@@ -1,0 +1,418 @@
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+
+  z-index: 90;
+
+  width: 260px;
+
+  display: flex;
+  flex-direction: column;
+
+  background:
+      linear-gradient(
+          180deg,
+          #0f1f3d 0%,
+          #13284c 100%
+      );
+
+  color: #ffffff;
+
+  border-right:
+      1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+      8px 0 30px rgba(15, 31, 61, 0.10);
+
+  transition:
+      transform 0.24s ease,
+      width 0.24s ease;
+}
+
+
+/* =====================================================
+ BRAND
+===================================================== */
+
+.sidebarBrand {
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 16px 18px;
+
+  border-bottom:
+      1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brandLogo {
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background:
+      linear-gradient(
+          135deg,
+          #1a73e8,
+          #0b5ed7
+      );
+
+  box-shadow:
+      0 8px 20px rgba(11, 94, 215, 0.28);
+
+  font-size: 24px;
+}
+
+.brandText {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.brandText strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.brandText span {
+  color:
+      rgba(255, 255, 255, 0.58);
+
+  font-size: 11px;
+}
+
+.sidebarCloseButton {
+  display: none;
+
+  margin-left: auto;
+
+  width: 36px;
+  height: 36px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background:
+      rgba(255, 255, 255, 0.08);
+
+  color: white;
+
+  font-size: 15px;
+}
+
+
+/* =====================================================
+ NAVIGATION
+===================================================== */
+
+.sidebarNavigation {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  padding: 18px 12px;
+
+  overflow-y: auto;
+}
+
+.sidebarItem {
+  width: 100%;
+  min-height: 46px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 13px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: transparent;
+
+  color:
+      rgba(255, 255, 255, 0.72);
+
+  text-align: left;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+}
+
+.sidebarItem:hover {
+  background:
+      rgba(255, 255, 255, 0.07);
+
+  color: #ffffff;
+}
+
+.sidebarItem:active {
+  transform: scale(0.985);
+}
+
+.sidebarItem.active {
+  background:
+      linear-gradient(
+          90deg,
+          rgba(35, 112, 232, 0.95),
+          rgba(24, 96, 207, 0.92)
+      );
+
+  color: #ffffff;
+
+  box-shadow:
+      0 7px 18px rgba(0, 0, 0, 0.12);
+}
+
+.sidebarIcon {
+  width: 24px;
+
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 17px;
+}
+
+
+/* =====================================================
+ SCROLLBAR
+===================================================== */
+
+.sidebarNavigation::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebarNavigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebarNavigation::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background:
+      rgba(255, 255, 255, 0.16);
+}
+
+
+/* =====================================================
+ FOOTER
+===================================================== */
+
+.sidebarFooter {
+  padding: 14px 16px 18px;
+
+  border-top:
+      1px solid rgba(255, 255, 255, 0.08);
+}
+
+.autoSaveStatus {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px 12px;
+
+  border-radius: 11px;
+
+  background:
+      rgba(255, 255, 255, 0.06);
+}
+
+.autoSaveStatus .statusDot {
+  width: 9px;
+  height: 9px;
+
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+
+  background: #36d399;
+
+  box-shadow:
+      0 0 0 5px rgba(54, 211, 153, 0.08);
+}
+
+.autoSaveStatus div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.autoSaveStatus strong {
+  font-size: 11px;
+}
+
+.autoSaveStatus small {
+  color:
+      rgba(255, 255, 255, 0.52);
+
+  font-size: 10px;
+}
+
+
+/* =====================================================
+ OVERLAY
+===================================================== */
+
+.sidebarOverlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 80;
+
+  display: none;
+
+  background:
+      rgba(15, 23, 42, 0.48);
+
+  backdrop-filter: blur(2px);
+}
+
+.sidebarOverlay.show {
+  display: block;
+}
+
+
+/* =====================================================
+ DESKTOP COLLAPSED SIDEBAR
+===================================================== */
+
+body.sidebarCollapsed .sidebar {
+  width: 82px;
+}
+
+body.sidebarCollapsed .mainApplication {
+  margin-left: 82px;
+}
+
+body.sidebarCollapsed .brandText,
+body.sidebarCollapsed .sidebarItem > span:not(.sidebarIcon),
+body.sidebarCollapsed .autoSaveStatus div {
+  display: none;
+}
+
+body.sidebarCollapsed .sidebarBrand {
+  justify-content: center;
+}
+
+body.sidebarCollapsed .sidebarNavigation {
+  align-items: center;
+}
+
+body.sidebarCollapsed .sidebarItem {
+  width: 54px;
+
+  justify-content: center;
+
+  padding: 0;
+}
+
+body.sidebarCollapsed .sidebarIcon {
+  width: auto;
+}
+
+body.sidebarCollapsed .sidebarFooter {
+  display: flex;
+  justify-content: center;
+}
+
+body.sidebarCollapsed .autoSaveStatus {
+  padding: 12px;
+}
+
+
+/* =====================================================
+ ACTIVE INDICATOR
+===================================================== */
+
+.sidebarItem.active::before {
+  content: "";
+
+  width: 3px;
+  height: 22px;
+
+  position: absolute;
+  left: 0;
+
+  border-radius:
+      0 4px 4px 0;
+
+  background: #ffffff;
+}
+
+.sidebarItem {
+  position: relative;
+}
+
+
+/* =====================================================
+ TOOLTIP FOR COLLAPSED MODE
+===================================================== */
+
+body.sidebarCollapsed .sidebarItem {
+  position: relative;
+}
+
+body.sidebarCollapsed .sidebarItem:hover::after {
+  content:
+      attr(data-title);
+
+  position: absolute;
+  left: 66px;
+  top: 50%;
+
+  transform:
+      translateY(-50%);
+
+  min-width: 110px;
+
+  padding: 8px 10px;
+
+  border-radius: 8px;
+
+  background: #111827;
+  color: #ffffff;
+
+  box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.18);
+
+  font-size: 11px;
+  white-space: nowrap;
+}

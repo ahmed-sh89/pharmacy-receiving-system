@@ -1,0 +1,2499 @@
+/* =====================================================
+   DASHBOARD STATISTICS
+===================================================== */
+
+.statisticsGrid {
+  display: grid;
+
+  grid-template-columns:
+      repeat(6, minmax(120px, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 22px;
+}
+
+.statCard {
+  position: relative;
+
+  min-height: 112px;
+
+  padding: 18px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.statCard::after {
+  content: "";
+
+  position: absolute;
+  right: -24px;
+  bottom: -24px;
+
+  width: 80px;
+  height: 80px;
+
+  border-radius: 50%;
+
+  background:
+      rgba(11, 94, 215, 0.05);
+}
+
+.statCardLabel {
+  position: relative;
+  z-index: 1;
+
+  margin-bottom: 12px;
+
+  color: var(--text-soft);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statCard strong {
+  position: relative;
+  z-index: 1;
+
+  display: block;
+
+  font-size: 31px;
+  line-height: 1;
+
+  color: var(--text);
+}
+
+.statSuccess {
+  border-color: #cdebdc;
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #f3fbf7
+      );
+}
+
+.statSuccess strong {
+  color: var(--success);
+}
+
+.statWarning {
+  border-color: #f2dfaa;
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #fffaf0
+      );
+}
+
+.statWarning strong {
+  color: var(--warning);
+}
+
+.statDanger {
+  border-color: #f0cccc;
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #fff6f6
+      );
+}
+
+.statDanger strong {
+  color: var(--danger);
+}
+
+
+/* =====================================================
+ PROGRESS
+===================================================== */
+
+.progressPercentage {
+  color: var(--primary);
+
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 14px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #edf1f7;
+}
+
+.progressBar {
+  width: 0%;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+      linear-gradient(
+          90deg,
+          #0b5ed7,
+          #4f8fe9
+      );
+
+  transition: width 0.28s ease;
+}
+
+.progressDetails {
+  display: flex;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 9px;
+
+  color: var(--text-soft);
+
+  font-size: 12px;
+}
+
+
+/* =====================================================
+ LAST SCAN CARD
+===================================================== */
+
+.lastScanCard {
+  border-color: #d7e4f7;
+}
+
+.lastScanCard.scanSuccess {
+  border-color: #a9dbc5;
+
+  box-shadow:
+      0 8px 24px rgba(31, 157, 104, 0.10);
+}
+
+.lastScanCard.scanError {
+  border-color: #efbcbc;
+
+  box-shadow:
+      0 8px 24px rgba(214, 69, 69, 0.10);
+}
+
+
+/* =====================================================
+ STATUS BADGES
+===================================================== */
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 26px;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.statusPending {
+  color: #667085;
+  background: #f2f4f7;
+}
+
+.statusReceiving {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.statusCompleted {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.statusOver {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.statusManual {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+
+/* =====================================================
+ RECEIVING TABLE ROW STATES
+===================================================== */
+
+.dataTable tbody tr.rowPending {
+  background: #ffffff;
+}
+
+.dataTable tbody tr.rowReceiving {
+  background: #f5f9ff;
+}
+
+.dataTable tbody tr.rowCompleted {
+  background: #f3fbf7;
+}
+
+.dataTable tbody tr.rowOver {
+  background: #fff6f6;
+}
+
+.dataTable tbody tr.rowManual {
+  background: #fffaf0;
+}
+
+
+/* =====================================================
+ REPORT TOTAL ROW
+===================================================== */
+
+.reportTotalRow td {
+  background: #f3f7ff;
+
+  color: var(--primary);
+
+  font-weight: 800;
+}
+
+
+/* =====================================================
+ ARCHIVE STATUS
+===================================================== */
+
+.archiveStatus {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.archiveStatus.completed {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.archiveStatus.closed {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+
+/* =====================================================
+ HEALTH STATUS
+===================================================== */
+
+.healthValueGood {
+  color: var(--success);
+}
+
+.healthValueWarning {
+  color: var(--warning);
+}
+
+.healthValueDanger {
+  color: var(--danger);
+}
+
+
+/* =====================================================
+ EMPTY TABLE STATE
+===================================================== */
+
+.tableEmptyState {
+  padding: 32px 16px !important;
+
+  color: var(--text-soft);
+
+  text-align: center;
+}
+
+
+/* =====================================================
+ SEARCH RESULT ITEM
+===================================================== */
+
+.searchResultItem {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 12px;
+
+  border: 0;
+  border-bottom: 1px solid var(--border);
+
+  background: white;
+
+  text-align: left;
+}
+
+.searchResultItem:last-child {
+  border-bottom: 0;
+}
+
+.searchResultItem:hover {
+  background: var(--primary-soft);
+}
+
+.searchResultMain {
+  min-width: 0;
+}
+
+.searchResultMain strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchResultMain span {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.searchResultMeta {
+  flex: 0 0 auto;
+
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+
+/* =====================================================
+ MANUAL ITEM
+===================================================== */
+
+.manualBadge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 3px 7px;
+
+  margin-left: 6px;
+
+  border-radius: 999px;
+
+  color: var(--warning);
+  background: var(--warning-soft);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  vertical-align: middle;
+}
+
+
+/* =====================================================
+ SCAN FLASH EFFECTS
+===================================================== */
+
+@keyframes scanSuccessFlash {
+  0% {
+      box-shadow:
+          0 0 0 7px rgba(31, 157, 104, 0.18);
+  }
+
+  100% {
+      box-shadow:
+          0 0 0 5px rgba(11, 94, 215, 0.08);
+  }
+}
+
+@keyframes scanErrorFlash {
+  0% {
+      box-shadow:
+          0 0 0 7px rgba(214, 69, 69, 0.18);
+  }
+
+  100% {
+      box-shadow:
+          0 0 0 5px rgba(11, 94, 215, 0.08);
+  }
+}
+
+.scanBox.flashSuccess {
+  animation:
+      scanSuccessFlash 0.5s ease;
+}
+
+.scanBox.flashError {
+  animation:
+      scanErrorFlash 0.5s ease;
+}
+
+
+/* =====================================================
+ REPORT SUMMARY HIGHLIGHT
+===================================================== */
+
+.reportSummaryCard.highlight::before {
+  content: "TOTAL";
+
+  display: inline-block;
+
+  margin-bottom: 7px;
+
+  padding: 3px 6px;
+
+  border-radius: 6px;
+
+  background: white;
+
+  color: var(--primary);
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+
+/* =====================================================
+ RESPONSIVE INTERMEDIATE
+===================================================== */
+
+@media (max-width: 1280px) {
+
+  .statisticsGrid {
+      grid-template-columns:
+          repeat(3, minmax(150px, 1fr));
+  }
+
+  .lastScanGrid {
+      grid-template-columns:
+          repeat(4, minmax(120px, 1fr));
+  }
+
+  .reportFilterGrid {
+      grid-template-columns:
+          2fr 1fr 1fr;
+  }
+
+  .reportButtonField {
+      grid-column:
+          1 / -1;
+  }
+
+  .reportButtonField .primaryButton {
+      width: 100%;
+  }
+
+}
+
+
+/* =====================================================
+ SMALL LAPTOP
+===================================================== */
+
+@media (max-width: 1024px) {
+
+  .twoColumnLayout {
+      grid-template-columns: 1fr;
+  }
+
+  .statisticsGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+  .lastScanGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+  .actionCardGrid {
+      grid-template-columns: 1fr;
+  }
+
+  .reportSummaryGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+  .healthGrid,
+  .sessionInfoGrid,
+  .archiveSummaryGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+}
+/* =====================================================
+   SMART SCAN SEARCH
+===================================================== */
+
+.smartScanSearchArea {
+  margin-top: 14px;
+}
+
+.smartScanResults {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+
+  margin-top: 10px;
+}
+
+.smartSearchResult {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 13px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  text-align: left;
+
+  transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      transform 0.18s ease,
+      box-shadow 0.18s ease;
+}
+
+.smartSearchResult:hover {
+  border-color: #b9cff2;
+  background: #f7faff;
+
+  box-shadow:
+      0 8px 20px rgba(11, 94, 215, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.smartSearchResultMain {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.smartSearchResultMain strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: var(--text);
+
+  font-size: 14px;
+}
+
+.smartSearchResultMain span {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.smartSearchResultQty {
+  flex: 0 0 auto;
+
+  min-width: 80px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+.smartSearchResultQty span {
+  color: var(--primary);
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.smartSearchResultQty small {
+  color: var(--text-soft);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.smartSearchEmpty {
+  padding: 16px;
+
+  border: 1px dashed #cfd8e6;
+  border-radius: 12px;
+
+  background: #fafcff;
+
+  color: var(--text-soft);
+
+  text-align: center;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+ SELECTED SEARCH ITEM
+===================================================== */
+
+.smartScanSelected {
+  margin-top: 12px;
+  padding: 18px;
+
+  border: 1px solid #b8cff4;
+  border-radius: 15px;
+
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #f5f9ff
+      );
+
+  box-shadow:
+      0 10px 24px rgba(11, 94, 215, 0.08);
+}
+
+.smartSelectedMain {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 16px;
+}
+
+.smartSelectedMain h3 {
+  margin: 5px 0 4px;
+
+  color: var(--text);
+
+  font-size: 18px;
+}
+
+.smartSelectedCode {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.smartSelectedCode strong {
+  color: var(--primary);
+}
+
+.smartSelectedStats {
+  display: grid;
+
+  grid-template-columns:
+      repeat(3, minmax(100px, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 16px;
+}
+
+.smartSelectedStats > div {
+  padding: 11px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.smartSelectedStats span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--text-soft);
+
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.smartSelectedStats strong {
+  font-size: 18px;
+}
+
+.smartQuantityRow {
+  display: grid;
+
+  grid-template-columns:
+      auto auto minmax(150px, 1fr);
+
+  gap: 12px;
+
+  align-items: center;
+}
+
+.smartQuantityLabel {
+  color: var(--text-soft);
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.smartQuantityControl {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #cfd8e6;
+  border-radius: 11px;
+
+  background: white;
+}
+
+.quantityButton {
+  width: 42px;
+  height: 42px;
+
+  border: 0;
+
+  background: #f4f7fb;
+  color: var(--primary);
+
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.quantityButton:hover {
+  background: var(--primary-soft);
+}
+
+#smartQuantityInput {
+  width: 72px;
+  height: 42px;
+
+  padding: 0 6px;
+
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+
+  outline: 0;
+
+  background: white;
+
+  color: var(--text);
+
+  font-size: 17px;
+  font-weight: 800;
+
+  text-align: center;
+}
+
+
+/* =====================================================
+ LAST SCAN — PRIORITY DISPLAY
+===================================================== */
+
+#lastScanCard {
+  margin-top: 14px;
+  margin-bottom: 20px;
+
+  border: 2px solid #d6e3f6;
+
+  box-shadow:
+      0 10px 26px rgba(31, 41, 55, 0.07);
+}
+
+#lastScanCard .cardHeader {
+  margin-bottom: 14px;
+}
+
+#lastItemName {
+  color: var(--primary);
+
+  font-size: 18px;
+}
+
+#lastScanCard.scanSuccess {
+  border-color: #86cfad;
+
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #f2fbf7
+      );
+}
+
+#lastScanCard.scanError {
+  border-color: #eba9a9;
+
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #fff5f5
+      );
+}
+
+
+/* =====================================================
+ RECEIVING TABLE QUANTITY CONTROL
+===================================================== */
+
+.tableQtyControl {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #ccd5e2;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.tableQtyButton {
+  width: 30px;
+  height: 30px;
+
+  border: 0;
+
+  background: #f3f6fa;
+  color: var(--primary);
+
+  font-size: 18px;
+  font-weight: 800;
+
+  line-height: 1;
+}
+
+.tableQtyButton:hover {
+  background: var(--primary-soft);
+}
+
+.tableQtyValue {
+  min-width: 42px;
+  height: 30px;
+
+  padding: 0 8px;
+
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+
+  background: #ffffff;
+
+  color: var(--text);
+
+  font-size: 13px;
+  font-weight: 800;
+
+  text-align: center;
+}
+
+.tableQtyValue:hover {
+  background: #fafcff;
+  color: var(--primary);
+}
+
+
+/* =====================================================
+ RECENTLY UPDATED ROW
+===================================================== */
+
+@keyframes recentlyUpdatedRowFlash {
+
+  0% {
+      background: #dff8ea;
+      box-shadow:
+          inset 4px 0 0 #1f9d68;
+  }
+
+  55% {
+      background: #eaf9f1;
+      box-shadow:
+          inset 4px 0 0 #1f9d68;
+  }
+
+  100% {
+      background: inherit;
+      box-shadow:
+          inset 0 0 0 transparent;
+  }
+
+}
+
+#receivingTableBody tr.recentlyUpdated {
+  animation:
+      recentlyUpdatedRowFlash
+      1.8s ease;
+}
+
+
+/* =====================================================
+ SMART SCAN MOBILE
+===================================================== */
+
+@media (max-width:768px){
+
+  .smartSelectedStats {
+      grid-template-columns:
+          repeat(3, 1fr);
+  }
+
+  .smartQuantityRow {
+      grid-template-columns:
+          1fr;
+  }
+
+  .smartQuantityLabel {
+      display: none;
+  }
+
+  .smartQuantityControl {
+      width: 100%;
+  }
+
+  .quantityButton {
+      flex: 1;
+  }
+
+  #smartQuantityInput {
+      flex: 1;
+      width: auto;
+  }
+
+  .smartQuantityRow .primaryButton {
+      width: 100%;
+  }
+
+  .smartSearchResult {
+      padding: 12px;
+  }
+
+}
+
+
+/* =====================================================
+ ZEBRA / TOUCH DEVICE
+===================================================== */
+
+@media (pointer:coarse){
+
+  .smartSearchResult {
+      min-height: 58px;
+  }
+
+  .quantityButton {
+      min-width: 48px;
+      min-height: 48px;
+  }
+
+  #smartQuantityInput {
+      min-height: 48px;
+  }
+
+  .tableQtyButton {
+      min-width: 38px;
+      min-height: 38px;
+  }
+
+  .tableQtyValue {
+      min-height: 38px;
+  }
+
+}
+/* =====================================================
+   LAST SCAN QUICK QUANTITY
+===================================================== */
+
+.lastScanQuantityControls {
+  margin-top: 16px;
+  padding-top: 15px;
+
+  border-top: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+}
+
+.lastScanQtyTitle {
+  font-size: 12px;
+  font-weight: 800;
+
+  color: var(--text-soft);
+}
+
+.lastScanQtyActions {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #bfcde1;
+  border-radius: 11px;
+
+  background: white;
+}
+
+.lastScanQtyButton {
+  width: 46px;
+  height: 42px;
+
+  border: 0;
+
+  background: #f3f7fd;
+  color: var(--primary);
+
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.lastScanQtyButton:hover {
+  background: var(--primary-soft);
+}
+
+.lastScanQtyValue {
+  min-width: 62px;
+  height: 42px;
+
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+
+  background: white;
+
+  color: var(--primary);
+
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.lastScanQtyHint {
+  color: var(--text-soft);
+
+  font-size: 10px;
+}
+
+
+/* =====================================================
+ CLICKABLE DASHBOARD CARDS
+===================================================== */
+
+.clickableStatCard {
+  cursor: pointer;
+
+  transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+}
+
+.clickableStatCard:hover {
+  transform: translateY(-2px);
+
+  border-color: #aac5ec;
+
+  box-shadow:
+      0 12px 28px rgba(11, 94, 215, 0.10);
+}
+
+
+/* =====================================================
+ STAT ITEMS MODAL
+===================================================== */
+
+.statItemsModal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 500;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+      rgba(15, 23, 42, 0.56);
+
+  backdrop-filter: blur(3px);
+}
+
+.statItemsModal.open {
+  display: flex;
+}
+
+.statItemsModalCard {
+  width: min(
+      1000px,
+      96vw
+  );
+
+  max-height: 88vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border-radius: 18px;
+
+  background: white;
+
+  box-shadow:
+      0 30px 80px rgba(15, 23, 42, 0.24);
+}
+
+.statItemsModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 20px 22px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.statItemsModalHeader span {
+  color: var(--text-soft);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.8px;
+}
+
+.statItemsModalHeader h2 {
+  margin: 4px 0 0;
+
+  font-size: 20px;
+}
+
+.statItemsClose {
+  width: 40px;
+  height: 40px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: #f2f4f7;
+}
+
+.statItemsModalSummary {
+  display: flex;
+  align-items: baseline;
+
+  gap: 6px;
+
+  padding: 14px 22px;
+
+  background: #f8faff;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.statItemsModalSummary strong {
+  color: var(--primary);
+
+  font-size: 22px;
+}
+
+.statItemsModalSummary span {
+  color: var(--text-soft);
+
+  font-size: 11px;
+}
+
+.statItemsTableWrap {
+  overflow: auto;
+}
+
+
+/* =====================================================
+ MOBILE
+===================================================== */
+
+@media (max-width:768px){
+
+  .lastScanQuantityControls {
+      flex-direction: column;
+      align-items: stretch;
+  }
+
+  .lastScanQtyActions {
+      width: 100%;
+  }
+
+  .lastScanQtyButton,
+  .lastScanQtyValue {
+      flex: 1;
+  }
+
+  .lastScanQtyHint {
+      text-align: center;
+  }
+
+  .statItemsModal {
+      padding: 8px;
+  }
+
+  .statItemsModalCard {
+      max-height: 94vh;
+  }
+
+}
+
+/* =====================================================
+   PROFESSIONAL LAST SCAN — FINAL
+===================================================== */
+
+#lastScanCard {
+    margin-top: 14px;
+    margin-bottom: 20px;
+
+    padding: 14px 16px;
+
+    border: 2px solid #d6e3f6;
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f8fbff
+        );
+
+    box-shadow:
+        0 10px 26px rgba(31, 41, 55, 0.07);
+}
+
+#lastScanCard .cardHeader {
+    margin-bottom: 10px;
+}
+
+#lastScanCard.scanSuccess {
+    border-color: #86cfad;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f2fbf7
+        );
+}
+
+#lastScanCard.scanError {
+    border-color: #eba9a9;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #fff5f5
+        );
+}
+
+/*
+   The old equal-width grid stays hidden for compatibility.
+*/
+#lastScanCard .legacyLastScanGrid {
+    display: none !important;
+}
+
+.professionalLastScanLayout {
+    width: 100%;
+}
+
+/* Full-width item identity area */
+.lastScanHero {
+    width: 100%;
+
+    padding: 14px 16px;
+
+    border: 1px solid #dce7f6;
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f6f9ff
+        );
+}
+
+/*
+   Most important field:
+   never ellipsize or hide the item name.
+   It can wrap naturally so the COMPLETE name is visible.
+*/
+.lastScanHeroName {
+    width: 100%;
+
+    margin: 0 0 11px;
+
+    color: var(--primary);
+
+    font-size: clamp(16px, 1.65vw, 21px);
+    font-weight: 850;
+    line-height: 1.28;
+
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: normal;
+
+    letter-spacing: -0.15px;
+}
+
+/* Item Number / GTIN / time */
+.lastScanMetaRow {
+    display: grid;
+
+    grid-template-columns:
+        minmax(130px, 0.8fr)
+        minmax(180px, 1.2fr)
+        minmax(150px, 0.9fr);
+
+    gap: 8px;
+}
+
+.lastScanMetaItem {
+    min-width: 0;
+
+    padding: 7px 9px;
+
+    border: 1px solid #e5ebf3;
+    border-radius: 8px;
+
+    background: #ffffff;
+}
+
+.lastScanMetaItem span {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #8390a2;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.45px;
+    text-transform: uppercase;
+}
+
+.lastScanMetaItem strong {
+    display: block;
+
+    color: #334155;
+
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Receiving metrics */
+.lastScanMetrics {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-top: 9px;
+}
+
+.lastScanMetric {
+    min-width: 0;
+
+    padding: 9px 10px;
+
+    border: 1px solid #e3e9f2;
+    border-radius: 10px;
+
+    background: #f8fafc;
+
+    text-align: center;
+}
+
+.lastScanMetric span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #7b8798;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+}
+
+.lastScanMetric > strong {
+    display: block;
+
+    color: #273244;
+
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.lastScanMetricReceived {
+    border-color: #cdebdc;
+    background: #f4fbf7;
+}
+
+.lastScanMetricReceived > strong {
+    color: var(--success);
+}
+
+.lastScanMetricRemaining {
+    border-color: #f2dfaa;
+    background: #fffaf0;
+}
+
+.lastScanMetricRemaining > strong {
+    color: var(--warning);
+}
+
+.lastScanHeroStatus {
+    min-height: 26px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =====================================================
+   LAST SCAN QUICK QUANTITY — FINAL
+===================================================== */
+
+.lastScanQuantityControls {
+    display: grid;
+
+    grid-template-columns:
+        auto auto minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 10px;
+    padding-top: 10px;
+
+    border-top: 1px solid #e3e9f2;
+}
+
+.lastScanQtyTitle {
+    color: #6d7888;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.lastScanQtyActions {
+    display: inline-flex;
+    align-items: center;
+
+    overflow: hidden;
+
+    border: 1px solid #c8d3e3;
+    border-radius: 9px;
+
+    background: #ffffff;
+}
+
+.lastScanQtyButton {
+    width: 36px;
+    height: 32px;
+
+    border: 0;
+
+    background: #f3f7fd;
+    color: var(--primary);
+
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.lastScanQtyButton:hover {
+    background: var(--primary-soft);
+}
+
+.lastScanQtyValue {
+    min-width: 48px;
+    height: 32px;
+
+    border: 0;
+    border-left: 1px solid #dfe6ef;
+    border-right: 1px solid #dfe6ef;
+
+    background: #ffffff;
+    color: var(--primary);
+
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.lastScanQtyHint {
+    color: #8994a4;
+
+    font-size: 8px;
+    line-height: 1.3;
+}
+
+/* =====================================================
+   LAST SCAN RESPONSIVE / ZEBRA
+===================================================== */
+
+@media (max-width: 900px) {
+
+    .lastScanMetaRow {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .lastScanMetaTime {
+        grid-column:
+            1 / -1;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    #lastScanCard {
+        padding: 10px;
+    }
+
+    .lastScanHero {
+        padding: 11px 12px;
+    }
+
+    .lastScanHeroName {
+        font-size: 15px;
+        line-height: 1.3;
+    }
+
+    .lastScanMetaRow {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 5px;
+    }
+
+    .lastScanMetaItem {
+        padding: 6px 7px;
+    }
+
+    .lastScanMetaItem strong {
+        font-size: 9px;
+    }
+
+    .lastScanMetrics {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 5px;
+    }
+
+    .lastScanMetric {
+        padding: 7px 4px;
+    }
+
+    .lastScanMetric span {
+        font-size: 7px;
+    }
+
+    .lastScanMetric > strong {
+        font-size: 13px;
+    }
+
+    .lastScanQuantityControls {
+        grid-template-columns:
+            auto 1fr;
+
+        gap: 7px;
+    }
+
+    .lastScanQtyActions {
+        justify-self: end;
+    }
+
+    .lastScanQtyHint {
+        display: none;
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .lastScanHeroName {
+        font-size: 14px;
+    }
+
+    .lastScanMetaRow {
+        grid-template-columns:
+            1fr;
+    }
+
+    .lastScanMetaTime {
+        grid-column: auto;
+    }
+
+    .lastScanMetrics {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+/* =====================================================
+   LAST SCAN METRICS — LARGE READABLE VALUES
+   Final override: keeps existing professional palette.
+===================================================== */
+
+#lastScanCard .lastScanMetrics {
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#lastScanCard .lastScanMetric {
+    min-height: 76px;
+    padding: 12px 12px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#lastScanCard .lastScanMetric span {
+    margin-bottom: 7px;
+
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1;
+    letter-spacing: 0.5px;
+}
+
+#lastScanCard .lastScanMetric > strong {
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+#lastScanCard .lastScanHeroStatus {
+    min-height: 30px;
+}
+
+#lastScanCard .lastScanHeroStatus .statusBadge {
+    min-height: 30px;
+    padding: 6px 12px;
+
+    font-size: 12px;
+    font-weight: 900;
+}
+
+#lastScanCard .lastScanOverQuantity {
+    display: block;
+
+    color: var(--danger);
+
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+#lastScanCard .lastScanMetricStatus:has(.lastScanOverQuantity) {
+    border-color: #f0cccc;
+    background: #fff6f6;
+}
+
+@media (max-width: 768px) {
+    #lastScanCard .lastScanMetric {
+        min-height: 66px;
+        padding: 9px 7px;
+    }
+
+    #lastScanCard .lastScanMetric span {
+        margin-bottom: 5px;
+        font-size: 8px;
+    }
+
+    #lastScanCard .lastScanMetric > strong,
+    #lastScanCard .lastScanOverQuantity {
+        font-size: 20px;
+    }
+
+    #lastScanCard .lastScanHeroStatus .statusBadge {
+        min-height: 26px;
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+}
+
+/* =====================================================
+   ORDER STATUS REPORT — DASHBOARD LIVE REPORT
+===================================================== */
+
+.orderStatusReportButton {
+    margin-left: 10px;
+}
+
+.orderStatusReportModal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 560;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px;
+
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(4px);
+}
+
+.orderStatusReportModal.open {
+    display: flex;
+}
+
+.orderStatusReportCard {
+    width: min(1120px, 96vw);
+    max-height: 90vh;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border: 1px solid #d9e3f0;
+    border-radius: 20px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 32px 90px rgba(15, 23, 42, 0.28);
+}
+
+.orderStatusReportHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 20px 22px 16px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.orderStatusReportHeader > div > span {
+    color: var(--primary);
+
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+}
+
+.orderStatusReportHeader h2 {
+    margin: 5px 0 4px;
+
+    color: var(--text);
+
+    font-size: 21px;
+}
+
+.orderStatusReportHeader p {
+    margin: 0;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+}
+
+.orderStatusReportToolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 14px 22px;
+
+    border-bottom: 1px solid var(--border);
+
+    background: #f8faff;
+}
+
+.orderStatusFilters {
+    display: inline-flex;
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+.orderStatusFilters button {
+    min-height: 34px;
+
+    padding: 7px 13px;
+
+    border: 1px solid #d6dfec;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #526174;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.orderStatusFilters button:hover {
+    border-color: #acc5e9;
+    transform: translateY(-1px);
+}
+
+.orderStatusFilters button.active {
+    border-color: var(--primary);
+
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.orderStatusReportSummary {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(80px, 1fr));
+
+    gap: 8px;
+}
+
+.orderStatusReportSummary > div {
+    min-width: 90px;
+
+    padding: 8px 10px;
+
+    border: 1px solid #e0e7f0;
+    border-radius: 9px;
+
+    background: #ffffff;
+}
+
+.orderStatusReportSummary strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: var(--text);
+
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.orderStatusReportSummary span {
+    color: var(--text-soft);
+
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.orderStatusReportSummary .shortageValue strong {
+    color: var(--warning);
+}
+
+.orderStatusReportSummary .overValue strong {
+    color: var(--danger);
+}
+
+.orderStatusReportTableWrap {
+    overflow: auto;
+}
+
+.orderStatusReportTable th,
+.orderStatusReportTable td {
+    white-space: nowrap;
+}
+
+.orderStatusReportTable td:nth-child(2) {
+    min-width: 260px;
+    white-space: normal;
+}
+
+.orderStatusShortageRow {
+    background: #fffaf0;
+}
+
+.differenceShortage {
+    color: var(--warning);
+
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.differenceOver,
+.overQtyBadge {
+    color: var(--danger);
+
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.differenceComplete {
+    color: var(--success);
+
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.statusShortage {
+    color: #b7791f;
+    background: #fff3d6;
+}
+
+/* =====================================================
+   OVER / REMAINING DETAIL MODAL — QUANTITY EMPHASIS
+===================================================== */
+
+.statItemsModalSummary {
+    justify-content: flex-start;
+    gap: 18px;
+}
+
+.statSummaryBlock {
+    display: flex;
+    align-items: baseline;
+
+    gap: 6px;
+}
+
+.statSummaryQuantity {
+    padding-left: 18px;
+
+    border-left: 1px solid var(--border);
+}
+
+.statSummaryQuantity strong {
+    color: var(--danger);
+}
+
+.statItemsDataTable .overQtyBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 48px;
+
+    padding: 5px 9px;
+
+    border-radius: 8px;
+
+    background: #fff0f0;
+}
+
+@media (max-width: 900px) {
+
+    .orderStatusReportToolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .orderStatusReportSummary {
+        grid-template-columns:
+            repeat(2, minmax(100px, 1fr));
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .orderStatusReportButton {
+        margin-left: 4px;
+    }
+
+    .orderStatusReportModal {
+        padding: 6px;
+    }
+
+    .orderStatusReportCard {
+        max-height: 96vh;
+    }
+
+    .orderStatusReportHeader {
+        padding: 15px;
+    }
+
+    .orderStatusReportToolbar {
+        padding: 10px;
+    }
+
+    .orderStatusFilters {
+        display: grid;
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .orderStatusFilters button {
+        width: 100%;
+    }
+
+}
+
+/* =====================================================
+   MASTER GTIN DATABASE
+===================================================== */
+
+.masterGTINCard{
+    position:relative;
+    overflow:hidden;
+}
+
+.masterGTINCard::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:3px;
+    background:var(--primary);
+    opacity:.85;
+}
+
+.masterGTINStatusGrid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin-top:6px;
+}
+
+.masterGTINStatusGrid > div{
+    min-width:0;
+    padding:12px 13px;
+    border:1px solid var(--border);
+    border-radius:11px;
+    background:#f8fafc;
+}
+
+.masterGTINStatusGrid span{
+    display:block;
+    margin-bottom:5px;
+    color:var(--text-soft);
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.35px;
+    text-transform:uppercase;
+}
+
+.masterGTINStatusGrid strong{
+    display:block;
+    overflow:hidden;
+    color:var(--text);
+    font-size:13px;
+    font-weight:850;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+#masterGTINStatus{
+    color:var(--primary);
+}
+
+.masterGTINNotice{
+    margin-top:10px;
+    padding:10px 12px;
+    border:1px solid #d7e2f2;
+    border-radius:10px;
+    background:#f6f9fe;
+    color:#506078;
+    font-size:11px;
+    line-height:1.45;
+}
+
+.masterGTINNotice.success{
+    border-color:#b8dfcb;
+    background:#f2fbf6;
+    color:#287352;
+}
+
+.masterGTINNotice.warning{
+    border-color:#efd59b;
+    background:#fffaf0;
+    color:#87641b;
+}
+
+.legacyMappingDetails{
+    margin-top:12px;
+    border-top:1px solid var(--border);
+    padding-top:10px;
+}
+
+.legacyMappingDetails summary{
+    cursor:pointer;
+    color:var(--text-soft);
+    font-size:11px;
+    font-weight:750;
+    user-select:none;
+}
+
+.legacyMappingContent{
+    display:grid;
+    gap:10px;
+    margin-top:10px;
+}
+
+.legacyMappingContent .secondaryButton{
+    justify-self:start;
+}
+
+/* =====================================================
+   SAFE QUANTITY ADJUSTMENT
+===================================================== */
+
+.quantityAdjustmentModal{
+    position:fixed;
+    inset:0;
+    z-index:650;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    background:rgba(15,23,42,.56);
+    backdrop-filter:blur(3px);
+}
+
+.quantityAdjustmentModal.open{
+    display:flex;
+}
+
+.quantityAdjustmentCard{
+    width:min(440px,96vw);
+    padding:20px;
+    border:1px solid #d9e3f0;
+    border-radius:17px;
+    background:#fff;
+    box-shadow:0 28px 70px rgba(15,23,42,.24);
+}
+
+.quantityAdjustmentHeader{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+}
+
+.quantityAdjustmentHeader h3{
+    margin:5px 0 0;
+    color:var(--text);
+    font-size:16px;
+    line-height:1.3;
+}
+
+.quantityCurrentTotal{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:16px 0 14px;
+    padding:11px 13px;
+    border:1px solid #d9e5f5;
+    border-radius:11px;
+    background:#f7faff;
+}
+
+.quantityCurrentTotal span{
+    color:var(--text-soft);
+    font-size:11px;
+    font-weight:750;
+}
+
+.quantityCurrentTotal strong{
+    color:var(--primary);
+    font-size:22px;
+    font-weight:900;
+}
+
+.quantityAdjustmentLabel{
+    display:block;
+    margin-bottom:6px;
+    color:var(--text-soft);
+    font-size:10px;
+    font-weight:800;
+    text-transform:uppercase;
+}
+
+.quantityAdjustmentInput{
+    width:100%;
+    height:48px;
+    padding:0 13px;
+    border:2px solid #c7d7eb;
+    border-radius:11px;
+    outline:none;
+    background:#fff;
+    color:var(--text);
+    font-size:20px;
+    font-weight:900;
+    text-align:center;
+}
+
+.quantityAdjustmentInput:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(11,94,215,.10);
+}
+
+.quantityAdjustmentHelp{
+    margin:10px 0 14px;
+    color:var(--text-soft);
+    font-size:10px;
+    line-height:1.5;
+}
+
+.quantityAdjustmentActions{
+    display:grid;
+    grid-template-columns:1.25fr 1fr;
+    gap:9px;
+}
+
+@media (max-width:768px){
+    .masterGTINStatusGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .quantityAdjustmentActions{
+        grid-template-columns:1fr;
+    }
+}
+
+
+/* =====================================================
+   ZEBRA OFFLINE RECEIVING MODE
+===================================================== */
+
+.zebraQuickHeader{
+    display:none;
+}
+
+body.zebraMode{
+    background:#eef3f9;
+}
+
+body.zebraMode .sidebar,
+body.zebraMode .sidebarOverlay,
+body.zebraMode .topBar{
+    display:none !important;
+}
+
+body.zebraMode .mainApplication{
+    margin-left:0 !important;
+    width:100% !important;
+}
+
+body.zebraMode .mainContent{
+    width:min(100%,680px);
+    margin:0 auto;
+    padding:8px;
+}
+
+body.zebraMode .appPage{
+    display:none !important;
+}
+
+body.zebraMode #page-dashboard{
+    display:block !important;
+}
+
+body.zebraMode #page-dashboard > *{
+    display:none !important;
+}
+
+body.zebraMode #page-dashboard > .zebraQuickHeader,
+body.zebraMode #page-dashboard > .scanPanel{
+    display:block !important;
+}
+
+body.zebraMode .zebraQuickHeader{
+    margin-bottom:8px;
+    padding:12px;
+    border:1px solid #c9d8ed;
+    border-radius:14px;
+    background:linear-gradient(145deg,#ffffff,#f5f9ff);
+    box-shadow:0 8px 22px rgba(31,41,55,.07);
+}
+
+.zebraQuickHeaderMain{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.zebraModeEyebrow{
+    display:block;
+    margin-bottom:4px;
+    font-size:9px;
+    font-weight:900;
+    letter-spacing:.7px;
+    color:#65758b;
+}
+
+#zebraQuickOrder{
+    display:block;
+    max-width:440px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:15px;
+    color:#17355e;
+}
+
+.zebraDeviceBadge{
+    flex:0 0 auto;
+    padding:6px 8px;
+    border-radius:8px;
+    background:#e8f1ff;
+    color:#0b5ed7;
+    font-size:9px;
+    font-weight:900;
+}
+
+.zebraQuickStats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+    margin-top:10px;
+}
+
+.zebraQuickStats > div{
+    padding:7px 8px;
+    border:1px solid #dce5f0;
+    border-radius:9px;
+    background:#fff;
+    text-align:center;
+}
+
+.zebraQuickStats span{
+    display:block;
+    margin-bottom:2px;
+    font-size:8px;
+    font-weight:800;
+    text-transform:uppercase;
+    color:#7c8898;
+}
+
+.zebraQuickStats strong{
+    font-size:16px;
+    color:#172b4d;
+}
+
+.zebraQuickExport{
+    width:100%;
+    margin-top:9px;
+    min-height:42px;
+}
+
+body.zebraMode .scanPanel{
+    margin:0;
+    padding:10px;
+    border-radius:14px;
+}
+
+body.zebraMode .scanPanelHeader{
+    margin-bottom:8px;
+}
+
+body.zebraMode .scanPanelHeader h2{
+    font-size:18px;
+    margin-bottom:2px;
+}
+
+body.zebraMode .scanPanelHeader p{
+    display:none;
+}
+
+body.zebraMode #scanBox{
+    min-height:62px;
+    border-width:3px;
+}
+
+body.zebraMode #barcodeInput{
+    font-size:17px;
+    font-weight:800;
+}
+
+body.zebraMode #lastScanCard{
+    margin-bottom:0;
+}
+
+body.zebraMode .smartScanResults{
+    max-height:220px;
+    overflow:auto;
+}
+
+@media (max-width:768px){
+    body.zebraMode .mainContent{
+        padding:5px;
+    }
+
+    body.zebraMode .scanStatusBadge{
+        font-size:8px;
+    }
+
+    body.zebraMode #lastScanCard{
+        padding:9px;
+    }
+}

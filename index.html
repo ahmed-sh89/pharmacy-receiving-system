@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0b5ed7"
+    >
+
+    <meta
+        name="description"
+        content="Professional Pharmacy Receiving System"
+    >
+
+    <title>
+        Pharmacy Receiving System V3
+    </title>
+
+    <!-- ================================
+         STYLES
+    ================================= -->
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/sidebar.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/dashboard.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/responsive.css"
+    >
+
+</head>
+
+
+<body>
+
+<div id="app">
+
+
+    <!-- ==================================================
+         SIDEBAR OVERLAY
+    =================================================== -->
+
+    <div
+        id="sidebarOverlay"
+        class="sidebarOverlay"
+    ></div>
+
+
+    <!-- ==================================================
+         SIDEBAR
+    =================================================== -->
+
+    <aside
+        id="sidebar"
+        class="sidebar"
+    >
+
+        <!-- BRAND -->
+
+        <div class="sidebarBrand">
+
+            <div class="brandLogo">
+
+                💊
+
+            </div>
+
+
+            <div class="brandText">
+
+                <strong>
+                    Pharmacy Receiving
+                </strong>
+
+                <span>
+                    Enterprise V3
+                </span>
+
+            </div>
+
+
+            <button
+                id="btnCloseSidebar"
+                class="sidebarCloseButton"
+                type="button"
+                aria-label="Close sidebar"
+            >
+
+                ✕
+
+            </button>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav class="sidebarNavigation">
+
+
+            <button
+                class="sidebarItem active"
+                type="button"
+                data-page="dashboard"
+            >
+
+                <span class="sidebarIcon">
+                    ▦
+                </span>
+
+                <span>
+                    Dashboard
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="receiving"
+            >
+
+                <span class="sidebarIcon">
+                    ◉
+                </span>
+
+                <span>
+                    Receiving
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="files"
+            >
+
+                <span class="sidebarIcon">
+                    📂
+                </span>
+
+                <span>
+                    Orders & Mappings
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="reports"
+            >
+
+                <span class="sidebarIcon">
+                    ▤
+                </span>
+
+                <span>
+                    Reports
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="sessions"
+            >
+
+                <span class="sidebarIcon">
+                    ⇄
+                </span>
+
+                <span>
+                    Zebra & Sessions
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="archive"
+            >
+
+                <span class="sidebarIcon">
+                    ▣
+                </span>
+
+                <span>
+                    Archive
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="settings"
+            >
+
+                <span class="sidebarIcon">
+                    ⚙
+                </span>
+
+                <span>
+                    Settings
+                </span>
+
+            </button>
+
+
+        </nav>
+
+
+        <!-- SIDEBAR FOOTER -->
+
+        <div class="sidebarFooter">
+
+            <div class="autoSaveStatus">
+
+                <span class="statusDot"></span>
+
+                <div>
+
+                    <strong>
+                        Auto Save
+                    </strong>
+
+                    <small>
+                        Enabled
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- ==================================================
+         MAIN APPLICATION
+    =================================================== -->
+
+    <main class="mainApplication">
+
+
+        <!-- ==================================================
+             TOP BAR
+        =================================================== -->
+
+        <header class="topBar">
+
+
+            <div class="topBarLeft">
+
+                <button
+                    id="btnMenu"
+                    class="iconButton"
+                    type="button"
+                    aria-label="Open menu"
+                >
+
+                    ☰
+
+                </button>
+
+
+                <div class="pageHeading">
+
+                    <h1 id="pageTitle">
+                        Dashboard
+                    </h1>
+
+                    <p id="pageSubtitle">
+                        Pharmacy Receiving System
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="topBarRight">
+
+
+                <div class="headerInfo">
+
+                    <span>
+                        Current Order
+                    </span>
+
+                    <strong id="headerOrderId">
+                        No Order
+                    </strong>
+
+                </div>
+
+
+                <div class="headerInfo">
+
+                    <span>
+                        Session
+                    </span>
+
+                    <strong id="headerSessionId">
+                        Local
+                    </strong>
+
+                </div>
+
+
+                <div
+                    id="systemStatus"
+                    class="systemStatus ready"
+                >
+
+                    READY
+
+                </div>
+
+
+            </div>
+
+
+        </header>
+
+
+        <!-- ==================================================
+             MAIN CONTENT
+        =================================================== -->
+
+        <div class="mainContent">
+
+
+            <!-- ==================================================
+                 DASHBOARD PAGE
+            =================================================== -->
+
+            <section
+                id="page-dashboard"
+                class="appPage active"
+            >
+
+
+                <!-- SCAN AREA -->
+
+                <section class="scanPanel">
+
+
+                    <div class="scanPanelHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ACTIVE RECEIVING
+
+                            </span>
+
+                            <h2>
+
+                                Scan GS1 / Barcode
+
+                            </h2>
+
+                            <p>
+
+                                Keep the cursor in the highlighted box and scan
+                                the product barcode.
+
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            id="scanStatusBadge"
+                            class="scanStatusBadge ready"
+                        >
+
+                            <span class="scanPulse"></span>
+
+                            READY TO SCAN
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- IMPORTANT SCAN BOX -->
+
+                    <div
+                        id="scanBox"
+                        class="scanBox"
+                    >
+
+                        <div class="scanBoxIcon">
+
+                            ▥
+
+                        </div>
+
+
+                        <input
+                            id="barcodeInput"
+                            type="text"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            placeholder="SCAN BARCODE HERE"
+                        >
+
+
+                        <div class="scanBoxIndicator">
+
+                            SCANNER
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="scanPanelFooter">
+
+
+                        <button
+                            id="btnQuickSearch"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            🔍 Search Item
+
+                        </button>
+
+
+                        <span>
+
+                            The scanner input will be captured automatically.
+
+                        </span>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- STATISTICS -->
+
+                <section class="statisticsGrid">
+
+
+                    <article class="statCard">
+
+                        <div class="statCardLabel">
+
+                            Total Items
+
+                        </div>
+
+                        <strong id="statTotalItems">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statSuccess">
+
+                        <div class="statCardLabel">
+
+                            Completed
+
+                        </div>
+
+                        <strong id="statCompleted">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statWarning">
+
+                        <div class="statCardLabel">
+
+                            Remaining
+
+                        </div>
+
+                        <strong id="statRemaining">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statDanger">
+
+                        <div class="statCardLabel">
+
+                            Over Received
+
+                        </div>
+
+                        <strong id="statOver">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard">
+
+                        <div class="statCardLabel">
+
+                            Manual
+
+                        </div>
+
+                        <strong id="statManual">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard">
+
+                        <div class="statCardLabel">
+
+                            Total Scans
+
+                        </div>
+
+                        <strong id="statScans">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                </section>
+
+
+                <!-- PROGRESS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ORDER PROGRESS
+
+                            </span>
+
+                            <h3>
+
+                                Receiving Progress
+
+                            </h3>
+
+                        </div>
+
+
+                        <strong
+                            id="progressLabel"
+                            class="progressPercentage"
+                        >
+
+                            0%
+
+                        </strong>
+
+
+                    </div>
+
+
+                    <div class="progressTrack">
+
+                        <div
+                            id="progressBar"
+                            class="progressBar"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="progressDetails">
+
+
+                        <span id="progressCompletedText">
+
+                            0 Completed
+
+                        </span>
+
+
+                        <span id="progressRemainingText">
+
+                            0 Remaining
+
+                        </span>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- LAST SCAN -->
+
+                <section
+                    id="lastScanCard"
+                    class="contentCard lastScanCard"
+                >
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                LATEST ACTIVITY
+
+                            </span>
+
+                            <h3>
+
+                                Last Scan
+
+                            </h3>
+
+                        </div>
+
+
+                        <span id="lastScanTime">
+
+                            -
+
+                        </span>
+
+
+                    </div>
+
+
+                    <div class="lastScanGrid">
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Item Name
+
+                            </span>
+
+                            <strong id="lastItemName">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Item Number
+
+                            </span>
+
+                            <strong id="lastItemCode">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                GTIN
+
+                            </span>
+
+                            <strong id="lastGTIN">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Ordered
+
+                            </span>
+
+                            <strong id="lastOrderedQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Received
+
+                            </span>
+
+                            <strong id="lastReceivedQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Remaining
+
+                            </span>
+
+                            <strong id="lastRemainingQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Status
+
+                            </span>
+
+                            <strong id="lastItemStatus">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 RECEIVING PAGE
+            =================================================== -->
+
+            <section
+                id="page-receiving"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                CURRENT ORDER
+
+                            </span>
+
+                            <h2>
+
+                                Receiving Items
+
+                            </h2>
+
+                        </div>
+
+
+                        <div class="headerActions">
+
+
+                            <button
+                                id="btnReceivingSearch"
+                                class="secondaryButton"
+                                type="button"
+                            >
+
+                                🔍 Search
+
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    Item Number
+                                </th>
+
+                                <th>
+                                    Item Name
+                                </th>
+
+                                <th>
+                                    Ordered
+                                </th>
+
+                                <th>
+                                    Received
+                                </th>
+
+                                <th>
+                                    Remaining
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="receivingTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 ORDERS & MAPPINGS PAGE
+            =================================================== -->
+
+            <section
+                id="page-files"
+                class="appPage"
+            >
+
+
+                <div class="twoColumnLayout">
+
+
+                    <!-- ORDERS -->
+
+                    <section class="contentCard">
+
+
+                        <div class="cardHeader">
+
+
+                            <div>
+
+                                <span class="sectionEyebrow">
+
+                                    MASTER ORDERS
+
+                                </span>
+
+                                <h2>
+
+                                    Order Files
+
+                                </h2>
+
+                                <p>
+
+                                    Multiple order files are supported.
+
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                id="btnLoadOrders"
+                                class="primaryButton"
+                                type="button"
+                            >
+
+                                + Add Order Files
+
+                            </button>
+
+
+                        </div>
+
+
+                        <input
+                            id="orderFileInput"
+                            type="file"
+                            multiple
+                            accept=".xlsx,.xls"
+                            hidden
+                        >
+
+
+                        <div
+                            id="orderFilesList"
+                            class="fileList"
+                        >
+
+                            <div class="emptyState">
+
+                                No order files loaded.
+
+                            </div>
+
+                        </div>
+
+
+                    </section>
+
+
+                    <!-- MASTER GTIN DATABASE -->
+
+                    <section class="contentCard masterGTINCard">
+
+                        <div class="cardHeader">
+
+                            <div>
+
+                                <span class="sectionEyebrow">
+                                    BARCODE DATABASE
+                                </span>
+
+                                <h2>
+                                    Master GTIN Database
+                                </h2>
+
+                                <p>
+                                    Upload the pharmacy-wide GTIN file once. New orders will use it automatically.
+                                </p>
+
+                            </div>
+
+                            <button
+                                id="btnUpdateMasterGTIN"
+                                class="primaryButton"
+                                type="button"
+                            >
+                                Update Master GTIN
+                            </button>
+
+                        </div>
+
+                        <input
+                            id="masterGTINFileInput"
+                            type="file"
+                            accept=".xlsx,.xls"
+                            hidden
+                        >
+
+                        <div class="masterGTINStatusGrid">
+
+                            <div>
+                                <span>Status</span>
+                                <strong id="masterGTINStatus">Not installed</strong>
+                            </div>
+
+                            <div>
+                                <span>Master Items</span>
+                                <strong id="masterGTINItemCount">0</strong>
+                            </div>
+
+                            <div>
+                                <span>Current Order Matched</span>
+                                <strong id="masterGTINMatchedCount">0</strong>
+                            </div>
+
+                            <div>
+                                <span>Last Updated</span>
+                                <strong id="masterGTINUpdatedAt">-</strong>
+                            </div>
+
+                        </div>
+
+                        <div id="masterGTINNotice" class="masterGTINNotice">
+                            Update Master GTIN to remove the need to load a Mapping file for every order.
+                        </div>
+
+                        <details class="legacyMappingDetails">
+                            <summary>Optional fallback: Mapping Files</summary>
+
+                            <div class="legacyMappingContent">
+
+                                <button
+                                    id="btnLoadMappings"
+                                    class="secondaryButton"
+                                    type="button"
+                                >
+                                    + Add Mapping Files
+                                </button>
+
+                                <input
+                                    id="mappingFileInput"
+                                    type="file"
+                                    multiple
+                                    accept=".xlsx,.xls"
+                                    hidden
+                                >
+
+                                <div
+                                    id="mappingFilesList"
+                                    class="fileList"
+                                >
+                                    <div class="emptyState">
+                                        No fallback mapping files loaded.
+                                    </div>
+                                </div>
+
+                            </div>
+                        </details>
+
+                    </section>
+
+
+                </div>
+
+
+                <!-- IMPORT STATUS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                DATA HEALTH
+
+                            </span>
+
+                            <h3>
+
+                                Import Summary
+
+                            </h3>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="healthGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Order Items
+
+                            </span>
+
+                            <strong id="healthOrderItems">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Barcode Mappings
+
+                            </span>
+
+                            <strong id="healthMappings">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Missing Barcode
+
+                            </span>
+
+                            <strong id="healthMissingBarcode">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Duplicate GTIN
+
+                            </span>
+
+                            <strong id="healthDuplicateGTIN">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 REPORTS PAGE
+            =================================================== -->
+
+            <section
+                id="page-reports"
+                class="appPage"
+            >
+
+
+                <!-- ITEM RECEIVING HISTORY REPORT -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                HISTORICAL REPORT
+
+                            </span>
+
+                            <h2>
+
+                                Item Receiving Report
+
+                            </h2>
+
+                            <p>
+
+                                Find how much of a specific item was received
+                                during any selected date range.
+
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="reportFilterGrid">
+
+
+                        <div class="formField reportItemField">
+
+                            <label for="reportItemSearch">
+
+                                Item Name / Item Number
+
+                            </label>
+
+
+                            <input
+                                id="reportItemSearch"
+                                type="text"
+                                autocomplete="off"
+                                placeholder="Search by name or item number"
+                            >
+
+
+                            <div
+                                id="reportItemResults"
+                                class="dropdownResults"
+                            ></div>
+
+
+                        </div>
+
+
+                        <div class="formField">
+
+                            <label for="reportFromDate">
+
+                                From Date
+
+                            </label>
+
+                            <input
+                                id="reportFromDate"
+                                type="date"
+                            >
+
+                        </div>
+
+
+                        <div class="formField">
+
+                            <label for="reportToDate">
+
+                                To Date
+
+                            </label>
+
+                            <input
+                                id="reportToDate"
+                                type="date"
+                            >
+
+                        </div>
+
+
+                        <div class="formField reportButtonField">
+
+                            <label>
+
+                                &nbsp;
+
+                            </label>
+
+                            <button
+                                id="btnGenerateItemReport"
+                                class="primaryButton"
+                                type="button"
+                            >
+
+                                Generate Report
+
+                            </button>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- REPORT SUMMARY -->
+
+                    <div class="reportSummaryGrid">
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Selected Item
+
+                            </span>
+
+                            <strong id="reportSelectedItem">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Item Number
+
+                            </span>
+
+                            <strong id="reportSelectedCode">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard highlight">
+
+                            <span>
+
+                                Total Received
+
+                            </span>
+
+                            <strong id="reportTotalReceived">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Number of Orders
+
+                            </span>
+
+                            <strong id="reportOrderCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Order
+                                </th>
+
+                                <th>
+                                    Item Number
+                                </th>
+
+                                <th>
+                                    Item Name
+                                </th>
+
+                                <th>
+                                    Qty
+                                </th>
+
+                                <th>
+                                    Source
+                                </th>
+
+                                <th>
+                                    Device
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="itemReportTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                    <div class="cardFooter">
+
+
+                        <button
+                            id="btnExportItemReport"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            Export Item Report
+
+                        </button>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 ZEBRA & SESSION PAGE
+            =================================================== -->
+
+            <section
+                id="page-sessions"
+                class="appPage"
+            >
+
+
+                <div class="actionCardGrid">
+
+
+                    <button
+                        id="btnCreateSession"
+                        class="largeActionCard"
+                        type="button"
+                    >
+
+                        <span class="actionIcon">
+
+                            ＋
+
+                        </span>
+
+                        <strong>
+
+                            Create Session
+
+                        </strong>
+
+                        <small>
+
+                            Create a new receiving session.
+
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        id="btnPrepareZebraWork"
+                        class="largeActionCard"
+                        type="button"
+                    >
+
+                        <span class="actionIcon">
+                            ▣
+                        </span>
+
+                        <strong>
+                            Prepare Zebra Work File
+                        </strong>
+
+                        <small>
+                            PC: create a lightweight copy of the current order for Zebra.
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        id="btnLoadZebraWork"
+                        class="largeActionCard"
+                        type="button"
+                    >
+
+                        <span class="actionIcon">
+                            ⇧
+                        </span>
+
+                        <strong>
+                            Load Zebra Work File
+                        </strong>
+
+                        <small>
+                            Zebra: load the prepared order and start offline scanning.
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        id="btnExportZebraSession"
+                        class="largeActionCard"
+                        type="button"
+                    >
+
+                        <span class="actionIcon">
+
+                            ⇩
+
+                        </span>
+
+                        <strong>
+
+                            Export Zebra Session
+
+                        </strong>
+
+                        <small>
+
+                            Save this device receiving activity.
+
+                        </small>
+
+                    </button>
+
+
+                    <button
+                        id="btnMergeZebraSession"
+                        class="largeActionCard"
+                        type="button"
+                    >
+
+                        <span class="actionIcon">
+
+                            ⇄
+
+                        </span>
+
+                        <strong>
+
+                            Merge Zebra Session
+
+                        </strong>
+
+                        <small>
+
+                            PC: merge Zebra scans safely. Re-importing the same session will not duplicate quantities.
+
+                        </small>
+
+                    </button>
+
+
+                </div>
+
+
+                <input
+                    id="zebraWorkFileInput"
+                    type="file"
+                    accept=".prs,.json"
+                    hidden
+                >
+
+
+                <input
+                    id="zebraSessionFileInput"
+                    type="file"
+                    accept=".prs,.json"
+                    hidden
+                >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                CURRENT SESSION
+
+                            </span>
+
+                            <h3>
+
+                                Session Information
+
+                            </h3>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="sessionInfoGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Session ID
+
+                            </span>
+
+                            <strong id="sessionPageId">
+
+                                Local
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Device ID
+
+                            </span>
+
+                            <strong id="sessionDeviceId">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Pending Queue
+
+                            </span>
+
+                            <strong id="sessionQueueCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Last Save
+
+                            </span>
+
+                            <strong id="sessionLastSave">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 ARCHIVE PAGE
+            =================================================== -->
+
+            <section
+                id="page-archive"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                HISTORICAL DATA
+
+                            </span>
+
+                            <h2>
+
+                                Receiving Archive
+
+                            </h2>
+
+                            <p>
+
+                                Completed orders remain here even after the
+                                current workspace is reset.
+
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="archiveSummaryGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Archived Orders
+
+                            </span>
+
+                            <strong id="archiveOrderCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Receiving Transactions
+
+                            </span>
+
+                            <strong id="archiveTransactionCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    Order ID
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Items
+                                </th>
+
+                                <th>
+                                    Received Units
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="archiveTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 SETTINGS PAGE
+            =================================================== -->
+
+            <section
+                id="page-settings"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                WORKSPACE
+
+                            </span>
+
+                            <h2>
+
+                                Current Order
+
+                            </h2>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="settingsButtonGrid">
+
+
+                        <button
+                            id="btnSaveNow"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            💾 Save Now
+
+                        </button>
+
+
+                        <button
+                            id="btnExportReports"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            📊 Export Reports
+
+                        </button>
+
+
+                        <button
+                            id="btnCloseCurrentOrder"
+                            class="warningButton"
+                            type="button"
+                        >
+
+                            ✓ Close Current Order
+
+                        </button>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <section class="contentCard dangerZoneCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow dangerText">
+
+                                DANGER ZONE
+
+                            </span>
+
+                            <h2>
+
+                                Data Management
+
+                            </h2>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <p class="settingsDescription">
+
+                        Closing the current order does not delete historical
+                        reports. Historical deletion is a separate protected action.
+
+                    </p>
+
+
+                    <div class="settingsButtonGrid">
+
+
+                        <button
+                            id="btnResetWorkspace"
+                            class="dangerOutlineButton"
+                            type="button"
+                        >
+
+                            Reset Current Workspace
+
+                        </button>
+
+
+                        <button
+                            id="btnDeleteAllHistory"
+                            class="dangerButton"
+                            type="button"
+                        >
+
+                            Delete All Historical Data
+
+                        </button>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- ==================================================
+     GLOBAL ITEM SEARCH MODAL
+=================================================== -->
+
+<div
+    id="searchModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard">
+
+
+        <div class="modalHeader">
+
+
+            <div>
+
+                <span class="sectionEyebrow">
+
+                    ITEM LOOKUP
+
+                </span>
+
+                <h2>
+
+                    Search Item
+
+                </h2>
+
+            </div>
+
+
+            <button
+                id="btnCloseSearch"
+                class="iconButton"
+                type="button"
+            >
+
+                ✕
+
+            </button>
+
+
+        </div>
+
+
+        <input
+            id="globalSearchInput"
+            class="largeSearchInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Search by item name or item number..."
+        >
+
+
+        <div
+            id="globalSearchResults"
+            class="modalSearchResults"
+        ></div>
+
+
+        <div
+            id="manualAddArea"
+            class="manualAddArea"
+        >
+
+
+            <p>
+
+                Can't find the item in the current order?
+
+            </p>
+
+
+            <button
+                id="btnOpenManualAdd"
+                class="secondaryButton"
+                type="button"
+            >
+
+                + Add Manual Item
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     MANUAL ITEM MODAL
+=================================================== -->
+
+<div
+    id="manualItemModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard smallModal">
+
+
+        <div class="modalHeader">
+
+
+            <div>
+
+                <span class="sectionEyebrow">
+
+                    MANUAL RECEIVING
+
+                </span>
+
+                <h2>
+
+                    Add Manual Item
+
+                </h2>
+
+            </div>
+
+
+            <button
+                id="btnCloseManualItem"
+                class="iconButton"
+                type="button"
+            >
+
+                ✕
+
+            </button>
+
+
+        </div>
+
+
+        <div class="formStack">
+
+
+            <div class="formField">
+
+                <label for="manualItemCode">
+
+                    Item Number
+
+                </label>
+
+                <input
+                    id="manualItemCode"
+                    type="text"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="formField">
+
+                <label for="manualItemName">
+
+                    Item Name
+
+                </label>
+
+                <input
+                    id="manualItemName"
+                    type="text"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="formField">
+
+                <label for="manualItemQuantity">
+
+                    Quantity
+
+                </label>
+
+                <input
+                    id="manualItemQuantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="1"
+                >
+
+            </div>
+
+
+        </div>
+
+
+        <div class="modalFooter">
+
+
+            <button
+                id="btnCancelManualItem"
+                class="secondaryButton"
+                type="button"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                id="btnSaveManualItem"
+                class="primaryButton"
+                type="button"
+            >
+
+                Add Item
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     CONFIRM MODAL
+=================================================== -->
+
+<div
+    id="confirmModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard smallModal">
+
+
+        <div class="modalHeader">
+
+
+            <h2 id="confirmTitle">
+
+                Confirm
+
+            </h2>
+
+
+        </div>
+
+
+        <p
+            id="confirmMessage"
+            class="confirmMessage"
+        >
+
+            Are you sure?
+
+        </p>
+
+
+        <div class="modalFooter">
+
+
+            <button
+                id="btnConfirmCancel"
+                class="secondaryButton"
+                type="button"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                id="btnConfirmOK"
+                class="dangerButton"
+                type="button"
+            >
+
+                Confirm
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     TOAST
+=================================================== -->
+
+<div
+    id="toastContainer"
+    class="toastContainer"
+></div>
+
+
+<!-- ==================================================
+     LOADING OVERLAY
+=================================================== -->
+
+<div
+    id="loadingOverlay"
+    class="loadingOverlay"
+>
+
+
+    <div class="loadingCard">
+
+
+        <div class="spinner"></div>
+
+
+        <strong id="loadingText">
+
+            Loading...
+
+        </strong>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     EXTERNAL LIBRARIES
+=================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+></script>
+
+
+<!-- ==================================================
+     APPLICATION FILES
+=================================================== -->
+
+<script src="js/config.js"></script>
+
+<script src="js/utils.js"></script>
+
+<script src="js/state.js"></script>
+
+<script src="js/router.js"></script>
+
+<script src="js/ui.js"></script>
+
+<script src="js/excel.js"></script>
+
+<script src="js/master-gtin.js"></script>
+
+<script src="js/scanner.js"></script>
+
+<script src="js/receiving.js"></script>
+
+<script src="js/session.js"></script>
+
+<script src="js/reports.js"></script>
+
+<script src="js/app.js"></script>
+
+
+</body>
+
+</html>
