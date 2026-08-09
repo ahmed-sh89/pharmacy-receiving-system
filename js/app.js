@@ -193,6 +193,12 @@ function initializeOptionalModules(){
 
 
     initializeModuleSafely(
+        "supabase",
+        "initializeSupabaseCloud"
+    );
+
+
+    initializeModuleSafely(
         "session",
         "initializeSession"
     );
@@ -887,24 +893,65 @@ function bindCoreApplicationButtons(){
             function(){
 
                 if(
-                    typeof createReceivingSession ===
+                    typeof createCloudReceivingSession ===
                     "function"
                 ){
-
-                    createReceivingSession();
-
+                    createCloudReceivingSession();
                 }
                 else{
-
                     showToast(
-                        "Session module is not ready yet",
+                        "Cloud session module is not ready yet",
                         "warning"
                     );
-
                 }
 
             }
         );
+
+
+    document
+        .getElementById(
+            "btnJoinCloudSession"
+        )
+        ?.addEventListener(
+            "click",
+            function(){
+                const input = document.getElementById("cloudSessionCodeInput");
+                if(typeof joinCloudReceivingSession === "function"){
+                    joinCloudReceivingSession(input ? input.value : "");
+                }
+            }
+        );
+
+
+    document
+        .getElementById("cloudSessionCodeInput")
+        ?.addEventListener(
+            "keydown",
+            function(event){
+                if(event.key === "Enter"){
+                    event.preventDefault();
+                    if(typeof joinCloudReceivingSession === "function"){
+                        joinCloudReceivingSession(event.target.value);
+                    }
+                }
+            }
+        );
+
+
+    document
+        .getElementById("btnRefreshCloudNow")
+        ?.addEventListener("click",function(){
+            if(typeof flushCloudPendingQueue === "function"){ flushCloudPendingQueue(); }
+            if(typeof refreshCloudSnapshot === "function"){ refreshCloudSnapshot(); }
+        });
+
+
+    document
+        .getElementById("btnLeaveCloudSession")
+        ?.addEventListener("click",function(){
+            if(typeof leaveCloudSession === "function"){ leaveCloudSession(); }
+        });
 
 
     document

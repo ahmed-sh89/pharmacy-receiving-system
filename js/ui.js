@@ -17,6 +17,11 @@ const UI = {
 
     reportSearchResults:[],
 
+    receivingFilters:{
+        status:"all",
+        category:"all"
+    },
+
     smartScan:{
         container:null,
         results:null,
@@ -118,6 +123,12 @@ function cacheUIElements(){
 
         receivingTableBody:
             document.getElementById("receivingTableBody"),
+
+        receivingStatusFilter:
+            document.getElementById("receivingStatusFilter"),
+
+        receivingCategoryFilter:
+            document.getElementById("receivingCategoryFilter"),
 
         archiveTableBody:
             document.getElementById("archiveTableBody"),
@@ -1008,6 +1019,19 @@ function bindUIEvents(){
         );
 
 
+    UI.elements.receivingStatusFilter
+        ?.addEventListener("change",function(event){
+            UI.receivingFilters.status = event.target.value || "all";
+            refreshReceivingTable();
+        });
+
+    UI.elements.receivingCategoryFilter
+        ?.addEventListener("change",function(event){
+            UI.receivingFilters.category = event.target.value || "all";
+            refreshReceivingTable();
+        });
+
+
     document
         .getElementById("btnCloseSearch")
         ?.addEventListener(
@@ -1325,7 +1349,9 @@ function refreshHeader(){
 
     setElementText(
         UI.elements.headerSessionId,
-        AppState.session.id
+        (AppState.session.cloud === true
+            ? (AppState.session.code || AppState.session.id)
+            : AppState.session.id)
         ||
         "Local"
     );
@@ -1565,62 +1591,70 @@ function clearLastScanUI(){
 
 function refreshReceivingTable(){
 
-    const tbody =
-        UI.elements.receivingTableBody;
+    const tbody = UI.elements.receivingTableBody;
+    if(!tbody){ return; }
 
-    if(!tbody){
+    refreshReceivingCategoryFilter();
+    tbody.innerHTML = "";
+
+    const allItems = AppState.workspace.orderData || [];
+    const statusFilter = UI.receivingFilters.status || "all";
+    const categoryFilter = UI.receivingFilters.category || "all";
+
+    const items = allItems.filter(item=>{
+        const received = toNumber(item.receivedQty,0);
+        const ordered = toNumber(item.orderedQty,0);
+
+        let statusMatch = true;
+        if(statusFilter === "received"){ statusMatch = received > 0; }
+        else if(statusFilter === "not_received"){ statusMatch = received <= 0; }
+        else if(statusFilter === "partial"){ statusMatch = received > 0 && received < ordered; }
+        else if(statusFilter === "completed"){ statusMatch = ordered > 0 && received === ordered; }
+        else if(statusFilter === "over"){ statusMatch = received > ordered; }
+
+        const category = toSafeString(item.category || "").trim();
+        const categoryMatch = categoryFilter === "all" || category === categoryFilter;
+        return statusMatch && categoryMatch;
+    });
+
+    if(allItems.length === 0){
+        tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No order items loaded.</td></tr>`;
         return;
     }
-
-    tbody.innerHTML =
-        "";
-
-    const items =
-        AppState.workspace.orderData;
 
     if(items.length === 0){
-
-        tbody.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="7"
-                    class="tableEmptyState"
-                >
-                    No order items loaded.
-                </td>
-
-            </tr>
-
-        `;
-
+        tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No items match the selected filters.</td></tr>`;
         return;
     }
 
-    const fragment =
-        document.createDocumentFragment();
+    const fragment = document.createDocumentFragment();
+    items.forEach((item,index)=>{
+        fragment.appendChild(createReceivingTableRow(item,index));
+    });
+    tbody.appendChild(fragment);
+}
 
-    items.forEach(
-        (
-            item,
-            index
-        )=>{
+function refreshReceivingCategoryFilter(){
+    const select = UI.elements.receivingCategoryFilter;
+    if(!select){ return; }
 
-            fragment.appendChild(
-                createReceivingTableRow(
-                    item,
-                    index
-                )
-            );
+    const categories = Array.from(new Set(
+        (AppState.workspace.orderData || [])
+            .map(item=>toSafeString(item.category || "").trim())
+            .filter(Boolean)
+    )).sort((a,b)=>a.localeCompare(b));
 
-        }
-    );
+    const current = UI.receivingFilters.category || "all";
+    select.innerHTML = `<option value="all">All Categories</option>` +
+        categories.map(category=>`<option value="${escapeHTML(category)}">${escapeHTML(category)}</option>`).join("");
 
-    tbody.appendChild(
-        fragment
-    );
-
+    if(current !== "all" && categories.includes(current)){
+        select.value = current;
+    }
+    else{
+        UI.receivingFilters.category = "all";
+        select.value = "all";
+    }
 }
 
 
@@ -2504,7 +2538,9 @@ function refreshSessionUI(){
 
     setElementText(
         UI.elements.sessionPageId,
-        session.id || "Local"
+        session.cloud === true
+        ? (session.code || session.id || "Cloud")
+        : (session.id || "Local")
     );
 
     setElementText(

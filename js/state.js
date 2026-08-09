@@ -67,6 +67,14 @@ const AppState = {
 
         role:"LOCAL",
 
+        cloud:false,
+
+        code:"",
+
+        secret:"",
+
+        cloudTotalScans:0,
+
         parentSessionId:null,
 
         workFileId:null,
@@ -207,6 +215,14 @@ function createEmptySession(){
 
         role:"LOCAL",
 
+        cloud:false,
+
+        code:"",
+
+        secret:"",
+
+        cloudTotalScans:0,
+
         parentSessionId:null,
 
         workFileId:null,
@@ -281,7 +297,9 @@ function recalculateStatistics(){
         ).length;
 
     AppState.statistics.totalScans =
-        AppState.workspace.receivingHistory.length;
+        AppState.session && AppState.session.cloud === true
+        ? toNumber(AppState.session.cloudTotalScans,AppState.workspace.receivingHistory.length)
+        : AppState.workspace.receivingHistory.length;
 
 }
 
@@ -450,6 +468,10 @@ function upsertOrderItem(item){
 
     if(existing){
 
+        if(!existing.category && item.category){
+            existing.category = toSafeString(item.category);
+        }
+
         existing.orderedQty +=
             orderedQty;
 
@@ -476,6 +498,11 @@ function upsertOrderItem(item){
         itemName:
             toSafeString(
                 item.itemName
+            ),
+
+        category:
+            toSafeString(
+                item.category || ""
             ),
 
         orderedQty:
@@ -737,7 +764,13 @@ function addReceivingTransaction(
             AppState.session.deviceId,
 
         manual:
-            transaction.manual === true
+            transaction.manual === true,
+
+        cloudTransactionId:
+            transaction.cloudTransactionId || null,
+
+        cloudSynced:
+            transaction.cloudSynced === true
 
     };
 

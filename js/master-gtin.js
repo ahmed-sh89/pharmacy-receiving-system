@@ -350,13 +350,14 @@ async function parseMasterGTINFile(file){
             );
 
         /*
-           We only need the first three columns from this
-           master file. Restricting the range keeps a large
-           50k+ row import fast and memory efficient.
+           Read a practical header/data window so Category can
+           be imported together with Barcode, Item Number and Name.
+           The pharmacy master can contain 50k+ rows, so we still
+           cap the inspected columns for good mobile performance.
         */
         const range = {
             s:{r:decoded.s.r,c:0},
-            e:{r:decoded.e.r,c:2}
+            e:{r:decoded.e.r,c:Math.min(decoded.e.c,24)}
         };
 
         const matrix =
@@ -408,6 +409,11 @@ async function parseMasterGTINFile(file){
                     row[header.itemName]
                 );
 
+            const category =
+                header.category >= 0
+                ? toSafeString(row[header.category])
+                : "";
+
             if(!gtin || !itemCode){
                 continue;
             }
@@ -430,7 +436,8 @@ async function parseMasterGTINFile(file){
                     records[previousIndex] = {
                         itemCode:itemCode,
                         gtin:gtin,
-                        itemName:itemName
+                        itemName:itemName,
+                        category:category
                     };
 
                 }
@@ -445,7 +452,8 @@ async function parseMasterGTINFile(file){
                 records.push({
                     itemCode:itemCode,
                     gtin:gtin,
-                    itemName:itemName
+                    itemName:itemName,
+                    category:category
                 });
 
             }
@@ -533,6 +541,19 @@ function findMasterGTINHeader(matrix){
                 ].includes(value)
             );
 
+        const category =
+            normalized.findIndex(value=>
+                [
+                    "category",
+                    "item category",
+                    "product category",
+                    "department",
+                    "group",
+                    "item group",
+                    "classification"
+                ].includes(value)
+            );
+
         if(gtin >= 0 && itemCode >= 0){
 
             return {
@@ -542,7 +563,8 @@ function findMasterGTINHeader(matrix){
                 itemName:
                     itemName >= 0
                     ? itemName
-                    : itemCode
+                    : itemCode,
+                category:category
             };
 
         }
@@ -686,6 +708,11 @@ async function applyMasterGTINToCurrentOrder(
             source:"MASTER"
         });
 
+        const orderItem = AppState.indexes.itemByCode.get(record.itemCode);
+        if(orderItem && record.category){
+            orderItem.category = record.category;
+        }
+
         matchedCodes.add(
             record.itemCode
         );
@@ -765,6 +792,11 @@ async function applyMasterGTINForItemCode(itemCode){
 
     const record =
         records[0];
+
+    const orderItem = AppState.indexes.itemByCode.get(code);
+    if(orderItem && record.category){
+        orderItem.category = record.category;
+    }
 
     const conflict =
         AppState.workspace.mappingData.some(mapping=>
