@@ -864,8 +864,20 @@
                         </div>
 
 
-                        <div class="headerActions">
+                        <div class="headerActions receivingFilterBar">
 
+                            <select id="receivingStatusFilter" class="compactSelect" aria-label="Receiving status filter">
+                                <option value="all">All Status</option>
+                                <option value="received">Received Any Qty</option>
+                                <option value="not_received">Not Received</option>
+                                <option value="partial">Partially Received</option>
+                                <option value="completed">Completed</option>
+                                <option value="over">Over Received</option>
+                            </select>
+
+                            <select id="receivingCategoryFilter" class="compactSelect" aria-label="Category filter">
+                                <option value="all">All Categories</option>
+                            </select>
 
                             <button
                                 id="btnReceivingSearch"
@@ -1526,7 +1538,7 @@
 
 
             <!-- ==================================================
-                 ZEBRA & SESSION PAGE
+                 CLOUD SESSION PAGE
             =================================================== -->
 
             <section
@@ -1534,255 +1546,76 @@
                 class="appPage"
             >
 
-
-                <div class="actionCardGrid">
-
-
-                    <button
-                        id="btnCreateSession"
-                        class="largeActionCard"
-                        type="button"
-                    >
-
-                        <span class="actionIcon">
-
-                            ＋
-
-                        </span>
-
-                        <strong>
-
-                            Create Session
-
-                        </strong>
-
-                        <small>
-
-                            Create a new receiving session.
-
-                        </small>
-
-                    </button>
-
-
-                    <button
-                        id="btnPrepareZebraWork"
-                        class="largeActionCard"
-                        type="button"
-                    >
-
-                        <span class="actionIcon">
-                            ▣
-                        </span>
-
-                        <strong>
-                            Prepare Zebra Work File
-                        </strong>
-
-                        <small>
-                            PC: create a lightweight copy of the current order for Zebra.
-                        </small>
-
-                    </button>
-
-
-                    <button
-                        id="btnLoadZebraWork"
-                        class="largeActionCard"
-                        type="button"
-                    >
-
-                        <span class="actionIcon">
-                            ⇧
-                        </span>
-
-                        <strong>
-                            Load Zebra Work File
-                        </strong>
-
-                        <small>
-                            Zebra: load the prepared order and start offline scanning.
-                        </small>
-
-                    </button>
-
-
-                    <button
-                        id="btnExportZebraSession"
-                        class="largeActionCard"
-                        type="button"
-                    >
-
-                        <span class="actionIcon">
-
-                            ⇩
-
-                        </span>
-
-                        <strong>
-
-                            Export Zebra Session
-
-                        </strong>
-
-                        <small>
-
-                            Save this device receiving activity.
-
-                        </small>
-
-                    </button>
-
-
-                    <button
-                        id="btnMergeZebraSession"
-                        class="largeActionCard"
-                        type="button"
-                    >
-
-                        <span class="actionIcon">
-
-                            ⇄
-
-                        </span>
-
-                        <strong>
-
-                            Merge Zebra Session
-
-                        </strong>
-
-                        <small>
-
-                            PC: merge Zebra scans safely. Re-importing the same session will not duplicate quantities.
-
-                        </small>
-
-                    </button>
-
-
-                </div>
-
-
-                <input
-                    id="zebraWorkFileInput"
-                    type="file"
-                    hidden
-                >
-
-
-                <input
-                    id="zebraSessionFileInput"
-                    type="file"
-                    hidden
-                >
-
-
-                <section class="contentCard">
-
-
+                <section class="contentCard cloudSessionHero">
                     <div class="cardHeader">
-
-
                         <div>
-
-                            <span class="sectionEyebrow">
-
-                                CURRENT SESSION
-
-                            </span>
-
-                            <h3>
-
-                                Session Information
-
-                            </h3>
-
+                            <span class="sectionEyebrow">SHARED RECEIVING</span>
+                            <h2>PC + Zebra Cloud Session</h2>
+                            <p>Create the session on the PC, then join from Zebra using the number or QR code. No file transfer or manual merge is required.</p>
                         </div>
-
-
+                        <div class="cloudStatusPill" id="cloudSyncStatus">LOCAL</div>
                     </div>
 
+                    <div class="cloudActionGrid">
+                        <button id="btnCreateSession" class="largeActionCard" type="button">
+                            <span class="actionIcon">☁</span>
+                            <strong>Create Shared Session</strong>
+                            <small>PC: upload the current order and start shared receiving.</small>
+                        </button>
 
-                    <div class="sessionInfoGrid">
-
-
-                        <div>
-
-                            <span>
-
-                                Session ID
-
-                            </span>
-
-                            <strong id="sessionPageId">
-
-                                Local
-
-                            </strong>
-
+                        <div class="cloudJoinCard">
+                            <span class="sectionEyebrow">JOIN FROM ZEBRA</span>
+                            <strong>Session Number</strong>
+                            <div class="cloudJoinRow">
+                                <input id="cloudSessionCodeInput" class="cloudCodeInput" inputmode="numeric" maxlength="8" placeholder="Enter session number" autocomplete="off">
+                                <button id="btnJoinCloudSession" class="primaryButton" type="button">Join</button>
+                            </div>
+                            <small>Enter the number shown on the PC, or scan the QR code.</small>
                         </div>
-
-
-                        <div>
-
-                            <span>
-
-                                Device ID
-
-                            </span>
-
-                            <strong id="sessionDeviceId">
-
-                                -
-
-                            </strong>
-
-                        </div>
-
-
-                        <div>
-
-                            <span>
-
-                                Pending Queue
-
-                            </span>
-
-                            <strong id="sessionQueueCount">
-
-                                0
-
-                            </strong>
-
-                        </div>
-
-
-                        <div>
-
-                            <span>
-
-                                Last Save
-
-                            </span>
-
-                            <strong id="sessionLastSave">
-
-                                -
-
-                            </strong>
-
-                        </div>
-
-
                     </div>
 
-
+                    <div id="cloudSessionQRWrap" class="cloudQRPanel hidden">
+                        <div>
+                            <span class="sectionEyebrow">ACTIVE SESSION</span>
+                            <div id="cloudSessionCodeDisplay" class="cloudSessionCode">------</div>
+                            <p>Scan this QR with Zebra to open the same receiving session.</p>
+                            <button id="btnRefreshCloudNow" class="secondaryButton" type="button">↻ Sync Now</button>
+                            <button id="btnLeaveCloudSession" class="secondaryButton" type="button">Disconnect</button>
+                        </div>
+                        <canvas id="cloudSessionQR" width="220" height="220"></canvas>
+                    </div>
                 </section>
 
+                <section class="contentCard">
+                    <div class="cardHeader">
+                        <div>
+                            <span class="sectionEyebrow">CURRENT SESSION</span>
+                            <h3>Session Information</h3>
+                        </div>
+                    </div>
+
+                    <div class="sessionInfoGrid">
+                        <div><span>Session</span><strong id="sessionPageId">Local</strong></div>
+                        <div><span>Device ID</span><strong id="sessionDeviceId">-</strong></div>
+                        <div><span>Pending Sync</span><strong id="sessionQueueCount">0</strong></div>
+                        <div><span>Last Cloud Sync</span><strong id="sessionLastSave">-</strong></div>
+                    </div>
+                </section>
+
+                <details class="contentCard emergencyTools">
+                    <summary><strong>Emergency Offline Tools</strong> — use only if cloud receiving is unavailable</summary>
+                    <div class="actionCardGrid emergencyActionGrid">
+                        <button id="btnPrepareZebraWork" class="largeActionCard" type="button"><span class="actionIcon">▣</span><strong>Prepare Zebra Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnLoadZebraWork" class="largeActionCard" type="button"><span class="actionIcon">⇧</span><strong>Load Zebra Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnExportZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇩</span><strong>Export Zebra Session</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnMergeZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇄</span><strong>Merge Zebra Session</strong><small>Emergency recovery only.</small></button>
+                    </div>
+                </details>
+
+                <input id="zebraWorkFileInput" type="file" hidden>
+                <input id="zebraSessionFileInput" type="file" hidden>
 
             </section>
-
 
             <!-- ==================================================
                  ARCHIVE PAGE
@@ -2429,6 +2262,8 @@
     src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
 ></script>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+
 
 <!-- ==================================================
      APPLICATION FILES
@@ -2455,6 +2290,8 @@
 <script src="js/session.js"></script>
 
 <script src="js/reports.js"></script>
+
+<script src="js/supabase.js"></script>
 
 <script src="js/app.js"></script>
 
