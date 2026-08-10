@@ -412,12 +412,34 @@ async function signUpInitialOwner(){
             await completePendingOwnerSetup();
             await loadMyAppContext();
             renderAuthState();
-            if(hasApplicationAccess()){ unlockApplicationAfterAuth(); }
+            if(!hasApplicationAccess()){
+                throw new Error("Owner account exists, but pharmacy access was not verified.");
+            }
+            setAuthMessage("System Owner and pharmacy created successfully.","success");
+            unlockApplicationAfterAuth();
         }
         else{
-            setAuthMessage("Owner account created. Confirm the email if requested, then sign in to complete the pharmacy setup.","success");
+            const identities = result && result.user && Array.isArray(result.user.identities)
+                ? result.user.identities
+                : null;
+            const likelyExistingAccount = identities && identities.length === 0;
+
             showAuthPanel("login");
             setInputValue("authEmail",email);
+            setInputValue("authPassword","");
+
+            if(likelyExistingAccount){
+                setAuthMessage(
+                    "This email already has an authentication account. System Owner setup is NOT complete yet. Sign in with that account (or reset its password) to finish the saved setup.",
+                    "error"
+                );
+            }
+            else{
+                setAuthMessage(
+                    "Authentication account created. System Owner setup is NOT complete yet. Confirm the email if requested, then sign in with the same password to finish the saved pharmacy setup.",
+                    "success"
+                );
+            }
         }
     }
     catch(error){ setAuthMessage(error.message || "Owner setup failed.","error"); }
@@ -486,10 +508,15 @@ function hasApplicationAccess(){
 
 async function finishPendingAccessIfPossible(){
     if(!getSupabaseAccessToken()){ return; }
-    if(localStorage.getItem(AUTH_PENDING_OWNER_KEY) && !AuthState.ownerExists){
-        await completePendingOwnerSetup();
+    if(localStorage.getItem(AUTH_PENDING_OWNER_KEY)){
         await loadPublicSetupStatus().catch(()=>{});
-        return;
+        if(!AuthState.ownerExists){
+            await completePendingOwnerSetup();
+            await loadMyAppContext();
+            return;
+        }
+        // Another verified Owner already exists: discard stale first-setup data.
+        localStorage.removeItem(AUTH_PENDING_OWNER_KEY);
     }
     if(localStorage.getItem(AUTH_PENDING_REGISTRATION_KEY)){
         await submitPendingRegistration();
@@ -503,14 +530,35 @@ async function finishPendingAccessIfPossible(){
 async function completePendingOwnerSetup(){
     const raw = localStorage.getItem(AUTH_PENDING_OWNER_KEY);
     if(!raw){ return false; }
-    const setup = JSON.parse(raw);
-    await authRpc("bootstrap_system_owner",{
+
+    let setup;
+    try{
+        setup = JSON.parse(raw);
+    }
+    catch(_){
+        localStorage.removeItem(AUTH_PENDING_OWNER_KEY);
+        throw new Error("Saved Owner setup data is invalid. Please start the setup again.");
+    }
+
+    const result = await authRpc("bootstrap_system_owner",{
         p_pharmacy_name:setup.pharmacyName,
         p_pharmacy_code:setup.pharmacyCode
     });
+    const row = Array.isArray(result) ? result[0] : result;
+
+    // Never report Owner setup as successful unless the database confirms
+    // the owner role AND the pharmacy membership in the same RPC response.
+    if(!row || !row.pharmacy_id || row.system_role !== "owner" || row.member_role !== "admin"){
+        throw new Error("System Owner setup was not completed by the database. No success state was saved.");
+    }
+
+    await loadPublicSetupStatus();
+    if(!AuthState.ownerExists){
+        throw new Error("System Owner verification failed. Please retry before continuing.");
+    }
+
     localStorage.removeItem(AUTH_PENDING_OWNER_KEY);
-    AuthState.ownerExists = true;
-    return true;
+    return row;
 }
 
 async function completeOwnerSetupFromPendingPanel(){
