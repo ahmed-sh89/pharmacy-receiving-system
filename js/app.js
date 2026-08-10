@@ -47,8 +47,54 @@ const PharmacyApp = {
 
 window.addEventListener(
     "DOMContentLoaded",
-    startApplication
+    bootstrapMedryvo
 );
+
+async function bootstrapMedryvo(){
+    try{
+        document.body.classList.add("authLocked");
+
+        if(typeof initializeAuth === "function"){
+            await initializeAuth();
+
+            if(typeof finishPendingAccessIfPossible === "function" && getSupabaseAccessToken()){
+                await finishPendingAccessIfPossible().catch(()=>{});
+            }
+
+            if(typeof loadMyAppContext === "function" && getSupabaseAccessToken()){
+                await loadMyAppContext().catch(()=>{});
+            }
+
+            if(typeof loadMyRegistrationStatus === "function" && getSupabaseAccessToken()){
+                await loadMyRegistrationStatus().catch(()=>{});
+            }
+
+            if(typeof renderAuthState === "function"){
+                renderAuthState();
+            }
+
+            if(typeof hasApplicationAccess === "function" && hasApplicationAccess()){
+                document.body.classList.remove("authLocked");
+                await startApplication();
+            }
+            return;
+        }
+
+        document.body.classList.remove("authLocked");
+        await startApplication();
+    }
+    catch(error){
+        console.error("Medryvo authentication bootstrap failed", error);
+        if(typeof setAuthMessage === "function"){
+            setAuthMessage(error.message || "Unable to initialize secure access.", "error");
+        }
+    }
+}
+
+window.bootProtectedApplication = async function(){
+    document.body.classList.remove("authLocked");
+    await startApplication();
+};
 
 
 /* =====================================================

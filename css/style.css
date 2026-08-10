@@ -1282,3 +1282,30 @@ button:disabled {
 .rowManual {
   background: #fffaf0;
 }
+/* =====================================================
+   MEDRYVO BRAND SYSTEM — PHASE 1 FOUNDATION
+===================================================== */
+:root{
+  --bg:#f6f8fc;
+  --surface:#ffffff;
+  --surface-soft:#f8fbff;
+  --border:#e5eaf2;
+  --text:#0f2442;
+  --text-soft:#6c7890;
+  --primary:#0D47A1;
+  --primary-dark:#08367b;
+  --primary-soft:#eef5ff;
+  --accent:#FF8A00;
+  --accent-dark:#e87900;
+  --accent-soft:#fff3e4;
+  --shadow-sm:0 6px 18px rgba(13,71,161,.06);
+  --shadow-md:0 18px 44px rgba(13,71,161,.10);
+}
+body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
+.topBar{min-height:72px;border-bottom-color:#e7ebf1;box-shadow:0 1px 0 rgba(13,71,161,.02);}
+.pageHeading h1{font-weight:800;letter-spacing:-.35px;color:#102746;}
+.primaryButton{background:linear-gradient(135deg,var(--primary),#1769c2);border-color:var(--primary);box-shadow:0 8px 18px rgba(13,71,161,.14);}
+.primaryButton:hover{background:linear-gradient(135deg,var(--primary-dark),var(--primary));}
+.warningButton{background:var(--accent);border-color:var(--accent);color:#fff;}
+.card,.panel,.statCard{border-color:#e6ebf3;box-shadow:var(--shadow-sm);}
+.medryvoLogoSvg{display:block;width:100%;height:100%;}

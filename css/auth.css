@@ -236,3 +236,40 @@
     .registrationActions button{ width:100%; }
     .registrationRequestTop{ align-items:center; }
 }
+
+/* =====================================================
+   MEDRYVO AUTH — BLUE / ORANGE PREMIUM THEME
+===================================================== */
+.authGate{
+    background:
+      radial-gradient(circle at 15% 15%,rgba(255,138,0,.14),transparent 30%),
+      radial-gradient(circle at 88% 12%,rgba(25,118,210,.20),transparent 32%),
+      linear-gradient(145deg,#041a3d 0%,#082d68 50%,#0D47A1 100%);
+}
+.authShell{width:min(1040px,100%);border-radius:30px;border:1px solid rgba(255,255,255,.18);box-shadow:0 38px 95px rgba(0,23,57,.38);}
+.authBrandPanel{padding:56px;background:linear-gradient(150deg,#0D47A1 0%,#0a3b8c 58%,#072b65 100%);}
+.authBrandPanel:before{content:"";position:absolute;inset:0;background:linear-gradient(130deg,transparent 45%,rgba(255,138,0,.10));pointer-events:none;}
+.authBrandPanel:after{background:rgba(255,138,0,.13);}
+.authBrandMark{width:82px;height:82px;padding:10px;border-radius:24px;background:#fff;border:0;box-shadow:0 18px 38px rgba(0,0,0,.18);}
+.authBrandPanel h1{font-size:46px;margin-bottom:3px;letter-spacing:-1.2px;}
+.authBrandTagline{color:#FFB04A;font-size:11px;font-weight:900;letter-spacing:1.65px;margin-bottom:22px;}
+.authFeature span:first-child{background:#FF8A00;color:#fff;font-weight:900;}
+.authFormPanel{padding:54px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);}
+.authEyebrow{color:#FF8A00;}
+.authFormPanel h2{font-size:34px;color:#102746;}
+.authField input,.authField select{border-color:#dce4ef;background:#fff;box-shadow:0 1px 2px rgba(16,39,70,.02);}
+.authField input:focus,.authField select:focus{border-color:#1976D2;box-shadow:0 0 0 4px rgba(13,71,161,.10);}
+.authPrimaryButton{background:linear-gradient(135deg,#0D47A1,#1769c2);box-shadow:0 13px 26px rgba(13,71,161,.22);}
+.authPrimaryButton:hover{background:linear-gradient(135deg,#08367b,#0D47A1);}
+.authSecondaryLink{color:#0D47A1;}
+.authSignupLink{border-color:#d9e4f3;background:#fff;box-shadow:0 4px 12px rgba(13,71,161,.04);}
+.authSignupLink:hover{border-color:#FFB04A;background:#fff8ef;color:#c96600;}
+.authMessage.info{color:#0D47A1;}
+.pendingApprovalCard{border-color:#d8e4f2;background:linear-gradient(180deg,#fff,#f7faff);}
+.registrationStatus.pending{background:#fff1df;color:#b75f00;}
+@media(max-width:760px){
+  .authBrandPanel{padding:24px 24px 20px;}
+  .authBrandPanel h1{font-size:31px;}
+  .authBrandTagline{font-size:9px;margin-bottom:10px;}
+  .authBrandMark{width:58px;height:58px;border-radius:18px;}
+}

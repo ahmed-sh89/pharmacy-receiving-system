@@ -12,10 +12,10 @@ const APP_CONFIG = Object.freeze({
     ================================================= */
 
     appName:
-        "Pharmacy Receiving System",
+        "Medryvo",
 
     shortName:
-        "PRS",
+        "MDV",
 
     version:
         "3.1.0",
@@ -418,13 +418,13 @@ const APP_CONFIG = Object.freeze({
     reports:{
 
         defaultFilePrefix:
-            "Pharmacy_Receiving_Report",
+            "Medryvo_Receiving_Report",
 
         itemReportFilePrefix:
-            "Item_Receiving_Report",
+            "Medryvo_Item_Receiving_Report",
 
         archiveFilePrefix:
-            "Receiving_Archive",
+            "Medryvo_Receiving_Archive",
 
         dateFormat:
             "yyyy-mm-dd",
