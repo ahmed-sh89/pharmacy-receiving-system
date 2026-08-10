@@ -18,6 +18,7 @@ const AuthState = {
     session:null,
     user:null,
     context:null,
+    contextLoading:false,
     ownerExists:true,
     refreshTimer:null,
     busy:false,
@@ -482,7 +483,12 @@ async function loadPublicSetupStatus(){
     const result = await publicRpc("get_public_setup_status",{});
     const row = Array.isArray(result) ? result[0] : result;
     AuthState.ownerExists = !!(row && row.owner_exists);
-    renderAuthState();
+
+    // Do NOT render here.
+    // This function is often called immediately after authentication,
+    // before loadMyAppContext() has finished. Rendering at that moment
+    // makes a valid pharmacy user look temporarily unassigned and causes
+    // the "Complete access" panel to flash for a fraction of a second.
     return AuthState.ownerExists;
 }
 
@@ -736,8 +742,11 @@ async function refreshAuthToken(){
 async function loadMyAppContext(){
     if(!getSupabaseAccessToken()){
         AuthState.context = null;
+        AuthState.contextLoading = false;
         return null;
     }
+
+    AuthState.contextLoading = true;
     try{
         const rows = await authRpc("get_my_app_context",{});
         const row = Array.isArray(rows) ? rows[0] : rows;
@@ -753,6 +762,9 @@ async function loadMyAppContext(){
             if(refreshed){ return loadMyAppContext(); }
         }
         throw error;
+    }
+    finally{
+        AuthState.contextLoading = false;
     }
 }
 
@@ -1080,6 +1092,13 @@ function renderAuthState(){
     const accessPanel = document.getElementById("authAccessPanel");
     const formsPanel = document.getElementById("authFormsPanel");
     const account = AuthState.context;
+
+    // Authenticated session exists, but pharmacy/role context is still loading.
+    // Keep the current auth gate state unchanged rather than showing
+    // "Complete access" prematurely.
+    if(AuthState.session && AuthState.contextLoading){
+        return;
+    }
 
     if(!AuthState.session){
         clearSensitiveAuthFields();
