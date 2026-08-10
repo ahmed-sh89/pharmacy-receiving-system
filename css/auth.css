@@ -403,3 +403,196 @@
         padding-bottom:30px;
     }
 }
+
+
+/* =====================================================
+   MEDRYVO DESIGN 2 — APPROVED AUTH EXPERIENCE
+   Full blue canvas + minimal brand + floating white card
+===================================================== */
+:root{
+    --medryvo-blue:#0754c9;
+    --medryvo-deep:#052d72;
+    --medryvo-navy:#071c42;
+    --medryvo-orange:#ff8a00;
+    --medryvo-ink:#0b1f44;
+}
+
+.authGate{
+    background:
+      radial-gradient(circle at 78% 12%, rgba(39,130,255,.34), transparent 30%),
+      radial-gradient(circle at 8% 88%, rgba(29,116,255,.30), transparent 27%),
+      linear-gradient(135deg, var(--medryvo-navy) 0%, var(--medryvo-deep) 44%, var(--medryvo-blue) 100%);
+    padding:28px;
+}
+
+.authGate::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.22;
+    background-image:
+      linear-gradient(115deg, transparent 0 72%, rgba(255,138,0,.35) 72.15%, transparent 72.3%),
+      radial-gradient(circle at 12% 18%, rgba(255,255,255,.22) 0 2px, transparent 3px);
+    background-size:auto, 34px 34px;
+}
+
+.authShell{
+    width:min(1180px, 100%);
+    height:min(760px, calc(100dvh - 56px));
+    max-height:calc(100dvh - 56px);
+    background:transparent;
+    border:0;
+    box-shadow:none;
+    overflow:visible;
+    gap:64px;
+    grid-template-columns:minmax(330px,.9fr) minmax(440px,1fr);
+}
+
+.authBrandPanel{
+    background:transparent;
+    border:0;
+    padding:58px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    overflow:visible;
+}
+.authBrandPanel::before,
+.authBrandPanel::after{ display:none; }
+
+.authBrandInner{
+    width:100%;
+    max-width:430px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+.authBrandLogo{
+    width:104px;
+    height:104px;
+    margin:0 auto 24px;
+    border-radius:26px;
+    background:#fff;
+    box-shadow:0 18px 44px rgba(0,0,0,.22);
+}
+.authBrandTitle{
+    margin:0;
+    font-size:clamp(44px,5vw,68px);
+    line-height:1;
+    letter-spacing:-2.2px;
+}
+.authBrandKicker{
+    margin-top:16px;
+    font-size:14px;
+    letter-spacing:3px;
+    color:#ff9b19;
+}
+.authBrandText,
+.authBrandPoints{
+    display:none !important;
+}
+
+.authFormPanel{
+    align-self:center;
+    height:min(720px, calc(100dvh - 72px));
+    max-height:calc(100dvh - 72px);
+    padding:0;
+    background:rgba(255,255,255,.985);
+    border:1px solid rgba(255,255,255,.65);
+    border-radius:34px;
+    box-shadow:0 30px 80px rgba(2,22,65,.30);
+    overflow:hidden;
+}
+.authFormPanelInner{
+    max-width:none;
+    padding:38px 44px 42px;
+    overflow-y:auto;
+}
+.authEyebrow{
+    color:var(--medryvo-orange);
+    letter-spacing:1.7px;
+}
+.authFormPanel h1{
+    color:var(--medryvo-ink);
+    letter-spacing:-1.2px;
+}
+.authInfoBox{
+    border:0;
+    background:linear-gradient(135deg,#eef6ff,#e5f0ff);
+    color:#294b7d;
+    border-radius:15px;
+}
+.authInput{
+    min-height:52px;
+    border-radius:13px;
+    border-color:#d4deec;
+    background:#fff;
+}
+.authInput:focus{
+    border-color:#1b6fe8;
+    box-shadow:0 0 0 4px rgba(27,111,232,.11);
+}
+.authPrimaryButton{
+    min-height:54px;
+    border-radius:13px;
+    background:linear-gradient(90deg,#0649c9,#0878f7);
+    box-shadow:0 13px 28px rgba(8,102,224,.25);
+}
+.authPrimaryButton:hover{
+    transform:translateY(-1px);
+    box-shadow:0 17px 34px rgba(8,102,224,.30);
+}
+.authBackButton{
+    display:inline-flex !important;
+    visibility:visible !important;
+    position:relative;
+    z-index:5;
+    margin:0 0 18px;
+    color:#0754c9;
+    font-size:14px;
+    font-weight:800;
+}
+.authBackButton:hover{ color:var(--medryvo-orange); }
+
+@media (max-width:900px){
+    .authGate{ padding:18px; }
+    .authShell{
+        display:block;
+        height:auto;
+        max-height:none;
+        width:min(650px,100%);
+    }
+    .authBrandPanel{
+        min-height:auto;
+        padding:30px 20px 26px;
+    }
+    .authBrandLogo{
+        width:76px;
+        height:76px;
+        border-radius:20px;
+        margin-bottom:15px;
+    }
+    .authBrandTitle{
+        font-size:44px;
+        letter-spacing:-1.5px;
+    }
+    .authBrandKicker{
+        margin-top:10px;
+        font-size:11px;
+        letter-spacing:2px;
+    }
+    .authFormPanel{
+        height:auto;
+        max-height:none;
+        border-radius:26px;
+        overflow:visible;
+    }
+    .authFormPanelInner{
+        max-height:none;
+        overflow:visible;
+        padding:30px 26px 36px;
+    }
+}
