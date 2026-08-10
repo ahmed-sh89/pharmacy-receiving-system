@@ -23,7 +23,8 @@ const AuthState = {
     refreshTimer:null,
     busy:false,
     registration:null,
-    ownerRegistrations:[]
+    ownerRegistrations:[],
+    ownerPharmacies:[]
 };
 
 function getSupabaseProjectUrl(){
@@ -67,6 +68,7 @@ function bindAuthUI(){
     bindClick("btnAuthSignIn", ()=>signInFromForm());
     bindClick("btnAuthShowLogin", ()=>showAuthPanel("login"));
     bindClick("btnAuthShowLoginFromOwner", ()=>showAuthPanel("login"));
+    bindClick("btnAuthShowLoginFromInvite", ()=>showAuthPanel("login"));
     bindClick("btnAuthShowInviteSignup", ()=>showAuthPanel("invite"));
     bindClick("btnAuthShowPublicSignup", ()=>showAuthPanel("public"));
     bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
@@ -97,6 +99,7 @@ function bindAuthUI(){
     bindClick("btnPendingLogout", ()=>signOutCurrentUser());
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
     bindClick("btnRefreshRegistrationRequests", ()=>loadOwnerRegistrationRequests(true));
+    bindClick("btnRefreshOwnerControl", ()=>loadOwnerControlCenter(true));
     bindClick("btnCreateMemberInvite", ()=>createMemberInviteFromSettings());
 
     ["authEmail","authPassword"].forEach(id=>{
@@ -620,36 +623,53 @@ async function signUpInvitedUser(){
     const name = valueOf("inviteSignupName").trim();
     const email = valueOf("inviteSignupEmail").trim();
     const password = valueOf("inviteSignupPassword");
-    const token = normalizeInviteToken(valueOf("inviteSignupToken"));
-    if(!email || password.length < 6 || !token){
-        setAuthMessage("Enter your invited email, a password of at least 6 characters, and the invitation code.", "error");
+
+    if(!email || password.length < 8){
+        setAuthMessage("Enter the assigned admin email and a password of at least 8 characters.","error");
         return;
     }
-    localStorage.setItem(AUTH_PENDING_INVITE_KEY, token);
-    setAuthBusy(true, "Creating invited account...");
+
+    setAuthBusy(true,"Creating admin account...");
     try{
-        const result = await authRequest("/auth/v1/signup", {
+        const result = await authRequest("/auth/v1/signup",{
             method:"POST",
             body:JSON.stringify({
-                email,
-                password,
+                email,password,
                 data:{display_name:name || email.split("@")[0]}
             })
         });
+
         if(result && result.access_token){
             persistAuthSession(result);
-            await redeemPendingInvite();
+            await claimAssignedAdminIfAvailable(true);
             await loadMyAppContext();
             renderAuthState();
-            if(hasApplicationAccess()){ unlockApplicationAfterAuth(); }
-        }
-        else{
-            setAuthMessage("Account created. Confirm the email if requested, then sign in. Your invitation code is saved on this device.", "success");
+
+            if(hasApplicationAccess()){
+                setAuthMessage("Admin account activated successfully.","success");
+                unlockApplicationAfterAuth();
+            }else{
+                throw new Error("This email is not currently assigned as a pharmacy ADMIN.");
+            }
+        }else{
+            setAuthMessage(
+                "Account created. Confirm the email if requested, then Sign In with the same email. Medryvo will claim the ADMIN assignment automatically.",
+                "success"
+            );
             showAuthPanel("login");
             setInputValue("authEmail",email);
         }
     }
-    catch(error){ setAuthMessage(error.message || "Unable to create account.","error"); }
+    catch(error){
+        const message = String(error && error.message || "");
+        if(/already|registered|exists/i.test(message)){
+            setAuthMessage("This email already has an account. Use Sign In; the ADMIN assignment will be linked automatically.","error");
+            showAuthPanel("login");
+            setInputValue("authEmail",email);
+        }else{
+            setAuthMessage(message || "Unable to activate the ADMIN account.","error");
+        }
+    }
     finally{ setAuthBusy(false); }
 }
 
@@ -785,8 +805,26 @@ function hasApplicationAccess(){
     return !!(AuthState.context && AuthState.context.pharmacy_id);
 }
 
+
+async function claimAssignedAdminIfAvailable(throwIfMissing=false){
+    if(!getSupabaseAccessToken()){ return null; }
+    try{
+        const rows = await authRpc("claim_pharmacy_admin_assignment",{});
+        const row = Array.isArray(rows) ? rows[0] : rows;
+        return row || null;
+    }catch(error){
+        const message = String(error && error.message || "");
+        if(!throwIfMissing && /no pending admin assignment|not assigned|assignment/i.test(message)){
+            return null;
+        }
+        if(throwIfMissing){ throw error; }
+        return null;
+    }
+}
+
 async function finishPendingAccessIfPossible(){
     if(!getSupabaseAccessToken()){ return; }
+    await claimAssignedAdminIfAvailable(false).catch(()=>{});
     if(localStorage.getItem(AUTH_PENDING_OWNER_KEY)){
         await loadPublicSetupStatus().catch(()=>{});
         if(!AuthState.ownerExists){
@@ -971,12 +1009,155 @@ async function ownerCreatePharmacyFromSettings(){
 }
 
 
+
+async function loadOwnerPharmacies(){
+    if(!isSystemOwner()){ return []; }
+    const rows = await authRpc("owner_list_pharmacies",{});
+    AuthState.ownerPharmacies = Array.isArray(rows) ? rows : [];
+    renderOwnerPharmacies();
+    return AuthState.ownerPharmacies;
+}
+
+async function loadOwnerControlCenter(showMessage=false){
+    if(!isSystemOwner()){ return; }
+    try{
+        await Promise.all([
+            loadOwnerRegistrationRequests(false),
+            loadOwnerPharmacies()
+        ]);
+        renderOwnerMetrics();
+        if(showMessage){ setSettingsAccessMessage("Owner Control Center refreshed.","success"); }
+    }catch(error){
+        if(showMessage){ setSettingsAccessMessage(error.message || "Unable to refresh Owner Control Center.","error"); }
+    }
+}
+
+function renderOwnerMetrics(){
+    const pharmacies = AuthState.ownerPharmacies || [];
+    const requests = AuthState.ownerRegistrations || [];
+    setText("ownerMetricTotalPharmacies",String(pharmacies.length));
+    setText("ownerMetricActivePharmacies",String(pharmacies.filter(p=>p.status === "active" && p.active !== false).length));
+    setText("ownerMetricPendingRequests",String(requests.filter(r=>r.request_status === "pending").length));
+    setText("ownerMetricAdminsAssigned",String(pharmacies.filter(p=>p.admin_email || p.pending_admin_email).length));
+}
+
+function renderOwnerPharmacies(){
+    const box = document.getElementById("ownerPharmacyList");
+    if(!box){ return; }
+    const rows = AuthState.ownerPharmacies || [];
+    if(!rows.length){
+        box.innerHTML = '<div class="registrationEmpty">No pharmacies found.</div>';
+        renderOwnerMetrics();
+        return;
+    }
+
+    box.innerHTML = rows.map(p=>{
+        const active = p.status === "active" && p.active !== false;
+        const adminLabel = p.admin_email
+            ? escapeAuthHtml(p.admin_email)
+            : (p.pending_admin_email
+                ? escapeAuthHtml(p.pending_admin_email) + ' <span class="ownerAwaitingTag">Awaiting activation</span>'
+                : '<span class="ownerUnassignedTag">No ADMIN assigned</span>');
+        const adminName = p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
+
+        return `<article class="ownerPharmacyCard">
+            <div class="ownerPharmacyIdentity">
+                <div class="ownerPharmacyIcon">${escapeAuthHtml((p.pharmacy_name || "P").slice(0,1).toUpperCase())}</div>
+                <div>
+                    <strong>${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
+                    <span>${escapeAuthHtml(p.pharmacy_code || "-")}</span>
+                </div>
+            </div>
+
+            <div class="ownerPharmacyAdmin">
+                <span class="ownerFieldLabel">ADMIN</span>
+                <div>${adminLabel}</div>
+                ${adminName}
+            </div>
+
+            <div class="ownerPharmacyStatus">
+                <span class="registrationStatus ${active ? "approved" : "rejected"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
+            </div>
+
+            <div class="ownerPharmacyActions">
+                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>
+                <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
+            </div>
+        </article>`;
+    }).join("");
+
+    box.querySelectorAll("[data-owner-action]").forEach(btn=>{
+        btn.addEventListener("click",()=>handleOwnerPharmacyAction(btn));
+    });
+    renderOwnerMetrics();
+}
+
+async function handleOwnerPharmacyAction(button){
+    if(!isSystemOwner() || !button){ return; }
+    const pharmacyId = button.dataset.pharmacyId;
+    const action = button.dataset.ownerAction;
+    if(!pharmacyId){ return; }
+
+    if(action === "admin"){
+        const email = window.prompt("Enter the ADMIN email for this pharmacy:");
+        if(email === null){ return; }
+        const cleanEmail = String(email).trim().toLowerCase();
+        if(!cleanEmail || !cleanEmail.includes("@")){
+            setSettingsAccessMessage("Enter a valid ADMIN email.","error");
+            return;
+        }
+        if(!window.confirm("Assign " + cleanEmail + " as the single pharmacy ADMIN?")){ return; }
+
+        setAuthBusy(true);
+        try{
+            const rows = await authRpc("owner_assign_pharmacy_admin",{
+                p_pharmacy_id:pharmacyId,
+                p_email:cleanEmail
+            });
+            const row = Array.isArray(rows) ? rows[0] : rows;
+            await loadOwnerPharmacies();
+            setSettingsAccessMessage(
+                row && row.assignment_status === "active"
+                    ? "ADMIN linked successfully."
+                    : "ADMIN email assigned. The user can now choose Activate Pharmacy Admin and create/sign in to the account.",
+                "success"
+            );
+        }catch(error){
+            setSettingsAccessMessage(error.message || "Unable to assign ADMIN.","error");
+        }finally{
+            setAuthBusy(false);
+        }
+        return;
+    }
+
+    const nextStatus = action === "suspend" ? "suspended" : "active";
+    const question = nextStatus === "suspended"
+        ? "Suspend this pharmacy? Its ADMIN will lose application access until you reactivate it."
+        : "Reactivate this pharmacy?";
+    if(!window.confirm(question)){ return; }
+
+    setAuthBusy(true);
+    try{
+        await authRpc("owner_set_pharmacy_status",{
+            p_pharmacy_id:pharmacyId,
+            p_status:nextStatus
+        });
+        await loadOwnerPharmacies();
+        setSettingsAccessMessage(nextStatus === "active" ? "Pharmacy activated." : "Pharmacy suspended.","success");
+    }catch(error){
+        setSettingsAccessMessage(error.message || "Unable to update pharmacy status.","error");
+    }finally{
+        setAuthBusy(false);
+    }
+}
+
 async function loadOwnerRegistrationRequests(showMessage=false){
     if(!isSystemOwner()){ return []; }
     try{
         const rows = await authRpc("owner_list_pharmacy_registrations",{p_status:null});
         AuthState.ownerRegistrations = Array.isArray(rows) ? rows : [];
         renderOwnerRegistrationRequests();
+        renderOwnerMetrics();
         if(showMessage){ setSettingsAccessMessage("Registration requests refreshed.","success"); }
         return AuthState.ownerRegistrations;
     }
@@ -1031,7 +1212,7 @@ async function reviewRegistration(requestId,decision){
             p_decision:decision,
             p_note:null
         });
-        await loadOwnerRegistrationRequests(false);
+        await loadOwnerControlCenter(false);
         setSettingsAccessMessage(approve ? "Pharmacy approved successfully." : "Registration rejected.","success");
     }
     catch(error){ setSettingsAccessMessage(error.message || "Unable to review registration.","error"); }
@@ -1132,15 +1313,11 @@ function renderAuthState(){
 
     const ownerCard = document.getElementById("ownerManagementCard");
     if(ownerCard){ ownerCard.hidden = !isSystemOwner(); }
-    if(isSystemOwner()){ loadOwnerRegistrationRequests(false).catch(()=>{}); }
+    if(isSystemOwner()){ loadOwnerControlCenter(false).catch(()=>{}); }
+
+    // Current Medryvo access model: one ADMIN per pharmacy, no staff invitations.
     const memberCard = document.getElementById("memberInviteCard");
-    if(memberCard){ memberCard.hidden = !isPharmacyAdmin(); }
-    const roleSelect = document.getElementById("memberInviteRole");
-    if(roleSelect){
-        const adminOption = roleSelect.querySelector('option[value="admin"]');
-        if(adminOption){ adminOption.hidden = !isSystemOwner(); }
-        if(!isSystemOwner()){ roleSelect.value = "staff"; }
-    }
+    if(memberCard){ memberCard.hidden = true; }
 
     const ownerButton = document.getElementById("btnAuthShowOwnerSetup");
     if(ownerButton){ ownerButton.hidden = AuthState.ownerExists; }
