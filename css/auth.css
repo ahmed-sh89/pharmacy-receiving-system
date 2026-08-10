@@ -273,3 +273,133 @@
   .authBrandTagline{font-size:9px;margin-bottom:10px;}
   .authBrandMark{width:58px;height:58px;border-radius:18px;}
 }
+
+
+/* =====================================================
+   MEDRYVO PHASE 1 PATCH — AUTH SCROLL + VISIBLE BACK
+===================================================== */
+.authGate{
+    min-height:100vh;
+    min-height:100dvh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+}
+
+.authShell{
+    height:min(760px, calc(100dvh - 48px));
+    min-height:0;
+    max-height:calc(100dvh - 48px);
+}
+
+.authBrandPanel{
+    min-height:0;
+    overflow:hidden;
+}
+
+.authFormPanel{
+    min-height:0;
+    overflow:hidden;
+    align-items:stretch;
+}
+
+.authFormPanelInner{
+    width:100%;
+    min-height:0;
+    max-height:100%;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-gutter:stable;
+    padding-right:8px;
+}
+
+#authFormsPanel,
+#authAccessPanel{
+    padding-top:2px;
+    padding-bottom:20px;
+}
+
+.authBackButton{
+    appearance:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+    min-height:38px;
+    margin:0 0 14px;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:#0D47A1;
+    font:inherit;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+}
+.authBackButton:hover{ color:#FF7A00; }
+.authBackButton:focus-visible{
+    outline:3px solid rgba(255,138,0,.22);
+    outline-offset:4px;
+    border-radius:8px;
+}
+
+.authFormPanelInner::-webkit-scrollbar{ width:9px; }
+.authFormPanelInner::-webkit-scrollbar-track{ background:transparent; }
+.authFormPanelInner::-webkit-scrollbar-thumb{
+    background:#cfdaea;
+    border:2px solid #fff;
+    border-radius:999px;
+}
+.authFormPanelInner::-webkit-scrollbar-thumb:hover{ background:#aebfd5; }
+
+@media (max-width:760px){
+    .authGate{
+        display:none;
+        align-items:flex-start;
+        padding:10px;
+        overflow-y:auto;
+    }
+    .authGate.visible{ display:flex; }
+
+    .authShell{
+        height:auto;
+        min-height:0;
+        max-height:none;
+        overflow:visible;
+        margin:auto 0;
+    }
+
+    .authBrandPanel{ overflow:hidden; }
+
+    .authFormPanel{
+        overflow:visible;
+        padding:26px 22px 32px;
+    }
+
+    .authFormPanelInner{
+        max-height:none;
+        overflow:visible;
+        padding-right:0;
+    }
+}
+
+@media (max-height:700px) and (min-width:761px){
+    .authGate{
+        align-items:flex-start;
+        padding-top:14px;
+        padding-bottom:14px;
+    }
+    .authShell{
+        height:calc(100dvh - 28px);
+        max-height:calc(100dvh - 28px);
+    }
+    .authBrandPanel{
+        padding-top:34px;
+        padding-bottom:34px;
+    }
+    .authFormPanel{
+        padding-top:30px;
+        padding-bottom:30px;
+    }
+}

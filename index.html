@@ -22,6 +22,10 @@
 
     <title>Medryvo | Pharmacy Operations Platform</title>
 
+    <link rel="icon" type="image/svg+xml" href="assets/medryvo-mark.svg">
+    <link rel="shortcut icon" href="assets/medryvo-mark.svg">
+    <link rel="apple-touch-icon" href="assets/medryvo-mark.svg">
+
     <!-- ================================
          STYLES
     ================================= -->
@@ -113,6 +117,7 @@
                     </div>
 
                     <div id="authOwnerSignupForm" hidden>
+                        <button id="btnAuthShowLoginFromOwner" class="authBackButton" type="button" aria-label="Back to sign in">← Back to Sign In</button>
                         <span class="authEyebrow">FIRST SETUP</span>
                         <h2>Create System Owner</h2>
                         <p class="authLead">This option works once only. The Owner can create other pharmacies and their Admin invitations.</p>
@@ -122,7 +127,6 @@
                         <div class="authField"><label>Your Pharmacy Name</label><input id="ownerPharmacyName" type="text" placeholder="Main pharmacy"></div>
                         <div class="authField"><label>Pharmacy Code</label><input id="ownerPharmacyCode" type="text" maxlength="24" placeholder="PHARM01"></div>
                         <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
-                        <button id="btnAuthShowLoginFromOwner" class="authSecondaryLink" type="button">Back to Sign In</button>
                     </div>
                 </div>
 
