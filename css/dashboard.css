@@ -2514,3 +2514,209 @@ body.zebraMode .smartScanResults{
 .progressBar{background:linear-gradient(90deg,#0D47A1,#1976D2 72%,#FF8A00 100%);}
 .statusReceiving{color:#0D47A1;background:#eaf3ff;}
 .statusManual{color:#b75f00;background:#fff1df;}
+
+
+/* =====================================================
+   MEDRYVO PHASE 2A — OWNER CONTROL CENTER
+===================================================== */
+.ownerControlCenter{
+    overflow:hidden;
+}
+.ownerControlHeader{
+    align-items:flex-start;
+}
+.ownerControlHeader .settingsDescription{
+    margin:7px 0 0;
+    max-width:720px;
+}
+.ownerMetricGrid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+    margin:20px 0 24px;
+}
+.ownerMetricCard{
+    min-height:102px;
+    padding:17px 18px;
+    border:1px solid #dce6f4;
+    border-radius:18px;
+    background:linear-gradient(145deg,#ffffff,#f5f9ff);
+    box-shadow:0 10px 28px rgba(21,63,120,.06);
+}
+.ownerMetricCard span{
+    display:block;
+    color:#687894;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.2px;
+}
+.ownerMetricCard strong{
+    display:block;
+    margin-top:9px;
+    color:#0b2a61;
+    font-size:30px;
+    line-height:1;
+}
+.ownerMetricWarning{
+    background:linear-gradient(145deg,#fffaf2,#fff4e4);
+    border-color:#ffe0b3;
+}
+.ownerMetricWarning strong{
+    color:#e66f00;
+}
+.ownerControlSection{
+    padding-top:22px;
+    margin-top:22px;
+    border-top:1px solid #e5ecf6;
+}
+.ownerSectionHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:8px;
+}
+.ownerSectionHeader h3{
+    margin:3px 0 0;
+    color:#102a56;
+}
+.ownerPharmacyList{
+    display:grid;
+    gap:12px;
+    margin-top:16px;
+}
+.ownerPharmacyCard{
+    display:grid;
+    grid-template-columns:minmax(220px,1.2fr) minmax(240px,1.2fr) 120px auto;
+    align-items:center;
+    gap:18px;
+    padding:16px;
+    border:1px solid #dfe8f5;
+    border-radius:18px;
+    background:#fff;
+    box-shadow:0 7px 22px rgba(24,63,112,.045);
+}
+.ownerPharmacyIdentity{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+}
+.ownerPharmacyIcon{
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:linear-gradient(145deg,#0754c9,#0877f5);
+    color:#fff;
+    font-weight:900;
+    box-shadow:0 9px 20px rgba(7,84,201,.18);
+}
+.ownerPharmacyIdentity strong,
+.ownerPharmacyIdentity span{
+    display:block;
+}
+.ownerPharmacyIdentity strong{
+    color:#102a56;
+    font-size:14px;
+}
+.ownerPharmacyIdentity span{
+    margin-top:3px;
+    color:#7a8aa4;
+    font-size:12px;
+    font-weight:800;
+}
+.ownerFieldLabel{
+    display:block;
+    margin-bottom:4px;
+    color:#8390a6;
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:1px;
+}
+.ownerPharmacyAdmin{
+    min-width:0;
+    color:#233c66;
+    font-size:12px;
+    overflow-wrap:anywhere;
+}
+.ownerPharmacyAdmin small{
+    display:block;
+    margin-top:3px;
+    color:#7a8aa4;
+}
+.ownerAwaitingTag,
+.ownerUnassignedTag{
+    display:inline-flex;
+    margin-left:6px;
+    padding:3px 7px;
+    border-radius:999px;
+    font-size:9px;
+    font-weight:900;
+    vertical-align:middle;
+}
+.ownerAwaitingTag{
+    color:#9a5700;
+    background:#fff1d8;
+}
+.ownerUnassignedTag{
+    margin-left:0;
+    color:#a33d31;
+    background:#fff0ed;
+}
+.ownerPharmacyActions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.ownerPharmacyActions .secondaryButton{
+    min-height:38px;
+    padding:0 12px;
+    white-space:nowrap;
+}
+.ownerControlMessage{
+    margin-top:14px;
+}
+.registrationRequestCard{
+    border-radius:16px;
+}
+@media (max-width:1080px){
+    .ownerMetricGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .ownerPharmacyCard{
+        grid-template-columns:minmax(210px,1fr) minmax(220px,1fr);
+    }
+    .ownerPharmacyStatus,
+    .ownerPharmacyActions{
+        justify-self:start;
+    }
+}
+@media (max-width:680px){
+    .ownerMetricGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:9px;
+    }
+    .ownerMetricCard{
+        min-height:86px;
+        padding:13px;
+    }
+    .ownerMetricCard strong{
+        font-size:24px;
+    }
+    .ownerSectionHeader,
+    .ownerControlHeader{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+    .ownerPharmacyCard{
+        grid-template-columns:1fr;
+        gap:12px;
+    }
+    .ownerPharmacyActions{
+        justify-content:flex-start;
+    }
+}
