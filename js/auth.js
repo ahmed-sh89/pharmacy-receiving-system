@@ -1434,6 +1434,47 @@ function lockApplicationForAuth(showLogin = true){
     }
 }
 
+
+function openDashboardAfterAuthentication(){
+    try{
+        if(typeof AppState !== "undefined" && AppState.ui){
+            if("currentPage" in AppState.ui){ AppState.ui.currentPage = "dashboard"; }
+            if("activePage" in AppState.ui){ AppState.ui.activePage = "dashboard"; }
+        }
+        localStorage.removeItem("prs_last_page");
+        localStorage.removeItem("medryvo_last_page");
+        sessionStorage.removeItem("prs_last_page");
+        sessionStorage.removeItem("medryvo_last_page");
+    }catch(_){}
+    try{
+        if(typeof navigateTo === "function"){
+            navigateTo("dashboard");
+            return;
+        }
+    }catch(_){}
+
+    try{
+        if(typeof showPage === "function"){
+            showPage("dashboard");
+            return;
+        }
+    }catch(_){}
+
+    try{
+        if(typeof Router !== "undefined" && Router && typeof Router.navigate === "function"){
+            Router.navigate("dashboard");
+            return;
+        }
+    }catch(_){}
+
+    // Fallback for the current SPA hash/page-state pattern.
+    try{
+        if(window.location.hash && window.location.hash !== "#dashboard"){
+            history.replaceState(history.state || {}, "", window.location.pathname + window.location.search + "#dashboard");
+        }
+    }catch(_){}
+}
+
 function unlockApplicationAfterAuth(){
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
         lockApplicationForAuth(true);
@@ -1446,6 +1487,7 @@ function unlockApplicationAfterAuth(){
     // makes the main content look frozen while the sidebar remains interactive.
     resetResponsiveSidebarAfterAuth();
     document.body.classList.remove("authLocked");
+    openDashboardAfterAuthentication();
     const overlay = document.getElementById("authGate");
     if(overlay){ overlay.classList.remove("visible"); }
     if(typeof window.bootProtectedApplication === "function"){
