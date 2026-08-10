@@ -217,10 +217,12 @@ async function requestPasswordRecovery(){
     }
     setAuthBusy(true,"Sending password reset email...");
     try{
+        // Supabase Auth expects redirect_to on the /recover request URL, not in the JSON body.
         const redirectTo = MEDRYVO_RECOVERY_REDIRECT;
-        await authRequest("/auth/v1/recover",{
+        const recoverPath = "/auth/v1/recover?redirect_to=" + encodeURIComponent(redirectTo);
+        await authRequest(recoverPath,{
             method:"POST",
-            body:JSON.stringify({email, redirect_to:redirectTo})
+            body:JSON.stringify({email})
         });
         setAuthMessage("Password reset email sent. Open the newest message and follow the link.","success");
     }
