@@ -928,6 +928,7 @@ function normalizeInviteToken(value){
 
 async function signOutCurrentUser(){
     clearRecoveryArtifacts();
+    resetResponsiveSidebarAfterAuth();
     const token = getSupabaseAccessToken();
     try{
         if(token){
@@ -950,6 +951,7 @@ async function signOutCurrentUser(){
 }
 
 async function resumeAuthenticatedApp(){
+    resetResponsiveSidebarAfterAuth();
     await loadPublicSetupStatus().catch(()=>{});
     if(!AuthState.session){
         lockApplicationForAuth();
@@ -1405,6 +1407,25 @@ function setText(id,value){
     if(el){ el.textContent = value; }
 }
 
+
+function resetResponsiveSidebarAfterAuth(){
+    try{
+        if(typeof closeMobileSidebar === "function"){
+            closeMobileSidebar();
+        }
+    }catch(_){}
+
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    if(sidebar){ sidebar.classList.remove("show"); }
+    if(overlay){ overlay.classList.remove("show"); }
+
+    if(typeof AppState !== "undefined" && AppState.ui){
+        AppState.ui.sidebarOpen = false;
+    }
+}
+
 function lockApplicationForAuth(showLogin = true){
     document.body.classList.add("authLocked");
     if(showLogin){
@@ -1419,6 +1440,11 @@ function unlockApplicationAfterAuth(){
         showAuthPanel("recovery",{history:"replace"});
         return;
     }
+
+    // A sidebar drawer can remain open behind the auth screen after Sign Out.
+    // If it survives the next Sign In, its backdrop covers the application and
+    // makes the main content look frozen while the sidebar remains interactive.
+    resetResponsiveSidebarAfterAuth();
     document.body.classList.remove("authLocked");
     const overlay = document.getElementById("authGate");
     if(overlay){ overlay.classList.remove("visible"); }
