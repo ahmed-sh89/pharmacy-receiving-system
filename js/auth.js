@@ -6,6 +6,8 @@
 ===================================================== */
 
 const AUTH_STORAGE_KEY = "PRS_V3_SUPABASE_AUTH";
+const MEDRYVO_REMEMBERED_EMAIL_KEY = "medryvo_remembered_email";
+const MEDRYVO_RECOVERY_REDIRECT = "https://ahmed-sh89.github.io/pharmacy-receiving-system/";
 const AUTH_PENDING_INVITE_KEY = "PRS_V3_PENDING_INVITE";
 const AUTH_PENDING_OWNER_KEY = "PRS_V3_PENDING_OWNER_SETUP";
 const AUTH_PENDING_REGISTRATION_KEY = "PRS_V3_PENDING_PHARMACY_REGISTRATION";
@@ -40,7 +42,7 @@ async function initializeAuth(){
     if(AuthState.initialized){ return; }
     AuthState.initialized = true;
     bindAuthUI();
-    const recoveryMode = parseRecoverySessionFromUrl();
+    const recoveryMode = handleRecoveryErrorFromUrl() || parseRecoverySessionFromUrl();
     if(!recoveryMode){ restoreAuthSession(); }
     await loadPublicSetupStatus().catch(()=>{});
     if(!recoveryMode){ renderAuthState(); }
@@ -55,6 +57,23 @@ function bindAuthUI(){
     bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
     bindClick("btnAuthForgotPassword", ()=>requestPasswordRecovery());
     bindClick("btnAuthRecoverySave", ()=>saveRecoveredPassword());
+    bindPasswordToggle("btnToggleAuthPassword","authPassword");
+    bindPasswordToggle("btnTogglePublicSignupPassword","publicSignupPassword");
+    bindPasswordToggle("btnToggleInviteSignupPassword","inviteSignupPassword");
+    bindPasswordToggle("btnToggleOwnerSignupPassword","ownerSignupPassword");
+    bindPasswordToggle("btnToggleRecoveryPassword","authRecoveryPassword");
+    bindPasswordToggle("btnToggleRecoveryPasswordConfirm","authRecoveryPasswordConfirm");
+    restoreRememberedEmail();
+    const rememberEmail = document.getElementById("authRememberEmail");
+    if(rememberEmail){
+        rememberEmail.addEventListener("change", ()=>{
+            if(!rememberEmail.checked){
+                try{ localStorage.removeItem(MEDRYVO_REMEMBERED_EMAIL_KEY); }catch(_){}
+            }else{
+                persistRememberedEmail(valueOf("authEmail").trim());
+            }
+        });
+    }
     bindAuthHistoryNavigation();
     bindClick("btnAuthInviteSignUp", ()=>signUpInvitedUser());
     bindClick("btnAuthPublicSignUp", ()=>signUpPublicPharmacy());
@@ -79,6 +98,44 @@ function bindAuthUI(){
             });
         }
     });
+}
+
+
+function bindPasswordToggle(buttonId, inputId){
+    const button = document.getElementById(buttonId);
+    const input = document.getElementById(inputId);
+    if(!button || !input){ return; }
+
+    button.addEventListener("click", ()=>{
+        const reveal = input.type === "password";
+        input.type = reveal ? "text" : "password";
+        button.textContent = reveal ? "Hide" : "Show";
+        button.setAttribute("aria-label", reveal ? "Hide password" : "Show password");
+        button.setAttribute("aria-pressed", reveal ? "true" : "false");
+        input.focus({preventScroll:true});
+    });
+}
+
+function restoreRememberedEmail(){
+    try{
+        const remembered = localStorage.getItem(MEDRYVO_REMEMBERED_EMAIL_KEY) || "";
+        if(remembered){
+            setInputValue("authEmail", remembered);
+            const checkbox = document.getElementById("authRememberEmail");
+            if(checkbox){ checkbox.checked = true; }
+        }
+    }catch(_){}
+}
+
+function persistRememberedEmail(email){
+    try{
+        const checkbox = document.getElementById("authRememberEmail");
+        if(checkbox && checkbox.checked){
+            localStorage.setItem(MEDRYVO_REMEMBERED_EMAIL_KEY, email);
+        }else{
+            localStorage.removeItem(MEDRYVO_REMEMBERED_EMAIL_KEY);
+        }
+    }catch(_){}
 }
 
 function bindClick(id, handler){
@@ -160,7 +217,7 @@ async function requestPasswordRecovery(){
     }
     setAuthBusy(true,"Sending password reset email...");
     try{
-        const redirectTo = window.location.origin + window.location.pathname;
+        const redirectTo = MEDRYVO_RECOVERY_REDIRECT;
         await authRequest("/auth/v1/recover",{
             method:"POST",
             body:JSON.stringify({email, redirect_to:redirectTo})
@@ -169,6 +226,25 @@ async function requestPasswordRecovery(){
     }
     catch(error){ setAuthMessage(error.message || "Unable to send password reset email.","error"); }
     finally{ setAuthBusy(false); }
+}
+
+
+function handleRecoveryErrorFromUrl(){
+    const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
+    const errorCode = hash.get("error_code") || "";
+    const errorDescription = (hash.get("error_description") || "").replace(/\+/g," ");
+    if(!errorCode){ return false; }
+
+    showAuthPanel("login",{history:"replace"});
+    if(errorCode === "otp_expired"){
+        setAuthMessage("This password reset link has expired or was already used. Request a new link with Forgot Password.", "error");
+    }else{
+        setAuthMessage(errorDescription || "The password reset link is invalid. Request a new link.", "error");
+    }
+    try{
+        history.replaceState({medryvoAuthMode:"login"},"",window.location.pathname + window.location.search);
+    }catch(_){}
+    return true;
 }
 
 function parseRecoverySessionFromUrl(){
@@ -317,6 +393,7 @@ async function signInFromForm(){
         setAuthMessage("Enter email and password.", "error");
         return;
     }
+    persistRememberedEmail(email);
     setAuthBusy(true, "Signing in...");
     try{
         const session = await authRequest("/auth/v1/token?grant_type=password", {

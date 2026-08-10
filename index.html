@@ -85,7 +85,17 @@
                         <h2>Sign in</h2>
                         <p class="authLead">Use the account assigned to your pharmacy.</p>
                         <div class="authField"><label>Email</label><input id="authEmail" type="email" autocomplete="username" placeholder="name@example.com"></div>
-                        <div class="authField"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+                                <button id="btnToggleAuthPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <label class="authRememberRow">
+                            <input id="authRememberEmail" type="checkbox" checked>
+                            <span>Remember email on this device</span>
+                        </label>
                         <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
                         <button id="btnAuthForgotPassword" class="authSecondaryLink authForgotPassword" type="button">Forgot Password?</button>
                         <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
@@ -99,7 +109,13 @@
                         <p class="authLead">Create an account and submit your pharmacy for approval. You cannot use operational data until the System Owner approves the request.</p>
                         <div class="authField"><label>Your Name</label><input id="publicSignupName" type="text" autocomplete="name" placeholder="Pharmacy manager name"></div>
                         <div class="authField"><label>Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
-                        <div class="authField"><label>Password</label><input id="publicSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="publicSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <button id="btnTogglePublicSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
                         <div class="authField"><label>Pharmacy Name</label><input id="publicPharmacyName" type="text" placeholder="Pharmacy name"></div>
                         <div class="authField"><label>Requested Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="PHARM02"></div>
                         <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
@@ -112,7 +128,13 @@
                         <p class="authLead">Your pharmacy manager gives you the invitation code. Your email must match the invited email.</p>
                         <div class="authField"><label>Name</label><input id="inviteSignupName" type="text" autocomplete="name" placeholder="Your name"></div>
                         <div class="authField"><label>Email</label><input id="inviteSignupEmail" type="email" autocomplete="email" placeholder="Invited email"></div>
-                        <div class="authField"><label>Password</label><input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <button id="btnToggleInviteSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
                         <div class="authField"><label>Invitation Code</label><input id="inviteSignupToken" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
                         <button id="btnAuthInviteSignUp" class="authPrimaryButton" type="button">Create / Activate Account</button>
                         <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
@@ -125,7 +147,13 @@
                         <p class="authLead">This option works once only. The Owner can create other pharmacies and their Admin invitations.</p>
                         <div class="authField"><label>Owner Name</label><input id="ownerSignupName" type="text" autocomplete="name" placeholder="Owner name"></div>
                         <div class="authField"><label>Owner Email</label><input id="ownerSignupEmail" type="email" autocomplete="email" placeholder="Owner email"></div>
-                        <div class="authField"><label>Password</label><input id="ownerSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="ownerSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <button id="btnToggleOwnerSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
                         <div class="authField"><label>Your Pharmacy Name</label><input id="ownerPharmacyName" type="text" placeholder="Main pharmacy"></div>
                         <div class="authField"><label>Pharmacy Code</label><input id="ownerPharmacyCode" type="text" maxlength="24" placeholder="PHARM01"></div>
                         <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
@@ -138,8 +166,20 @@
                         <h2>Set a New Password</h2>
                         <p class="authLead">Choose a new password for your Medryvo account.</p>
                         <div class="authInfoBox authRecoveryInfo">Your recovery link is active. Enter a new password below.</div>
-                        <div class="authField"><label>New Password</label><input id="authRecoveryPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div>
-                        <div class="authField"><label>Confirm New Password</label><input id="authRecoveryPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat the new password"></div>
+                        <div class="authField">
+                            <label>New Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authRecoveryPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+                                <button id="btnToggleRecoveryPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <div class="authField">
+                            <label>Confirm New Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authRecoveryPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat the new password">
+                                <button id="btnToggleRecoveryPasswordConfirm" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
                         <button id="btnAuthRecoverySave" class="authPrimaryButton" type="button">Update Password</button>
                         <div id="authRecoveryMessage" class="authMessage" role="status" aria-live="polite"></div>
                     </div>

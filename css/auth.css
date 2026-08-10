@@ -1233,3 +1233,63 @@ body.authLocked{
 #authRecoveryMessage{
     min-height:18px;
 }
+
+
+/* ==============================================================
+   MEDRYVO PHASE 1E — LOGIN UX / PASSWORD VISIBILITY
+   ============================================================== */
+.authPasswordWrap{
+    position:relative;
+    width:100%;
+}
+.authPasswordWrap input{
+    width:100%;
+    padding-right:72px !important;
+}
+.authPasswordToggle{
+    position:absolute;
+    top:50%;
+    right:10px;
+    transform:translateY(-50%);
+    min-width:52px;
+    min-height:34px;
+    padding:0 8px;
+    border:0;
+    border-radius:9px;
+    background:#eef5ff;
+    color:#0754c9;
+    font:inherit;
+    font-size:11px;
+    font-weight:900;
+    cursor:pointer;
+}
+.authPasswordToggle:hover{
+    background:#e2efff;
+    color:#ff7a00;
+}
+.authPasswordToggle:focus-visible{
+    outline:3px solid rgba(8,119,245,.18);
+    outline-offset:2px;
+}
+
+.authRememberRow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:max-content;
+    max-width:100%;
+    margin:-2px 0 10px;
+    color:#53647f;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+    user-select:none;
+}
+.authRememberRow input{
+    width:15px;
+    height:15px;
+    accent-color:#0754c9;
+}
+
+/* Browser/password managers remain responsible for password storage.
+   Medryvo only stores the email address when Remember email is enabled. */
