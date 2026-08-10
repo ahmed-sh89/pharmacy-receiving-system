@@ -1293,3 +1293,21 @@ body.authLocked{
 
 /* Browser/password managers remain responsible for password storage.
    Medryvo only stores the email address when Remember email is enabled. */
+
+
+/* ==============================================================
+   MEDRYVO PHASE 1K — HARD RECOVERY VISIBILITY GATE
+   The reset-password form can only render during a real recovery URL.
+   ============================================================== */
+#authRecoveryForm{
+    display:none !important;
+}
+body.medryvoRecoveryMode #authRecoveryForm:not([hidden]){
+    display:block !important;
+}
+
+/* During ordinary sign-in/dashboard transitions recovery UI is physically
+   prevented from rendering, eliminating stale-state flashes. */
+body:not(.medryvoRecoveryMode) #authRecoveryForm{
+    display:none !important;
+}

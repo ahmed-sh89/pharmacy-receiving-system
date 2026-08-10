@@ -48,8 +48,7 @@ async function initializeAuth(){
     const isRecoveryUrl = hash.get("type") === "recovery" && !!hash.get("access_token");
 
     if(!isRecoveryUrl){
-        AuthState.recoveryActive = false;
-        window.__MEDRYVO_RECOVERY_ACTIVE = false;
+        clearRecoveryArtifacts();
     }
 
     const recoveryError = handleRecoveryErrorFromUrl();
@@ -180,7 +179,9 @@ function clearSensitiveAuthFields(){
 
 
 function clearRecoveryArtifacts(){
-    clearRecoveryArtifacts();
+    AuthState.recoveryActive = false;
+    window.__MEDRYVO_RECOVERY_ACTIVE = false;
+    document.body.classList.remove("medryvoRecoveryMode");
 
     try{
         if(window.location.hash){
@@ -289,6 +290,7 @@ async function requestPasswordRecovery(){
 function handleRecoveryErrorFromUrl(){
     AuthState.recoveryActive = false;
     window.__MEDRYVO_RECOVERY_ACTIVE = false;
+    document.body.classList.remove("medryvoRecoveryMode");
     const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
     const errorCode = hash.get("error_code") || "";
     const errorDescription = (hash.get("error_description") || "").replace(/\+/g," ");
@@ -317,13 +319,13 @@ function parseRecoverySessionFromUrl(){
     // is a Supabase recovery URL. A previous recovery session/state
     // must never trigger this screen during an ordinary sign in.
     if(type !== "recovery" || !accessToken){
-        AuthState.recoveryActive = false;
-        window.__MEDRYVO_RECOVERY_ACTIVE = false;
+        clearRecoveryArtifacts();
         return false;
     }
 
     AuthState.recoveryActive = true;
     window.__MEDRYVO_RECOVERY_ACTIVE = true;
+    document.body.classList.add("medryvoRecoveryMode");
 
     AuthState.session = {
         access_token:accessToken,
@@ -351,8 +353,7 @@ async function saveRecoveredPassword(){
             headers:{"Authorization":"Bearer "+token},
             body:JSON.stringify({password})
         });
-        AuthState.recoveryActive = false;
-        window.__MEDRYVO_RECOVERY_ACTIVE = false;
+        clearRecoveryArtifacts();
         try{
             history.replaceState(
                 Object.assign({}, history.state || {}, {medryvoAuthMode:"login"}),
@@ -463,16 +464,8 @@ async function loadPublicSetupStatus(){
 async function signInFromForm(){
     if(AuthState.busy){ return; }
 
-    // A normal password sign-in must never inherit a stale recovery UI state.
-    AuthState.recoveryActive = false;
-    window.__MEDRYVO_RECOVERY_ACTIVE = false;
-    try{
-        history.replaceState(
-            Object.assign({}, history.state || {}, {medryvoAuthMode:"login"}),
-            "",
-            window.location.pathname + window.location.search
-        );
-    }catch(_){}
+    // A normal password sign-in must never inherit recovery state.
+    clearRecoveryArtifacts();
     showAuthPanel("login",{history:"replace"});
 
     const email = valueOf("authEmail").trim();
@@ -1126,7 +1119,7 @@ function renderPendingAccessPanel(){
 }
 
 function showAuthPanel(mode, options = {}){
-    if(mode === "recovery" && !AuthState.recoveryActive){
+    if(mode === "recovery" && (!AuthState.recoveryActive || !document.body.classList.contains("medryvoRecoveryMode"))){
         mode = "login";
     }
 
