@@ -149,6 +149,31 @@ function persistRememberedEmail(email){
     }catch(_){}
 }
 
+
+function clearSensitiveAuthFields(){
+    const passwordFieldIds = [
+        "authPassword",
+        "publicSignupPassword",
+        "inviteSignupPassword",
+        "ownerSignupPassword",
+        "authRecoveryPassword",
+        "authRecoveryPasswordConfirm"
+    ];
+
+    passwordFieldIds.forEach(id=>{
+        const input = document.getElementById(id);
+        if(!input){ return; }
+        input.value = "";
+        input.type = "password";
+    });
+
+    document.querySelectorAll(".authPasswordToggle").forEach(button=>{
+        button.textContent = "Show";
+        button.setAttribute("aria-label","Show password");
+        button.setAttribute("aria-pressed","false");
+    });
+}
+
 function bindClick(id, handler){
     document.querySelectorAll('[id="' + id + '"]').forEach(el=>{
         el.addEventListener("click", handler);
@@ -306,6 +331,14 @@ async function saveRecoveredPassword(){
         AuthState.recoveryActive = false;
         window.__MEDRYVO_RECOVERY_ACTIVE = false;
         try{
+            history.replaceState(
+                Object.assign({}, history.state || {}, {medryvoAuthMode:"login"}),
+                "",
+                window.location.pathname + window.location.search
+            );
+        }catch(_){}
+        try{
+        clearSensitiveAuthFields();
             await authRequest("/auth/v1/logout",{method:"POST",headers:{"Authorization":"Bearer "+token},body:"{}"});
         }catch(_){ }
         persistAuthSession(null);
@@ -406,6 +439,19 @@ async function loadPublicSetupStatus(){
 
 async function signInFromForm(){
     if(AuthState.busy){ return; }
+
+    // A normal password sign-in must never inherit a stale recovery UI state.
+    AuthState.recoveryActive = false;
+    window.__MEDRYVO_RECOVERY_ACTIVE = false;
+    try{
+        history.replaceState(
+            Object.assign({}, history.state || {}, {medryvoAuthMode:"login"}),
+            "",
+            window.location.pathname + window.location.search
+        );
+    }catch(_){}
+    showAuthPanel("login",{history:"replace"});
+
     const email = valueOf("authEmail").trim();
     const password = valueOf("authPassword");
     if(!email || !password){
@@ -994,6 +1040,7 @@ function renderAuthState(){
     const account = AuthState.context;
 
     if(!AuthState.session){
+        clearSensitiveAuthFields();
         if(overlay){ overlay.classList.add("visible"); }
         if(formsPanel){ formsPanel.hidden = false; }
         if(accessPanel){ accessPanel.hidden = true; }
