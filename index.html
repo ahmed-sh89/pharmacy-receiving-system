@@ -48,10 +48,127 @@
         href="css/responsive.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="css/auth.css"
+    >
+
 </head>
 
 
 <body>
+
+<!-- ==================================================
+     AUTHENTICATION GATE — OWNER / ADMIN / STAFF
+=================================================== -->
+<div id="authGate" class="authGate visible">
+    <div class="authShell">
+        <section class="authBrandPanel">
+            <div class="authBrandMark">💊</div>
+            <h1>Pharmacy Receiving System</h1>
+            <p>Secure multi-pharmacy receiving, Zebra scanning, expiry control and historical reporting from one workspace.</p>
+            <div class="authFeatureList">
+                <div class="authFeature"><span>✓</span><span>One secure link for every pharmacy</span></div>
+                <div class="authFeature"><span>✓</span><span>OWNER, ADMIN and STAFF access levels</span></div>
+                <div class="authFeature"><span>✓</span><span>Each pharmacy sees only its own operational data</span></div>
+            </div>
+        </section>
+
+        <section class="authFormPanel">
+            <div class="authFormPanelInner">
+                <div id="authFormsPanel">
+                    <div id="authLoginForm">
+                        <span class="authEyebrow">SECURE ACCESS</span>
+                        <h2>Sign in</h2>
+                        <p class="authLead">Use the account assigned to your pharmacy.</p>
+                        <div class="authField"><label>Email</label><input id="authEmail" type="email" autocomplete="username" placeholder="name@example.com"></div>
+                        <div class="authField"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
+                        <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
+                        <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
+                        <button id="btnAuthShowInviteSignup" class="authSecondaryLink" type="button">I have a staff invitation code</button>
+                        <button id="btnAuthShowOwnerSetup" class="authSecondaryLink" type="button" hidden>First system setup — Owner only</button>
+                    </div>
+
+                    <div id="authPublicSignupForm" hidden>
+                        <span class="authEyebrow">NEW PHARMACY</span>
+                        <h2>Request access</h2>
+                        <p class="authLead">Create an account and submit your pharmacy for approval. You cannot use operational data until the System Owner approves the request.</p>
+                        <div class="authField"><label>Your Name</label><input id="publicSignupName" type="text" autocomplete="name" placeholder="Pharmacy manager name"></div>
+                        <div class="authField"><label>Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+                        <div class="authField"><label>Password</label><input id="publicSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                        <div class="authField"><label>Pharmacy Name</label><input id="publicPharmacyName" type="text" placeholder="Pharmacy name"></div>
+                        <div class="authField"><label>Requested Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="PHARM02"></div>
+                        <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
+                        <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
+                    </div>
+
+                    <div id="authInviteSignupForm" hidden>
+                        <span class="authEyebrow">INVITED USER</span>
+                        <h2>Activate your account</h2>
+                        <p class="authLead">Your pharmacy manager gives you the invitation code. Your email must match the invited email.</p>
+                        <div class="authField"><label>Name</label><input id="inviteSignupName" type="text" autocomplete="name" placeholder="Your name"></div>
+                        <div class="authField"><label>Email</label><input id="inviteSignupEmail" type="email" autocomplete="email" placeholder="Invited email"></div>
+                        <div class="authField"><label>Password</label><input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                        <div class="authField"><label>Invitation Code</label><input id="inviteSignupToken" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+                        <button id="btnAuthInviteSignUp" class="authPrimaryButton" type="button">Create / Activate Account</button>
+                        <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
+                    </div>
+
+                    <div id="authOwnerSignupForm" hidden>
+                        <span class="authEyebrow">FIRST SETUP</span>
+                        <h2>Create System Owner</h2>
+                        <p class="authLead">This option works once only. The Owner can create other pharmacies and their Admin invitations.</p>
+                        <div class="authField"><label>Owner Name</label><input id="ownerSignupName" type="text" autocomplete="name" placeholder="Owner name"></div>
+                        <div class="authField"><label>Owner Email</label><input id="ownerSignupEmail" type="email" autocomplete="email" placeholder="Owner email"></div>
+                        <div class="authField"><label>Password</label><input id="ownerSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+                        <div class="authField"><label>Your Pharmacy Name</label><input id="ownerPharmacyName" type="text" placeholder="Main pharmacy"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="ownerPharmacyCode" type="text" maxlength="24" placeholder="PHARM01"></div>
+                        <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
+                        <button id="btnAuthShowLoginFromOwner" class="authSecondaryLink" type="button">Back to Sign In</button>
+                    </div>
+                </div>
+
+                <div id="authAccessPanel" hidden>
+                    <span class="authEyebrow">ACCOUNT CREATED</span>
+                    <h2>Complete access</h2>
+                    <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
+
+                    <div id="pendingStandardAccessBox">
+                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Staff can use an invitation code, or a pharmacy manager can submit a new pharmacy request for Owner approval.</div>
+                        <div class="authField"><label>Invitation Code (Staff)</label><input id="pendingInviteToken" type="text" autocomplete="off" placeholder="Invitation code"></div>
+                        <button id="btnRedeemInvite" class="authPrimaryButton" type="button">Activate Staff Access</button>
+                        <div class="authDivider"><span>OR</span></div>
+                        <div class="authField"><label>Your Name</label><input id="pendingRegistrationApplicantName" type="text" placeholder="Pharmacy manager name"></div>
+                        <div class="authField"><label>Pharmacy Name</label><input id="pendingRegistrationPharmacyName" type="text" placeholder="Pharmacy name"></div>
+                        <div class="authField"><label>Requested Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="PHARM02"></div>
+                        <button id="btnSubmitPendingRegistration" class="authPrimaryButton" type="button">Submit Pharmacy for Approval</button>
+                    </div>
+
+                    <div id="pendingRegistrationStatusBox" hidden>
+                        <div class="pendingApprovalCard">
+                            <span class="authEyebrow">PHARMACY REQUEST</span>
+                            <h3 id="pendingRegistrationPharmacy">-</h3>
+                            <div class="pendingApprovalMeta"><span>Code</span><strong id="pendingRegistrationCode">-</strong></div>
+                            <div class="pendingApprovalMeta"><span>Status</span><strong id="pendingRegistrationStatus">PENDING</strong></div>
+                            <p id="pendingRegistrationNote">Waiting for System Owner approval.</p>
+                        </div>
+                    </div>
+
+                    <div id="pendingOwnerSetupBox" hidden>
+                        <div class="authSetupNote">No System Owner exists yet. Complete the one-time Owner setup.</div>
+                        <div class="authField"><label>Your Pharmacy Name</label><input id="pendingOwnerPharmacyName" type="text" placeholder="Main pharmacy"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingOwnerPharmacyCode" type="text" placeholder="PHARM01"></div>
+                        <button id="btnCompleteOwnerSetup" class="authPrimaryButton" type="button">Become System Owner</button>
+                    </div>
+
+                    <button id="btnPendingLogout" class="authSecondaryLink" type="button">Sign out</button>
+                </div>
+
+                <div id="authMessage" class="authMessage"></div>
+            </div>
+        </section>
+    </div>
+</div>
 
 <div id="app">
 
@@ -243,6 +360,16 @@
         <!-- SIDEBAR FOOTER -->
 
         <div class="sidebarFooter">
+
+            <div class="accountIdentity">
+                <div class="accountAvatar">P</div>
+                <div class="accountIdentityText">
+                    <strong id="accountPharmacyName">Pharmacy</strong>
+                    <small id="accountUserName">User</small>
+                </div>
+                <span id="accountUserRole" class="accountRoleBadge"></span>
+            </div>
+            <button id="btnLogout" class="sidebarLogoutButton" type="button">Sign Out</button>
 
             <div class="autoSaveStatus">
 
@@ -1761,6 +1888,41 @@
                 class="appPage"
             >
 
+                <section class="contentCard">
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">ACCOUNT</span><h2>Pharmacy & Access</h2></div>
+                    </div>
+                    <div class="accountSettingsGrid">
+                        <div class="accountSettingTile"><span>Pharmacy</span><strong id="settingsPharmacyName">-</strong></div>
+                        <div class="accountSettingTile"><span>Pharmacy Code</span><strong id="settingsPharmacyCode">-</strong></div>
+                        <div class="accountSettingTile"><span>Signed In User</span><strong id="settingsSignedInUser">-</strong></div>
+                        <div class="accountSettingTile"><span>Role</span><strong id="settingsUserRole">-</strong></div>
+                    </div>
+                </section>
+
+                <section id="ownerManagementCard" class="contentCard" hidden>
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">SYSTEM OWNER</span><h2>Pharmacy Approvals</h2></div>
+                        <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
+                    </div>
+                    <p class="settingsDescription">New pharmacies may register from the public login page, but they remain locked until you approve them here.</p>
+                    <div id="ownerRegistrationRequests" class="registrationRequestsList">
+                        <div class="registrationEmpty">No pharmacy registration requests yet.</div>
+                    </div>
+                </section>
+
+                <section id="memberInviteCard" class="contentCard" hidden>
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invite User</h2></div>
+                    </div>
+                    <p class="settingsDescription">ADMIN can invite STAFF to this pharmacy. The System Owner may also create ADMIN invitations.</p>
+                    <div class="accessFormGrid accessFormGridSmall">
+                        <div class="authField"><label>User Email</label><input id="memberInviteEmail" type="email" placeholder="staff@example.com"></div>
+                        <div class="authField"><label>Role</label><select id="memberInviteRole"><option value="staff">STAFF</option><option value="admin">ADMIN</option></select></div>
+                    </div>
+                    <button id="btnCreateMemberInvite" class="secondaryButton" type="button">Generate Invitation Code</button>
+                    <div id="settingsAccessMessage" class="authMessage"></div>
+                </section>
 
                 <section class="contentCard">
 
@@ -2292,6 +2454,8 @@
 <script src="js/reports.js"></script>
 
 <script src="js/supabase.js"></script>
+
+<script src="js/auth.js"></script>
 
 <script src="js/app.js"></script>
 

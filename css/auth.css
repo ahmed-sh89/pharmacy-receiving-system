@@ -1,0 +1,238 @@
+/* =====================================================
+   PHARMACY RECEIVING SYSTEM V3
+   PHASE 1 AUTH + ACCOUNT UI
+===================================================== */
+
+.authGate{
+    position:fixed;
+    inset:0;
+    z-index:99999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:
+        radial-gradient(circle at 12% 18%, rgba(37,99,235,.20), transparent 30%),
+        radial-gradient(circle at 90% 10%, rgba(14,165,233,.16), transparent 28%),
+        linear-gradient(145deg,#071426 0%,#0b1d36 48%,#0b2548 100%);
+}
+
+.authGate.visible{ display:flex; }
+.authLocked #app{ filter:blur(1px); pointer-events:none; user-select:none; }
+
+.authShell{
+    width:min(980px,100%);
+    min-height:560px;
+    display:grid;
+    grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:28px;
+    background:#fff;
+    box-shadow:0 32px 80px rgba(0,0,0,.35);
+}
+
+.authBrandPanel{
+    position:relative;
+    padding:52px;
+    color:#fff;
+    background:linear-gradient(155deg,#0b5ed7 0%,#0d47a1 55%,#062f70 100%);
+}
+.authBrandPanel:after{
+    content:"";
+    position:absolute;
+    width:280px;
+    height:280px;
+    border-radius:50%;
+    right:-120px;
+    bottom:-130px;
+    background:rgba(255,255,255,.08);
+}
+.authBrandMark{
+    width:66px;
+    height:66px;
+    border-radius:20px;
+    display:grid;
+    place-items:center;
+    font-size:32px;
+    background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 12px 28px rgba(0,0,0,.15);
+    margin-bottom:28px;
+}
+.authBrandPanel h1{ font-size:38px; line-height:1.08; margin:0 0 16px; letter-spacing:-.8px; }
+.authBrandPanel p{ max-width:440px; margin:0; color:rgba(255,255,255,.82); font-size:16px; line-height:1.7; }
+.authFeatureList{ display:grid; gap:14px; margin-top:38px; }
+.authFeature{ display:flex; align-items:center; gap:12px; color:rgba(255,255,255,.92); font-weight:650; }
+.authFeature span:first-child{ width:30px; height:30px; display:grid; place-items:center; border-radius:10px; background:rgba(255,255,255,.13); }
+
+.authFormPanel{ padding:48px; display:flex; align-items:center; background:#fff; }
+.authFormPanelInner{ width:100%; }
+.authEyebrow{ color:#2563eb; font-size:12px; font-weight:800; letter-spacing:1.3px; text-transform:uppercase; }
+.authFormPanel h2{ margin:8px 0 8px; font-size:30px; color:#10233f; letter-spacing:-.5px; }
+.authLead{ color:#6b7a90; line-height:1.6; margin:0 0 26px; }
+.authField{ display:grid; gap:8px; margin-bottom:16px; }
+.authField label{ color:#34445b; font-size:13px; font-weight:750; }
+.authField input{
+    width:100%;
+    min-height:50px;
+    border:1px solid #dce4ef;
+    border-radius:14px;
+    padding:0 15px;
+    font:inherit;
+    color:#13243c;
+    outline:none;
+    transition:.18s ease;
+    background:#fbfdff;
+}
+.authField input:focus{ border-color:#5b8def; box-shadow:0 0 0 4px rgba(37,99,235,.10); background:#fff; }
+.authPrimaryButton{
+    width:100%; min-height:52px; border:0; border-radius:14px; cursor:pointer;
+    background:linear-gradient(135deg,#2563eb,#0b5ed7); color:#fff; font-weight:800; font-size:15px;
+    box-shadow:0 12px 24px rgba(37,99,235,.20);
+}
+.authSecondaryLink{ width:100%; margin-top:12px; border:0; background:transparent; color:#2563eb; font-weight:750; cursor:pointer; min-height:42px; }
+.authMessage{ min-height:22px; margin:14px 0 0; font-size:13px; font-weight:650; }
+.authMessage.error{ color:#b42318; }
+.authMessage.success{ color:#067647; }
+.authMessage.info{ color:#175cd3; }
+.authSetupNote{ padding:12px 14px; border-radius:12px; background:#f2f7ff; color:#47617f; font-size:13px; line-height:1.55; margin-bottom:18px; }
+
+.accountIdentity{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.12);
+}
+.accountAvatar{
+    width:36px; height:36px; border-radius:12px; display:grid; place-items:center;
+    background:rgba(255,255,255,.12); color:#fff; font-weight:900;
+}
+.accountIdentityText{ min-width:0; flex:1; }
+.accountIdentityText strong,.accountIdentityText small{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.accountIdentityText small{ opacity:.72; margin-top:2px; }
+.accountRoleBadge{ font-size:10px; font-weight:850; letter-spacing:.6px; padding:5px 7px; border-radius:999px; background:rgba(255,255,255,.12); }
+.sidebarLogoutButton{ margin-top:10px; width:100%; min-height:38px; border:1px solid rgba(255,255,255,.14); border-radius:10px; color:#fff; background:rgba(255,255,255,.06); cursor:pointer; font-weight:700; }
+
+.accountSettingsGrid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.accountSettingTile{ border:1px solid #e4eaf2; border-radius:16px; padding:16px; background:#fbfdff; }
+.accountSettingTile span{ display:block; color:#718096; font-size:12px; margin-bottom:6px; }
+.accountSettingTile strong{ color:#172b4d; overflow-wrap:anywhere; }
+
+@media (max-width:760px){
+    .authGate{ padding:12px; }
+    .authShell{ grid-template-columns:1fr; min-height:0; max-width:520px; border-radius:22px; }
+    .authBrandPanel{ padding:28px 26px 24px; }
+    .authBrandPanel h1{ font-size:28px; }
+    .authBrandPanel p{ font-size:14px; }
+    .authFeatureList{ display:none; }
+    .authBrandMark{ width:50px; height:50px; margin-bottom:16px; }
+    .authFormPanel{ padding:28px 24px 30px; }
+    .authFormPanel h2{ font-size:25px; }
+    .accountSettingsGrid{ grid-template-columns:1fr 1fr; }
+}
+
+/* =====================================================
+   PHASE 1 — OWNER / ADMIN / STAFF MANAGEMENT
+===================================================== */
+.accessFormGrid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+    margin:12px 0 16px;
+}
+.accessFormGridSmall{
+    grid-template-columns:minmax(260px,1fr) minmax(150px,.35fr);
+}
+.authField select{
+    width:100%;
+    min-height:50px;
+    border:1px solid #dce4ef;
+    border-radius:14px;
+    padding:0 15px;
+    font:inherit;
+    color:#13243c;
+    outline:none;
+    background:#fbfdff;
+}
+.authField select:focus{
+    border-color:#5b8def;
+    box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    background:#fff;
+}
+#settingsAccessMessage{
+    margin-top:14px;
+    padding:0;
+    overflow-wrap:anywhere;
+    user-select:text;
+}
+
+@media (max-width:760px){
+    .accessFormGrid,
+    .accessFormGridSmall{
+        grid-template-columns:1fr;
+    }
+}
+
+/* =====================================================
+   PHASE 1B — PUBLIC REGISTRATION / OWNER APPROVAL
+===================================================== */
+.authSignupLink{
+    margin-top:16px;
+    min-height:48px;
+    border:1px solid #d7e3f5;
+    border-radius:12px;
+    background:#f7faff;
+}
+.authDivider{
+    position:relative;
+    text-align:center;
+    margin:22px 0;
+    color:#8a98aa;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:1px;
+}
+.authDivider:before{
+    content:"";
+    position:absolute;
+    left:0; right:0; top:50%;
+    height:1px;
+    background:#e5eaf1;
+}
+.authDivider span{
+    position:relative;
+    padding:0 10px;
+    background:#fff;
+}
+.pendingApprovalCard{
+    border:1px solid #dbe7f5;
+    border-radius:18px;
+    padding:20px;
+    background:linear-gradient(180deg,#fbfdff,#f4f8ff);
+}
+.pendingApprovalCard h3{ margin:7px 0 18px; color:#172b4d; font-size:22px; }
+.pendingApprovalMeta{ display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-top:1px solid #e5edf7; }
+.pendingApprovalMeta span{ color:#718096; font-size:13px; }
+.pendingApprovalMeta strong{ color:#17365e; }
+.pendingApprovalCard p{ margin:14px 0 0; color:#64748b; line-height:1.5; font-size:13px; }
+.registrationRequestsList{ display:grid; gap:14px; margin-top:18px; }
+.registrationEmpty{ padding:22px; border:1px dashed #cdd9e8; border-radius:16px; color:#718096; text-align:center; background:#fbfdff; }
+.registrationRequestCard{ border:1px solid #e0e7f0; border-radius:18px; padding:18px; background:#fff; box-shadow:0 8px 20px rgba(15,43,82,.04); }
+.registrationRequestTop{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.registrationRequestTop strong{ display:block; color:#172b4d; font-size:17px; }
+.registrationRequestTop span:not(.registrationStatus){ display:block; margin-top:4px; color:#718096; font-size:12px; }
+.registrationStatus{ font-size:10px; font-weight:900; letter-spacing:.8px; padding:7px 10px; border-radius:999px; }
+.registrationStatus.pending{ background:#fff4d6; color:#9a6700; }
+.registrationStatus.approved{ background:#e8f8ef; color:#137a42; }
+.registrationStatus.rejected{ background:#fdecec; color:#b42318; }
+.registrationMeta{ display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px; color:#607087; font-size:13px; }
+.registrationActions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid #edf1f6; }
+@media (max-width:760px){
+    .registrationActions{ flex-direction:column-reverse; }
+    .registrationActions button{ width:100%; }
+    .registrationRequestTop{ align-items:center; }
+}
