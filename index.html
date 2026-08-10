@@ -123,23 +123,33 @@
                     </div>
 
                     <div id="authInviteSignupForm" hidden>
-                        <span class="authEyebrow">INVITED USER</span>
-                        <h2>Activate your account</h2>
-                        <p class="authLead">Your pharmacy manager gives you the invitation code. Your email must match the invited email.</p>
-                        <div class="authField"><label>Name</label><input id="inviteSignupName" type="text" autocomplete="name" placeholder="Your name"></div>
-                        <div class="authField"><label>Email</label><input id="inviteSignupEmail" type="email" autocomplete="email" placeholder="Invited email"></div>
+                        <button id="btnAuthShowLoginFromInvite" class="authBackButton" type="button">← Back to Sign In</button>
+                        <span class="authEyebrow">PHARMACY ADMIN</span>
+                        <h2>Activate Admin Account</h2>
+                        <p class="authLead">Use the email that the System Owner assigned to your pharmacy.</p>
+
+                        <div class="authInfoBox">
+                            No invitation code is required. Your email must already be assigned to a pharmacy by the System Owner.
+                        </div>
+
+                        <div class="authField">
+                            <label>Full Name</label>
+                            <input id="inviteSignupName" type="text" autocomplete="name" placeholder="Your name">
+                        </div>
+                        <div class="authField">
+                            <label>Email</label>
+                            <input id="inviteSignupEmail" type="email" autocomplete="email" placeholder="admin@pharmacy.com">
+                        </div>
                         <div class="authField">
                             <label>Password</label>
                             <div class="authPasswordWrap">
-                                <input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters">
                                 <button id="btnToggleInviteSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
                             </div>
                         </div>
-                        <div class="authField"><label>Invitation Code</label><input id="inviteSignupToken" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
-                        <button id="btnAuthInviteSignUp" class="authPrimaryButton" type="button">Create / Activate Account</button>
-                        <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
-                    </div>
 
+                        <button id="btnAuthInviteSignUp" class="authPrimaryButton" type="button">Create / Activate Admin Account</button>
+                    </div>
                     <div id="authOwnerSignupForm" hidden>
                         <button id="btnAuthShowLoginFromOwner" class="authBackButton" type="button" aria-label="Back to sign in">← Back to Sign In</button>
                         <span class="authEyebrow">FIRST SETUP</span>
@@ -1946,28 +1956,78 @@
                     </div>
                 </section>
 
-                <section id="ownerManagementCard" class="contentCard" hidden>
-                    <div class="cardHeader">
-                        <div><span class="sectionEyebrow">SYSTEM OWNER</span><h2>Pharmacy Approvals</h2></div>
-                        <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
+                <section id="ownerManagementCard" class="contentCard ownerControlCenter" hidden>
+                    <div class="cardHeader ownerControlHeader">
+                        <div>
+                            <span class="sectionEyebrow">SYSTEM OWNER</span>
+                            <h2>Owner Control Center</h2>
+                            <p class="settingsDescription">
+                                Approve new pharmacies, control access, and manage the single ADMIN account assigned to each pharmacy.
+                            </p>
+                        </div>
+                        <button id="btnRefreshOwnerControl" class="secondaryButton" type="button">Refresh</button>
                     </div>
-                    <p class="settingsDescription">New pharmacies may register from the public login page, but they remain locked until you approve them here.</p>
-                    <div id="ownerRegistrationRequests" class="registrationRequestsList">
-                        <div class="registrationEmpty">No pharmacy registration requests yet.</div>
+
+                    <div class="ownerMetricGrid">
+                        <article class="ownerMetricCard">
+                            <span>Total Pharmacies</span>
+                            <strong id="ownerMetricTotalPharmacies">0</strong>
+                        </article>
+                        <article class="ownerMetricCard">
+                            <span>Active</span>
+                            <strong id="ownerMetricActivePharmacies">0</strong>
+                        </article>
+                        <article class="ownerMetricCard ownerMetricWarning">
+                            <span>Pending Requests</span>
+                            <strong id="ownerMetricPendingRequests">0</strong>
+                        </article>
+                        <article class="ownerMetricCard">
+                            <span>Admins Assigned</span>
+                            <strong id="ownerMetricAdminsAssigned">0</strong>
+                        </article>
                     </div>
+
+                    <div class="ownerControlSection">
+                        <div class="ownerSectionHeader">
+                            <div>
+                                <span class="sectionEyebrow">NEW PHARMACIES</span>
+                                <h3>Registration Requests</h3>
+                            </div>
+                            <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
+                        </div>
+                        <p class="settingsDescription">
+                            Public registrations remain locked until you approve them. Approval makes the registered account the ADMIN of that pharmacy.
+                        </p>
+                        <div id="ownerRegistrationRequests" class="registrationRequestsList">
+                            <div class="registrationEmpty">No pharmacy registration requests yet.</div>
+                        </div>
+                    </div>
+
+                    <div class="ownerControlSection">
+                        <div class="ownerSectionHeader">
+                            <div>
+                                <span class="sectionEyebrow">PHARMACY ACCESS</span>
+                                <h3>Pharmacies & Admins</h3>
+                            </div>
+                        </div>
+                        <p class="settingsDescription">
+                            Each pharmacy uses one ADMIN account. You can assign an email before the ADMIN creates an account; Medryvo links it automatically when that email activates.
+                        </p>
+                        <div id="ownerPharmacyList" class="ownerPharmacyList">
+                            <div class="registrationEmpty">Loading pharmacies...</div>
+                        </div>
+                    </div>
+
+                    <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
                 </section>
 
-                <section id="memberInviteCard" class="contentCard" hidden>
+                <section id="memberInviteCard" class="contentCard" hidden aria-hidden="true">
                     <div class="cardHeader">
-                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invite User</h2></div>
+                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invitations Disabled</h2></div>
                     </div>
-                    <p class="settingsDescription">ADMIN can invite STAFF to this pharmacy. The System Owner may also create ADMIN invitations.</p>
-                    <div class="accessFormGrid accessFormGridSmall">
-                        <div class="authField"><label>User Email</label><input id="memberInviteEmail" type="email" placeholder="staff@example.com"></div>
-                        <div class="authField"><label>Role</label><select id="memberInviteRole"><option value="staff">STAFF</option><option value="admin">ADMIN</option></select></div>
-                    </div>
-                    <button id="btnCreateMemberInvite" class="secondaryButton" type="button">Generate Invitation Code</button>
-                    <div id="settingsAccessMessage" class="authMessage"></div>
+                    <p class="settingsDescription">
+                        Medryvo is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
+                    </p>
                 </section>
 
                 <section class="contentCard">
