@@ -14,6 +14,7 @@ const AUTH_PENDING_REGISTRATION_KEY = "PRS_V3_PENDING_PHARMACY_REGISTRATION";
 
 const AuthState = {
     initialized:false,
+    recoveryActive:false,
     session:null,
     user:null,
     context:null,
@@ -42,10 +43,20 @@ async function initializeAuth(){
     if(AuthState.initialized){ return; }
     AuthState.initialized = true;
     bindAuthUI();
+
+    // Recovery mode has priority over every normal authenticated-app path.
     const recoveryMode = handleRecoveryErrorFromUrl() || parseRecoverySessionFromUrl();
-    if(!recoveryMode){ restoreAuthSession(); }
+    if(recoveryMode){
+        AuthState.recoveryActive = true;
+        window.__MEDRYVO_RECOVERY_ACTIVE = true;
+        lockApplicationForAuth(true);
+        showAuthPanel("recovery",{history:"replace"});
+        return;
+    }
+
+    restoreAuthSession();
     await loadPublicSetupStatus().catch(()=>{});
-    if(!recoveryMode){ renderAuthState(); }
+    renderAuthState();
 }
 
 function bindAuthUI(){
@@ -232,6 +243,8 @@ async function requestPasswordRecovery(){
 
 
 function handleRecoveryErrorFromUrl(){
+    AuthState.recoveryActive = false;
+    window.__MEDRYVO_RECOVERY_ACTIVE = false;
     const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
     const errorCode = hash.get("error_code") || "";
     const errorDescription = (hash.get("error_description") || "").replace(/\+/g," ");
@@ -255,6 +268,8 @@ function parseRecoverySessionFromUrl(){
     const accessToken = hash.get("access_token") || "";
     const refreshToken = hash.get("refresh_token") || "";
     if(!accessToken){ return false; }
+    AuthState.recoveryActive = true;
+    window.__MEDRYVO_RECOVERY_ACTIVE = true;
     AuthState.session = {
         access_token:accessToken,
         refresh_token:refreshToken,
@@ -288,6 +303,8 @@ async function saveRecoveredPassword(){
             headers:{"Authorization":"Bearer "+token},
             body:JSON.stringify({password})
         });
+        AuthState.recoveryActive = false;
+        window.__MEDRYVO_RECOVERY_ACTIVE = false;
         try{
             await authRequest("/auth/v1/logout",{method:"POST",headers:{"Authorization":"Bearer "+token},body:"{}"});
         }catch(_){ }
@@ -966,6 +983,11 @@ function isPharmacyAdmin(){
 }
 
 function renderAuthState(){
+    if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
+        lockApplicationForAuth(true);
+        showAuthPanel("recovery",{history:"replace"});
+        return;
+    }
     const overlay = document.getElementById("authGate");
     const accessPanel = document.getElementById("authAccessPanel");
     const formsPanel = document.getElementById("authFormsPanel");
@@ -1101,6 +1123,11 @@ function lockApplicationForAuth(showLogin = true){
 }
 
 function unlockApplicationAfterAuth(){
+    if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
+        lockApplicationForAuth(true);
+        showAuthPanel("recovery",{history:"replace"});
+        return;
+    }
     document.body.classList.remove("authLocked");
     const overlay = document.getElementById("authGate");
     if(overlay){ overlay.classList.remove("visible"); }
