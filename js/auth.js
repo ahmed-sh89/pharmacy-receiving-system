@@ -52,6 +52,7 @@ function bindAuthUI(){
     bindClick("btnAuthShowInviteSignup", ()=>showAuthPanel("invite"));
     bindClick("btnAuthShowPublicSignup", ()=>showAuthPanel("public"));
     bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
+    bindAuthHistoryNavigation();
     bindClick("btnAuthInviteSignUp", ()=>signUpInvitedUser());
     bindClick("btnAuthPublicSignUp", ()=>signUpPublicPharmacy());
     bindClick("btnSubmitPendingRegistration", ()=>submitRegistrationFromPendingPanel());
@@ -78,8 +79,64 @@ function bindAuthUI(){
 }
 
 function bindClick(id, handler){
-    const el = document.getElementById(id);
-    if(el){ el.addEventListener("click", handler); }
+    document.querySelectorAll('[id="' + id + '"]').forEach(el=>{
+        el.addEventListener("click", handler);
+    });
+}
+
+
+function bindAuthHistoryNavigation(){
+    if(window.__MEDRYVO_AUTH_HISTORY_BOUND){ return; }
+    window.__MEDRYVO_AUTH_HISTORY_BOUND = true;
+
+    const initialMode = getVisibleAuthMode() || "login";
+    const currentState = history.state || {};
+    if(!currentState.medryvoAuthMode){
+        history.replaceState(
+            Object.assign({}, currentState, {medryvoAuthMode: initialMode}),
+            "",
+            window.location.href
+        );
+    }
+
+    window.addEventListener("popstate", event=>{
+        if(document.body && document.body.classList.contains("authLocked")){
+            const mode = event.state && event.state.medryvoAuthMode
+                ? event.state.medryvoAuthMode
+                : "login";
+            showAuthPanel(mode, {history:"none"});
+        }
+    });
+}
+
+function getVisibleAuthMode(){
+    const map = {
+        login:"authLoginForm",
+        public:"authPublicSignupForm",
+        invite:"authInviteSignupForm",
+        owner:"authOwnerSignupForm"
+    };
+    for(const [mode,id] of Object.entries(map)){
+        const el = document.getElementById(id);
+        if(el && !el.hidden){ return mode; }
+    }
+    return "login";
+}
+
+function syncAuthHistory(mode, behavior){
+    if(behavior === "none"){ return; }
+
+    const currentMode = history.state && history.state.medryvoAuthMode;
+    if(currentMode === mode){ return; }
+
+    const nextState = Object.assign({}, history.state || {}, {medryvoAuthMode:mode});
+
+    if(behavior === "replace"){
+        history.replaceState(nextState, "", window.location.href);
+        return;
+    }
+
+    history.pushState(nextState, "", window.location.href);
 }
 
 function restoreAuthSession(){
@@ -765,15 +822,23 @@ function renderPendingAccessPanel(){
     }
 }
 
-function showAuthPanel(mode){
+function showAuthPanel(mode, options = {}){
     const login = document.getElementById("authLoginForm");
     const invite = document.getElementById("authInviteSignupForm");
     const owner = document.getElementById("authOwnerSignupForm");
     const publicSignup = document.getElementById("authPublicSignupForm");
-    if(login){ login.hidden = mode !== "login"; }
-    if(invite){ invite.hidden = mode !== "invite"; }
-    if(owner){ owner.hidden = mode !== "owner"; }
-    if(publicSignup){ publicSignup.hidden = mode !== "public"; }
+
+    const validMode = ["login","invite","owner","public"].includes(mode) ? mode : "login";
+
+    if(login){ login.hidden = validMode !== "login"; }
+    if(invite){ invite.hidden = validMode !== "invite"; }
+    if(owner){ owner.hidden = validMode !== "owner"; }
+    if(publicSignup){ publicSignup.hidden = validMode !== "public"; }
+
+    const panel = document.querySelector(".authFormPanelInner");
+    if(panel){ panel.scrollTop = 0; }
+
+    syncAuthHistory(validMode, options.history || "push");
     setAuthMessage("","");
 }
 
