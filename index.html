@@ -159,9 +159,8 @@
                         <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
                     </div>
                 </div>
-
-
-                    <div id="authRecoveryForm" hidden>
+                <template id="authRecoveryTemplate">
+<div id="authRecoveryForm">
                         <span class="authEyebrow">ACCOUNT SECURITY</span>
                         <h2>Set a New Password</h2>
                         <p class="authLead">Choose a new password for your Medryvo account.</p>
@@ -183,7 +182,8 @@
                         <button id="btnAuthRecoverySave" class="authPrimaryButton" type="button">Update Password</button>
                         <div id="authRecoveryMessage" class="authMessage" role="status" aria-live="polite"></div>
                     </div>
-                <div id="authAccessPanel" hidden>
+                </template>
+<div id="authAccessPanel" hidden>
                     <span class="authEyebrow">ACCOUNT CREATED</span>
                     <h2>Complete access</h2>
                     <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>

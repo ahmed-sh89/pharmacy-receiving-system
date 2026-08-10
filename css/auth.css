@@ -1311,3 +1311,13 @@ body.medryvoRecoveryMode #authRecoveryForm:not([hidden]){
 body:not(.medryvoRecoveryMode) #authRecoveryForm{
     display:none !important;
 }
+
+
+/* ==============================================================
+   MEDRYVO PHASE 1L — RECOVERY DOM ISOLATION
+   The recovery form lives inside <template> during normal use.
+   Template content is not part of the rendered DOM, so it cannot flash.
+   ============================================================== */
+#authRecoveryTemplate{
+    display:none !important;
+}

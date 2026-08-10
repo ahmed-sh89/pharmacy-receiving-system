@@ -70,13 +70,10 @@ function bindAuthUI(){
     bindClick("btnAuthShowPublicSignup", ()=>showAuthPanel("public"));
     bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
     bindClick("btnAuthForgotPassword", ()=>requestPasswordRecovery());
-    bindClick("btnAuthRecoverySave", ()=>saveRecoveredPassword());
     bindPasswordToggle("btnToggleAuthPassword","authPassword");
     bindPasswordToggle("btnTogglePublicSignupPassword","publicSignupPassword");
     bindPasswordToggle("btnToggleInviteSignupPassword","inviteSignupPassword");
     bindPasswordToggle("btnToggleOwnerSignupPassword","ownerSignupPassword");
-    bindPasswordToggle("btnToggleRecoveryPassword","authRecoveryPassword");
-    bindPasswordToggle("btnToggleRecoveryPasswordConfirm","authRecoveryPasswordConfirm");
     restoreRememberedEmail();
     const rememberEmail = document.getElementById("authRememberEmail");
     if(rememberEmail){
@@ -182,6 +179,7 @@ function clearRecoveryArtifacts(){
     AuthState.recoveryActive = false;
     window.__MEDRYVO_RECOVERY_ACTIVE = false;
     document.body.classList.remove("medryvoRecoveryMode");
+    unmountRecoveryForm();
 
     try{
         if(window.location.hash){
@@ -308,6 +306,32 @@ function handleRecoveryErrorFromUrl(){
     return true;
 }
 
+
+function mountRecoveryForm(){
+    let recovery = document.getElementById("authRecoveryForm");
+    if(recovery){ return recovery; }
+
+    const template = document.getElementById("authRecoveryTemplate");
+    const formsPanel = document.getElementById("authFormsPanel");
+    if(!template || !formsPanel){ return null; }
+
+    const fragment = template.content.cloneNode(true);
+    formsPanel.appendChild(fragment);
+    recovery = document.getElementById("authRecoveryForm");
+
+    // The recovery controls are created dynamically, so bind them here.
+    bindClick("btnAuthRecoverySave", ()=>saveRecoveredPassword());
+    bindPasswordToggle("btnToggleRecoveryPassword","authRecoveryPassword");
+    bindPasswordToggle("btnToggleRecoveryPasswordConfirm","authRecoveryPasswordConfirm");
+
+    return recovery;
+}
+
+function unmountRecoveryForm(){
+    const recovery = document.getElementById("authRecoveryForm");
+    if(recovery){ recovery.remove(); }
+}
+
 function parseRecoverySessionFromUrl(){
     const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
     const type = hash.get("type") || "";
@@ -326,6 +350,7 @@ function parseRecoverySessionFromUrl(){
     AuthState.recoveryActive = true;
     window.__MEDRYVO_RECOVERY_ACTIVE = true;
     document.body.classList.add("medryvoRecoveryMode");
+    mountRecoveryForm();
 
     AuthState.session = {
         access_token:accessToken,
@@ -852,6 +877,7 @@ function normalizeInviteToken(value){
 }
 
 async function signOutCurrentUser(){
+    clearRecoveryArtifacts();
     const token = getSupabaseAccessToken();
     try{
         if(token){
@@ -1123,13 +1149,15 @@ function showAuthPanel(mode, options = {}){
         mode = "login";
     }
 
+    const validMode = ["login","invite","owner","public","recovery"].includes(mode) ? mode : "login";
+
     const login = document.getElementById("authLoginForm");
     const invite = document.getElementById("authInviteSignupForm");
     const owner = document.getElementById("authOwnerSignupForm");
     const publicSignup = document.getElementById("authPublicSignupForm");
-    const recovery = document.getElementById("authRecoveryForm");
-
-    const validMode = ["login","invite","owner","public","recovery"].includes(mode) ? mode : "login";
+    const recovery = validMode === "recovery" && AuthState.recoveryActive
+        ? mountRecoveryForm()
+        : document.getElementById("authRecoveryForm");
 
     if(login){ login.hidden = validMode !== "login"; }
     if(invite){ invite.hidden = validMode !== "invite"; }
