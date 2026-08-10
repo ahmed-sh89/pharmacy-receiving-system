@@ -44,15 +44,19 @@ async function initializeAuth(){
     AuthState.initialized = true;
     bindAuthUI();
 
-    // Recovery mode has priority over every normal authenticated-app path.
-    const recoveryMode = handleRecoveryErrorFromUrl() || parseRecoverySessionFromUrl();
-    if(recoveryMode){
-        AuthState.recoveryActive = true;
-        window.__MEDRYVO_RECOVERY_ACTIVE = true;
-        lockApplicationForAuth(true);
-        showAuthPanel("recovery",{history:"replace"});
-        return;
+    const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
+    const isRecoveryUrl = hash.get("type") === "recovery" && !!hash.get("access_token");
+
+    if(!isRecoveryUrl){
+        AuthState.recoveryActive = false;
+        window.__MEDRYVO_RECOVERY_ACTIVE = false;
     }
+
+    const recoveryError = handleRecoveryErrorFromUrl();
+    if(recoveryError){ return; }
+
+    const recoveryMode = parseRecoverySessionFromUrl();
+    if(recoveryMode){ return; }
 
     restoreAuthSession();
     await loadPublicSetupStatus().catch(()=>{});
@@ -174,6 +178,21 @@ function clearSensitiveAuthFields(){
     });
 }
 
+
+function clearRecoveryArtifacts(){
+    clearRecoveryArtifacts();
+
+    try{
+        if(window.location.hash){
+            history.replaceState(
+                Object.assign({}, history.state || {}, {medryvoAuthMode:"login"}),
+                "",
+                window.location.pathname + window.location.search
+            );
+        }
+    }catch(_){}
+}
+
 function bindClick(id, handler){
     document.querySelectorAll('[id="' + id + '"]').forEach(el=>{
         el.addEventListener("click", handler);
@@ -289,27 +308,31 @@ function handleRecoveryErrorFromUrl(){
 
 function parseRecoverySessionFromUrl(){
     const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
-    if(hash.get("type") !== "recovery"){ return false; }
+    const type = hash.get("type") || "";
     const accessToken = hash.get("access_token") || "";
     const refreshToken = hash.get("refresh_token") || "";
-    if(!accessToken){ return false; }
+
+    // IMPORTANT:
+    // Recovery mode is valid ONLY when the current browser URL itself
+    // is a Supabase recovery URL. A previous recovery session/state
+    // must never trigger this screen during an ordinary sign in.
+    if(type !== "recovery" || !accessToken){
+        AuthState.recoveryActive = false;
+        window.__MEDRYVO_RECOVERY_ACTIVE = false;
+        return false;
+    }
+
     AuthState.recoveryActive = true;
     window.__MEDRYVO_RECOVERY_ACTIVE = true;
+
     AuthState.session = {
         access_token:accessToken,
         refresh_token:refreshToken,
         token_type:hash.get("token_type") || "bearer",
-        expires_in:Number(hash.get("expires_in") || 3600),
-        user:null
+        expires_in:Number(hash.get("expires_in") || 0)
     };
-    localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(AuthState.session));
-    document.body.classList.add("authLocked");
-    const gate=document.getElementById("authGate");
-    if(gate){ gate.classList.add("visible"); }
+
     showAuthPanel("recovery",{history:"replace"});
-    try{
-        history.replaceState({medryvoAuthMode:"recovery"},"",window.location.pathname+window.location.search);
-    }catch(_){ }
     return true;
 }
 
@@ -1103,6 +1126,10 @@ function renderPendingAccessPanel(){
 }
 
 function showAuthPanel(mode, options = {}){
+    if(mode === "recovery" && !AuthState.recoveryActive){
+        mode = "login";
+    }
+
     const login = document.getElementById("authLoginForm");
     const invite = document.getElementById("authInviteSignupForm");
     const owner = document.getElementById("authOwnerSignupForm");
