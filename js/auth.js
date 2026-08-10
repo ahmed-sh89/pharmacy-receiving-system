@@ -40,9 +40,10 @@ async function initializeAuth(){
     if(AuthState.initialized){ return; }
     AuthState.initialized = true;
     bindAuthUI();
-    restoreAuthSession();
+    const recoveryMode = parseRecoverySessionFromUrl();
+    if(!recoveryMode){ restoreAuthSession(); }
     await loadPublicSetupStatus().catch(()=>{});
-    renderAuthState();
+    if(!recoveryMode){ renderAuthState(); }
 }
 
 function bindAuthUI(){
@@ -52,6 +53,8 @@ function bindAuthUI(){
     bindClick("btnAuthShowInviteSignup", ()=>showAuthPanel("invite"));
     bindClick("btnAuthShowPublicSignup", ()=>showAuthPanel("public"));
     bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
+    bindClick("btnAuthForgotPassword", ()=>requestPasswordRecovery());
+    bindClick("btnAuthRecoverySave", ()=>saveRecoveredPassword());
     bindAuthHistoryNavigation();
     bindClick("btnAuthInviteSignUp", ()=>signUpInvitedUser());
     bindClick("btnAuthPublicSignUp", ()=>signUpPublicPharmacy());
@@ -114,7 +117,8 @@ function getVisibleAuthMode(){
         login:"authLoginForm",
         public:"authPublicSignupForm",
         invite:"authInviteSignupForm",
-        owner:"authOwnerSignupForm"
+        owner:"authOwnerSignupForm",
+        recovery:"authRecoveryForm"
     };
     for(const [mode,id] of Object.entries(map)){
         const el = document.getElementById(id);
@@ -137,6 +141,86 @@ function syncAuthHistory(mode, behavior){
     }
 
     history.pushState(nextState, "", window.location.href);
+}
+
+
+function setRecoveryMessage(message,type){
+    const el = document.getElementById("authRecoveryMessage");
+    if(!el){ return; }
+    el.textContent = message || "";
+    el.className = "authMessage " + (type || "");
+}
+
+async function requestPasswordRecovery(){
+    if(AuthState.busy){ return; }
+    const email = valueOf("authEmail").trim();
+    if(!email){
+        setAuthMessage("Enter your email address first.","error");
+        return;
+    }
+    setAuthBusy(true,"Sending password reset email...");
+    try{
+        const redirectTo = window.location.origin + window.location.pathname;
+        await authRequest("/auth/v1/recover",{
+            method:"POST",
+            body:JSON.stringify({email, redirect_to:redirectTo})
+        });
+        setAuthMessage("Password reset email sent. Open the newest message and follow the link.","success");
+    }
+    catch(error){ setAuthMessage(error.message || "Unable to send password reset email.","error"); }
+    finally{ setAuthBusy(false); }
+}
+
+function parseRecoverySessionFromUrl(){
+    const hash = new URLSearchParams((window.location.hash || "").replace(/^#/,""));
+    if(hash.get("type") !== "recovery"){ return false; }
+    const accessToken = hash.get("access_token") || "";
+    const refreshToken = hash.get("refresh_token") || "";
+    if(!accessToken){ return false; }
+    AuthState.session = {
+        access_token:accessToken,
+        refresh_token:refreshToken,
+        token_type:hash.get("token_type") || "bearer",
+        expires_in:Number(hash.get("expires_in") || 3600),
+        user:null
+    };
+    localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(AuthState.session));
+    document.body.classList.add("authLocked");
+    const gate=document.getElementById("authGate");
+    if(gate){ gate.classList.add("visible"); }
+    showAuthPanel("recovery",{history:"replace"});
+    try{
+        history.replaceState({medryvoAuthMode:"recovery"},"",window.location.pathname+window.location.search);
+    }catch(_){ }
+    return true;
+}
+
+async function saveRecoveredPassword(){
+    if(AuthState.busy){ return; }
+    const password=valueOf("authRecoveryPassword");
+    const confirmPassword=valueOf("authRecoveryPasswordConfirm");
+    if(password.length < 8){ setRecoveryMessage("Password must be at least 8 characters.","error"); return; }
+    if(password !== confirmPassword){ setRecoveryMessage("The two passwords do not match.","error"); return; }
+    const token=getSupabaseAccessToken();
+    if(!token){ setRecoveryMessage("Recovery session is missing or expired. Request a new link.","error"); return; }
+    setAuthBusy(true,"Updating password...");
+    try{
+        await authRequest("/auth/v1/user",{
+            method:"PUT",
+            headers:{"Authorization":"Bearer "+token},
+            body:JSON.stringify({password})
+        });
+        try{
+            await authRequest("/auth/v1/logout",{method:"POST",headers:{"Authorization":"Bearer "+token},body:"{}"});
+        }catch(_){ }
+        persistAuthSession(null);
+        setInputValue("authRecoveryPassword","");
+        setInputValue("authRecoveryPasswordConfirm","");
+        showAuthPanel("login",{history:"replace"});
+        setAuthMessage("Password updated successfully. Sign in with your new password.","success");
+    }
+    catch(error){ setRecoveryMessage(error.message || "Unable to update password.","error"); }
+    finally{ setAuthBusy(false); }
 }
 
 function restoreAuthSession(){
@@ -875,13 +959,15 @@ function showAuthPanel(mode, options = {}){
     const invite = document.getElementById("authInviteSignupForm");
     const owner = document.getElementById("authOwnerSignupForm");
     const publicSignup = document.getElementById("authPublicSignupForm");
+    const recovery = document.getElementById("authRecoveryForm");
 
-    const validMode = ["login","invite","owner","public"].includes(mode) ? mode : "login";
+    const validMode = ["login","invite","owner","public","recovery"].includes(mode) ? mode : "login";
 
     if(login){ login.hidden = validMode !== "login"; }
     if(invite){ invite.hidden = validMode !== "invite"; }
     if(owner){ owner.hidden = validMode !== "owner"; }
     if(publicSignup){ publicSignup.hidden = validMode !== "public"; }
+    if(recovery){ recovery.hidden = validMode !== "recovery"; }
 
     const panel = document.querySelector(".authFormPanelInner");
     if(panel){ panel.scrollTop = 0; }

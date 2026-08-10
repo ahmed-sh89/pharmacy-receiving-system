@@ -1210,3 +1210,26 @@ body.authLocked{
     .authInfoBox,.authSetupNote{ padding:7px 9px !important; font-size:9.5px !important; }
     .authBackButton{ min-height:24px !important; margin-bottom:4px !important; }
 }
+
+
+/* =====================================================
+   MEDRYVO PHASE 1D — PASSWORD RECOVERY
+===================================================== */
+.authForgotPassword{
+    width:max-content !important;
+    min-height:26px !important;
+    height:auto !important;
+    margin:6px auto 0 !important;
+    padding:2px 6px !important;
+    display:block;
+    font-size:clamp(10px,1.35vh,13px) !important;
+}
+#authRecoveryForm .authRecoveryInfo{
+    margin-bottom:clamp(7px,1.2vh,12px) !important;
+}
+#authRecoveryForm .authField{
+    margin-bottom:clamp(7px,1.2vh,11px) !important;
+}
+#authRecoveryMessage{
+    min-height:18px;
+}
