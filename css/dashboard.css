@@ -2332,11 +2332,20 @@ body.zebraMode{
     background:#eef3f9;
 }
 
-body.zebraMode .sidebar,
-body.zebraMode .sidebarOverlay,
 body.zebraMode .topBar{
     display:none !important;
 }
+
+/* Zebra keeps the normal navigation as a compact drawer. */
+body.zebraMode .sidebar{
+    display:flex !important;
+    width:min(86vw,300px) !important;
+    transform:translateX(-105%);
+    z-index:120;
+}
+body.zebraMode .sidebar.show{ transform:translateX(0); }
+body.zebraMode .sidebarOverlay{ z-index:110; }
+body.zebraMode .sidebarCloseButton{ display:block; }
 
 body.zebraMode .mainApplication{
     margin-left:0 !important;
@@ -2378,6 +2387,7 @@ body.zebraMode .zebraQuickHeader{
 .zebraQuickHeaderMain{
     display:flex;
     align-items:flex-start;
+    gap:9px;
     justify-content:space-between;
     gap:10px;
 }
@@ -2782,3 +2792,8 @@ body.zebraMode .smartScanResults{
 @media(max-width:820px){
     .returnsArchiveIntroGrid{grid-template-columns:1fr;}
 }
+
+/* PHASE 2B.2 — Zebra compact navigation */
+.zebraMenuButton{width:42px;height:42px;flex:0 0 42px;border:1px solid #c9d8ed;border-radius:12px;background:#fff;color:#0b5ed7;font-size:22px;font-weight:800;line-height:1;box-shadow:0 5px 14px rgba(31,41,55,.06)}
+.zebraQuickIdentity{min-width:0;flex:1}.zebraQuickIdentity strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.zebraMode .sidebarItem[data-page="dashboard"] span:last-child{font-size:0}body.zebraMode .sidebarItem[data-page="dashboard"] span:last-child::after{content:"Receiving";font-size:13px}

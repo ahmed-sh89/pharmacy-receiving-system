@@ -5368,8 +5368,9 @@ function initializeZebraInterface(){
 
     header.innerHTML = `
         <div class="zebraQuickHeaderMain">
-            <div>
-                <span class="zebraModeEyebrow">ZEBRA OFFLINE RECEIVING</span>
+            <button id="btnZebraMenu" class="zebraMenuButton" type="button" aria-label="Open navigation">☰</button>
+            <div class="zebraQuickIdentity">
+                <span class="zebraModeEyebrow">ZEBRA RECEIVING</span>
                 <strong id="zebraQuickOrder">No order loaded</strong>
             </div>
             <span id="zebraQuickDevice" class="zebraDeviceBadge">ZEBRA</span>
@@ -5388,6 +5389,12 @@ function initializeZebraInterface(){
         header,
         page.firstChild
     );
+
+    document
+        .getElementById("btnZebraMenu")
+        ?.addEventListener("click", function(){
+            if(typeof openMobileSidebar === "function"){ openMobileSidebar(); }
+        });
 
     document
         .getElementById(

@@ -33,6 +33,10 @@ function initializeSupabaseCloud(){
 
     CloudSyncEngine.initialized = true;
 
+    /* One-time migration: old offline Zebra work must not reopen as the current session.
+       A recovery copy is retained locally before the visible quantities are cleared. */
+    backupAndClearLegacyZebraWorkspace();
+
     AppEvents.on("receiving:transaction", function(transaction){
         if(!isCloudSessionActive() || CloudSyncEngine.applyingRemote){
             return;
@@ -66,8 +70,12 @@ function initializeSupabaseCloud(){
     setTimeout(handleCloudJoinFromURL, 600);
 
     if(isCloudSessionActive()){
-        startCloudPolling();
-        refreshCloudSnapshot();
+        validateRestoredCloudSession().then(function(valid){
+            if(valid === true && isCloudSessionActive()){
+                startCloudPolling();
+                refreshCloudSnapshot();
+            }
+        });
     }
 
     Logger.info("Supabase cloud module initialized");
@@ -685,3 +693,63 @@ window.refreshCloudSnapshot = refreshCloudSnapshot;
 window.flushCloudPendingQueue = flushCloudPendingQueue;
 window.renderCloudSessionQR = renderCloudSessionQR;
 window.leaveCloudSession = leaveCloudSession;
+
+/* =====================================================
+   PHASE 2B.2 — RESTORED ZEBRA SESSION SAFETY
+===================================================== */
+const PHASE2B2_LEGACY_ZEBRA_MIGRATION_KEY = "pharmflow_p2b2_legacy_zebra_migrated_v1";
+const PHASE2B2_ZEBRA_RECOVERY_KEY = "pharmflow_p2b2_zebra_recovery_v1";
+
+function backupAndClearLegacyZebraWorkspace(){
+    try{
+        if(!AppState || !AppState.session || AppState.session.role !== "ZEBRA" || AppState.session.cloud === true){ return false; }
+        if(localStorage.getItem(PHASE2B2_LEGACY_ZEBRA_MIGRATION_KEY) === "1"){ return false; }
+        localStorage.setItem(PHASE2B2_ZEBRA_RECOVERY_KEY, JSON.stringify({
+            savedAt:nowISO(),
+            reason:"Phase 2B.2 legacy Zebra cleanup",
+            workspace:AppState.workspace,
+            session:AppState.session
+        }));
+        localStorage.setItem(PHASE2B2_LEGACY_ZEBRA_MIGRATION_KEY,"1");
+        clearCurrentWorkspace();
+        startNewWorkspace();
+        AppState.session = {...createEmptySession(),id:createSessionId(),deviceId:ensureDeviceId(),role:"LOCAL",createdAt:nowISO(),pendingQueue:[]};
+        deleteWorkspaceSnapshot();
+        saveWorkspaceSnapshot();
+        AppEvents.emit("workspace:cleared");
+        AppEvents.emit("session:updated");
+        Logger.info("Legacy Zebra workspace cleared; recovery backup retained locally");
+        return true;
+    }catch(error){ Logger.warn("Legacy Zebra cleanup skipped",error); return false; }
+}
+
+function isInactiveCloudSessionError(error){
+    const text=String(error && error.message || error || "").toLowerCase();
+    return /inactive|closed|ended|expired|not found|invalid session|no longer active|session.*invalid/.test(text);
+}
+
+async function validateRestoredCloudSession(){
+    if(!isCloudSessionActive() || !navigator.onLine){ return true; }
+    try{
+        await cloudRpc("get_session_snapshot",{p_session_id:AppState.session.id,p_session_secret:AppState.session.secret});
+        return true;
+    }catch(error){
+        if(!isInactiveCloudSessionError(error)){ Logger.warn("Could not validate restored cloud session; keeping local state",error); return null; }
+        const wasZebra=AppState.session.role === "ZEBRA";
+        if(wasZebra){
+            try{ localStorage.setItem(PHASE2B2_ZEBRA_RECOVERY_KEY,JSON.stringify({savedAt:nowISO(),reason:"Closed cloud Zebra session cleanup",workspace:AppState.workspace,session:AppState.session})); }catch(_){ }
+        }
+        stopCloudPolling();
+        if(wasZebra){ clearCurrentWorkspace(); startNewWorkspace(); deleteWorkspaceSnapshot(); }
+        AppState.session={...createEmptySession(),id:createSessionId(),deviceId:ensureDeviceId(),role:"LOCAL",createdAt:nowISO(),pendingQueue:[]};
+        saveWorkspaceSnapshot();
+        AppEvents.emit("workspace:cleared");
+        AppEvents.emit("session:updated");
+        renderCloudSessionQR();
+        showToast("Previous Zebra session has ended — local quantities cleared","success");
+        return false;
+    }
+}
+
+window.validateRestoredCloudSession=validateRestoredCloudSession;
+window.backupAndClearLegacyZebraWorkspace=backupAndClearLegacyZebraWorkspace;
