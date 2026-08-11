@@ -1094,6 +1094,79 @@ function getMasterGTINRecordsByItemCodes(
 }
 
 
+/* =====================================================
+   DIRECT GLOBAL GTIN LOOKUP
+   Phase 2B.8
+
+   Receiving must not depend only on mappingData having
+   already been projected into the current workspace.
+   The central Global GTIN cache can resolve a scanned
+   GTIN directly and then attach it to the current order.
+===================================================== */
+
+async function getMasterGTINRecordByGTIN(gtin){
+
+    const normalized = normalizeGTIN(gtin);
+
+    if(!normalized){
+        return null;
+    }
+
+    if(
+        (!MasterGTINEngine.db || !MasterGTINEngine.metadata.installed) &&
+        typeof syncGlobalMasterGTINFromCloud === "function"
+    ){
+        try{
+            await syncGlobalMasterGTINFromCloud();
+        }
+        catch(error){
+            Logger.warn("Global GTIN refresh unavailable during scan",error);
+        }
+    }
+
+    if(!MasterGTINEngine.db){
+        return null;
+    }
+
+    const variants =
+        typeof createGTINVariants === "function"
+        ? createGTINVariants(normalized)
+        : [normalized];
+
+    if(!variants.includes(normalized)){
+        variants.unshift(normalized);
+    }
+
+    for(const candidate of variants){
+
+        const record = await new Promise((resolve,reject)=>{
+
+            const tx = MasterGTINEngine.db.transaction(
+                MasterGTINEngine.recordsStore,
+                "readonly"
+            );
+
+            const store = tx.objectStore(
+                MasterGTINEngine.recordsStore
+            );
+
+            const index = store.index("gtin");
+            const request = index.get(candidate);
+
+            request.onsuccess = ()=>resolve(request.result || null);
+            request.onerror = ()=>reject(request.error);
+
+        });
+
+        if(record){
+            return record;
+        }
+    }
+
+    return null;
+}
+
+
 function deleteMasterGTINDatabase(dbName){
 
     try{

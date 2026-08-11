@@ -637,7 +637,7 @@ function isFastScannerTyping(){
    PROCESS SCANNER VALUE
 ===================================================== */
 
-function processScannerValue(rawValue){
+async function processScannerValue(rawValue){
 
     if(
         ScannerEngine.processing
@@ -749,7 +749,7 @@ function processScannerValue(rawValue){
             "function"
         ){
 
-            return receiveParsedBarcode(
+            return await receiveParsedBarcode(
                 parsed
             );
 

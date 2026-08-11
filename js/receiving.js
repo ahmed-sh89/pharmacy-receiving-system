@@ -74,7 +74,7 @@ function initializeReceiving(){
    RECEIVE PARSED BARCODE
 ===================================================== */
 
-function receiveParsedBarcode(parsed){
+async function receiveParsedBarcode(parsed){
 
     if(
         !parsed ||
@@ -103,10 +103,23 @@ function receiveParsedBarcode(parsed){
 
     }
 
-    const item =
+    let item =
         findReceivingItemByGTIN(
             parsed.gtin
         );
+
+    /*
+       Phase 2B.8: if the current workspace index has not yet been
+       populated from Global GTIN, resolve the scan directly from
+       the central GTIN cache and attach that mapping to this order.
+       This prevents a valid barcode from failing only because the
+       mapping projection happened before/after auth or session load.
+    */
+    if(!item){
+        item = await findReceivingItemByGlobalGTIN(
+            parsed.gtin
+        );
+    }
 
     if(!item){
 
@@ -207,6 +220,54 @@ function findReceivingItemByGTIN(gtin){
     }
 
     return null;
+}
+
+
+/* =====================================================
+   FALLBACK: DIRECT GLOBAL GTIN -> CURRENT ORDER
+   Phase 2B.8
+===================================================== */
+
+async function findReceivingItemByGlobalGTIN(gtin){
+
+    if(typeof getMasterGTINRecordByGTIN !== "function"){
+        return null;
+    }
+
+    try{
+
+        const record = await getMasterGTINRecordByGTIN(gtin);
+
+        if(!record || !record.itemCode){
+            return null;
+        }
+
+        const itemCode = normalizeItemCode(record.itemCode);
+        const item = getItemByCode(itemCode);
+
+        /* The Global GTIN may know the product, but receiving is only
+           allowed when that Item Number actually exists in this order. */
+        if(!item){
+            return null;
+        }
+
+        if(record.category && !item.category){
+            item.category = toSafeString(record.category);
+        }
+
+        addMappingRecord({
+            itemCode:itemCode,
+            gtin:normalizeGTIN(record.gtin || gtin),
+            source:"MASTER"
+        });
+
+        return item;
+
+    }
+    catch(error){
+        Logger.warn("Direct Global GTIN receiving lookup failed",error);
+        return null;
+    }
 }
 
 
