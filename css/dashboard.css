@@ -2332,20 +2332,11 @@ body.zebraMode{
     background:#eef3f9;
 }
 
+body.zebraMode .sidebar,
+body.zebraMode .sidebarOverlay,
 body.zebraMode .topBar{
     display:none !important;
 }
-
-/* Zebra keeps the normal navigation as a compact drawer. */
-body.zebraMode .sidebar{
-    display:flex !important;
-    width:min(86vw,300px) !important;
-    transform:translateX(-105%);
-    z-index:120;
-}
-body.zebraMode .sidebar.show{ transform:translateX(0); }
-body.zebraMode .sidebarOverlay{ z-index:110; }
-body.zebraMode .sidebarCloseButton{ display:block; }
 
 body.zebraMode .mainApplication{
     margin-left:0 !important;
@@ -2387,7 +2378,6 @@ body.zebraMode .zebraQuickHeader{
 .zebraQuickHeaderMain{
     display:flex;
     align-items:flex-start;
-    gap:9px;
     justify-content:space-between;
     gap:10px;
 }
@@ -2793,7 +2783,80 @@ body.zebraMode .smartScanResults{
     .returnsArchiveIntroGrid{grid-template-columns:1fr;}
 }
 
-/* PHASE 2B.2 — Zebra compact navigation */
-.zebraMenuButton{width:42px;height:42px;flex:0 0 42px;border:1px solid #c9d8ed;border-radius:12px;background:#fff;color:#0b5ed7;font-size:22px;font-weight:800;line-height:1;box-shadow:0 5px 14px rgba(31,41,55,.06)}
-.zebraQuickIdentity{min-width:0;flex:1}.zebraQuickIdentity strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body.zebraMode .sidebarItem[data-page="dashboard"] span:last-child{font-size:0}body.zebraMode .sidebarItem[data-page="dashboard"] span:last-child::after{content:"Receiving";font-size:13px}
+
+/* =====================================================
+   PHASE 2B.3 — ZEBRA TWO-MODE CLEANUP
+===================================================== */
+.pharmflowQuickActions{display:none!important}
+.zebraHome,.zebraExpiryShell{display:none}
+.zebraModesButton{border:1px solid #cbd8e8;background:#fff;color:#0b5ed7;border-radius:10px;padding:8px 11px;font-weight:850}
+
+body.zebraDevice{background:#eef3f9;min-height:100dvh}
+body.zebraDevice .sidebar,
+body.zebraDevice .sidebarOverlay,
+body.zebraDevice .topBar{display:none!important}
+body.zebraDevice .mainApplication{margin-left:0!important;width:100%!important;min-height:100dvh}
+body.zebraDevice .mainContent{width:min(100%,680px);margin:0 auto;padding:8px}
+body.zebraDevice .appPage{display:none!important}
+
+body.zebraDevice.zebraHomeActive .zebraHome{display:block}
+.zebraHome{padding:10px 4px 20px}
+.zebraBrandRow{display:flex;align-items:center;gap:11px;padding:8px 6px 16px}
+.zebraBrandRow img{width:42px;height:42px}
+.zebraBrandRow div{display:flex;flex-direction:column;gap:2px}
+.zebraBrandRow strong{font-size:19px;color:#0c1d38}
+.zebraBrandRow span{font-size:11px;font-weight:750;color:#76849a}
+.zebraModeIntro{padding:18px;border:1px solid #dce6f3;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(18,48,86,.06)}
+.zebraModeIntro>span{font-size:9px;font-weight:900;letter-spacing:.12em;color:#6f7f94}
+.zebraModeIntro h1{margin:5px 0 7px;font-size:24px;line-height:1.1;color:#0c1d38}
+.zebraModeIntro p{margin:0;color:#68778d;line-height:1.45;font-size:13px}
+.zebraModeCards{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.zebraModeCard{width:100%;display:flex;align-items:center;gap:14px;padding:18px;text-align:left;border:1px solid #d8e4f2;border-radius:18px;background:#fff;color:#10213b;box-shadow:0 7px 20px rgba(18,48,86,.05)}
+.zebraModeCard:active{transform:scale(.992)}
+.zebraModeIcon{width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#eaf2ff;color:#0b5ed7;font-size:22px;font-weight:900}
+.zebraModeCard:nth-child(2) .zebraModeIcon{background:#fff1df;color:#dc7200}
+.zebraModeCard div{display:flex;flex-direction:column;gap:4px}
+.zebraModeCard strong{font-size:18px}
+.zebraModeCard small{font-size:11px;line-height:1.35;color:#748298}
+.zebraSignOut{display:block;margin:18px auto 0;border:0;background:transparent;color:#68788f;font-weight:800;padding:10px}
+
+body.zebraDevice.zebraJoinActive #page-sessions{display:block!important}
+body.zebraDevice.zebraJoinActive #page-sessions>.contentCard:not(.cloudSessionHero),
+body.zebraDevice.zebraJoinActive #page-sessions>.emergencyTools,
+body.zebraDevice.zebraJoinActive #btnCreateSession,
+body.zebraDevice.zebraJoinActive #cloudSessionQRWrap{display:none!important}
+body.zebraDevice.zebraJoinActive .cloudSessionHero{margin:0;padding:16px;border-radius:16px}
+body.zebraDevice.zebraJoinActive .cloudSessionHero .cardHeader{display:none}
+body.zebraDevice.zebraJoinActive .cloudActionGrid{display:block;margin-top:0}
+body.zebraDevice.zebraJoinActive .cloudJoinCard{padding:18px;border-radius:16px}
+body.zebraDevice.zebraJoinActive .cloudJoinCard:before{content:"LIVE RECEIVING";font-size:9px;font-weight:900;letter-spacing:.12em;color:#6f7f94}
+body.zebraDevice.zebraJoinActive .cloudJoinRow{display:grid;grid-template-columns:1fr auto;gap:8px}
+body.zebraDevice.zebraJoinActive .cloudCodeInput{font-size:24px;height:54px;text-align:center}
+body.zebraDevice.zebraJoinActive #btnJoinCloudSession{min-width:84px}
+
+body.zebraDevice.zebraReceivingActive #page-dashboard{display:block!important}
+body.zebraDevice.zebraReceivingActive #page-dashboard>*{display:none!important}
+body.zebraDevice.zebraReceivingActive #page-dashboard>.zebraQuickHeader,
+body.zebraDevice.zebraReceivingActive #page-dashboard>.scanPanel{display:block!important}
+body.zebraDevice.zebraReceivingActive .zebraQuickHeader{margin-bottom:7px;padding:11px;border:1px solid #c9d8ed;border-radius:14px;background:#fff;box-shadow:0 7px 20px rgba(31,41,55,.06)}
+body.zebraDevice.zebraReceivingActive .scanPanel{margin:0;padding:10px;border-radius:14px}
+body.zebraDevice.zebraReceivingActive .scanPanelHeader p{display:none}
+body.zebraDevice.zebraReceivingActive #barcodeInput{font-size:17px;font-weight:800}
+body.zebraDevice.zebraReceivingActive #smartQuantityInput,
+body.zebraDevice.zebraReceivingActive #quantityAdjustmentInput{font-size:22px;font-weight:900;text-align:center}
+
+body.zebraDevice.zebraExpiryActive .zebraExpiryShell{display:block}
+.zebraExpiryShell{padding:8px 2px}
+.zebraExpiryTop{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.zebraExpiryTop button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 11px;color:#0b5ed7;font-weight:850}
+.zebraExpiryTop strong{font-size:18px;color:#10213b}
+.zebraExpiryPlaceholder{padding:20px;border:1px solid #dce6f3;border-radius:18px;background:#fff}
+.zebraExpiryPlaceholder span{font-size:9px;font-weight:900;letter-spacing:.12em;color:#dc7200}
+.zebraExpiryPlaceholder h2{margin:7px 0 9px;font-size:20px;line-height:1.2;color:#10213b}
+.zebraExpiryPlaceholder p{margin:0;color:#6b798e;line-height:1.5;font-size:13px}
+
+@media(max-width:680px){
+ body.zebraDevice .mainContent{padding:5px}
+ body.zebraDevice.zebraJoinActive .cloudJoinRow{grid-template-columns:1fr}
+ body.zebraDevice.zebraJoinActive #btnJoinCloudSession{width:100%;min-height:50px}
+}

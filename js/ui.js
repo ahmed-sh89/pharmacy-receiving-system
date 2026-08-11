@@ -411,6 +411,8 @@ function createSmartScanSearchUI(){
                     <input
                         id="smartQuantityInput"
                         type="number"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
                         min="1"
                         step="1"
                         value="1"
@@ -5335,173 +5337,223 @@ function closeOrderStatusReport(){
 
 
 /* =====================================================
-   ZEBRA OFFLINE INTERFACE
+   ZEBRA TWO-MODE EXPERIENCE
+   - Live Receiving linked to PC cloud session
+   - Expiry Capture (workflow implemented in its dedicated phase)
 ===================================================== */
+
+function isLikelyZebraDevice(){
+    const ua = String(navigator.userAgent || "").toLowerCase();
+    const zebraUA = /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
+    const androidNarrow = /android/i.test(ua) && Math.min(window.screen?.width || innerWidth, innerWidth) <= 1000;
+    return zebraUA || androidNarrow;
+}
+
+function backupLegacyZebraWorkspace(reason){
+    try{
+        const hasOrder = Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0;
+        const hasHistory = Array.isArray(AppState?.workspace?.receivingHistory) && AppState.workspace.receivingHistory.length > 0;
+        if(!hasOrder && !hasHistory){ return null; }
+        const key = "PRS_V3_ZEBRA_RECOVERY_" + Date.now();
+        localStorage.setItem(key, JSON.stringify({
+            reason: reason || "legacy-zebra-cleanup",
+            savedAt: nowISO(),
+            snapshot: typeof serializeCurrentWorkspace === "function" ? serializeCurrentWorkspace() : null
+        }));
+        return key;
+    }catch(error){
+        Logger.warn("Unable to create Zebra recovery backup", error);
+        return null;
+    }
+}
+
+function resetZebraWorkingState(reason, options = {}){
+    const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
+    if(pending > 0 && options.force !== true){
+        Logger.warn("Zebra cleanup postponed because unsynced transactions remain", pending);
+        return false;
+    }
+
+    backupLegacyZebraWorkspace(reason);
+    if(typeof stopCloudPolling === "function"){ stopCloudPolling(); }
+    if(typeof clearCurrentWorkspace === "function"){ clearCurrentWorkspace(); }
+    if(typeof startNewWorkspace === "function"){ startNewWorkspace(); }
+    if(typeof deleteWorkspaceSnapshot === "function"){ deleteWorkspaceSnapshot(); }
+
+    AppState.session = {
+        ...createEmptySession(),
+        id:createSessionId(),
+        deviceId:ensureDeviceId(),
+        role:"ZEBRA_IDLE",
+        cloud:false,
+        createdAt:nowISO(),
+        pendingQueue:[]
+    };
+
+    if(typeof saveWorkspaceSnapshot === "function"){ saveWorkspaceSnapshot(); }
+    AppEvents.emit("session:updated");
+    AppEvents.emit("workspace:cleared");
+    return true;
+}
 
 function initializeZebraInterface(){
-
-    if(
-        document.getElementById(
-            "zebraQuickHeader"
-        )
-    ){
+    if(!isLikelyZebraDevice()){
+        document.body.classList.remove("zebraDevice","zebraHomeActive","zebraJoinActive","zebraExpiryActive");
         return;
     }
 
-    const page =
-        document.getElementById(
-            "page-dashboard"
-        );
+    document.body.classList.add("zebraDevice");
 
-    if(!page){
-        return;
+    /* Keep the Zebra hardware scanner focused without summoning the Android
+       soft keyboard. Manual search inputs remain normal text inputs. */
+    const barcodeInput = document.getElementById("barcodeInput");
+    if(barcodeInput){
+        barcodeInput.setAttribute("inputmode","none");
+        barcodeInput.setAttribute("autocomplete","off");
     }
 
-    const header =
-        document.createElement("section");
+    /* Old offline/local Zebra work must never reopen as the active screen.
+       Keep a local recovery copy, then reset the disposable working state. */
+    const hasOldWorkspace = Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0;
+    const isValidCloudZebra = AppState?.session?.role === "ZEBRA" && AppState?.session?.cloud === true && AppState?.session?.id && AppState?.session?.secret;
+    if(hasOldWorkspace && !isValidCloudZebra){
+        resetZebraWorkingState("legacy-or-local-zebra-workspace", {force:true});
+    }
 
-    header.id =
-        "zebraQuickHeader";
-
-    header.className =
-        "zebraQuickHeader";
-
-    header.innerHTML = `
-        <div class="zebraQuickHeaderMain">
-            <button id="btnZebraMenu" class="zebraMenuButton" type="button" aria-label="Open navigation">☰</button>
-            <div class="zebraQuickIdentity">
-                <span class="zebraModeEyebrow">ZEBRA RECEIVING</span>
-                <strong id="zebraQuickOrder">No order loaded</strong>
+    if(!document.getElementById("zebraHome")){
+        const home = document.createElement("section");
+        home.id = "zebraHome";
+        home.className = "zebraHome";
+        home.innerHTML = `
+            <div class="zebraBrandRow">
+                <img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true">
+                <div><strong>PharmFlow</strong><span>Zebra Workspace</span></div>
             </div>
-            <span id="zebraQuickDevice" class="zebraDeviceBadge">ZEBRA</span>
-        </div>
-        <div class="zebraQuickStats">
-            <div><span>Scans</span><strong id="zebraQuickScans">0</strong></div>
-            <div><span>Net Qty</span><strong id="zebraQuickUnits">0</strong></div>
-            <div><span>Items</span><strong id="zebraQuickItems">0</strong></div>
-        </div>
-        <button id="btnZebraQuickExport" class="primaryButton zebraQuickExport" type="button">
-            Export Zebra Session
-        </button>
-    `;
+            <div class="zebraModeIntro">
+                <span>SELECT MODE</span>
+                <h1>What are you working on?</h1>
+                <p>Only the tools needed for the selected Zebra workflow will be shown.</p>
+            </div>
+            <div class="zebraModeCards">
+                <button id="btnZebraReceivingMode" class="zebraModeCard" type="button">
+                    <span class="zebraModeIcon">▥</span>
+                    <div><strong>Receiving</strong><small>Join the PC session and count the order live.</small></div>
+                </button>
+                <button id="btnZebraExpiryMode" class="zebraModeCard" type="button">
+                    <span class="zebraModeIcon">◷</span>
+                    <div><strong>Expiry</strong><small>Scan products and capture quantity + expiry date.</small></div>
+                </button>
+            </div>
+            <button id="btnZebraSignOut" class="zebraSignOut" type="button">Sign Out</button>
+        `;
+        document.querySelector(".mainContent")?.prepend(home);
 
-    page.insertBefore(
-        header,
-        page.firstChild
-    );
-
-    document
-        .getElementById("btnZebraMenu")
-        ?.addEventListener("click", function(){
-            if(typeof openMobileSidebar === "function"){ openMobileSidebar(); }
-        });
-
-    document
-        .getElementById(
-            "btnZebraQuickExport"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-                if(
-                    typeof exportZebraSession ===
-                    "function"
-                ){
-                    exportZebraSession();
-                }
+        document.getElementById("btnZebraReceivingMode")?.addEventListener("click", function(){
+            if(AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true){
+                setZebraReceivingMode();
+            }else{
+                setZebraJoinMode();
             }
-        );
-}
-
-
-function setZebraInterfaceMode(enabled){
-
-    initializeZebraInterface();
-
-    document.body.classList.toggle(
-        "zebraMode",
-        enabled === true
-    );
-
-    refreshZebraInterface();
-}
-
-
-function refreshZebraInterface(){
-
-    const isZebra =
-        AppState.session.role ===
-        "ZEBRA";
-
-    document.body.classList.toggle(
-        "zebraMode",
-        isZebra
-    );
-
-    if(!isZebra){
-        return;
+        });
+        document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
+            setZebraExpiryMode();
+        });
+        document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
+            document.getElementById("btnLogout")?.click();
+        });
     }
 
-    const history =
-        AppState.workspace.receivingHistory || [];
+    if(!document.getElementById("zebraQuickHeader")){
+        const page = document.getElementById("page-dashboard");
+        if(page){
+            const header = document.createElement("section");
+            header.id = "zebraQuickHeader";
+            header.className = "zebraQuickHeader";
+            header.innerHTML = `
+                <div class="zebraQuickHeaderMain">
+                    <div>
+                        <span class="zebraModeEyebrow">LIVE RECEIVING</span>
+                        <strong id="zebraQuickOrder">No active order</strong>
+                    </div>
+                    <button id="btnZebraModes" class="zebraModesButton" type="button">Modes</button>
+                </div>
+                <div class="zebraQuickStats">
+                    <div><span>Scans</span><strong id="zebraQuickScans">0</strong></div>
+                    <div><span>Qty</span><strong id="zebraQuickUnits">0</strong></div>
+                    <div><span>Items</span><strong id="zebraQuickItems">0</strong></div>
+                </div>
+            `;
+            page.insertBefore(header,page.firstChild);
+            document.getElementById("btnZebraModes")?.addEventListener("click", setZebraHomeMode);
+        }
+    }
 
-    const netUnits =
-        history.reduce(
-            (sum,transaction)=>
-                sum + toNumber(transaction.quantity,0),
-            0
-        );
+    if(!document.getElementById("zebraExpiryShell")){
+        const shell = document.createElement("section");
+        shell.id = "zebraExpiryShell";
+        shell.className = "zebraExpiryShell";
+        shell.innerHTML = `
+            <div class="zebraExpiryTop"><button id="btnExpiryBackToModes" type="button">‹ Modes</button><strong>Expiry</strong></div>
+            <div class="zebraExpiryPlaceholder">
+                <span>EXPIRY WORKFLOW</span>
+                <h2>Expiry capture is reserved for the Expiry implementation phase.</h2>
+                <p>The fixed flow is: Scan → Global GTIN item → numeric quantity → numeric month → numeric year.</p>
+            </div>
+        `;
+        document.querySelector(".mainContent")?.prepend(shell);
+        document.getElementById("btnExpiryBackToModes")?.addEventListener("click", setZebraHomeMode);
+    }
 
-    const touchedItems =
-        new Set(
-            history
-                .map(transaction=>
-                    normalizeItemCode(
-                        transaction.itemCode
-                    )
-                )
-                .filter(Boolean)
-        );
-
-    setElementText(
-        document.getElementById(
-            "zebraQuickOrder"
-        ),
-        AppState.workspace.orderName ||
-        AppState.workspace.orderId ||
-        "Order"
-    );
-
-    setElementText(
-        document.getElementById(
-            "zebraQuickDevice"
-        ),
-        AppState.session.deviceId ||
-        "ZEBRA"
-    );
-
-    setElementText(
-        document.getElementById(
-            "zebraQuickScans"
-        ),
-        history.length
-    );
-
-    setElementText(
-        document.getElementById(
-            "zebraQuickUnits"
-        ),
-        netUnits
-    );
-
-    setElementText(
-        document.getElementById(
-            "zebraQuickItems"
-        ),
-        touchedItems.size
-    );
+    if(isValidCloudZebra){
+        setZebraReceivingMode();
+    }else{
+        setZebraHomeMode();
+    }
 }
 
-/* =====================================================
-   END SMART UI
-===================================================== */
+function clearZebraModeClasses(){
+    document.body.classList.remove("zebraHomeActive","zebraJoinActive","zebraReceivingActive","zebraExpiryActive","zebraMode");
+}
+function setZebraHomeMode(){
+    if(!isLikelyZebraDevice()){ return; }
+    clearZebraModeClasses();
+    document.body.classList.add("zebraHomeActive");
+}
+function setZebraJoinMode(){
+    if(!isLikelyZebraDevice()){ return; }
+    clearZebraModeClasses();
+    document.body.classList.add("zebraJoinActive");
+    document.getElementById("cloudSessionCodeInput")?.focus();
+}
+function setZebraReceivingMode(){
+    if(!isLikelyZebraDevice()){ return; }
+    clearZebraModeClasses();
+    document.body.classList.add("zebraReceivingActive","zebraMode");
+    refreshZebraInterface();
+    setTimeout(()=>focusScannerInput(),50);
+}
+function setZebraExpiryMode(){
+    if(!isLikelyZebraDevice()){ return; }
+    clearZebraModeClasses();
+    document.body.classList.add("zebraExpiryActive");
+}
+function setZebraInterfaceMode(enabled){
+    initializeZebraInterface();
+    if(enabled === true){ setZebraReceivingMode(); }
+    else{ setZebraHomeMode(); }
+}
+function refreshZebraInterface(){
+    if(!isLikelyZebraDevice()){ return; }
+    const isZebra = AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true;
+    if(!isZebra){ return; }
+
+    const history = AppState.workspace.receivingHistory || [];
+    const netUnits = history.reduce((sum,transaction)=>sum + toNumber(transaction.quantity,0),0);
+    const touchedItems = new Set(history.map(transaction=>normalizeItemCode(transaction.itemCode)).filter(Boolean));
+
+    setElementText(document.getElementById("zebraQuickOrder"),AppState.workspace.orderName || AppState.workspace.orderId || "Order");
+    setElementText(document.getElementById("zebraQuickScans"),history.length);
+    setElementText(document.getElementById("zebraQuickUnits"),netUnits);
+    setElementText(document.getElementById("zebraQuickItems"),touchedItems.size);
+}
+
