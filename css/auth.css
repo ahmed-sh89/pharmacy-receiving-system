@@ -1321,3 +1321,45 @@ body:not(.medryvoRecoveryMode) #authRecoveryForm{
 #authRecoveryTemplate{
     display:none !important;
 }
+
+
+/* ==============================================================
+   MEDRYVO PHASE 2A.4 — NEUTRAL AUTH BOOT STATE
+   No Login / Complete Access decision is rendered until Supabase
+   session + pharmacy role context have both been resolved.
+   ============================================================== */
+.authBootPanel{
+    display:none;
+    width:100%;
+    text-align:left;
+}
+
+body.authBooting #authBootPanel{
+    display:block;
+}
+
+body.authBooting #authFormsPanel,
+body.authBooting #authAccessPanel{
+    display:none !important;
+}
+
+.authBootSpinner{
+    width:38px;
+    height:38px;
+    margin:0 0 18px;
+    border:4px solid rgba(13,71,161,.14);
+    border-top-color:#0D5FE8;
+    border-radius:50%;
+    animation:medryvoAuthBootSpin .8s linear infinite;
+}
+
+@keyframes medryvoAuthBootSpin{
+    to{ transform:rotate(360deg); }
+}
+
+@media (prefers-reduced-motion:reduce){
+    .authBootSpinner{
+        animation:none;
+        border-top-color:#0D5FE8;
+    }
+}

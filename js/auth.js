@@ -54,14 +54,38 @@ async function initializeAuth(){
     }
 
     const recoveryError = handleRecoveryErrorFromUrl();
-    if(recoveryError){ return; }
+    if(recoveryError){
+        finishAuthBootState();
+        return;
+    }
 
     const recoveryMode = parseRecoverySessionFromUrl();
-    if(recoveryMode){ return; }
+    if(recoveryMode){
+        finishAuthBootState();
+        return;
+    }
 
     restoreAuthSession();
     await loadPublicSetupStatus().catch(()=>{});
+
+    // IMPORTANT:
+    // If a stored authenticated session exists, do not render an access
+    // decision here. bootstrapMedryvo() will first finish pending access,
+    // load pharmacy/role context, and only then call renderAuthState().
+    // This prevents "Complete access" from appearing during hard reload.
+    if(AuthState.session){
+        return;
+    }
+
+    finishAuthBootState();
     renderAuthState();
+}
+
+
+function finishAuthBootState(){
+    document.body.classList.remove("authBooting");
+    const bootPanel = document.getElementById("authBootPanel");
+    if(bootPanel){ bootPanel.hidden = true; }
 }
 
 function bindAuthUI(){
@@ -1266,6 +1290,8 @@ function isPharmacyAdmin(){
 }
 
 function renderAuthState(){
+    finishAuthBootState();
+
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
         lockApplicationForAuth(true);
         showAuthPanel("recovery",{history:"replace"});
@@ -1476,6 +1502,8 @@ function openDashboardAfterAuthentication(){
 }
 
 function unlockApplicationAfterAuth(){
+    finishAuthBootState();
+
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
         lockApplicationForAuth(true);
         showAuthPanel("recovery",{history:"replace"});

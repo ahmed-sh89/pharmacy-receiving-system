@@ -58,7 +58,7 @@
 </head>
 
 
-<body>
+<body class="authBooting">
 
 <!-- ==================================================
      AUTHENTICATION GATE — OWNER / ADMIN / STAFF
@@ -79,6 +79,12 @@
 
         <section class="authFormPanel">
             <div class="authFormPanelInner">
+                <div id="authBootPanel" class="authBootPanel" role="status" aria-live="polite">
+                    <div class="authBootSpinner" aria-hidden="true"></div>
+                    <span class="authEyebrow">SECURE ACCESS</span>
+                    <h2>Preparing Medryvo</h2>
+                    <p class="authLead">Checking your secure pharmacy access...</p>
+                </div>
                 <div id="authFormsPanel">
                     <div id="authLoginForm">
                         <span class="authEyebrow">SECURE ACCESS</span>
