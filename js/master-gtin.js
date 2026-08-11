@@ -82,6 +82,14 @@ async function initializeMasterGTIN(){
 
         }
 
+        /* Supabase is the source of truth. IndexedDB is only a fast
+           device cache. Pull the pharmacy-wide database after auth
+           context is available; if offline, the last local cache remains usable. */
+        if(typeof authRpc === "function" && typeof AuthState !== "undefined" && AuthState.context && AuthState.context.pharmacy_id){
+            try{ await syncGlobalMasterGTINFromCloud(); }
+            catch(error){ Logger.warn("Global GTIN sync unavailable; using local cache",error); }
+        }
+
         if(
             MasterGTINEngine.metadata.installed &&
             AppState.workspace.orderData.length > 0
@@ -187,6 +195,17 @@ async function handleMasterGTINFileSelection(event){
 
         }
 
+        if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
+            throw new Error("Pharmacy access is required to update Global GTIN");
+        }
+
+        /* Write Supabase first. A failed cloud update must never be
+           presented as a successful global update. */
+        await authRpc("replace_pharmacy_master_gtin",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_records:parsed.records
+        });
+
         const previousDbName =
             MasterGTINEngine.dbName;
 
@@ -259,7 +278,7 @@ async function handleMasterGTINFileSelection(event){
         );
 
         showToast(
-            "Master GTIN updated — " +
+            "Global GTIN updated — " +
             parsed.records.length.toLocaleString() +
             " items",
             "success"
@@ -1088,6 +1107,56 @@ function deleteMasterGTINDatabase(dbName){
     }
 }
 
+
+/* =====================================================
+   GLOBAL SUPABASE SYNC
+===================================================== */
+
+async function syncGlobalMasterGTINFromCloud(){
+    if(typeof authRpc !== "function" || !AuthState.context || !AuthState.context.pharmacy_id){
+        return false;
+    }
+
+    const result = await authRpc("get_pharmacy_master_gtin",{
+        p_pharmacy_id:AuthState.context.pharmacy_id
+    });
+    const rows = Array.isArray(result) ? result : [];
+    if(rows.length === 0){ return false; }
+
+    const records = rows.map(row=>({
+        itemCode:normalizeItemCode(row.item_code),
+        gtin:normalizeGTIN(row.gtin),
+        itemName:toSafeString(row.item_name || ""),
+        category:toSafeString(row.category || "")
+    })).filter(row=>row.itemCode && row.gtin);
+
+    if(records.length === 0){ return false; }
+
+    const previousDbName = MasterGTINEngine.dbName;
+    const newDbName = MasterGTINEngine.databasePrefix + "cloud_" + Date.now();
+    const newDb = await openMasterGTINDatabase(newDbName);
+    await writeMasterGTINRecords(newDb,records);
+
+    const updatedAt = rows.reduce((latest,row)=>{
+        const value = row.updated_at || null;
+        return !latest || (value && value > latest) ? value : latest;
+    },null);
+    const metadata = {
+        installed:true,
+        fileName:"Supabase Global GTIN",
+        updatedAt:updatedAt || nowISO(),
+        itemCount:records.length,
+        duplicateGTINCount:0
+    };
+    await writeMasterGTINMetadata(newDb,metadata);
+    localStorage.setItem(MasterGTINEngine.storagePointerKey,newDbName);
+    if(MasterGTINEngine.db){ MasterGTINEngine.db.close(); }
+    MasterGTINEngine.db = newDb;
+    MasterGTINEngine.dbName = newDbName;
+    MasterGTINEngine.metadata = metadata;
+    if(previousDbName && previousDbName !== newDbName){ deleteMasterGTINDatabase(previousDbName); }
+    return true;
+}
 
 /* =====================================================
    STATUS

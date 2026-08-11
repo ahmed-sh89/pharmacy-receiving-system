@@ -82,7 +82,7 @@
                 <div id="authBootPanel" class="authBootPanel" role="status" aria-live="polite">
                     <div class="authBootSpinner" aria-hidden="true"></div>
                     <span class="authEyebrow">SECURE ACCESS</span>
-                    <h2>Preparing Medryvo</h2>
+                    <h2>Preparing PharmFlow</h2>
                     <p class="authLead">Checking your secure pharmacy access...</p>
                 </div>
                 <div id="authFormsPanel">
@@ -580,7 +580,7 @@
 
 
                 <section class="pharmflowDashboardHero"><div class="pharmflowHeroCopy"><span class="sectionEyebrow">PHARMACY WORKSPACE</span><h2>Welcome to <span data-brand-name>PharmFlow</span></h2><p>One workspace for receiving, order tracking, expiry control and pharmacy reports.</p></div><div class="pharmflowContextCard"><div><span>Current Pharmacy</span><strong id="dashboardPharmacyName">Pharmacy</strong><small id="dashboardPharmacyCode">—</small></div><span id="dashboardUserRole" class="pharmflowRolePill">USER</span></div></section>
-                <section class="pharmflowQuickActions" aria-label="Quick actions"><button type="button" class="pharmflowQuickAction" data-page="files"><span>＋</span><div><strong>Upload Orders</strong><small>Import pharmacy orders</small></div></button><button type="button" class="pharmflowQuickAction" data-page="receiving"><span>▥</span><div><strong>Start Receiving</strong><small>Scan and receive items</small></div></button><button type="button" class="pharmflowQuickAction" data-page="reports"><span>▤</span><div><strong>Reports</strong><small>Review receiving activity</small></div></button><button type="button" class="pharmflowQuickAction" data-page="settings"><span>⚙</span><div><strong>Workspace</strong><small>Pharmacy settings</small></div></button></section>
+                <section class="pharmflowQuickActions" aria-label="Quick actions"><button type="button" class="pharmflowQuickAction" data-page="receiving"><span>▥</span><div><strong>Start Receiving</strong><small>Scan and receive items</small></div></button><button type="button" class="pharmflowQuickAction" data-page="reports"><span>▤</span><div><strong>Reports</strong><small>Review receiving activity</small></div></button><button type="button" class="pharmflowQuickAction" data-page="settings"><span>⚙</span><div><strong>Workspace</strong><small>Pharmacy settings</small></div></button></section>
 
                 <!-- SCAN AREA -->
 
@@ -1249,107 +1249,7 @@
                     </section>
 
 
-                    <!-- MASTER GTIN DATABASE -->
 
-                    <section class="contentCard masterGTINCard">
-
-                        <div class="cardHeader">
-
-                            <div>
-
-                                <span class="sectionEyebrow">
-                                    BARCODE DATABASE
-                                </span>
-
-                                <h2>
-                                    Master GTIN Database
-                                </h2>
-
-                                <p>
-                                    Upload the pharmacy-wide GTIN file once. New orders will use it automatically.
-                                </p>
-
-                            </div>
-
-                            <button
-                                id="btnUpdateMasterGTIN"
-                                class="primaryButton"
-                                type="button"
-                            >
-                                Update Master GTIN
-                            </button>
-
-                        </div>
-
-                        <input
-                            id="masterGTINFileInput"
-                            type="file"
-                            accept=".xlsx,.xls"
-                            hidden
-                        >
-
-                        <div class="masterGTINStatusGrid">
-
-                            <div>
-                                <span>Status</span>
-                                <strong id="masterGTINStatus">Not installed</strong>
-                            </div>
-
-                            <div>
-                                <span>Master Items</span>
-                                <strong id="masterGTINItemCount">0</strong>
-                            </div>
-
-                            <div>
-                                <span>Current Order Matched</span>
-                                <strong id="masterGTINMatchedCount">0</strong>
-                            </div>
-
-                            <div>
-                                <span>Last Updated</span>
-                                <strong id="masterGTINUpdatedAt">-</strong>
-                            </div>
-
-                        </div>
-
-                        <div id="masterGTINNotice" class="masterGTINNotice">
-                            Update Master GTIN to remove the need to load a Mapping file for every order.
-                        </div>
-
-                        <details class="legacyMappingDetails">
-                            <summary>Optional fallback: Mapping Files</summary>
-
-                            <div class="legacyMappingContent">
-
-                                <button
-                                    id="btnLoadMappings"
-                                    class="secondaryButton"
-                                    type="button"
-                                >
-                                    + Add Mapping Files
-                                </button>
-
-                                <input
-                                    id="mappingFileInput"
-                                    type="file"
-                                    multiple
-                                    accept=".xlsx,.xls"
-                                    hidden
-                                >
-
-                                <div
-                                    id="mappingFilesList"
-                                    class="fileList"
-                                >
-                                    <div class="emptyState">
-                                        No fallback mapping files loaded.
-                                    </div>
-                                </div>
-
-                            </div>
-                        </details>
-
-                    </section>
 
 
                 </div>
@@ -1791,7 +1691,7 @@
                             <button id="btnRefreshCloudNow" class="secondaryButton" type="button">↻ Sync Now</button>
                             <button id="btnLeaveCloudSession" class="secondaryButton" type="button">Disconnect</button>
                         </div>
-                        <canvas id="cloudSessionQR" width="220" height="220"></canvas>
+                        <div id="cloudSessionQR" class="cloudQRCode" aria-label="Session QR code"></div>
                     </div>
                 </section>
 
@@ -2169,6 +2069,108 @@
 
                 </section>
 
+
+                    <!-- MASTER GTIN DATABASE -->
+
+                    <section class="contentCard masterGTINCard">
+
+                        <div class="cardHeader">
+
+                            <div>
+
+                                <span class="sectionEyebrow">
+                                    BARCODE DATABASE
+                                </span>
+
+                                <h2>
+                                    Global GTIN Database
+                                </h2>
+
+                                <p>
+                                    Update the pharmacy-wide GTIN database once. It is stored in Supabase and shared by authorized devices.
+                                </p>
+
+                            </div>
+
+                            <button
+                                id="btnUpdateMasterGTIN"
+                                class="primaryButton"
+                                type="button"
+                            >
+                                Update Global GTIN
+                            </button>
+
+                        </div>
+
+                        <input
+                            id="masterGTINFileInput"
+                            type="file"
+                            accept=".xlsx,.xls"
+                            hidden
+                        >
+
+                        <div class="masterGTINStatusGrid">
+
+                            <div>
+                                <span>Status</span>
+                                <strong id="masterGTINStatus">Not installed</strong>
+                            </div>
+
+                            <div>
+                                <span>Global Items</span>
+                                <strong id="masterGTINItemCount">0</strong>
+                            </div>
+
+                            <div>
+                                <span>Current Order Matched</span>
+                                <strong id="masterGTINMatchedCount">0</strong>
+                            </div>
+
+                            <div>
+                                <span>Last Updated</span>
+                                <strong id="masterGTINUpdatedAt">-</strong>
+                            </div>
+
+                        </div>
+
+                        <div id="masterGTINNotice" class="masterGTINNotice">
+                            Update Global GTIN to remove the need to load a Mapping file for every order.
+                        </div>
+
+                        <details class="legacyMappingDetails">
+                            <summary>Optional fallback: Mapping Files</summary>
+
+                            <div class="legacyMappingContent">
+
+                                <button
+                                    id="btnLoadMappings"
+                                    class="secondaryButton"
+                                    type="button"
+                                >
+                                    + Add Mapping Files
+                                </button>
+
+                                <input
+                                    id="mappingFileInput"
+                                    type="file"
+                                    multiple
+                                    accept=".xlsx,.xls"
+                                    hidden
+                                >
+
+                                <div
+                                    id="mappingFilesList"
+                                    class="fileList"
+                                >
+                                    <div class="emptyState">
+                                        No fallback mapping files loaded.
+                                    </div>
+                                </div>
+
+                            </div>
+                        </details>
+
+                    </section>
 
                 <section class="contentCard dangerZoneCard">
 
@@ -2602,7 +2604,7 @@
     src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
 ></script>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 
 <!-- ==================================================

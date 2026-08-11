@@ -360,10 +360,25 @@ function renderCloudSessionQR(){
     wrapper.classList.remove("hidden");
     const url = getCloudJoinURL();
 
-    if(window.QRCode && typeof window.QRCode.toCanvas === "function"){
-        window.QRCode.toCanvas(canvas,url,{width:220,margin:2},function(error){
-            if(error){ Logger.error("Unable to render QR",error); }
-        });
+    canvas.innerHTML = "";
+
+    if(typeof window.QRCode === "function"){
+        try{
+            new window.QRCode(canvas,{
+                text:url,
+                width:220,
+                height:220,
+                correctLevel:window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : undefined
+            });
+        }
+        catch(error){
+            Logger.error("Unable to render QR",error);
+            canvas.textContent = "QR unavailable — use Session Number";
+        }
+    }
+    else{
+        Logger.error("QR library is unavailable");
+        canvas.textContent = "QR unavailable — use Session Number";
     }
 }
 
@@ -635,7 +650,19 @@ function updateCloudConnectionUI(label){
 }
 
 function leaveCloudSession(){
+    const wasZebra = !!(AppState.session && AppState.session.role === "ZEBRA");
     stopCloudPolling();
+
+    if(wasZebra){
+        /* A Zebra session is disposable working state. Once it ends,
+           clear the local order/received quantities so a finished
+           session can never leak into the next one. Historical/cloud
+           records are not deleted by this client-side cleanup. */
+        clearCurrentWorkspace();
+        startNewWorkspace();
+        deleteWorkspaceSnapshot();
+    }
+
     AppState.session = {
         ...createEmptySession(),
         id:createSessionId(),
@@ -646,8 +673,9 @@ function leaveCloudSession(){
     };
     saveWorkspaceSnapshot();
     AppEvents.emit("session:updated");
+    AppEvents.emit("workspace:cleared");
     renderCloudSessionQR();
-    showToast("Cloud session disconnected","success");
+    showToast(wasZebra ? "Session ended — Zebra quantities cleared" : "Cloud session disconnected","success");
 }
 
 window.initializeSupabaseCloud = initializeSupabaseCloud;
