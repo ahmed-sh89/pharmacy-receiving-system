@@ -660,6 +660,27 @@ function processScannerValue(rawValue){
         );
 
 
+    /* Phase 2B.5 hard guard: Zebra Receiving is never allowed to become a
+       local-only receiving workflow. After the PC ends a session, the cloud
+       watcher clears the session; this guard prevents any later hardware scan
+       from changing local quantities until a new PC session is joined. */
+    if(
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice() &&
+        !(
+            AppState?.session?.role === "ZEBRA" &&
+            AppState?.session?.cloud === true &&
+            AppState?.session?.id &&
+            AppState?.session?.secret
+        )
+    ){
+        if(input){ input.value = ""; }
+        if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
+        showToast("Join an active PC session before scanning","warning");
+        return false;
+    }
+
+
     if(!cleaned){
 
         return false;

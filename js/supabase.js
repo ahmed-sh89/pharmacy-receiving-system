@@ -546,6 +546,26 @@ async function refreshCloudSnapshot(options = {}){
         });
 
         const rows = Array.isArray(result) ? result : [];
+
+        /* Phase 2B.5: for a Zebra that was already joined, an empty snapshot
+           means the server no longer exposes this receiving session as active.
+           Do not leave the handheld in a local-only receiving state. */
+        const zebraJoined = !!(
+            typeof isLikelyZebraDevice === "function" &&
+            isLikelyZebraDevice() &&
+            AppState.session?.role === "ZEBRA" &&
+            AppState.session?.cloud === true
+        );
+        if(zebraJoined && rows.length === 0){
+            if(typeof resetZebraWorkingState === "function"){
+                resetZebraWorkingState("server-session-ended", {force:true});
+            }
+            if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
+            updateCloudConnectionUI("SESSION ENDED");
+            showToast("PC session ended — scan locked until you join a new session","warning");
+            return false;
+        }
+
         const pendingByItem = getPendingQuantityByItem();
 
         CloudSyncEngine.applyingRemote = true;
@@ -622,6 +642,24 @@ async function refreshCloudSnapshot(options = {}){
         return true;
     }
     catch(error){
+        /* A confirmed terminal session response is different from a network
+           problem. Terminal = close Zebra immediately; network issue = preserve
+           the current work and wait for reconnection. */
+        const zebraJoined = !!(
+            typeof isLikelyZebraDevice === "function" &&
+            isLikelyZebraDevice() &&
+            AppState.session?.role === "ZEBRA"
+        );
+        if(zebraJoined && isTerminalCloudSessionError(error)){
+            Logger.info("PC session ended; closing Zebra receiving", error.message || error);
+            if(typeof resetZebraWorkingState === "function"){
+                resetZebraWorkingState("server-session-ended", {force:true});
+            }
+            if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
+            updateCloudConnectionUI("SESSION ENDED");
+            showToast("PC session ended — scan locked until you join a new session","warning");
+            return false;
+        }
         Logger.warn("Cloud snapshot refresh failed",error);
         updateCloudConnectionUI("CONNECTION ISSUE");
         return false;
@@ -681,12 +719,18 @@ function safeParseJSON(value,fallback){
 function startCloudPolling(){
     stopCloudPolling();
     if(!isCloudSessionActive()){ return; }
+    const intervalMs = (
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice() &&
+        AppState.session?.role === "ZEBRA"
+    ) ? 700 : CLOUD_CONFIG.pollIntervalMs;
+
     CloudSyncEngine.pollingTimer = setInterval(function(){
         if(document.visibilityState !== "hidden"){
             flushCloudPendingQueue();
             refreshCloudSnapshot();
         }
-    },CLOUD_CONFIG.pollIntervalMs);
+    },intervalMs);
     renderCloudSessionQR();
 }
 
