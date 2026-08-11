@@ -487,10 +487,6 @@ async function parseMasterGTINFile(file){
 
         }
 
-        if(records.length > 0){
-            break;
-        }
-
     }
 
     let duplicateGTINCount = 0;
@@ -537,7 +533,16 @@ function findMasterGTINHeader(matrix){
                     "barcode",
                     "bar code",
                     "gtin",
-                    "ean"
+                    "ean",
+                    "ean13",
+                    "ean 13",
+                    "ean14",
+                    "ean 14",
+                    "upc",
+                    "data matrix",
+                    "datamatrix",
+                    "product barcode",
+                    "item barcode"
                 ].includes(value)
             );
 
@@ -547,7 +552,17 @@ function findMasterGTINHeader(matrix){
                     "item number",
                     "item no",
                     "item code",
-                    "item"
+                    "item",
+                    "itemnumber",
+                    "itemcode",
+                    "sku",
+                    "material",
+                    "material number",
+                    "material no",
+                    "product code",
+                    "product number",
+                    "article",
+                    "article number"
                 ].includes(value)
             );
 
@@ -556,7 +571,10 @@ function findMasterGTINHeader(matrix){
                 [
                     "name",
                     "item name",
-                    "description"
+                    "description",
+                    "material description",
+                    "product description",
+                    "item description"
                 ].includes(value)
             );
 
@@ -1112,15 +1130,12 @@ async function getMasterGTINRecordByGTIN(gtin){
         return null;
     }
 
-    if(
-        (!MasterGTINEngine.db || !MasterGTINEngine.metadata.installed) &&
-        typeof syncGlobalMasterGTINFromCloud === "function"
-    ){
+    if(typeof ensureGlobalMasterGTINReady === "function"){
         try{
-            await syncGlobalMasterGTINFromCloud();
+            await ensureGlobalMasterGTINReady();
         }
         catch(error){
-            Logger.warn("Global GTIN refresh unavailable during scan",error);
+            Logger.warn("Global GTIN unavailable during scan",error);
         }
     }
 
@@ -1185,8 +1200,8 @@ function deleteMasterGTINDatabase(dbName){
    GLOBAL SUPABASE SYNC
 ===================================================== */
 
-async function syncGlobalMasterGTINFromCloud(){
-    if(typeof authRpc !== "function" || !AuthState.context || !AuthState.context.pharmacy_id){
+async function syncGlobalMasterGTINFromCloud(options = {}){
+    if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
         return false;
     }
 
@@ -1194,7 +1209,27 @@ async function syncGlobalMasterGTINFromCloud(){
         p_pharmacy_id:AuthState.context.pharmacy_id
     });
     const rows = Array.isArray(result) ? result : [];
-    if(rows.length === 0){ return false; }
+
+    /* Supabase is authoritative. If the pharmacy master is empty, do not
+       silently keep a stale device cache and pretend it is current. */
+    if(rows.length === 0){
+        if(options.allowEmpty === true){
+            const previousDbName = MasterGTINEngine.dbName;
+            if(MasterGTINEngine.db){ MasterGTINEngine.db.close(); }
+            MasterGTINEngine.db = null;
+            MasterGTINEngine.dbName = null;
+            MasterGTINEngine.metadata = {
+                installed:false,
+                fileName:"",
+                updatedAt:null,
+                itemCount:0,
+                duplicateGTINCount:0
+            };
+            localStorage.removeItem(MasterGTINEngine.storagePointerKey);
+            if(previousDbName){ deleteMasterGTINDatabase(previousDbName); }
+        }
+        return false;
+    }
 
     const records = rows.map(row=>({
         itemCode:normalizeItemCode(row.item_code),
@@ -1228,7 +1263,30 @@ async function syncGlobalMasterGTINFromCloud(){
     MasterGTINEngine.dbName = newDbName;
     MasterGTINEngine.metadata = metadata;
     if(previousDbName && previousDbName !== newDbName){ deleteMasterGTINDatabase(previousDbName); }
+
+    if(AppState.workspace.orderData && AppState.workspace.orderData.length > 0){
+        await applyMasterGTINToCurrentOrder({silent:true});
+    }
+
+    AppEvents.emit("masterGTIN:updated",getMasterGTINStatus());
     return true;
+}
+
+async function ensureGlobalMasterGTINReady(options = {}){
+    const forceCloud = options.forceCloud === true;
+
+    if(forceCloud || !MasterGTINEngine.db || !MasterGTINEngine.metadata.installed){
+        try{
+            const synced = await syncGlobalMasterGTINFromCloud({allowEmpty:forceCloud});
+            if(synced){ return true; }
+        }
+        catch(error){
+            Logger.warn("Global GTIN cloud sync failed",error);
+            if(!MasterGTINEngine.db){ throw error; }
+        }
+    }
+
+    return !!(MasterGTINEngine.db && MasterGTINEngine.metadata.installed);
 }
 
 /* =====================================================

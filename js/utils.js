@@ -33,9 +33,25 @@ function normalizeText(value){
 
 function normalizeItemCode(value){
 
-    return toSafeString(value)
+    let text = toSafeString(value)
+        .replace(/^'+/,"")
+        .replace(/\u00A0/g,"")
         .replace(/\s+/g,"")
         .toUpperCase();
+
+    /* Excel frequently stores Item Number as 1012347, 001012347,
+       1012347.0 or formatted text. Numeric-only item numbers are
+       canonicalized so Master GTIN and Order files still match even
+       when their cell formats differ. Alphanumeric SKUs are preserved. */
+    if(/^\d+\.0+$/.test(text)){
+        text = text.replace(/\.0+$/,"");
+    }
+
+    if(/^\d+$/.test(text)){
+        text = text.replace(/^0+(?=\d)/,"");
+    }
+
+    return text;
 
 }
 

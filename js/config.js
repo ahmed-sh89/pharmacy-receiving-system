@@ -180,7 +180,14 @@ const APP_CONFIG = Object.freeze({
             "item no",
             "itemno",
             "code",
-            "sku"
+            "sku",
+            "material",
+            "material number",
+            "material no",
+            "product code",
+            "product number",
+            "article",
+            "article number"
 
         ],
 
@@ -191,7 +198,10 @@ const APP_CONFIG = Object.freeze({
             "description",
             "product name",
             "productname",
-            "name"
+            "name",
+            "material description",
+            "product description",
+            "item description"
 
         ],
 
@@ -202,7 +212,13 @@ const APP_CONFIG = Object.freeze({
             "order qty",
             "order quantity",
             "qty",
-            "quantity"
+            "quantity",
+            "order qty.",
+            "ordered qty.",
+            "requested qty",
+            "requested quantity",
+            "transfer qty",
+            "shipped qty"
 
         ]
 
@@ -224,7 +240,14 @@ const APP_CONFIG = Object.freeze({
             "item no",
             "itemno",
             "code",
-            "sku"
+            "sku",
+            "material",
+            "material number",
+            "material no",
+            "product code",
+            "product number",
+            "article",
+            "article number"
 
         ],
 
@@ -237,7 +260,12 @@ const APP_CONFIG = Object.freeze({
             "ean13",
             "ean14",
             "data matrix",
-            "datamatrix"
+            "datamatrix",
+            "ean 13",
+            "ean 14",
+            "upc",
+            "product barcode",
+            "item barcode"
 
         ]
 

@@ -158,6 +158,15 @@ async function createCloudReceivingSession(){
     showLoading("Creating shared cloud session...");
 
     try{
+        /* Phase 2B.9: Supabase Global GTIN is authoritative. Refresh it
+           before the PC publishes the order to a shared Zebra session. */
+        if(typeof ensureGlobalMasterGTINReady === "function"){
+            await ensureGlobalMasterGTINReady({forceCloud:true});
+        }
+        if(typeof applyMasterGTINToCurrentOrder === "function"){
+            await applyMasterGTINToCurrentOrder({silent:true});
+        }
+
         const result = await cloudRpc("create_receiving_session",{
             p_order_number:AppState.workspace.orderId || AppState.workspace.orderName || "",
             p_order_name:AppState.workspace.orderName || AppState.workspace.orderId || "",
@@ -292,6 +301,13 @@ async function joinCloudReceivingSession(sessionCode){
             }
             if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
             throw new Error("This PC session has already ended");
+        }
+
+        /* Every Zebra pulls the same pharmacy-wide Global GTIN directly
+           from Supabase when it joins. No mapping-file upload is required
+           on the handheld. */
+        if(typeof ensureGlobalMasterGTINReady === "function"){
+            await ensureGlobalMasterGTINReady({forceCloud:true});
         }
 
         AppState.workspace.orderId = session.order_number || AppState.workspace.orderId;
