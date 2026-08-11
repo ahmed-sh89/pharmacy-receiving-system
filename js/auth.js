@@ -677,7 +677,7 @@ async function signUpInvitedUser(){
             }
         }else{
             setAuthMessage(
-                "Account created. Confirm the email if requested, then Sign In with the same email. Medryvo will claim the ADMIN assignment automatically.",
+                "Account created. Confirm the email if requested, then Sign In with the same email. PharmFlow will claim the ADMIN assignment automatically.",
                 "success"
             );
             showAuthPanel("login");
@@ -1334,6 +1334,9 @@ function renderAuthState(){
     setText("accountPharmacyName",account && account.pharmacy_name || "Pharmacy");
     setText("accountUserName",account && (account.display_name || account.email) || "User");
     setText("accountUserRole",roleText);
+    setText("dashboardPharmacyName",account && account.pharmacy_name || "Pharmacy");
+    setText("dashboardPharmacyCode",account && account.pharmacy_code || "—");
+    setText("dashboardUserRole",roleText || "USER");
     setText("settingsPharmacyName",account && account.pharmacy_name || "-");
     setText("settingsPharmacyCode",account && account.pharmacy_code || "-");
     setText("settingsSignedInUser",account && account.email || "-");
@@ -1343,7 +1346,7 @@ function renderAuthState(){
     if(ownerCard){ ownerCard.hidden = !isSystemOwner(); }
     if(isSystemOwner()){ loadOwnerControlCenter(false).catch(()=>{}); }
 
-    // Current Medryvo access model: one ADMIN per pharmacy, no staff invitations.
+    // Current PharmFlow access model: one ADMIN per pharmacy, no staff invitations.
     const memberCard = document.getElementById("memberInviteCard");
     if(memberCard){ memberCard.hidden = true; }
 

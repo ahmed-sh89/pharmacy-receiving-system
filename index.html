@@ -17,14 +17,14 @@
 
     <meta
         name="description"
-        content="Medryvo Pharmacy Operations Platform"
+        content="PharmFlow Pharmacy Operations Platform"
     >
 
-    <title>Medryvo | Pharmacy Operations Platform</title>
+    <title>PharmFlow | Pharmacy Operations Platform</title>
 
-    <link rel="icon" type="image/svg+xml" href="assets/medryvo-mark.svg">
-    <link rel="shortcut icon" href="assets/medryvo-mark.svg">
-    <link rel="apple-touch-icon" href="assets/medryvo-mark.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark.svg">
+    <link rel="shortcut icon" href="assets/pharmflow-mark.svg">
+    <link rel="apple-touch-icon" href="assets/pharmflow-mark.svg">
 
     <!-- ================================
          STYLES
@@ -66,12 +66,12 @@
 <div id="authGate" class="authGate visible">
     <div class="authShell">
 
-        <section class="authBrandPanel" aria-label="Medryvo">
+        <section class="authBrandPanel" aria-label="PharmFlow">
             <div class="authBrandMinimal">
                 <div class="authBrandLogoCard">
-                    <img src="assets/medryvo-mark.svg" alt="Medryvo">
+                    <img src="assets/pharmflow-mark.svg" alt="PharmFlow">
                 </div>
-                <div class="authBrandName">Medryvo</div>
+                <div class="authBrandName" data-brand-name>PharmFlow</div>
                 <div class="authBrandTagline">PHARMACY OPERATIONS PLATFORM</div>
             </div>
         </section>
@@ -179,7 +179,7 @@
 <div id="authRecoveryForm">
                         <span class="authEyebrow">ACCOUNT SECURITY</span>
                         <h2>Set a New Password</h2>
-                        <p class="authLead">Choose a new password for your Medryvo account.</p>
+                        <p class="authLead">Choose a new password for your PharmFlow account.</p>
                         <div class="authInfoBox authRecoveryInfo">Your recovery link is active. Enter a new password below.</div>
                         <div class="authField">
                             <label>New Password</label>
@@ -267,13 +267,13 @@
 
         <div class="sidebarBrand">
 
-            <div class="brandLogo"><svg class="medryvoLogoSvg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="capsuleBlue" x1="0" x2="1"><stop offset="0" stop-color="#0D47A1"/><stop offset="1" stop-color="#1976D2"/></linearGradient><linearGradient id="capsuleOrange" x1="0" x2="1"><stop offset="0" stop-color="#FF8A00"/><stop offset="1" stop-color="#FFB347"/></linearGradient></defs><path d="M19 9c7-7 18-7 25 0s7 18 0 25L31 47c-7 7-18 7-25 0s-7-18 0-25L19 9Z" fill="white" opacity=".08"/><g transform="rotate(45 25 28)"><rect x="16" y="7" width="18" height="42" rx="9" fill="url(#capsuleBlue)"/><path d="M16 28h18v12a9 9 0 0 1-18 0V28Z" fill="url(#capsuleOrange)"/><path d="M17 28h16" stroke="#fff" stroke-width="2"/></g><path d="M34 45l7 7 15-18" fill="none" stroke="#FF8A00" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 50h3v8h-3zm5-4h3v12h-3zm5-5h3v17h-3z" fill="#0D47A1"/></svg></div>
+            <div class="brandLogo"><img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true"></div>
 
 
             <div class="brandText">
 
-                <strong>Medryvo</strong>
-                <span>Pharmacy Operations Platform</span>
+                <strong data-brand-name>PharmFlow</strong>
+                <span data-brand-tagline>Pharmacy Operations Platform</span>
 
             </div>
 
@@ -402,6 +402,23 @@
             <button
                 class="sidebarItem"
                 type="button"
+                data-page="returnsArchive"
+            >
+
+                <span class="sidebarIcon">
+                    ↩
+                </span>
+
+                <span>
+                    Returns Archive
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
                 data-page="settings"
             >
 
@@ -492,7 +509,7 @@
                     </h1>
 
                     <p id="pageSubtitle">
-                        Pharmacy Receiving System
+                        Pharmacy Operations Platform
                     </p>
 
                 </div>
@@ -561,6 +578,9 @@
                 class="appPage active"
             >
 
+
+                <section class="pharmflowDashboardHero"><div class="pharmflowHeroCopy"><span class="sectionEyebrow">PHARMACY WORKSPACE</span><h2>Welcome to <span data-brand-name>PharmFlow</span></h2><p>One workspace for receiving, order tracking, expiry control and pharmacy reports.</p></div><div class="pharmflowContextCard"><div><span>Current Pharmacy</span><strong id="dashboardPharmacyName">Pharmacy</strong><small id="dashboardPharmacyCode">—</small></div><span id="dashboardUserRole" class="pharmflowRolePill">USER</span></div></section>
+                <section class="pharmflowQuickActions" aria-label="Quick actions"><button type="button" class="pharmflowQuickAction" data-page="files"><span>＋</span><div><strong>Upload Orders</strong><small>Import pharmacy orders</small></div></button><button type="button" class="pharmflowQuickAction" data-page="receiving"><span>▥</span><div><strong>Start Receiving</strong><small>Scan and receive items</small></div></button><button type="button" class="pharmflowQuickAction" data-page="reports"><span>▤</span><div><strong>Reports</strong><small>Review receiving activity</small></div></button><button type="button" class="pharmflowQuickAction" data-page="settings"><span>⚙</span><div><strong>Workspace</strong><small>Pharmacy settings</small></div></button></section>
 
                 <!-- SCAN AREA -->
 
@@ -1942,6 +1962,52 @@
 
 
             <!-- ==================================================
+                 RETURNS ARCHIVE PAGE
+            =================================================== -->
+
+            <section
+                id="page-returnsArchive"
+                class="appPage"
+            >
+
+                <section class="returnsArchiveIntroGrid">
+                    <article class="contentCard returnsArchiveIntroCard">
+                        <div class="returnsArchiveIcon">↩</div>
+                        <div>
+                            <span class="sectionEyebrow">REFERENCE FILES</span>
+                            <h2>Returns Archive</h2>
+                            <p>
+                                Keep Excel, PDF, image and supporting files for each return record together.
+                                PharmFlow will store the files as uploaded without reading or analysing their contents.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="contentCard returnsArchiveRulesCard">
+                        <span class="sectionEyebrow">INDEPENDENT DATA</span>
+                        <h3>Separate from Historical Data</h3>
+                        <p>
+                            Return files and return records have their own delete controls.
+                            Deleting Historical Data in Settings will not delete Returns Archive files.
+                        </p>
+                    </article>
+                </section>
+
+                <section class="contentCard returnsArchivePlaceholder">
+                    <div>
+                        <span class="sectionEyebrow">REFERENCE ARCHIVE</span>
+                        <h2>Returns storage workspace</h2>
+                        <p>
+                            The functional archive will use a simple record structure:
+                            Date + Return Number/Title + uploaded files.
+                        </p>
+                    </div>
+                </section>
+
+            </section>
+
+
+            <!-- ==================================================
                  SETTINGS PAGE
             =================================================== -->
 
@@ -2017,7 +2083,7 @@
                             </div>
                         </div>
                         <p class="settingsDescription">
-                            Each pharmacy uses one ADMIN account. You can assign an email before the ADMIN creates an account; Medryvo links it automatically when that email activates.
+                            Each pharmacy uses one ADMIN account. You can assign an email before the ADMIN creates an account; PharmFlow links it automatically when that email activates.
                         </p>
                         <div id="ownerPharmacyList" class="ownerPharmacyList">
                             <div class="registrationEmpty">Loading pharmacies...</div>
@@ -2032,7 +2098,7 @@
                         <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invitations Disabled</h2></div>
                     </div>
                     <p class="settingsDescription">
-                        Medryvo is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
+                        PharmFlow is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
                     </p>
                 </section>
 

@@ -12,10 +12,10 @@ const APP_CONFIG = Object.freeze({
     ================================================= */
 
     appName:
-        "Medryvo",
+        "PharmFlow",
 
     shortName:
-        "MDV",
+        "PF",
 
     version:
         "3.1.0",
@@ -25,6 +25,8 @@ const APP_CONFIG = Object.freeze({
 
     environment:
         "production",
+
+    brand:{ name:"PharmFlow", tagline:"Pharmacy Operations Platform", mark:"assets/pharmflow-mark.svg" },
 
 
     /* =================================================
@@ -418,13 +420,13 @@ const APP_CONFIG = Object.freeze({
     reports:{
 
         defaultFilePrefix:
-            "Medryvo_Receiving_Report",
+            "PharmFlow_Receiving_Report",
 
         itemReportFilePrefix:
-            "Medryvo_Item_Receiving_Report",
+            "PharmFlow_Item_Receiving_Report",
 
         archiveFilePrefix:
-            "Medryvo_Receiving_Archive",
+            "PharmFlow_Receiving_Archive",
 
         dateFormat:
             "yyyy-mm-dd",

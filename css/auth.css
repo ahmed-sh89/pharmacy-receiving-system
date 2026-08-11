@@ -1363,3 +1363,6 @@ body.authBooting #authAccessPanel{
         border-top-color:#0D5FE8;
     }
 }
+
+/* PHARMFLOW AUTH BRANDING — PHASE 2B */
+.authBrandLogo img{filter:drop-shadow(0 14px 28px rgba(11,94,215,.16))}.authBrandName{letter-spacing:-.035em}.authBrandPanel{background:radial-gradient(circle at 18% 18%,rgba(255,138,0,.13),transparent 17rem),linear-gradient(145deg,#071A34 0%,#0D3D79 100%)!important}

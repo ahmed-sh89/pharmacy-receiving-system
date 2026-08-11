@@ -41,6 +41,13 @@ const PharmacyApp = {
 };
 
 
+function applyBrandIdentity(){
+    const brand=APP_CONFIG.brand||{}; const name=brand.name||APP_CONFIG.appName||"PharmFlow"; const tagline=brand.tagline||"Pharmacy Operations Platform";
+    document.querySelectorAll("[data-brand-name]").forEach(el=>el.textContent=name);
+    document.querySelectorAll("[data-brand-tagline]").forEach(el=>el.textContent=tagline);
+    document.querySelectorAll(".pharmflowQuickAction[data-page]").forEach(button=>{ if(button.dataset.pharmflowBound==="1")return; button.dataset.pharmflowBound="1"; button.addEventListener("click",()=>{ if(typeof navigateTo==="function")navigateTo(button.dataset.page); }); });
+}
+
 /* =====================================================
    APPLICATION START
 ===================================================== */
@@ -52,6 +59,7 @@ window.addEventListener(
 
 async function bootstrapMedryvo(){
     try{
+        applyBrandIdentity();
         document.body.classList.add("authLocked");
 
         if(typeof initializeAuth === "function"){
@@ -84,7 +92,7 @@ async function bootstrapMedryvo(){
         await startApplication();
     }
     catch(error){
-        console.error("Medryvo authentication bootstrap failed", error);
+        console.error("PharmFlow authentication bootstrap failed", error);
         if(typeof setAuthMessage === "function"){
             setAuthMessage(error.message || "Unable to initialize secure access.", "error");
         }
