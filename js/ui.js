@@ -5377,7 +5377,13 @@ function resetZebraWorkingState(reason, options = {}){
     backupLegacyZebraWorkspace(reason);
     if(typeof stopCloudPolling === "function"){ stopCloudPolling(); }
     if(typeof clearCurrentWorkspace === "function"){ clearCurrentWorkspace(); }
-    if(typeof startNewWorkspace === "function"){ startNewWorkspace(); }
+    /* Zebra idle state must have NO order at all. startNewWorkspace() creates
+       a fresh order id, so it is intentionally not used here. */
+    AppState.workspace = typeof createEmptyWorkspace === "function"
+        ? createEmptyWorkspace()
+        : {orderId:null,orderName:"",active:false,orderFiles:[],mappingFiles:[],orderData:[],mappingData:[],receivingHistory:[],lastScan:null};
+    if(typeof resetStatistics === "function"){ resetStatistics(); }
+    if(typeof rebuildStateIndexes === "function"){ rebuildStateIndexes(); }
     if(typeof deleteWorkspaceSnapshot === "function"){ deleteWorkspaceSnapshot(); }
 
     AppState.session = {
@@ -5412,11 +5418,25 @@ function initializeZebraInterface(){
         barcodeInput.setAttribute("autocomplete","off");
     }
 
-    /* Old offline/local Zebra work must never reopen as the active screen.
-       Keep a local recovery copy, then reset the disposable working state. */
-    const hasOldWorkspace = Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0;
+    /* Phase 2B.4 one-time Zebra migration: previous builds could leave an old
+       cloud/local order attached to this handheld indefinitely. Back it up once
+       and clear it so the first screen is Modes, with no phantom Order Number. */
+    const zebraMigrationKey = "PRS_V3_ZEBRA_PHASE2B4_CLEANED";
+    let migrated = false;
+    try{ migrated = localStorage.getItem(zebraMigrationKey) === "1"; }catch(_){ migrated = false; }
+
+    const hasOldWorkspace = !!(
+        AppState?.workspace?.orderId ||
+        AppState?.workspace?.orderName ||
+        (Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0) ||
+        (Array.isArray(AppState?.workspace?.receivingHistory) && AppState.workspace.receivingHistory.length > 0)
+    );
     const isValidCloudZebra = AppState?.session?.role === "ZEBRA" && AppState?.session?.cloud === true && AppState?.session?.id && AppState?.session?.secret;
-    if(hasOldWorkspace && !isValidCloudZebra){
+
+    if(!migrated){
+        resetZebraWorkingState("phase2b4-one-time-stale-session-cleanup", {force:true});
+        try{ localStorage.setItem(zebraMigrationKey,"1"); }catch(_){ }
+    }else if(hasOldWorkspace && !isValidCloudZebra){
         resetZebraWorkingState("legacy-or-local-zebra-workspace", {force:true});
     }
 
@@ -5459,8 +5479,31 @@ function initializeZebraInterface(){
             setZebraExpiryMode();
         });
         document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
+            const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
+            if(pending > 0){
+                showToast("Sync pending Zebra work before signing out","warning");
+                return;
+            }
+            /* Signing out detaches this handheld from the old order/session. */
+            resetZebraWorkingState("zebra-sign-out", {force:true});
             document.getElementById("btnLogout")?.click();
         });
+    }
+
+
+    if(!document.getElementById("zebraJoinHeader")){
+        const hero = document.querySelector("#page-sessions .cloudSessionHero");
+        if(hero){
+            const joinHeader = document.createElement("div");
+            joinHeader.id = "zebraJoinHeader";
+            joinHeader.className = "zebraJoinHeader";
+            joinHeader.innerHTML = `
+                <button id="btnZebraJoinBack" type="button">‹ Modes</button>
+                <div><span>RECEIVING</span><strong>Join PC Session</strong></div>
+            `;
+            hero.prepend(joinHeader);
+            document.getElementById("btnZebraJoinBack")?.addEventListener("click", setZebraHomeMode);
+        }
     }
 
     if(!document.getElementById("zebraQuickHeader")){
@@ -5476,11 +5519,6 @@ function initializeZebraInterface(){
                         <strong id="zebraQuickOrder">No active order</strong>
                     </div>
                     <button id="btnZebraModes" class="zebraModesButton" type="button">Modes</button>
-                </div>
-                <div class="zebraQuickStats">
-                    <div><span>Scans</span><strong id="zebraQuickScans">0</strong></div>
-                    <div><span>Qty</span><strong id="zebraQuickUnits">0</strong></div>
-                    <div><span>Items</span><strong id="zebraQuickItems">0</strong></div>
                 </div>
             `;
             page.insertBefore(header,page.firstChild);
@@ -5504,11 +5542,10 @@ function initializeZebraInterface(){
         document.getElementById("btnExpiryBackToModes")?.addEventListener("click", setZebraHomeMode);
     }
 
-    if(isValidCloudZebra){
-        setZebraReceivingMode();
-    }else{
-        setZebraHomeMode();
-    }
+    /* Never expose a restored order before cloud validation. New sign-in starts
+       from Modes; validateRestoredZebraCloudSession() may resume a genuinely
+       active session after Supabase confirms it. */
+    setZebraHomeMode();
 }
 
 function clearZebraModeClasses(){
@@ -5547,13 +5584,9 @@ function refreshZebraInterface(){
     const isZebra = AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true;
     if(!isZebra){ return; }
 
-    const history = AppState.workspace.receivingHistory || [];
-    const netUnits = history.reduce((sum,transaction)=>sum + toNumber(transaction.quantity,0),0);
-    const touchedItems = new Set(history.map(transaction=>normalizeItemCode(transaction.itemCode)).filter(Boolean));
-
-    setElementText(document.getElementById("zebraQuickOrder"),AppState.workspace.orderName || AppState.workspace.orderId || "Order");
-    setElementText(document.getElementById("zebraQuickScans"),history.length);
-    setElementText(document.getElementById("zebraQuickUnits"),netUnits);
-    setElementText(document.getElementById("zebraQuickItems"),touchedItems.size);
+    setElementText(
+        document.getElementById("zebraQuickOrder"),
+        AppState.workspace.orderName || AppState.workspace.orderId || "Active order"
+    );
 }
 

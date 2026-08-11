@@ -367,14 +367,16 @@ function renderCloudSessionQR(){
     }
 
     wrapper.classList.remove("hidden");
-    const url = getCloudJoinURL();
+    /* Zebra hardware scanners should receive only the numeric Session Number.
+       A URL can contain unrelated digits and break numeric join parsing. */
+    const qrPayload = String(AppState.session.code || "");
 
     canvas.innerHTML = "";
 
     if(typeof window.QRCode === "function"){
         try{
             new window.QRCode(canvas,{
-                text:url,
+                text:qrPayload,
                 width:220,
                 height:220,
                 correctLevel:window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.M : undefined
