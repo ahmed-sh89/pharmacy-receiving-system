@@ -485,7 +485,7 @@ function looksLikeStrongBarcode(value){
     */
 
     if(
-        /^\]d2/i.test(
+        /^\](?:C1|d2|Q3)/i.test(
             raw
         )
     ){
@@ -987,6 +987,28 @@ function cleanScannerInput(value){
             .replace(
                 /<GS>/gi,
                 "\x1D"
+            )
+            /*
+               Zebra/DataWedge may expose the GS1 separator as ~, ~~
+               or \~ depending on profile / browser keyboard handling.
+               Arabic keyboard output may also surface the separator as
+               the shadda mark (U+0651). Normalize all of these to FNC1/GS.
+            */
+            .replace(
+                /\\?~+/g,
+                "\x1D"
+            )
+            .replace(
+                /\u0651+/g,
+                "\x1D"
+            )
+            /*
+               Strip common AIM symbology identifiers.
+               ]C1 = GS1-128, ]d2 = GS1 DataMatrix, ]Q3 = GS1 QR.
+            */
+            .replace(
+                /^\](?:C1|d2|Q3)/i,
+                ""
             )
             .trim();
 
