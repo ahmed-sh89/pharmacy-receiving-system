@@ -285,6 +285,15 @@ async function joinCloudReceivingSession(sessionCode){
             pendingQueue:[]
         };
 
+        /* Do not allow a Zebra to re-join a session that the PC has already ended. */
+        if(await isCloudSessionTerminatedOnServer()){
+            if(typeof resetZebraWorkingState === "function"){
+                resetZebraWorkingState("attempted-join-to-ended-session",{force:true});
+            }
+            if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
+            throw new Error("This PC session has already ended");
+        }
+
         AppState.workspace.orderId = session.order_number || AppState.workspace.orderId;
         AppState.workspace.orderName = session.order_name || AppState.workspace.orderName || session.order_number || "Shared Order";
         AppState.workspace.active = true;
@@ -532,6 +541,67 @@ function getPendingQuantityByItem(){
     return map;
 }
 
+
+/* =====================================================
+   PHASE 2B.6 — SERVER TERMINATION SIGNAL
+
+   The legacy shared-session RPC keeps returning the last snapshot even after
+   the PC locally disconnects. A tiny server-side termination registry gives
+   every device one authoritative end-of-session signal without changing the
+   existing receiving tables/RPCs.
+===================================================== */
+
+async function isCloudSessionTerminatedOnServer(){
+    if(!isCloudSessionActive() || !navigator.onLine){
+        return false;
+    }
+
+    const result = await cloudRpc("pharmflow_is_session_ended",{
+        p_session_id:String(AppState.session.id || ""),
+        p_session_secret:String(AppState.session.secret || "")
+    });
+
+    if(Array.isArray(result)){
+        const row = result[0];
+        if(typeof row === "boolean"){ return row; }
+        if(row && typeof row.ended !== "undefined"){ return row.ended === true; }
+        if(row && typeof row.is_ended !== "undefined"){ return row.is_ended === true; }
+        return false;
+    }
+
+    if(typeof result === "boolean"){ return result; }
+    if(result && typeof result.ended !== "undefined"){ return result.ended === true; }
+    if(result && typeof result.is_ended !== "undefined"){ return result.is_ended === true; }
+    return false;
+}
+
+async function markCloudSessionEndedOnServer(){
+    if(!isCloudSessionActive()){
+        return true;
+    }
+    if(!navigator.onLine){
+        throw new Error("Internet connection is required to end the shared session");
+    }
+
+    await cloudRpc("pharmflow_end_session",{
+        p_session_id:String(AppState.session.id || ""),
+        p_session_secret:String(AppState.session.secret || ""),
+        p_ended_by_device:String(AppState.session.deviceId || ensureDeviceId() || "PC")
+    });
+    return true;
+}
+
+function terminateZebraFromServer(reason = "server-session-ended"){
+    if(typeof resetZebraWorkingState === "function"){
+        resetZebraWorkingState(reason,{force:true});
+    }
+    if(typeof setZebraHomeMode === "function"){
+        setZebraHomeMode();
+    }
+    updateCloudConnectionUI("SESSION ENDED");
+    showToast("PC session ended — scan locked until you join a new session","warning");
+}
+
 async function refreshCloudSnapshot(options = {}){
     if(!isCloudSessionActive() || !navigator.onLine || CloudSyncEngine.pollRunning){
         return false;
@@ -540,6 +610,18 @@ async function refreshCloudSnapshot(options = {}){
     CloudSyncEngine.pollRunning = true;
 
     try{
+        const zebraJoinedForEndCheck = !!(
+            typeof isLikelyZebraDevice === "function" &&
+            isLikelyZebraDevice() &&
+            AppState.session?.role === "ZEBRA" &&
+            AppState.session?.cloud === true
+        );
+
+        if(zebraJoinedForEndCheck && await isCloudSessionTerminatedOnServer()){
+            terminateZebraFromServer("server-termination-signal");
+            return false;
+        }
+
         const result = await cloudRpc("get_session_snapshot",{
             p_session_id:AppState.session.id,
             p_session_secret:AppState.session.secret
@@ -688,6 +770,11 @@ async function validateRestoredZebraCloudSession(){
     }
 
     try{
+        if(await isCloudSessionTerminatedOnServer()){
+            terminateZebraFromServer("restored-session-termination-signal");
+            return false;
+        }
+
         const result = await cloudRpc("get_session_snapshot",{
             p_session_id:AppState.session.id,
             p_session_secret:AppState.session.secret
@@ -746,26 +833,54 @@ function updateCloudConnectionUI(label){
     if(element){ element.textContent = label || "-"; }
 }
 
-function leaveCloudSession(){
+async function leaveCloudSession(){
     const wasZebra = !!(AppState.session && AppState.session.role === "ZEBRA");
-    stopCloudPolling();
+    const wasPC = !!(AppState.session && AppState.session.role === "PC" && AppState.session.cloud === true);
 
+    /* Zebra leaving Receiving must only detach that handheld. It must never end
+       the PC-owned shared session for other devices. */
     if(wasZebra){
+        stopCloudPolling();
         const pending = Array.isArray(AppState.session.pendingQueue) ? AppState.session.pendingQueue.length : 0;
         if(pending > 0){
-            showToast("Sync pending Zebra work before ending this session","warning");
+            showToast("Sync pending Zebra work before leaving this session","warning");
             startCloudPolling();
             return false;
         }
         if(typeof resetZebraWorkingState === "function"){
-            resetZebraWorkingState("zebra-session-ended", {force:true});
-            if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
-            renderCloudSessionQR();
-            showToast("Session ended — Zebra is ready for a new task","success");
-            return true;
+            resetZebraWorkingState("zebra-session-left",{force:true});
+        }
+        if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
+        renderCloudSessionQR();
+        showToast("Zebra disconnected — ready for a new task","success");
+        return true;
+    }
+
+    /* PC Disconnect is the authoritative END SESSION action. Do not clear the
+       PC locally until Supabase has recorded the termination. Otherwise Zebra
+       would continue accepting scans against a session the PC can no longer see. */
+    if(wasPC){
+        if(!navigator.onLine){
+            showToast("Internet connection is required to end the shared session","warning");
+            return false;
+        }
+
+        try{
+            showLoading("Ending shared session...");
+            await flushCloudPendingQueue();
+            await markCloudSessionEndedOnServer();
+        }
+        catch(error){
+            Logger.error("Unable to end shared session on server",error);
+            showToast(error.message || "Unable to end shared session — please try again","error");
+            return false;
+        }
+        finally{
+            hideLoading();
         }
     }
 
+    stopCloudPolling();
     AppState.session = {
         ...createEmptySession(),
         id:createSessionId(),
@@ -778,7 +893,8 @@ function leaveCloudSession(){
     AppEvents.emit("session:updated");
     AppEvents.emit("workspace:cleared");
     renderCloudSessionQR();
-    showToast(wasZebra ? "Session ended — Zebra quantities cleared" : "Cloud session disconnected","success");
+    showToast(wasPC ? "Shared session ended on all devices" : "Cloud session disconnected","success");
+    return true;
 }
 
 window.initializeSupabaseCloud = initializeSupabaseCloud;
@@ -788,3 +904,5 @@ window.refreshCloudSnapshot = refreshCloudSnapshot;
 window.flushCloudPendingQueue = flushCloudPendingQueue;
 window.renderCloudSessionQR = renderCloudSessionQR;
 window.leaveCloudSession = leaveCloudSession;
+window.isCloudSessionTerminatedOnServer = isCloudSessionTerminatedOnServer;
+window.markCloudSessionEndedOnServer = markCloudSessionEndedOnServer;
