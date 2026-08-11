@@ -19,14 +19,15 @@ const MasterGTINEngine = {
     dbName:null,
     recordsStore:"records",
     metaStore:"metadata",
-    storagePointerKey:"pharmacy_master_gtin_active_db_v1",
-    databasePrefix:"pharmacy_master_gtin_v1_",
+    storagePointerKey:"pharmacy_master_gtin_active_db_v2",
+    databasePrefix:"pharmacy_master_gtin_v2_",
     metadata:{
         installed:false,
         fileName:"",
         updatedAt:null,
         itemCount:0,
-        duplicateGTINCount:0
+        duplicateGTINCount:0,
+        cloudVersion:""
     },
     currentOrder:{
         matchedItems:0,
@@ -199,12 +200,13 @@ async function handleMasterGTINFileSelection(event){
             throw new Error("Pharmacy access is required to update Global GTIN");
         }
 
-        /* Write Supabase first. A failed cloud update must never be
-           presented as a successful global update. */
-        await authRpc("replace_pharmacy_master_gtin",{
-            p_pharmacy_id:AuthState.context.pharmacy_id,
-            p_records:parsed.records
-        });
+        /* Phase 2B.9.1: large masters are uploaded in chunks to a staging
+           import and committed atomically. This avoids oversized RPC payloads
+           and keeps the previous Global GTIN active until the whole file is ready. */
+        const cloudCommit = await uploadGlobalMasterGTINInChunks(
+            parsed.records,
+            file.name
+        );
 
         const previousDbName =
             MasterGTINEngine.dbName;
@@ -229,7 +231,11 @@ async function handleMasterGTINFileSelection(event){
             updatedAt:nowISO(),
             itemCount:parsed.records.length,
             duplicateGTINCount:
-                parsed.duplicateGTINCount
+                parsed.duplicateGTINCount,
+            cloudVersion:
+                cloudCommit && cloudCommit.version
+                ? String(cloudCommit.version)
+                : ""
         };
 
         await writeMasterGTINMetadata(
@@ -328,184 +334,66 @@ async function handleMasterGTINFileSelection(event){
 
 async function parseMasterGTINFile(file){
 
-    validateMasterGTINExcelFile(
-        file
-    );
+    validateMasterGTINExcelFile(file);
 
-    const buffer =
-        await file.arrayBuffer();
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer,{
+        type:"array",
+        cellDates:false,
+        cellText:true,
+        cellNF:true
+    });
 
-    const workbook =
-        XLSX.read(
-            buffer,
-            {
-                type:"array",
-                cellDates:false,
-                cellText:true,
-                cellNF:true
-            }
-        );
-
-    const records = [];
-
-    const seenItemCodes =
-        new Set();
-
-    const gtinOwners =
-        new Map();
+    /* Preserve every unique Item Number + GTIN pair. One item can legitimately
+       have more than one barcode, and the central master must not discard them. */
+    const recordMap = new Map();
+    const gtinOwners = new Map();
 
     for(const sheetName of workbook.SheetNames){
+        const worksheet = workbook.Sheets[sheetName];
+        if(!worksheet || !worksheet["!ref"]){ continue; }
 
-        const worksheet =
-            workbook.Sheets[sheetName];
-
-        if(!worksheet || !worksheet["!ref"]){
-            continue;
-        }
-
-        const decoded =
-            XLSX.utils.decode_range(
-                worksheet["!ref"]
-            );
-
-        /*
-           Read a practical header/data window so Category can
-           be imported together with Barcode, Item Number and Name.
-           The pharmacy master can contain 50k+ rows, so we still
-           cap the inspected columns for good mobile performance.
-        */
+        const decoded = XLSX.utils.decode_range(worksheet["!ref"]);
         const range = {
             s:{r:decoded.s.r,c:0},
             e:{r:decoded.e.r,c:Math.min(decoded.e.c,24)}
         };
+        const matrix = XLSX.utils.sheet_to_json(worksheet,{
+            header:1,
+            defval:"",
+            raw:false,
+            range:range,
+            blankrows:false
+        });
+        if(matrix.length < 2){ continue; }
 
-        const matrix =
-            XLSX.utils.sheet_to_json(
-                worksheet,
-                {
-                    header:1,
-                    defval:"",
-                    raw:false,
-                    range:range,
-                    blankrows:false
-                }
-            );
+        const header = findMasterGTINHeader(matrix);
+        if(!header){ continue; }
 
-        if(matrix.length < 2){
-            continue;
+        for(let rowIndex=header.rowIndex+1; rowIndex<matrix.length; rowIndex++){
+            const row = matrix[rowIndex] || [];
+            const gtin = normalizeBarcodeFromExcel(row[header.gtin]);
+            const itemCode = normalizeItemCode(row[header.itemCode]);
+            const itemName = toSafeString(row[header.itemName]);
+            const category = header.category >= 0 ? toSafeString(row[header.category]) : "";
+            if(!gtin || !itemCode){ continue; }
+
+            const key = itemCode + "|" + gtin;
+            recordMap.set(key,{itemCode,gtin,itemName,category});
+
+            if(!gtinOwners.has(gtin)){ gtinOwners.set(gtin,new Set()); }
+            gtinOwners.get(gtin).add(itemCode);
         }
-
-        const header =
-            findMasterGTINHeader(
-                matrix
-            );
-
-        if(!header){
-            continue;
-        }
-
-        for(
-            let rowIndex = header.rowIndex + 1;
-            rowIndex < matrix.length;
-            rowIndex++
-        ){
-
-            const row =
-                matrix[rowIndex];
-
-            const gtin =
-                normalizeBarcodeFromExcel(
-                    row[header.gtin]
-                );
-
-            const itemCode =
-                normalizeItemCode(
-                    row[header.itemCode]
-                );
-
-            const itemName =
-                toSafeString(
-                    row[header.itemName]
-                );
-
-            const category =
-                header.category >= 0
-                ? toSafeString(row[header.category])
-                : "";
-
-            if(!gtin || !itemCode){
-                continue;
-            }
-
-            /*
-               Item Number is the primary key. If the same
-               Item Number is accidentally repeated in a
-               file, keep the last valid row as the latest.
-            */
-            if(seenItemCodes.has(itemCode)){
-
-                const previousIndex =
-                    records.findIndex(
-                        record=>
-                            record.itemCode === itemCode
-                    );
-
-                if(previousIndex >= 0){
-
-                    records[previousIndex] = {
-                        itemCode:itemCode,
-                        gtin:gtin,
-                        itemName:itemName,
-                        category:category
-                    };
-
-                }
-
-            }
-            else{
-
-                seenItemCodes.add(
-                    itemCode
-                );
-
-                records.push({
-                    itemCode:itemCode,
-                    gtin:gtin,
-                    itemName:itemName,
-                    category:category
-                });
-
-            }
-
-            if(!gtinOwners.has(gtin)){
-                gtinOwners.set(gtin,new Set());
-            }
-
-            gtinOwners
-                .get(gtin)
-                .add(itemCode);
-
-        }
-
     }
 
     let duplicateGTINCount = 0;
-
-    gtinOwners.forEach(itemCodes=>{
-
-        if(itemCodes.size > 1){
-            duplicateGTINCount++;
-        }
-
-    });
+    gtinOwners.forEach(itemCodes=>{ if(itemCodes.size > 1){ duplicateGTINCount++; } });
 
     return {
-        records:records,
-        duplicateGTINCount:
-            duplicateGTINCount
+        records:Array.from(recordMap.values()),
+        duplicateGTINCount
     };
 }
-
 
 function findMasterGTINHeader(matrix){
 
@@ -800,73 +688,33 @@ async function applyMasterGTINToCurrentOrder(
 
 
 async function applyMasterGTINForItemCode(itemCode){
+    if(!MasterGTINEngine.db || !MasterGTINEngine.metadata.installed){ return false; }
+    const code=normalizeItemCode(itemCode);
+    if(!code){ return false; }
+    const records=await getMasterGTINRecordsByItemCodes(MasterGTINEngine.db,[code]);
+    if(records.length===0){ return false; }
 
-    if(
-        !MasterGTINEngine.db ||
-        !MasterGTINEngine.metadata.installed
-    ){
-        return false;
-    }
+    const orderItem=AppState.indexes.itemByCode.get(code);
+    const categoryRecord=records.find(record=>record.category);
+    if(orderItem && categoryRecord){ orderItem.category=categoryRecord.category; }
 
-    const code =
-        normalizeItemCode(
-            itemCode
+    let added=false;
+    for(const record of records){
+        const conflict=AppState.workspace.mappingData.some(mapping=>
+            normalizeGTIN(mapping.gtin)===record.gtin && normalizeItemCode(mapping.itemCode)!==code
         );
-
-    if(!code){
-        return false;
-    }
-
-    const records =
-        await getMasterGTINRecordsByItemCodes(
-            MasterGTINEngine.db,
-            [code]
+        if(conflict){ continue; }
+        const exists=AppState.workspace.mappingData.some(mapping=>
+            normalizeGTIN(mapping.gtin)===record.gtin && normalizeItemCode(mapping.itemCode)===code
         );
-
-    if(records.length === 0){
-        return false;
+        if(!exists){
+            AppState.workspace.mappingData.push({itemCode:code,gtin:record.gtin,source:"MASTER"});
+            added=true;
+        }
     }
-
-    const record =
-        records[0];
-
-    const orderItem = AppState.indexes.itemByCode.get(code);
-    if(orderItem && record.category){
-        orderItem.category = record.category;
-    }
-
-    const conflict =
-        AppState.workspace.mappingData.some(mapping=>
-            normalizeGTIN(mapping.gtin) === record.gtin &&
-            normalizeItemCode(mapping.itemCode) !== code
-        );
-
-    if(conflict){
-        return false;
-    }
-
-    const exists =
-        AppState.workspace.mappingData.some(mapping=>
-            normalizeGTIN(mapping.gtin) === record.gtin &&
-            normalizeItemCode(mapping.itemCode) === code
-        );
-
-    if(!exists){
-
-        AppState.workspace.mappingData.push({
-            itemCode:code,
-            gtin:record.gtin,
-            source:"MASTER"
-        });
-
-        rebuildStateIndexes();
-        AppEvents.emit("files:updated");
-
-    }
-
-    return true;
+    if(added){ rebuildStateIndexes(); AppEvents.emit("files:updated"); }
+    return added || records.length>0;
 }
-
 
 /* =====================================================
    INDEXEDDB HELPERS
@@ -875,242 +723,98 @@ async function applyMasterGTINForItemCode(itemCode){
 function openMasterGTINDatabase(dbName){
 
     return new Promise((resolve,reject)=>{
-
         if(!("indexedDB" in window)){
             reject(new Error("IndexedDB is not supported"));
             return;
         }
 
-        const request =
-            indexedDB.open(
-                dbName,
-                1
-            );
-
-        request.onupgradeneeded =
-            function(event){
-
-                const db =
-                    event.target.result;
-
-                if(!db.objectStoreNames.contains(
-                    MasterGTINEngine.recordsStore
-                )){
-
-                    const store =
-                        db.createObjectStore(
-                            MasterGTINEngine.recordsStore,
-                            {
-                                keyPath:"itemCode"
-                            }
-                        );
-
-                    store.createIndex(
-                        "gtin",
-                        "gtin",
-                        {
-                            unique:false
-                        }
-                    );
-
-                }
-
-                if(!db.objectStoreNames.contains(
-                    MasterGTINEngine.metaStore
-                )){
-
-                    db.createObjectStore(
-                        MasterGTINEngine.metaStore,
-                        {
-                            keyPath:"key"
-                        }
-                    );
-
-                }
-
-            };
-
-        request.onsuccess =
-            ()=>resolve(request.result);
-
-        request.onerror =
-            ()=>reject(
-                request.error ||
-                new Error("Unable to open Master GTIN database")
-            );
-
+        const request = indexedDB.open(dbName,1);
+        request.onupgradeneeded = function(event){
+            const db = event.target.result;
+            if(!db.objectStoreNames.contains(MasterGTINEngine.recordsStore)){
+                const store = db.createObjectStore(MasterGTINEngine.recordsStore,{keyPath:"key"});
+                store.createIndex("itemCode","itemCode",{unique:false});
+                store.createIndex("gtin","gtin",{unique:false});
+            }
+            if(!db.objectStoreNames.contains(MasterGTINEngine.metaStore)){
+                db.createObjectStore(MasterGTINEngine.metaStore,{keyPath:"key"});
+            }
+        };
+        request.onsuccess = ()=>resolve(request.result);
+        request.onerror = ()=>reject(request.error || new Error("Unable to open Master GTIN database"));
     });
 }
 
-
 async function writeMasterGTINRecords(db,records){
-
     const batchSize = 2000;
-
-    for(
-        let start = 0;
-        start < records.length;
-        start += batchSize
-    ){
-
-        const batch =
-            records.slice(
-                start,
-                start + batchSize
-            );
-
+    for(let start=0; start<records.length; start+=batchSize){
+        const batch = records.slice(start,start+batchSize);
         await new Promise((resolve,reject)=>{
-
-            const tx =
-                db.transaction(
-                    MasterGTINEngine.recordsStore,
-                    "readwrite"
-                );
-
-            const store =
-                tx.objectStore(
-                    MasterGTINEngine.recordsStore
-                );
-
+            const tx = db.transaction(MasterGTINEngine.recordsStore,"readwrite");
+            const store = tx.objectStore(MasterGTINEngine.recordsStore);
             batch.forEach(record=>{
-                store.put(record);
+                const itemCode = normalizeItemCode(record.itemCode);
+                const gtin = normalizeGTIN(record.gtin);
+                if(!itemCode || !gtin){ return; }
+                store.put({
+                    ...record,
+                    itemCode,
+                    gtin,
+                    key:itemCode + "|" + gtin
+                });
             });
-
-            tx.oncomplete =
-                ()=>resolve();
-
-            tx.onerror =
-                ()=>reject(
-                    tx.error ||
-                    new Error("Unable to write Master GTIN records")
-                );
-
-            tx.onabort =
-                ()=>reject(
-                    tx.error ||
-                    new Error("Master GTIN write was aborted")
-                );
-
+            tx.oncomplete=()=>resolve();
+            tx.onerror=()=>reject(tx.error || new Error("Unable to write Master GTIN records"));
+            tx.onabort=()=>reject(tx.error || new Error("Master GTIN write was aborted"));
         });
-
     }
 }
 
-
 function writeMasterGTINMetadata(db,metadata){
-
     return new Promise((resolve,reject)=>{
-
-        const tx =
-            db.transaction(
-                MasterGTINEngine.metaStore,
-                "readwrite"
-            );
-
-        tx.objectStore(
-            MasterGTINEngine.metaStore
-        ).put({
-            key:"master",
-            ...metadata
-        });
-
-        tx.oncomplete = ()=>resolve();
-        tx.onerror = ()=>reject(tx.error);
-        tx.onabort = ()=>reject(tx.error);
-
+        const tx=db.transaction(MasterGTINEngine.metaStore,"readwrite");
+        tx.objectStore(MasterGTINEngine.metaStore).put({key:"master",...metadata});
+        tx.oncomplete=()=>resolve();
+        tx.onerror=()=>reject(tx.error);
+        tx.onabort=()=>reject(tx.error);
     });
 }
-
 
 function readMasterGTINMetadata(db){
-
     return new Promise((resolve,reject)=>{
-
-        const tx =
-            db.transaction(
-                MasterGTINEngine.metaStore,
-                "readonly"
-            );
-
-        const request =
-            tx.objectStore(
-                MasterGTINEngine.metaStore
-            ).get("master");
-
-        request.onsuccess =
-            ()=>resolve(request.result || null);
-
-        request.onerror =
-            ()=>reject(request.error);
-
+        const tx=db.transaction(MasterGTINEngine.metaStore,"readonly");
+        const request=tx.objectStore(MasterGTINEngine.metaStore).get("master");
+        request.onsuccess=()=>resolve(request.result || null);
+        request.onerror=()=>reject(request.error);
     });
 }
 
-
-function getMasterGTINRecordsByItemCodes(
-    db,
-    itemCodes
-){
-
+function getMasterGTINRecordsByItemCodes(db,itemCodes){
     return new Promise((resolve,reject)=>{
+        const codes=Array.from(new Set((itemCodes||[]).map(normalizeItemCode).filter(Boolean)));
+        if(codes.length===0){ resolve([]); return; }
+        const tx=db.transaction(MasterGTINEngine.recordsStore,"readonly");
+        const store=tx.objectStore(MasterGTINEngine.recordsStore);
+        const index=store.index("itemCode");
+        const results=[];
+        let remaining=codes.length;
+        let failed=false;
 
-        if(itemCodes.length === 0){
-            resolve([]);
-            return;
-        }
-
-        const tx =
-            db.transaction(
-                MasterGTINEngine.recordsStore,
-                "readonly"
-            );
-
-        const store =
-            tx.objectStore(
-                MasterGTINEngine.recordsStore
-            );
-
-        const results = [];
-        let remaining = itemCodes.length;
-        let failed = false;
-
-        itemCodes.forEach(itemCode=>{
-
-            const request =
-                store.get(itemCode);
-
-            request.onsuccess =
-                function(){
-
-                    if(request.result){
-                        results.push(request.result);
-                    }
-
-                    remaining--;
-
-                    if(remaining === 0 && !failed){
-                        resolve(results);
-                    }
-
-                };
-
-            request.onerror =
-                function(){
-
-                    if(failed){
-                        return;
-                    }
-
-                    failed = true;
-                    reject(request.error);
-
-                };
-
+        codes.forEach(code=>{
+            const request=index.getAll(code);
+            request.onsuccess=()=>{
+                if(Array.isArray(request.result)){ results.push(...request.result); }
+                remaining--;
+                if(remaining===0 && !failed){ resolve(results); }
+            };
+            request.onerror=()=>{
+                if(failed){ return; }
+                failed=true;
+                reject(request.error);
+            };
         });
-
     });
 }
-
 
 /* =====================================================
    DIRECT GLOBAL GTIN LOOKUP
@@ -1123,64 +827,38 @@ function getMasterGTINRecordsByItemCodes(
 ===================================================== */
 
 async function getMasterGTINRecordByGTIN(gtin){
-
-    const normalized = normalizeGTIN(gtin);
-
-    if(!normalized){
-        return null;
-    }
+    const normalized=normalizeGTIN(gtin);
+    if(!normalized){ return null; }
 
     if(typeof ensureGlobalMasterGTINReady === "function"){
-        try{
-            await ensureGlobalMasterGTINReady();
-        }
-        catch(error){
-            Logger.warn("Global GTIN unavailable during scan",error);
-        }
+        try{ await ensureGlobalMasterGTINReady(); }
+        catch(error){ Logger.warn("Global GTIN unavailable during scan",error); }
     }
+    if(!MasterGTINEngine.db){ return null; }
 
-    if(!MasterGTINEngine.db){
-        return null;
-    }
-
-    const variants =
-        typeof createGTINVariants === "function"
-        ? createGTINVariants(normalized)
-        : [normalized];
-
-    if(!variants.includes(normalized)){
-        variants.unshift(normalized);
-    }
+    const variants=typeof createGTINVariants === "function" ? createGTINVariants(normalized) : [normalized];
+    if(!variants.includes(normalized)){ variants.unshift(normalized); }
 
     for(const candidate of variants){
-
-        const record = await new Promise((resolve,reject)=>{
-
-            const tx = MasterGTINEngine.db.transaction(
-                MasterGTINEngine.recordsStore,
-                "readonly"
-            );
-
-            const store = tx.objectStore(
-                MasterGTINEngine.recordsStore
-            );
-
-            const index = store.index("gtin");
-            const request = index.get(candidate);
-
-            request.onsuccess = ()=>resolve(request.result || null);
-            request.onerror = ()=>reject(request.error);
-
+        const records=await new Promise((resolve,reject)=>{
+            const tx=MasterGTINEngine.db.transaction(MasterGTINEngine.recordsStore,"readonly");
+            const index=tx.objectStore(MasterGTINEngine.recordsStore).index("gtin");
+            const request=index.getAll(candidate);
+            request.onsuccess=()=>resolve(Array.isArray(request.result)?request.result:[]);
+            request.onerror=()=>reject(request.error);
         });
+        if(records.length===0){ continue; }
 
-        if(record){
-            return record;
-        }
+        const currentOrderCodes=new Set((AppState.workspace.orderData||[]).map(item=>normalizeItemCode(item.itemCode)).filter(Boolean));
+        const inOrder=records.filter(record=>currentOrderCodes.has(normalizeItemCode(record.itemCode)));
+        const candidates=inOrder.length>0 ? inOrder : records;
+        const owners=new Set(candidates.map(record=>normalizeItemCode(record.itemCode)).filter(Boolean));
+        if(owners.size===1){ return candidates[0]; }
+        Logger.warn("Ambiguous Global GTIN belongs to multiple item numbers",candidate,Array.from(owners));
+        return null;
     }
-
     return null;
 }
-
 
 function deleteMasterGTINDatabase(dbName){
 
@@ -1200,93 +878,164 @@ function deleteMasterGTINDatabase(dbName){
    GLOBAL SUPABASE SYNC
 ===================================================== */
 
+async function uploadGlobalMasterGTINInChunks(records,sourceFile){
+    const pharmacyId=AuthState.context.pharmacy_id;
+    const beginResult=await authRpc("begin_pharmacy_master_gtin_import",{
+        p_pharmacy_id:pharmacyId,
+        p_source_file:toSafeString(sourceFile || "")
+    });
+    const beginRow=Array.isArray(beginResult)?beginResult[0]:beginResult;
+    const importId=typeof beginRow === "string" ? beginRow : (beginRow && (beginRow.import_id || beginRow.id));
+    if(!importId){ throw new Error("Unable to start Global GTIN update"); }
+
+    const chunkSize=750;
+    for(let start=0; start<records.length; start+=chunkSize){
+        const chunk=records.slice(start,start+chunkSize);
+        await authRpc("append_pharmacy_master_gtin_import",{
+            p_pharmacy_id:pharmacyId,
+            p_import_id:importId,
+            p_records:chunk
+        });
+        if(typeof setLoadingText === "function"){
+            setLoadingText("Uploading Global GTIN " + Math.min(start+chunk.length,records.length) + " / " + records.length + "...");
+        }
+    }
+
+    const commitResult=await authRpc("commit_pharmacy_master_gtin_import",{
+        p_pharmacy_id:pharmacyId,
+        p_import_id:importId
+    });
+    const row=Array.isArray(commitResult)?commitResult[0]:commitResult;
+    return row || {version:String(importId),item_count:records.length};
+}
+
+async function getGlobalMasterGTINCloudMeta(){
+    if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
+        return null;
+    }
+    const result=await authRpc("get_pharmacy_master_gtin_meta",{p_pharmacy_id:AuthState.context.pharmacy_id});
+    const row=Array.isArray(result)?result[0]:result;
+    return row || null;
+}
+
 async function syncGlobalMasterGTINFromCloud(options = {}){
     if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
         return false;
     }
 
-    const result = await authRpc("get_pharmacy_master_gtin",{
-        p_pharmacy_id:AuthState.context.pharmacy_id
-    });
-    const rows = Array.isArray(result) ? result : [];
+    const meta=await getGlobalMasterGTINCloudMeta();
+    const cloudCount=meta ? Number(meta.item_count || 0) : 0;
+    const cloudVersion=meta ? String(meta.version || "") : "";
 
-    /* Supabase is authoritative. If the pharmacy master is empty, do not
-       silently keep a stale device cache and pretend it is current. */
-    if(rows.length === 0){
-        if(options.allowEmpty === true){
-            const previousDbName = MasterGTINEngine.dbName;
+    if(!meta || cloudCount===0){
+        if(options.allowEmpty===true){
+            const previousDbName=MasterGTINEngine.dbName;
             if(MasterGTINEngine.db){ MasterGTINEngine.db.close(); }
-            MasterGTINEngine.db = null;
-            MasterGTINEngine.dbName = null;
-            MasterGTINEngine.metadata = {
-                installed:false,
-                fileName:"",
-                updatedAt:null,
-                itemCount:0,
-                duplicateGTINCount:0
-            };
+            MasterGTINEngine.db=null;
+            MasterGTINEngine.dbName=null;
+            MasterGTINEngine.metadata={installed:false,fileName:"",updatedAt:null,itemCount:0,duplicateGTINCount:0,cloudVersion:""};
             localStorage.removeItem(MasterGTINEngine.storagePointerKey);
             if(previousDbName){ deleteMasterGTINDatabase(previousDbName); }
         }
         return false;
     }
 
-    const records = rows.map(row=>({
-        itemCode:normalizeItemCode(row.item_code),
-        gtin:normalizeGTIN(row.gtin),
-        itemName:toSafeString(row.item_name || ""),
-        category:toSafeString(row.category || "")
-    })).filter(row=>row.itemCode && row.gtin);
+    if(
+        options.forceDownload!==true &&
+        MasterGTINEngine.db &&
+        MasterGTINEngine.metadata.installed &&
+        String(MasterGTINEngine.metadata.cloudVersion || "")===cloudVersion &&
+        Number(MasterGTINEngine.metadata.itemCount || 0)===cloudCount
+    ){
+        if(AppState.workspace.orderData && AppState.workspace.orderData.length>0){
+            await applyMasterGTINToCurrentOrder({silent:true});
+        }
+        return true;
+    }
 
-    if(records.length === 0){ return false; }
+    const pageSize=1000;
+    const records=[];
+    for(let offset=0; offset<cloudCount; offset+=pageSize){
+        const pageResult=await authRpc("get_pharmacy_master_gtin_page",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_offset:offset,
+            p_limit:pageSize
+        });
+        const rows=Array.isArray(pageResult)?pageResult:[];
+        rows.forEach(row=>{
+            const itemCode=normalizeItemCode(row.item_code);
+            const gtin=normalizeGTIN(row.gtin);
+            if(itemCode && gtin){
+                records.push({
+                    itemCode,
+                    gtin,
+                    itemName:toSafeString(row.item_name || ""),
+                    category:toSafeString(row.category || "")
+                });
+            }
+        });
+        if(typeof setLoadingText === "function" && options.silent!==true){
+            setLoadingText("Syncing Global GTIN " + Math.min(offset+rows.length,cloudCount) + " / " + cloudCount + "...");
+        }
+        if(rows.length===0){ break; }
+    }
 
-    const previousDbName = MasterGTINEngine.dbName;
-    const newDbName = MasterGTINEngine.databasePrefix + "cloud_" + Date.now();
-    const newDb = await openMasterGTINDatabase(newDbName);
+    if(records.length!==cloudCount){
+        throw new Error("Global GTIN sync incomplete: received " + records.length + " of " + cloudCount + " records");
+    }
+
+    const previousDbName=MasterGTINEngine.dbName;
+    const newDbName=MasterGTINEngine.databasePrefix + "cloud_" + Date.now();
+    const newDb=await openMasterGTINDatabase(newDbName);
     await writeMasterGTINRecords(newDb,records);
 
-    const updatedAt = rows.reduce((latest,row)=>{
-        const value = row.updated_at || null;
-        return !latest || (value && value > latest) ? value : latest;
-    },null);
-    const metadata = {
+    const metadata={
         installed:true,
-        fileName:"Supabase Global GTIN",
-        updatedAt:updatedAt || nowISO(),
+        fileName:toSafeString(meta.source_file || "Supabase Global GTIN"),
+        updatedAt:meta.updated_at || nowISO(),
         itemCount:records.length,
-        duplicateGTINCount:0
+        duplicateGTINCount:0,
+        cloudVersion
     };
     await writeMasterGTINMetadata(newDb,metadata);
     localStorage.setItem(MasterGTINEngine.storagePointerKey,newDbName);
     if(MasterGTINEngine.db){ MasterGTINEngine.db.close(); }
-    MasterGTINEngine.db = newDb;
-    MasterGTINEngine.dbName = newDbName;
-    MasterGTINEngine.metadata = metadata;
-    if(previousDbName && previousDbName !== newDbName){ deleteMasterGTINDatabase(previousDbName); }
+    MasterGTINEngine.db=newDb;
+    MasterGTINEngine.dbName=newDbName;
+    MasterGTINEngine.metadata=metadata;
+    if(previousDbName && previousDbName!==newDbName){ deleteMasterGTINDatabase(previousDbName); }
 
-    if(AppState.workspace.orderData && AppState.workspace.orderData.length > 0){
+    if(AppState.workspace.orderData && AppState.workspace.orderData.length>0){
         await applyMasterGTINToCurrentOrder({silent:true});
     }
-
     AppEvents.emit("masterGTIN:updated",getMasterGTINStatus());
     return true;
 }
 
 async function ensureGlobalMasterGTINReady(options = {}){
-    const forceCloud = options.forceCloud === true;
-
-    if(forceCloud || !MasterGTINEngine.db || !MasterGTINEngine.metadata.installed){
-        try{
-            const synced = await syncGlobalMasterGTINFromCloud({allowEmpty:forceCloud});
-            if(synced){ return true; }
+    const forceCloud=options.forceCloud===true;
+    try{
+        const meta=await getGlobalMasterGTINCloudMeta();
+        const cloudVersion=meta ? String(meta.version || "") : "";
+        const cloudCount=meta ? Number(meta.item_count || 0) : 0;
+        const cacheCurrent=!!(
+            MasterGTINEngine.db && MasterGTINEngine.metadata.installed &&
+            cloudVersion && String(MasterGTINEngine.metadata.cloudVersion || "")===cloudVersion &&
+            Number(MasterGTINEngine.metadata.itemCount || 0)===cloudCount
+        );
+        if(!cacheCurrent){
+            return await syncGlobalMasterGTINFromCloud({allowEmpty:forceCloud,silent:options.silent===true});
         }
-        catch(error){
-            Logger.warn("Global GTIN cloud sync failed",error);
-            if(!MasterGTINEngine.db){ throw error; }
+        if(AppState.workspace.orderData && AppState.workspace.orderData.length>0){
+            await applyMasterGTINToCurrentOrder({silent:true});
         }
+        return true;
     }
-
-    return !!(MasterGTINEngine.db && MasterGTINEngine.metadata.installed);
+    catch(error){
+        Logger.warn("Global GTIN cloud sync failed",error);
+        if(!MasterGTINEngine.db){ throw error; }
+        return true;
+    }
 }
 
 /* =====================================================
