@@ -439,6 +439,45 @@ function clearCurrentWorkspace(){
 
 }
 
+/* =====================================================
+   RESET OPERATIONAL STATE TO TRUE DEFAULT
+   Clears only this device's current working state.
+   Historical archive and Global GTIN are untouched.
+===================================================== */
+
+function resetOperationalStateToDefault(){
+
+    const deviceId =
+        ensureDeviceId();
+
+    AppState.workspace =
+        createEmptyWorkspace();
+
+    AppState.session = {
+        ...createEmptySession(),
+        deviceId:deviceId
+    };
+
+    resetStatistics();
+    rebuildStateIndexes();
+
+    deleteWorkspaceSnapshot();
+
+    AppEvents.emit(
+        "workspace:cleared"
+    );
+
+    AppEvents.emit(
+        "session:updated"
+    );
+
+    return true;
+
+}
+
+window.resetOperationalStateToDefault =
+    resetOperationalStateToDefault;
+
 
 /* =====================================================
    ADD OR UPDATE ORDER ITEM
@@ -1102,7 +1141,12 @@ function initializeState(){
 
     if(!restored){
 
-        startNewWorkspace();
+        /* A fresh/sign-in state must be truly empty. A workspace/order is
+           created only by an actual receiving workflow, not by page startup. */
+        AppState.workspace = createEmptyWorkspace();
+        AppState.session = createEmptySession();
+        resetStatistics();
+        rebuildStateIndexes();
 
     }
 

@@ -131,6 +131,12 @@ async function startApplication(){
 
         PharmacyApp.modules.state = true;
 
+        /* Phase 2C.5.3.1: Supabase is authoritative across PCs.
+           Validate any restored local workspace before exposing it. */
+        if(typeof reconcileRestoredWorkspaceWithCloud === "function"){
+            await reconcileRestoredWorkspaceWithCloud({reason:"startup"});
+        }
+
 
         startRouter();
 
@@ -261,6 +267,11 @@ function initializeOptionalModules(){
     initializeModuleSafely(
         "reports",
         "initializeReports"
+    );
+
+    initializeModuleSafely(
+        "orders",
+        "initializeOrderLifecycle"
     );
 
 }
@@ -548,6 +559,16 @@ function bindApplicationLifecycleEvents(){
         "focus",
         function(){
 
+            if(typeof reconcileRestoredWorkspaceWithCloud === "function"){
+                reconcileRestoredWorkspaceWithCloud({reason:"window-focus",silent:true})
+                    .then(result=>{
+                        if(result && result.cleared && typeof refreshEntireUI === "function"){
+                            refreshEntireUI();
+                        }
+                    })
+                    .catch(()=>{});
+            }
+
             if(
                 AppRouter.currentRoute ===
                 "dashboard" ||
@@ -659,30 +680,25 @@ function resetCurrentWorkspace(){
 
     try{
 
-        clearCurrentWorkspace();
-
-        startNewWorkspace();
-
-        deleteWorkspaceSnapshot();
-
-        saveApplicationState(
-            false
-        );
-
+        if(typeof resetOperationalStateToDefault === "function"){
+            resetOperationalStateToDefault();
+        }else{
+            clearCurrentWorkspace();
+            AppState.session = createEmptySession();
+            ensureDeviceId();
+            deleteWorkspaceSnapshot();
+        }
 
         refreshEntireUI();
-
 
         navigateTo(
             "dashboard"
         );
 
-
         showToast(
             "Current workspace reset",
             "success"
         );
-
 
         focusScannerInput();
 
@@ -694,7 +710,6 @@ function resetCurrentWorkspace(){
             error
         );
 
-
         showToast(
             "Unable to reset workspace",
             "error"
@@ -703,6 +718,7 @@ function resetCurrentWorkspace(){
     }
 
 }
+
 
 
 /* =====================================================

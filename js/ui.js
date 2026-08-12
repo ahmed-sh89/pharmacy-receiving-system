@@ -1364,23 +1364,26 @@ function refreshEntireUI(){
 
 function refreshHeader(){
 
+    const hasActiveOrder = !!(
+        AppState.workspace?.active === true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
+
     setElementText(
         UI.elements.headerOrderId,
-        AppState.workspace.orderName
-        ||
-        AppState.workspace.orderId
-        ||
-        "No Order"
+        hasActiveOrder
+            ? (AppState.workspace.orderName || "Active Order")
+            : "No Active Order"
     );
 
 
     setElementText(
         UI.elements.headerSessionId,
-        (AppState.session.cloud === true
-            ? (AppState.session.code || AppState.session.id)
-            : AppState.session.id)
-        ||
-        "Local"
+        hasActiveOrder
+            ? ((AppState.session.cloud === true
+                ? (AppState.session.code || AppState.session.id)
+                : AppState.session.id) || "No Session")
+            : "No Session"
     );
 
 }
