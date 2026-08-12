@@ -27,6 +27,43 @@ function initializeReports(){
     initializeReportDates();
     resetItemReportUI();
     ReportsEngine.initialized = true;
+
+    /* Phase 2C.5.2.1: Item Transfer data can become available AFTER
+       Reports initializes (auth context, IndexedDB archive restore, or
+       cloud order registry refresh). Keep the selector synchronized with
+       those late data sources instead of relying on one startup timeout. */
+    if(typeof AppEvents!=="undefined" && AppEvents && typeof AppEvents.on==="function"){
+        AppEvents.on("archive:updated",()=>{
+            if(typeof refreshItemTransferOrderOptions==="function"){
+                refreshItemTransferOrderOptions();
+            }
+        });
+    }
+
+    [400,1200,2500,5000].forEach(delay=>{
+        setTimeout(async()=>{
+            try{
+                if(typeof restoreHistoricalArchive==="function" &&
+                   typeof AppState!=="undefined" && AppState.archive &&
+                   Array.isArray(AppState.archive.orders) && !AppState.archive.orders.length){
+                    await restoreHistoricalArchive();
+                }
+                if(typeof refreshOrderLifecycleRegistry==="function" &&
+                   typeof AuthState!=="undefined" && AuthState.context && AuthState.context.pharmacy_id){
+                    await refreshOrderLifecycleRegistry();
+                }
+            }catch(error){
+                if(typeof Logger!=="undefined" && Logger.warn){
+                    Logger.warn("Item Transfer source refresh retry failed",error);
+                }
+            }finally{
+                if(typeof refreshItemTransferOrderOptions==="function"){
+                    refreshItemTransferOrderOptions();
+                }
+            }
+        },delay);
+    });
+
     Logger.info("Reports module initialized");
 }
 
