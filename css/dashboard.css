@@ -3344,3 +3344,133 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     margin-top:4px;
   }
 }
+
+
+/* =====================================================
+   PHASE 2C.5.4.4 — POLISHED SIDEBAR + KPI VISUAL SYSTEM
+   Visual-only refinement based on the approved desktop mockup.
+===================================================== */
+:root{
+  --pf-sidebar:#1d426b;
+  --pf-sidebar-deep:#17395f;
+  --pf-sidebar-text:#f5f8fc;
+  --pf-sidebar-muted:#c8d7e7;
+  --pf-orange:#ff8a1f;
+  --pf-card:#ffffff;
+  --pf-soft:#f6f9fd;
+}
+
+/* Sidebar: same calm steel/navy family as approved mockup */
+body:not(.zebraDevice) .sidebar{
+  background:linear-gradient(180deg,var(--pf-sidebar) 0%,var(--pf-sidebar-deep) 100%);
+  border-right:1px solid rgba(255,255,255,.08);
+  box-shadow:8px 0 28px rgba(14,38,66,.08);
+}
+body:not(.zebraDevice) .sidebarBrand{
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+body:not(.zebraDevice) .sidebarBrand .brandText strong{color:#fff;font-weight:900;}
+body:not(.zebraDevice) .sidebarBrand .brandText span{color:var(--pf-sidebar-muted);font-weight:700;}
+body:not(.zebraDevice) .sidebarNavigation{padding:14px 10px;gap:5px;}
+body:not(.zebraDevice) .sidebarItem{
+  min-height:46px;
+  padding:0 13px;
+  border-radius:9px;
+  color:var(--pf-sidebar-text);
+  font-weight:800;
+  letter-spacing:-.01em;
+  opacity:.94;
+  transition:background .16s ease,color .16s ease,transform .16s ease;
+}
+body:not(.zebraDevice) .sidebarItem:hover{
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  transform:translateX(1px);
+}
+body:not(.zebraDevice) .sidebarItem.active{
+  background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.08));
+  color:#fff;
+  box-shadow:inset -4px 0 0 var(--pf-orange);
+}
+body:not(.zebraDevice) .sidebarIcon{
+  width:25px;height:25px;min-width:25px;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:#dce8f5;
+}
+body:not(.zebraDevice) .sidebarItem.active .sidebarIcon{color:#fff;}
+body:not(.zebraDevice) .sidebarIcon svg{
+  width:20px;height:20px;display:block;
+  fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+}
+body:not(.zebraDevice) .sidebarFooter{
+  border-top:1px solid rgba(255,255,255,.11);
+  background:rgba(6,25,46,.08);
+}
+body:not(.zebraDevice) .accountIdentityText strong,
+body:not(.zebraDevice) .sidebarLogoutButton,
+body:not(.zebraDevice) .autoSaveStatus strong{color:#fff;}
+body:not(.zebraDevice) .accountIdentityText small,
+body:not(.zebraDevice) .autoSaveStatus span:not(.statusDot){color:var(--pf-sidebar-muted);}
+body:not(.zebraDevice) .sidebarLogoutButton{
+  border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.04);font-weight:850;
+}
+body:not(.zebraDevice) .sidebarLogoutButton:hover{background:rgba(255,255,255,.10);}
+
+/* Top header: clean, compact, pharmacy name remains the dominant identity */
+body:not(.zebraDevice) .topBar{box-shadow:0 1px 0 rgba(20,52,89,.03);}
+body:not(.zebraDevice) .pageHeading h1{font-weight:950;letter-spacing:-.025em;}
+body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:750;color:#526986;}
+
+/* KPI strip: decorative icon medallions without increasing vertical height */
+#page-dashboard .statisticsGrid{gap:9px;margin-bottom:10px;}
+#page-dashboard .statCard{
+  min-height:82px;padding:10px 10px 9px 52px;
+  border-radius:12px;background:#fff;box-shadow:none;
+  display:flex;flex-direction:column;justify-content:center;
+}
+#page-dashboard .statCard::after{display:none;}
+#page-dashboard .statCard::before{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:19px;font-weight:900;line-height:1;
+  background:#edf5ff;color:#1769e0;border:1px solid #dceafd;
+}
+#page-dashboard .statCard:nth-child(1)::before{content:"◇";font-size:25px;}
+#page-dashboard .statCard:nth-child(2)::before{content:"✓";background:#ebf9f1;color:#16a05d;border-color:#d6f1e2;}
+#page-dashboard .statCard:nth-child(3)::before{content:"◷";background:#fff5e9;color:#ef8a16;border-color:#fde7c9;}
+#page-dashboard .statCard:nth-child(4)::before{content:"↗";background:#fff0f1;color:#df3d4d;border-color:#f8dadd;}
+#page-dashboard .statCard:nth-child(5)::before{content:"○";background:#f3efff;color:#7146df;border-color:#e4dcff;font-size:25px;}
+#page-dashboard .statCard:nth-child(6)::before{content:"▥";background:#edf5ff;color:#1769e0;border-color:#dceafd;}
+#page-dashboard .statCardLabel{margin:0 0 3px;font-size:9px;line-height:1.05;font-weight:900;color:#536781;}
+#page-dashboard .statCard strong{font-size:24px;line-height:1;font-weight:950;color:#102a4c;}
+#page-dashboard .statSuccess,#page-dashboard .statWarning,#page-dashboard .statDanger{background:#fff;border-color:var(--pf-line);}
+#page-dashboard .statSuccess strong,#page-dashboard .statWarning strong,#page-dashboard .statDanger strong{color:#102a4c;}
+
+/* Use color as a subtle signal rather than coloring whole KPI cards */
+#page-dashboard .statCard:nth-child(2) strong{color:#159a59;}
+#page-dashboard .statCard:nth-child(3) strong{color:#e78610;}
+#page-dashboard .statCard:nth-child(4) strong{color:#d83d49;}
+
+/* Dashboard card typography: a little smaller, bolder and easier to scan */
+#page-dashboard .scanPanelHeader h2,
+#page-dashboard #lastScanCard .cardHeader h3,
+#page-dashboard>.contentCard:not(#lastScanCard) h3{font-weight:950;letter-spacing:-.015em;}
+#page-dashboard .scanBox input{font-weight:800;color:#18314f;}
+#page-dashboard .lastScanField:first-child>strong{font-weight:950;letter-spacing:-.018em;}
+#page-dashboard .lastScanField>span{font-weight:900;}
+#page-dashboard .lastScanField>strong{font-weight:950;}
+
+/* General application pages: keep icons/labels crisp against the new shell */
+body:not(.zebraDevice) .sectionEyebrow{font-weight:900;}
+body:not(.zebraDevice) .cardHeader h2,
+body:not(.zebraDevice) .cardHeader h3{font-weight:900;}
+body:not(.zebraDevice) button{font-weight:800;}
+
+@media (max-width:1280px) and (min-width:769px){
+  body:not(.zebraDevice) .sidebarItem{min-height:42px;font-size:12px;}
+  body:not(.zebraDevice) .sidebarIcon{width:22px;height:22px;min-width:22px;}
+  body:not(.zebraDevice) .sidebarIcon svg{width:18px;height:18px;}
+  #page-dashboard .statCard{min-height:72px;padding-left:46px;}
+  #page-dashboard .statCard::before{left:8px;width:31px;height:31px;font-size:17px;}
+  #page-dashboard .statCard strong{font-size:21px;}
+}
