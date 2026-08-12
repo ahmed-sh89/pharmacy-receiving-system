@@ -795,7 +795,7 @@ async function closeAndArchiveCurrentOrder(){
                 ),
 
             status:
-                "Closed",
+                "Received",
 
             sessionId:
                 AppState.session.id,

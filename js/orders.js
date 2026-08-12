@@ -223,3 +223,161 @@ async function getOriginalUploadedOrderSnapshot(orderNumber){
    during receiving. */
 window.saveOriginalUploadedOrderSnapshot=saveOriginalUploadedOrderSnapshot;
 window.getOriginalUploadedOrderSnapshot=getOriginalUploadedOrderSnapshot;
+
+
+/* =====================================================
+   PHARMFLOW PHASE 2C.4 — MANUAL FINALIZE RECEIVING
+   Finalization is always an explicit user action. It never depends on
+   ordered/received quantity equality. Official order data remains the
+   immutable uploaded source snapshot.
+===================================================== */
+
+const FinalizeReceivingEngine={busy:false};
+
+function getWorkspaceOrderNumbers(){
+    const seen=new Set();
+    const numbers=[];
+    (AppState.workspace.orderFiles||[]).forEach(file=>{
+        const value=normalizeOrderNumber(file.documentId||file.orderNumber||"");
+        if(value && !seen.has(value)){ seen.add(value); numbers.push(value); }
+    });
+    return numbers;
+}
+
+function getFinalizeReceivingSummary(){
+    const orderNumbers=getWorkspaceOrderNumbers();
+    let report=null;
+    if(typeof buildReceivingDiscrepancyReport === "function"){
+        report=buildReceivingDiscrepancyReport({visibleOnly:false});
+    }
+    return {
+        orderNumbers,
+        totalItems:Array.isArray(AppState.workspace.orderData)?AppState.workspace.orderData.length:0,
+        discrepancies:report?Number(report.totalDiscrepancies||0):0,
+        shortages:report?Number(report.shortageItems||0):0,
+        over:report?Number(report.overItems||0):0,
+        manual:report?Number(report.manualExtraItems||0):0
+    };
+}
+
+async function validateWorkspaceCanFinalize(){
+    const summary=getFinalizeReceivingSummary();
+    if(summary.totalItems<=0){
+        throw new Error("No receiving order is loaded");
+    }
+    if(!summary.orderNumbers.length){
+        throw new Error("No registered Order Number was found in the current workspace");
+    }
+
+    await refreshOrderLifecycleRegistry();
+    const records=OrderLifecycleEngine.records||[];
+    const received=[];
+    const missing=[];
+    summary.orderNumbers.forEach(number=>{
+        const record=records.find(row=>normalizeOrderNumber(row.order_number)===number);
+        if(!record){ missing.push(number); return; }
+        if(String(record.status||"").toLowerCase()==="received"){ received.push(number); }
+    });
+    if(missing.length){
+        throw new Error("Order registry is missing: "+missing.join(", "));
+    }
+    if(received.length){
+        throw new Error("Already received/finalized: "+received.join(", "));
+    }
+    return summary;
+}
+
+function refreshFinalizeReceivingButton(){
+    const button=document.getElementById("btnFinalizeReceiving");
+    if(!button){ return; }
+    const hasOrder=!!(AppState.workspace && Array.isArray(AppState.workspace.orderData) && AppState.workspace.orderData.length);
+    button.disabled=!hasOrder || FinalizeReceivingEngine.busy;
+    button.textContent=FinalizeReceivingEngine.busy?"Finalizing…":"✓ Finalize Receiving";
+}
+
+function requestFinalizeReceiving(){
+    if(FinalizeReceivingEngine.busy){ return; }
+    validateWorkspaceCanFinalize().then(summary=>{
+        const orders=summary.orderNumbers.join(", ");
+        const message=[
+            "Finalize receiving manually for: "+orders+".",
+            "This confirms the physical count is finished even when quantities do not match.",
+            "Discrepancies: "+summary.discrepancies+" (Shortage "+summary.shortages+", Over "+summary.over+", Manual "+summary.manual+").",
+            "The original uploaded order remains the source for official reports. After finalization, this receiving workspace will be archived and cleared."
+        ].join(" ");
+        showConfirmModal("Finalize Receiving",message,function(){
+            finalizeCurrentReceiving().catch(()=>{});
+        });
+    }).catch(error=>{
+        Logger.warn("Finalize validation failed",error);
+        showToast(error.message||"Unable to finalize this receiving order","warning");
+    });
+}
+
+async function finalizeCurrentReceiving(){
+    if(FinalizeReceivingEngine.busy){ return false; }
+    FinalizeReceivingEngine.busy=true;
+    refreshFinalizeReceivingButton();
+    showLoading("Finalizing receiving…");
+    try{
+        const summary=await validateWorkspaceCanFinalize();
+
+        /* A live PC session must be authoritatively ended before the workspace
+           is archived, so a Handheld cannot continue adding local scans. */
+        if(AppState.session && AppState.session.cloud===true && AppState.session.role==="PC"){
+            if(typeof leaveCloudSession!=="function"){
+                throw new Error("Shared session module is unavailable");
+            }
+            const ended=await leaveCloudSession();
+            if(ended===false){
+                throw new Error("Shared Handheld session could not be ended");
+            }
+        }
+
+        await markWorkspaceOrdersReceived();
+
+        if(typeof closeAndArchiveCurrentOrder!=="function"){
+            throw new Error("Receiving archive module is unavailable");
+        }
+        const archived=await closeAndArchiveCurrentOrder();
+        if(!archived){
+            throw new Error("Order was marked Received but the local receiving archive could not be completed. Do not scan this order again; refresh and retry archive recovery.");
+        }
+
+        await refreshOrderLifecycleRegistry();
+        showToast(
+            summary.orderNumbers.length>1
+                ? summary.orderNumbers.length+" orders finalized as Received"
+                : "Order "+summary.orderNumbers[0]+" finalized as Received",
+            "success"
+        );
+        return true;
+    }catch(error){
+        Logger.error("Manual receiving finalization failed",error);
+        showToast(error.message||"Unable to finalize receiving","error");
+        return false;
+    }finally{
+        hideLoading();
+        FinalizeReceivingEngine.busy=false;
+        refreshFinalizeReceivingButton();
+    }
+}
+
+function bindFinalizeReceivingUI(){
+    const button=document.getElementById("btnFinalizeReceiving");
+    if(button && button.dataset.bound!=="1"){
+        button.dataset.bound="1";
+        button.addEventListener("click",requestFinalizeReceiving);
+    }
+    ["workspace:created","workspace:cleared","files:updated","receiving:updated","archive:updated"].forEach(eventName=>{
+        try{ AppEvents.on(eventName,refreshFinalizeReceivingButton); }catch(_error){}
+    });
+    refreshFinalizeReceivingButton();
+}
+
+window.requestFinalizeReceiving=requestFinalizeReceiving;
+window.finalizeCurrentReceiving=finalizeCurrentReceiving;
+window.refreshFinalizeReceivingButton=refreshFinalizeReceivingButton;
+window.bindFinalizeReceivingUI=bindFinalizeReceivingUI;
+
+setTimeout(bindFinalizeReceivingUI,350);

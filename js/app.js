@@ -614,54 +614,17 @@ function handleSaveNow(){
 
 function requestCloseCurrentOrder(){
 
-    const workspace =
-        AppState.workspace;
-
-
-    if(
-        workspace.orderData.length ===
-        0
-    ){
-
-        showToast(
-            "No current order to close",
-            "warning"
-        );
-
+    /* Phase 2C.4: legacy Close Current Order must never bypass the
+       authoritative manual receiving finalization workflow. */
+    if(typeof requestFinalizeReceiving === "function"){
+        requestFinalizeReceiving();
         return;
-
     }
 
-
-    showConfirmModal(
-
-        "Close Current Order",
-
-        "The current order will be archived and the workspace will be cleared. Historical receiving data will remain available.",
-
-        function(){
-
-            if(
-                typeof closeAndArchiveCurrentOrder ===
-                "function"
-            ){
-
-                closeAndArchiveCurrentOrder();
-
-            }
-            else{
-
-                showToast(
-                    "Archive module is not ready yet",
-                    "warning"
-                );
-
-            }
-
-        }
-
+    showToast(
+        "Use Finalize Receiving from the Receiving page",
+        "warning"
     );
-
 }
 
 

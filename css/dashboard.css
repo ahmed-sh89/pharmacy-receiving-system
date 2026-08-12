@@ -2977,3 +2977,4 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .discrepancyGrid .displayedMetric{border-color:#bcd6fb;background:#f3f8ff}
 .discrepancyGrid .displayedMetric strong{color:#0d63dc}
 @media(max-width:900px){.issueMultiFilter{width:100%}.issueMultiFilterMenu{width:100%}.discrepancyGrid{grid-template-columns:repeat(2,1fr)}}
+\n\n/* =====================================================\n   PHASE 2C.4 — MANUAL FINALIZE RECEIVING\n===================================================== */\n.finalizeReceivingButton{\n    min-width:190px;\n    font-weight:800;\n}\n.finalizeReceivingButton:disabled{\n    opacity:.5;\n    cursor:not-allowed;\n}\n@media (max-width:1100px){\n    .receivingSummaryActions .finalizeReceivingButton{\n        flex-basis:100%;\n    }\n}\n
