@@ -3153,3 +3153,194 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
   #page-dashboard .lastScanQuantityControls{top:49px;right:24px;}
   #page-dashboard>.contentCard:not(#lastScanCard){padding:8px 12px;}
 }
+
+/* =====================================================
+   PHASE 2C.5.4.3 — COMPACT PC MANUAL/SEARCH SELECTION
+   Goal: keep selected-item quantity entry + Last Scan visible
+   on one desktop viewport with minimal vertical scrolling.
+===================================================== */
+@media (min-width: 769px){
+  /* The selected result becomes a compact two-row operator strip. */
+  #page-dashboard .smartScanSelected{
+    margin-top:6px;
+    padding:8px 10px;
+    border-radius:11px;
+    box-shadow:none;
+    background:#fbfdff;
+  }
+
+  #page-dashboard .smartSelectedMain{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:10px;
+    margin:0;
+    min-height:34px;
+  }
+
+  #page-dashboard .smartSelectedMain > div:first-child{
+    min-width:0;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    overflow:hidden;
+  }
+
+  #page-dashboard .smartSelectedMain .sectionEyebrow{
+    display:none;
+  }
+
+  #page-dashboard .smartSelectedMain h3{
+    margin:0;
+    min-width:0;
+    max-width:68%;
+    font-size:15px;
+    line-height:1.1;
+    font-weight:900;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:#10243f;
+  }
+
+  #page-dashboard .smartSelectedCode{
+    flex:0 0 auto;
+    font-size:10px;
+    line-height:1;
+    font-weight:800;
+    white-space:nowrap;
+    color:#65778d;
+  }
+
+  #page-dashboard .smartSelectedCode strong{
+    font-weight:900;
+  }
+
+  #page-dashboard #btnCloseSmartSelection{
+    width:30px;
+    height:30px;
+    min-width:30px;
+    padding:0;
+  }
+
+  /* Statistics stay on one thin line instead of three large cards. */
+  #page-dashboard .smartSelectedStats{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin:6px 0 0;
+    border:1px solid #e1e8f1;
+    border-radius:9px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  #page-dashboard .smartSelectedStats > div{
+    flex:1 1 0;
+    min-width:0;
+    padding:5px 10px;
+    border:0;
+    border-right:1px solid #e1e8f1;
+    border-radius:0;
+    text-align:center;
+    background:#fff;
+  }
+
+  #page-dashboard .smartSelectedStats > div:last-child{
+    border-right:0;
+  }
+
+  #page-dashboard .smartSelectedStats span{
+    display:inline;
+    margin:0 6px 0 0;
+    font-size:8px;
+    line-height:1;
+    font-weight:900;
+    letter-spacing:.04em;
+  }
+
+  #page-dashboard .smartSelectedStats strong{
+    display:inline;
+    font-size:14px;
+    line-height:1;
+    font-weight:900;
+  }
+
+  /* Quantity entry becomes one compact horizontal action strip. */
+  #page-dashboard .smartQuantityRow{
+    display:grid;
+    grid-template-columns:auto 132px minmax(130px,220px);
+    justify-content:end;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+  }
+
+  #page-dashboard .smartQuantityLabel{
+    font-size:9px;
+    font-weight:900;
+  }
+
+  #page-dashboard .smartQuantityControl{
+    height:32px;
+    border-radius:8px;
+  }
+
+  #page-dashboard .smartQuantityControl .quantityButton{
+    width:36px;
+    min-width:36px;
+    height:32px;
+    font-size:18px;
+    font-weight:900;
+  }
+
+  #page-dashboard #smartQuantityInput{
+    width:60px;
+    height:32px;
+    font-size:14px;
+    font-weight:900;
+    text-align:center;
+  }
+
+  #page-dashboard #btnAddSmartQuantity{
+    min-height:32px;
+    height:32px;
+    padding:0 14px;
+    border-radius:8px;
+    font-size:11px;
+    line-height:32px;
+    font-weight:900;
+  }
+
+  /* Tighten the gap before Last Scan / Progress without altering logic. */
+  #page-dashboard .smartScanSearchArea{
+    margin-bottom:0;
+  }
+
+  #page-dashboard #lastScanCard{
+    margin-top:6px;
+  }
+}
+
+/* Extra compression for common 768–900px-high desktop/laptop screens. */
+@media (min-width: 769px) and (max-height: 900px){
+  #page-dashboard .smartScanSelected{
+    padding:6px 9px;
+    margin-top:5px;
+  }
+  #page-dashboard .smartSelectedMain{
+    min-height:28px;
+  }
+  #page-dashboard .smartSelectedMain h3{
+    font-size:14px;
+  }
+  #page-dashboard .smartSelectedStats{
+    margin-top:4px;
+  }
+  #page-dashboard .smartSelectedStats > div{
+    padding:4px 8px;
+  }
+  #page-dashboard .smartQuantityRow{
+    margin-top:4px;
+  }
+}
