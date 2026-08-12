@@ -2996,3 +2996,17 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .itemTransferMetaGrid strong{display:block;font-size:13px;color:#10243e;overflow-wrap:anywhere;}
 .itemTransferTableContainer{max-height:520px;overflow:auto;}
 @media(max-width:900px){.itemTransferControls{grid-template-columns:1fr 1fr;}.itemTransferOrderField{grid-column:1/-1;}.itemTransferMetaGrid{grid-template-columns:1fr 1fr;}}
+
+/* Phase 2C.5.3 — archive actions */
+.archiveDeleteOrderButton{
+    border:1px solid #dc2626;
+    background:#fff;
+    color:#b91c1c;
+    border-radius:10px;
+    padding:8px 12px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.archiveDeleteOrderButton:hover{background:#fef2f2;}
+.archiveActionNote{font-size:12px;color:#64748b;}

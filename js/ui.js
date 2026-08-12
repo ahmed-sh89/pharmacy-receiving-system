@@ -2660,101 +2660,100 @@ function refreshArchiveUI(){
 }
 
 
-function renderArchiveTable(orders){
-
-    const tbody =
-        UI.elements.archiveTableBody;
-
-    if(!tbody){
-        return;
-    }
-
-    tbody.innerHTML =
-        "";
-
-    if(
-        !orders ||
-        orders.length === 0
-    ){
-
-        tbody.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="5"
-                    class="tableEmptyState"
-                >
-                    No archived orders yet.
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-    orders.forEach(order=>{
-
-        const row =
-            document.createElement(
-                "tr"
-            );
-
-        row.innerHTML = `
-
-            <td>
-                ${escapeHTML(
-                    order.orderId
-                )}
-            </td>
-
-            <td>
-                ${escapeHTML(
-                    formatDate(
-                        order.closedAt
-                        ||
-                        order.createdAt
-                    )
-                )}
-            </td>
-
-            <td>
-                ${toInteger(
-                    order.totalItems,
-                    0
-                )}
-            </td>
-
-            <td>
-                ${toNumber(
-                    order.totalReceivedUnits,
-                    0
-                )}
-            </td>
-
-            <td>
-
-                <span
-                    class="archiveStatus completed"
-                >
-                    ${escapeHTML(
-                        order.status || "Closed"
-                    )}
-                </span>
-
-            </td>
-
-        `;
-
-        tbody.appendChild(
-            row
-        );
-
+function getArchiveOrderNumbers(order){
+    const values=[];
+    const seen=new Set();
+    const files=Array.isArray(order && order.orderFiles)?order.orderFiles:[];
+    files.forEach(file=>{
+        const raw=toSafeString(file && (file.documentId||file.orderNumber||file.order_number)).trim();
+        const value=typeof normalizeOrderNumber==="function"?normalizeOrderNumber(raw):raw.toUpperCase().replace(/\s+/g,"");
+        if(value && !seen.has(value)){seen.add(value);values.push(value);}
     });
-
+    if(!values.length && order && order.orderNumber){
+        const raw=toSafeString(order.orderNumber).trim();
+        if(raw)values.push(raw);
+    }
+    return values;
 }
+
+function getArchiveOrderDate(order){
+    const files=Array.isArray(order && order.orderFiles)?order.orderFiles:[];
+    for(const file of files){
+        const value=file && (file.orderDate||file.order_date||file.documentDate||file.reportDate);
+        if(value){return formatDate(value);}
+    }
+    return "-";
+}
+
+async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
+    if(typeof isPharmacyAdmin==="function" && !isPharmacyAdmin()){
+        showToast("Admin permission is required to delete a received order","warning");
+        return false;
+    }
+    const safeOrder=toSafeString(orderNumber).trim();
+    if(!safeOrder){showToast("Order Number is unavailable for this archive record","error");return false;}
+    if(!window.confirm("Delete received order "+safeOrder+" and its related receiving data? This does NOT delete the Global GTIN Master or other orders."))return false;
+    const typed=window.prompt("Type the Order Number exactly to continue:\n\n"+safeOrder,"");
+    if(toSafeString(typed).trim().toUpperCase()!==safeOrder.toUpperCase()){
+        showToast("Order Number confirmation did not match","warning");
+        return false;
+    }
+    if(!window.confirm("FINAL CONFIRMATION\n\nPermanently delete "+safeOrder+"?"))return false;
+    showLoading("Deleting "+safeOrder+"...");
+    try{
+        if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context && AuthState.context.pharmacy_id){
+            try{
+                await authRpc("delete_pharmflow_order_complete",{
+                    p_pharmacy_id:AuthState.context.pharmacy_id,
+                    p_order_number:safeOrder,
+                    p_confirmation:safeOrder
+                });
+            }catch(error){
+                Logger.warn("Cloud order delete RPC unavailable or failed",error);
+                throw new Error("Cloud order deletion failed. No local archive data was removed. "+(error.message||""));
+            }
+        }
+        if(typeof deleteArchivedOrderLocalData!=="function")throw new Error("Local archive delete helper is unavailable");
+        await deleteArchivedOrderLocalData(internalOrderId);
+        if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry().catch(()=>{});
+        if(typeof refreshItemTransferOrderOptions==="function")refreshItemTransferOrderOptions();
+        showToast("Order "+safeOrder+" deleted","success");
+        return true;
+    }catch(error){
+        Logger.error("Delete archived order failed",error);
+        showToast(error.message||"Unable to delete order","error");
+        return false;
+    }finally{hideLoading();}
+}
+window.requestDeleteArchivedOrder=requestDeleteArchivedOrder;
+
+function renderArchiveTable(orders){
+    const tbody=UI.elements.archiveTableBody;
+    if(!tbody){return;}
+    tbody.innerHTML="";
+    if(!orders || orders.length===0){
+        tbody.innerHTML=`<tr><td colspan="7" class="tableEmptyState">No archived orders yet.</td></tr>`;
+        return;
+    }
+    orders.forEach(order=>{
+        const numbers=getArchiveOrderNumbers(order);
+        const displayNumber=numbers.length?numbers.join(", "):"Unavailable";
+        const row=document.createElement("tr");
+        row.innerHTML=`
+            <td><strong>${escapeHTML(displayNumber)}</strong></td>
+            <td>${escapeHTML(getArchiveOrderDate(order))}</td>
+            <td>${escapeHTML(formatDate(order.closedAt||order.createdAt))}</td>
+            <td>${toInteger(order.totalItems,0)}</td>
+            <td>${toNumber(order.totalReceivedUnits,0)}</td>
+            <td><span class="archiveStatus completed">${escapeHTML(order.status||"Received")}</span></td>
+            <td>${numbers.length===1?`<button type="button" class="archiveDeleteOrderButton" data-delete-archive-order="${escapeHTML(order.orderId)}" data-order-number="${escapeHTML(numbers[0])}">Delete Order</button>`:`<span class="archiveActionNote">${numbers.length>1?"Batch record":"Order number unavailable"}</span>`}</td>`;
+        tbody.appendChild(row);
+    });
+    tbody.querySelectorAll("[data-delete-archive-order]").forEach(button=>{
+        button.addEventListener("click",()=>requestDeleteArchivedOrder(button.dataset.deleteArchiveOrder,button.dataset.orderNumber));
+    });
+}
+
 
 
 /* =====================================================

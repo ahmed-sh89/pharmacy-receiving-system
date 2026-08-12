@@ -2180,3 +2180,48 @@ function getSessionSummary(){
 /* =====================================================
    END SESSION ENGINE
 ===================================================== */
+
+/* =====================================================
+   PHASE 2C.5.3 — DELETE ONE ARCHIVED ORDER LOCALLY
+===================================================== */
+async function dbDeleteKey(storeName,key){
+    const db=await getDatabase();
+    return new Promise((resolve,reject)=>{
+        const transaction=db.transaction(storeName,"readwrite");
+        const store=transaction.objectStore(storeName);
+        const request=store.delete(key);
+        request.onsuccess=()=>resolve(true);
+        request.onerror=()=>reject(request.error);
+    });
+}
+
+async function dbDeleteWhere(storeName,predicate){
+    const db=await getDatabase();
+    return new Promise((resolve,reject)=>{
+        const transaction=db.transaction(storeName,"readwrite");
+        const store=transaction.objectStore(storeName);
+        const request=store.openCursor();
+        request.onsuccess=event=>{
+            const cursor=event.target.result;
+            if(!cursor){return;}
+            try{
+                if(predicate(cursor.value)){cursor.delete();}
+                cursor.continue();
+            }catch(error){reject(error);}
+        };
+        request.onerror=()=>reject(request.error);
+        transaction.oncomplete=()=>resolve(true);
+        transaction.onerror=()=>reject(transaction.error);
+    });
+}
+
+async function deleteArchivedOrderLocalData(internalOrderId){
+    const stores=APP_CONFIG.database.stores;
+    await dbDeleteWhere(stores.transactions,row=>toSafeString(row&&row.orderId)===toSafeString(internalOrderId));
+    await dbDeleteWhere(stores.sessions,row=>toSafeString(row&&row.orderId)===toSafeString(internalOrderId));
+    await dbDeleteKey(stores.orders,internalOrderId);
+    await restoreHistoricalArchive();
+    AppEvents.emit("archive:updated");
+    return true;
+}
+window.deleteArchivedOrderLocalData=deleteArchivedOrderLocalData;
