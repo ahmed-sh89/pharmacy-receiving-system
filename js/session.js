@@ -1057,87 +1057,58 @@ async function restoreHistoricalArchive(){
 
 async function deleteAllHistoricalData(){
 
-    showLoading(
-        "Deleting historical data..."
+    /* Phase 2C.5.4.2: Historical deletion must be cloud + local.
+       The old implementation only cleared this browser, leaving received
+       Order Registry rows in Supabase and causing false duplicate blocks. */
+    const phrase=window.prompt(
+        "Type DELETE ALL HISTORICAL DATA to permanently remove all received order history for this pharmacy.\n\nGlobal GTIN Master, Returns Archive, users, and active uploaded orders are not affected.",
+        ""
     );
+    if(phrase!=="DELETE ALL HISTORICAL DATA"){
+        showToast("Historical deletion cancelled","warning");
+        return false;
+    }
 
+    showLoading("Deleting historical data...");
 
     try{
+        /* Supabase is authoritative across PCs. Delete finalized/received
+           Order Registry + immutable source snapshots first. If cloud
+           deletion fails, do NOT clear this browser and create split state. */
+        if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context?.pharmacy_id){
+            await authRpc("delete_all_pharmflow_received_history",{
+                p_pharmacy_id:AuthState.context.pharmacy_id,
+                p_confirmation:"DELETE ALL HISTORICAL DATA"
+            });
+        }else{
+            throw new Error("Pharmacy cloud context is unavailable. Sign in again before deleting historical data.");
+        }
 
-        await dbClearStore(
-            APP_CONFIG
-                .database
-                .stores
-                .orders
-        );
+        await dbClearStore(APP_CONFIG.database.stores.orders);
+        await dbClearStore(APP_CONFIG.database.stores.transactions);
+        await dbClearStore(APP_CONFIG.database.stores.sessions);
+        await dbClearStore(APP_CONFIG.database.stores.archive);
 
+        AppState.archive.orders=[];
+        AppState.archive.transactions=[];
 
-        await dbClearStore(
-            APP_CONFIG
-                .database
-                .stores
-                .transactions
-        );
+        if(typeof refreshOrderLifecycleRegistry==="function"){
+            await refreshOrderLifecycleRegistry();
+        }
+        if(typeof refreshItemTransferOrderOptions==="function"){
+            await Promise.resolve(refreshItemTransferOrderOptions());
+        }
 
-
-        await dbClearStore(
-            APP_CONFIG
-                .database
-                .stores
-                .sessions
-        );
-
-
-        await dbClearStore(
-            APP_CONFIG
-                .database
-                .stores
-                .archive
-        );
-
-
-        AppState.archive.orders = [];
-
-        AppState.archive.transactions = [];
-
-
-        AppEvents.emit(
-            "archive:updated"
-        );
-
-
-        showToast(
-            "Historical data deleted",
-            "success"
-        );
-
-
+        AppEvents.emit("archive:updated");
+        showToast("Historical order data deleted from this pharmacy","success");
         return true;
-
-    }
-    catch(error){
-
-        Logger.error(
-            "Historical delete failed",
-            error
-        );
-
-
-        showToast(
-            "Unable to delete historical data",
-            "error"
-        );
-
-
+    }catch(error){
+        Logger.error("Historical data deletion failed",error);
+        showToast(error.message||"Unable to delete historical data","error");
         return false;
-
-    }
-    finally{
-
+    }finally{
         hideLoading();
-
     }
-
 }
 
 
