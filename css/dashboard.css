@@ -3041,3 +3041,115 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
   .dashboardWorkContextStats>div{flex:1;}
   #page-files .healthGrid{grid-template-columns:repeat(2,minmax(120px,1fr));}
 }
+
+/* =====================================================
+   PHASE 2C.5.4.1 — UNIFIED COMPACT PHARMFLOW UI
+   Approved one-screen design system
+===================================================== */
+:root{
+  --pf-navy:#183b63;
+  --pf-navy-2:#244d78;
+  --pf-blue:#1769e0;
+  --pf-ink:#102a4c;
+  --pf-muted:#60738e;
+  --pf-line:#dbe5f0;
+  --pf-bg:#f5f8fc;
+}
+
+/* PC shell: compact and consistent on every application page */
+body:not(.zebraDevice) .mainApplication{background:var(--pf-bg);}
+body:not(.zebraDevice) .topBar{min-height:72px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--pf-line);}
+body:not(.zebraDevice) .topBarLeft{min-width:0;gap:12px;}
+body:not(.zebraDevice) .pageHeading{display:flex;align-items:center;gap:16px;min-width:0;}
+body:not(.zebraDevice) .pageHeading h1{margin:0;color:var(--pf-ink);font-size:clamp(18px,1.55vw,27px);font-weight:900;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body:not(.zebraDevice) .pageHeading p{margin:0;padding-left:16px;border-left:1px solid #cfd9e6;color:#526986;font-size:13px;font-weight:700;white-space:nowrap;}
+body:not(.zebraDevice) .topBarRight{gap:8px;}
+body:not(.zebraDevice) .headerInfo{min-width:100px;padding:8px 11px;border:1px solid var(--pf-line);border-radius:10px;background:#fff;}
+body:not(.zebraDevice) .systemStatus{min-height:44px;padding:0 16px;border-radius:10px;}
+body:not(.zebraDevice) .mainContent{padding:12px 18px 16px;}
+body:not(.zebraDevice) .appPage>.contentCard,
+body:not(.zebraDevice) .appPage>.scanPanel{margin-bottom:12px;}
+
+/* Dashboard: one operational screen, no duplicated current-receiving strip */
+#page-dashboard .statisticsGrid{order:1;grid-template-columns:repeat(6,minmax(100px,1fr));gap:8px;margin:0 0 10px;}
+#page-dashboard .statCard{min-height:78px;padding:11px 13px;border-radius:11px;box-shadow:none;}
+#page-dashboard .statCardLabel{margin-bottom:7px;font-size:9px;}
+#page-dashboard .statCard strong{font-size:25px;}
+#page-dashboard .scanPanel{padding:12px 14px;margin-bottom:10px;border-radius:12px;}
+#page-dashboard .scanPanelHeader{margin-bottom:8px;align-items:center;}
+#page-dashboard .scanPanelHeader .sectionEyebrow,#page-dashboard .scanPanelHeader p{display:none;}
+#page-dashboard .scanPanelHeader h2{margin:0;font-size:18px;}
+#page-dashboard .scanBox{min-height:52px;}
+#page-dashboard .scanPanelFooter{margin-top:6px;}
+#page-dashboard .scanPanelFooter>span{display:none;}
+
+#page-dashboard #lastScanCard{margin:0 0 10px;padding:12px 14px;border:1px solid var(--pf-line);box-shadow:none;background:#fff;}
+#page-dashboard #lastScanCard .cardHeader{margin-bottom:8px;}
+#page-dashboard #lastScanCard .cardHeader .sectionEyebrow{display:none;}
+#page-dashboard #lastScanCard .cardHeader h3{font-size:18px;}
+#page-dashboard #lastScanCard #lastScanTime{font-size:10px;color:var(--pf-muted);}
+#page-dashboard .lastScanGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #e2e9f2;border-radius:10px;overflow:hidden;}
+#page-dashboard .lastScanField{min-height:58px;padding:8px 12px;text-align:center;border-right:1px solid #e2e9f2;}
+#page-dashboard .lastScanField:first-child{grid-column:1/-1;min-height:50px;text-align:left;border-right:0;border-bottom:1px solid #e2e9f2;padding-right:210px;display:flex;justify-content:center;flex-direction:column;}
+#page-dashboard .lastScanField:first-child>span{display:none;}
+#page-dashboard #lastItemName{display:block;max-width:100%;font-size:clamp(14px,1.35vw,21px);line-height:1.15;color:var(--pf-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#page-dashboard .lastScanField>span{font-size:9px;font-weight:800;color:#60738e;text-transform:uppercase;}
+#page-dashboard .lastScanField>strong{font-size:19px;color:var(--pf-ink);}
+#page-dashboard .lastScanQuantityControls{position:absolute;right:28px;top:59px;margin:0;padding:0;border:0;gap:7px;z-index:2;}
+#page-dashboard #lastScanCard{position:relative;}
+#page-dashboard .lastScanQtyTitle{font-size:10px;}
+#page-dashboard .lastScanQtyHint{display:none;}
+#page-dashboard .lastScanQtyActions{border-radius:8px;}
+#page-dashboard .lastScanQtyButton{width:38px;height:36px;font-size:19px;}
+#page-dashboard .lastScanQtyValue{min-width:50px;height:36px;font-size:16px;}
+
+#page-dashboard>.contentCard:not(#lastScanCard){padding:11px 14px;margin:0;border-radius:12px;box-shadow:none;}
+#page-dashboard>.contentCard:not(#lastScanCard) .cardHeader{margin-bottom:7px;}
+#page-dashboard>.contentCard:not(#lastScanCard) .sectionEyebrow{display:none;}
+#page-dashboard>.contentCard:not(#lastScanCard) h3{font-size:16px;}
+#page-dashboard .progressPercentage{font-size:18px;}
+#page-dashboard .progressTrack{height:8px;}
+#page-dashboard .progressDetails{margin-top:5px;font-size:10px;}
+
+/* Remove legacy dashboard work-context if old cached markup is ever present */
+#page-dashboard .dashboardWorkContext{display:none!important;}
+
+/* Keep every desktop page visually dense without breaking data tables */
+body:not(.zebraDevice) .contentCard{border-radius:12px;}
+body:not(.zebraDevice) .cardHeader{gap:10px;}
+body:not(.zebraDevice) .cardHeader h2,body:not(.zebraDevice) .cardHeader h3{color:var(--pf-ink);}
+body:not(.zebraDevice) .dataTable th{padding-top:9px;padding-bottom:9px;}
+body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
+
+/* Login / registration / recovery use the same approved visual language */
+.authGate{background:#f4f7fb;}
+.authShell{border:1px solid #dce5f0;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(16,42,76,.12);}
+.authBrandPanel{background:linear-gradient(150deg,#173a61 0%,#244f7b 100%);}
+.authBrandName{font-weight:900;letter-spacing:-.02em;}
+.authBrandTagline{opacity:.78;}
+.authFormPanel{background:#fff;}
+.authEyebrow{color:var(--pf-blue);}
+.authPrimaryButton{background:var(--pf-blue);border-radius:10px;box-shadow:none;}
+.authPrimaryButton:hover{filter:brightness(.96);}
+.authField input{border-color:#d7e1ed;border-radius:10px;background:#fbfdff;}
+.authField input:focus{border-color:#79a9e8;box-shadow:0 0 0 3px rgba(23,105,224,.10);}
+
+@media (max-width:1280px) and (min-width:769px){
+  #page-dashboard .statisticsGrid{grid-template-columns:repeat(6,minmax(82px,1fr));}
+  #page-dashboard .statCard{padding:9px;min-height:72px;}
+  #page-dashboard .statCard strong{font-size:22px;}
+  body:not(.zebraDevice) .mainContent{padding:10px 12px;}
+  body:not(.zebraDevice) .topBar{padding:8px 12px;}
+}
+
+@media (max-height:800px) and (min-width:769px){
+  body:not(.zebraDevice) .topBar{min-height:62px;}
+  #page-dashboard .statCard{min-height:66px;padding:8px 11px;}
+  #page-dashboard .scanPanel{padding:9px 12px;}
+  #page-dashboard .scanBox{min-height:46px;}
+  #page-dashboard #lastScanCard{padding:9px 12px;}
+  #page-dashboard .lastScanField{min-height:49px;padding:6px 10px;}
+  #page-dashboard .lastScanField:first-child{min-height:43px;}
+  #page-dashboard .lastScanQuantityControls{top:49px;right:24px;}
+  #page-dashboard>.contentCard:not(#lastScanCard){padding:8px 12px;}
+}

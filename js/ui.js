@@ -1362,48 +1362,36 @@ function refreshEntireUI(){
    HEADER
 ===================================================== */
 
-function refreshDashboardWorkContext(){
-    const orderNumber = AppState?.workspace?.orderName || AppState?.workspace?.orderId || "";
-    const orderFiles = Array.isArray(AppState?.workspace?.orderFiles) ? AppState.workspace.orderFiles : [];
-    const orderItems = Array.isArray(AppState?.workspace?.orderData) ? AppState.workspace.orderData : [];
-
-    setElementText(
-        document.getElementById("dashboardActiveOrderNumber"),
-        orderNumber || "No active order"
-    );
-
-    setElementText(
-        document.getElementById("dashboardActiveOrderMeta"),
-        orderNumber
-            ? `${orderFiles.length || 1} order file${(orderFiles.length || 1) === 1 ? "" : "s"} loaded • ${orderItems.length} items`
-            : "Upload an order to start receiving"
-    );
-
-    setElementText(document.getElementById("dashboardOrderFileCount"), orderFiles.length);
-    setElementText(document.getElementById("dashboardOrderItemCount"), orderItems.length);
-}
-
 function refreshHeader(){
 
-    refreshDashboardWorkContext();
+    // Approved compact Dashboard identity: show the signed-in pharmacy name.
+    const dashboardActive = document.getElementById("page-dashboard")?.classList.contains("active");
+    if(dashboardActive){
+        const pharmacyName = (document.getElementById("accountPharmacyName")?.textContent || "Pharmacy").trim();
+        setElementText(UI.elements.pageTitle, pharmacyName || "Pharmacy");
+        setElementText(UI.elements.pageSubtitle, "Receiving Dashboard");
+    }
+
+    const hasActiveOrder = !!(
+        AppState.workspace?.active === true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
 
     setElementText(
         UI.elements.headerOrderId,
-        AppState.workspace.orderName
-        ||
-        AppState.workspace.orderId
-        ||
-        "No Order"
+        hasActiveOrder
+            ? (AppState.workspace.orderName || "Active Order")
+            : "No Active Order"
     );
 
 
     setElementText(
         UI.elements.headerSessionId,
-        (AppState.session.cloud === true
-            ? (AppState.session.code || AppState.session.id)
-            : AppState.session.id)
-        ||
-        "Local"
+        hasActiveOrder
+            ? ((AppState.session.cloud === true
+                ? (AppState.session.code || AppState.session.id)
+                : AppState.session.id) || "No Session")
+            : "No Session"
     );
 
 }

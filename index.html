@@ -504,13 +504,8 @@
 
                 <div class="pageHeading">
 
-                    <h1 id="pageTitle">
-                        Dashboard
-                    </h1>
-
-                    <p id="pageSubtitle">
-                        Pharmacy Operations Platform
-                    </p>
+                    <h1 id="pageTitle" class="pharmacyHeaderName">Pharmacy</h1>
+                    <p id="pageSubtitle">Receiving Dashboard</p>
 
                 </div>
 
@@ -577,126 +572,6 @@
                 id="page-dashboard"
                 class="appPage active"
             >
-
-
-                <section class="dashboardWorkContext" aria-label="Current receiving context">
-                    <div class="dashboardWorkContextMain">
-                        <span class="sectionEyebrow">CURRENT RECEIVING</span>
-                        <strong id="dashboardActiveOrderNumber">No active order</strong>
-                        <span id="dashboardActiveOrderMeta">Upload an order to start receiving</span>
-                    </div>
-                    <div class="dashboardWorkContextStats">
-                        <div><span>ORDER FILES</span><strong id="dashboardOrderFileCount">0</strong></div>
-                        <div><span>ITEMS</span><strong id="dashboardOrderItemCount">0</strong></div>
-                    </div>
-                </section>
-
-                <!-- SCAN AREA -->
-
-                <section class="scanPanel">
-
-
-                    <div class="scanPanelHeader">
-
-
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                ACTIVE RECEIVING
-
-                            </span>
-
-                            <h2>
-
-                                Scan GS1 / Barcode
-
-                            </h2>
-
-                            <p>
-
-                                Keep the cursor in the highlighted box and scan
-                                the product barcode.
-
-                            </p>
-
-                        </div>
-
-
-                        <div
-                            id="scanStatusBadge"
-                            class="scanStatusBadge ready"
-                        >
-
-                            <span class="scanPulse"></span>
-
-                            READY TO SCAN
-
-                        </div>
-
-
-                    </div>
-
-
-                    <!-- IMPORTANT SCAN BOX -->
-
-                    <div
-                        id="scanBox"
-                        class="scanBox"
-                    >
-
-                        <div class="scanBoxIcon">
-
-                            ▥
-
-                        </div>
-
-
-                        <input
-                            id="barcodeInput"
-                            type="text"
-                            autocomplete="off"
-                            autocapitalize="off"
-                            spellcheck="false"
-                            placeholder="SCAN BARCODE HERE"
-                        >
-
-
-                        <div class="scanBoxIndicator">
-
-                            SCANNER
-
-                        </div>
-
-
-                    </div>
-
-
-                    <div class="scanPanelFooter">
-
-
-                        <button
-                            id="btnQuickSearch"
-                            class="secondaryButton"
-                            type="button"
-                        >
-
-                            🔍 Search Item
-
-                        </button>
-
-
-                        <span>
-
-                            The scanner input will be captured automatically.
-
-                        </span>
-
-
-                    </div>
-
-
-                </section>
 
 
                 <!-- STATISTICS -->
@@ -809,67 +684,105 @@
                 </section>
 
 
-                <!-- PROGRESS -->
 
-                <section class="contentCard">
+                <!-- SCAN AREA -->
+
+                <section class="scanPanel">
 
 
-                    <div class="cardHeader">
+                    <div class="scanPanelHeader">
 
 
                         <div>
 
                             <span class="sectionEyebrow">
 
-                                ORDER PROGRESS
+                                ACTIVE RECEIVING
 
                             </span>
 
-                            <h3>
+                            <h2>
 
-                                Receiving Progress
+                                Scan GS1 / Barcode
 
-                            </h3>
+                            </h2>
+
+                            <p>
+
+                                Keep the cursor in the highlighted box and scan
+                                the product barcode.
+
+                            </p>
 
                         </div>
 
 
-                        <strong
-                            id="progressLabel"
-                            class="progressPercentage"
+                        <div
+                            id="scanStatusBadge"
+                            class="scanStatusBadge ready"
                         >
 
-                            0%
+                            <span class="scanPulse"></span>
 
-                        </strong>
+                            READY TO SCAN
+
+                        </div>
 
 
                     </div>
 
 
-                    <div class="progressTrack">
+                    <!-- IMPORTANT SCAN BOX -->
 
-                        <div
-                            id="progressBar"
-                            class="progressBar"
-                        ></div>
+                    <div
+                        id="scanBox"
+                        class="scanBox"
+                    >
+
+                        <div class="scanBoxIcon">
+
+                            ▥
+
+                        </div>
+
+
+                        <input
+                            id="barcodeInput"
+                            type="text"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            placeholder="SCAN BARCODE HERE"
+                        >
+
+
+                        <div class="scanBoxIndicator">
+
+                            SCANNER
+
+                        </div>
+
 
                     </div>
 
 
-                    <div class="progressDetails">
+                    <div class="scanPanelFooter">
 
 
-                        <span id="progressCompletedText">
+                        <button
+                            id="btnQuickSearch"
+                            class="secondaryButton"
+                            type="button"
+                        >
 
-                            0 Completed
+                            🔍 Search Item
 
-                        </span>
+                        </button>
 
 
-                        <span id="progressRemainingText">
+                        <span>
 
-                            0 Remaining
+                            The scanner input will be captured automatically.
 
                         </span>
 
@@ -936,43 +849,7 @@
                             </strong>
 
                         </div>
-
-
-                        <div class="lastScanField">
-
-                            <span>
-
-                                Item Number
-
-                            </span>
-
-                            <strong id="lastItemCode">
-
-                                -
-
-                            </strong>
-
-                        </div>
-
-
-                        <div class="lastScanField">
-
-                            <span>
-
-                                GTIN
-
-                            </span>
-
-                            <strong id="lastGTIN">
-
-                                -
-
-                            </strong>
-
-                        </div>
-
-
-                        <div class="lastScanField">
+<div class="lastScanField">
 
                             <span>
 
@@ -1044,6 +921,78 @@
 
 
                 </section>
+
+
+                <!-- PROGRESS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ORDER PROGRESS
+
+                            </span>
+
+                            <h3>
+
+                                Receiving Progress
+
+                            </h3>
+
+                        </div>
+
+
+                        <strong
+                            id="progressLabel"
+                            class="progressPercentage"
+                        >
+
+                            0%
+
+                        </strong>
+
+
+                    </div>
+
+
+                    <div class="progressTrack">
+
+                        <div
+                            id="progressBar"
+                            class="progressBar"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="progressDetails">
+
+
+                        <span id="progressCompletedText">
+
+                            0 Completed
+
+                        </span>
+
+
+                        <span id="progressRemainingText">
+
+                            0 Remaining
+
+                        </span>
+
+
+                    </div>
+
+
+                </section>
+
 
 
             </section>
