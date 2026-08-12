@@ -103,9 +103,19 @@ async function handleOrderFileSelection(event){
 
         for(const file of files){
 
+            const orderMeta =
+                typeof inspectOrderFileMetadata === "function"
+                ? await inspectOrderFileMetadata(file)
+                : null;
+
+            if(orderMeta && typeof assertOrderNumberCanUpload === "function"){
+                await assertOrderNumberCanUpload(orderMeta.orderNumber);
+            }
+
             const result =
                 await importOrderFile(
-                    file
+                    file,
+                    orderMeta
                 );
 
             importedRows +=
@@ -369,7 +379,7 @@ async function handleMappingFileSelection(event){
    IMPORT ORDER FILE
 ===================================================== */
 
-async function importOrderFile(file){
+async function importOrderFile(file, preflightMeta = null){
 
     const result = {
         success:false,
@@ -402,7 +412,15 @@ async function importOrderFile(file){
 
     let validRowsInFile = 0;
 
-    let detectedOrderId = "";
+    /* Phase 2C.2: immutable source-order snapshot.
+       These rows are kept separate from receiving quantities and are the
+       authoritative source for future business reports. */
+    const sourceOrderRows = [];
+
+    let detectedOrderId =
+        preflightMeta && preflightMeta.orderNumber
+        ? normalizeOrderNumber(preflightMeta.orderNumber)
+        : "";
 
     workbook.SheetNames
         .forEach(sheetName=>{
@@ -492,6 +510,16 @@ async function importOrderFile(file){
                     continue;
                 }
 
+                /* Keep an untouched copy BEFORE receiving mutates workspace data. */
+                sourceOrderRows.push({
+                    itemCode:item.itemCode,
+                    itemName:item.itemName,
+                    orderedQty:item.orderedQty,
+                    category:item.category || "",
+                    sourceSheet:sheetName,
+                    sourceRow:rowIndex + 1
+                });
+
                 upsertOrderItem(
                     item
                 );
@@ -512,9 +540,26 @@ async function importOrderFile(file){
             validRowsInFile,
             {
                 documentId:
-                    detectedOrderId
+                    detectedOrderId,
+                orderDate:
+                    preflightMeta ? preflightMeta.orderDate : "",
+                fromWarehouse:
+                    preflightMeta ? preflightMeta.fromWarehouse : "",
+                toWarehouse:
+                    preflightMeta ? preflightMeta.toWarehouse : ""
             }
         );
+
+        if(preflightMeta && typeof registerUploadedOrder === "function"){
+            await registerUploadedOrder(preflightMeta, validRowsInFile);
+
+            if(typeof saveOriginalUploadedOrderSnapshot === "function"){
+                await saveOriginalUploadedOrderSnapshot(
+                    preflightMeta.orderNumber,
+                    sourceOrderRows
+                );
+            }
+        }
 
         if(detectedOrderId){
 
@@ -942,6 +987,12 @@ function findOrderHeaderRow(
                     .orderedQty
             );
 
+        const category =
+            findHeaderColumn(
+                row,
+                ["category","item category","product category","classification"]
+            );
+
         if(
             itemCode >= 0 &&
             orderedQty >= 0
@@ -959,7 +1010,9 @@ function findOrderHeaderRow(
                         itemName,
 
                     orderedQty:
-                        orderedQty
+                        orderedQty,
+                    category:
+                        category
                 }
             };
 
@@ -1080,6 +1133,11 @@ function parseOrderMatrixRow(
             ]
         );
 
+    const category =
+        columns.category >= 0
+        ? toSafeString(row[columns.category])
+        : "";
+
     if(
         !Number.isFinite(
             orderedQty
@@ -1109,6 +1167,9 @@ function parseOrderMatrixRow(
 
         remainingQty:
             orderedQty,
+
+        category:
+            category,
 
         manual:
             false
@@ -1545,7 +1606,16 @@ function registerImportedFile(
         documentId:
             toSafeString(
                 extra.documentId
-            )
+            ),
+
+        orderDate:
+            toSafeString(extra.orderDate),
+
+        fromWarehouse:
+            toSafeString(extra.fromWarehouse),
+
+        toWarehouse:
+            toSafeString(extra.toWarehouse)
 
     };
 
