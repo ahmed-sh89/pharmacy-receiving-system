@@ -1672,6 +1672,58 @@
                 </section>
 
 
+                <!-- ITEM TRANSFER REPORT — ORIGINAL UPLOADED ORDER ONLY -->
+
+                <section class="contentCard itemTransferReportCard">
+                    <div class="cardHeader itemTransferHeader">
+                        <div>
+                            <span class="sectionEyebrow">OFFICIAL ORDER REPORT</span>
+                            <h2>Item Transfer Report</h2>
+                            <p>Available only after manual receiving finalization. Quantities come exclusively from the original uploaded order.</p>
+                        </div>
+                        <span id="itemTransferAvailability" class="itemTransferAvailability locked">Select a received order</span>
+                    </div>
+
+                    <div class="itemTransferControls">
+                        <div class="formField itemTransferOrderField">
+                            <label for="itemTransferOrderSelect">Received Order</label>
+                            <select id="itemTransferOrderSelect">
+                                <option value="">Select received order</option>
+                            </select>
+                        </div>
+                        <button id="btnLoadItemTransfer" class="primaryButton" type="button">Load Report</button>
+                        <button id="btnExportItemTransferExcel" class="secondaryButton" type="button" disabled>Export Excel</button>
+                        <button id="btnExportItemTransferPDF" class="secondaryButton" type="button" disabled>Export PDF</button>
+                    </div>
+
+                    <div id="itemTransferReportPreview" class="itemTransferPreview hidden">
+                        <div class="itemTransferMetaGrid">
+                            <div><span>Order Number</span><strong id="itemTransferOrderNumber">-</strong></div>
+                            <div><span>Order Date</span><strong id="itemTransferOrderDate">-</strong></div>
+                            <div><span>From Warehouse</span><strong id="itemTransferFromWarehouse">-</strong></div>
+                            <div><span>To Warehouse</span><strong id="itemTransferToWarehouse">-</strong></div>
+                            <div><span>Source File</span><strong id="itemTransferSourceFile">-</strong></div>
+                            <div><span>Total Items</span><strong id="itemTransferItemCount">0</strong></div>
+                        </div>
+
+                        <div class="tableContainer itemTransferTableContainer">
+                            <table class="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Item Number</th>
+                                        <th>Item Name</th>
+                                        <th>Transfer Qty</th>
+                                        <th>Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemTransferTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
             </section>
 
 

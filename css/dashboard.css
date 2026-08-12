@@ -2978,3 +2978,21 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .discrepancyGrid .displayedMetric strong{color:#0d63dc}
 @media(max-width:900px){.issueMultiFilter{width:100%}.issueMultiFilterMenu{width:100%}.discrepancyGrid{grid-template-columns:repeat(2,1fr)}}
 \n\n/* =====================================================\n   PHASE 2C.4 — MANUAL FINALIZE RECEIVING\n===================================================== */\n.finalizeReceivingButton{\n    min-width:190px;\n    font-weight:800;\n}\n.finalizeReceivingButton:disabled{\n    opacity:.5;\n    cursor:not-allowed;\n}\n@media (max-width:1100px){\n    .receivingSummaryActions .finalizeReceivingButton{\n        flex-basis:100%;\n    }\n}\n
+/* =====================================================
+   PHASE 2C.5 — ITEM TRANSFER REPORT
+===================================================== */
+.itemTransferReportCard{margin-top:20px;}
+.itemTransferHeader{align-items:flex-start;gap:18px;}
+.itemTransferAvailability{display:inline-flex;align-items:center;min-height:32px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;}
+.itemTransferAvailability.locked{background:#f4f6f8;color:#69788b;border:1px solid #dce4ec;}
+.itemTransferAvailability.available{background:#eaf8ef;color:#177245;border:1px solid #bfe7cc;}
+.itemTransferControls{display:grid;grid-template-columns:minmax(260px,1fr) auto auto auto;gap:10px;align-items:end;margin-top:18px;}
+.itemTransferOrderField{margin:0;}
+.itemTransferOrderField select{width:100%;min-height:44px;}
+.itemTransferPreview{margin-top:18px;}
+.itemTransferMetaGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.itemTransferMetaGrid>div{background:#f8fafc;border:1px solid #e1e8f0;border-radius:12px;padding:11px 13px;min-width:0;}
+.itemTransferMetaGrid span{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#718096;margin-bottom:4px;}
+.itemTransferMetaGrid strong{display:block;font-size:13px;color:#10243e;overflow-wrap:anywhere;}
+.itemTransferTableContainer{max-height:520px;overflow:auto;}
+@media(max-width:900px){.itemTransferControls{grid-template-columns:1fr 1fr;}.itemTransferOrderField{grid-column:1/-1;}.itemTransferMetaGrid{grid-template-columns:1fr 1fr;}}

@@ -1030,3 +1030,252 @@ function exportReceivingSummaryPDF(){
     showToast("Displayed discrepancy rows exported to PDF","success"); return true;
 }
 
+
+/* =====================================================
+   PHARMFLOW PHASE 2C.5 — ITEM TRANSFER REPORT
+   Official business report. Reads ONLY the immutable original uploaded
+   order snapshot. Physical receiving quantities never alter this report.
+===================================================== */
+
+ReportsEngine.itemTransfer={
+    orderNumber:"",
+    orderMeta:null,
+    rows:[]
+};
+
+function getReceivedOrderRegistryRows(){
+    const rows=(typeof OrderLifecycleEngine!=="undefined" && Array.isArray(OrderLifecycleEngine.records))
+        ? OrderLifecycleEngine.records
+        : [];
+    return rows.filter(row=>String(row.status||"").toLowerCase()==="received");
+}
+
+function refreshItemTransferOrderOptions(){
+    const select=document.getElementById("itemTransferOrderSelect");
+    if(!select){return;}
+    const current=select.value;
+    const rows=getReceivedOrderRegistryRows();
+    select.innerHTML='<option value="">Select received order</option>'+rows.map(row=>{
+        const number=toSafeString(row.order_number);
+        const date=toSafeString(row.order_date||"");
+        return '<option value="'+escapeHTML(number)+'">'+escapeHTML(number+(date?' • '+date:''))+'</option>';
+    }).join("");
+    if(current && rows.some(row=>normalizeOrderNumber(row.order_number)===normalizeOrderNumber(current))){
+        select.value=current;
+    }
+    const availability=document.getElementById("itemTransferAvailability");
+    if(availability && !ReportsEngine.itemTransfer.orderNumber){
+        availability.textContent=rows.length?"Received orders available":"No received orders";
+        availability.classList.toggle("locked",!rows.length);
+        availability.classList.toggle("available",!!rows.length);
+    }
+}
+
+function findReceivedOrderMeta(orderNumber){
+    const key=normalizeOrderNumber(orderNumber);
+    return getReceivedOrderRegistryRows().find(row=>normalizeOrderNumber(row.order_number)===key)||null;
+}
+
+function normalizeItemTransferRows(rows){
+    return (Array.isArray(rows)?rows:[]).map((row,index)=>({
+        lineNo:Number(row.line_no||index+1),
+        itemCode:normalizeItemCode(row.item_code||row.itemCode||""),
+        itemName:toSafeString(row.item_name||row.itemName||""),
+        transferQty:toNumber(row.ordered_qty??row.orderedQty,0),
+        category:toSafeString(row.category||"")
+    })).filter(row=>row.itemCode && Number.isFinite(row.transferQty));
+}
+
+async function loadItemTransferReport(orderNumberOverride=""){
+    const select=document.getElementById("itemTransferOrderSelect");
+    const requested=normalizeOrderNumber(orderNumberOverride || (select?select.value:""));
+    if(!requested){showToast("Select a received order first","warning");return false;}
+
+    showLoading("Loading original uploaded order…");
+    try{
+        if(typeof refreshOrderLifecycleRegistry==="function"){
+            await refreshOrderLifecycleRegistry();
+            refreshItemTransferOrderOptions();
+            if(select){select.value=requested;}
+        }
+        const meta=findReceivedOrderMeta(requested);
+        if(!meta){
+            throw new Error("Item Transfer is locked until this order is finalized as Received");
+        }
+        if(typeof getOriginalUploadedOrderSnapshot!=="function"){
+            throw new Error("Original order source module is unavailable");
+        }
+        const raw=await getOriginalUploadedOrderSnapshot(requested);
+        const rows=normalizeItemTransferRows(raw);
+        if(!rows.length){
+            throw new Error("Original uploaded-order snapshot is unavailable for "+requested+". This report cannot use receiving quantities as a substitute.");
+        }
+        ReportsEngine.itemTransfer={orderNumber:requested,orderMeta:meta,rows};
+        renderItemTransferReport();
+        showToast("Item Transfer loaded from original order data","success");
+        return true;
+    }catch(error){
+        Logger.error("Item Transfer load failed",error);
+        showToast(error.message||"Unable to load Item Transfer report","error");
+        return false;
+    }finally{hideLoading();}
+}
+
+function renderItemTransferReport(){
+    const state=ReportsEngine.itemTransfer;
+    const meta=state.orderMeta||{};
+    const preview=document.getElementById("itemTransferReportPreview");
+    const body=document.getElementById("itemTransferTableBody");
+    if(preview){preview.classList.toggle("hidden",!state.rows.length);}
+    const values={
+        itemTransferOrderNumber:state.orderNumber||"-",
+        itemTransferOrderDate:meta.order_date||"-",
+        itemTransferFromWarehouse:meta.from_warehouse||"-",
+        itemTransferToWarehouse:meta.to_warehouse||"-",
+        itemTransferSourceFile:meta.source_file||"-",
+        itemTransferItemCount:String(state.rows.length||0)
+    };
+    Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
+    if(body){
+        body.innerHTML=state.rows.map((row,index)=>`<tr><td>${index+1}</td><td>${escapeHTML(row.itemCode)}</td><td>${escapeHTML(row.itemName)}</td><td><strong>${toNumber(row.transferQty,0)}</strong></td><td>${escapeHTML(row.category||"-")}</td></tr>`).join("");
+    }
+    const availability=document.getElementById("itemTransferAvailability");
+    if(availability){
+        availability.textContent=state.rows.length?"Official source • Received":"Select a received order";
+        availability.classList.toggle("locked",!state.rows.length);
+        availability.classList.toggle("available",!!state.rows.length);
+    }
+    ["btnExportItemTransferExcel","btnExportItemTransferPDF"].forEach(id=>{const button=document.getElementById(id);if(button)button.disabled=!state.rows.length;});
+}
+
+function buildItemTransferExcelRows(){
+    return ReportsEngine.itemTransfer.rows.map((row,index)=>({
+        "No.":index+1,
+        "Item Number":row.itemCode,
+        "Item Name":row.itemName,
+        "Transfer Qty":toNumber(row.transferQty,0),
+        "Category":row.category||""
+    }));
+}
+
+function safeReportOrderFilePart(value){
+    return String(value||"ORDER").replace(/[^a-z0-9_-]+/gi,"_");
+}
+
+function exportItemTransferExcel(){
+    const state=ReportsEngine.itemTransfer;
+    if(!state.rows.length){showToast("Load a received order first","warning");return false;}
+    if(typeof XLSX==="undefined"){showToast("Excel library is unavailable","error");return false;}
+    const meta=state.orderMeta||{};
+    const aoa=[
+        ["Order Number",state.orderNumber,"Order Date",meta.order_date||""],
+        ["From Warehouse",meta.from_warehouse||"","To Warehouse",meta.to_warehouse||""],
+        ["Source File",meta.source_file||"","Status","Received"],
+        [],
+        ["No.","Item Number","Item Name","Transfer Qty","Category"]
+    ];
+    buildItemTransferExcelRows().forEach(row=>aoa.push([row["No."],row["Item Number"],row["Item Name"],row["Transfer Qty"],row.Category]));
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"]=[{wch:7},{wch:18},{wch:44},{wch:14},{wch:24}];
+    ws["!autofilter"]={ref:`A5:E${aoa.length}`};
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Item Transfer");
+    XLSX.writeFile(wb,"PharmFlow_Item_Transfer_"+safeReportOrderFilePart(state.orderNumber)+".xlsx");
+    showToast("Item Transfer exported to Excel","success");
+    return true;
+}
+
+function exportItemTransferPDF(){
+    const state=ReportsEngine.itemTransfer;
+    if(!state.rows.length){showToast("Load a received order first","warning");return false;}
+    if(!window.jspdf || !window.jspdf.jsPDF){showToast("PDF library is unavailable","error");return false;}
+    const {jsPDF}=window.jspdf;
+    const meta=state.orderMeta||{};
+    const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
+    const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+    const margin=32, rowH=23;
+    const cols=[
+        {x:32,w:36,label:"#"},
+        {x:68,w:94,label:"Item Number"},
+        {x:162,w:365,label:"Item Name"},
+        {x:527,w:90,label:"Transfer Qty"},
+        {x:617,w:190,label:"Category"}
+    ];
+    let y=0,pageNo=0;
+    function drawMeta(){
+        doc.setFont("helvetica","bold");doc.setFontSize(10);
+        doc.text("Order "+state.orderNumber,margin,y);
+        doc.setFont("helvetica","normal");doc.setFontSize(9);
+        doc.text("Order Date: "+String(meta.order_date||"-"),210,y);
+        doc.text("Status: Received",390,y);
+        y+=16;
+        doc.text("From: "+String(meta.from_warehouse||"-"),margin,y);
+        doc.text("To: "+String(meta.to_warehouse||"-"),300,y);
+        doc.text("Source: "+String(meta.source_file||"-"),540,y);
+        y+=18;
+    }
+    function header(){
+        pageNo++;y=30;
+        if(pageNo===1){drawMeta();}
+        doc.setFont("helvetica","bold");doc.setFontSize(8);
+        cols.forEach(c=>doc.text(c.label,c.x,y));
+        doc.setDrawColor(180);doc.line(margin,y+6,pageW-margin,y+6);y+=18;
+    }
+    function footer(){
+        doc.setFont("helvetica","normal");doc.setFontSize(8);
+        doc.text("Page "+pageNo,pageW-margin-35,pageH-18);
+        doc.text(state.rows.length+" item(s) • Original uploaded order source",margin,pageH-18);
+    }
+    header();
+    state.rows.forEach((row,index)=>{
+        if(y+rowH>pageH-38){footer();doc.addPage();header();}
+        doc.setFont("helvetica","normal");doc.setFontSize(8);
+        doc.text(String(index+1),cols[0].x,y);
+        doc.text(String(row.itemCode||""),cols[1].x,y);
+        doc.text(doc.splitTextToSize(String(row.itemName||""),cols[2].w-8).slice(0,2),cols[2].x,y);
+        doc.setFont("helvetica","bold");doc.text(String(toNumber(row.transferQty,0)),cols[3].x,y);
+        doc.setFont("helvetica","normal");doc.text(doc.splitTextToSize(String(row.category||"-"),cols[4].w-8).slice(0,2),cols[4].x,y);
+        doc.setDrawColor(230);doc.line(margin,y+15,pageW-margin,y+15);y+=rowH;
+    });
+    footer();
+    doc.save("PharmFlow_Item_Transfer_"+safeReportOrderFilePart(state.orderNumber)+".pdf");
+    showToast("Item Transfer exported to PDF","success");
+    return true;
+}
+
+function bindItemTransferReportUI(){
+    const load=document.getElementById("btnLoadItemTransfer");
+    if(load && load.dataset.bound!=="1"){
+        load.dataset.bound="1";
+        load.addEventListener("click",()=>loadItemTransferReport());
+    }
+    const excel=document.getElementById("btnExportItemTransferExcel");
+    if(excel && excel.dataset.bound!=="1"){
+        excel.dataset.bound="1";excel.addEventListener("click",exportItemTransferExcel);
+    }
+    const pdf=document.getElementById("btnExportItemTransferPDF");
+    if(pdf && pdf.dataset.bound!=="1"){
+        pdf.dataset.bound="1";pdf.addEventListener("click",exportItemTransferPDF);
+    }
+    const select=document.getElementById("itemTransferOrderSelect");
+    if(select && select.dataset.bound!=="1"){
+        select.dataset.bound="1";
+        select.addEventListener("change",()=>{
+            ReportsEngine.itemTransfer={orderNumber:"",orderMeta:null,rows:[]};
+            renderItemTransferReport();
+        });
+    }
+    refreshItemTransferOrderOptions();
+}
+
+window.refreshItemTransferOrderOptions=refreshItemTransferOrderOptions;
+window.loadItemTransferReport=loadItemTransferReport;
+window.exportItemTransferExcel=exportItemTransferExcel;
+window.exportItemTransferPDF=exportItemTransferPDF;
+
+setTimeout(()=>{
+    bindItemTransferReportUI();
+    if(typeof refreshOrderLifecycleRegistry==="function"){
+        refreshOrderLifecycleRegistry().then(refreshItemTransferOrderOptions).catch(()=>{});
+    }
+},700);
