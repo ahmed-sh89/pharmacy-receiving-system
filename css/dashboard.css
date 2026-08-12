@@ -2947,3 +2947,13 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .receivingSummaryGrid span{display:block;font-size:10px;font-weight:800;color:#718096;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
 .receivingSummaryGrid strong{font-size:21px;color:#10213b}
 @media(max-width:1100px){.receivingSummaryGrid{grid-template-columns:repeat(4,1fr)}}
+
+/* PHASE 2C.3.1 — compact discrepancy-focused receiving panel */
+.discrepancyPanel{padding:16px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)}
+.discrepancyPanel .receivingSummaryHeader{align-items:center;margin-bottom:12px}
+.discrepancyPanel .receivingSummaryHeader h3{font-size:18px;margin:2px 0 3px}
+.discrepancyPanel .receivingSummaryHeader p{font-size:12px;max-width:650px}
+.discrepancyGrid{grid-template-columns:repeat(4,minmax(120px,1fr));max-width:720px}
+.discrepancyGrid>div{padding:10px 12px;background:#fff}
+.discrepancyGrid strong{font-size:19px}
+@media(max-width:900px){.discrepancyPanel .receivingSummaryHeader{flex-direction:column}.discrepancyGrid{grid-template-columns:repeat(2,1fr);max-width:none}.receivingSummaryActions{width:100%}.receivingSummaryActions button{flex:1}}

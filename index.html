@@ -1104,27 +1104,23 @@
                     </div>
 
 
-                    <section class="receivingSummaryPanel" id="receivingSummaryPanel">
+                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
                         <div class="receivingSummaryHeader">
                             <div>
-                                <span class="sectionEyebrow">PHYSICAL RECEIVING VERIFICATION</span>
-                                <h3>Receiving Summary</h3>
-                                <p>Operational scan results only. This summary does not change the original uploaded order or official order reports.</p>
+                                <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
+                                <h3>Discrepancies</h3>
+                                <p>Only shortages, over-received items and manual/unordered extras. Exact matches are excluded.</p>
                             </div>
                             <div class="receivingSummaryActions">
-                                <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Excel</button>
-                                <button id="btnExportReceivingSummaryPDF" class="secondaryButton" type="button">Export PDF</button>
+                                <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Discrepancies · Excel</button>
+                                <button id="btnExportReceivingSummaryPDF" class="secondaryButton" type="button">Export Discrepancies · PDF</button>
                             </div>
                         </div>
-                        <div class="receivingSummaryGrid">
-                            <div><span>Total Items</span><strong id="rsTotalItems">0</strong></div>
-                            <div><span>Fully Received</span><strong id="rsFullyReceived">0</strong></div>
-                            <div><span>Short</span><strong id="rsShort">0</strong></div>
-                            <div><span>Over</span><strong id="rsOver">0</strong></div>
-                            <div><span>Not Received</span><strong id="rsNotReceived">0</strong></div>
-                            <div><span>Ordered Units</span><strong id="rsOrderedUnits">0</strong></div>
-                            <div><span>Received Units</span><strong id="rsReceivedUnits">0</strong></div>
-                            <div><span>Net Difference</span><strong id="rsDifference">0</strong></div>
+                        <div class="receivingSummaryGrid discrepancyGrid">
+                            <div><span>Total Discrepancies</span><strong id="rsTotalItems">0</strong></div>
+                            <div><span>Shortage Items</span><strong id="rsShort">0</strong></div>
+                            <div><span>Over Received</span><strong id="rsOver">0</strong></div>
+                            <div><span>Manual Extras</span><strong id="rsManual">0</strong></div>
                         </div>
                     </section>
 
