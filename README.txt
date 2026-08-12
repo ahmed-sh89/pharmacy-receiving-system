@@ -1,5 +1,9 @@
-PHARMFLOW PHASE 2C.4.1 — FINALIZE BUTTON EVENT FIX
+PharmFlow Phase 2C.4.2 - Legacy Current Order Registry Repair
 
-Replace only index.html.
-Cause: js/orders.js existed but was not loaded by index.html, so the Finalize Receiving button had no click listener.
-No SQL required.
+Replace only:
+  js/orders.js
+
+No SQL is required.
+
+Purpose:
+If the currently loaded order predates the persistent Order Registry, Finalize Receiving will safely register that current order from its already-saved workspace metadata, then continue normal duplicate/finalize protection.

@@ -260,6 +260,51 @@ function getFinalizeReceivingSummary(){
     };
 }
 
+async function repairMissingOrderRegistryFromWorkspace(orderNumbers){
+    const wanted=new Set((orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean));
+    if(!wanted.size){ return []; }
+
+    const files=Array.isArray(AppState.workspace.orderFiles)?AppState.workspace.orderFiles:[];
+    const repaired=[];
+
+    for(const orderNumber of wanted){
+        const fileRecord=files.find(file=>
+            normalizeOrderNumber(file.documentId||file.orderNumber||"")===orderNumber
+        );
+
+        if(!fileRecord){
+            continue;
+        }
+
+        const meta={
+            orderNumber,
+            orderDate:toSafeString(fileRecord.orderDate||""),
+            fromWarehouse:toSafeString(fileRecord.fromWarehouse||""),
+            toWarehouse:toSafeString(fileRecord.toWarehouse||""),
+            fileName:toSafeString(fileRecord.name||"")
+        };
+
+        try{
+            await registerUploadedOrder(meta,Number(fileRecord.rows||0));
+            repaired.push(orderNumber);
+        }catch(error){
+            /* Another device may have registered it between validation calls.
+               Re-check before deciding this is a real failure. */
+            const existing=await getOrderLifecycleRecord(orderNumber).catch(()=>null);
+            if(existing){
+                repaired.push(orderNumber);
+                continue;
+            }
+            throw error;
+        }
+    }
+
+    if(repaired.length){
+        await refreshOrderLifecycleRegistry();
+    }
+    return repaired;
+}
+
 async function validateWorkspaceCanFinalize(){
     const summary=getFinalizeReceivingSummary();
     if(summary.totalItems<=0){
@@ -270,16 +315,28 @@ async function validateWorkspaceCanFinalize(){
     }
 
     await refreshOrderLifecycleRegistry();
-    const records=OrderLifecycleEngine.records||[];
+    let records=OrderLifecycleEngine.records||[];
     const received=[];
-    const missing=[];
+    let missing=[];
     summary.orderNumbers.forEach(number=>{
         const record=records.find(row=>normalizeOrderNumber(row.order_number)===number);
         if(!record){ missing.push(number); return; }
         if(String(record.status||"").toLowerCase()==="received"){ received.push(number); }
     });
+
+    /* Compatibility repair for an order that was already loaded before the
+       persistent Order Registry was introduced. This does not change receiving
+       quantities or the immutable uploaded-order source snapshot. */
     if(missing.length){
-        throw new Error("Order registry is missing: "+missing.join(", "));
+        await repairMissingOrderRegistryFromWorkspace(missing);
+        records=OrderLifecycleEngine.records||[];
+        missing=summary.orderNumbers.filter(number=>
+            !records.some(row=>normalizeOrderNumber(row.order_number)===number)
+        );
+    }
+
+    if(missing.length){
+        throw new Error("Order registry could not be restored for: "+missing.join(", "));
     }
     if(received.length){
         throw new Error("Already received/finalized: "+received.join(", "));
@@ -379,5 +436,6 @@ window.requestFinalizeReceiving=requestFinalizeReceiving;
 window.finalizeCurrentReceiving=finalizeCurrentReceiving;
 window.refreshFinalizeReceivingButton=refreshFinalizeReceivingButton;
 window.bindFinalizeReceivingUI=bindFinalizeReceivingUI;
+window.repairMissingOrderRegistryFromWorkspace=repairMissingOrderRegistryFromWorkspace;
 
 setTimeout(bindFinalizeReceivingUI,350);
