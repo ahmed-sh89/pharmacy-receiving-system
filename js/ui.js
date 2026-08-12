@@ -1005,6 +1005,9 @@ function closeSmartScanSearch(
 
 function bindUIEvents(){
 
+    document.getElementById("btnExportReceivingSummaryExcel")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryExcel==="function") exportReceivingSummaryExcel(); });
+    document.getElementById("btnExportReceivingSummaryPDF")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryPDF==="function") exportReceivingSummaryPDF(); });
+
     document
         .getElementById("btnQuickSearch")
         ?.addEventListener(
@@ -1592,6 +1595,7 @@ function clearLastScanUI(){
 ===================================================== */
 
 function refreshReceivingTable(){
+    if(typeof refreshReceivingVerificationSummary==="function") refreshReceivingVerificationSummary();
 
     const tbody = UI.elements.receivingTableBody;
     if(!tbody){ return; }

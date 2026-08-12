@@ -1104,6 +1104,30 @@
                     </div>
 
 
+                    <section class="receivingSummaryPanel" id="receivingSummaryPanel">
+                        <div class="receivingSummaryHeader">
+                            <div>
+                                <span class="sectionEyebrow">PHYSICAL RECEIVING VERIFICATION</span>
+                                <h3>Receiving Summary</h3>
+                                <p>Operational scan results only. This summary does not change the original uploaded order or official order reports.</p>
+                            </div>
+                            <div class="receivingSummaryActions">
+                                <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Excel</button>
+                                <button id="btnExportReceivingSummaryPDF" class="secondaryButton" type="button">Export PDF</button>
+                            </div>
+                        </div>
+                        <div class="receivingSummaryGrid">
+                            <div><span>Total Items</span><strong id="rsTotalItems">0</strong></div>
+                            <div><span>Fully Received</span><strong id="rsFullyReceived">0</strong></div>
+                            <div><span>Short</span><strong id="rsShort">0</strong></div>
+                            <div><span>Over</span><strong id="rsOver">0</strong></div>
+                            <div><span>Not Received</span><strong id="rsNotReceived">0</strong></div>
+                            <div><span>Ordered Units</span><strong id="rsOrderedUnits">0</strong></div>
+                            <div><span>Received Units</span><strong id="rsReceivedUnits">0</strong></div>
+                            <div><span>Net Difference</span><strong id="rsDifference">0</strong></div>
+                        </div>
+                    </section>
+
                     <div class="tableContainer">
 
 
@@ -2604,6 +2628,8 @@
 ></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 
 
 <!-- ==================================================

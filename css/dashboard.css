@@ -2935,3 +2935,15 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
     body.zebraDevice.zebraReceivingActive .mainContent{padding:3px!important}
     body.zebraDevice.zebraReceivingActive .scanPanelFooter{display:flex!important;justify-content:flex-end!important}
 }
+
+/* PHASE 2C.3 — Receiving verification summary */
+.receivingSummaryPanel{margin:0 0 18px;padding:18px;border:1px solid #dfe7f1;border-radius:16px;background:#fff}
+.receivingSummaryHeader{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:14px}
+.receivingSummaryHeader h3{margin:3px 0 5px;font-size:20px;color:#10213b}
+.receivingSummaryHeader p{margin:0;max-width:720px;color:#68778d;font-size:13px;line-height:1.45}
+.receivingSummaryActions{display:flex;gap:8px;flex-wrap:wrap}
+.receivingSummaryGrid{display:grid;grid-template-columns:repeat(8,minmax(92px,1fr));gap:9px}
+.receivingSummaryGrid>div{padding:12px;border:1px solid #e5ebf3;border-radius:12px;background:#f8fafc;min-width:0}
+.receivingSummaryGrid span{display:block;font-size:10px;font-weight:800;color:#718096;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.receivingSummaryGrid strong{font-size:21px;color:#10213b}
+@media(max-width:1100px){.receivingSummaryGrid{grid-template-columns:repeat(4,1fr)}}
