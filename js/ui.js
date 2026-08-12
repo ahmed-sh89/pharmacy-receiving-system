@@ -1362,28 +1362,48 @@ function refreshEntireUI(){
    HEADER
 ===================================================== */
 
-function refreshHeader(){
+function refreshDashboardWorkContext(){
+    const orderNumber = AppState?.workspace?.orderName || AppState?.workspace?.orderId || "";
+    const orderFiles = Array.isArray(AppState?.workspace?.orderFiles) ? AppState.workspace.orderFiles : [];
+    const orderItems = Array.isArray(AppState?.workspace?.orderData) ? AppState.workspace.orderData : [];
 
-    const hasActiveOrder = !!(
-        AppState.workspace?.active === true &&
-        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    setElementText(
+        document.getElementById("dashboardActiveOrderNumber"),
+        orderNumber || "No active order"
     );
 
     setElementText(
+        document.getElementById("dashboardActiveOrderMeta"),
+        orderNumber
+            ? `${orderFiles.length || 1} order file${(orderFiles.length || 1) === 1 ? "" : "s"} loaded • ${orderItems.length} items`
+            : "Upload an order to start receiving"
+    );
+
+    setElementText(document.getElementById("dashboardOrderFileCount"), orderFiles.length);
+    setElementText(document.getElementById("dashboardOrderItemCount"), orderItems.length);
+}
+
+function refreshHeader(){
+
+    refreshDashboardWorkContext();
+
+    setElementText(
         UI.elements.headerOrderId,
-        hasActiveOrder
-            ? (AppState.workspace.orderName || "Active Order")
-            : "No Active Order"
+        AppState.workspace.orderName
+        ||
+        AppState.workspace.orderId
+        ||
+        "No Order"
     );
 
 
     setElementText(
         UI.elements.headerSessionId,
-        hasActiveOrder
-            ? ((AppState.session.cloud === true
-                ? (AppState.session.code || AppState.session.id)
-                : AppState.session.id) || "No Session")
-            : "No Session"
+        (AppState.session.cloud === true
+            ? (AppState.session.code || AppState.session.id)
+            : AppState.session.id)
+        ||
+        "Local"
     );
 
 }

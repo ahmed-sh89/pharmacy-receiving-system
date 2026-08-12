@@ -3010,3 +3010,34 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 }
 .archiveDeleteOrderButton:hover{background:#fef2f2;}
 .archiveActionNote{font-size:12px;color:#64748b;}
+
+/* =====================================================
+   PHASE 2C.5.4 — DASHBOARD / ORDERS UI CLEANUP
+   UI-only. No receiving or persistence logic changes.
+===================================================== */
+#page-dashboard .pharmflowDashboardHero{display:none!important;}
+.dashboardWorkContext{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+    padding:16px 18px;margin-bottom:14px;background:#fff;border:1px solid #dce6f4;
+    border-radius:16px;box-shadow:0 5px 18px rgba(19,64,120,.045);
+}
+.dashboardWorkContextMain{display:flex;flex-direction:column;min-width:0;gap:3px;}
+.dashboardWorkContextMain>strong{font-size:20px;line-height:1.15;color:#10243f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dashboardWorkContextMain>span:last-child{font-size:12px;color:#687a91;}
+.dashboardWorkContextStats{display:flex;gap:8px;flex:0 0 auto;}
+.dashboardWorkContextStats>div{min-width:88px;padding:9px 12px;border:1px solid #e0e8f3;border-radius:12px;background:#f8fbff;}
+.dashboardWorkContextStats span{display:block;font-size:9px;font-weight:800;letter-spacing:.08em;color:#71839a;margin-bottom:3px;}
+.dashboardWorkContextStats strong{font-size:17px;color:#10243f;}
+#page-dashboard .scanPanel{margin-top:0;}
+#page-files .twoColumnLayout{grid-template-columns:minmax(0,1fr)!important;}
+#page-files>.contentCard,#page-files .twoColumnLayout>.contentCard{max-width:none;}
+#page-files .fileItem{padding:12px 14px;}
+#page-files .healthGrid{grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;}
+#page-files .healthGrid>div{padding:13px 14px;min-height:74px;}
+#page-files .contentCard{box-shadow:0 5px 18px rgba(19,64,120,.04);}
+@media(max-width:900px){
+  .dashboardWorkContext{align-items:flex-start;flex-direction:column;}
+  .dashboardWorkContextStats{width:100%;}
+  .dashboardWorkContextStats>div{flex:1;}
+  #page-files .healthGrid{grid-template-columns:repeat(2,minmax(120px,1fr));}
+}
