@@ -1366,10 +1366,11 @@ function refreshHeader(){
 
     setElementText(
         UI.elements.headerOrderId,
-        ((AppState.workspace.orderFiles||[]).map(file=>file.documentId).filter(Boolean).join(" + "))
-        || AppState.workspace.orderName
-        || AppState.workspace.orderId
-        || "No Order"
+        AppState.workspace.orderName
+        ||
+        AppState.workspace.orderId
+        ||
+        "No Order"
     );
 
 
@@ -2703,7 +2704,11 @@ function renderArchiveTable(orders){
 
         row.innerHTML = `
 
-            <td><strong>${escapeHTML((order.orderFiles||[]).map(f=>f.documentId).filter(Boolean).join(" + ") || order.orderName || order.orderId)}</strong></td>
+            <td>
+                ${escapeHTML(
+                    order.orderId
+                )}
+            </td>
 
             <td>
                 ${escapeHTML(
@@ -2740,13 +2745,12 @@ function renderArchiveTable(orders){
                 </span>
 
             </td>
-            <td><button type="button" class="dangerGhostButton compactButton" data-delete-archive-order="${escapeHTML(order.orderId)}">Delete Order</button></td>
 
         `;
 
-        tbody.appendChild(row);
-        const deleteButton=row.querySelector("[data-delete-archive-order]");
-        if(deleteButton){deleteButton.addEventListener("click",()=>requestDeleteArchivedOrder(order));}
+        tbody.appendChild(
+            row
+        );
 
     });
 

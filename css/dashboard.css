@@ -2996,6 +2996,3 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .itemTransferMetaGrid strong{display:block;font-size:13px;color:#10243e;overflow-wrap:anywhere;}
 .itemTransferTableContainer{max-height:520px;overflow:auto;}
 @media(max-width:900px){.itemTransferControls{grid-template-columns:1fr 1fr;}.itemTransferOrderField{grid-column:1/-1;}.itemTransferMetaGrid{grid-template-columns:1fr 1fr;}}
-
-/* Phase 2C.5.1 — compact order/report architecture */
-.itemTransferOrdersContainer{margin-top:18px}.itemTransferPreview{margin-top:22px;border-top:1px solid #dbe5f0;padding-top:20px}.itemTransferPreviewHead{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.itemTransferPreviewHead h3{font-size:22px;margin:4px 0 0}.itemTransferActions{display:flex;gap:10px;flex-wrap:wrap}.compactButton{min-height:34px!important;padding:7px 12px!important;font-size:12px!important}.dangerGhostButton{border:1px solid #e45b5b;background:#fff;color:#c83e3e;border-radius:9px;font-weight:700;cursor:pointer}.dangerGhostButton:hover{background:#fff3f3}.archiveSummaryGrid{margin-bottom:16px}.itemTransferReportCard .cardHeader{padding-bottom:4px}@media(max-width:800px){.itemTransferPreviewHead{align-items:flex-start;flex-direction:column}}

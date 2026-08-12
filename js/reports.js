@@ -1051,13 +1051,24 @@ function getReceivedOrderRegistryRows(){
 }
 
 function refreshItemTransferOrderOptions(){
-    const body=document.getElementById("itemTransferOrdersBody");
+    const select=document.getElementById("itemTransferOrderSelect");
+    if(!select){return;}
+    const current=select.value;
     const rows=getReceivedOrderRegistryRows();
+    select.innerHTML='<option value="">Select received order</option>'+rows.map(row=>{
+        const number=toSafeString(row.order_number);
+        const date=toSafeString(row.order_date||"");
+        return '<option value="'+escapeHTML(number)+'">'+escapeHTML(number+(date?' • '+date:''))+'</option>';
+    }).join("");
+    if(current && rows.some(row=>normalizeOrderNumber(row.order_number)===normalizeOrderNumber(current))){
+        select.value=current;
+    }
     const availability=document.getElementById("itemTransferAvailability");
-    if(availability){availability.textContent=rows.length?rows.length+" received order(s)":"No received orders";availability.classList.toggle("locked",!rows.length);availability.classList.toggle("available",!!rows.length);}
-    if(!body)return;
-    body.innerHTML=rows.length?rows.map(row=>`<tr><td><strong>${escapeHTML(row.order_number||"")}</strong></td><td>${escapeHTML(row.order_date||"-")}</td><td>${escapeHTML(row.from_warehouse||"-")}</td><td>${escapeHTML(row.to_warehouse||"-")}</td><td>${toNumber(row.item_count,0)}</td><td><span class="statusBadge statusCompleted">Received</span></td><td><button class="secondaryButton compactButton" data-item-transfer-order="${escapeHTML(row.order_number||"")}">View Report</button></td></tr>`).join(""):`<tr><td colspan="7" class="tableEmptyState">No finalized orders are available yet.</td></tr>`;
-    body.querySelectorAll("[data-item-transfer-order]").forEach(btn=>btn.addEventListener("click",()=>loadItemTransferReport(btn.dataset.itemTransferOrder)));
+    if(availability && !ReportsEngine.itemTransfer.orderNumber){
+        availability.textContent=rows.length?"Received orders available":"No received orders";
+        availability.classList.toggle("locked",!rows.length);
+        availability.classList.toggle("available",!!rows.length);
+    }
 }
 
 function findReceivedOrderMeta(orderNumber){
@@ -1076,7 +1087,8 @@ function normalizeItemTransferRows(rows){
 }
 
 async function loadItemTransferReport(orderNumberOverride=""){
-    const requested=normalizeOrderNumber(orderNumberOverride);
+    const select=document.getElementById("itemTransferOrderSelect");
+    const requested=normalizeOrderNumber(orderNumberOverride || (select?select.value:""));
     if(!requested){showToast("Select a received order first","warning");return false;}
 
     showLoading("Loading original uploaded order…");
@@ -1084,6 +1096,7 @@ async function loadItemTransferReport(orderNumberOverride=""){
         if(typeof refreshOrderLifecycleRegistry==="function"){
             await refreshOrderLifecycleRegistry();
             refreshItemTransferOrderOptions();
+            if(select){select.value=requested;}
         }
         const meta=findReceivedOrderMeta(requested);
         if(!meta){
@@ -1231,10 +1244,27 @@ function exportItemTransferPDF(){
 }
 
 function bindItemTransferReportUI(){
+    const load=document.getElementById("btnLoadItemTransfer");
+    if(load && load.dataset.bound!=="1"){
+        load.dataset.bound="1";
+        load.addEventListener("click",()=>loadItemTransferReport());
+    }
     const excel=document.getElementById("btnExportItemTransferExcel");
-    if(excel && excel.dataset.bound!=="1"){excel.dataset.bound="1";excel.addEventListener("click",exportItemTransferExcel);}
+    if(excel && excel.dataset.bound!=="1"){
+        excel.dataset.bound="1";excel.addEventListener("click",exportItemTransferExcel);
+    }
     const pdf=document.getElementById("btnExportItemTransferPDF");
-    if(pdf && pdf.dataset.bound!=="1"){pdf.dataset.bound="1";pdf.addEventListener("click",exportItemTransferPDF);}
+    if(pdf && pdf.dataset.bound!=="1"){
+        pdf.dataset.bound="1";pdf.addEventListener("click",exportItemTransferPDF);
+    }
+    const select=document.getElementById("itemTransferOrderSelect");
+    if(select && select.dataset.bound!=="1"){
+        select.dataset.bound="1";
+        select.addEventListener("change",()=>{
+            ReportsEngine.itemTransfer={orderNumber:"",orderMeta:null,rows:[]};
+            renderItemTransferReport();
+        });
+    }
     refreshItemTransferOrderOptions();
 }
 
