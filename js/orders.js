@@ -117,6 +117,7 @@ async function refreshOrderLifecycleRegistry(){
         const result=await authRpc("list_pharmflow_orders",{p_pharmacy_id:AuthState.context.pharmacy_id});
         OrderLifecycleEngine.records=Array.isArray(result)?result:[];
         renderOrderLifecycleRegistry();
+        if(typeof refreshItemTransferOrderOptions==="function"){refreshItemTransferOrderOptions();}
         return OrderLifecycleEngine.records;
     }catch(error){Logger.warn("Order registry refresh failed",error);return [];}
 }

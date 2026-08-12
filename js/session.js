@@ -624,6 +624,12 @@ async function dbGetAll(
 }
 
 
+/* Delete one IndexedDB record by primary key. */
+async function dbDelete(storeName,key){
+    const db=await getDatabase();
+    return new Promise((resolve,reject)=>{const tx=db.transaction(storeName,"readwrite");const req=tx.objectStore(storeName).delete(key);req.onsuccess=()=>resolve(true);req.onerror=()=>reject(req.error);});
+}
+
 /* =====================================================
    DB CLEAR STORE
 ===================================================== */
@@ -1050,6 +1056,29 @@ async function restoreHistoricalArchive(){
 
 }
 
+
+async function requestDeleteArchivedOrder(order){
+    if(!order)return false;
+    const orderNumbers=(order.orderFiles||[]).map(f=>normalizeOrderNumber(f.documentId)).filter(Boolean);
+    const label=orderNumbers.join(" + ") || order.orderName || order.orderId;
+    if(!window.confirm("Permanently delete order "+label+" and its receiving history/reports? Global GTIN and other orders will not be affected."))return false;
+    const typed=window.prompt("Type the Order Number exactly to continue:\n"+label);
+    if(typed!==label){showToast("Order deletion cancelled — confirmation did not match","warning");return false;}
+    if(!window.confirm("FINAL CONFIRMATION: permanently delete "+label+"? This cannot be undone."))return false;
+    showLoading("Deleting order…");
+    try{
+        if(typeof authRpc==="function" && AuthState.context && AuthState.context.pharmacy_id){
+            for(const n of orderNumbers){await authRpc("delete_pharmflow_order_complete",{p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:n,p_confirmation:n});}
+        }
+        await dbDelete(APP_CONFIG.database.stores.orders,order.orderId);
+        const txs=(AppState.archive.transactions||[]).filter(t=>t.orderId===order.orderId);
+        for(const t of txs){if(t.transactionId)await dbDelete(APP_CONFIG.database.stores.transactions,t.transactionId);}
+        await restoreHistoricalArchive();
+        if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry();
+        showToast("Order "+label+" deleted","success");return true;
+    }catch(error){Logger.error("Order deletion failed",error);showToast(error.message||"Unable to delete order","error");return false;}finally{hideLoading();}
+}
+window.requestDeleteArchivedOrder=requestDeleteArchivedOrder;
 
 /* =====================================================
    DELETE ALL HISTORY

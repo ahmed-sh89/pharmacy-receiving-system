@@ -1168,9 +1168,7 @@
                                     Remaining
                                 </th>
 
-                                <th>
-                                    Status
-                                </th>
+                                <th>Status</th><th>Actions</th>
 
                             </tr>
 
@@ -1608,9 +1606,7 @@
 
                             <tr>
 
-                                <th>
-                                    Date
-                                </th>
+                                <th>Received Date</th>
 
                                 <th>
                                     Order
@@ -1673,139 +1669,15 @@
 
 
                 <!-- ITEM TRANSFER REPORT — ORIGINAL UPLOADED ORDER ONLY -->
-
                 <section class="contentCard itemTransferReportCard">
-                    <div class="cardHeader itemTransferHeader">
-                        <div>
-                            <span class="sectionEyebrow">OFFICIAL ORDER REPORT</span>
-                            <h2>Item Transfer Report</h2>
-                            <p>Available only after manual receiving finalization. Quantities come exclusively from the original uploaded order.</p>
-                        </div>
-                        <span id="itemTransferAvailability" class="itemTransferAvailability locked">Select a received order</span>
-                    </div>
-
-                    <div class="itemTransferControls">
-                        <div class="formField itemTransferOrderField">
-                            <label for="itemTransferOrderSelect">Received Order</label>
-                            <select id="itemTransferOrderSelect">
-                                <option value="">Select received order</option>
-                            </select>
-                        </div>
-                        <button id="btnLoadItemTransfer" class="primaryButton" type="button">Load Report</button>
-                        <button id="btnExportItemTransferExcel" class="secondaryButton" type="button" disabled>Export Excel</button>
-                        <button id="btnExportItemTransferPDF" class="secondaryButton" type="button" disabled>Export PDF</button>
-                    </div>
-
+                    <div class="cardHeader itemTransferHeader"><div><span class="sectionEyebrow">OFFICIAL ORDER REPORT</span><h2>Item Transfer Reports</h2><p>Received orders only. Transfer quantities come exclusively from the original uploaded order.</p></div><span id="itemTransferAvailability" class="itemTransferAvailability locked">Loading received orders…</span></div>
+                    <div class="tableContainer itemTransferOrdersContainer"><table class="dataTable"><thead><tr><th>Order Number</th><th>Order Date</th><th>From</th><th>To</th><th>Items</th><th>Status</th><th>Action</th></tr></thead><tbody id="itemTransferOrdersBody"></tbody></table></div>
                     <div id="itemTransferReportPreview" class="itemTransferPreview hidden">
-                        <div class="itemTransferMetaGrid">
-                            <div><span>Order Number</span><strong id="itemTransferOrderNumber">-</strong></div>
-                            <div><span>Order Date</span><strong id="itemTransferOrderDate">-</strong></div>
-                            <div><span>From Warehouse</span><strong id="itemTransferFromWarehouse">-</strong></div>
-                            <div><span>To Warehouse</span><strong id="itemTransferToWarehouse">-</strong></div>
-                            <div><span>Source File</span><strong id="itemTransferSourceFile">-</strong></div>
-                            <div><span>Total Items</span><strong id="itemTransferItemCount">0</strong></div>
-                        </div>
-
-                        <div class="tableContainer itemTransferTableContainer">
-                            <table class="dataTable">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Item Number</th>
-                                        <th>Item Name</th>
-                                        <th>Transfer Qty</th>
-                                        <th>Category</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="itemTransferTableBody"></tbody>
-                            </table>
-                        </div>
+                        <div class="itemTransferPreviewHead"><div><span class="sectionEyebrow">SELECTED ORDER</span><h3 id="itemTransferOrderNumber">-</h3></div><div class="itemTransferActions"><button id="btnExportItemTransferExcel" class="secondaryButton" type="button" disabled>Export Excel</button><button id="btnExportItemTransferPDF" class="secondaryButton" type="button" disabled>Export PDF</button></div></div>
+                        <div class="itemTransferMetaGrid"><div><span>Order Date</span><strong id="itemTransferOrderDate">-</strong></div><div><span>From Warehouse</span><strong id="itemTransferFromWarehouse">-</strong></div><div><span>To Warehouse</span><strong id="itemTransferToWarehouse">-</strong></div><div><span>Source File</span><strong id="itemTransferSourceFile">-</strong></div><div><span>Total Items</span><strong id="itemTransferItemCount">0</strong></div></div>
+                        <div class="tableContainer itemTransferTableContainer"><table class="dataTable"><thead><tr><th>#</th><th>Item Number</th><th>Item Name</th><th>Transfer Qty</th><th>Category</th></tr></thead><tbody id="itemTransferTableBody"></tbody></table></div>
                     </div>
                 </section>
-
-
-            </section>
-
-
-            <!-- ==================================================
-                 CLOUD SESSION PAGE
-            =================================================== -->
-
-            <section
-                id="page-sessions"
-                class="appPage"
-            >
-
-                <section class="contentCard cloudSessionHero">
-                    <div class="cardHeader">
-                        <div>
-                            <span class="sectionEyebrow">SHARED RECEIVING</span>
-                            <h2>PC + Zebra Cloud Session</h2>
-                            <p>Create the session on the PC, then join from Zebra using the number or QR code. No file transfer or manual merge is required.</p>
-                        </div>
-                        <div class="cloudStatusPill" id="cloudSyncStatus">LOCAL</div>
-                    </div>
-
-                    <div class="cloudActionGrid">
-                        <button id="btnCreateSession" class="largeActionCard" type="button">
-                            <span class="actionIcon">☁</span>
-                            <strong>Create Shared Session</strong>
-                            <small>PC: upload the current order and start shared receiving.</small>
-                        </button>
-
-                        <div class="cloudJoinCard">
-                            <span class="sectionEyebrow">JOIN FROM ZEBRA</span>
-                            <strong>Session Number</strong>
-                            <div class="cloudJoinRow">
-                                <input id="cloudSessionCodeInput" class="cloudCodeInput" inputmode="numeric" maxlength="8" placeholder="Enter session number" autocomplete="off">
-                                <button id="btnJoinCloudSession" class="primaryButton" type="button">Join</button>
-                            </div>
-                            <small>Enter the number shown on the PC, or scan the QR code.</small>
-                        </div>
-                    </div>
-
-                    <div id="cloudSessionQRWrap" class="cloudQRPanel hidden">
-                        <div>
-                            <span class="sectionEyebrow">ACTIVE SESSION</span>
-                            <div id="cloudSessionCodeDisplay" class="cloudSessionCode">------</div>
-                            <p>Scan this QR with Zebra to open the same receiving session.</p>
-                            <button id="btnRefreshCloudNow" class="secondaryButton" type="button">↻ Sync Now</button>
-                            <button id="btnLeaveCloudSession" class="secondaryButton" type="button">Disconnect</button>
-                        </div>
-                        <div id="cloudSessionQR" class="cloudQRCode" aria-label="Session QR code"></div>
-                    </div>
-                </section>
-
-                <section class="contentCard">
-                    <div class="cardHeader">
-                        <div>
-                            <span class="sectionEyebrow">CURRENT SESSION</span>
-                            <h3>Session Information</h3>
-                        </div>
-                    </div>
-
-                    <div class="sessionInfoGrid">
-                        <div><span>Session</span><strong id="sessionPageId">Local</strong></div>
-                        <div><span>Device ID</span><strong id="sessionDeviceId">-</strong></div>
-                        <div><span>Pending Sync</span><strong id="sessionQueueCount">0</strong></div>
-                        <div><span>Last Cloud Sync</span><strong id="sessionLastSave">-</strong></div>
-                    </div>
-                </section>
-
-                <details class="contentCard emergencyTools">
-                    <summary><strong>Emergency Offline Tools</strong> — use only if cloud receiving is unavailable</summary>
-                    <div class="actionCardGrid emergencyActionGrid">
-                        <button id="btnPrepareZebraWork" class="largeActionCard" type="button"><span class="actionIcon">▣</span><strong>Prepare Zebra Work File</strong><small>Emergency offline workflow.</small></button>
-                        <button id="btnLoadZebraWork" class="largeActionCard" type="button"><span class="actionIcon">⇧</span><strong>Load Zebra Work File</strong><small>Emergency offline workflow.</small></button>
-                        <button id="btnExportZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇩</span><strong>Export Zebra Session</strong><small>Emergency offline workflow.</small></button>
-                        <button id="btnMergeZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇄</span><strong>Merge Zebra Session</strong><small>Emergency recovery only.</small></button>
-                    </div>
-                </details>
-
-                <input id="zebraWorkFileInput" type="file" hidden>
-                <input id="zebraSessionFileInput" type="file" hidden>
-
-            </section>
 
             <!-- ==================================================
                  ARCHIVE PAGE
@@ -1900,13 +1772,9 @@
 
                             <tr>
 
-                                <th>
-                                    Order ID
-                                </th>
+                                <th>Order Number</th>
 
-                                <th>
-                                    Date
-                                </th>
+                                <th>Received Date</th>
 
                                 <th>
                                     Items
@@ -1916,9 +1784,7 @@
                                     Received Units
                                 </th>
 
-                                <th>
-                                    Status
-                                </th>
+                                <th>Status</th><th>Actions</th>
 
                             </tr>
 
