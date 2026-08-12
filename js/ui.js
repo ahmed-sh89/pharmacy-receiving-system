@@ -18,7 +18,7 @@ const UI = {
     reportSearchResults:[],
 
     receivingFilters:{
-        status:"all",
+        issues:new Set(["not_received","partial","over","manual"]),
         category:"all"
     },
 
@@ -124,8 +124,8 @@ function cacheUIElements(){
         receivingTableBody:
             document.getElementById("receivingTableBody"),
 
-        receivingStatusFilter:
-            document.getElementById("receivingStatusFilter"),
+        receivingIssueFilter:
+            document.getElementById("receivingIssueFilter"),
 
         receivingCategoryFilter:
             document.getElementById("receivingCategoryFilter"),
@@ -1024,11 +1024,33 @@ function bindUIEvents(){
         );
 
 
-    UI.elements.receivingStatusFilter
-        ?.addEventListener("change",function(event){
-            UI.receivingFilters.status = event.target.value || "all";
+    document.querySelectorAll("[data-receiving-issue]").forEach(input=>{
+        input.addEventListener("change",function(){
+            const selected=new Set(
+                Array.from(document.querySelectorAll("[data-receiving-issue]:checked"))
+                    .map(el=>el.value)
+            );
+            UI.receivingFilters.issues=selected;
+            refreshReceivingIssueFilterLabel();
             refreshReceivingTable();
         });
+    });
+
+    document.getElementById("btnSelectAllReceivingIssues")?.addEventListener("click",function(event){
+        event.preventDefault();
+        document.querySelectorAll("[data-receiving-issue]").forEach(el=>{el.checked=true;});
+        UI.receivingFilters.issues=new Set(["not_received","partial","over","manual"]);
+        refreshReceivingIssueFilterLabel();
+        refreshReceivingTable();
+    });
+
+    document.getElementById("btnClearReceivingIssues")?.addEventListener("click",function(event){
+        event.preventDefault();
+        document.querySelectorAll("[data-receiving-issue]").forEach(el=>{el.checked=false;});
+        UI.receivingFilters.issues=new Set();
+        refreshReceivingIssueFilterLabel();
+        refreshReceivingTable();
+    });
 
     UI.elements.receivingCategoryFilter
         ?.addEventListener("change",function(event){
@@ -1590,13 +1612,37 @@ function clearLastScanUI(){
 }
 
 
+function getReceivingIssueKey(item){
+    if(!item){ return ""; }
+    const ordered=toNumber(item.orderedQty,0);
+    const received=toNumber(item.receivedQty,0);
+    if(item.manual===true && received>0){ return "manual"; }
+    if(received>ordered){ return "over"; }
+    if(ordered>0 && received<=0){ return "not_received"; }
+    if(ordered>0 && received>0 && received<ordered){ return "partial"; }
+    return "";
+}
+
+function refreshReceivingIssueFilterLabel(){
+    const label=document.getElementById("receivingIssueFilterLabel");
+    if(!label){ return; }
+    const set=UI.receivingFilters.issues instanceof Set ? UI.receivingFilters.issues : new Set();
+    const names={not_received:"Not Received",partial:"Partial Shortage",over:"Over Received",manual:"Manual Extra"};
+    if(set.size===4){ label.textContent="All discrepancies"; return; }
+    if(set.size===0){ label.textContent="None selected"; return; }
+    if(set.size===1){ label.textContent=names[Array.from(set)[0]]||"1 selected"; return; }
+    label.textContent=set.size+" selected";
+}
+
+function getVisibleReceivingItemsForExport(){
+    return Array.isArray(UI.receivingVisibleItems) ? UI.receivingVisibleItems.slice() : [];
+}
+
 /* =====================================================
    RECEIVING TABLE
 ===================================================== */
 
 function refreshReceivingTable(){
-    if(typeof refreshReceivingVerificationSummary==="function") refreshReceivingVerificationSummary();
-
     const tbody = UI.elements.receivingTableBody;
     if(!tbody){ return; }
 
@@ -1604,24 +1650,22 @@ function refreshReceivingTable(){
     tbody.innerHTML = "";
 
     const allItems = AppState.workspace.orderData || [];
-    const statusFilter = UI.receivingFilters.status || "all";
+    const selectedIssues = UI.receivingFilters.issues instanceof Set
+        ? UI.receivingFilters.issues
+        : new Set(["not_received","partial","over","manual"]);
     const categoryFilter = UI.receivingFilters.category || "all";
 
     const items = allItems.filter(item=>{
-        const received = toNumber(item.receivedQty,0);
-        const ordered = toNumber(item.orderedQty,0);
-
-        let statusMatch = true;
-        if(statusFilter === "received"){ statusMatch = received > 0; }
-        else if(statusFilter === "not_received"){ statusMatch = received <= 0; }
-        else if(statusFilter === "partial"){ statusMatch = received > 0 && received < ordered; }
-        else if(statusFilter === "completed"){ statusMatch = ordered > 0 && received === ordered; }
-        else if(statusFilter === "over"){ statusMatch = received > ordered; }
-
+        const issue = getReceivingIssueKey(item);
+        if(!issue || !selectedIssues.has(issue)){ return false; }
         const category = toSafeString(item.category || "").trim();
-        const categoryMatch = categoryFilter === "all" || category === categoryFilter;
-        return statusMatch && categoryMatch;
+        return categoryFilter === "all" || category === categoryFilter;
     });
+
+    UI.receivingVisibleItems = items.slice();
+    const displayed=document.getElementById("rsDisplayedItems");
+    if(displayed){ displayed.textContent=items.length; }
+    if(typeof refreshReceivingVerificationSummary==="function") refreshReceivingVerificationSummary();
 
     if(allItems.length === 0){
         tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No order items loaded.</td></tr>`;

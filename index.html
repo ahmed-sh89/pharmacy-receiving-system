@@ -1074,14 +1074,22 @@
 
                         <div class="headerActions receivingFilterBar">
 
-                            <select id="receivingStatusFilter" class="compactSelect" aria-label="Receiving status filter">
-                                <option value="all">All Status</option>
-                                <option value="received">Received Any Qty</option>
-                                <option value="not_received">Not Received</option>
-                                <option value="partial">Partially Received</option>
-                                <option value="completed">Completed</option>
-                                <option value="over">Over Received</option>
-                            </select>
+                            <details id="receivingIssueFilter" class="issueMultiFilter">
+                                <summary>
+                                    <span>Discrepancy Types</span>
+                                    <strong id="receivingIssueFilterLabel">All discrepancies</strong>
+                                </summary>
+                                <div class="issueMultiFilterMenu" role="group" aria-label="Discrepancy types">
+                                    <label><input type="checkbox" data-receiving-issue value="not_received" checked> Not Received</label>
+                                    <label><input type="checkbox" data-receiving-issue value="partial" checked> Partial Shortage</label>
+                                    <label><input type="checkbox" data-receiving-issue value="over" checked> Over Received</label>
+                                    <label><input type="checkbox" data-receiving-issue value="manual" checked> Manual / Unordered Extra</label>
+                                    <div class="issueMultiFilterActions">
+                                        <button type="button" id="btnSelectAllReceivingIssues">Select all</button>
+                                        <button type="button" id="btnClearReceivingIssues">Clear</button>
+                                    </div>
+                                </div>
+                            </details>
 
                             <select id="receivingCategoryFilter" class="compactSelect" aria-label="Category filter">
                                 <option value="all">All Categories</option>
@@ -1108,8 +1116,8 @@
                         <div class="receivingSummaryHeader">
                             <div>
                                 <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
-                                <h3>Discrepancies</h3>
-                                <p>Only shortages, over-received items and manual/unordered extras. Exact matches are excluded.</p>
+                                <h3>Discrepancy Report Preview</h3>
+                                <p>Select the discrepancy types above. The table and exports always use exactly the rows currently displayed.</p>
                             </div>
                             <div class="receivingSummaryActions">
                                 <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Discrepancies · Excel</button>
@@ -1117,7 +1125,8 @@
                             </div>
                         </div>
                         <div class="receivingSummaryGrid discrepancyGrid">
-                            <div><span>Total Discrepancies</span><strong id="rsTotalItems">0</strong></div>
+                            <div class="displayedMetric"><span>Displayed Items</span><strong id="rsDisplayedItems">0</strong></div>
+                            <div><span>All Discrepancies</span><strong id="rsTotalItems">0</strong></div>
                             <div><span>Shortage Items</span><strong id="rsShort">0</strong></div>
                             <div><span>Over Received</span><strong id="rsOver">0</strong></div>
                             <div><span>Manual Extras</span><strong id="rsManual">0</strong></div>

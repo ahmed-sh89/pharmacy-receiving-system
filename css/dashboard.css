@@ -2957,3 +2957,23 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .discrepancyGrid>div{padding:10px 12px;background:#fff}
 .discrepancyGrid strong{font-size:19px}
 @media(max-width:900px){.discrepancyPanel .receivingSummaryHeader{flex-direction:column}.discrepancyGrid{grid-template-columns:repeat(2,1fr);max-width:none}.receivingSummaryActions{width:100%}.receivingSummaryActions button{flex:1}}
+
+/* PHASE 2C.3.2 — discrepancy selection + visible export */
+.issueMultiFilter{position:relative;min-width:235px}
+.issueMultiFilter>summary{list-style:none;min-height:42px;border:1px solid #d7e1ee;border-radius:12px;background:#fff;padding:7px 38px 7px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:1px;position:relative}
+.issueMultiFilter>summary::-webkit-details-marker{display:none}
+.issueMultiFilter>summary:after{content:"▾";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#60738c;font-size:12px}
+.issueMultiFilter[open]>summary{border-color:#1d6fe8;box-shadow:0 0 0 3px rgba(29,111,232,.10)}
+.issueMultiFilter>summary span{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#75849a}
+.issueMultiFilter>summary strong{font-size:12px;color:#142743;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.issueMultiFilterMenu{position:absolute;z-index:80;top:calc(100% + 7px);left:0;width:285px;padding:10px;background:#fff;border:1px solid #dbe5f1;border-radius:14px;box-shadow:0 18px 45px rgba(24,48,82,.16);display:grid;gap:4px}
+.issueMultiFilterMenu label{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#263a55;cursor:pointer}
+.issueMultiFilterMenu label:hover{background:#f4f8fd}
+.issueMultiFilterMenu input{width:16px;height:16px;accent-color:#1469e8}
+.issueMultiFilterActions{display:flex;gap:7px;padding-top:8px;margin-top:4px;border-top:1px solid #edf1f6}
+.issueMultiFilterActions button{flex:1;border:1px solid #d9e3ef;background:#f8fafc;color:#38516f;border-radius:8px;padding:7px 8px;font-size:11px;font-weight:800;cursor:pointer}
+.issueMultiFilterActions button:hover{background:#eef5ff;border-color:#bfd5f5}
+.discrepancyGrid{grid-template-columns:repeat(5,minmax(105px,1fr));max-width:900px}
+.discrepancyGrid .displayedMetric{border-color:#bcd6fb;background:#f3f8ff}
+.discrepancyGrid .displayedMetric strong{color:#0d63dc}
+@media(max-width:900px){.issueMultiFilter{width:100%}.issueMultiFilterMenu{width:100%}.discrepancyGrid{grid-template-columns:repeat(2,1fr)}}

@@ -845,33 +845,54 @@ function getReportsDebugSnapshot(){
    Exception-only operational reconciliation.
    Official order reports remain sourced from uploaded order data.
 ===================================================== */
-function buildReceivingDiscrepancyReport(){
-    const items=Array.isArray(AppState.workspace.orderData)?AppState.workspace.orderData:[];
+function getReceivingOrderMetadata(){
+    const files=Array.isArray(AppState.workspace.orderFiles)?AppState.workspace.orderFiles:[];
+    const seen=new Set();
+    const rows=[];
+    files.forEach(file=>{
+        const orderNumber=toSafeString(file.documentId||file.orderNumber||"").trim();
+        if(!orderNumber || seen.has(orderNumber)){ return; }
+        seen.add(orderNumber);
+        rows.push({
+            orderNumber,
+            orderDate:toSafeString(file.orderDate||"").trim(),
+            fromWarehouse:toSafeString(file.fromWarehouse||"").trim(),
+            toWarehouse:toSafeString(file.toWarehouse||"").trim(),
+            sourceFile:toSafeString(file.name||"").trim()
+        });
+    });
+    if(!rows.length){
+        const fallback=toSafeString(AppState.workspace.orderId||AppState.workspace.orderName||"").trim();
+        if(fallback){ rows.push({orderNumber:fallback,orderDate:"",fromWarehouse:"",toWarehouse:"",sourceFile:""}); }
+    }
+    return rows;
+}
+
+function buildReceivingDiscrepancyReport(options={}){
+    const visibleOnly=options.visibleOnly===true;
+    const sourceItems=visibleOnly && typeof getVisibleReceivingItemsForExport==="function"
+        ? getVisibleReceivingItemsForExport()
+        : (Array.isArray(AppState.workspace.orderData)?AppState.workspace.orderData:[]);
     const rows=[];
     let shortageItems=0, partialShortageItems=0, overItems=0, manualExtraItems=0;
 
-    items.forEach((item)=>{
+    sourceItems.forEach((item)=>{
         const ordered=toNumber(item.orderedQty,0);
         const received=toNumber(item.receivedQty,0);
-        const manual=item.manual===true;
         const difference=received-ordered;
+        const issueKey=typeof getReceivingIssueKey==="function" ? getReceivingIssueKey(item) : "";
         let issueType="";
 
-        if(manual && received>0){
-            issueType="Manual / Unordered Extra";
-            manualExtraItems++;
-        }else if(received>ordered){
-            issueType="Over Received";
-            overItems++;
-        }else if(received===0 && ordered>0){
-            issueType="Not Received";
-            shortageItems++;
-        }else if(received>0 && received<ordered){
-            issueType="Partial Shortage";
-            shortageItems++;
-            partialShortageItems++;
+        if(issueKey==="manual"){
+            issueType="Manual / Unordered Extra"; manualExtraItems++;
+        }else if(issueKey==="over"){
+            issueType="Over Received"; overItems++;
+        }else if(issueKey==="not_received"){
+            issueType="Not Received"; shortageItems++;
+        }else if(issueKey==="partial"){
+            issueType="Partial Shortage"; shortageItems++; partialShortageItems++;
         }else{
-            return; // Exact matches are intentionally excluded.
+            return;
         }
 
         rows.push({
@@ -887,8 +908,10 @@ function buildReceivingDiscrepancyReport(){
 
     const rank={"Not Received":1,"Partial Shortage":2,"Over Received":3,"Manual / Unordered Extra":4};
     rows.sort((a,b)=>(rank[a["Issue Type"]]||9)-(rank[b["Issue Type"]]||9)||String(a["Item Name"]).localeCompare(String(b["Item Name"])));
+    const orderMetadata=getReceivingOrderMetadata();
     return {
-        orderId:AppState.workspace.orderId||AppState.workspace.orderName||"Current Order",
+        orderId:orderMetadata.map(x=>x.orderNumber).join(" + ") || AppState.workspace.orderId || AppState.workspace.orderName || "Current Order",
+        orders:orderMetadata,
         totalDiscrepancies:rows.length,
         shortageItems,
         partialShortageItems,
@@ -899,51 +922,52 @@ function buildReceivingDiscrepancyReport(){
 }
 
 function refreshReceivingVerificationSummary(){
-    const s=buildReceivingDiscrepancyReport();
+    const all=buildReceivingDiscrepancyReport({visibleOnly:false});
+    const visible=buildReceivingDiscrepancyReport({visibleOnly:true});
     const values={
-        rsTotalItems:s.totalDiscrepancies,
-        rsShort:s.shortageItems,
-        rsOver:s.overItems,
-        rsManual:s.manualExtraItems
+        rsDisplayedItems:visible.totalDiscrepancies,
+        rsTotalItems:all.totalDiscrepancies,
+        rsShort:all.shortageItems,
+        rsOver:all.overItems,
+        rsManual:all.manualExtraItems
     };
     Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
-    return s;
+    return visible;
 }
 
 function exportReceivingSummaryExcel(){
     if(typeof XLSX==="undefined"){showToast("Excel library is unavailable","error");return false;}
-    const s=buildReceivingDiscrepancyReport();
-    if(!s.rows.length){showToast("No receiving discrepancies to export","success");return false;}
+    const s=buildReceivingDiscrepancyReport({visibleOnly:true});
+    if(!s.rows.length){showToast("No displayed discrepancies to export","warning");return false;}
 
-    const aoa=[
-        ["PharmFlow - Receiving Discrepancy Report"],
-        ["Order",s.orderId],
-        ["Purpose","Physical receiving discrepancies only"],
-        [],
-        ["Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Category"]
-    ];
+    const aoa=[];
+    aoa.push(["Order Number","Order Date","From Warehouse","To Warehouse","Source File"]);
+    (s.orders||[]).forEach(o=>aoa.push([o.orderNumber,o.orderDate,o.fromWarehouse,o.toWarehouse,o.sourceFile]));
+    aoa.push([]);
+    const headerRow=aoa.length+1;
+    aoa.push(["Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Category"]);
     s.rows.forEach(r=>aoa.push([r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Category]));
     const ws=XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"]=[{wch:16},{wch:44},{wch:13},{wch:13},{wch:12},{wch:24},{wch:22}];
-    ws["!freeze"]={xSplit:0,ySplit:5};
-    ws["!autofilter"]={ref:`A5:G${aoa.length}`};
+    ws["!cols"]=[{wch:18},{wch:44},{wch:13},{wch:13},{wch:12},{wch:25},{wch:22}];
+    ws["!freeze"]={xSplit:0,ySplit:headerRow};
+    ws["!autofilter"]={ref:`A${headerRow}:G${aoa.length}`};
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,"Discrepancies");
     XLSX.writeFile(wb,"PharmFlow_Receiving_Discrepancies_"+String(s.orderId).replace(/[^a-z0-9_-]+/gi,"_")+".xlsx");
-    showToast("Discrepancy report exported to Excel","success"); return true;
+    showToast("Displayed discrepancy rows exported to Excel","success"); return true;
 }
 
 function exportReceivingSummaryPDF(){
-    const s=buildReceivingDiscrepancyReport();
-    if(!s.rows.length){showToast("No receiving discrepancies to export","success");return false;}
+    const s=buildReceivingDiscrepancyReport({visibleOnly:true});
+    if(!s.rows.length){showToast("No displayed discrepancies to export","warning");return false;}
     if(!window.jspdf || !window.jspdf.jsPDF){showToast("PDF library is unavailable","error");return false;}
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
     const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
-    const margin=34;
+    const margin=32;
     const cols=[
-        {key:"Item Number",label:"Item Number",x:34,w:82},
-        {key:"Item Name",label:"Item Name",x:116,w:270},
+        {key:"Item Number",label:"Item Number",x:32,w:82},
+        {key:"Item Name",label:"Item Name",x:114,w:272},
         {key:"Ordered Qty",label:"Ordered",x:386,w:68},
         {key:"Received Qty",label:"Received",x:454,w:68},
         {key:"Difference",label:"Difference",x:522,w:68},
@@ -953,23 +977,37 @@ function exportReceivingSummaryPDF(){
     const rowH=24;
     let y=0,pageNo=0;
 
+    function drawOrderMetadata(){
+        doc.setFont("helvetica","bold");doc.setFontSize(8);
+        doc.text("Order Number",margin,y);doc.text("Order Date",170,y);doc.text("From Warehouse",255,y);doc.text("To Warehouse",405,y);doc.text("Source File",555,y);
+        y+=13;
+        doc.setFont("helvetica","normal");
+        (s.orders||[]).forEach(o=>{
+            if(y>112){return;}
+            doc.text(String(o.orderNumber||"-"),margin,y);
+            doc.text(String(o.orderDate||"-"),170,y);
+            doc.text(doc.splitTextToSize(String(o.fromWarehouse||"-"),140).slice(0,1),255,y);
+            doc.text(doc.splitTextToSize(String(o.toWarehouse||"-"),140).slice(0,1),405,y);
+            doc.text(doc.splitTextToSize(String(o.sourceFile||"-"),245).slice(0,1),555,y);
+            y+=12;
+        });
+        y+=5;
+        doc.setDrawColor(210);doc.line(margin,y,pageW-margin,y);y+=14;
+    }
+
     function header(){
         pageNo++;
-        doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("PharmFlow",margin,35);
-        doc.setFontSize(15);doc.text("Receiving Discrepancy Report",margin,57);
-        doc.setFont("helvetica","normal");doc.setFontSize(9);
-        doc.text(`Order: ${s.orderId}`,margin,76);
-        doc.text(`Exceptions only - exact matches are excluded`,margin,91);
+        y=32;
+        if(pageNo===1){ drawOrderMetadata(); }
         doc.setFont("helvetica","bold");doc.setFontSize(8);
-        y=116;
         cols.forEach(c=>doc.text(c.label,c.x,y));
-        doc.line(margin,y+6,pageW-margin,y+6);
+        doc.setDrawColor(185);doc.line(margin,y+6,pageW-margin,y+6);
         y+=18;
     }
     function footer(){
         doc.setFont("helvetica","normal");doc.setFontSize(8);
         doc.text(`Page ${pageNo}`,pageW-margin-35,pageH-18);
-        doc.text("Operational receiving verification only",margin,pageH-18);
+        doc.text(`${s.rows.length} displayed discrepancy item(s)`,margin,pageH-18);
     }
     header();
     s.rows.forEach((r)=>{
@@ -989,5 +1027,6 @@ function exportReceivingSummaryPDF(){
     });
     footer();
     doc.save("PharmFlow_Receiving_Discrepancies_"+String(s.orderId).replace(/[^a-z0-9_-]+/gi,"_")+".pdf");
-    showToast("Discrepancy report exported to PDF","success"); return true;
+    showToast("Displayed discrepancy rows exported to PDF","success"); return true;
 }
+
