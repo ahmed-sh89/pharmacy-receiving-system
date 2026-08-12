@@ -1044,10 +1044,45 @@ ReportsEngine.itemTransfer={
 };
 
 function getReceivedOrderRegistryRows(){
-    const rows=(typeof OrderLifecycleEngine!=="undefined" && Array.isArray(OrderLifecycleEngine.records))
+    const registry=(typeof OrderLifecycleEngine!=="undefined" && Array.isArray(OrderLifecycleEngine.records))
         ? OrderLifecycleEngine.records
         : [];
-    return rows.filter(row=>String(row.status||"").toLowerCase()==="received");
+    const receivedRegistry=registry.filter(row=>String(row.status||"").toLowerCase()==="received");
+
+    // Phase 2C.5.2: historical orders may have been finalized before the
+    // permanent order registry was introduced. The Archive is authoritative
+    // evidence that receiving was finalized, so expose its source order
+    // numbers as report candidates too. Item Transfer still refuses to load
+    // unless an immutable original uploaded-order snapshot exists.
+    const archived=(typeof AppState!=="undefined" && AppState.archive && Array.isArray(AppState.archive.orders))
+        ? AppState.archive.orders
+        : [];
+    const archiveRows=[];
+    archived.forEach(order=>{
+        if(String(order.status||"").toLowerCase()!=="received"){return;}
+        const files=Array.isArray(order.orderFiles)?order.orderFiles:[];
+        files.forEach(file=>{
+            const number=normalizeOrderNumber(file.documentId||file.orderNumber||file.order_number||"");
+            if(!number){return;}
+            archiveRows.push({
+                order_number:number,
+                order_date:file.orderDate||file.order_date||order.orderDate||order.closedAt||"",
+                from_warehouse:file.fromWarehouse||file.from_warehouse||"",
+                to_warehouse:file.toWarehouse||file.to_warehouse||"",
+                source_file:file.fileName||file.source_file||"",
+                status:"received",
+                archive_order_id:order.orderId||""
+            });
+        });
+    });
+
+    const merged=new Map();
+    [...archiveRows,...receivedRegistry].forEach(row=>{
+        const key=normalizeOrderNumber(row.order_number);
+        if(!key){return;}
+        merged.set(key,{...(merged.get(key)||{}),...row,order_number:key,status:"received"});
+    });
+    return Array.from(merged.values());
 }
 
 function refreshItemTransferOrderOptions(){
