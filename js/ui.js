@@ -1336,6 +1336,8 @@ function bindUIStateEvents(){
 
 function refreshEntireUI(){
 
+    if(typeof refreshSafeAccountIdentity === "function"){ refreshSafeAccountIdentity(); }
+
     refreshHeader();
 
     refreshDashboard();
@@ -2459,7 +2461,7 @@ function refreshMasterGTINUI(){
 
         if(UI.elements.masterGTINNotice){
             UI.elements.masterGTINNotice.textContent =
-                "Update Master GTIN once. Mapping files will then be optional for normal orders.";
+                "System Global GTIN is not available on this device yet. PharmFlow will sync it automatically after sign-in.";
             UI.elements.masterGTINNotice.className =
                 "masterGTINNotice";
         }
@@ -2532,7 +2534,7 @@ function refreshMasterGTINUI(){
         else{
 
             UI.elements.masterGTINNotice.textContent =
-                "Master GTIN is active for the current order. Mapping file is not required.";
+                "System Global GTIN is active for the current order. Mapping file is not required.";
 
             UI.elements.masterGTINNotice.className =
                 "masterGTINNotice success";
@@ -5756,7 +5758,15 @@ function getKpiPanelItems(key){
 }
 
 function kpiTitle(key){
-    return ({total:"Total Items",completed:"Completed Items",remaining:"Remaining Items",over:"Over Received",manual:"Manual / Unordered Extras",scans:"Recent Scan Activity"})[key]||"Dashboard Details";
+    return ({
+        total:"Order Item Browser",
+        completed:"Completed Items",
+        remaining:"Remaining Items",
+        over:"Over Received",
+        manual:"Manual / Unordered Extras",
+        scans:"Receiving Activity History",
+        received:"Received Items — Any Quantity"
+    })[key]||"Dashboard Details";
 }
 
 function openDashboardKpiPanel(key){
@@ -5765,7 +5775,7 @@ function openDashboardKpiPanel(key){
     const overlay=document.createElement("div");
     overlay.id="dashboardKpiOverlay";
     overlay.className="quickKpiOverlay";
-    overlay.innerHTML=`<div class="quickKpiPanel"><div class="quickKpiHeader"><h3>${kpiTitle(key)}</h3><button type="button" class="quickKpiClose" data-close>✕</button></div><div data-body></div></div>`;
+    overlay.innerHTML=`<div class="quickKpiPanel phase263Panel"><div class="quickKpiHeader"><h3>${kpiTitle(key)}</h3><button type="button" class="quickKpiClose" data-close>✕</button></div><div data-body></div></div>`;
     document.body.appendChild(overlay);
     overlay.querySelector("[data-close]").onclick=closeDashboardKpiPanel;
     overlay.addEventListener("click",event=>{if(event.target===overlay) closeDashboardKpiPanel();});
@@ -5784,42 +5794,110 @@ function refreshOpenKpiPanel(){
     if(body) renderDashboardKpiPanel(activeKpiKey,body);
 }
 
+function getReceivingActivityRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const totals=new Map();
+    const rows=[];
+    history.forEach(tx=>{
+        const code=toSafeString(tx?.itemCode||"");
+        const change=toNumber(tx?.quantity,0);
+        const total=Math.max(0,toNumber(totals.get(code),0)+change);
+        totals.set(code,total);
+        rows.push({...tx,qtyChange:change,totalAfterAction:total});
+    });
+    return rows.reverse();
+}
+
+function getActivitySourceLabel(source){
+    const value=toSafeString(source||"").toUpperCase();
+    if(value.includes("UNDO")) return "Correction";
+    if(value.includes("SCAN")) return "Scanner";
+    if(value.includes("SEARCH")) return "Manual Quantity";
+    if(value.includes("MANUAL")||value.includes("EDIT")||value.includes("ADJUST")) return "Manual Quantity";
+    return source||"Receiving";
+}
+
+function toggleHighPriority(itemCode){
+    const item=typeof getItemByCode==="function"?getItemByCode(itemCode):null;
+    if(!item) return;
+    item.highPriority=item.highPriority!==true;
+    if(typeof saveApplicationState==="function") saveApplicationState("high-priority");
+    refreshOpenKpiPanel();
+    showToast(`${item.itemName} — ${item.highPriority?"High Priority enabled":"High Priority removed"}`,"success");
+}
+
+function renderItemBrowser(body, rows, options={}){
+    const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+    const showPriority=options.showPriority===true;
+    const receivedMode=options.receivedMode===true;
+    const totalUnits=rows.reduce((sum,item)=>sum+Math.max(0,toNumber(item.receivedQty,0)),0);
+    body.innerHTML=`
+      <div class="phase263BrowserToolbar">
+        <input class="phase263Search" type="search" placeholder="Search by Item Name / Item Number" aria-label="Search items">
+        ${showPriority?'<button type="button" class="phase263Filter active" data-filter="all">All Items</button><button type="button" class="phase263Filter" data-filter="priority">★ High Priority</button>':''}
+      </div>
+      ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b><span>Total Received Units: <b>${totalUnits}</b></span></div>`:''}
+      <div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr>${showPriority?'<th>Priority</th>':''}<th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody data-rows></tbody></table></div>`;
+    const input=body.querySelector('.phase263Search');
+    const tbody=body.querySelector('[data-rows]');
+    let filter='all';
+    const draw=()=>{
+        const q=toSafeString(input?.value||'').trim().toLowerCase();
+        let visible=rows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
+        if(showPriority&&filter==='priority') visible=visible.filter(item=>item.highPriority===true);
+        visible.sort((a,b)=>(b.highPriority===true)-(a.highPriority===true)||toSafeString(a.itemName).localeCompare(toSafeString(b.itemName)));
+        tbody.innerHTML=visible.length?visible.map(item=>`<tr class="${item.highPriority===true?'phase263PriorityRow':''}">${showPriority?`<td><button type="button" class="phase263Star ${item.highPriority===true?'active':''}" data-priority="${esc(item.itemCode)}" title="Toggle High Priority">${item.highPriority===true?'★':'☆'}</button></td>`:''}<td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||'')}</td></tr>`).join(''):'<tr><td colspan="7" class="tableEmptyState">No matching items.</td></tr>';
+        tbody.querySelectorAll('[data-priority]').forEach(btn=>btn.onclick=()=>toggleHighPriority(btn.dataset.priority));
+    };
+    input?.addEventListener('input',draw);
+    body.querySelectorAll('[data-filter]').forEach(btn=>btn.onclick=()=>{filter=btn.dataset.filter;body.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b===btn));draw();});
+    draw();
+}
+
 function renderDashboardKpiPanel(key,body){
     if(!body) return;
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
     if(key==="scans"){
-        const rows=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
-        if(!rows.length){body.innerHTML='<div class="tableEmptyState">No recent scans on this device yet.</div>';return;}
-        body.innerHTML=`<table class="quickKpiTable"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total after scan</th><th>Action</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>+${esc(row.quantity)}</td><td>${esc(row.receivedQty)}</td><td><button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${row.undone?'disabled':''}>${row.undone?'Corrected':'Undo scan'}</button></td></tr>`).join('')}</tbody></table>`;
-        body.querySelectorAll("[data-undo]").forEach(btn=>btn.onclick=()=>{ if(typeof undoRecentScannerTransaction==="function") undoRecentScannerTransaction(btn.dataset.undo); });
+        const rows=getReceivingActivityRows();
+        if(!rows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
+        const recent=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
+        const undoMap=new Map(recent.map(row=>[row.transactionId,row]));
+        body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Item</th><th>Source</th><th>Qty Change</th><th>Total After Action</th><th>Action</th></tr></thead><tbody>${rows.map(row=>{const undo=undoMap.get(row.transactionId);const q=toNumber(row.qtyChange,0);return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>${esc(getActivitySourceLabel(row.source))}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${q>0?'+':''}${esc(q)}</td><td><b>${esc(row.totalAfterAction)}</b></td><td>${undo?`<button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${undo.undone?'disabled':''}>${undo.undone?'Corrected':'Undo scan'}</button>`:'—'}</td></tr>`;}).join('')}</tbody></table></div>`;
+        body.querySelectorAll("[data-undo]").forEach(btn=>btn.onclick=()=>{if(typeof undoRecentScannerTransaction==="function") undoRecentScannerTransaction(btn.dataset.undo);});
+        return;
+    }
+    if(key==="received"){
+        const rows=(Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[]).filter(i=>toNumber(i.receivedQty,0)>0);
+        renderItemBrowser(body,rows,{receivedMode:true});
+        return;
+    }
+    if(key==="total"){
+        renderItemBrowser(body,getKpiPanelItems("total"),{showPriority:true});
         return;
     }
     const rows=getKpiPanelItems(key);
     if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
-    body.innerHTML=`<table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||"")}</td></tr>`).join('')}</tbody></table>`;
+    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* =====================================================
    PHASE 2C.6 FINAL - ONE-TAP ACCIDENTAL SCAN CORRECTION
 ===================================================== */
 function refreshScanSafetyUI(){
-    const card=document.getElementById("lastScanCard");
-    if(!card) return;
-    let bar=card.querySelector(".scanSafetyBar");
-    if(!bar){
-        bar=document.createElement("div");
-        bar.className="scanSafetyBar";
-        bar.innerHTML='<button type="button" class="scanUndoLastButton hidden" id="btnUndoLastScan">↶ Undo Last Scan</button>';
-        const header=card.querySelector(".cardHeader");
-        if(header) header.appendChild(bar); else card.prepend(bar);
-        bar.querySelector("#btnUndoLastScan").onclick=()=>{ if(typeof undoLastScannerTransaction==="function") undoLastScannerTransaction(); };
+    /* Phase 2C.6.3: remove the risky dashboard Undo button. */
+    document.querySelector("#lastScanCard .scanSafetyBar")?.remove();
+
+    /* Keep a safe review entry point beside Search Item. */
+    const searchButton=document.getElementById("btnQuickSearch");
+    if(searchButton && !document.getElementById("btnReceivedItems")){
+        const button=document.createElement("button");
+        button.type="button";
+        button.id="btnReceivedItems";
+        button.className=(searchButton.className||"")+" receivedItemsButton";
+        button.innerHTML="✓ Received Items";
+        button.addEventListener("click",()=>openDashboardKpiPanel("received"));
+        searchButton.insertAdjacentElement("afterend",button);
     }
-    const button=bar.querySelector("#btnUndoLastScan");
-    const rows=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
-    const latest=rows.find(row=>!row.undone);
-    if(!latest){ button?.classList.add("hidden"); return; }
-    button?.classList.remove("hidden");
-    if(button) button.textContent=`↶ Undo Last Scan (+${latest.quantity})`;
 }
 
 

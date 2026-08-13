@@ -5,7 +5,7 @@
    MASTER GTIN DATABASE ENGINE
 
    Purpose:
-   - Import the pharmacy-wide GTIN master file once.
+   - Import the system-wide GTIN master file once.
    - Store it in IndexedDB (not localStorage) because the
      file can contain tens of thousands of items.
    - Automatically map only the items in the current order.
@@ -84,7 +84,7 @@ async function initializeMasterGTIN(){
         }
 
         /* Supabase is the source of truth. IndexedDB is only a fast
-           device cache. Pull the pharmacy-wide database after auth
+           device cache. Pull the system-wide database after auth
            context is available; if offline, the last local cache remains usable. */
         if(typeof authRpc === "function" && typeof AuthState !== "undefined" && AuthState.context && AuthState.context.pharmacy_id){
             try{ await syncGlobalMasterGTINFromCloud(); }
@@ -902,9 +902,7 @@ function deleteMasterGTINDatabase(dbName){
 ===================================================== */
 
 async function uploadGlobalMasterGTINInChunks(records,sourceFile){
-    const pharmacyId=AuthState.context.pharmacy_id;
-    const beginResult=await authRpc("begin_pharmacy_master_gtin_import",{
-        p_pharmacy_id:pharmacyId,
+    const beginResult=await authRpc("begin_global_master_gtin_import",{
         p_source_file:toSafeString(sourceFile || "")
     });
     const beginRow=Array.isArray(beginResult)?beginResult[0]:beginResult;
@@ -914,8 +912,7 @@ async function uploadGlobalMasterGTINInChunks(records,sourceFile){
     const chunkSize=750;
     for(let start=0; start<records.length; start+=chunkSize){
         const chunk=records.slice(start,start+chunkSize);
-        await authRpc("append_pharmacy_master_gtin_import",{
-            p_pharmacy_id:pharmacyId,
+        await authRpc("append_global_master_gtin_import",{
             p_import_id:importId,
             p_records:chunk
         });
@@ -924,8 +921,7 @@ async function uploadGlobalMasterGTINInChunks(records,sourceFile){
         }
     }
 
-    const commitResult=await authRpc("commit_pharmacy_master_gtin_import",{
-        p_pharmacy_id:pharmacyId,
+    const commitResult=await authRpc("commit_global_master_gtin_import",{
         p_import_id:importId
     });
     const row=Array.isArray(commitResult)?commitResult[0]:commitResult;
@@ -936,7 +932,7 @@ async function getGlobalMasterGTINCloudMeta(){
     if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
         return null;
     }
-    const result=await authRpc("get_pharmacy_master_gtin_meta",{p_pharmacy_id:AuthState.context.pharmacy_id});
+    const result=await authRpc("get_global_master_gtin_meta",{});
     const row=Array.isArray(result)?result[0]:result;
     return row || null;
 }
@@ -979,8 +975,7 @@ async function syncGlobalMasterGTINFromCloud(options = {}){
     const pageSize=1000;
     const records=[];
     for(let offset=0; offset<cloudCount; offset+=pageSize){
-        const pageResult=await authRpc("get_pharmacy_master_gtin_page",{
-            p_pharmacy_id:AuthState.context.pharmacy_id,
+        const pageResult=await authRpc("get_global_master_gtin_page",{
             p_offset:offset,
             p_limit:pageSize
         });

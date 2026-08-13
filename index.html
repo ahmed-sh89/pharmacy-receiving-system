@@ -1959,6 +1959,24 @@
                         <div class="accountSettingTile"><span>Signed In User</span><strong id="settingsSignedInUser">-</strong></div>
                         <div class="accountSettingTile"><span>Role</span><strong id="settingsUserRole">-</strong></div>
                     </div>
+                    <div class="accountEditActions">
+                        <button id="btnEditAccountProfile" class="secondaryButton" type="button">👤 Edit Account</button>
+                    </div>
+                    <div id="accountEditPanel" class="accountEditPanel hidden" aria-hidden="true">
+                        <div class="accountEditField">
+                            <label for="accountDisplayNameInput">User Name</label>
+                            <input id="accountDisplayNameInput" type="text" maxlength="80" autocomplete="name" placeholder="Your name">
+                        </div>
+                        <div class="accountEditField">
+                            <label for="accountPharmacyNameInput">Pharmacy Name</label>
+                            <input id="accountPharmacyNameInput" type="text" maxlength="120" placeholder="Pharmacy name">
+                        </div>
+                        <div class="accountEditButtons">
+                            <button id="btnSaveAccountProfile" class="primaryButton" type="button">Save Changes</button>
+                            <button id="btnCancelAccountProfile" class="secondaryButton" type="button">Cancel</button>
+                        </div>
+                        <small class="accountSecurityNote">Passwords are never displayed anywhere inside PharmFlow.</small>
+                    </div>
                 </section>
 
                 <section id="ownerManagementCard" class="contentCard ownerControlCenter" hidden>
@@ -2111,7 +2129,7 @@
                                 </h2>
 
                                 <p>
-                                    Update the pharmacy-wide GTIN database once. It is stored in Supabase and shared by authorized devices.
+                                    System-wide GTIN Master. It is stored in Supabase and read-only for pharmacies; only the System Owner can update it.
                                 </p>
 
                             </div>

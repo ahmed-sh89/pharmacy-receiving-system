@@ -3643,3 +3643,90 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
 .priorityStar{border:0;background:transparent;color:#b8c3d1;font-size:20px;line-height:1;cursor:pointer;padding:2px 5px}
 .priorityStar.active{color:#e9a800}
 .quickKpiEmpty{padding:22px;text-align:center;color:#64748b;font-weight:800}
+
+/* =====================================================
+   PHASE 2C.6.3 — RECEIVED ITEMS + HIGH PRIORITY BROWSER
+===================================================== */
+.phase263Panel{max-width:min(1120px,94vw);max-height:88vh;overflow:hidden;display:flex;flex-direction:column}
+.phase263Panel [data-body]{min-height:0;overflow:auto}
+.phase263BrowserToolbar{display:flex;gap:8px;align-items:center;padding:0 0 10px;position:sticky;top:0;background:#fff;z-index:2}
+.phase263Search{flex:1;min-width:220px;height:38px;border:1px solid #cbd8e8;border-radius:9px;padding:0 12px;font-size:12px;font-weight:700;outline:none}
+.phase263Search:focus{border-color:#2b6fd8;box-shadow:0 0 0 3px rgba(43,111,216,.10)}
+.phase263Filter{height:38px;border:1px solid #d7e0eb;border-radius:9px;background:#fff;padding:0 12px;font-size:11px;font-weight:800;color:#40516a;cursor:pointer}
+.phase263Filter.active{border-color:#f2b04b;background:#fff8eb;color:#9a5b00}
+.phase263Summary{display:flex;gap:24px;align-items:center;padding:8px 10px;margin-bottom:8px;border:1px solid #dce8f7;border-radius:9px;background:#f7fbff;font-size:11px;color:#334155}
+.phase263TableWrap{overflow:auto;max-height:62vh;border:1px solid #e1e8f1;border-radius:9px}
+.phase263Table{margin:0}
+.phase263Table thead th{position:sticky;top:0;background:#f6f9fd;z-index:1}
+.phase263Star{width:32px;height:30px;border:1px solid #d8e1ec;border-radius:8px;background:#fff;font-size:19px;line-height:1;color:#9aa7b7;cursor:pointer}
+.phase263Star.active{color:#f59e0b;background:#fff8e8;border-color:#f4c66d}
+.phase263PriorityRow{background:#fffdf6}
+.phase263Positive{font-weight:900;color:#12834b}
+.phase263Negative{font-weight:900;color:#d14343}
+.receivedItemsButton{white-space:nowrap}
+@media(max-width:760px){.phase263BrowserToolbar{flex-wrap:wrap}.phase263Search{flex-basis:100%}.phase263Summary{justify-content:space-between;gap:8px}.phase263Panel{max-width:96vw}.phase263TableWrap{max-height:58vh}}
+
+/* =====================================================
+   PHASE 2C.6.4 — COMPACT ALL-PAGES + ACCOUNT PANEL
+===================================================== */
+body:not(.zebraDevice) .mainContent{
+    padding:10px 14px 14px!important;
+}
+body:not(.zebraDevice) .appPage{
+    gap:8px!important;
+}
+body:not(.zebraDevice) .appPage>.contentCard,
+body:not(.zebraDevice) .appPage>.scanPanel,
+body:not(.zebraDevice) .appPage .contentCard{
+    margin-bottom:9px!important;
+}
+body:not(.zebraDevice) #page-settings>.contentCard,
+body:not(.zebraDevice) #page-files>.contentCard,
+body:not(.zebraDevice) #page-reports>.contentCard,
+body:not(.zebraDevice) #page-archive>.contentCard,
+body:not(.zebraDevice) #page-returnsArchive>.contentCard,
+body:not(.zebraDevice) #page-sessions>.contentCard{
+    padding:13px 16px!important;
+}
+body:not(.zebraDevice) .appPage .cardHeader{
+    margin-bottom:8px!important;
+}
+body:not(.zebraDevice) .appPage .cardHeader h2,
+body:not(.zebraDevice) .appPage .cardHeader h3{
+    margin:0!important;
+    line-height:1.15!important;
+}
+body:not(.zebraDevice) .appPage .settingsDescription,
+body:not(.zebraDevice) .appPage p{
+    margin-top:5px;
+    margin-bottom:7px;
+}
+body:not(.zebraDevice) .accountSettingsGrid,
+body:not(.zebraDevice) .masterGTINStatusGrid,
+body:not(.zebraDevice) .ownerMetricGrid{
+    gap:9px!important;
+}
+body:not(.zebraDevice) .accountSettingTile,
+body:not(.zebraDevice) .masterGTINStatusGrid>div,
+body:not(.zebraDevice) .ownerMetricCard{
+    padding:10px 12px!important;
+    min-height:64px!important;
+}
+
+.accountEditActions{display:flex;justify-content:flex-end;margin-top:8px}
+.accountEditPanel{
+    margin-top:9px;padding:10px;border:1px solid #dbe6f5;border-radius:11px;
+    background:#f8fbff;display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.2fr) auto;gap:9px;align-items:end;
+}
+.accountEditPanel.hidden{display:none!important}
+.accountEditField label{display:block;margin:0 0 4px;color:#64748b;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}
+.accountEditField input{width:100%;height:37px;border:1px solid #cfdced;border-radius:9px;padding:0 10px;font-size:13px;font-weight:750;color:#17233b;background:#fff}
+.accountEditButtons{display:flex;gap:6px;align-items:center}
+.accountSecurityNote{grid-column:1/-1;color:#64748b;font-size:10px;font-weight:700}
+
+@media(max-width:900px){
+  .accountEditPanel{grid-template-columns:1fr 1fr}.accountEditButtons{grid-column:1/-1}
+}
+@media(max-width:620px){
+  .accountEditPanel{grid-template-columns:1fr}.accountEditButtons{grid-column:auto}.accountSecurityNote{grid-column:auto}
+}

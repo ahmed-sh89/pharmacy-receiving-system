@@ -150,6 +150,19 @@ async function startApplication(){
 
         initializeOptionalModules();
 
+        /* Phase 2C.6.4: the System Global GTIN Master is authoritative for every pharmacy.
+           Pull it explicitly after authenticated app context exists so a brand-new browser/pharmacy
+           never depends on a pharmacy-specific local cache. */
+        if(typeof ensureGlobalMasterGTINReady === "function"){
+            try{
+                await ensureGlobalMasterGTINReady({forceCloud:true,silent:true});
+            }
+            catch(error){
+                Logger.warn("System Global GTIN sync unavailable during startup",error);
+            }
+        }
+
+        await refreshSafeAccountIdentity();
 
         startAutosaveEngine();
 
@@ -822,10 +835,111 @@ function requestDeleteAllHistory(){
 
 
 /* =====================================================
+   SAFE ACCOUNT IDENTITY — PHASE 2C.6.4
+===================================================== */
+
+function safeAccountFallbackName(){
+    const email=toSafeString(typeof AuthState!=="undefined" ? AuthState.context?.email : "").trim();
+    return email && email.includes("@") ? email.split("@")[0] : "User";
+}
+
+function looksLikeSensitiveCredential(value){
+    const text=toSafeString(value).trim();
+    if(!text){ return false; }
+    /* Conservative display-only protection. A value that strongly resembles a password
+       is never rendered as an identity. It can still be corrected from Edit Account. */
+    const hasLower=/[a-z]/.test(text), hasUpper=/[A-Z]/.test(text), hasDigit=/\d/.test(text), hasSymbol=/[^A-Za-z0-9\s]/.test(text);
+    return text.length>=8 && hasLower && hasUpper && hasDigit && hasSymbol;
+}
+
+async function refreshSafeAccountIdentity(){
+    if(typeof AuthState==="undefined" || !AuthState.context){ return; }
+    const c=AuthState.context;
+    const fallback=safeAccountFallbackName();
+    let userName=toSafeString(c.display_name).trim() || fallback;
+    if(looksLikeSensitiveCredential(userName)){ userName=fallback; }
+    let pharmacyName=toSafeString(c.pharmacy_name).trim() || "Pharmacy";
+    if(looksLikeSensitiveCredential(pharmacyName)){ pharmacyName="Pharmacy"; }
+    const role=toSafeString(c.system_role || c.member_role || "user").toUpperCase();
+
+    const pairs=[
+        ["accountPharmacyName",pharmacyName],
+        ["accountUserName",userName],
+        ["accountUserRole",role],
+        ["settingsPharmacyName",pharmacyName],
+        ["settingsPharmacyCode",toSafeString(c.pharmacy_code)||"-"],
+        ["settingsSignedInUser",toSafeString(c.email)||"-"],
+        ["settingsUserRole",role],
+        ["dashboardPharmacyName",pharmacyName],
+        ["dashboardPharmacyCode",toSafeString(c.pharmacy_code)||"—"],
+        ["dashboardUserRole",role]
+    ];
+    pairs.forEach(([id,value])=>{ const el=document.getElementById(id); if(el){ el.textContent=value; } });
+
+    const nameInput=document.getElementById("accountDisplayNameInput");
+    if(nameInput){ nameInput.value=userName===fallback ? "" : userName; }
+    const pharmacyInput=document.getElementById("accountPharmacyNameInput");
+    if(pharmacyInput){ pharmacyInput.value=pharmacyName==="Pharmacy" ? "" : pharmacyName; }
+
+    const canRenamePharmacy = typeof isPharmacyAdmin==="function" ? isPharmacyAdmin() : (String(c.member_role||"").toLowerCase()==="admin" || String(c.system_role||"").toLowerCase()==="owner");
+    const pharmacyField=pharmacyInput?.closest(".accountEditField");
+    if(pharmacyField){ pharmacyField.hidden=!canRenamePharmacy; }
+}
+
+function openAccountEditPanel(){
+    const panel=document.getElementById("accountEditPanel");
+    if(!panel){ return; }
+    refreshSafeAccountIdentity();
+    panel.classList.remove("hidden");
+    panel.setAttribute("aria-hidden","false");
+    setTimeout(()=>document.getElementById("accountDisplayNameInput")?.focus(),20);
+}
+
+function closeAccountEditPanel(){
+    const panel=document.getElementById("accountEditPanel");
+    if(!panel){ return; }
+    panel.classList.add("hidden");
+    panel.setAttribute("aria-hidden","true");
+}
+
+async function saveAccountProfileChanges(){
+    if(typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context){
+        showToast("Account service is unavailable","error"); return false;
+    }
+    const displayName=toSafeString(document.getElementById("accountDisplayNameInput")?.value).trim();
+    const pharmacyName=toSafeString(document.getElementById("accountPharmacyNameInput")?.value).trim();
+    if(!displayName){ showToast("Enter your user name","warning"); return false; }
+
+    showLoading("Saving account...");
+    try{
+        await authRpc("update_my_display_name",{p_display_name:displayName});
+        const canRenamePharmacy = typeof isPharmacyAdmin==="function" ? isPharmacyAdmin() : false;
+        if(canRenamePharmacy && pharmacyName && AuthState.context.pharmacy_id){
+            await authRpc("update_my_pharmacy_name",{p_pharmacy_id:AuthState.context.pharmacy_id,p_pharmacy_name:pharmacyName});
+        }
+        if(typeof loadMyAppContext==="function"){ await loadMyAppContext(); }
+        if(typeof renderAuthState==="function"){ renderAuthState(); }
+        await refreshSafeAccountIdentity();
+        closeAccountEditPanel();
+        if(typeof refreshEntireUI==="function"){ refreshEntireUI(); }
+        showToast("Account updated","success");
+        return true;
+    }catch(error){
+        Logger.error("Account update failed",error);
+        showToast(error.message||"Unable to update account","error");
+        return false;
+    }finally{ hideLoading(); }
+}
+
+/* =====================================================
    FILE BUTTON BINDINGS
 ===================================================== */
 
 function bindCoreApplicationButtons(){
+
+    document.getElementById("btnEditAccountProfile")?.addEventListener("click",openAccountEditPanel);
+    document.getElementById("btnCancelAccountProfile")?.addEventListener("click",closeAccountEditPanel);
+    document.getElementById("btnSaveAccountProfile")?.addEventListener("click",saveAccountProfileChanges);
 
     document
         .getElementById(
