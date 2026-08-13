@@ -3630,3 +3630,16 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
 .scanUndoLastButton{border:1px solid #f0b1b1;background:#fff8f7;color:#b42318;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer}
 .scanUndoLastButton.hidden{display:none!important}
 @media(max-width:900px){.dashboardKpiCard::after{display:none}.quickKpiPanel{padding:10px}.quickKpiTable{font-size:11px}}
+
+
+/* PHASE 2C.6.2 — integrity batch UI */
+.healthMetricInteractive{cursor:pointer;transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease}
+.healthMetricInteractive:hover,.healthMetricInteractive:focus-visible{border-color:#7faee3!important;box-shadow:0 6px 18px rgba(15,52,90,.10);transform:translateY(-1px);outline:none}
+.fileItemActions{display:flex;align-items:center;gap:10px}
+.removeActiveOrderButton{border:1px solid #efb1b1;background:#fff7f7;color:#b42318;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:900;cursor:pointer}
+.quickKpiToolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;font-size:11px;font-weight:800;color:#64748b}
+.priorityFilterButton{border:1px solid #cfdbea;background:#f8fbff;color:#284b73;border-radius:9px;padding:6px 9px;font-size:11px;font-weight:900;cursor:pointer}
+.priorityFilterButton.active{background:#fff7dc;border-color:#efc85e;color:#8a6410}
+.priorityStar{border:0;background:transparent;color:#b8c3d1;font-size:20px;line-height:1;cursor:pointer;padding:2px 5px}
+.priorityStar.active{color:#e9a800}
+.quickKpiEmpty{padding:22px;text-align:center;color:#64748b;font-weight:800}

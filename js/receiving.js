@@ -1113,7 +1113,7 @@ function rememberRecentScannerTransaction(item, transaction){
     ReceivingEngine.recentScans.unshift(entry);
     ReceivingEngine.recentScans=ReceivingEngine.recentScans.slice(0,20);
 
-    const over=entry.orderedQty>=0 && entry.receivedQty>entry.orderedQty && item.manual!==true;
+    const over=entry.orderedQty>=0 && entry.receivedQty>entry.orderedQty;
     if(over){
         showToast(`OVER RECEIVED: ${entry.itemName} — Received ${entry.receivedQty} / Ordered ${entry.orderedQty}. Use Undo if accidental.`,`warning`);
     }
@@ -1121,7 +1121,10 @@ function rememberRecentScannerTransaction(item, transaction){
 }
 
 function getRecentScannerTransactions(){
-    return Array.isArray(ReceivingEngine.recentScans) ? ReceivingEngine.recentScans.slice() : [];
+    const rows=Array.isArray(ReceivingEngine.recentScans) ? ReceivingEngine.recentScans : [];
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const ids=new Set(history.map(tx=>tx?.transactionId).filter(Boolean));
+    return rows.filter(row=>ids.has(row.transactionId)).slice();
 }
 
 function undoRecentScannerTransaction(transactionId){

@@ -1426,7 +1426,7 @@ function refreshDashboard(){
 
     setElementText(
         UI.elements.statRemaining,
-        stats.remainingItems
+        Number.isFinite(stats.remainingUnits) ? stats.remainingUnits : stats.remainingItems
     );
 
 
@@ -2408,19 +2408,16 @@ function renderFileList(
 
             </div>
 
-            <small>
-                ${toInteger(
-                    file.rows,
-                    0
-                )}
-                rows
-            </small>
+            <div class="fileItemActions">
+                <small>${toInteger(file.rows,0)} rows</small>
+                ${container===UI.elements.orderFilesList ? `<button type="button" class="removeActiveOrderButton" data-remove-order-file="${escapeHTML(file.id||"")}" title="Remove this order only">Remove</button>` : ""}
+            </div>
 
         `;
 
-        container.appendChild(
-            element
-        );
+        container.appendChild(element);
+        const removeBtn=element.querySelector("[data-remove-order-file]");
+        if(removeBtn){ removeBtn.addEventListener("click",event=>{ event.stopPropagation(); requestRemoveActiveOrderFile(removeBtn.dataset.removeOrderFile); }); }
 
     });
 
@@ -5722,17 +5719,27 @@ function refreshZebraInterface(){
    PHASE 2C.6 FINAL - CLICKABLE KPI CONTENT
 ===================================================== */
 let activeKpiKey=null;
+let kpiPriorityOnly=false;
 
 function setupDashboardKpiInteractivity(){
-    document.querySelectorAll(".dashboardKpiCard[data-kpi]").forEach(card=>{
-        if(card.dataset.kpiBound==="1") return;
-        card.dataset.kpiBound="1";
-        const open=()=>openDashboardKpiPanel(card.dataset.kpi);
-        card.addEventListener("click",open);
-        card.addEventListener("keydown",event=>{
-            if(event.key==="Enter"||event.key===" "){ event.preventDefault(); open(); }
-        });
-    });
+    if(document.documentElement.dataset.kpiCaptureBound==="1") return;
+    document.documentElement.dataset.kpiCaptureBound="1";
+    document.addEventListener("click",event=>{
+        const card=event.target.closest?.(".dashboardKpiCard[data-kpi]");
+        if(!card) return;
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
+        openDashboardKpiPanel(card.dataset.kpi);
+    },true);
+    document.addEventListener("keydown",event=>{
+        const card=event.target.closest?.(".dashboardKpiCard[data-kpi]");
+        if(card && (event.key==="Enter"||event.key===" ")){event.preventDefault();openDashboardKpiPanel(card.dataset.kpi);}
+    },true);
+    const missing=document.querySelector('[data-health-metric="missing"]');
+    if(missing && missing.dataset.bound!=="1"){
+        missing.dataset.bound="1";
+        missing.addEventListener("click",openCurrentMissingGTINPanel);
+        missing.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCurrentMissingGTINPanel();}});
+    }
 }
 
 function getKpiPanelItems(key){
@@ -5813,4 +5820,39 @@ function refreshScanSafetyUI(){
     if(!latest){ button?.classList.add("hidden"); return; }
     button?.classList.remove("hidden");
     if(button) button.textContent=`↶ Undo Last Scan (+${latest.quantity})`;
+}
+
+
+/* =====================================================
+   PHASE 2C.6.2 — DATA HEALTH + MULTI-ORDER CONTROL
+===================================================== */
+function openCurrentMissingGTINPanel(){
+    const rows=typeof getItemsWithoutMapping==="function"?getItemsWithoutMapping():[];
+    document.getElementById("currentMissingGTINOverlay")?.remove();
+    const overlay=document.createElement("div");overlay.id="currentMissingGTINOverlay";overlay.className="quickKpiOverlay";
+    const esc=typeof escapeHTML==="function"?escapeHTML:(v=>String(v??""));
+    overlay.innerHTML=`<div class="quickKpiPanel"><div class="quickKpiHeader"><h3>Missing GTIN — Current Workspace</h3><button type="button" class="quickKpiClose" data-close>✕</button></div>${rows.length?`<table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th></tr></thead><tbody>${rows.map(i=>`<tr><td>${esc(i.itemCode)}</td><td><b>${esc(i.itemName)}</b></td><td>${toNumber(i.orderedQty,0)}</td></tr>`).join("")}</tbody></table>`:`<div class="quickKpiEmpty">No missing GTIN items in the current workspace.</div>`}</div>`;
+    document.body.appendChild(overlay);overlay.querySelector('[data-close]').onclick=()=>overlay.remove();overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+}
+
+async function requestRemoveActiveOrderFile(fileId){
+    const files=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles:[];
+    const file=files.find(f=>f.id===fileId);if(!file)return;
+    const orderNumber=typeof normalizeOrderNumber==="function"?normalizeOrderNumber(file.documentId||file.orderNumber||""):toSafeString(file.documentId||"");
+    if(files.length<=1){showToast("Use Reset Current Workspace to discard the only active order","warning");return;}
+    showConfirmModal("Remove Active Order",`Remove ${orderNumber||file.name} from the current workspace only? Other uploaded orders will remain. Physical scans already recorded are not silently deleted.`,async()=>{
+        try{
+            showLoading("Removing order...");
+            const sourceRows=typeof getOriginalUploadedOrderSnapshot==="function"&&orderNumber?await getOriginalUploadedOrderSnapshot(orderNumber):[];
+            if(orderNumber&&typeof authRpc==="function"&&typeof AuthState!=="undefined"&&AuthState.context?.pharmacy_id){await authRpc("discard_pharmflow_active_order",{p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:orderNumber,p_confirmation:orderNumber});}
+            sourceRows.forEach(row=>{const code=normalizeItemCode(row.item_code||row.itemCode);const item=getItemByCode(code);if(!item)return;item.orderedQty=Math.max(0,toNumber(item.orderedQty,0)-toNumber(row.ordered_qty??row.orderedQty,0));if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);});
+            AppState.workspace.orderData=AppState.workspace.orderData.filter(item=>!(toNumber(item.orderedQty,0)<=0&&toNumber(item.receivedQty,0)<=0&&item.manual!==true));
+            AppState.workspace.orderFiles=files.filter(f=>f.id!==fileId);
+            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
+            const remaining=AppState.workspace.orderFiles.map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||"")).filter(Boolean);
+            AppState.workspace.orderName=remaining.length===1?remaining[0]:(remaining.length?remaining.join(" + "):"");
+            recalculateStatistics();if(typeof saveApplicationState==="function")saveApplicationState("remove-order");refreshEntireUI();
+            showToast(`${orderNumber||file.name} removed. ${remaining.length} active order(s) remain.`,"success");
+        }catch(error){Logger.error("Remove active order failed",error);showToast(error?.message||"Unable to remove order","error");}finally{hideLoading();}
+    });
 }

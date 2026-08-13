@@ -746,6 +746,11 @@ async function resetCurrentWorkspace(){
             deleteWorkspaceSnapshot();
         }
 
+        if(typeof ReceivingEngine!=="undefined"){
+            ReceivingEngine.recentScans=[];
+            ReceivingEngine.lastTransaction=null;
+        }
+
         if(typeof refreshOrderLifecycleRegistry === "function"){
             await refreshOrderLifecycleRegistry();
         }
@@ -1547,3 +1552,34 @@ function enforceOwnerOnlyMasterGTINUI(){
 }
 window.addEventListener("auth:context-ready",enforceOwnerOnlyMasterGTINUI);
 setTimeout(enforceOwnerOnlyMasterGTINUI,500);
+
+
+/* =====================================================
+   PHASE 2C.6.2 — CONSISTENT LIVE DASHBOARD METRICS
+===================================================== */
+function calculateDashboardMetrics(){
+    const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    let completedItems=0, remainingItems=0, remainingUnits=0, overReceivedItems=0, manualItems=0;
+    items.forEach(item=>{
+        const ordered=Math.max(0,toNumber(item?.orderedQty,0));
+        const received=Math.max(0,toNumber(item?.receivedQty,0));
+        const remaining=Math.max(0,ordered-received);
+        item.remainingQty=remaining;
+        if(ordered>0 && received>=ordered) completedItems++;
+        remainingUnits+=remaining;
+        if(remaining>0) remainingItems++;
+        if(received>ordered) overReceivedItems++;
+        if(item?.manual===true && received>0) manualItems++;
+    });
+    const scannerName=toSafeString(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
+    const totalScans=history.filter(tx=>{
+        const source=toSafeString(tx?.source||"").toUpperCase();
+        return toNumber(tx?.quantity,0)>0 && (source===scannerName || source.includes("SCAN")) && !source.includes("UNDO");
+    }).length;
+    return {totalItems:items.length,completedItems,remainingItems,remainingUnits,overReceivedItems,manualItems,totalScans};
+}
+function recalculateStatistics(){
+    AppState.statistics=Object.assign(AppState.statistics||{},calculateDashboardMetrics());
+    return AppState.statistics;
+}
