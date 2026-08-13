@@ -81,9 +81,65 @@ async function getOrderLifecycleRecord(orderNumber){
 }
 
 async function assertOrderNumberCanUpload(orderNumber){
-    const existing=await getOrderLifecycleRecord(orderNumber);
-    if(existing){throw new Error("Order "+normalizeOrderNumber(orderNumber)+" was already uploaded (status: "+(existing.status||"Uploaded")+"). Duplicate upload is blocked.");}
-    return true;
+    const normalized = normalizeOrderNumber(orderNumber);
+    const existing = await getOrderLifecycleRecord(normalized);
+    if(!existing){ return true; }
+
+    const status = String(existing.status || "uploaded").trim().toLowerCase();
+
+    /* Received/finalized orders remain protected from duplicate upload.
+       They can only be removed through the protected Archive/Historical
+       deletion workflows. */
+    if(["received","finalized","closed"].includes(status)){
+        throw new Error(
+            "Order "+normalized+" was already uploaded (status: "+(existing.status||"received")+"). Duplicate upload is blocked."
+        );
+    }
+
+    /* Phase 2C.5.4.5 legacy orphan recovery. Older builds could clear a
+       browser workspace but leave an UPLOADED/RECEIVING registry row in
+       Supabase. Do not silently delete it because another PC may genuinely
+       be working on that order. Offer an explicit protected discard instead. */
+    const localNumbers = new Set(
+        (Array.isArray(AppState?.workspace?.orderFiles) ? AppState.workspace.orderFiles : [])
+            .map(file=>normalizeOrderNumber(file?.documentId || file?.orderNumber || ""))
+            .filter(Boolean)
+    );
+
+    if(!localNumbers.has(normalized)){
+        const repair = window.confirm(
+            "Order "+normalized+" is registered as an unfinished active order (status: "+(existing.status||"uploaded")+").\n\n"+
+            "This can be a previous workspace that was closed before Finalize, or an order currently open on another PC.\n\n"+
+            "Press OK only if you want to DISCARD the old unfinished order and upload it again from the beginning."
+        );
+
+        if(repair){
+            const typed = window.prompt(
+                "Type the Order Number exactly to discard the unfinished registration:\n"+normalized,
+                ""
+            );
+            if(normalizeOrderNumber(typed) !== normalized){
+                throw new Error("Order discard cancelled. Existing active order remains protected.");
+            }
+
+            if(typeof authRpc!=="function" || !AuthState.context?.pharmacy_id){
+                throw new Error("Pharmacy cloud context is unavailable. Sign in again and retry.");
+            }
+
+            await authRpc("discard_pharmflow_active_order",{
+                p_pharmacy_id:AuthState.context.pharmacy_id,
+                p_order_number:normalized,
+                p_confirmation:normalized
+            });
+            await refreshOrderLifecycleRegistry();
+            showToast("Old unfinished order discarded — upload can continue","success");
+            return true;
+        }
+    }
+
+    throw new Error(
+        "Order "+normalized+" is already active (status: "+(existing.status||"uploaded")+"). Duplicate upload is blocked."
+    );
 }
 
 async function registerUploadedOrder(meta,rowCount){
@@ -144,149 +200,6 @@ window.registerUploadedOrder=registerUploadedOrder;
 window.markWorkspaceOrdersReceived=markWorkspaceOrdersReceived;
 window.refreshOrderLifecycleRegistry=refreshOrderLifecycleRegistry;
 window.canGenerateItemTransferReport=canGenerateItemTransferReport;
-
-/* =====================================================
-   PHASE 2C.5.3.1 — CROSS-DEVICE WORKSPACE SYNC GUARD
-   Supabase Order Registry is authoritative. A local PC must never restore
-   quantities for an order that another device already finalized/deleted.
-===================================================== */
-
-const CrossDeviceWorkspaceGuard={
-    busy:false,
-    lastCheckAt:0
-};
-
-function getRestoredWorkspaceOrderNumbers(){
-    const seen=new Set();
-    const values=[];
-    (AppState.workspace?.orderFiles||[]).forEach(file=>{
-        const number=normalizeOrderNumber(file.documentId||file.orderNumber||"");
-        if(number && !seen.has(number)){
-            seen.add(number);
-            values.push(number);
-        }
-    });
-    if(!values.length){
-        const fallback=normalizeOrderNumber(AppState.workspace?.orderName||"");
-        if(/^TO[-_A-Z0-9]+$/i.test(fallback)){ values.push(fallback); }
-    }
-    return values;
-}
-
-function hasMeaningfulRestoredWorkspace(){
-    return !!(
-        (AppState.workspace?.active===true) ||
-        (AppState.workspace?.orderData?.length>0) ||
-        (AppState.workspace?.orderFiles?.length>0) ||
-        (AppState.workspace?.receivingHistory?.length>0)
-    );
-}
-
-function backupStaleWorkspaceBeforeCloudClear(reason){
-    try{
-        if(typeof serializeCurrentWorkspace!=="function"){ return null; }
-        const key="PRS_V3_STALE_WORKSPACE_RECOVERY_"+Date.now();
-        localStorage.setItem(key,JSON.stringify({
-            reason:reason||"cloud-authoritative-clear",
-            savedAt:new Date().toISOString(),
-            data:serializeCurrentWorkspace()
-        }));
-        return key;
-    }catch(_){ return null; }
-}
-
-async function reconcileRestoredWorkspaceWithCloud(options={}){
-    const now=Date.now();
-    if(CrossDeviceWorkspaceGuard.busy){ return {checked:false,busy:true}; }
-    if(options.reason==="window-focus" && now-CrossDeviceWorkspaceGuard.lastCheckAt<2500){
-        return {checked:false,throttled:true};
-    }
-    CrossDeviceWorkspaceGuard.lastCheckAt=now;
-
-    if(!hasMeaningfulRestoredWorkspace()){
-        return {checked:true,cleared:false,reason:"empty-local-workspace"};
-    }
-    if(typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id || typeof authRpc!=="function"){
-        return {checked:false,deferred:true};
-    }
-
-    const localOrders=getRestoredWorkspaceOrderNumbers();
-    if(!localOrders.length){
-        /* Old synthetic ORD-* workspace with no real source Order Number is
-           not safe to resume across devices. Clear it as stale. */
-        backupStaleWorkspaceBeforeCloudClear("no-source-order-number");
-        if(typeof resetOperationalStateToDefault==="function"){
-            resetOperationalStateToDefault();
-        }
-        return {checked:true,cleared:true,reason:"no-source-order-number"};
-    }
-
-    CrossDeviceWorkspaceGuard.busy=true;
-    try{
-        /* Do not use the swallowing refresh helper here. If the RPC fails,
-           keep local data rather than clearing it on uncertainty. */
-        const result=await authRpc("list_pharmflow_orders",{
-            p_pharmacy_id:AuthState.context.pharmacy_id
-        });
-        const rows=Array.isArray(result)?result:[];
-        OrderLifecycleEngine.records=rows;
-        if(typeof renderOrderLifecycleRegistry==="function"){
-            renderOrderLifecycleRegistry();
-        }
-
-        const byNumber=new Map(rows.map(row=>[
-            normalizeOrderNumber(row.order_number),row
-        ]));
-        const received=[];
-        const deletedOrMissing=[];
-        const active=[];
-
-        localOrders.forEach(number=>{
-            const row=byNumber.get(number);
-            if(!row){ deletedOrMissing.push(number); return; }
-            const status=String(row.status||"").toLowerCase();
-            if(status==="received" || status==="finalized" || status==="closed"){
-                received.push(number);
-            }else{
-                active.push(number);
-            }
-        });
-
-        if(received.length || deletedOrMissing.length){
-            const reason=received.length
-                ? "finalized-on-another-device"
-                : "order-no-longer-active";
-            backupStaleWorkspaceBeforeCloudClear(reason);
-            if(typeof resetOperationalStateToDefault==="function"){
-                resetOperationalStateToDefault();
-            }else{
-                clearCurrentWorkspace();
-                AppState.session=createEmptySession();
-                ensureDeviceId();
-                deleteWorkspaceSnapshot();
-            }
-            if(!options.silent && typeof showToast==="function"){
-                showToast(
-                    received.length
-                        ? "This order was already received on another device. Local stale quantities were cleared."
-                        : "This order is no longer active. Local stale workspace was cleared.",
-                    "info"
-                );
-            }
-            return {checked:true,cleared:true,reason,received,deletedOrMissing};
-        }
-
-        return {checked:true,cleared:false,active};
-    }catch(error){
-        Logger.warn("Cross-device workspace validation deferred",error);
-        return {checked:false,cleared:false,error:true};
-    }finally{
-        CrossDeviceWorkspaceGuard.busy=false;
-    }
-}
-
-window.reconcileRestoredWorkspaceWithCloud=reconcileRestoredWorkspaceWithCloud;
-window.getRestoredWorkspaceOrderNumbers=getRestoredWorkspaceOrderNumbers;
 
 async function requestDeleteGlobalGTINMaster(){
     if(!AuthState.context || !AuthState.context.pharmacy_id){

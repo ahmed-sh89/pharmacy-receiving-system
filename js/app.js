@@ -659,7 +659,7 @@ function requestResetWorkspace(){
 
         "Reset Current Workspace",
 
-        "This will clear the current order and current receiving workspace. Historical archived data will not be deleted.",
+        "This will permanently discard the CURRENT UNFINALIZED order and its receiving workspace so the same Order Number can be uploaded again. Finalized historical orders and Global GTIN Master are not deleted.",
 
         function(){
 
@@ -676,9 +676,66 @@ function requestResetWorkspace(){
    RESET WORKSPACE
 ===================================================== */
 
-function resetCurrentWorkspace(){
+async function resetCurrentWorkspace(){
+
+    /* Phase 2C.5.4.5
+       Reset/close of an UNFINALIZED workspace is an intentional discard.
+       Supabase must be cleared first so the order number does not remain as
+       an orphan active registry record and falsely block a future upload.
+       Finalized/received orders are protected by the RPC and remain history. */
+
+    const activeOrderNumbers = (()=>{
+        const seen = new Set();
+        const values = [];
+        const files = Array.isArray(AppState?.workspace?.orderFiles)
+            ? AppState.workspace.orderFiles
+            : [];
+        files.forEach(file=>{
+            const raw = file?.documentId || file?.orderNumber || "";
+            const value = typeof normalizeOrderNumber === "function"
+                ? normalizeOrderNumber(raw)
+                : String(raw||"").trim().toUpperCase().replace(/\s+/g,"");
+            if(value && !seen.has(value)){
+                seen.add(value);
+                values.push(value);
+            }
+        });
+        return values;
+    })();
 
     try{
+        showLoading("Closing current workspace...");
+
+        /* If this PC owns a live Handheld session, end it authoritatively
+           before discarding the unfinished order. */
+        if(
+            AppState?.session?.cloud === true &&
+            AppState?.session?.role === "PC" &&
+            typeof leaveCloudSession === "function"
+        ){
+            const ended = await leaveCloudSession();
+            if(ended === false){
+                throw new Error("Unable to end the live session. Current workspace was not cleared.");
+            }
+        }
+
+        if(activeOrderNumbers.length){
+            if(
+                typeof authRpc !== "function" ||
+                typeof AuthState === "undefined" ||
+                !AuthState.context?.pharmacy_id
+            ){
+                throw new Error("Pharmacy cloud context is unavailable. Sign in again before closing the current order.");
+            }
+
+            for(const orderNumber of activeOrderNumbers){
+                await authRpc("discard_pharmflow_active_order",{
+                    p_pharmacy_id:AuthState.context.pharmacy_id,
+                    p_order_number:orderNumber,
+                    p_confirmation:orderNumber
+                });
+            }
+        }
 
         if(typeof resetOperationalStateToDefault === "function"){
             resetOperationalStateToDefault();
@@ -689,32 +746,32 @@ function resetCurrentWorkspace(){
             deleteWorkspaceSnapshot();
         }
 
+        if(typeof refreshOrderLifecycleRegistry === "function"){
+            await refreshOrderLifecycleRegistry();
+        }
+
         refreshEntireUI();
-
-        navigateTo(
-            "dashboard"
-        );
-
+        navigateTo("dashboard");
         showToast(
-            "Current workspace reset",
+            activeOrderNumbers.length
+                ? "Unfinalized order discarded — it can be uploaded again"
+                : "Current workspace reset",
             "success"
         );
-
         focusScannerInput();
+        return true;
 
     }
     catch(error){
-
-        Logger.error(
-            "Workspace reset failed",
-            error
-        );
-
+        Logger.error("Workspace reset failed",error);
         showToast(
-            "Unable to reset workspace",
+            error?.message || "Unable to reset workspace",
             "error"
         );
-
+        return false;
+    }
+    finally{
+        hideLoading();
     }
 
 }
