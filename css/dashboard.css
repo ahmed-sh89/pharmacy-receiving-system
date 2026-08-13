@@ -3474,3 +3474,159 @@ body:not(.zebraDevice) button{font-weight:800;}
   #page-dashboard .statCard::before{left:8px;width:31px;height:31px;font-size:17px;}
   #page-dashboard .statCard strong{font-size:21px;}
 }
+
+
+/* =====================================================
+   PHASE 2C.6 — HANDHELD FINAL RECEIVING UX
+   Internal legacy .zebra* selectors are retained for
+   backward compatibility; all user-facing wording is Handheld.
+===================================================== */
+
+.handheldScanContext{
+    display:none;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    margin:0 0 7px;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext>div{
+    min-width:0;
+    padding:7px 8px;
+    border:1px solid #d8e3f0;
+    border-radius:10px;
+    background:#f7faff;
+    text-align:center;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext span{
+    display:block;
+    margin-bottom:2px;
+    color:#728198;
+    font-size:8px;
+    font-weight:900;
+    letter-spacing:.10em;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext strong{
+    display:block;
+    color:#10213b;
+    font-size:20px;
+    font-weight:950;
+    line-height:1;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext>div:first-child strong{
+    color:#0b66d8;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls{
+    padding:7px!important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyActions{
+    grid-template-columns:52px minmax(0,1fr) 52px!important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue{
+    font-weight:950!important;
+}
+
+body.zebraDevice.zebraReceivingActive #barcodeInput{
+    caret-color:transparent;
+}
+
+body.zebraDevice input[type="number"],
+body.zebraDevice #smartQuantityInput,
+body.zebraDevice #quantityAdjustmentInput{
+    font-variant-numeric:tabular-nums;
+}
+
+body.zebraDevice .zebraModeIntro p{
+    max-width:34ch;
+}
+
+body.zebraDevice .zebraModeCards{
+    gap:9px;
+}
+
+body.zebraDevice .zebraModeCard{
+    min-height:86px;
+}
+
+body.zebraDevice.zebraJoinActive .cloudJoinCard{
+    margin-top:4px!important;
+}
+
+body.zebraDevice.zebraJoinActive .cloudCodeInput{
+    font-weight:950!important;
+    letter-spacing:.08em;
+}
+
+body.zebraDevice.zebraHomeActive #barcodeInput,
+body.zebraDevice.zebraJoinActive #barcodeInput,
+body.zebraDevice.zebraExpiryActive #barcodeInput{
+    pointer-events:none;
+}
+
+/* =====================================================
+   PHASE 2C.6 FINAL - CLICKABLE KPI + FAST SCAN SAFETY
+===================================================== */
+.dashboardKpiCard{
+    cursor:pointer;
+    position:relative;
+    transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+.dashboardKpiCard::after{
+    content:"View";
+    position:absolute;
+    right:10px;
+    bottom:7px;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.04em;
+    color:#64748b;
+    opacity:.72;
+}
+.dashboardKpiCard:hover,
+.dashboardKpiCard:focus-visible{
+    transform:translateY(-1px);
+    box-shadow:0 7px 18px rgba(15,23,42,.10);
+    border-color:#93b4d7;
+    outline:none;
+}
+.quickKpiOverlay{
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:rgba(15,23,42,.34);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:14px;
+}
+.quickKpiPanel{
+    width:min(900px,96vw);
+    max-height:86vh;
+    overflow:auto;
+    background:#fff;
+    border:1px solid #dce5ef;
+    border-radius:16px;
+    box-shadow:0 22px 60px rgba(15,23,42,.22);
+    padding:14px;
+}
+.quickKpiHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.quickKpiHeader h3{margin:0;font-size:17px;font-weight:900;color:#102a4c}
+.quickKpiClose{border:0;background:#eef3f8;border-radius:9px;padding:7px 10px;font-weight:900;cursor:pointer}
+.quickKpiTable{width:100%;border-collapse:collapse;font-size:12px;font-weight:700}
+.quickKpiTable th,.quickKpiTable td{padding:8px 7px;border-bottom:1px solid #e8eef5;text-align:left;vertical-align:middle}
+.quickKpiTable th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+.quickUndoButton{border:1px solid #f3b1b1;background:#fff5f5;color:#b42318;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:900;cursor:pointer}
+.quickUndoButton:disabled{opacity:.45;cursor:not-allowed}
+.scanSafetyBar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:7px}
+.scanUndoLastButton{border:1px solid #f0b1b1;background:#fff8f7;color:#b42318;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer}
+.scanUndoLastButton.hidden{display:none!important}
+@media(max-width:900px){.dashboardKpiCard::after{display:none}.quickKpiPanel{padding:10px}.quickKpiTable{font-size:11px}}

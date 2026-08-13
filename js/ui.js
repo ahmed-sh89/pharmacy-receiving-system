@@ -1005,6 +1005,9 @@ function closeSmartScanSearch(
 
 function bindUIEvents(){
 
+    setupDashboardKpiInteractivity();
+    refreshScanSafetyUI();
+
     document.getElementById("btnExportReceivingSummaryExcel")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryExcel==="function") exportReceivingSummaryExcel(); });
     document.getElementById("btnExportReceivingSummaryPDF")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryPDF==="function") exportReceivingSummaryPDF(); });
 
@@ -1039,7 +1042,7 @@ function bindUIEvents(){
     document.getElementById("btnSelectAllReceivingIssues")?.addEventListener("click",function(event){
         event.preventDefault();
         document.querySelectorAll("[data-receiving-issue]").forEach(el=>{el.checked=true;});
-        UI.receivingFilters.issues=new Set(["not_received","partial","over","manual"]);
+        UI.receivingFilters.issues=new Set(["not_received","partial","received_any","over","manual"]);
         refreshReceivingIssueFilterLabel();
         refreshReceivingTable();
     });
@@ -1638,8 +1641,11 @@ function refreshReceivingIssueFilterLabel(){
     const label=document.getElementById("receivingIssueFilterLabel");
     if(!label){ return; }
     const set=UI.receivingFilters.issues instanceof Set ? UI.receivingFilters.issues : new Set();
-    const names={not_received:"Not Received",partial:"Partial Shortage",over:"Over Received",manual:"Manual Extra"};
-    if(set.size===4){ label.textContent="All discrepancies"; return; }
+    const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Manual Extra"};
+    const discrepancyKeys=["not_received","partial","over","manual"];
+    const allDiscrepancies=discrepancyKeys.every(key=>set.has(key));
+    if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All receiving types"; return; }
+    if(set.size===4 && allDiscrepancies && !set.has("received_any")){ label.textContent="All discrepancies"; return; }
     if(set.size===0){ label.textContent="None selected"; return; }
     if(set.size===1){ label.textContent=names[Array.from(set)[0]]||"1 selected"; return; }
     label.textContent=set.size+" selected";
@@ -1668,7 +1674,10 @@ function refreshReceivingTable(){
 
     const items = allItems.filter(item=>{
         const issue = getReceivingIssueKey(item);
-        if(!issue || !selectedIssues.has(issue)){ return false; }
+        const received = toNumber(item?.receivedQty,0);
+        const matchesReceivedAny = selectedIssues.has("received_any") && received > 0;
+        const matchesIssue = !!issue && selectedIssues.has(issue);
+        if(!matchesReceivedAny && !matchesIssue){ return false; }
         const category = toSafeString(item.category || "").trim();
         return categoryFilter === "all" || category === categoryFilter;
     });
@@ -4098,6 +4107,17 @@ function createLastScanQuantityControls(){
 
       </div>
 
+      <div class="handheldScanContext" aria-live="polite">
+          <div>
+              <span>THIS SCAN</span>
+              <strong id="handheldThisScan">+0</strong>
+          </div>
+          <div>
+              <span>TOTAL RECEIVED</span>
+              <strong id="handheldTotalReceived">0</strong>
+          </div>
+      </div>
+
       <div class="lastScanQtyActions">
 
           <button
@@ -4264,6 +4284,16 @@ function refreshLastScanQuantityControl(){
           "btnLastScanEdit"
       );
 
+  const thisScanElement =
+      document.getElementById(
+          "handheldThisScan"
+      );
+
+  const totalReceivedElement =
+      document.getElementById(
+          "handheldTotalReceived"
+      );
+
   if(!button){
       return;
   }
@@ -4271,21 +4301,42 @@ function refreshLastScanQuantityControl(){
   const item =
       getCurrentLastScanItem();
 
+  const scan =
+      AppState.workspace.lastScan;
+
   if(!item){
 
-      button.textContent =
-          "0";
+      button.textContent = "0";
+      if(thisScanElement){ thisScanElement.textContent = "+0"; }
+      if(totalReceivedElement){ totalReceivedElement.textContent = "0"; }
 
       return;
   }
 
-  button.textContent =
-      String(
-          toNumber(
-              item.receivedQty,
-              0
-          )
+  const totalReceived =
+      toNumber(
+          item.receivedQty,
+          0
       );
+
+  button.textContent =
+      String(totalReceived);
+
+  if(totalReceivedElement){
+      totalReceivedElement.textContent =
+          String(totalReceived);
+  }
+
+  if(thisScanElement){
+      const localDelta =
+          scan && scan.itemCode === item.itemCode
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      thisScanElement.textContent =
+          (localDelta > 0 ? "+" : "") +
+          String(localDelta);
+  }
 
 }
 
@@ -5402,9 +5453,26 @@ function closeOrderStatusReport(){
 
 function isLikelyZebraDevice(){
     const ua = String(navigator.userAgent || "").toLowerCase();
-    const zebraUA = /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
-    const androidNarrow = /android/i.test(ua) && Math.min(window.screen?.width || innerWidth, innerWidth) <= 1000;
-    return zebraUA || androidNarrow;
+
+    /* Phase 2C.6:
+       Handheld UI is reserved for Zebra/enterprise handheld hardware.
+       Generic Android phones must NOT silently switch into the operational
+       handheld workflow. A deliberate ?handheld=1 override remains available
+       for controlled testing when the Zebra is not physically available. */
+    const enterpriseHandheld =
+        /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
+
+    let explicitHandheld = false;
+    try{
+        const params = new URLSearchParams(window.location.search || "");
+        explicitHandheld =
+            params.get("handheld") === "1" ||
+            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
+    }catch(_){
+        explicitHandheld = false;
+    }
+
+    return enterpriseHandheld || explicitHandheld;
 }
 
 function backupLegacyZebraWorkspace(reason){
@@ -5420,7 +5488,7 @@ function backupLegacyZebraWorkspace(reason){
         }));
         return key;
     }catch(error){
-        Logger.warn("Unable to create Zebra recovery backup", error);
+        Logger.warn("Unable to create Handheld recovery backup", error);
         return null;
     }
 }
@@ -5428,7 +5496,7 @@ function backupLegacyZebraWorkspace(reason){
 function resetZebraWorkingState(reason, options = {}){
     const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
     if(pending > 0 && options.force !== true){
-        Logger.warn("Zebra cleanup postponed because unsynced transactions remain", pending);
+        Logger.warn("Handheld cleanup postponed because unsynced transactions remain", pending);
         return false;
     }
 
@@ -5505,12 +5573,12 @@ function initializeZebraInterface(){
         home.innerHTML = `
             <div class="zebraBrandRow">
                 <img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true">
-                <div><strong>PharmFlow</strong><span>Zebra Workspace</span></div>
+                <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
             </div>
             <div class="zebraModeIntro">
                 <span>SELECT MODE</span>
                 <h1>What are you working on?</h1>
-                <p>Only the tools needed for the selected Zebra workflow will be shown.</p>
+                <p>Only the tools needed for the selected Handheld workflow will be shown.</p>
             </div>
             <div class="zebraModeCards">
                 <button id="btnZebraReceivingMode" class="zebraModeCard" type="button">
@@ -5539,7 +5607,7 @@ function initializeZebraInterface(){
         document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
             const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
             if(pending > 0){
-                showToast("Sync pending Zebra work before signing out","warning");
+                showToast("Sync pending Handheld work before signing out","warning");
                 return;
             }
             /* Signing out detaches this handheld from the old order/session. */
@@ -5648,3 +5716,101 @@ function refreshZebraInterface(){
     );
 }
 
+
+
+/* =====================================================
+   PHASE 2C.6 FINAL - CLICKABLE KPI CONTENT
+===================================================== */
+let activeKpiKey=null;
+
+function setupDashboardKpiInteractivity(){
+    document.querySelectorAll(".dashboardKpiCard[data-kpi]").forEach(card=>{
+        if(card.dataset.kpiBound==="1") return;
+        card.dataset.kpiBound="1";
+        const open=()=>openDashboardKpiPanel(card.dataset.kpi);
+        card.addEventListener("click",open);
+        card.addEventListener("keydown",event=>{
+            if(event.key==="Enter"||event.key===" "){ event.preventDefault(); open(); }
+        });
+    });
+}
+
+function getKpiPanelItems(key){
+    const items=Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[];
+    if(key==="total") return items.slice();
+    if(key==="completed") return items.filter(i=>{
+        const o=toNumber(i.orderedQty,0),r=toNumber(i.receivedQty,0);
+        return o>0 && r===o;
+    });
+    if(key==="remaining") return items.filter(i=>toNumber(i.remainingQty,0)>0);
+    if(key==="over") return items.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
+    if(key==="manual") return items.filter(i=>i.manual===true);
+    return [];
+}
+
+function kpiTitle(key){
+    return ({total:"Total Items",completed:"Completed Items",remaining:"Remaining Items",over:"Over Received",manual:"Manual / Unordered Extras",scans:"Recent Scan Activity"})[key]||"Dashboard Details";
+}
+
+function openDashboardKpiPanel(key){
+    activeKpiKey=key;
+    document.getElementById("dashboardKpiOverlay")?.remove();
+    const overlay=document.createElement("div");
+    overlay.id="dashboardKpiOverlay";
+    overlay.className="quickKpiOverlay";
+    overlay.innerHTML=`<div class="quickKpiPanel"><div class="quickKpiHeader"><h3>${kpiTitle(key)}</h3><button type="button" class="quickKpiClose" data-close>✕</button></div><div data-body></div></div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector("[data-close]").onclick=closeDashboardKpiPanel;
+    overlay.addEventListener("click",event=>{if(event.target===overlay) closeDashboardKpiPanel();});
+    renderDashboardKpiPanel(key,overlay.querySelector("[data-body]"));
+}
+
+function closeDashboardKpiPanel(){
+    document.getElementById("dashboardKpiOverlay")?.remove();
+    activeKpiKey=null;
+    focusScannerInput?.();
+}
+
+function refreshOpenKpiPanel(){
+    if(!activeKpiKey) return;
+    const body=document.querySelector("#dashboardKpiOverlay [data-body]");
+    if(body) renderDashboardKpiPanel(activeKpiKey,body);
+}
+
+function renderDashboardKpiPanel(key,body){
+    if(!body) return;
+    const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+    if(key==="scans"){
+        const rows=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
+        if(!rows.length){body.innerHTML='<div class="tableEmptyState">No recent scans on this device yet.</div>';return;}
+        body.innerHTML=`<table class="quickKpiTable"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total after scan</th><th>Action</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>+${esc(row.quantity)}</td><td>${esc(row.receivedQty)}</td><td><button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${row.undone?'disabled':''}>${row.undone?'Corrected':'Undo scan'}</button></td></tr>`).join('')}</tbody></table>`;
+        body.querySelectorAll("[data-undo]").forEach(btn=>btn.onclick=()=>{ if(typeof undoRecentScannerTransaction==="function") undoRecentScannerTransaction(btn.dataset.undo); });
+        return;
+    }
+    const rows=getKpiPanelItems(key);
+    if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
+    body.innerHTML=`<table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||"")}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* =====================================================
+   PHASE 2C.6 FINAL - ONE-TAP ACCIDENTAL SCAN CORRECTION
+===================================================== */
+function refreshScanSafetyUI(){
+    const card=document.getElementById("lastScanCard");
+    if(!card) return;
+    let bar=card.querySelector(".scanSafetyBar");
+    if(!bar){
+        bar=document.createElement("div");
+        bar.className="scanSafetyBar";
+        bar.innerHTML='<button type="button" class="scanUndoLastButton hidden" id="btnUndoLastScan">↶ Undo Last Scan</button>';
+        const header=card.querySelector(".cardHeader");
+        if(header) header.appendChild(bar); else card.prepend(bar);
+        bar.querySelector("#btnUndoLastScan").onclick=()=>{ if(typeof undoLastScannerTransaction==="function") undoLastScannerTransaction(); };
+    }
+    const button=bar.querySelector("#btnUndoLastScan");
+    const rows=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
+    const latest=rows.find(row=>!row.undone);
+    if(!latest){ button?.classList.add("hidden"); return; }
+    button?.classList.remove("hidden");
+    if(button) button.textContent=`↶ Undo Last Scan (+${latest.quantity})`;
+}

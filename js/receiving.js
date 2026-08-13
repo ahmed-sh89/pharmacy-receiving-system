@@ -11,6 +11,8 @@ const ReceivingEngine = {
 
     lastTransaction:null,
 
+    recentScans:[],
+
     adjustmentSources:{
 
         search:
@@ -122,13 +124,7 @@ async function receiveParsedBarcode(parsed){
     }
 
     if(!item){
-
-        handleReceivingFailure(
-            "Barcode not found in current order"
-        );
-
-        return false;
-
+        return await quickResolveUnrecognizedGTIN(parsed);
     }
 
     const quantity =
@@ -165,6 +161,71 @@ async function receiveParsedBarcode(parsed){
 
 }
 
+
+/* =====================================================
+   PHASE 2C.6.1 - QUICK RESOLVE + SAFE PHARMACY LEARNING
+===================================================== */
+async function quickResolveUnrecognizedGTIN(parsed){
+    const gtin=normalizeGTIN(parsed?.gtin||"");
+    if(!gtin){ handleReceivingFailure("Barcode could not be identified"); return false; }
+
+    let known=null;
+    try{ known=await getMasterGTINRecordByGTIN(gtin); }catch(_e){}
+
+    /* Known centrally/locally, but not in this order -> one-click Extra. */
+    if(known?.itemCode){
+        const code=normalizeItemCode(known.itemCode), name=toSafeString(known.itemName||known.name||code);
+        if(!window.confirm(`${name}\nItem Code: ${code}\n\nNot in current order. Add as EXTRA and receive +1?`)){ return false; }
+        let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true});
+        if(!item){ handleReceivingFailure("Unable to add extra item"); return false; }
+        item.manual=true;
+        addMappingRecord({itemCode:code,gtin:gtin,source:known.source||"MASTER"});
+        return receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true});
+    }
+
+    return await openQuickGTINResolver(parsed);
+}
+
+function openQuickGTINResolver(parsed){
+    return new Promise(resolve=>{
+        const gtin=normalizeGTIN(parsed.gtin);
+        document.getElementById("quickGTINResolver")?.remove();
+        const overlay=document.createElement("div");
+        overlay.id="quickGTINResolver";
+        overlay.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:99999;display:flex;align-items:center;justify-content:center;padding:12px";
+        overlay.innerHTML=`<div style="width:min(680px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.2);font-family:inherit">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><b style="font-size:17px">Quick GTIN Resolve</b><div style="font-size:12px;color:#64748b;margin-top:3px">GTIN ${gtin} is not recognized. Match an order item or add a new extra.</div></div><button data-x style="border:0;background:#eef2f7;border-radius:9px;padding:7px 10px;font-weight:800">✕</button></div>
+          <input data-search placeholder="Search current order by Item Name / Item Code" style="width:100%;box-sizing:border-box;margin:12px 0 8px;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:700">
+          <div data-results style="display:grid;gap:6px;max-height:250px;overflow:auto"></div>
+          <div style="border-top:1px solid #e2e8f0;margin:12px 0;padding-top:12px"><b style="font-size:13px">Not in the order? Add as new EXTRA</b><div style="display:grid;grid-template-columns:1fr 2fr auto;gap:7px;margin-top:7px"><input data-code placeholder="Item Code" style="min-width:0;padding:9px;border:1px solid #cbd5e1;border-radius:9px;font-weight:700"><input data-name placeholder="Item Name" style="min-width:0;padding:9px;border:1px solid #cbd5e1;border-radius:9px;font-weight:700"><button data-extra style="border:0;border-radius:9px;padding:9px 12px;background:#0f6f8f;color:white;font-weight:800">Add Extra +1</button></div></div>
+          <div style="font-size:11px;color:#64748b;margin-top:10px">Saved only for this pharmacy. It does not change the System Global Master.</div>
+        </div>`;
+        document.body.appendChild(overlay);
+        const results=overlay.querySelector('[data-results]'), search=overlay.querySelector('[data-search]');
+        const finish=v=>{overlay.remove();resolve(v)};
+        const render=()=>{
+            const q=toSafeString(search.value).toLowerCase().trim();
+            const items=(AppState.workspace.orderData||[]).filter(i=>!q || toSafeString(i.itemName).toLowerCase().includes(q)||toSafeString(i.itemCode).toLowerCase().includes(q)).slice(0,8);
+            results.innerHTML=items.map((i,n)=>`<button data-i="${n}" style="text-align:left;border:1px solid #e2e8f0;background:#f8fafc;border-radius:9px;padding:9px 10px;cursor:pointer"><b>${typeof escapeHtml==="function"?escapeHtml(i.itemName):i.itemName}</b><span style="float:right;color:#64748b;font-size:12px">${i.itemCode}</span></button>`).join('') || '<div style="padding:8px;color:#64748b;font-size:12px">No matching order item</div>';
+            results.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=async()=>{
+                const item=items[Number(btn.dataset.i)];
+                try{ await savePharmacyLearnedGTIN(gtin,item.itemCode,item.itemName); addMappingRecord({itemCode:item.itemCode,gtin,source:"PHARMACY_LEARNED"}); finish(await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:false})); }
+                catch(e){ showToast(e.message||"Unable to save GTIN","error"); }
+            });
+        };
+        search.oninput=render; render(); search.focus();
+        overlay.querySelector('[data-x]').onclick=()=>finish(false);
+        overlay.querySelector('[data-extra]').onclick=async()=>{
+            const code=normalizeItemCode(overlay.querySelector('[data-code]').value), name=toSafeString(overlay.querySelector('[data-name]').value).trim();
+            if(!code||!name){showToast("Enter Item Code and Item Name","warning");return;}
+            try{
+                await savePharmacyLearnedGTIN(gtin,code,name);
+                let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true}); item.manual=true;
+                finish(await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true}));
+            }catch(e){showToast(e.message||"Unable to add extra","error");}
+        };
+    });
+}
 
 /* =====================================================
    FIND ITEM BY GTIN
@@ -1026,6 +1087,70 @@ function setItemReceivedQuantity(
 
 
 /* =====================================================
+   PHASE 2C.6 FINAL - FAST SCAN SAFETY
+   Keep normal receiving instant. Corrections are one-tap
+   audit transactions instead of deleting history.
+===================================================== */
+function isScannerTransaction(transaction){
+    const source=toSafeString(transaction?.source||"").toUpperCase();
+    const scanner=toSafeString(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
+    return !!transaction && toNumber(transaction.quantity,0)>0 && (source===scanner || source.includes("SCAN"));
+}
+
+function rememberRecentScannerTransaction(item, transaction){
+    if(!isScannerTransaction(transaction)){ return; }
+    const entry={
+        transactionId:transaction.transactionId,
+        itemCode:item.itemCode,
+        itemName:item.itemName,
+        quantity:toNumber(transaction.quantity,1),
+        receivedQty:toNumber(item.receivedQty,0),
+        orderedQty:toNumber(item.orderedQty,0),
+        dateTime:transaction.dateTime||nowISO(),
+        gtin:transaction.gtin||"",
+        undone:false
+    };
+    ReceivingEngine.recentScans.unshift(entry);
+    ReceivingEngine.recentScans=ReceivingEngine.recentScans.slice(0,20);
+
+    const over=entry.orderedQty>=0 && entry.receivedQty>entry.orderedQty && item.manual!==true;
+    if(over){
+        showToast(`OVER RECEIVED: ${entry.itemName} — Received ${entry.receivedQty} / Ordered ${entry.orderedQty}. Use Undo if accidental.`,`warning`);
+    }
+    if(typeof refreshScanSafetyUI==="function"){ refreshScanSafetyUI(); }
+}
+
+function getRecentScannerTransactions(){
+    return Array.isArray(ReceivingEngine.recentScans) ? ReceivingEngine.recentScans.slice() : [];
+}
+
+function undoRecentScannerTransaction(transactionId){
+    const entry=ReceivingEngine.recentScans.find(row=>row.transactionId===transactionId);
+    if(!entry || entry.undone){ showToast("This scan is already corrected","warning"); return false; }
+    const item=getItemByCode(entry.itemCode);
+    if(!item){ showToast("Item is no longer available in the current order","error"); return false; }
+    const current=toNumber(item.receivedQty,0);
+    const qty=Math.min(toNumber(entry.quantity,1),current);
+    if(qty<=0){ showToast("Received quantity is already zero","warning"); return false; }
+    const tx=applyQuantityAdjustment({item:item,difference:-qty,source:"SCAN_UNDO"});
+    if(tx){
+        entry.undone=true;
+        entry.undoneAt=nowISO();
+        showToast(`${entry.itemName} — accidental scan corrected (-${qty})`,"success");
+        if(typeof refreshScanSafetyUI==="function"){ refreshScanSafetyUI(); }
+        if(typeof refreshOpenKpiPanel==="function"){ refreshOpenKpiPanel(); }
+        return tx;
+    }
+    return false;
+}
+
+function undoLastScannerTransaction(){
+    const entry=ReceivingEngine.recentScans.find(row=>!row.undone);
+    if(!entry){ showToast("No recent scanner transaction to undo","warning"); return false; }
+    return undoRecentScannerTransaction(entry.transactionId);
+}
+
+/* =====================================================
    GENERIC QUANTITY ADJUSTMENT
 
    Positive difference = increase
@@ -1227,6 +1352,8 @@ function finishReceivingChange(
 
     ReceivingEngine.lastTransaction =
         transaction;
+
+    rememberRecentScannerTransaction(item, transaction);
 
     recalculateStatistics();
 

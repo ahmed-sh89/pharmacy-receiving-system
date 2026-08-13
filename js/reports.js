@@ -928,6 +928,11 @@ function buildReceivingDiscrepancyReport(options={}){
             issueType="Not Received"; shortageItems++;
         }else if(issueKey==="partial"){
             issueType="Partial Shortage"; shortageItems++; partialShortageItems++;
+        }else if(received>0){
+            // Included only when the visible table is using the "Received Any Quantity" filter.
+            // Keep completed receipts visible in the final exported report without
+            // changing the original uploaded order source.
+            issueType="Received";
         }else{
             return;
         }
@@ -943,7 +948,7 @@ function buildReceivingDiscrepancyReport(options={}){
         });
     });
 
-    const rank={"Not Received":1,"Partial Shortage":2,"Over Received":3,"Manual / Unordered Extra":4};
+    const rank={"Not Received":1,"Partial Shortage":2,"Received":3,"Over Received":4,"Manual / Unordered Extra":5};
     rows.sort((a,b)=>(rank[a["Issue Type"]]||9)-(rank[b["Issue Type"]]||9)||String(a["Item Name"]).localeCompare(String(b["Item Name"])));
     const orderMetadata=getReceivingOrderMetadata();
     return {
@@ -972,6 +977,15 @@ function refreshReceivingVerificationSummary(){
     return visible;
 }
 
+function getReceivingReportFileBase(summary){
+    const orderNumbers=(summary?.orders||[])
+        .map(o=>toSafeString(o?.orderNumber||"").trim())
+        .filter(Boolean);
+    const raw=(orderNumbers.length ? orderNumbers.join("_") : toSafeString(summary?.orderId||"Receiving").trim());
+    const safe=raw.replace(/[^a-z0-9_-]+/gi,"_").replace(/^_+|_+$/g,"") || "Receiving";
+    return safe+"-PharmFlow";
+}
+
 function exportReceivingSummaryExcel(){
     if(typeof XLSX==="undefined"){showToast("Excel library is unavailable","error");return false;}
     const s=buildReceivingDiscrepancyReport({visibleOnly:true});
@@ -990,7 +1004,7 @@ function exportReceivingSummaryExcel(){
     ws["!autofilter"]={ref:`A${headerRow}:G${aoa.length}`};
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,"Discrepancies");
-    XLSX.writeFile(wb,"PharmFlow_Receiving_Discrepancies_"+String(s.orderId).replace(/[^a-z0-9_-]+/gi,"_")+".xlsx");
+    XLSX.writeFile(wb,getReceivingReportFileBase(s)+".xlsx");
     showToast("Displayed discrepancy rows exported to Excel","success"); return true;
 }
 
@@ -1063,7 +1077,7 @@ function exportReceivingSummaryPDF(){
         y+=rowH;
     });
     footer();
-    doc.save("PharmFlow_Receiving_Discrepancies_"+String(s.orderId).replace(/[^a-z0-9_-]+/gi,"_")+".pdf");
+    doc.save(getReceivingReportFileBase(s)+".pdf");
     showToast("Displayed discrepancy rows exported to PDF","success"); return true;
 }
 

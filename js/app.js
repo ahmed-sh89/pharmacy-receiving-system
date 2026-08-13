@@ -887,13 +887,11 @@ function bindCoreApplicationButtons(){
         ?.addEventListener(
             "click",
             function(){
-
-                document
-                    .getElementById(
-                        "masterGTINFileInput"
-                    )
-                    ?.click();
-
+                if(typeof isSystemOwner === "function" && !isSystemOwner()){
+                    showToast("System Owner access is required to update the Global Master GTIN","warning");
+                    return;
+                }
+                document.getElementById("masterGTINFileInput")?.click();
             }
         );
 
@@ -1539,3 +1537,13 @@ window.addEventListener(
 /* =====================================================
    END APPLICATION CORE
 ===================================================== */
+
+function enforceOwnerOnlyMasterGTINUI(){
+ const btn=document.getElementById("btnUpdateMasterGTIN");
+ const input=document.getElementById("masterGTINFileInput");
+ const owner=(typeof isSystemOwner==="function" && isSystemOwner());
+ if(btn){ btn.hidden=!owner; btn.setAttribute("aria-hidden",owner?"false":"true"); }
+ if(input){ input.disabled=!owner; }
+}
+window.addEventListener("auth:context-ready",enforceOwnerOnlyMasterGTINUI);
+setTimeout(enforceOwnerOnlyMasterGTINUI,500);

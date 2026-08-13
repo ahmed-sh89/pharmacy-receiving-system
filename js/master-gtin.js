@@ -826,9 +826,32 @@ function getMasterGTINRecordsByItemCodes(db,itemCodes){
    GTIN directly and then attach it to the current order.
 ===================================================== */
 
+async function getPharmacyLearnedGTINRecord(gtin){
+    const normalized=normalizeGTIN(gtin);
+    if(!normalized || typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){ return null; }
+    try{
+        const rows=await authRpc("resolve_pharmacy_learned_gtin",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized});
+        const row=Array.isArray(rows)?rows[0]:rows;
+        if(!row || !row.item_code){ return null; }
+        return {gtin:normalized,itemCode:row.item_code,itemName:row.item_name||"",source:"PHARMACY_LEARNED"};
+    }catch(error){ Logger.warn("Local learned GTIN lookup failed",error); return null; }
+}
+
+async function savePharmacyLearnedGTIN(gtin,itemCode,itemName){
+    const normalized=normalizeGTIN(gtin), code=normalizeItemCode(itemCode), name=toSafeString(itemName).trim();
+    if(!normalized || !code || !name){ throw new Error("GTIN, Item Code and Item Name are required"); }
+    if(typeof authRpc!=="function" || !AuthState?.context?.pharmacy_id){ throw new Error("Pharmacy context is unavailable"); }
+    const result=await authRpc("learn_pharmacy_gtin",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized,p_item_code:code,p_item_name:name});
+    addMappingRecord({itemCode:code,gtin:normalized,source:"PHARMACY_LEARNED"});
+    return Array.isArray(result)?result[0]:result;
+}
+
 async function getMasterGTINRecordByGTIN(gtin){
     const normalized=normalizeGTIN(gtin);
     if(!normalized){ return null; }
+
+    const learned=await getPharmacyLearnedGTINRecord(normalized);
+    if(learned){ return learned; }
 
     if(typeof ensureGlobalMasterGTINReady === "function"){
         try{ await ensureGlobalMasterGTINReady(); }

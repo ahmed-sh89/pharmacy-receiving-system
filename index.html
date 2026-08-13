@@ -366,7 +366,7 @@
                 <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3M18 7l3 3-3 3M6 17l-3-3 3-3"/></svg></span>
 
                 <span>
-                    Zebra & Sessions
+                    Handheld & Sessions
                 </span>
 
             </button>
@@ -563,7 +563,7 @@
                 <section class="statisticsGrid">
 
 
-                    <article class="statCard">
+                    <article class="statCard dashboardKpiCard" data-kpi="total" role="button" tabindex="0" aria-label="Open total items">
 
                         <div class="statCardLabel">
 
@@ -580,7 +580,7 @@
                     </article>
 
 
-                    <article class="statCard statSuccess">
+                    <article class="statCard statSuccess dashboardKpiCard" data-kpi="completed" role="button" tabindex="0" aria-label="Open completed items">
 
                         <div class="statCardLabel">
 
@@ -597,7 +597,7 @@
                     </article>
 
 
-                    <article class="statCard statWarning">
+                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remaining" role="button" tabindex="0" aria-label="Open remaining items">
 
                         <div class="statCardLabel">
 
@@ -614,7 +614,7 @@
                     </article>
 
 
-                    <article class="statCard statDanger">
+                    <article class="statCard statDanger dashboardKpiCard" data-kpi="over" role="button" tabindex="0" aria-label="Open over received items">
 
                         <div class="statCardLabel">
 
@@ -631,7 +631,7 @@
                     </article>
 
 
-                    <article class="statCard">
+                    <article class="statCard dashboardKpiCard" data-kpi="manual" role="button" tabindex="0" aria-label="Open manual items">
 
                         <div class="statCardLabel">
 
@@ -648,7 +648,7 @@
                     </article>
 
 
-                    <article class="statCard">
+                    <article class="statCard dashboardKpiCard" data-kpi="scans" role="button" tabindex="0" aria-label="Open recent scans">
 
                         <div class="statCardLabel">
 
@@ -1025,6 +1025,7 @@
                                 <div class="issueMultiFilterMenu" role="group" aria-label="Discrepancy types">
                                     <label><input type="checkbox" data-receiving-issue value="not_received" checked> Not Received</label>
                                     <label><input type="checkbox" data-receiving-issue value="partial" checked> Partial Shortage</label>
+                                    <label><input type="checkbox" data-receiving-issue value="received_any"> Received Any Quantity</label>
                                     <label><input type="checkbox" data-receiving-issue value="over" checked> Over Received</label>
                                     <label><input type="checkbox" data-receiving-issue value="manual" checked> Manual / Unordered Extra</label>
                                     <div class="issueMultiFilterActions">
@@ -1687,8 +1688,8 @@
                     <div class="cardHeader">
                         <div>
                             <span class="sectionEyebrow">SHARED RECEIVING</span>
-                            <h2>PC + Zebra Cloud Session</h2>
-                            <p>Create the session on the PC, then join from Zebra using the number or QR code. No file transfer or manual merge is required.</p>
+                            <h2>PC + Handheld Live Session</h2>
+                            <p>Create the session on the PC, then join from the Handheld using the session number or QR code. Receiving stays live across both devices.</p>
                         </div>
                         <div class="cloudStatusPill" id="cloudSyncStatus">LOCAL</div>
                     </div>
@@ -1701,7 +1702,7 @@
                         </button>
 
                         <div class="cloudJoinCard">
-                            <span class="sectionEyebrow">JOIN FROM ZEBRA</span>
+                            <span class="sectionEyebrow">JOIN FROM HANDHELD</span>
                             <strong>Session Number</strong>
                             <div class="cloudJoinRow">
                                 <input id="cloudSessionCodeInput" class="cloudCodeInput" inputmode="numeric" maxlength="8" placeholder="Enter session number" autocomplete="off">
@@ -1715,7 +1716,7 @@
                         <div>
                             <span class="sectionEyebrow">ACTIVE SESSION</span>
                             <div id="cloudSessionCodeDisplay" class="cloudSessionCode">------</div>
-                            <p>Scan this QR with Zebra to open the same receiving session.</p>
+                            <p>Scan this QR with the Handheld to open the same receiving session.</p>
                             <button id="btnRefreshCloudNow" class="secondaryButton" type="button">↻ Sync Now</button>
                             <button id="btnLeaveCloudSession" class="secondaryButton" type="button">Disconnect</button>
                         </div>
@@ -1742,10 +1743,10 @@
                 <details class="contentCard emergencyTools">
                     <summary><strong>Emergency Offline Tools</strong> — use only if cloud receiving is unavailable</summary>
                     <div class="actionCardGrid emergencyActionGrid">
-                        <button id="btnPrepareZebraWork" class="largeActionCard" type="button"><span class="actionIcon">▣</span><strong>Prepare Zebra Work File</strong><small>Emergency offline workflow.</small></button>
-                        <button id="btnLoadZebraWork" class="largeActionCard" type="button"><span class="actionIcon">⇧</span><strong>Load Zebra Work File</strong><small>Emergency offline workflow.</small></button>
-                        <button id="btnExportZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇩</span><strong>Export Zebra Session</strong><small>Emergency offline workflow.</small></button>
-                        <button id="btnMergeZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇄</span><strong>Merge Zebra Session</strong><small>Emergency recovery only.</small></button>
+                        <button id="btnPrepareZebraWork" class="largeActionCard" type="button"><span class="actionIcon">▣</span><strong>Prepare Handheld Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnLoadZebraWork" class="largeActionCard" type="button"><span class="actionIcon">⇧</span><strong>Load Handheld Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnExportZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇩</span><strong>Export Handheld Session</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnMergeZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇄</span><strong>Merge Handheld Session</strong><small>Emergency recovery only.</small></button>
                     </div>
                 </details>
 

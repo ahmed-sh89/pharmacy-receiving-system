@@ -159,7 +159,7 @@ async function createCloudReceivingSession(){
 
     try{
         /* Phase 2B.9: Supabase Global GTIN is authoritative. Refresh it
-           before the PC publishes the order to a shared Zebra session. */
+           before the PC publishes the order to a shared Handheld session. */
         if(typeof ensureGlobalMasterGTINReady === "function"){
             await ensureGlobalMasterGTINReady({forceCloud:true});
         }
@@ -294,7 +294,7 @@ async function joinCloudReceivingSession(sessionCode){
             pendingQueue:[]
         };
 
-        /* Do not allow a Zebra to re-join a session that the PC has already ended. */
+        /* Do not allow a Handheld to re-join a session that the PC has already ended. */
         if(await isCloudSessionTerminatedOnServer()){
             if(typeof resetZebraWorkingState === "function"){
                 resetZebraWorkingState("attempted-join-to-ended-session",{force:true});
@@ -303,7 +303,7 @@ async function joinCloudReceivingSession(sessionCode){
             throw new Error("This PC session has already ended");
         }
 
-        /* Every Zebra pulls the same pharmacy-wide Global GTIN directly
+        /* Every Handheld pulls the same pharmacy-wide Global GTIN directly
            from Supabase when it joins. No mapping-file upload is required
            on the handheld. */
         if(typeof ensureGlobalMasterGTINReady === "function"){
@@ -615,7 +615,7 @@ function terminateZebraFromServer(reason = "server-session-ended"){
         setZebraHomeMode();
     }
     updateCloudConnectionUI("SESSION ENDED");
-    showToast("PC session ended — scan locked until you join a new session","warning");
+    showToast("PC session ended — Handheld scan locked until you join a new session","warning");
 }
 
 async function refreshCloudSnapshot(options = {}){
@@ -660,7 +660,7 @@ async function refreshCloudSnapshot(options = {}){
             }
             if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
             updateCloudConnectionUI("SESSION ENDED");
-            showToast("PC session ended — scan locked until you join a new session","warning");
+            showToast("PC session ended — Handheld scan locked until you join a new session","warning");
             return false;
         }
 
@@ -749,13 +749,13 @@ async function refreshCloudSnapshot(options = {}){
             AppState.session?.role === "ZEBRA"
         );
         if(zebraJoined && isTerminalCloudSessionError(error)){
-            Logger.info("PC session ended; closing Zebra receiving", error.message || error);
+            Logger.info("PC session ended; closing Handheld receiving", error.message || error);
             if(typeof resetZebraWorkingState === "function"){
                 resetZebraWorkingState("server-session-ended", {force:true});
             }
             if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
             updateCloudConnectionUI("SESSION ENDED");
-            showToast("PC session ended — scan locked until you join a new session","warning");
+            showToast("PC session ended — Handheld scan locked until you join a new session","warning");
             return false;
         }
         Logger.warn("Cloud snapshot refresh failed",error);
@@ -779,7 +779,7 @@ async function validateRestoredZebraCloudSession(){
     if(!(AppState.session?.role === "ZEBRA" && isCloudSessionActive())){ return false; }
 
     if(!navigator.onLine){
-        /* Never destroy Zebra work merely because the network is temporarily unavailable. */
+        /* Never destroy Handheld work merely because the network is temporarily unavailable. */
         updateCloudConnectionUI("OFFLINE");
         if(typeof setZebraReceivingMode === "function"){ setZebraReceivingMode(); }
         return null;
@@ -802,13 +802,13 @@ async function validateRestoredZebraCloudSession(){
         return true;
     }catch(error){
         if(isTerminalCloudSessionError(error)){
-            Logger.info("Closed/stale Zebra session removed", error.message || error);
+            Logger.info("Closed/stale Handheld session removed", error.message || error);
             if(typeof resetZebraWorkingState === "function"){ resetZebraWorkingState("closed-cloud-session", {force:true}); }
             if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
-            showToast("Previous Zebra session has ended — ready for a new task","success");
+            showToast("Previous Handheld session has ended — ready for a new task","success");
             return false;
         }
-        Logger.warn("Unable to validate Zebra session; local work preserved", error);
+        Logger.warn("Unable to validate Handheld session; local work preserved", error);
         updateCloudConnectionUI("CONNECTION ISSUE");
         if(typeof setZebraReceivingMode === "function"){ setZebraReceivingMode(); }
         return null;
@@ -853,13 +853,13 @@ async function leaveCloudSession(){
     const wasZebra = !!(AppState.session && AppState.session.role === "ZEBRA");
     const wasPC = !!(AppState.session && AppState.session.role === "PC" && AppState.session.cloud === true);
 
-    /* Zebra leaving Receiving must only detach that handheld. It must never end
+    /* Handheld leaving Receiving must only detach that handheld. It must never end
        the PC-owned shared session for other devices. */
     if(wasZebra){
         stopCloudPolling();
         const pending = Array.isArray(AppState.session.pendingQueue) ? AppState.session.pendingQueue.length : 0;
         if(pending > 0){
-            showToast("Sync pending Zebra work before leaving this session","warning");
+            showToast("Sync pending Handheld work before leaving this session","warning");
             startCloudPolling();
             return false;
         }
@@ -868,12 +868,12 @@ async function leaveCloudSession(){
         }
         if(typeof setZebraHomeMode === "function"){ setZebraHomeMode(); }
         renderCloudSessionQR();
-        showToast("Zebra disconnected — ready for a new task","success");
+        showToast("Handheld disconnected — ready for a new task","success");
         return true;
     }
 
     /* PC Disconnect is the authoritative END SESSION action. Do not clear the
-       PC locally until Supabase has recorded the termination. Otherwise Zebra
+       PC locally until Supabase has recorded the termination. Otherwise Handheld
        would continue accepting scans against a session the PC can no longer see. */
     if(wasPC){
         if(!navigator.onLine){
