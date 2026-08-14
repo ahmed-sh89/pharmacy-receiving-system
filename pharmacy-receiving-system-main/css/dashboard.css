@@ -1,0 +1,3957 @@
+/* =====================================================
+   DASHBOARD STATISTICS
+===================================================== */
+
+.statisticsGrid {
+  display: grid;
+
+  grid-template-columns:
+      repeat(6, minmax(120px, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 22px;
+}
+
+.statCard {
+  position: relative;
+
+  min-height: 112px;
+
+  padding: 18px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.statCard::after {
+  content: "";
+
+  position: absolute;
+  right: -24px;
+  bottom: -24px;
+
+  width: 80px;
+  height: 80px;
+
+  border-radius: 50%;
+
+  background:
+      rgba(11, 94, 215, 0.05);
+}
+
+.statCardLabel {
+  position: relative;
+  z-index: 1;
+
+  margin-bottom: 12px;
+
+  color: var(--text-soft);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statCard strong {
+  position: relative;
+  z-index: 1;
+
+  display: block;
+
+  font-size: 31px;
+  line-height: 1;
+
+  color: var(--text);
+}
+
+.statSuccess {
+  border-color: #cdebdc;
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #f3fbf7
+      );
+}
+
+.statSuccess strong {
+  color: var(--success);
+}
+
+.statWarning {
+  border-color: #f2dfaa;
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #fffaf0
+      );
+}
+
+.statWarning strong {
+  color: var(--warning);
+}
+
+.statDanger {
+  border-color: #f0cccc;
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #fff6f6
+      );
+}
+
+.statDanger strong {
+  color: var(--danger);
+}
+
+
+/* =====================================================
+ PROGRESS
+===================================================== */
+
+.progressPercentage {
+  color: var(--primary);
+
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 14px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #edf1f7;
+}
+
+.progressBar {
+  width: 0%;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+      linear-gradient(
+          90deg,
+          #A65F3A,
+          #4f8fe9
+      );
+
+  transition: width 0.28s ease;
+}
+
+.progressDetails {
+  display: flex;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 9px;
+
+  color: var(--text-soft);
+
+  font-size: 12px;
+}
+
+
+/* =====================================================
+ LAST SCAN CARD
+===================================================== */
+
+.lastScanCard {
+  border-color: #d7e4f7;
+}
+
+.lastScanCard.scanSuccess {
+  border-color: #a9dbc5;
+
+  box-shadow:
+      0 8px 24px rgba(31, 157, 104, 0.10);
+}
+
+.lastScanCard.scanError {
+  border-color: #efbcbc;
+
+  box-shadow:
+      0 8px 24px rgba(214, 69, 69, 0.10);
+}
+
+
+/* =====================================================
+ STATUS BADGES
+===================================================== */
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 26px;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.statusPending {
+  color: #667085;
+  background: #f2f4f7;
+}
+
+.statusReceiving {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.statusCompleted {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.statusOver {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.statusManual {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+
+/* =====================================================
+ RECEIVING TABLE ROW STATES
+===================================================== */
+
+.dataTable tbody tr.rowPending {
+  background: #ffffff;
+}
+
+.dataTable tbody tr.rowReceiving {
+  background: #f5f9ff;
+}
+
+.dataTable tbody tr.rowCompleted {
+  background: #f3fbf7;
+}
+
+.dataTable tbody tr.rowOver {
+  background: #fff6f6;
+}
+
+.dataTable tbody tr.rowManual {
+  background: #fffaf0;
+}
+
+
+/* =====================================================
+ REPORT TOTAL ROW
+===================================================== */
+
+.reportTotalRow td {
+  background: #f3f7ff;
+
+  color: var(--primary);
+
+  font-weight: 700;
+}
+
+
+/* =====================================================
+ ARCHIVE STATUS
+===================================================== */
+
+.archiveStatus {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.archiveStatus.completed {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.archiveStatus.closed {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+
+/* =====================================================
+ HEALTH STATUS
+===================================================== */
+
+.healthValueGood {
+  color: var(--success);
+}
+
+.healthValueWarning {
+  color: var(--warning);
+}
+
+.healthValueDanger {
+  color: var(--danger);
+}
+
+
+/* =====================================================
+ EMPTY TABLE STATE
+===================================================== */
+
+.tableEmptyState {
+  padding: 32px 16px !important;
+
+  color: var(--text-soft);
+
+  text-align: center;
+}
+
+
+/* =====================================================
+ SEARCH RESULT ITEM
+===================================================== */
+
+.searchResultItem {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 12px;
+
+  border: 0;
+  border-bottom: 1px solid var(--border);
+
+  background: white;
+
+  text-align: left;
+}
+
+.searchResultItem:last-child {
+  border-bottom: 0;
+}
+
+.searchResultItem:hover {
+  background: var(--primary-soft);
+}
+
+.searchResultMain {
+  min-width: 0;
+}
+
+.searchResultMain strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchResultMain span {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.searchResultMeta {
+  flex: 0 0 auto;
+
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =====================================================
+ MANUAL ITEM
+===================================================== */
+
+.manualBadge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 3px 7px;
+
+  margin-left: 6px;
+
+  border-radius: 999px;
+
+  color: var(--warning);
+  background: var(--warning-soft);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  vertical-align: middle;
+}
+
+
+/* =====================================================
+ SCAN FLASH EFFECTS
+===================================================== */
+
+@keyframes scanSuccessFlash {
+  0% {
+      box-shadow:
+          0 0 0 7px rgba(31, 157, 104, 0.18);
+  }
+
+  100% {
+      box-shadow:
+          0 0 0 5px rgba(11, 94, 215, 0.08);
+  }
+}
+
+@keyframes scanErrorFlash {
+  0% {
+      box-shadow:
+          0 0 0 7px rgba(214, 69, 69, 0.18);
+  }
+
+  100% {
+      box-shadow:
+          0 0 0 5px rgba(11, 94, 215, 0.08);
+  }
+}
+
+.scanBox.flashSuccess {
+  animation:
+      scanSuccessFlash 0.5s ease;
+}
+
+.scanBox.flashError {
+  animation:
+      scanErrorFlash 0.5s ease;
+}
+
+
+/* =====================================================
+ REPORT SUMMARY HIGHLIGHT
+===================================================== */
+
+.reportSummaryCard.highlight::before {
+  content: "TOTAL";
+
+  display: inline-block;
+
+  margin-bottom: 7px;
+
+  padding: 3px 6px;
+
+  border-radius: 6px;
+
+  background: white;
+
+  color: var(--primary);
+
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+
+/* =====================================================
+ RESPONSIVE INTERMEDIATE
+===================================================== */
+
+@media (max-width: 1280px) {
+
+  .statisticsGrid {
+      grid-template-columns:
+          repeat(3, minmax(150px, 1fr));
+  }
+
+  .lastScanGrid {
+      grid-template-columns:
+          repeat(4, minmax(120px, 1fr));
+  }
+
+  .reportFilterGrid {
+      grid-template-columns:
+          2fr 1fr 1fr;
+  }
+
+  .reportButtonField {
+      grid-column:
+          1 / -1;
+  }
+
+  .reportButtonField .primaryButton {
+      width: 100%;
+  }
+
+}
+
+
+/* =====================================================
+ SMALL LAPTOP
+===================================================== */
+
+@media (max-width: 1024px) {
+
+  .twoColumnLayout {
+      grid-template-columns: 1fr;
+  }
+
+  .statisticsGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+  .lastScanGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+  .actionCardGrid {
+      grid-template-columns: 1fr;
+  }
+
+  .reportSummaryGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+  .healthGrid,
+  .sessionInfoGrid,
+  .archiveSummaryGrid {
+      grid-template-columns:
+          repeat(2, minmax(140px, 1fr));
+  }
+
+}
+/* =====================================================
+   SMART SCAN SEARCH
+===================================================== */
+
+.smartScanSearchArea {
+  margin-top: 14px;
+}
+
+.smartScanResults {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+
+  margin-top: 10px;
+}
+
+.smartSearchResult {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 13px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  text-align: left;
+
+  transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      transform 0.18s ease,
+      box-shadow 0.18s ease;
+}
+
+.smartSearchResult:hover {
+  border-color: #b9cff2;
+  background: #f7faff;
+
+  box-shadow:
+      0 8px 20px rgba(11, 94, 215, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.smartSearchResultMain {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.smartSearchResultMain strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: var(--text);
+
+  font-size: 14px;
+}
+
+.smartSearchResultMain span {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.smartSearchResultQty {
+  flex: 0 0 auto;
+
+  min-width: 80px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+.smartSearchResultQty span {
+  color: var(--primary);
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.smartSearchResultQty small {
+  color: var(--text-soft);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.smartSearchEmpty {
+  padding: 16px;
+
+  border: 1px dashed #cfd8e6;
+  border-radius: 12px;
+
+  background: #fafcff;
+
+  color: var(--text-soft);
+
+  text-align: center;
+  font-size: 13px;
+}
+
+
+/* =====================================================
+ SELECTED SEARCH ITEM
+===================================================== */
+
+.smartScanSelected {
+  margin-top: 12px;
+  padding: 18px;
+
+  border: 1px solid #b8cff4;
+  border-radius: 15px;
+
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #f5f9ff
+      );
+
+  box-shadow:
+      0 10px 24px rgba(11, 94, 215, 0.08);
+}
+
+.smartSelectedMain {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 16px;
+}
+
+.smartSelectedMain h3 {
+  margin: 5px 0 4px;
+
+  color: var(--text);
+
+  font-size: 18px;
+}
+
+.smartSelectedCode {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.smartSelectedCode strong {
+  color: var(--primary);
+}
+
+.smartSelectedStats {
+  display: grid;
+
+  grid-template-columns:
+      repeat(3, minmax(100px, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 16px;
+}
+
+.smartSelectedStats > div {
+  padding: 11px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.smartSelectedStats span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--text-soft);
+
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.smartSelectedStats strong {
+  font-size: 18px;
+}
+
+.smartQuantityRow {
+  display: grid;
+
+  grid-template-columns:
+      auto auto minmax(150px, 1fr);
+
+  gap: 12px;
+
+  align-items: center;
+}
+
+.smartQuantityLabel {
+  color: var(--text-soft);
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.smartQuantityControl {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #cfd8e6;
+  border-radius: 11px;
+
+  background: white;
+}
+
+.quantityButton {
+  width: 42px;
+  height: 42px;
+
+  border: 0;
+
+  background: #f4f7fb;
+  color: var(--primary);
+
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.quantityButton:hover {
+  background: var(--primary-soft);
+}
+
+#smartQuantityInput {
+  width: 72px;
+  height: 42px;
+
+  padding: 0 6px;
+
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+
+  outline: 0;
+
+  background: white;
+
+  color: var(--text);
+
+  font-size: 17px;
+  font-weight: 700;
+
+  text-align: center;
+}
+
+
+/* =====================================================
+ LAST SCAN — PRIORITY DISPLAY
+===================================================== */
+
+#lastScanCard {
+  margin-top: 14px;
+  margin-bottom: 20px;
+
+  border: 2px solid #d6e3f6;
+
+  box-shadow:
+      0 10px 26px rgba(31, 41, 55, 0.07);
+}
+
+#lastScanCard .cardHeader {
+  margin-bottom: 14px;
+}
+
+#lastItemName {
+  color: var(--primary);
+
+  font-size: 18px;
+}
+
+#lastScanCard.scanSuccess {
+  border-color: #86cfad;
+
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #f2fbf7
+      );
+}
+
+#lastScanCard.scanError {
+  border-color: #eba9a9;
+
+  background:
+      linear-gradient(
+          145deg,
+          #ffffff,
+          #fff5f5
+      );
+}
+
+
+/* =====================================================
+ RECEIVING TABLE QUANTITY CONTROL
+===================================================== */
+
+.tableQtyControl {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #ccd5e2;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.tableQtyButton {
+  width: 30px;
+  height: 30px;
+
+  border: 0;
+
+  background: #f3f6fa;
+  color: var(--primary);
+
+  font-size: 18px;
+  font-weight: 700;
+
+  line-height: 1;
+}
+
+.tableQtyButton:hover {
+  background: var(--primary-soft);
+}
+
+.tableQtyValue {
+  min-width: 42px;
+  height: 30px;
+
+  padding: 0 8px;
+
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+
+  background: #ffffff;
+
+  color: var(--text);
+
+  font-size: 13px;
+  font-weight: 700;
+
+  text-align: center;
+}
+
+.tableQtyValue:hover {
+  background: #fafcff;
+  color: var(--primary);
+}
+
+
+/* =====================================================
+ RECENTLY UPDATED ROW
+===================================================== */
+
+@keyframes recentlyUpdatedRowFlash {
+
+  0% {
+      background: #dff8ea;
+      box-shadow:
+          inset 4px 0 0 #1f9d68;
+  }
+
+  55% {
+      background: #eaf9f1;
+      box-shadow:
+          inset 4px 0 0 #1f9d68;
+  }
+
+  100% {
+      background: inherit;
+      box-shadow:
+          inset 0 0 0 transparent;
+  }
+
+}
+
+#receivingTableBody tr.recentlyUpdated {
+  animation:
+      recentlyUpdatedRowFlash
+      1.8s ease;
+}
+
+
+/* =====================================================
+ SMART SCAN MOBILE
+===================================================== */
+
+@media (max-width:768px){
+
+  .smartSelectedStats {
+      grid-template-columns:
+          repeat(3, 1fr);
+  }
+
+  .smartQuantityRow {
+      grid-template-columns:
+          1fr;
+  }
+
+  .smartQuantityLabel {
+      display: none;
+  }
+
+  .smartQuantityControl {
+      width: 100%;
+  }
+
+  .quantityButton {
+      flex: 1;
+  }
+
+  #smartQuantityInput {
+      flex: 1;
+      width: auto;
+  }
+
+  .smartQuantityRow .primaryButton {
+      width: 100%;
+  }
+
+  .smartSearchResult {
+      padding: 12px;
+  }
+
+}
+
+
+/* =====================================================
+ ZEBRA / TOUCH DEVICE
+===================================================== */
+
+@media (pointer:coarse){
+
+  .smartSearchResult {
+      min-height: 58px;
+  }
+
+  .quantityButton {
+      min-width: 48px;
+      min-height: 48px;
+  }
+
+  #smartQuantityInput {
+      min-height: 48px;
+  }
+
+  .tableQtyButton {
+      min-width: 38px;
+      min-height: 38px;
+  }
+
+  .tableQtyValue {
+      min-height: 38px;
+  }
+
+}
+/* =====================================================
+   LAST SCAN QUICK QUANTITY
+===================================================== */
+
+.lastScanQuantityControls {
+  margin-top: 16px;
+  padding-top: 15px;
+
+  border-top: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+}
+
+.lastScanQtyTitle {
+  font-size: 12px;
+  font-weight: 700;
+
+  color: var(--text-soft);
+}
+
+.lastScanQtyActions {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #bfcde1;
+  border-radius: 11px;
+
+  background: white;
+}
+
+.lastScanQtyButton {
+  width: 46px;
+  height: 42px;
+
+  border: 0;
+
+  background: #f3f7fd;
+  color: var(--primary);
+
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.lastScanQtyButton:hover {
+  background: var(--primary-soft);
+}
+
+.lastScanQtyValue {
+  min-width: 62px;
+  height: 42px;
+
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+
+  background: white;
+
+  color: var(--primary);
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lastScanQtyHint {
+  color: var(--text-soft);
+
+  font-size: 10px;
+}
+
+
+/* =====================================================
+ CLICKABLE DASHBOARD CARDS
+===================================================== */
+
+.clickableStatCard {
+  cursor: pointer;
+
+  transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+}
+
+.clickableStatCard:hover {
+  transform: translateY(-2px);
+
+  border-color: #aac5ec;
+
+  box-shadow:
+      0 12px 28px rgba(11, 94, 215, 0.10);
+}
+
+
+/* =====================================================
+ STAT ITEMS MODAL
+===================================================== */
+
+.statItemsModal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 500;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+      rgba(15, 23, 42, 0.56);
+
+  backdrop-filter: blur(3px);
+}
+
+.statItemsModal.open {
+  display: flex;
+}
+
+.statItemsModalCard {
+  width: min(
+      1000px,
+      96vw
+  );
+
+  max-height: 88vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border-radius: 18px;
+
+  background: white;
+
+  box-shadow:
+      0 30px 80px rgba(15, 23, 42, 0.24);
+}
+
+.statItemsModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 20px 22px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.statItemsModalHeader span {
+  color: var(--text-soft);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+}
+
+.statItemsModalHeader h2 {
+  margin: 4px 0 0;
+
+  font-size: 20px;
+}
+
+.statItemsClose {
+  width: 40px;
+  height: 40px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: #f2f4f7;
+}
+
+.statItemsModalSummary {
+  display: flex;
+  align-items: baseline;
+
+  gap: 6px;
+
+  padding: 14px 22px;
+
+  background: #f8faff;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.statItemsModalSummary strong {
+  color: var(--primary);
+
+  font-size: 22px;
+}
+
+.statItemsModalSummary span {
+  color: var(--text-soft);
+
+  font-size: 11px;
+}
+
+.statItemsTableWrap {
+  overflow: auto;
+}
+
+
+/* =====================================================
+ MOBILE
+===================================================== */
+
+@media (max-width:768px){
+
+  .lastScanQuantityControls {
+      flex-direction: column;
+      align-items: stretch;
+  }
+
+  .lastScanQtyActions {
+      width: 100%;
+  }
+
+  .lastScanQtyButton,
+  .lastScanQtyValue {
+      flex: 1;
+  }
+
+  .lastScanQtyHint {
+      text-align: center;
+  }
+
+  .statItemsModal {
+      padding: 8px;
+  }
+
+  .statItemsModalCard {
+      max-height: 94vh;
+  }
+
+}
+
+/* =====================================================
+   PROFESSIONAL LAST SCAN — FINAL
+===================================================== */
+
+#lastScanCard {
+    margin-top: 14px;
+    margin-bottom: 20px;
+
+    padding: 14px 16px;
+
+    border: 2px solid #d6e3f6;
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f8fbff
+        );
+
+    box-shadow:
+        0 10px 26px rgba(31, 41, 55, 0.07);
+}
+
+#lastScanCard .cardHeader {
+    margin-bottom: 10px;
+}
+
+#lastScanCard.scanSuccess {
+    border-color: #86cfad;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f2fbf7
+        );
+}
+
+#lastScanCard.scanError {
+    border-color: #eba9a9;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #fff5f5
+        );
+}
+
+/*
+   The old equal-width grid stays hidden for compatibility.
+*/
+#lastScanCard .legacyLastScanGrid {
+    display: none !important;
+}
+
+.professionalLastScanLayout {
+    width: 100%;
+}
+
+/* Full-width item identity area */
+.lastScanHero {
+    width: 100%;
+
+    padding: 14px 16px;
+
+    border: 1px solid #dce7f6;
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f6f9ff
+        );
+}
+
+/*
+   Most important field:
+   never ellipsize or hide the item name.
+   It can wrap naturally so the COMPLETE name is visible.
+*/
+.lastScanHeroName {
+    width: 100%;
+
+    margin: 0 0 11px;
+
+    color: var(--primary);
+
+    font-size: clamp(16px, 1.65vw, 21px);
+    font-weight: 700;
+    line-height: 1.28;
+
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: normal;
+
+    letter-spacing: -0.15px;
+}
+
+/* Item Number / GTIN / time */
+.lastScanMetaRow {
+    display: grid;
+
+    grid-template-columns:
+        minmax(130px, 0.8fr)
+        minmax(180px, 1.2fr)
+        minmax(150px, 0.9fr);
+
+    gap: 8px;
+}
+
+.lastScanMetaItem {
+    min-width: 0;
+
+    padding: 7px 9px;
+
+    border: 1px solid #e5ebf3;
+    border-radius: 8px;
+
+    background: #ffffff;
+}
+
+.lastScanMetaItem span {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #8390a2;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    letter-spacing: 0.45px;
+    text-transform: uppercase;
+}
+
+.lastScanMetaItem strong {
+    display: block;
+
+    color: #334155;
+
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Receiving metrics */
+.lastScanMetrics {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-top: 9px;
+}
+
+.lastScanMetric {
+    min-width: 0;
+
+    padding: 9px 10px;
+
+    border: 1px solid #e3e9f2;
+    border-radius: 10px;
+
+    background: #f8fafc;
+
+    text-align: center;
+}
+
+.lastScanMetric span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #7b8798;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+}
+
+.lastScanMetric > strong {
+    display: block;
+
+    color: #273244;
+
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.lastScanMetricReceived {
+    border-color: #cdebdc;
+    background: #f4fbf7;
+}
+
+.lastScanMetricReceived > strong {
+    color: var(--success);
+}
+
+.lastScanMetricRemaining {
+    border-color: #f2dfaa;
+    background: #fffaf0;
+}
+
+.lastScanMetricRemaining > strong {
+    color: var(--warning);
+}
+
+.lastScanHeroStatus {
+    min-height: 26px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =====================================================
+   LAST SCAN QUICK QUANTITY — FINAL
+===================================================== */
+
+.lastScanQuantityControls {
+    display: grid;
+
+    grid-template-columns:
+        auto auto minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 10px;
+    padding-top: 10px;
+
+    border-top: 1px solid #e3e9f2;
+}
+
+.lastScanQtyTitle {
+    color: #6d7888;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.lastScanQtyActions {
+    display: inline-flex;
+    align-items: center;
+
+    overflow: hidden;
+
+    border: 1px solid #c8d3e3;
+    border-radius: 9px;
+
+    background: #ffffff;
+}
+
+.lastScanQtyButton {
+    width: 36px;
+    height: 32px;
+
+    border: 0;
+
+    background: #f3f7fd;
+    color: var(--primary);
+
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.lastScanQtyButton:hover {
+    background: var(--primary-soft);
+}
+
+.lastScanQtyValue {
+    min-width: 48px;
+    height: 32px;
+
+    border: 0;
+    border-left: 1px solid #dfe6ef;
+    border-right: 1px solid #dfe6ef;
+
+    background: #ffffff;
+    color: var(--primary);
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.lastScanQtyHint {
+    color: #8994a4;
+
+    font-size: 8px;
+    line-height: 1.3;
+}
+
+/* =====================================================
+   LAST SCAN RESPONSIVE / ZEBRA
+===================================================== */
+
+@media (max-width: 900px) {
+
+    .lastScanMetaRow {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .lastScanMetaTime {
+        grid-column:
+            1 / -1;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    #lastScanCard {
+        padding: 10px;
+    }
+
+    .lastScanHero {
+        padding: 11px 12px;
+    }
+
+    .lastScanHeroName {
+        font-size: 15px;
+        line-height: 1.3;
+    }
+
+    .lastScanMetaRow {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 5px;
+    }
+
+    .lastScanMetaItem {
+        padding: 6px 7px;
+    }
+
+    .lastScanMetaItem strong {
+        font-size: 9px;
+    }
+
+    .lastScanMetrics {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 5px;
+    }
+
+    .lastScanMetric {
+        padding: 7px 4px;
+    }
+
+    .lastScanMetric span {
+        font-size: 7px;
+    }
+
+    .lastScanMetric > strong {
+        font-size: 13px;
+    }
+
+    .lastScanQuantityControls {
+        grid-template-columns:
+            auto 1fr;
+
+        gap: 7px;
+    }
+
+    .lastScanQtyActions {
+        justify-self: end;
+    }
+
+    .lastScanQtyHint {
+        display: none;
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .lastScanHeroName {
+        font-size: 14px;
+    }
+
+    .lastScanMetaRow {
+        grid-template-columns:
+            1fr;
+    }
+
+    .lastScanMetaTime {
+        grid-column: auto;
+    }
+
+    .lastScanMetrics {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+/* =====================================================
+   LAST SCAN METRICS — LARGE READABLE VALUES
+   Final override: keeps existing professional palette.
+===================================================== */
+
+#lastScanCard .lastScanMetrics {
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#lastScanCard .lastScanMetric {
+    min-height: 76px;
+    padding: 12px 12px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#lastScanCard .lastScanMetric span {
+    margin-bottom: 7px;
+
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+}
+
+#lastScanCard .lastScanMetric > strong {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#lastScanCard .lastScanHeroStatus {
+    min-height: 30px;
+}
+
+#lastScanCard .lastScanHeroStatus .statusBadge {
+    min-height: 30px;
+    padding: 6px 12px;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#lastScanCard .lastScanOverQuantity {
+    display: block;
+
+    color: var(--danger);
+
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#lastScanCard .lastScanMetricStatus:has(.lastScanOverQuantity) {
+    border-color: #f0cccc;
+    background: #fff6f6;
+}
+
+@media (max-width: 768px) {
+    #lastScanCard .lastScanMetric {
+        min-height: 66px;
+        padding: 9px 7px;
+    }
+
+    #lastScanCard .lastScanMetric span {
+        margin-bottom: 5px;
+        font-size: 8px;
+    }
+
+    #lastScanCard .lastScanMetric > strong,
+    #lastScanCard .lastScanOverQuantity {
+        font-size: 20px;
+    }
+
+    #lastScanCard .lastScanHeroStatus .statusBadge {
+        min-height: 26px;
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+}
+
+/* =====================================================
+   ORDER STATUS REPORT — DASHBOARD LIVE REPORT
+===================================================== */
+
+.orderStatusReportButton {
+    margin-left: 10px;
+}
+
+.orderStatusReportModal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 560;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px;
+
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(4px);
+}
+
+.orderStatusReportModal.open {
+    display: flex;
+}
+
+.orderStatusReportCard {
+    width: min(1120px, 96vw);
+    max-height: 90vh;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border: 1px solid #d9e3f0;
+    border-radius: 20px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 32px 90px rgba(15, 23, 42, 0.28);
+}
+
+.orderStatusReportHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 20px 22px 16px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.orderStatusReportHeader > div > span {
+    color: var(--primary);
+
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+}
+
+.orderStatusReportHeader h2 {
+    margin: 5px 0 4px;
+
+    color: var(--text);
+
+    font-size: 21px;
+}
+
+.orderStatusReportHeader p {
+    margin: 0;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+}
+
+.orderStatusReportToolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 14px 22px;
+
+    border-bottom: 1px solid var(--border);
+
+    background: #f8faff;
+}
+
+.orderStatusFilters {
+    display: inline-flex;
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+.orderStatusFilters button {
+    min-height: 34px;
+
+    padding: 7px 13px;
+
+    border: 1px solid #d6dfec;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #526174;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.orderStatusFilters button:hover {
+    border-color: #acc5e9;
+    transform: translateY(-1px);
+}
+
+.orderStatusFilters button.active {
+    border-color: var(--primary);
+
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.orderStatusReportSummary {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(80px, 1fr));
+
+    gap: 8px;
+}
+
+.orderStatusReportSummary > div {
+    min-width: 90px;
+
+    padding: 8px 10px;
+
+    border: 1px solid #e0e7f0;
+    border-radius: 9px;
+
+    background: #ffffff;
+}
+
+.orderStatusReportSummary strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: var(--text);
+
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.orderStatusReportSummary span {
+    color: var(--text-soft);
+
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.orderStatusReportSummary .shortageValue strong {
+    color: var(--warning);
+}
+
+.orderStatusReportSummary .overValue strong {
+    color: var(--danger);
+}
+
+.orderStatusReportTableWrap {
+    overflow: auto;
+}
+
+.orderStatusReportTable th,
+.orderStatusReportTable td {
+    white-space: nowrap;
+}
+
+.orderStatusReportTable td:nth-child(2) {
+    min-width: 260px;
+    white-space: normal;
+}
+
+.orderStatusShortageRow {
+    background: #fffaf0;
+}
+
+.differenceShortage {
+    color: var(--warning);
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.differenceOver,
+.overQtyBadge {
+    color: var(--danger);
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.differenceComplete {
+    color: var(--success);
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.statusShortage {
+    color: #b7791f;
+    background: #fff3d6;
+}
+
+/* =====================================================
+   OVER / REMAINING DETAIL MODAL — QUANTITY EMPHASIS
+===================================================== */
+
+.statItemsModalSummary {
+    justify-content: flex-start;
+    gap: 18px;
+}
+
+.statSummaryBlock {
+    display: flex;
+    align-items: baseline;
+
+    gap: 6px;
+}
+
+.statSummaryQuantity {
+    padding-left: 18px;
+
+    border-left: 1px solid var(--border);
+}
+
+.statSummaryQuantity strong {
+    color: var(--danger);
+}
+
+.statItemsDataTable .overQtyBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 48px;
+
+    padding: 5px 9px;
+
+    border-radius: 8px;
+
+    background: #fff0f0;
+}
+
+@media (max-width: 900px) {
+
+    .orderStatusReportToolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .orderStatusReportSummary {
+        grid-template-columns:
+            repeat(2, minmax(100px, 1fr));
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .orderStatusReportButton {
+        margin-left: 4px;
+    }
+
+    .orderStatusReportModal {
+        padding: 6px;
+    }
+
+    .orderStatusReportCard {
+        max-height: 96vh;
+    }
+
+    .orderStatusReportHeader {
+        padding: 15px;
+    }
+
+    .orderStatusReportToolbar {
+        padding: 10px;
+    }
+
+    .orderStatusFilters {
+        display: grid;
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .orderStatusFilters button {
+        width: 100%;
+    }
+
+}
+
+/* =====================================================
+   MASTER GTIN DATABASE
+===================================================== */
+
+.masterGTINCard{
+    position:relative;
+    overflow:hidden;
+}
+
+.masterGTINCard::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:3px;
+    background:var(--primary);
+    opacity:.85;
+}
+
+.masterGTINStatusGrid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin-top:6px;
+}
+
+.masterGTINStatusGrid > div{
+    min-width:0;
+    padding:12px 13px;
+    border:1px solid var(--border);
+    border-radius:11px;
+    background:#f8fafc;
+}
+
+.masterGTINStatusGrid span{
+    display:block;
+    margin-bottom:5px;
+    color:var(--text-soft);
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.35px;
+    text-transform:uppercase;
+}
+
+.masterGTINStatusGrid strong{
+    display:block;
+    overflow:hidden;
+    color:var(--text);
+    font-size:13px;
+    font-weight:700;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+#masterGTINStatus{
+    color:var(--primary);
+}
+
+.masterGTINNotice{
+    margin-top:10px;
+    padding:10px 12px;
+    border:1px solid #d7e2f2;
+    border-radius:10px;
+    background:#f6f9fe;
+    color:#506078;
+    font-size:11px;
+    line-height:1.45;
+}
+
+.masterGTINNotice.success{
+    border-color:#b8dfcb;
+    background:#f2fbf6;
+    color:#287352;
+}
+
+.masterGTINNotice.warning{
+    border-color:#efd59b;
+    background:#fffaf0;
+    color:#87641b;
+}
+
+.legacyMappingDetails{
+    margin-top:12px;
+    border-top:1px solid var(--border);
+    padding-top:10px;
+}
+
+.legacyMappingDetails summary{
+    cursor:pointer;
+    color:var(--text-soft);
+    font-size:11px;
+    font-weight:700;
+    user-select:none;
+}
+
+.legacyMappingContent{
+    display:grid;
+    gap:10px;
+    margin-top:10px;
+}
+
+.legacyMappingContent .secondaryButton{
+    justify-self:start;
+}
+
+/* =====================================================
+   SAFE QUANTITY ADJUSTMENT
+===================================================== */
+
+.quantityAdjustmentModal{
+    position:fixed;
+    inset:0;
+    z-index:650;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    background:rgba(15,23,42,.56);
+    backdrop-filter:blur(3px);
+}
+
+.quantityAdjustmentModal.open{
+    display:flex;
+}
+
+.quantityAdjustmentCard{
+    width:min(440px,96vw);
+    padding:20px;
+    border:1px solid #d9e3f0;
+    border-radius:17px;
+    background:#fff;
+    box-shadow:0 28px 70px rgba(15,23,42,.24);
+}
+
+.quantityAdjustmentHeader{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+}
+
+.quantityAdjustmentHeader h3{
+    margin:5px 0 0;
+    color:var(--text);
+    font-size:16px;
+    line-height:1.3;
+}
+
+.quantityCurrentTotal{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:16px 0 14px;
+    padding:11px 13px;
+    border:1px solid #d9e5f5;
+    border-radius:11px;
+    background:#f7faff;
+}
+
+.quantityCurrentTotal span{
+    color:var(--text-soft);
+    font-size:11px;
+    font-weight:700;
+}
+
+.quantityCurrentTotal strong{
+    color:var(--primary);
+    font-size:22px;
+    font-weight:700;
+}
+
+.quantityAdjustmentLabel{
+    display:block;
+    margin-bottom:6px;
+    color:var(--text-soft);
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+}
+
+.quantityAdjustmentInput{
+    width:100%;
+    height:48px;
+    padding:0 13px;
+    border:2px solid #c7d7eb;
+    border-radius:11px;
+    outline:none;
+    background:#fff;
+    color:var(--text);
+    font-size:20px;
+    font-weight:700;
+    text-align:center;
+}
+
+.quantityAdjustmentInput:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(11,94,215,.10);
+}
+
+.quantityAdjustmentHelp{
+    margin:10px 0 14px;
+    color:var(--text-soft);
+    font-size:10px;
+    line-height:1.5;
+}
+
+.quantityAdjustmentActions{
+    display:grid;
+    grid-template-columns:1.25fr 1fr;
+    gap:9px;
+}
+
+@media (max-width:768px){
+    .masterGTINStatusGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .quantityAdjustmentActions{
+        grid-template-columns:1fr;
+    }
+}
+
+
+/* =====================================================
+   ZEBRA OFFLINE RECEIVING MODE
+===================================================== */
+
+.zebraQuickHeader{
+    display:none;
+}
+
+body.zebraMode{
+    background:#eef3f9;
+}
+
+body.zebraMode .sidebar,
+body.zebraMode .sidebarOverlay,
+body.zebraMode .topBar{
+    display:none !important;
+}
+
+body.zebraMode .mainApplication{
+    margin-left:0 !important;
+    width:100% !important;
+}
+
+body.zebraMode .mainContent{
+    width:min(100%,680px);
+    margin:0 auto;
+    padding:8px;
+}
+
+body.zebraMode .appPage{
+    display:none !important;
+}
+
+body.zebraMode #page-dashboard{
+    display:block !important;
+}
+
+body.zebraMode #page-dashboard > *{
+    display:none !important;
+}
+
+body.zebraMode #page-dashboard > .zebraQuickHeader,
+body.zebraMode #page-dashboard > .scanPanel{
+    display:block !important;
+}
+
+body.zebraMode .zebraQuickHeader{
+    margin-bottom:8px;
+    padding:12px;
+    border:1px solid #c9d8ed;
+    border-radius:14px;
+    background:linear-gradient(145deg,#ffffff,#f5f9ff);
+    box-shadow:0 8px 22px rgba(31,41,55,.07);
+}
+
+.zebraQuickHeaderMain{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.zebraModeEyebrow{
+    display:block;
+    margin-bottom:4px;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.7px;
+    color:#65758b;
+}
+
+#zebraQuickOrder{
+    display:block;
+    max-width:440px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:15px;
+    color:#17355e;
+}
+
+.zebraDeviceBadge{
+    flex:0 0 auto;
+    padding:6px 8px;
+    border-radius:8px;
+    background:#e8f1ff;
+    color:#A65F3A;
+    font-size:9px;
+    font-weight:700;
+}
+
+.zebraQuickStats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+    margin-top:10px;
+}
+
+.zebraQuickStats > div{
+    padding:7px 8px;
+    border:1px solid #dce5f0;
+    border-radius:9px;
+    background:#fff;
+    text-align:center;
+}
+
+.zebraQuickStats span{
+    display:block;
+    margin-bottom:2px;
+    font-size:8px;
+    font-weight:700;
+    text-transform:uppercase;
+    color:#7c8898;
+}
+
+.zebraQuickStats strong{
+    font-size:16px;
+    color:#172b4d;
+}
+
+.zebraQuickExport{
+    width:100%;
+    margin-top:9px;
+    min-height:42px;
+}
+
+body.zebraMode .scanPanel{
+    margin:0;
+    padding:10px;
+    border-radius:14px;
+}
+
+body.zebraMode .scanPanelHeader{
+    margin-bottom:8px;
+}
+
+body.zebraMode .scanPanelHeader h2{
+    font-size:18px;
+    margin-bottom:2px;
+}
+
+body.zebraMode .scanPanelHeader p{
+    display:none;
+}
+
+body.zebraMode #scanBox{
+    min-height:62px;
+    border-width:3px;
+}
+
+body.zebraMode #barcodeInput{
+    font-size:17px;
+    font-weight:700;
+}
+
+body.zebraMode #lastScanCard{
+    margin-bottom:0;
+}
+
+body.zebraMode .smartScanResults{
+    max-height:220px;
+    overflow:auto;
+}
+
+@media (max-width:768px){
+    body.zebraMode .mainContent{
+        padding:5px;
+    }
+
+    body.zebraMode .scanStatusBadge{
+        font-size:8px;
+    }
+
+    body.zebraMode #lastScanCard{
+        padding:9px;
+    }
+}
+
+
+/* =====================================================
+   CLOUD SESSION + RECEIVING FILTERS
+===================================================== */
+.receivingFilterBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.compactSelect{min-height:42px;border:1px solid #d7e1ee;border-radius:12px;background:#fff;padding:0 34px 0 12px;font:inherit;color:#1b2a41;outline:none}.compactSelect:focus{border-color:#1d6fe8;box-shadow:0 0 0 3px rgba(29,111,232,.12)}.cloudSessionHero{overflow:hidden}.cloudActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.cloudJoinCard{border:1px solid #d9e5f5;border-radius:18px;padding:20px;background:#f8fbff;display:flex;flex-direction:column;gap:10px}.cloudJoinRow{display:flex;gap:10px}.cloudCodeInput{flex:1;min-width:0;height:48px;border:2px solid #cfe0f7;border-radius:12px;padding:0 14px;font-size:20px;font-weight:700;letter-spacing:2px;outline:none}.cloudCodeInput:focus{border-color:#1469e8;box-shadow:0 0 0 3px rgba(20,105,232,.12)}.cloudStatusPill{padding:9px 14px;border-radius:999px;background:#eaf8f0;color:#158252;font-weight:700;font-size:12px}.cloudQRPanel{margin-top:18px;border:1px solid #d9e5f5;border-radius:18px;padding:22px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px}.cloudQRPanel.hidden{display:none!important}.cloudSessionCode{font-size:38px;font-weight:700;letter-spacing:6px;color:#0e5bd7;margin:8px 0}.cloudQRCode{background:#fff;border:10px solid #fff;border-radius:14px;box-shadow:0 8px 26px rgba(12,45,85,.12)}.emergencyTools{margin-top:18px}.emergencyTools summary{cursor:pointer;color:#54657a}.emergencyActionGrid{margin-top:18px}.hidden{display:none!important}@media(max-width:760px){.cloudActionGrid{grid-template-columns:1fr}.cloudQRPanel{flex-direction:column;text-align:center}.cloudJoinRow{flex-direction:column}.receivingFilterBar{width:100%}.compactSelect{flex:1;min-width:145px}.cloudSessionCode{font-size:30px;letter-spacing:4px}}
+
+/* =====================================================
+   MEDRYVO DASHBOARD POLISH
+===================================================== */
+.statisticsGrid{gap:16px;}
+.statCard{border-radius:18px;box-shadow:0 8px 24px rgba(13,71,161,.06);transition:transform .18s ease,box-shadow .18s ease;}
+.statCard:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(13,71,161,.09);}
+.statCard::after{background:rgba(13,71,161,.045);}
+.progressBar{background:linear-gradient(90deg,#0D47A1,#1976D2 72%,#FF8A00 100%);}
+.statusReceiving{color:#0D47A1;background:#eaf3ff;}
+.statusManual{color:#b75f00;background:#fff1df;}
+
+
+/* =====================================================
+   MEDRYVO PHASE 2A — OWNER CONTROL CENTER
+===================================================== */
+.ownerControlCenter{
+    overflow:hidden;
+}
+.ownerControlHeader{
+    align-items:flex-start;
+}
+.ownerControlHeader .settingsDescription{
+    margin:7px 0 0;
+    max-width:720px;
+}
+.ownerMetricGrid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+    margin:20px 0 24px;
+}
+.ownerMetricCard{
+    min-height:102px;
+    padding:17px 18px;
+    border:1px solid #dce6f4;
+    border-radius:18px;
+    background:linear-gradient(145deg,#ffffff,#f5f9ff);
+    box-shadow:0 10px 28px rgba(21,63,120,.06);
+}
+.ownerMetricCard span{
+    display:block;
+    color:#687894;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.2px;
+}
+.ownerMetricCard strong{
+    display:block;
+    margin-top:9px;
+    color:#0b2a61;
+    font-size:30px;
+    line-height:1;
+}
+.ownerMetricWarning{
+    background:linear-gradient(145deg,#fffaf2,#fff4e4);
+    border-color:#ffe0b3;
+}
+.ownerMetricWarning strong{
+    color:#e66f00;
+}
+.ownerControlSection{
+    padding-top:22px;
+    margin-top:22px;
+    border-top:1px solid #e5ecf6;
+}
+.ownerSectionHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:8px;
+}
+.ownerSectionHeader h3{
+    margin:3px 0 0;
+    color:#102a56;
+}
+.ownerPharmacyList{
+    display:grid;
+    gap:12px;
+    margin-top:16px;
+}
+.ownerPharmacyCard{
+    display:grid;
+    grid-template-columns:minmax(220px,1.2fr) minmax(240px,1.2fr) 120px auto;
+    align-items:center;
+    gap:18px;
+    padding:16px;
+    border:1px solid #dfe8f5;
+    border-radius:18px;
+    background:#fff;
+    box-shadow:0 7px 22px rgba(24,63,112,.045);
+}
+.ownerPharmacyIdentity{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+}
+.ownerPharmacyIcon{
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:linear-gradient(145deg,#0754c9,#0877f5);
+    color:#fff;
+    font-weight:700;
+    box-shadow:0 9px 20px rgba(7,84,201,.18);
+}
+.ownerPharmacyIdentity strong,
+.ownerPharmacyIdentity span{
+    display:block;
+}
+.ownerPharmacyIdentity strong{
+    color:#102a56;
+    font-size:14px;
+}
+.ownerPharmacyIdentity span{
+    margin-top:3px;
+    color:#7a8aa4;
+    font-size:12px;
+    font-weight:700;
+}
+.ownerFieldLabel{
+    display:block;
+    margin-bottom:4px;
+    color:#8390a6;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
+}
+.ownerPharmacyAdmin{
+    min-width:0;
+    color:#233c66;
+    font-size:12px;
+    overflow-wrap:anywhere;
+}
+.ownerPharmacyAdmin small{
+    display:block;
+    margin-top:3px;
+    color:#7a8aa4;
+}
+.ownerAwaitingTag,
+.ownerUnassignedTag{
+    display:inline-flex;
+    margin-left:6px;
+    padding:3px 7px;
+    border-radius:999px;
+    font-size:9px;
+    font-weight:700;
+    vertical-align:middle;
+}
+.ownerAwaitingTag{
+    color:#9a5700;
+    background:#fff1d8;
+}
+.ownerUnassignedTag{
+    margin-left:0;
+    color:#a33d31;
+    background:#fff0ed;
+}
+.ownerPharmacyActions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.ownerPharmacyActions .secondaryButton{
+    min-height:38px;
+    padding:0 12px;
+    white-space:nowrap;
+}
+.ownerControlMessage{
+    margin-top:14px;
+}
+.registrationRequestCard{
+    border-radius:16px;
+}
+@media (max-width:1080px){
+    .ownerMetricGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .ownerPharmacyCard{
+        grid-template-columns:minmax(210px,1fr) minmax(220px,1fr);
+    }
+    .ownerPharmacyStatus,
+    .ownerPharmacyActions{
+        justify-self:start;
+    }
+}
+@media (max-width:680px){
+    .ownerMetricGrid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:9px;
+    }
+    .ownerMetricCard{
+        min-height:86px;
+        padding:13px;
+    }
+    .ownerMetricCard strong{
+        font-size:24px;
+    }
+    .ownerSectionHeader,
+    .ownerControlHeader{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+    .ownerPharmacyCard{
+        grid-template-columns:1fr;
+        gap:12px;
+    }
+    .ownerPharmacyActions{
+        justify-content:flex-start;
+    }
+}
+
+/* PHARMFLOW DASHBOARD — PHASE 2B */
+.pharmflowDashboardHero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:18px;align-items:stretch;margin-bottom:18px;padding:26px 28px;border:1px solid #DCE6F3;border-radius:22px;background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.11),transparent 15rem),linear-gradient(135deg,#fff 0%,#F5F9FF 100%);box-shadow:0 12px 34px rgba(18,48,86,.07)}.pharmflowHeroCopy h2{margin:6px 0 8px;color:#0C1D38;font-size:clamp(24px,2.2vw,34px);line-height:1.12;letter-spacing:-.035em}.pharmflowHeroCopy p{max-width:700px;margin:0;color:#65738A;line-height:1.6}.pharmflowContextCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-radius:17px;background:#0D2342;color:#fff;box-shadow:0 12px 26px rgba(12,35,66,.15)}.pharmflowContextCard div{min-width:0;display:flex;flex-direction:column;gap:5px}.pharmflowContextCard span:first-child{font-size:10px;font-weight:700;letter-spacing:.12em;color:#AFC4DF;text-transform:uppercase}.pharmflowContextCard strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}.pharmflowContextCard small{color:#AFC4DF;font-weight:700}.pharmflowRolePill{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:rgba(255,138,0,.16);border:1px solid rgba(255,166,59,.3);color:#FFC06F!important;font-size:10px!important;font-weight:700;letter-spacing:.08em}.pharmflowQuickActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.pharmflowQuickAction{min-height:76px;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;border:1px solid #E0E8F2;border-radius:16px;background:#fff;color:#14213A;box-shadow:0 6px 18px rgba(18,48,86,.045)}.pharmflowQuickAction>span{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#F6EAE1;color:#A65F3A;font-size:18px;font-weight:900}.pharmflowQuickAction:nth-child(1)>span{background:#FFF2E2;color:#E87400}.pharmflowQuickAction div{display:flex;flex-direction:column;gap:3px}.pharmflowQuickAction small{color:#77859A;font-size:10.5px}@media(max-width:1050px){.pharmflowDashboardHero{grid-template-columns:1fr}.pharmflowQuickActions{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pharmflowDashboardHero{padding:20px}.pharmflowQuickAction small{display:none}}@media(max-width:430px){.pharmflowQuickActions{grid-template-columns:1fr}}
+
+
+/* =====================================================
+   PHARMFLOW RETURNS ARCHIVE FOUNDATION — PHASE 2B
+===================================================== */
+.returnsArchiveIntroGrid{
+    display:grid;
+    grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);
+    gap:16px;
+    margin-bottom:16px;
+}
+.returnsArchiveIntroCard{
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+}
+.returnsArchiveIcon{
+    width:48px;
+    height:48px;
+    display:grid;
+    place-items:center;
+    flex:0 0 48px;
+    border-radius:15px;
+    background:#FFF2E2;
+    color:#E87400;
+    font-size:22px;
+    font-weight:700;
+}
+.returnsArchiveIntroCard h2,
+.returnsArchiveRulesCard h3,
+.returnsArchivePlaceholder h2{
+    margin:6px 0 8px;
+    color:#0C1D38;
+}
+.returnsArchiveIntroCard p,
+.returnsArchiveRulesCard p,
+.returnsArchivePlaceholder p{
+    margin:0;
+    color:#65738A;
+    line-height:1.6;
+}
+.returnsArchiveRulesCard{
+    border-color:#D9E7FA;
+    background:linear-gradient(145deg,#FFFFFF,#F7FAFF);
+}
+.returnsArchivePlaceholder{
+    min-height:180px;
+    display:grid;
+    place-items:center;
+    text-align:center;
+    border-style:dashed;
+    background:#FBFCFE;
+}
+.returnsArchivePlaceholder > div{
+    max-width:620px;
+}
+@media(max-width:820px){
+    .returnsArchiveIntroGrid{grid-template-columns:1fr;}
+}
+
+
+/* =====================================================
+   PHASE 2B.3 — ZEBRA TWO-MODE CLEANUP
+===================================================== */
+.pharmflowQuickActions{display:none!important}
+.zebraHome,.zebraExpiryShell{display:none}
+.zebraModesButton{border:1px solid #cbd8e8;background:#fff;color:#A65F3A;border-radius:10px;padding:8px 11px;font-weight:850}
+
+body.zebraDevice{background:#eef3f9;min-height:100dvh}
+body.zebraDevice .sidebar,
+body.zebraDevice .sidebarOverlay,
+body.zebraDevice .topBar{display:none!important}
+body.zebraDevice .mainApplication{margin-left:0!important;width:100%!important;min-height:100dvh}
+body.zebraDevice .mainContent{width:min(100%,680px);margin:0 auto;padding:8px}
+body.zebraDevice .appPage{display:none!important}
+
+body.zebraDevice.zebraHomeActive .zebraHome{display:block}
+.zebraHome{padding:10px 4px 20px}
+.zebraBrandRow{display:flex;align-items:center;gap:11px;padding:8px 6px 16px}
+.zebraBrandRow img{width:42px;height:42px}
+.zebraBrandRow div{display:flex;flex-direction:column;gap:2px}
+.zebraBrandRow strong{font-size:19px;color:#0c1d38}
+.zebraBrandRow span{font-size:11px;font-weight:700;color:#76849a}
+.zebraModeIntro{padding:18px;border:1px solid #dce6f3;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(18,48,86,.06)}
+.zebraModeIntro>span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#6f7f94}
+.zebraModeIntro h1{margin:5px 0 7px;font-size:24px;line-height:1.1;color:#0c1d38}
+.zebraModeIntro p{margin:0;color:#68778d;line-height:1.45;font-size:13px}
+.zebraModeCards{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.zebraModeCard{width:100%;display:flex;align-items:center;gap:14px;padding:18px;text-align:left;border:1px solid #d8e4f2;border-radius:18px;background:#fff;color:#10213b;box-shadow:0 7px 20px rgba(18,48,86,.05)}
+.zebraModeCard:active{transform:scale(.992)}
+.zebraModeIcon{width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#F6EAE1;color:#A65F3A;font-size:22px;font-weight:900}
+.zebraModeCard:nth-child(2) .zebraModeIcon{background:#fff1df;color:#dc7200}
+.zebraModeCard div{display:flex;flex-direction:column;gap:4px}
+.zebraModeCard strong{font-size:18px}
+.zebraModeCard small{font-size:11px;line-height:1.35;color:#748298}
+.zebraSignOut{display:block;margin:18px auto 0;border:0;background:transparent;color:#68788f;font-weight:700;padding:10px}
+
+body.zebraDevice.zebraJoinActive #page-sessions{display:block!important}
+body.zebraDevice.zebraJoinActive #page-sessions>.contentCard:not(.cloudSessionHero),
+body.zebraDevice.zebraJoinActive #page-sessions>.emergencyTools,
+body.zebraDevice.zebraJoinActive #btnCreateSession,
+body.zebraDevice.zebraJoinActive #cloudSessionQRWrap{display:none!important}
+body.zebraDevice.zebraJoinActive .cloudSessionHero{margin:0;padding:16px;border-radius:16px}
+body.zebraDevice.zebraJoinActive .cloudSessionHero .cardHeader{display:none}
+body.zebraDevice.zebraJoinActive .cloudActionGrid{display:block;margin-top:0}
+body.zebraDevice.zebraJoinActive .cloudJoinCard{padding:18px;border-radius:16px}
+body.zebraDevice.zebraJoinActive .cloudJoinCard:before{content:"LIVE RECEIVING";font-size:9px;font-weight:700;letter-spacing:.12em;color:#6f7f94}
+body.zebraDevice.zebraJoinActive .cloudJoinRow{display:grid;grid-template-columns:1fr auto;gap:8px}
+body.zebraDevice.zebraJoinActive .cloudCodeInput{font-size:24px;height:54px;text-align:center}
+body.zebraDevice.zebraJoinActive #btnJoinCloudSession{min-width:84px}
+
+body.zebraDevice.zebraReceivingActive #page-dashboard{display:block!important}
+body.zebraDevice.zebraReceivingActive #page-dashboard>*{display:none!important}
+body.zebraDevice.zebraReceivingActive #page-dashboard>.zebraQuickHeader,
+body.zebraDevice.zebraReceivingActive #page-dashboard>.scanPanel{display:block!important}
+body.zebraDevice.zebraReceivingActive .zebraQuickHeader{margin-bottom:7px;padding:11px;border:1px solid #c9d8ed;border-radius:14px;background:#fff;box-shadow:0 7px 20px rgba(31,41,55,.06)}
+body.zebraDevice.zebraReceivingActive .scanPanel{margin:0;padding:10px;border-radius:14px}
+body.zebraDevice.zebraReceivingActive .scanPanelHeader p{display:none}
+body.zebraDevice.zebraReceivingActive #barcodeInput{font-size:17px;font-weight:800}
+body.zebraDevice.zebraReceivingActive #smartQuantityInput,
+body.zebraDevice.zebraReceivingActive #quantityAdjustmentInput{font-size:22px;font-weight:700;text-align:center}
+
+body.zebraDevice.zebraExpiryActive .zebraExpiryShell{display:block}
+.zebraExpiryShell{padding:8px 2px}
+.zebraExpiryTop{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.zebraExpiryTop button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 11px;color:#A65F3A;font-weight:850}
+.zebraExpiryTop strong{font-size:18px;color:#10213b}
+.zebraExpiryPlaceholder{padding:20px;border:1px solid #dce6f3;border-radius:18px;background:#fff}
+.zebraExpiryPlaceholder span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#dc7200}
+.zebraExpiryPlaceholder h2{margin:7px 0 9px;font-size:20px;line-height:1.2;color:#10213b}
+.zebraExpiryPlaceholder p{margin:0;color:#6b798e;line-height:1.5;font-size:13px}
+
+@media(max-width:680px){
+ body.zebraDevice .mainContent{padding:5px}
+ body.zebraDevice.zebraJoinActive .cloudJoinRow{grid-template-columns:1fr}
+ body.zebraDevice.zebraJoinActive #btnJoinCloudSession{width:100%;min-height:50px}
+}
+
+
+/* =====================================================
+   PHASE 2B.4 — ZEBRA JOIN + ONE-VIEWPORT RECEIVING
+===================================================== */
+body.zebraDevice .zebraQuickStats{display:none!important}
+body.zebraDevice.zebraReceivingActive .zebraQuickHeader{
+    margin-bottom:5px!important;padding:7px 9px!important;border-radius:12px!important;
+}
+body.zebraDevice.zebraReceivingActive .zebraQuickHeaderMain{align-items:center!important}
+body.zebraDevice.zebraReceivingActive .zebraModeEyebrow{font-size:8px!important}
+body.zebraDevice.zebraReceivingActive #zebraQuickOrder{font-size:16px!important;line-height:1.1!important}
+body.zebraDevice.zebraReceivingActive .zebraModesButton{padding:7px 9px!important;font-size:12px!important}
+
+/* Scan is the first operational element. */
+body.zebraDevice.zebraReceivingActive .scanPanel{padding:8px!important}
+body.zebraDevice.zebraReceivingActive .scanPanelHeader{margin-bottom:6px!important;align-items:center!important}
+body.zebraDevice.zebraReceivingActive .scanPanelHeader h2{font-size:20px!important;line-height:1.05!important;margin:2px 0!important}
+body.zebraDevice.zebraReceivingActive .scanStatusBadge{font-size:9px!important;padding:6px 8px!important}
+body.zebraDevice.zebraReceivingActive #scanBox{min-height:58px!important;margin:0!important}
+body.zebraDevice.zebraReceivingActive .scanBoxIcon{width:42px!important;height:42px!important}
+body.zebraDevice.zebraReceivingActive #barcodeInput{font-size:16px!important;min-width:0!important}
+body.zebraDevice.zebraReceivingActive .scanBoxIndicator{font-size:9px!important;padding:8px!important}
+body.zebraDevice.zebraReceivingActive .scanPanelFooter{margin-top:5px!important}
+body.zebraDevice.zebraReceivingActive .scanPanelFooter>span{display:none!important}
+body.zebraDevice.zebraReceivingActive #btnQuickSearch{min-height:38px!important;padding:7px 10px!important}
+
+/* Last Scan immediately follows Scan and keeps quantity actions above detail. */
+body.zebraDevice.zebraReceivingActive #lastScanCard{
+    display:flex!important;flex-direction:column!important;margin:7px 0 0!important;padding:9px!important;border-radius:13px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader{order:1!important;margin-bottom:5px!important}
+body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader h3{font-size:19px!important;margin:1px 0!important}
+body.zebraDevice.zebraReceivingActive #lastScanTime{font-size:10px!important}
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls{
+    order:2!important;margin:0 0 6px!important;padding:7px!important;border-radius:11px!important;
+}
+body.zebraDevice.zebraReceivingActive .lastScanQtyTitle,
+body.zebraDevice.zebraReceivingActive .lastScanQtyHint{display:none!important}
+body.zebraDevice.zebraReceivingActive .lastScanQtyActions{gap:8px!important;justify-content:stretch!important}
+body.zebraDevice.zebraReceivingActive .lastScanQtyButton,
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue{min-height:48px!important;font-size:22px!important;flex:1 1 0!important}
+body.zebraDevice.zebraReceivingActive .professionalLastScanLayout{order:3!important}
+body.zebraDevice.zebraReceivingActive .lastScanHero{padding:8px 9px!important;border-radius:10px!important}
+body.zebraDevice.zebraReceivingActive .lastScanHeroName{font-size:17px!important;margin-bottom:5px!important;line-height:1.15!important}
+body.zebraDevice.zebraReceivingActive .lastScanMetaRow{grid-template-columns:1fr!important;gap:4px!important}
+body.zebraDevice.zebraReceivingActive .lastScanMetaItem{padding:5px 7px!important}
+body.zebraDevice.zebraReceivingActive .lastScanMetaItem:not(:first-child){display:none!important}
+body.zebraDevice.zebraReceivingActive .lastScanMetrics{display:none!important}
+
+/* Search-selected quantity: keep Add Quantity in the same visible block. */
+body.zebraDevice.zebraReceivingActive #smartScanSelected{padding:8px!important;margin-top:5px!important}
+body.zebraDevice.zebraReceivingActive .smartSelectedStats{display:none!important}
+body.zebraDevice.zebraReceivingActive .smartSelectedMain h3{font-size:16px!important;margin:2px 0!important}
+body.zebraDevice.zebraReceivingActive .smartQuantityRow{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;margin-top:6px!important}
+body.zebraDevice.zebraReceivingActive .smartQuantityLabel{display:none!important}
+body.zebraDevice.zebraReceivingActive .smartQuantityControl{width:100%!important;display:grid!important;grid-template-columns:50px 1fr 50px!important;gap:6px!important}
+body.zebraDevice.zebraReceivingActive #smartQuantityInput{width:100%!important;min-height:48px!important;font-size:24px!important}
+body.zebraDevice.zebraReceivingActive #btnAddSmartQuantity{width:100%!important;min-height:46px!important;margin:0!important}
+
+/* Dedicated Join PC Session screen. */
+.zebraJoinHeader{display:none}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 10px;color:#A65F3A;font-weight:850}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader div{display:flex;flex-direction:column;gap:1px}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader span{font-size:8px;font-weight:700;letter-spacing:.12em;color:#748298}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader strong{font-size:18px;color:#10213b}
+body.zebraDevice.zebraJoinActive .cloudJoinCard:before{content:"JOIN PC SESSION"!important}
+body.zebraDevice.zebraJoinActive .cloudJoinCard>strong{font-size:18px!important}
+body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8px;line-height:1.35}
+
+@media(max-width:680px){
+    body.zebraDevice.zebraReceivingActive .mainContent{padding:3px!important}
+    body.zebraDevice.zebraReceivingActive .scanPanelFooter{display:flex!important;justify-content:flex-end!important}
+}
+
+/* PHASE 2C.3 — Receiving verification summary */
+.receivingSummaryPanel{margin:0 0 18px;padding:18px;border:1px solid #dfe7f1;border-radius:16px;background:#fff}
+.receivingSummaryHeader{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:14px}
+.receivingSummaryHeader h3{margin:3px 0 5px;font-size:20px;color:#10213b}
+.receivingSummaryHeader p{margin:0;max-width:720px;color:#68778d;font-size:13px;line-height:1.45}
+.receivingSummaryActions{display:flex;gap:8px;flex-wrap:wrap}
+.receivingSummaryGrid{display:grid;grid-template-columns:repeat(8,minmax(92px,1fr));gap:9px}
+.receivingSummaryGrid>div{padding:12px;border:1px solid #e5ebf3;border-radius:12px;background:#f8fafc;min-width:0}
+.receivingSummaryGrid span{display:block;font-size:10px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.receivingSummaryGrid strong{font-size:21px;color:#10213b}
+@media(max-width:1100px){.receivingSummaryGrid{grid-template-columns:repeat(4,1fr)}}
+
+/* PHASE 2C.3.1 — compact discrepancy-focused receiving panel */
+.discrepancyPanel{padding:16px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)}
+.discrepancyPanel .receivingSummaryHeader{align-items:center;margin-bottom:12px}
+.discrepancyPanel .receivingSummaryHeader h3{font-size:18px;margin:2px 0 3px}
+.discrepancyPanel .receivingSummaryHeader p{font-size:12px;max-width:650px}
+.discrepancyGrid{grid-template-columns:repeat(4,minmax(120px,1fr));max-width:720px}
+.discrepancyGrid>div{padding:10px 12px;background:#fff}
+.discrepancyGrid strong{font-size:19px}
+@media(max-width:900px){.discrepancyPanel .receivingSummaryHeader{flex-direction:column}.discrepancyGrid{grid-template-columns:repeat(2,1fr);max-width:none}.receivingSummaryActions{width:100%}.receivingSummaryActions button{flex:1}}
+
+/* PHASE 2C.3.2 — discrepancy selection + visible export */
+.issueMultiFilter{position:relative;min-width:235px}
+.issueMultiFilter>summary{list-style:none;min-height:42px;border:1px solid #d7e1ee;border-radius:12px;background:#fff;padding:7px 38px 7px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:1px;position:relative}
+.issueMultiFilter>summary::-webkit-details-marker{display:none}
+.issueMultiFilter>summary:after{content:"▾";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#60738c;font-size:12px}
+.issueMultiFilter[open]>summary{border-color:#1d6fe8;box-shadow:0 0 0 3px rgba(29,111,232,.10)}
+.issueMultiFilter>summary span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#75849a}
+.issueMultiFilter>summary strong{font-size:12px;color:#142743;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.issueMultiFilterMenu{position:absolute;z-index:80;top:calc(100% + 7px);left:0;width:285px;padding:10px;background:#fff;border:1px solid #dbe5f1;border-radius:14px;box-shadow:0 18px 45px rgba(24,48,82,.16);display:grid;gap:4px}
+.issueMultiFilterMenu label{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#263a55;cursor:pointer}
+.issueMultiFilterMenu label:hover{background:#f4f8fd}
+.issueMultiFilterMenu input{width:16px;height:16px;accent-color:#1469e8}
+.issueMultiFilterActions{display:flex;gap:7px;padding-top:8px;margin-top:4px;border-top:1px solid #edf1f6}
+.issueMultiFilterActions button{flex:1;border:1px solid #d9e3ef;background:#f8fafc;color:#38516f;border-radius:8px;padding:7px 8px;font-size:11px;font-weight:700;cursor:pointer}
+.issueMultiFilterActions button:hover{background:#eef5ff;border-color:#bfd5f5}
+.discrepancyGrid{grid-template-columns:repeat(5,minmax(105px,1fr));max-width:900px}
+.discrepancyGrid .displayedMetric{border-color:#bcd6fb;background:#f3f8ff}
+.discrepancyGrid .displayedMetric strong{color:#0d63dc}
+@media(max-width:900px){.issueMultiFilter{width:100%}.issueMultiFilterMenu{width:100%}.discrepancyGrid{grid-template-columns:repeat(2,1fr)}}
+\n\n/* =====================================================\n   PHASE 2C.4 — MANUAL FINALIZE RECEIVING\n===================================================== */\n.finalizeReceivingButton{\n    min-width:190px;\n    font-weight:700;\n}\n.finalizeReceivingButton:disabled{\n    opacity:.5;\n    cursor:not-allowed;\n}\n@media (max-width:1100px){\n    .receivingSummaryActions .finalizeReceivingButton{\n        flex-basis:100%;\n    }\n}\n
+/* =====================================================
+   PHASE 2C.5 — ITEM TRANSFER REPORT
+===================================================== */
+.itemTransferReportCard{margin-top:20px;}
+.itemTransferHeader{align-items:flex-start;gap:18px;}
+.itemTransferAvailability{display:inline-flex;align-items:center;min-height:32px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;}
+.itemTransferAvailability.locked{background:#f4f6f8;color:#69788b;border:1px solid #dce4ec;}
+.itemTransferAvailability.available{background:#eaf8ef;color:#177245;border:1px solid #bfe7cc;}
+.itemTransferControls{display:grid;grid-template-columns:minmax(260px,1fr) auto auto auto;gap:10px;align-items:end;margin-top:18px;}
+.itemTransferOrderField{margin:0;}
+.itemTransferOrderField select{width:100%;min-height:44px;}
+.itemTransferPreview{margin-top:18px;}
+.itemTransferMetaGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.itemTransferMetaGrid>div{background:#f8fafc;border:1px solid #e1e8f0;border-radius:12px;padding:11px 13px;min-width:0;}
+.itemTransferMetaGrid span{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#718096;margin-bottom:4px;}
+.itemTransferMetaGrid strong{display:block;font-size:13px;color:#10243e;overflow-wrap:anywhere;}
+.itemTransferTableContainer{max-height:520px;overflow:auto;}
+@media(max-width:900px){.itemTransferControls{grid-template-columns:1fr 1fr;}.itemTransferOrderField{grid-column:1/-1;}.itemTransferMetaGrid{grid-template-columns:1fr 1fr;}}
+
+/* Phase 2C.5.3 — archive actions */
+.archiveDeleteOrderButton{
+    border:1px solid #dc2626;
+    background:#fff;
+    color:#b91c1c;
+    border-radius:10px;
+    padding:8px 12px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.archiveDeleteOrderButton:hover{background:#fef2f2;}
+.archiveActionNote{font-size:12px;color:#64748b;}
+
+/* =====================================================
+   PHASE 2C.5.4 — DASHBOARD / ORDERS UI CLEANUP
+   UI-only. No receiving or persistence logic changes.
+===================================================== */
+#page-dashboard .pharmflowDashboardHero{display:none!important;}
+.dashboardWorkContext{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+    padding:16px 18px;margin-bottom:14px;background:#fff;border:1px solid #dce6f4;
+    border-radius:16px;box-shadow:0 5px 18px rgba(19,64,120,.045);
+}
+.dashboardWorkContextMain{display:flex;flex-direction:column;min-width:0;gap:3px;}
+.dashboardWorkContextMain>strong{font-size:20px;line-height:1.15;color:#10243f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dashboardWorkContextMain>span:last-child{font-size:12px;color:#687a91;}
+.dashboardWorkContextStats{display:flex;gap:8px;flex:0 0 auto;}
+.dashboardWorkContextStats>div{min-width:88px;padding:9px 12px;border:1px solid #e0e8f3;border-radius:12px;background:#f8fbff;}
+.dashboardWorkContextStats span{display:block;font-size:9px;font-weight:700;letter-spacing:.08em;color:#71839a;margin-bottom:3px;}
+.dashboardWorkContextStats strong{font-size:17px;color:#10243f;}
+#page-dashboard .scanPanel{margin-top:0;}
+#page-files .twoColumnLayout{grid-template-columns:minmax(0,1fr)!important;}
+#page-files>.contentCard,#page-files .twoColumnLayout>.contentCard{max-width:none;}
+#page-files .fileItem{padding:12px 14px;}
+#page-files .healthGrid{grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;}
+#page-files .healthGrid>div{padding:13px 14px;min-height:74px;}
+#page-files .contentCard{box-shadow:0 5px 18px rgba(19,64,120,.04);}
+@media(max-width:900px){
+  .dashboardWorkContext{align-items:flex-start;flex-direction:column;}
+  .dashboardWorkContextStats{width:100%;}
+  .dashboardWorkContextStats>div{flex:1;}
+  #page-files .healthGrid{grid-template-columns:repeat(2,minmax(120px,1fr));}
+}
+
+/* =====================================================
+   PHASE 2C.5.4.1 — UNIFIED COMPACT PHARMFLOW UI
+   Approved one-screen design system
+===================================================== */
+:root{
+  --pf-navy:#183b63;
+  --pf-navy-2:#244d78;
+  --pf-blue:#1769e0;
+  --pf-ink:#102a4c;
+  --pf-muted:#60738e;
+  --pf-line:#dbe5f0;
+  --pf-bg:#f5f8fc;
+}
+
+/* PC shell: compact and consistent on every application page */
+body:not(.zebraDevice) .mainApplication{background:var(--pf-bg);}
+body:not(.zebraDevice) .topBar{min-height:72px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--pf-line);}
+body:not(.zebraDevice) .topBarLeft{min-width:0;gap:12px;}
+body:not(.zebraDevice) .pageHeading{display:flex;align-items:center;gap:16px;min-width:0;}
+body:not(.zebraDevice) .pageHeading h1{margin:0;color:var(--pf-ink);font-size:clamp(18px,1.55vw,27px);font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body:not(.zebraDevice) .pageHeading p{margin:0;padding-left:16px;border-left:1px solid #cfd9e6;color:#526986;font-size:13px;font-weight:700;white-space:nowrap;}
+body:not(.zebraDevice) .topBarRight{gap:8px;}
+body:not(.zebraDevice) .headerInfo{min-width:100px;padding:8px 11px;border:1px solid var(--pf-line);border-radius:10px;background:#fff;}
+body:not(.zebraDevice) .systemStatus{min-height:44px;padding:0 16px;border-radius:10px;}
+body:not(.zebraDevice) .mainContent{padding:12px 18px 16px;}
+body:not(.zebraDevice) .appPage>.contentCard,
+body:not(.zebraDevice) .appPage>.scanPanel{margin-bottom:12px;}
+
+/* Dashboard: one operational screen, no duplicated current-receiving strip */
+#page-dashboard .statisticsGrid{order:1;grid-template-columns:repeat(6,minmax(100px,1fr));gap:8px;margin:0 0 10px;}
+#page-dashboard .statCard{min-height:78px;padding:11px 13px;border-radius:11px;box-shadow:none;}
+#page-dashboard .statCardLabel{margin-bottom:7px;font-size:9px;}
+#page-dashboard .statCard strong{font-size:25px;}
+#page-dashboard .scanPanel{padding:12px 14px;margin-bottom:10px;border-radius:12px;}
+#page-dashboard .scanPanelHeader{margin-bottom:8px;align-items:center;}
+#page-dashboard .scanPanelHeader .sectionEyebrow,#page-dashboard .scanPanelHeader p{display:none;}
+#page-dashboard .scanPanelHeader h2{margin:0;font-size:18px;}
+#page-dashboard .scanBox{min-height:52px;}
+#page-dashboard .scanPanelFooter{margin-top:6px;}
+#page-dashboard .scanPanelFooter>span{display:none;}
+
+#page-dashboard #lastScanCard{margin:0 0 10px;padding:12px 14px;border:1px solid var(--pf-line);box-shadow:none;background:#fff;}
+#page-dashboard #lastScanCard .cardHeader{margin-bottom:8px;}
+#page-dashboard #lastScanCard .cardHeader .sectionEyebrow{display:none;}
+#page-dashboard #lastScanCard .cardHeader h3{font-size:18px;}
+#page-dashboard #lastScanCard #lastScanTime{font-size:10px;color:var(--pf-muted);}
+#page-dashboard .lastScanGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #e2e9f2;border-radius:10px;overflow:hidden;}
+#page-dashboard .lastScanField{min-height:58px;padding:8px 12px;text-align:center;border-right:1px solid #e2e9f2;}
+#page-dashboard .lastScanField:first-child{grid-column:1/-1;min-height:50px;text-align:left;border-right:0;border-bottom:1px solid #e2e9f2;padding-right:210px;display:flex;justify-content:center;flex-direction:column;}
+#page-dashboard .lastScanField:first-child>span{display:none;}
+#page-dashboard #lastItemName{display:block;max-width:100%;font-size:clamp(14px,1.35vw,21px);line-height:1.15;color:var(--pf-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#page-dashboard .lastScanField>span{font-size:9px;font-weight:700;color:#60738e;text-transform:uppercase;}
+#page-dashboard .lastScanField>strong{font-size:19px;color:var(--pf-ink);}
+#page-dashboard .lastScanQuantityControls{position:absolute;right:28px;top:59px;margin:0;padding:0;border:0;gap:7px;z-index:2;}
+#page-dashboard #lastScanCard{position:relative;}
+#page-dashboard .lastScanQtyTitle{font-size:10px;}
+#page-dashboard .lastScanQtyHint{display:none;}
+#page-dashboard .lastScanQtyActions{border-radius:8px;}
+#page-dashboard .lastScanQtyButton{width:38px;height:36px;font-size:19px;}
+#page-dashboard .lastScanQtyValue{min-width:50px;height:36px;font-size:16px;}
+
+#page-dashboard>.contentCard:not(#lastScanCard){padding:11px 14px;margin:0;border-radius:12px;box-shadow:none;}
+#page-dashboard>.contentCard:not(#lastScanCard) .cardHeader{margin-bottom:7px;}
+#page-dashboard>.contentCard:not(#lastScanCard) .sectionEyebrow{display:none;}
+#page-dashboard>.contentCard:not(#lastScanCard) h3{font-size:16px;}
+#page-dashboard .progressPercentage{font-size:18px;}
+#page-dashboard .progressTrack{height:8px;}
+#page-dashboard .progressDetails{margin-top:5px;font-size:10px;}
+
+/* Remove legacy dashboard work-context if old cached markup is ever present */
+#page-dashboard .dashboardWorkContext{display:none!important;}
+
+/* Keep every desktop page visually dense without breaking data tables */
+body:not(.zebraDevice) .contentCard{border-radius:12px;}
+body:not(.zebraDevice) .cardHeader{gap:10px;}
+body:not(.zebraDevice) .cardHeader h2,body:not(.zebraDevice) .cardHeader h3{color:var(--pf-ink);}
+body:not(.zebraDevice) .dataTable th{padding-top:9px;padding-bottom:9px;}
+body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
+
+/* Login / registration / recovery use the same approved visual language */
+.authGate{background:#f4f7fb;}
+.authShell{border:1px solid #dce5f0;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(16,42,76,.12);}
+.authBrandPanel{background:linear-gradient(150deg,#173a61 0%,#244f7b 100%);}
+.authBrandName{font-weight:700;letter-spacing:-.02em;}
+.authBrandTagline{opacity:.78;}
+.authFormPanel{background:#fff;}
+.authEyebrow{color:var(--pf-blue);}
+.authPrimaryButton{background:var(--pf-blue);border-radius:10px;box-shadow:none;}
+.authPrimaryButton:hover{filter:brightness(.96);}
+.authField input{border-color:#d7e1ed;border-radius:10px;background:#fbfdff;}
+.authField input:focus{border-color:#79a9e8;box-shadow:0 0 0 3px rgba(23,105,224,.10);}
+
+@media (max-width:1280px) and (min-width:769px){
+  #page-dashboard .statisticsGrid{grid-template-columns:repeat(6,minmax(82px,1fr));}
+  #page-dashboard .statCard{padding:9px;min-height:72px;}
+  #page-dashboard .statCard strong{font-size:22px;}
+  body:not(.zebraDevice) .mainContent{padding:10px 12px;}
+  body:not(.zebraDevice) .topBar{padding:8px 12px;}
+}
+
+@media (max-height:800px) and (min-width:769px){
+  body:not(.zebraDevice) .topBar{min-height:62px;}
+  #page-dashboard .statCard{min-height:66px;padding:8px 11px;}
+  #page-dashboard .scanPanel{padding:9px 12px;}
+  #page-dashboard .scanBox{min-height:46px;}
+  #page-dashboard #lastScanCard{padding:9px 12px;}
+  #page-dashboard .lastScanField{min-height:49px;padding:6px 10px;}
+  #page-dashboard .lastScanField:first-child{min-height:43px;}
+  #page-dashboard .lastScanQuantityControls{top:49px;right:24px;}
+  #page-dashboard>.contentCard:not(#lastScanCard){padding:8px 12px;}
+}
+
+/* =====================================================
+   PHASE 2C.5.4.3 — COMPACT PC MANUAL/SEARCH SELECTION
+   Goal: keep selected-item quantity entry + Last Scan visible
+   on one desktop viewport with minimal vertical scrolling.
+===================================================== */
+@media (min-width: 769px){
+  /* The selected result becomes a compact two-row operator strip. */
+  #page-dashboard .smartScanSelected{
+    margin-top:6px;
+    padding:8px 10px;
+    border-radius:11px;
+    box-shadow:none;
+    background:#fbfdff;
+  }
+
+  #page-dashboard .smartSelectedMain{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:10px;
+    margin:0;
+    min-height:34px;
+  }
+
+  #page-dashboard .smartSelectedMain > div:first-child{
+    min-width:0;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    overflow:hidden;
+  }
+
+  #page-dashboard .smartSelectedMain .sectionEyebrow{
+    display:none;
+  }
+
+  #page-dashboard .smartSelectedMain h3{
+    margin:0;
+    min-width:0;
+    max-width:68%;
+    font-size:15px;
+    line-height:1.1;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:#10243f;
+  }
+
+  #page-dashboard .smartSelectedCode{
+    flex:0 0 auto;
+    font-size:10px;
+    line-height:1;
+    font-weight:700;
+    white-space:nowrap;
+    color:#65778d;
+  }
+
+  #page-dashboard .smartSelectedCode strong{
+    font-weight:700;
+  }
+
+  #page-dashboard #btnCloseSmartSelection{
+    width:30px;
+    height:30px;
+    min-width:30px;
+    padding:0;
+  }
+
+  /* Statistics stay on one thin line instead of three large cards. */
+  #page-dashboard .smartSelectedStats{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin:6px 0 0;
+    border:1px solid #e1e8f1;
+    border-radius:9px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  #page-dashboard .smartSelectedStats > div{
+    flex:1 1 0;
+    min-width:0;
+    padding:5px 10px;
+    border:0;
+    border-right:1px solid #e1e8f1;
+    border-radius:0;
+    text-align:center;
+    background:#fff;
+  }
+
+  #page-dashboard .smartSelectedStats > div:last-child{
+    border-right:0;
+  }
+
+  #page-dashboard .smartSelectedStats span{
+    display:inline;
+    margin:0 6px 0 0;
+    font-size:8px;
+    line-height:1;
+    font-weight:700;
+    letter-spacing:.04em;
+  }
+
+  #page-dashboard .smartSelectedStats strong{
+    display:inline;
+    font-size:14px;
+    line-height:1;
+    font-weight:700;
+  }
+
+  /* Quantity entry becomes one compact horizontal action strip. */
+  #page-dashboard .smartQuantityRow{
+    display:grid;
+    grid-template-columns:auto 132px minmax(130px,220px);
+    justify-content:end;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+  }
+
+  #page-dashboard .smartQuantityLabel{
+    font-size:9px;
+    font-weight:700;
+  }
+
+  #page-dashboard .smartQuantityControl{
+    height:32px;
+    border-radius:8px;
+  }
+
+  #page-dashboard .smartQuantityControl .quantityButton{
+    width:36px;
+    min-width:36px;
+    height:32px;
+    font-size:18px;
+    font-weight:700;
+  }
+
+  #page-dashboard #smartQuantityInput{
+    width:60px;
+    height:32px;
+    font-size:14px;
+    font-weight:700;
+    text-align:center;
+  }
+
+  #page-dashboard #btnAddSmartQuantity{
+    min-height:32px;
+    height:32px;
+    padding:0 14px;
+    border-radius:8px;
+    font-size:11px;
+    line-height:32px;
+    font-weight:700;
+  }
+
+  /* Tighten the gap before Last Scan / Progress without altering logic. */
+  #page-dashboard .smartScanSearchArea{
+    margin-bottom:0;
+  }
+
+  #page-dashboard #lastScanCard{
+    margin-top:6px;
+  }
+}
+
+/* Extra compression for common 768–900px-high desktop/laptop screens. */
+@media (min-width: 769px) and (max-height: 900px){
+  #page-dashboard .smartScanSelected{
+    padding:6px 9px;
+    margin-top:5px;
+  }
+  #page-dashboard .smartSelectedMain{
+    min-height:28px;
+  }
+  #page-dashboard .smartSelectedMain h3{
+    font-size:14px;
+  }
+  #page-dashboard .smartSelectedStats{
+    margin-top:4px;
+  }
+  #page-dashboard .smartSelectedStats > div{
+    padding:4px 8px;
+  }
+  #page-dashboard .smartQuantityRow{
+    margin-top:4px;
+  }
+}
+
+
+/* =====================================================
+   PHASE 2C.5.4.4 — POLISHED SIDEBAR + KPI VISUAL SYSTEM
+   Visual-only refinement based on the approved desktop mockup.
+===================================================== */
+:root{
+  --pf-sidebar:#1d426b;
+  --pf-sidebar-deep:#17395f;
+  --pf-sidebar-text:#f5f8fc;
+  --pf-sidebar-muted:#c8d7e7;
+  --pf-orange:#ff8a1f;
+  --pf-card:#ffffff;
+  --pf-soft:#f6f9fd;
+}
+
+/* Sidebar: same calm steel/navy family as approved mockup */
+body:not(.zebraDevice) .sidebar{
+  background:linear-gradient(180deg,var(--pf-sidebar) 0%,var(--pf-sidebar-deep) 100%);
+  border-right:1px solid rgba(255,255,255,.08);
+  box-shadow:8px 0 28px rgba(14,38,66,.08);
+}
+body:not(.zebraDevice) .sidebarBrand{
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+body:not(.zebraDevice) .sidebarBrand .brandText strong{color:#fff;font-weight:700;}
+body:not(.zebraDevice) .sidebarBrand .brandText span{color:var(--pf-sidebar-muted);font-weight:700;}
+body:not(.zebraDevice) .sidebarNavigation{padding:14px 10px;gap:5px;}
+body:not(.zebraDevice) .sidebarItem{
+  min-height:46px;
+  padding:0 13px;
+  border-radius:9px;
+  color:var(--pf-sidebar-text);
+  font-weight:700;
+  letter-spacing:-.01em;
+  opacity:.94;
+  transition:background .16s ease,color .16s ease,transform .16s ease;
+}
+body:not(.zebraDevice) .sidebarItem:hover{
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  transform:translateX(1px);
+}
+body:not(.zebraDevice) .sidebarItem.active{
+  background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.08));
+  color:#fff;
+  box-shadow:inset -4px 0 0 var(--pf-orange);
+}
+body:not(.zebraDevice) .sidebarIcon{
+  width:25px;height:25px;min-width:25px;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:#dce8f5;
+}
+body:not(.zebraDevice) .sidebarItem.active .sidebarIcon{color:#fff;}
+body:not(.zebraDevice) .sidebarIcon svg{
+  width:20px;height:20px;display:block;
+  fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+}
+body:not(.zebraDevice) .sidebarFooter{
+  border-top:1px solid rgba(255,255,255,.11);
+  background:rgba(6,25,46,.08);
+}
+body:not(.zebraDevice) .accountIdentityText strong,
+body:not(.zebraDevice) .sidebarLogoutButton,
+body:not(.zebraDevice) .autoSaveStatus strong{color:#fff;}
+body:not(.zebraDevice) .accountIdentityText small,
+body:not(.zebraDevice) .autoSaveStatus span:not(.statusDot){color:var(--pf-sidebar-muted);}
+body:not(.zebraDevice) .sidebarLogoutButton{
+  border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.04);font-weight:700;
+}
+body:not(.zebraDevice) .sidebarLogoutButton:hover{background:rgba(255,255,255,.10);}
+
+/* Top header: clean, compact, pharmacy name remains the dominant identity */
+body:not(.zebraDevice) .topBar{box-shadow:0 1px 0 rgba(20,52,89,.03);}
+body:not(.zebraDevice) .pageHeading h1{font-weight:950;letter-spacing:-.025em;}
+body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:700;color:#526986;}
+
+/* KPI strip: decorative icon medallions without increasing vertical height */
+#page-dashboard .statisticsGrid{gap:9px;margin-bottom:10px;}
+#page-dashboard .statCard{
+  min-height:82px;padding:10px 10px 9px 52px;
+  border-radius:12px;background:#fff;box-shadow:none;
+  display:flex;flex-direction:column;justify-content:center;
+}
+#page-dashboard .statCard::after{display:none;}
+#page-dashboard .statCard::before{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:19px;font-weight:700;line-height:1;
+  background:#edf5ff;color:#1769e0;border:1px solid #dceafd;
+}
+#page-dashboard .statCard:nth-child(1)::before{content:"◇";font-size:25px;}
+#page-dashboard .statCard:nth-child(2)::before{content:"✓";background:#ebf9f1;color:#16a05d;border-color:#d6f1e2;}
+#page-dashboard .statCard:nth-child(3)::before{content:"◷";background:#fff5e9;color:#ef8a16;border-color:#fde7c9;}
+#page-dashboard .statCard:nth-child(4)::before{content:"↗";background:#fff0f1;color:#df3d4d;border-color:#f8dadd;}
+#page-dashboard .statCard:nth-child(5)::before{content:"○";background:#f3efff;color:#7146df;border-color:#e4dcff;font-size:25px;}
+#page-dashboard .statCard:nth-child(6)::before{content:"▥";background:#edf5ff;color:#1769e0;border-color:#dceafd;}
+#page-dashboard .statCardLabel{margin:0 0 3px;font-size:9px;line-height:1.05;font-weight:700;color:#536781;}
+#page-dashboard .statCard strong{font-size:24px;line-height:1;font-weight:950;color:#102a4c;}
+#page-dashboard .statSuccess,#page-dashboard .statWarning,#page-dashboard .statDanger{background:#fff;border-color:var(--pf-line);}
+#page-dashboard .statSuccess strong,#page-dashboard .statWarning strong,#page-dashboard .statDanger strong{color:#102a4c;}
+
+/* Use color as a subtle signal rather than coloring whole KPI cards */
+#page-dashboard .statCard:nth-child(2) strong{color:#159a59;}
+#page-dashboard .statCard:nth-child(3) strong{color:#e78610;}
+#page-dashboard .statCard:nth-child(4) strong{color:#d83d49;}
+
+/* Dashboard card typography: a little smaller, bolder and easier to scan */
+#page-dashboard .scanPanelHeader h2,
+#page-dashboard #lastScanCard .cardHeader h3,
+#page-dashboard>.contentCard:not(#lastScanCard) h3{font-weight:950;letter-spacing:-.015em;}
+#page-dashboard .scanBox input{font-weight:700;color:#18314f;}
+#page-dashboard .lastScanField:first-child>strong{font-weight:950;letter-spacing:-.018em;}
+#page-dashboard .lastScanField>span{font-weight:700;}
+#page-dashboard .lastScanField>strong{font-weight:950;}
+
+/* General application pages: keep icons/labels crisp against the new shell */
+body:not(.zebraDevice) .sectionEyebrow{font-weight:700;}
+body:not(.zebraDevice) .cardHeader h2,
+body:not(.zebraDevice) .cardHeader h3{font-weight:700;}
+body:not(.zebraDevice) button{font-weight:700;}
+
+@media (max-width:1280px) and (min-width:769px){
+  body:not(.zebraDevice) .sidebarItem{min-height:42px;font-size:12px;}
+  body:not(.zebraDevice) .sidebarIcon{width:22px;height:22px;min-width:22px;}
+  body:not(.zebraDevice) .sidebarIcon svg{width:18px;height:18px;}
+  #page-dashboard .statCard{min-height:72px;padding-left:46px;}
+  #page-dashboard .statCard::before{left:8px;width:31px;height:31px;font-size:17px;}
+  #page-dashboard .statCard strong{font-size:21px;}
+}
+
+
+/* =====================================================
+   PHASE 2C.6 — HANDHELD FINAL RECEIVING UX
+   Internal legacy .zebra* selectors are retained for
+   backward compatibility; all user-facing wording is Handheld.
+===================================================== */
+
+.handheldScanContext{
+    display:none;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    margin:0 0 7px;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext>div{
+    min-width:0;
+    padding:7px 8px;
+    border:1px solid #d8e3f0;
+    border-radius:10px;
+    background:#f7faff;
+    text-align:center;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext span{
+    display:block;
+    margin-bottom:2px;
+    color:#728198;
+    font-size:8px;
+    font-weight:700;
+    letter-spacing:.10em;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext strong{
+    display:block;
+    color:#10213b;
+    font-size:20px;
+    font-weight:950;
+    line-height:1;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext>div:first-child strong{
+    color:#0b66d8;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls{
+    padding:7px!important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyActions{
+    grid-template-columns:52px minmax(0,1fr) 52px!important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue{
+    font-weight:950!important;
+}
+
+body.zebraDevice.zebraReceivingActive #barcodeInput{
+    caret-color:transparent;
+}
+
+body.zebraDevice input[type="number"],
+body.zebraDevice #smartQuantityInput,
+body.zebraDevice #quantityAdjustmentInput{
+    font-variant-numeric:tabular-nums;
+}
+
+body.zebraDevice .zebraModeIntro p{
+    max-width:34ch;
+}
+
+body.zebraDevice .zebraModeCards{
+    gap:9px;
+}
+
+body.zebraDevice .zebraModeCard{
+    min-height:86px;
+}
+
+body.zebraDevice.zebraJoinActive .cloudJoinCard{
+    margin-top:4px!important;
+}
+
+body.zebraDevice.zebraJoinActive .cloudCodeInput{
+    font-weight:950!important;
+    letter-spacing:.08em;
+}
+
+body.zebraDevice.zebraHomeActive #barcodeInput,
+body.zebraDevice.zebraJoinActive #barcodeInput,
+body.zebraDevice.zebraExpiryActive #barcodeInput{
+    pointer-events:none;
+}
+
+/* =====================================================
+   PHASE 2C.6 FINAL - CLICKABLE KPI + FAST SCAN SAFETY
+===================================================== */
+.dashboardKpiCard{
+    cursor:pointer;
+    position:relative;
+    transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+.dashboardKpiCard::after{
+    content:"View";
+    position:absolute;
+    right:10px;
+    bottom:7px;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.04em;
+    color:#64748b;
+    opacity:.72;
+}
+.dashboardKpiCard:hover,
+.dashboardKpiCard:focus-visible{
+    transform:translateY(-1px);
+    box-shadow:0 7px 18px rgba(15,23,42,.10);
+    border-color:#93b4d7;
+    outline:none;
+}
+.quickKpiOverlay{
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:rgba(15,23,42,.34);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:14px;
+}
+.quickKpiPanel{
+    width:min(900px,96vw);
+    max-height:86vh;
+    overflow:auto;
+    background:#fff;
+    border:1px solid #dce5ef;
+    border-radius:16px;
+    box-shadow:0 22px 60px rgba(15,23,42,.22);
+    padding:14px;
+}
+.quickKpiHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.quickKpiHeader h3{margin:0;font-size:17px;font-weight:700;color:#102a4c}
+.quickKpiClose{border:0;background:#eef3f8;border-radius:9px;padding:7px 10px;font-weight:700;cursor:pointer}
+.quickKpiTable{width:100%;border-collapse:collapse;font-size:12px;font-weight:700}
+.quickKpiTable th,.quickKpiTable td{padding:8px 7px;border-bottom:1px solid #e8eef5;text-align:left;vertical-align:middle}
+.quickKpiTable th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+.quickUndoButton{border:1px solid #f3b1b1;background:#fff5f5;color:#b42318;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer}
+.quickUndoButton:disabled{opacity:.45;cursor:not-allowed}
+.scanSafetyBar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:7px}
+.scanUndoLastButton{border:1px solid #f0b1b1;background:#fff8f7;color:#b42318;border-radius:9px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer}
+.scanUndoLastButton.hidden{display:none!important}
+@media(max-width:900px){.dashboardKpiCard::after{display:none}.quickKpiPanel{padding:10px}.quickKpiTable{font-size:11px}}
+
+
+/* PHASE 2C.6.2 — integrity batch UI */
+.healthMetricInteractive{cursor:pointer;transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease}
+.healthMetricInteractive:hover,.healthMetricInteractive:focus-visible{border-color:#7faee3!important;box-shadow:0 6px 18px rgba(15,52,90,.10);transform:translateY(-1px);outline:none}
+.fileItemActions{display:flex;align-items:center;gap:10px}
+.removeActiveOrderButton{border:1px solid #efb1b1;background:#fff7f7;color:#b42318;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer}
+.quickKpiToolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;font-size:11px;font-weight:700;color:#64748b}
+.priorityFilterButton{border:1px solid #cfdbea;background:#f8fbff;color:#284b73;border-radius:9px;padding:6px 9px;font-size:11px;font-weight:700;cursor:pointer}
+.priorityFilterButton.active{background:#fff7dc;border-color:#efc85e;color:#8a6410}
+.priorityStar{border:0;background:transparent;color:#b8c3d1;font-size:20px;line-height:1;cursor:pointer;padding:2px 5px}
+.priorityStar.active{color:#e9a800}
+.quickKpiEmpty{padding:22px;text-align:center;color:#64748b;font-weight:800}
+
+/* =====================================================
+   PHASE 2C.6.3 — RECEIVED ITEMS + HIGH PRIORITY BROWSER
+===================================================== */
+.phase263Panel{max-width:min(1120px,94vw);max-height:88vh;overflow:hidden;display:flex;flex-direction:column}
+.phase263Panel [data-body]{min-height:0;overflow:auto}
+.phase263BrowserToolbar{display:flex;gap:8px;align-items:center;padding:0 0 10px;position:sticky;top:0;background:#fff;z-index:2}
+.phase263Search{flex:1;min-width:220px;height:38px;border:1px solid #cbd8e8;border-radius:9px;padding:0 12px;font-size:12px;font-weight:700;outline:none}
+.phase263Search:focus{border-color:#2b6fd8;box-shadow:0 0 0 3px rgba(43,111,216,.10)}
+.phase263Filter{height:38px;border:1px solid #d7e0eb;border-radius:9px;background:#fff;padding:0 12px;font-size:11px;font-weight:700;color:#40516a;cursor:pointer}
+.phase263Filter.active{border-color:#f2b04b;background:#fff8eb;color:#9a5b00}
+.phase263Summary{display:flex;gap:24px;align-items:center;padding:8px 10px;margin-bottom:8px;border:1px solid #dce8f7;border-radius:9px;background:#f7fbff;font-size:11px;color:#334155}
+.phase263TableWrap{overflow:auto;max-height:62vh;border:1px solid #e1e8f1;border-radius:9px}
+.phase263Table{margin:0}
+.phase263Table thead th{position:sticky;top:0;background:#f6f9fd;z-index:1}
+.phase263Star{width:32px;height:30px;border:1px solid #d8e1ec;border-radius:8px;background:#fff;font-size:19px;line-height:1;color:#9aa7b7;cursor:pointer}
+.phase263Star.active{color:#f59e0b;background:#fff8e8;border-color:#f4c66d}
+.phase263PriorityRow{background:#fffdf6}
+.phase263Positive{font-weight:700;color:#12834b}
+.phase263Negative{font-weight:700;color:#d14343}
+.receivedItemsButton{white-space:nowrap}
+@media(max-width:760px){.phase263BrowserToolbar{flex-wrap:wrap}.phase263Search{flex-basis:100%}.phase263Summary{justify-content:space-between;gap:8px}.phase263Panel{max-width:96vw}.phase263TableWrap{max-height:58vh}}
+
+/* =====================================================
+   PHASE 2C.6.4 — COMPACT ALL-PAGES + ACCOUNT PANEL
+===================================================== */
+body:not(.zebraDevice) .mainContent{
+    padding:10px 14px 14px!important;
+}
+body:not(.zebraDevice) .appPage{
+    gap:8px!important;
+}
+body:not(.zebraDevice) .appPage>.contentCard,
+body:not(.zebraDevice) .appPage>.scanPanel,
+body:not(.zebraDevice) .appPage .contentCard{
+    margin-bottom:9px!important;
+}
+body:not(.zebraDevice) #page-settings>.contentCard,
+body:not(.zebraDevice) #page-files>.contentCard,
+body:not(.zebraDevice) #page-reports>.contentCard,
+body:not(.zebraDevice) #page-archive>.contentCard,
+body:not(.zebraDevice) #page-returnsArchive>.contentCard,
+body:not(.zebraDevice) #page-sessions>.contentCard{
+    padding:13px 16px!important;
+}
+body:not(.zebraDevice) .appPage .cardHeader{
+    margin-bottom:8px!important;
+}
+body:not(.zebraDevice) .appPage .cardHeader h2,
+body:not(.zebraDevice) .appPage .cardHeader h3{
+    margin:0!important;
+    line-height:1.15!important;
+}
+body:not(.zebraDevice) .appPage .settingsDescription,
+body:not(.zebraDevice) .appPage p{
+    margin-top:5px;
+    margin-bottom:7px;
+}
+body:not(.zebraDevice) .accountSettingsGrid,
+body:not(.zebraDevice) .masterGTINStatusGrid,
+body:not(.zebraDevice) .ownerMetricGrid{
+    gap:9px!important;
+}
+body:not(.zebraDevice) .accountSettingTile,
+body:not(.zebraDevice) .masterGTINStatusGrid>div,
+body:not(.zebraDevice) .ownerMetricCard{
+    padding:10px 12px!important;
+    min-height:64px!important;
+}
+
+.accountEditActions{display:flex;justify-content:flex-end;margin-top:8px}
+.accountEditPanel{
+    margin-top:9px;padding:10px;border:1px solid #dbe6f5;border-radius:11px;
+    background:#f8fbff;display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.2fr) auto;gap:9px;align-items:end;
+}
+.accountEditPanel.hidden{display:none!important}
+.accountEditField label{display:block;margin:0 0 4px;color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}
+.accountEditField input{width:100%;height:37px;border:1px solid #cfdced;border-radius:9px;padding:0 10px;font-size:13px;font-weight:700;color:#17233b;background:#fff}
+.accountEditButtons{display:flex;gap:6px;align-items:center}
+.accountSecurityNote{grid-column:1/-1;color:#64748b;font-size:10px;font-weight:700}
+
+@media(max-width:900px){
+  .accountEditPanel{grid-template-columns:1fr 1fr}.accountEditButtons{grid-column:1/-1}
+}
+@media(max-width:620px){
+  .accountEditPanel{grid-template-columns:1fr}.accountEditButtons{grid-column:auto}.accountSecurityNote{grid-column:auto}
+}
+
+
+/* Phase 2C.7 — compact cloud/order scope */
+.orderScopeControl{display:flex;align-items:center;gap:8px;margin:6px 0;padding:6px 10px;border:1px solid #dbe3ea;border-radius:10px;background:#f8fafc;font-size:12px;font-weight:700}
+.orderScopeControl label{white-space:nowrap;color:#475569}.orderScopeControl select{min-width:190px;max-width:320px;height:32px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:0 8px;font-weight:700;color:#0f172a}
+@media(max-height:850px){.pageContent,.settingsContent,.reportsContent,.ordersContent{padding-top:8px!important;padding-bottom:8px!important}.card,.settingsCard,.reportCard{margin-bottom:8px!important}.sectionHeader{margin-bottom:6px!important}}
+.cloudWorkspaceStatus{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.03em;color:#15803d;white-space:nowrap}html[data-cloud-workspace-state="offline"] .cloudWorkspaceStatus{color:#b45309}html[data-cloud-workspace-state="syncing"] .cloudWorkspaceStatus{color:#0369a1}
+
+
+/* =====================================================
+   PHASE 2C.8 — TYPOGRAPHY REFINEMENT
+   Less visual heaviness across PharmFlow while keeping
+   operational quantities and primary scan identity clear.
+===================================================== */
+
+body,
+button,
+input,
+select,
+textarea {
+    font-weight: 400;
+}
+
+/* Navigation / buttons remain clear without excessive boldness */
+.sidebar a,
+.sidebar button,
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+    font-weight: 600;
+}
+
+/* Main headings keep hierarchy */
+h1,
+h2,
+.pageTitle,
+.cardTitle {
+    font-weight: 700;
+}
+
+h3,
+h4 {
+    font-weight: 600;
+}
+
+/* Table content is easier to scan */
+.dataTable th,
+table th {
+    font-weight: 600;
+}
+
+.dataTable td,
+table td {
+    font-weight: 400;
+}
+
+/* Labels should not compete with values */
+.statCardLabel,
+.lastScanMetaItem span,
+.lastScanMetric span,
+.masterGTINStatusGrid span,
+.quantityAdjustmentLabel,
+.zebraQuickStats span {
+    font-weight: 600;
+}
+
+/* Preserve strong emphasis where it matters operationally */
+.statCard strong,
+.progressPercentage,
+#lastScanCard .lastScanMetric > strong,
+#lastScanCard .lastScanOverQuantity,
+.quantityCurrentTotal strong,
+.masterGTINStatusGrid strong,
+.zebraQuickStats strong {
+    font-weight: 700;
+}
+
+/* Item identity stays prominent but not overly heavy */
+.lastScanHeroName,
+#lastItemName,
+.smartSelectedMain h3,
+.smartSearchResultMain strong {
+    font-weight: 700;
+}
+
+/* Status badges and compact controls */
+.statusBadge,
+.archiveStatus,
+.manualBadge,
+.orderStatusFilters button {
+    font-weight: 600;
+}
+
+/* Quantity controls */
+.lastScanQtyTitle,
+.lastScanQtyButton,
+.lastScanQtyValue,
+.tableQtyButton,
+.tableQtyValue,
+.quantityButton,
+#smartQuantityInput,
+.quantityAdjustmentInput {
+    font-weight: 700;
+}
+
+/* =====================================================
+   PHARMFLOW — KPI SOFT COLOR CARDS
+   Color coding is intentionally subtle for long receiving sessions.
+===================================================== */
+.statisticsGrid .statCard{
+  border-color:#DCE8F6;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F2F7FF 100%);
+}
+.statisticsGrid .statCard strong{color:#1769D2;}
+.statisticsGrid .statCard::after{background:rgba(23,105,210,.055);}
+
+.statisticsGrid .statSuccess{
+  border-color:#CFE9DB;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F1FAF5 100%);
+}
+.statisticsGrid .statSuccess strong{color:#16935B;}
+.statisticsGrid .statSuccess::after{background:rgba(22,147,91,.06);}
+
+.statisticsGrid .statWarning{
+  border-color:#F0DDB8;
+  background:linear-gradient(145deg,#FFFFFF 0%,#FFF8EE 100%);
+}
+.statisticsGrid .statWarning strong{color:#D9850B;}
+.statisticsGrid .statWarning::after{background:rgba(217,133,11,.065);}
+
+.statisticsGrid .statDanger{
+  border-color:#F0D1D4;
+  background:linear-gradient(145deg,#FFFFFF 0%,#FFF3F3 100%);
+}
+.statisticsGrid .statDanger strong{color:#D94A55;}
+.statisticsGrid .statDanger::after{background:rgba(217,74,85,.06);}
+
+.statisticsGrid .statCard[data-kpi="manual"]{
+  border-color:#E2D8F5;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F7F4FF 100%);
+}
+.statisticsGrid .statCard[data-kpi="manual"] strong{color:#7454C7;}
+.statisticsGrid .statCard[data-kpi="manual"]::after{background:rgba(116,84,199,.06);}
+
+.statisticsGrid .statCard[data-kpi="scans"]{
+  border-color:#D5E6F5;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F2F8FF 100%);
+}
+.statisticsGrid .statCard[data-kpi="scans"] strong{color:#2778C9;}
+.statisticsGrid .statCard[data-kpi="scans"]::after{background:rgba(39,120,201,.06);}
+
+/* =====================================================
+   PHARMFLOW — WARM PEARL ALL-PAGES BACKGROUND
+   Keeps semantic KPI/card colors and blue action accents.
+===================================================== */
+body:not(.zebraDevice),
+body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,
+body:not(.zebraDevice) .appPage{
+  background-color:#F5F3EF !important;
+}
+body:not(.zebraDevice) .topHeader{
+  background:rgba(250,248,244,.94) !important;
+  border-bottom-color:#E5DFD6 !important;
+}
+body:not(.zebraDevice) .contentCard,
+body:not(.zebraDevice) .scanPanel{
+  border-color:#E7E1D8;
+}
+body:not(.zebraDevice) .pharmflowDashboardHero{
+  border-color:#E5DED5;
+  background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.08),transparent 15rem),linear-gradient(135deg,#fff 0%,#FAF7F1 100%);
+}
+body:not(.zebraDevice) .dashboardWorkContextStats>div,
+body:not(.zebraDevice) .receivingSummaryGrid>div,
+body:not(.zebraDevice) .itemTransferMetaGrid>div,
+body:not(.zebraDevice) .orderScopeControl{
+  background:#FAF8F4;
+  border-color:#E6E0D7;
+}
+/* Handheld also receives the neutral pearl page canvas; operational cards remain high-contrast. */
+body.zebraDevice{background:#F3F0EA !important;}
+
+
+/* =====================================================
+   PHARMFLOW — LIGHT LATTE GLOBAL CANVAS
+===================================================== */
+:root{
+  --pf-latte-canvas:#F3ECE5;
+  --pf-latte-canvas-soft:#F8F3EE;
+  --pf-latte-line:#DDD0C3;
+}
+body:not(.zebraDevice),
+body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,
+body:not(.zebraDevice) .appPage{
+  background:#F3ECE5 !important;
+}
+body:not(.zebraDevice) .topBar,
+body:not(.zebraDevice) .topHeader{
+  background:rgba(251,247,243,.96) !important;
+  border-bottom-color:#DED2C6 !important;
+}
+body:not(.zebraDevice) .contentCard,
+body:not(.zebraDevice) .scanPanel,
+body:not(.zebraDevice) .statItemsModalCard,
+body:not(.zebraDevice) .orderStatusReportCard{
+  background:#FFFFFF;
+  border-color:#E2D6CA;
+}
+body:not(.zebraDevice) .pharmflowDashboardHero{
+  border-color:#DED0C2;
+  background:
+    radial-gradient(circle at 90% 18%,rgba(177,132,90,.09),transparent 15rem),
+    linear-gradient(135deg,#FFFFFF 0%,#F8F1EA 100%);
+}
+body:not(.zebraDevice) .dashboardWorkContextStats>div,
+body:not(.zebraDevice) .receivingSummaryGrid>div,
+body:not(.zebraDevice) .itemTransferMetaGrid>div,
+body:not(.zebraDevice) .orderScopeControl,
+body:not(.zebraDevice) .masterGTINStatusGrid>div{
+  background:#FAF5F0;
+  border-color:#E4D8CD;
+}
+body.zebraDevice{background:#F3ECE5 !important;}

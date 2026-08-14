@@ -1,0 +1,377 @@
+/*======================================================
+RESPONSIVE
+======================================================*/
+
+@media (max-width:1400px){
+
+  .statisticsGrid{
+
+      grid-template-columns:repeat(3,1fr);
+
+  }
+
+}
+
+
+
+@media (max-width:1200px){
+
+  .mainApplication{
+
+      margin-left:220px;
+
+  }
+
+  .sidebar{
+
+      width:220px;
+
+  }
+
+}
+
+
+
+@media (max-width:1024px){
+
+  .sidebar{
+
+      transform:translateX(-100%);
+
+      width:260px;
+
+  }
+
+  .sidebar.show{
+
+      transform:translateX(0);
+
+  }
+
+  .sidebarCloseButton{
+
+      display:flex;
+
+      align-items:center;
+
+      justify-content:center;
+
+  }
+
+  .mainApplication{
+
+      margin-left:0;
+
+  }
+
+  .sidebarOverlay.show{
+
+      display:block;
+
+  }
+
+  .statisticsGrid{
+
+      grid-template-columns:repeat(2,1fr);
+
+  }
+
+  .twoColumnLayout{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .reportSummaryGrid{
+
+      grid-template-columns:repeat(2,1fr);
+
+  }
+
+  .actionCardGrid{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .healthGrid,
+
+  .sessionInfoGrid,
+
+  .archiveSummaryGrid{
+
+      grid-template-columns:repeat(2,1fr);
+
+  }
+
+  .lastScanGrid{
+
+      grid-template-columns:repeat(2,1fr);
+
+  }
+
+}
+
+
+
+@media (max-width:768px){
+
+  .mainContent{
+
+      padding:14px;
+
+  }
+
+  .topBar{
+
+      padding:12px;
+
+  }
+
+  .topBarRight{
+
+      display:none;
+
+  }
+
+  .pageHeading h1{
+
+      font-size:19px;
+
+  }
+
+  .scanPanel{
+
+      padding:18px;
+
+  }
+
+  .scanPanelHeader{
+
+      flex-direction:column;
+
+  }
+
+  .scanStatusBadge{
+
+      align-self:flex-start;
+
+  }
+
+  .scanBox{
+
+      min-height:66px;
+
+  }
+
+  #barcodeInput{
+
+      font-size:18px;
+
+  }
+
+  .statisticsGrid{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .reportFilterGrid{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .reportSummaryGrid{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .healthGrid,
+
+  .sessionInfoGrid,
+
+  .archiveSummaryGrid{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .lastScanGrid{
+
+      grid-template-columns:1fr;
+
+  }
+
+  .settingsButtonGrid{
+
+      flex-direction:column;
+
+  }
+
+  .settingsButtonGrid button{
+
+      width:100%;
+
+  }
+
+  .modalCard{
+
+      width:100%;
+
+      margin:12px;
+
+  }
+
+}
+
+
+
+@media (max-width:480px){
+
+  .brandText{
+
+      display:block;
+
+  }
+
+  .topBar{
+
+      min-height:auto;
+
+  }
+
+  .scanPanelHeader h2{
+
+      font-size:21px;
+
+  }
+
+  .contentCard{
+
+      padding:16px;
+
+  }
+
+  .scanBox{
+
+      padding:8px;
+
+  }
+
+  .scanBoxIcon{
+
+      width:44px;
+
+      height:44px;
+
+      font-size:22px;
+
+  }
+
+  #barcodeInput{
+
+      font-size:16px;
+
+  }
+
+  .primaryButton,
+
+  .secondaryButton,
+
+  .warningButton,
+
+  .dangerButton,
+
+  .dangerOutlineButton{
+
+      width:100%;
+
+  }
+
+}
+
+
+
+/*======================================================
+ZEBRA DEVICE
+======================================================*/
+
+@media (pointer:coarse){
+
+  button{
+
+      min-height:48px;
+
+  }
+
+  input{
+
+      min-height:46px;
+
+  }
+
+  .sidebarItem{
+
+      min-height:52px;
+
+  }
+
+  .scanBox{
+
+      min-height:78px;
+
+  }
+
+  #barcodeInput{
+
+      font-size:20px;
+
+  }
+
+}
+
+
+
+/*======================================================
+PRINT
+======================================================*/
+
+@media print{
+
+  .sidebar,
+
+  .topBar,
+
+  .primaryButton,
+
+  .secondaryButton,
+
+  .warningButton,
+
+  .dangerButton,
+
+  .dangerOutlineButton,
+
+  .sidebarOverlay{
+
+      display:none !important;
+
+  }
+
+  .mainApplication{
+
+      margin:0;
+
+  }
+
+  .contentCard{
+
+      border:none;
+
+      box-shadow:none;
+
+  }
+
+}

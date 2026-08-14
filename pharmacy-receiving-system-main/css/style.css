@@ -1,0 +1,1346 @@
+:root {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --border: #e5e9f2;
+
+  --text: #1d2433;
+  --text-soft: #6b7280;
+
+  --primary: #A65F3A;
+  --primary-dark: #87482B;
+  --primary-soft: #F6EAE1;
+
+  --success: #1f9d68;
+  --success-soft: #e9f8f1;
+
+  --warning: #d99000;
+  --warning-soft: #fff7df;
+
+  --danger: #d64545;
+  --danger-soft: #fff0f0;
+
+  --shadow-sm:
+      0 4px 14px rgba(31, 41, 55, 0.06);
+
+  --shadow-md:
+      0 10px 30px rgba(31, 41, 55, 0.09);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+
+  --transition: 0.22s ease;
+}
+
+
+/* =====================================================
+ RESET
+===================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+      Inter,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Arial,
+      sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+
+/* =====================================================
+ APP
+===================================================== */
+
+#app {
+  min-height: 100vh;
+}
+
+.mainApplication {
+  min-height: 100vh;
+  margin-left: 260px;
+  transition: margin-left var(--transition);
+}
+
+.mainContent {
+  padding: 24px;
+}
+
+.appPage {
+  display: none;
+}
+
+.appPage.active {
+  display: block;
+}
+
+
+/* =====================================================
+ TOP BAR
+===================================================== */
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 24px;
+
+  background:
+      rgba(255, 255, 255, 0.94);
+
+  border-bottom: 1px solid var(--border);
+
+  backdrop-filter: blur(12px);
+}
+
+.topBarLeft,
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pageHeading h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.pageHeading p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  padding: 8px 12px;
+
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.headerInfo span {
+  color: var(--text-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.headerInfo strong {
+  font-size: 13px;
+}
+
+.systemStatus {
+  padding: 10px 14px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+
+.systemStatus.ready {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.systemStatus.warning {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.systemStatus.error {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+
+/* =====================================================
+ GENERIC BUTTONS
+===================================================== */
+
+.iconButton {
+  border: 0;
+
+  width: 42px;
+  height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  color: var(--text);
+  background: var(--surface-soft);
+
+  transition:
+      background var(--transition),
+      transform var(--transition);
+}
+
+.iconButton:hover {
+  background: #eef2f7;
+}
+
+.iconButton:active {
+  transform: scale(0.96);
+}
+
+.primaryButton,
+.secondaryButton,
+.warningButton,
+.dangerButton,
+.dangerOutlineButton {
+  min-height: 42px;
+
+  padding: 0 16px;
+
+  border-radius: 12px;
+
+  font-weight: 700;
+
+  transition:
+      transform var(--transition),
+      box-shadow var(--transition),
+      background var(--transition);
+}
+
+.primaryButton {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: white;
+}
+
+.primaryButton:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 8px 18px rgba(11, 94, 215, 0.18);
+}
+
+.secondaryButton {
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
+}
+
+.secondaryButton:hover {
+  background: var(--surface-soft);
+}
+
+.warningButton {
+  border: 1px solid var(--warning);
+  background: var(--warning);
+  color: white;
+}
+
+.dangerButton {
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: white;
+}
+
+.dangerOutlineButton {
+  border: 1px solid var(--danger);
+  background: white;
+  color: var(--danger);
+}
+
+.primaryButton:active,
+.secondaryButton:active,
+.warningButton:active,
+.dangerButton:active,
+.dangerOutlineButton:active {
+  transform: translateY(1px);
+}
+
+
+/* =====================================================
+ CONTENT CARDS
+===================================================== */
+
+.contentCard {
+  margin-bottom: 20px;
+
+  padding: 22px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  margin-bottom: 18px;
+}
+
+.cardHeader h2,
+.cardHeader h3 {
+  margin: 3px 0 0;
+}
+
+.cardHeader p {
+  margin: 7px 0 0;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.sectionEyebrow {
+  display: inline-block;
+
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 18px;
+}
+
+
+/* =====================================================
+ SCAN PANEL
+===================================================== */
+
+.scanPanel {
+  position: relative;
+  overflow: hidden;
+
+  margin-bottom: 22px;
+  padding: 24px;
+
+  border: 1px solid #b7cff5;
+  border-radius: var(--radius-lg);
+
+  background:
+      linear-gradient(
+          135deg,
+          #ffffff 0%,
+          #f4f8ff 100%
+      );
+
+  box-shadow:
+      0 14px 32px rgba(11, 94, 215, 0.10);
+}
+
+.scanPanel::before {
+  content: "";
+
+  position: absolute;
+  top: -70px;
+  right: -70px;
+
+  width: 180px;
+  height: 180px;
+
+  border-radius: 50%;
+
+  background:
+      rgba(11, 94, 215, 0.06);
+}
+
+.scanPanelHeader {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 20px;
+}
+
+.scanPanelHeader h2 {
+  margin: 4px 0 5px;
+  font-size: 24px;
+}
+
+.scanPanelHeader p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.scanStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 13px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.scanStatusBadge.ready {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.scanStatusBadge.error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.scanPulse {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+
+  box-shadow:
+      0 0 0 5px rgba(31, 157, 104, 0.12);
+}
+
+.scanBox {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  min-height: 74px;
+
+  padding: 9px;
+
+  border: 3px solid var(--primary);
+  border-radius: 18px;
+
+  background: white;
+
+  box-shadow:
+      0 0 0 5px rgba(11, 94, 215, 0.08),
+      0 12px 24px rgba(11, 94, 215, 0.10);
+
+  transition:
+      border-color var(--transition),
+      box-shadow var(--transition),
+      transform var(--transition);
+}
+
+.scanBox:focus-within {
+  border-color: #004cb9;
+
+  box-shadow:
+      0 0 0 7px rgba(11, 94, 215, 0.12),
+      0 16px 30px rgba(11, 94, 215, 0.16);
+
+  transform: translateY(-1px);
+}
+
+.scanBox.success {
+  border-color: var(--success);
+
+  box-shadow:
+      0 0 0 6px rgba(31, 157, 104, 0.10);
+}
+
+.scanBox.error {
+  border-color: var(--danger);
+
+  box-shadow:
+      0 0 0 6px rgba(214, 69, 69, 0.10);
+}
+
+.scanBoxIcon {
+  width: 52px;
+  height: 52px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: var(--primary-soft);
+  color: var(--primary);
+
+  font-size: 28px;
+  font-weight: 900;
+}
+
+#barcodeInput {
+  width: 100%;
+  min-width: 0;
+
+  padding: 0 18px;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+#barcodeInput::placeholder {
+  color: #9ba8bd;
+  font-weight: 600;
+}
+
+.scanBoxIndicator {
+  flex: 0 0 auto;
+
+  margin-right: 8px;
+
+  padding: 8px 10px;
+
+  border-radius: 9px;
+
+  color: var(--primary);
+  background: var(--primary-soft);
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.scanPanelFooter {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  margin-top: 18px;
+
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+
+/* =====================================================
+ LAST SCAN
+===================================================== */
+
+.lastScanGrid {
+  display: grid;
+  grid-template-columns:
+      repeat(7, minmax(100px, 1fr));
+
+  gap: 12px;
+}
+
+.lastScanField {
+  padding: 13px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+
+  background: var(--surface-soft);
+}
+
+.lastScanField span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: var(--text-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.lastScanField strong {
+  display: block;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  font-size: 14px;
+}
+
+
+/* =====================================================
+ TABLES
+===================================================== */
+
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.dataTable {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  background: white;
+}
+
+.dataTable th {
+  padding: 13px 14px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: var(--surface-soft);
+
+  color: var(--text-soft);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dataTable td {
+  padding: 13px 14px;
+
+  border-bottom: 1px solid var(--border);
+
+  font-size: 13px;
+}
+
+.dataTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.dataTable tbody tr:hover {
+  background: #fafcff;
+}
+
+
+/* =====================================================
+ TWO COLUMN
+===================================================== */
+
+.twoColumnLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 20px;
+}
+
+
+/* =====================================================
+ FILE LISTS
+===================================================== */
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 12px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  background: var(--surface-soft);
+}
+
+.fileItem strong {
+  font-size: 13px;
+}
+
+.fileItem small {
+  color: var(--text-soft);
+}
+
+.emptyState {
+  padding: 30px 18px;
+
+  border: 1px dashed #ccd4e1;
+  border-radius: 12px;
+
+  color: var(--text-soft);
+
+  text-align: center;
+}
+
+
+/* =====================================================
+ HEALTH GRID
+===================================================== */
+
+.healthGrid,
+.sessionInfoGrid,
+.archiveSummaryGrid {
+  display: grid;
+  grid-template-columns:
+      repeat(4, minmax(120px, 1fr));
+
+  gap: 14px;
+}
+
+.healthGrid > div,
+.sessionInfoGrid > div,
+.archiveSummaryGrid > div {
+  padding: 15px;
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  background: var(--surface-soft);
+}
+
+.healthGrid span,
+.sessionInfoGrid span,
+.archiveSummaryGrid span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.healthGrid strong,
+.sessionInfoGrid strong,
+.archiveSummaryGrid strong {
+  font-size: 21px;
+}
+
+
+/* =====================================================
+ REPORTS
+===================================================== */
+
+.reportFilterGrid {
+  display: grid;
+
+  grid-template-columns:
+      minmax(250px, 2fr)
+      minmax(150px, 1fr)
+      minmax(150px, 1fr)
+      auto;
+
+  gap: 14px;
+
+  align-items: end;
+
+  margin-bottom: 20px;
+}
+
+.formField {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.formField label {
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.formField input {
+  min-height: 44px;
+
+  padding: 0 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  outline: 0;
+
+  background: white;
+
+  color: var(--text);
+}
+
+.formField input:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+      0 0 0 3px rgba(11, 94, 215, 0.08);
+}
+
+.reportSummaryGrid {
+  display: grid;
+
+  grid-template-columns:
+      repeat(4, minmax(140px, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 20px;
+}
+
+.reportSummaryCard {
+  padding: 16px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: var(--surface-soft);
+}
+
+.reportSummaryCard span {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.reportSummaryCard strong {
+  font-size: 20px;
+}
+
+.reportSummaryCard.highlight {
+  border-color: #b7cff5;
+  background: var(--primary-soft);
+}
+
+.reportSummaryCard.highlight strong {
+  color: var(--primary);
+}
+
+.dropdownResults {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+
+  max-height: 260px;
+  overflow-y: auto;
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  background: white;
+
+  box-shadow: var(--shadow-md);
+}
+
+.dropdownResults:empty {
+  display: none;
+}
+
+.dropdownItem {
+  display: block;
+
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 0;
+  border-bottom: 1px solid var(--border);
+
+  background: white;
+
+  text-align: left;
+}
+
+.dropdownItem:last-child {
+  border-bottom: 0;
+}
+
+.dropdownItem:hover {
+  background: var(--primary-soft);
+}
+
+
+/* =====================================================
+ LARGE ACTION CARDS
+===================================================== */
+
+.actionCardGrid {
+  display: grid;
+  grid-template-columns:
+      repeat(3, minmax(200px, 1fr));
+
+  gap: 18px;
+
+  margin-bottom: 20px;
+}
+
+.largeActionCard {
+  min-height: 150px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 22px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  background: white;
+
+  box-shadow: var(--shadow-sm);
+
+  text-align: left;
+
+  transition:
+      transform var(--transition),
+      border-color var(--transition),
+      box-shadow var(--transition);
+}
+
+.largeActionCard:hover {
+  transform: translateY(-2px);
+
+  border-color: #c1d4f4;
+
+  box-shadow: var(--shadow-md);
+}
+
+.actionIcon {
+  margin-bottom: 4px;
+
+  color: var(--primary);
+
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.largeActionCard strong {
+  font-size: 17px;
+}
+
+.largeActionCard small {
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+ SETTINGS
+===================================================== */
+
+.settingsButtonGrid {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+.settingsDescription {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.dangerZoneCard {
+  border-color: #f0cdcd;
+}
+
+.dangerText {
+  color: var(--danger);
+}
+
+
+/* =====================================================
+ MODALS
+===================================================== */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+      rgba(17, 24, 39, 0.45);
+
+  backdrop-filter: blur(5px);
+}
+
+.modalOverlay.open {
+  display: flex;
+}
+
+.modalCard {
+  width: min(680px, 100%);
+
+  max-height: 86vh;
+  overflow-y: auto;
+
+  padding: 22px;
+
+  border-radius: var(--radius-md);
+
+  background: white;
+
+  box-shadow:
+      0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+.smallModal {
+  width: min(470px, 100%);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 18px;
+}
+
+.modalHeader h2 {
+  margin: 3px 0 0;
+}
+
+.largeSearchInput {
+  width: 100%;
+  min-height: 50px;
+
+  padding: 0 14px;
+
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+
+  outline: 0;
+
+  font-size: 16px;
+}
+
+.modalSearchResults {
+  max-height: 330px;
+  overflow-y: auto;
+
+  margin-top: 12px;
+}
+
+.manualAddArea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  margin-top: 18px;
+  padding-top: 18px;
+
+  border-top: 1px solid var(--border);
+}
+
+.manualAddArea p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.formStack {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.confirmMessage {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+
+/* =====================================================
+ TOASTS
+===================================================== */
+
+.toastContainer {
+  position: fixed;
+  top: 88px;
+  right: 18px;
+  z-index: 200;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.toastMessage {
+  min-width: 260px;
+  max-width: 380px;
+
+  padding: 13px 15px;
+
+  border-radius: 12px;
+
+  background: #1f2937;
+  color: white;
+
+  box-shadow: var(--shadow-md);
+
+  font-size: 13px;
+  font-weight: 600;
+
+  animation: toastIn 0.22s ease;
+}
+
+.toastMessage.success {
+  background: var(--success);
+}
+
+.toastMessage.warning {
+  background: var(--warning);
+}
+
+.toastMessage.error {
+  background: var(--danger);
+}
+
+@keyframes toastIn {
+  from {
+      opacity: 0;
+      transform: translateY(-8px);
+  }
+
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+
+
+/* =====================================================
+ LOADING
+===================================================== */
+
+.loadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  background:
+      rgba(255, 255, 255, 0.82);
+
+  backdrop-filter: blur(4px);
+}
+
+.loadingOverlay.show {
+  display: flex;
+}
+
+.loadingCard {
+  min-width: 180px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 22px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  background: white;
+
+  box-shadow: var(--shadow-md);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+
+  border: 4px solid #e9edf4;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+      transform: rotate(360deg);
+  }
+}
+
+
+/* =====================================================
+ HELPERS
+===================================================== */
+
+.hidden {
+  display: none !important;
+}
+
+.textSuccess {
+  color: var(--success);
+}
+
+.textWarning {
+  color: var(--warning);
+}
+
+.textDanger {
+  color: var(--danger);
+}
+
+.rowCompleted {
+  background: #f3fbf7;
+}
+
+.rowReceiving {
+  background: #f5f9ff;
+}
+
+.rowOver {
+  background: #fff5f5;
+}
+
+.rowManual {
+  background: #fffaf0;
+}
+/* =====================================================
+   MEDRYVO BRAND SYSTEM — PHASE 1 FOUNDATION
+===================================================== */
+:root{
+  --bg:#f6f8fc;
+  --surface:#ffffff;
+  --surface-soft:#f8fbff;
+  --border:#e5eaf2;
+  --text:#0f2442;
+  --text-soft:#6c7890;
+  --primary:#0D47A1;
+  --primary-dark:#08367b;
+  --primary-soft:#eef5ff;
+  --accent:#FF8A00;
+  --accent-dark:#e87900;
+  --accent-soft:#fff3e4;
+  --shadow-sm:0 6px 18px rgba(13,71,161,.06);
+  --shadow-md:0 18px 44px rgba(13,71,161,.10);
+}
+body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
+.topBar{min-height:72px;border-bottom-color:#e7ebf1;box-shadow:0 1px 0 rgba(13,71,161,.02);}
+.pageHeading h1{font-weight:800;letter-spacing:-.35px;color:#102746;}
+.primaryButton{background:linear-gradient(135deg,var(--primary),#1769c2);border-color:var(--primary);box-shadow:0 8px 18px rgba(13,71,161,.14);}
+.primaryButton:hover{background:linear-gradient(135deg,var(--primary-dark),var(--primary));}
+.warningButton{background:var(--accent);border-color:var(--accent);color:#fff;}
+.card,.panel,.statCard{border-color:#e6ebf3;box-shadow:var(--shadow-sm);}
+.medryvoLogoSvg{display:block;width:100%;height:100%;}
+
+/* PHARMFLOW BRAND SYSTEM — PHASE 2B */
+:root{--primary:#A65F3A;--primary-dark:#7A3F27;--primary-soft:#F6EAE1;--brand-orange:#FF8A00;--brand-orange-soft:#FFF2E2;--brand-navy:#0C1D38;--bg:#F4F7FB;--border:#E1E8F2;--text:#14213A;--text-soft:#65738A}body{background:radial-gradient(circle at 90% 0%,rgba(11,94,215,.055),transparent 28rem),var(--bg)}.topBar{min-height:80px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(13,43,88,.04)}.pageHeading h1{color:var(--brand-navy);letter-spacing:-.02em}.pageHeading p{color:var(--text-soft)}
+
+/* =====================================================
+   PHARMFLOW — WARM PEARL GLOBAL BACKGROUND
+   Phase 2C.8 visual refinement
+===================================================== */
+:root{
+  --bg:#F5F3EF;
+  --surface-soft:#FAF8F4;
+  --border:#E7E1D8;
+}
+body{background:#F5F3EF;}
+.mainApplication,.mainContent,.appPage{background-color:#F5F3EF;}
+
+/* =====================================================
+   PHARMFLOW — LATTE + COPPER IDENTITY
+===================================================== */
+:root{
+  --primary:#A65F3A;
+  --primary-dark:#87482B;
+  --primary-soft:#F6EAE1;
+  --brand-orange:#B8744F;
+  --brand-orange-soft:#F7ECE4;
+  --brand-navy:#3F3028;
+  --bg:#F3ECE5;
+  --border:#DED0C3;
+  --text:#332B26;
+  --text-soft:#75685F;
+}
+body{background:#F3ECE5;color:var(--text)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline-color:#A65F3A;
+}

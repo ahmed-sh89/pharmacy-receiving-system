@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0D47A1"
+    >
+
+    <meta
+        name="description"
+        content="PharmFlow Pharmacy Operations Platform"
+    >
+
+    <title>PharmFlow | Pharmacy Operations Platform</title>
+
+    <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark.svg">
+    <link rel="shortcut icon" href="assets/pharmflow-mark.svg">
+    <link rel="apple-touch-icon" href="assets/pharmflow-mark.svg">
+
+    <!-- ================================
+         STYLES
+    ================================= -->
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/sidebar.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/dashboard.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/responsive.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/auth.css"
+    >
+
+</head>
+
+
+<body class="authBooting">
+
+<!-- ==================================================
+     AUTHENTICATION GATE — OWNER / ADMIN / STAFF
+=================================================== -->
+<div id="authGate" class="authGate visible">
+    <div class="authShell">
+
+        <section class="authBrandPanel" aria-label="PharmFlow">
+            <div class="authBrandMinimal">
+                <div class="authBrandLogoCard">
+                    <img src="assets/pharmflow-mark.svg" alt="PharmFlow">
+                </div>
+                <div class="authBrandName" data-brand-name>PharmFlow</div>
+                <div class="authBrandTagline">PHARMACY OPERATIONS PLATFORM</div>
+            </div>
+        </section>
+
+
+        <section class="authFormPanel">
+            <div class="authFormPanelInner">
+                <div id="authBootPanel" class="authBootPanel" role="status" aria-live="polite">
+                    <div class="authBootSpinner" aria-hidden="true"></div>
+                    <span class="authEyebrow">SECURE ACCESS</span>
+                    <h2>Preparing PharmFlow</h2>
+                    <p class="authLead">Checking your secure pharmacy access...</p>
+                </div>
+                <div id="authFormsPanel">
+                    <div id="authLoginForm">
+                        <span class="authEyebrow">SECURE ACCESS</span>
+                        <h2>Sign in</h2>
+                        <p class="authLead">Use the account assigned to your pharmacy.</p>
+                        <div class="authField"><label>Email</label><input id="authEmail" type="email" autocomplete="username" placeholder="name@example.com"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+                                <button id="btnToggleAuthPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <label class="authRememberRow">
+                            <input id="authRememberEmail" type="checkbox" checked>
+                            <span>Remember email on this device</span>
+                        </label>
+                        <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
+                        <button id="btnAuthForgotPassword" class="authSecondaryLink authForgotPassword" type="button">Forgot Password?</button>
+                        <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
+                        <button id="btnAuthShowInviteSignup" class="authSecondaryLink" type="button">Activate Pharmacy Admin</button>
+                        <button id="btnAuthShowOwnerSetup" class="authSecondaryLink" type="button" hidden>First system setup — Owner only</button>
+                    </div>
+
+                    <div id="authPublicSignupForm" hidden>
+                        <span class="authEyebrow">NEW PHARMACY</span>
+                        <h2>Request access</h2>
+                        <p class="authLead">Create an account and submit your pharmacy for approval. You cannot use operational data until the System Owner approves the request.</p>
+                        <div class="authField"><label>Your Name</label><input id="publicSignupName" type="text" autocomplete="name" placeholder="Pharmacy manager name"></div>
+                        <div class="authField"><label>Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="publicSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <button id="btnTogglePublicSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <div class="authField"><label>Pharmacy Name</label><input id="publicPharmacyName" type="text" placeholder="Pharmacy name"></div>
+                        <div class="authField"><label>Requested Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="PHARM02"></div>
+                        <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
+                        <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
+                    </div>
+
+                    <div id="authInviteSignupForm" hidden>
+                        <button id="btnAuthShowLoginFromInvite" class="authBackButton" type="button">← Back to Sign In</button>
+                        <span class="authEyebrow">PHARMACY ADMIN</span>
+                        <h2>Activate Admin Account</h2>
+                        <p class="authLead">Use the email that the System Owner assigned to your pharmacy.</p>
+
+                        <div class="authInfoBox">
+                            No invitation code is required. Your email must already be assigned to a pharmacy by the System Owner.
+                        </div>
+
+                        <div class="authField">
+                            <label>Full Name</label>
+                            <input id="inviteSignupName" type="text" autocomplete="name" placeholder="Your name">
+                        </div>
+                        <div class="authField">
+                            <label>Email</label>
+                            <input id="inviteSignupEmail" type="email" autocomplete="email" placeholder="admin@pharmacy.com">
+                        </div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+                                <button id="btnToggleInviteSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+
+                        <button id="btnAuthInviteSignUp" class="authPrimaryButton" type="button">Create / Activate Admin Account</button>
+                    </div>
+                    <div id="authOwnerSignupForm" hidden>
+                        <button id="btnAuthShowLoginFromOwner" class="authBackButton" type="button" aria-label="Back to sign in">← Back to Sign In</button>
+                        <span class="authEyebrow">FIRST SETUP</span>
+                        <h2>Create System Owner</h2>
+                        <p class="authLead">This option works once only. The Owner can create other pharmacies and their Admin invitations.</p>
+                        <div class="authField"><label>Owner Name</label><input id="ownerSignupName" type="text" autocomplete="name" placeholder="Owner name"></div>
+                        <div class="authField"><label>Owner Email</label><input id="ownerSignupEmail" type="email" autocomplete="email" placeholder="Owner email"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="ownerSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <button id="btnToggleOwnerSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <div class="authField"><label>Your Pharmacy Name</label><input id="ownerPharmacyName" type="text" placeholder="Main pharmacy"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="ownerPharmacyCode" type="text" maxlength="24" placeholder="PHARM01"></div>
+                        <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
+                    </div>
+                </div>
+                <template id="authRecoveryTemplate">
+<div id="authRecoveryForm">
+                        <span class="authEyebrow">ACCOUNT SECURITY</span>
+                        <h2>Set a New Password</h2>
+                        <p class="authLead">Choose a new password for your PharmFlow account.</p>
+                        <div class="authInfoBox authRecoveryInfo">Your recovery link is active. Enter a new password below.</div>
+                        <div class="authField">
+                            <label>New Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authRecoveryPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+                                <button id="btnToggleRecoveryPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <div class="authField">
+                            <label>Confirm New Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authRecoveryPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat the new password">
+                                <button id="btnToggleRecoveryPasswordConfirm" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <button id="btnAuthRecoverySave" class="authPrimaryButton" type="button">Update Password</button>
+                        <div id="authRecoveryMessage" class="authMessage" role="status" aria-live="polite"></div>
+                    </div>
+                </template>
+<div id="authAccessPanel" hidden>
+                    <span class="authEyebrow">ACCOUNT CREATED</span>
+                    <h2>Complete access</h2>
+                    <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
+
+                    <div id="pendingStandardAccessBox">
+                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Staff can use an invitation code, or a pharmacy manager can submit a new pharmacy request for Owner approval.</div>
+                        <div class="authField"><label>Invitation Code (Staff)</label><input id="pendingInviteToken" type="text" autocomplete="off" placeholder="Invitation code"></div>
+                        <button id="btnRedeemInvite" class="authPrimaryButton" type="button">Activate Staff Access</button>
+                        <div class="authDivider"><span>OR</span></div>
+                        <div class="authField"><label>Your Name</label><input id="pendingRegistrationApplicantName" type="text" placeholder="Pharmacy manager name"></div>
+                        <div class="authField"><label>Pharmacy Name</label><input id="pendingRegistrationPharmacyName" type="text" placeholder="Pharmacy name"></div>
+                        <div class="authField"><label>Requested Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="PHARM02"></div>
+                        <button id="btnSubmitPendingRegistration" class="authPrimaryButton" type="button">Submit Pharmacy for Approval</button>
+                    </div>
+
+                    <div id="pendingRegistrationStatusBox" hidden>
+                        <div class="pendingApprovalCard">
+                            <span class="authEyebrow">PHARMACY REQUEST</span>
+                            <h3 id="pendingRegistrationPharmacy">-</h3>
+                            <div class="pendingApprovalMeta"><span>Code</span><strong id="pendingRegistrationCode">-</strong></div>
+                            <div class="pendingApprovalMeta"><span>Status</span><strong id="pendingRegistrationStatus">PENDING</strong></div>
+                            <p id="pendingRegistrationNote">Waiting for System Owner approval.</p>
+                        </div>
+                    </div>
+
+                    <div id="pendingOwnerSetupBox" hidden>
+                        <div class="authSetupNote">No System Owner exists yet. Complete the one-time Owner setup.</div>
+                        <div class="authField"><label>Your Pharmacy Name</label><input id="pendingOwnerPharmacyName" type="text" placeholder="Main pharmacy"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingOwnerPharmacyCode" type="text" placeholder="PHARM01"></div>
+                        <button id="btnCompleteOwnerSetup" class="authPrimaryButton" type="button">Become System Owner</button>
+                    </div>
+
+                    <button id="btnPendingLogout" class="authSecondaryLink" type="button">Sign out</button>
+                </div>
+
+                <div id="authMessage" class="authMessage"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div id="app">
+
+
+    <!-- ==================================================
+         SIDEBAR OVERLAY
+    =================================================== -->
+
+    <div
+        id="sidebarOverlay"
+        class="sidebarOverlay"
+    ></div>
+
+
+    <!-- ==================================================
+         SIDEBAR
+    =================================================== -->
+
+    <aside
+        id="sidebar"
+        class="sidebar"
+    >
+
+        <!-- BRAND -->
+
+        <div class="sidebarBrand">
+
+            <div class="brandLogo"><img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true"></div>
+
+
+            <div class="brandText">
+
+                <strong data-brand-name>PharmFlow</strong>
+                <span data-brand-tagline>Pharmacy Operations Platform</span>
+
+            </div>
+
+
+            <button
+                id="btnCloseSidebar"
+                class="sidebarCloseButton"
+                type="button"
+                aria-label="Close sidebar"
+            >
+
+                ✕
+
+            </button>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav class="sidebarNavigation">
+
+
+            <button
+                class="sidebarItem active"
+                type="button"
+                data-page="dashboard"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.2a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
+
+                <span>
+                    Dashboard
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="receiving"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span>
+
+                <span>
+                    Receiving
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="files"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span>
+
+                <span>
+                    Orders
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="reports"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+
+                <span>
+                    Reports
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="sessions"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3M18 7l3 3-3 3M6 17l-3-3 3-3"/></svg></span>
+
+                <span>
+                    Handheld & Sessions
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="archive"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM3 4h18v4H3zM9 12h6"/></svg></span>
+
+                <span>
+                    Archive
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="returnsArchive"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H4v5M4 12a8 8 0 1 0 2-5"/></svg></span>
+
+                <span>
+                    Returns Archive
+                </span>
+
+            </button>
+
+
+            <button
+                class="sidebarItem"
+                type="button"
+                data-page="settings"
+            >
+
+                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span>
+
+                <span>
+                    Settings
+                </span>
+
+            </button>
+
+
+        </nav>
+
+
+        <!-- SIDEBAR FOOTER -->
+
+        <div class="sidebarFooter">
+
+            <div class="accountIdentity">
+                <div class="accountAvatar">P</div>
+                <div class="accountIdentityText">
+                    <strong id="accountPharmacyName">Pharmacy</strong>
+                    <small id="accountUserName">User</small>
+                </div>
+                <span id="accountUserRole" class="accountRoleBadge"></span>
+            </div>
+            <button id="btnLogout" class="sidebarLogoutButton" type="button">Sign Out</button>
+
+            <div class="autoSaveStatus">
+
+                <span class="statusDot"></span>
+
+                <div>
+
+                    <strong>
+                        Auto Save
+                    </strong>
+
+                    <small>
+                        Enabled
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- ==================================================
+         MAIN APPLICATION
+    =================================================== -->
+
+    <main class="mainApplication">
+
+
+        <!-- ==================================================
+             TOP BAR
+        =================================================== -->
+
+        <header class="topBar">
+
+
+            <div class="topBarLeft">
+
+                <button
+                    id="btnMenu"
+                    class="iconButton"
+                    type="button"
+                    aria-label="Open menu"
+                >
+
+                    ☰
+
+                </button>
+
+
+                <div class="pageHeading">
+
+                    <h1 id="pageTitle" class="pharmacyHeaderName">Pharmacy</h1>
+                    <p id="pageSubtitle">Receiving Dashboard</p>
+
+                </div>
+
+            </div>
+
+
+            <div class="topBarRight">
+
+
+                <div class="headerInfo">
+
+                    <span>
+                        Current Order
+                    </span>
+
+                    <strong id="headerOrderId">
+                        No Order
+                    </strong>
+
+                </div>
+
+
+                <div class="headerInfo">
+
+                    <span>
+                        Session Status
+                    </span>
+
+                    <strong id="headerSessionId">
+                        INACTIVE
+                    </strong>
+
+                </div>
+
+
+                <div
+                    id="systemStatus"
+                    class="systemStatus ready"
+                >
+
+                    READY
+
+                </div>
+
+
+            </div>
+
+
+        </header>
+
+
+        <!-- ==================================================
+             MAIN CONTENT
+        =================================================== -->
+
+        <div class="mainContent">
+
+
+            <!-- ==================================================
+                 DASHBOARD PAGE
+            =================================================== -->
+
+            <section
+                id="page-dashboard"
+                class="appPage active"
+            >
+
+
+                <!-- STATISTICS -->
+
+                <section class="statisticsGrid">
+
+
+                    <article class="statCard dashboardKpiCard" data-kpi="total" role="button" tabindex="0" aria-label="Open total items">
+
+                        <div class="statCardLabel">
+
+                            Total Items
+
+                        </div>
+
+                        <strong id="statTotalItems">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statSuccess dashboardKpiCard" data-kpi="completed" role="button" tabindex="0" aria-label="Open completed items">
+
+                        <div class="statCardLabel">
+
+                            Completed
+
+                        </div>
+
+                        <strong id="statCompleted">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remaining" role="button" tabindex="0" aria-label="Open remaining items">
+
+                        <div class="statCardLabel">
+
+                            Remaining Units
+
+                        </div>
+
+                        <strong id="statRemaining">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statDanger dashboardKpiCard" data-kpi="over" role="button" tabindex="0" aria-label="Open over received items">
+
+                        <div class="statCardLabel">
+
+                            Over Received
+
+                        </div>
+
+                        <strong id="statOver">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard dashboardKpiCard" data-kpi="manual" role="button" tabindex="0" aria-label="Open manual items">
+
+                        <div class="statCardLabel">
+
+                            Manual
+
+                        </div>
+
+                        <strong id="statManual">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard dashboardKpiCard" data-kpi="scans" role="button" tabindex="0" aria-label="Open recent scans">
+
+                        <div class="statCardLabel">
+
+                            Total Scans
+
+                        </div>
+
+                        <strong id="statScans">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                </section>
+
+
+
+                <!-- SCAN AREA -->
+
+                <section class="scanPanel">
+
+
+                    <div class="scanPanelHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ACTIVE RECEIVING
+
+                            </span>
+
+                            <h2>
+
+                                Scan GS1 / Barcode
+
+                            </h2>
+
+                            <p>
+
+                                Keep the cursor in the highlighted box and scan
+                                the product barcode.
+
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            id="scanStatusBadge"
+                            class="scanStatusBadge ready"
+                        >
+
+                            <span class="scanPulse"></span>
+
+                            READY TO SCAN
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- IMPORTANT SCAN BOX -->
+
+                    <div
+                        id="scanBox"
+                        class="scanBox"
+                    >
+
+                        <div class="scanBoxIcon">
+
+                            ▥
+
+                        </div>
+
+
+                        <input
+                            id="barcodeInput"
+                            type="text"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            placeholder="SCAN BARCODE HERE"
+                        >
+
+
+                        <div class="scanBoxIndicator">
+
+                            SCANNER
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="scanPanelFooter">
+
+
+                        <button
+                            id="btnQuickSearch"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            🔍 Search Item
+
+                        </button>
+
+
+                        <span>
+
+                            The scanner input will be captured automatically.
+
+                        </span>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- LAST SCAN -->
+
+                <section
+                    id="lastScanCard"
+                    class="contentCard lastScanCard"
+                >
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                LATEST ACTIVITY
+
+                            </span>
+
+                            <h3>
+
+                                Last Scan
+
+                            </h3>
+
+                        </div>
+
+
+                        <span id="lastScanTime">
+
+                            -
+
+                        </span>
+
+
+                    </div>
+
+
+                    <div class="lastScanGrid">
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Item Name
+
+                            </span>
+
+                            <strong id="lastItemName">
+
+                                -
+
+                            </strong>
+
+                        </div>
+<div class="lastScanField">
+
+                            <span>
+
+                                Ordered
+
+                            </span>
+
+                            <strong id="lastOrderedQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Received
+
+                            </span>
+
+                            <strong id="lastReceivedQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Remaining
+
+                            </span>
+
+                            <strong id="lastRemainingQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Status
+
+                            </span>
+
+                            <strong id="lastItemStatus">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- PROGRESS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ORDER PROGRESS
+
+                            </span>
+
+                            <h3>
+
+                                Receiving Progress
+
+                            </h3>
+
+                        </div>
+
+
+                        <strong
+                            id="progressLabel"
+                            class="progressPercentage"
+                        >
+
+                            0%
+
+                        </strong>
+
+
+                    </div>
+
+
+                    <div class="progressTrack">
+
+                        <div
+                            id="progressBar"
+                            class="progressBar"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="progressDetails">
+
+
+                        <span id="progressCompletedText">
+
+                            0 Completed
+
+                        </span>
+
+
+                        <span id="progressRemainingText">
+
+                            0 Remaining
+
+                        </span>
+
+
+                    </div>
+
+
+                </section>
+
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 RECEIVING PAGE
+            =================================================== -->
+
+            <section
+                id="page-receiving"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                CURRENT ORDER
+
+                            </span>
+
+                            <h2>
+
+                                Receiving Items
+
+                            </h2>
+
+                        </div>
+
+
+                        <div class="headerActions receivingFilterBar">
+
+                            <details id="receivingIssueFilter" class="issueMultiFilter">
+                                <summary>
+                                    <span>Discrepancy Types</span>
+                                    <strong id="receivingIssueFilterLabel">All discrepancies</strong>
+                                </summary>
+                                <div class="issueMultiFilterMenu" role="group" aria-label="Discrepancy types">
+                                    <label><input type="checkbox" data-receiving-issue value="not_received" checked> Not Received</label>
+                                    <label><input type="checkbox" data-receiving-issue value="partial" checked> Partial Shortage</label>
+                                    <label><input type="checkbox" data-receiving-issue value="received_any"> Received Any Quantity</label>
+                                    <label><input type="checkbox" data-receiving-issue value="over" checked> Over Received</label>
+                                    <label><input type="checkbox" data-receiving-issue value="manual" checked> Manual / Unordered Extra</label>
+                                    <div class="issueMultiFilterActions">
+                                        <button type="button" id="btnSelectAllReceivingIssues">Select all</button>
+                                        <button type="button" id="btnClearReceivingIssues">Clear</button>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <select id="receivingCategoryFilter" class="compactSelect" aria-label="Category filter">
+                                <option value="all">All Categories</option>
+                            </select>
+
+                            <button
+                                id="btnReceivingSearch"
+                                class="secondaryButton"
+                                type="button"
+                            >
+
+                                🔍 Search
+
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
+                        <div class="receivingSummaryHeader">
+                            <div>
+                                <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
+                                <h3>Discrepancy Report Preview</h3>
+                                <p>Select the discrepancy types above. The table and exports always use exactly the rows currently displayed.</p>
+                            </div>
+                            <div class="receivingSummaryActions">
+                                <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Discrepancies · Excel</button>
+                                <button id="btnExportReceivingSummaryPDF" class="secondaryButton" type="button">Export Discrepancies · PDF</button>
+                                <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Finalize Receiving</button>
+                            </div>
+                        </div>
+                        <div class="receivingSummaryGrid discrepancyGrid">
+                            <div class="displayedMetric"><span>Displayed Items</span><strong id="rsDisplayedItems">0</strong></div>
+                            <div><span>All Discrepancies</span><strong id="rsTotalItems">0</strong></div>
+                            <div><span>Shortage Items</span><strong id="rsShort">0</strong></div>
+                            <div><span>Over Received</span><strong id="rsOver">0</strong></div>
+                            <div><span>Manual Extras</span><strong id="rsManual">0</strong></div>
+                        </div>
+                    </section>
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    Item Number
+                                </th>
+
+                                <th>
+                                    Item Name
+                                </th>
+
+                                <th>
+                                    Ordered
+                                </th>
+
+                                <th>
+                                    Received
+                                </th>
+
+                                <th>
+                                    Remaining
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="receivingTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 ORDERS & MAPPINGS PAGE
+            =================================================== -->
+
+            <section
+                id="page-files"
+                class="appPage"
+            >
+
+
+                <div class="twoColumnLayout">
+
+
+                    <!-- ORDERS -->
+
+                    <section class="contentCard">
+
+
+                        <div class="cardHeader">
+
+
+                            <div>
+
+                                <span class="sectionEyebrow">
+
+                                    ORDERS
+
+                                </span>
+
+                                <h2>
+
+                                    Active Order Files
+
+                                </h2>
+
+                                <p>
+
+                                    Upload one or more order files. PharmFlow uses the Global GTIN Master automatically.
+
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                id="btnLoadOrders"
+                                class="primaryButton"
+                                type="button"
+                            >
+
+                                + Add Order Files
+
+                            </button>
+
+
+                        </div>
+
+
+                        <input
+                            id="orderFileInput"
+                            type="file"
+                            multiple
+                            accept=".xlsx,.xls"
+                            hidden
+                        >
+
+
+                        <div
+                            id="orderFilesList"
+                            class="fileList"
+                        >
+
+                            <div class="emptyState">
+
+                                No order files loaded.
+
+                            </div>
+
+                        </div>
+
+
+                    </section>
+
+
+
+
+
+                </div>
+
+
+                <!-- IMPORT STATUS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                DATA HEALTH
+
+                            </span>
+
+                            <h3>
+
+                                Order Data Check
+
+                            </h3>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="healthGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Items Loaded
+
+                            </span>
+
+                            <strong id="healthOrderItems">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                GTIN Matched
+
+                            </span>
+
+                            <strong id="healthMappings">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="healthMetricCard healthMetricInteractive" data-health-metric="missing" role="button" tabindex="0" aria-label="Open missing GTIN items">
+
+                            <span>
+
+                                Missing GTIN
+
+                            </span>
+
+                            <strong id="healthMissingBarcode">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                GTIN Conflicts
+
+                            </span>
+
+                            <strong id="healthDuplicateGTIN">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 REPORTS PAGE
+            =================================================== -->
+
+            <section
+                id="page-reports"
+                class="appPage"
+            >
+
+
+                <!-- ITEM RECEIVING HISTORY REPORT -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                HISTORICAL REPORT
+
+                            </span>
+
+                            <h2>
+
+                                Item Receiving Report
+
+                            </h2>
+
+                            <p>
+
+                                Find how much of a specific item was received
+                                during any selected date range.
+
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="reportFilterGrid">
+
+
+                        <div class="formField reportItemField">
+
+                            <label for="reportItemSearch">
+
+                                Item Name / Item Number
+
+                            </label>
+
+
+                            <input
+                                id="reportItemSearch"
+                                type="text"
+                                autocomplete="off"
+                                placeholder="Search by name or item number"
+                            >
+
+
+                            <div
+                                id="reportItemResults"
+                                class="dropdownResults"
+                            ></div>
+
+
+                        </div>
+
+
+                        <div class="formField">
+
+                            <label for="reportFromDate">
+
+                                From Date
+
+                            </label>
+
+                            <input
+                                id="reportFromDate"
+                                type="date"
+                            >
+
+                        </div>
+
+
+                        <div class="formField">
+
+                            <label for="reportToDate">
+
+                                To Date
+
+                            </label>
+
+                            <input
+                                id="reportToDate"
+                                type="date"
+                            >
+
+                        </div>
+
+
+                        <div class="formField reportButtonField">
+
+                            <label>
+
+                                &nbsp;
+
+                            </label>
+
+                            <button
+                                id="btnGenerateItemReport"
+                                class="primaryButton"
+                                type="button"
+                            >
+
+                                Generate Report
+
+                            </button>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- REPORT SUMMARY -->
+
+                    <div class="reportSummaryGrid">
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Selected Item
+
+                            </span>
+
+                            <strong id="reportSelectedItem">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Item Number
+
+                            </span>
+
+                            <strong id="reportSelectedCode">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard highlight">
+
+                            <span>
+
+                                Total Received
+
+                            </span>
+
+                            <strong id="reportTotalReceived">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Number of Orders
+
+                            </span>
+
+                            <strong id="reportOrderCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Order
+                                </th>
+
+                                <th>
+                                    Item Number
+                                </th>
+
+                                <th>
+                                    Item Name
+                                </th>
+
+                                <th>
+                                    Qty
+                                </th>
+
+                                <th>
+                                    Source
+                                </th>
+
+                                <th>
+                                    Device
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="itemReportTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                    <div class="cardFooter">
+
+
+                        <button
+                            id="btnExportItemReport"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            Export Item Report
+
+                        </button>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- ITEM TRANSFER REPORT — ORIGINAL UPLOADED ORDER ONLY -->
+
+                <section class="contentCard itemTransferReportCard">
+                    <div class="cardHeader itemTransferHeader">
+                        <div>
+                            <span class="sectionEyebrow">OFFICIAL ORDER REPORT</span>
+                            <h2>Item Transfer Report</h2>
+                            <p>Available only after manual receiving finalization. Quantities come exclusively from the original uploaded order.</p>
+                        </div>
+                        <span id="itemTransferAvailability" class="itemTransferAvailability locked">Select a received order</span>
+                    </div>
+
+                    <div class="itemTransferControls">
+                        <div class="formField itemTransferOrderField">
+                            <label for="itemTransferOrderSelect">Received Order</label>
+                            <select id="itemTransferOrderSelect">
+                                <option value="">Select received order</option>
+                            </select>
+                        </div>
+                        <button id="btnLoadItemTransfer" class="primaryButton" type="button">Load Report</button>
+                        <button id="btnExportItemTransferExcel" class="secondaryButton" type="button" disabled>Export Excel</button>
+                        <button id="btnExportItemTransferPDF" class="secondaryButton" type="button" disabled>Export PDF</button>
+                    </div>
+
+                    <div id="itemTransferReportPreview" class="itemTransferPreview hidden">
+                        <div class="itemTransferMetaGrid">
+                            <div><span>Order Number</span><strong id="itemTransferOrderNumber">-</strong></div>
+                            <div><span>Order Date</span><strong id="itemTransferOrderDate">-</strong></div>
+                            <div><span>From Warehouse</span><strong id="itemTransferFromWarehouse">-</strong></div>
+                            <div><span>To Warehouse</span><strong id="itemTransferToWarehouse">-</strong></div>
+                            <div><span>Source File</span><strong id="itemTransferSourceFile">-</strong></div>
+                            <div><span>Total Items</span><strong id="itemTransferItemCount">0</strong></div>
+                        </div>
+
+                        <div class="tableContainer itemTransferTableContainer">
+                            <table class="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Item Number</th>
+                                        <th>Item Name</th>
+                                        <th>Transfer Qty</th>
+                                        <th>Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemTransferTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 CLOUD SESSION PAGE
+            =================================================== -->
+
+            <section
+                id="page-sessions"
+                class="appPage"
+            >
+
+                <section class="contentCard cloudSessionHero">
+                    <div class="cardHeader">
+                        <div>
+                            <span class="sectionEyebrow">SHARED RECEIVING</span>
+                            <h2>PC + Handheld Live Session</h2>
+                            <p>Create the session on the PC, then join from the Handheld using the session number or QR code. Receiving stays live across both devices.</p>
+                        </div>
+                        <div class="cloudStatusPill" id="cloudSyncStatus">LOCAL</div>
+                    </div>
+
+                    <div class="cloudActionGrid">
+                        <button id="btnCreateSession" class="largeActionCard" type="button">
+                            <span class="actionIcon">☁</span>
+                            <strong>Create Shared Session</strong>
+                            <small>PC: upload the current order and start shared receiving.</small>
+                        </button>
+
+                        <div class="cloudJoinCard">
+                            <span class="sectionEyebrow">JOIN FROM HANDHELD</span>
+                            <strong>Session Number</strong>
+                            <div class="cloudJoinRow">
+                                <input id="cloudSessionCodeInput" class="cloudCodeInput" inputmode="numeric" maxlength="8" placeholder="Enter session number" autocomplete="off">
+                                <button id="btnJoinCloudSession" class="primaryButton" type="button">Join</button>
+                            </div>
+                            <small>Enter the number shown on the PC, or scan the QR code.</small>
+                        </div>
+                    </div>
+
+                    <div id="cloudSessionQRWrap" class="cloudQRPanel hidden">
+                        <div>
+                            <span class="sectionEyebrow">SESSION STATUS</span>
+                            <div id="cloudSessionCodeDisplay" class="cloudSessionCode">CONNECTED</div>
+                            <p>Scan this QR with the Handheld to open the same receiving workspace.</p>
+                            <button id="btnRefreshCloudNow" class="secondaryButton" type="button">↻ Sync Now</button>
+                            <button id="btnLeaveCloudSession" class="secondaryButton" type="button">Disconnect</button>
+                        </div>
+                        <div id="cloudSessionQR" class="cloudQRCode" aria-label="Session QR code"></div>
+                    </div>
+                </section>
+
+                <section class="contentCard">
+                    <div class="cardHeader">
+                        <div>
+                            <span class="sectionEyebrow">CURRENT SESSION</span>
+                            <h3>Session Information</h3>
+                        </div>
+                    </div>
+
+                    <div class="sessionInfoGrid">
+                        <div><span>Session Status</span><strong id="sessionPageId">INACTIVE</strong></div>
+                        <div><span>Device ID</span><strong id="sessionDeviceId">-</strong></div>
+                        <div><span>Pending Sync</span><strong id="sessionQueueCount">0</strong></div>
+                        <div><span>Last Cloud Sync</span><strong id="sessionLastSave">-</strong></div>
+                    </div>
+                </section>
+
+                <details class="contentCard emergencyTools">
+                    <summary><strong>Emergency Offline Tools</strong> — use only if cloud receiving is unavailable</summary>
+                    <div class="actionCardGrid emergencyActionGrid">
+                        <button id="btnPrepareZebraWork" class="largeActionCard" type="button"><span class="actionIcon">▣</span><strong>Prepare Handheld Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnLoadZebraWork" class="largeActionCard" type="button"><span class="actionIcon">⇧</span><strong>Load Handheld Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnExportZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇩</span><strong>Export Handheld Session</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnMergeZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇄</span><strong>Merge Handheld Session</strong><small>Emergency recovery only.</small></button>
+                    </div>
+                </details>
+
+                <input id="zebraWorkFileInput" type="file" hidden>
+                <input id="zebraSessionFileInput" type="file" hidden>
+
+            </section>
+
+            <!-- ==================================================
+                 ARCHIVE PAGE
+            =================================================== -->
+
+            <section
+                id="page-archive"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                HISTORICAL DATA
+
+                            </span>
+
+                            <h2>
+
+                                Receiving Archive
+
+                            </h2>
+
+                            <p>
+
+                                Completed orders remain here even after the
+                                current workspace is reset.
+
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="archiveSummaryGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Archived Orders
+
+                            </span>
+
+                            <strong id="archiveOrderCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Receiving Transactions
+
+                            </span>
+
+                            <strong id="archiveTransactionCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    Order Number
+                                </th>
+
+                                <th>
+                                    Order Date
+                                </th>
+
+                                <th>
+                                    Received Date
+                                </th>
+
+                                <th>
+                                    Items
+                                </th>
+
+                                <th>
+                                    Received Units
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="archiveTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 RETURNS ARCHIVE PAGE
+            =================================================== -->
+
+            <section
+                id="page-returnsArchive"
+                class="appPage"
+            >
+
+                <section class="returnsArchiveIntroGrid">
+                    <article class="contentCard returnsArchiveIntroCard">
+                        <div class="returnsArchiveIcon">↩</div>
+                        <div>
+                            <span class="sectionEyebrow">REFERENCE FILES</span>
+                            <h2>Returns Archive</h2>
+                            <p>
+                                Keep Excel, PDF, image and supporting files for each return record together.
+                                PharmFlow will store the files as uploaded without reading or analysing their contents.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="contentCard returnsArchiveRulesCard">
+                        <span class="sectionEyebrow">INDEPENDENT DATA</span>
+                        <h3>Separate from Historical Data</h3>
+                        <p>
+                            Return files and return records have their own delete controls.
+                            Deleting Historical Data in Settings will not delete Returns Archive files.
+                        </p>
+                    </article>
+                </section>
+
+                <section class="contentCard returnsArchivePlaceholder">
+                    <div>
+                        <span class="sectionEyebrow">REFERENCE ARCHIVE</span>
+                        <h2>Returns storage workspace</h2>
+                        <p>
+                            The functional archive will use a simple record structure:
+                            Date + Return Number/Title + uploaded files.
+                        </p>
+                    </div>
+                </section>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SETTINGS PAGE
+            =================================================== -->
+
+            <section
+                id="page-settings"
+                class="appPage"
+            >
+
+                <section class="contentCard">
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">ACCOUNT</span><h2>Pharmacy & Access</h2></div>
+                    </div>
+                    <div class="accountSettingsGrid">
+                        <div class="accountSettingTile"><span>Pharmacy</span><strong id="settingsPharmacyName">-</strong></div>
+                        <div class="accountSettingTile"><span>Pharmacy Code</span><strong id="settingsPharmacyCode">-</strong></div>
+                        <div class="accountSettingTile"><span>Signed In User</span><strong id="settingsSignedInUser">-</strong></div>
+                        <div class="accountSettingTile"><span>Role</span><strong id="settingsUserRole">-</strong></div>
+                    </div>
+                    <div class="accountEditActions">
+                        <button id="btnEditAccountProfile" class="secondaryButton" type="button">👤 Edit Account</button>
+                    </div>
+                    <div id="accountEditPanel" class="accountEditPanel hidden" aria-hidden="true">
+                        <div class="accountEditField">
+                            <label for="accountDisplayNameInput">User Name</label>
+                            <input id="accountDisplayNameInput" type="text" maxlength="80" autocomplete="name" placeholder="Your name">
+                        </div>
+                        <div class="accountEditField">
+                            <label for="accountPharmacyNameInput">Pharmacy Name</label>
+                            <input id="accountPharmacyNameInput" type="text" maxlength="120" placeholder="Pharmacy name">
+                        </div>
+                        <div class="accountEditButtons">
+                            <button id="btnSaveAccountProfile" class="primaryButton" type="button">Save Changes</button>
+                            <button id="btnCancelAccountProfile" class="secondaryButton" type="button">Cancel</button>
+                        </div>
+                        <small class="accountSecurityNote">Passwords are never displayed anywhere inside PharmFlow.</small>
+                    </div>
+                </section>
+
+                <section id="ownerManagementCard" class="contentCard ownerControlCenter" hidden>
+                    <div class="cardHeader ownerControlHeader">
+                        <div>
+                            <span class="sectionEyebrow">SYSTEM OWNER</span>
+                            <h2>Owner Control Center</h2>
+                            <p class="settingsDescription">
+                                Approve new pharmacies, control access, and manage the single ADMIN account assigned to each pharmacy.
+                            </p>
+                        </div>
+                        <button id="btnRefreshOwnerControl" class="secondaryButton" type="button">Refresh</button>
+                    </div>
+
+                    <div class="ownerMetricGrid">
+                        <article class="ownerMetricCard">
+                            <span>Total Pharmacies</span>
+                            <strong id="ownerMetricTotalPharmacies">0</strong>
+                        </article>
+                        <article class="ownerMetricCard">
+                            <span>Active</span>
+                            <strong id="ownerMetricActivePharmacies">0</strong>
+                        </article>
+                        <article class="ownerMetricCard ownerMetricWarning">
+                            <span>Pending Requests</span>
+                            <strong id="ownerMetricPendingRequests">0</strong>
+                        </article>
+                        <article class="ownerMetricCard">
+                            <span>Admins Assigned</span>
+                            <strong id="ownerMetricAdminsAssigned">0</strong>
+                        </article>
+                    </div>
+
+                    <div class="ownerControlSection">
+                        <div class="ownerSectionHeader">
+                            <div>
+                                <span class="sectionEyebrow">NEW PHARMACIES</span>
+                                <h3>Registration Requests</h3>
+                            </div>
+                            <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
+                        </div>
+                        <p class="settingsDescription">
+                            Public registrations remain locked until you approve them. Approval makes the registered account the ADMIN of that pharmacy.
+                        </p>
+                        <div id="ownerRegistrationRequests" class="registrationRequestsList">
+                            <div class="registrationEmpty">No pharmacy registration requests yet.</div>
+                        </div>
+                    </div>
+
+                    <div class="ownerControlSection">
+                        <div class="ownerSectionHeader">
+                            <div>
+                                <span class="sectionEyebrow">PHARMACY ACCESS</span>
+                                <h3>Pharmacies & Admins</h3>
+                            </div>
+                        </div>
+                        <p class="settingsDescription">
+                            Each pharmacy uses one ADMIN account. You can assign an email before the ADMIN creates an account; PharmFlow links it automatically when that email activates.
+                        </p>
+                        <div id="ownerPharmacyList" class="ownerPharmacyList">
+                            <div class="registrationEmpty">Loading pharmacies...</div>
+                        </div>
+                    </div>
+
+                    <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
+                </section>
+
+                <section id="memberInviteCard" class="contentCard" hidden aria-hidden="true">
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invitations Disabled</h2></div>
+                    </div>
+                    <p class="settingsDescription">
+                        PharmFlow is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
+                    </p>
+                </section>
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                WORKSPACE
+
+                            </span>
+
+                            <h2>
+
+                                Current Order
+
+                            </h2>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="settingsButtonGrid">
+
+
+                        <button
+                            id="btnSaveNow"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            💾 Save Now
+
+                        </button>
+
+
+                        <button
+                            id="btnExportReports"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            📊 Export Reports
+
+                        </button>
+
+
+
+
+                    </div>
+
+
+                </section>
+
+
+                    <!-- MASTER GTIN DATABASE -->
+
+                    <section class="contentCard masterGTINCard">
+
+                        <div class="cardHeader">
+
+                            <div>
+
+                                <span class="sectionEyebrow">
+                                    BARCODE DATABASE
+                                </span>
+
+                                <h2>
+                                    Global GTIN Database
+                                </h2>
+
+                                <p>
+                                    System-wide GTIN Master. It is stored in Supabase and read-only for pharmacies; only the System Owner can update it.
+                                </p>
+
+                            </div>
+
+                            <button
+                                id="btnUpdateMasterGTIN"
+                                class="primaryButton"
+                                type="button"
+                            >
+                                Update Global GTIN
+                            </button>
+
+                        </div>
+
+                        <input
+                            id="masterGTINFileInput"
+                            type="file"
+                            accept=".xlsx,.xls"
+                            hidden
+                        >
+
+                        <div class="masterGTINStatusGrid">
+
+                            <div>
+                                <span>Status</span>
+                                <strong id="masterGTINStatus">Not installed</strong>
+                            </div>
+
+                            <div>
+                                <span>Global Items</span>
+                                <strong id="masterGTINItemCount">0</strong>
+                            </div>
+
+                            <div>
+                                <span>Current Order Matched</span>
+                                <strong id="masterGTINMatchedCount">0</strong>
+                            </div>
+
+                            <div>
+                                <span>Last Updated</span>
+                                <strong id="masterGTINUpdatedAt">-</strong>
+                            </div>
+
+                        </div>
+
+                        <div id="masterGTINNotice" class="masterGTINNotice">
+                            Update Global GTIN to remove the need to load a Mapping file for every order.
+                        </div>
+
+                        <details class="legacyMappingDetails">
+                            <summary>Optional fallback: Mapping Files</summary>
+
+                            <div class="legacyMappingContent">
+
+                                <button
+                                    id="btnLoadMappings"
+                                    class="secondaryButton"
+                                    type="button"
+                                >
+                                    + Add Mapping Files
+                                </button>
+
+                                <input
+                                    id="mappingFileInput"
+                                    type="file"
+                                    multiple
+                                    accept=".xlsx,.xls"
+                                    hidden
+                                >
+
+                                <div
+                                    id="mappingFilesList"
+                                    class="fileList"
+                                >
+                                    <div class="emptyState">
+                                        No fallback mapping files loaded.
+                                    </div>
+                                </div>
+
+                            </div>
+                        </details>
+
+                    </section>
+
+                <section class="contentCard dangerZoneCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow dangerText">
+
+                                DANGER ZONE
+
+                            </span>
+
+                            <h2>
+
+                                Data Management
+
+                            </h2>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <p class="settingsDescription">
+
+                        Closing the current order does not delete historical
+                        reports. Historical deletion is a separate protected action.
+
+                    </p>
+
+
+                    <div class="settingsButtonGrid">
+
+
+                        <button
+                            id="btnResetWorkspace"
+                            class="dangerOutlineButton"
+                            type="button"
+                        >
+
+                            Reset Current Workspace
+
+                        </button>
+
+
+                        <button
+                            id="btnDeleteAllHistory"
+                            class="dangerButton"
+                            type="button"
+                        >
+
+                            Delete All Historical Data
+
+                        </button>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- ==================================================
+     GLOBAL ITEM SEARCH MODAL
+=================================================== -->
+
+<div
+    id="searchModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard">
+
+
+        <div class="modalHeader">
+
+
+            <div>
+
+                <span class="sectionEyebrow">
+
+                    ITEM LOOKUP
+
+                </span>
+
+                <h2>
+
+                    Search Item
+
+                </h2>
+
+            </div>
+
+
+            <button
+                id="btnCloseSearch"
+                class="iconButton"
+                type="button"
+            >
+
+                ✕
+
+            </button>
+
+
+        </div>
+
+
+        <input
+            id="globalSearchInput"
+            class="largeSearchInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Search by item name or item number..."
+        >
+
+
+        <div
+            id="globalSearchResults"
+            class="modalSearchResults"
+        ></div>
+
+
+        <div
+            id="manualAddArea"
+            class="manualAddArea"
+        >
+
+
+            <p>
+
+                Can't find the item in the current order?
+
+            </p>
+
+
+            <button
+                id="btnOpenManualAdd"
+                class="secondaryButton"
+                type="button"
+            >
+
+                + Add Manual Item
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     MANUAL ITEM MODAL
+=================================================== -->
+
+<div
+    id="manualItemModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard smallModal">
+
+
+        <div class="modalHeader">
+
+
+            <div>
+
+                <span class="sectionEyebrow">
+
+                    MANUAL RECEIVING
+
+                </span>
+
+                <h2>
+
+                    Add Manual Item
+
+                </h2>
+
+            </div>
+
+
+            <button
+                id="btnCloseManualItem"
+                class="iconButton"
+                type="button"
+            >
+
+                ✕
+
+            </button>
+
+
+        </div>
+
+
+        <div class="formStack">
+
+
+            <div class="formField">
+
+                <label for="manualItemCode">
+
+                    Item Number
+
+                </label>
+
+                <input
+                    id="manualItemCode"
+                    type="text"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="formField">
+
+                <label for="manualItemName">
+
+                    Item Name
+
+                </label>
+
+                <input
+                    id="manualItemName"
+                    type="text"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="formField">
+
+                <label for="manualItemQuantity">
+
+                    Quantity
+
+                </label>
+
+                <input
+                    id="manualItemQuantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="1"
+                >
+
+            </div>
+
+
+        </div>
+
+
+        <div class="modalFooter">
+
+
+            <button
+                id="btnCancelManualItem"
+                class="secondaryButton"
+                type="button"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                id="btnSaveManualItem"
+                class="primaryButton"
+                type="button"
+            >
+
+                Add Item
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     CONFIRM MODAL
+=================================================== -->
+
+<div
+    id="confirmModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard smallModal">
+
+
+        <div class="modalHeader">
+
+
+            <h2 id="confirmTitle">
+
+                Confirm
+
+            </h2>
+
+
+        </div>
+
+
+        <p
+            id="confirmMessage"
+            class="confirmMessage"
+        >
+
+            Are you sure?
+
+        </p>
+
+
+        <div class="modalFooter">
+
+
+            <button
+                id="btnConfirmCancel"
+                class="secondaryButton"
+                type="button"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                id="btnConfirmOK"
+                class="dangerButton"
+                type="button"
+            >
+
+                Confirm
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     TOAST
+=================================================== -->
+
+<div
+    id="toastContainer"
+    class="toastContainer"
+></div>
+
+
+<!-- ==================================================
+     LOADING OVERLAY
+=================================================== -->
+
+<div
+    id="loadingOverlay"
+    class="loadingOverlay"
+>
+
+
+    <div class="loadingCard">
+
+
+        <div class="spinner"></div>
+
+
+        <strong id="loadingText">
+
+            Loading...
+
+        </strong>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     EXTERNAL LIBRARIES
+=================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+
+<!-- ==================================================
+     APPLICATION FILES
+=================================================== -->
+
+<script src="js/config.js"></script>
+
+<script src="js/utils.js"></script>
+
+<script src="js/state.js"></script>
+
+<script src="js/router.js"></script>
+
+<script src="js/ui.js"></script>
+
+<script src="js/excel.js"></script>
+
+<script src="js/master-gtin.js"></script>
+
+<script src="js/scanner.js"></script>
+
+<script src="js/receiving.js"></script>
+
+<script src="js/session.js"></script>
+
+<script src="js/reports.js"></script>
+
+<script src="js/supabase.js"></script>
+
+<script src="js/orders.js"></script>
+
+<script src="js/auth.js"></script>
+
+<script src="js/cloud-workspace.js"></script>
+
+<script src="js/app.js"></script>
+
+
+</body>
+
+</html>

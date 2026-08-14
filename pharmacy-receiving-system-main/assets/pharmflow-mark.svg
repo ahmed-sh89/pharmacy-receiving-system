@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PharmFlow">
+  <defs>
+    <linearGradient id="c" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#B8744F"/><stop offset="1" stop-color="#7F4329"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="17" fill="#FFFDF9" stroke="#E0CDBD"/>
+  <path d="M18 15h5v34h-5zm8 0h3v34h-3zm6 0h3v34h-3z" fill="#8C4B2D"/>
+  <path d="M35 15h7c8 0 13 5 13 12s-5 12-13 12h-7V15zm7 7h-1v10h1c4 0 6-2 6-5s-2-5-6-5z" fill="url(#c)"/>
+  <path d="M45 22v10M40 27h10" stroke="#FFFDF9" stroke-width="2.8" stroke-linecap="round"/>
+</svg>
