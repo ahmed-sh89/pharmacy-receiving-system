@@ -685,71 +685,50 @@ function renderSmartScanSearchResults(
 
     results.forEach(item=>{
 
-        const button =
-            document.createElement(
-                "button"
-            );
+        const row = document.createElement("div");
+        row.className = "smartSearchResultRow";
+        row.style.display = "flex";
+        row.style.alignItems = "stretch";
+        row.style.gap = "6px";
 
-        button.type =
-            "button";
-
-        button.className =
-            "smartSearchResult";
-
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "smartSearchResult";
+        button.style.flex = "1 1 auto";
         button.innerHTML = `
-
             <div class="smartSearchResultMain">
-
-                <strong>
-                    ${escapeHTML(
-                        item.itemName
-                    )}
-                </strong>
-
-                <span>
-                    ${escapeHTML(
-                        item.itemCode
-                    )}
-                </span>
-
+                <strong>${escapeHTML(item.itemName)}</strong>
+                <span>${escapeHTML(item.itemCode)}</span>
             </div>
-
             <div class="smartSearchResultQty">
+                <span>${toNumber(item.receivedQty,0)} / ${toNumber(item.orderedQty,0)}</span>
+                <small>Received</small>
+            </div>`;
 
-                <span>
-                    ${toNumber(
-                        item.receivedQty,
-                        0
-                    )}
-                    /
-                    ${toNumber(
-                        item.orderedQty,
-                        0
-                    )}
-                </span>
+        button.addEventListener("click",function(){
+            selectSmartScanItem(item);
+        });
+        row.appendChild(button);
 
-                <small>
-                    Received
-                </small>
+        /* Phase 2C.7.6: the Dashboard inline search must expose the same
+           historical review/correction workflow as the Receiving search. */
+        if(toNumber(item.receivedQty,0) > 0){
+            const review=document.createElement("button");
+            review.type="button";
+            review.className="secondaryButton smartSearchReviewButton";
+            review.textContent="Review / Adjust";
+            review.style.flex="0 0 auto";
+            review.style.padding="0 10px";
+            review.addEventListener("click",function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                closeSmartScanSearch(false);
+                openSearchedItemReview(item);
+            });
+            row.appendChild(review);
+        }
 
-            </div>
-
-        `;
-
-        button.addEventListener(
-            "click",
-            function(){
-
-                selectSmartScanItem(
-                    item
-                );
-
-            }
-        );
-
-        fragment.appendChild(
-            button
-        );
+        fragment.appendChild(row);
 
     });
 
@@ -6257,6 +6236,16 @@ function setupPhase263ActionDelegation(){
     if(document.documentElement.dataset.phase263ActionsBound==="1") return;
     document.documentElement.dataset.phase263ActionsBound="1";
     document.addEventListener("click",event=>{
+        /* Phase 2C.7.6: Dashboard Search Item and Receiving Search are one
+           workflow. Capture binding prevents an older page-specific handler
+           from opening a different/stale search implementation. */
+        const unifiedSearch=event.target.closest?.("#btnQuickSearch, #btnReceivingSearch");
+        if(unifiedSearch){
+            event.preventDefault();
+            event.stopImmediatePropagation?.();
+            openItemSearchModal();
+            return;
+        }
         const received=event.target.closest?.("#btnReceivedItems");
         if(received){event.preventDefault();openDashboardKpiPanel("received");return;}
         const priority=event.target.closest?.("#btnOrderItemsPriority");
