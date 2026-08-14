@@ -3955,3 +3955,181 @@ body:not(.zebraDevice) .masterGTINStatusGrid>div{
   border-color:#E4D8CD;
 }
 body.zebraDevice{background:#F3ECE5 !important;}
+
+
+/* =====================================================
+   PHARMFLOW — PHASE 2C.8.4 OPERATIONAL UI
+   Copper replaces decorative blue. Semantic statuses remain.
+===================================================== */
+body:not(.zebraDevice),
+body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,
+body:not(.zebraDevice) .appPage{
+  background:#F3ECE5 !important;
+}
+body:not(.zebraDevice) .contentCard,
+body:not(.zebraDevice) .scanPanel,
+body:not(.zebraDevice) .statItemsModalCard,
+body:not(.zebraDevice) .orderStatusReportCard{
+  background:#FFFDF9 !important;
+  border-color:#DFD0C3 !important;
+}
+
+/* Scanner focus / input: copper, not blue */
+.scanBox,
+#scanBox,
+.smartScanSearchInput,
+.smartScanSearchArea input{
+  border-color:#C9AE98 !important;
+}
+.scanBox:focus-within,
+#scanBox:focus-within,
+.smartScanSearchArea:focus-within{
+  border-color:#A65F3A !important;
+  box-shadow:0 0 0 3px rgba(166,95,58,.10) !important;
+}
+.scanBoxIcon,
+.scanBoxIndicator{color:#8A4B2E !important;}
+.scanBoxIndicator{background:#F4E5DA !important;}
+
+/* Last Scan: dark espresso identity + copper controls */
+#lastScanCard{
+  background:linear-gradient(145deg,#FFFDF9 0%,#FAF2EB 100%) !important;
+  border-color:#D7C2B0 !important;
+}
+#lastScanCard .cardHeader h3,
+#lastItemName,
+.lastScanHeroName{
+  color:#2B231E !important;
+}
+#lastItemName,
+.lastScanHeroName{
+  font-weight:800 !important;
+}
+#lastScanCard .lastScanHero,
+#lastScanCard .lastScanMetaItem,
+#lastScanCard .lastScanField{
+  background:#FFF9F3 !important;
+  border-color:#E0D0C2 !important;
+}
+#lastScanCard .lastScanField>span,
+#lastScanCard .lastScanMetaItem span,
+#lastScanCard .lastScanMetric span{
+  color:#806F62 !important;
+}
+#lastScanCard .lastScanField>strong,
+#lastScanCard .lastScanMetaItem strong,
+#lastScanCard .lastScanMetric>strong{
+  color:#342A24 !important;
+}
+.lastScanQtyButton,
+.tableQtyButton,
+.quantityButton{
+  color:#82462D !important;
+  border-color:#D0B6A0 !important;
+  background:#FFF8F2 !important;
+}
+.lastScanQtyButton:hover,
+.tableQtyButton:hover,
+.quantityButton:hover{
+  background:#F4E4D8 !important;
+  border-color:#A65F3A !important;
+}
+.lastScanQtyValue,.tableQtyValue{
+  color:#352A23 !important;
+  background:#FFFDF9 !important;
+  border-color:#D0B6A0 !important;
+}
+
+/* Current-item / links / generic operational blue -> copper */
+.smartSelectedMain h3,
+.smartSearchResultMain strong,
+.itemLink,
+.itemCodeLink,
+.orderNumberLink{
+  color:#7F4329 !important;
+}
+.sectionEyebrow{color:#96502F !important;}
+.progressBar{
+  background:linear-gradient(90deg,#A65F3A,#C47A4C 72%,#D99A62 100%) !important;
+}
+
+/* KPI: neutral/copper for non-semantic cards, keep green/amber/red semantic cards */
+.statisticsGrid .statCard{
+  border-color:#DDC8B7 !important;
+  background:linear-gradient(145deg,#FFFDF9 0%,#F8EEE5 100%) !important;
+}
+.statisticsGrid .statCard strong{color:#75412E !important;}
+.statisticsGrid .statCard::after{background:rgba(166,95,58,.05) !important;}
+.statisticsGrid .statSuccess{
+  border-color:#CFE9DB !important;
+  background:linear-gradient(145deg,#FFFDF9 0%,#F1FAF5 100%) !important;
+}
+.statisticsGrid .statSuccess strong{color:#16935B !important;}
+.statisticsGrid .statWarning{
+  border-color:#F0DDB8 !important;
+  background:linear-gradient(145deg,#FFFDF9 0%,#FFF8EE 100%) !important;
+}
+.statisticsGrid .statWarning strong{color:#D9850B !important;}
+.statisticsGrid .statDanger{
+  border-color:#F0D1D4 !important;
+  background:linear-gradient(145deg,#FFFDF9 0%,#FFF3F3 100%) !important;
+}
+.statisticsGrid .statDanger strong{color:#D94A55 !important;}
+.statisticsGrid .statCard[data-kpi="manual"]{
+  border-color:#DDC8B7 !important;
+  background:linear-gradient(145deg,#FFFDF9 0%,#F7EDE5 100%) !important;
+}
+.statisticsGrid .statCard[data-kpi="manual"] strong{color:#8A4B2E !important;}
+.statisticsGrid .statCard[data-kpi="scans"]{
+  border-color:#D7BEAA !important;
+  background:linear-gradient(145deg,#FFFDF9 0%,#F3E3D8 100%) !important;
+}
+.statisticsGrid .statCard[data-kpi="scans"] strong{color:#7F4329 !important;}
+
+/* Dashboard decorative icons: copper unless semantic */
+#page-dashboard .statCard:nth-child(1)::before,
+#page-dashboard .statCard:nth-child(5)::before,
+#page-dashboard .statCard:nth-child(6)::before{
+  background:#F4E4D8 !important;
+  color:#9A5735 !important;
+  border-color:#DEC4B0 !important;
+}
+#page-dashboard .statCard:nth-child(2)::before{
+  background:#EBF9F1 !important;color:#16A05D !important;border-color:#D6F1E2 !important;
+}
+#page-dashboard .statCard:nth-child(3)::before{
+  background:#FFF5E9 !important;color:#EF8A16 !important;border-color:#FDE7C9 !important;
+}
+#page-dashboard .statCard:nth-child(4)::before{
+  background:#FFF0F1 !important;color:#DF3D4D !important;border-color:#F8DADD !important;
+}
+
+/* Table receiving state: warm neutral rather than blue */
+.statusReceiving{
+  color:#7A432D !important;
+  background:#F5E5D9 !important;
+}
+.rowReceiving{background:#FFF9F3 !important;}
+
+/* Modal selected/focus accents */
+.statItemsModalCard,
+.smartSearchModalCard,
+.quantityAdjustmentCard{
+  border-color:#D7C1AE !important;
+}
+.smartSearchResult:hover,
+.smartSearchResult.selected{
+  border-color:#B97A58 !important;
+  background:#FBF0E8 !important;
+}
+
+/* Zebra scanner follows same visual identity */
+body.zebraDevice{background:#F3ECE5 !important;}
+body.zebraDevice .scanBox,
+body.zebraMode #scanBox{border-color:#C9AE98 !important;}
+body.zebraDevice .scanBox:focus-within,
+body.zebraMode #scanBox:focus-within{
+  border-color:#A65F3A !important;
+  box-shadow:0 0 0 3px rgba(166,95,58,.10) !important;
+}

@@ -1344,3 +1344,49 @@ body{background:#F3ECE5;color:var(--text)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
   outline-color:#A65F3A;
 }
+
+
+/* =====================================================
+   PHARMFLOW — PHASE 2C.8.4
+   FINAL LATTE + COPPER / ESPRESSO IDENTITY
+===================================================== */
+:root{
+  --bg:#F3ECE5;
+  --surface:#FFFCF8;
+  --surface-soft:#F8F1EA;
+  --border:#DDCDBF;
+  --text:#2F2722;
+  --text-soft:#75675D;
+  --primary:#A65F3A;
+  --primary-dark:#7F4329;
+  --primary-soft:#F3E3D8;
+  --accent:#B8744F;
+  --accent-dark:#8D4B2D;
+  --accent-soft:#F8EDE5;
+  --brand-navy:#352B25;
+  --shadow-sm:0 6px 18px rgba(92,61,42,.055);
+  --shadow-md:0 18px 44px rgba(92,61,42,.09);
+}
+body{background:#F3ECE5 !important;color:var(--text);}
+a{color:#8A4B2E;}
+.topBar{background:rgba(251,247,243,.97) !important;border-bottom-color:#DED0C2 !important;}
+.pageHeading h1{color:#302620 !important;}
+.pageHeading p{color:#796A60 !important;}
+.primaryButton,
+.scanActionButton,
+.confirmButton{
+  background:linear-gradient(135deg,#B46D47,#95502F) !important;
+  border-color:#95502F !important;
+  color:#fff !important;
+  box-shadow:0 8px 18px rgba(133,73,43,.14) !important;
+}
+.primaryButton:hover,
+.scanActionButton:hover,
+.confirmButton:hover{
+  background:linear-gradient(135deg,#95502F,#7F4329) !important;
+}
+.secondaryButton:hover{border-color:#B88769 !important;color:#7F4329 !important;background:#FBF4EE !important;}
+input:focus,select:focus,textarea:focus{
+  border-color:#B26B44 !important;
+  box-shadow:0 0 0 3px rgba(166,95,58,.11) !important;
+}

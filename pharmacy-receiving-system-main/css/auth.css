@@ -1548,3 +1548,96 @@ body.authBooting #authAccessPanel{
   background:linear-gradient(135deg,#B46D47,#95502F) !important;
   border-color:#95502F !important;
 }
+
+
+/* =====================================================
+   PHARMFLOW — PHASE 2C.8.4 AUTH
+   Approved centered Latte / Copper identity.
+===================================================== */
+.authGate,
+.authGate.visible{
+  background:
+    radial-gradient(circle at 12% 14%,rgba(173,109,69,.08),transparent 25rem),
+    radial-gradient(circle at 88% 86%,rgba(100,73,54,.05),transparent 29rem),
+    linear-gradient(145deg,#F4E8DC 0%,#E9D8C8 100%) !important;
+}
+.authShell{
+  width:min(570px,100%) !important;
+  grid-template-columns:1fr !important;
+  gap:12px !important;
+  align-content:center !important;
+}
+.authBrandPanel{
+  min-height:0 !important;
+  padding:4px 12px 8px !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+.authBrandMinimal{min-height:0 !important;}
+.authBrandLogoCard{
+  width:94px !important;
+  height:94px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+.authBrandLogoCard img{width:100% !important;height:100% !important;}
+.authBrandName{
+  margin-top:8px !important;
+  color:#35291F !important;
+  font-size:clamp(38px,5vw,54px) !important;
+  font-weight:800 !important;
+  letter-spacing:-1.7px !important;
+}
+.authBrandTagline{
+  margin-top:5px !important;
+  color:#985233 !important;
+  font-weight:750 !important;
+  letter-spacing:2.2px !important;
+}
+.authFormPanel{
+  width:100% !important;
+  background:linear-gradient(155deg,#F9EFE5 0%,#F4E7DA 100%) !important;
+  border:1px solid #D2BCA7 !important;
+  border-radius:28px !important;
+  box-shadow:0 26px 64px rgba(86,57,39,.14) !important;
+}
+.authEyebrow{color:#9A5130 !important;}
+.authFormPanel h2{color:#2D241F !important;}
+.authLead{color:#6D5F55 !important;}
+.authField label{color:#46372D !important;font-weight:700 !important;}
+.authField input,
+.authField select,
+.authInput{
+  background:#FFF9F3 !important;
+  border:1px solid #CDB49F !important;
+  color:#2F2722 !important;
+}
+.authField input:focus,
+.authField select:focus,
+.authInput:focus{
+  border-color:#A65F3A !important;
+  box-shadow:0 0 0 3px rgba(166,95,58,.12) !important;
+}
+.authPrimaryButton,.authSubmitButton{
+  background:linear-gradient(135deg,#B46D47,#95502F) !important;
+  color:#fff !important;
+  border-color:#95502F !important;
+  box-shadow:0 11px 24px rgba(139,74,43,.18) !important;
+}
+.authPrimaryButton:hover,.authSubmitButton:hover{
+  background:linear-gradient(135deg,#9B5433,#7F4329) !important;
+}
+.authSecondaryLink,.authBackButton,.authSignupLink{color:#7F4329 !important;}
+.authSignupLink{border-color:#CDB39D !important;background:#FAEFE6 !important;}
+.authDivider span{background:#F6E9DD !important;}
+input[type="checkbox"]{accent-color:#A65F3A !important;}
+@media(max-width:820px){
+  .authShell{gap:7px !important;}
+  .authBrandLogoCard{width:68px !important;height:68px !important;}
+  .authBrandName{font-size:34px !important;}
+  .authBrandPanel{padding:0 8px 3px !important;}
+}

@@ -1,22 +1,25 @@
-PHARMFLOW — CURRENT PROJECT REFERENCE
+PharmFlow — Current Project Reference
+Phase 2C.8.4 — Latte + Copper Identity
 
-Current UI identity:
-- Light Latte global background.
-- Warm Porcelain authentication card.
-- Copper/Brown primary accent instead of blue.
-- Sidebar text 14px / bold 700 for readability.
-- Session number/ID is hidden from normal user-facing UI; only session status is shown.
+Current visual identity:
+- Light Latte page canvas.
+- Copper / muted terracotta primary actions.
+- Espresso / dark brown primary text.
+- Semantic operational colors remain: green success, amber remaining/warning, red over/error.
+- Sidebar text remains 14px and is intentionally bolder for readability.
+- PharmFlow mark is transparent and uses a barcode-inspired copper P.
+- Session Number/ID is not intended for normal user display; status is sufficient.
 
 Current functional baseline:
-- Multi-PC cloud workspace / receiving remains enabled.
-- Multiple GTIN per item / safe pharmacy GTIN learning remains enabled.
-- Global GTIN Master remains the central master source.
-- Receiving, reports, orders, archive, returns archive and handheld logic were not intentionally changed by this visual cleanup.
+- Multiple GTIN per item / pharmacy-learned GTIN workflow.
+- Unknown GTIN resolution and safe mapping.
+- Multi-PC/cloud workspace logic remains unchanged.
+- Receiving, reports, archive, returns, and handheld logic unchanged.
 
-Database reference SQL retained in this package because it documents/installs database-side functionality:
+Database references retained:
 - PHASE2B6_SERVER_SESSION_TERMINATION.sql
 - PHASE2C51_DELETE_SINGLE_ORDER.sql
 - PHASE2C61_SAFE_GTIN_LEARNING.sql
+- PHASE2C81_GTIN_AMBIGUITY_HOTFIX.sql (reference to successful ambiguity fix)
 
-Important:
-Do not rerun database SQL on an existing production database unless that migration/fix is specifically required.
+No SQL is required for this visual Phase 2C.8.4 update.

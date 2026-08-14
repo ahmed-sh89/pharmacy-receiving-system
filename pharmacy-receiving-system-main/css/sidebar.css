@@ -568,3 +568,64 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
 .sidebarItem.active{font-weight:750 !important;color:#7F4329 !important;box-shadow:inset 4px 0 0 #A65F3A !important;}
 .sidebarItem.active .sidebarIcon,.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}
 .sidebarItem:hover{color:#7F4329 !important;}
+
+
+/* =====================================================
+   PHARMFLOW — PHASE 2C.8.4 SIDEBAR
+   Stronger text, transparent logo, copper active state.
+===================================================== */
+.sidebar{
+  background:linear-gradient(180deg,#EADDCF 0%,#E5D5C3 58%,#DECAB6 100%) !important;
+  border-right:1px solid #CDB7A2 !important;
+  color:#342B25 !important;
+}
+.sidebarBrand{border-bottom-color:#D3BEAA !important;}
+.brandLogo{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:1px !important;
+}
+.brandLogo img{width:100% !important;height:100% !important;object-fit:contain !important;}
+.brandText strong{color:#352A23 !important;font-size:18px !important;font-weight:800 !important;}
+.brandText span{color:#715E50 !important;font-weight:650 !important;}
+.sidebarItem{
+  color:#4B3E34 !important;
+  font-size:14px !important;
+  font-weight:750 !important;
+  letter-spacing:0 !important;
+}
+.sidebarItem .sidebarIcon{color:#6D5748 !important;}
+.sidebarItem:hover{
+  background:rgba(255,252,248,.55) !important;
+  color:#793F27 !important;
+}
+.sidebarItem.active{
+  background:linear-gradient(90deg,#F9EFE7 0%,#F5E7DC 100%) !important;
+  color:#763D26 !important;
+  font-weight:800 !important;
+  box-shadow:inset 4px 0 0 #A65F3A !important;
+}
+.sidebarItem.active .sidebarIcon,
+.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}
+.sidebarFooter{
+  background:rgba(236,220,205,.84) !important;
+  border-top-color:#D2BCA7 !important;
+}
+.accountIdentity{
+  background:rgba(255,252,248,.72) !important;
+  border-color:#D3BFAA !important;
+}
+.accountAvatar{
+  background:#F3E4D8 !important;
+  color:#82472E !important;
+}
+.accountIdentityText strong{color:#3A2F28 !important;}
+.accountIdentityText small{color:#74665C !important;}
+.accountRoleBadge{background:#F1E0D3 !important;color:#7B432C !important;}
+.sidebarLogoutButton{
+  color:#4B3B31 !important;
+  border-color:#C9AF99 !important;
+  background:rgba(255,252,248,.64) !important;
+}
+.sidebarLogoutButton:hover{background:#FFF8F2 !important;color:#783F28 !important;}
