@@ -70,7 +70,7 @@
       linear-gradient(
           135deg,
           #1a73e8,
-          #A65F3A
+          #0b5ed7
       );
 
   box-shadow:
@@ -436,7 +436,7 @@ body.sidebarCollapsed .sidebarItem:hover::after {
 .sidebarLogoutButton{border-color:rgba(255,255,255,.18);}
 
 /* PHARMFLOW SIDEBAR — PHASE 2B */
-.sidebar{width:272px;background:radial-gradient(circle at 10% 0%,rgba(255,138,0,.12),transparent 16rem),linear-gradient(180deg,#0B1C36 0%,#102A50 100%);box-shadow:10px 0 36px rgba(10,31,61,.10)}.mainApplication{margin-left:272px}.sidebarBrand{min-height:88px}.brandLogo{width:46px;height:46px;padding:4px;border-radius:15px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.18)}.brandLogo img{display:block;width:100%;height:100%}.brandText strong{font-size:17px}.sidebarItem{min-height:48px;border-radius:13px}.sidebarItem.active{background:linear-gradient(90deg,#A65F3A,#B8734D);box-shadow:0 10px 24px rgba(3,45,112,.28)}.sidebarItem.active::after{content:"";width:4px;height:22px;border-radius:4px;background:#FF9A22;margin-left:auto}
+.sidebar{width:272px;background:radial-gradient(circle at 10% 0%,rgba(255,138,0,.12),transparent 16rem),linear-gradient(180deg,#0B1C36 0%,#102A50 100%);box-shadow:10px 0 36px rgba(10,31,61,.10)}.mainApplication{margin-left:272px}.sidebarBrand{min-height:88px}.brandLogo{width:46px;height:46px;padding:4px;border-radius:15px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.18)}.brandLogo img{display:block;width:100%;height:100%}.brandText strong{font-size:17px}.sidebarItem{min-height:48px;border-radius:13px}.sidebarItem.active{background:linear-gradient(90deg,#0B5ED7,#176FDE);box-shadow:0 10px 24px rgba(3,45,112,.28)}.sidebarItem.active::after{content:"";width:4px;height:22px;border-radius:4px;background:#FF9A22;margin-left:auto}
 
 /* =====================================================
    PHARMFLOW — APPROVED LIGHT SIDEBAR VISUAL SYSTEM
@@ -499,7 +499,7 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
 }
 .sidebarItem:hover{background:#EAF1F8 !important;}
 .sidebarItem.active{
-  background:linear-gradient(90deg,#F3E4D8 0%,#F8EFE8 100%) !important;
+  background:linear-gradient(90deg,#E7F0FC 0%,#EEF5FC 100%) !important;
 }
 .sidebarFooter{background:rgba(241,244,246,.78) !important;border-top-color:#E0E5EA !important;}
 
@@ -513,8 +513,8 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
 .sidebarBrand{border-bottom-color:#E6E0D7 !important;}
 .sidebarFooter{background:rgba(241,238,232,.82) !important;border-top-color:#E4DED5 !important;}
 .sidebarNavigation::-webkit-scrollbar-thumb{background:#D5CEC4 !important;}
-.sidebarItem:hover{background:#ECE8E1 !important;color:#8A4B2E !important;}
-.sidebarItem.active{background:linear-gradient(90deg,#F1E6DC 0%,#F1F2F1 100%) !important;}
+.sidebarItem:hover{background:#ECE8E1 !important;color:#174F9D !important;}
+.sidebarItem.active{background:linear-gradient(90deg,#E9EEF5 0%,#F1F2F1 100%) !important;}
 .accountIdentity{border-color:#E4DED5 !important;}
 
 
@@ -538,15 +538,15 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
 .sidebarItem .sidebarIcon{color:#716154 !important;}
 .sidebarItem:hover{
   background:rgba(255,255,255,.38) !important;
-  color:#8A4B2E !important;
+  color:#2E5F98 !important;
 }
-.sidebarItem:hover .sidebarIcon{color:#9A5735 !important;}
+.sidebarItem:hover .sidebarIcon{color:#2E6DB4 !important;}
 .sidebarItem.active{
   background:linear-gradient(90deg,#F8F1EA 0%,#F1E6DA 100%) !important;
-  color:#8A4B2E !important;
-  box-shadow:inset 3px 0 0 #A65F3A !important;
+  color:#245E9E !important;
+  box-shadow:inset 3px 0 0 #3D7FC4 !important;
 }
-.sidebarItem.active .sidebarIcon{color:#9A5735 !important;}
+.sidebarItem.active .sidebarIcon{color:#2B6EB6 !important;}
 .sidebarFooter{
   background:rgba(235,221,207,.84) !important;
   border-top-color:#D5C2AE !important;
@@ -563,69 +563,18 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
 }
 .sidebarLogoutButton:hover{background:#F8F1EA !important;}
 
-/* Final sidebar readability + copper accent */
-.sidebarItem{font-size:14px !important;font-weight:700 !important;letter-spacing:0 !important;}
-.sidebarItem.active{font-weight:750 !important;color:#7F4329 !important;box-shadow:inset 4px 0 0 #A65F3A !important;}
-.sidebarItem.active .sidebarIcon,.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}
-.sidebarItem:hover{color:#7F4329 !important;}
 
-
-/* =====================================================
-   PHARMFLOW — PHASE 2C.8.4 SIDEBAR
-   Stronger text, transparent logo, copper active state.
-===================================================== */
+/* PHARMFLOW 2C.8.5 — FINAL SIDEBAR */
 .sidebar{
-  background:linear-gradient(180deg,#EADDCF 0%,#E5D5C3 58%,#DECAB6 100%) !important;
-  border-right:1px solid #CDB7A2 !important;
-  color:#342B25 !important;
+  background:linear-gradient(180deg,#E8D7C7 0%,#E1CDBA 100%) !important;
+  border-right-color:#CBB19A !important;color:#382C25 !important;
 }
-.sidebarBrand{border-bottom-color:#D3BEAA !important;}
-.brandLogo{
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-  padding:1px !important;
-}
-.brandLogo img{width:100% !important;height:100% !important;object-fit:contain !important;}
-.brandText strong{color:#352A23 !important;font-size:18px !important;font-weight:800 !important;}
-.brandText span{color:#715E50 !important;font-weight:650 !important;}
-.sidebarItem{
-  color:#4B3E34 !important;
-  font-size:14px !important;
-  font-weight:750 !important;
-  letter-spacing:0 !important;
-}
-.sidebarItem .sidebarIcon{color:#6D5748 !important;}
-.sidebarItem:hover{
-  background:rgba(255,252,248,.55) !important;
-  color:#793F27 !important;
-}
+.brandLogo{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;}
+.sidebarItem{color:#493A30 !important;font-size:14px !important;font-weight:750 !important;}
+.sidebarItem .sidebarIcon{color:#6D5545 !important;}
+.sidebarItem:hover{background:rgba(255,249,243,.55) !important;color:#7B422B !important;}
 .sidebarItem.active{
-  background:linear-gradient(90deg,#F9EFE7 0%,#F5E7DC 100%) !important;
-  color:#763D26 !important;
-  font-weight:800 !important;
+  background:#F5E6DA !important;color:#743D27 !important;font-weight:800 !important;
   box-shadow:inset 4px 0 0 #A65F3A !important;
 }
-.sidebarItem.active .sidebarIcon,
-.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}
-.sidebarFooter{
-  background:rgba(236,220,205,.84) !important;
-  border-top-color:#D2BCA7 !important;
-}
-.accountIdentity{
-  background:rgba(255,252,248,.72) !important;
-  border-color:#D3BFAA !important;
-}
-.accountAvatar{
-  background:#F3E4D8 !important;
-  color:#82472E !important;
-}
-.accountIdentityText strong{color:#3A2F28 !important;}
-.accountIdentityText small{color:#74665C !important;}
-.accountRoleBadge{background:#F1E0D3 !important;color:#7B432C !important;}
-.sidebarLogoutButton{
-  color:#4B3B31 !important;
-  border-color:#C9AF99 !important;
-  background:rgba(255,252,248,.64) !important;
-}
-.sidebarLogoutButton:hover{background:#FFF8F2 !important;color:#783F28 !important;}
+.sidebarItem.active .sidebarIcon,.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}

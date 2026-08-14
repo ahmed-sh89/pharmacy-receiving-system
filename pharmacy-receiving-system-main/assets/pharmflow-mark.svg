@@ -1,20 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PharmFlow">
-  <defs>
-    <linearGradient id="pfCopper" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#C47A4C"/>
-      <stop offset="1" stop-color="#8B482B"/>
-    </linearGradient>
-  </defs>
-  <!-- Transparent background -->
-  <g fill="url(#pfCopper)">
-    <!-- Barcode stem -->
-    <rect x="8" y="10" width="3" height="44" rx="1"/>
-    <rect x="13" y="10" width="2" height="44" rx="1"/>
-    <rect x="17" y="10" width="4" height="44" rx="1"/>
-    <rect x="23" y="10" width="2" height="44" rx="1"/>
-    <!-- P / flow form -->
-    <path d="M28 10h10.5C49.2 10 56 16.1 56 25.4S49.2 41 38.5 41H34v13h-6V10zm6 7v17h4.1c7 0 11.2-3.1 11.2-8.6S45.1 17 38.1 17H34z"/>
-  </g>
-  <!-- Pharmacy cross -->
-  <path d="M40.5 21v9M36 25.5h9" stroke="#6F3924" stroke-width="2.8" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="PharmFlow">
+<defs><linearGradient id="c" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#C67A4B"/><stop offset="1" stop-color="#8B472A"/></linearGradient></defs>
+<g fill="url(#c)">
+<rect x="8" y="9" width="3" height="46" rx="1"/><rect x="13" y="9" width="2" height="46" rx="1"/>
+<rect x="17" y="9" width="4" height="46" rx="1"/><rect x="23" y="9" width="2" height="46" rx="1"/>
+<path d="M28 9h11c10.7 0 17 6.2 17 15.6S49.7 40 39 40h-5v15h-6V9zm6 7v17h4.5c7 0 10.8-3 10.8-8.5S45.5 16 38.5 16H34z"/>
+</g>
+<path d="M40.5 20.5v10M35.5 25.5h10" stroke="#6F3924" stroke-width="3" stroke-linecap="round"/>
 </svg>

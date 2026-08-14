@@ -147,7 +147,7 @@
   background:
       linear-gradient(
           90deg,
-          #A65F3A,
+          #0b5ed7,
           #4f8fe9
       );
 
@@ -2406,7 +2406,7 @@ body.zebraMode .zebraQuickHeader{
     padding:6px 8px;
     border-radius:8px;
     background:#e8f1ff;
-    color:#A65F3A;
+    color:#0b5ed7;
     font-size:9px;
     font-weight:700;
 }
@@ -2722,7 +2722,7 @@ body.zebraMode .smartScanResults{
 }
 
 /* PHARMFLOW DASHBOARD — PHASE 2B */
-.pharmflowDashboardHero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:18px;align-items:stretch;margin-bottom:18px;padding:26px 28px;border:1px solid #DCE6F3;border-radius:22px;background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.11),transparent 15rem),linear-gradient(135deg,#fff 0%,#F5F9FF 100%);box-shadow:0 12px 34px rgba(18,48,86,.07)}.pharmflowHeroCopy h2{margin:6px 0 8px;color:#0C1D38;font-size:clamp(24px,2.2vw,34px);line-height:1.12;letter-spacing:-.035em}.pharmflowHeroCopy p{max-width:700px;margin:0;color:#65738A;line-height:1.6}.pharmflowContextCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-radius:17px;background:#0D2342;color:#fff;box-shadow:0 12px 26px rgba(12,35,66,.15)}.pharmflowContextCard div{min-width:0;display:flex;flex-direction:column;gap:5px}.pharmflowContextCard span:first-child{font-size:10px;font-weight:700;letter-spacing:.12em;color:#AFC4DF;text-transform:uppercase}.pharmflowContextCard strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}.pharmflowContextCard small{color:#AFC4DF;font-weight:700}.pharmflowRolePill{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:rgba(255,138,0,.16);border:1px solid rgba(255,166,59,.3);color:#FFC06F!important;font-size:10px!important;font-weight:700;letter-spacing:.08em}.pharmflowQuickActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.pharmflowQuickAction{min-height:76px;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;border:1px solid #E0E8F2;border-radius:16px;background:#fff;color:#14213A;box-shadow:0 6px 18px rgba(18,48,86,.045)}.pharmflowQuickAction>span{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#F6EAE1;color:#A65F3A;font-size:18px;font-weight:900}.pharmflowQuickAction:nth-child(1)>span{background:#FFF2E2;color:#E87400}.pharmflowQuickAction div{display:flex;flex-direction:column;gap:3px}.pharmflowQuickAction small{color:#77859A;font-size:10.5px}@media(max-width:1050px){.pharmflowDashboardHero{grid-template-columns:1fr}.pharmflowQuickActions{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pharmflowDashboardHero{padding:20px}.pharmflowQuickAction small{display:none}}@media(max-width:430px){.pharmflowQuickActions{grid-template-columns:1fr}}
+.pharmflowDashboardHero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:18px;align-items:stretch;margin-bottom:18px;padding:26px 28px;border:1px solid #DCE6F3;border-radius:22px;background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.11),transparent 15rem),linear-gradient(135deg,#fff 0%,#F5F9FF 100%);box-shadow:0 12px 34px rgba(18,48,86,.07)}.pharmflowHeroCopy h2{margin:6px 0 8px;color:#0C1D38;font-size:clamp(24px,2.2vw,34px);line-height:1.12;letter-spacing:-.035em}.pharmflowHeroCopy p{max-width:700px;margin:0;color:#65738A;line-height:1.6}.pharmflowContextCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-radius:17px;background:#0D2342;color:#fff;box-shadow:0 12px 26px rgba(12,35,66,.15)}.pharmflowContextCard div{min-width:0;display:flex;flex-direction:column;gap:5px}.pharmflowContextCard span:first-child{font-size:10px;font-weight:700;letter-spacing:.12em;color:#AFC4DF;text-transform:uppercase}.pharmflowContextCard strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}.pharmflowContextCard small{color:#AFC4DF;font-weight:700}.pharmflowRolePill{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:rgba(255,138,0,.16);border:1px solid rgba(255,166,59,.3);color:#FFC06F!important;font-size:10px!important;font-weight:700;letter-spacing:.08em}.pharmflowQuickActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.pharmflowQuickAction{min-height:76px;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;border:1px solid #E0E8F2;border-radius:16px;background:#fff;color:#14213A;box-shadow:0 6px 18px rgba(18,48,86,.045)}.pharmflowQuickAction>span{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#EAF2FF;color:#0B5ED7;font-size:18px;font-weight:900}.pharmflowQuickAction:nth-child(1)>span{background:#FFF2E2;color:#E87400}.pharmflowQuickAction div{display:flex;flex-direction:column;gap:3px}.pharmflowQuickAction small{color:#77859A;font-size:10.5px}@media(max-width:1050px){.pharmflowDashboardHero{grid-template-columns:1fr}.pharmflowQuickActions{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pharmflowDashboardHero{padding:20px}.pharmflowQuickAction small{display:none}}@media(max-width:430px){.pharmflowQuickActions{grid-template-columns:1fr}}
 
 
 /* =====================================================
@@ -2789,7 +2789,7 @@ body.zebraMode .smartScanResults{
 ===================================================== */
 .pharmflowQuickActions{display:none!important}
 .zebraHome,.zebraExpiryShell{display:none}
-.zebraModesButton{border:1px solid #cbd8e8;background:#fff;color:#A65F3A;border-radius:10px;padding:8px 11px;font-weight:850}
+.zebraModesButton{border:1px solid #cbd8e8;background:#fff;color:#0b5ed7;border-radius:10px;padding:8px 11px;font-weight:850}
 
 body.zebraDevice{background:#eef3f9;min-height:100dvh}
 body.zebraDevice .sidebar,
@@ -2813,7 +2813,7 @@ body.zebraDevice.zebraHomeActive .zebraHome{display:block}
 .zebraModeCards{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
 .zebraModeCard{width:100%;display:flex;align-items:center;gap:14px;padding:18px;text-align:left;border:1px solid #d8e4f2;border-radius:18px;background:#fff;color:#10213b;box-shadow:0 7px 20px rgba(18,48,86,.05)}
 .zebraModeCard:active{transform:scale(.992)}
-.zebraModeIcon{width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#F6EAE1;color:#A65F3A;font-size:22px;font-weight:900}
+.zebraModeIcon{width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#eaf2ff;color:#0b5ed7;font-size:22px;font-weight:900}
 .zebraModeCard:nth-child(2) .zebraModeIcon{background:#fff1df;color:#dc7200}
 .zebraModeCard div{display:flex;flex-direction:column;gap:4px}
 .zebraModeCard strong{font-size:18px}
@@ -2848,7 +2848,7 @@ body.zebraDevice.zebraReceivingActive #quantityAdjustmentInput{font-size:22px;fo
 body.zebraDevice.zebraExpiryActive .zebraExpiryShell{display:block}
 .zebraExpiryShell{padding:8px 2px}
 .zebraExpiryTop{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.zebraExpiryTop button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 11px;color:#A65F3A;font-weight:850}
+.zebraExpiryTop button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 11px;color:#0b5ed7;font-weight:850}
 .zebraExpiryTop strong{font-size:18px;color:#10213b}
 .zebraExpiryPlaceholder{padding:20px;border:1px solid #dce6f3;border-radius:18px;background:#fff}
 .zebraExpiryPlaceholder span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#dc7200}
@@ -2923,7 +2923,7 @@ body.zebraDevice.zebraReceivingActive #btnAddSmartQuantity{width:100%!important;
 /* Dedicated Join PC Session screen. */
 .zebraJoinHeader{display:none}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-body.zebraDevice.zebraJoinActive .zebraJoinHeader button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 10px;color:#A65F3A;font-weight:850}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 10px;color:#0b5ed7;font-weight:850}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader div{display:flex;flex-direction:column;gap:1px}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader span{font-size:8px;font-weight:700;letter-spacing:.12em;color:#748298}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader strong{font-size:18px;color:#10213b}
@@ -3957,179 +3957,78 @@ body:not(.zebraDevice) .masterGTINStatusGrid>div{
 body.zebraDevice{background:#F3ECE5 !important;}
 
 
-/* =====================================================
-   PHARMFLOW — PHASE 2C.8.4 OPERATIONAL UI
-   Copper replaces decorative blue. Semantic statuses remain.
-===================================================== */
-body:not(.zebraDevice),
-body:not(.zebraDevice) .mainApplication,
-body:not(.zebraDevice) .mainContent,
-body:not(.zebraDevice) .appPage{
-  background:#F3ECE5 !important;
+/* =========================================================
+   PHARMFLOW 2C.8.5 — FINAL OPERATIONAL SOURCE RULES
+   Remove decorative blue from scanner/Last Scan/general UI.
+========================================================= */
+:root{
+  --pf-blue:#A65F3A !important;
+  --pf-navy:#3B2D25 !important;
+  --pf-ink:#332821 !important;
 }
-body:not(.zebraDevice) .contentCard,
-body:not(.zebraDevice) .scanPanel,
-body:not(.zebraDevice) .statItemsModalCard,
-body:not(.zebraDevice) .orderStatusReportCard{
-  background:#FFFDF9 !important;
-  border-color:#DFD0C3 !important;
+body:not(.zebraDevice),body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,body:not(.zebraDevice) .appPage{
+  background:#F1E5DA !important;
 }
-
-/* Scanner focus / input: copper, not blue */
-.scanBox,
-#scanBox,
-.smartScanSearchInput,
-.smartScanSearchArea input{
-  border-color:#C9AE98 !important;
+body:not(.zebraDevice) .contentCard,body:not(.zebraDevice) .scanPanel{
+  background:#FBF3EC !important;border-color:#D9C3B0 !important;
 }
-.scanBox:focus-within,
-#scanBox:focus-within,
-.smartScanSearchArea:focus-within{
-  border-color:#A65F3A !important;
-  box-shadow:0 0 0 3px rgba(166,95,58,.10) !important;
+#page-dashboard .scanPanel{
+  background:#F8ECE2 !important;border-color:#D2B49B !important;
 }
-.scanBoxIcon,
-.scanBoxIndicator{color:#8A4B2E !important;}
-.scanBoxIndicator{background:#F4E5DA !important;}
-
-/* Last Scan: dark espresso identity + copper controls */
+.scanBox,#scanBox,#page-dashboard .scanBox{
+  border:2px solid #B98262 !important;background:#FFF9F4 !important;
+  box-shadow:none !important;
+}
+.scanBox:focus-within,#scanBox:focus-within,#page-dashboard .scanBox:focus-within{
+  border-color:#A65F3A !important;box-shadow:0 0 0 3px rgba(166,95,58,.12) !important;
+}
+.scanBoxIcon,.scanBoxIndicator{background:#F1DED0 !important;color:#8C492E !important;}
+.scanBoxIndicator{border-color:#D5B9A4 !important;}
 #lastScanCard{
-  background:linear-gradient(145deg,#FFFDF9 0%,#FAF2EB 100%) !important;
-  border-color:#D7C2B0 !important;
+  background:linear-gradient(145deg,#F9EEE5 0%,#F3E2D4 100%) !important;
+  border-color:#D3B79F !important;
 }
-#lastScanCard .cardHeader h3,
-#lastItemName,
-.lastScanHeroName{
-  color:#2B231E !important;
+#lastItemName,.lastScanHeroName,#page-dashboard #lastItemName{
+  color:#2E251F !important;font-weight:800 !important;
 }
-#lastItemName,
-.lastScanHeroName{
-  font-weight:800 !important;
+#lastScanCard .lastScanHero,#lastScanCard .lastScanField,
+#lastScanCard .lastScanMetaItem{
+  background:#FFF8F1 !important;border-color:#DDC8B7 !important;
 }
-#lastScanCard .lastScanHero,
-#lastScanCard .lastScanMetaItem,
-#lastScanCard .lastScanField{
-  background:#FFF9F3 !important;
-  border-color:#E0D0C2 !important;
+.lastScanQtyButton,.tableQtyButton,.quantityButton{
+  color:#82452D !important;background:#FFF7F0 !important;border-color:#CEB29B !important;
 }
-#lastScanCard .lastScanField>span,
-#lastScanCard .lastScanMetaItem span,
-#lastScanCard .lastScanMetric span{
-  color:#806F62 !important;
+.lastScanQtyButton:hover,.tableQtyButton:hover,.quantityButton:hover{
+  background:#EFD9C9 !important;border-color:#A65F3A !important;
 }
-#lastScanCard .lastScanField>strong,
-#lastScanCard .lastScanMetaItem strong,
-#lastScanCard .lastScanMetric>strong{
-  color:#342A24 !important;
+.lastScanQtyValue,.tableQtyValue{color:#342920 !important;background:#FFF9F4 !important;border-color:#CEB29B !important;}
+.smartSelectedMain h3,.smartSearchResultMain strong,.itemLink,.itemCodeLink,.orderNumberLink{
+  color:#7D432B !important;
 }
-.lastScanQtyButton,
-.tableQtyButton,
-.quantityButton{
-  color:#82462D !important;
-  border-color:#D0B6A0 !important;
-  background:#FFF8F2 !important;
+.sectionEyebrow{color:#965033 !important;}
+.progressBar{background:linear-gradient(90deg,#A65F3A,#C57B50 72%,#D69B6C 100%) !important;}
+.statusReceiving{color:#7B432C !important;background:#F2E0D3 !important;}
+.rowReceiving{background:#FFF8F2 !important;}
+.compactSelect:focus,.cloudCodeInput:focus,.issueMultiFilter[open]>summary{
+  border-color:#A65F3A !important;box-shadow:0 0 0 3px rgba(166,95,58,.11) !important;
 }
-.lastScanQtyButton:hover,
-.tableQtyButton:hover,
-.quantityButton:hover{
-  background:#F4E4D8 !important;
-  border-color:#A65F3A !important;
-}
-.lastScanQtyValue,.tableQtyValue{
-  color:#352A23 !important;
-  background:#FFFDF9 !important;
-  border-color:#D0B6A0 !important;
-}
-
-/* Current-item / links / generic operational blue -> copper */
-.smartSelectedMain h3,
-.smartSearchResultMain strong,
-.itemLink,
-.itemCodeLink,
-.orderNumberLink{
-  color:#7F4329 !important;
-}
-.sectionEyebrow{color:#96502F !important;}
-.progressBar{
-  background:linear-gradient(90deg,#A65F3A,#C47A4C 72%,#D99A62 100%) !important;
-}
-
-/* KPI: neutral/copper for non-semantic cards, keep green/amber/red semantic cards */
+.issueMultiFilterMenu input{accent-color:#A65F3A !important;}
+.cloudSessionCode{color:#7D432B !important;}
+.discrepancyGrid .displayedMetric strong{color:#8B4B31 !important;}
 .statisticsGrid .statCard{
-  border-color:#DDC8B7 !important;
-  background:linear-gradient(145deg,#FFFDF9 0%,#F8EEE5 100%) !important;
+  border-color:#DEC8B7 !important;background:linear-gradient(145deg,#FFFDF9 0%,#F5E8DD 100%) !important;
 }
-.statisticsGrid .statCard strong{color:#75412E !important;}
-.statisticsGrid .statCard::after{background:rgba(166,95,58,.05) !important;}
-.statisticsGrid .statSuccess{
-  border-color:#CFE9DB !important;
-  background:linear-gradient(145deg,#FFFDF9 0%,#F1FAF5 100%) !important;
-}
-.statisticsGrid .statSuccess strong{color:#16935B !important;}
-.statisticsGrid .statWarning{
-  border-color:#F0DDB8 !important;
-  background:linear-gradient(145deg,#FFFDF9 0%,#FFF8EE 100%) !important;
-}
-.statisticsGrid .statWarning strong{color:#D9850B !important;}
-.statisticsGrid .statDanger{
-  border-color:#F0D1D4 !important;
-  background:linear-gradient(145deg,#FFFDF9 0%,#FFF3F3 100%) !important;
-}
-.statisticsGrid .statDanger strong{color:#D94A55 !important;}
+.statisticsGrid .statCard strong{color:#7B432E !important;}
 .statisticsGrid .statCard[data-kpi="manual"]{
-  border-color:#DDC8B7 !important;
-  background:linear-gradient(145deg,#FFFDF9 0%,#F7EDE5 100%) !important;
+  border-color:#DEC8B7 !important;background:linear-gradient(145deg,#FFFDF9 0%,#F3E4D8 100%) !important;
 }
-.statisticsGrid .statCard[data-kpi="manual"] strong{color:#8A4B2E !important;}
+.statisticsGrid .statCard[data-kpi="manual"] strong{color:#8A4A31 !important;}
 .statisticsGrid .statCard[data-kpi="scans"]{
-  border-color:#D7BEAA !important;
-  background:linear-gradient(145deg,#FFFDF9 0%,#F3E3D8 100%) !important;
+  border-color:#D7BCA7 !important;background:linear-gradient(145deg,#FFFDF9 0%,#F0DDCE 100%) !important;
 }
-.statisticsGrid .statCard[data-kpi="scans"] strong{color:#7F4329 !important;}
-
-/* Dashboard decorative icons: copper unless semantic */
-#page-dashboard .statCard:nth-child(1)::before,
-#page-dashboard .statCard:nth-child(5)::before,
-#page-dashboard .statCard:nth-child(6)::before{
-  background:#F4E4D8 !important;
-  color:#9A5735 !important;
-  border-color:#DEC4B0 !important;
-}
-#page-dashboard .statCard:nth-child(2)::before{
-  background:#EBF9F1 !important;color:#16A05D !important;border-color:#D6F1E2 !important;
-}
-#page-dashboard .statCard:nth-child(3)::before{
-  background:#FFF5E9 !important;color:#EF8A16 !important;border-color:#FDE7C9 !important;
-}
-#page-dashboard .statCard:nth-child(4)::before{
-  background:#FFF0F1 !important;color:#DF3D4D !important;border-color:#F8DADD !important;
-}
-
-/* Table receiving state: warm neutral rather than blue */
-.statusReceiving{
-  color:#7A432D !important;
-  background:#F5E5D9 !important;
-}
-.rowReceiving{background:#FFF9F3 !important;}
-
-/* Modal selected/focus accents */
-.statItemsModalCard,
-.smartSearchModalCard,
-.quantityAdjustmentCard{
-  border-color:#D7C1AE !important;
-}
-.smartSearchResult:hover,
-.smartSearchResult.selected{
-  border-color:#B97A58 !important;
-  background:#FBF0E8 !important;
-}
-
-/* Zebra scanner follows same visual identity */
-body.zebraDevice{background:#F3ECE5 !important;}
-body.zebraDevice .scanBox,
-body.zebraMode #scanBox{border-color:#C9AE98 !important;}
-body.zebraDevice .scanBox:focus-within,
-body.zebraMode #scanBox:focus-within{
-  border-color:#A65F3A !important;
-  box-shadow:0 0 0 3px rgba(166,95,58,.10) !important;
-}
+.statisticsGrid .statCard[data-kpi="scans"] strong{color:#7D432B !important;}
+/* Preserve semantic status colors */
+.statisticsGrid .statSuccess strong{color:#16935B !important;}
+.statisticsGrid .statWarning strong{color:#D9850B !important;}
+.statisticsGrid .statDanger strong{color:#D94A55 !important;}

@@ -7,9 +7,9 @@
   --text: #1d2433;
   --text-soft: #6b7280;
 
-  --primary: #A65F3A;
-  --primary-dark: #87482B;
-  --primary-soft: #F6EAE1;
+  --primary: #0b5ed7;
+  --primary-dark: #084ba9;
+  --primary-soft: #eaf2ff;
 
   --success: #1f9d68;
   --success-soft: #e9f8f1;
@@ -1311,7 +1311,7 @@ body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
 .medryvoLogoSvg{display:block;width:100%;height:100%;}
 
 /* PHARMFLOW BRAND SYSTEM — PHASE 2B */
-:root{--primary:#A65F3A;--primary-dark:#7A3F27;--primary-soft:#F6EAE1;--brand-orange:#FF8A00;--brand-orange-soft:#FFF2E2;--brand-navy:#0C1D38;--bg:#F4F7FB;--border:#E1E8F2;--text:#14213A;--text-soft:#65738A}body{background:radial-gradient(circle at 90% 0%,rgba(11,94,215,.055),transparent 28rem),var(--bg)}.topBar{min-height:80px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(13,43,88,.04)}.pageHeading h1{color:var(--brand-navy);letter-spacing:-.02em}.pageHeading p{color:var(--text-soft)}
+:root{--primary:#0B5ED7;--primary-dark:#073E9C;--primary-soft:#EAF2FF;--brand-orange:#FF8A00;--brand-orange-soft:#FFF2E2;--brand-navy:#0C1D38;--bg:#F4F7FB;--border:#E1E8F2;--text:#14213A;--text-soft:#65738A}body{background:radial-gradient(circle at 90% 0%,rgba(11,94,215,.055),transparent 28rem),var(--bg)}.topBar{min-height:80px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(13,43,88,.04)}.pageHeading h1{color:var(--brand-navy);letter-spacing:-.02em}.pageHeading p{color:var(--text-soft)}
 
 /* =====================================================
    PHARMFLOW — WARM PEARL GLOBAL BACKGROUND
@@ -1324,69 +1324,3 @@ body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
 }
 body{background:#F5F3EF;}
 .mainApplication,.mainContent,.appPage{background-color:#F5F3EF;}
-
-/* =====================================================
-   PHARMFLOW — LATTE + COPPER IDENTITY
-===================================================== */
-:root{
-  --primary:#A65F3A;
-  --primary-dark:#87482B;
-  --primary-soft:#F6EAE1;
-  --brand-orange:#B8744F;
-  --brand-orange-soft:#F7ECE4;
-  --brand-navy:#3F3028;
-  --bg:#F3ECE5;
-  --border:#DED0C3;
-  --text:#332B26;
-  --text-soft:#75685F;
-}
-body{background:#F3ECE5;color:var(--text)}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
-  outline-color:#A65F3A;
-}
-
-
-/* =====================================================
-   PHARMFLOW — PHASE 2C.8.4
-   FINAL LATTE + COPPER / ESPRESSO IDENTITY
-===================================================== */
-:root{
-  --bg:#F3ECE5;
-  --surface:#FFFCF8;
-  --surface-soft:#F8F1EA;
-  --border:#DDCDBF;
-  --text:#2F2722;
-  --text-soft:#75675D;
-  --primary:#A65F3A;
-  --primary-dark:#7F4329;
-  --primary-soft:#F3E3D8;
-  --accent:#B8744F;
-  --accent-dark:#8D4B2D;
-  --accent-soft:#F8EDE5;
-  --brand-navy:#352B25;
-  --shadow-sm:0 6px 18px rgba(92,61,42,.055);
-  --shadow-md:0 18px 44px rgba(92,61,42,.09);
-}
-body{background:#F3ECE5 !important;color:var(--text);}
-a{color:#8A4B2E;}
-.topBar{background:rgba(251,247,243,.97) !important;border-bottom-color:#DED0C2 !important;}
-.pageHeading h1{color:#302620 !important;}
-.pageHeading p{color:#796A60 !important;}
-.primaryButton,
-.scanActionButton,
-.confirmButton{
-  background:linear-gradient(135deg,#B46D47,#95502F) !important;
-  border-color:#95502F !important;
-  color:#fff !important;
-  box-shadow:0 8px 18px rgba(133,73,43,.14) !important;
-}
-.primaryButton:hover,
-.scanActionButton:hover,
-.confirmButton:hover{
-  background:linear-gradient(135deg,#95502F,#7F4329) !important;
-}
-.secondaryButton:hover{border-color:#B88769 !important;color:#7F4329 !important;background:#FBF4EE !important;}
-input:focus,select:focus,textarea:focus{
-  border-color:#B26B44 !important;
-  box-shadow:0 0 0 3px rgba(166,95,58,.11) !important;
-}

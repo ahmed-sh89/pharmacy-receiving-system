@@ -1,25 +1,18 @@
-PharmFlow — Current Project Reference
-Phase 2C.8.4 — Latte + Copper Identity
+PharmFlow Phase 2C.8.5 — Correct Source Theme Fix
 
-Current visual identity:
-- Light Latte page canvas.
-- Copper / muted terracotta primary actions.
-- Espresso / dark brown primary text.
-- Semantic operational colors remain: green success, amber remaining/warning, red over/error.
-- Sidebar text remains 14px and is intentionally bolder for readability.
-- PharmFlow mark is transparent and uses a barcode-inspired copper P.
-- Session Number/ID is not intended for normal user display; status is sufficient.
+This build was made from the user's current uploaded project.
+Important correction:
+- The uploaded ZIP contained TWO project trees.
+- The prior visual changes existed in the nested copy while GitHub was serving the root copy.
+- The nested duplicate has now been removed so there is one deployable project only.
 
-Current functional baseline:
-- Multiple GTIN per item / pharmacy-learned GTIN workflow.
-- Unknown GTIN resolution and safe mapping.
-- Multi-PC/cloud workspace logic remains unchanged.
-- Receiving, reports, archive, returns, and handheld logic unchanged.
+Visual identity:
+- Latte / warm beige page and cards
+- Copper primary controls and focus
+- Espresso headings and Last Scan item name
+- Transparent copper PharmFlow logo
+- Sidebar 14px with stronger 750/800 weight
+- Green / amber / red retained for semantic operational statuses
 
-Database references retained:
-- PHASE2B6_SERVER_SESSION_TERMINATION.sql
-- PHASE2C51_DELETE_SINGLE_ORDER.sql
-- PHASE2C61_SAFE_GTIN_LEARNING.sql
-- PHASE2C81_GTIN_AMBIGUITY_HOTFIX.sql (reference to successful ambiguity fix)
-
-No SQL is required for this visual Phase 2C.8.4 update.
+No SQL required.
+Receiving, GTIN, cloud and multi-PC JavaScript logic was not modified.
