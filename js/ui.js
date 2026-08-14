@@ -1957,6 +1957,53 @@ function getDeviceItemReceivedQuantity(itemCode){
     return Math.max(0, net);
 }
 
+/*
+   Current batch = the uninterrupted run of actions for the item on THIS device.
+   As soon as this device works on another item, the next scan of the original
+   item starts a fresh batch at 1. Other devices never reset this local batch.
+*/
+function getCurrentBatchQuantity(itemCode){
+    const code = normalizeItemCode(itemCode);
+    const deviceId = getCurrentDeviceId();
+
+    if(!code || !deviceId){
+        return 0;
+    }
+
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    const local = history
+        .map((tx,index)=>({tx,index}))
+        .filter(row=>toSafeString(row.tx?.deviceId||"")===deviceId)
+        .sort((a,b)=>{
+            const ta = new Date(a.tx?.dateTime||0).getTime();
+            const tb = new Date(b.tx?.dateTime||0).getTime();
+            return ta===tb ? a.index-b.index : ta-tb;
+        });
+
+    if(!local.length){
+        return 0;
+    }
+
+    const lastCode = normalizeItemCode(local[local.length-1].tx?.itemCode);
+    if(lastCode !== code){
+        return 0;
+    }
+
+    let qty = 0;
+    for(let i=local.length-1; i>=0; i--){
+        const txCode = normalizeItemCode(local[i].tx?.itemCode);
+        if(txCode !== code){
+            break;
+        }
+        qty += toNumber(local[i].tx?.quantity,0);
+    }
+
+    return Math.max(0, qty);
+}
+
 function getDeviceLastItemActionQuantity(itemCode){
     const code = normalizeItemCode(itemCode);
     const deviceId = getCurrentDeviceId();
@@ -2008,7 +2055,7 @@ function openQuantityEditPrompt(item){
                 </div>
 
                 <div class="quantityCurrentTotal" style="margin-top:8px;">
-                    <span>This PC Qty</span>
+                    <span>Current Batch Qty</span>
                     <strong id="quantityAdjustmentDeviceCurrent">0</strong>
                 </div>
 
@@ -2028,7 +2075,7 @@ function openQuantityEditPrompt(item){
                     >
 
                     <div class="quantityCurrentTotal" style="margin-top:8px;">
-                        <span>New This PC Qty</span>
+                        <span>New Batch Qty</span>
                         <strong id="quantityAdjustmentPreview">0</strong>
                     </div>
 
@@ -2112,7 +2159,7 @@ function openQuantityEditPrompt(item){
     );
 
     const allDevicesQty = toNumber(item.receivedQty, 0);
-    const thisDeviceQty = getDeviceItemReceivedQuantity(item.itemCode);
+    const thisDeviceQty = getCurrentBatchQuantity(item.itemCode);
 
     setElementText(document.getElementById("quantityAdjustmentCurrent"), allDevicesQty);
     setElementText(document.getElementById("quantityAdjustmentDeviceCurrent"), thisDeviceQty);
@@ -3048,7 +3095,14 @@ function renderGlobalSearchResults(searchText){
 
         button.addEventListener(
             "click",
-            function(){
+            function(event){
+
+                if(event.target?.closest?.("[data-review-item]")){
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openSearchedItemReview(item);
+                    return;
+                }
 
                 selectSmartScanItem(
                     item
@@ -3059,6 +3113,22 @@ function renderGlobalSearchResults(searchText){
             }
         );
 
+        if(toNumber(item.receivedQty,0) > 0){
+            const review = document.createElement("button");
+            review.type = "button";
+            review.className = "secondaryButton";
+            review.setAttribute("data-review-item", item.itemCode);
+            review.style.marginLeft = "10px";
+            review.style.padding = "7px 10px";
+            review.textContent = "Review / Adjust";
+            review.addEventListener("click", function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                openSearchedItemReview(item);
+            });
+            button.appendChild(review);
+        }
+
         container.appendChild(
             button
         );
@@ -3066,6 +3136,122 @@ function renderGlobalSearchResults(searchText){
     });
 
 }
+
+
+/* =====================================================
+   PHASE 2C.7.5 - SEARCHED ITEM REVIEW / CORRECTION
+===================================================== */
+function openSearchedItemReview(item){
+    if(!item) return;
+
+    closeItemSearchModal();
+
+    let modal=document.getElementById("searchedItemReviewModal");
+    if(!modal){
+        modal=document.createElement("div");
+        modal.id="searchedItemReviewModal";
+        modal.className="quantityAdjustmentModal";
+        modal.innerHTML=`
+          <div class="quantityAdjustmentCard" style="max-width:680px;">
+            <div class="quantityAdjustmentHeader">
+              <div><span class="sectionEyebrow">ITEM REVIEW</span><h3 id="searchedReviewName">-</h3></div>
+              <button type="button" id="btnCloseSearchedReview" class="iconButton" aria-label="Close">✕</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">
+              <div class="quantityCurrentTotal"><span>Ordered</span><strong id="searchedReviewOrdered">0</strong></div>
+              <div class="quantityCurrentTotal"><span>Received — All Devices</span><strong id="searchedReviewReceived">0</strong></div>
+              <div class="quantityCurrentTotal"><span>Remaining</span><strong id="searchedReviewRemaining">0</strong></div>
+            </div>
+            <div class="quantityCurrentTotal" style="margin-bottom:10px;">
+              <span>Last Update</span><strong id="searchedReviewLastUpdate">-</strong>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button type="button" id="btnSearchedAdjust" class="primaryButton">Adjust Received Qty</button>
+              <button type="button" id="btnSearchedActivity" class="secondaryButton">View Activity</button>
+            </div>
+            <div id="searchedReviewCorrection" hidden>
+              <label class="quantityAdjustmentLabel" for="searchedReviewCorrectionInput">Correct total received to</label>
+              <input id="searchedReviewCorrectionInput" class="quantityAdjustmentInput" type="number" min="0" step="1" inputmode="numeric">
+              <p class="quantityAdjustmentHelp">This changes the shared total for this item. PharmFlow records only the difference as a correction, so the audit history remains intact.</p>
+              <div class="quantityAdjustmentActions">
+                <button type="button" id="btnApplySearchedCorrection" class="primaryButton">Apply Correction</button>
+                <button type="button" id="btnCancelSearchedCorrection" class="secondaryButton">Cancel</button>
+              </div>
+            </div>
+            <div id="searchedReviewActivity" hidden style="margin-top:10px;"></div>
+          </div>`;
+        document.body.appendChild(modal);
+        document.getElementById("btnCloseSearchedReview")?.addEventListener("click",closeSearchedItemReview);
+        modal.addEventListener("click",e=>{if(e.target===modal)closeSearchedItemReview();});
+        modal.addEventListener("keydown",e=>{
+            if(e.key==="Escape"){e.preventDefault();closeSearchedItemReview();return;}
+            if(e.key==="Enter" && !document.getElementById("searchedReviewCorrection")?.hidden){
+                e.preventDefault(); document.getElementById("btnApplySearchedCorrection")?.click();
+            }
+        });
+    }
+
+    modal.dataset.itemCode=item.itemCode;
+    setElementText(document.getElementById("searchedReviewName"),item.itemName||item.itemCode);
+    setElementText(document.getElementById("searchedReviewOrdered"),toNumber(item.orderedQty,0));
+    setElementText(document.getElementById("searchedReviewReceived"),toNumber(item.receivedQty,0));
+    setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(item.orderedQty,0)-toNumber(item.receivedQty,0)));
+
+    const history=(Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[])
+      .filter(tx=>normalizeItemCode(tx?.itemCode)===normalizeItemCode(item.itemCode))
+      .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+    const last=history[0];
+    setElementText(document.getElementById("searchedReviewLastUpdate"),last?.dateTime?(typeof formatDateTime==="function"?formatDateTime(last.dateTime):last.dateTime):"No activity yet");
+
+    const correction=document.getElementById("searchedReviewCorrection");
+    const activity=document.getElementById("searchedReviewActivity");
+    if(correction) correction.hidden=true;
+    if(activity){activity.hidden=true;activity.innerHTML="";}
+
+    document.getElementById("btnSearchedAdjust").onclick=()=>{
+        if(activity) activity.hidden=true;
+        if(correction) correction.hidden=false;
+        const current=getItemByCode(modal.dataset.itemCode);
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        if(input){input.value=String(toNumber(current?.receivedQty,item.receivedQty));setTimeout(()=>{input.focus();input.select();},20);}
+    };
+
+    document.getElementById("btnCancelSearchedCorrection").onclick=()=>{if(correction) correction.hidden=true;};
+
+    document.getElementById("btnApplySearchedCorrection").onclick=()=>{
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        const total=toNumber(input?.value,-1);
+        if(total<0){showToast("Enter a valid received total","warning");return;}
+        const tx=setItemReceivedQuantity(modal.dataset.itemCode,total);
+        if(!tx) return;
+        const current=getItemByCode(modal.dataset.itemCode);
+        setElementText(document.getElementById("searchedReviewReceived"),toNumber(current?.receivedQty,total));
+        setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(current?.orderedQty,0)-toNumber(current?.receivedQty,total)));
+        if(correction) correction.hidden=true;
+        showToast("Received quantity corrected. History preserved.","success");
+    };
+
+    document.getElementById("btnSearchedActivity").onclick=()=>{
+        if(correction) correction.hidden=true;
+        if(!activity) return;
+        const rows=(typeof getReceivingActivityRows==="function"?getReceivingActivityRows():[])
+          .filter(row=>normalizeItemCode(row?.itemCode)===normalizeItemCode(modal.dataset.itemCode))
+          .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+        activity.hidden=false;
+        activity.innerHTML=rows.length?`<div class="phase263TableWrap" style="max-height:260px;"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After</th></tr></thead><tbody>${rows.map(row=>{const q=toNumber(row.qtyChange,0);return `<tr><td>${escapeHTML(typeof formatDateTime==="function"?formatDateTime(row.dateTime):toSafeString(row.dateTime))}</td><td>${escapeHTML(toSafeString(row.deviceId||"Unknown"))}</td><td>${escapeHTML(typeof getActivitySourceLabel==="function"?getActivitySourceLabel(row.source):toSafeString(row.source))}</td><td>${q>0?"+":""}${escapeHTML(q)}</td><td><b>${escapeHTML(toNumber(row.totalAfterAction,0))}</b></td></tr>`;}).join("")}</tbody></table></div>`:'<div class="tableEmptyState">No receiving activity for this item.</div>';
+    };
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden","false");
+}
+
+function closeSearchedItemReview(){
+    const modal=document.getElementById("searchedItemReviewModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden","true");
+    focusScannerInput();
+}
+window.openSearchedItemReview=openSearchedItemReview;
 
 
 /* =====================================================
@@ -4179,7 +4365,7 @@ function createLastScanQuantityControls(){
 
       <div class="lastScanQtyTitle">
 
-          THIS PC QTY
+          BATCH QTY
 
       </div>
 
@@ -4224,7 +4410,7 @@ function createLastScanQuantityControls(){
 
       <div class="lastScanQtyHint">
 
-          Current device quantity. Tap to add more from this batch.
+          Current local batch only. Scanning another item starts a new batch.
 
       </div>
 
@@ -4396,7 +4582,7 @@ function refreshLastScanQuantityControl(){
       );
 
   const thisDeviceReceived =
-      getDeviceItemReceivedQuantity(
+      getCurrentBatchQuantity(
           item.itemCode
       );
 
