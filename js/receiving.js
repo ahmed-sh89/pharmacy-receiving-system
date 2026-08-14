@@ -1762,10 +1762,9 @@ async function saveManualReceivingItem(){
 
             serial:"",
 
-            source:
-                ReceivingEngine
-                    .adjustmentSources
-                    .manual,
+            /* Distinguish first creation of an unordered/manual item
+               from later quantity edits in the audit history. */
+            source:"MANUAL_ITEM",
 
             manual:true
 

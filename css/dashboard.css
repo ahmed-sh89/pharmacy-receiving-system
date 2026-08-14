@@ -3730,3 +3730,10 @@ body:not(.zebraDevice) .ownerMetricCard{
 @media(max-width:620px){
   .accountEditPanel{grid-template-columns:1fr}.accountEditButtons{grid-column:auto}.accountSecurityNote{grid-column:auto}
 }
+
+
+/* Phase 2C.7 — compact cloud/order scope */
+.orderScopeControl{display:flex;align-items:center;gap:8px;margin:6px 0;padding:6px 10px;border:1px solid #dbe3ea;border-radius:10px;background:#f8fafc;font-size:12px;font-weight:700}
+.orderScopeControl label{white-space:nowrap;color:#475569}.orderScopeControl select{min-width:190px;max-width:320px;height:32px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:0 8px;font-weight:700;color:#0f172a}
+@media(max-height:850px){.pageContent,.settingsContent,.reportsContent,.ordersContent{padding-top:8px!important;padding-bottom:8px!important}.card,.settingsCard,.reportCard{margin-bottom:8px!important}.sectionHeader{margin-bottom:6px!important}}
+.cloudWorkspaceStatus{margin-left:auto;font-size:11px;font-weight:900;letter-spacing:.03em;color:#15803d;white-space:nowrap}html[data-cloud-workspace-state="offline"] .cloudWorkspaceStatus{color:#b45309}html[data-cloud-workspace-state="syncing"] .cloudWorkspaceStatus{color:#0369a1}

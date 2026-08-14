@@ -931,6 +931,33 @@ async function saveAccountProfileChanges(){
     }finally{ hideLoading(); }
 }
 
+
+/* =====================================================
+   PHASE 2C.6.5 — ROBUST ACCOUNT EDIT INTERACTIVITY
+===================================================== */
+function setupAccountEditDelegation(){
+    if(document.documentElement.dataset.accountEditBound==="1") return;
+    document.documentElement.dataset.accountEditBound="1";
+
+    document.addEventListener("click",event=>{
+        const edit=event.target.closest?.("#btnEditAccountProfile");
+        if(edit){ event.preventDefault(); openAccountEditPanel(); return; }
+
+        const cancel=event.target.closest?.("#btnCancelAccountProfile");
+        if(cancel){ event.preventDefault(); closeAccountEditPanel(); return; }
+
+        const save=event.target.closest?.("#btnSaveAccountProfile");
+        if(save){ event.preventDefault(); saveAccountProfileChanges(); }
+    },true);
+}
+
+setupAccountEditDelegation();
+window.addEventListener("load",setupAccountEditDelegation);
+window.addEventListener("auth:context-ready",()=>{
+    refreshSafeAccountIdentity();
+    setupAccountEditDelegation();
+});
+
 /* =====================================================
    FILE BUTTON BINDINGS
 ===================================================== */

@@ -1006,6 +1006,7 @@ function closeSmartScanSearch(
 function bindUIEvents(){
 
     setupDashboardKpiInteractivity();
+    setupPhase263ActionDelegation();
     refreshScanSafetyUI();
 
     document.getElementById("btnExportReceivingSummaryExcel")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryExcel==="function") exportReceivingSummaryExcel(); });
@@ -1410,43 +1411,53 @@ function refreshDashboard(){
 
     recalculateStatistics();
 
-    const stats =
-        AppState.statistics;
-
+    const stats = AppState.statistics;
+    const scopedItems = getScopedOrderItems();
+    const scopeActive = getActiveOrderScope() !== "ALL";
+    const scoped = scopeActive ? {
+        totalItems: scopedItems.length,
+        completedItems: scopedItems.filter(i=>toNumber(i.orderedQty,0)>0 && toNumber(i.receivedQty,0)===toNumber(i.orderedQty,0)).length,
+        remainingUnits: scopedItems.reduce((n,i)=>n+Math.max(0,toNumber(i.orderedQty,0)-toNumber(i.receivedQty,0)),0),
+        overReceivedItems: scopedItems.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0)).length,
+        manualItems: scopedItems.filter(i=>i.manual===true).length,
+        totalScans: (AppState.workspace?.receivingHistory||[]).filter(tx=>{
+            const item=getItemByCode?.(tx.itemCode); return !item || itemBelongsToOrderScope(item);
+        }).length
+    } : stats;
 
     setElementText(
         UI.elements.statTotalItems,
-        stats.totalItems
+        scoped.totalItems
     );
 
 
     setElementText(
         UI.elements.statCompleted,
-        stats.completedItems
+        scoped.completedItems
     );
 
 
     setElementText(
         UI.elements.statRemaining,
-        Number.isFinite(stats.remainingUnits) ? stats.remainingUnits : stats.remainingItems
+        Number.isFinite(scoped.remainingUnits) ? scoped.remainingUnits : stats.remainingItems
     );
 
 
     setElementText(
         UI.elements.statOver,
-        stats.overReceivedItems
+        scoped.overReceivedItems
     );
 
 
     setElementText(
         UI.elements.statManual,
-        stats.manualItems
+        scoped.manualItems
     );
 
 
     setElementText(
         UI.elements.statScans,
-        stats.totalScans
+        scoped.totalScans
     );
 
 
@@ -2441,7 +2452,7 @@ function refreshMasterGTINUI(){
 
         setElementText(
             UI.elements.masterGTINStatus,
-            "Not installed"
+            (navigator.onLine ? "CONNECTED — MASTER UNAVAILABLE" : "OFFLINE")
         );
 
         setElementText(
@@ -2471,7 +2482,7 @@ function refreshMasterGTINUI(){
 
     setElementText(
         UI.elements.masterGTINStatus,
-        "Ready"
+        (navigator.onLine ? "CONNECTED — ACTIVE" : "OFFLINE — CACHED")
     );
 
     setElementText(
@@ -5744,8 +5755,26 @@ function setupDashboardKpiInteractivity(){
     }
 }
 
-function getKpiPanelItems(key){
+function getActiveOrderScope(){
+    return toSafeString(window.PharmFlowOrderScope || "ALL");
+}
+
+function itemBelongsToOrderScope(item, scope=getActiveOrderScope()){
+    if(!scope || scope==="ALL") return true;
+    const list=Array.isArray(item?.orderNumbers)?item.orderNumbers:[];
+    if(list.length) return list.map(normalizeOrderNumber).includes(normalizeOrderNumber(scope));
+    /* Legacy workspaces created before 2C.7 have no per-item membership.
+       Keep them visible rather than hiding valid stock. */
+    return true;
+}
+
+function getScopedOrderItems(){
     const items=Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[];
+    return items.filter(item=>itemBelongsToOrderScope(item));
+}
+
+function getKpiPanelItems(key){
+    const items=getScopedOrderItems();
     if(key==="total") return items.slice();
     if(key==="completed") return items.filter(i=>{
         const o=toNumber(i.orderedQty,0),r=toNumber(i.receivedQty,0);
@@ -5797,20 +5826,36 @@ function refreshOpenKpiPanel(){
 function getReceivingActivityRows(){
     const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
     const totals=new Map();
-    const rows=[];
-    history.forEach(tx=>{
+
+    /* Always calculate totals in true chronological order.
+       The stored history may be newest-first or oldest-first depending on
+       the source/device, so array position must never decide the result. */
+    const chronological=history.slice().sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return ta-tb;
+    });
+
+    const rows=chronological.map(tx=>{
         const code=toSafeString(tx?.itemCode||"");
         const change=toNumber(tx?.quantity,0);
         const total=Math.max(0,toNumber(totals.get(code),0)+change);
         totals.set(code,total);
-        rows.push({...tx,qtyChange:change,totalAfterAction:total});
+        return {...tx,qtyChange:change,totalAfterAction:total};
     });
-    return rows.reverse();
+
+    /* Review screen requirement: newest activity is always first. */
+    return rows.sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return tb-ta;
+    });
 }
 
 function getActivitySourceLabel(source){
     const value=toSafeString(source||"").toUpperCase();
-    if(value.includes("UNDO")) return "Correction";
+    if(value.includes("UNDO")||value.includes("CORRECTION")) return "Correction";
+    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Manual Item";
     if(value.includes("SCAN")) return "Scanner";
     if(value.includes("SEARCH")) return "Manual Quantity";
     if(value.includes("MANUAL")||value.includes("EDIT")||value.includes("ADJUST")) return "Manual Quantity";
@@ -5867,7 +5912,7 @@ function renderDashboardKpiPanel(key,body){
         return;
     }
     if(key==="received"){
-        const rows=(Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[]).filter(i=>toNumber(i.receivedQty,0)>0);
+        const rows=getScopedOrderItems().filter(i=>toNumber(i.receivedQty,0)>0);
         renderItemBrowser(body,rows,{receivedMode:true});
         return;
     }
@@ -5884,20 +5929,68 @@ function renderDashboardKpiPanel(key,body){
    PHASE 2C.6 FINAL - ONE-TAP ACCIDENTAL SCAN CORRECTION
 ===================================================== */
 function refreshScanSafetyUI(){
-    /* Phase 2C.6.3: remove the risky dashboard Undo button. */
+    /* Phase 2C.6.3+: remove the risky dashboard Undo button. */
     document.querySelector("#lastScanCard .scanSafetyBar")?.remove();
 
-    /* Keep a safe review entry point beside Search Item. */
+    /* Always expose the two fast review workflows beside Search Item.
+       Handlers are assigned every refresh AND backed by delegated binding
+       below so a re-render can never leave a dead button. */
     const searchButton=document.getElementById("btnQuickSearch");
-    if(searchButton && !document.getElementById("btnReceivedItems")){
-        const button=document.createElement("button");
-        button.type="button";
-        button.id="btnReceivedItems";
-        button.className=(searchButton.className||"")+" receivedItemsButton";
-        button.innerHTML="✓ Received Items";
-        button.addEventListener("click",()=>openDashboardKpiPanel("received"));
-        searchButton.insertAdjacentElement("afterend",button);
+    if(!searchButton) return;
+
+    let received=document.getElementById("btnReceivedItems");
+    if(!received){
+        received=document.createElement("button");
+        received.type="button";
+        received.id="btnReceivedItems";
+        received.className=(searchButton.className||"")+" receivedItemsButton";
+        received.innerHTML="✓ Received Items";
+        searchButton.insertAdjacentElement("afterend",received);
     }
+    received.onclick=()=>openDashboardKpiPanel("received");
+
+    let priority=document.getElementById("btnOrderItemsPriority");
+    if(!priority){
+        priority=document.createElement("button");
+        priority.type="button";
+        priority.id="btnOrderItemsPriority";
+        priority.className=(searchButton.className||"")+" priorityItemsButton";
+        priority.innerHTML="★ Order Items";
+        received.insertAdjacentElement("afterend",priority);
+    }
+    priority.onclick=()=>openDashboardKpiPanel("total");
+}
+
+
+function refreshOrderScopeControl(){
+    const host=document.querySelector('.currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader') || document.querySelector('#dashboardPage');
+    if(!host) return;
+    let wrap=document.getElementById('orderScopeControl');
+    if(!wrap){
+        wrap=document.createElement('div'); wrap.id='orderScopeControl'; wrap.className='orderScopeControl';
+        host.appendChild(wrap);
+    }
+    const files=Array.isArray(AppState.workspace?.orderFiles)?AppState.workspace.orderFiles:[];
+    const orders=Array.from(new Set(files.map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||'')).filter(Boolean)));
+    const current=getActiveOrderScope();
+    if(current!=='ALL' && !orders.includes(current)) window.PharmFlowOrderScope='ALL';
+    wrap.innerHTML=`<label>Order View</label><select id="orderScopeSelect"><option value="ALL">All Active Orders</option>${orders.map(o=>`<option value="${escapeHtml(o)}" ${getActiveOrderScope()===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}</select>`;
+    wrap.querySelector('select').onchange=e=>{ window.PharmFlowOrderScope=e.target.value||'ALL'; refreshDashboard(); refreshOpenKpiPanel(); };
+}
+
+AppEvents.on('workspace:saved',()=>setTimeout(refreshOrderScopeControl,0));
+AppEvents.on('receiving:updated',()=>setTimeout(refreshOrderScopeControl,0));
+window.addEventListener('auth:context-ready',()=>setTimeout(refreshOrderScopeControl,250));
+setTimeout(refreshOrderScopeControl,800);
+function setupPhase263ActionDelegation(){
+    if(document.documentElement.dataset.phase263ActionsBound==="1") return;
+    document.documentElement.dataset.phase263ActionsBound="1";
+    document.addEventListener("click",event=>{
+        const received=event.target.closest?.("#btnReceivedItems");
+        if(received){event.preventDefault();openDashboardKpiPanel("received");return;}
+        const priority=event.target.closest?.("#btnOrderItemsPriority");
+        if(priority){event.preventDefault();openDashboardKpiPanel("total");}
+    },true);
 }
 
 

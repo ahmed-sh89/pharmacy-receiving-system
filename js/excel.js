@@ -520,9 +520,22 @@ async function importOrderFile(file, preflightMeta = null){
                     sourceRow:rowIndex + 1
                 });
 
-                upsertOrderItem(
+                /* Phase 2C.7: preserve per-order membership even when the same
+                   Item Code exists in more than one uploaded order. */
+                item.orderNumbers = Array.from(new Set([
+                    ...(Array.isArray(item.orderNumbers) ? item.orderNumbers : []),
+                    normalizeOrderNumber(detectedOrderId || "")
+                ].filter(Boolean)));
+
+                const mergedItem = upsertOrderItem(
                     item
                 );
+                if(mergedItem){
+                    mergedItem.orderNumbers = Array.from(new Set([
+                        ...(Array.isArray(mergedItem.orderNumbers) ? mergedItem.orderNumbers : []),
+                        normalizeOrderNumber(detectedOrderId || "")
+                    ].filter(Boolean)));
+                }
 
                 result.importedRows++;
 
