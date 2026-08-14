@@ -562,3 +562,19 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
   color:#514337 !important;
 }
 .sidebarLogoutButton:hover{background:#F8F1EA !important;}
+
+
+/* PHARMFLOW 2C.8.5 — FINAL SIDEBAR */
+.sidebar{
+  background:linear-gradient(180deg,#E8D7C7 0%,#E1CDBA 100%) !important;
+  border-right-color:#CBB19A !important;color:#382C25 !important;
+}
+.brandLogo{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;}
+.sidebarItem{color:#493A30 !important;font-size:14px !important;font-weight:750 !important;}
+.sidebarItem .sidebarIcon{color:#6D5545 !important;}
+.sidebarItem:hover{background:rgba(255,249,243,.55) !important;color:#7B422B !important;}
+.sidebarItem.active{
+  background:#F5E6DA !important;color:#743D27 !important;font-weight:800 !important;
+  box-shadow:inset 4px 0 0 #A65F3A !important;
+}
+.sidebarItem.active .sidebarIcon,.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}

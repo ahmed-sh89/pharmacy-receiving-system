@@ -1527,3 +1527,55 @@ body.authBooting #authAccessPanel{
 .authField input:hover,
 .authField select:hover,
 .authInput:hover{border-color:#C8B29D !important;}
+
+
+/* =========================================================
+   PHARMFLOW 2C.8.5 — FINAL AUTH SOURCE RULES
+   These rules are last in the loaded stylesheet by design.
+========================================================= */
+.authGate,.authGate.visible{
+  background:linear-gradient(145deg,#F1E2D4 0%,#E7D2C0 100%) !important;
+}
+.authShell{
+  width:min(560px,calc(100% - 28px)) !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+}
+.authBrandPanel{
+  min-height:0 !important;padding:4px 10px 6px !important;
+  background:transparent !important;border:0 !important;box-shadow:none !important;
+}
+.authBrandMinimal{min-height:0 !important;}
+.authBrandLogoCard{
+  width:88px !important;height:88px !important;padding:0 !important;
+  background:transparent !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;
+}
+.authBrandLogoCard img{width:100% !important;height:100% !important;object-fit:contain !important;}
+.authBrandName{color:#35281F !important;font-weight:800 !important;}
+.authBrandTagline,.authEyebrow{color:#9B5433 !important;}
+.authFormPanel{
+  background:linear-gradient(155deg,#F7E9DC 0%,#F1DFCF 100%) !important;
+  border:1px solid #CEB49D !important;border-radius:28px !important;
+  box-shadow:0 24px 58px rgba(88,57,38,.14) !important;
+}
+.authFormPanel h2{color:#2E251F !important;}
+.authLead{color:#6F5E52 !important;}
+.authField label{color:#46362C !important;}
+.authField input,.authField select,.authInput{
+  background:#FFF8F1 !important;border-color:#CDAF97 !important;color:#302720 !important;
+}
+.authField input:hover,.authField select:hover,.authInput:hover{background:#FFF9F4 !important;border-color:#B98D70 !important;}
+.authField input:focus,.authField select:focus,.authInput:focus{
+  border-color:#A65F3A !important;
+  box-shadow:0 0 0 3px rgba(166,95,58,.13) !important;
+}
+.authPrimaryButton{
+  background:linear-gradient(135deg,#B46B44,#914B2D) !important;
+  border:1px solid #914B2D !important;color:#fff !important;
+  box-shadow:0 10px 22px rgba(130,68,40,.18) !important;
+}
+.authPrimaryButton:hover{background:linear-gradient(135deg,#9A5130,#7C3F27) !important;}
+.authSecondaryLink,.authSignupLink,.authBackButton{color:#7D432B !important;}
+.authSignupLink{background:#F9ECE1 !important;border-color:#CDB29B !important;}
+.authPasswordToggle{background:#F4E3D5 !important;color:#7C432B !important;}
+.authRemember input{accent-color:#A65F3A !important;}

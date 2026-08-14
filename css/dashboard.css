@@ -3955,3 +3955,80 @@ body:not(.zebraDevice) .masterGTINStatusGrid>div{
   border-color:#E4D8CD;
 }
 body.zebraDevice{background:#F3ECE5 !important;}
+
+
+/* =========================================================
+   PHARMFLOW 2C.8.5 — FINAL OPERATIONAL SOURCE RULES
+   Remove decorative blue from scanner/Last Scan/general UI.
+========================================================= */
+:root{
+  --pf-blue:#A65F3A !important;
+  --pf-navy:#3B2D25 !important;
+  --pf-ink:#332821 !important;
+}
+body:not(.zebraDevice),body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,body:not(.zebraDevice) .appPage{
+  background:#F1E5DA !important;
+}
+body:not(.zebraDevice) .contentCard,body:not(.zebraDevice) .scanPanel{
+  background:#FBF3EC !important;border-color:#D9C3B0 !important;
+}
+#page-dashboard .scanPanel{
+  background:#F8ECE2 !important;border-color:#D2B49B !important;
+}
+.scanBox,#scanBox,#page-dashboard .scanBox{
+  border:2px solid #B98262 !important;background:#FFF9F4 !important;
+  box-shadow:none !important;
+}
+.scanBox:focus-within,#scanBox:focus-within,#page-dashboard .scanBox:focus-within{
+  border-color:#A65F3A !important;box-shadow:0 0 0 3px rgba(166,95,58,.12) !important;
+}
+.scanBoxIcon,.scanBoxIndicator{background:#F1DED0 !important;color:#8C492E !important;}
+.scanBoxIndicator{border-color:#D5B9A4 !important;}
+#lastScanCard{
+  background:linear-gradient(145deg,#F9EEE5 0%,#F3E2D4 100%) !important;
+  border-color:#D3B79F !important;
+}
+#lastItemName,.lastScanHeroName,#page-dashboard #lastItemName{
+  color:#2E251F !important;font-weight:800 !important;
+}
+#lastScanCard .lastScanHero,#lastScanCard .lastScanField,
+#lastScanCard .lastScanMetaItem{
+  background:#FFF8F1 !important;border-color:#DDC8B7 !important;
+}
+.lastScanQtyButton,.tableQtyButton,.quantityButton{
+  color:#82452D !important;background:#FFF7F0 !important;border-color:#CEB29B !important;
+}
+.lastScanQtyButton:hover,.tableQtyButton:hover,.quantityButton:hover{
+  background:#EFD9C9 !important;border-color:#A65F3A !important;
+}
+.lastScanQtyValue,.tableQtyValue{color:#342920 !important;background:#FFF9F4 !important;border-color:#CEB29B !important;}
+.smartSelectedMain h3,.smartSearchResultMain strong,.itemLink,.itemCodeLink,.orderNumberLink{
+  color:#7D432B !important;
+}
+.sectionEyebrow{color:#965033 !important;}
+.progressBar{background:linear-gradient(90deg,#A65F3A,#C57B50 72%,#D69B6C 100%) !important;}
+.statusReceiving{color:#7B432C !important;background:#F2E0D3 !important;}
+.rowReceiving{background:#FFF8F2 !important;}
+.compactSelect:focus,.cloudCodeInput:focus,.issueMultiFilter[open]>summary{
+  border-color:#A65F3A !important;box-shadow:0 0 0 3px rgba(166,95,58,.11) !important;
+}
+.issueMultiFilterMenu input{accent-color:#A65F3A !important;}
+.cloudSessionCode{color:#7D432B !important;}
+.discrepancyGrid .displayedMetric strong{color:#8B4B31 !important;}
+.statisticsGrid .statCard{
+  border-color:#DEC8B7 !important;background:linear-gradient(145deg,#FFFDF9 0%,#F5E8DD 100%) !important;
+}
+.statisticsGrid .statCard strong{color:#7B432E !important;}
+.statisticsGrid .statCard[data-kpi="manual"]{
+  border-color:#DEC8B7 !important;background:linear-gradient(145deg,#FFFDF9 0%,#F3E4D8 100%) !important;
+}
+.statisticsGrid .statCard[data-kpi="manual"] strong{color:#8A4A31 !important;}
+.statisticsGrid .statCard[data-kpi="scans"]{
+  border-color:#D7BCA7 !important;background:linear-gradient(145deg,#FFFDF9 0%,#F0DDCE 100%) !important;
+}
+.statisticsGrid .statCard[data-kpi="scans"] strong{color:#7D432B !important;}
+/* Preserve semantic status colors */
+.statisticsGrid .statSuccess strong{color:#16935B !important;}
+.statisticsGrid .statWarning strong{color:#D9850B !important;}
+.statisticsGrid .statDanger strong{color:#D94A55 !important;}
