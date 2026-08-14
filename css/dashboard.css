@@ -4032,3 +4032,105 @@ body:not(.zebraDevice) .contentCard,body:not(.zebraDevice) .scanPanel{
 .statisticsGrid .statSuccess strong{color:#16935B !important;}
 .statisticsGrid .statWarning strong{color:#D9850B !important;}
 .statisticsGrid .statDanger strong{color:#D94A55 !important;}
+
+
+/* =========================================================
+   PHARMFLOW 2C.8.6 — SCAN FEEDBACK
+   Success = green, Failure = red.  Latte remains the base UI.
+========================================================= */
+
+/* Ready state remains warm-neutral */
+.scanBox,#scanBox,#page-dashboard .scanBox{
+  transition:border-color .16s ease,background .16s ease,box-shadow .16s ease !important;
+}
+
+/* Successful scan */
+.scanBox.success,
+#scanBox.success,
+.scanBox.flashSuccess,
+#scanBox.flashSuccess{
+  border-color:#26975A !important;
+  background:linear-gradient(90deg,#F6FFF9 0%,#EEF9F2 100%) !important;
+  box-shadow:0 0 0 3px rgba(38,151,90,.12) !important;
+}
+.scanBox.success .scanBoxIcon,
+#scanBox.success .scanBoxIcon,
+.scanBox.flashSuccess .scanBoxIcon,
+#scanBox.flashSuccess .scanBoxIcon{
+  background:#DDF4E6 !important;
+  color:#178348 !important;
+}
+.scanBox.success .scanBoxIndicator,
+#scanBox.success .scanBoxIndicator,
+.scanBox.flashSuccess .scanBoxIndicator,
+#scanBox.flashSuccess .scanBoxIndicator{
+  background:#E2F7EA !important;
+  color:#167A43 !important;
+  border-color:#BFE7CE !important;
+}
+
+/* Failed / unknown scan */
+.scanBox.error,
+#scanBox.error,
+.scanBox.flashError,
+#scanBox.flashError{
+  border-color:#D94A55 !important;
+  background:linear-gradient(90deg,#FFF8F8 0%,#FFF0F1 100%) !important;
+  box-shadow:0 0 0 3px rgba(217,74,85,.11) !important;
+}
+.scanBox.error .scanBoxIcon,
+#scanBox.error .scanBoxIcon,
+.scanBox.flashError .scanBoxIcon,
+#scanBox.flashError .scanBoxIcon{
+  background:#FCE0E2 !important;
+  color:#C93543 !important;
+}
+.scanBox.error .scanBoxIndicator,
+#scanBox.error .scanBoxIndicator,
+.scanBox.flashError .scanBoxIndicator,
+#scanBox.flashError .scanBoxIndicator{
+  background:#FDE5E7 !important;
+  color:#BF2D3A !important;
+  border-color:#F1BBC0 !important;
+}
+
+/* Last successful received item stays green until next item. */
+#lastScanCard.scanSuccess{
+  background:linear-gradient(145deg,#F8FFF9 0%,#EAF7EE 100%) !important;
+  border-color:#A9D9BB !important;
+  box-shadow:0 8px 22px rgba(34,139,83,.07) !important;
+}
+#lastScanCard.scanSuccess .lastScanHero{
+  background:linear-gradient(145deg,#F1FBF4 0%,#E5F5EA 100%) !important;
+  border-color:#B6DEC4 !important;
+}
+#lastScanCard.scanSuccess #lastItemName,
+#lastScanCard.scanSuccess .lastScanHeroName{
+  color:#167D45 !important;
+}
+#lastScanCard.scanSuccess .lastScanQtyButton{
+  color:#177D46 !important;
+  border-color:#B4DCC2 !important;
+  background:#F5FFF8 !important;
+}
+#lastScanCard.scanSuccess .lastScanQtyButton:hover{
+  background:#DFF3E6 !important;
+  border-color:#26975A !important;
+}
+#lastScanCard.scanSuccess .lastScanQtyValue{
+  color:#146C3D !important;
+  border-color:#B4DCC2 !important;
+  background:#FBFFFC !important;
+}
+
+/* Temporary error indication if Last Scan itself is marked as failed. */
+#lastScanCard.scanError{
+  background:linear-gradient(145deg,#FFF9F9 0%,#FDEBEC 100%) !important;
+  border-color:#ECB0B5 !important;
+}
+
+/* Green receiving progress reinforces successful receiving. */
+.receivingProgressBar,
+#receivingProgressBar{
+  background:linear-gradient(90deg,#249654,#36A965) !important;
+}

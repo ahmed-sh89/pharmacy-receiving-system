@@ -3724,14 +3724,16 @@ function flashLastScanCard(
         "scanError"
     );
 
-    setTimeout(()=>{
-
-        card.classList.remove(
-            "scanSuccess",
-            "scanError"
-        );
-
-    },700);
+    /*
+       Keep the successful Last Scan visually green until the
+       next scan replaces it.  An error is temporary because
+       the previous successful item is still the last received item.
+    */
+    if(!success){
+        setTimeout(()=>{
+            card.classList.remove("scanError");
+        },1400);
+    }
 
 }
 

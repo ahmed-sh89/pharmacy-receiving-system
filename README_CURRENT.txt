@@ -1,18 +1,14 @@
-PharmFlow Phase 2C.8.5 — Correct Source Theme Fix
+PharmFlow Phase 2C.8.6
 
-This build was made from the user's current uploaded project.
-Important correction:
-- The uploaded ZIP contained TWO project trees.
-- The prior visual changes existed in the nested copy while GitHub was serving the root copy.
-- The nested duplicate has now been removed so there is one deployable project only.
+Visual / UX changes:
+- PharmFlow logo now uses a capsule inside the P instead of a plus sign.
+- Transparent copper logo retained.
+- Successful scan box turns green.
+- Failed / unknown scan box turns red.
+- Last successful Scan card remains green until the next successful item.
+- Receiving progress uses green feedback.
+- Login layout compressed responsively so all actions remain visible on 720–768px laptop screens.
 
-Visual identity:
-- Latte / warm beige page and cards
-- Copper primary controls and focus
-- Espresso headings and Last Scan item name
-- Transparent copper PharmFlow logo
-- Sidebar 14px with stronger 750/800 weight
-- Green / amber / red retained for semantic operational statuses
-
-No SQL required.
-Receiving, GTIN, cloud and multi-PC JavaScript logic was not modified.
+Functional logic:
+- Receiving, GTIN learning, cloud workspace and Multi-PC logic unchanged.
+- No SQL required.
