@@ -169,6 +169,14 @@ async function restoreCloudWorkspaceOnLogin(){
             if(cloudHasOrder){
                 PharmFlowCloudWorkspace.applyingRemote=true;
                 restoreWorkspaceState(cloudState);
+                /* Last Scan is intentionally device-local. A remote PC must not
+                   replace the operator's current Last Scan card. */
+                const localDevice=cloudWorkspaceDeviceId();
+                const localTx=(AppState.workspace.receivingHistory||[]).filter(tx=>toSafeString(tx.deviceId||"")===toSafeString(localDevice)).sort((a,b)=>new Date(b.dateTime||0)-new Date(a.dateTime||0))[0];
+                if(localTx){
+                    const localItem=getItemByCode(localTx.itemCode);
+                    if(localItem && typeof setLastScan==="function") setLastScan({itemCode:localItem.itemCode,itemName:localItem.itemName,gtin:localTx.gtin||"",lot:localTx.lot||"",expiry:localTx.expiry||"",serial:localTx.serial||"",quantity:localTx.quantity,orderedQty:localItem.orderedQty,receivedQty:localItem.receivedQty,remainingQty:localItem.remainingQty,status:localItem.status,source:localTx.source,transactionId:localTx.transactionId,scanTime:localTx.dateTime});
+                } else { AppState.workspace.lastScan=null; }
                 saveWorkspaceSnapshot();
                 if(typeof refreshAllUI==="function") refreshAllUI();
                 PharmFlowCloudWorkspace.lastCloudUpdate=row.updated_at||null;

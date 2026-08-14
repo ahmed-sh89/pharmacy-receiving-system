@@ -737,8 +737,7 @@ function createReceivingTransaction(options){
                 .scanner,
 
         deviceId:
-            AppState.session
-                .deviceId,
+            (typeof ensureDeviceId === "function" ? ensureDeviceId() : AppState.session.deviceId),
 
         manual:
             options.manual === true
@@ -1283,8 +1282,7 @@ function applyQuantityAdjustment(options){
                 "MANUAL_ADJUSTMENT",
 
             deviceId:
-                AppState.session
-                    .deviceId,
+                (typeof ensureDeviceId === "function" ? ensureDeviceId() : AppState.session.deviceId),
 
             manual:
                 item.manual === true
