@@ -1715,3 +1715,116 @@ body.authBooting #authAccessPanel{
     padding:26px 32px 28px !important;
   }
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.8.7 — TWO-COLUMN AUTH LAYOUT
+   Brand left, access form right. Warm, balanced, laptop-safe.
+========================================================= */
+@media (min-width: 821px){
+  .authGate,.authGate.visible{
+    padding:24px 34px !important;
+    overflow:auto !important;
+  }
+  .authShell{
+    width:min(1080px,94vw) !important;
+    height:auto !important;
+    max-height:none !important;
+    display:grid !important;
+    grid-template-columns:minmax(300px,.82fr) minmax(440px,1.18fr) !important;
+    grid-template-rows:1fr !important;
+    gap:42px !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+  .authBrandPanel{
+    min-height:520px !important;
+    padding:42px 30px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    background:transparent !important;
+    border:0 !important;
+    box-shadow:none !important;
+  }
+  .authBrandMinimal{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    justify-content:center !important;
+    min-height:0 !important;
+    width:100% !important;
+  }
+  .authBrandLogoCard{
+    width:128px !important;
+    height:128px !important;
+    margin:0 0 22px !important;
+    padding:0 !important;
+    background:transparent !important;
+    border:0 !important;
+    box-shadow:none !important;
+  }
+  .authBrandName{
+    margin:0 !important;
+    font-size:58px !important;
+    line-height:.98 !important;
+    letter-spacing:-2.2px !important;
+    text-align:left !important;
+    color:#35281F !important;
+  }
+  .authBrandTagline{
+    margin:13px 0 0 !important;
+    max-width:340px !important;
+    font-size:11px !important;
+    line-height:1.5 !important;
+    letter-spacing:2.15px !important;
+    text-align:left !important;
+    color:#9B5433 !important;
+  }
+  .authFormPanel{
+    width:100% !important;
+    max-width:560px !important;
+    max-height:none !important;
+    justify-self:end !important;
+    align-self:center !important;
+    overflow:visible !important;
+    border-radius:28px !important;
+  }
+  .authFormPanelInner{
+    max-height:none !important;
+    overflow:visible !important;
+    padding:32px 38px 34px !important;
+  }
+  .authFormPanel h2{
+    font-size:31px !important;
+    margin:3px 0 6px !important;
+  }
+  .authLead{
+    font-size:13px !important;
+    margin-bottom:16px !important;
+  }
+  .authEyebrow{font-size:10px !important;letter-spacing:1.6px !important;}
+  .authField{margin-bottom:12px !important;}
+  .authField label{font-size:11px !important;margin-bottom:5px !important;}
+  .authField input,.authField select,.authInput{
+    height:46px !important;min-height:46px !important;font-size:14px !important;
+  }
+  .authPrimaryButton{height:48px !important;min-height:48px !important;font-size:13px !important;}
+  .authSecondaryLink{min-height:32px !important;font-size:11px !important;}
+  .authSignupLink{min-height:42px !important;}
+}
+@media (min-width:821px) and (max-height:680px){
+  .authGate,.authGate.visible{padding:12px 28px !important;}
+  .authBrandPanel{min-height:0 !important;padding:22px 24px !important;}
+  .authBrandLogoCard{width:98px !important;height:98px !important;margin-bottom:15px !important;}
+  .authBrandName{font-size:48px !important;}
+  .authBrandTagline{margin-top:8px !important;font-size:9px !important;}
+  .authFormPanelInner{padding:22px 32px 24px !important;}
+  .authFormPanel h2{font-size:27px !important;}
+  .authLead{margin-bottom:10px !important;}
+  .authField{margin-bottom:8px !important;}
+  .authField input,.authField select,.authInput{height:40px !important;min-height:40px !important;}
+  .authPrimaryButton{height:42px !important;min-height:42px !important;}
+  .authSecondaryLink{min-height:27px !important;margin-top:4px !important;}
+  .authSignupLink{min-height:36px !important;}
+}

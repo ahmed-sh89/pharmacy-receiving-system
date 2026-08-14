@@ -4134,3 +4134,46 @@ body:not(.zebraDevice) .contentCard,body:not(.zebraDevice) .scanPanel{
 #receivingProgressBar{
   background:linear-gradient(90deg,#249654,#36A965) !important;
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.8.7 — SCAN BOX SIGNAL
+   READY charcoal / SUCCESS green flash / ERROR dark-red flash.
+========================================================= */
+.scanBox,#scanBox,#page-dashboard .scanBox{
+  border:2px solid #514A45 !important;
+  background:#FFF9F4 !important;
+  box-shadow:0 2px 7px rgba(48,40,35,.08) !important;
+  transition:border-color .12s ease,background-color .12s ease,box-shadow .12s ease !important;
+}
+.scanBox .scanBoxIcon,#scanBox .scanBoxIcon{
+  background:#EEE8E2 !important;
+  color:#47413D !important;
+}
+.scanBox .scanBoxIndicator,#scanBox .scanBoxIndicator{
+  background:#EEE8E2 !important;
+  color:#47413D !important;
+  border-color:#D3CAC2 !important;
+}
+.scanBox.success,#scanBox.success,.scanBox.flashSuccess,#scanBox.flashSuccess{
+  border-color:#118447 !important;
+  background:#EAF8EF !important;
+  box-shadow:0 0 0 4px rgba(17,132,71,.18),0 0 18px rgba(17,132,71,.24) !important;
+}
+.scanBox.success .scanBoxIcon,#scanBox.success .scanBoxIcon,
+.scanBox.flashSuccess .scanBoxIcon,#scanBox.flashSuccess .scanBoxIcon,
+.scanBox.success .scanBoxIndicator,#scanBox.success .scanBoxIndicator,
+.scanBox.flashSuccess .scanBoxIndicator,#scanBox.flashSuccess .scanBoxIndicator{
+  background:#CDEDD8 !important;color:#0E733D !important;border-color:#9FD6B2 !important;
+}
+.scanBox.error,#scanBox.error,.scanBox.flashError,#scanBox.flashError{
+  border-color:#A91F2A !important;
+  background:#FDEBED !important;
+  box-shadow:0 0 0 4px rgba(169,31,42,.17),0 0 18px rgba(169,31,42,.22) !important;
+}
+.scanBox.error .scanBoxIcon,#scanBox.error .scanBoxIcon,
+.scanBox.flashError .scanBoxIcon,#scanBox.flashError .scanBoxIcon,
+.scanBox.error .scanBoxIndicator,#scanBox.error .scanBoxIndicator,
+.scanBox.flashError .scanBoxIndicator,#scanBox.flashError .scanBoxIndicator{
+  background:#F5C9CD !important;color:#961B25 !important;border-color:#E6A3A9 !important;
+}

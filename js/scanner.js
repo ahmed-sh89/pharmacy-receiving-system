@@ -93,11 +93,12 @@ function initializeScanner(){
     input.addEventListener(
         "focus",
         function(){
-
-            setScanBoxState(
-                "ready"
-            );
-
+            /*
+               Do not reset scan feedback here. A successful scan
+               immediately restores focus to the scanner input, and
+               resetting to READY here would hide the green/red flash.
+               setScanBoxState() owns the timed return to READY.
+            */
         }
     );
 
