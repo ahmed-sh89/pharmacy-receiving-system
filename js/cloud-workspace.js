@@ -1,9 +1,10 @@
 "use strict";
 
 /* =====================================================
-   PHARMFLOW PHASE 2C.7 — MULTI-PC CLOUD WORKSPACE
-   Local-first receiving: UI changes immediately; small
-   additive transactions synchronize in the background.
+   PHARMFLOW PHASE 2C.7.1 — MULTI-PC CLOUD WORKSPACE FIX
+   - Never overwrite cloud workspace from a fresh empty PC
+   - Hydrate as soon as Auth context + AppState are both ready
+   - Keep local-first scan speed
 ===================================================== */
 
 const PharmFlowCloudWorkspace = {
@@ -11,9 +12,12 @@ const PharmFlowCloudWorkspace = {
     initialized:false,
     pollTimer:null,
     saveTimer:null,
+    contextWatchTimer:null,
     lastCloudUpdate:null,
     pendingKey:"PHARMFLOW_CLOUD_TX_QUEUE_V1",
-    deviceId:null
+    deviceId:null,
+    hydratedPharmacyId:null,
+    hydrationPromise:null
 };
 
 function cloudWorkspacePharmacyId(){
@@ -29,7 +33,7 @@ function cloudWorkspaceDeviceId(){
 function setCloudWorkspaceStatus(state, detail=""){
     document.documentElement.dataset.cloudWorkspaceState=state;
     let el=document.getElementById("cloudWorkspaceStatus");
-    const host=document.getElementById("orderScopeControl") || document.querySelector(".currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader");
+    const host=document.getElementById("orderScopeControl") || document.querySelector(".currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader, .topBarRight");
     if(host && !el){
         el=document.createElement("span"); el.id="cloudWorkspaceStatus"; el.className="cloudWorkspaceStatus"; host.appendChild(el);
     }
@@ -54,7 +58,8 @@ function queueCloudWorkspaceTransaction(tx){
 }
 
 async function flushCloudWorkspaceQueue(){
-    if(!navigator.onLine || !cloudWorkspacePharmacyId() || typeof authRpc!=="function"){
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function"){
         if(readCloudQueue().length) setCloudWorkspaceStatus("offline");
         return;
     }
@@ -64,7 +69,7 @@ async function flushCloudWorkspaceQueue(){
     for(const tx of q){
         try{
             await authRpc("append_pharmflow_cloud_transaction",{
-                p_pharmacy_id:cloudWorkspacePharmacyId(),
+                p_pharmacy_id:pharmacyId,
                 p_transaction_id:tx.transactionId,
                 p_order_number:toSafeString(tx.orderId||""),
                 p_item_code:toSafeString(tx.itemCode||""),
@@ -83,17 +88,23 @@ async function flushCloudWorkspaceQueue(){
 }
 
 function scheduleCloudWorkspaceSnapshot(){
-    if(PharmFlowCloudWorkspace.applyingRemote || !cloudWorkspacePharmacyId()) return;
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(PharmFlowCloudWorkspace.applyingRemote || !pharmacyId) return;
+    if(PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId) return;
     clearTimeout(PharmFlowCloudWorkspace.saveTimer);
     PharmFlowCloudWorkspace.saveTimer=setTimeout(saveCloudWorkspaceSnapshot,700);
 }
 
 async function saveCloudWorkspaceSnapshot(){
-    if(!navigator.onLine || typeof authRpc!=="function") return;
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(!navigator.onLine || typeof authRpc!=="function" || !pharmacyId) return;
+    if(PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId) return;
+    /* Explicit clear has its own RPC. A fresh empty PC must never erase the cloud. */
+    if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length) return;
     try{
         setCloudWorkspaceStatus("syncing");
         await authRpc("save_pharmflow_cloud_workspace",{
-            p_pharmacy_id:cloudWorkspacePharmacyId(),
+            p_pharmacy_id:pharmacyId,
             p_workspace:serializeCurrentWorkspace(),
             p_device_id:cloudWorkspaceDeviceId()
         });
@@ -105,8 +116,8 @@ function applyCloudTransaction(tx){
     const id=toSafeString(tx.transaction_id||tx.transactionId||"");
     if(!id || AppState.indexes.transactionIds.has(id)) return false;
     const code=normalizeItemCode(tx.item_code||tx.itemCode||"");
-    let item=getItemByCode(code);
-    if(!item){ return false; }
+    const item=getItemByCode(code);
+    if(!item) return false;
     const qty=toNumber(tx.quantity,0);
     item.receivedQty=Math.max(0,toNumber(item.receivedQty,0)+qty);
     updateItemCalculatedFields(item);
@@ -121,11 +132,12 @@ function applyCloudTransaction(tx){
 }
 
 async function pullCloudWorkspaceTransactions(){
-    if(!navigator.onLine || !cloudWorkspacePharmacyId() || typeof authRpc!=="function") return;
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function") return;
+    /* Transactions cannot be applied until this PC has the order rows. */
+    if(PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId) return;
     try{
-        const rows=await authRpc("list_pharmflow_cloud_transactions",{
-            p_pharmacy_id:cloudWorkspacePharmacyId(), p_limit:1000
-        });
+        const rows=await authRpc("list_pharmflow_cloud_transactions",{p_pharmacy_id:pharmacyId,p_limit:1000});
         let changed=false;
         PharmFlowCloudWorkspace.applyingRemote=true;
         for(const tx of (Array.isArray(rows)?rows:[]).slice().reverse()) changed=applyCloudTransaction(tx)||changed;
@@ -139,25 +151,56 @@ async function pullCloudWorkspaceTransactions(){
 }
 
 async function restoreCloudWorkspaceOnLogin(){
-    if(!navigator.onLine || !cloudWorkspacePharmacyId() || typeof authRpc!=="function") return;
-    try{
-        setCloudWorkspaceStatus("syncing");
-        const result=await authRpc("get_pharmflow_cloud_workspace",{p_pharmacy_id:cloudWorkspacePharmacyId()});
-        const row=Array.isArray(result)?result[0]:result;
-        if(row && row.workspace && row.workspace.workspace && Array.isArray(row.workspace.workspace.orderData) && row.workspace.workspace.orderData.length){
-            PharmFlowCloudWorkspace.applyingRemote=true;
-            restoreWorkspaceState(row.workspace);
-            saveWorkspaceSnapshot();
-            if(typeof refreshAllUI==="function") refreshAllUI();
-            PharmFlowCloudWorkspace.lastCloudUpdate=row.updated_at||null;
-        }else if(AppState.workspace?.orderData?.length){
-            await saveCloudWorkspaceSnapshot();
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function") return false;
+    if(typeof AppState==="undefined" || !AppState.workspace) return false;
+    if(PharmFlowCloudWorkspace.hydratedPharmacyId===pharmacyId) return true;
+    if(PharmFlowCloudWorkspace.hydrationPromise) return PharmFlowCloudWorkspace.hydrationPromise;
+
+    PharmFlowCloudWorkspace.hydrationPromise=(async()=>{
+        try{
+            setCloudWorkspaceStatus("syncing");
+            const result=await authRpc("get_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
+            const row=Array.isArray(result)?result[0]:result;
+            const cloudState=row?.workspace;
+            const cloudHasOrder=cloudState?.workspace && Array.isArray(cloudState.workspace.orderData) && cloudState.workspace.orderData.length>0;
+            const localHasOrder=Array.isArray(AppState.workspace?.orderData) && AppState.workspace.orderData.length>0;
+
+            if(cloudHasOrder){
+                PharmFlowCloudWorkspace.applyingRemote=true;
+                restoreWorkspaceState(cloudState);
+                saveWorkspaceSnapshot();
+                if(typeof refreshAllUI==="function") refreshAllUI();
+                PharmFlowCloudWorkspace.lastCloudUpdate=row.updated_at||null;
+                PharmFlowCloudWorkspace.applyingRemote=false;
+            }
+
+            /* Mark hydrated BEFORE bootstrap-saving the original PC local order. */
+            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+
+            if(!cloudHasOrder && localHasOrder){
+                await saveCloudWorkspaceSnapshot();
+            }
+
+            await pullCloudWorkspaceTransactions();
+            await flushCloudWorkspaceQueue();
+            setCloudWorkspaceStatus("synced");
+            return true;
+        }catch(error){
+            PharmFlowCloudWorkspace.applyingRemote=false;
+            setCloudWorkspaceStatus("offline",error.message||"");
+            return false;
+        }finally{
+            PharmFlowCloudWorkspace.hydrationPromise=null;
         }
-        PharmFlowCloudWorkspace.applyingRemote=false;
-        await pullCloudWorkspaceTransactions();
-        await flushCloudWorkspaceQueue();
-        setCloudWorkspaceStatus("synced");
-    }catch(error){PharmFlowCloudWorkspace.applyingRemote=false;setCloudWorkspaceStatus("offline",error.message||"");}
+    })();
+    return PharmFlowCloudWorkspace.hydrationPromise;
+}
+
+function attemptCloudWorkspaceHydration(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(!pharmacyId || typeof AppState==="undefined" || !AppState.workspace) return;
+    if(PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId) restoreCloudWorkspaceOnLogin();
 }
 
 function initializePharmFlowCloudWorkspace(){
@@ -166,16 +209,30 @@ function initializePharmFlowCloudWorkspace(){
     AppEvents.on("receiving:transaction",queueCloudWorkspaceTransaction);
     AppEvents.on("workspace:saved",scheduleCloudWorkspaceSnapshot);
     AppEvents.on("workspace:cleared",async()=>{
-        if(typeof authRpc!=="function" || !cloudWorkspacePharmacyId()) return;
-        try{await authRpc("clear_pharmflow_cloud_workspace",{p_pharmacy_id:cloudWorkspacePharmacyId()});writeCloudQueue([]);setCloudWorkspaceStatus("synced");}catch(_){}
+        const pharmacyId=cloudWorkspacePharmacyId();
+        if(typeof authRpc!=="function" || !pharmacyId) return;
+        try{
+            await authRpc("clear_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
+            writeCloudQueue([]); setCloudWorkspaceStatus("synced");
+            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+        }catch(_){}
     });
-    window.addEventListener("online",()=>{flushCloudWorkspaceQueue();pullCloudWorkspaceTransactions();});
+    window.addEventListener("online",()=>{attemptCloudWorkspaceHydration();flushCloudWorkspaceQueue();pullCloudWorkspaceTransactions();});
     window.addEventListener("offline",()=>setCloudWorkspaceStatus("offline"));
-    window.addEventListener("auth:context-ready",()=>setTimeout(restoreCloudWorkspaceOnLogin,150));
+    window.addEventListener("auth:context-ready",()=>setTimeout(attemptCloudWorkspaceHydration,0));
+
+    /* Auth can finish before this script receives the context-ready event.
+       This watcher closes that race and also waits for AppState initialization. */
+    PharmFlowCloudWorkspace.contextWatchTimer=setInterval(attemptCloudWorkspaceHydration,250);
     PharmFlowCloudWorkspace.pollTimer=setInterval(()=>{
-        if(document.visibilityState==="visible"){flushCloudWorkspaceQueue();pullCloudWorkspaceTransactions();}
+        if(document.visibilityState==="visible"){
+            attemptCloudWorkspaceHydration();
+            flushCloudWorkspaceQueue();
+            pullCloudWorkspaceTransactions();
+        }
     },1500);
-    if(cloudWorkspacePharmacyId()) setTimeout(restoreCloudWorkspaceOnLogin,250);
+    attemptCloudWorkspaceHydration();
 }
 
-setTimeout(initializePharmFlowCloudWorkspace,100);
+/* Bind immediately; do not wait 100 ms and risk missing auth:context-ready. */
+initializePharmFlowCloudWorkspace();

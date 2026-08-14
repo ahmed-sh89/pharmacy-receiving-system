@@ -5862,13 +5862,14 @@ function getActivitySourceLabel(source){
     return source||"Receiving";
 }
 
-function toggleHighPriority(itemCode){
+function toggleHighPriority(itemCode, options={}){
     const item=typeof getItemByCode==="function"?getItemByCode(itemCode):null;
-    if(!item) return;
+    if(!item) return null;
     item.highPriority=item.highPriority!==true;
     if(typeof saveApplicationState==="function") saveApplicationState("high-priority");
-    refreshOpenKpiPanel();
-    showToast(`${item.itemName} — ${item.highPriority?"High Priority enabled":"High Priority removed"}`,"success");
+    if(options.refresh!==false) refreshOpenKpiPanel();
+    if(options.toast!==false) showToast(`${item.itemName} — ${item.highPriority?"High Priority enabled":"High Priority removed"}`,"success");
+    return item;
 }
 
 function renderItemBrowser(body, rows, options={}){
@@ -5892,7 +5893,16 @@ function renderItemBrowser(body, rows, options={}){
         if(showPriority&&filter==='priority') visible=visible.filter(item=>item.highPriority===true);
         visible.sort((a,b)=>(b.highPriority===true)-(a.highPriority===true)||toSafeString(a.itemName).localeCompare(toSafeString(b.itemName)));
         tbody.innerHTML=visible.length?visible.map(item=>`<tr class="${item.highPriority===true?'phase263PriorityRow':''}">${showPriority?`<td><button type="button" class="phase263Star ${item.highPriority===true?'active':''}" data-priority="${esc(item.itemCode)}" title="Toggle High Priority">${item.highPriority===true?'★':'☆'}</button></td>`:''}<td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||'')}</td></tr>`).join(''):'<tr><td colspan="7" class="tableEmptyState">No matching items.</td></tr>';
-        tbody.querySelectorAll('[data-priority]').forEach(btn=>btn.onclick=()=>toggleHighPriority(btn.dataset.priority));
+        tbody.querySelectorAll('[data-priority]').forEach(btn=>btn.onclick=(event)=>{
+            event.preventDefault();
+            const wrap=body.querySelector('.phase263TableWrap');
+            const savedTop=wrap?.scrollTop||0;
+            const savedLeft=wrap?.scrollLeft||0;
+            toggleHighPriority(btn.dataset.priority,{refresh:false});
+            draw();
+            const nextWrap=body.querySelector('.phase263TableWrap');
+            if(nextWrap){nextWrap.scrollTop=savedTop;nextWrap.scrollLeft=savedLeft;}
+        });
     };
     input?.addEventListener('input',draw);
     body.querySelectorAll('[data-filter]').forEach(btn=>btn.onclick=()=>{filter=btn.dataset.filter;body.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b===btn));draw();});
