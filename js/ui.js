@@ -1916,6 +1916,62 @@ function createReceivingTableRow(
 
 
 /* =====================================================
+   DEVICE-LOCAL QUANTITY HELPERS
+   Phase 2C.7.3
+===================================================== */
+
+function getCurrentDeviceId(){
+    try{
+        if(typeof ensureDeviceId === "function"){
+            return toSafeString(ensureDeviceId());
+        }
+    }catch(_){ }
+
+    return toSafeString(AppState?.session?.deviceId || "");
+}
+
+function getDeviceItemReceivedQuantity(itemCode){
+    const code = normalizeItemCode(itemCode);
+    const deviceId = getCurrentDeviceId();
+
+    if(!code || !deviceId){
+        return 0;
+    }
+
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    const net = history.reduce((sum, tx)=>{
+        if(normalizeItemCode(tx?.itemCode) !== code){
+            return sum;
+        }
+
+        if(toSafeString(tx?.deviceId || "") !== deviceId){
+            return sum;
+        }
+
+        return sum + toNumber(tx?.quantity, 0);
+    }, 0);
+
+    return Math.max(0, net);
+}
+
+function getDeviceLastItemActionQuantity(itemCode){
+    const code = normalizeItemCode(itemCode);
+    const deviceId = getCurrentDeviceId();
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    const row = history
+        .filter(tx=>normalizeItemCode(tx?.itemCode)===code && toSafeString(tx?.deviceId||"")===deviceId)
+        .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0))[0];
+
+    return row ? toNumber(row.quantity,0) : 0;
+}
+
+/* =====================================================
    EDIT QUANTITY
 ===================================================== */
 
@@ -1932,203 +1988,208 @@ function openQuantityEditPrompt(item){
 
     if(!modal){
 
-        modal =
-            document.createElement(
-                "div"
-            );
-
-        modal.id =
-            "quantityAdjustmentModal";
-
-        modal.className =
-            "quantityAdjustmentModal";
+        modal = document.createElement("div");
+        modal.id = "quantityAdjustmentModal";
+        modal.className = "quantityAdjustmentModal";
 
         modal.innerHTML = `
-
             <div class="quantityAdjustmentCard">
-
                 <div class="quantityAdjustmentHeader">
                     <div>
                         <span class="sectionEyebrow">QUANTITY</span>
                         <h3 id="quantityAdjustmentItemName">-</h3>
                     </div>
-                    <button type="button" id="btnCloseQuantityAdjustment" class="iconButton">✕</button>
+                    <button type="button" id="btnCloseQuantityAdjustment" class="iconButton" aria-label="Close">✕</button>
                 </div>
 
                 <div class="quantityCurrentTotal">
-                    <span>Current Received</span>
+                    <span>Received — All Devices</span>
                     <strong id="quantityAdjustmentCurrent">0</strong>
                 </div>
 
-                <label class="quantityAdjustmentLabel" for="quantityAdjustmentInput">
-                    Quantity
-                </label>
+                <div class="quantityCurrentTotal" style="margin-top:8px;">
+                    <span>This PC Qty</span>
+                    <strong id="quantityAdjustmentDeviceCurrent">0</strong>
+                </div>
 
-                <input
-                    id="quantityAdjustmentInput"
-                    class="quantityAdjustmentInput"
-                    type="number"
-                    min="0"
-                    step="1"
-                    value="1"
-                    inputmode="numeric"
-                >
+                <div id="quantityAddMode">
+                    <label class="quantityAdjustmentLabel" for="quantityAdjustmentInput">
+                        Additional quantity from this batch
+                    </label>
 
-                <p class="quantityAdjustmentHelp">
-                    <strong>Add Quantity</strong> adds to what was already received.
-                    Use <strong>Correct Total</strong> only when you want to replace the final received total.
-                </p>
+                    <input
+                        id="quantityAdjustmentInput"
+                        class="quantityAdjustmentInput"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="1"
+                        inputmode="numeric"
+                    >
 
-                <div class="quantityAdjustmentActions">
-                    <button type="button" id="btnQuantityAdd" class="primaryButton">
-                        + Add Quantity
-                    </button>
-                    <button type="button" id="btnQuantitySetTotal" class="secondaryButton">
-                        Correct Total
+                    <div class="quantityCurrentTotal" style="margin-top:8px;">
+                        <span>New This PC Qty</span>
+                        <strong id="quantityAdjustmentPreview">0</strong>
+                    </div>
+
+                    <p class="quantityAdjustmentHelp">
+                        Enter only the <strong>additional</strong> packs in front of you after the scanned pack(s).
+                        Press <strong>Enter</strong> to add them and return to scanning.
+                    </p>
+
+                    <div class="quantityAdjustmentActions">
+                        <button type="button" id="btnQuantityAdd" class="primaryButton">+ Add 1</button>
+                    </div>
+
+                    <button type="button" id="btnShowQuantityCorrection" class="authSecondaryLink" style="margin-top:8px;">
+                        Correct received total
                     </button>
                 </div>
 
+                <div id="quantityCorrectionMode" hidden>
+                    <label class="quantityAdjustmentLabel" for="quantityCorrectionInput">
+                        Replace all-device received total with
+                    </label>
+                    <input
+                        id="quantityCorrectionInput"
+                        class="quantityAdjustmentInput"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="0"
+                        inputmode="numeric"
+                    >
+                    <p class="quantityAdjustmentHelp">
+                        This is a correction to the <strong>shared total across all devices</strong>. Use only when the current received total is wrong.
+                    </p>
+                    <div class="quantityAdjustmentActions">
+                        <button type="button" id="btnQuantitySetTotal" class="secondaryButton">Confirm Correct Total</button>
+                        <button type="button" id="btnCancelQuantityCorrection" class="secondaryButton">Back</button>
+                    </div>
+                </div>
             </div>
-
         `;
 
-        document.body.appendChild(
-            modal
-        );
+        document.body.appendChild(modal);
 
         document
-            .getElementById(
-                "btnCloseQuantityAdjustment"
-            )
-            ?.addEventListener(
-                "click",
-                closeQuantityAdjustmentModal
-            );
+            .getElementById("btnCloseQuantityAdjustment")
+            ?.addEventListener("click", closeQuantityAdjustmentModal);
 
-        modal.addEventListener(
-            "click",
-            function(event){
-                if(event.target === modal){
-                    closeQuantityAdjustmentModal();
-                }
+        modal.addEventListener("click", function(event){
+            if(event.target === modal){
+                closeQuantityAdjustmentModal();
             }
-        );
+        });
 
+        modal.addEventListener("keydown", function(event){
+            if(event.key === "Escape"){
+                event.preventDefault();
+                closeQuantityAdjustmentModal();
+                return;
+            }
+
+            if(event.key !== "Enter"){
+                return;
+            }
+
+            const correctionMode = !document.getElementById("quantityCorrectionMode")?.hidden;
+            event.preventDefault();
+
+            if(correctionMode){
+                document.getElementById("btnQuantitySetTotal")?.click();
+            }else{
+                document.getElementById("btnQuantityAdd")?.click();
+            }
+        });
     }
 
-    modal.dataset.itemCode =
-        item.itemCode;
+    modal.dataset.itemCode = item.itemCode;
 
     setElementText(
-        document.getElementById(
-            "quantityAdjustmentItemName"
-        ),
+        document.getElementById("quantityAdjustmentItemName"),
         item.itemName
     );
 
-    setElementText(
-        document.getElementById(
-            "quantityAdjustmentCurrent"
-        ),
-        toNumber(
-            item.receivedQty,
-            0
-        )
-    );
+    const allDevicesQty = toNumber(item.receivedQty, 0);
+    const thisDeviceQty = getDeviceItemReceivedQuantity(item.itemCode);
 
-    const input =
-        document.getElementById(
-            "quantityAdjustmentInput"
-        );
+    setElementText(document.getElementById("quantityAdjustmentCurrent"), allDevicesQty);
+    setElementText(document.getElementById("quantityAdjustmentDeviceCurrent"), thisDeviceQty);
 
-    if(input){
-        input.value = "1";
+    const input = document.getElementById("quantityAdjustmentInput");
+    const correctionInput = document.getElementById("quantityCorrectionInput");
+    const addMode = document.getElementById("quantityAddMode");
+    const correctionMode = document.getElementById("quantityCorrectionMode");
+    const addButton = document.getElementById("btnQuantityAdd");
+    const setButton = document.getElementById("btnQuantitySetTotal");
+    const preview = document.getElementById("quantityAdjustmentPreview");
+
+    if(addMode){ addMode.hidden = false; }
+    if(correctionMode){ correctionMode.hidden = true; }
+    if(input){ input.value = "1"; }
+    if(correctionInput){ correctionInput.value = String(allDevicesQty); }
+
+    function refreshAddPreview(){
+        const additional = Math.max(0, toNumber(input?.value, 0));
+        if(preview){ preview.textContent = String(thisDeviceQty + additional); }
+        if(addButton){ addButton.textContent = `+ Add ${additional}`; }
     }
 
-    const addButton =
-        document.getElementById(
-            "btnQuantityAdd"
-        );
+    input?.addEventListener("input", refreshAddPreview, {once:false});
+    refreshAddPreview();
 
-    const setButton =
-        document.getElementById(
-            "btnQuantitySetTotal"
-        );
+    document.getElementById("btnShowQuantityCorrection").onclick = function(){
+        if(addMode){ addMode.hidden = true; }
+        if(correctionMode){ correctionMode.hidden = false; }
+        if(correctionInput){
+            correctionInput.value = String(toNumber(getItemByCode(modal.dataset.itemCode)?.receivedQty, allDevicesQty));
+            setTimeout(()=>{ correctionInput.focus(); correctionInput.select(); }, 20);
+        }
+    };
 
-    addButton.onclick =
-        function(){
+    document.getElementById("btnCancelQuantityCorrection").onclick = function(){
+        if(correctionMode){ correctionMode.hidden = true; }
+        if(addMode){ addMode.hidden = false; }
+        setTimeout(()=>{ input?.focus(); input?.select(); }, 20);
+    };
 
-            const code =
-                modal.dataset.itemCode;
+    addButton.onclick = function(){
+        const code = modal.dataset.itemCode;
+        const quantity = toNumber(input?.value, 0);
 
-            const quantity =
-                toNumber(
-                    input?.value,
-                    0
-                );
+        if(quantity <= 0){
+            showToast("Enter the additional quantity to add", "warning");
+            return;
+        }
 
-            if(quantity <= 0){
-                showToast(
-                    "Enter a quantity greater than zero",
-                    "warning"
-                );
-                return;
-            }
+        const transaction = addItemReceivedQuantity(code, quantity, "MANUAL_ADD");
+        if(transaction){
+            closeQuantityAdjustmentModal();
+        }
+    };
 
-            const transaction =
-                addItemReceivedQuantity(
-                    code,
-                    quantity,
-                    "MANUAL_ADD"
-                );
+    setButton.onclick = function(){
+        const code = modal.dataset.itemCode;
+        const total = toNumber(correctionInput?.value, -1);
 
-            if(transaction){
-                closeQuantityAdjustmentModal();
-            }
+        if(total < 0){
+            showToast("Enter a valid total quantity", "warning");
+            return;
+        }
 
-        };
+        const transaction = setItemReceivedQuantity(code, total);
+        if(transaction){
+            closeQuantityAdjustmentModal();
+        }
+    };
 
-    setButton.onclick =
-        function(){
-
-            const code =
-                modal.dataset.itemCode;
-
-            const total =
-                toNumber(
-                    input?.value,
-                    -1
-                );
-
-            if(total < 0){
-                showToast(
-                    "Enter a valid total quantity",
-                    "warning"
-                );
-                return;
-            }
-
-            const transaction =
-                setItemReceivedQuantity(
-                    code,
-                    total
-                );
-
-            if(transaction){
-                closeQuantityAdjustmentModal();
-            }
-
-        };
-
-    modal.classList.add(
-        "open"
-    );
+    modal.classList.add("open");
 
     setTimeout(()=>{
         input?.focus();
         input?.select();
     },30);
-
 }
 
 
@@ -4118,17 +4179,17 @@ function createLastScanQuantityControls(){
 
       <div class="lastScanQtyTitle">
 
-          Quick Quantity Adjustment
+          THIS PC QTY
 
       </div>
 
       <div class="handheldScanContext" aria-live="polite">
           <div>
-              <span>THIS SCAN</span>
+              <span>LAST ACTION</span>
               <strong id="handheldThisScan">+0</strong>
           </div>
           <div>
-              <span>TOTAL RECEIVED</span>
+              <span>ALL DEVICES</span>
               <strong id="handheldTotalReceived">0</strong>
           </div>
       </div>
@@ -4163,7 +4224,7 @@ function createLastScanQuantityControls(){
 
       <div class="lastScanQtyHint">
 
-          Tap the number to add quantity or correct the total.
+          Current device quantity. Tap to add more from this batch.
 
       </div>
 
@@ -4334,8 +4395,13 @@ function refreshLastScanQuantityControl(){
           0
       );
 
+  const thisDeviceReceived =
+      getDeviceItemReceivedQuantity(
+          item.itemCode
+      );
+
   button.textContent =
-      String(totalReceived);
+      String(thisDeviceReceived);
 
   if(totalReceivedElement){
       totalReceivedElement.textContent =
