@@ -124,7 +124,7 @@
   color: var(--primary);
 
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .progressTrack {
@@ -206,7 +206,7 @@
   border-radius: 999px;
 
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
 
   white-space: nowrap;
 }
@@ -271,7 +271,7 @@
 
   color: var(--primary);
 
-  font-weight: 800;
+  font-weight: 700;
 }
 
 
@@ -288,7 +288,7 @@
   border-radius: 999px;
 
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .archiveStatus.completed {
@@ -388,7 +388,7 @@
   color: var(--primary);
 
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 
@@ -410,7 +410,7 @@
   background: var(--warning-soft);
 
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
 
   vertical-align: middle;
 }
@@ -475,7 +475,7 @@
   color: var(--primary);
 
   font-size: 8px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.8px;
 }
 
@@ -642,7 +642,7 @@
   color: var(--primary);
 
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .smartSearchResultQty small {
@@ -815,7 +815,7 @@
   color: var(--text);
 
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 700;
 
   text-align: center;
 }
@@ -894,7 +894,7 @@
   color: var(--primary);
 
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
 
   line-height: 1;
 }
@@ -918,7 +918,7 @@
   color: var(--text);
 
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 
   text-align: center;
 }
@@ -1053,7 +1053,7 @@
 
 .lastScanQtyTitle {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 
   color: var(--text-soft);
 }
@@ -1080,7 +1080,7 @@
   color: var(--primary);
 
   font-size: 23px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .lastScanQtyButton:hover {
@@ -1100,7 +1100,7 @@
   color: var(--primary);
 
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .lastScanQtyHint {
@@ -1196,7 +1196,7 @@
   color: var(--text-soft);
 
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: 0.8px;
 }
@@ -1372,7 +1372,7 @@
     color: var(--primary);
 
     font-size: clamp(16px, 1.65vw, 21px);
-    font-weight: 850;
+    font-weight: 700;
     line-height: 1.28;
 
     white-space: normal;
@@ -1414,7 +1414,7 @@
     color: #8390a2;
 
     font-size: 8px;
-    font-weight: 800;
+    font-weight: 700;
 
     letter-spacing: 0.45px;
     text-transform: uppercase;
@@ -1426,7 +1426,7 @@
     color: #334155;
 
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.2;
 
     white-space: nowrap;
@@ -1467,7 +1467,7 @@
     color: #7b8798;
 
     font-size: 8px;
-    font-weight: 800;
+    font-weight: 700;
 
     letter-spacing: 0.35px;
     text-transform: uppercase;
@@ -1479,7 +1479,7 @@
     color: #273244;
 
     font-size: 15px;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
 }
 
@@ -1533,7 +1533,7 @@
     color: #6d7888;
 
     font-size: 9px;
-    font-weight: 800;
+    font-weight: 700;
 
     white-space: nowrap;
 }
@@ -1560,7 +1560,7 @@
     color: var(--primary);
 
     font-size: 18px;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .lastScanQtyButton:hover {
@@ -1579,7 +1579,7 @@
     color: var(--primary);
 
     font-size: 14px;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .lastScanQtyHint {
@@ -1719,14 +1719,14 @@
     margin-bottom: 7px;
 
     font-size: 10px;
-    font-weight: 850;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: 0.5px;
 }
 
 #lastScanCard .lastScanMetric > strong {
     font-size: 24px;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
 }
 
@@ -1739,7 +1739,7 @@
     padding: 6px 12px;
 
     font-size: 12px;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 #lastScanCard .lastScanOverQuantity {
@@ -1748,7 +1748,7 @@
     color: var(--danger);
 
     font-size: 24px;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
 }
 
@@ -1842,7 +1842,7 @@
     color: var(--primary);
 
     font-size: 9px;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.8px;
 }
 
@@ -1895,7 +1895,7 @@
     color: #526174;
 
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 700;
 
     transition:
         background 0.18s ease,
@@ -1943,7 +1943,7 @@
     color: var(--text);
 
     font-size: 16px;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .orderStatusReportSummary span {
@@ -1984,7 +1984,7 @@
     color: var(--warning);
 
     font-size: 15px;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .differenceOver,
@@ -1992,14 +1992,14 @@
     color: var(--danger);
 
     font-size: 15px;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .differenceComplete {
     color: var(--success);
 
     font-size: 14px;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .statusShortage {
@@ -2135,7 +2135,7 @@
     margin-bottom:5px;
     color:var(--text-soft);
     font-size:9px;
-    font-weight:800;
+    font-weight:700;
     letter-spacing:.35px;
     text-transform:uppercase;
 }
@@ -2145,7 +2145,7 @@
     overflow:hidden;
     color:var(--text);
     font-size:13px;
-    font-weight:850;
+    font-weight:700;
     text-overflow:ellipsis;
     white-space:nowrap;
 }
@@ -2187,7 +2187,7 @@
     cursor:pointer;
     color:var(--text-soft);
     font-size:11px;
-    font-weight:750;
+    font-weight:700;
     user-select:none;
 }
 
@@ -2259,13 +2259,13 @@
 .quantityCurrentTotal span{
     color:var(--text-soft);
     font-size:11px;
-    font-weight:750;
+    font-weight:700;
 }
 
 .quantityCurrentTotal strong{
     color:var(--primary);
     font-size:22px;
-    font-weight:900;
+    font-weight:700;
 }
 
 .quantityAdjustmentLabel{
@@ -2273,7 +2273,7 @@
     margin-bottom:6px;
     color:var(--text-soft);
     font-size:10px;
-    font-weight:800;
+    font-weight:700;
     text-transform:uppercase;
 }
 
@@ -2287,7 +2287,7 @@
     background:#fff;
     color:var(--text);
     font-size:20px;
-    font-weight:900;
+    font-weight:700;
     text-align:center;
 }
 
@@ -2386,7 +2386,7 @@ body.zebraMode .zebraQuickHeader{
     display:block;
     margin-bottom:4px;
     font-size:9px;
-    font-weight:900;
+    font-weight:700;
     letter-spacing:.7px;
     color:#65758b;
 }
@@ -2408,7 +2408,7 @@ body.zebraMode .zebraQuickHeader{
     background:#e8f1ff;
     color:#0b5ed7;
     font-size:9px;
-    font-weight:900;
+    font-weight:700;
 }
 
 .zebraQuickStats{
@@ -2430,7 +2430,7 @@ body.zebraMode .zebraQuickHeader{
     display:block;
     margin-bottom:2px;
     font-size:8px;
-    font-weight:800;
+    font-weight:700;
     text-transform:uppercase;
     color:#7c8898;
 }
@@ -2472,7 +2472,7 @@ body.zebraMode #scanBox{
 
 body.zebraMode #barcodeInput{
     font-size:17px;
-    font-weight:800;
+    font-weight:700;
 }
 
 body.zebraMode #lastScanCard{
@@ -2502,7 +2502,7 @@ body.zebraMode .smartScanResults{
 /* =====================================================
    CLOUD SESSION + RECEIVING FILTERS
 ===================================================== */
-.receivingFilterBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.compactSelect{min-height:42px;border:1px solid #d7e1ee;border-radius:12px;background:#fff;padding:0 34px 0 12px;font:inherit;color:#1b2a41;outline:none}.compactSelect:focus{border-color:#1d6fe8;box-shadow:0 0 0 3px rgba(29,111,232,.12)}.cloudSessionHero{overflow:hidden}.cloudActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.cloudJoinCard{border:1px solid #d9e5f5;border-radius:18px;padding:20px;background:#f8fbff;display:flex;flex-direction:column;gap:10px}.cloudJoinRow{display:flex;gap:10px}.cloudCodeInput{flex:1;min-width:0;height:48px;border:2px solid #cfe0f7;border-radius:12px;padding:0 14px;font-size:20px;font-weight:800;letter-spacing:2px;outline:none}.cloudCodeInput:focus{border-color:#1469e8;box-shadow:0 0 0 3px rgba(20,105,232,.12)}.cloudStatusPill{padding:9px 14px;border-radius:999px;background:#eaf8f0;color:#158252;font-weight:800;font-size:12px}.cloudQRPanel{margin-top:18px;border:1px solid #d9e5f5;border-radius:18px;padding:22px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px}.cloudQRPanel.hidden{display:none!important}.cloudSessionCode{font-size:38px;font-weight:900;letter-spacing:6px;color:#0e5bd7;margin:8px 0}.cloudQRCode{background:#fff;border:10px solid #fff;border-radius:14px;box-shadow:0 8px 26px rgba(12,45,85,.12)}.emergencyTools{margin-top:18px}.emergencyTools summary{cursor:pointer;color:#54657a}.emergencyActionGrid{margin-top:18px}.hidden{display:none!important}@media(max-width:760px){.cloudActionGrid{grid-template-columns:1fr}.cloudQRPanel{flex-direction:column;text-align:center}.cloudJoinRow{flex-direction:column}.receivingFilterBar{width:100%}.compactSelect{flex:1;min-width:145px}.cloudSessionCode{font-size:30px;letter-spacing:4px}}
+.receivingFilterBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.compactSelect{min-height:42px;border:1px solid #d7e1ee;border-radius:12px;background:#fff;padding:0 34px 0 12px;font:inherit;color:#1b2a41;outline:none}.compactSelect:focus{border-color:#1d6fe8;box-shadow:0 0 0 3px rgba(29,111,232,.12)}.cloudSessionHero{overflow:hidden}.cloudActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.cloudJoinCard{border:1px solid #d9e5f5;border-radius:18px;padding:20px;background:#f8fbff;display:flex;flex-direction:column;gap:10px}.cloudJoinRow{display:flex;gap:10px}.cloudCodeInput{flex:1;min-width:0;height:48px;border:2px solid #cfe0f7;border-radius:12px;padding:0 14px;font-size:20px;font-weight:700;letter-spacing:2px;outline:none}.cloudCodeInput:focus{border-color:#1469e8;box-shadow:0 0 0 3px rgba(20,105,232,.12)}.cloudStatusPill{padding:9px 14px;border-radius:999px;background:#eaf8f0;color:#158252;font-weight:700;font-size:12px}.cloudQRPanel{margin-top:18px;border:1px solid #d9e5f5;border-radius:18px;padding:22px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px}.cloudQRPanel.hidden{display:none!important}.cloudSessionCode{font-size:38px;font-weight:700;letter-spacing:6px;color:#0e5bd7;margin:8px 0}.cloudQRCode{background:#fff;border:10px solid #fff;border-radius:14px;box-shadow:0 8px 26px rgba(12,45,85,.12)}.emergencyTools{margin-top:18px}.emergencyTools summary{cursor:pointer;color:#54657a}.emergencyActionGrid{margin-top:18px}.hidden{display:none!important}@media(max-width:760px){.cloudActionGrid{grid-template-columns:1fr}.cloudQRPanel{flex-direction:column;text-align:center}.cloudJoinRow{flex-direction:column}.receivingFilterBar{width:100%}.compactSelect{flex:1;min-width:145px}.cloudSessionCode{font-size:30px;letter-spacing:4px}}
 
 /* =====================================================
    MEDRYVO DASHBOARD POLISH
@@ -2547,7 +2547,7 @@ body.zebraMode .smartScanResults{
     display:block;
     color:#687894;
     font-size:12px;
-    font-weight:800;
+    font-weight:700;
     letter-spacing:.2px;
 }
 .ownerMetricCard strong{
@@ -2611,7 +2611,7 @@ body.zebraMode .smartScanResults{
     border-radius:13px;
     background:linear-gradient(145deg,#0754c9,#0877f5);
     color:#fff;
-    font-weight:900;
+    font-weight:700;
     box-shadow:0 9px 20px rgba(7,84,201,.18);
 }
 .ownerPharmacyIdentity strong,
@@ -2626,14 +2626,14 @@ body.zebraMode .smartScanResults{
     margin-top:3px;
     color:#7a8aa4;
     font-size:12px;
-    font-weight:800;
+    font-weight:700;
 }
 .ownerFieldLabel{
     display:block;
     margin-bottom:4px;
     color:#8390a6;
     font-size:10px;
-    font-weight:900;
+    font-weight:700;
     letter-spacing:1px;
 }
 .ownerPharmacyAdmin{
@@ -2654,7 +2654,7 @@ body.zebraMode .smartScanResults{
     padding:3px 7px;
     border-radius:999px;
     font-size:9px;
-    font-weight:900;
+    font-weight:700;
     vertical-align:middle;
 }
 .ownerAwaitingTag{
@@ -2722,7 +2722,7 @@ body.zebraMode .smartScanResults{
 }
 
 /* PHARMFLOW DASHBOARD — PHASE 2B */
-.pharmflowDashboardHero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:18px;align-items:stretch;margin-bottom:18px;padding:26px 28px;border:1px solid #DCE6F3;border-radius:22px;background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.11),transparent 15rem),linear-gradient(135deg,#fff 0%,#F5F9FF 100%);box-shadow:0 12px 34px rgba(18,48,86,.07)}.pharmflowHeroCopy h2{margin:6px 0 8px;color:#0C1D38;font-size:clamp(24px,2.2vw,34px);line-height:1.12;letter-spacing:-.035em}.pharmflowHeroCopy p{max-width:700px;margin:0;color:#65738A;line-height:1.6}.pharmflowContextCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-radius:17px;background:#0D2342;color:#fff;box-shadow:0 12px 26px rgba(12,35,66,.15)}.pharmflowContextCard div{min-width:0;display:flex;flex-direction:column;gap:5px}.pharmflowContextCard span:first-child{font-size:10px;font-weight:800;letter-spacing:.12em;color:#AFC4DF;text-transform:uppercase}.pharmflowContextCard strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}.pharmflowContextCard small{color:#AFC4DF;font-weight:700}.pharmflowRolePill{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:rgba(255,138,0,.16);border:1px solid rgba(255,166,59,.3);color:#FFC06F!important;font-size:10px!important;font-weight:900;letter-spacing:.08em}.pharmflowQuickActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.pharmflowQuickAction{min-height:76px;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;border:1px solid #E0E8F2;border-radius:16px;background:#fff;color:#14213A;box-shadow:0 6px 18px rgba(18,48,86,.045)}.pharmflowQuickAction>span{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#EAF2FF;color:#0B5ED7;font-size:18px;font-weight:900}.pharmflowQuickAction:nth-child(1)>span{background:#FFF2E2;color:#E87400}.pharmflowQuickAction div{display:flex;flex-direction:column;gap:3px}.pharmflowQuickAction small{color:#77859A;font-size:10.5px}@media(max-width:1050px){.pharmflowDashboardHero{grid-template-columns:1fr}.pharmflowQuickActions{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pharmflowDashboardHero{padding:20px}.pharmflowQuickAction small{display:none}}@media(max-width:430px){.pharmflowQuickActions{grid-template-columns:1fr}}
+.pharmflowDashboardHero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:18px;align-items:stretch;margin-bottom:18px;padding:26px 28px;border:1px solid #DCE6F3;border-radius:22px;background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.11),transparent 15rem),linear-gradient(135deg,#fff 0%,#F5F9FF 100%);box-shadow:0 12px 34px rgba(18,48,86,.07)}.pharmflowHeroCopy h2{margin:6px 0 8px;color:#0C1D38;font-size:clamp(24px,2.2vw,34px);line-height:1.12;letter-spacing:-.035em}.pharmflowHeroCopy p{max-width:700px;margin:0;color:#65738A;line-height:1.6}.pharmflowContextCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-radius:17px;background:#0D2342;color:#fff;box-shadow:0 12px 26px rgba(12,35,66,.15)}.pharmflowContextCard div{min-width:0;display:flex;flex-direction:column;gap:5px}.pharmflowContextCard span:first-child{font-size:10px;font-weight:700;letter-spacing:.12em;color:#AFC4DF;text-transform:uppercase}.pharmflowContextCard strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}.pharmflowContextCard small{color:#AFC4DF;font-weight:700}.pharmflowRolePill{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:rgba(255,138,0,.16);border:1px solid rgba(255,166,59,.3);color:#FFC06F!important;font-size:10px!important;font-weight:700;letter-spacing:.08em}.pharmflowQuickActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.pharmflowQuickAction{min-height:76px;display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left;border:1px solid #E0E8F2;border-radius:16px;background:#fff;color:#14213A;box-shadow:0 6px 18px rgba(18,48,86,.045)}.pharmflowQuickAction>span{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#EAF2FF;color:#0B5ED7;font-size:18px;font-weight:900}.pharmflowQuickAction:nth-child(1)>span{background:#FFF2E2;color:#E87400}.pharmflowQuickAction div{display:flex;flex-direction:column;gap:3px}.pharmflowQuickAction small{color:#77859A;font-size:10.5px}@media(max-width:1050px){.pharmflowDashboardHero{grid-template-columns:1fr}.pharmflowQuickActions{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pharmflowDashboardHero{padding:20px}.pharmflowQuickAction small{display:none}}@media(max-width:430px){.pharmflowQuickActions{grid-template-columns:1fr}}
 
 
 /* =====================================================
@@ -2749,7 +2749,7 @@ body.zebraMode .smartScanResults{
     background:#FFF2E2;
     color:#E87400;
     font-size:22px;
-    font-weight:900;
+    font-weight:700;
 }
 .returnsArchiveIntroCard h2,
 .returnsArchiveRulesCard h3,
@@ -2805,9 +2805,9 @@ body.zebraDevice.zebraHomeActive .zebraHome{display:block}
 .zebraBrandRow img{width:42px;height:42px}
 .zebraBrandRow div{display:flex;flex-direction:column;gap:2px}
 .zebraBrandRow strong{font-size:19px;color:#0c1d38}
-.zebraBrandRow span{font-size:11px;font-weight:750;color:#76849a}
+.zebraBrandRow span{font-size:11px;font-weight:700;color:#76849a}
 .zebraModeIntro{padding:18px;border:1px solid #dce6f3;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(18,48,86,.06)}
-.zebraModeIntro>span{font-size:9px;font-weight:900;letter-spacing:.12em;color:#6f7f94}
+.zebraModeIntro>span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#6f7f94}
 .zebraModeIntro h1{margin:5px 0 7px;font-size:24px;line-height:1.1;color:#0c1d38}
 .zebraModeIntro p{margin:0;color:#68778d;line-height:1.45;font-size:13px}
 .zebraModeCards{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
@@ -2818,7 +2818,7 @@ body.zebraDevice.zebraHomeActive .zebraHome{display:block}
 .zebraModeCard div{display:flex;flex-direction:column;gap:4px}
 .zebraModeCard strong{font-size:18px}
 .zebraModeCard small{font-size:11px;line-height:1.35;color:#748298}
-.zebraSignOut{display:block;margin:18px auto 0;border:0;background:transparent;color:#68788f;font-weight:800;padding:10px}
+.zebraSignOut{display:block;margin:18px auto 0;border:0;background:transparent;color:#68788f;font-weight:700;padding:10px}
 
 body.zebraDevice.zebraJoinActive #page-sessions{display:block!important}
 body.zebraDevice.zebraJoinActive #page-sessions>.contentCard:not(.cloudSessionHero),
@@ -2829,7 +2829,7 @@ body.zebraDevice.zebraJoinActive .cloudSessionHero{margin:0;padding:16px;border-
 body.zebraDevice.zebraJoinActive .cloudSessionHero .cardHeader{display:none}
 body.zebraDevice.zebraJoinActive .cloudActionGrid{display:block;margin-top:0}
 body.zebraDevice.zebraJoinActive .cloudJoinCard{padding:18px;border-radius:16px}
-body.zebraDevice.zebraJoinActive .cloudJoinCard:before{content:"LIVE RECEIVING";font-size:9px;font-weight:900;letter-spacing:.12em;color:#6f7f94}
+body.zebraDevice.zebraJoinActive .cloudJoinCard:before{content:"LIVE RECEIVING";font-size:9px;font-weight:700;letter-spacing:.12em;color:#6f7f94}
 body.zebraDevice.zebraJoinActive .cloudJoinRow{display:grid;grid-template-columns:1fr auto;gap:8px}
 body.zebraDevice.zebraJoinActive .cloudCodeInput{font-size:24px;height:54px;text-align:center}
 body.zebraDevice.zebraJoinActive #btnJoinCloudSession{min-width:84px}
@@ -2843,7 +2843,7 @@ body.zebraDevice.zebraReceivingActive .scanPanel{margin:0;padding:10px;border-ra
 body.zebraDevice.zebraReceivingActive .scanPanelHeader p{display:none}
 body.zebraDevice.zebraReceivingActive #barcodeInput{font-size:17px;font-weight:800}
 body.zebraDevice.zebraReceivingActive #smartQuantityInput,
-body.zebraDevice.zebraReceivingActive #quantityAdjustmentInput{font-size:22px;font-weight:900;text-align:center}
+body.zebraDevice.zebraReceivingActive #quantityAdjustmentInput{font-size:22px;font-weight:700;text-align:center}
 
 body.zebraDevice.zebraExpiryActive .zebraExpiryShell{display:block}
 .zebraExpiryShell{padding:8px 2px}
@@ -2851,7 +2851,7 @@ body.zebraDevice.zebraExpiryActive .zebraExpiryShell{display:block}
 .zebraExpiryTop button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 11px;color:#0b5ed7;font-weight:850}
 .zebraExpiryTop strong{font-size:18px;color:#10213b}
 .zebraExpiryPlaceholder{padding:20px;border:1px solid #dce6f3;border-radius:18px;background:#fff}
-.zebraExpiryPlaceholder span{font-size:9px;font-weight:900;letter-spacing:.12em;color:#dc7200}
+.zebraExpiryPlaceholder span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#dc7200}
 .zebraExpiryPlaceholder h2{margin:7px 0 9px;font-size:20px;line-height:1.2;color:#10213b}
 .zebraExpiryPlaceholder p{margin:0;color:#6b798e;line-height:1.5;font-size:13px}
 
@@ -2925,7 +2925,7 @@ body.zebraDevice.zebraReceivingActive #btnAddSmartQuantity{width:100%!important;
 body.zebraDevice.zebraJoinActive .zebraJoinHeader{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader button{border:1px solid #d2deec;border-radius:10px;background:#fff;padding:9px 10px;color:#0b5ed7;font-weight:850}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader div{display:flex;flex-direction:column;gap:1px}
-body.zebraDevice.zebraJoinActive .zebraJoinHeader span{font-size:8px;font-weight:900;letter-spacing:.12em;color:#748298}
+body.zebraDevice.zebraJoinActive .zebraJoinHeader span{font-size:8px;font-weight:700;letter-spacing:.12em;color:#748298}
 body.zebraDevice.zebraJoinActive .zebraJoinHeader strong{font-size:18px;color:#10213b}
 body.zebraDevice.zebraJoinActive .cloudJoinCard:before{content:"JOIN PC SESSION"!important}
 body.zebraDevice.zebraJoinActive .cloudJoinCard>strong{font-size:18px!important}
@@ -2944,7 +2944,7 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .receivingSummaryActions{display:flex;gap:8px;flex-wrap:wrap}
 .receivingSummaryGrid{display:grid;grid-template-columns:repeat(8,minmax(92px,1fr));gap:9px}
 .receivingSummaryGrid>div{padding:12px;border:1px solid #e5ebf3;border-radius:12px;background:#f8fafc;min-width:0}
-.receivingSummaryGrid span{display:block;font-size:10px;font-weight:800;color:#718096;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.receivingSummaryGrid span{display:block;font-size:10px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
 .receivingSummaryGrid strong{font-size:21px;color:#10213b}
 @media(max-width:1100px){.receivingSummaryGrid{grid-template-columns:repeat(4,1fr)}}
 
@@ -2964,26 +2964,26 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .issueMultiFilter>summary::-webkit-details-marker{display:none}
 .issueMultiFilter>summary:after{content:"▾";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#60738c;font-size:12px}
 .issueMultiFilter[open]>summary{border-color:#1d6fe8;box-shadow:0 0 0 3px rgba(29,111,232,.10)}
-.issueMultiFilter>summary span{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#75849a}
+.issueMultiFilter>summary span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#75849a}
 .issueMultiFilter>summary strong{font-size:12px;color:#142743;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .issueMultiFilterMenu{position:absolute;z-index:80;top:calc(100% + 7px);left:0;width:285px;padding:10px;background:#fff;border:1px solid #dbe5f1;border-radius:14px;box-shadow:0 18px 45px rgba(24,48,82,.16);display:grid;gap:4px}
 .issueMultiFilterMenu label{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#263a55;cursor:pointer}
 .issueMultiFilterMenu label:hover{background:#f4f8fd}
 .issueMultiFilterMenu input{width:16px;height:16px;accent-color:#1469e8}
 .issueMultiFilterActions{display:flex;gap:7px;padding-top:8px;margin-top:4px;border-top:1px solid #edf1f6}
-.issueMultiFilterActions button{flex:1;border:1px solid #d9e3ef;background:#f8fafc;color:#38516f;border-radius:8px;padding:7px 8px;font-size:11px;font-weight:800;cursor:pointer}
+.issueMultiFilterActions button{flex:1;border:1px solid #d9e3ef;background:#f8fafc;color:#38516f;border-radius:8px;padding:7px 8px;font-size:11px;font-weight:700;cursor:pointer}
 .issueMultiFilterActions button:hover{background:#eef5ff;border-color:#bfd5f5}
 .discrepancyGrid{grid-template-columns:repeat(5,minmax(105px,1fr));max-width:900px}
 .discrepancyGrid .displayedMetric{border-color:#bcd6fb;background:#f3f8ff}
 .discrepancyGrid .displayedMetric strong{color:#0d63dc}
 @media(max-width:900px){.issueMultiFilter{width:100%}.issueMultiFilterMenu{width:100%}.discrepancyGrid{grid-template-columns:repeat(2,1fr)}}
-\n\n/* =====================================================\n   PHASE 2C.4 — MANUAL FINALIZE RECEIVING\n===================================================== */\n.finalizeReceivingButton{\n    min-width:190px;\n    font-weight:800;\n}\n.finalizeReceivingButton:disabled{\n    opacity:.5;\n    cursor:not-allowed;\n}\n@media (max-width:1100px){\n    .receivingSummaryActions .finalizeReceivingButton{\n        flex-basis:100%;\n    }\n}\n
+\n\n/* =====================================================\n   PHASE 2C.4 — MANUAL FINALIZE RECEIVING\n===================================================== */\n.finalizeReceivingButton{\n    min-width:190px;\n    font-weight:700;\n}\n.finalizeReceivingButton:disabled{\n    opacity:.5;\n    cursor:not-allowed;\n}\n@media (max-width:1100px){\n    .receivingSummaryActions .finalizeReceivingButton{\n        flex-basis:100%;\n    }\n}\n
 /* =====================================================
    PHASE 2C.5 — ITEM TRANSFER REPORT
 ===================================================== */
 .itemTransferReportCard{margin-top:20px;}
 .itemTransferHeader{align-items:flex-start;gap:18px;}
-.itemTransferAvailability{display:inline-flex;align-items:center;min-height:32px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;}
+.itemTransferAvailability{display:inline-flex;align-items:center;min-height:32px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;}
 .itemTransferAvailability.locked{background:#f4f6f8;color:#69788b;border:1px solid #dce4ec;}
 .itemTransferAvailability.available{background:#eaf8ef;color:#177245;border:1px solid #bfe7cc;}
 .itemTransferControls{display:grid;grid-template-columns:minmax(260px,1fr) auto auto auto;gap:10px;align-items:end;margin-top:18px;}
@@ -2992,7 +2992,7 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .itemTransferPreview{margin-top:18px;}
 .itemTransferMetaGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px;}
 .itemTransferMetaGrid>div{background:#f8fafc;border:1px solid #e1e8f0;border-radius:12px;padding:11px 13px;min-width:0;}
-.itemTransferMetaGrid span{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#718096;margin-bottom:4px;}
+.itemTransferMetaGrid span{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#718096;margin-bottom:4px;}
 .itemTransferMetaGrid strong{display:block;font-size:13px;color:#10243e;overflow-wrap:anywhere;}
 .itemTransferTableContainer{max-height:520px;overflow:auto;}
 @media(max-width:900px){.itemTransferControls{grid-template-columns:1fr 1fr;}.itemTransferOrderField{grid-column:1/-1;}.itemTransferMetaGrid{grid-template-columns:1fr 1fr;}}
@@ -3026,7 +3026,7 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .dashboardWorkContextMain>span:last-child{font-size:12px;color:#687a91;}
 .dashboardWorkContextStats{display:flex;gap:8px;flex:0 0 auto;}
 .dashboardWorkContextStats>div{min-width:88px;padding:9px 12px;border:1px solid #e0e8f3;border-radius:12px;background:#f8fbff;}
-.dashboardWorkContextStats span{display:block;font-size:9px;font-weight:800;letter-spacing:.08em;color:#71839a;margin-bottom:3px;}
+.dashboardWorkContextStats span{display:block;font-size:9px;font-weight:700;letter-spacing:.08em;color:#71839a;margin-bottom:3px;}
 .dashboardWorkContextStats strong{font-size:17px;color:#10243f;}
 #page-dashboard .scanPanel{margin-top:0;}
 #page-files .twoColumnLayout{grid-template-columns:minmax(0,1fr)!important;}
@@ -3061,7 +3061,7 @@ body:not(.zebraDevice) .mainApplication{background:var(--pf-bg);}
 body:not(.zebraDevice) .topBar{min-height:72px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--pf-line);}
 body:not(.zebraDevice) .topBarLeft{min-width:0;gap:12px;}
 body:not(.zebraDevice) .pageHeading{display:flex;align-items:center;gap:16px;min-width:0;}
-body:not(.zebraDevice) .pageHeading h1{margin:0;color:var(--pf-ink);font-size:clamp(18px,1.55vw,27px);font-weight:900;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body:not(.zebraDevice) .pageHeading h1{margin:0;color:var(--pf-ink);font-size:clamp(18px,1.55vw,27px);font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 body:not(.zebraDevice) .pageHeading p{margin:0;padding-left:16px;border-left:1px solid #cfd9e6;color:#526986;font-size:13px;font-weight:700;white-space:nowrap;}
 body:not(.zebraDevice) .topBarRight{gap:8px;}
 body:not(.zebraDevice) .headerInfo{min-width:100px;padding:8px 11px;border:1px solid var(--pf-line);border-radius:10px;background:#fff;}
@@ -3093,7 +3093,7 @@ body:not(.zebraDevice) .appPage>.scanPanel{margin-bottom:12px;}
 #page-dashboard .lastScanField:first-child{grid-column:1/-1;min-height:50px;text-align:left;border-right:0;border-bottom:1px solid #e2e9f2;padding-right:210px;display:flex;justify-content:center;flex-direction:column;}
 #page-dashboard .lastScanField:first-child>span{display:none;}
 #page-dashboard #lastItemName{display:block;max-width:100%;font-size:clamp(14px,1.35vw,21px);line-height:1.15;color:var(--pf-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#page-dashboard .lastScanField>span{font-size:9px;font-weight:800;color:#60738e;text-transform:uppercase;}
+#page-dashboard .lastScanField>span{font-size:9px;font-weight:700;color:#60738e;text-transform:uppercase;}
 #page-dashboard .lastScanField>strong{font-size:19px;color:var(--pf-ink);}
 #page-dashboard .lastScanQuantityControls{position:absolute;right:28px;top:59px;margin:0;padding:0;border:0;gap:7px;z-index:2;}
 #page-dashboard #lastScanCard{position:relative;}
@@ -3125,7 +3125,7 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
 .authGate{background:#f4f7fb;}
 .authShell{border:1px solid #dce5f0;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(16,42,76,.12);}
 .authBrandPanel{background:linear-gradient(150deg,#173a61 0%,#244f7b 100%);}
-.authBrandName{font-weight:900;letter-spacing:-.02em;}
+.authBrandName{font-weight:700;letter-spacing:-.02em;}
 .authBrandTagline{opacity:.78;}
 .authFormPanel{background:#fff;}
 .authEyebrow{color:var(--pf-blue);}
@@ -3196,7 +3196,7 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     max-width:68%;
     font-size:15px;
     line-height:1.1;
-    font-weight:900;
+    font-weight:700;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -3207,13 +3207,13 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     flex:0 0 auto;
     font-size:10px;
     line-height:1;
-    font-weight:800;
+    font-weight:700;
     white-space:nowrap;
     color:#65778d;
   }
 
   #page-dashboard .smartSelectedCode strong{
-    font-weight:900;
+    font-weight:700;
   }
 
   #page-dashboard #btnCloseSmartSelection{
@@ -3255,7 +3255,7 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     margin:0 6px 0 0;
     font-size:8px;
     line-height:1;
-    font-weight:900;
+    font-weight:700;
     letter-spacing:.04em;
   }
 
@@ -3263,7 +3263,7 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     display:inline;
     font-size:14px;
     line-height:1;
-    font-weight:900;
+    font-weight:700;
   }
 
   /* Quantity entry becomes one compact horizontal action strip. */
@@ -3278,7 +3278,7 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
 
   #page-dashboard .smartQuantityLabel{
     font-size:9px;
-    font-weight:900;
+    font-weight:700;
   }
 
   #page-dashboard .smartQuantityControl{
@@ -3291,14 +3291,14 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     min-width:36px;
     height:32px;
     font-size:18px;
-    font-weight:900;
+    font-weight:700;
   }
 
   #page-dashboard #smartQuantityInput{
     width:60px;
     height:32px;
     font-size:14px;
-    font-weight:900;
+    font-weight:700;
     text-align:center;
   }
 
@@ -3309,7 +3309,7 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     border-radius:8px;
     font-size:11px;
     line-height:32px;
-    font-weight:900;
+    font-weight:700;
   }
 
   /* Tighten the gap before Last Scan / Progress without altering logic. */
@@ -3369,7 +3369,7 @@ body:not(.zebraDevice) .sidebar{
 body:not(.zebraDevice) .sidebarBrand{
   border-bottom:1px solid rgba(255,255,255,.10);
 }
-body:not(.zebraDevice) .sidebarBrand .brandText strong{color:#fff;font-weight:900;}
+body:not(.zebraDevice) .sidebarBrand .brandText strong{color:#fff;font-weight:700;}
 body:not(.zebraDevice) .sidebarBrand .brandText span{color:var(--pf-sidebar-muted);font-weight:700;}
 body:not(.zebraDevice) .sidebarNavigation{padding:14px 10px;gap:5px;}
 body:not(.zebraDevice) .sidebarItem{
@@ -3377,7 +3377,7 @@ body:not(.zebraDevice) .sidebarItem{
   padding:0 13px;
   border-radius:9px;
   color:var(--pf-sidebar-text);
-  font-weight:800;
+  font-weight:700;
   letter-spacing:-.01em;
   opacity:.94;
   transition:background .16s ease,color .16s ease,transform .16s ease;
@@ -3412,14 +3412,14 @@ body:not(.zebraDevice) .autoSaveStatus strong{color:#fff;}
 body:not(.zebraDevice) .accountIdentityText small,
 body:not(.zebraDevice) .autoSaveStatus span:not(.statusDot){color:var(--pf-sidebar-muted);}
 body:not(.zebraDevice) .sidebarLogoutButton{
-  border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.04);font-weight:850;
+  border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.04);font-weight:700;
 }
 body:not(.zebraDevice) .sidebarLogoutButton:hover{background:rgba(255,255,255,.10);}
 
 /* Top header: clean, compact, pharmacy name remains the dominant identity */
 body:not(.zebraDevice) .topBar{box-shadow:0 1px 0 rgba(20,52,89,.03);}
 body:not(.zebraDevice) .pageHeading h1{font-weight:950;letter-spacing:-.025em;}
-body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:750;color:#526986;}
+body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:700;color:#526986;}
 
 /* KPI strip: decorative icon medallions without increasing vertical height */
 #page-dashboard .statisticsGrid{gap:9px;margin-bottom:10px;}
@@ -3432,7 +3432,7 @@ body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:750;color:#526986;}
 #page-dashboard .statCard::before{
   position:absolute;left:10px;top:50%;transform:translateY(-50%);
   width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:19px;font-weight:900;line-height:1;
+  font-size:19px;font-weight:700;line-height:1;
   background:#edf5ff;color:#1769e0;border:1px solid #dceafd;
 }
 #page-dashboard .statCard:nth-child(1)::before{content:"◇";font-size:25px;}
@@ -3441,7 +3441,7 @@ body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:750;color:#526986;}
 #page-dashboard .statCard:nth-child(4)::before{content:"↗";background:#fff0f1;color:#df3d4d;border-color:#f8dadd;}
 #page-dashboard .statCard:nth-child(5)::before{content:"○";background:#f3efff;color:#7146df;border-color:#e4dcff;font-size:25px;}
 #page-dashboard .statCard:nth-child(6)::before{content:"▥";background:#edf5ff;color:#1769e0;border-color:#dceafd;}
-#page-dashboard .statCardLabel{margin:0 0 3px;font-size:9px;line-height:1.05;font-weight:900;color:#536781;}
+#page-dashboard .statCardLabel{margin:0 0 3px;font-size:9px;line-height:1.05;font-weight:700;color:#536781;}
 #page-dashboard .statCard strong{font-size:24px;line-height:1;font-weight:950;color:#102a4c;}
 #page-dashboard .statSuccess,#page-dashboard .statWarning,#page-dashboard .statDanger{background:#fff;border-color:var(--pf-line);}
 #page-dashboard .statSuccess strong,#page-dashboard .statWarning strong,#page-dashboard .statDanger strong{color:#102a4c;}
@@ -3455,16 +3455,16 @@ body:not(.zebraDevice) #pageHeadingSubtitle{font-weight:750;color:#526986;}
 #page-dashboard .scanPanelHeader h2,
 #page-dashboard #lastScanCard .cardHeader h3,
 #page-dashboard>.contentCard:not(#lastScanCard) h3{font-weight:950;letter-spacing:-.015em;}
-#page-dashboard .scanBox input{font-weight:800;color:#18314f;}
+#page-dashboard .scanBox input{font-weight:700;color:#18314f;}
 #page-dashboard .lastScanField:first-child>strong{font-weight:950;letter-spacing:-.018em;}
-#page-dashboard .lastScanField>span{font-weight:900;}
+#page-dashboard .lastScanField>span{font-weight:700;}
 #page-dashboard .lastScanField>strong{font-weight:950;}
 
 /* General application pages: keep icons/labels crisp against the new shell */
-body:not(.zebraDevice) .sectionEyebrow{font-weight:900;}
+body:not(.zebraDevice) .sectionEyebrow{font-weight:700;}
 body:not(.zebraDevice) .cardHeader h2,
-body:not(.zebraDevice) .cardHeader h3{font-weight:900;}
-body:not(.zebraDevice) button{font-weight:800;}
+body:not(.zebraDevice) .cardHeader h3{font-weight:700;}
+body:not(.zebraDevice) button{font-weight:700;}
 
 @media (max-width:1280px) and (min-width:769px){
   body:not(.zebraDevice) .sidebarItem{min-height:42px;font-size:12px;}
@@ -3507,7 +3507,7 @@ body.zebraDevice.zebraReceivingActive .handheldScanContext span{
     margin-bottom:2px;
     color:#728198;
     font-size:8px;
-    font-weight:900;
+    font-weight:700;
     letter-spacing:.10em;
 }
 
@@ -3586,7 +3586,7 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
     right:10px;
     bottom:7px;
     font-size:9px;
-    font-weight:800;
+    font-weight:700;
     letter-spacing:.04em;
     color:#64748b;
     opacity:.72;
@@ -3619,15 +3619,15 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
     padding:14px;
 }
 .quickKpiHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.quickKpiHeader h3{margin:0;font-size:17px;font-weight:900;color:#102a4c}
-.quickKpiClose{border:0;background:#eef3f8;border-radius:9px;padding:7px 10px;font-weight:900;cursor:pointer}
+.quickKpiHeader h3{margin:0;font-size:17px;font-weight:700;color:#102a4c}
+.quickKpiClose{border:0;background:#eef3f8;border-radius:9px;padding:7px 10px;font-weight:700;cursor:pointer}
 .quickKpiTable{width:100%;border-collapse:collapse;font-size:12px;font-weight:700}
 .quickKpiTable th,.quickKpiTable td{padding:8px 7px;border-bottom:1px solid #e8eef5;text-align:left;vertical-align:middle}
 .quickKpiTable th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
-.quickUndoButton{border:1px solid #f3b1b1;background:#fff5f5;color:#b42318;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:900;cursor:pointer}
+.quickUndoButton{border:1px solid #f3b1b1;background:#fff5f5;color:#b42318;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer}
 .quickUndoButton:disabled{opacity:.45;cursor:not-allowed}
 .scanSafetyBar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:7px}
-.scanUndoLastButton{border:1px solid #f0b1b1;background:#fff8f7;color:#b42318;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11px;cursor:pointer}
+.scanUndoLastButton{border:1px solid #f0b1b1;background:#fff8f7;color:#b42318;border-radius:9px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer}
 .scanUndoLastButton.hidden{display:none!important}
 @media(max-width:900px){.dashboardKpiCard::after{display:none}.quickKpiPanel{padding:10px}.quickKpiTable{font-size:11px}}
 
@@ -3636,9 +3636,9 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
 .healthMetricInteractive{cursor:pointer;transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease}
 .healthMetricInteractive:hover,.healthMetricInteractive:focus-visible{border-color:#7faee3!important;box-shadow:0 6px 18px rgba(15,52,90,.10);transform:translateY(-1px);outline:none}
 .fileItemActions{display:flex;align-items:center;gap:10px}
-.removeActiveOrderButton{border:1px solid #efb1b1;background:#fff7f7;color:#b42318;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:900;cursor:pointer}
-.quickKpiToolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;font-size:11px;font-weight:800;color:#64748b}
-.priorityFilterButton{border:1px solid #cfdbea;background:#f8fbff;color:#284b73;border-radius:9px;padding:6px 9px;font-size:11px;font-weight:900;cursor:pointer}
+.removeActiveOrderButton{border:1px solid #efb1b1;background:#fff7f7;color:#b42318;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;cursor:pointer}
+.quickKpiToolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;font-size:11px;font-weight:700;color:#64748b}
+.priorityFilterButton{border:1px solid #cfdbea;background:#f8fbff;color:#284b73;border-radius:9px;padding:6px 9px;font-size:11px;font-weight:700;cursor:pointer}
 .priorityFilterButton.active{background:#fff7dc;border-color:#efc85e;color:#8a6410}
 .priorityStar{border:0;background:transparent;color:#b8c3d1;font-size:20px;line-height:1;cursor:pointer;padding:2px 5px}
 .priorityStar.active{color:#e9a800}
@@ -3652,7 +3652,7 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
 .phase263BrowserToolbar{display:flex;gap:8px;align-items:center;padding:0 0 10px;position:sticky;top:0;background:#fff;z-index:2}
 .phase263Search{flex:1;min-width:220px;height:38px;border:1px solid #cbd8e8;border-radius:9px;padding:0 12px;font-size:12px;font-weight:700;outline:none}
 .phase263Search:focus{border-color:#2b6fd8;box-shadow:0 0 0 3px rgba(43,111,216,.10)}
-.phase263Filter{height:38px;border:1px solid #d7e0eb;border-radius:9px;background:#fff;padding:0 12px;font-size:11px;font-weight:800;color:#40516a;cursor:pointer}
+.phase263Filter{height:38px;border:1px solid #d7e0eb;border-radius:9px;background:#fff;padding:0 12px;font-size:11px;font-weight:700;color:#40516a;cursor:pointer}
 .phase263Filter.active{border-color:#f2b04b;background:#fff8eb;color:#9a5b00}
 .phase263Summary{display:flex;gap:24px;align-items:center;padding:8px 10px;margin-bottom:8px;border:1px solid #dce8f7;border-radius:9px;background:#f7fbff;font-size:11px;color:#334155}
 .phase263TableWrap{overflow:auto;max-height:62vh;border:1px solid #e1e8f1;border-radius:9px}
@@ -3661,8 +3661,8 @@ body.zebraDevice.zebraExpiryActive #barcodeInput{
 .phase263Star{width:32px;height:30px;border:1px solid #d8e1ec;border-radius:8px;background:#fff;font-size:19px;line-height:1;color:#9aa7b7;cursor:pointer}
 .phase263Star.active{color:#f59e0b;background:#fff8e8;border-color:#f4c66d}
 .phase263PriorityRow{background:#fffdf6}
-.phase263Positive{font-weight:900;color:#12834b}
-.phase263Negative{font-weight:900;color:#d14343}
+.phase263Positive{font-weight:700;color:#12834b}
+.phase263Negative{font-weight:700;color:#d14343}
 .receivedItemsButton{white-space:nowrap}
 @media(max-width:760px){.phase263BrowserToolbar{flex-wrap:wrap}.phase263Search{flex-basis:100%}.phase263Summary{justify-content:space-between;gap:8px}.phase263Panel{max-width:96vw}.phase263TableWrap{max-height:58vh}}
 
@@ -3719,8 +3719,8 @@ body:not(.zebraDevice) .ownerMetricCard{
     background:#f8fbff;display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.2fr) auto;gap:9px;align-items:end;
 }
 .accountEditPanel.hidden{display:none!important}
-.accountEditField label{display:block;margin:0 0 4px;color:#64748b;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}
-.accountEditField input{width:100%;height:37px;border:1px solid #cfdced;border-radius:9px;padding:0 10px;font-size:13px;font-weight:750;color:#17233b;background:#fff}
+.accountEditField label{display:block;margin:0 0 4px;color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}
+.accountEditField input{width:100%;height:37px;border:1px solid #cfdced;border-radius:9px;padding:0 10px;font-size:13px;font-weight:700;color:#17233b;background:#fff}
 .accountEditButtons{display:flex;gap:6px;align-items:center}
 .accountSecurityNote{grid-column:1/-1;color:#64748b;font-size:10px;font-weight:700}
 
@@ -3736,4 +3736,101 @@ body:not(.zebraDevice) .ownerMetricCard{
 .orderScopeControl{display:flex;align-items:center;gap:8px;margin:6px 0;padding:6px 10px;border:1px solid #dbe3ea;border-radius:10px;background:#f8fafc;font-size:12px;font-weight:700}
 .orderScopeControl label{white-space:nowrap;color:#475569}.orderScopeControl select{min-width:190px;max-width:320px;height:32px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:0 8px;font-weight:700;color:#0f172a}
 @media(max-height:850px){.pageContent,.settingsContent,.reportsContent,.ordersContent{padding-top:8px!important;padding-bottom:8px!important}.card,.settingsCard,.reportCard{margin-bottom:8px!important}.sectionHeader{margin-bottom:6px!important}}
-.cloudWorkspaceStatus{margin-left:auto;font-size:11px;font-weight:900;letter-spacing:.03em;color:#15803d;white-space:nowrap}html[data-cloud-workspace-state="offline"] .cloudWorkspaceStatus{color:#b45309}html[data-cloud-workspace-state="syncing"] .cloudWorkspaceStatus{color:#0369a1}
+.cloudWorkspaceStatus{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.03em;color:#15803d;white-space:nowrap}html[data-cloud-workspace-state="offline"] .cloudWorkspaceStatus{color:#b45309}html[data-cloud-workspace-state="syncing"] .cloudWorkspaceStatus{color:#0369a1}
+
+
+/* =====================================================
+   PHASE 2C.8 — TYPOGRAPHY REFINEMENT
+   Less visual heaviness across PharmFlow while keeping
+   operational quantities and primary scan identity clear.
+===================================================== */
+
+body,
+button,
+input,
+select,
+textarea {
+    font-weight: 400;
+}
+
+/* Navigation / buttons remain clear without excessive boldness */
+.sidebar a,
+.sidebar button,
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+    font-weight: 600;
+}
+
+/* Main headings keep hierarchy */
+h1,
+h2,
+.pageTitle,
+.cardTitle {
+    font-weight: 700;
+}
+
+h3,
+h4 {
+    font-weight: 600;
+}
+
+/* Table content is easier to scan */
+.dataTable th,
+table th {
+    font-weight: 600;
+}
+
+.dataTable td,
+table td {
+    font-weight: 400;
+}
+
+/* Labels should not compete with values */
+.statCardLabel,
+.lastScanMetaItem span,
+.lastScanMetric span,
+.masterGTINStatusGrid span,
+.quantityAdjustmentLabel,
+.zebraQuickStats span {
+    font-weight: 600;
+}
+
+/* Preserve strong emphasis where it matters operationally */
+.statCard strong,
+.progressPercentage,
+#lastScanCard .lastScanMetric > strong,
+#lastScanCard .lastScanOverQuantity,
+.quantityCurrentTotal strong,
+.masterGTINStatusGrid strong,
+.zebraQuickStats strong {
+    font-weight: 700;
+}
+
+/* Item identity stays prominent but not overly heavy */
+.lastScanHeroName,
+#lastItemName,
+.smartSelectedMain h3,
+.smartSearchResultMain strong {
+    font-weight: 700;
+}
+
+/* Status badges and compact controls */
+.statusBadge,
+.archiveStatus,
+.manualBadge,
+.orderStatusFilters button {
+    font-weight: 600;
+}
+
+/* Quantity controls */
+.lastScanQtyTitle,
+.lastScanQtyButton,
+.lastScanQtyValue,
+.tableQtyButton,
+.tableQtyValue,
+.quantityButton,
+#smartQuantityInput,
+.quantityAdjustmentInput {
+    font-weight: 700;
+}

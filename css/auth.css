@@ -1366,3 +1366,97 @@ body.authBooting #authAccessPanel{
 
 /* PHARMFLOW AUTH BRANDING — PHASE 2B */
 .authBrandLogo img{filter:drop-shadow(0 14px 28px rgba(11,94,215,.16))}.authBrandName{letter-spacing:-.035em}.authBrandPanel{background:radial-gradient(circle at 18% 18%,rgba(255,138,0,.13),transparent 17rem),linear-gradient(145deg,#071A34 0%,#0D3D79 100%)!important}
+
+/* ==============================================================
+   PHARMFLOW — APPROVED LIGHT AUTH VISUAL SYSTEM
+   Centered brand, calm semi-light panel, refined inputs.
+   ============================================================== */
+.authGate,
+.authGate.visible{
+    background:linear-gradient(145deg,#f5f8fc 0%,#eef4fb 100%) !important;
+}
+.authGate::before{
+    opacity:.28 !important;
+    background:radial-gradient(circle,rgba(43,105,190,.16) 0 1.4px,transparent 1.8px) !important;
+    background-size:28px 28px !important;
+    mask-image:linear-gradient(135deg,#000 0 17%,transparent 38% 100%) !important;
+}
+.authGate::after{
+    border-color:rgba(46,103,180,.08) !important;
+    box-shadow:0 0 0 72px rgba(46,103,180,.025),0 0 0 150px rgba(46,103,180,.018) !important;
+}
+.authShell{
+    width:min(1180px,100%) !important;
+    grid-template-columns:minmax(360px,.98fr) minmax(390px,500px) !important;
+    gap:clamp(34px,5.5vw,82px) !important;
+}
+.authBrandPanel{
+    align-self:stretch !important;
+    min-height:440px;
+    padding:clamp(34px,5vw,68px) !important;
+    border:1px solid #d9e6f5;
+    border-radius:30px;
+    background:linear-gradient(145deg,#e9f2ff 0%,#f6f9fe 54%,#e6f0fd 100%) !important;
+    box-shadow:0 24px 62px rgba(39,83,145,.10);
+}
+.authBrandMinimal{
+    height:100%;
+    min-height:100%;
+    align-items:center !important;
+    justify-content:center !important;
+    text-align:center !important;
+}
+.authBrandLogoCard{
+    width:clamp(76px,10vh,104px) !important;
+    height:clamp(76px,10vh,104px) !important;
+    padding:15px !important;
+    border:1px solid #dbe7f4 !important;
+    border-radius:27px !important;
+    box-shadow:0 16px 38px rgba(30,75,136,.12) !important;
+}
+.authBrandName{
+    margin-top:22px !important;
+    color:#102f68 !important;
+    font-size:clamp(43px,5.3vw,68px) !important;
+    font-weight:700 !important;
+    line-height:1 !important;
+    letter-spacing:-2.2px !important;
+    text-align:center !important;
+}
+.authBrandTagline{
+    margin-top:13px !important;
+    color:#41638f !important;
+    font-size:clamp(9px,1vw,13px) !important;
+    font-weight:600 !important;
+    letter-spacing:2.2px !important;
+    text-align:center !important;
+}
+.authFormPanel{
+    border-color:#dce6f1 !important;
+    box-shadow:0 24px 60px rgba(39,83,145,.12) !important;
+}
+.authField label{font-weight:600 !important;color:#263f62 !important;}
+.authField input,
+.authField select,
+.authInput{
+    background:#fbfdff !important;
+    border:1px solid #cbd9e9 !important;
+    box-shadow:inset 0 1px 2px rgba(24,56,98,.025),0 1px 2px rgba(24,56,98,.025) !important;
+}
+.authField input:hover,
+.authField select:hover,
+.authInput:hover{
+    border-color:#aac4e3 !important;
+    background:#fff !important;
+}
+.authField input:focus,
+.authField select:focus,
+.authInput:focus{
+    border-color:#5e9ee8 !important;
+    box-shadow:0 0 0 3px rgba(50,124,218,.10),0 5px 16px rgba(35,94,170,.06) !important;
+}
+.authField input::placeholder,.authInput::placeholder{color:#93a4ba;}
+@media(max-width:820px){
+    .authBrandPanel{min-height:0;border-radius:20px;padding:12px 16px !important;}
+    .authBrandMinimal{min-height:0;}
+}
