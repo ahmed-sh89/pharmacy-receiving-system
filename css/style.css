@@ -1312,3 +1312,15 @@ body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
 
 /* PHARMFLOW BRAND SYSTEM — PHASE 2B */
 :root{--primary:#0B5ED7;--primary-dark:#073E9C;--primary-soft:#EAF2FF;--brand-orange:#FF8A00;--brand-orange-soft:#FFF2E2;--brand-navy:#0C1D38;--bg:#F4F7FB;--border:#E1E8F2;--text:#14213A;--text-soft:#65738A}body{background:radial-gradient(circle at 90% 0%,rgba(11,94,215,.055),transparent 28rem),var(--bg)}.topBar{min-height:80px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(13,43,88,.04)}.pageHeading h1{color:var(--brand-navy);letter-spacing:-.02em}.pageHeading p{color:var(--text-soft)}
+
+/* =====================================================
+   PHARMFLOW — WARM PEARL GLOBAL BACKGROUND
+   Phase 2C.8 visual refinement
+===================================================== */
+:root{
+  --bg:#F5F3EF;
+  --surface-soft:#FAF8F4;
+  --border:#E7E1D8;
+}
+body{background:#F5F3EF;}
+.mainApplication,.mainContent,.appPage{background-color:#F5F3EF;}

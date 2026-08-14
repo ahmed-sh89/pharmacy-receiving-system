@@ -502,3 +502,17 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
   background:linear-gradient(90deg,#E7F0FC 0%,#EEF5FC 100%) !important;
 }
 .sidebarFooter{background:rgba(241,244,246,.78) !important;border-top-color:#E0E5EA !important;}
+
+/* =====================================================
+   PHARMFLOW — WARM PEARL SIDEBAR
+===================================================== */
+.sidebar{
+  background:linear-gradient(180deg,#F8F6F2 0%,#F1EEE8 100%) !important;
+  border-right-color:#E2DDD4 !important;
+}
+.sidebarBrand{border-bottom-color:#E6E0D7 !important;}
+.sidebarFooter{background:rgba(241,238,232,.82) !important;border-top-color:#E4DED5 !important;}
+.sidebarNavigation::-webkit-scrollbar-thumb{background:#D5CEC4 !important;}
+.sidebarItem:hover{background:#ECE8E1 !important;color:#174F9D !important;}
+.sidebarItem.active{background:linear-gradient(90deg,#E9EEF5 0%,#F1F2F1 100%) !important;}
+.accountIdentity{border-color:#E4DED5 !important;}

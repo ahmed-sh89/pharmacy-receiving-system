@@ -3880,3 +3880,35 @@ table td {
 }
 .statisticsGrid .statCard[data-kpi="scans"] strong{color:#2778C9;}
 .statisticsGrid .statCard[data-kpi="scans"]::after{background:rgba(39,120,201,.06);}
+
+/* =====================================================
+   PHARMFLOW — WARM PEARL ALL-PAGES BACKGROUND
+   Keeps semantic KPI/card colors and blue action accents.
+===================================================== */
+body:not(.zebraDevice),
+body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,
+body:not(.zebraDevice) .appPage{
+  background-color:#F5F3EF !important;
+}
+body:not(.zebraDevice) .topHeader{
+  background:rgba(250,248,244,.94) !important;
+  border-bottom-color:#E5DFD6 !important;
+}
+body:not(.zebraDevice) .contentCard,
+body:not(.zebraDevice) .scanPanel{
+  border-color:#E7E1D8;
+}
+body:not(.zebraDevice) .pharmflowDashboardHero{
+  border-color:#E5DED5;
+  background:radial-gradient(circle at 90% 20%,rgba(255,138,0,.08),transparent 15rem),linear-gradient(135deg,#fff 0%,#FAF7F1 100%);
+}
+body:not(.zebraDevice) .dashboardWorkContextStats>div,
+body:not(.zebraDevice) .receivingSummaryGrid>div,
+body:not(.zebraDevice) .itemTransferMetaGrid>div,
+body:not(.zebraDevice) .orderScopeControl{
+  background:#FAF8F4;
+  border-color:#E6E0D7;
+}
+/* Handheld also receives the neutral pearl page canvas; operational cards remain high-contrast. */
+body.zebraDevice{background:#F3F0EA !important;}
