@@ -1,12 +1,10 @@
-PharmFlow Phase 2C.8.7
+PharmFlow Phase 2C.8.8 — Fast Receiving UX
 
-- Login redesigned as balanced two-column desktop layout: brand/logo left, sign-in form right.
-- Mobile/tablet falls back to single-column layout.
-- Scan Box READY state is charcoal/espresso, not copper.
-- Successful scan produces a clearly visible green flash, then returns to READY.
-- Failed/unknown scan produces a dark-red flash, then returns to READY.
-- Fixed the scanner focus event that was immediately cancelling the success/error flash.
-- Last Scan successful item remains green as previously approved.
-- Capsule-in-P transparent PharmFlow logo retained.
-- No Receiving, GTIN, Multi-PC or cloud business logic changed.
+- Routine scanner success/error toast notifications removed.
+- Scan Box is the primary operational feedback: READY charcoal, RECEIVED green, ACTION REQUIRED amber, hard failure dark red.
+- Unknown GTIN / known-extra GTIN flow replaced by a unified right-side Smart Resolution Panel.
+- Panel supports current-order search, Link GTIN & Receive +1, known Master Extra +1, and manual Extra +1.
+- Successful action closes panel automatically and returns focus to scanner.
+- Administrative confirmation dialogs are unchanged.
+- Multiple-GTIN database logic, cloud sync and Multi-PC logic are unchanged.
 - No SQL required.

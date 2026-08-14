@@ -3549,11 +3549,7 @@ function focusScannerInput(){
         return;
     }
 
-    if(
-        document.querySelector(
-            ".modalOverlay.open"
-        )
-    ){
+    if(document.querySelector(".modalOverlay.open, .gtinResolutionShell.open")){
         return;
     }
 
@@ -3607,7 +3603,8 @@ function setScanBoxState(
         "success",
         "error",
         "flashSuccess",
-        "flashError"
+        "flashError",
+        "action"
     );
 
     if(state === "success"){
@@ -3640,6 +3637,15 @@ function setScanBoxState(
 
         },600);
 
+        return;
+    }
+
+    if(state === "action") {
+        scanBox.classList.add("action");
+        if(badge){
+            badge.className="scanStatusBadge action";
+            badge.innerHTML=`<span class="scanPulse"></span>ACTION REQUIRED`;
+        }
         return;
     }
 

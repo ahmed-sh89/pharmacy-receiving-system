@@ -172,58 +172,104 @@ async function quickResolveUnrecognizedGTIN(parsed){
     let known=null;
     try{ known=await getMasterGTINRecordByGTIN(gtin); }catch(_e){}
 
-    /* Known centrally/locally, but not in this order -> one-click Extra. */
-    if(known?.itemCode){
-        const code=normalizeItemCode(known.itemCode), name=toSafeString(known.itemName||known.name||code);
-        if(!window.confirm(`${name}\nItem Code: ${code}\n\nNot in current order. Add as EXTRA and receive +1?`)){ return false; }
-        let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true});
-        if(!item){ handleReceivingFailure("Unable to add extra item"); return false; }
-        item.manual=true;
-        addMappingRecord({itemCode:code,gtin:gtin,source:known.source||"MASTER"});
-        return receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true});
-    }
-
-    return await openQuickGTINResolver(parsed);
+    /* Unknown-but-resolvable is an ACTION state, not a hard error. */
+    if(typeof setScanBoxState==="function") setScanBoxState("action");
+    return await openQuickGTINResolver(parsed,known);
 }
 
-function openQuickGTINResolver(parsed){
+function openQuickGTINResolver(parsed,knownRecord=null){
     return new Promise(resolve=>{
         const gtin=normalizeGTIN(parsed.gtin);
         document.getElementById("quickGTINResolver")?.remove();
-        const overlay=document.createElement("div");
-        overlay.id="quickGTINResolver";
-        overlay.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:99999;display:flex;align-items:center;justify-content:center;padding:12px";
-        overlay.innerHTML=`<div style="width:min(680px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.2);font-family:inherit">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><b style="font-size:17px">Quick GTIN Resolve</b><div style="font-size:12px;color:#64748b;margin-top:3px">GTIN ${gtin} is not recognized. Match an order item or add a new extra.</div></div><button data-x style="border:0;background:#eef2f7;border-radius:9px;padding:7px 10px;font-weight:800">✕</button></div>
-          <input data-search placeholder="Search current order by Item Name / Item Code" style="width:100%;box-sizing:border-box;margin:12px 0 8px;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-weight:700">
-          <div data-results style="display:grid;gap:6px;max-height:250px;overflow:auto"></div>
-          <div style="border-top:1px solid #e2e8f0;margin:12px 0;padding-top:12px"><b style="font-size:13px">Not in the order? Add as new EXTRA</b><div style="display:grid;grid-template-columns:1fr 2fr auto;gap:7px;margin-top:7px"><input data-code placeholder="Item Code" style="min-width:0;padding:9px;border:1px solid #cbd5e1;border-radius:9px;font-weight:700"><input data-name placeholder="Item Name" style="min-width:0;padding:9px;border:1px solid #cbd5e1;border-radius:9px;font-weight:700"><button data-extra style="border:0;border-radius:9px;padding:9px 12px;background:#0f6f8f;color:white;font-weight:800">Add Extra +1</button></div></div>
-          <div style="font-size:11px;color:#64748b;margin-top:10px">Saved only for this pharmacy. It does not change the System Global Master.</div>
-        </div>`;
-        document.body.appendChild(overlay);
-        const results=overlay.querySelector('[data-results]'), search=overlay.querySelector('[data-search]');
-        const finish=v=>{overlay.remove();resolve(v)};
+
+        const panel=document.createElement("div");
+        panel.id="quickGTINResolver";
+        panel.className="gtinResolutionShell open";
+        panel.setAttribute("role","dialog");
+        panel.setAttribute("aria-modal","true");
+        panel.setAttribute("aria-label","GTIN resolution");
+
+        const knownCode=normalizeItemCode(knownRecord?.itemCode||"");
+        const knownName=toSafeString(knownRecord?.itemName||knownRecord?.name||knownCode);
+        const knownBlock=knownCode ? `
+          <section class="gtinSuggestedMatch">
+            <span class="gtinMiniLabel">MASTER MATCH</span>
+            <strong>${escapeHTML(knownName)}</strong>
+            <small>Item ${escapeHTML(knownCode)} · Not in the current order</small>
+            <button type="button" class="gtinPrimaryAction" data-known>Add to Order &amp; Receive +1</button>
+          </section>` : "";
+
+        panel.innerHTML=`
+          <button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button>
+          <aside class="gtinResolutionPanel">
+            <header class="gtinResolutionHeader">
+              <div><span class="gtinActionBadge">ACTION REQUIRED</span><h2>Match this GTIN</h2><p>One quick decision, then scanning resumes automatically.</p></div>
+              <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
+            </header>
+            <div class="gtinReadout"><span>SCANNED GTIN</span><strong>${escapeHTML(gtin)}</strong></div>
+            ${knownBlock}
+            <section class="gtinResolutionSection">
+              <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find item in current order</label>
+              <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Search item name or item code" autocomplete="off">
+              <div data-results class="gtinResolutionResults"></div>
+            </section>
+            ${knownCode ? "" : `<section class="gtinResolutionSection gtinManualExtra"><div><span class="gtinMiniLabel">NOT IN THE ORDER?</span><strong>Add new Extra item</strong></div><div class="gtinExtraGrid"><input data-code placeholder="Item Code" autocomplete="off"><input data-name placeholder="Item Name" autocomplete="off"><button type="button" class="gtinSecondaryAction" data-extra>Add Extra &amp; Receive +1</button></div></section>`}
+            <footer class="gtinResolutionFooter"><span>Saved for this pharmacy only. Global Master is unchanged.</span><button type="button" data-close>Cancel</button></footer>
+          </aside>`;
+        document.body.appendChild(panel);
+
+        const results=panel.querySelector('[data-results]');
+        const search=panel.querySelector('[data-search]');
+        let finished=false;
+        const finish=v=>{
+            if(finished) return;
+            finished=true;
+            panel.remove();
+            if(typeof setScanBoxState==="function") setScanBoxState(v?"success":"ready");
+            setTimeout(()=>{ if(typeof focusScannerInput==="function") focusScannerInput(); },30);
+            resolve(v);
+        };
+        const receiveMatched=async(item,manual=false)=>{
+            try{
+                await savePharmacyLearnedGTIN(gtin,item.itemCode,item.itemName);
+                addMappingRecord({itemCode:item.itemCode,gtin,source:"PHARMACY_LEARNED"});
+                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual});
+                finish(tx);
+            }catch(e){
+                if(typeof setScanBoxState==="function") setScanBoxState("error");
+                const msg=panel.querySelector('.gtinPanelMessage');
+                if(msg) msg.textContent=e.message||"Unable to save GTIN";
+            }
+        };
         const render=()=>{
             const q=toSafeString(search.value).toLowerCase().trim();
-            const items=(AppState.workspace.orderData||[]).filter(i=>!q || toSafeString(i.itemName).toLowerCase().includes(q)||toSafeString(i.itemCode).toLowerCase().includes(q)).slice(0,8);
-            results.innerHTML=items.map((i,n)=>`<button data-i="${n}" style="text-align:left;border:1px solid #e2e8f0;background:#f8fafc;border-radius:9px;padding:9px 10px;cursor:pointer"><b>${typeof escapeHtml==="function"?escapeHtml(i.itemName):i.itemName}</b><span style="float:right;color:#64748b;font-size:12px">${i.itemCode}</span></button>`).join('') || '<div style="padding:8px;color:#64748b;font-size:12px">No matching order item</div>';
-            results.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=async()=>{
-                const item=items[Number(btn.dataset.i)];
-                try{ await savePharmacyLearnedGTIN(gtin,item.itemCode,item.itemName); addMappingRecord({itemCode:item.itemCode,gtin,source:"PHARMACY_LEARNED"}); finish(await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:false})); }
-                catch(e){ showToast(e.message||"Unable to save GTIN","error"); }
-            });
+            const items=(AppState.workspace.orderData||[]).filter(i=>!q||toSafeString(i.itemName).toLowerCase().includes(q)||toSafeString(i.itemCode).toLowerCase().includes(q)).slice(0,8);
+            results.innerHTML=items.length?items.map((i,n)=>`<button type="button" class="gtinResult" data-i="${n}"><span><strong>${escapeHTML(i.itemName)}</strong><small>Item ${escapeHTML(i.itemCode)}</small></span><b>Link GTIN &amp; Receive +1</b></button>`).join(''):'<div class="gtinNoResult">No matching order item.</div>';
+            results.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>receiveMatched(items[Number(btn.dataset.i)],false));
         };
-        search.oninput=render; render(); search.focus();
-        overlay.querySelector('[data-x]').onclick=()=>finish(false);
-        overlay.querySelector('[data-extra]').onclick=async()=>{
-            const code=normalizeItemCode(overlay.querySelector('[data-code]').value), name=toSafeString(overlay.querySelector('[data-name]').value).trim();
-            if(!code||!name){showToast("Enter Item Code and Item Name","warning");return;}
+        search.oninput=render; render();
+        panel.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>finish(false));
+        panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
+            let item=upsertOrderItem({itemCode:knownCode,itemName:knownName,orderedQty:0,receivedQty:0,manual:true});
+            if(!item){ if(typeof setScanBoxState==="function") setScanBoxState("error"); return; }
+            item.manual=true;
+            addMappingRecord({itemCode:knownCode,gtin,source:knownRecord?.source||"MASTER"});
+            const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true});
+            finish(tx);
+        });
+        panel.querySelector('[data-extra]')?.addEventListener('click',async()=>{
+            const code=normalizeItemCode(panel.querySelector('[data-code]').value), name=toSafeString(panel.querySelector('[data-name]').value).trim();
+            if(!code||!name){ panel.querySelector('.gtinPanelMessage').textContent="Enter Item Code and Item Name"; return; }
             try{
                 await savePharmacyLearnedGTIN(gtin,code,name);
                 let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true}); item.manual=true;
-                finish(await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true}));
-            }catch(e){showToast(e.message||"Unable to add extra","error");}
-        };
+                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true});
+                finish(tx);
+            }catch(e){ if(typeof setScanBoxState==="function") setScanBoxState("error"); panel.querySelector('.gtinPanelMessage').textContent=e.message||"Unable to add extra"; }
+        });
+        const footer=panel.querySelector('.gtinResolutionFooter');
+        footer.insertAdjacentHTML('beforebegin','<div class="gtinPanelMessage" aria-live="polite"></div>');
+        setTimeout(()=>search.focus(),80);
     });
 }
 
@@ -1410,18 +1456,10 @@ function finishReceivingChange(
         true
     );
 
-    if(
-        options.successToast ===
-        true
-    ){
-
-        showToast(
-            item.itemName +
-            "  +" +
-            transaction.quantity,
-            "success"
-        );
-
+    const scannerSource = toSafeString(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase();
+    const transactionSource = toSafeString(transaction?.source || "").toUpperCase();
+    if(options.successToast === true && transactionSource !== scannerSource){
+        showToast(item.itemName + "  +" + transaction.quantity,"success");
     }
 
     focusScannerInput();
@@ -1527,11 +1565,6 @@ function handleReceivingFailure(message){
 
     flashLastScanCard(
         false
-    );
-
-    showToast(
-        message,
-        "error"
     );
 
     Logger.warn(

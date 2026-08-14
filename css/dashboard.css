@@ -4177,3 +4177,46 @@ body:not(.zebraDevice) .contentCard,body:not(.zebraDevice) .scanPanel{
 .scanBox.flashError .scanBoxIndicator,#scanBox.flashError .scanBoxIndicator{
   background:#F5C9CD !important;color:#961B25 !important;border-color:#E6A3A9 !important;
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.8.8 — FAST RECEIVING UX
+========================================================= */
+.scanBox.action,#scanBox.action{
+  border-color:#D28A18 !important;background:linear-gradient(90deg,#FFFDF7 0%,#FFF5DF 100%) !important;
+  box-shadow:0 0 0 3px rgba(210,138,24,.12) !important;
+}
+.scanBox.action .scanBoxIcon,#scanBox.action .scanBoxIcon{background:#FBE8BC !important;color:#A86508 !important;}
+.scanBox.action .scanBoxIndicator,#scanBox.action .scanBoxIndicator,
+.scanStatusBadge.action{background:#FFF0CB !important;color:#9A5B05 !important;border-color:#E8C478 !important;}
+
+.gtinResolutionShell{position:fixed;inset:0;z-index:100000;display:none;font-family:inherit;}
+.gtinResolutionShell.open{display:block;}
+.gtinResolutionScrim{position:absolute;inset:0;border:0;background:rgba(43,35,30,.20);backdrop-filter:blur(1.5px);cursor:default;}
+.gtinResolutionPanel{position:absolute;right:0;top:0;height:100%;width:min(430px,94vw);box-sizing:border-box;overflow:auto;background:linear-gradient(180deg,#FFF9F3 0%,#F7E9DD 100%);border-left:1px solid #D2B8A2;box-shadow:-18px 0 46px rgba(66,44,31,.16);padding:20px;animation:gtinPanelIn .18s ease-out;}
+@keyframes gtinPanelIn{from{transform:translateX(28px);opacity:.5}to{transform:none;opacity:1}}
+.gtinResolutionHeader{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding-bottom:15px;border-bottom:1px solid #DFCDBE;}
+.gtinResolutionHeader h2{margin:7px 0 4px;color:#30251F;font-size:24px;line-height:1.05;}
+.gtinResolutionHeader p{margin:0;color:#78675B;font-size:12px;line-height:1.45;}
+.gtinActionBadge{display:inline-flex;padding:5px 8px;border-radius:999px;background:#FFF0C8;color:#965A08;border:1px solid #E7C272;font-size:10px;font-weight:850;letter-spacing:.8px;}
+.gtinCloseButton{width:36px;height:36px;border-radius:10px;border:1px solid #D7C0AE;background:#FFF8F1;color:#604A3C;font-weight:800;cursor:pointer;}
+.gtinReadout{margin:14px 0;padding:11px 12px;border:1px solid #D8C2B0;border-radius:12px;background:#F3E4D7;display:grid;gap:4px;}
+.gtinReadout span,.gtinMiniLabel{font-size:9px;letter-spacing:.9px;font-weight:850;color:#9A5835;}
+.gtinReadout strong{font-size:15px;color:#382B23;word-break:break-all;}
+.gtinResolutionSection,.gtinSuggestedMatch{margin-top:14px;padding:14px;border:1px solid #DDC8B7;border-radius:14px;background:rgba(255,252,248,.78);}
+.gtinSuggestedMatch{display:grid;gap:6px;border-color:#E3C77F;background:#FFF7E5;}
+.gtinSuggestedMatch strong{font-size:16px;color:#332820;}.gtinSuggestedMatch small{color:#78675B;}
+.gtinResolutionLabel{display:block;margin-bottom:7px;font-size:11px;font-weight:800;color:#4A392F;}
+.gtinResolutionSearch,.gtinExtraGrid input{width:100%;box-sizing:border-box;border:1px solid #CDB39D;border-radius:10px;background:#FFFDF9;padding:11px 12px;color:#302720;font:inherit;font-size:13px;outline:none;}
+.gtinResolutionSearch:focus,.gtinExtraGrid input:focus{border-color:#A65F3A;box-shadow:0 0 0 3px rgba(166,95,58,.10);}
+.gtinResolutionResults{display:grid;gap:7px;margin-top:9px;max-height:280px;overflow:auto;}
+.gtinResult{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:1px solid #DECABB;border-radius:11px;background:#FFFDF9;padding:10px;cursor:pointer;color:#342820;}
+.gtinResult:hover{border-color:#B87956;background:#FBEEE5;}.gtinResult span{display:grid;gap:3px;min-width:0}.gtinResult strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gtinResult small{font-size:10px;color:#7C6A5E}.gtinResult b{font-size:9px;color:#7C432B;white-space:nowrap;}
+.gtinNoResult{padding:12px;text-align:center;color:#806E61;font-size:11px;}
+.gtinExtraGrid{display:grid;grid-template-columns:1fr;gap:7px;margin-top:9px;}
+.gtinPrimaryAction,.gtinSecondaryAction{border:0;border-radius:10px;padding:11px 12px;font-weight:850;cursor:pointer;}
+.gtinPrimaryAction{margin-top:4px;background:#A65F3A;color:white;}.gtinSecondaryAction{background:#3F3935;color:white;}
+.gtinPanelMessage{min-height:18px;margin:8px 2px 0;color:#B32632;font-size:11px;font-weight:750;}
+.gtinResolutionFooter{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;padding-top:11px;border-top:1px solid #DDCABB;color:#7A685C;font-size:9px;line-height:1.35;}
+.gtinResolutionFooter button{border:0;background:transparent;color:#684B3B;font-weight:800;cursor:pointer;}
+@media(max-width:600px){.gtinResolutionPanel{width:100%;padding:15px}.gtinResolutionScrim{display:none}.gtinResolutionHeader h2{font-size:21px}}
