@@ -3834,3 +3834,49 @@ table td {
 .quantityAdjustmentInput {
     font-weight: 700;
 }
+
+/* =====================================================
+   PHARMFLOW — KPI SOFT COLOR CARDS
+   Color coding is intentionally subtle for long receiving sessions.
+===================================================== */
+.statisticsGrid .statCard{
+  border-color:#DCE8F6;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F2F7FF 100%);
+}
+.statisticsGrid .statCard strong{color:#1769D2;}
+.statisticsGrid .statCard::after{background:rgba(23,105,210,.055);}
+
+.statisticsGrid .statSuccess{
+  border-color:#CFE9DB;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F1FAF5 100%);
+}
+.statisticsGrid .statSuccess strong{color:#16935B;}
+.statisticsGrid .statSuccess::after{background:rgba(22,147,91,.06);}
+
+.statisticsGrid .statWarning{
+  border-color:#F0DDB8;
+  background:linear-gradient(145deg,#FFFFFF 0%,#FFF8EE 100%);
+}
+.statisticsGrid .statWarning strong{color:#D9850B;}
+.statisticsGrid .statWarning::after{background:rgba(217,133,11,.065);}
+
+.statisticsGrid .statDanger{
+  border-color:#F0D1D4;
+  background:linear-gradient(145deg,#FFFFFF 0%,#FFF3F3 100%);
+}
+.statisticsGrid .statDanger strong{color:#D94A55;}
+.statisticsGrid .statDanger::after{background:rgba(217,74,85,.06);}
+
+.statisticsGrid .statCard[data-kpi="manual"]{
+  border-color:#E2D8F5;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F7F4FF 100%);
+}
+.statisticsGrid .statCard[data-kpi="manual"] strong{color:#7454C7;}
+.statisticsGrid .statCard[data-kpi="manual"]::after{background:rgba(116,84,199,.06);}
+
+.statisticsGrid .statCard[data-kpi="scans"]{
+  border-color:#D5E6F5;
+  background:linear-gradient(145deg,#FFFFFF 0%,#F2F8FF 100%);
+}
+.statisticsGrid .statCard[data-kpi="scans"] strong{color:#2778C9;}
+.statisticsGrid .statCard[data-kpi="scans"]::after{background:rgba(39,120,201,.06);}

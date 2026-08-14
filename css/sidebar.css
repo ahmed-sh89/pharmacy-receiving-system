@@ -477,3 +477,28 @@ body.sidebarCollapsed .sidebarItem:hover::after {
 .autoSaveStatus small,.autoSaveStatus span:not(.statusDot){color:#6f887c !important;}
 .autoSaveStatus .statusDot{background:#2fb879 !important;}
 body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;color:#fff !important;}
+
+/* =====================================================
+   PHARMFLOW — PEARL SIDEBAR REFINEMENT
+   Approved light design: clearer navigation, same layout.
+===================================================== */
+.sidebar{
+  background:linear-gradient(180deg,#F7F8F9 0%,#F1F4F6 100%) !important;
+  border-right-color:#DDE3E8 !important;
+}
+.sidebarBrand{border-bottom-color:#E0E5EA !important;}
+.sidebarItem{
+  font-size:14px !important;
+  font-weight:600 !important;
+  letter-spacing:-.05px;
+}
+.sidebarItem .sidebarIcon{
+  width:20px !important;
+  height:20px !important;
+  font-size:19px !important;
+}
+.sidebarItem:hover{background:#EAF1F8 !important;}
+.sidebarItem.active{
+  background:linear-gradient(90deg,#E7F0FC 0%,#EEF5FC 100%) !important;
+}
+.sidebarFooter{background:rgba(241,244,246,.78) !important;border-top-color:#E0E5EA !important;}
