@@ -516,3 +516,49 @@ body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;co
 .sidebarItem:hover{background:#ECE8E1 !important;color:#174F9D !important;}
 .sidebarItem.active{background:linear-gradient(90deg,#E9EEF5 0%,#F1F2F1 100%) !important;}
 .accountIdentity{border-color:#E4DED5 !important;}
+
+
+/* =====================================================
+   PHARMFLOW — LIGHT LATTE SIDEBAR
+===================================================== */
+.sidebar{
+  background:linear-gradient(180deg,#E9DCCF 0%,#E5D5C3 56%,#DFCCB8 100%) !important;
+  color:#3E342C !important;
+  border-right:1px solid #D2BFAA !important;
+  box-shadow:8px 0 28px rgba(76,55,38,.075) !important;
+}
+.sidebarBrand{border-bottom-color:#D6C3AF !important;}
+.brandText strong{color:#3D322A !important;}
+.brandText span{color:#75675B !important;}
+.sidebarItem{
+  color:#574A40 !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+}
+.sidebarItem .sidebarIcon{color:#716154 !important;}
+.sidebarItem:hover{
+  background:rgba(255,255,255,.38) !important;
+  color:#2E5F98 !important;
+}
+.sidebarItem:hover .sidebarIcon{color:#2E6DB4 !important;}
+.sidebarItem.active{
+  background:linear-gradient(90deg,#F8F1EA 0%,#F1E6DA 100%) !important;
+  color:#245E9E !important;
+  box-shadow:inset 3px 0 0 #3D7FC4 !important;
+}
+.sidebarItem.active .sidebarIcon{color:#2B6EB6 !important;}
+.sidebarFooter{
+  background:rgba(235,221,207,.84) !important;
+  border-top-color:#D5C2AE !important;
+}
+.sidebarNavigation::-webkit-scrollbar-thumb{background:#C7B29D !important;}
+.accountIdentity{
+  background:rgba(255,255,255,.64) !important;
+  border-color:#D8C5B2 !important;
+}
+.sidebarLogoutButton{
+  background:rgba(255,255,255,.62) !important;
+  border-color:#CDB8A3 !important;
+  color:#514337 !important;
+}
+.sidebarLogoutButton:hover{background:#F8F1EA !important;}

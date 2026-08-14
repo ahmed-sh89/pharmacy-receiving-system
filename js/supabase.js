@@ -381,7 +381,7 @@ function renderCloudSessionQR(){
     const codeText = document.getElementById("cloudSessionCodeDisplay");
 
     if(codeText){
-        codeText.textContent = AppState.session.code || "------";
+        codeText.textContent = isCloudSessionActive() ? "CONNECTED" : "INACTIVE";
     }
 
     if(!canvas || !wrapper){ return; }

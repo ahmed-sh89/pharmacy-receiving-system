@@ -3912,3 +3912,46 @@ body:not(.zebraDevice) .orderScopeControl{
 }
 /* Handheld also receives the neutral pearl page canvas; operational cards remain high-contrast. */
 body.zebraDevice{background:#F3F0EA !important;}
+
+
+/* =====================================================
+   PHARMFLOW — LIGHT LATTE GLOBAL CANVAS
+===================================================== */
+:root{
+  --pf-latte-canvas:#F3ECE5;
+  --pf-latte-canvas-soft:#F8F3EE;
+  --pf-latte-line:#DDD0C3;
+}
+body:not(.zebraDevice),
+body:not(.zebraDevice) .mainApplication,
+body:not(.zebraDevice) .mainContent,
+body:not(.zebraDevice) .appPage{
+  background:#F3ECE5 !important;
+}
+body:not(.zebraDevice) .topBar,
+body:not(.zebraDevice) .topHeader{
+  background:rgba(251,247,243,.96) !important;
+  border-bottom-color:#DED2C6 !important;
+}
+body:not(.zebraDevice) .contentCard,
+body:not(.zebraDevice) .scanPanel,
+body:not(.zebraDevice) .statItemsModalCard,
+body:not(.zebraDevice) .orderStatusReportCard{
+  background:#FFFFFF;
+  border-color:#E2D6CA;
+}
+body:not(.zebraDevice) .pharmflowDashboardHero{
+  border-color:#DED0C2;
+  background:
+    radial-gradient(circle at 90% 18%,rgba(177,132,90,.09),transparent 15rem),
+    linear-gradient(135deg,#FFFFFF 0%,#F8F1EA 100%);
+}
+body:not(.zebraDevice) .dashboardWorkContextStats>div,
+body:not(.zebraDevice) .receivingSummaryGrid>div,
+body:not(.zebraDevice) .itemTransferMetaGrid>div,
+body:not(.zebraDevice) .orderScopeControl,
+body:not(.zebraDevice) .masterGTINStatusGrid>div{
+  background:#FAF5F0;
+  border-color:#E4D8CD;
+}
+body.zebraDevice{background:#F3ECE5 !important;}

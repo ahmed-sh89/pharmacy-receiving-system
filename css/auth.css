@@ -1481,3 +1481,49 @@ body.authBooting #authAccessPanel{
 .authFormPanel{border-color:#E4DED5 !important;box-shadow:0 24px 60px rgba(74,65,53,.10) !important;}
 .authField input,.authField select,.authInput{background:#FFFDF9 !important;border-color:#D9D1C7 !important;}
 .authField input:hover,.authField select:hover,.authInput:hover{border-color:#C8BDB0 !important;background:#fff !important;}
+
+
+/* =====================================================
+   PHARMFLOW — LIGHT LATTE AUTH CANVAS
+===================================================== */
+.authGate,
+.authGate.visible{
+  background:
+    radial-gradient(circle at 12% 14%,rgba(177,132,90,.12),transparent 26rem),
+    radial-gradient(circle at 88% 86%,rgba(116,96,79,.07),transparent 29rem),
+    linear-gradient(145deg,#F5EEE7 0%,#EBDCCF 100%) !important;
+}
+.authGate::before{
+  background:radial-gradient(circle,rgba(120,91,67,.08) 0 1.3px,transparent 1.8px) !important;
+  background-size:28px 28px !important;
+  opacity:.38 !important;
+}
+.authGate::after{
+  border-color:rgba(113,88,66,.08) !important;
+  box-shadow:0 0 0 72px rgba(113,88,66,.024),0 0 0 150px rgba(113,88,66,.015) !important;
+}
+.authBrandPanel{
+  border-color:#D6C3B0 !important;
+  background:linear-gradient(145deg,#E9DCCF 0%,#E5D5C3 55%,#DDC9B5 100%) !important;
+  box-shadow:0 24px 62px rgba(76,55,38,.10) !important;
+}
+.authBrandName{color:#44372E !important;}
+.authBrandTagline{color:#755F4D !important;}
+.authBrandLogoCard{
+  border-color:#D8C5B2 !important;
+  box-shadow:0 16px 38px rgba(76,55,38,.10) !important;
+}
+.authFormPanel{
+  background:#FFFEFC !important;
+  border-color:#DED1C5 !important;
+  box-shadow:0 24px 60px rgba(76,55,38,.10) !important;
+}
+.authField input,
+.authField select,
+.authInput{
+  background:#FFFCF8 !important;
+  border-color:#D9C9BA !important;
+}
+.authField input:hover,
+.authField select:hover,
+.authInput:hover{border-color:#C8B29D !important;}

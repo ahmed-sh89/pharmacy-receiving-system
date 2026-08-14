@@ -1373,10 +1373,8 @@ function refreshHeader(){
     setElementText(
         UI.elements.headerSessionId,
         hasActiveOrder
-            ? ((AppState.session.cloud === true
-                ? (AppState.session.code || AppState.session.id)
-                : AppState.session.id) || "No Session")
-            : "No Session"
+            ? (AppState.session.cloud === true ? "CONNECTED" : "LOCAL")
+            : "INACTIVE"
     );
 
 }
@@ -2711,8 +2709,8 @@ function refreshSessionUI(){
     setElementText(
         UI.elements.sessionPageId,
         session.cloud === true
-        ? (session.code || session.id || "Cloud")
-        : (session.id || "Local")
+            ? "CONNECTED"
+            : (AppState.workspace?.active === true ? "LOCAL" : "INACTIVE")
     );
 
     setElementText(
