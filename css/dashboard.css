@@ -4953,3 +4953,128 @@ body.zebraDevice #barcodeInput,
 body.zebraDevice #expiryBarcodeInput{
   caret-color:transparent !important;
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.4 — EXPIRY CAPTURE UX
+========================================================= */
+#zebraExpiryShell.appPage.active{
+  display:block;
+  width:100%;
+}
+body:not(.zebraDevice) #zebraExpiryShell{
+  max-width:980px;
+  margin:0 auto;
+  padding:18px;
+}
+body:not(.zebraDevice) #zebraExpiryShell .zebraExpiryTop{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+body:not(.zebraDevice) #btnExpiryBackToModes{
+  display:none !important;
+}
+body:not(.zebraDevice) #zebraExpiryShell .expiryItemCard,
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox,
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar{
+  max-width:760px;
+}
+.zebraExpiryTop{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+.expiryCapturedButton{
+  margin-left:auto;
+  min-height:38px;
+  padding:0 10px;
+  border:1px solid #CDB8A5;
+  border-radius:10px;
+  background:#FFF9F3;
+  color:#493D35;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.expiryCapturedButton strong{
+  display:inline-flex;
+  min-width:22px;
+  height:22px;
+  align-items:center;
+  justify-content:center;
+  margin-left:4px;
+  border-radius:999px;
+  background:#A65A37;
+  color:#fff;
+}
+.expiryEntryGrid select{
+  width:100%;
+  min-height:68px;
+  border:1px solid #B7C4D2;
+  border-radius:13px;
+  background:#F8FBFF;
+  padding:0 10px;
+  font-size:18px;
+  font-weight:800;
+  color:#263746;
+  text-align:center;
+}
+.expiryCapturedOverlay{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(35,29,25,.38);
+}
+.expiryCapturedPanel{
+  width:100%;
+  max-width:680px;
+  max-height:84dvh;
+  overflow:auto;
+  padding:12px;
+  border-radius:18px 18px 0 0;
+  background:#FFF9F3;
+}
+.expiryCapturedPanel header{
+  position:sticky;
+  top:-12px;
+  z-index:2;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 2px;
+  background:#FFF9F3;
+}
+.expiryCapturedPanel header div{display:flex;flex-direction:column}
+.expiryCapturedPanel header span{font-size:8px;font-weight:900;letter-spacing:.12em;color:#A65A37}
+.expiryCapturedPanel header strong{font-size:19px;color:#302821}
+.expiryCapturedPanel header button{
+  width:40px;height:40px;border:1px solid #D7C3B2;border-radius:10px;background:#fff
+}
+.expiryCapturedList{display:grid;gap:7px}
+.expiryCapturedRow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:10px;
+  border:1px solid #DDCBBB;
+  border-radius:12px;
+  background:#fff;
+}
+.expiryCapturedMain{min-width:0;display:flex;flex-direction:column}
+.expiryCapturedMain strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expiryCapturedMain span{margin-top:3px;font-size:11px;color:#6C5C52}
+.expiryCapturedMain small{margin-top:2px;font-size:9px;color:#8B7A6E}
+.expiryDeleteRecord{
+  min-width:72px;min-height:40px;border:1px solid #B74747;border-radius:10px;
+  background:#FFF5F5;color:#A52B2B;font-size:11px;font-weight:900
+}
+.expiryCapturedDone{
+  width:100%;min-height:44px;margin-top:10px;border:0;border-radius:11px;
+  background:#A65A37;color:#fff;font-weight:900
+}
+.expiryCapturedEmpty{padding:20px;text-align:center;color:#76685F}

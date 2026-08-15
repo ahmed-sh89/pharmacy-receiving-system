@@ -27,6 +27,37 @@ function expiryMonthName(month){
     return names[Number(month)] || "";
 }
 
+function expiryEscapeHtml(value){
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+function populateExpiryDateDropdowns(){
+    const month = document.getElementById("expiryMonth");
+    const year = document.getElementById("expiryYear");
+    if(month && month.tagName === "SELECT"){
+        const selected = month.value;
+        month.innerHTML = `<option value="">Month</option>` +
+            Array.from({length:12},(_,i)=>{
+                const n=i+1, mm=String(n).padStart(2,"0");
+                return `<option value="${n}">${mm} — ${expiryMonthName(n)}</option>`;
+            }).join("");
+        if(selected) month.value=selected;
+    }
+    if(year && year.tagName === "SELECT"){
+        const selected = year.value;
+        const current = new Date().getFullYear();
+        year.innerHTML = `<option value="">Year</option>` +
+            Array.from({length:11},(_,i)=>current+i)
+                .map(y=>`<option value="${y}">${y}</option>`).join("");
+        if(selected) year.value=selected;
+    }
+}
+
 async function loadExpiryWorkers(){
     const pharmacyId = expiryPharmacyId();
     if(!pharmacyId || typeof authRpc !== "function") return [];
@@ -64,7 +95,7 @@ function renderExpiryWorkerSelects(){
         select.innerHTML =
             `<option value="">Select worker...</option>` +
             ExpiryCaptureEngine.workers.map(w =>
-                `<option value="${escapeHtml(w.worker_id)}">${escapeHtml(w.worker_name)}</option>`
+                `<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`
             ).join("");
         select.value = current;
     });
@@ -228,12 +259,12 @@ async function saveExpiryCapture(){
         return;
     }
     if(month < 1 || month > 12){
-        setExpiryStatus("action","ENTER MONTH 01–12");
+        setExpiryStatus("action","SELECT MONTH");
         document.getElementById("expiryMonth")?.focus();
         return;
     }
     if(year < 2020 || year > 2200){
-        setExpiryStatus("action","ENTER YEAR");
+        setExpiryStatus("action","SELECT YEAR");
         document.getElementById("expiryYear")?.focus();
         return;
     }
@@ -265,11 +296,12 @@ async function saveExpiryCapture(){
         const saved = document.getElementById("expiryLastSaved");
         if(saved){
             saved.innerHTML =
-                `<strong>${escapeHtml(item.itemName)}</strong>` +
-                `<span>Qty ${quantity} • ${escapeHtml(expiryMonthName(month))} ${year} • ${escapeHtml(worker?.worker_name || "")}</span>`;
+                `<strong>${expiryEscapeHtml(item.itemName)}</strong>` +
+                `<span>Qty ${quantity} • ${expiryEscapeHtml(expiryMonthName(month))} ${year} • ${expiryEscapeHtml(worker?.worker_name || "")}</span>`;
         }
 
         setExpiryStatus("success","✓ SAVED — NEXT ITEM");
+        refreshExpiryCapturedCount();
         setTimeout(()=>resetExpiryCaptureForm({focus:true}),500);
 
     }catch(error){
@@ -284,7 +316,139 @@ async function saveExpiryCapture(){
     }
 }
 
+
+async function loadExpiryCapturedRecords(){
+    const pharmacyId = expiryPharmacyId();
+    if(!pharmacyId || typeof authRpc !== "function") return [];
+    return await authRpc("list_pharmacy_expiry_captures",{
+        p_pharmacy_id:pharmacyId,
+        p_expiry_year:null,
+        p_expiry_months:null,
+        p_categories:null,
+        p_worker_ids:null,
+        p_search:null
+    }) || [];
+}
+
+async function refreshExpiryCapturedCount(){
+    try{
+        const rows = await loadExpiryCapturedRecords();
+        const btn = document.getElementById("btnExpiryCaptured");
+        const count = document.getElementById("expiryCapturedCount");
+        if(count) count.textContent=String(rows.length);
+        if(btn) btn.dataset.loaded="1";
+        return rows;
+    }catch(error){
+        console.warn("Unable to refresh expiry captured count",error);
+        return [];
+    }
+}
+
+async function openExpiryCapturedPanel(){
+    document.getElementById("expiryCapturedOverlay")?.remove();
+    let rows=[];
+    try{
+        rows=await loadExpiryCapturedRecords();
+    }catch(error){
+        setExpiryStatus("error","UNABLE TO LOAD CAPTURED");
+        return;
+    }
+
+    const overlay=document.createElement("div");
+    overlay.id="expiryCapturedOverlay";
+    overlay.className="expiryCapturedOverlay";
+    overlay.innerHTML=`
+      <section class="expiryCapturedPanel">
+        <header>
+          <div><span>NEAR EXPIRY</span><strong>Captured Items</strong></div>
+          <button type="button" data-close>✕</button>
+        </header>
+        <div class="expiryCapturedList">
+          ${rows.length ? rows.map(row=>`
+            <div class="expiryCapturedRow" data-capture="${expiryEscapeHtml(row.capture_id)}">
+              <div class="expiryCapturedMain">
+                <strong>${expiryEscapeHtml(row.item_name || "Item")}</strong>
+                <span>Qty ${Number(row.quantity||0)} • ${expiryEscapeHtml(expiryMonthName(row.expiry_month))} ${Number(row.expiry_year||0)}</span>
+                <small>${expiryEscapeHtml(row.captured_by_name || "")}${row.category ? " • "+expiryEscapeHtml(row.category) : ""}</small>
+              </div>
+              <button class="expiryDeleteRecord" type="button" data-delete="${expiryEscapeHtml(row.capture_id)}">Delete</button>
+            </div>`).join("") :
+            `<div class="expiryCapturedEmpty">No captured expiry items yet.</div>`}
+        </div>
+        <button class="expiryCapturedDone" type="button" data-close>Done</button>
+      </section>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{
+        overlay.remove();
+        if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) focusExpiryScanner();
+    });
+
+    overlay.querySelectorAll("[data-delete]").forEach(button=>{
+        button.onclick=async()=>{
+            const id=button.getAttribute("data-delete");
+            if(button.dataset.confirm!=="1"){
+                button.dataset.confirm="1";
+                button.textContent="Confirm";
+                setTimeout(()=>{
+                    if(button.isConnected && button.dataset.confirm==="1"){
+                        button.dataset.confirm="";
+                        button.textContent="Delete";
+                    }
+                },3000);
+                return;
+            }
+            button.disabled=true;
+            try{
+                await authRpc("delete_pharmacy_expiry_capture",{
+                    p_pharmacy_id:expiryPharmacyId(),
+                    p_capture_id:id
+                });
+                button.closest(".expiryCapturedRow")?.remove();
+                await refreshExpiryCapturedCount();
+            }catch(error){
+                button.disabled=false;
+                button.dataset.confirm="";
+                button.textContent="Delete";
+                if(typeof showToast==="function"){
+                    showToast(error?.message || "Unable to delete expiry record","error");
+                }
+            }
+        };
+    });
+}
+
 function bindExpiryCaptureUI(){
+    populateExpiryDateDropdowns();
+
+    const qtyInput = document.getElementById("expiryQuantity");
+    if(qtyInput && qtyInput.dataset.enterBound !== "1"){
+        qtyInput.dataset.enterBound="1";
+        qtyInput.addEventListener("keydown",event=>{
+            if(event.key==="Enter"){
+                event.preventDefault();
+                qtyInput.blur();
+                try{ document.activeElement?.blur?.(); }catch(_){}
+                document.getElementById("expiryMonth")?.focus();
+            }
+        });
+    }
+
+    const monthSelect=document.getElementById("expiryMonth");
+    if(monthSelect && monthSelect.dataset.bound !== "1"){
+        monthSelect.dataset.bound="1";
+        monthSelect.addEventListener("change",()=>{
+            const label=document.getElementById("expiryMonthName");
+            if(label) label.textContent=expiryMonthName(monthSelect.value);
+        });
+    }
+
+    const capturedButton=document.getElementById("btnExpiryCaptured");
+    if(capturedButton && capturedButton.dataset.bound !== "1"){
+        capturedButton.dataset.bound="1";
+        capturedButton.addEventListener("click",openExpiryCapturedPanel);
+    }
+
     const barcode = document.getElementById("expiryBarcodeInput");
     if(barcode && barcode.dataset.bound !== "1"){
         barcode.dataset.bound = "1";
@@ -380,6 +544,8 @@ function bindExpiryCaptureUI(){
 
 async function activateExpiryCapture(){
     bindExpiryCaptureUI();
+    populateExpiryDateDropdowns();
+    refreshExpiryCapturedCount();
     await loadExpiryWorkers();
     resetExpiryCaptureForm({focus:false});
 
@@ -472,8 +638,8 @@ function renderExpiryWorkerSettingsList(){
 
     list.innerHTML = ExpiryCaptureEngine.workers.map(w => `
         <div class="expiryWorkerRow">
-            <strong>${escapeHtml(w.worker_name)}</strong>
-            <button type="button" class="secondaryButton" data-expiry-worker-remove="${escapeHtml(w.worker_id)}">Disable</button>
+            <strong>${expiryEscapeHtml(w.worker_name)}</strong>
+            <button type="button" class="secondaryButton" data-expiry-worker-remove="${expiryEscapeHtml(w.worker_id)}">Disable</button>
         </div>
     `).join("");
 
@@ -504,5 +670,14 @@ if(typeof AppEvents !== "undefined" && AppEvents?.on){
     AppEvents.on("auth:context", async () => {
         ensureExpiryWorkerSettingsCard();
         try{ await loadExpiryWorkers(); }catch(_){}
+    });
+}
+
+if(typeof AppEvents !== "undefined" && AppEvents?.on){
+    AppEvents.on("route:changed",payload=>{
+        if(payload?.routeName==="expiry"){
+            document.body.classList.remove("zebraExpiryActive");
+            setTimeout(()=>activateExpiryCapture(),20);
+        }
     });
 }

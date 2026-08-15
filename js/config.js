@@ -374,6 +374,22 @@ const APP_CONFIG = Object.freeze({
 
         },
 
+        expiry:{
+
+            id:
+                "expiry",
+
+            elementId:
+                "zebraExpiryShell",
+
+            title:
+                "Near Expiry",
+
+            subtitle:
+                "Capture and review near-expiry items"
+
+        },
+
         reports:{
 
             id:

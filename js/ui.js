@@ -5939,11 +5939,12 @@ function initializeZebraInterface(){
     if(!document.getElementById("zebraExpiryShell")){
         const shell = document.createElement("section");
         shell.id = "zebraExpiryShell";
-        shell.className = "zebraExpiryShell";
+        shell.className = "zebraExpiryShell appPage";
         shell.innerHTML = `
             <div class="zebraExpiryTop">
                 <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
                 <div><span>NEAR EXPIRY</span><strong>Capture</strong></div>
+                <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">CAPTURED <strong id="expiryCapturedCount">0</strong></button>
             </div>
 
             <div class="expiryWorkerBar">
@@ -5978,12 +5979,16 @@ function initializeZebraInterface(){
                 </label>
                 <label>
                     <span>Month</span>
-                    <input id="expiryMonth" type="number" min="1" max="12" inputmode="numeric" placeholder="MM">
+                    <select id="expiryMonth" aria-label="Expiry month">
+                        <option value="">Month</option>
+                    </select>
                     <small id="expiryMonthName"></small>
                 </label>
                 <label>
                     <span>Year</span>
-                    <input id="expiryYear" type="number" min="2020" max="2200" inputmode="numeric" placeholder="YYYY">
+                    <select id="expiryYear" aria-label="Expiry year">
+                        <option value="">Year</option>
+                    </select>
                 </label>
             </div>
 
@@ -6063,6 +6068,7 @@ function setZebraExpiryMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
     document.body.classList.add("zebraDevice","zebraExpiryActive");
+    document.getElementById("zebraExpiryShell")?.classList.add("active");
     try{ document.activeElement?.blur?.(); }catch(_){}
     try{ window.scrollTo(0,0); }catch(_){}
     if(typeof activateExpiryCapture === "function"){

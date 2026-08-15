@@ -1,28 +1,28 @@
-PharmFlow Phase 2C.9.3 — Final Handheld Receiving + Near Expiry UX
+PharmFlow Phase 2C.9.4 — Near Expiry Capture UX
 
-Included in one update:
-1. Join PC Session no longer opens the Android keyboard automatically.
-2. Receiving scanner and Near Expiry scanner remain hardware-scanner only.
-3. MODE/Modes is always visible at the top of Receiving and Near Expiry.
-4. Receiving worker screen is simplified; PC/admin buttons are hidden.
-5. TOTAL SCANS is a visible button for scans made by this Handheld.
-6. Tapping TOTAL SCANS opens the Handheld item review list.
-7. Undo is not shown on the main screen. "Undo Item" appears only beside items in Total Scans.
-8. Near Expiry now accepts Zebra scanner input even when DataWedge/Chrome does not append Enter.
-9. Near Expiry resolves the scanned GS1/GTIN, then moves to Quantity.
-10. Worker selection is remembered per device.
-11. Protected Supabase RPC calls retry once after refreshing an expired JWT.
-12. Raw "JWT expired" is no longer the expected user-facing worker-management failure.
-13. Near Expiry opens at the top so Modes remains visible.
+Changes:
+- Fixed runtime error: escapeHtml is not defined.
+- Fixed Add Worker and Save & Next path affected by that error.
+- Month is now a dropdown (01 January through 12 December).
+- Year is now a dynamic dropdown: current year through current year + 10.
+- Quantity is the only manual numeric expiry-entry field.
+- Pressing Enter in Quantity dismisses the Android keyboard and moves to Month.
+- Added CAPTURED counter/review button.
+- Captured list shows saved expiry records and allows protected single-record Delete with a second confirmation tap.
+- Deleting an expiry capture does NOT delete Global GTIN, order data, receiving data, workers, or other expiry records.
+- Added Near Expiry to the PC sidebar using the same capture engine/data.
+- Zebra scanner remains keyboard-free.
 
-No new SQL is required for Phase 2C.9.3.
-The Phase 2C.9.1 expiry SQL must already have been run.
+SQL:
+Run PHASE2C94_EXPIRY_DELETE_CAPTURE.sql once in Supabase SQL Editor before testing Delete.
+The existing PHASE2C91_HANDHELD_EXPIRY_CAPTURE.sql must already be installed.
 
-Recommended physical Zebra test:
-A) Sign in -> no keyboard.
-B) Receive Order -> Join screen -> no keyboard until Session Number is tapped.
-C) Join -> MODE visible -> scan -> green feedback -> Total Scans increments.
-D) Total Scans -> item list -> Undo Item corrects the selected recent item.
-E) Near Expiry -> Modes visible -> choose worker -> scan GS1 -> item resolves.
-F) Enter Qty -> Month -> Year -> Save & Next -> scanner ready again.
-G) Settings -> Add Worker after a long login session -> token refresh is handled automatically.
+Test:
+1. Settings > Add Worker.
+2. Zebra > Near Expiry > choose worker.
+3. Scan item.
+4. Enter Quantity and press Enter: keyboard closes.
+5. Choose Month and Year from dropdowns.
+6. Save & Next.
+7. Open CAPTURED and delete one saved record using Delete > Confirm.
+8. On PC, verify Near Expiry appears in sidebar and opens Capture.
