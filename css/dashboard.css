@@ -4679,3 +4679,277 @@ body.zebraDevice.zebraHomeActive select{
 body.zebraDevice.zebraReceivingActive #barcodeInput{
   caret-color:transparent !important;
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.3 — FINAL HANDHELD RECEIVING + EXPIRY UX
+========================================================= */
+
+/* ----- Always-visible operational header ----- */
+body.zebraDevice.zebraReceivingActive #zebraQuickHeader,
+body.zebraDevice.zebraExpiryActive .zebraExpiryTop{
+  position:sticky !important;
+  top:0 !important;
+  z-index:80 !important;
+  background:#F7EFE8 !important;
+  padding:7px 4px !important;
+  margin:0 0 7px !important;
+}
+
+.zebraFinalHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.zebraFinalTitle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.zebraFinalTitle>strong{
+  font-size:17px;
+  color:#302821;
+  white-space:nowrap;
+}
+.zebraConnectedDot{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#E3F6E9;
+  color:#137A42;
+  font-size:9px;
+  font-weight:900;
+}
+.zebraConnectedDot:before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#20A65A;
+}
+body.zebraDevice .zebraModesButton{
+  flex:0 0 auto;
+  min-width:66px !important;
+  height:38px !important;
+  padding:0 10px !important;
+  border:1px solid #CDB8A5 !important;
+  border-radius:10px !important;
+  background:#FFF9F3 !important;
+  color:#493D35 !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+}
+
+/* ----- Total Scans is the only review entry point ----- */
+.handheldTotalScansButton{
+  width:100%;
+  min-height:54px;
+  margin-top:7px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 14px;
+  border:1px solid #C9D4E4;
+  border-radius:13px;
+  background:#F8FBFF;
+  color:#33465D;
+}
+.handheldTotalScansButton span{
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+.handheldTotalScansButton strong{
+  font-size:25px;
+  line-height:1;
+  color:#315E9B;
+}
+
+/* Hide PC/admin actions from worker receiving screen. */
+body.zebraDevice.zebraReceivingActive #btnQuickSearch,
+body.zebraDevice.zebraReceivingActive #btnReceivedItems,
+body.zebraDevice.zebraReceivingActive #btnOrderItemsPriority,
+body.zebraDevice.zebraReceivingActive #btnOrderStatusReport,
+body.zebraDevice.zebraReceivingActive .receivingProgressCard,
+body.zebraDevice.zebraReceivingActive #receivingProgressCard,
+body.zebraDevice.zebraReceivingActive .dashboardStats,
+body.zebraDevice.zebraReceivingActive .dashboardKpiGrid,
+body.zebraDevice.zebraReceivingActive .dashboardSummaryGrid{
+  display:none !important;
+}
+
+/* Compact receiving body so no controls are cut off. */
+body.zebraDevice.zebraReceivingActive .mainContent{
+  max-width:560px !important;
+  padding:5px !important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox{
+  width:100% !important;
+  min-width:0 !important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard{
+  width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+
+/* ----- Handheld scan review / Undo Item ----- */
+.handheldScansOverlay{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(35,29,25,.35);
+}
+.handheldScansPanel{
+  width:100%;
+  max-width:560px;
+  max-height:82dvh;
+  overflow:auto;
+  padding:12px;
+  border-radius:18px 18px 0 0;
+  background:#FFF9F3;
+  box-shadow:0 -12px 35px rgba(48,40,33,.18);
+}
+.handheldScansPanel header{
+  position:sticky;
+  top:-12px;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:9px 2px;
+  background:#FFF9F3;
+}
+.handheldScansPanel header div{
+  display:flex;
+  flex-direction:column;
+}
+.handheldScansPanel header span{
+  font-size:8px;
+  letter-spacing:.12em;
+  font-weight:900;
+  color:#9A5434;
+}
+.handheldScansPanel header strong{
+  font-size:20px;
+  color:#302821;
+}
+.handheldScansPanel header button{
+  width:40px;
+  height:40px;
+  border:1px solid #D7C3B2;
+  border-radius:10px;
+  background:#fff;
+  font-size:18px;
+}
+.handheldScansCount{
+  padding:7px 0 12px;
+  text-align:center;
+  font-size:32px;
+  font-weight:900;
+  color:#315E9B;
+}
+.handheldScansList{
+  display:grid;
+  gap:7px;
+}
+.handheldScanItem{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:10px;
+  border:1px solid #DDCBBB;
+  border-radius:12px;
+  background:#fff;
+}
+.handheldScanItem>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.handheldScanItem strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:14px;
+  color:#302821;
+}
+.handheldScanItem span{
+  margin-top:3px;
+  font-size:10px;
+  color:#77675D;
+}
+.handheldUndoItem{
+  min-width:86px;
+  min-height:40px;
+  border:1px solid #B74747;
+  border-radius:10px;
+  background:#FFF5F5;
+  color:#A52B2B;
+  font-size:11px;
+  font-weight:900;
+}
+.handheldPanelDone{
+  width:100%;
+  min-height:44px;
+  margin-top:10px;
+  border:0;
+  border-radius:11px;
+  background:#A65A37;
+  color:white;
+  font-weight:900;
+}
+.handheldScansEmpty{
+  padding:18px;
+  text-align:center;
+  color:#76685F;
+}
+
+/* ----- Join screen: keyboard only after explicit tap ----- */
+body.zebraDevice.zebraJoinActive #cloudSessionCodeInput{
+  input-mode:numeric;
+}
+
+/* ----- Expiry: Modes never disappears below old scroll position ----- */
+body.zebraDevice.zebraExpiryActive{
+  scroll-behavior:auto !important;
+}
+body.zebraDevice.zebraExpiryActive .zebraExpiryShell{
+  width:100% !important;
+  min-width:0 !important;
+}
+body.zebraDevice.zebraExpiryActive .zebraExpiryTop{
+  min-height:48px !important;
+}
+body.zebraDevice.zebraExpiryActive #btnExpiryBackToModes{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:82px !important;
+}
+body.zebraDevice.zebraExpiryActive .expiryScanBox{
+  transition:border-color .12s ease,background .12s ease,box-shadow .12s ease;
+}
+body.zebraDevice.zebraExpiryActive .expiryScanStatus.success + .expiryScanBox{
+  border-color:#168A4A !important;
+  background:#EFFAF3 !important;
+  box-shadow:0 0 0 3px rgba(22,138,74,.14) !important;
+}
+body.zebraDevice.zebraExpiryActive .expiryScanStatus.error + .expiryScanBox{
+  border-color:#A9232F !important;
+  background:#FFF0F1 !important;
+}
+
+/* Scanner inputs never summon the Android soft keyboard. */
+body.zebraDevice #barcodeInput,
+body.zebraDevice #expiryBarcodeInput{
+  caret-color:transparent !important;
+}

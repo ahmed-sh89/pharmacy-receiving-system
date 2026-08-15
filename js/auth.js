@@ -497,13 +497,38 @@ async function publicRpc(functionName, params = {}){
 }
 
 async function authRpc(functionName, params = {}){
-    const token = getSupabaseAccessToken();
-    if(!token){ throw new Error("Please sign in first"); }
-    return authRequest("/rest/v1/rpc/" + encodeURIComponent(functionName), {
-        method:"POST",
-        headers:{"Authorization":"Bearer " + token,"Accept":"application/json"},
-        body:JSON.stringify(params || {})
-    });
+    const execute = async () => {
+        const token = getSupabaseAccessToken();
+        if(!token){ throw new Error("Please sign in first"); }
+        return authRequest("/rest/v1/rpc/" + encodeURIComponent(functionName), {
+            method:"POST",
+            headers:{"Authorization":"Bearer " + token,"Accept":"application/json"},
+            body:JSON.stringify(params || {})
+        });
+    };
+
+    try{
+        return await execute();
+    }catch(error){
+        const message = String(error?.message || "").toLowerCase();
+        const looksExpired =
+            message.includes("jwt expired") ||
+            message.includes("token is expired") ||
+            message.includes("invalid jwt");
+
+        if(!looksExpired){ throw error; }
+
+        const refreshed =
+            typeof refreshAuthToken === "function"
+                ? await refreshAuthToken()
+                : false;
+
+        if(!refreshed){
+            throw new Error("Your sign-in expired. Please sign in again.");
+        }
+
+        return execute();
+    }
 }
 
 async function loadPublicSetupStatus(){

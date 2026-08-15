@@ -9,6 +9,8 @@ const ExpiryCaptureEngine = {
     selectedWorkerId: "",
     currentItem: null,
     busy: false,
+    scanTimer: null,
+    lastResolvedRaw: "",
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -135,7 +137,7 @@ async function resolveExpiryScannedValue(rawValue){
 
     if(!ExpiryCaptureEngine.selectedWorkerId){
         setExpiryStatus("action","SELECT WORKER");
-        document.getElementById("expiryWorkerSelect")?.focus();
+        try{ document.activeElement?.blur?.(); }catch(_){}
         return false;
     }
 
@@ -166,9 +168,7 @@ async function resolveExpiryScannedValue(rawValue){
         setExpiryStatus("action","GTIN NEEDS MAPPING");
         const input = document.getElementById("expiryBarcodeInput");
         if(input) input.value = "";
-        if(typeof showToast === "function"){
-            showToast("This GTIN is not mapped yet. Map it in Receiving or Global GTIN before expiry capture.","warning");
-        }
+        setTimeout(()=>setExpiryStatus("ready","READY TO SCAN"),900);
         return false;
     }
 
@@ -289,21 +289,46 @@ function bindExpiryCaptureUI(){
     if(barcode && barcode.dataset.bound !== "1"){
         barcode.dataset.bound = "1";
         barcode.setAttribute("inputmode","none");
+        barcode.setAttribute("autocomplete","off");
+        barcode.setAttribute("autocapitalize","off");
+        barcode.setAttribute("spellcheck","false");
+
+        const commitHardwareScan = () => {
+            clearTimeout(ExpiryCaptureEngine.scanTimer);
+            ExpiryCaptureEngine.scanTimer = null;
+
+            const value = String(barcode.value || "").trim();
+            if(!value || value === ExpiryCaptureEngine.lastResolvedRaw) return;
+
+            ExpiryCaptureEngine.lastResolvedRaw = value;
+            barcode.value = "";
+
+            Promise.resolve(resolveExpiryScannedValue(value))
+                .finally(() => {
+                    setTimeout(() => {
+                        ExpiryCaptureEngine.lastResolvedRaw = "";
+                    },250);
+                });
+        };
+
         barcode.addEventListener("keydown", event => {
-            if(event.key === "Enter"){
+            if(event.key === "Enter" || event.key === "Tab"){
                 event.preventDefault();
-                const value = barcode.value;
-                barcode.value = "";
-                resolveExpiryScannedValue(value);
+                commitHardwareScan();
             }
         });
-        barcode.addEventListener("change", () => {
-            const value = barcode.value;
-            if(value){
-                barcode.value = "";
-                resolveExpiryScannedValue(value);
-            }
+
+        /*
+           Zebra DataWedge/Chrome configurations do not always send Enter.
+           Scanner characters arrive as a fast input burst; commit shortly
+           after the burst stops.
+        */
+        barcode.addEventListener("input", () => {
+            clearTimeout(ExpiryCaptureEngine.scanTimer);
+            ExpiryCaptureEngine.scanTimer = setTimeout(commitHardwareScan,90);
         });
+
+        barcode.addEventListener("change", commitHardwareScan);
     }
 
     const worker = document.getElementById("expiryWorkerSelect");
@@ -365,11 +390,13 @@ async function activateExpiryCapture(){
 
     if(!ExpiryCaptureEngine.selectedWorkerId){
         setExpiryStatus("action","SELECT WORKER");
-        document.getElementById("expiryWorkerSelect")?.focus();
+        try{ document.activeElement?.blur?.(); }catch(_){}
+        try{ window.scrollTo(0,0); }catch(_){}
         return;
     }
 
     setExpiryStatus("ready","READY TO SCAN");
+    try{ window.scrollTo(0,0); }catch(_){}
     focusExpiryScanner();
 }
 
@@ -426,7 +453,11 @@ async function saveExpiryWorkerFromSettings(){
         await loadExpiryWorkers();
         if(typeof showToast === "function") showToast("Worker saved","success");
     }catch(error){
-        if(typeof showToast === "function") showToast(error?.message || "Unable to save worker","error");
+        const message = String(error?.message || "");
+        const friendly = /jwt|token|sign-in expired/i.test(message)
+            ? "Your sign-in expired. Please sign in again."
+            : (message || "Unable to save worker");
+        if(typeof showToast === "function") showToast(friendly,"error");
     }
 }
 

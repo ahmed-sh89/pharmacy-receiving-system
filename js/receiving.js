@@ -1156,7 +1156,7 @@ function rememberRecentScannerTransaction(item, transaction){
         undone:false
     };
     ReceivingEngine.recentScans.unshift(entry);
-    ReceivingEngine.recentScans=ReceivingEngine.recentScans.slice(0,20);
+    ReceivingEngine.recentScans=ReceivingEngine.recentScans.slice(0,1000);
 
     const over=entry.orderedQty>=0 && entry.receivedQty>entry.orderedQty;
     if(over){

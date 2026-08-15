@@ -6039,24 +6039,180 @@ function setZebraHomeMode(){
 function setZebraJoinMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
-    document.body.classList.add("zebraJoinActive");
-    document.getElementById("cloudSessionCodeInput")?.focus();
+    document.body.classList.add("zebraDevice","zebraJoinActive");
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    try{ window.scrollTo(0,0); }catch(_){}
+    const code = document.getElementById("cloudSessionCodeInput");
+    if(code){
+        code.setAttribute("inputmode","numeric");
+        code.setAttribute("autocomplete","off");
+    }
 }
 function setZebraReceivingMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
-    document.body.classList.add("zebraReceivingActive","zebraMode");
+    document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
+    try{ window.scrollTo(0,0); }catch(_){}
     refreshZebraInterface();
-    setTimeout(()=>focusScannerInput(),50);
+    if(typeof ensureHandheldReceivingTools === "function"){
+        ensureHandheldReceivingTools();
+    }
+    setTimeout(()=>focusScannerInput(),80);
 }
 function setZebraExpiryMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
-    document.body.classList.add("zebraExpiryActive");
+    document.body.classList.add("zebraDevice","zebraExpiryActive");
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    try{ window.scrollTo(0,0); }catch(_){}
     if(typeof activateExpiryCapture === "function"){
-        setTimeout(()=>activateExpiryCapture(),30);
+        setTimeout(()=>activateExpiryCapture(),40);
     }
 }
+
+function getHandheldDeviceScannerRows(){
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+    const deviceId = typeof ensureDeviceId === "function"
+        ? ensureDeviceId()
+        : AppState?.session?.deviceId;
+
+    return history.filter(tx => {
+        const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
+        const source = String(tx?.source || "").toUpperCase();
+        const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
+            || source.includes("SCAN");
+        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+    });
+}
+
+function getHandheldTotalScans(){
+    return getHandheldDeviceScannerRows().length;
+}
+
+function ensureHandheldReceivingTools(){
+    if(!isLikelyZebraDevice()) return;
+
+    const page = document.getElementById("page-dashboard");
+    if(!page) return;
+
+    const oldHeader = document.getElementById("zebraQuickHeader");
+    if(oldHeader){
+        oldHeader.innerHTML = `
+            <div class="zebraFinalHeader">
+                <div class="zebraFinalTitle">
+                    <strong>Receive Order</strong>
+                    <span class="zebraConnectedDot">CONNECTED</span>
+                </div>
+                <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
+            </div>
+            <button id="btnHandheldTotalScans" class="handheldTotalScansButton" type="button">
+                <span>TOTAL SCANS</span>
+                <strong id="handheldTotalScansValue">0</strong>
+            </button>
+        `;
+        document.getElementById("btnZebraModes")?.addEventListener("click", setZebraHomeMode);
+        document.getElementById("btnHandheldTotalScans")?.addEventListener("click", openHandheldScansPanel);
+    }
+
+    refreshHandheldReceivingTools();
+}
+
+function refreshHandheldReceivingTools(){
+    const value = document.getElementById("handheldTotalScansValue");
+    if(value) value.textContent = String(getHandheldTotalScans());
+}
+
+function openHandheldScansPanel(){
+    document.getElementById("handheldScansOverlay")?.remove();
+
+    const recent = typeof getRecentScannerTransactions === "function"
+        ? getRecentScannerTransactions()
+        : [];
+
+    const groups = new Map();
+    recent.forEach(row => {
+        if(row.undone) return;
+        const key = String(row.itemCode || row.itemName || "");
+        if(!groups.has(key)){
+            groups.set(key,{
+                itemCode:row.itemCode || "",
+                itemName:row.itemName || "Item",
+                qty:0,
+                latest:null
+            });
+        }
+        const group = groups.get(key);
+        group.qty += Number(row.quantity || 1);
+        if(!group.latest || String(row.dateTime || "") > String(group.latest.dateTime || "")){
+            group.latest = row;
+        }
+    });
+
+    const esc = value => typeof escapeHtml === "function"
+        ? escapeHtml(String(value ?? ""))
+        : String(value ?? "");
+
+    const overlay = document.createElement("div");
+    overlay.id = "handheldScansOverlay";
+    overlay.className = "handheldScansOverlay";
+
+    const rows = Array.from(groups.values());
+    overlay.innerHTML = `
+        <section class="handheldScansPanel">
+            <header>
+                <div><span>THIS HANDHELD</span><strong>Total Scans</strong></div>
+                <button type="button" data-close>✕</button>
+            </header>
+            <div class="handheldScansCount">${getHandheldTotalScans()}</div>
+            <div class="handheldScansList">
+                ${rows.length ? rows.map(row => `
+                    <div class="handheldScanItem">
+                        <div>
+                            <strong>${esc(row.itemName)}</strong>
+                            <span>${esc(row.itemCode)} · Qty ${row.qty}</span>
+                        </div>
+                        <button type="button" class="handheldUndoItem"
+                                data-undo-item="${esc(row.latest?.transactionId || "")}">
+                            Undo Item
+                        </button>
+                    </div>
+                `).join("") : `<div class="handheldScansEmpty">No scans from this Handheld yet.</div>`}
+            </div>
+            <button type="button" class="handheldPanelDone" data-close>Done</button>
+        </section>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll("[data-close]").forEach(btn => btn.onclick = () => {
+        overlay.remove();
+        setTimeout(()=>focusScannerInput?.(),40);
+    });
+
+    overlay.querySelectorAll("[data-undo-item]").forEach(btn => {
+        btn.onclick = () => {
+            const transactionId = btn.getAttribute("data-undo-item");
+            if(!transactionId) return;
+            const ok = typeof undoRecentScannerTransaction === "function"
+                ? undoRecentScannerTransaction(transactionId)
+                : false;
+            if(ok){
+                refreshHandheldReceivingTools();
+                openHandheldScansPanel();
+            }
+        };
+    });
+}
+
+if(typeof AppEvents !== "undefined" && AppEvents?.on){
+    AppEvents.on("receiving:updated", () => {
+        if(typeof refreshHandheldReceivingTools === "function"){
+            setTimeout(refreshHandheldReceivingTools,0);
+        }
+    });
+}
+
 function setZebraInterfaceMode(enabled){
     initializeZebraInterface();
     if(enabled === true){ setZebraReceivingMode(); }
