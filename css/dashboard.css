@@ -4566,3 +4566,116 @@ body.zebraExpiryActive .mainContent{
   .expiryEntryGrid{grid-template-columns:1fr .72fr .9fr;}
   .expiryEntryGrid input{font-size:18px !important;}
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.2 — HANDHELD ROUTING & FOCUS HOTFIX
+========================================================= */
+body.zebraDevice{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:100dvh !important;
+  overflow-x:hidden !important;
+}
+body.zebraDevice .mainApplication{
+  margin-left:0 !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+body.zebraDevice .mainContent{
+  width:100% !important;
+  max-width:560px !important;
+  margin:0 auto !important;
+  padding:8px !important;
+}
+
+/* Home is a dedicated worker screen — never a shrunken PC Dashboard. */
+body.zebraDevice.zebraHomeActive .appPage,
+body.zebraDevice.zebraHomeActive #page-dashboard,
+body.zebraDevice.zebraHomeActive #page-files,
+body.zebraDevice.zebraHomeActive #page-receiving,
+body.zebraDevice.zebraHomeActive #page-reports,
+body.zebraDevice.zebraHomeActive #page-sessions,
+body.zebraDevice.zebraHomeActive #page-archive,
+body.zebraDevice.zebraHomeActive #page-returnsArchive,
+body.zebraDevice.zebraHomeActive #page-settings{
+  display:none !important;
+}
+body.zebraDevice.zebraHomeActive .zebraHome{
+  display:block !important;
+  width:100% !important;
+}
+
+body.zebraDevice .zebraHome{
+  padding:8px 3px 18px !important;
+}
+body.zebraDevice .zebraBrandRow{
+  padding:5px 5px 11px !important;
+}
+body.zebraDevice .zebraBrandRow img{
+  width:38px !important;
+  height:38px !important;
+}
+body.zebraDevice .zebraBrandRow strong{
+  font-size:18px !important;
+  color:#332A24 !important;
+}
+body.zebraDevice .zebraBrandRow span{
+  font-size:9px !important;
+  color:#76685F !important;
+}
+body.zebraDevice .zebraModeIntro{
+  padding:13px !important;
+  border-color:#D7C3B2 !important;
+  background:#FFF9F3 !important;
+  box-shadow:none !important;
+}
+body.zebraDevice .zebraModeIntro h1{
+  margin:4px 0 2px !important;
+  font-size:21px !important;
+  color:#302821 !important;
+}
+body.zebraDevice .zebraModeIntro p{
+  display:none !important;
+}
+body.zebraDevice .zebraModeCards{
+  gap:9px !important;
+  margin-top:9px !important;
+}
+body.zebraDevice .zebraModeCard{
+  min-height:88px !important;
+  padding:14px !important;
+  border-color:#D7C2AF !important;
+  background:#FFF9F3 !important;
+  color:#302821 !important;
+  box-shadow:none !important;
+}
+body.zebraDevice .zebraModeCard strong{
+  font-size:18px !important;
+}
+body.zebraDevice .zebraModeCard small{
+  font-size:10px !important;
+  color:#75665C !important;
+}
+body.zebraDevice .zebraModeIcon{
+  width:48px !important;
+  height:48px !important;
+  background:#EEE8E3 !important;
+  color:#4B4540 !important;
+}
+body.zebraDevice .zebraModeCard:nth-child(2) .zebraModeIcon{
+  background:#F4E4D8 !important;
+  color:#9A5434 !important;
+}
+
+/* No software keyboard target exists on the Home screen. */
+body.zebraDevice.zebraHomeActive input,
+body.zebraDevice.zebraHomeActive textarea,
+body.zebraDevice.zebraHomeActive select{
+  pointer-events:none !important;
+}
+
+/* Hardware receiving scanner remains keyboard-free. */
+body.zebraDevice.zebraReceivingActive #barcodeInput{
+  caret-color:transparent !important;
+}

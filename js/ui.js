@@ -5706,25 +5706,50 @@ function closeOrderStatusReport(){
 function isLikelyZebraDevice(){
     const ua = String(navigator.userAgent || "").toLowerCase();
 
-    /* Phase 2C.6:
-       Handheld UI is reserved for Zebra/enterprise handheld hardware.
-       Generic Android phones must NOT silently switch into the operational
-       handheld workflow. A deliberate ?handheld=1 override remains available
-       for controlled testing when the Zebra is not physically available. */
     const enterpriseHandheld =
         /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
 
     let explicitHandheld = false;
+    let persistedHandheld = false;
+
     try{
         const params = new URLSearchParams(window.location.search || "");
         explicitHandheld =
             params.get("handheld") === "1" ||
             localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
-    }catch(_){
-        explicitHandheld = false;
+
+        persistedHandheld =
+            localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
+    }catch(_){}
+
+    /*
+       Chrome on some Zebra builds reports a generic Android user-agent.
+       PharmFlow therefore also recognizes the narrow Android enterprise
+       form factor, then remembers this browser as a Handheld.
+    */
+    const android = /android/i.test(ua);
+    const shortestScreenSide = Math.min(
+        Number(window.screen?.width || window.innerWidth || 9999),
+        Number(window.screen?.height || window.innerHeight || 9999)
+    );
+    const handheldFormFactor =
+        android &&
+        shortestScreenSide <= 600 &&
+        Number(navigator.maxTouchPoints || 0) > 0;
+
+    const detected =
+        enterpriseHandheld ||
+        explicitHandheld ||
+        persistedHandheld ||
+        handheldFormFactor;
+
+    if(detected){
+        try{
+            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
+        }catch(_){}
     }
 
-    return enterpriseHandheld || explicitHandheld;
+    return detected;
 }
 
 function backupLegacyZebraWorkspace(reason){
@@ -5782,7 +5807,14 @@ function resetZebraWorkingState(reason, options = {}){
 
 function initializeZebraInterface(){
     if(!isLikelyZebraDevice()){
-        document.body.classList.remove("zebraDevice","zebraHomeActive","zebraJoinActive","zebraExpiryActive");
+        document.body.classList.remove(
+            "zebraDevice",
+            "zebraHomeActive",
+            "zebraJoinActive",
+            "zebraReceivingActive",
+            "zebraExpiryActive",
+            "zebraMode"
+        );
         return;
     }
 
@@ -5976,8 +6008,33 @@ function clearZebraModeClasses(){
 }
 function setZebraHomeMode(){
     if(!isLikelyZebraDevice()){ return; }
+
     clearZebraModeClasses();
-    document.body.classList.add("zebraHomeActive");
+    document.body.classList.add("zebraDevice","zebraHomeActive");
+
+    /*
+       Mode Selection is button-only. Any focused login/search/scanner input
+       would make Android show its software keyboard, so explicitly blur all
+       known inputs whenever we return Home.
+    */
+    try{ document.activeElement?.blur?.(); }catch(_){}
+
+    [
+        "authEmail",
+        "authPassword",
+        "barcodeInput",
+        "cloudSessionCodeInput",
+        "expiryBarcodeInput",
+        "searchInput",
+        "smartScanSearchInput"
+    ].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && typeof el.blur === "function"){
+            try{ el.blur(); }catch(_){}
+        }
+    });
+
+    try{ window.scrollTo(0,0); }catch(_){}
 }
 function setZebraJoinMode(){
     if(!isLikelyZebraDevice()){ return; }

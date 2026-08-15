@@ -1,23 +1,15 @@
-PharmFlow Phase 2C.9.1 — Handheld Near Expiry Final
+PharmFlow Phase 2C.9.2 — Handheld Routing & Focus Hotfix
 
-Handheld now has two worker jobs:
-1. Receive Order
-2. Near Expiry
+Fixes observed on the physical Handheld after Phase 2C.9.1:
+- After sign-in, Handheld opens Mode Selection instead of the PC Dashboard.
+- Mode Selection contains only Receive Order, Near Expiry, and Sign Out.
+- Android software keyboard is dismissed immediately after sign-in.
+- No input is focused while the worker is on Mode Selection.
+- Scanner focus is used only after entering the appropriate scanning workflow.
+- Zebra detection supports Chrome builds whose user-agent does not explicitly say Zebra.
+- The browser is remembered as a PharmFlow Handheld after detection.
 
-Near Expiry:
-- Worker is selected once per device (Captured By) and remembered.
-- Flow: Scan -> Item -> Qty -> Month -> Year -> Save & Next.
-- Month is numeric; e.g. 08 displays August.
-- Item Code, Item Name, GTIN and Category are read from Global GTIN.
-- Captured By and Captured At are stored with every expiry record.
-- Last saved item is shown briefly for confirmation.
-- Expiry scan works independently of a PC receiving session.
+No new SQL is required for Phase 2C.9.2.
+If not already run, PHASE2C91_HANDHELD_EXPIRY_CAPTURE.sql is still required for Near Expiry.
 
-Settings:
-- Pharmacy Admin can add or disable Near Expiry worker names.
-- Disabling a worker does not delete historical expiry records.
-
-Database:
-Run PHASE2C91_HANDHELD_EXPIRY_CAPTURE.sql once in Supabase before testing Near Expiry.
-
-Receiving / Multiple GTIN / Cloud / Multi-PC arithmetic was not changed.
+No GTIN mapping, quantity arithmetic, cloud synchronization, or expiry database logic was changed.

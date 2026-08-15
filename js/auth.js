@@ -1513,18 +1513,53 @@ function unlockApplicationAfterAuth(){
         return;
     }
 
-    // A sidebar drawer can remain open behind the auth screen after Sign Out.
-    // If it survives the next Sign In, its backdrop covers the application and
-    // makes the main content look frozen while the sidebar remains interactive.
+    /*
+       Close the login keyboard BEFORE exposing the app.
+       Zebra must land on Mode Selection with no software keyboard.
+    */
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    document.querySelectorAll("#authGate input, #authGate select, #authGate textarea")
+        .forEach(el=>{ try{ el.blur(); }catch(_){} });
+
     resetResponsiveSidebarAfterAuth();
     document.body.classList.remove("authLocked");
-    openDashboardAfterAuthentication();
+
+    const handheld =
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice();
+
+    if(!handheld){
+        openDashboardAfterAuthentication();
+    }
+
     const overlay = document.getElementById("authGate");
     if(overlay){ overlay.classList.remove("visible"); }
+
     if(typeof window.bootProtectedApplication === "function"){
         window.bootProtectedApplication();
     }
     else if(typeof refreshEntireUI === "function"){
         refreshEntireUI();
+    }
+
+    if(handheld){
+        const openHandheldHome = ()=>{
+            try{
+                if(typeof initializeZebraInterface === "function"){
+                    initializeZebraInterface();
+                }
+                if(typeof setZebraHomeMode === "function"){
+                    setZebraHomeMode();
+                }
+                document.activeElement?.blur?.();
+                window.scrollTo?.(0,0);
+            }catch(error){
+                console.warn("Handheld home routing failed",error);
+            }
+        };
+
+        /* Re-assert after asynchronous application/UI boot callbacks. */
+        setTimeout(openHandheldHome,50);
+        setTimeout(openHandheldHome,350);
     }
 }
