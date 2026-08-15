@@ -4220,3 +4220,349 @@ body:not(.zebraDevice) .contentCard,body:not(.zebraDevice) .scanPanel{
 .gtinResolutionFooter{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;padding-top:11px;border-top:1px solid #DDCABB;color:#7A685C;font-size:9px;line-height:1.35;}
 .gtinResolutionFooter button{border:0;background:transparent;color:#684B3B;font-weight:800;cursor:pointer;}
 @media(max-width:600px){.gtinResolutionPanel{width:100%;padding:15px}.gtinResolutionScrim{display:none}.gtinResolutionHeader h2{font-size:21px}}
+
+/* =========================================================
+   PHARMFLOW 2C.9 — HANDHELD SIMPLIFICATION
+   Worker device: Receive Order + Near Expiry only.
+========================================================= */
+.handheldQtyGuidance{display:none;}
+body.zebraDevice .sidebar,body.zebraMode .sidebar,
+body.zebraDevice .topBar,body.zebraMode .topBar{display:none!important;}
+body.zebraDevice .mainContent,body.zebraMode .mainContent{
+  margin:0!important;width:100%!important;padding:8px!important;
+}
+body.zebraDevice .pageHeading p,body.zebraMode .pageHeading p{display:none!important;}
+body.zebraDevice .scanBox,body.zebraMode #scanBox{
+  min-height:58px!important;border:2px solid #4B4540!important;
+  background:#FFF9F4!important;border-radius:14px!important;
+  transition:border-color .12s ease,background .12s ease,box-shadow .12s ease!important;
+}
+body.zebraDevice .scanBoxIndicator,body.zebraMode .scanBoxIndicator{
+  color:#3F3A36!important;background:#EEE8E3!important;
+  border-color:#D8CFC8!important;font-weight:800!important;
+}
+body.zebraDevice #lastScanCard,body.zebraMode #lastScanCard{
+  margin-top:7px!important;padding:10px!important;border-radius:14px!important;
+}
+body.zebraDevice #lastItemName,body.zebraMode #lastItemName{
+  font-size:17px!important;line-height:1.15!important;
+}
+body.zebraDevice .lastScanQtyButton,body.zebraMode .lastScanQtyButton,
+body.zebraDevice .quantityButton,body.zebraMode .quantityButton{
+  min-width:48px!important;min-height:46px!important;font-size:22px!important;border-radius:12px!important;
+}
+body.zebraDevice .lastScanQtyValue,body.zebraMode .lastScanQtyValue{
+  min-height:46px!important;font-size:20px!important;
+}
+/* Ready charcoal -> success green -> action amber -> real error dark red */
+body.zebraDevice .scanBox.success,body.zebraDevice .scanBox.flashSuccess,
+body.zebraMode #scanBox.success,body.zebraMode #scanBox.flashSuccess{
+  border-color:#168A4A!important;background:#EFFAF3!important;
+  box-shadow:0 0 0 3px rgba(22,138,74,.15)!important;
+}
+body.zebraDevice .scanBox.actionRequired,body.zebraMode #scanBox.actionRequired{
+  border-color:#D58A19!important;background:#FFF8EA!important;
+  box-shadow:0 0 0 3px rgba(213,138,25,.13)!important;
+}
+body.zebraDevice .scanBox.error,body.zebraDevice .scanBox.flashError,
+body.zebraMode #scanBox.error,body.zebraMode #scanBox.flashError{
+  border-color:#A9232F!important;background:#FFF0F1!important;
+  box-shadow:0 0 0 3px rgba(169,35,47,.14)!important;
+}
+body.zebraDevice input[type="number"],body.zebraMode input[type="number"]{
+  min-height:48px!important;font-size:20px!important;text-align:center;
+}
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.1 — FINAL HANDHELD NEAR EXPIRY
+========================================================= */
+body.zebraDevice.zebraExpiryActive .mainContent,
+body.zebraExpiryActive .mainContent{
+  max-width:560px !important;
+  margin:0 auto !important;
+  padding:7px !important;
+}
+.zebraExpiryShell{
+  padding:0 !important;
+}
+.zebraExpiryTop{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin-bottom:7px !important;
+}
+.zebraExpiryTop button{
+  min-width:72px;
+  height:38px;
+  padding:0 10px !important;
+  border:1px solid #CDB8A5 !important;
+  border-radius:10px !important;
+  background:#FFF9F3 !important;
+  color:#493D35 !important;
+  font-weight:750 !important;
+}
+.zebraExpiryTop>div{
+  display:flex;
+  flex-direction:column;
+}
+.zebraExpiryTop span{
+  font-size:8px;
+  letter-spacing:.12em;
+  font-weight:800;
+  color:#9A5434;
+}
+.zebraExpiryTop strong{
+  font-size:17px !important;
+  color:#302821 !important;
+}
+.expiryWorkerBar{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  padding:7px 9px;
+  margin-bottom:7px;
+  border:1px solid #D7C3B2;
+  border-radius:11px;
+  background:#FFF9F3;
+}
+.expiryWorkerBar label{
+  font-size:10px;
+  font-weight:800;
+  color:#65574E;
+}
+.expiryWorkerBar select{
+  width:100%;
+  height:36px;
+  border:1px solid #CDB5A0;
+  border-radius:9px;
+  background:#fff;
+  color:#332A24;
+  padding:0 8px;
+  font-size:13px;
+  font-weight:700;
+}
+.expiryScanStatus{
+  min-height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:5px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.expiryScanStatus.ready{background:#ECE8E4;color:#433E3A;}
+.expiryScanStatus.busy{background:#F5E6D9;color:#82452D;}
+.expiryScanStatus.success{background:#DFF4E7;color:#147A43;}
+.expiryScanStatus.action{background:#FFF1CF;color:#9B6100;}
+.expiryScanStatus.error{background:#FADDE0;color:#A9232F;}
+
+.expiryScanBox{
+  min-height:58px;
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  align-items:center;
+  margin-bottom:7px;
+  overflow:hidden;
+  border:2px solid #4B4540;
+  border-radius:13px;
+  background:#FFF9F4;
+}
+.expiryScanIcon{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#ECE8E4;
+  color:#4B4540;
+  font-size:22px;
+  font-weight:900;
+}
+#expiryBarcodeInput{
+  width:100%;
+  height:54px;
+  padding:0 11px;
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#302821;
+  font-size:16px;
+  font-weight:700;
+}
+.expiryItemCard{
+  padding:9px 10px;
+  margin-bottom:7px;
+  border:1px solid #D9C5B3;
+  border-radius:12px;
+  background:#FFF9F3;
+}
+.expiryItemCard>span{
+  display:block;
+  margin-bottom:3px;
+  color:#8C7463;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.1em;
+}
+.expiryItemCard>strong{
+  display:block;
+  min-height:21px;
+  color:#2E2925;
+  font-size:16px;
+  line-height:1.15;
+  font-weight:800;
+}
+.expiryItemMeta{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  margin-top:7px;
+}
+.expiryItemMeta>div{
+  min-width:0;
+  padding:5px 6px;
+  border:1px solid #E4D7CB;
+  border-radius:8px;
+  background:#FFFCF9;
+}
+.expiryItemMeta span{
+  display:block;
+  margin-bottom:2px;
+  color:#89786D;
+  font-size:7px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.expiryItemMeta strong{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#40362F;
+  font-size:10px;
+}
+.expiryEntryGrid{
+  display:grid;
+  grid-template-columns:1.2fr .8fr 1fr;
+  gap:6px;
+  margin-bottom:7px;
+}
+.expiryEntryGrid label{
+  min-width:0;
+}
+.expiryEntryGrid label>span{
+  display:block;
+  margin:0 0 3px;
+  color:#66574D;
+  font-size:9px;
+  font-weight:800;
+}
+.expiryEntryGrid input{
+  width:100% !important;
+  height:48px !important;
+  min-height:48px !important;
+  padding:0 6px !important;
+  border:1px solid #CDB49F !important;
+  border-radius:10px !important;
+  background:#fff !important;
+  color:#302821 !important;
+  font-size:20px !important;
+  font-weight:800 !important;
+  text-align:center !important;
+}
+.expiryEntryGrid input:focus{
+  border-color:#A65F3A !important;
+  box-shadow:0 0 0 3px rgba(166,95,58,.11) !important;
+}
+#expiryMonthName{
+  display:block;
+  min-height:14px;
+  margin-top:2px;
+  color:#895037;
+  font-size:9px;
+  font-weight:750;
+  text-align:center;
+}
+.expirySaveButton{
+  width:100%;
+  height:48px;
+  border:0;
+  border-radius:11px;
+  background:linear-gradient(135deg,#B46B44,#914B2D);
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.expirySaveButton:disabled{
+  opacity:.42;
+}
+.expiryLastSaved{
+  min-height:35px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:6px;
+  padding:6px 8px;
+  border-radius:9px;
+  background:#EAF7EF;
+  color:#176E42;
+  font-size:9px;
+}
+.expiryLastSaved:empty{display:none;}
+.expiryLastSaved strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:10px;
+}
+.expiryLastSaved span{
+  white-space:nowrap;
+}
+
+/* Settings worker management */
+.expiryWorkerAddRow{
+  display:grid;
+  grid-template-columns:minmax(180px,1fr) auto;
+  gap:8px;
+  align-items:center;
+  margin-top:10px;
+}
+.expiryWorkerAddRow input{
+  height:40px;
+  border:1px solid #D3BDA9;
+  border-radius:10px;
+  padding:0 10px;
+  background:#FFF9F4;
+}
+.expiryWorkersSettingsList{
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+.expiryWorkerRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 10px;
+  border:1px solid #E0D0C2;
+  border-radius:10px;
+  background:#FFF9F4;
+}
+.expiryWorkerRow strong{
+  color:#40352D;
+  font-size:13px;
+}
+
+@media(max-width:420px){
+  .expiryItemMeta{grid-template-columns:1fr 1fr;}
+  .expiryItemMeta>div:last-child{grid-column:1/-1;}
+  .expiryEntryGrid{grid-template-columns:1fr .72fr .9fr;}
+  .expiryEntryGrid input{font-size:18px !important;}
+}

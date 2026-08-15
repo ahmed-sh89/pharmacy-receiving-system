@@ -5909,12 +5909,57 @@ function initializeZebraInterface(){
         shell.id = "zebraExpiryShell";
         shell.className = "zebraExpiryShell";
         shell.innerHTML = `
-            <div class="zebraExpiryTop"><button id="btnExpiryBackToModes" type="button">‹ Modes</button><strong>Expiry</strong></div>
-            <div class="zebraExpiryPlaceholder">
-                <span>EXPIRY WORKFLOW</span>
-                <h2>Expiry capture is reserved for the Expiry implementation phase.</h2>
-                <p>The fixed flow is: Scan → Global GTIN item → numeric quantity → numeric month → numeric year.</p>
+            <div class="zebraExpiryTop">
+                <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
+                <div><span>NEAR EXPIRY</span><strong>Capture</strong></div>
             </div>
+
+            <div class="expiryWorkerBar">
+                <label for="expiryWorkerSelect">Captured By</label>
+                <select id="expiryWorkerSelect">
+                    <option value="">Select worker...</option>
+                </select>
+            </div>
+
+            <div id="expiryScanStatus" class="expiryScanStatus ready">READY TO SCAN</div>
+
+            <div class="expiryScanBox">
+                <span class="expiryScanIcon">▥</span>
+                <input id="expiryBarcodeInput" type="text" inputmode="none" autocomplete="off"
+                       placeholder="Scan GS1 / Barcode">
+            </div>
+
+            <div class="expiryItemCard">
+                <span>LAST ITEM</span>
+                <strong id="expiryItemName">—</strong>
+                <div class="expiryItemMeta">
+                    <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
+                    <div><span>GTIN</span><strong id="expiryItemGTIN">—</strong></div>
+                    <div><span>Category</span><strong id="expiryItemCategory">—</strong></div>
+                </div>
+            </div>
+
+            <div class="expiryEntryGrid">
+                <label>
+                    <span>Quantity</span>
+                    <input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" placeholder="Qty">
+                </label>
+                <label>
+                    <span>Month</span>
+                    <input id="expiryMonth" type="number" min="1" max="12" inputmode="numeric" placeholder="MM">
+                    <small id="expiryMonthName"></small>
+                </label>
+                <label>
+                    <span>Year</span>
+                    <input id="expiryYear" type="number" min="2020" max="2200" inputmode="numeric" placeholder="YYYY">
+                </label>
+            </div>
+
+            <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>
+                SAVE & NEXT
+            </button>
+
+            <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
         `;
         document.querySelector(".mainContent")?.prepend(shell);
         document.getElementById("btnExpiryBackToModes")?.addEventListener("click", setZebraHomeMode);
@@ -5951,6 +5996,9 @@ function setZebraExpiryMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
     document.body.classList.add("zebraExpiryActive");
+    if(typeof activateExpiryCapture === "function"){
+        setTimeout(()=>activateExpiryCapture(),30);
+    }
 }
 function setZebraInterfaceMode(enabled){
     initializeZebraInterface();
@@ -6292,4 +6340,17 @@ async function requestRemoveActiveOrderFile(fileId){
             showToast(`${orderNumber||file.name} removed. ${remaining.length} active order(s) remain.`,"success");
         }catch(error){Logger.error("Remove active order failed",error);showToast(error?.message||"Unable to remove order","error");}finally{hideLoading();}
     });
+}
+
+/* PharmFlow 2C.9 — handheld quantity semantics.
+   Manual entry is ADDITIONAL quantity, not total quantity. */
+function refreshHandheldQuantityGuidance(){
+    const hint=document.getElementById("handheldQtyHint");
+    if(!hint) return;
+    const receivedEl=document.getElementById("lastReceived");
+    const remainingEl=document.getElementById("lastRemaining");
+    const deviceEl=document.getElementById("lastThisPcQty") || document.getElementById("lastThisDeviceQty");
+    const d=deviceEl ? (deviceEl.textContent||"0").trim() : "0";
+    const r=remainingEl ? (remainingEl.textContent||"0").trim() : "0";
+    hint.textContent=`Scanned on this device: ${d} • Remaining to order: ${r}`;
 }

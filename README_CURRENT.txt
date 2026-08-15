@@ -1,10 +1,23 @@
-PharmFlow Phase 2C.8.8 — Fast Receiving UX
+PharmFlow Phase 2C.9.1 — Handheld Near Expiry Final
 
-- Routine scanner success/error toast notifications removed.
-- Scan Box is the primary operational feedback: READY charcoal, RECEIVED green, ACTION REQUIRED amber, hard failure dark red.
-- Unknown GTIN / known-extra GTIN flow replaced by a unified right-side Smart Resolution Panel.
-- Panel supports current-order search, Link GTIN & Receive +1, known Master Extra +1, and manual Extra +1.
-- Successful action closes panel automatically and returns focus to scanner.
-- Administrative confirmation dialogs are unchanged.
-- Multiple-GTIN database logic, cloud sync and Multi-PC logic are unchanged.
-- No SQL required.
+Handheld now has two worker jobs:
+1. Receive Order
+2. Near Expiry
+
+Near Expiry:
+- Worker is selected once per device (Captured By) and remembered.
+- Flow: Scan -> Item -> Qty -> Month -> Year -> Save & Next.
+- Month is numeric; e.g. 08 displays August.
+- Item Code, Item Name, GTIN and Category are read from Global GTIN.
+- Captured By and Captured At are stored with every expiry record.
+- Last saved item is shown briefly for confirmation.
+- Expiry scan works independently of a PC receiving session.
+
+Settings:
+- Pharmacy Admin can add or disable Near Expiry worker names.
+- Disabling a worker does not delete historical expiry records.
+
+Database:
+Run PHASE2C91_HANDHELD_EXPIRY_CAPTURE.sql once in Supabase before testing Near Expiry.
+
+Receiving / Multiple GTIN / Cloud / Multi-PC arithmetic was not changed.
