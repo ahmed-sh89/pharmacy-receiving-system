@@ -421,6 +421,20 @@ async function openExpiryCapturedPanel(){
 function bindExpiryCaptureUI(){
     populateExpiryDateDropdowns();
 
+    const modesButton = document.getElementById("btnExpiryBackToModes");
+    if(modesButton && modesButton.dataset.bound !== "1"){
+        modesButton.dataset.bound = "1";
+        modesButton.addEventListener("click",()=>{
+            if(typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice()){
+                if(typeof setZebraHomeMode === "function"){
+                    setZebraHomeMode();
+                }
+            }else if(typeof navigateTo === "function"){
+                navigateTo("dashboard");
+            }
+        });
+    }
+
     const qtyInput = document.getElementById("expiryQuantity");
     if(qtyInput && qtyInput.dataset.enterBound !== "1"){
         qtyInput.dataset.enterBound="1";
@@ -676,7 +690,10 @@ if(typeof AppEvents !== "undefined" && AppEvents?.on){
 if(typeof AppEvents !== "undefined" && AppEvents?.on){
     AppEvents.on("route:changed",payload=>{
         if(payload?.routeName==="expiry"){
-            document.body.classList.remove("zebraExpiryActive");
+            if(!(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice())){
+                document.body.classList.remove("zebraExpiryActive","zebraMode");
+            }
+            try{ window.scrollTo(0,0); }catch(_){}
             setTimeout(()=>activateExpiryCapture(),20);
         }
     });

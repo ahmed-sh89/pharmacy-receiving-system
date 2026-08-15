@@ -5078,3 +5078,221 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar{
   background:#A65A37;color:#fff;font-weight:900
 }
 .expiryCapturedEmpty{padding:20px;text-align:center;color:#76685F}
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.5 — EXPIRY PAGE ARCHITECTURE +
+   HANDHELD QUANTITY CONTROL VISIBILITY
+========================================================= */
+
+/* One real expiry page for both PC and Zebra. */
+#zebraExpiryShell{
+  width:100%;
+  min-width:0;
+}
+
+#zebraExpiryShell.appPage.active{
+  display:block !important;
+}
+
+.expiryCaptureCard{
+  width:100%;
+}
+
+/* PC: full usable capture page, not an empty route. */
+body:not(.zebraDevice) #zebraExpiryShell.appPage.active{
+  display:block !important;
+  max-width:1040px;
+  margin:0 auto;
+  padding:18px;
+}
+
+body:not(.zebraDevice) #zebraExpiryShell .zebraExpiryTop{
+  position:static !important;
+  display:flex !important;
+  align-items:center !important;
+  max-width:820px;
+  margin:0 0 12px !important;
+  padding:0 !important;
+  background:transparent !important;
+}
+
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{
+  max-width:820px;
+  padding:18px;
+  border:1px solid #D9C5B3;
+  border-radius:18px;
+  background:#FBF3EC;
+  box-shadow:0 12px 30px rgba(88,57,38,.06);
+}
+
+body:not(.zebraDevice) #zebraExpiryShell #btnExpiryBackToModes{
+  display:none !important;
+}
+
+body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid{
+  grid-template-columns:1fr 1fr 1fr !important;
+  max-width:760px;
+}
+
+body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid input,
+body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid select{
+  min-height:52px !important;
+}
+
+/* Zebra Expiry: hide every other app page and explicitly show expiry. */
+body.zebraDevice.zebraExpiryActive .appPage{
+  display:none !important;
+}
+
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell.appPage{
+  display:block !important;
+}
+
+body.zebraDevice.zebraExpiryActive .mainContent{
+  width:100% !important;
+  max-width:560px !important;
+  margin:0 auto !important;
+  padding:5px !important;
+}
+
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
+  padding:0 !important;
+  overflow:visible !important;
+}
+
+body.zebraDevice.zebraExpiryActive .zebraExpiryTop{
+  position:sticky !important;
+  top:0 !important;
+  z-index:90 !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  width:100% !important;
+  min-width:0 !important;
+  margin:0 0 6px !important;
+  padding:6px 2px !important;
+  background:#F7EFE8 !important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryPageTitle{
+  min-width:0;
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryPageTitle span{
+  font-size:8px;
+  letter-spacing:.12em;
+  font-weight:900;
+  color:#9A5434;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryPageTitle strong{
+  font-size:16px;
+  color:#302821;
+}
+
+body.zebraDevice.zebraExpiryActive #btnExpiryBackToModes{
+  flex:0 0 auto;
+  min-width:78px !important;
+  height:40px !important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryCapturedButton{
+  flex:0 0 auto;
+  max-width:108px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryCaptureCard{
+  padding:0 !important;
+  background:transparent !important;
+}
+
+/* Receiving quantity controls: ALWAYS - | Qty | + within screen width. */
+body.zebraDevice.zebraReceivingActive .lastScanQuantityControls{
+  width:100% !important;
+  min-width:0 !important;
+  margin-top:8px !important;
+  padding-top:8px !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:7px !important;
+  overflow:visible !important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyTitle{
+  display:none !important;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldScanContext{
+  width:100% !important;
+  min-width:0 !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyActions{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  display:grid !important;
+  grid-template-columns:minmax(48px,1fr) minmax(72px,1.25fr) minmax(48px,1fr) !important;
+  align-items:stretch !important;
+  overflow:visible !important;
+  border-radius:11px !important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyButton,
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:48px !important;
+  margin:0 !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyButton{
+  font-size:24px !important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue{
+  font-size:20px !important;
+}
+
+body.zebraDevice.zebraReceivingActive .lastScanQtyHint{
+  display:none !important;
+}
+
+/* Extra-small Zebra safety: never let Last Scan create horizontal overflow. */
+@media(max-width:420px){
+  body.zebraDevice.zebraReceivingActive #lastScanCard,
+  body.zebraDevice.zebraReceivingActive #lastScanCard *{
+    box-sizing:border-box;
+  }
+
+  body.zebraDevice.zebraReceivingActive #lastScanCard{
+    max-width:100% !important;
+    overflow:hidden !important;
+  }
+
+  body.zebraDevice.zebraReceivingActive .lastScanQtyActions{
+    grid-template-columns:52px minmax(68px,1fr) 52px !important;
+  }
+
+  body.zebraDevice.zebraExpiryActive .expiryEntryGrid{
+    grid-template-columns:1fr .9fr 1fr !important;
+  }
+
+  body.zebraDevice.zebraExpiryActive .expiryEntryGrid select{
+    min-width:0 !important;
+    padding:0 4px !important;
+    font-size:15px !important;
+  }
+}

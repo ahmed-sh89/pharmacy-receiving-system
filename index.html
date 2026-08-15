@@ -1369,6 +1369,118 @@
 
 
             <!-- ==================================================
+                 NEAR EXPIRY PAGE
+                 Shared by PC and Zebra. Device CSS changes layout only.
+            =================================================== -->
+
+            <section
+                id="zebraExpiryShell"
+                class="appPage zebraExpiryShell"
+            >
+                <div class="zebraExpiryTop">
+                    <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
+
+                    <div class="expiryPageTitle">
+                        <span>NEAR EXPIRY</span>
+                        <strong>Capture</strong>
+                    </div>
+
+                    <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
+                        CAPTURED <strong id="expiryCapturedCount">0</strong>
+                    </button>
+                </div>
+
+                <section class="expiryCaptureCard">
+                    <div class="expiryWorkerBar">
+                        <label for="expiryWorkerSelect">Captured By</label>
+                        <select id="expiryWorkerSelect">
+                            <option value="">Select worker...</option>
+                        </select>
+                    </div>
+
+                    <div id="expiryScanStatus" class="expiryScanStatus ready">READY TO SCAN</div>
+
+                    <div class="expiryScanBox">
+                        <span class="expiryScanIcon">▥</span>
+                        <input
+                            id="expiryBarcodeInput"
+                            type="text"
+                            inputmode="none"
+                            autocomplete="off"
+                            placeholder="Scan GS1 / Barcode"
+                        >
+                    </div>
+
+                    <div class="expiryItemCard">
+                        <span>LAST ITEM</span>
+                        <strong id="expiryItemName">—</strong>
+
+                        <div class="expiryItemMeta">
+                            <div>
+                                <span>Item Code</span>
+                                <strong id="expiryItemCode">—</strong>
+                            </div>
+
+                            <div>
+                                <span>GTIN</span>
+                                <strong id="expiryItemGTIN">—</strong>
+                            </div>
+
+                            <div>
+                                <span>Category</span>
+                                <strong id="expiryItemCategory">—</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="expiryEntryGrid">
+                        <label>
+                            <span>Quantity</span>
+                            <input
+                                id="expiryQuantity"
+                                type="number"
+                                min="1"
+                                step="1"
+                                inputmode="numeric"
+                                placeholder="Qty"
+                            >
+                        </label>
+
+                        <label>
+                            <span>Month</span>
+                            <select id="expiryMonth" aria-label="Expiry month">
+                                <option value="">Month</option>
+                            </select>
+                            <small id="expiryMonthName"></small>
+                        </label>
+
+                        <label>
+                            <span>Year</span>
+                            <select id="expiryYear" aria-label="Expiry year">
+                                <option value="">Year</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <button
+                        id="btnSaveExpiryCapture"
+                        class="expirySaveButton"
+                        type="button"
+                        disabled
+                    >
+                        SAVE &amp; NEXT
+                    </button>
+
+                    <div
+                        id="expiryLastSaved"
+                        class="expiryLastSaved"
+                        aria-live="polite"
+                    ></div>
+                </section>
+            </section>
+
+
+            <!-- ==================================================
                  REPORTS PAGE
             =================================================== -->
 

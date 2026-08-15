@@ -5936,71 +5936,8 @@ function initializeZebraInterface(){
         }
     }
 
-    if(!document.getElementById("zebraExpiryShell")){
-        const shell = document.createElement("section");
-        shell.id = "zebraExpiryShell";
-        shell.className = "zebraExpiryShell appPage";
-        shell.innerHTML = `
-            <div class="zebraExpiryTop">
-                <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
-                <div><span>NEAR EXPIRY</span><strong>Capture</strong></div>
-                <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">CAPTURED <strong id="expiryCapturedCount">0</strong></button>
-            </div>
-
-            <div class="expiryWorkerBar">
-                <label for="expiryWorkerSelect">Captured By</label>
-                <select id="expiryWorkerSelect">
-                    <option value="">Select worker...</option>
-                </select>
-            </div>
-
-            <div id="expiryScanStatus" class="expiryScanStatus ready">READY TO SCAN</div>
-
-            <div class="expiryScanBox">
-                <span class="expiryScanIcon">▥</span>
-                <input id="expiryBarcodeInput" type="text" inputmode="none" autocomplete="off"
-                       placeholder="Scan GS1 / Barcode">
-            </div>
-
-            <div class="expiryItemCard">
-                <span>LAST ITEM</span>
-                <strong id="expiryItemName">—</strong>
-                <div class="expiryItemMeta">
-                    <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
-                    <div><span>GTIN</span><strong id="expiryItemGTIN">—</strong></div>
-                    <div><span>Category</span><strong id="expiryItemCategory">—</strong></div>
-                </div>
-            </div>
-
-            <div class="expiryEntryGrid">
-                <label>
-                    <span>Quantity</span>
-                    <input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" placeholder="Qty">
-                </label>
-                <label>
-                    <span>Month</span>
-                    <select id="expiryMonth" aria-label="Expiry month">
-                        <option value="">Month</option>
-                    </select>
-                    <small id="expiryMonthName"></small>
-                </label>
-                <label>
-                    <span>Year</span>
-                    <select id="expiryYear" aria-label="Expiry year">
-                        <option value="">Year</option>
-                    </select>
-                </label>
-            </div>
-
-            <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>
-                SAVE & NEXT
-            </button>
-
-            <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
-        `;
-        document.querySelector(".mainContent")?.prepend(shell);
-        document.getElementById("btnExpiryBackToModes")?.addEventListener("click", setZebraHomeMode);
-    }
+    /* Near Expiry is now a permanent appPage in index.html.
+       PC and Zebra share the exact same capture markup and data logic. */
 
     /* Never expose a restored order before cloud validation. New sign-in starts
        from Modes; validateRestoredZebraCloudSession() may resume a genuinely
@@ -6066,11 +6003,20 @@ function setZebraReceivingMode(){
 }
 function setZebraExpiryMode(){
     if(!isLikelyZebraDevice()){ return; }
+
     clearZebraModeClasses();
     document.body.classList.add("zebraDevice","zebraExpiryActive");
-    document.getElementById("zebraExpiryShell")?.classList.add("active");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    const expiryPage = document.getElementById("zebraExpiryShell");
+    expiryPage?.classList.add("active");
+
     try{ document.activeElement?.blur?.(); }catch(_){}
     try{ window.scrollTo(0,0); }catch(_){}
+
     if(typeof activateExpiryCapture === "function"){
         setTimeout(()=>activateExpiryCapture(),40);
     }
