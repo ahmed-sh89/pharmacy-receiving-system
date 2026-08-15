@@ -165,14 +165,31 @@ async function receiveParsedBarcode(parsed){
 /* =====================================================
    PHASE 2C.6.1 - QUICK RESOLVE + SAFE PHARMACY LEARNING
 ===================================================== */
+async function saveReceivingNeedsReview(parsed){
+    const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);
+    if(!pharmacyId || typeof authRpc!=="function") throw new Error("Review queue is not available");
+    return authRpc("save_pharmacy_needs_review",{
+        p_pharmacy_id:pharmacyId,p_workflow:"RECEIVING",p_gtin:normalizeGTIN(parsed?.gtin||""),
+        p_raw_barcode:toSafeString(parsed?.raw||parsed?.original||parsed?.gtin||""),
+        p_order_id:toSafeString(AppState.workspace.orderId||""),p_order_name:toSafeString(AppState.workspace.orderName||""),
+        p_pending_quantity:getValidReceivingQuantity(parsed?.quantity),p_expiry_month:null,p_expiry_year:null,p_worker_id:null,
+        p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():"",
+        p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC"
+    });
+}
 async function quickResolveUnrecognizedGTIN(parsed){
     const gtin=normalizeGTIN(parsed?.gtin||"");
     if(!gtin){ handleReceivingFailure("Barcode could not be identified"); return false; }
-
-    let known=null;
-    try{ known=await getMasterGTINRecordByGTIN(gtin); }catch(_e){}
-
-    /* Unknown-but-resolvable is an ACTION state, not a hard error. */
+    let known=null; try{ known=await getMasterGTINRecordByGTIN(gtin); }catch(_e){}
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        try{
+            await saveReceivingNeedsReview(parsed);
+            if(typeof setScanBoxState==="function") setScanBoxState("action");
+            if(typeof refreshNeedsReviewCounters==="function") refreshNeedsReviewCounters();
+            setTimeout(()=>{ if(typeof setScanBoxState==="function")setScanBoxState("ready"); if(typeof focusScannerInput==="function")focusScannerInput(); },450);
+            return true;
+        }catch(error){ handleReceivingFailure(error?.message||"Unable to save for review"); return false; }
+    }
     if(typeof setScanBoxState==="function") setScanBoxState("action");
     return await openQuickGTINResolver(parsed,known);
 }
@@ -214,7 +231,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <div data-results class="gtinResolutionResults"></div>
             </section>
             ${knownCode ? "" : `<section class="gtinResolutionSection gtinManualExtra"><div><span class="gtinMiniLabel">NOT IN THE ORDER?</span><strong>Add new Extra item</strong></div><div class="gtinExtraGrid"><input data-code placeholder="Item Code" autocomplete="off"><input data-name placeholder="Item Name" autocomplete="off"><button type="button" class="gtinSecondaryAction" data-extra>Add Extra &amp; Receive +1</button></div></section>`}
-            <footer class="gtinResolutionFooter"><span>Saved for this pharmacy only. Global Master is unchanged.</span><button type="button" data-close>Cancel</button></footer>
+            <footer class="gtinResolutionFooter"><span>Resolve now or send this scan to Needs Review.</span><div><button type="button" data-review>Save for Review</button><button type="button" data-close>Cancel</button></div></footer>
           </aside>`;
         document.body.appendChild(panel);
 
@@ -249,6 +266,10 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         };
         search.oninput=render; render();
         panel.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>finish(false));
+        panel.querySelector('[data-review]')?.addEventListener('click',async()=>{
+            try{ await saveReceivingNeedsReview(parsed); if(typeof refreshNeedsReviewCounters==="function")refreshNeedsReviewCounters(); finish(true); }
+            catch(error){ if(typeof setScanBoxState==="function")setScanBoxState("error"); }
+        });
         panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
             let item=upsertOrderItem({itemCode:knownCode,itemName:knownName,orderedQty:0,receivedQty:0,manual:true});
             if(!item){ if(typeof setScanBoxState==="function") setScanBoxState("error"); return; }

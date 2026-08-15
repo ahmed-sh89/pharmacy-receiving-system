@@ -44,7 +44,7 @@ function populateExpiryDateDropdowns(){
         month.innerHTML = `<option value="">Month</option>` +
             Array.from({length:12},(_,i)=>{
                 const n=i+1, mm=String(n).padStart(2,"0");
-                return `<option value="${n}">${mm} — ${expiryMonthName(n)}</option>`;
+                return `<option value="${n}">${mm}</option>`;
             }).join("");
         if(selected) month.value=selected;
     }
@@ -196,11 +196,18 @@ async function resolveExpiryScannedValue(rawValue){
     }
 
     if(!record){
-        setExpiryStatus("action","GTIN NEEDS MAPPING");
-        const input = document.getElementById("expiryBarcodeInput");
-        if(input) input.value = "";
-        setTimeout(()=>setExpiryStatus("ready","READY TO SCAN"),900);
-        return false;
+        ExpiryCaptureEngine.currentItem={itemCode:"",itemName:"Item not recognized",gtin,category:"",needsReview:true,rawBarcode:cleaned};
+        document.getElementById("expiryItemName").textContent="Item not recognized";
+        document.getElementById("expiryItemCode").textContent="Needs Review";
+        document.getElementById("expiryItemGTIN").textContent=gtin;
+        document.getElementById("expiryItemCategory").textContent="Pending";
+        const qty=document.getElementById("expiryQuantity");
+        if(qty){qty.value="";qty.disabled=false;setTimeout(()=>qty.focus(),40);}
+        document.getElementById("expiryMonth").disabled=false;
+        document.getElementById("expiryYear").disabled=false;
+        document.getElementById("btnSaveExpiryCapture").disabled=false;
+        setExpiryStatus("action","SAVE FOR REVIEW");
+        return true;
     }
 
     ExpiryCaptureEngine.currentItem = {
@@ -278,6 +285,19 @@ async function saveExpiryCapture(){
         const pharmacyId = expiryPharmacyId();
         const deviceId = (typeof ensureDeviceId === "function") ? ensureDeviceId() : "";
 
+        if(item.needsReview){
+            await authRpc("save_pharmacy_needs_review",{
+                p_pharmacy_id:pharmacyId,p_workflow:"EXPIRY",p_gtin:item.gtin,p_raw_barcode:item.rawBarcode||item.gtin,
+                p_order_id:null,p_order_name:null,p_pending_quantity:quantity,p_expiry_month:month,p_expiry_year:year,
+                p_worker_id:workerId,p_device_id:deviceId,
+                p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC"
+            });
+            setExpiryStatus("success","✓ SAVED FOR REVIEW");
+            if(typeof refreshNeedsReviewCounters==="function")refreshNeedsReviewCounters();
+            setTimeout(()=>resetExpiryCaptureForm({focus:true}),500);
+            return;
+        }
+
         await authRpc("save_pharmacy_expiry_capture", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
@@ -320,7 +340,8 @@ async function saveExpiryCapture(){
 async function loadExpiryCapturedRecords(){
     const pharmacyId = expiryPharmacyId();
     if(!pharmacyId || typeof authRpc !== "function") return [];
-    return await authRpc("list_pharmacy_expiry_captures",{
+
+    const rows = await authRpc("list_pharmacy_expiry_captures",{
         p_pharmacy_id:pharmacyId,
         p_expiry_year:null,
         p_expiry_months:null,
@@ -328,6 +349,13 @@ async function loadExpiryCapturedRecords(){
         p_worker_ids:null,
         p_search:null
     }) || [];
+
+    /* Captured review always shows the most recently saved item first. */
+    return [...rows].sort((a,b)=>{
+        const aTime = Date.parse(a?.captured_at || "") || 0;
+        const bTime = Date.parse(b?.captured_at || "") || 0;
+        return bTime - aTime;
+    });
 }
 
 async function refreshExpiryCapturedCount(){
@@ -369,7 +397,11 @@ async function openExpiryCapturedPanel(){
               <div class="expiryCapturedMain">
                 <strong>${expiryEscapeHtml(row.item_name || "Item")}</strong>
                 <span>Qty ${Number(row.quantity||0)} • ${expiryEscapeHtml(expiryMonthName(row.expiry_month))} ${Number(row.expiry_year||0)}</span>
-                <small>${expiryEscapeHtml(row.captured_by_name || "")}${row.category ? " • "+expiryEscapeHtml(row.category) : ""}</small>
+                <small>
+                    ${expiryEscapeHtml(row.captured_by_name || "")}
+                    ${row.category ? " • "+expiryEscapeHtml(row.category) : ""}
+                    • ${expiryEscapeHtml(String(row.source || "PC").toUpperCase())}
+                </small>
               </div>
               <button class="expiryDeleteRecord" type="button" data-delete="${expiryEscapeHtml(row.capture_id)}">Delete</button>
             </div>`).join("") :

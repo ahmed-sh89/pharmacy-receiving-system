@@ -6428,8 +6428,71 @@ function refreshScanSafetyUI(){
         received.insertAdjacentElement("afterend",priority);
     }
     priority.onclick=()=>openDashboardKpiPanel("total");
+    ensureNeedsReviewButtons();
 }
 
+
+
+async function loadNeedsReviewRows(workflow,orderId=null){
+    const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);
+    if(!pharmacyId||typeof authRpc!=="function")return [];
+    return await authRpc("list_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_workflow:workflow||null,p_order_id:orderId||null})||[];
+}
+async function refreshNeedsReviewCounters(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
+    try{
+        const orderId=String(AppState?.workspace?.orderId||"");
+        const [r,e]=await Promise.all([loadNeedsReviewRows("RECEIVING",orderId||null),loadNeedsReviewRows("EXPIRY",null)]);
+        const rc=document.getElementById("receivingNeedsReviewCount"),ec=document.getElementById("expiryNeedsReviewCount");
+        if(rc)rc.textContent=String(r.length); if(ec)ec.textContent=String(e.length);
+        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",r.length>0);
+        document.getElementById("btnExpiryNeedsReview")?.classList.toggle("hasItems",e.length>0);
+    }catch(error){console.warn("Needs Review count failed",error);}
+}
+function ensureNeedsReviewButtons(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
+    const search=document.getElementById("btnQuickSearch");
+    if(search&&!document.getElementById("btnReceivingNeedsReview")){
+        const b=document.createElement("button");b.type="button";b.id="btnReceivingNeedsReview";b.className=(search.className||"")+" needsReviewButton";
+        b.innerHTML='Needs Review <strong id="receivingNeedsReviewCount">0</strong>';search.insertAdjacentElement("afterend",b);b.onclick=()=>openNeedsReviewPanel("RECEIVING");
+    }
+    const captured=document.getElementById("btnExpiryCaptured");
+    if(captured&&!document.getElementById("btnExpiryNeedsReview")){
+        const b=document.createElement("button");b.type="button";b.id="btnExpiryNeedsReview";b.className="expiryCapturedButton needsReviewButton";
+        b.innerHTML='REVIEW <strong id="expiryNeedsReviewCount">0</strong>';captured.insertAdjacentElement("beforebegin",b);b.onclick=()=>openNeedsReviewPanel("EXPIRY");
+    }
+    refreshNeedsReviewCounters();
+}
+async function openNeedsReviewPanel(workflow){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
+    document.getElementById("needsReviewOverlay")?.remove();
+    const orderId=workflow==="RECEIVING"?String(AppState?.workspace?.orderId||""):null;
+    let rows=[];try{rows=await loadNeedsReviewRows(workflow,orderId);}catch(error){showToast?.(error?.message||"Unable to load Needs Review","error");return;}
+    const esc=v=>typeof escapeHTML==="function"?escapeHTML(String(v??"")):String(v??"");
+    const overlay=document.createElement("div");overlay.id="needsReviewOverlay";overlay.className="needsReviewOverlay";
+    overlay.innerHTML=`<button class="needsReviewScrim" data-close></button><aside class="needsReviewPanel"><header><div><span>${workflow}</span><h2>Needs Review</h2><p>${rows.length} pending</p></div><button class="needsReviewClose" data-close>✕</button></header><div class="needsReviewList">${
+      rows.length?rows.map((row,i)=>`<section class="needsReviewRow" data-i="${i}"><div class="needsReviewInfo"><span>GTIN</span><strong>${esc(row.gtin)}</strong><small>${workflow==="RECEIVING"?`Pending scans: ${row.pending_quantity}`:`Qty ${row.pending_quantity} · ${String(row.expiry_month).padStart(2,"0")}/${row.expiry_year} · ${esc(row.captured_by_name)}`}</small></div><input data-search placeholder="Search current order item"><div class="needsReviewMatches"></div><button class="needsReviewDelete" data-delete>Delete</button></section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}</div></aside>`;
+    document.body.appendChild(overlay);overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>overlay.remove());
+    const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
+    overlay.querySelectorAll(".needsReviewRow").forEach(sec=>{
+      const row=rows[Number(sec.dataset.i)],search=sec.querySelector("[data-search]"),matches=sec.querySelector(".needsReviewMatches");
+      const render=()=>{const q=String(search.value||"").toLowerCase().trim();const found=items.filter(x=>!q||String(x.itemName||"").toLowerCase().includes(q)||String(x.itemCode||"").toLowerCase().includes(q)).slice(0,6);
+        matches.innerHTML=found.map((x,i)=>`<button data-m="${i}"><span><strong>${esc(x.itemName)}</strong><small>${esc(x.itemCode)}</small></span><b>Link</b></button>`).join("")||'<small>Search current order. Manual item entry remains PC-only.</small>';
+        matches.querySelectorAll("[data-m]").forEach(b=>b.onclick=async()=>{const item=found[Number(b.dataset.m)];b.disabled=true;try{
+          const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);
+          await authRpc("resolve_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id,p_item_code:item.itemCode,p_item_name:item.itemName});
+          if(typeof savePharmacyLearnedGTIN==="function")await savePharmacyLearnedGTIN(row.gtin,item.itemCode,item.itemName);
+          if(typeof addMappingRecord==="function")addMappingRecord({itemCode:item.itemCode,gtin:row.gtin,source:"PHARMACY_LEARNED"});
+          if(workflow==="RECEIVING"&&typeof receiveOrderItem==="function")receiveOrderItem({item,quantity:Number(row.pending_quantity||1),gtin:row.gtin,lot:"",expiry:"",serial:"",source:APP_CONFIG.transactionSources.scanner,manual:item.manual===true});
+          else if(workflow==="EXPIRY")await authRpc("save_pharmacy_expiry_capture",{p_pharmacy_id:pharmacyId,p_item_code:item.itemCode,p_item_name:item.itemName,p_gtin:row.gtin,p_category:item.category||"",p_quantity:Number(row.pending_quantity),p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),p_worker_id:row.worker_id,p_device_id:row.device_id||"",p_source:row.source||"PC"});
+          sec.remove();refreshNeedsReviewCounters();
+        }catch(error){b.disabled=false;showToast?.(error?.message||"Unable to resolve","error");}});};search.oninput=render;render();
+      sec.querySelector("[data-delete]").onclick=async e=>{const b=e.currentTarget;if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected){b.dataset.c="";b.textContent="Delete";}},2500);return;}
+        try{const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);await authRpc("delete_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id});sec.remove();refreshNeedsReviewCounters();}catch(error){showToast?.(error?.message||"Unable to delete","error");}};
+    });
+}
+window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
+window.openNeedsReviewPanel=openNeedsReviewPanel;
 
 function refreshOrderScopeControl(){
     const host=document.querySelector('.currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader') || document.querySelector('#dashboardPage');
@@ -6519,3 +6582,5 @@ function refreshHandheldQuantityGuidance(){
     const r=remainingEl ? (remainingEl.textContent||"0").trim() : "0";
     hint.textContent=`Scanned on this device: ${d} • Remaining to order: ${r}`;
 }
+
+if(typeof AppEvents!=="undefined"&&AppEvents?.on){AppEvents.on("route:changed",()=>setTimeout(ensureNeedsReviewButtons,30));AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));}
