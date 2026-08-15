@@ -2561,7 +2561,14 @@ function refreshMasterGTINUI(){
         ? getMasterGTINStatus()
         : null;
 
+    const headerMaster=document.getElementById("headerMasterGTINStatus");
+
     if(!status || status.installed !== true){
+
+        if(headerMaster){
+            headerMaster.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
+            headerMaster.title="Global GTIN Master is not available on this device yet";
+        }
 
         setElementText(
             UI.elements.masterGTINStatus,
@@ -2591,6 +2598,12 @@ function refreshMasterGTINUI(){
         }
 
         return;
+    }
+
+    if(headerMaster){
+        const count=toInteger(status.itemCount,0);
+        headerMaster.textContent=navigator.onLine ? "ACTIVE · "+count.toLocaleString() : "CACHED · "+count.toLocaleString();
+        headerMaster.title="Global GTIN Master — "+count.toLocaleString()+" items";
     }
 
     setElementText(

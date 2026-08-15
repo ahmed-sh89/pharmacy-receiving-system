@@ -1088,6 +1088,13 @@ async function deleteAllHistoricalData(){
         if(typeof refreshOrderLifecycleRegistry==="function"){
             await refreshOrderLifecycleRegistry();
         }
+        if(typeof reconcileCloudWorkspaceAuthority==="function"){
+            await reconcileCloudWorkspaceAuthority();
+        }
+        if(typeof syncGlobalMasterGTINFromCloud==="function"){
+            try{ await syncGlobalMasterGTINFromCloud(); }catch(_){ }
+        }
+        if(typeof refreshMasterGTINUI==="function") refreshMasterGTINUI();
         if(typeof refreshItemTransferOrderOptions==="function"){
             await Promise.resolve(refreshItemTransferOrderOptions());
         }

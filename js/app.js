@@ -732,22 +732,30 @@ async function resetCurrentWorkspace(){
             }
         }
 
-        if(activeOrderNumbers.length){
-            if(
-                typeof authRpc !== "function" ||
-                typeof AuthState === "undefined" ||
-                !AuthState.context?.pharmacy_id
-            ){
-                throw new Error("Pharmacy cloud context is unavailable. Sign in again before closing the current order.");
-            }
+        if(
+            typeof authRpc !== "function" ||
+            typeof AuthState === "undefined" ||
+            !AuthState.context?.pharmacy_id
+        ){
+            throw new Error("Pharmacy cloud context is unavailable. Sign in again before closing the current order.");
+        }
 
-            for(const orderNumber of activeOrderNumbers){
-                await authRpc("discard_pharmflow_active_order",{
-                    p_pharmacy_id:AuthState.context.pharmacy_id,
-                    p_order_number:orderNumber,
-                    p_confirmation:orderNumber
-                });
-            }
+        /* Phase 2C.10.2: reset means discard the pharmacy CURRENT workspace,
+           including legacy/ghost UPLOADED or RECEIVING registry rows that may
+           no longer exist in this browser. Finalized history is never touched. */
+        await authRpc("discard_all_pharmflow_active_orders",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_confirmation:"RESET CURRENT WORKSPACE"
+        });
+
+        /* Clear the shared workspace synchronously BEFORE local state is reset.
+           This removes the race where another PC can keep/re-hydrate stale data. */
+        await authRpc("clear_pharmflow_cloud_workspace",{
+            p_pharmacy_id:AuthState.context.pharmacy_id
+        });
+        if(typeof PharmFlowCloudWorkspace!=="undefined"){
+            PharmFlowCloudWorkspace.hydratedPharmacyId=AuthState.context.pharmacy_id;
+            PharmFlowCloudWorkspace.lastCloudUpdate=null;
         }
 
         if(typeof resetOperationalStateToDefault === "function"){
@@ -766,6 +774,12 @@ async function resetCurrentWorkspace(){
 
         if(typeof refreshOrderLifecycleRegistry === "function"){
             await refreshOrderLifecycleRegistry();
+        }
+        if(typeof reconcileCloudWorkspaceAuthority === "function"){
+            await reconcileCloudWorkspaceAuthority();
+        }
+        if(typeof syncGlobalMasterGTINFromCloud === "function"){
+            try{ await syncGlobalMasterGTINFromCloud(); }catch(_){ }
         }
 
         refreshEntireUI();
