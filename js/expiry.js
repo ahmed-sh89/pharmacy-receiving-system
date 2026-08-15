@@ -11,6 +11,7 @@ const ExpiryCaptureEngine = {
     busy: false,
     scanTimer: null,
     lastResolvedRaw: "",
+    scannedGS1: null,
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -126,8 +127,9 @@ function setExpiryStatus(kind, text){
 
 function resetExpiryCaptureForm(options = {}){
     ExpiryCaptureEngine.currentItem = null;
+    ExpiryCaptureEngine.scannedGS1 = null;
 
-    ["expiryItemName","expiryItemCode","expiryItemGTIN","expiryItemCategory"].forEach(id => {
+    ["expiryItemName","expiryItemCode","expiryItemGTIN","expiryItemCategory","expiryItemBatch","expiryItemSerial"].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.textContent = "—";
     });
@@ -179,6 +181,7 @@ async function resolveExpiryScannedValue(rawValue){
         : {gtin: cleaned};
 
     const gtin = String(parsed?.gtin || (typeof extractLikelyGTIN === "function" ? extractLikelyGTIN(cleaned) : "") || "").replace(/\D/g,"");
+    ExpiryCaptureEngine.scannedGS1 = parsed || null;
 
     if(!gtin){
         setExpiryStatus("error","GTIN NOT READ");
@@ -221,6 +224,25 @@ async function resolveExpiryScannedValue(rawValue){
     document.getElementById("expiryItemCode").textContent = ExpiryCaptureEngine.currentItem.itemCode || "—";
     document.getElementById("expiryItemGTIN").textContent = gtin;
     document.getElementById("expiryItemCategory").textContent = ExpiryCaptureEngine.currentItem.category || "Uncategorized";
+
+    const batch = toSafeString(parsed?.lot || "").trim();
+    const serial = toSafeString(parsed?.serial || "").trim();
+    const batchEl=document.getElementById("expiryItemBatch");
+    const serialEl=document.getElementById("expiryItemSerial");
+    if(batchEl) batchEl.textContent=batch || "—";
+    if(serialEl) serialEl.textContent=serial ? "Detected ✓" : "—";
+
+    /* GS1 AI 17 is authoritative for the scanned representative pack.
+       The worker still enters the total quantity for this Batch/Expiry group. */
+    const autoExpiry=toSafeString(parsed?.expiry || "");
+    const m=autoExpiry.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m){
+        const month=document.getElementById("expiryMonth"), year=document.getElementById("expiryYear");
+        if(month) month.value=String(Number(m[2]));
+        if(year) year.value=String(Number(m[1]));
+        const monthName=document.getElementById("expiryMonthName");
+        if(monthName) monthName.textContent=expiryMonthName(Number(m[2])) + " · AUTO READ ✓";
+    }
 
     const qty = document.getElementById("expiryQuantity");
     if(qty) qty.value = "1";
@@ -298,7 +320,8 @@ async function saveExpiryCapture(){
             return;
         }
 
-        await authRpc("save_pharmacy_expiry_capture", {
+        const gs1=ExpiryCaptureEngine.scannedGS1 || {};
+        await authRpc("save_pharmacy_expiry_capture_smart", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
             p_item_name: item.itemName,
@@ -308,6 +331,8 @@ async function saveExpiryCapture(){
             p_expiry_month: month,
             p_expiry_year: year,
             p_worker_id: workerId,
+            p_batch_no: toSafeString(gs1.lot||""),
+            p_sample_serial: toSafeString(gs1.serial||""),
             p_device_id: deviceId,
             p_source: (typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice()) ? "HANDHELD" : "PC"
         });

@@ -1079,3 +1079,46 @@ function hasMasterGTIN(){
 /* =====================================================
    END MASTER GTIN ENGINE
 ===================================================== */
+
+
+/* =====================================================
+   PHASE 2C.9.7 — GLOBAL MASTER ITEM SEARCH
+   Used by Expiry Needs Review. This intentionally searches
+   the Global Master cache, never the current order.
+===================================================== */
+async function searchGlobalMasterItems(query, limit = 8){
+    const q=toSafeString(query).trim().toLowerCase();
+    if(!q){ return []; }
+    if(typeof ensureGlobalMasterGTINReady === "function"){
+        try{ await ensureGlobalMasterGTINReady(); }catch(_){ }
+    }
+    if(!MasterGTINEngine.db){ return []; }
+
+    const exactCode=normalizeItemCode(query);
+    if(exactCode){
+        const exact=await getMasterGTINRecordsByItemCodes(MasterGTINEngine.db,[exactCode]);
+        if(exact.length){
+            const first=exact[0];
+            return [{itemCode:first.itemCode,itemName:first.itemName||"",category:first.category||"",gtinCount:new Set(exact.map(x=>x.gtin)).size}];
+        }
+    }
+
+    return await new Promise((resolve,reject)=>{
+        const tx=MasterGTINEngine.db.transaction(MasterGTINEngine.recordsStore,"readonly");
+        const req=tx.objectStore(MasterGTINEngine.recordsStore).openCursor();
+        const found=new Map();
+        req.onsuccess=()=>{
+            const cursor=req.result;
+            if(!cursor || found.size>=limit){ resolve(Array.from(found.values())); return; }
+            const r=cursor.value||{};
+            const code=toSafeString(r.itemCode);
+            const name=toSafeString(r.itemName);
+            if((code.toLowerCase().includes(q)||name.toLowerCase().includes(q))&&!found.has(code)){
+                found.set(code,{itemCode:code,itemName:name,category:toSafeString(r.category||""),gtinCount:1});
+            }
+            cursor.continue();
+        };
+        req.onerror=()=>reject(req.error);
+    });
+}
+window.searchGlobalMasterItems=searchGlobalMasterItems;

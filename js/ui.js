@@ -6492,28 +6492,35 @@ async function openNeedsReviewPanel(workflow){
     const orderId=workflow==="RECEIVING"?String(AppState?.workspace?.orderId||""):null;
     let rows=[];try{rows=await loadNeedsReviewRows(workflow,orderId);}catch(error){showToast?.(error?.message||"Unable to load Needs Review","error");return;}
     const esc=v=>typeof escapeHTML==="function"?escapeHTML(String(v??"")):String(v??"");
+    const isExpiry=workflow==="EXPIRY";
     const overlay=document.createElement("div");overlay.id="needsReviewOverlay";overlay.className="needsReviewOverlay";
     overlay.innerHTML=`<button class="needsReviewScrim" data-close></button><aside class="needsReviewPanel"><header><div><span>${workflow}</span><h2>Needs Review</h2><p>${rows.length} pending</p></div><button class="needsReviewClose" data-close>✕</button></header><div class="needsReviewList">${
-      rows.length?rows.map((row,i)=>`<section class="needsReviewRow" data-i="${i}"><div class="needsReviewInfo"><span>GTIN</span><strong>${esc(row.gtin)}</strong><small>${workflow==="RECEIVING"?`Pending scans: ${row.pending_quantity}`:`Qty ${row.pending_quantity} · ${String(row.expiry_month).padStart(2,"0")}/${row.expiry_year} · ${esc(row.captured_by_name)}`}</small></div><input data-search placeholder="Search current order item"><div class="needsReviewMatches"></div><button class="needsReviewDelete" data-delete>Delete</button></section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}</div></aside>`;
+      rows.length?rows.map((row,i)=>`<section class="needsReviewRow" data-i="${i}"><div class="needsReviewInfo"><span>GTIN</span><strong>${esc(row.gtin)}</strong><small>${isExpiry?`Qty ${row.pending_quantity} · ${String(row.expiry_month).padStart(2,"0")}/${row.expiry_year} · ${esc(row.captured_by_name)}`:`Pending scans: ${row.pending_quantity}`}</small></div><input data-search placeholder="${isExpiry?"Search Global Master — Item Code / Item Name":"Search current order item"}"><div class="needsReviewMatches"></div><button class="needsReviewDelete" data-delete>Delete</button></section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}</div></aside>`;
     document.body.appendChild(overlay);overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>overlay.remove());
-    const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
+    const orderItems=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
     overlay.querySelectorAll(".needsReviewRow").forEach(sec=>{
       const row=rows[Number(sec.dataset.i)],search=sec.querySelector("[data-search]"),matches=sec.querySelector(".needsReviewMatches");
-      const render=()=>{const q=String(search.value||"").toLowerCase().trim();const found=items.filter(x=>!q||String(x.itemName||"").toLowerCase().includes(q)||String(x.itemCode||"").toLowerCase().includes(q)).slice(0,6);
-        matches.innerHTML=found.map((x,i)=>`<button data-m="${i}"><span><strong>${esc(x.itemName)}</strong><small>${esc(x.itemCode)}</small></span><b>Link</b></button>`).join("")||'<small>Search current order. Manual item entry remains PC-only.</small>';
+      let seq=0;
+      const render=async()=>{const my=++seq;const q=String(search.value||"").trim();let found=[];
+        if(isExpiry){ found=q&&typeof searchGlobalMasterItems==="function"?await searchGlobalMasterItems(q,6):[]; }
+        else { const lq=q.toLowerCase(); found=orderItems.filter(x=>!lq||String(x.itemName||"").toLowerCase().includes(lq)||String(x.itemCode||"").toLowerCase().includes(lq)).slice(0,6); }
+        if(my!==seq)return;
+        matches.innerHTML=found.map((x,i)=>`<button data-m="${i}"><span><strong>${esc(x.itemName)}</strong><small>${esc(x.itemCode)}${isExpiry&&x.gtinCount?` · ${x.gtinCount} GTIN${x.gtinCount>1?"s":""}`:""}</small></span><b>${isExpiry?"Add GTIN & Resolve":"Link"}</b></button>`).join("")||(isExpiry?'<small>Search the Global Master by Item Code or Item Name.</small>':'<small>Search current order. Manual item entry remains PC-only.</small>');
         matches.querySelectorAll("[data-m]").forEach(b=>b.onclick=async()=>{const item=found[Number(b.dataset.m)];b.disabled=true;try{
           const pharmacyId=getNeedsReviewPharmacyId();
           await authRpc("resolve_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id,p_item_code:item.itemCode,p_item_name:item.itemName});
           if(typeof savePharmacyLearnedGTIN==="function")await savePharmacyLearnedGTIN(row.gtin,item.itemCode,item.itemName);
           if(typeof addMappingRecord==="function")addMappingRecord({itemCode:item.itemCode,gtin:row.gtin,source:"PHARMACY_LEARNED"});
           if(workflow==="RECEIVING"&&typeof receiveOrderItem==="function")receiveOrderItem({item,quantity:Number(row.pending_quantity||1),gtin:row.gtin,lot:"",expiry:"",serial:"",source:APP_CONFIG.transactionSources.scanner,manual:item.manual===true});
-          else if(workflow==="EXPIRY")await authRpc("save_pharmacy_expiry_capture",{p_pharmacy_id:pharmacyId,p_item_code:item.itemCode,p_item_name:item.itemName,p_gtin:row.gtin,p_category:item.category||"",p_quantity:Number(row.pending_quantity),p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),p_worker_id:row.worker_id,p_device_id:row.device_id||"",p_source:row.source||"PC"});
+          else if(isExpiry)await authRpc("save_pharmacy_expiry_capture_smart",{p_pharmacy_id:pharmacyId,p_item_code:item.itemCode,p_item_name:item.itemName,p_gtin:row.gtin,p_category:item.category||"",p_quantity:Number(row.pending_quantity),p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),p_worker_id:row.worker_id,p_batch_no:"",p_sample_serial:"",p_device_id:row.device_id||"",p_source:row.source||"PC"});
           sec.remove();refreshNeedsReviewCounters();
-        }catch(error){b.disabled=false;showToast?.(error?.message||"Unable to resolve","error");}});};search.oninput=render;render();
+        }catch(error){b.disabled=false;showToast?.(error?.message||"Unable to resolve","error");}});};
+      search.oninput=()=>{clearTimeout(search._nrTimer);search._nrTimer=setTimeout(render,120);}; render();
       sec.querySelector("[data-delete]").onclick=async e=>{const b=e.currentTarget;if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected){b.dataset.c="";b.textContent="Delete";}},2500);return;}
         try{const pharmacyId=getNeedsReviewPharmacyId();await authRpc("delete_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id});sec.remove();refreshNeedsReviewCounters();}catch(error){showToast?.(error?.message||"Unable to delete","error");}};
     });
 }
+
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
 window.openNeedsReviewPanel=openNeedsReviewPanel;
 

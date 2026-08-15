@@ -5385,3 +5385,9 @@ body.zebraDevice.zebraExpiryActive .expiryEntryGrid label:last-child::after{
   display:block;
   height:18px;
 }
+
+
+/* PHASE 2C.9.7 — Smart GS1 expiry details */
+.expiryItemMeta{grid-template-columns:repeat(3,minmax(0,1fr));}
+body.zebraDevice.zebraExpiryActive .expiryItemMeta{grid-template-columns:repeat(2,minmax(0,1fr));}
+body.zebraDevice.zebraExpiryActive .expiryItemMeta>div:nth-child(3){grid-column:1/-1;}
