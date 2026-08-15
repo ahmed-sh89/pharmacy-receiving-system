@@ -1054,7 +1054,8 @@ async function deleteAllHistoricalData(){
         ""
     );
     if(phrase!=="DELETE ALL HISTORICAL DATA"){
-        showToast("Historical deletion cancelled","warning");
+        /* Cancel is intentionally silent. A stale warning toast must never
+           appear beside a successfully-clean Archive and imply data failure. */
         return false;
     }
 
@@ -1100,7 +1101,12 @@ async function deleteAllHistoricalData(){
         }
 
         AppEvents.emit("archive:updated");
-        showToast("Historical order data deleted from this pharmacy","success");
+
+        showToast(
+            "Historical data deleted successfully · Global GTIN Master remains active",
+            "success"
+        );
+
         return true;
     }catch(error){
         Logger.error("Historical data deletion failed",error);

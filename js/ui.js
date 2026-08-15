@@ -2597,6 +2597,21 @@ function refreshMasterGTINUI(){
                 "masterGTINNotice";
         }
 
+        const ordersMasterStatus=document.getElementById("ordersMasterStatus");
+        const ordersMasterCount=document.getElementById("ordersMasterItemCount");
+        const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
+        const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
+
+        if(ordersMasterStatus){
+            ordersMasterStatus.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
+        }
+        if(ordersMasterCount) ordersMasterCount.textContent="0";
+        if(ordersMasterUpdated) ordersMasterUpdated.textContent="-";
+        if(ordersMasterCard){
+            ordersMasterCard.classList.remove("isActive");
+            ordersMasterCard.classList.add("isSyncing");
+        }
+
         return;
     }
 
@@ -2633,6 +2648,32 @@ function refreshMasterGTINUI(){
         ? formatDateTime(status.updatedAt)
         : "-"
     );
+
+    /* Orders page uses the same Global Master status object as Settings
+       and the header. It is a database status card, not a local file. */
+    {
+        const ordersMasterStatus=document.getElementById("ordersMasterStatus");
+        const ordersMasterCount=document.getElementById("ordersMasterItemCount");
+        const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
+        const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
+        const count=toInteger(status.itemCount,0);
+
+        if(ordersMasterStatus){
+            ordersMasterStatus.textContent=navigator.onLine ? "ACTIVE" : "CACHED";
+        }
+        if(ordersMasterCount){
+            ordersMasterCount.textContent=count.toLocaleString();
+        }
+        if(ordersMasterUpdated){
+            ordersMasterUpdated.textContent=status.updatedAt
+                ? formatDateTime(status.updatedAt)
+                : "-";
+        }
+        if(ordersMasterCard){
+            ordersMasterCard.classList.remove("isSyncing");
+            ordersMasterCard.classList.add("isActive");
+        }
+    }
 
     if(UI.elements.masterGTINNotice){
 

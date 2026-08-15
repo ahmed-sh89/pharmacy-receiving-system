@@ -1,42 +1,17 @@
-PharmFlow Phase 2C.10.1 — Data Integrity & Multi-PC Foundation
+PharmFlow Phase 2C.10.2.1 — Global Master Visibility + Historical Delete Message Fix
 
-1. Erroneous Manual Items
-- A Manual/Unordered item with Received Qty = 0 now exposes Remove Manual Item.
-- Available from Search and Item Review.
-- Removal persists locally and is pushed to the shared workspace.
-- Removed manual items no longer remain searchable or appear in current reports.
+Changes:
+- Orders page now contains a permanent Global GTIN Master status card above Active Order Files.
+- The card uses the exact same status source as Settings and the top header.
+- Shows ACTIVE/CACHED, Global Item count, Last Updated and System Master · Supabase.
+- It is deliberately separate from Active Order Files because Global Master is a central database, not a workspace upload.
+- Reset Current Workspace and Delete All Historical Data never remove Global GTIN Master.
 
-2. Supabase / Multi-PC authority
-- A stale PC can no longer upload its old locally-cached order into an empty cloud workspace after login.
-- Cloud workspace is reconciled while the app is visible and whenever the browser regains focus.
-- If PC1 finalizes/deletes the current order, PC2 clears the stale current workspace on reconciliation.
-- Structural cloud changes are pulled in addition to transaction updates.
+Historical deletion notification:
+- Removed the misleading "Historical deletion cancelled" warning toast from a cancelled confirmation prompt.
+- A successful deletion now reports:
+  Historical data deleted successfully · Global GTIN Master remains active
+- Archive/UI refresh behavior is unchanged.
 
-3. Finalized Archive
-- Finalize writes the archive record to Supabase BEFORE clearing the local workspace.
-- The finalized Archive list is restored cloud-first across PCs.
-- Delete All Historical Data also deletes the new cloud finalized-archive records.
-- SQL required: PHASE2C101_DATA_INTEGRITY_CLOUD_ARCHIVE.sql
-
-4. Multiple Orders / Original Source
-- Existing multi-file/multi-order workspace is preserved.
-- Order numbers remain preserved in orderFiles.
-- Original uploaded-order snapshots remain the authoritative source for Item Transfer.
-- Item Transfer continues to use Ordered Quantity from the original uploaded order, never actual Received Qty.
-
-5. Post-Finalize discrepancy email
-- When discrepancies exist, Finalize opens a professional email preview.
-- Preview includes Order Number, Order Date, Item Code, Item Name, Ordered Qty, Received Qty, Difference and Status.
-- Message text:
-  الاخوة الكرام بالمستودع
-  تحية طيبة وبعد
-  يوجد فرق توريد في الطلبية ادناه
-  ...
-  للإفادة والتشييك
-  خالص الشكر ..
-- User reviews To + Subject + table before choosing Open in Gmail.
-- Open in Gmail opens a compose window; PharmFlow never auto-sends.
-- No discrepancy = no email interruption.
-
-Important deployment:
-Run PHASE2C101_DATA_INTEGRITY_CLOUD_ARCHIVE.sql once before testing multi-PC archive/finalize.
+No SQL change is required for 2C.10.2.1.
+Keep all SQL already required through Phase 2C.10.2.

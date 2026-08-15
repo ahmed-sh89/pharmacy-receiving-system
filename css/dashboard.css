@@ -5785,3 +5785,112 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
 @media(max-width:760px){
   .finalizedEmailFields{grid-template-columns:1fr}
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.2.1 — ORDERS GLOBAL MASTER VISIBILITY
+========================================================= */
+
+.ordersGlobalMasterCard{
+  display:grid;
+  grid-template-columns:auto minmax(260px,1.6fr) minmax(140px,.6fr) minmax(210px,.8fr);
+  align-items:center;
+  gap:12px;
+  margin:2px 0 14px;
+  padding:12px 14px;
+  border:1px solid #D8C6B6;
+  border-radius:13px;
+  background:#FBF7F3;
+}
+
+.ordersGlobalMasterCard.isActive{
+  border-color:#A9D6BC;
+  background:#F2FAF5;
+}
+
+.ordersGlobalMasterCard.isSyncing{
+  background:#FBF7F3;
+}
+
+.ordersMasterIcon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  background:#F1E5DB;
+  color:#9C5636;
+  font-size:20px;
+  font-weight:900;
+}
+
+.ordersGlobalMasterCard.isActive .ordersMasterIcon{
+  background:#DCF2E4;
+  color:#278052;
+}
+
+.ordersMasterIdentity{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.ordersMasterEyebrow{
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.11em;
+  color:#8C4B30;
+}
+
+.ordersMasterIdentity>strong{
+  font-size:17px;
+  line-height:1.15;
+  color:#302721;
+}
+
+.ordersGlobalMasterCard.isActive .ordersMasterIdentity>strong{
+  color:#24764C;
+}
+
+.ordersMasterIdentity>small{
+  color:#76675D;
+  font-size:9px;
+}
+
+.ordersMasterMetric{
+  min-height:44px;
+  padding-left:12px;
+  border-left:1px solid #DED0C5;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:3px;
+}
+
+.ordersMasterMetric span{
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#84746A;
+}
+
+.ordersMasterMetric strong{
+  font-size:13px;
+  color:#302721;
+}
+
+@media(max-width:850px){
+  .ordersGlobalMasterCard{
+    grid-template-columns:auto 1fr;
+  }
+
+  .ordersMasterMetric{
+    grid-column:2;
+    padding:6px 0 0;
+    border-left:0;
+    border-top:1px solid #DED0C5;
+    min-height:0;
+  }
+}
