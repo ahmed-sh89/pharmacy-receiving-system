@@ -259,35 +259,119 @@ async function uploadCurrentOrderToCloud(){
 
 async function joinCloudReceivingSession(sessionCode){
     const code=String(sessionCode||"").replace(/\D/g,"").trim();
-    if(!code){showToast("Enter the Session Code","warning");return false;}
-    if(!navigator.onLine){showToast("Internet connection is required to join a cloud session","warning");return false;}
-    if(CloudSyncEngine.joining===true)return false;
+
+    if(!code){
+        showToast("Enter the Session Code","warning");
+        return false;
+    }
+
+    if(!navigator.onLine){
+        showToast("Internet connection is required to join a cloud session","warning");
+        return false;
+    }
+
+    if(CloudSyncEngine.joining===true){
+        return false;
+    }
+
     CloudSyncEngine.joining=true;
     showLoading("Joining shared session...");
-    const withTimeout=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label||"Connection timed out")),ms))]);
+
+    const deadline=Date.now()+12000;
+
+    const withDeadline=(promise,label)=>{
+        const remaining=Math.max(1,deadline-Date.now());
+
+        return Promise.race([
+            Promise.resolve(promise),
+            new Promise((_,reject)=>setTimeout(
+                ()=>reject(new Error(label||"Session connection timed out — try again")),
+                remaining
+            ))
+        ]);
+    };
+
     try{
-        const result=await withTimeout(cloudRpc("join_receiving_session_by_code",{p_session_code:code}),10000,"Session connection timed out — try again");
+        const result=await withDeadline(
+            cloudRpc("join_receiving_session_by_code",{p_session_code:code}),
+            "Session connection timed out — try again"
+        );
+
         const session=Array.isArray(result)?result[0]:result;
-        if(!session||!session.session_id||!session.session_secret)throw new Error("Session not found or no longer active");
-        AppState.session={...createEmptySession(),id:session.session_id,code:String(session.session_code||code),secret:String(session.session_secret),cloud:true,role:"ZEBRA",deviceId:ensureDeviceId(),createdAt:nowISO(),lastSave:null,pendingQueue:[]};
-        if(await withTimeout(isCloudSessionTerminatedOnServer(),5000,"Session validation timed out")){
-            resetZebraWorkingState?.("attempted-join-to-ended-session",{force:true});setZebraHomeMode?.();throw new Error("This PC session has already ended");
+
+        if(!session||!session.session_id||!session.session_secret){
+            throw new Error("Session not found or no longer active");
         }
-        /* Global Master sync must not trap the worker on the Join loader. */
-        if(typeof ensureGlobalMasterGTINReady==="function"){
-            try{await withTimeout(ensureGlobalMasterGTINReady({forceCloud:true}),7000,"Global GTIN sync timed out");}catch(error){Logger.warn("Join continues with cached Global GTIN",error);}
+
+        AppState.session={
+            ...createEmptySession(),
+            id:session.session_id,
+            code:String(session.session_code||code),
+            secret:String(session.session_secret),
+            cloud:true,
+            role:"ZEBRA",
+            deviceId:ensureDeviceId(),
+            createdAt:nowISO(),
+            lastSave:null,
+            pendingQueue:[]
+        };
+
+        if(await withDeadline(
+            isCloudSessionTerminatedOnServer(),
+            "Session validation timed out — try again"
+        )){
+            resetZebraWorkingState?.("attempted-join-to-ended-session",{force:true});
+            throw new Error("This PC session has already ended");
         }
+
         AppState.workspace.orderId=session.order_number||AppState.workspace.orderId;
         AppState.workspace.orderName=session.order_name||AppState.workspace.orderName||session.order_number||"Shared Order";
         AppState.workspace.active=true;
-        await withTimeout(refreshCloudSnapshot({replaceWorkspace:true}),10000,"Order sync timed out — try again");
-        saveWorkspaceSnapshot();AppEvents.emit("session:updated");startCloudPolling();renderCloudSessionQR();
-        showToast("Connected to session "+AppState.session.code,"success");setZebraReceivingMode?.();navigateToCloudReceiving();return true;
-    }catch(error){
+
+        await withDeadline(
+            refreshCloudSnapshot({replaceWorkspace:true}),
+            "Order sync timed out — try again"
+        );
+
+        saveWorkspaceSnapshot();
+        AppEvents.emit("session:updated");
+        startCloudPolling();
+        renderCloudSessionQR();
+
+        /* Global Master refresh is useful but should never hold the worker
+           on the Joining screen. Refresh after Receiving is already open. */
+        if(typeof ensureGlobalMasterGTINReady==="function"){
+            Promise.resolve()
+                .then(()=>ensureGlobalMasterGTINReady({forceCloud:true}))
+                .catch(error=>Logger.warn("Background Global GTIN refresh failed",error));
+        }
+
+        hideLoading();
+        showToast("Connected","success");
+        setZebraReceivingMode?.();
+        navigateToCloudReceiving();
+
+        return true;
+    }
+    catch(error){
         Logger.error("Cloud session join failed",error);
-        if(AppState.session?.role==="ZEBRA"&&AppState.session?.cloud===true){resetZebraWorkingState?.("join-failed",{force:true});setZebraHomeMode?.();}
-        showToast(error.message||"Unable to join session","error");return false;
-    }finally{CloudSyncEngine.joining=false;hideLoading();focusScannerInput();}
+
+        if(AppState.session?.role==="ZEBRA"&&AppState.session?.cloud===true){
+            resetZebraWorkingState?.("join-failed",{force:true});
+        }
+
+        if(typeof setZebraJoinMode==="function"){
+            setZebraJoinMode();
+        }
+
+        showToast(error.message||"Unable to join session","error");
+        return false;
+    }
+    finally{
+        CloudSyncEngine.joining=false;
+        hideLoading();
+        try{ document.activeElement?.blur?.(); }catch(_){}
+    }
 }
 
 function navigateToCloudReceiving(){

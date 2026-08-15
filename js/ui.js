@@ -4379,6 +4379,8 @@ function createLastScanQuantityControls(){
               type="button"
               id="btnLastScanEdit"
               class="lastScanQtyValue"
+              aria-label="Add Quantity"
+              title="Add Quantity"
           >
               0
           </button>

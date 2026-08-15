@@ -1,15 +1,26 @@
-PharmFlow Phase 2C.9.6.2 — Needs Review PC Context + Expiry Field Alignment
+PharmFlow Phase 2C.9.8 — Physical Zebra UX Stabilization
 
-Fixes:
-- PC Needs Review now reads pharmacy_id from the same AuthState.context source used successfully by Near Expiry workers/capture.
-- REVIEW counter refreshes when Near Expiry opens.
-- Review Resolve/Delete also use the corrected pharmacy context.
-- No additional SQL is required beyond PHASE2C96_UNIFIED_NEEDS_REVIEW.sql.
+Receiving Handheld
+- Fixes Last Scan / quantity controls covering the Item Name.
+- Item Name is shown before quantity controls.
+- Removes the duplicate bulky Last Action / All Devices strip.
+- Minus | Quantity | Plus remain visible.
+- The middle quantity action is clearly labelled ADD QUANTITY.
 
-Handheld Near Expiry:
-- Quantity, Month and Year now have matching height, border radius and visual weight.
-- Quantity value is centered horizontally and vertically.
-- Number spinner controls are hidden on Zebra.
-- Helper spacing is balanced so all three boxes align cleanly.
+Receiving Join
+- Scanning the PC Session QR/Session Number on Zebra auto-joins without pressing Join.
+- Manual entry still supports the Join button.
+- Join has one 12-second overall deadline.
+- Global GTIN refresh happens in background after Receiving opens.
+- Join failure/timeout returns to the Join screen rather than trapping the worker.
 
-Use the same PHASE2C96_UNIFIED_NEEDS_REVIEW.sql already included in the 2C.9.6 family.
+Near Expiry Handheld
+- Batch and Serial are compact.
+- Qty / Month / Year use less vertical space.
+- Save & Next remains visible/sticky during normal capture.
+- READING has animated feedback.
+- Global Master GTIN lookup has a 5-second timeout.
+- If lookup stalls: LOOKUP TIMEOUT — SCAN AGAIN, then READY TO SCAN.
+
+No new SQL is required for Phase 2C.9.8.
+Keep the SQL already required by Phase 2C.9.7.

@@ -1172,6 +1172,57 @@ function bindCoreApplicationButtons(){
             }
         );
 
+    /* Phase 2C.9.8:
+       Zebra QR/DataWedge may type the Session Number without Enter.
+       A fast complete numeric scanner burst joins automatically. */
+    {
+        const joinInput = document.getElementById("cloudSessionCodeInput");
+        if(joinInput && joinInput.dataset.directQrJoinBound !== "1"){
+            joinInput.dataset.directQrJoinBound = "1";
+
+            let joinScanTimer = null;
+            let burstStartedAt = 0;
+            let previousLength = 0;
+
+            joinInput.addEventListener("input",function(event){
+                if(
+                    typeof isLikelyZebraDevice !== "function" ||
+                    !isLikelyZebraDevice()
+                ){
+                    return;
+                }
+
+                const input = event.currentTarget;
+                const digits = String(input.value || "").replace(/\D/g,"");
+                input.value = digits;
+
+                const now = Date.now();
+                if(previousLength === 0 || digits.length <= previousLength){
+                    burstStartedAt = now;
+                }
+                previousLength = digits.length;
+
+                clearTimeout(joinScanTimer);
+
+                if(digits.length >= 6){
+                    joinScanTimer = setTimeout(()=>{
+                        const current = String(input.value || "").replace(/\D/g,"");
+                        const elapsed = Date.now() - burstStartedAt;
+
+                        if(
+                            current.length >= 6 &&
+                            elapsed <= 1200 &&
+                            typeof joinCloudReceivingSession === "function"
+                        ){
+                            try{ input.blur(); }catch(_){}
+                            joinCloudReceivingSession(current);
+                        }
+                    },140);
+                }
+            });
+        }
+    }
+
 
     document
         .getElementById("btnRefreshCloudNow")

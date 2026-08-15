@@ -191,11 +191,33 @@ async function resolveExpiryScannedValue(rawValue){
 
     let record = null;
     try{
-        record = typeof getMasterGTINRecordByGTIN === "function"
-            ? await getMasterGTINRecordByGTIN(gtin)
-            : null;
+        const lookupPromise = typeof getMasterGTINRecordByGTIN === "function"
+            ? getMasterGTINRecordByGTIN(gtin)
+            : Promise.resolve(null);
+
+        record = await Promise.race([
+            Promise.resolve(lookupPromise),
+            new Promise((_,reject)=>setTimeout(
+                ()=>reject(new Error("GTIN lookup timed out")),
+                5000
+            ))
+        ]);
     }catch(error){
         console.error("Expiry GTIN lookup failed",error);
+
+        if(String(error?.message || "").toLowerCase().includes("timed out")){
+            setExpiryStatus("error","LOOKUP TIMEOUT — SCAN AGAIN");
+
+            const input = document.getElementById("expiryBarcodeInput");
+            if(input) input.value = "";
+
+            setTimeout(()=>{
+                setExpiryStatus("ready","READY TO SCAN");
+                focusExpiryScanner();
+            },1200);
+
+            return false;
+        }
     }
 
     if(!record){
