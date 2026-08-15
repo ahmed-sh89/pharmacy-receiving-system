@@ -5953,14 +5953,38 @@ function clearZebraModeClasses(){
 function setZebraHomeMode(){
     if(!isLikelyZebraDevice()){ return; }
 
+    /*
+       Strict mode isolation:
+       before showing Home, deactivate every app page and every operational
+       Zebra surface so no previous Receiving / Join / Expiry markup can remain
+       visible underneath Mode Selection.
+    */
     clearZebraModeClasses();
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    [
+        "zebraExpiryShell",
+        "zebraJoinPanel",
+        "page-dashboard",
+        "page-receiving",
+        "page-files",
+        "page-reports",
+        "page-sessions",
+        "page-archive",
+        "page-returnsArchive",
+        "page-settings"
+    ].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el){
+            el.classList.remove("active");
+        }
+    });
+
     document.body.classList.add("zebraDevice","zebraHomeActive");
 
-    /*
-       Mode Selection is button-only. Any focused login/search/scanner input
-       would make Android show its software keyboard, so explicitly blur all
-       known inputs whenever we return Home.
-    */
     try{ document.activeElement?.blur?.(); }catch(_){}
 
     [
@@ -5978,14 +6002,32 @@ function setZebraHomeMode(){
         }
     });
 
-    try{ window.scrollTo(0,0); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
 }
 function setZebraJoinMode(){
     if(!isLikelyZebraDevice()){ return; }
+
     clearZebraModeClasses();
     document.body.classList.add("zebraDevice","zebraJoinActive");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    document.getElementById("zebraExpiryShell")?.classList.remove("active");
+    document.getElementById("page-dashboard")?.classList.remove("active");
+
     try{ document.activeElement?.blur?.(); }catch(_){}
-    try{ window.scrollTo(0,0); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
+
     const code = document.getElementById("cloudSessionCodeInput");
     if(code){
         code.setAttribute("inputmode","numeric");
@@ -6013,11 +6055,19 @@ function setZebraExpiryMode(){
         page.classList.remove("active");
     });
 
+    document.getElementById("zebraJoinPanel")?.classList.remove("active");
+    document.getElementById("page-dashboard")?.classList.remove("active");
+    document.getElementById("page-receiving")?.classList.remove("active");
+
     const expiryPage = document.getElementById("zebraExpiryShell");
     expiryPage?.classList.add("active");
 
     try{ document.activeElement?.blur?.(); }catch(_){}
-    try{ window.scrollTo(0,0); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
 
     if(typeof activateExpiryCapture === "function"){
         setTimeout(()=>activateExpiryCapture(),40);

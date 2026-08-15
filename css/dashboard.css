@@ -5554,3 +5554,63 @@ body.zebraDevice.zebraExpiryActive .expiryScanStatus.busy{
   from{opacity:.55}
   to{opacity:1}
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.9 — STRICT HANDHELD MODE ISOLATION
+========================================================= */
+
+/* HOME: absolutely nothing from the previous operational mode may remain. */
+body.zebraDevice.zebraHomeActive #zebraExpiryShell,
+body.zebraDevice.zebraHomeActive #zebraJoinPanel,
+body.zebraDevice.zebraHomeActive .zebraJoinPanel,
+body.zebraDevice.zebraHomeActive #page-dashboard,
+body.zebraDevice.zebraHomeActive #page-receiving,
+body.zebraDevice.zebraHomeActive #page-files,
+body.zebraDevice.zebraHomeActive #page-reports,
+body.zebraDevice.zebraHomeActive #page-sessions,
+body.zebraDevice.zebraHomeActive #page-archive,
+body.zebraDevice.zebraHomeActive #page-returnsArchive,
+body.zebraDevice.zebraHomeActive #page-settings{
+  display:none !important;
+}
+
+body.zebraDevice.zebraHomeActive .zebraHome{
+  display:block !important;
+  position:relative !important;
+  z-index:20 !important;
+}
+
+/* JOIN: show Join only; hide Home, Expiry and Receiving content. */
+body.zebraDevice.zebraJoinActive .zebraHome,
+body.zebraDevice.zebraJoinActive #zebraExpiryShell,
+body.zebraDevice.zebraJoinActive #page-dashboard,
+body.zebraDevice.zebraJoinActive #page-receiving{
+  display:none !important;
+}
+
+body.zebraDevice.zebraJoinActive #zebraJoinPanel,
+body.zebraDevice.zebraJoinActive .zebraJoinPanel{
+  display:block !important;
+}
+
+/* RECEIVING: show operational receiving only. */
+body.zebraDevice.zebraReceivingActive .zebraHome,
+body.zebraDevice.zebraReceivingActive #zebraExpiryShell,
+body.zebraDevice.zebraReceivingActive #zebraJoinPanel,
+body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
+  display:none !important;
+}
+
+/* EXPIRY: show expiry only. */
+body.zebraDevice.zebraExpiryActive .zebraHome,
+body.zebraDevice.zebraExpiryActive #zebraJoinPanel,
+body.zebraDevice.zebraExpiryActive .zebraJoinPanel,
+body.zebraDevice.zebraExpiryActive #page-dashboard,
+body.zebraDevice.zebraExpiryActive #page-receiving{
+  display:none !important;
+}
+
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
+  display:block !important;
+}
