@@ -5317,3 +5317,71 @@ body.zebraDevice.zebraJoinActive #zebraExpiryShell,body.zebraDevice.zebraReceivi
 .expiryCapturedMain small{
   line-height:1.35;
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.9.6.2 — NEEDS REVIEW CONTEXT + EXPIRY FIELD ALIGNMENT
+========================================================= */
+
+/* Quantity must visually match Month and Year on Zebra. */
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid{
+  align-items:start !important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid label{
+  display:flex !important;
+  flex-direction:column !important;
+  min-width:0 !important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity,
+body.zebraDevice.zebraExpiryActive #expiryMonth,
+body.zebraDevice.zebraExpiryActive #expiryYear{
+  height:64px !important;
+  min-height:64px !important;
+  max-height:64px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  border-radius:14px !important;
+  text-align:center !important;
+  font-size:20px !important;
+  font-weight:800 !important;
+  line-height:64px !important;
+  padding:0 8px !important;
+}
+
+/* Number input itself centered vertically/horizontally. */
+body.zebraDevice.zebraExpiryActive #expiryQuantity{
+  display:block !important;
+  appearance:textfield;
+  -moz-appearance:textfield;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity::-webkit-outer-spin-button,
+body.zebraDevice.zebraExpiryActive #expiryQuantity::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+
+/* Month name helper stays below without changing box height. */
+body.zebraDevice.zebraExpiryActive #expiryMonthName{
+  height:15px !important;
+  min-height:15px !important;
+  margin-top:3px !important;
+  line-height:15px !important;
+  text-align:center !important;
+}
+
+/* Give Quantity the same helper-line footprint as Month so top boxes stay aligned. */
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid label:first-child::after{
+  content:"";
+  display:block;
+  height:18px;
+}
+
+/* Year also gets the same helper footprint for perfect row alignment. */
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid label:last-child::after{
+  content:"";
+  display:block;
+  height:18px;
+}

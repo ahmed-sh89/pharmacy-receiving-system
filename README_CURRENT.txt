@@ -1,13 +1,15 @@
-PharmFlow Phase 2C.9.6.1 — Unified Needs Review + Capture Ordering
+PharmFlow Phase 2C.9.6.2 — Needs Review PC Context + Expiry Field Alignment
 
-Added before deployment of 2C.9.6:
-- Near Expiry > CAPTURED is sorted by Captured At from newest to oldest.
-- Every captured expiry row now shows its Source: HANDHELD or PC.
-- Existing Captured By, Category, Quantity and Expiry information remain visible.
-- No database schema change is required for this refinement.
-- PHASE2C96_UNIFIED_NEEDS_REVIEW.sql is still the only new SQL required for the 2C.9.6 family.
+Fixes:
+- PC Needs Review now reads pharmacy_id from the same AuthState.context source used successfully by Near Expiry workers/capture.
+- REVIEW counter refreshes when Near Expiry opens.
+- Review Resolve/Delete also use the corrected pharmacy context.
+- No additional SQL is required beyond PHASE2C96_UNIFIED_NEEDS_REVIEW.sql.
 
-Recommended display:
-Newest capture
-↓
-Older captures
+Handheld Near Expiry:
+- Quantity, Month and Year now have matching height, border radius and visual weight.
+- Quantity value is centered horizontally and vertically.
+- Number spinner controls are hidden on Zebra.
+- Helper spacing is balanced so all three boxes align cleanly.
+
+Use the same PHASE2C96_UNIFIED_NEEDS_REVIEW.sql already included in the 2C.9.6 family.

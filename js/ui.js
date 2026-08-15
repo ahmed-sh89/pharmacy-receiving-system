@@ -6433,10 +6433,33 @@ function refreshScanSafetyUI(){
 
 
 
+function getNeedsReviewPharmacyId(){
+    if(typeof getCurrentPharmacyId === "function"){
+        const id = getCurrentPharmacyId();
+        if(id) return id;
+    }
+
+    if(typeof AuthState !== "undefined"){
+        return (
+            AuthState?.context?.pharmacy_id ||
+            AuthState?.profile?.pharmacy_id ||
+            AuthState?.pharmacyId ||
+            null
+        );
+    }
+
+    return null;
+}
+
 async function loadNeedsReviewRows(workflow,orderId=null){
-    const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);
-    if(!pharmacyId||typeof authRpc!=="function")return [];
-    return await authRpc("list_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_workflow:workflow||null,p_order_id:orderId||null})||[];
+    const pharmacyId = getNeedsReviewPharmacyId();
+    if(!pharmacyId || typeof authRpc !== "function") return [];
+
+    return await authRpc("list_pharmacy_needs_review",{
+        p_pharmacy_id:pharmacyId,
+        p_workflow:workflow||null,
+        p_order_id:orderId||null
+    }) || [];
 }
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
@@ -6479,7 +6502,7 @@ async function openNeedsReviewPanel(workflow){
       const render=()=>{const q=String(search.value||"").toLowerCase().trim();const found=items.filter(x=>!q||String(x.itemName||"").toLowerCase().includes(q)||String(x.itemCode||"").toLowerCase().includes(q)).slice(0,6);
         matches.innerHTML=found.map((x,i)=>`<button data-m="${i}"><span><strong>${esc(x.itemName)}</strong><small>${esc(x.itemCode)}</small></span><b>Link</b></button>`).join("")||'<small>Search current order. Manual item entry remains PC-only.</small>';
         matches.querySelectorAll("[data-m]").forEach(b=>b.onclick=async()=>{const item=found[Number(b.dataset.m)];b.disabled=true;try{
-          const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);
+          const pharmacyId=getNeedsReviewPharmacyId();
           await authRpc("resolve_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id,p_item_code:item.itemCode,p_item_name:item.itemName});
           if(typeof savePharmacyLearnedGTIN==="function")await savePharmacyLearnedGTIN(row.gtin,item.itemCode,item.itemName);
           if(typeof addMappingRecord==="function")addMappingRecord({itemCode:item.itemCode,gtin:row.gtin,source:"PHARMACY_LEARNED"});
@@ -6488,7 +6511,7 @@ async function openNeedsReviewPanel(workflow){
           sec.remove();refreshNeedsReviewCounters();
         }catch(error){b.disabled=false;showToast?.(error?.message||"Unable to resolve","error");}});};search.oninput=render;render();
       sec.querySelector("[data-delete]").onclick=async e=>{const b=e.currentTarget;if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected){b.dataset.c="";b.textContent="Delete";}},2500);return;}
-        try{const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);await authRpc("delete_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id});sec.remove();refreshNeedsReviewCounters();}catch(error){showToast?.(error?.message||"Unable to delete","error");}};
+        try{const pharmacyId=getNeedsReviewPharmacyId();await authRpc("delete_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id});sec.remove();refreshNeedsReviewCounters();}catch(error){showToast?.(error?.message||"Unable to delete","error");}};
     });
 }
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
@@ -6583,4 +6606,15 @@ function refreshHandheldQuantityGuidance(){
     hint.textContent=`Scanned on this device: ${d} • Remaining to order: ${r}`;
 }
 
-if(typeof AppEvents!=="undefined"&&AppEvents?.on){AppEvents.on("route:changed",()=>setTimeout(ensureNeedsReviewButtons,30));AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));}
+if(typeof AppEvents!=="undefined"&&AppEvents?.on){
+    AppEvents.on("route:changed",payload=>{
+        setTimeout(()=>{
+            ensureNeedsReviewButtons();
+            refreshNeedsReviewCounters();
+            if(payload?.routeName==="expiry"){
+                refreshNeedsReviewCounters();
+            }
+        },30);
+    });
+    AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));
+}
