@@ -6131,8 +6131,8 @@ function refreshHandheldReceivingTools(){
 function openHandheldScansPanel(){
     document.getElementById("handheldScansOverlay")?.remove();
 
-    const recent = typeof getRecentScannerTransactions === "function"
-        ? getRecentScannerTransactions()
+    const recent = typeof getHandheldDeviceScannerRows === "function"
+        ? getHandheldDeviceScannerRows()
         : [];
 
     const groups = new Map();
@@ -6547,7 +6547,7 @@ async function openNeedsReviewPanel(workflow){
     const isExpiry=workflow==="EXPIRY";
     const overlay=document.createElement("div");overlay.id="needsReviewOverlay";overlay.className="needsReviewOverlay";
     overlay.innerHTML=`<button class="needsReviewScrim" data-close></button><aside class="needsReviewPanel"><header><div><span>${workflow}</span><h2>Needs Review</h2><p>${rows.length} pending</p></div><button class="needsReviewClose" data-close>✕</button></header><div class="needsReviewList">${
-      rows.length?rows.map((row,i)=>`<section class="needsReviewRow" data-i="${i}"><div class="needsReviewInfo"><span>GTIN</span><strong>${esc(row.gtin)}</strong><small>${isExpiry?`Qty ${row.pending_quantity} · ${String(row.expiry_month).padStart(2,"0")}/${row.expiry_year} · ${esc(row.captured_by_name)}`:`Pending scans: ${row.pending_quantity}`}</small></div><input data-search placeholder="${isExpiry?"Search Global Master — Item Code / Item Name":"Search current order item"}"><div class="needsReviewMatches"></div><button class="needsReviewDelete" data-delete>Delete</button></section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}</div></aside>`;
+      rows.length?rows.map((row,i)=>`<section class="needsReviewRow" data-i="${i}"><div class="needsReviewInfo"><span>GTIN</span><strong>${esc(row.gtin)}</strong><small>${isExpiry?`Qty ${row.pending_quantity} · ${String(row.expiry_month).padStart(2,"0")}/${row.expiry_year} · ${esc(row.captured_by_name)}`:`${row.review_reason==="KNOWN_NOT_IN_ORDER" ? "Known item — Not in current order" : "GTIN not recognized"} · Pending Qty: ${row.pending_quantity}`}</small></div><input data-search placeholder="${isExpiry?"Search Global Master — Item Code / Item Name":"Search current order item"}"><div class="needsReviewMatches"></div><button class="needsReviewDelete" data-delete>Delete</button></section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}</div></aside>`;
     document.body.appendChild(overlay);overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>overlay.remove());
     const orderItems=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
     overlay.querySelectorAll(".needsReviewRow").forEach(sec=>{

@@ -1,14 +1,9 @@
-PharmFlow Phase 2C.9.9 — Strict Handheld Mode Isolation
+PharmFlow Phase 2C.10.0 — Receiving Pending Review Workflow
 
-Fixes:
-- Pressing MODE / Modes now fully closes the previous Handheld mode first.
-- Mode Selection can no longer appear together with Near Expiry or Receiving.
-- Every .appPage is deactivated before Home is shown.
-- HOME explicitly hides Expiry, Join Session, Receiving and all PC pages.
-- EXPIRY explicitly hides Home, Join and Receiving.
-- JOIN explicitly hides Home, Expiry and Receiving.
-- RECEIVING explicitly hides Home, Expiry and Join.
-- Scroll position resets to the top whenever a Handheld mode changes.
-
-No SQL changes.
-No GTIN, Receiving quantity, Session synchronization, Near Expiry capture or reporting logic changed.
+- Fixes Total Scans count/list mismatch by using the same Handheld scan source for both.
+- Known GTIN + item in current order: receive immediately.
+- Known GTIN in Global Master but not in current order: Amber review card, Quantity only, Save for Review.
+- Unknown GTIN: Amber review card, Quantity only, Save for Review.
+- Pending review quantity does not affect Received Qty or order totals before pharmacist/admin approval.
+- PC Needs Review shows explicit reason and Pending Quantity.
+- SQL required: PHASE2C100_RECEIVING_PENDING_REVIEW_REASONS.sql

@@ -165,33 +165,130 @@ async function receiveParsedBarcode(parsed){
 /* =====================================================
    PHASE 2C.6.1 - QUICK RESOLVE + SAFE PHARMACY LEARNING
 ===================================================== */
-async function saveReceivingNeedsReview(parsed){
-    const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():(window.AuthState?.profile?.pharmacy_id||window.AuthState?.pharmacyId);
+async function saveReceivingNeedsReview(parsed,options={}){
+    const pharmacyId =
+        typeof getCurrentPharmacyId==="function"
+            ? getCurrentPharmacyId()
+            : (typeof AuthState!=="undefined"
+                ? (AuthState?.context?.pharmacy_id||AuthState?.profile?.pharmacy_id||AuthState?.pharmacyId)
+                : null);
+
     if(!pharmacyId || typeof authRpc!=="function") throw new Error("Review queue is not available");
+
+    const quantity=Math.max(1,Number(options.quantity||parsed?.quantity||1)||1);
+
     return authRpc("save_pharmacy_needs_review",{
         p_pharmacy_id:pharmacyId,p_workflow:"RECEIVING",p_gtin:normalizeGTIN(parsed?.gtin||""),
         p_raw_barcode:toSafeString(parsed?.raw||parsed?.original||parsed?.gtin||""),
-        p_order_id:toSafeString(AppState.workspace.orderId||""),p_order_name:toSafeString(AppState.workspace.orderName||""),
-        p_pending_quantity:getValidReceivingQuantity(parsed?.quantity),p_expiry_month:null,p_expiry_year:null,p_worker_id:null,
+        p_order_id:toSafeString(AppState.workspace.orderId||""),
+        p_order_name:toSafeString(AppState.workspace.orderName||""),
+        p_pending_quantity:quantity,p_expiry_month:null,p_expiry_year:null,p_worker_id:null,
         p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():"",
-        p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC"
+        p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC",
+        p_review_reason:options.reason||"UNKNOWN_GTIN"
+    });
+}
+
+function getReceivingItemByItemCode(itemCode){
+    const code=String(itemCode||"").trim();
+    return (AppState?.workspace?.orderData||[]).find(x=>String(x?.itemCode||"").trim()===code)||null;
+}
+function clearCurrentHandheldReviewDraft(){
+    window.__pfReceivingReviewDraft=null;
+    document.getElementById("handheldReceivingReviewCard")?.remove();
+}
+function renderHandheldReceivingReviewDraft(draft){
+    clearCurrentHandheldReviewDraft();
+    window.__pfReceivingReviewDraft=draft;
+    const lastScan=document.getElementById("lastScanCard");
+    if(!lastScan)return;
+
+    const esc=v=>typeof escapeHTML==="function"?escapeHTML(String(v??"")):String(v??"");
+    const known=!!draft.itemCode;
+
+    const card=document.createElement("section");
+    card.id="handheldReceivingReviewCard";
+    card.className="handheldReceivingReviewCard";
+    card.innerHTML=`
+      <div class="handheldReviewStatus">${known?"ITEM NOT IN CURRENT ORDER":"GTIN NEEDS REVIEW"}</div>
+      <div class="handheldReviewBody">
+        <strong>${esc(draft.itemName||"Item not recognized")}</strong>
+        <div class="handheldReviewMeta">
+          ${draft.itemCode?`<span>Item Code <b>${esc(draft.itemCode)}</b></span>`:""}
+          <span>GTIN <b>${esc(draft.gtin||"")}</b></span>
+        </div>
+        <label class="handheldReviewQtyLabel"><span>Quantity</span>
+          <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="1">
+        </label>
+        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE FOR REVIEW</button>
+      </div>`;
+    lastScan.insertAdjacentElement("afterend",card);
+
+    const qty=document.getElementById("handheldReviewQty");
+    qty?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();qty.blur();}});
+
+    document.getElementById("btnSaveHandheldReview")?.addEventListener("click",async()=>{
+        const quantity=Math.max(1,Number(qty?.value||1)||1);
+        const btn=document.getElementById("btnSaveHandheldReview");
+        if(btn)btn.disabled=true;
+        try{
+            await saveReceivingNeedsReview(draft.parsed,{quantity,reason:draft.reason});
+            card.querySelector(".handheldReviewStatus").textContent="SAVED FOR REVIEW ✓";
+            card.classList.add("saved");
+            refreshNeedsReviewCounters?.();
+            setTimeout(()=>{
+                clearCurrentHandheldReviewDraft();
+                setScanBoxState?.("ready");
+                focusScannerInput?.();
+            },500);
+        }catch(error){
+            if(btn)btn.disabled=false;
+            setScanBoxState?.("error");
+            showToast?.(error?.message||"Unable to save for review","error");
+        }
     });
 }
 async function quickResolveUnrecognizedGTIN(parsed){
     const gtin=normalizeGTIN(parsed?.gtin||"");
-    if(!gtin){ handleReceivingFailure("Barcode could not be identified"); return false; }
-    let known=null; try{ known=await getMasterGTINRecordByGTIN(gtin); }catch(_e){}
-    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
-        try{
-            await saveReceivingNeedsReview(parsed);
-            if(typeof setScanBoxState==="function") setScanBoxState("action");
-            if(typeof refreshNeedsReviewCounters==="function") refreshNeedsReviewCounters();
-            setTimeout(()=>{ if(typeof setScanBoxState==="function")setScanBoxState("ready"); if(typeof focusScannerInput==="function")focusScannerInput(); },450);
+    if(!gtin){handleReceivingFailure("Barcode could not be identified");return false;}
+
+    let masterRecord=null;
+    try{masterRecord=await getMasterGTINRecordByGTIN(gtin);}catch(_e){}
+
+    const isHandheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
+
+    if(masterRecord?.itemCode){
+        const orderItem=getReceivingItemByItemCode(masterRecord.itemCode);
+
+        if(orderItem){
+            return receiveOrderItem({
+                item:orderItem,quantity:getValidReceivingQuantity(parsed?.quantity),
+                gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",
+                source:APP_CONFIG.transactionSources.scanner,manual:false
+            });
+        }
+
+        if(isHandheld){
+            setScanBoxState?.("action");
+            renderHandheldReceivingReviewDraft({
+                parsed,gtin,itemCode:masterRecord.itemCode||"",
+                itemName:masterRecord.itemName||"Known item",
+                reason:"KNOWN_NOT_IN_ORDER"
+            });
             return true;
-        }catch(error){ handleReceivingFailure(error?.message||"Unable to save for review"); return false; }
+        }
     }
-    if(typeof setScanBoxState==="function") setScanBoxState("action");
-    return await openQuickGTINResolver(parsed,known);
+
+    if(isHandheld){
+        setScanBoxState?.("action");
+        renderHandheldReceivingReviewDraft({
+            parsed,gtin,itemCode:"",itemName:"Item not recognized",reason:"UNKNOWN_GTIN"
+        });
+        return true;
+    }
+
+    setScanBoxState?.("action");
+    return await openQuickGTINResolver(parsed,masterRecord);
 }
 
 function openQuickGTINResolver(parsed,knownRecord=null){

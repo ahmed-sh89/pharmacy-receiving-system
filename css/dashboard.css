@@ -5614,3 +5614,15 @@ body.zebraDevice.zebraExpiryActive #page-receiving{
 body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
   display:block !important;
 }
+
+/* PHARMFLOW 2C.10.0 — Handheld receiving pending review */
+.handheldReceivingReviewCard{width:100%;margin-top:8px;border:1px solid #D7B66C;border-radius:14px;overflow:hidden;background:#FFF9EE}
+.handheldReviewStatus{padding:8px 10px;text-align:center;font-size:10px;font-weight:900;letter-spacing:.06em;background:#FFF0C9;color:#8B5A00}
+.handheldReviewBody{padding:10px}
+.handheldReviewBody>strong{display:block;font-size:17px;line-height:1.2;color:#302821}
+.handheldReviewMeta{display:grid;gap:4px;margin-top:7px}
+.handheldReviewMeta span{display:flex;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid #E0D0B6;border-radius:9px;background:#fff;font-size:10px}
+.handheldReviewQtyLabel{display:block;margin-top:9px}.handheldReviewQtyLabel>span{display:block;margin-bottom:4px;font-size:10px;font-weight:800}
+#handheldReviewQty{width:100%;height:56px;border:1px solid #CDBEAF;border-radius:11px;background:#fff;text-align:center;font-size:24px;font-weight:900;box-sizing:border-box}
+.handheldReviewSave{width:100%;min-height:48px;margin-top:9px;border:0;border-radius:11px;background:#A65A37;color:#fff;font-size:13px;font-weight:900}
+.handheldReceivingReviewCard.saved{border-color:#72B88A;background:#F1FAF4}
