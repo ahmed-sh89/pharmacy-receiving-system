@@ -187,7 +187,16 @@ async function restoreCloudWorkspaceOnLogin(){
             PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
 
             if(!cloudHasOrder && localHasOrder){
-                await saveCloudWorkspaceSnapshot();
+                /* Server is authoritative after sign-in. A stale browser must
+                   never resurrect a locally-cached order that another PC
+                   finalized or deleted. */
+                PharmFlowCloudWorkspace.applyingRemote=true;
+                clearCurrentWorkspace();
+                startNewWorkspace();
+                deleteWorkspaceSnapshot();
+                saveWorkspaceSnapshot();
+                if(typeof refreshAllUI==="function") refreshAllUI();
+                PharmFlowCloudWorkspace.applyingRemote=false;
             }
 
             await pullCloudWorkspaceTransactions();
@@ -204,6 +213,85 @@ async function restoreCloudWorkspaceOnLogin(){
     })();
     return PharmFlowCloudWorkspace.hydrationPromise;
 }
+
+
+async function reconcileCloudWorkspaceAuthority(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function" ||
+        PharmFlowCloudWorkspace.applyingRemote ||
+        PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId
+    ){
+        return false;
+    }
+
+    /* A local structural save is currently waiting to be uploaded.
+       Do not race it with the authority pull. */
+    if(PharmFlowCloudWorkspace.saveTimer){
+        return false;
+    }
+
+    try{
+        const result=await authRpc("get_pharmflow_cloud_workspace",{
+            p_pharmacy_id:pharmacyId
+        });
+
+        const row=Array.isArray(result)?result[0]:result;
+        const cloudState=row?.workspace;
+        const cloudHasOrder=!!(
+            cloudState?.workspace &&
+            Array.isArray(cloudState.workspace.orderData) &&
+            cloudState.workspace.orderData.length
+        );
+        const localHasOrder=!!(
+            Array.isArray(AppState?.workspace?.orderData) &&
+            AppState.workspace.orderData.length
+        );
+
+        if(cloudHasOrder){
+            const remoteStamp=String(row?.updated_at||"");
+            const changed=
+                remoteStamp &&
+                remoteStamp!==String(PharmFlowCloudWorkspace.lastCloudUpdate||"");
+
+            if(changed || !localHasOrder){
+                PharmFlowCloudWorkspace.applyingRemote=true;
+                restoreWorkspaceState(cloudState);
+                AppState.workspace.lastScan=null;
+                saveWorkspaceSnapshot();
+                if(typeof refreshAllUI==="function") refreshAllUI();
+                PharmFlowCloudWorkspace.lastCloudUpdate=remoteStamp;
+                PharmFlowCloudWorkspace.applyingRemote=false;
+            }
+        }else if(localHasOrder){
+            /* Remote empty means another PC closed/deleted/finalized the
+               current order. Clear stale local cache immediately. */
+            PharmFlowCloudWorkspace.applyingRemote=true;
+            clearCurrentWorkspace();
+            startNewWorkspace();
+            deleteWorkspaceSnapshot();
+            saveWorkspaceSnapshot();
+            if(typeof refreshAllUI==="function") refreshAllUI();
+            PharmFlowCloudWorkspace.applyingRemote=false;
+        }
+
+        if(typeof restoreHistoricalArchive==="function"){
+            await restoreHistoricalArchive();
+        }
+
+        return true;
+    }catch(error){
+        Logger.warn("Cloud authority reconciliation failed",error);
+        return false;
+    }finally{
+        PharmFlowCloudWorkspace.applyingRemote=false;
+    }
+}
+
+window.reconcileCloudWorkspaceAuthority=reconcileCloudWorkspaceAuthority;
 
 function attemptCloudWorkspaceHydration(){
     const pharmacyId=cloudWorkspacePharmacyId();
@@ -235,10 +323,21 @@ function initializePharmFlowCloudWorkspace(){
     PharmFlowCloudWorkspace.pollTimer=setInterval(()=>{
         if(document.visibilityState==="visible"){
             attemptCloudWorkspaceHydration();
+            reconcileCloudWorkspaceAuthority();
             flushCloudWorkspaceQueue();
             pullCloudWorkspaceTransactions();
         }
     },1500);
+
+    window.addEventListener("focus",()=>{
+        reconcileCloudWorkspaceAuthority();
+    });
+
+    document.addEventListener("visibilitychange",()=>{
+        if(document.visibilityState==="visible"){
+            reconcileCloudWorkspaceAuthority();
+        }
+    });
     attemptCloudWorkspaceHydration();
 }
 

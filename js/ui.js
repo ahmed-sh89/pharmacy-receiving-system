@@ -712,6 +712,29 @@ function renderSmartScanSearchResults(
 
         /* Phase 2C.7.6: the Dashboard inline search must expose the same
            historical review/correction workflow as the Receiving search. */
+        if(item.manual===true && toNumber(item.receivedQty,0)===0){
+            const remove=document.createElement("button");
+            remove.type="button";
+            remove.className="secondaryButton removeManualSearchButton";
+            remove.textContent="Remove Manual Item";
+            remove.style.flex="0 0 auto";
+            remove.addEventListener("click",function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                if(typeof deleteManualItem==="function" && deleteManualItem(item.itemCode)){
+                    renderSmartScanSearchResults(
+                        searchItems(
+                            getSearchableItems(),
+                            query,
+                            APP_CONFIG.receiving.searchResultLimit
+                        ),
+                        query
+                    );
+                }
+            });
+            row.appendChild(remove);
+        }
+
         if(toNumber(item.receivedQty,0) > 0){
             const review=document.createElement("button");
             review.type="button";
@@ -3090,6 +3113,26 @@ function renderGlobalSearchResults(searchText){
             }
         );
 
+        if(item.manual===true && toNumber(item.receivedQty,0)===0){
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "secondaryButton removeManualSearchButton";
+            remove.style.marginLeft = "10px";
+            remove.style.padding = "7px 10px";
+            remove.textContent = "Remove Manual Item";
+            remove.addEventListener("click", function(event){
+                event.preventDefault();
+                event.stopPropagation();
+
+                if(typeof deleteManualItem==="function" && deleteManualItem(item.itemCode)){
+                    renderGlobalSearchResults(
+                        UI.elements.globalSearchInput?.value || ""
+                    );
+                }
+            });
+            button.appendChild(remove);
+        }
+
         if(toNumber(item.receivedQty,0) > 0){
             const review = document.createElement("button");
             review.type = "button";
@@ -3145,6 +3188,7 @@ function openSearchedItemReview(item){
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
               <button type="button" id="btnSearchedAdjust" class="primaryButton">Adjust Received Qty</button>
               <button type="button" id="btnSearchedActivity" class="secondaryButton">View Activity</button>
+              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Manual Item</button>
             </div>
             <div id="searchedReviewCorrection" hidden>
               <label class="quantityAdjustmentLabel" for="searchedReviewCorrectionInput">Correct total received to</label>
@@ -3182,6 +3226,29 @@ function openSearchedItemReview(item){
 
     const correction=document.getElementById("searchedReviewCorrection");
     const activity=document.getElementById("searchedReviewActivity");
+    const removeManualButton=document.getElementById("btnSearchedRemoveManual");
+    if(removeManualButton){
+        removeManualButton.hidden = !(
+            item.manual===true &&
+            toNumber(item.receivedQty,0)===0
+        );
+        removeManualButton.onclick=()=>{
+            const current=getItemByCode(modal.dataset.itemCode);
+            if(!current || current.manual!==true || toNumber(current.receivedQty,0)!==0){
+                showToast("Set the manual item quantity to zero first","warning");
+                return;
+            }
+            showConfirmModal(
+                "Remove Manual Item",
+                "Remove this manually-added item from the current receiving workspace? It will no longer appear in Search or reports.",
+                ()=>{
+                    if(deleteManualItem(current.itemCode)){
+                        closeSearchedItemReview();
+                    }
+                }
+            );
+        };
+    }
     if(correction) correction.hidden=true;
     if(activity){activity.hidden=true;activity.innerHTML="";}
 
@@ -3205,6 +3272,14 @@ function openSearchedItemReview(item){
         setElementText(document.getElementById("searchedReviewReceived"),toNumber(current?.receivedQty,total));
         setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(current?.orderedQty,0)-toNumber(current?.receivedQty,total)));
         if(correction) correction.hidden=true;
+
+        if(removeManualButton){
+            removeManualButton.hidden = !(
+                current?.manual===true &&
+                toNumber(current?.receivedQty,0)===0
+            );
+        }
+
         showToast("Received quantity corrected. History preserved.","success");
     };
 

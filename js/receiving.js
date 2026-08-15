@@ -2063,8 +2063,18 @@ function deleteManualItem(
         "files:updated"
     );
 
+    /* Persist the structural removal and push it to the shared pharmacy
+       workspace. A zero-quantity manual item must not reappear after reload. */
+    if(typeof saveWorkspaceSnapshot === "function"){
+        saveWorkspaceSnapshot();
+    }
+
+    if(typeof saveCloudWorkspaceSnapshot === "function"){
+        Promise.resolve(saveCloudWorkspaceSnapshot()).catch(()=>{});
+    }
+
     showToast(
-        "Manual item deleted",
+        "Manual item removed",
         "success"
     );
 
@@ -2354,3 +2364,4 @@ function getCurrentReceivingSummary(){
 /* =====================================================
    END RECEIVING ENGINE
 ===================================================== */
+window.deleteManualItem = deleteManualItem;

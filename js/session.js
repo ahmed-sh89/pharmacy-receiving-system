@@ -806,6 +806,33 @@ async function closeAndArchiveCurrentOrder(){
         };
 
 
+        /* Phase 2C.10.1: finalized archive is saved server-side BEFORE
+           clearing this PC. This is the cross-PC authoritative copy. */
+        if(
+            typeof authRpc==="function" &&
+            typeof AuthState!=="undefined" &&
+            AuthState.context?.pharmacy_id
+        ){
+            const orderNumbers = Array.from(
+                new Set(
+                    (workspace.orderFiles||[])
+                        .map(file=>String(file.documentId||file.orderNumber||"").trim())
+                        .filter(Boolean)
+                )
+            );
+
+            await authRpc("save_pharmflow_finalized_archive",{
+                p_pharmacy_id:AuthState.context.pharmacy_id,
+                p_archive_id:String(archiveRecord.orderId),
+                p_order_numbers:orderNumbers,
+                p_closed_at:closedAt,
+                p_archive_payload:archiveRecord
+            });
+        }else{
+            throw new Error("Cloud pharmacy context is unavailable. Archive was not cleared.");
+        }
+
+
         const historicalTransactions =
             workspace
                 .receivingHistory
@@ -943,113 +970,75 @@ async function closeAndArchiveCurrentOrder(){
 ===================================================== */
 
 async function restoreHistoricalArchive(){
-
     try{
+        let cloudOrders = null;
 
-        const orders =
-            await dbGetAll(
-                APP_CONFIG
-                    .database
-                    .stores
-                    .orders
-            );
+        if(
+            navigator.onLine &&
+            typeof authRpc==="function" &&
+            typeof AuthState!=="undefined" &&
+            AuthState.context?.pharmacy_id
+        ){
+            try{
+                const rows=await authRpc("list_pharmflow_finalized_archives",{
+                    p_pharmacy_id:AuthState.context.pharmacy_id
+                });
 
+                cloudOrders=(Array.isArray(rows)?rows:[])
+                    .map(row=>row?.archive_payload)
+                    .filter(Boolean);
+
+                /* Once the cloud archive migration exists, it is authoritative.
+                   Replace the browser's stale order store rather than merging it. */
+                await dbClearStore(APP_CONFIG.database.stores.orders);
+
+                for(const order of cloudOrders){
+                    await dbPut(APP_CONFIG.database.stores.orders,order);
+                }
+
+            }catch(error){
+                Logger.warn("Cloud finalized archive unavailable; using local cache",error);
+                cloudOrders=null;
+            }
+        }
+
+        const orders = cloudOrders !== null
+            ? cloudOrders
+            : await dbGetAll(APP_CONFIG.database.stores.orders);
 
         const transactions =
             await dbGetAll(
-                APP_CONFIG
-                    .database
-                    .stores
-                    .transactions
+                APP_CONFIG.database.stores.transactions
             );
-
 
         AppState.archive.orders =
-            orders.sort(
-                (
-                    a,
-                    b
-                )=>
-
-                    new Date(
-                        b.closedAt
-                        ||
-                        b.createdAt
-                        ||
-                        0
-                    )
+            (orders||[]).sort(
+                (a,b)=>
+                    new Date(b.closedAt||b.createdAt||0)
                     -
-                    new Date(
-                        a.closedAt
-                        ||
-                        a.createdAt
-                        ||
-                        0
-                    )
-
+                    new Date(a.closedAt||a.createdAt||0)
             );
-
 
         AppState.archive.transactions =
             transactions.sort(
-                (
-                    a,
-                    b
-                )=>
-
-                    new Date(
-                        b.dateTime
-                        ||
-                        0
-                    )
-                    -
-                    new Date(
-                        a.dateTime
-                        ||
-                        0
-                    )
-
+                (a,b)=>new Date(b.dateTime||0)-new Date(a.dateTime||0)
             );
 
+        AppEvents.emit("archive:updated");
 
-        AppEvents.emit(
-            "archive:updated"
-        );
-
-
-        Logger.info(
-            "Historical archive restored",
-            {
-                orders:
-                    AppState.archive
-                        .orders
-                        .length,
-
-                transactions:
-                    AppState.archive
-                        .transactions
-                        .length
-            }
-        );
-
+        Logger.info("Historical archive restored",{
+            orders:AppState.archive.orders.length,
+            transactions:AppState.archive.transactions.length,
+            source:cloudOrders!==null ? "cloud" : "local-cache"
+        });
 
         return true;
-
     }
     catch(error){
-
-        Logger.error(
-            "Unable to restore archive",
-            error
-        );
-
-
+        Logger.error("Unable to restore archive",error);
         return false;
-
     }
-
 }
-
 
 /* =====================================================
    DELETE ALL HISTORY
@@ -1077,6 +1066,10 @@ async function deleteAllHistoricalData(){
            deletion fails, do NOT clear this browser and create split state. */
         if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context?.pharmacy_id){
             await authRpc("delete_all_pharmflow_received_history",{
+                p_pharmacy_id:AuthState.context.pharmacy_id,
+                p_confirmation:"DELETE ALL HISTORICAL DATA"
+            });
+            await authRpc("delete_all_pharmflow_finalized_archives",{
                 p_pharmacy_id:AuthState.context.pharmacy_id,
                 p_confirmation:"DELETE ALL HISTORICAL DATA"
             });

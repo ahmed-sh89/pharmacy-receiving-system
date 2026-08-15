@@ -5626,3 +5626,162 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
 #handheldReviewQty{width:100%;height:56px;border:1px solid #CDBEAF;border-radius:11px;background:#fff;text-align:center;font-size:24px;font-weight:900;box-sizing:border-box}
 .handheldReviewSave{width:100%;min-height:48px;margin-top:9px;border:0;border-radius:11px;background:#A65A37;color:#fff;font-size:13px;font-weight:900}
 .handheldReceivingReviewCard.saved{border-color:#72B88A;background:#F1FAF4}
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.1 — DATA INTEGRITY + FINALIZE EMAIL
+========================================================= */
+
+.removeManualSearchButton{
+  border-color:#C36B5D !important;
+  color:#9A3F32 !important;
+  background:#FFF7F5 !important;
+}
+
+.finalizedEmailPreviewOverlay{
+  position:fixed;
+  inset:0;
+  z-index:100100;
+  display:flex;
+  justify-content:flex-end;
+}
+
+.finalizedEmailScrim{
+  position:absolute;
+  inset:0;
+  border:0;
+  background:rgba(38,30,25,.38);
+}
+
+.finalizedEmailPanel{
+  position:relative;
+  z-index:1;
+  width:min(980px,96vw);
+  height:100%;
+  overflow:auto;
+  padding:22px;
+  background:#F8F0E9;
+  box-shadow:-18px 0 55px rgba(54,38,27,.18);
+}
+
+.finalizedEmailPanel>header{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  padding-bottom:14px;
+  border-bottom:1px solid #DCC9B8;
+}
+
+.finalizedEmailPanel header span{
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+  color:#2F7D50;
+}
+
+.finalizedEmailPanel header h2{
+  margin:4px 0 2px;
+  color:#302821;
+}
+
+.finalizedEmailPanel header p{
+  margin:0;
+  color:#796A60;
+}
+
+.finalizedEmailClose{
+  width:42px;
+  height:42px;
+  border:1px solid #D2BEAC;
+  border-radius:11px;
+  background:#fff;
+}
+
+.finalizedEmailFields{
+  display:grid;
+  grid-template-columns:1fr 1.4fr;
+  gap:10px;
+  margin:14px 0;
+}
+
+.finalizedEmailFields label{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  font-size:10px;
+  font-weight:800;
+  color:#66564C;
+}
+
+.finalizedEmailFields input{
+  height:42px;
+  padding:0 10px;
+  border:1px solid #CFBCAA;
+  border-radius:9px;
+  background:#fff;
+}
+
+.finalizedEmailLetter{
+  padding:22px;
+  border:1px solid #D9C6B5;
+  border-radius:15px;
+  background:#fff;
+  color:#332B25;
+}
+
+.finalizedEmailLetter p{
+  line-height:1.7;
+}
+
+.finalizedEmailTableWrap{
+  width:100%;
+  overflow:auto;
+  margin:15px 0;
+}
+
+.finalizedEmailTableWrap table{
+  width:100%;
+  min-width:900px;
+  border-collapse:collapse;
+}
+
+.finalizedEmailTableWrap th{
+  padding:9px 8px;
+  border:1px solid #8C654D;
+  background:#8C654D;
+  color:#fff;
+  font-size:10px;
+  text-align:left;
+}
+
+.finalizedEmailTableWrap td{
+  padding:8px;
+  border:1px solid #E2D6CC;
+  font-size:10px;
+}
+
+.finalizedEmailTableWrap td.negative{
+  color:#A52B2B;
+  font-weight:900;
+}
+
+.finalizedEmailTableWrap td.positive{
+  color:#956016;
+  font-weight:900;
+}
+
+.finalizedEmailPanel>footer{
+  position:sticky;
+  bottom:-22px;
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin:18px -22px -22px;
+  padding:12px 22px;
+  border-top:1px solid #DCC9B8;
+  background:#F8F0E9;
+}
+
+@media(max-width:760px){
+  .finalizedEmailFields{grid-template-columns:1fr}
+}

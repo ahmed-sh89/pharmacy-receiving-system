@@ -435,6 +435,11 @@ async function finalizeCurrentReceiving(){
     try{
         const summary=await validateWorkspaceCanFinalize();
 
+        const finalizedDiscrepancyReport =
+            typeof buildReceivingDiscrepancyReport==="function"
+                ? buildReceivingDiscrepancyReport({visibleOnly:false})
+                : null;
+
         /* A live PC session must be authoritatively ended before the workspace
            is archived, so a Handheld cannot continue adding local scans. */
         if(AppState.session && AppState.session.cloud===true && AppState.session.role==="PC"){
@@ -458,6 +463,18 @@ async function finalizeCurrentReceiving(){
         }
 
         await refreshOrderLifecycleRegistry();
+
+        if(
+            finalizedDiscrepancyReport &&
+            Number(finalizedDiscrepancyReport.totalDiscrepancies||0)>0 &&
+            typeof openFinalizedDiscrepancyEmailPreview==="function"
+        ){
+            setTimeout(
+                ()=>openFinalizedDiscrepancyEmailPreview(finalizedDiscrepancyReport),
+                120
+            );
+        }
+
         showToast(
             summary.orderNumbers.length>1
                 ? summary.orderNumbers.length+" orders finalized as Received"
@@ -475,6 +492,134 @@ async function finalizeCurrentReceiving(){
         refreshFinalizeReceivingButton();
     }
 }
+
+
+function buildFinalizedDiscrepancyEmailText(report){
+    const orders=Array.isArray(report?.orders)?report.orders:[];
+    const orderLabel=orders.map(x=>x.orderNumber).filter(Boolean).join(" + ") || report?.orderId || "";
+    const orderDate=orders.map(x=>x.orderDate).filter(Boolean)[0] || "";
+
+    const lines=[
+        "الاخوة الكرام بالمستودع",
+        "تحية طيبة وبعد",
+        "",
+        "يوجد فرق توريد في الطلبية ادناه",
+        "",
+        "Order Number: "+orderLabel,
+        "Order Date: "+orderDate,
+        "",
+        "Item Code | Item Name | Ordered Qty | Received Qty | Difference | Status"
+    ];
+
+    (report?.rows||[]).forEach(row=>{
+        lines.push([
+            row["Item Number"]||"",
+            row["Item Name"]||"",
+            row["Ordered Qty"]??0,
+            row["Received Qty"]??0,
+            row["Difference"]??0,
+            row["Issue Type"]||""
+        ].join(" | "));
+    });
+
+    lines.push("","للإفادة والتشييك","خالص الشكر ..");
+    return lines.join("\n");
+}
+
+function openFinalizedDiscrepancyEmailPreview(report){
+    document.getElementById("finalizedEmailPreviewOverlay")?.remove();
+
+    const esc=v=>typeof escapeHTML==="function"
+        ? escapeHTML(String(v??""))
+        : String(v??"");
+
+    const orders=Array.isArray(report?.orders)?report.orders:[];
+    const orderLabel=orders.map(x=>x.orderNumber).filter(Boolean).join(" + ") || report?.orderId || "";
+    const orderDate=orders.map(x=>x.orderDate).filter(Boolean)[0] || "";
+    const subject="Supply Discrepancy - Order "+orderLabel+(orderDate?" - "+orderDate:"");
+
+    const overlay=document.createElement("div");
+    overlay.id="finalizedEmailPreviewOverlay";
+    overlay.className="finalizedEmailPreviewOverlay";
+
+    overlay.innerHTML=`
+      <button class="finalizedEmailScrim" type="button" data-close></button>
+      <aside class="finalizedEmailPanel">
+        <header>
+          <div>
+            <span>ORDER FINALIZED ✓</span>
+            <h2>Supply Discrepancy Email</h2>
+            <p>Review the message before opening Gmail.</p>
+          </div>
+          <button type="button" class="finalizedEmailClose" data-close>✕</button>
+        </header>
+
+        <div class="finalizedEmailFields">
+          <label>To<input id="finalizedEmailTo" type="email" placeholder="warehouse@example.com"></label>
+          <label>Subject<input id="finalizedEmailSubject" type="text" value="${esc(subject)}"></label>
+        </div>
+
+        <article class="finalizedEmailLetter">
+          <p><strong>الاخوة الكرام بالمستودع</strong><br>تحية طيبة وبعد</p>
+          <p>يوجد فرق توريد في الطلبية ادناه</p>
+
+          <div class="finalizedEmailTableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order Number</th><th>Order Date</th><th>Item Code</th>
+                  <th>Item Name</th><th>Ordered Quantity</th>
+                  <th>Received Quantity</th><th>Difference</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(report?.rows||[]).map(row=>`
+                  <tr>
+                    <td>${esc(orderLabel)}</td>
+                    <td>${esc(orderDate)}</td>
+                    <td>${esc(row["Item Number"]||"")}</td>
+                    <td>${esc(row["Item Name"]||"")}</td>
+                    <td>${esc(row["Ordered Qty"]??0)}</td>
+                    <td>${esc(row["Received Qty"]??0)}</td>
+                    <td class="${Number(row["Difference"]||0)<0?"negative":"positive"}">${Number(row["Difference"]||0)>0?"+":""}${esc(row["Difference"]??0)}</td>
+                    <td>${esc(row["Issue Type"]||"")}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <p>للإفادة والتشييك</p>
+          <p>خالص الشكر ..</p>
+        </article>
+
+        <footer>
+          <button type="button" class="secondaryButton" data-close>Close</button>
+          <button type="button" class="primaryButton" id="btnOpenFinalizedGmail">Open in Gmail</button>
+        </footer>
+      </aside>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(button=>{
+        button.onclick=()=>overlay.remove();
+    });
+
+    document.getElementById("btnOpenFinalizedGmail")?.addEventListener("click",()=>{
+        const to=String(document.getElementById("finalizedEmailTo")?.value||"").trim();
+        const subjectValue=String(document.getElementById("finalizedEmailSubject")?.value||subject).trim();
+        const body=buildFinalizedDiscrepancyEmailText(report);
+
+        const url=
+            "https://mail.google.com/mail/?view=cm&fs=1"+
+            "&to="+encodeURIComponent(to)+
+            "&su="+encodeURIComponent(subjectValue)+
+            "&body="+encodeURIComponent(body);
+
+        window.open(url,"_blank","noopener");
+    });
+}
+
+window.openFinalizedDiscrepancyEmailPreview=openFinalizedDiscrepancyEmailPreview;
 
 function bindFinalizeReceivingUI(){
     const button=document.getElementById("btnFinalizeReceiving");
