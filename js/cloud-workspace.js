@@ -28,6 +28,7 @@ const PharmFlowCloudWorkspace = {
     statusTimer:null,
     visibleStatus:"",
     activeManifestRevision:0,
+    activeManifestPresent:false,
     activeManifestBusy:false,
     receivingSyncBusy:false,
     receivingSyncTimer:null,
@@ -264,6 +265,8 @@ function resetRuntimeForAuthenticatedContextChange(newScope){
         PharmFlowCloudWorkspace.hydratedPharmacyId=null;
         PharmFlowCloudWorkspace.lastCloudUpdate=null;
         PharmFlowCloudWorkspace.lastAppliedWorkspaceSignature="";
+        PharmFlowCloudWorkspace.activeManifestRevision=0;
+        PharmFlowCloudWorkspace.activeManifestPresent=false;
         PharmFlowCloudWorkspace.generation=null;
         PharmFlowCloudWorkspace.suppressNextClearRpc=true;
 
@@ -512,6 +515,7 @@ async function saveActiveOrderManifest(){
         const row=Array.isArray(result)?result[0]:result;
         PharmFlowCloudWorkspace.activeManifestRevision=
             Number(row?.revision||0);
+        PharmFlowCloudWorkspace.activeManifestPresent=true;
 
         return true;
     }catch(error){
@@ -552,6 +556,7 @@ function applyActiveOrderManifest(manifest,revision){
 
     PharmFlowCloudWorkspace.activeManifestRevision=
         Number(revision||0);
+    PharmFlowCloudWorkspace.activeManifestPresent=true;
 
     /* Order structure is ready on this PC even if the legacy
        cloud-workspace snapshot endpoint is unavailable. */
@@ -589,8 +594,12 @@ async function pullActiveOrderManifest(){
         const row=Array.isArray(result)?result[0]:result;
 
         if(!row?.manifest){
+            PharmFlowCloudWorkspace.activeManifestPresent=false;
+            PharmFlowCloudWorkspace.activeManifestRevision=0;
             return false;
         }
+
+        PharmFlowCloudWorkspace.activeManifestPresent=true;
 
         const revision=Number(row.revision||0);
 
@@ -637,6 +646,7 @@ async function clearActiveOrderManifest(){
         );
 
         PharmFlowCloudWorkspace.activeManifestRevision=0;
+        PharmFlowCloudWorkspace.activeManifestPresent=false;
         return true;
     }catch(error){
         Logger.warn("Active Order Manifest clear failed",error);
@@ -1216,7 +1226,11 @@ async function reconcileCloudWorkspaceAuthority(){
                     PharmFlowCloudWorkspace.applyingRemote=false;
                 }
             }
-            else if(localHasOrder){
+            else if(localHasOrder && !PharmFlowCloudWorkspace.activeManifestPresent){
+                /* Phase 2C.10.3.4: the dedicated Active Order Manifest is the
+                   structural authority for uploaded orders. An empty legacy
+                   cloud-workspace snapshot must never erase orders restored
+                   from that manifest on PC2/PC3. */
                 PharmFlowCloudWorkspace.applyingRemote=true;
 
                 clearCurrentWorkspace();
