@@ -24,7 +24,9 @@ const PharmFlowCloudWorkspace = {
     activeAccountScope:"",
     reconcilePromise:null,
     lastAppliedWorkspaceSignature:"",
-    contextSwitching:false
+    contextSwitching:false,
+    statusTimer:null,
+    visibleStatus:""
 };
 
 function cloudWorkspacePharmacyId(){
@@ -37,17 +39,59 @@ function cloudWorkspaceDeviceId(){
     return PharmFlowCloudWorkspace.deviceId;
 }
 
-function setCloudWorkspaceStatus(state, detail=""){
+function renderCloudWorkspaceStatus(state, detail=""){
     document.documentElement.dataset.cloudWorkspaceState=state;
+
     let el=document.getElementById("cloudWorkspaceStatus");
-    const host=document.getElementById("orderScopeControl") || document.querySelector(".currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader, .topBarRight");
+    const host=
+        document.getElementById("orderScopeControl") ||
+        document.querySelector(
+            ".currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader, .topBarRight"
+        );
+
     if(host && !el){
-        el=document.createElement("span"); el.id="cloudWorkspaceStatus"; el.className="cloudWorkspaceStatus"; host.appendChild(el);
+        el=document.createElement("span");
+        el.id="cloudWorkspaceStatus";
+        el.className="cloudWorkspaceStatus";
+        host.appendChild(el);
     }
+
     if(el){
-        el.textContent = state==="synced" ? "● SYNCED" : state==="syncing" ? "● SYNCING" : state==="offline" ? "● OFFLINE — PENDING SYNC" : "● CLOUD";
+        el.textContent=
+            state==="synced"
+                ? "● SYNCED"
+                : state==="syncing"
+                    ? "● SYNCING"
+                    : state==="offline"
+                        ? "● OFFLINE — PENDING SYNC"
+                        : "● CLOUD";
+
         el.title=detail||"PharmFlow Cloud Workspace";
     }
+
+    PharmFlowCloudWorkspace.visibleStatus=state;
+}
+
+function setCloudWorkspaceStatus(state, detail=""){
+    if(PharmFlowCloudWorkspace.statusTimer){
+        clearTimeout(PharmFlowCloudWorkspace.statusTimer);
+        PharmFlowCloudWorkspace.statusTimer=null;
+    }
+
+    /* SYNCED is final and can be shown immediately.
+       SYNCING/OFFLINE are delayed so sub-second network transitions
+       do not create the rapid flashing reported on the Dashboard. */
+    if(state==="synced"){
+        renderCloudWorkspaceStatus(state,detail);
+        return;
+    }
+
+    const delay=state==="offline" ? 1800 : 900;
+
+    PharmFlowCloudWorkspace.statusTimer=setTimeout(()=>{
+        renderCloudWorkspaceStatus(state,detail);
+        PharmFlowCloudWorkspace.statusTimer=null;
+    },delay);
 }
 
 function cloudQueueStorageKey(){
@@ -714,9 +758,26 @@ function initializePharmFlowCloudWorkspace(){
     AppEvents.on("workspace:saved",scheduleCloudWorkspaceSnapshot);
 
     AppEvents.on("files:updated",()=>{
+        /* Persist the fully imported workspace first, then push it.
+           This is required for a second PC to see Active Order Files. */
+        try{
+            saveWorkspaceSnapshot?.();
+        }catch(_){}
+
         setTimeout(()=>{
             forceCloudWorkspaceSnapshot("Order files synced");
-        },180);
+        },350);
+
+        /* One guarded retry handles slow Global GTIN matching / large orders
+           without relying on the browser's 2.2s polling race. */
+        setTimeout(()=>{
+            if(
+                Array.isArray(AppState?.workspace?.orderData) &&
+                AppState.workspace.orderData.length
+            ){
+                forceCloudWorkspaceSnapshot("Order files verified");
+            }
+        },1800);
     });
     AppEvents.on("workspace:cleared",async()=>{
         const pharmacyId=cloudWorkspacePharmacyId();

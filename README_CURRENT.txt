@@ -1,49 +1,38 @@
-PharmFlow Phase 2C.10.2.7 — Multi-Order Report + Filter-Matched Email + Cross-PC Upload Sync
+PharmFlow Phase 2C.10.2.8 — Five-point corrective release
 
-1. CROSS-PC ACTIVE ORDER FILES
-- Uploading/changing order files now forces an immediate guarded Cloud Workspace save.
-- PC2 receives the full workspace including Active Order Files metadata and per-order source rows.
-- This is in addition to the regular cloud polling/reconciliation.
-- Account/pharmacy isolation from 2C.10.2.6 remains intact.
+FIX 1 — Cloud status flashing
+- Transient SYNCING and OFFLINE states are now debounced.
+- SYNCED is displayed immediately.
+- A sub-second network transition no longer flashes OFFLINE -> SYNCING -> SYNCED.
 
-2. MULTIPLE ORDERS
-- When more than one active Order is loaded, Current Order in the top bar becomes an Order selector.
-- The selected order is stored in the shared workspace.
-- New receiving transactions are attributed to the selected Order.
-- Per-order original source rows are preserved inside the shared workspace.
-- Multi-order discrepancy reports are built separately by Order.
-- If one Item Code exists in more than one Order, received quantities use transaction Order attribution.
-  Legacy unattributed quantities use deterministic FIFO allocation as a compatibility fallback.
+FIX 2 — PC2 shows No Active Order
+- Root cause corrected in the import/sync path:
+  the completed imported workspace is now saved BEFORE files:updated/cloud push.
+- files:updated also performs an immediate guarded cloud save plus one verification retry.
+- PC2 cloud reconciliation can therefore hydrate Active Order Files instead of an older empty workspace.
 
-3. FILTERS
-- Default Discrepancy Types now starts with every checkbox selected.
-- Label displays All selected.
-- Email Differences now uses EXACTLY the same rows currently displayed after:
-  discrepancy-type filter + category filter.
-- Example: Received Any Quantity + Over Received selected -> the email uses exactly those displayed rows.
+FIX 3 — Current Order selector
+- Current Order selector is now the real dashboard order scope.
+- Dashboard KPI cards recalculate from the selected Order's ORIGINAL source rows.
+- Received quantities use per-order transaction allocation.
+- Remaining / Completed / Over / Manual / Scans refresh when switching orders.
+- Receiving table and progress are refreshed on selection change.
 
-4. MULTI-ORDER EMAIL
-- One email/report can contain multiple Orders.
-- Each Order has its own professional section and table.
-- Orders with no displayed rows are omitted.
-- Multi-order subject:
-  Supply Discrepancy Report | X Orders | YYYY-MM-DD
+FIX 4 — Email design
+- Removed duplicated outer Arabic message from preview.
+- Main Arabic heading enlarged to 30px, bold and centered.
+- Greeting/body/closing enlarged and centered with logical emphasis.
+- Each Order header is centered.
+- Table headers and cells are centered and clearer.
+- Entire email content is visually centered.
 
-5. PROFESSIONAL EMAIL DESIGN
-- Arabic heading is larger, centered and bold:
-  الإخوة الكرام بالمستودع
-- Professional PharmFlow copper/neutral styling.
-- Separate table per Order.
-- Clear Order Number / Order Date / displayed item count.
-- Copy Email copies rich HTML when the browser supports HTML clipboard.
+FIX 5 — Discrepancy filter
+- Added OK beside Select all and Clear.
+- OK closes the filter dropdown without changing the selected filters.
 
-IMPORTANT GMAIL LIMITATION
-- A standard Gmail compose URL cannot inject a reliable HTML table.
-- Open in Gmail therefore:
-  1) copies the formatted HTML report automatically,
-  2) opens Gmail with To + Subject,
-  3) user pastes once with Ctrl+V.
-- This preserves the professional table formatting and avoids the broken plain-text table seen previously.
+Validation performed:
+- JavaScript syntax checked with node --check.
+- HTML local src/href references checked.
+- Required implementation markers checked in source.
 
-No new SQL migration is required specifically for Phase 2C.10.2.7.
-If PHASE2C1025_DEPLOY_FROM_2C1023.sql has not been run yet, it is still required.
+No new SQL migration is required for Phase 2C.10.2.8.

@@ -576,7 +576,7 @@ function buildFinalizedDiscrepancyEmailHTML(report){
 
         return `
         <div style="margin:24px 0 0;border:1px solid #ddc9bb;border-radius:14px;overflow:hidden;background:#ffffff">
-          <div style="padding:14px 16px;background:#f5ebe3;border-bottom:1px solid #ddc9bb">
+          <div style="padding:16px;background:#f5ebe3;border-bottom:1px solid #ddc9bb;text-align:center">
             <div style="font-size:11px;letter-spacing:.08em;color:#9a6246;font-weight:700">ORDER ${index+1}</div>
             <div style="font-size:18px;color:#342d28;font-weight:700;margin-top:3px">${esc(group.orderNumber||"-")}</div>
             <div style="font-size:12px;color:#76675d;margin-top:3px">
@@ -586,15 +586,15 @@ function buildFinalizedDiscrepancyEmailHTML(report){
             </div>
           </div>
 
-          <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px" cellpadding="0" cellspacing="0">
+          <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;text-align:center" cellpadding="0" cellspacing="0">
             <thead>
               <tr style="background:#9a6246;color:#ffffff">
-                <th style="padding:10px 8px;text-align:left">Item Code</th>
-                <th style="padding:10px 8px;text-align:left">Item Name</th>
-                <th style="padding:10px 8px;text-align:center">Ordered</th>
-                <th style="padding:10px 8px;text-align:center">Received</th>
-                <th style="padding:10px 8px;text-align:center">Difference</th>
-                <th style="padding:10px 8px;text-align:left">Status</th>
+                <th style="padding:10px 8px;text-align:center;font-weight:800">Item Code</th>
+                <th style="padding:10px 8px;text-align:center;font-weight:800">Item Name</th>
+                <th style="padding:10px 8px;text-align:center;font-weight:800">Ordered</th>
+                <th style="padding:10px 8px;text-align:center;font-weight:800">Received</th>
+                <th style="padding:10px 8px;text-align:center;font-weight:800">Difference</th>
+                <th style="padding:10px 8px;text-align:center;font-weight:800">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -608,12 +608,12 @@ function buildFinalizedDiscrepancyEmailHTML(report){
 
                   return `
                   <tr>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc">${esc(row["Item Number"]||"")}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc">${esc(row["Item Name"]||"")}</td>
+                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Item Number"]||"")}</td>
+                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Item Name"]||"")}</td>
                     <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Ordered Qty"]??0)}</td>
                     <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Received Qty"]??0)}</td>
                     <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center;font-weight:700;color:${diff<0?"#a54343":(diff>0?"#9a6a20":"#47795a")}">${diff>0?"+":""}${esc(diff)}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc">${esc(status)}</td>
+                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center;font-weight:700">${esc(status)}</td>
                   </tr>`;
               }).join("")}
             </tbody>
@@ -622,11 +622,11 @@ function buildFinalizedDiscrepancyEmailHTML(report){
     }).join("");
 
     return `
-    <div style="max-width:980px;margin:0 auto;font-family:Arial,Tahoma,sans-serif;color:#342d28;background:#ffffff">
+    <div style="max-width:980px;margin:0 auto;font-family:Arial,Tahoma,sans-serif;color:#342d28;background:#ffffff;text-align:center;font-size:15px;line-height:1.7">
       <div dir="rtl" style="text-align:center;padding:18px 14px 8px">
-        <div style="font-size:25px;line-height:1.5;font-weight:800;color:#6f432e">الإخوة الكرام بالمستودع</div>
-        <div style="font-size:18px;line-height:1.7;font-weight:700;color:#8b5d46;margin-top:5px">تحية طيبة وبعد،</div>
-        <div style="font-size:15px;line-height:1.9;color:#443832;margin:10px auto 0;max-width:760px">
+        <div style="font-size:30px;line-height:1.45;font-weight:800;color:#6f432e;text-align:center">الإخوة الكرام بالمستودع</div>
+        <div style="font-size:21px;line-height:1.7;font-weight:800;color:#8b5d46;margin-top:6px;text-align:center">تحية طيبة وبعد،</div>
+        <div style="font-size:18px;line-height:1.9;font-weight:700;color:#443832;margin:12px auto 0;max-width:800px;text-align:center">
           يوجد فرق توريد في الطلبية الموضحة أدناه، نأمل التكرم بالمراجعة والتشييك.
         </div>
       </div>
@@ -640,9 +640,9 @@ function buildFinalizedDiscrepancyEmailHTML(report){
 
       ${sections}
 
-      <div dir="rtl" style="text-align:right;margin-top:24px;font-size:15px;line-height:1.9;color:#443832">
-        <div>للإفادة والمراجعة والتشييك.</div>
-        <div style="margin-top:8px;font-weight:700">خالص الشكر والتقدير.</div>
+      <div dir="rtl" style="text-align:center;margin-top:28px;font-size:18px;line-height:1.9;color:#443832">
+        <div style="font-weight:700">للإفادة والمراجعة والتشييك.</div>
+        <div style="margin-top:8px;font-size:19px;font-weight:800;color:#6f432e">خالص الشكر والتقدير.</div>
       </div>
     </div>`;
 }
@@ -832,20 +832,9 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
           </label>
         </section>
 
-        <article class="finalizedEmailLetter" dir="rtl">
-          <div class="finalizedEmailMessage">
-            <p>الاخوة الكرام بالمستودع،</p>
-            <p>تحية طيبة وبعد،</p>
-            <p>يوجد فرق توريد في الطلبية الموضحة أدناه، نأمل التكرم بالمراجعة والتشييك.</p>
-          </div>
-
+        <article class="finalizedEmailLetter">
           <div class="finalizedEmailRichPreview" dir="ltr">
             ${buildFinalizedDiscrepancyEmailHTML(report)}
-          </div>
-
-          <div class="finalizedEmailClosing">
-            <p>للإفادة والتشييك.</p>
-            <p>خالص الشكر والتقدير.</p>
           </div>
         </article>
 

@@ -151,6 +151,11 @@ async function handleOrderFileSelection(event){
 
         recalculateStatistics();
 
+        /* Phase 2C.10.2.8:
+           Active Order Files must be committed locally before cloud sync.
+           Without this, PC2 can hydrate an older/empty workspace. */
+        saveWorkspaceSnapshot?.();
+
         AppEvents.emit(
             "files:updated"
         );

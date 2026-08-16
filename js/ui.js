@@ -1042,6 +1042,15 @@ function bindUIEvents(){
                 typeof setSelectedReceivingOrderNumber==="function" &&
                 setSelectedReceivingOrderNumber(event.target.value)
             ){
+                window.PharmFlowOrderScope=event.target.value;
+
+                refreshHeader();
+                refreshDashboard();
+                refreshProgress();
+                refreshReceivingTable();
+                refreshHealthSummary?.();
+                refreshOpenOrderStatusReport?.();
+
                 showToast?.(
                     "Active receiving order: "+event.target.value,
                     "success"
@@ -1092,6 +1101,14 @@ function bindUIEvents(){
         UI.receivingFilters.issues=new Set();
         refreshReceivingIssueFilterLabel();
         refreshReceivingTable();
+    });
+
+    document.getElementById("btnOkReceivingIssues")?.addEventListener("click",function(event){
+        event.preventDefault();
+        const details=document.getElementById("receivingIssueFilter");
+        if(details){
+            details.open=false;
+        }
     });
 
     UI.elements.receivingCategoryFilter
@@ -1483,69 +1500,153 @@ function refreshHeader(){
    DASHBOARD
 ===================================================== */
 
+function getSelectedOrderDashboardMetrics(){
+    const selected=
+        typeof getSelectedReceivingOrderNumber==="function"
+            ? getSelectedReceivingOrderNumber()
+            : "";
+
+    if(
+        !selected ||
+        typeof getPerOrderReceivingRows!=="function"
+    ){
+        return null;
+    }
+
+    const rows=getPerOrderReceivingRows(selected);
+
+    if(!Array.isArray(rows) || !rows.length){
+        return null;
+    }
+
+    const orderRows=rows.filter(
+        row=>toNumber(row["Ordered Qty"],0)>0
+    );
+
+    const manualRows=rows.filter(
+        row=>row.issueKey==="manual"
+    );
+
+    const localDevice=
+        typeof ensureDeviceId==="function"
+            ? ensureDeviceId()
+            : AppState.session?.deviceId;
+
+    const totalScans=(AppState.workspace?.receivingHistory||[])
+        .filter(tx=>{
+            const txOrder=normalizeOrderNumber(
+                tx?.selectedOrderNumber ||
+                tx?.orderId ||
+                tx?.orderNumber ||
+                ""
+            );
+
+            return (
+                txOrder===normalizeOrderNumber(selected) &&
+                toSafeString(tx?.deviceId||"")===
+                    toSafeString(localDevice||"")
+            );
+        }).length;
+
+    return {
+        totalItems:orderRows.length,
+        completedItems:orderRows.filter(row=>
+            toNumber(row["Ordered Qty"],0)>0 &&
+            toNumber(row["Received Qty"],0)===
+                toNumber(row["Ordered Qty"],0)
+        ).length,
+        remainingUnits:orderRows.reduce(
+            (sum,row)=>
+                sum+
+                Math.max(
+                    0,
+                    toNumber(row["Ordered Qty"],0)-
+                    toNumber(row["Received Qty"],0)
+                ),
+            0
+        ),
+        overReceivedItems:orderRows.filter(row=>
+            toNumber(row["Received Qty"],0)>
+            toNumber(row["Ordered Qty"],0)
+        ).length,
+        manualItems:manualRows.length,
+        totalScans
+    };
+}
+
 function refreshDashboard(){
 
     recalculateStatistics();
 
-    const stats = AppState.statistics;
-    const scopedItems = getScopedOrderItems();
-    const scopeActive = getActiveOrderScope() !== "ALL";
-    const scoped = scopeActive ? {
-        totalItems: scopedItems.length,
-        completedItems: scopedItems.filter(i=>toNumber(i.orderedQty,0)>0 && toNumber(i.receivedQty,0)===toNumber(i.orderedQty,0)).length,
-        remainingUnits: scopedItems.reduce((n,i)=>n+Math.max(0,toNumber(i.orderedQty,0)-toNumber(i.receivedQty,0)),0),
-        overReceivedItems: scopedItems.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0)).length,
-        manualItems: scopedItems.filter(i=>i.manual===true).length,
-        totalScans: (AppState.workspace?.receivingHistory||[]).filter(tx=>{
-            const item=getItemByCode?.(tx.itemCode);
-            const localDevice=(typeof ensureDeviceId==="function"?ensureDeviceId():AppState.session?.deviceId);
-            return (!item || itemBelongsToOrderScope(item)) && toSafeString(tx.deviceId||"")===toSafeString(localDevice||"");
-        }).length
-    } : {...stats, totalScans:(AppState.workspace?.receivingHistory||[]).filter(tx=>{
-        const localDevice=(typeof ensureDeviceId==="function"?ensureDeviceId():AppState.session?.deviceId);
-        return toSafeString(tx.deviceId||"")===toSafeString(localDevice||"");
-    }).length};
+    const stats=AppState.statistics;
+    const selectedMetrics=getSelectedOrderDashboardMetrics();
 
-    setElementText(
-        UI.elements.statTotalItems,
-        scoped.totalItems
-    );
+    let scoped;
 
+    if(selectedMetrics){
+        scoped=selectedMetrics;
+    }else{
+        const scopedItems=getScopedOrderItems();
+        const scopeActive=getActiveOrderScope()!=="ALL";
 
-    setElementText(
-        UI.elements.statCompleted,
-        scoped.completedItems
-    );
+        scoped=scopeActive ? {
+            totalItems:scopedItems.length,
+            completedItems:scopedItems.filter(i=>
+                toNumber(i.orderedQty,0)>0 &&
+                toNumber(i.receivedQty,0)===toNumber(i.orderedQty,0)
+            ).length,
+            remainingUnits:scopedItems.reduce(
+                (n,i)=>n+Math.max(
+                    0,
+                    toNumber(i.orderedQty,0)-toNumber(i.receivedQty,0)
+                ),
+                0
+            ),
+            overReceivedItems:scopedItems.filter(i=>
+                toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0)
+            ).length,
+            manualItems:scopedItems.filter(i=>i.manual===true).length,
+            totalScans:(AppState.workspace?.receivingHistory||[]).filter(tx=>{
+                const item=getItemByCode?.(tx.itemCode);
+                const localDevice=
+                    typeof ensureDeviceId==="function"
+                        ? ensureDeviceId()
+                        : AppState.session?.deviceId;
 
+                return (
+                    (!item || itemBelongsToOrderScope(item)) &&
+                    toSafeString(tx.deviceId||"")===
+                        toSafeString(localDevice||"")
+                );
+            }).length
+        } : {
+            ...stats,
+            totalScans:(AppState.workspace?.receivingHistory||[]).filter(tx=>{
+                const localDevice=
+                    typeof ensureDeviceId==="function"
+                        ? ensureDeviceId()
+                        : AppState.session?.deviceId;
 
+                return toSafeString(tx.deviceId||"")===
+                    toSafeString(localDevice||"");
+            }).length
+        };
+    }
+
+    setElementText(UI.elements.statTotalItems,scoped.totalItems);
+    setElementText(UI.elements.statCompleted,scoped.completedItems);
     setElementText(
         UI.elements.statRemaining,
-        Number.isFinite(scoped.remainingUnits) ? scoped.remainingUnits : stats.remainingItems
+        Number.isFinite(scoped.remainingUnits)
+            ? scoped.remainingUnits
+            : stats.remainingItems
     );
-
-
-    setElementText(
-        UI.elements.statOver,
-        scoped.overReceivedItems
-    );
-
-
-    setElementText(
-        UI.elements.statManual,
-        scoped.manualItems
-    );
-
-
-    setElementText(
-        UI.elements.statScans,
-        scoped.totalScans
-    );
-
+    setElementText(UI.elements.statOver,scoped.overReceivedItems);
+    setElementText(UI.elements.statManual,scoped.manualItems);
+    setElementText(UI.elements.statScans,scoped.totalScans);
 
     refreshProgress();
-
 }
-
 
 /* =====================================================
    PROGRESS
@@ -1553,13 +1654,20 @@ function refreshDashboard(){
 
 function refreshProgress(){
 
+    const selectedMetrics=
+        typeof getSelectedOrderDashboardMetrics==="function"
+            ? getSelectedOrderDashboardMetrics()
+            : null;
+
     const total =
-        AppState.statistics
-            .totalItems;
+        selectedMetrics
+            ? selectedMetrics.totalItems
+            : AppState.statistics.totalItems;
 
     const completed =
-        AppState.statistics
-            .completedItems;
+        selectedMetrics
+            ? selectedMetrics.completedItems
+            : AppState.statistics.completedItems;
 
     let percent = 0;
 
@@ -6711,7 +6819,16 @@ function setupDashboardKpiInteractivity(){
 }
 
 function getActiveOrderScope(){
-    return toSafeString(window.PharmFlowOrderScope || "ALL");
+    const selected=
+        typeof getSelectedReceivingOrderNumber==="function"
+            ? getSelectedReceivingOrderNumber()
+            : "";
+
+    return toSafeString(
+        selected ||
+        window.PharmFlowOrderScope ||
+        "ALL"
+    );
 }
 
 function itemBelongsToOrderScope(item, scope=getActiveOrderScope()){

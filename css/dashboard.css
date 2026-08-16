@@ -6423,3 +6423,47 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
     max-width:130px;
   }
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.2.8 — STABILITY / ORDER SCOPE / EMAIL
+========================================================= */
+
+.issueMultiFilterActions{
+  grid-template-columns:repeat(3,1fr);
+}
+
+.issueFilterOkButton{
+  background:#1f6fd6 !important;
+  border-color:#1f6fd6 !important;
+  color:#fff !important;
+}
+
+.issueFilterOkButton:hover{
+  background:#195fb9 !important;
+}
+
+.finalizedEmailLetter,
+.finalizedEmailRichPreview{
+  text-align:center !important;
+}
+
+.finalizedEmailRichPreview{
+  font-size:15px;
+}
+
+.finalizedEmailRichPreview table th,
+.finalizedEmailRichPreview table td{
+  text-align:center !important;
+  vertical-align:middle !important;
+}
+
+.finalizedEmailRichPreview table th{
+  font-weight:800 !important;
+  font-size:13px !important;
+}
+
+.finalizedEmailRichPreview table td{
+  font-size:13px !important;
+}
+
