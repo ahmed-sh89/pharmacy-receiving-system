@@ -5894,3 +5894,443 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
     min-height:0;
   }
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.2.2 — PERSISTENT DISCREPANCY REPORT
+   Cleaner typography / Gmail transport hardening
+========================================================= */
+
+.finalizedEmailPanel{
+  width:min(1040px,96vw) !important;
+  background:#F7F2ED !important;
+  padding:0 !important;
+}
+
+.finalizedEmailHeader{
+  position:sticky;
+  top:0;
+  z-index:4;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  padding:20px 24px 16px;
+  border-bottom:1px solid #E0D3C8;
+  background:rgba(247,242,237,.97);
+  backdrop-filter:blur(10px);
+}
+
+.finalizedEmailKicker{
+  display:block;
+  margin-bottom:4px;
+  font-size:8px !important;
+  font-weight:700 !important;
+  letter-spacing:.14em;
+  color:#5A8A6B !important;
+}
+
+.finalizedEmailHeader h2{
+  margin:0 0 4px !important;
+  font-size:24px;
+  font-weight:650 !important;
+  letter-spacing:-.02em;
+}
+
+.finalizedEmailHeader p{
+  margin:0;
+  font-size:11px;
+  font-weight:400;
+  color:#7B6E65;
+}
+
+.finalizedEmailSummary{
+  display:grid;
+  grid-template-columns:1.4fr 1fr .8fr .8fr;
+  gap:8px;
+  padding:14px 24px 0;
+}
+
+.finalizedEmailSummary>div{
+  min-height:62px;
+  padding:11px 12px;
+  border:1px solid #E0D3C8;
+  border-radius:11px;
+  background:#FCFAF8;
+}
+
+.finalizedEmailSummary span{
+  display:block;
+  margin-bottom:5px;
+  font-size:7px;
+  font-weight:700;
+  letter-spacing:.09em;
+  color:#8B7B70;
+}
+
+.finalizedEmailSummary strong{
+  font-size:14px;
+  font-weight:600 !important;
+  color:#342C27;
+}
+
+.finalizedEmailCompose{
+  display:grid;
+  grid-template-columns:.8fr 1.2fr;
+  gap:10px;
+  padding:12px 24px 0;
+}
+
+.finalizedEmailCompose label{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.finalizedEmailCompose label>span{
+  font-size:9px;
+  font-weight:600;
+  color:#6D5F56;
+}
+
+.finalizedEmailCompose input{
+  height:42px;
+  padding:0 11px;
+  border:1px solid #D7C8BB;
+  border-radius:9px;
+  background:#fff;
+  font-size:12px;
+  font-weight:400;
+  outline:none;
+}
+
+.finalizedEmailCompose input:focus{
+  border-color:#A96B4B;
+  box-shadow:0 0 0 3px rgba(169,107,75,.08);
+}
+
+.finalizedEmailLetter{
+  margin:14px 24px 20px;
+  padding:22px !important;
+  border:1px solid #DDD0C5 !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  box-shadow:0 7px 22px rgba(54,39,29,.04);
+  font-weight:400 !important;
+}
+
+.finalizedEmailMessage,
+.finalizedEmailClosing{
+  font-size:13px;
+  font-weight:400;
+  line-height:1.8;
+  color:#3F3630;
+}
+
+.finalizedEmailMessage p,
+.finalizedEmailClosing p{
+  margin:0 0 7px;
+  font-weight:400 !important;
+}
+
+.finalizedEmailTableWrap{
+  margin:17px 0 !important;
+  border:1px solid #DFD3C9;
+  border-radius:10px;
+  overflow:auto;
+}
+
+.finalizedEmailTableWrap table{
+  min-width:920px !important;
+  border-collapse:separate !important;
+  border-spacing:0;
+}
+
+.finalizedEmailTableWrap th{
+  position:sticky;
+  top:0;
+  padding:9px 10px !important;
+  border:0 !important;
+  border-bottom:1px solid #B98265 !important;
+  background:#9A6246 !important;
+  font-size:8px !important;
+  font-weight:650 !important;
+  letter-spacing:.03em;
+  color:#fff;
+  white-space:nowrap;
+}
+
+.finalizedEmailTableWrap td{
+  padding:9px 10px !important;
+  border:0 !important;
+  border-bottom:1px solid #EEE6E0 !important;
+  background:#fff;
+  font-size:10px !important;
+  font-weight:400 !important;
+  color:#413832;
+  vertical-align:middle;
+}
+
+.finalizedEmailTableWrap tbody tr:last-child td{
+  border-bottom:0 !important;
+}
+
+.finalizedEmailTableWrap tbody tr:hover td{
+  background:#FBF7F3;
+}
+
+.finalizedEmailTableWrap td.code{
+  font-variant-numeric:tabular-nums;
+  color:#65574E;
+}
+
+.finalizedEmailTableWrap td.itemName{
+  min-width:220px;
+}
+
+.finalizedEmailTableWrap td.number{
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+
+.finalizedEmailTableWrap td.shortage{
+  color:#A54343 !important;
+  font-weight:600 !important;
+}
+
+.finalizedEmailTableWrap td.over{
+  color:#9A6A20 !important;
+  font-weight:600 !important;
+}
+
+.emailIssue{
+  display:inline-flex;
+  align-items:center;
+  min-height:23px;
+  padding:0 7px;
+  border-radius:999px;
+  font-size:8px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.emailIssue.shortage{
+  background:#FFF1F0;
+  color:#A54343;
+}
+
+.emailIssue.over{
+  background:#FFF7E6;
+  color:#8B611C;
+}
+
+.emailIssue.neutral{
+  background:#F0F2F4;
+  color:#5D6872;
+}
+
+.finalizedEmailFooter{
+  position:sticky !important;
+  bottom:0 !important;
+  z-index:4;
+  display:flex !important;
+  justify-content:space-between !important;
+  align-items:center !important;
+  gap:14px;
+  margin:0 !important;
+  padding:12px 24px !important;
+  border-top:1px solid #DED1C6 !important;
+  background:rgba(247,242,237,.98) !important;
+}
+
+.finalizedEmailSavedNote{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#47795A;
+}
+
+.finalizedEmailSavedNote>span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:#E6F4EA;
+  font-weight:700;
+}
+
+.finalizedEmailSavedNote>div{
+  display:flex;
+  flex-direction:column;
+}
+
+.finalizedEmailSavedNote strong{
+  font-size:10px;
+  font-weight:600 !important;
+}
+
+.finalizedEmailSavedNote small{
+  margin-top:2px;
+  font-size:8px;
+  font-weight:400;
+  color:#7A706A;
+}
+
+.finalizedEmailActions{
+  display:flex;
+  gap:8px;
+}
+
+.archiveRowActions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.archiveViewReportButton{
+  min-height:31px;
+  padding:0 10px;
+  border:1px solid #B88A6D;
+  border-radius:8px;
+  background:#FFF8F3;
+  color:#805039;
+  font-size:9px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.archiveViewReportButton:hover{
+  background:#F6E9DF;
+}
+
+@media(max-width:760px){
+  .finalizedEmailSummary{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .finalizedEmailCompose{
+    grid-template-columns:1fr;
+  }
+
+  .finalizedEmailFooter{
+    align-items:flex-start !important;
+    flex-direction:column;
+  }
+
+  .finalizedEmailActions{
+    width:100%;
+  }
+
+  .finalizedEmailActions button{
+    flex:1;
+  }
+}
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.2.3 — LIVE RECEIVING REPORT
+========================================================= */
+
+.liveReceivingReportActions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin-left:auto;
+}
+
+.orderStatusReportToolbar{
+  flex-wrap:wrap;
+  gap:10px !important;
+}
+
+.orderStatusReportHeader h2,
+.archivedReceivingReportCard h2{
+  font-weight:600 !important;
+}
+
+.orderStatusReportHeader p,
+.archivedReceivingReportCard p{
+  font-weight:400 !important;
+}
+
+.orderStatusReportTable td,
+.orderStatusReportTable th{
+  font-weight:400;
+}
+
+.orderStatusReportTable th{
+  font-weight:600;
+}
+
+.statusBadge{
+  font-weight:600 !important;
+}
+
+.statusUnordered{
+  background:#F2EDF7 !important;
+  color:#70518A !important;
+}
+
+.orderStatusUnorderedRow td{
+  background:#FCFAFE;
+}
+
+.archivedReceivingReportCard{
+  max-width:1180px;
+}
+
+.archivedReportSummary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(130px,1fr));
+  gap:8px;
+  padding:0 18px 12px;
+}
+
+.archivedReportSummary>div{
+  padding:10px 11px;
+  border:1px solid #E0D4CA;
+  border-radius:10px;
+  background:#FCFAF8;
+}
+
+.archivedReportSummary span{
+  display:block;
+  margin-bottom:4px;
+  font-size:8px;
+  color:#82746A;
+}
+
+.archivedReportSummary strong{
+  font-size:12px;
+  font-weight:600;
+  color:#342D28;
+}
+
+.archiveLiveReportActions{
+  padding:0 18px 12px;
+}
+
+@media(max-width:760px){
+  .liveReceivingReportActions{
+    width:100%;
+    margin-left:0;
+  }
+
+  .liveReceivingReportActions button{
+    flex:1;
+  }
+
+  .archivedReportSummary{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media print{
+  .liveReceivingReportActions{
+    display:none !important;
+  }
+}

@@ -1013,6 +1013,29 @@ function bindUIEvents(){
 
     document.getElementById("btnExportReceivingSummaryExcel")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryExcel==="function") exportReceivingSummaryExcel(); });
     document.getElementById("btnExportReceivingSummaryPDF")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryPDF==="function") exportReceivingSummaryPDF(); });
+    document.getElementById("btnEmailReceivingDifferences")?.addEventListener("click",()=>{
+        if(
+            typeof buildLiveReceivingReport!=="function" ||
+            typeof buildReceivingEmailDifferencesReport!=="function" ||
+            typeof openFinalizedDiscrepancyEmailPreview!=="function"
+        ){
+            showToast?.("Email report is unavailable","error");
+            return;
+        }
+
+        const live=buildLiveReceivingReport();
+        const report=buildReceivingEmailDifferencesReport(live);
+
+        if(!report.rows.length){
+            showToast?.("All items are Completed. There are no differences to email.","success");
+            return;
+        }
+
+        openFinalizedDiscrepancyEmailPreview(report,{
+            fromArchive:false,
+            liveReport:true
+        });
+    });
 
     document
         .getElementById("btnQuickSearch")
@@ -2912,9 +2935,47 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
         }
         if(typeof deleteArchivedOrderLocalData!=="function")throw new Error("Local archive delete helper is unavailable");
         await deleteArchivedOrderLocalData(internalOrderId);
-        if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry().catch(()=>{});
-        if(typeof refreshItemTransferOrderOptions==="function")refreshItemTransferOrderOptions();
-        showToast("Order "+safeOrder+" deleted","success");
+
+        /* Cloud is authoritative: reload Archive and lifecycle after deletion,
+           then verify before ever showing a success toast. */
+        if(typeof restoreHistoricalArchive==="function"){
+            await restoreHistoricalArchive();
+        }
+        if(typeof refreshOrderLifecycleRegistry==="function"){
+            await refreshOrderLifecycleRegistry();
+        }
+        if(typeof refreshItemTransferOrderOptions==="function"){
+            refreshItemTransferOrderOptions();
+        }
+
+        if(
+            typeof ReportsEngine!=="undefined" &&
+            ReportsEngine.itemTransfer &&
+            typeof normalizeOrderNumber==="function" &&
+            normalizeOrderNumber(ReportsEngine.itemTransfer.orderNumber)===normalizeOrderNumber(safeOrder)
+        ){
+            ReportsEngine.itemTransfer={orderNumber:"",orderMeta:null,rows:[]};
+            if(typeof renderItemTransferReport==="function")renderItemTransferReport();
+        }
+
+        const stillInArchive=(AppState.archive.orders||[]).some(order=>
+            getArchiveOrderNumbers(order).some(number=>
+                normalizeOrderNumber(number)===normalizeOrderNumber(safeOrder)
+            )
+        );
+
+        const stillInRegistry=(
+            typeof OrderLifecycleEngine!=="undefined" &&
+            Array.isArray(OrderLifecycleEngine.records)
+        ) ? OrderLifecycleEngine.records.some(row=>
+            normalizeOrderNumber(row.order_number)===normalizeOrderNumber(safeOrder)
+        ) : false;
+
+        if(stillInArchive || stillInRegistry){
+            throw new Error("Deletion was not confirmed by the cloud. The order remains protected.");
+        }
+
+        showToast("Order "+safeOrder+" permanently deleted","success");
         return true;
     }catch(error){
         Logger.error("Delete archived order failed",error);
@@ -2923,6 +2984,55 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
     }finally{hideLoading();}
 }
 window.requestDeleteArchivedOrder=requestDeleteArchivedOrder;
+
+
+function openArchivedDiscrepancyReport(internalOrderId){
+    const order=(AppState.archive.orders||[]).find(
+        row=>String(row?.orderId||"")===String(internalOrderId||"")
+    );
+
+    if(!order){
+        showToast("Archived order could not be found","error");
+        return false;
+    }
+
+    const fullReport=order.fullReceivingReport;
+    const emailReport=order.discrepancyReport;
+
+    if(fullReport && Array.isArray(fullReport.rows)){
+        if(typeof openOrderStatusReportFromSnapshot==="function"){
+            openOrderStatusReportFromSnapshot(
+                JSON.parse(JSON.stringify(fullReport))
+            );
+            return true;
+        }
+
+        if(typeof printLiveReceivingReport==="function"){
+            printLiveReceivingReport(
+                JSON.parse(JSON.stringify(fullReport))
+            );
+            return true;
+        }
+    }
+
+    /* Compatibility for reports finalized by 2C.10.2.2. */
+    if(emailReport && Array.isArray(emailReport.rows)){
+        openFinalizedDiscrepancyEmailPreview?.(
+            JSON.parse(JSON.stringify(emailReport)),
+            {fromArchive:true}
+        );
+        return true;
+    }
+
+    showToast(
+        "No saved report is available for this older archive record",
+        "warning"
+    );
+    return false;
+}
+
+window.openArchivedDiscrepancyReport=openArchivedDiscrepancyReport;
+
 
 function renderArchiveTable(orders){
     const tbody=UI.elements.archiveTableBody;
@@ -2943,9 +3053,25 @@ function renderArchiveTable(orders){
             <td>${toInteger(order.totalItems,0)}</td>
             <td>${toNumber(order.totalReceivedUnits,0)}</td>
             <td><span class="archiveStatus completed">${escapeHTML(order.status||"Received")}</span></td>
-            <td>${numbers.length===1?`<button type="button" class="archiveDeleteOrderButton" data-delete-archive-order="${escapeHTML(order.orderId)}" data-order-number="${escapeHTML(numbers[0])}">Delete Order</button>`:`<span class="archiveActionNote">${numbers.length>1?"Batch record":"Order number unavailable"}</span>`}</td>`;
+            <td>
+              <div class="archiveRowActions">
+                ${order.discrepancyReport && Array.isArray(order.discrepancyReport.rows)
+                    ? `<button type="button" class="archiveViewReportButton" data-view-archive-report="${escapeHTML(order.orderId)}">View Report</button>`
+                    : `<span class="archiveActionNote">No saved report</span>`}
+                ${numbers.length===1
+                    ? `<button type="button" class="archiveDeleteOrderButton" data-delete-archive-order="${escapeHTML(order.orderId)}" data-order-number="${escapeHTML(numbers[0])}">Delete Order</button>`
+                    : `<span class="archiveActionNote">${numbers.length>1?"Batch record":"Order number unavailable"}</span>`}
+              </div>
+            </td>`;
         tbody.appendChild(row);
     });
+    tbody.querySelectorAll("[data-view-archive-report]").forEach(button=>{
+        button.addEventListener(
+            "click",
+            ()=>openArchivedDiscrepancyReport(button.dataset.viewArchiveReport)
+        );
+    });
+
     tbody.querySelectorAll("[data-delete-archive-order]").forEach(button=>{
         button.addEventListener("click",()=>requestDeleteArchivedOrder(button.dataset.deleteArchiveOrder,button.dataset.orderNumber));
     });
@@ -5305,7 +5431,7 @@ function createOrderStatusReportButton(){
         " orderStatusReportButton";
 
     button.innerHTML =
-        "📋 Order Status Report";
+        "📋 Receiving Report";
 
     button.addEventListener(
         "click",
@@ -5351,13 +5477,17 @@ function getOrderStatusReportRows(filter = "all"){
                 let reportStatus =
                     "complete";
 
-                if(difference < 0){
-                    reportStatus =
-                        "shortage";
+                if(item.manual===true || ordered===0){
+                    reportStatus = received>0 ? "unordered" : "complete";
+                }
+                else if(received===0 && ordered>0){
+                    reportStatus = "not_received";
+                }
+                else if(difference < 0){
+                    reportStatus = "shortage";
                 }
                 else if(difference > 0){
-                    reportStatus =
-                        "over";
+                    reportStatus = "over";
                 }
 
                 return {
@@ -5445,9 +5575,9 @@ function openOrderStatusReport(
 
                     <div>
                         <span>LIVE ORDER REPORT</span>
-                        <h2>Order Status Report</h2>
+                        <h2>Receiving Report</h2>
                         <p>
-                            Current shortage and over-received quantities.
+                            Live snapshot of the current receiving progress. Available before Finalize.
                         </p>
                     </div>
 
@@ -5499,6 +5629,16 @@ function openOrderStatusReport(
                         id="orderStatusReportSummary"
                         class="orderStatusReportSummary"
                     ></div>
+
+                    <div class="liveReceivingReportActions">
+                        <button id="btnPrintLiveReceivingReport" type="button" class="secondaryButton">
+                            Print / Save PDF
+                        </button>
+
+                        <button id="btnEmailLiveReceivingDifferences" type="button" class="primaryButton">
+                            Email Differences
+                        </button>
+                    </div>
 
                 </div>
 
@@ -5568,6 +5708,42 @@ function openOrderStatusReport(
                     }
                 );
 
+            });
+
+
+        document.getElementById("btnPrintLiveReceivingReport")
+            ?.addEventListener("click",()=>{
+                if(typeof buildLiveReceivingReport==="function" && typeof printLiveReceivingReport==="function"){
+                    printLiveReceivingReport(buildLiveReceivingReport());
+                }
+            });
+
+        document.getElementById("btnEmailLiveReceivingDifferences")
+            ?.addEventListener("click",()=>{
+                if(
+                    typeof buildLiveReceivingReport!=="function" ||
+                    typeof buildReceivingEmailDifferencesReport!=="function" ||
+                    typeof openFinalizedDiscrepancyEmailPreview!=="function"
+                ){
+                    showToast?.("Email report is unavailable","error");
+                    return;
+                }
+
+                const live=buildLiveReceivingReport();
+                const emailReport=buildReceivingEmailDifferencesReport(live);
+
+                if(!emailReport.rows.length){
+                    showToast?.("All items are Completed. There are no differences to email.","success");
+                    return;
+                }
+
+                openFinalizedDiscrepancyEmailPreview(
+                    emailReport,
+                    {
+                        fromArchive:false,
+                        liveReport:true
+                    }
+                );
             });
 
     }
@@ -5723,19 +5899,16 @@ function renderOrderStatusReport(
             );
 
         if(rowData.reportStatus === "over"){
-            tr.classList.add(
-                "rowOver"
-            );
+            tr.classList.add("rowOver");
         }
-        else if(rowData.reportStatus === "shortage"){
-            tr.classList.add(
-                "orderStatusShortageRow"
-            );
+        else if(["shortage","not_received"].includes(rowData.reportStatus)){
+            tr.classList.add("orderStatusShortageRow");
+        }
+        else if(rowData.reportStatus === "unordered"){
+            tr.classList.add("orderStatusUnorderedRow");
         }
         else{
-            tr.classList.add(
-                "rowCompleted"
-            );
+            tr.classList.add("rowCompleted");
         }
 
         let differenceHTML =
@@ -5744,23 +5917,21 @@ function renderOrderStatusReport(
         let statusHTML =
             '<span class="statusBadge statusCompleted">Complete</span>';
 
-        if(rowData.difference < 0){
-
-            differenceHTML =
-                `<strong class="differenceShortage">${rowData.difference}</strong>`;
-
-            statusHTML =
-                `<span class="statusBadge statusShortage">Shortage ${Math.abs(rowData.difference)}</span>`;
-
+        if(rowData.reportStatus==="not_received"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Not Received</span>`;
         }
-        else if(rowData.difference > 0){
-
-            differenceHTML =
-                `<strong class="differenceOver">+${rowData.difference}</strong>`;
-
-            statusHTML =
-                `<span class="statusBadge statusOver">Over +${rowData.difference}</span>`;
-
+        else if(rowData.reportStatus==="shortage"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Shortage ${Math.abs(rowData.difference)}</span>`;
+        }
+        else if(rowData.reportStatus==="over"){
+            differenceHTML=`<span class="differenceOver">+${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusOver">Over +${rowData.difference}</span>`;
+        }
+        else if(rowData.reportStatus==="unordered"){
+            differenceHTML=`<span class="differenceOver">+${rowData.received}</span>`;
+            statusHTML=`<span class="statusBadge statusUnordered">Unordered</span>`;
         }
 
         tr.innerHTML = `
@@ -5786,6 +5957,101 @@ function renderOrderStatusReport(
     });
 
 }
+
+
+
+function openOrderStatusReportFromSnapshot(report){
+    if(!report || !Array.isArray(report.rows)){
+        showToast?.("Saved report is unavailable","warning");
+        return false;
+    }
+
+    document.getElementById("archivedReceivingReportOverlay")?.remove();
+
+    const esc=v=>typeof escapeHTML==="function"
+        ? escapeHTML(String(v??""))
+        : String(v??"");
+
+    const orders=Array.isArray(report.orders)?report.orders:[];
+    const orderLabel=orders.map(o=>o.orderNumber).filter(Boolean).join(" + ") || report.orderId || "-";
+    const orderDate=orders.map(o=>o.orderDate).filter(Boolean)[0] || "-";
+
+    const overlay=document.createElement("div");
+    overlay.id="archivedReceivingReportOverlay";
+    overlay.className="orderStatusReportModal open";
+
+    overlay.innerHTML=`
+      <div class="orderStatusReportCard archivedReceivingReportCard">
+        <div class="orderStatusReportHeader">
+          <div>
+            <span>SAVED RECEIVING REPORT</span>
+            <h2>Receiving Report</h2>
+            <p>${esc(orderLabel)} · ${esc(orderDate)} · Finalized snapshot</p>
+          </div>
+          <button type="button" class="statItemsClose" data-close>✕</button>
+        </div>
+
+        <div class="archivedReportSummary">
+          <div><span>Total Items</span><strong>${report.counts?.total||report.rows.length}</strong></div>
+          <div><span>Completed</span><strong>${report.counts?.COMPLETED||0}</strong></div>
+          <div><span>Requires Review</span><strong>${report.counts?.requiresReview||0}</strong></div>
+          <div><span>Generated</span><strong>${esc(report.generatedAt ? new Date(report.generatedAt).toLocaleString() : "-")}</strong></div>
+        </div>
+
+        <div class="liveReceivingReportActions archiveLiveReportActions">
+          <button type="button" class="secondaryButton" id="btnPrintArchivedReceivingReport">Print / Save PDF</button>
+          <button type="button" class="primaryButton" id="btnEmailArchivedDifferences">Email Differences</button>
+        </div>
+
+        <div class="orderStatusReportTableWrap">
+          <table class="dataTable orderStatusReportTable">
+            <thead><tr>
+              <th>Item Number</th><th>Item Name</th><th>Ordered</th>
+              <th>Received</th><th>Difference</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${report.rows.map(row=>{
+                  const diff=Number(row["Difference"]||0);
+                  return `<tr>
+                    <td>${esc(row["Item Number"])}</td>
+                    <td>${esc(row["Item Name"])}</td>
+                    <td>${row["Ordered Qty"]}</td>
+                    <td>${row["Received Qty"]}</td>
+                    <td>${diff>0?"+":""}${diff}</td>
+                    <td><span class="statusBadge">${esc(row.Status)}</span></td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(button=>{
+        button.onclick=()=>overlay.remove();
+    });
+
+    document.getElementById("btnPrintArchivedReceivingReport")?.addEventListener("click",()=>{
+        printLiveReceivingReport?.(report);
+    });
+
+    document.getElementById("btnEmailArchivedDifferences")?.addEventListener("click",()=>{
+        const emailReport=buildReceivingEmailDifferencesReport?.(report);
+        if(!emailReport?.rows?.length){
+            showToast?.("All items are Completed. There are no differences to email.","success");
+            return;
+        }
+        openFinalizedDiscrepancyEmailPreview?.(
+            emailReport,
+            {fromArchive:true}
+        );
+    });
+
+    return true;
+}
+
+window.openOrderStatusReportFromSnapshot=openOrderStatusReportFromSnapshot;
 
 
 function refreshOpenOrderStatusReport(){

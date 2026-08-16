@@ -905,6 +905,223 @@ function getReceivingOrderMetadata(){
     return rows;
 }
 
+
+/* =====================================================
+   PHASE 2C.10.2.3 — LIVE RECEIVING REPORT
+   Independent from Finalize.
+===================================================== */
+
+function getLiveReceivingItemStatus(item){
+    const ordered=toNumber(item?.orderedQty,0);
+    const received=toNumber(item?.receivedQty,0);
+
+    if(item?.manual===true || ordered===0){
+        return received>0 ? "UNORDERED" : "COMPLETED";
+    }
+
+    if(received===ordered){
+        return "COMPLETED";
+    }
+
+    if(received===0 && ordered>0){
+        return "NOT RECEIVED";
+    }
+
+    if(received<ordered){
+        return "SHORTAGE";
+    }
+
+    if(received>ordered){
+        return "OVER RECEIVED";
+    }
+
+    return "COMPLETED";
+}
+
+function buildLiveReceivingReport(options={}){
+    const sourceItems=Array.isArray(options.items)
+        ? options.items
+        : (Array.isArray(AppState?.workspace?.orderData) ? AppState.workspace.orderData : []);
+
+    const orderMetadata=
+        typeof getReceivingOrderMetadata==="function"
+            ? getReceivingOrderMetadata()
+            : [];
+
+    const rows=sourceItems.map(item=>{
+        const ordered=toNumber(item?.orderedQty,0);
+        const received=toNumber(item?.receivedQty,0);
+        const difference=received-ordered;
+        const status=getLiveReceivingItemStatus(item);
+
+        return {
+            "Item Number":item?.itemCode||"",
+            "Item Name":item?.itemName||"",
+            "Ordered Qty":ordered,
+            "Received Qty":received,
+            "Difference":difference,
+            "Status":status,
+            "Category":item?.category||"",
+            "Manual":item?.manual===true
+        };
+    });
+
+    const statusRank={
+        "NOT RECEIVED":1,
+        "SHORTAGE":2,
+        "OVER RECEIVED":3,
+        "UNORDERED":4,
+        "COMPLETED":5
+    };
+
+    rows.sort((a,b)=>
+        (statusRank[a.Status]||9)-(statusRank[b.Status]||9) ||
+        String(a["Item Name"]).localeCompare(String(b["Item Name"]))
+    );
+
+    const counts=rows.reduce((acc,row)=>{
+        acc.total++;
+        acc[row.Status]=(acc[row.Status]||0)+1;
+        if(row.Status!=="COMPLETED") acc.requiresReview++;
+        return acc;
+    },{
+        total:0,
+        requiresReview:0,
+        "COMPLETED":0,
+        "SHORTAGE":0,
+        "NOT RECEIVED":0,
+        "OVER RECEIVED":0,
+        "UNORDERED":0
+    });
+
+    return {
+        reportType:"LIVE_RECEIVING",
+        generatedAt:new Date().toISOString(),
+        snapshotStatus:AppState?.workspace?.active ? "RECEIVING IN PROGRESS" : "RECEIVING SNAPSHOT",
+        orderId:orderMetadata.map(x=>x.orderNumber).filter(Boolean).join(" + ")
+            || AppState?.workspace?.orderId
+            || AppState?.workspace?.orderName
+            || "Current Order",
+        orders:orderMetadata,
+        counts,
+        rows
+    };
+}
+
+function buildReceivingEmailDifferencesReport(liveReport=null){
+    const live=liveReport || buildLiveReceivingReport();
+    const rows=(live?.rows||[])
+        .filter(row=>String(row?.Status||"").toUpperCase()!=="COMPLETED")
+        .map(row=>({
+            "Item Number":row["Item Number"],
+            "Item Name":row["Item Name"],
+            "Ordered Qty":row["Ordered Qty"],
+            "Received Qty":row["Received Qty"],
+            "Difference":row["Difference"],
+            "Issue Type":row["Status"],
+            "Category":row["Category"]||""
+        }));
+
+    return {
+        orderId:live?.orderId||"",
+        orders:Array.isArray(live?.orders)?live.orders:[],
+        totalDiscrepancies:rows.length,
+        shortageItems:rows.filter(r=>["SHORTAGE","NOT RECEIVED"].includes(r["Issue Type"])).length,
+        partialShortageItems:rows.filter(r=>r["Issue Type"]==="SHORTAGE").length,
+        overItems:rows.filter(r=>r["Issue Type"]==="OVER RECEIVED").length,
+        manualExtraItems:rows.filter(r=>r["Issue Type"]==="UNORDERED").length,
+        rows
+    };
+}
+
+function printLiveReceivingReport(report=null){
+    const live=report || buildLiveReceivingReport();
+    const esc=value=>String(value??"")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;");
+
+    const orders=(live.orders||[]);
+    const orderNumbers=orders.map(o=>o.orderNumber).filter(Boolean).join(" + ") || live.orderId || "-";
+    const orderDate=orders.map(o=>o.orderDate).filter(Boolean)[0] || "-";
+
+    const printWindow=window.open("","_blank","width=1200,height=850");
+    if(!printWindow){
+        showToast?.("Allow pop-ups to print the report","warning");
+        return false;
+    }
+
+    printWindow.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Receiving Report - ${esc(orderNumbers)}</title>
+<style>
+@page{size:A4 landscape;margin:12mm}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#342d28;font-size:11px}
+.header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #9a6246;padding-bottom:12px;margin-bottom:14px}
+.brand{font-size:12px;letter-spacing:.12em;color:#9a6246}
+h1{font-size:22px;font-weight:600;margin:4px 0}
+.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.meta div{border:1px solid #ddd1c7;border-radius:8px;padding:8px}
+.meta span{display:block;font-size:8px;color:#85766b;margin-bottom:3px}
+.meta strong{font-size:12px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{background:#9a6246;color:#fff;text-align:left;font-size:9px;font-weight:600;padding:8px;border:1px solid #9a6246}
+td{padding:7px 8px;border:1px solid #e6ddd6;font-size:9px}
+td.num{text-align:center}
+.status{font-weight:600}
+.completed{color:#3f7455}.shortage,.notreceived{color:#a54343}.over{color:#96651f}.unordered{color:#76528c}
+.footer{margin-top:10px;font-size:8px;color:#7e7269}
+</style>
+</head>
+<body>
+<div class="header">
+ <div><div class="brand">PHARMFLOW</div><h1>Receiving Report</h1><div>${esc(live.snapshotStatus||"REPORT SNAPSHOT")}</div></div>
+ <div>Generated: ${esc(new Date(live.generatedAt||Date.now()).toLocaleString())}</div>
+</div>
+<div class="meta">
+ <div><span>ORDER NUMBER</span><strong>${esc(orderNumbers)}</strong></div>
+ <div><span>ORDER DATE</span><strong>${esc(orderDate)}</strong></div>
+ <div><span>TOTAL ITEMS</span><strong>${live.counts?.total||0}</strong></div>
+ <div><span>REQUIRES REVIEW</span><strong>${live.counts?.requiresReview||0}</strong></div>
+</div>
+<table>
+<thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Difference</th><th>Status</th></tr></thead>
+<tbody>
+${(live.rows||[]).map(row=>{
+    const status=String(row.Status||"");
+    const cls=status==="COMPLETED"?"completed":
+              status==="SHORTAGE"?"shortage":
+              status==="NOT RECEIVED"?"notreceived":
+              status==="OVER RECEIVED"?"over":"unordered";
+    const diff=Number(row["Difference"]||0);
+    return `<tr>
+      <td>${esc(row["Item Number"])}</td>
+      <td>${esc(row["Item Name"])}</td>
+      <td class="num">${row["Ordered Qty"]}</td>
+      <td class="num">${row["Received Qty"]}</td>
+      <td class="num">${diff>0?"+":""}${diff}</td>
+      <td class="status ${cls}">${esc(status)}</td>
+    </tr>`;
+}).join("")}
+</tbody>
+</table>
+<div class="footer">This report is a snapshot of PharmFlow receiving data at the generated time.</div>
+<script>window.onload=()=>{setTimeout(()=>window.print(),250)};<\/script>
+</body></html>`);
+
+    printWindow.document.close();
+    return true;
+}
+
+window.buildLiveReceivingReport=buildLiveReceivingReport;
+window.buildReceivingEmailDifferencesReport=buildReceivingEmailDifferencesReport;
+window.printLiveReceivingReport=printLiveReceivingReport;
+
+
 function buildReceivingDiscrepancyReport(options={}){
     const visibleOnly=options.visibleOnly===true;
     const sourceItems=visibleOnly && typeof getVisibleReceivingItemsForExport==="function"
@@ -1148,6 +1365,15 @@ function refreshItemTransferOrderOptions(){
     }).join("");
     if(current && rows.some(row=>normalizeOrderNumber(row.order_number)===normalizeOrderNumber(current))){
         select.value=current;
+    }else{
+        select.value="";
+        if(
+            ReportsEngine.itemTransfer?.orderNumber &&
+            !rows.some(row=>normalizeOrderNumber(row.order_number)===normalizeOrderNumber(ReportsEngine.itemTransfer.orderNumber))
+        ){
+            ReportsEngine.itemTransfer={orderNumber:"",orderMeta:null,rows:[]};
+            if(typeof renderItemTransferReport==="function")renderItemTransferReport();
+        }
     }
     const availability=document.getElementById("itemTransferAvailability");
     if(availability && !ReportsEngine.itemTransfer.orderNumber){

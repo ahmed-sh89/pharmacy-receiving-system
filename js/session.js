@@ -801,7 +801,20 @@ async function closeAndArchiveCurrentOrder(){
                 AppState.session.id,
 
             deviceId:
-                AppState.session.deviceId
+                AppState.session.deviceId,
+
+            /* Permanent report snapshot created at Finalize.
+               Stored inside the cloud archive payload so it survives page
+               close, sign-out and use from another PC. */
+            discrepancyReport:
+                window.__pfFinalizedDiscrepancyReport
+                    ? deepClone(window.__pfFinalizedDiscrepancyReport)
+                    : null,
+
+            fullReceivingReport:
+                window.__pfFinalizedFullReceivingReport
+                    ? deepClone(window.__pfFinalizedFullReceivingReport)
+                    : null
 
         };
 

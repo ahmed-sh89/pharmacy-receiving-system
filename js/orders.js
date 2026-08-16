@@ -435,9 +435,31 @@ async function finalizeCurrentReceiving(){
     try{
         const summary=await validateWorkspaceCanFinalize();
 
+        const finalizedFullReceivingReport =
+            typeof buildLiveReceivingReport==="function"
+                ? buildLiveReceivingReport()
+                : null;
+
         const finalizedDiscrepancyReport =
-            typeof buildReceivingDiscrepancyReport==="function"
-                ? buildReceivingDiscrepancyReport({visibleOnly:false})
+            typeof buildReceivingEmailDifferencesReport==="function"
+                ? buildReceivingEmailDifferencesReport(finalizedFullReceivingReport)
+                : (
+                    typeof buildReceivingDiscrepancyReport==="function"
+                        ? buildReceivingDiscrepancyReport({visibleOnly:false})
+                        : null
+                );
+
+        /* Both snapshots are persisted into Archive.
+           Full report = every item.
+           Email report = every status except COMPLETED. */
+        window.__pfFinalizedFullReceivingReport =
+            finalizedFullReceivingReport
+                ? JSON.parse(JSON.stringify(finalizedFullReceivingReport))
+                : null;
+
+        window.__pfFinalizedDiscrepancyReport =
+            finalizedDiscrepancyReport
+                ? JSON.parse(JSON.stringify(finalizedDiscrepancyReport))
                 : null;
 
         /* A live PC session must be authoritatively ended before the workspace
@@ -490,6 +512,13 @@ async function finalizeCurrentReceiving(){
         hideLoading();
         FinalizeReceivingEngine.busy=false;
         refreshFinalizeReceivingButton();
+
+        setTimeout(()=>{
+            try{
+                window.__pfFinalizedDiscrepancyReport=null;
+                window.__pfFinalizedFullReceivingReport=null;
+            }catch(_){}
+        },1500);
     }
 }
 
@@ -500,33 +529,98 @@ function buildFinalizedDiscrepancyEmailText(report){
     const orderDate=orders.map(x=>x.orderDate).filter(Boolean)[0] || "";
 
     const lines=[
-        "الاخوة الكرام بالمستودع",
-        "تحية طيبة وبعد",
+        "الاخوة الكرام بالمستودع،",
+        "تحية طيبة وبعد،",
         "",
-        "يوجد فرق توريد في الطلبية ادناه",
+        "يوجد فرق توريد في الطلبية الموضحة أدناه، نأمل التكرم بالمراجعة والتشييك.",
         "",
         "Order Number: "+orderLabel,
         "Order Date: "+orderDate,
         "",
-        "Item Code | Item Name | Ordered Qty | Received Qty | Difference | Status"
+        "Item Code\tItem Name\tOrdered\tReceived\tDifference\tStatus",
+        "--------------------------------------------------------------------------"
     ];
 
     (report?.rows||[]).forEach(row=>{
+        const diff=Number(row["Difference"]||0);
         lines.push([
             row["Item Number"]||"",
             row["Item Name"]||"",
             row["Ordered Qty"]??0,
             row["Received Qty"]??0,
-            row["Difference"]??0,
+            (diff>0?"+":"")+diff,
             row["Issue Type"]||""
-        ].join(" | "));
+        ].join("\t"));
     });
 
-    lines.push("","للإفادة والتشييك","خالص الشكر ..");
-    return lines.join("\n");
+    lines.push(
+        "",
+        "للإفادة والتشييك.",
+        "",
+        "خالص الشكر والتقدير."
+    );
+
+    return lines.join("\r\n");
 }
 
-function openFinalizedDiscrepancyEmailPreview(report){
+function buildGmailComposeUrl({to="",subject="",body=""}={}){
+    const base="https://mail.google.com/mail/u/0/";
+    const params=new URLSearchParams({
+        fs:"1",
+        tf:"cm",
+        to:String(to||""),
+        su:String(subject||""),
+        body:String(body||"")
+    });
+    return base+"?"+params.toString();
+}
+
+function openGmailComposeSafely({to="",subject="",body=""}={}){
+    const fullBody=String(body||"");
+    let gmailBody=fullBody;
+
+    /* Extremely long compose URLs can produce a blank browser tab.
+       Keep Gmail transport safe while the complete professional report
+       always remains stored in PharmFlow Archive. */
+    if(encodeURIComponent(gmailBody).length>11000){
+        const lines=gmailBody.split(/\r?\n/);
+        gmailBody=lines.slice(0,45).join("\r\n")+
+            "\r\n\r\n[The full discrepancy report is saved in PharmFlow Archive.]";
+    }
+
+    const url=buildGmailComposeUrl({to,subject,body:gmailBody});
+
+    try{
+        const popup=window.open("about:blank","_blank");
+        if(!popup){
+            throw new Error("Popup blocked");
+        }
+
+        popup.opener=null;
+        popup.location.replace(url);
+
+        setTimeout(()=>{
+            try{
+                if(popup && popup.location && popup.location.href==="about:blank"){
+                    popup.location.href=url;
+                }
+            }catch(_){}
+        },180);
+
+        return true;
+    }catch(error){
+        try{
+            window.location.href="mailto:"+encodeURIComponent(to)+
+                "?subject="+encodeURIComponent(subject)+
+                "&body="+encodeURIComponent(gmailBody);
+            return true;
+        }catch(_){
+            return false;
+        }
+    }
+}
+
+function openFinalizedDiscrepancyEmailPreview(report,options={}){
     document.getElementById("finalizedEmailPreviewOverlay")?.remove();
 
     const esc=v=>typeof escapeHTML==="function"
@@ -536,65 +630,107 @@ function openFinalizedDiscrepancyEmailPreview(report){
     const orders=Array.isArray(report?.orders)?report.orders:[];
     const orderLabel=orders.map(x=>x.orderNumber).filter(Boolean).join(" + ") || report?.orderId || "";
     const orderDate=orders.map(x=>x.orderDate).filter(Boolean)[0] || "";
-    const subject="Supply Discrepancy - Order "+orderLabel+(orderDate?" - "+orderDate:"");
+    const subject="Supply Discrepancy | Order "+orderLabel+(orderDate?" | "+orderDate:"");
+    const rows=Array.isArray(report?.rows)?report.rows:[];
 
     const overlay=document.createElement("div");
     overlay.id="finalizedEmailPreviewOverlay";
     overlay.className="finalizedEmailPreviewOverlay";
 
     overlay.innerHTML=`
-      <button class="finalizedEmailScrim" type="button" data-close></button>
-      <aside class="finalizedEmailPanel">
-        <header>
+      <button class="finalizedEmailScrim" type="button" data-close aria-label="Close"></button>
+
+      <aside class="finalizedEmailPanel" role="dialog" aria-modal="true" aria-label="Supply discrepancy report">
+        <header class="finalizedEmailHeader">
           <div>
-            <span>ORDER FINALIZED ✓</span>
-            <h2>Supply Discrepancy Email</h2>
-            <p>Review the message before opening Gmail.</p>
+            <span class="finalizedEmailKicker">${options.fromArchive?"SAVED REPORT":(options.liveReport?"LIVE RECEIVING REPORT":"ORDER FINALIZED")}</span>
+            <h2>Supply Discrepancy Report</h2>
+            <p>${rows.length} discrepancy item${rows.length===1?"":"s"} · Review before opening Gmail</p>
           </div>
-          <button type="button" class="finalizedEmailClose" data-close>✕</button>
+
+          <button type="button" class="finalizedEmailClose" data-close aria-label="Close">✕</button>
         </header>
 
-        <div class="finalizedEmailFields">
-          <label>To<input id="finalizedEmailTo" type="email" placeholder="warehouse@example.com"></label>
-          <label>Subject<input id="finalizedEmailSubject" type="text" value="${esc(subject)}"></label>
-        </div>
+        <section class="finalizedEmailSummary">
+          <div><span>ORDER NUMBER</span><strong>${esc(orderLabel||"-")}</strong></div>
+          <div><span>ORDER DATE</span><strong>${esc(orderDate||"-")}</strong></div>
+          <div><span>DISCREPANCIES</span><strong>${rows.length}</strong></div>
+          <div><span>STATUS</span><strong>${options.fromArchive?"Finalized":(options.liveReport?"In Progress":"Finalized")}</strong></div>
+        </section>
 
-        <article class="finalizedEmailLetter">
-          <p><strong>الاخوة الكرام بالمستودع</strong><br>تحية طيبة وبعد</p>
-          <p>يوجد فرق توريد في الطلبية ادناه</p>
+        <section class="finalizedEmailCompose">
+          <label>
+            <span>To</span>
+            <input id="finalizedEmailTo" type="email" placeholder="warehouse@example.com" autocomplete="email">
+          </label>
 
-          <div class="finalizedEmailTableWrap">
+          <label>
+            <span>Subject</span>
+            <input id="finalizedEmailSubject" type="text" value="${esc(subject)}">
+          </label>
+        </section>
+
+        <article class="finalizedEmailLetter" dir="rtl">
+          <div class="finalizedEmailMessage">
+            <p>الاخوة الكرام بالمستودع،</p>
+            <p>تحية طيبة وبعد،</p>
+            <p>يوجد فرق توريد في الطلبية الموضحة أدناه، نأمل التكرم بالمراجعة والتشييك.</p>
+          </div>
+
+          <div class="finalizedEmailTableWrap" dir="ltr">
             <table>
               <thead>
                 <tr>
-                  <th>Order Number</th><th>Order Date</th><th>Item Code</th>
-                  <th>Item Name</th><th>Ordered Quantity</th>
-                  <th>Received Quantity</th><th>Difference</th><th>Status</th>
+                  <th>Order Number</th>
+                  <th>Order Date</th>
+                  <th>Item Code</th>
+                  <th>Item Name</th>
+                  <th>Ordered</th>
+                  <th>Received</th>
+                  <th>Difference</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                ${(report?.rows||[]).map(row=>`
-                  <tr>
-                    <td>${esc(orderLabel)}</td>
-                    <td>${esc(orderDate)}</td>
-                    <td>${esc(row["Item Number"]||"")}</td>
-                    <td>${esc(row["Item Name"]||"")}</td>
-                    <td>${esc(row["Ordered Qty"]??0)}</td>
-                    <td>${esc(row["Received Qty"]??0)}</td>
-                    <td class="${Number(row["Difference"]||0)<0?"negative":"positive"}">${Number(row["Difference"]||0)>0?"+":""}${esc(row["Difference"]??0)}</td>
-                    <td>${esc(row["Issue Type"]||"")}</td>
-                  </tr>`).join("")}
+                ${rows.map(row=>{
+                    const diff=Number(row["Difference"]||0);
+                    const issue=String(row["Issue Type"]||"");
+                    const statusClass=diff<0?"shortage":(diff>0?"over":"neutral");
+                    return `
+                      <tr>
+                        <td>${esc(orderLabel)}</td>
+                        <td>${esc(orderDate)}</td>
+                        <td class="code">${esc(row["Item Number"]||"")}</td>
+                        <td class="itemName">${esc(row["Item Name"]||"")}</td>
+                        <td class="number">${esc(row["Ordered Qty"]??0)}</td>
+                        <td class="number">${esc(row["Received Qty"]??0)}</td>
+                        <td class="number ${statusClass}">${diff>0?"+":""}${esc(diff)}</td>
+                        <td><span class="emailIssue ${statusClass}">${esc(issue)}</span></td>
+                      </tr>`;
+                }).join("")}
               </tbody>
             </table>
           </div>
 
-          <p>للإفادة والتشييك</p>
-          <p>خالص الشكر ..</p>
+          <div class="finalizedEmailClosing">
+            <p>للإفادة والتشييك.</p>
+            <p>خالص الشكر والتقدير.</p>
+          </div>
         </article>
 
-        <footer>
-          <button type="button" class="secondaryButton" data-close>Close</button>
-          <button type="button" class="primaryButton" id="btnOpenFinalizedGmail">Open in Gmail</button>
+        <footer class="finalizedEmailFooter">
+          <div class="finalizedEmailSavedNote">
+            <span>✓</span>
+            <div>
+              <strong>${options.fromArchive?"Saved in PharmFlow Archive":(options.liveReport?"Live report — Finalize not required":"Saved in PharmFlow Archive")}</strong>
+              <small>${options.liveReport?"Email includes every current status except Completed.":"You can close this window and reopen the report at any time."}</small>
+            </div>
+          </div>
+
+          <div class="finalizedEmailActions">
+            <button type="button" class="secondaryButton" id="btnCopyFinalizedEmail">Copy Email</button>
+            <button type="button" class="primaryButton" id="btnOpenFinalizedGmail">Open in Gmail</button>
+          </div>
         </footer>
       </aside>`;
 
@@ -604,18 +740,29 @@ function openFinalizedDiscrepancyEmailPreview(report){
         button.onclick=()=>overlay.remove();
     });
 
+    document.getElementById("btnCopyFinalizedEmail")?.addEventListener("click",async()=>{
+        try{
+            await navigator.clipboard.writeText(buildFinalizedDiscrepancyEmailText(report));
+            showToast?.("Email text copied","success");
+        }catch(_){
+            showToast?.("Unable to copy email text","warning");
+        }
+    });
+
     document.getElementById("btnOpenFinalizedGmail")?.addEventListener("click",()=>{
         const to=String(document.getElementById("finalizedEmailTo")?.value||"").trim();
         const subjectValue=String(document.getElementById("finalizedEmailSubject")?.value||subject).trim();
         const body=buildFinalizedDiscrepancyEmailText(report);
 
-        const url=
-            "https://mail.google.com/mail/?view=cm&fs=1"+
-            "&to="+encodeURIComponent(to)+
-            "&su="+encodeURIComponent(subjectValue)+
-            "&body="+encodeURIComponent(body);
+        const opened=openGmailComposeSafely({
+            to,
+            subject:subjectValue,
+            body
+        });
 
-        window.open(url,"_blank","noopener");
+        if(!opened){
+            showToast?.("Gmail could not be opened. Use Copy Email instead.","warning");
+        }
     });
 }
 

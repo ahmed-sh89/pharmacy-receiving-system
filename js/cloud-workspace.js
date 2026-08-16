@@ -17,7 +17,10 @@ const PharmFlowCloudWorkspace = {
     pendingKey:"PHARMFLOW_CLOUD_TX_QUEUE_V1",
     deviceId:null,
     hydratedPharmacyId:null,
-    hydrationPromise:null
+    hydrationPromise:null,
+    generation:null,
+    generationCheckBusy:false,
+    suppressNextClearRpc:false
 };
 
 function cloudWorkspacePharmacyId(){
@@ -87,6 +90,94 @@ async function flushCloudWorkspaceQueue(){
     setCloudWorkspaceStatus(remain.length ? (navigator.onLine?"syncing":"offline") : "synced");
 }
 
+
+async function getCloudWorkspaceGeneration(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function") return null;
+
+    const value=await authRpc("get_pharmflow_workspace_generation",{
+        p_pharmacy_id:pharmacyId
+    });
+
+    const generation=Number(
+        Array.isArray(value) ? value[0] : value
+    );
+
+    return Number.isFinite(generation) ? generation : 0;
+}
+
+function cancelPendingCloudWorkspaceSave(){
+    if(PharmFlowCloudWorkspace.saveTimer){
+        clearTimeout(PharmFlowCloudWorkspace.saveTimer);
+        PharmFlowCloudWorkspace.saveTimer=null;
+    }
+}
+
+function clearLocalWorkspaceFromRemoteReset(newGeneration){
+    cancelPendingCloudWorkspaceSave();
+    writeCloudQueue([]);
+
+    PharmFlowCloudWorkspace.applyingRemote=true;
+    PharmFlowCloudWorkspace.suppressNextClearRpc=true;
+
+    if(typeof resetOperationalStateToDefault==="function"){
+        resetOperationalStateToDefault();
+    }else{
+        clearCurrentWorkspace();
+        AppState.session=createEmptySession();
+        deleteWorkspaceSnapshot();
+    }
+
+    PharmFlowCloudWorkspace.generation=Number(newGeneration||0);
+    PharmFlowCloudWorkspace.lastCloudUpdate=null;
+    PharmFlowCloudWorkspace.applyingRemote=false;
+
+    if(typeof refreshAllUI==="function") refreshAllUI();
+    if(typeof navigateTo==="function") navigateTo("dashboard");
+    setCloudWorkspaceStatus("synced","Current workspace reset from another PC");
+}
+
+async function reconcileWorkspaceGeneration(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function" ||
+        PharmFlowCloudWorkspace.generationCheckBusy
+    ){
+        return false;
+    }
+
+    PharmFlowCloudWorkspace.generationCheckBusy=true;
+
+    try{
+        const serverGeneration=await getCloudWorkspaceGeneration();
+
+        if(serverGeneration===null) return false;
+
+        if(PharmFlowCloudWorkspace.generation===null){
+            PharmFlowCloudWorkspace.generation=serverGeneration;
+            return true;
+        }
+
+        if(Number(serverGeneration)!==Number(PharmFlowCloudWorkspace.generation)){
+            clearLocalWorkspaceFromRemoteReset(serverGeneration);
+            return true;
+        }
+
+        return false;
+    }catch(error){
+        Logger.warn("Workspace generation check failed",error);
+        return false;
+    }finally{
+        PharmFlowCloudWorkspace.generationCheckBusy=false;
+    }
+}
+
+window.reconcileWorkspaceGeneration=reconcileWorkspaceGeneration;
+
+
 function scheduleCloudWorkspaceSnapshot(){
     const pharmacyId=cloudWorkspacePharmacyId();
     if(PharmFlowCloudWorkspace.applyingRemote || !pharmacyId) return;
@@ -103,13 +194,29 @@ async function saveCloudWorkspaceSnapshot(){
     if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length) return;
     try{
         setCloudWorkspaceStatus("syncing");
-        await authRpc("save_pharmflow_cloud_workspace",{
+        if(PharmFlowCloudWorkspace.generation===null){
+            PharmFlowCloudWorkspace.generation=await getCloudWorkspaceGeneration();
+        }
+
+        await authRpc("save_pharmflow_cloud_workspace_guarded",{
             p_pharmacy_id:pharmacyId,
             p_workspace:serializeCurrentWorkspace(),
-            p_device_id:cloudWorkspaceDeviceId()
+            p_device_id:cloudWorkspaceDeviceId(),
+            p_expected_generation:Number(PharmFlowCloudWorkspace.generation||0)
         });
+
         setCloudWorkspaceStatus("synced");
-    }catch(error){setCloudWorkspaceStatus("offline",error.message||"");}
+    }catch(error){
+        const message=String(error?.message||"");
+
+        if(message.includes("WORKSPACE_RESET_CONFLICT")){
+            cancelPendingCloudWorkspaceSave();
+            await reconcileWorkspaceGeneration();
+            return;
+        }
+
+        setCloudWorkspaceStatus("offline",message);
+    }
 }
 
 function applyCloudTransaction(tx){
@@ -160,6 +267,12 @@ async function restoreCloudWorkspaceOnLogin(){
     PharmFlowCloudWorkspace.hydrationPromise=(async()=>{
         try{
             setCloudWorkspaceStatus("syncing");
+
+            const serverGeneration=await getCloudWorkspaceGeneration();
+            if(serverGeneration!==null){
+                PharmFlowCloudWorkspace.generation=serverGeneration;
+            }
+
             const result=await authRpc("get_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
             const row=Array.isArray(result)?result[0]:result;
             const cloudState=row?.workspace;
@@ -217,6 +330,16 @@ async function restoreCloudWorkspaceOnLogin(){
 
 async function reconcileCloudWorkspaceAuthority(){
     const pharmacyId=cloudWorkspacePharmacyId();
+
+    /* Reset generation is checked BEFORE any pending-save guard.
+       This guarantees another PC cannot keep a stale order alive. */
+    const resetDetected=await reconcileWorkspaceGeneration();
+    if(resetDetected){
+        if(typeof restoreHistoricalArchive==="function"){
+            restoreHistoricalArchive().catch?.(()=>{});
+        }
+        return true;
+    }
 
     if(
         !navigator.onLine ||
@@ -306,10 +429,22 @@ function initializePharmFlowCloudWorkspace(){
     AppEvents.on("workspace:saved",scheduleCloudWorkspaceSnapshot);
     AppEvents.on("workspace:cleared",async()=>{
         const pharmacyId=cloudWorkspacePharmacyId();
+
+        if(PharmFlowCloudWorkspace.suppressNextClearRpc){
+            PharmFlowCloudWorkspace.suppressNextClearRpc=false;
+            writeCloudQueue([]);
+            setCloudWorkspaceStatus("synced");
+            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+            return;
+        }
+
         if(typeof authRpc!=="function" || !pharmacyId) return;
+
         try{
+            /* Legacy safety path only. Explicit user Reset uses the atomic RPC. */
             await authRpc("clear_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
-            writeCloudQueue([]); setCloudWorkspaceStatus("synced");
+            writeCloudQueue([]);
+            setCloudWorkspaceStatus("synced");
             PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
         }catch(_){}
     });
@@ -323,6 +458,7 @@ function initializePharmFlowCloudWorkspace(){
     PharmFlowCloudWorkspace.pollTimer=setInterval(()=>{
         if(document.visibilityState==="visible"){
             attemptCloudWorkspaceHydration();
+            reconcileWorkspaceGeneration();
             reconcileCloudWorkspaceAuthority();
             flushCloudWorkspaceQueue();
             pullCloudWorkspaceTransactions();
@@ -330,12 +466,12 @@ function initializePharmFlowCloudWorkspace(){
     },1500);
 
     window.addEventListener("focus",()=>{
-        reconcileCloudWorkspaceAuthority();
+        reconcileWorkspaceGeneration().then(()=>reconcileCloudWorkspaceAuthority());
     });
 
     document.addEventListener("visibilitychange",()=>{
         if(document.visibilityState==="visible"){
-            reconcileCloudWorkspaceAuthority();
+            reconcileWorkspaceGeneration().then(()=>reconcileCloudWorkspaceAuthority());
         }
     });
     attemptCloudWorkspaceHydration();

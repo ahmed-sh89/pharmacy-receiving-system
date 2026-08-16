@@ -691,78 +691,118 @@ function requestResetWorkspace(){
 
 async function resetCurrentWorkspace(){
 
-    /* Phase 2C.5.4.5
-       Reset/close of an UNFINALIZED workspace is an intentional discard.
-       Supabase must be cleared first so the order number does not remain as
-       an orphan active registry record and falsely block a future upload.
-       Finalized/received orders are protected by the RPC and remain history. */
-
-    const activeOrderNumbers = (()=>{
-        const seen = new Set();
-        const values = [];
-        const files = Array.isArray(AppState?.workspace?.orderFiles)
+    const activeOrderNumbers=(()=>{
+        const seen=new Set();
+        const values=[];
+        const files=Array.isArray(AppState?.workspace?.orderFiles)
             ? AppState.workspace.orderFiles
             : [];
+
         files.forEach(file=>{
-            const raw = file?.documentId || file?.orderNumber || "";
-            const value = typeof normalizeOrderNumber === "function"
+            const raw=file?.documentId || file?.orderNumber || "";
+            const value=typeof normalizeOrderNumber==="function"
                 ? normalizeOrderNumber(raw)
                 : String(raw||"").trim().toUpperCase().replace(/\s+/g,"");
+
             if(value && !seen.has(value)){
                 seen.add(value);
                 values.push(value);
             }
         });
+
         return values;
     })();
 
-    try{
-        showLoading("Closing current workspace...");
+    const withTimeout=(promise,ms,message)=>Promise.race([
+        Promise.resolve(promise),
+        new Promise((_,reject)=>setTimeout(
+            ()=>reject(new Error(message)),
+            ms
+        ))
+    ]);
 
-        /* If this PC owns a live Handheld session, end it authoritatively
-           before discarding the unfinished order. */
+    try{
+        showLoading("Resetting current workspace...");
+
         if(
-            AppState?.session?.cloud === true &&
-            AppState?.session?.role === "PC" &&
-            typeof leaveCloudSession === "function"
+            typeof authRpc!=="function" ||
+            typeof AuthState==="undefined" ||
+            !AuthState.context?.pharmacy_id
         ){
-            const ended = await leaveCloudSession();
-            if(ended === false){
-                throw new Error("Unable to end the live session. Current workspace was not cleared.");
+            throw new Error(
+                "Pharmacy cloud context is unavailable. Sign in again before resetting."
+            );
+        }
+
+        const pharmacyId=AuthState.context.pharmacy_id;
+
+        /* A live PC/Handheld link should be ended, but it must never hold the
+           entire Reset screen for a minute. */
+        if(
+            AppState?.session?.cloud===true &&
+            AppState?.session?.role==="PC" &&
+            typeof leaveCloudSession==="function"
+        ){
+            try{
+                await withTimeout(
+                    leaveCloudSession(),
+                    6500,
+                    "Live session did not close in time"
+                );
+            }catch(error){
+                Logger.warn("Reset continuing after session-close timeout",error);
             }
         }
 
-        if(
-            typeof authRpc !== "function" ||
-            typeof AuthState === "undefined" ||
-            !AuthState.context?.pharmacy_id
-        ){
-            throw new Error("Pharmacy cloud context is unavailable. Sign in again before closing the current order.");
+        if(typeof cancelPendingCloudWorkspaceSave==="function"){
+            cancelPendingCloudWorkspaceSave();
         }
 
-        /* Phase 2C.10.2: reset means discard the pharmacy CURRENT workspace,
-           including legacy/ghost UPLOADED or RECEIVING registry rows that may
-           no longer exist in this browser. Finalized history is never touched. */
-        await authRpc("discard_all_pharmflow_active_orders",{
-            p_pharmacy_id:AuthState.context.pharmacy_id,
-            p_confirmation:"RESET CURRENT WORKSPACE"
-        });
-
-        /* Clear the shared workspace synchronously BEFORE local state is reset.
-           This removes the race where another PC can keep/re-hydrate stale data. */
-        await authRpc("clear_pharmflow_cloud_workspace",{
-            p_pharmacy_id:AuthState.context.pharmacy_id
-        });
         if(typeof PharmFlowCloudWorkspace!=="undefined"){
-            PharmFlowCloudWorkspace.hydratedPharmacyId=AuthState.context.pharmacy_id;
-            PharmFlowCloudWorkspace.lastCloudUpdate=null;
+            PharmFlowCloudWorkspace.suppressNextClearRpc=true;
         }
 
-        if(typeof resetOperationalStateToDefault === "function"){
+        /*
+           ONE server transaction:
+           - increments workspace generation
+           - discards unfinished order/source registry
+           - clears shared cloud workspace
+
+           A stale PC with the old generation is then physically unable
+           to save its old order back to Supabase.
+        */
+        const generationResult=await withTimeout(
+            authRpc("atomic_reset_pharmflow_current_workspace",{
+                p_pharmacy_id:pharmacyId,
+                p_confirmation:"RESET CURRENT WORKSPACE"
+            }),
+            12000,
+            "Cloud reset timed out. Nothing was cleared locally — please try again."
+        );
+
+        const newGeneration=Number(
+            Array.isArray(generationResult)
+                ? generationResult[0]
+                : generationResult
+        );
+
+        if(typeof PharmFlowCloudWorkspace!=="undefined"){
+            PharmFlowCloudWorkspace.generation=
+                Number.isFinite(newGeneration) ? newGeneration : 0;
+
+            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+            PharmFlowCloudWorkspace.lastCloudUpdate=null;
+
+            if(typeof writeCloudQueue==="function"){
+                writeCloudQueue([]);
+            }
+        }
+
+        if(typeof resetOperationalStateToDefault==="function"){
             resetOperationalStateToDefault();
         }else{
             clearCurrentWorkspace();
-            AppState.session = createEmptySession();
+            AppState.session=createEmptySession();
             ensureDeviceId();
             deleteWorkspaceSnapshot();
         }
@@ -772,42 +812,56 @@ async function resetCurrentWorkspace(){
             ReceivingEngine.lastTransaction=null;
         }
 
-        if(typeof refreshOrderLifecycleRegistry === "function"){
-            await refreshOrderLifecycleRegistry();
-        }
-        if(typeof reconcileCloudWorkspaceAuthority === "function"){
-            await reconcileCloudWorkspaceAuthority();
-        }
-        if(typeof syncGlobalMasterGTINFromCloud === "function"){
-            try{ await syncGlobalMasterGTINFromCloud(); }catch(_){ }
-        }
-
         refreshEntireUI();
         navigateTo("dashboard");
+        hideLoading();
+
         showToast(
             activeOrderNumbers.length
-                ? "Unfinalized order discarded — it can be uploaded again"
-                : "Current workspace reset",
+                ? "Current workspace reset on all devices"
+                : "Current workspace is clean",
             "success"
         );
+
+        /* Everything below is background maintenance only.
+           Reset success does not wait for it. */
+        Promise.resolve().then(async()=>{
+            try{
+                if(typeof refreshOrderLifecycleRegistry==="function"){
+                    await refreshOrderLifecycleRegistry();
+                }
+            }catch(_){}
+
+            try{
+                if(typeof restoreHistoricalArchive==="function"){
+                    await restoreHistoricalArchive();
+                }
+            }catch(_){}
+
+            try{
+                if(typeof syncGlobalMasterGTINFromCloud==="function"){
+                    await syncGlobalMasterGTINFromCloud();
+                }
+            }catch(_){}
+        });
+
         focusScannerInput();
         return true;
 
-    }
-    catch(error){
+    }catch(error){
         Logger.error("Workspace reset failed",error);
+
         showToast(
             error?.message || "Unable to reset workspace",
             "error"
         );
+
         return false;
-    }
-    finally{
+
+    }finally{
         hideLoading();
     }
-
 }
-
 
 
 /* =====================================================
