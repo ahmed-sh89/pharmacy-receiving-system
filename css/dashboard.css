@@ -6467,3 +6467,113 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
   font-size:13px !important;
 }
 
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.2.9 — MODERN ORDER PICKER
+========================================================= */
+
+.headerOrderPicker{
+  position:relative;
+  width:180px;
+}
+
+.headerOrderPickerButton{
+  width:100%;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:7px 10px 7px 12px;
+  border:1px solid #d7c7bb;
+  border-radius:12px;
+  background:linear-gradient(180deg,#fffdfb,#fbf5ef);
+  box-shadow:0 2px 8px rgba(75,51,36,.06);
+  color:#342d28;
+  cursor:pointer;
+  font-size:11px;
+  font-weight:750;
+  text-align:left;
+}
+
+.headerOrderPickerButton:hover{
+  border-color:#b98b70;
+  box-shadow:0 4px 12px rgba(75,51,36,.10);
+}
+
+.headerOrderPickerChevron{
+  width:25px;
+  height:25px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  background:#f1e4da;
+  color:#8e5b42;
+  font-size:18px;
+  line-height:1;
+}
+
+.headerOrderPickerMenu{
+  position:absolute;
+  top:calc(100% + 7px);
+  right:0;
+  width:260px;
+  z-index:10050;
+  padding:7px;
+  border:1px solid #d9c9bd;
+  border-radius:14px;
+  background:#fffdfb;
+  box-shadow:0 16px 38px rgba(55,38,28,.18);
+}
+
+.headerOrderPickerOption{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  padding:10px 11px;
+  margin:0 0 4px;
+  border:1px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  color:#342d28;
+  cursor:pointer;
+  text-align:left;
+}
+
+.headerOrderPickerOption:last-child{
+  margin-bottom:0;
+}
+
+.headerOrderPickerOption:hover{
+  background:#f8efe8;
+}
+
+.headerOrderPickerOption.selected{
+  border-color:#c99b7d;
+  background:#f4e6dc;
+}
+
+.headerOrderOptionMain{
+  font-size:11px;
+  font-weight:750;
+}
+
+.headerOrderOptionSub{
+  font-size:8px;
+  font-weight:450;
+  color:#817168;
+}
+
+@media(max-width:1050px){
+  .headerOrderPicker{
+    width:155px;
+  }
+
+  .headerOrderPickerMenu{
+    width:235px;
+  }
+}

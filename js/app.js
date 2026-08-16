@@ -799,6 +799,15 @@ async function resetCurrentWorkspace(){
                 : generationResult
         );
 
+        /* Dedicated Active Order Manifest is separate from the legacy
+           cloud workspace and must be cleared on an intentional reset. */
+        try{
+            await Promise.race([
+                clearActiveOrderManifest?.(),
+                new Promise(resolve=>setTimeout(resolve,2500))
+            ]);
+        }catch(_){}
+
         if(typeof PharmFlowCloudWorkspace!=="undefined"){
             PharmFlowCloudWorkspace.generation=
                 Number.isFinite(newGeneration) ? newGeneration : 0;

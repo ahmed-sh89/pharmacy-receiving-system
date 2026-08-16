@@ -26,7 +26,9 @@ const PharmFlowCloudWorkspace = {
     lastAppliedWorkspaceSignature:"",
     contextSwitching:false,
     statusTimer:null,
-    visibleStatus:""
+    visibleStatus:"",
+    activeManifestRevision:0,
+    activeManifestBusy:false
 };
 
 function cloudWorkspacePharmacyId(){
@@ -390,6 +392,196 @@ window.reconcileWorkspaceGeneration=reconcileWorkspaceGeneration;
 
 
 
+
+function serializeActiveOrderManifest(){
+    const workspace=AppState?.workspace || {};
+
+    const orderData=(workspace.orderData||[]).map(item=>{
+        const clone=deepClone(item);
+
+        /* Receiving quantities are transaction state, not upload structure.
+           PC2 will receive them through cloud transactions. */
+        clone.receivedQty=0;
+        clone.remainingQty=toNumber(clone.orderedQty,0);
+        clone.status=toNumber(clone.orderedQty,0)>0
+            ? "PENDING"
+            : (clone.manual===true ? "MANUAL" : "PENDING");
+
+        return clone;
+    });
+
+    return {
+        orderId:workspace.orderId||null,
+        orderName:workspace.orderName||"",
+        createdAt:workspace.createdAt||null,
+        startedAt:workspace.startedAt||null,
+        active:!!workspace.active,
+        selectedOrderNumber:
+            workspace.selectedOrderNumber || "",
+        orderFiles:deepClone(workspace.orderFiles||[]),
+        mappingFiles:deepClone(workspace.mappingFiles||[]),
+        orderData,
+        mappingData:deepClone(workspace.mappingData||[])
+    };
+}
+
+async function saveActiveOrderManifest(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function" ||
+        !Array.isArray(AppState?.workspace?.orderFiles) ||
+        !AppState.workspace.orderFiles.length
+    ){
+        return false;
+    }
+
+    try{
+        const result=await authRpc(
+            "save_pharmflow_active_order_manifest",
+            {
+                p_pharmacy_id:pharmacyId,
+                p_manifest:serializeActiveOrderManifest()
+            }
+        );
+
+        const row=Array.isArray(result)?result[0]:result;
+        PharmFlowCloudWorkspace.activeManifestRevision=
+            Number(row?.revision||0);
+
+        return true;
+    }catch(error){
+        Logger.warn("Unable to save Active Order Manifest",error);
+        return false;
+    }
+}
+
+function applyActiveOrderManifest(manifest,revision){
+    if(!manifest || typeof manifest!=="object"){
+        return false;
+    }
+
+    const incomingFiles=Array.isArray(manifest.orderFiles)
+        ? manifest.orderFiles
+        : [];
+
+    if(!incomingFiles.length){
+        return false;
+    }
+
+    const currentHistory=deepClone(
+        AppState?.workspace?.receivingHistory || []
+    );
+
+    const currentLastScan=AppState?.workspace?.lastScan || null;
+
+    AppState.workspace={
+        ...createEmptyWorkspace(),
+        ...manifest,
+        receivingHistory:currentHistory,
+        lastScan:currentLastScan
+    };
+
+    rebuildStateIndexes();
+    recalculateStatistics();
+    saveWorkspaceSnapshot();
+
+    PharmFlowCloudWorkspace.activeManifestRevision=
+        Number(revision||0);
+
+    AppEvents.emit("files:updated");
+    AppEvents.emit("receiving:updated",{source:"active-manifest"});
+
+    refreshEntireUI?.();
+    return true;
+}
+
+async function pullActiveOrderManifest(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function" ||
+        PharmFlowCloudWorkspace.activeManifestBusy ||
+        PharmFlowCloudWorkspace.contextSwitching
+    ){
+        return false;
+    }
+
+    PharmFlowCloudWorkspace.activeManifestBusy=true;
+
+    try{
+        const result=await authRpc(
+            "get_pharmflow_active_order_manifest",
+            {p_pharmacy_id:pharmacyId}
+        );
+
+        const row=Array.isArray(result)?result[0]:result;
+
+        if(!row?.manifest){
+            return false;
+        }
+
+        const revision=Number(row.revision||0);
+
+        const localFiles=Array.isArray(AppState?.workspace?.orderFiles)
+            ? AppState.workspace.orderFiles
+            : [];
+
+        if(
+            revision>
+                Number(
+                    PharmFlowCloudWorkspace.activeManifestRevision||0
+                ) ||
+            !localFiles.length
+        ){
+            return applyActiveOrderManifest(
+                row.manifest,
+                revision
+            );
+        }
+
+        return false;
+    }catch(error){
+        Logger.warn("Active Order Manifest pull failed",error);
+        return false;
+    }finally{
+        PharmFlowCloudWorkspace.activeManifestBusy=false;
+    }
+}
+
+async function clearActiveOrderManifest(){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !pharmacyId ||
+        typeof authRpc!=="function"
+    ){
+        return false;
+    }
+
+    try{
+        await authRpc(
+            "clear_pharmflow_active_order_manifest",
+            {p_pharmacy_id:pharmacyId}
+        );
+
+        PharmFlowCloudWorkspace.activeManifestRevision=0;
+        return true;
+    }catch(error){
+        Logger.warn("Active Order Manifest clear failed",error);
+        return false;
+    }
+}
+
+window.saveActiveOrderManifest=saveActiveOrderManifest;
+window.pullActiveOrderManifest=pullActiveOrderManifest;
+window.clearActiveOrderManifest=clearActiveOrderManifest;
+
+
 async function forceCloudWorkspaceSnapshot(reason="manual"){
     const pharmacyId=cloudWorkspacePharmacyId();
 
@@ -596,6 +788,7 @@ async function restoreCloudWorkspaceOnLogin(){
                 PharmFlowCloudWorkspace.applyingRemote=false;
             }
 
+            await pullActiveOrderManifest();
             await pullCloudWorkspaceTransactions();
             await flushCloudWorkspaceQueue();
             setCloudWorkspaceStatus("synced");
@@ -758,26 +951,20 @@ function initializePharmFlowCloudWorkspace(){
     AppEvents.on("workspace:saved",scheduleCloudWorkspaceSnapshot);
 
     AppEvents.on("files:updated",()=>{
-        /* Persist the fully imported workspace first, then push it.
-           This is required for a second PC to see Active Order Files. */
         try{
             saveWorkspaceSnapshot?.();
         }catch(_){}
 
+        /* Dedicated structural authority for Active Orders.
+           This is the primary PC1 -> PC2 upload path. */
+        setTimeout(()=>{
+            saveActiveOrderManifest();
+        },120);
+
+        /* Existing full cloud workspace remains as compatibility/session state. */
         setTimeout(()=>{
             forceCloudWorkspaceSnapshot("Order files synced");
-        },350);
-
-        /* One guarded retry handles slow Global GTIN matching / large orders
-           without relying on the browser's 2.2s polling race. */
-        setTimeout(()=>{
-            if(
-                Array.isArray(AppState?.workspace?.orderData) &&
-                AppState.workspace.orderData.length
-            ){
-                forceCloudWorkspaceSnapshot("Order files verified");
-            }
-        },1800);
+        },420);
     });
     AppEvents.on("workspace:cleared",async()=>{
         const pharmacyId=cloudWorkspacePharmacyId();
@@ -793,8 +980,14 @@ function initializePharmFlowCloudWorkspace(){
         if(typeof authRpc!=="function" || !pharmacyId) return;
 
         try{
-            /* Legacy safety path only. Explicit user Reset uses the atomic RPC. */
-            await authRpc("clear_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
+            await Promise.allSettled([
+                authRpc(
+                    "clear_pharmflow_cloud_workspace",
+                    {p_pharmacy_id:pharmacyId}
+                ),
+                clearActiveOrderManifest()
+            ]);
+
             writeCloudQueue([]);
             setCloudWorkspaceStatus("synced");
             PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
@@ -826,6 +1019,7 @@ function initializePharmFlowCloudWorkspace(){
         await reconcileCloudWorkspaceAuthority();
 
         if(!PharmFlowCloudWorkspace.contextSwitching){
+            await pullActiveOrderManifest();
             flushCloudWorkspaceQueue();
             pullCloudWorkspaceTransactions();
         }

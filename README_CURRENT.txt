@@ -1,38 +1,36 @@
-PharmFlow Phase 2C.10.2.8 — Five-point corrective release
+PharmFlow Phase 2C.10.2.9 — All Orders + Dedicated PC1/PC2 Active Order Sync
 
-FIX 1 — Cloud status flashing
-- Transient SYNCING and OFFLINE states are now debounced.
-- SYNCED is displayed immediately.
-- A sub-second network transition no longer flashes OFFLINE -> SYNCING -> SYNCED.
+IMPORTANT: THIS RELEASE HAS ONE NEW SQL FILE
+Run once in Supabase:
+PHASE2C1029_SHARED_ACTIVE_ORDERS.sql
 
-FIX 2 — PC2 shows No Active Order
-- Root cause corrected in the import/sync path:
-  the completed imported workspace is now saved BEFORE files:updated/cloud push.
-- files:updated also performs an immediate guarded cloud save plus one verification retry.
-- PC2 cloud reconciliation can therefore hydrate Active Order Files instead of an older empty workspace.
+1. CURRENT ORDER — ALL
+- Added All Orders as the default combined view when more than one active Order exists.
+- All Orders keeps the original aggregate Dashboard logic.
+- Selecting an individual Order recalculates Dashboard/Progress from that Order only.
+- Switching back to All Orders restores combined totals.
 
-FIX 3 — Current Order selector
-- Current Order selector is now the real dashboard order scope.
-- Dashboard KPI cards recalculate from the selected Order's ORIGINAL source rows.
-- Received quantities use per-order transaction allocation.
-- Remaining / Completed / Over / Manual / Scans refresh when switching orders.
-- Receiving table and progress are refreshed on selection change.
+2. MODERN ORDER PICKER
+- Removed the browser-native select appearance.
+- Replaced it with a PharmFlow custom picker:
+  All Orders / individual Order cards, description, selected state and custom popover.
 
-FIX 4 — Email design
-- Removed duplicated outer Arabic message from preview.
-- Main Arabic heading enlarged to 30px, bold and centered.
-- Greeting/body/closing enlarged and centered with logical emphasis.
-- Each Order header is centered.
-- Table headers and cells are centered and clearer.
-- Entire email content is visually centered.
+3. PC1 -> PC2 ACTIVE ORDER SYNC
+- Added a dedicated Supabase table/RPC called Active Order Manifest.
+- It is scoped ONLY by pharmacy_id, not by browser or user-local storage.
+- Any authenticated member of the same pharmacy reads the same Active Order Files.
+- Uploading Order Files on PC1 saves this structural manifest immediately.
+- PC2 explicitly pulls the manifest during login and on every visible cloud reconciliation cycle.
+- The manifest carries:
+  active order files, source rows, merged item structure and selected order.
+- Receiving quantities are intentionally NOT authoritative in the manifest;
+  receiving transactions continue through the existing transaction cloud sync.
+- Reset Current Workspace clears this dedicated manifest as well.
 
-FIX 5 — Discrepancy filter
-- Added OK beside Select all and Clear.
-- OK closes the filter dropdown without changing the selected filters.
+WHY THIS IS DIFFERENT FROM 2C.10.2.8
+- 2C.10.2.8 tried to make the full Cloud Workspace upload more deterministic.
+- Your live test proved that was still not sufficient for Active Order Files.
+- 2C.10.2.9 therefore does NOT rely on that path alone.
+  It introduces a separate pharmacy-wide structural authority specifically for active uploaded Orders.
 
-Validation performed:
-- JavaScript syntax checked with node --check.
-- HTML local src/href references checked.
-- Required implementation markers checked in source.
-
-No new SQL migration is required for Phase 2C.10.2.8.
+No other requested changes were silently omitted in this release.

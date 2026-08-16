@@ -537,12 +537,29 @@
                         No Order
                     </strong>
 
-                    <select
-                        id="headerOrderSelector"
-                        class="headerOrderSelector"
-                        aria-label="Select active order"
+                    <div
+                        id="headerOrderPicker"
+                        class="headerOrderPicker"
                         hidden
-                    ></select>
+                    >
+                        <button
+                            id="headerOrderPickerButton"
+                            class="headerOrderPickerButton"
+                            type="button"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                        >
+                            <span id="headerOrderPickerLabel">All Orders</span>
+                            <span class="headerOrderPickerChevron" aria-hidden="true">⌄</span>
+                        </button>
+
+                        <div
+                            id="headerOrderPickerMenu"
+                            class="headerOrderPickerMenu"
+                            role="menu"
+                            hidden
+                        ></div>
+                    </div>
 
                 </div>
 

@@ -3834,3 +3834,5 @@ table td {
 .quantityAdjustmentInput {
     font-weight: 700;
 }
+
+.receivingOrderCell{white-space:nowrap;text-align:center}.receivingOrderBadge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border:1px solid #dbc5b7;border-radius:999px;background:#fff8f3;font-size:11px;font-weight:700;color:#75452f}

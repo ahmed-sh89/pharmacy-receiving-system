@@ -911,20 +911,43 @@ function getActiveReceivingOrderNumbers(){
 
 function getSelectedReceivingOrderNumber(){
     const active=getActiveReceivingOrderNumbers();
-    const current=normalizeOrderNumber(
+    const raw=toSafeString(
         AppState?.workspace?.selectedOrderNumber || ""
-    );
+    ).trim();
+
+    if(raw.toUpperCase()==="ALL"){
+        return "ALL";
+    }
+
+    const current=normalizeOrderNumber(raw);
 
     if(current && active.includes(current)){
         return current;
     }
 
-    return active[0] || "";
+    return active.length>1
+        ? "ALL"
+        : (active[0] || "");
 }
 
 function setSelectedReceivingOrderNumber(orderNumber){
-    const normalized=normalizeOrderNumber(orderNumber);
+    const raw=toSafeString(orderNumber||"").trim();
     const active=getActiveReceivingOrderNumbers();
+
+    if(raw.toUpperCase()==="ALL"){
+        if(!active.length){
+            return false;
+        }
+
+        AppState.workspace.selectedOrderNumber="ALL";
+        AppState.workspace.orderName="All Orders";
+
+        saveWorkspaceSnapshot?.();
+        refreshEntireUI?.();
+        return true;
+    }
+
+    const normalized=normalizeOrderNumber(raw);
 
     if(!normalized || !active.includes(normalized)){
         return false;
@@ -1185,7 +1208,10 @@ function buildMultiOrderReceivingReport(options={}){
     const groups=[];
     const flatRows=[];
 
-    getActiveReceivingOrderNumbers().forEach(orderNumber=>{
+    const selectedScope=getSelectedReceivingOrderNumber();
+    const reportOrders=selectedScope && selectedScope!=="ALL" ? getActiveReceivingOrderNumbers().filter(order=>order===selectedScope) : getActiveReceivingOrderNumbers();
+
+    reportOrders.forEach(orderNumber=>{
         const meta=getReceivingOrderMetadata()
             .find(meta=>
                 normalizeOrderNumber(meta.orderNumber)===orderNumber

@@ -1036,13 +1036,40 @@ function bindUIEvents(){
         });
     });
 
-    document.getElementById("headerOrderSelector")
-        ?.addEventListener("change",event=>{
+    {
+        const pickerButton=document.getElementById("headerOrderPickerButton");
+        const pickerMenu=document.getElementById("headerOrderPickerMenu");
+
+        pickerButton?.addEventListener("click",event=>{
+            event.preventDefault();
+            event.stopPropagation();
+
+            const willOpen=pickerMenu?.hidden!==false;
+
+            if(pickerMenu){
+                pickerMenu.hidden=!willOpen;
+            }
+
+            pickerButton.setAttribute(
+                "aria-expanded",
+                willOpen ? "true" : "false"
+            );
+        });
+
+        pickerMenu?.addEventListener("click",event=>{
+            const option=event.target.closest("[data-header-order]");
+            if(!option) return;
+
+            const value=option.dataset.headerOrder;
+
             if(
                 typeof setSelectedReceivingOrderNumber==="function" &&
-                setSelectedReceivingOrderNumber(event.target.value)
+                setSelectedReceivingOrderNumber(value)
             ){
-                window.PharmFlowOrderScope=event.target.value;
+                window.PharmFlowOrderScope=value;
+
+                pickerMenu.hidden=true;
+                pickerButton?.setAttribute("aria-expanded","false");
 
                 refreshHeader();
                 refreshDashboard();
@@ -1052,11 +1079,25 @@ function bindUIEvents(){
                 refreshOpenOrderStatusReport?.();
 
                 showToast?.(
-                    "Active receiving order: "+event.target.value,
+                    value==="ALL"
+                        ? "Showing all active orders"
+                        : "Active receiving order: "+value,
                     "success"
                 );
             }
         });
+
+        document.addEventListener("click",event=>{
+            if(
+                pickerMenu &&
+                !pickerMenu.hidden &&
+                !event.target.closest("#headerOrderPicker")
+            ){
+                pickerMenu.hidden=true;
+                pickerButton?.setAttribute("aria-expanded","false");
+            }
+        });
+    }
 
 
     document
@@ -1440,7 +1481,10 @@ function refreshHeader(){
 
     {
         const orderLabel=UI.elements.headerOrderId;
-        const selector=document.getElementById("headerOrderSelector");
+        const picker=document.getElementById("headerOrderPicker");
+        const pickerLabel=document.getElementById("headerOrderPickerLabel");
+        const pickerMenu=document.getElementById("headerOrderPickerMenu");
+
         const activeOrders=
             typeof getActiveReceivingOrderNumbers==="function"
                 ? getActiveReceivingOrderNumbers()
@@ -1451,32 +1495,61 @@ function refreshHeader(){
                 ? getSelectedReceivingOrderNumber()
                 : "";
 
-        if(hasActiveOrder && activeOrders.length>1 && selector){
+        if(hasActiveOrder && activeOrders.length>1 && picker){
             orderLabel.hidden=true;
-            selector.hidden=false;
+            picker.hidden=false;
 
-            const existing=Array.from(selector.options)
-                .map(option=>option.value)
-                .join("|");
-
-            const desired=activeOrders.join("|");
-
-            if(existing!==desired){
-                selector.innerHTML=activeOrders
-                    .map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`)
-                    .join("");
+            if(pickerLabel){
+                pickerLabel.textContent=
+                    selected==="ALL"
+                        ? "All Orders"
+                        : selected;
             }
 
-            selector.value=selected || activeOrders[0];
+            if(pickerMenu){
+                const values=["ALL",...activeOrders];
+                const signature=values.join("|");
+
+                if(pickerMenu.dataset.signature!==signature){
+                    pickerMenu.innerHTML=values.map(value=>`
+                        <button
+                            type="button"
+                            class="headerOrderPickerOption"
+                            data-header-order="${escapeHTML(value)}"
+                            role="menuitem"
+                        >
+                            <span class="headerOrderOptionMain">
+                                ${value==="ALL" ? "All Orders" : escapeHTML(value)}
+                            </span>
+                            <span class="headerOrderOptionSub">
+                                ${value==="ALL"
+                                    ? `${activeOrders.length} active orders · Combined dashboard`
+                                    : "Individual order view"}
+                            </span>
+                        </button>
+                    `).join("");
+
+                    pickerMenu.dataset.signature=signature;
+                }
+
+                pickerMenu
+                    .querySelectorAll("[data-header-order]")
+                    .forEach(option=>{
+                        option.classList.toggle(
+                            "selected",
+                            option.dataset.headerOrder===selected
+                        );
+                    });
+            }
         }else{
-            if(selector) selector.hidden=true;
+            if(picker) picker.hidden=true;
             orderLabel.hidden=false;
 
             setElementText(
                 orderLabel,
                 hasActiveOrder
                     ? (
-                        selected ||
+                        activeOrders[0] ||
                         AppState.workspace.orderName ||
                         "Active Order"
                     )
@@ -1508,6 +1581,7 @@ function getSelectedOrderDashboardMetrics(){
 
     if(
         !selected ||
+        selected==="ALL" ||
         typeof getPerOrderReceivingRows!=="function"
     ){
         return null;
@@ -1862,50 +1936,15 @@ function getVisibleReceivingItemsForExport(){
 ===================================================== */
 
 function refreshReceivingTable(){
-    const tbody = UI.elements.receivingTableBody;
-    if(!tbody){ return; }
-
-    refreshReceivingCategoryFilter();
-    tbody.innerHTML = "";
-
-    const allItems = AppState.workspace.orderData || [];
-    const selectedIssues = UI.receivingFilters.issues instanceof Set
-        ? UI.receivingFilters.issues
-        : new Set(["not_received","partial","over","manual"]);
-    const categoryFilter = UI.receivingFilters.category || "all";
-
-    const items = allItems.filter(item=>{
-        const issue = getReceivingIssueKey(item);
-        const received = toNumber(item?.receivedQty,0);
-        const matchesReceivedAny = selectedIssues.has("received_any") && received > 0;
-        const matchesIssue = !!issue && selectedIssues.has(issue);
-        if(!matchesReceivedAny && !matchesIssue){ return false; }
-        const category = toSafeString(item.category || "").trim();
-        return categoryFilter === "all" || category === categoryFilter;
-    });
-
-    UI.receivingVisibleItems = items.slice();
-    const displayed=document.getElementById("rsDisplayedItems");
-    if(displayed){ displayed.textContent=items.length; }
-    if(typeof refreshReceivingVerificationSummary==="function") refreshReceivingVerificationSummary();
-
-    if(allItems.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No order items loaded.</td></tr>`;
-        return;
-    }
-
-    if(items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No items match the selected filters.</td></tr>`;
-        return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    items.forEach((item,index)=>{
-        fragment.appendChild(createReceivingTableRow(item,index));
-    });
-    tbody.appendChild(fragment);
+    const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
+    const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]), categoryFilter=UI.receivingFilters.category||"all";
+    const scope=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"ALL", active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[], allMode=scope==="ALL"&&active.length>1;
+    const hr=tbody.closest("table")?.querySelector("thead tr");if(hr){let h=hr.querySelector('[data-order-column="1"]');if(allMode&&!h){h=document.createElement("th");h.dataset.orderColumn="1";h.textContent="Order Number";const cells=hr.querySelectorAll("th");hr.insertBefore(h,cells[1]||null);}else if(!allMode&&h)h.remove();}
+    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=allMode?active:[scope||active[0]].filter(Boolean);orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(scope!=="ALL"&&!itemBelongsToOrderScope(item,scope))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
+    UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
+    if(!(AppState.workspace.orderData||[]).length){tbody.innerHTML=`<tr><td colspan="${allMode?9:8}" class="tableEmptyState">No order items loaded.</td></tr>`;return;}if(!rows.length){tbody.innerHTML=`<tr><td colspan="${allMode?9:8}" class="tableEmptyState">No items match the selected filters.</td></tr>`;return;}
+    rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);if(allMode){const c=document.createElement("td");c.className="receivingOrderCell";c.innerHTML=`<span class="receivingOrderBadge">${escapeHTML(item.orderNumber||"")}</span>`;tr.insertBefore(c,tr.children[1]||null);}tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
 }
-
 function refreshReceivingCategoryFilter(){
     const select = UI.elements.receivingCategoryFilter;
     if(!select){ return; }
@@ -2048,10 +2087,8 @@ function createReceivingTableRow(
 
                 event.stopPropagation();
 
-                increaseItemQuantity(
-                    item.itemCode,
-                    1
-                );
+                if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
+                increaseItemQuantity(item.itemCode,1);
 
             }
         );
@@ -2067,10 +2104,8 @@ function createReceivingTableRow(
 
                 event.stopPropagation();
 
-                decreaseItemQuantity(
-                    item.itemCode,
-                    1
-                );
+                if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
+                decreaseItemQuantity(item.itemCode,1);
 
             }
         );
@@ -2086,9 +2121,8 @@ function createReceivingTableRow(
 
                 event.stopPropagation();
 
-                openQuantityEditPrompt(
-                    item
-                );
+                if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
+                openQuantityEditPrompt(getItemByCode?.(item.itemCode)||item);
 
             }
         );

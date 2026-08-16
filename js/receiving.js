@@ -857,27 +857,17 @@ function receiveOrderItem(options){
 
 function createReceivingTransaction(options){
 
-    const item =
-        options.item;
+    const item=options.item;
+    let transactionOrder=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"";
+    if(transactionOrder==="ALL"){const unique=[...new Set((item?.orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];if(unique.length===1)transactionOrder=unique[0];else throw new Error("This item belongs to more than one active order. Select the target order before receiving it.");}
 
     return addReceivingTransaction({
 
         transactionId:
             createTransactionId(),
 
-        orderId:
-            (
-                typeof getSelectedReceivingOrderNumber==="function"
-                    ? getSelectedReceivingOrderNumber()
-                    : ""
-            )
-            ||
-            AppState.workspace.orderId,
-
-        selectedOrderNumber:
-            typeof getSelectedReceivingOrderNumber==="function"
-                ? getSelectedReceivingOrderNumber()
-                : "",
+        orderId:transactionOrder||AppState.workspace.orderId,
+        selectedOrderNumber:transactionOrder,
 
         dateTime:
             nowISO(),

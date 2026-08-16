@@ -301,7 +301,9 @@ function getWorkspaceOrderNumbers(){
 }
 
 function getFinalizeReceivingSummary(){
-    const orderNumbers=getWorkspaceOrderNumbers();
+    const allOrderNumbers=getWorkspaceOrderNumbers();
+    const selected=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"";
+    const orderNumbers=selected&&selected!=="ALL"?allOrderNumbers.filter(n=>n===selected):allOrderNumbers;
     let report=null;
     if(typeof buildReceivingDiscrepancyReport === "function"){
         report=buildReceivingDiscrepancyReport({visibleOnly:false});
@@ -404,7 +406,11 @@ function refreshFinalizeReceivingButton(){
     const button=document.getElementById("btnFinalizeReceiving");
     if(!button){ return; }
     const hasOrder=!!(AppState.workspace && Array.isArray(AppState.workspace.orderData) && AppState.workspace.orderData.length);
-    button.disabled=!hasOrder || FinalizeReceivingEngine.busy;
+    const active=getWorkspaceOrderNumbers();
+    const selected=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"";
+    const needsSpecificOrder=active.length>1&&selected==="ALL";
+    button.disabled=!hasOrder||FinalizeReceivingEngine.busy||needsSpecificOrder;
+    button.title=needsSpecificOrder?"Select one order before Finalize Receiving":"";
     button.textContent=FinalizeReceivingEngine.busy?"Finalizing…":"✓ Finalize Receiving";
 }
 
