@@ -700,11 +700,25 @@ function applyCloudTransaction(tx){
     const qty=toNumber(tx.quantity,0);
     item.receivedQty=Math.max(0,toNumber(item.receivedQty,0)+qty);
     updateItemCalculatedFields(item);
+    const remoteOrder=normalizeOrderNumber(
+        tx.order_number ||
+        tx.orderId ||
+        tx.payload?.selectedOrderNumber ||
+        ""
+    );
+
     addReceivingTransaction({
-        transactionId:id, orderId:tx.order_number||tx.orderId||AppState.workspace.orderId,
-        dateTime:tx.occurred_at||tx.dateTime||nowISO(), itemCode:code,
-        itemName:tx.item_name||tx.itemName||item.itemName, gtin:tx.gtin||"", quantity:qty,
-        source:tx.source||"CLOUD", deviceId:tx.device_id||"REMOTE", manual:item.manual===true,
+        transactionId:id,
+        orderId:remoteOrder||AppState.workspace.orderId,
+        selectedOrderNumber:remoteOrder,
+        dateTime:tx.occurred_at||tx.dateTime||nowISO(),
+        itemCode:code,
+        itemName:tx.item_name||tx.itemName||item.itemName,
+        gtin:tx.gtin||"",
+        quantity:qty,
+        source:tx.source||"CLOUD",
+        deviceId:tx.device_id||"REMOTE",
+        manual:item.manual===true,
         cloudSynced:true
     });
     return true;
@@ -726,7 +740,12 @@ async function pullCloudWorkspaceTransactions(){
             if(typeof refreshAllUI==="function") refreshAllUI();
             saveWorkspaceSnapshot();
         }
-    }catch(_){} finally{PharmFlowCloudWorkspace.applyingRemote=false;}
+    }catch(error){
+        Logger.warn("Receiving transaction pull failed",error);
+        setCloudWorkspaceStatus("offline","Receiving sync unavailable");
+    } finally{
+        PharmFlowCloudWorkspace.applyingRemote=false;
+    }
 }
 
 async function restoreCloudWorkspaceOnLogin(){
@@ -985,7 +1004,11 @@ function initializePharmFlowCloudWorkspace(){
                     "clear_pharmflow_cloud_workspace",
                     {p_pharmacy_id:pharmacyId}
                 ),
-                clearActiveOrderManifest()
+                clearActiveOrderManifest(),
+                authRpc(
+                    "clear_pharmflow_receiving_transactions",
+                    {p_pharmacy_id:pharmacyId}
+                )
             ]);
 
             writeCloudQueue([]);

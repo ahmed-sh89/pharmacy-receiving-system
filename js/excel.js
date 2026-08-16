@@ -604,7 +604,23 @@ async function importOrderFile(file, preflightMeta = null){
         AppState.workspace.active =
             true;
 
-        if(
+        const activeImportedOrders=[
+            ...new Set(
+                (AppState.workspace.orderFiles||[])
+                    .map(file=>normalizeOrderNumber(
+                        file?.documentId || file?.orderNumber || ""
+                    ))
+                    .filter(Boolean)
+            )
+        ];
+
+        /* Multi-order default is always ALL.
+           A specific order remains selectable afterwards by the operator. */
+        if(activeImportedOrders.length>1){
+            AppState.workspace.selectedOrderNumber="ALL";
+            AppState.workspace.orderName="All Orders";
+        }
+        else if(
             !AppState.workspace.selectedOrderNumber &&
             detectedOrderId
         ){

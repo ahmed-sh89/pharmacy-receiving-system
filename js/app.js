@@ -808,6 +808,16 @@ async function resetCurrentWorkspace(){
             ]);
         }catch(_){}
 
+        try{
+            await Promise.race([
+                authRpc(
+                    "clear_pharmflow_receiving_transactions",
+                    {p_pharmacy_id:pharmacyId}
+                ),
+                new Promise(resolve=>setTimeout(resolve,2500))
+            ]);
+        }catch(_){}
+
         if(typeof PharmFlowCloudWorkspace!=="undefined"){
             PharmFlowCloudWorkspace.generation=
                 Number.isFinite(newGeneration) ? newGeneration : 0;

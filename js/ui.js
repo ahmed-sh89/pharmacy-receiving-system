@@ -1581,30 +1581,61 @@ function getSelectedOrderDashboardMetrics(){
 
     if(
         !selected ||
-        selected==="ALL" ||
         typeof getPerOrderReceivingRows!=="function"
     ){
         return null;
     }
 
-    const rows=getPerOrderReceivingRows(selected);
+    const activeOrders=
+        typeof getActiveReceivingOrderNumbers==="function"
+            ? getActiveReceivingOrderNumbers()
+            : [];
 
-    if(!Array.isArray(rows) || !rows.length){
+    const targetOrders=
+        selected==="ALL"
+            ? activeOrders
+            : [selected];
+
+    if(!targetOrders.length){
         return null;
     }
-
-    const orderRows=rows.filter(
-        row=>toNumber(row["Ordered Qty"],0)>0
-    );
-
-    const manualRows=rows.filter(
-        row=>row.issueKey==="manual"
-    );
 
     const localDevice=
         typeof ensureDeviceId==="function"
             ? ensureDeviceId()
             : AppState.session?.deviceId;
+
+    let totalItems=0;
+    let completedItems=0;
+    let remainingUnits=0;
+    let overReceivedItems=0;
+    let manualItems=0;
+
+    targetOrders.forEach(orderNumber=>{
+        const rows=getPerOrderReceivingRows(orderNumber);
+
+        rows.forEach(row=>{
+            const ordered=toNumber(row["Ordered Qty"],0);
+            const received=toNumber(row["Received Qty"],0);
+
+            if(ordered>0){
+                totalItems++;
+
+                if(received===ordered){
+                    completedItems++;
+                }
+
+                remainingUnits+=Math.max(0,ordered-received);
+
+                if(received>ordered){
+                    overReceivedItems++;
+                }
+            }
+            else if(row.issueKey==="manual" && received>0){
+                manualItems++;
+            }
+        });
+    });
 
     const totalScans=(AppState.workspace?.receivingHistory||[])
         .filter(tx=>{
@@ -1615,35 +1646,24 @@ function getSelectedOrderDashboardMetrics(){
                 ""
             );
 
+            const inScope=
+                selected==="ALL"
+                    ? activeOrders.includes(txOrder)
+                    : txOrder===normalizeOrderNumber(selected);
+
             return (
-                txOrder===normalizeOrderNumber(selected) &&
+                inScope &&
                 toSafeString(tx?.deviceId||"")===
                     toSafeString(localDevice||"")
             );
         }).length;
 
     return {
-        totalItems:orderRows.length,
-        completedItems:orderRows.filter(row=>
-            toNumber(row["Ordered Qty"],0)>0 &&
-            toNumber(row["Received Qty"],0)===
-                toNumber(row["Ordered Qty"],0)
-        ).length,
-        remainingUnits:orderRows.reduce(
-            (sum,row)=>
-                sum+
-                Math.max(
-                    0,
-                    toNumber(row["Ordered Qty"],0)-
-                    toNumber(row["Received Qty"],0)
-                ),
-            0
-        ),
-        overReceivedItems:orderRows.filter(row=>
-            toNumber(row["Received Qty"],0)>
-            toNumber(row["Ordered Qty"],0)
-        ).length,
-        manualItems:manualRows.length,
+        totalItems,
+        completedItems,
+        remainingUnits,
+        overReceivedItems,
+        manualItems,
         totalScans
     };
 }
