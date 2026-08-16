@@ -28,7 +28,11 @@ const PharmFlowCloudWorkspace = {
     statusTimer:null,
     visibleStatus:"",
     activeManifestRevision:0,
-    activeManifestBusy:false
+    activeManifestBusy:false,
+    receivingSyncBusy:false,
+    receivingSyncTimer:null,
+    lastReceivingSyncAt:null,
+    lastReceivingSyncError:null
 };
 
 function cloudWorkspacePharmacyId(){
@@ -135,32 +139,90 @@ function queueCloudWorkspaceTransaction(tx){
 
 async function flushCloudWorkspaceQueue(){
     const pharmacyId=cloudWorkspacePharmacyId();
+
     if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function"){
-        if(readCloudQueue().length) setCloudWorkspaceStatus("offline");
-        return;
+        if(readCloudQueue().length){
+            setCloudWorkspaceStatus("offline","Receiving changes pending sync");
+        }
+        return false;
     }
-    const q=readCloudQueue(); if(!q.length){setCloudWorkspaceStatus("synced");return;}
-    setCloudWorkspaceStatus("syncing");
+
+    const queue=readCloudQueue();
+
+    if(!queue.length){
+        return true;
+    }
+
+    setCloudWorkspaceStatus("syncing","Syncing receiving changes");
+
     const remain=[];
-    for(const tx of q){
+    let syncedCount=0;
+
+    for(const tx of queue){
         try{
             await authRpc("append_pharmflow_cloud_transaction",{
                 p_pharmacy_id:pharmacyId,
                 p_transaction_id:tx.transactionId,
-                p_order_number:toSafeString(tx.orderId||""),
+                p_order_number:toSafeString(
+                    tx.selectedOrderNumber ||
+                    tx.orderId ||
+                    ""
+                ),
                 p_item_code:toSafeString(tx.itemCode||""),
                 p_item_name:toSafeString(tx.itemName||""),
                 p_gtin:toSafeString(tx.gtin||""),
                 p_quantity:toNumber(tx.quantity,0),
                 p_source:toSafeString(tx.source||"RECEIVING"),
-                p_device_id:cloudWorkspaceDeviceId(),
+                p_device_id:toSafeString(
+                    tx.deviceId ||
+                    cloudWorkspaceDeviceId()
+                ),
                 p_occurred_at:tx.dateTime||nowISO(),
                 p_payload:tx
             });
-        }catch(error){remain.push(tx);}
+
+            syncedCount++;
+
+            const local=(AppState?.workspace?.receivingHistory||[])
+                .find(row=>row.transactionId===tx.transactionId);
+
+            if(local){
+                local.cloudSynced=true;
+            }
+        }
+        catch(error){
+            Logger.warn(
+                "Receiving transaction upload failed",
+                {
+                    transactionId:tx?.transactionId,
+                    error:error?.message||String(error)
+                }
+            );
+
+            PharmFlowCloudWorkspace.lastReceivingSyncError=
+                error?.message || String(error);
+
+            remain.push(tx);
+        }
     }
+
     writeCloudQueue(remain);
-    setCloudWorkspaceStatus(remain.length ? (navigator.onLine?"syncing":"offline") : "synced");
+
+    if(remain.length){
+        setCloudWorkspaceStatus(
+            navigator.onLine ? "syncing" : "offline",
+            `${remain.length} receiving change(s) pending`
+        );
+        return false;
+    }
+
+    if(syncedCount){
+        saveWorkspaceSnapshot?.();
+    }
+
+    PharmFlowCloudWorkspace.lastReceivingSyncError=null;
+    setCloudWorkspaceStatus("synced","Receiving synchronized");
+    return true;
 }
 
 
@@ -491,6 +553,11 @@ function applyActiveOrderManifest(manifest,revision){
     PharmFlowCloudWorkspace.activeManifestRevision=
         Number(revision||0);
 
+    /* Order structure is ready on this PC even if the legacy
+       cloud-workspace snapshot endpoint is unavailable. */
+    PharmFlowCloudWorkspace.hydratedPharmacyId=
+        cloudWorkspacePharmacyId();
+
     AppEvents.emit("files:updated");
     AppEvents.emit("receiving:updated",{source:"active-manifest"});
 
@@ -691,60 +758,296 @@ async function saveCloudWorkspaceSnapshot(){
     }
 }
 
-function applyCloudTransaction(tx){
-    const id=toSafeString(tx.transaction_id||tx.transactionId||"");
-    if(!id || AppState.indexes.transactionIds.has(id)) return false;
-    const code=normalizeItemCode(tx.item_code||tx.itemCode||"");
-    const item=getItemByCode(code);
-    if(!item) return false;
-    const qty=toNumber(tx.quantity,0);
-    item.receivedQty=Math.max(0,toNumber(item.receivedQty,0)+qty);
-    updateItemCalculatedFields(item);
-    const remoteOrder=normalizeOrderNumber(
-        tx.order_number ||
-        tx.orderId ||
-        tx.payload?.selectedOrderNumber ||
+
+function getActiveReceivingOrderSetForCloud(){
+    const values=
+        typeof getActiveReceivingOrderNumbers==="function"
+            ? getActiveReceivingOrderNumbers()
+            : [];
+
+    return new Set(
+        values
+            .map(normalizeOrderNumber)
+            .filter(Boolean)
+    );
+}
+
+function rebuildReceivingQuantitiesFromLedger(){
+    const items=Array.isArray(AppState?.workspace?.orderData)
+        ? AppState.workspace.orderData
+        : [];
+
+    if(!items.length){
+        return;
+    }
+
+    const totals=new Map();
+    const activeOrders=getActiveReceivingOrderSetForCloud();
+
+    (AppState.workspace.receivingHistory||[]).forEach(tx=>{
+        const code=normalizeItemCode(tx?.itemCode||"");
+        if(!code){
+            return;
+        }
+
+        const txOrder=normalizeOrderNumber(
+            tx?.selectedOrderNumber ||
+            tx?.orderId ||
+            tx?.orderNumber ||
+            ""
+        );
+
+        /*
+           Current receiving rows are pharmacy/order scoped.
+           Legacy rows without an order are retained for compatibility.
+        */
+        if(
+            txOrder &&
+            activeOrders.size &&
+            !activeOrders.has(txOrder)
+        ){
+            return;
+        }
+
+        totals.set(
+            code,
+            (totals.get(code)||0)+toNumber(tx?.quantity,0)
+        );
+    });
+
+    items.forEach(item=>{
+        const code=normalizeItemCode(item?.itemCode||"");
+        item.receivedQty=Math.max(
+            0,
+            toNumber(totals.get(code),0)
+        );
+
+        if(typeof updateItemCalculatedFields==="function"){
+            updateItemCalculatedFields(item);
+        }
+    });
+}
+
+function normalizeCloudReceivingTransaction(tx){
+    const payload=
+        tx?.payload && typeof tx.payload==="object"
+            ? tx.payload
+            : {};
+
+    const orderNumber=normalizeOrderNumber(
+        tx?.order_number ||
+        tx?.orderId ||
+        payload?.selectedOrderNumber ||
+        payload?.orderId ||
         ""
     );
 
-    addReceivingTransaction({
-        transactionId:id,
-        orderId:remoteOrder||AppState.workspace.orderId,
-        selectedOrderNumber:remoteOrder,
-        dateTime:tx.occurred_at||tx.dateTime||nowISO(),
-        itemCode:code,
-        itemName:tx.item_name||tx.itemName||item.itemName,
-        gtin:tx.gtin||"",
-        quantity:qty,
-        source:tx.source||"CLOUD",
-        deviceId:tx.device_id||"REMOTE",
-        manual:item.manual===true,
+    return {
+        transactionId:toSafeString(
+            tx?.transaction_id ||
+            tx?.transactionId ||
+            payload?.transactionId ||
+            ""
+        ),
+        orderId:orderNumber,
+        selectedOrderNumber:orderNumber,
+        dateTime:
+            tx?.occurred_at ||
+            tx?.dateTime ||
+            payload?.dateTime ||
+            nowISO(),
+        itemCode:normalizeItemCode(
+            tx?.item_code ||
+            tx?.itemCode ||
+            payload?.itemCode ||
+            ""
+        ),
+        itemName:toSafeString(
+            tx?.item_name ||
+            tx?.itemName ||
+            payload?.itemName ||
+            ""
+        ),
+        gtin:toSafeString(
+            tx?.gtin ||
+            payload?.gtin ||
+            ""
+        ),
+        quantity:toNumber(
+            tx?.quantity ?? payload?.quantity,
+            0
+        ),
+        lot:toSafeString(payload?.lot||""),
+        expiry:toSafeString(payload?.expiry||""),
+        serial:toSafeString(payload?.serial||""),
+        source:toSafeString(
+            tx?.source ||
+            payload?.source ||
+            "CLOUD"
+        ),
+        deviceId:toSafeString(
+            tx?.device_id ||
+            payload?.deviceId ||
+            "REMOTE"
+        ),
+        manual:payload?.manual===true,
         cloudSynced:true
-    });
-    return true;
+    };
+}
+
+function mergeCloudReceivingLedger(rows){
+    let changed=false;
+
+    for(const raw of (Array.isArray(rows)?rows:[]).slice().reverse()){
+        const tx=normalizeCloudReceivingTransaction(raw);
+
+        if(
+            !tx.transactionId ||
+            !tx.itemCode
+        ){
+            continue;
+        }
+
+        const existing=(AppState.workspace.receivingHistory||[])
+            .find(row=>row.transactionId===tx.transactionId);
+
+        if(existing){
+            if(existing.cloudSynced!==true){
+                existing.cloudSynced=true;
+                changed=true;
+            }
+            continue;
+        }
+
+        /*
+           Do not require the old full Cloud Workspace to be hydrated.
+           The Active Order Manifest is sufficient as long as the item exists.
+        */
+        const item=getItemByCode(tx.itemCode);
+
+        if(!item){
+            continue;
+        }
+
+        const added=addReceivingTransaction(tx);
+
+        if(added){
+            changed=true;
+        }
+    }
+
+    /*
+       Rebuild quantities from the transaction ledger instead of applying
+       remote deltas incrementally. Every PC therefore converges to the
+       same receiving state after refresh/sign-in.
+    */
+    rebuildReceivingQuantitiesFromLedger();
+
+    return changed;
+}
+
+
+function applyCloudTransaction(tx){
+    return mergeCloudReceivingLedger([tx]);
 }
 
 async function pullCloudWorkspaceTransactions(){
     const pharmacyId=cloudWorkspacePharmacyId();
-    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function") return;
-    /* Transactions cannot be applied until this PC has the order rows. */
-    if(PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId) return;
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function" ||
+        PharmFlowCloudWorkspace.receivingSyncBusy ||
+        PharmFlowCloudWorkspace.contextSwitching
+    ){
+        return false;
+    }
+
+    PharmFlowCloudWorkspace.receivingSyncBusy=true;
+
     try{
-        const rows=await authRpc("list_pharmflow_cloud_transactions",{p_pharmacy_id:pharmacyId,p_limit:1000});
-        let changed=false;
-        PharmFlowCloudWorkspace.applyingRemote=true;
-        for(const tx of (Array.isArray(rows)?rows:[]).slice().reverse()) changed=applyCloudTransaction(tx)||changed;
-        if(changed){
-            rebuildStateIndexes(); recalculateStatistics();
-            AppEvents.emit("receiving:updated",{source:"cloud"});
-            if(typeof refreshAllUI==="function") refreshAllUI();
-            saveWorkspaceSnapshot();
+        /*
+           The original bug was here:
+           transaction pulling was blocked by hydratedPharmacyId, even when
+           PC2 already had its orders from the Active Order Manifest.
+           Receiving sync is now independent from the old workspace snapshot.
+        */
+        if(
+            !Array.isArray(AppState?.workspace?.orderData) ||
+            !AppState.workspace.orderData.length
+        ){
+            if(typeof pullActiveOrderManifest==="function"){
+                await pullActiveOrderManifest();
+            }
         }
-    }catch(error){
-        Logger.warn("Receiving transaction pull failed",error);
-        setCloudWorkspaceStatus("offline","Receiving sync unavailable");
-    } finally{
+
+        if(
+            !Array.isArray(AppState?.workspace?.orderData) ||
+            !AppState.workspace.orderData.length
+        ){
+            return false;
+        }
+
+        const rows=await authRpc(
+            "list_pharmflow_cloud_transactions",
+            {
+                p_pharmacy_id:pharmacyId,
+                p_limit:5000
+            }
+        );
+
+        PharmFlowCloudWorkspace.applyingRemote=true;
+
+        const changed=mergeCloudReceivingLedger(
+            Array.isArray(rows) ? rows : []
+        );
+
+        if(changed){
+            rebuildStateIndexes();
+            recalculateStatistics();
+            saveWorkspaceSnapshot();
+
+            AppEvents.emit(
+                "receiving:updated",
+                {
+                    source:"cloud-ledger",
+                    synchronized:true
+                }
+            );
+
+            if(typeof refreshEntireUI==="function"){
+                refreshEntireUI();
+            }
+            else if(typeof refreshAllUI==="function"){
+                refreshAllUI();
+            }
+        }
+
+        PharmFlowCloudWorkspace.lastReceivingSyncAt=nowISO();
+        PharmFlowCloudWorkspace.lastReceivingSyncError=null;
+
+        return true;
+    }
+    catch(error){
+        Logger.warn(
+            "Receiving transaction pull failed",
+            error
+        );
+
+        PharmFlowCloudWorkspace.lastReceivingSyncError=
+            error?.message || String(error);
+
+        setCloudWorkspaceStatus(
+            "offline",
+            "Receiving sync unavailable"
+        );
+
+        return false;
+    }
+    finally{
         PharmFlowCloudWorkspace.applyingRemote=false;
+        PharmFlowCloudWorkspace.receivingSyncBusy=false;
     }
 }
 
@@ -1037,24 +1340,44 @@ function initializePharmFlowCloudWorkspace(){
         ensureCloudAccountContextIsolation();
         attemptCloudWorkspaceHydration();
 
-        /* Serialized reconciliation prevents the UI/header oscillation
-           seen when multiple cloud pulls overlap. */
         await reconcileCloudWorkspaceAuthority();
 
         if(!PharmFlowCloudWorkspace.contextSwitching){
             await pullActiveOrderManifest();
-            flushCloudWorkspaceQueue();
-            pullCloudWorkspaceTransactions();
         }
     },2200);
 
+    /*
+       Receiving synchronization has its own independent loop.
+       It no longer waits for workspace reconciliation to finish.
+    */
+    PharmFlowCloudWorkspace.receivingSyncTimer=setInterval(async()=>{
+        if(
+            document.visibilityState!=="visible" ||
+            PharmFlowCloudWorkspace.contextSwitching
+        ){
+            return;
+        }
+
+        await flushCloudWorkspaceQueue();
+        await pullCloudWorkspaceTransactions();
+    },1000);
+
     window.addEventListener("focus",()=>{
-        reconcileWorkspaceGeneration().then(()=>reconcileCloudWorkspaceAuthority());
+        reconcileWorkspaceGeneration()
+            .then(()=>reconcileCloudWorkspaceAuthority());
+
+        flushCloudWorkspaceQueue()
+            .then(()=>pullCloudWorkspaceTransactions());
     });
 
     document.addEventListener("visibilitychange",()=>{
         if(document.visibilityState==="visible"){
-            reconcileWorkspaceGeneration().then(()=>reconcileCloudWorkspaceAuthority());
+            reconcileWorkspaceGeneration()
+                .then(()=>reconcileCloudWorkspaceAuthority());
+
+            flushCloudWorkspaceQueue()
+                .then(()=>pullCloudWorkspaceTransactions());
         }
     });
     attemptCloudWorkspaceHydration();

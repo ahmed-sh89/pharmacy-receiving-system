@@ -302,8 +302,14 @@ function getWorkspaceOrderNumbers(){
 
 function getFinalizeReceivingSummary(){
     const allOrderNumbers=getWorkspaceOrderNumbers();
-    const selected=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"";
-    const orderNumbers=selected&&selected!=="ALL"?allOrderNumbers.filter(n=>n===selected):allOrderNumbers;
+    const selectedOrders=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+    const orderNumbers=
+        selectedOrders.length===1
+            ? allOrderNumbers.filter(n=>n===selectedOrders[0])
+            : [];
     let report=null;
     if(typeof buildReceivingDiscrepancyReport === "function"){
         report=buildReceivingDiscrepancyReport({visibleOnly:false});
@@ -407,8 +413,12 @@ function refreshFinalizeReceivingButton(){
     if(!button){ return; }
     const hasOrder=!!(AppState.workspace && Array.isArray(AppState.workspace.orderData) && AppState.workspace.orderData.length);
     const active=getWorkspaceOrderNumbers();
-    const selected=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"";
-    const needsSpecificOrder=active.length>1&&selected==="ALL";
+    const selectedOrders=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+    const needsSpecificOrder=
+        active.length>1 && selectedOrders.length!==1;
     button.disabled=!hasOrder||FinalizeReceivingEngine.busy||needsSpecificOrder;
     button.title=needsSpecificOrder?"Select one order before Finalize Receiving":"";
     button.textContent=FinalizeReceivingEngine.busy?"Finalizing…":"✓ Finalize Receiving";

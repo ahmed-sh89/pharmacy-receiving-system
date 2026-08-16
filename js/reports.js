@@ -909,25 +909,83 @@ function getActiveReceivingOrderNumbers(){
     return rows;
 }
 
-function getSelectedReceivingOrderNumber(){
+function getSelectedReceivingOrderNumbers(){
     const active=getActiveReceivingOrderNumbers();
-    const raw=toSafeString(
+    const saved=Array.isArray(AppState?.workspace?.selectedOrderNumbers)
+        ? AppState.workspace.selectedOrderNumbers
+              .map(normalizeOrderNumber)
+              .filter(order=>active.includes(order))
+        : [];
+
+    if(saved.length){
+        return [...new Set(saved)];
+    }
+
+    const legacy=toSafeString(
         AppState?.workspace?.selectedOrderNumber || ""
     ).trim();
 
-    if(raw.toUpperCase()==="ALL"){
+    if(legacy.toUpperCase()==="ALL"){
+        return active.slice();
+    }
+
+    const normalized=normalizeOrderNumber(legacy);
+    if(normalized && active.includes(normalized)){
+        return [normalized];
+    }
+
+    return active.slice();
+}
+
+function isAllReceivingOrdersSelected(){
+    const active=getActiveReceivingOrderNumbers();
+    const selected=getSelectedReceivingOrderNumbers();
+    return !!active.length && selected.length===active.length;
+}
+
+function getSelectedReceivingOrderNumber(){
+    const selected=getSelectedReceivingOrderNumbers();
+
+    if(isAllReceivingOrdersSelected()){
         return "ALL";
     }
 
-    const current=normalizeOrderNumber(raw);
+    return selected.length===1
+        ? selected[0]
+        : "MULTI";
+}
 
-    if(current && active.includes(current)){
-        return current;
+function setSelectedReceivingOrderNumbers(orderNumbers){
+    const active=getActiveReceivingOrderNumbers();
+    let selected=(Array.isArray(orderNumbers)?orderNumbers:[])
+        .map(normalizeOrderNumber)
+        .filter(order=>active.includes(order));
+
+    selected=[...new Set(selected)];
+
+    if(!selected.length){
+        return false;
     }
 
-    return active.length>1
-        ? "ALL"
-        : (active[0] || "");
+    AppState.workspace.selectedOrderNumbers=selected;
+
+    if(selected.length===active.length){
+        AppState.workspace.selectedOrderNumber="ALL";
+        AppState.workspace.orderName="All Orders";
+    }
+    else if(selected.length===1){
+        AppState.workspace.selectedOrderNumber=selected[0];
+        AppState.workspace.orderName=selected[0];
+    }
+    else{
+        AppState.workspace.selectedOrderNumber="MULTI";
+        AppState.workspace.orderName=
+            selected.length+" Orders Selected";
+    }
+
+    saveWorkspaceSnapshot?.();
+    refreshEntireUI?.();
+    return true;
 }
 
 function setSelectedReceivingOrderNumber(orderNumber){
@@ -935,32 +993,17 @@ function setSelectedReceivingOrderNumber(orderNumber){
     const active=getActiveReceivingOrderNumbers();
 
     if(raw.toUpperCase()==="ALL"){
-        if(!active.length){
-            return false;
-        }
-
-        AppState.workspace.selectedOrderNumber="ALL";
-        AppState.workspace.orderName="All Orders";
-
-        saveWorkspaceSnapshot?.();
-        refreshEntireUI?.();
-        return true;
+        return setSelectedReceivingOrderNumbers(active);
     }
 
     const normalized=normalizeOrderNumber(raw);
-
     if(!normalized || !active.includes(normalized)){
         return false;
     }
 
-    AppState.workspace.selectedOrderNumber=normalized;
-    AppState.workspace.orderName=normalized;
-
-    saveWorkspaceSnapshot?.();
-    refreshEntireUI?.();
-
-    return true;
+    return setSelectedReceivingOrderNumbers([normalized]);
 }
+
 
 function getWorkspaceOrderFile(orderNumber){
     const normalized=normalizeOrderNumber(orderNumber);
@@ -1208,8 +1251,14 @@ function buildMultiOrderReceivingReport(options={}){
     const groups=[];
     const flatRows=[];
 
-    const selectedScope=getSelectedReceivingOrderNumber();
-    const reportOrders=selectedScope && selectedScope!=="ALL" ? getActiveReceivingOrderNumbers().filter(order=>order===selectedScope) : getActiveReceivingOrderNumbers();
+    const selectedOrders=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : getActiveReceivingOrderNumbers();
+
+    const reportOrders=selectedOrders.length
+        ? selectedOrders
+        : getActiveReceivingOrderNumbers();
 
     reportOrders.forEach(orderNumber=>{
         const meta=getReceivingOrderMetadata()

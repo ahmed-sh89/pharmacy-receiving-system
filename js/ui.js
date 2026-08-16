@@ -1057,33 +1057,78 @@ function bindUIEvents(){
         });
 
         pickerMenu?.addEventListener("click",event=>{
+            const action=event.target.closest("[data-order-picker-action]");
             const option=event.target.closest("[data-header-order]");
-            if(!option) return;
 
-            const value=option.dataset.headerOrder;
+            if(action){
+                event.preventDefault();
+                const active=
+                    typeof getActiveReceivingOrderNumbers==="function"
+                        ? getActiveReceivingOrderNumbers()
+                        : [];
 
-            if(
-                typeof setSelectedReceivingOrderNumber==="function" &&
-                setSelectedReceivingOrderNumber(value)
-            ){
-                window.PharmFlowOrderScope=value;
+                if(action.dataset.orderPickerAction==="all"){
+                    pickerMenu
+                        .querySelectorAll("[data-header-order]")
+                        .forEach(el=>{ el.checked=true; });
+                }
+                else if(action.dataset.orderPickerAction==="clear"){
+                    pickerMenu
+                        .querySelectorAll("[data-header-order]")
+                        .forEach(el=>{ el.checked=false; });
+                }
+                else if(action.dataset.orderPickerAction==="ok"){
+                    const selected=[
+                        ...pickerMenu.querySelectorAll(
+                            "[data-header-order]:checked"
+                        )
+                    ].map(el=>el.dataset.headerOrder);
 
-                pickerMenu.hidden=true;
-                pickerButton?.setAttribute("aria-expanded","false");
+                    if(!selected.length){
+                        showToast?.(
+                            "Select at least one Order",
+                            "warning"
+                        );
+                        return;
+                    }
 
-                refreshHeader();
-                refreshDashboard();
-                refreshProgress();
-                refreshReceivingTable();
-                refreshHealthSummary?.();
-                refreshOpenOrderStatusReport?.();
+                    if(
+                        typeof setSelectedReceivingOrderNumbers==="function" &&
+                        setSelectedReceivingOrderNumbers(selected)
+                    ){
+                        window.PharmFlowOrderScope=
+                            selected.length===active.length
+                                ? "ALL"
+                                : selected.join("|");
 
-                showToast?.(
-                    value==="ALL"
-                        ? "Showing all active orders"
-                        : "Active receiving order: "+value,
-                    "success"
-                );
+                        pickerMenu.hidden=true;
+                        pickerButton?.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                        refreshHeader();
+                        refreshDashboard();
+                        refreshProgress();
+                        refreshReceivingTable();
+                        refreshHealthSummary?.();
+                        refreshOpenOrderStatusReport?.();
+
+                        showToast?.(
+                            selected.length===active.length
+                                ? "Showing all active orders"
+                                : selected.length===1
+                                    ? "Selected order: "+selected[0]
+                                    : selected.length+" Orders Selected",
+                            "success"
+                        );
+                    }
+                }
+                return;
+            }
+
+            if(option){
+                event.stopPropagation();
             }
         });
 
@@ -1490,6 +1535,11 @@ function refreshHeader(){
                 ? getActiveReceivingOrderNumbers()
                 : [];
 
+        const selectedOrders=
+            typeof getSelectedReceivingOrderNumbers==="function"
+                ? getSelectedReceivingOrderNumbers()
+                : [];
+
         const selected=
             typeof getSelectedReceivingOrderNumber==="function"
                 ? getSelectedReceivingOrderNumber()
@@ -1499,47 +1549,67 @@ function refreshHeader(){
             orderLabel.hidden=true;
             picker.hidden=false;
 
+            const allSelected=
+                selectedOrders.length===activeOrders.length;
+
             if(pickerLabel){
                 pickerLabel.textContent=
-                    selected==="ALL"
+                    allSelected
                         ? "All Orders"
-                        : selected;
+                        : selectedOrders.length===1
+                            ? selectedOrders[0]
+                            : selectedOrders.length+" Orders Selected";
             }
 
             if(pickerMenu){
-                const values=["ALL",...activeOrders];
-                const signature=values.join("|");
+                const signature=
+                    activeOrders.join("|")+
+                    "::"+
+                    selectedOrders.join("|");
 
                 if(pickerMenu.dataset.signature!==signature){
-                    pickerMenu.innerHTML=values.map(value=>`
-                        <button
-                            type="button"
-                            class="headerOrderPickerOption"
-                            data-header-order="${escapeHTML(value)}"
-                            role="menuitem"
-                        >
-                            <span class="headerOrderOptionMain">
-                                ${value==="ALL" ? "All Orders" : escapeHTML(value)}
-                            </span>
-                            <span class="headerOrderOptionSub">
-                                ${value==="ALL"
-                                    ? `${activeOrders.length} active orders · Combined dashboard`
-                                    : "Individual order view"}
-                            </span>
-                        </button>
-                    `).join("");
+                    pickerMenu.innerHTML=`
+                        <div class="headerOrderPickerTitle">
+                            <strong>Select Orders</strong>
+                            <span>Choose one or multiple active orders</span>
+                        </div>
+
+                        <div class="headerOrderPickerOptions">
+                            ${activeOrders.map(order=>`
+                                <label class="headerOrderCheckOption">
+                                    <input
+                                        type="checkbox"
+                                        data-header-order="${escapeHTML(order)}"
+                                        ${selectedOrders.includes(order) ? "checked" : ""}
+                                    >
+                                    <span class="headerOrderCheckBox"></span>
+                                    <span class="headerOrderCheckText">
+                                        <strong>${escapeHTML(order)}</strong>
+                                        <small>Include in Dashboard & Receiving</small>
+                                    </span>
+                                </label>
+                            `).join("")}
+                        </div>
+
+                        <div class="headerOrderPickerActions">
+                            <button
+                                type="button"
+                                data-order-picker-action="all"
+                            >Select All</button>
+                            <button
+                                type="button"
+                                data-order-picker-action="clear"
+                            >Clear</button>
+                            <button
+                                type="button"
+                                class="headerOrderPickerOk"
+                                data-order-picker-action="ok"
+                            >OK</button>
+                        </div>
+                    `;
 
                     pickerMenu.dataset.signature=signature;
                 }
-
-                pickerMenu
-                    .querySelectorAll("[data-header-order]")
-                    .forEach(option=>{
-                        option.classList.toggle(
-                            "selected",
-                            option.dataset.headerOrder===selected
-                        );
-                    });
             }
         }else{
             if(picker) picker.hidden=true;
@@ -1592,9 +1662,13 @@ function getSelectedOrderDashboardMetrics(){
             : [];
 
     const targetOrders=
-        selected==="ALL"
-            ? activeOrders
-            : [selected];
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : (
+                selected==="ALL"
+                    ? activeOrders
+                    : [selected]
+            );
 
     if(!targetOrders.length){
         return null;
@@ -1647,9 +1721,9 @@ function getSelectedOrderDashboardMetrics(){
             );
 
             const inScope=
-                selected==="ALL"
-                    ? activeOrders.includes(txOrder)
-                    : txOrder===normalizeOrderNumber(selected);
+                targetOrders
+                    .map(normalizeOrderNumber)
+                    .includes(txOrder);
 
             return (
                 inScope &&
@@ -1958,9 +2032,9 @@ function getVisibleReceivingItemsForExport(){
 function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
     const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]), categoryFilter=UI.receivingFilters.category||"all";
-    const scope=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"ALL", active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[], allMode=scope==="ALL"&&active.length>1;
+    const scope=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"ALL", active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[], selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():(scope==="ALL"?active:[scope].filter(Boolean)), allMode=selectedOrders.length>1;
     const hr=tbody.closest("table")?.querySelector("thead tr");if(hr){let h=hr.querySelector('[data-order-column="1"]');if(allMode&&!h){h=document.createElement("th");h.dataset.orderColumn="1";h.textContent="Order Number";const cells=hr.querySelectorAll("th");hr.insertBefore(h,cells[1]||null);}else if(!allMode&&h)h.remove();}
-    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=allMode?active:[scope||active[0]].filter(Boolean);orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(scope!=="ALL"&&!itemBelongsToOrderScope(item,scope))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
+    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(selectedOrders.length && !selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     if(!(AppState.workspace.orderData||[]).length){tbody.innerHTML=`<tr><td colspan="${allMode?9:8}" class="tableEmptyState">No order items loaded.</td></tr>`;return;}if(!rows.length){tbody.innerHTML=`<tr><td colspan="${allMode?9:8}" class="tableEmptyState">No items match the selected filters.</td></tr>`;return;}
     rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);if(allMode){const c=document.createElement("td");c.className="receivingOrderCell";c.innerHTML=`<span class="receivingOrderBadge">${escapeHTML(item.orderNumber||"")}</span>`;tr.insertBefore(c,tr.children[1]||null);}tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});

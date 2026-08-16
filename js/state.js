@@ -753,6 +753,15 @@ function addReceivingTransaction(
             ||
             AppState.workspace.orderId,
 
+        selectedOrderNumber:
+            transaction.selectedOrderNumber
+            ||
+            transaction.orderId
+            ||
+            AppState.workspace.selectedOrderNumber
+            ||
+            "",
+
         dateTime:
             transaction.dateTime
             ||

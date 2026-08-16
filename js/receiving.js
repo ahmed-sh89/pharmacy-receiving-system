@@ -855,11 +855,50 @@ function receiveOrderItem(options){
    CREATE RECEIVING TRANSACTION
 ===================================================== */
 
+
+function resolveReceivingTransactionOrder(item){
+    const selectedOrders=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+
+    const memberships=[
+        ...new Set(
+            (item?.orderNumbers||[])
+                .map(normalizeOrderNumber)
+                .filter(Boolean)
+        )
+    ];
+
+    const eligible=memberships.filter(
+        order=>selectedOrders.includes(order)
+    );
+
+    if(selectedOrders.length===1){
+        return selectedOrders[0];
+    }
+
+    if(eligible.length===1){
+        return eligible[0];
+    }
+
+    if(eligible.length>1){
+        throw new Error(
+            "This item exists in more than one selected Order. Select one target Order before receiving it."
+        );
+    }
+
+    throw new Error(
+        "This item is not included in the selected Orders."
+    );
+}
+
+
 function createReceivingTransaction(options){
 
     const item=options.item;
-    let transactionOrder=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"";
-    if(transactionOrder==="ALL"){const unique=[...new Set((item?.orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];if(unique.length===1)transactionOrder=unique[0];else throw new Error("This item belongs to more than one active order. Select the target order before receiving it.");}
+    const transactionOrder=
+        resolveReceivingTransactionOrder(item);
 
     return addReceivingTransaction({
 
@@ -1417,8 +1456,10 @@ function applyQuantityAdjustment(options){
                 createTransactionId(),
 
             orderId:
-                AppState.workspace
-                    .orderId,
+                resolveReceivingTransactionOrder(item),
+
+            selectedOrderNumber:
+                resolveReceivingTransactionOrder(item),
 
             dateTime:
                 nowISO(),
