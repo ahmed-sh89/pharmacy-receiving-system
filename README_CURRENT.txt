@@ -1,35 +1,35 @@
-PharmFlow Phase 2C.10.2.5 — Atomic Cross-PC Workspace Reset
+PharmFlow Phase 2C.10.2.6 — Critical Account / Pharmacy Isolation
 
-IMPORTANT DEPLOYMENT
-Your live site was still on 2C.10.2.3 when this build was prepared.
-Therefore run ONLY:
-PHASE2C1025_DEPLOY_FROM_2C1023.sql
+P0 DATA-ISOLATION FIX
+- Current Workspace local cache is now scoped by BOTH pharmacy_id and user_id.
+- PharmFlow no longer reads the old browser-wide PRS_V3_CURRENT_WORKSPACE key.
+- An Owner signing into Pharmacy HHP084 cannot inherit the previous pharmacy user's order.
+- Pending cloud transaction queues are also account/pharmacy scoped.
+- Sign Out clears only the in-memory runtime; it does NOT delete the previous pharmacy's cloud data.
+- Signing into another account in the same browser triggers a full runtime context switch before cloud hydration.
+- Archive runtime is also cleared on context change and then reloaded for the correct pharmacy.
+- Cloud hydration state, workspace generation, pending saves and reconciliation promises are reset on account change.
 
-That SQL includes BOTH:
-- the 2C.10.2.4 complete single-order archive delete cascade, and
-- the new 2C.10.2.5 atomic reset generation protection.
+ANTI-UI-LOOP / HEADER STABILITY
+- Cloud authority reconciliation is serialized: only one reconcile may run at a time.
+- Cloud workspace is applied only when its semantic content changed.
+- The old 250 ms auth-context watcher is reduced to a 1200 ms safety watcher.
+- Main cloud poll is serialized at 2200 ms instead of launching overlapping async operations.
+- Header cloud/status areas have stable widths to prevent constant left/right movement.
 
-Then upload this full project. Do not upload 2C.10.2.4 separately.
+IMPORTANT
+- This build is based on 2C.10.2.5 and therefore also contains the previously prepared:
+  * Atomic cross-PC workspace reset
+  * 2C.10.2.4 complete archive delete cascade
+  * pre-Finalize Email Differences
+  * Device ID hidden from user-facing Handheld & Sessions UI
 
-RESET FIX
-- Reset Current Workspace is now ONE server-side atomic operation.
-- It increments a pharmacy workspace generation, removes unfinished order/source rows,
-  and clears the shared cloud workspace in the same server transaction.
-- A PC holding an older generation is blocked from saving that stale order back.
-- Every visible PC checks the server generation repeatedly and on browser focus.
-- When PC2 resets, PC1 automatically clears its stale Current Order after generation detection.
-- Pending local cloud snapshot timers are cancelled on reset.
-- Pending transaction queue is cleared on reset.
-- Local reset only happens AFTER server reset succeeds.
-- Hard cloud reset timeout: 12 seconds.
-- Live session close cannot block Reset for more than ~6.5 seconds.
-- Lifecycle, Archive and Global Master refresh are background maintenance and no longer
-  keep the loading screen open for a minute.
+SQL
+- If PHASE2C1025_DEPLOY_FROM_2C1023.sql has NOT been run yet, run it once.
+- No additional SQL is required specifically for 2C.10.2.6.
 
-ALSO INCLUDED FROM 2C.10.2.4
-- Complete Archive single-order deletion.
-- Deleted order removed from Item Transfer source and lifecycle registry.
-- Device ID hidden from Handheld & Sessions user interface.
-- Email Differences available before Finalize.
-
-Global GTIN Master and finalized unrelated history are not touched by Current Workspace Reset.
+NEXT AFTER THIS P0 TEST PASSES
+- Multiple Order selector / per-order receiving scope
+- Multi-order email with a separate professional table for each Order
+- All Discrepancies default = Select All
+- Final HTML/rich email design improvements

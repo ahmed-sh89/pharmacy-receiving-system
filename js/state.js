@@ -990,6 +990,54 @@ function restoreWorkspaceState(data){
 
 
 /* =====================================================
+   ACCOUNT / PHARMACY LOCAL-STATE ISOLATION
+===================================================== */
+
+function getAuthenticatedWorkspaceScope(){
+    const context =
+        typeof AuthState!=="undefined"
+            ? AuthState.context
+            : null;
+
+    const pharmacyId=String(
+        context?.pharmacy_id ||
+        AppState?.account?.pharmacyId ||
+        ""
+    ).trim();
+
+    const userId=String(
+        context?.user_id ||
+        AppState?.account?.userId ||
+        ""
+    ).trim();
+
+    if(!pharmacyId || !userId){
+        return "";
+    }
+
+    return pharmacyId+"__"+userId;
+}
+
+function getScopedWorkspaceStorageKey(){
+    const base=APP_CONFIG.storageKeys.currentWorkspace;
+    const scope=getAuthenticatedWorkspaceScope();
+
+    /* Authenticated PharmFlow never reads the old global workspace key.
+       This prevents Pharmacy A from appearing inside Pharmacy B. */
+    return scope ? `${base}__${scope}` : `${base}__NO_AUTH_CONTEXT`;
+}
+
+function removeLegacyUnscopedWorkspaceSnapshot(){
+    try{
+        storageRemove(APP_CONFIG.storageKeys.currentWorkspace);
+    }catch(_){}
+}
+
+window.getAuthenticatedWorkspaceScope=getAuthenticatedWorkspaceScope;
+window.getScopedWorkspaceStorageKey=getScopedWorkspaceStorageKey;
+
+
+/* =====================================================
    SAVE LIGHTWEIGHT WORKSPACE
 ===================================================== */
 
@@ -1001,9 +1049,7 @@ function saveWorkspaceSnapshot(){
 
     const success =
         storageSet(
-            APP_CONFIG
-                .storageKeys
-                .currentWorkspace,
+            getScopedWorkspaceStorageKey(),
             snapshot
         );
 
@@ -1034,9 +1080,7 @@ function loadWorkspaceSnapshot(){
 
     const snapshot =
         storageGet(
-            APP_CONFIG
-                .storageKeys
-                .currentWorkspace,
+            getScopedWorkspaceStorageKey(),
             null
         );
 
@@ -1060,9 +1104,7 @@ function loadWorkspaceSnapshot(){
 function deleteWorkspaceSnapshot(){
 
     return storageRemove(
-        APP_CONFIG
-            .storageKeys
-            .currentWorkspace
+        getScopedWorkspaceStorageKey()
     );
 
 }
@@ -1134,6 +1176,10 @@ function getStateDebugSnapshot(){
 function initializeState(){
 
     ensureDeviceId();
+
+    /* Old PharmFlow versions used one browser-wide workspace key.
+       Never allow that unsafe legacy cache to cross account boundaries. */
+    removeLegacyUnscopedWorkspaceSnapshot();
 
     const restored =
         loadWorkspaceSnapshot();

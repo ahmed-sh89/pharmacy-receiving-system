@@ -112,6 +112,19 @@ window.bootProtectedApplication = async function(){
 async function startApplication(){
 
     if(PharmacyApp.initialized){
+        /* Re-authentication in the same tab: refresh the authenticated
+           pharmacy context without carrying the previous runtime state. */
+        ensureCloudAccountContextIsolation?.();
+        refreshEntireUI?.();
+
+        if(typeof restoreCloudWorkspaceOnLogin==="function"){
+            restoreCloudWorkspaceOnLogin();
+        }
+
+        if(typeof restoreHistoricalArchive==="function"){
+            restoreHistoricalArchive();
+        }
+
         return;
     }
 

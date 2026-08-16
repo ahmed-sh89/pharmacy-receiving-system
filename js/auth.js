@@ -24,7 +24,8 @@ const AuthState = {
     busy:false,
     registration:null,
     ownerRegistrations:[],
-    ownerPharmacies:[]
+    ownerPharmacies:[],
+    lastContextScope:""
 };
 
 function getSupabaseProjectUrl(){
@@ -808,6 +809,40 @@ async function refreshAuthToken(){
     }
 }
 
+
+function getAuthContextScope(row=AuthState.context){
+    const pharmacyId=String(row?.pharmacy_id||"").trim();
+    const userId=String(row?.user_id||AuthState.user?.id||"").trim();
+
+    return pharmacyId && userId
+        ? pharmacyId+"__"+userId
+        : "";
+}
+
+function publishAuthenticatedContextReady(previousScope,newScope){
+    try{
+        window.dispatchEvent(
+            new CustomEvent(
+                "auth:context-ready",
+                {
+                    detail:{
+                        previousScope:previousScope||"",
+                        currentScope:newScope||"",
+                        pharmacyId:AuthState.context?.pharmacy_id||null,
+                        userId:AuthState.context?.user_id||null,
+                        changed:
+                            !!previousScope &&
+                            previousScope!==newScope
+                    }
+                }
+            )
+        );
+    }catch(_){}
+}
+
+window.getAuthContextScope=getAuthContextScope;
+
+
 async function loadMyAppContext(){
     if(!getSupabaseAccessToken()){
         AuthState.context = null;
@@ -819,10 +854,24 @@ async function loadMyAppContext(){
     try{
         const rows = await authRpc("get_my_app_context",{});
         const row = Array.isArray(rows) ? rows[0] : rows;
+        const previousScope=String(
+            AuthState.lastContextScope || ""
+        );
+
         AuthState.context = row || null;
+
         if(typeof AppState !== "undefined"){
             AppState.account = normalizeAccountContext(row);
         }
+
+        const newScope=getAuthContextScope(row);
+        AuthState.lastContextScope=newScope;
+
+        publishAuthenticatedContextReady(
+            previousScope,
+            newScope
+        );
+
         return row;
     }
     catch(error){
@@ -990,11 +1039,48 @@ async function signOutCurrentUser(){
     }
     catch(_){ }
     persistAuthSession(null);
+
+    const previousScope=String(
+        AuthState.lastContextScope || ""
+    );
+
     AuthState.context = null;
     AuthState.registration = null;
-    if(typeof AppState !== "undefined" && typeof createEmptyAccountContext === "function"){
-        AppState.account = createEmptyAccountContext();
+    AuthState.lastContextScope="";
+
+    if(typeof PharmFlowCloudWorkspace!=="undefined"){
+        if(typeof cancelPendingCloudWorkspaceSave==="function"){
+            cancelPendingCloudWorkspaceSave();
+        }
+
+        PharmFlowCloudWorkspace.hydratedPharmacyId=null;
+        PharmFlowCloudWorkspace.lastCloudUpdate=null;
+        PharmFlowCloudWorkspace.lastAppliedWorkspaceSignature="";
+        PharmFlowCloudWorkspace.generation=null;
+        PharmFlowCloudWorkspace.activeAccountScope="";
+        PharmFlowCloudWorkspace.hydrationPromise=null;
+        PharmFlowCloudWorkspace.reconcilePromise=null;
     }
+
+    if(
+        typeof AppState!=="undefined" &&
+        typeof createEmptyAccountContext==="function"
+    ){
+        AppState.account=createEmptyAccountContext();
+        AppState.workspace=createEmptyWorkspace();
+        AppState.session=createEmptySession();
+
+        if(AppState.archive){
+            AppState.archive.orders=[];
+            AppState.archive.transactions=[];
+        }
+
+        resetStatistics?.();
+        rebuildStateIndexes?.();
+    }
+
+    publishAuthenticatedContextReady(previousScope,"");
+
     lockApplicationForAuth();
     renderAuthState();
 }
@@ -1560,7 +1646,18 @@ function unlockApplicationAfterAuth(){
     const overlay = document.getElementById("authGate");
     if(overlay){ overlay.classList.remove("visible"); }
 
-    if(typeof window.bootProtectedApplication === "function"){
+    if(
+        typeof PharmacyApp!=="undefined" &&
+        PharmacyApp.initialized===true
+    ){
+        /* Signing into another account in the same browser must not
+           reuse the previous account's in-memory AppState. */
+        ensureCloudAccountContextIsolation?.();
+        refreshEntireUI?.();
+        restoreCloudWorkspaceOnLogin?.();
+        restoreHistoricalArchive?.();
+    }
+    else if(typeof window.bootProtectedApplication === "function"){
         window.bootProtectedApplication();
     }
     else if(typeof refreshEntireUI === "function"){

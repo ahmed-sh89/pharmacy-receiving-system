@@ -6334,3 +6334,43 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
     display:none !important;
   }
 }
+
+
+/* =========================================================
+   PHARMFLOW 2C.10.2.6 — ACCOUNT/PHARMACY ISOLATION
+   Header stability while cloud state changes.
+========================================================= */
+
+.topBarRight{
+  min-width:470px;
+  justify-content:flex-end;
+  contain:layout;
+}
+
+.topStatusCard{
+  min-width:104px;
+  flex:0 0 auto;
+}
+
+#cloudWorkspaceStatus{
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  min-width:92px;
+  flex:0 0 92px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+@media(max-width:1050px){
+  .topBarRight{
+    min-width:0;
+    contain:none;
+  }
+
+  #cloudWorkspaceStatus{
+    min-width:0;
+    flex:0 0 auto;
+  }
+}
