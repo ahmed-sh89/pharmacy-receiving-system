@@ -537,6 +537,13 @@
                         No Order
                     </strong>
 
+                    <select
+                        id="headerOrderSelector"
+                        class="headerOrderSelector"
+                        aria-label="Select active order"
+                        hidden
+                    ></select>
+
                 </div>
 
 
@@ -1059,7 +1066,7 @@
                                 <div class="issueMultiFilterMenu" role="group" aria-label="Discrepancy types">
                                     <label><input type="checkbox" data-receiving-issue value="not_received" checked> Not Received</label>
                                     <label><input type="checkbox" data-receiving-issue value="partial" checked> Partial Shortage</label>
-                                    <label><input type="checkbox" data-receiving-issue value="received_any"> Received Any Quantity</label>
+                                    <label><input type="checkbox" data-receiving-issue value="received_any" checked> Received Any Quantity</label>
                                     <label><input type="checkbox" data-receiving-issue value="over" checked> Over Received</label>
                                     <label><input type="checkbox" data-receiving-issue value="manual" checked> Manual / Unordered Extra</label>
                                     <div class="issueMultiFilterActions">
@@ -1095,7 +1102,7 @@
                             <div>
                                 <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
                                 <h3>Discrepancy Report Preview</h3>
-                                <p>Select the discrepancy types above. The table and exports always use exactly the rows currently displayed.</p>
+                                <p>Select the receiving types above. The table, exports and Email Differences use exactly the rows currently displayed.</p>
                             </div>
                             <div class="receivingSummaryActions">
                                 <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Discrepancies · Excel</button>

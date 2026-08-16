@@ -25,6 +25,8 @@ const AppState = {
 
         active:false,
 
+        selectedOrderNumber:"",
+
         orderFiles:[],
 
         mappingFiles:[],
@@ -183,6 +185,8 @@ function createEmptyWorkspace(){
         closedAt:null,
 
         active:false,
+
+        selectedOrderNumber:"",
 
         orderFiles:[],
 

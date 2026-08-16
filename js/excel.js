@@ -559,7 +559,10 @@ async function importOrderFile(file, preflightMeta = null){
                 fromWarehouse:
                     preflightMeta ? preflightMeta.fromWarehouse : "",
                 toWarehouse:
-                    preflightMeta ? preflightMeta.toWarehouse : ""
+                    preflightMeta ? preflightMeta.toWarehouse : "",
+
+                sourceRows:
+                    sourceOrderRows
             }
         );
 
@@ -595,6 +598,14 @@ async function importOrderFile(file, preflightMeta = null){
 
         AppState.workspace.active =
             true;
+
+        if(
+            !AppState.workspace.selectedOrderNumber &&
+            detectedOrderId
+        ){
+            AppState.workspace.selectedOrderNumber=
+                normalizeOrderNumber(detectedOrderId);
+        }
 
         result.success =
             true;
@@ -1615,6 +1626,11 @@ function registerImportedFile(
 
         rows:
             rows,
+
+        sourceRows:
+            Array.isArray(extra.sourceRows)
+                ? deepClone(extra.sourceRows)
+                : [],
 
         documentId:
             toSafeString(

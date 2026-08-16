@@ -345,6 +345,75 @@ async function reconcileWorkspaceGeneration(){
 window.reconcileWorkspaceGeneration=reconcileWorkspaceGeneration;
 
 
+
+async function forceCloudWorkspaceSnapshot(reason="manual"){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function"
+    ){
+        setCloudWorkspaceStatus("offline","Pending sync");
+        return false;
+    }
+
+    try{
+        ensureCloudAccountContextIsolation();
+
+        if(PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacyId){
+            await restoreCloudWorkspaceOnLogin();
+        }
+
+        cancelPendingCloudWorkspaceSave();
+
+        if(
+            !Array.isArray(AppState?.workspace?.orderData) ||
+            !AppState.workspace.orderData.length
+        ){
+            return false;
+        }
+
+        setCloudWorkspaceStatus("syncing");
+
+        if(PharmFlowCloudWorkspace.generation===null){
+            PharmFlowCloudWorkspace.generation=
+                await getCloudWorkspaceGeneration();
+        }
+
+        await authRpc("save_pharmflow_cloud_workspace_guarded",{
+            p_pharmacy_id:pharmacyId,
+            p_workspace:serializeCurrentWorkspace(),
+            p_device_id:cloudWorkspaceDeviceId(),
+            p_expected_generation:Number(
+                PharmFlowCloudWorkspace.generation||0
+            )
+        });
+
+        PharmFlowCloudWorkspace.lastAppliedWorkspaceSignature=
+            stableCloudWorkspaceSignature(
+                serializeCurrentWorkspace(),
+                {}
+            );
+
+        setCloudWorkspaceStatus("synced",reason);
+        return true;
+    }catch(error){
+        const message=String(error?.message||"");
+
+        if(message.includes("WORKSPACE_RESET_CONFLICT")){
+            await reconcileWorkspaceGeneration();
+            return false;
+        }
+
+        setCloudWorkspaceStatus("offline",message||"Pending sync");
+        return false;
+    }
+}
+
+window.forceCloudWorkspaceSnapshot=forceCloudWorkspaceSnapshot;
+
+
 function scheduleCloudWorkspaceSnapshot(){
     const pharmacyId=cloudWorkspacePharmacyId();
     if(PharmFlowCloudWorkspace.applyingRemote || !pharmacyId) return;
@@ -643,6 +712,12 @@ function initializePharmFlowCloudWorkspace(){
     PharmFlowCloudWorkspace.initialized=true;
     AppEvents.on("receiving:transaction",queueCloudWorkspaceTransaction);
     AppEvents.on("workspace:saved",scheduleCloudWorkspaceSnapshot);
+
+    AppEvents.on("files:updated",()=>{
+        setTimeout(()=>{
+            forceCloudWorkspaceSnapshot("Order files synced");
+        },180);
+    });
     AppEvents.on("workspace:cleared",async()=>{
         const pharmacyId=cloudWorkspacePharmacyId();
 

@@ -882,6 +882,381 @@ function getReportsDebugSnapshot(){
    Exception-only operational reconciliation.
    Official order reports remain sourced from uploaded order data.
 ===================================================== */
+
+/* =====================================================
+   PHASE 2C.10.2.7 — MULTI-ORDER RECEIVING SCOPE
+===================================================== */
+
+function getActiveReceivingOrderNumbers(){
+    const files=Array.isArray(AppState?.workspace?.orderFiles)
+        ? AppState.workspace.orderFiles
+        : [];
+
+    const seen=new Set();
+    const rows=[];
+
+    files.forEach(file=>{
+        const number=normalizeOrderNumber(
+            file?.documentId || file?.orderNumber || ""
+        );
+
+        if(number && !seen.has(number)){
+            seen.add(number);
+            rows.push(number);
+        }
+    });
+
+    return rows;
+}
+
+function getSelectedReceivingOrderNumber(){
+    const active=getActiveReceivingOrderNumbers();
+    const current=normalizeOrderNumber(
+        AppState?.workspace?.selectedOrderNumber || ""
+    );
+
+    if(current && active.includes(current)){
+        return current;
+    }
+
+    return active[0] || "";
+}
+
+function setSelectedReceivingOrderNumber(orderNumber){
+    const normalized=normalizeOrderNumber(orderNumber);
+    const active=getActiveReceivingOrderNumbers();
+
+    if(!normalized || !active.includes(normalized)){
+        return false;
+    }
+
+    AppState.workspace.selectedOrderNumber=normalized;
+    AppState.workspace.orderName=normalized;
+
+    saveWorkspaceSnapshot?.();
+    refreshEntireUI?.();
+
+    return true;
+}
+
+function getWorkspaceOrderFile(orderNumber){
+    const normalized=normalizeOrderNumber(orderNumber);
+
+    return (AppState?.workspace?.orderFiles||[]).find(
+        file=>
+            normalizeOrderNumber(
+                file?.documentId || file?.orderNumber || ""
+            )===normalized
+    ) || null;
+}
+
+function getWorkspaceOrderSourceRows(orderNumber){
+    const file=getWorkspaceOrderFile(orderNumber);
+
+    if(file && Array.isArray(file.sourceRows) && file.sourceRows.length){
+        return file.sourceRows.map(row=>({
+            itemCode:normalizeItemCode(row?.itemCode||""),
+            itemName:toSafeString(row?.itemName||""),
+            orderedQty:toNumber(row?.orderedQty,0),
+            category:toSafeString(row?.category||"")
+        }));
+    }
+
+    /* Compatibility fallback for workspaces uploaded before 2C.10.2.7. */
+    const normalized=normalizeOrderNumber(orderNumber);
+
+    return (AppState?.workspace?.orderData||[])
+        .filter(item=>
+            Array.isArray(item?.orderNumbers) &&
+            item.orderNumbers.some(
+                value=>normalizeOrderNumber(value)===normalized
+            )
+        )
+        .map(item=>({
+            itemCode:item.itemCode,
+            itemName:item.itemName,
+            orderedQty:toNumber(item.orderedQty,0),
+            category:item.category||""
+        }));
+}
+
+function buildReceivedQuantityByOrder(){
+    const totals=new Map();
+    const activeOrders=getActiveReceivingOrderNumbers();
+
+    const ensure=(order,itemCode)=>{
+        const key=normalizeOrderNumber(order)+"||"+normalizeItemCode(itemCode);
+        if(!totals.has(key)) totals.set(key,0);
+        return key;
+    };
+
+    (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
+        if(tx?.undone===true) return;
+
+        const code=normalizeItemCode(tx?.itemCode||"");
+        if(!code) return;
+
+        let order=normalizeOrderNumber(
+            tx?.orderNumber ||
+            tx?.orderId ||
+            tx?.selectedOrderNumber ||
+            ""
+        );
+
+        if(!activeOrders.includes(order)){
+            const item=getItemByCode?.(code);
+            const memberships=(item?.orderNumbers||[])
+                .map(normalizeOrderNumber)
+                .filter(number=>activeOrders.includes(number));
+
+            if(memberships.length===1){
+                order=memberships[0];
+            }else{
+                order="";
+            }
+        }
+
+        if(order){
+            const key=ensure(order,code);
+            totals.set(
+                key,
+                totals.get(key)+toNumber(tx?.quantity,0)
+            );
+        }
+    });
+
+    /* Legacy/unattributed quantities: distribute deterministically FIFO
+       across active orders using original ordered quantities. */
+    (AppState?.workspace?.orderData||[]).forEach(item=>{
+        const code=normalizeItemCode(item?.itemCode||"");
+        if(!code) return;
+
+        const totalReceived=toNumber(item?.receivedQty,0);
+        let attributed=0;
+
+        activeOrders.forEach(order=>{
+            attributed += totals.get(ensure(order,code)) || 0;
+        });
+
+        let remainder=Math.max(0,totalReceived-attributed);
+        if(remainder<=0) return;
+
+        const memberships=activeOrders
+            .map(order=>({
+                order,
+                source:getWorkspaceOrderSourceRows(order)
+                    .find(row=>normalizeItemCode(row.itemCode)===code)
+            }))
+            .filter(entry=>entry.source);
+
+        memberships.forEach(entry=>{
+            if(remainder<=0) return;
+
+            const key=ensure(entry.order,code);
+            const already=totals.get(key)||0;
+            const ordered=toNumber(entry.source.orderedQty,0);
+            const capacity=Math.max(0,ordered-already);
+            const allocate=Math.min(remainder,capacity);
+
+            if(allocate>0){
+                totals.set(key,already+allocate);
+                remainder-=allocate;
+            }
+        });
+
+        if(remainder>0 && memberships.length){
+            const target=getSelectedReceivingOrderNumber() || memberships[0].order;
+            const chosen=memberships.find(x=>x.order===target) || memberships[memberships.length-1];
+            const key=ensure(chosen.order,code);
+            totals.set(key,(totals.get(key)||0)+remainder);
+        }
+    });
+
+    return totals;
+}
+
+function getPerOrderReceivingRows(orderNumber){
+    const normalized=normalizeOrderNumber(orderNumber);
+    const source=getWorkspaceOrderSourceRows(normalized);
+    const receivedMap=buildReceivedQuantityByOrder();
+
+    const rows=source.map(row=>{
+        const code=normalizeItemCode(row.itemCode||"");
+        const received=toNumber(
+            receivedMap.get(normalized+"||"+code),
+            0
+        );
+        const ordered=toNumber(row.orderedQty,0);
+        const difference=received-ordered;
+
+        let issueKey="";
+        let issueType="";
+
+        if(received>ordered){
+            issueKey="over";
+            issueType="Over Received";
+        }else if(ordered>0 && received<=0){
+            issueKey="not_received";
+            issueType="Not Received";
+        }else if(ordered>0 && received>0 && received<ordered){
+            issueKey="partial";
+            issueType="Partial Shortage";
+        }else if(received>0){
+            issueKey="received_any";
+            issueType="Received";
+        }
+
+        return {
+            orderNumber:normalized,
+            "Item Number":row.itemCode||"",
+            "Item Name":row.itemName||"",
+            "Ordered Qty":ordered,
+            "Received Qty":received,
+            "Difference":difference,
+            "Issue Type":issueType,
+            issueKey,
+            "Category":row.category||""
+        };
+    });
+
+    /* Manual extras attributed to the selected order / transaction order. */
+    const manualItems=(AppState?.workspace?.orderData||[])
+        .filter(item=>item?.manual===true && toNumber(item?.receivedQty,0)>0);
+
+    manualItems.forEach(item=>{
+        const txs=(AppState?.workspace?.receivingHistory||[])
+            .filter(tx=>
+                normalizeItemCode(tx?.itemCode||"")===normalizeItemCode(item.itemCode) &&
+                normalizeOrderNumber(tx?.orderId||tx?.orderNumber||"")===normalized &&
+                tx?.undone!==true
+            );
+
+        const received=txs.reduce(
+            (sum,tx)=>sum+toNumber(tx?.quantity,0),
+            0
+        );
+
+        if(received>0){
+            rows.push({
+                orderNumber:normalized,
+                "Item Number":item.itemCode||"",
+                "Item Name":item.itemName||"",
+                "Ordered Qty":0,
+                "Received Qty":received,
+                "Difference":received,
+                "Issue Type":"Manual / Unordered Extra",
+                issueKey:"manual",
+                "Category":item.category||""
+            });
+        }
+    });
+
+    return rows;
+}
+
+function getCurrentReceivingFilterKeys(){
+    const set=
+        typeof UI!=="undefined" &&
+        UI.receivingFilters?.issues instanceof Set
+            ? UI.receivingFilters.issues
+            : new Set([
+                "not_received",
+                "partial",
+                "received_any",
+                "over",
+                "manual"
+            ]);
+
+    return new Set(set);
+}
+
+function buildMultiOrderReceivingReport(options={}){
+    const visibleOnly=options.visibleOnly===true;
+    const selectedKeys=visibleOnly
+        ? getCurrentReceivingFilterKeys()
+        : new Set(["not_received","partial","received_any","over","manual"]);
+
+    const category=
+        visibleOnly &&
+        typeof UI!=="undefined"
+            ? (UI.receivingFilters?.category||"all")
+            : "all";
+
+    const groups=[];
+    const flatRows=[];
+
+    getActiveReceivingOrderNumbers().forEach(orderNumber=>{
+        const meta=getReceivingOrderMetadata()
+            .find(meta=>
+                normalizeOrderNumber(meta.orderNumber)===orderNumber
+            ) || {orderNumber,orderDate:""};
+
+        const allRows=getPerOrderReceivingRows(orderNumber);
+
+        const rows=allRows.filter(row=>{
+            if(!row.issueKey || !selectedKeys.has(row.issueKey)){
+                return false;
+            }
+
+            if(
+                category!=="all" &&
+                toSafeString(row["Category"]||"").trim()!==category
+            ){
+                return false;
+            }
+
+            return true;
+        });
+
+        if(rows.length){
+            const summary={
+                totalItems:allRows.length,
+                discrepancyItems:rows.length,
+                notReceived:rows.filter(r=>r.issueKey==="not_received").length,
+                shortage:rows.filter(r=>r.issueKey==="partial").length,
+                received:rows.filter(r=>r.issueKey==="received_any").length,
+                over:rows.filter(r=>r.issueKey==="over").length,
+                manual:rows.filter(r=>r.issueKey==="manual").length
+            };
+
+            groups.push({
+                orderNumber,
+                orderDate:meta.orderDate||"",
+                fromWarehouse:meta.fromWarehouse||"",
+                toWarehouse:meta.toWarehouse||"",
+                sourceFile:meta.sourceFile||"",
+                summary,
+                rows
+            });
+
+            flatRows.push(...rows);
+        }
+    });
+
+    return {
+        reportType:"MULTI_ORDER_RECEIVING",
+        generatedAt:new Date().toISOString(),
+        orderGroups:groups,
+        orders:groups.map(group=>({
+            orderNumber:group.orderNumber,
+            orderDate:group.orderDate,
+            fromWarehouse:group.fromWarehouse,
+            toWarehouse:group.toWarehouse,
+            sourceFile:group.sourceFile
+        })),
+        orderId:groups.map(g=>g.orderNumber).join(" + "),
+        totalDiscrepancies:flatRows.length,
+        rows:flatRows
+    };
+}
+
+window.getActiveReceivingOrderNumbers=getActiveReceivingOrderNumbers;
+window.getSelectedReceivingOrderNumber=getSelectedReceivingOrderNumber;
+window.setSelectedReceivingOrderNumber=setSelectedReceivingOrderNumber;
+window.getWorkspaceOrderSourceRows=getWorkspaceOrderSourceRows;
+window.buildMultiOrderReceivingReport=buildMultiOrderReceivingReport;
+
+
 function getReceivingOrderMetadata(){
     const files=Array.isArray(AppState.workspace.orderFiles)?AppState.workspace.orderFiles:[];
     const seen=new Set();
@@ -1122,7 +1497,7 @@ window.buildReceivingEmailDifferencesReport=buildReceivingEmailDifferencesReport
 window.printLiveReceivingReport=printLiveReceivingReport;
 
 
-function buildReceivingDiscrepancyReport(options={}){
+function buildReceivingDiscrepancyReportLegacy(options={}){
     const visibleOnly=options.visibleOnly===true;
     const sourceItems=visibleOnly && typeof getVisibleReceivingItemsForExport==="function"
         ? getVisibleReceivingItemsForExport()
@@ -1180,6 +1555,54 @@ function buildReceivingDiscrepancyReport(options={}){
     };
 }
 
+function buildReceivingDiscrepancyReport(options={}){
+    const activeOrders=getActiveReceivingOrderNumbers();
+
+    if(
+        activeOrders.length &&
+        activeOrders.every(order=>{
+            const file=getWorkspaceOrderFile(order);
+            return !!(
+                file &&
+                Array.isArray(file.sourceRows) &&
+                file.sourceRows.length
+            );
+        })
+    ){
+        const multi=buildMultiOrderReceivingReport(options);
+
+        let shortageItems=0;
+        let partialShortageItems=0;
+        let overItems=0;
+        let manualExtraItems=0;
+
+        multi.rows.forEach(row=>{
+            const type=String(row["Issue Type"]||"");
+
+            if(type==="Not Received"){
+                shortageItems++;
+            }else if(type==="Partial Shortage"){
+                shortageItems++;
+                partialShortageItems++;
+            }else if(type==="Over Received"){
+                overItems++;
+            }else if(type==="Manual / Unordered Extra"){
+                manualExtraItems++;
+            }
+        });
+
+        return {
+            ...multi,
+            shortageItems,
+            partialShortageItems,
+            overItems,
+            manualExtraItems
+        };
+    }
+
+    return buildReceivingDiscrepancyReportLegacy(options);
+}
+
 function refreshReceivingVerificationSummary(){
     const all=buildReceivingDiscrepancyReport({visibleOnly:false});
     const visible=buildReceivingDiscrepancyReport({visibleOnly:true});
@@ -1193,6 +1616,24 @@ function refreshReceivingVerificationSummary(){
     Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
     return visible;
 }
+
+
+function buildEmailReportFromDisplayedReceiving(){
+    const report=buildReceivingDiscrepancyReport({visibleOnly:true});
+
+    if(Array.isArray(report.orderGroups)){
+        return {
+            ...report,
+            emailUsesCurrentFilters:true
+        };
+    }
+
+    return report;
+}
+
+window.buildEmailReportFromDisplayedReceiving=
+    buildEmailReportFromDisplayedReceiving;
+
 
 function getReceivingReportFileBase(summary){
     const orderNumbers=(summary?.orders||[])

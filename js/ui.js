@@ -18,7 +18,7 @@ const UI = {
     reportSearchResults:[],
 
     receivingFilters:{
-        issues:new Set(["not_received","partial","over","manual"]),
+        issues:new Set(["not_received","partial","received_any","over","manual"]),
         category:"all"
     },
 
@@ -1015,27 +1015,40 @@ function bindUIEvents(){
     document.getElementById("btnExportReceivingSummaryPDF")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryPDF==="function") exportReceivingSummaryPDF(); });
     document.getElementById("btnEmailReceivingDifferences")?.addEventListener("click",()=>{
         if(
-            typeof buildLiveReceivingReport!=="function" ||
-            typeof buildReceivingEmailDifferencesReport!=="function" ||
+            typeof buildEmailReportFromDisplayedReceiving!=="function" ||
             typeof openFinalizedDiscrepancyEmailPreview!=="function"
         ){
             showToast?.("Email report is unavailable","error");
             return;
         }
 
-        const live=buildLiveReceivingReport();
-        const report=buildReceivingEmailDifferencesReport(live);
+        const report=buildEmailReportFromDisplayedReceiving();
 
         if(!report.rows.length){
-            showToast?.("All items are Completed. There are no differences to email.","success");
+            showToast?.("No displayed rows to email","warning");
             return;
         }
 
         openFinalizedDiscrepancyEmailPreview(report,{
             fromArchive:false,
-            liveReport:true
+            liveReport:true,
+            filteredView:true
         });
     });
+
+    document.getElementById("headerOrderSelector")
+        ?.addEventListener("change",event=>{
+            if(
+                typeof setSelectedReceivingOrderNumber==="function" &&
+                setSelectedReceivingOrderNumber(event.target.value)
+            ){
+                showToast?.(
+                    "Active receiving order: "+event.target.value,
+                    "success"
+                );
+            }
+        });
+
 
     document
         .getElementById("btnQuickSearch")
@@ -1408,12 +1421,52 @@ function refreshHeader(){
         (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
     );
 
-    setElementText(
-        UI.elements.headerOrderId,
-        hasActiveOrder
-            ? (AppState.workspace.orderName || "Active Order")
-            : "No Active Order"
-    );
+    {
+        const orderLabel=UI.elements.headerOrderId;
+        const selector=document.getElementById("headerOrderSelector");
+        const activeOrders=
+            typeof getActiveReceivingOrderNumbers==="function"
+                ? getActiveReceivingOrderNumbers()
+                : [];
+
+        const selected=
+            typeof getSelectedReceivingOrderNumber==="function"
+                ? getSelectedReceivingOrderNumber()
+                : "";
+
+        if(hasActiveOrder && activeOrders.length>1 && selector){
+            orderLabel.hidden=true;
+            selector.hidden=false;
+
+            const existing=Array.from(selector.options)
+                .map(option=>option.value)
+                .join("|");
+
+            const desired=activeOrders.join("|");
+
+            if(existing!==desired){
+                selector.innerHTML=activeOrders
+                    .map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`)
+                    .join("");
+            }
+
+            selector.value=selected || activeOrders[0];
+        }else{
+            if(selector) selector.hidden=true;
+            orderLabel.hidden=false;
+
+            setElementText(
+                orderLabel,
+                hasActiveOrder
+                    ? (
+                        selected ||
+                        AppState.workspace.orderName ||
+                        "Active Order"
+                    )
+                    : "No Active Order"
+            );
+        }
+    }
 
 
     setElementText(
@@ -1685,7 +1738,7 @@ function refreshReceivingIssueFilterLabel(){
     const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Manual Extra"};
     const discrepancyKeys=["not_received","partial","over","manual"];
     const allDiscrepancies=discrepancyKeys.every(key=>set.has(key));
-    if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All receiving types"; return; }
+    if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All selected"; return; }
     if(set.size===4 && allDiscrepancies && !set.has("received_any")){ label.textContent="All discrepancies"; return; }
     if(set.size===0){ label.textContent="None selected"; return; }
     if(set.size===1){ label.textContent=names[Array.from(set)[0]]||"1 selected"; return; }

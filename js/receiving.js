@@ -866,8 +866,18 @@ function createReceivingTransaction(options){
             createTransactionId(),
 
         orderId:
-            AppState.workspace
-                .orderId,
+            (
+                typeof getSelectedReceivingOrderNumber==="function"
+                    ? getSelectedReceivingOrderNumber()
+                    : ""
+            )
+            ||
+            AppState.workspace.orderId,
+
+        selectedOrderNumber:
+            typeof getSelectedReceivingOrderNumber==="function"
+                ? getSelectedReceivingOrderNumber()
+                : "",
 
         dateTime:
             nowISO(),
