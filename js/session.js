@@ -1147,18 +1147,26 @@ async function deleteAllHistoricalData(){
         if(remainingHistory>0){
             throw new Error("Historical deletion was not verified — "+remainingHistory+" archived order(s) remain");
         }
+        /* Close the blocking overlay before rendering the final receipt so
+           the green confirmation is always visible to the operator. */
+        hideLoading();
+
         showToast(
-            "Historical data deleted successfully and verified on Supabase · Active Orders unaffected · Global GTIN Master active",
-            "success"
+            "Historical data deleted successfully · Server verified · Active Orders unaffected · Global GTIN Master active",
+            "success",
+            8000
         );
 
         return true;
     }catch(error){
         Logger.error("Historical data deletion failed",error);
-        showToast(error.message||"Unable to delete historical data","error");
-        return false;
-    }finally{
         hideLoading();
+        showToast(
+            error.message||"Unable to delete historical data",
+            "error",
+            8000
+        );
+        return false;
     }
 }
 

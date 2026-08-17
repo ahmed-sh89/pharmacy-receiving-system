@@ -3914,15 +3914,46 @@ function closeConfirmModal(){
 }
 
 
-function handleConfirmOK(){
+async function handleConfirmOK(){
 
-    const callback =
-        UI.confirmCallback;
+    /* Phase 2C.10.4.3 — confirmation actions that perform Supabase work must
+       be single-flight and awaited. This prevents a long destructive action
+       from being detached from its UI lifecycle and losing its final receipt. */
+    if(UI.confirmInProgress){
+        return;
+    }
+
+    const callback = UI.confirmCallback;
+
+    if(!callback){
+        closeConfirmModal();
+        return;
+    }
+
+    UI.confirmInProgress = true;
+
+    const confirmButton = document.getElementById("btnConfirmOK");
+    if(confirmButton){
+        confirmButton.disabled = true;
+    }
 
     closeConfirmModal();
 
-    if(callback){
-        callback();
+    try{
+        await Promise.resolve(callback());
+    }
+    catch(error){
+        Logger.error("Confirmed action failed",error);
+        showToast(
+            error?.message || "Unable to complete the requested action",
+            "error"
+        );
+    }
+    finally{
+        UI.confirmInProgress = false;
+        if(confirmButton){
+            confirmButton.disabled = false;
+        }
     }
 
 }
