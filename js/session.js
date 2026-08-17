@@ -1091,18 +1091,13 @@ async function deleteAllHistoricalData(){
             throw new Error("Pharmacy cloud context is unavailable. Sign in again before deleting historical data.");
         }
 
-        await dbClearStore(APP_CONFIG.database.stores.orders);
-        await dbClearStore(APP_CONFIG.database.stores.transactions);
-        await dbClearStore(APP_CONFIG.database.stores.sessions);
-        await dbClearStore(APP_CONFIG.database.stores.archive);
-
-        AppState.archive.orders=[];
-        AppState.archive.transactions=[];
-
-        let lifecycleRows=[];
-        if(typeof refreshOrderLifecycleRegistry==="function"){
-            lifecycleRows=await refreshOrderLifecycleRegistry();
-        }
+        /* Verify the authoritative server deletion directly before touching
+           local history. Do not rely on helper functions that intentionally
+           swallow RPC errors. */
+        const lifecycleRows=await authRpc(
+            "list_pharmflow_orders",
+            {p_pharmacy_id:AuthState.context.pharmacy_id}
+        );
 
         const receivedStillRegistered=(Array.isArray(lifecycleRows)?lifecycleRows:[])
             .filter(row=>["received","finalized","closed"].includes(
@@ -1111,51 +1106,85 @@ async function deleteAllHistoricalData(){
 
         if(receivedStillRegistered.length){
             throw new Error(
-                "Historical deletion was not verified on the server — "+
+                "Historical deletion was not verified on Supabase — "+
                 receivedStillRegistered.length+
                 " finalized/received Order registration(s) remain."
             );
         }
 
-        if(typeof authRpc==="function"){
-            const cloudArchives=await authRpc(
-                "list_pharmflow_finalized_archives",
-                {p_pharmacy_id:AuthState.context.pharmacy_id}
+        const cloudArchives=await authRpc(
+            "list_pharmflow_finalized_archives",
+            {p_pharmacy_id:AuthState.context.pharmacy_id}
+        );
+
+        if(Array.isArray(cloudArchives) && cloudArchives.length){
+            throw new Error(
+                "Historical deletion was not verified on Supabase — "+
+                cloudArchives.length+" finalized archive(s) remain."
             );
-            if(Array.isArray(cloudArchives) && cloudArchives.length){
-                throw new Error(
-                    "Historical deletion was not verified on the server — "+
-                    cloudArchives.length+" finalized archive(s) remain."
-                );
-            }
         }
 
-        if(typeof reconcileCloudWorkspaceAuthority==="function"){
-            await reconcileCloudWorkspaceAuthority();
-        }
-        if(typeof syncGlobalMasterGTINFromCloud==="function"){
-            try{ await syncGlobalMasterGTINFromCloud(); }catch(_){ }
-        }
-        if(typeof refreshMasterGTINUI==="function") refreshMasterGTINUI();
-        if(typeof refreshItemTransferOrderOptions==="function"){
-            await Promise.resolve(refreshItemTransferOrderOptions());
+        /* Server verification succeeded. Now clear the local historical
+           stores only. Active Orders remain untouched. */
+        await dbClearStore(APP_CONFIG.database.stores.orders);
+        await dbClearStore(APP_CONFIG.database.stores.transactions);
+        await dbClearStore(APP_CONFIG.database.stores.sessions);
+        await dbClearStore(APP_CONFIG.database.stores.archive);
+
+        AppState.archive.orders=[];
+        AppState.archive.transactions=[];
+
+        if(typeof OrderLifecycleEngine!=="undefined"){
+            OrderLifecycleEngine.records=Array.isArray(lifecycleRows)
+                ? lifecycleRows
+                : [];
+            renderOrderLifecycleRegistry?.();
         }
 
         AppEvents.emit("archive:updated");
 
-        const remainingHistory=Array.isArray(AppState.archive?.orders)?AppState.archive.orders.length:0;
-        if(remainingHistory>0){
-            throw new Error("Historical deletion was not verified — "+remainingHistory+" archived order(s) remain");
-        }
-        /* Close the blocking overlay before rendering the final receipt so
-           the green confirmation is always visible to the operator. */
+        /* Re-render first, then resolve a fresh toast host and show the
+           receipt exactly like Reset Current Workspace does. */
+        refreshEntireUI?.();
         hideLoading();
 
         showToast(
             "Historical data deleted successfully · Server verified · Active Orders unaffected · Global GTIN Master active",
             "success",
-            8000
+            10000
         );
+
+        /* Non-critical maintenance MUST NOT delay or suppress the operator
+           receipt. Any failure here is logged only. */
+        Promise.resolve().then(async()=>{
+            try{
+                if(typeof reconcileCloudWorkspaceAuthority==="function"){
+                    await reconcileCloudWorkspaceAuthority();
+                }
+            }catch(error){
+                Logger.warn("Post-history-delete workspace reconcile failed",error);
+            }
+
+            try{
+                if(typeof syncGlobalMasterGTINFromCloud==="function"){
+                    await syncGlobalMasterGTINFromCloud();
+                }
+            }catch(error){
+                Logger.warn("Post-history-delete GTIN refresh failed",error);
+            }
+
+            try{
+                refreshMasterGTINUI?.();
+            }catch(_){}
+
+            try{
+                if(typeof refreshItemTransferOrderOptions==="function"){
+                    await Promise.resolve(refreshItemTransferOrderOptions());
+                }
+            }catch(error){
+                Logger.warn("Post-history-delete Item Transfer refresh failed",error);
+            }
+        });
 
         return true;
     }catch(error){

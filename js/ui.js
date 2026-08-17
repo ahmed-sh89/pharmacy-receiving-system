@@ -3972,10 +3972,18 @@ function showToast(
             .toastDurationMs
 ){
 
-    const container =
-        UI.elements.toastContainer;
+    /* Phase 2C.10.4.4 — always resolve the live toast host from the DOM.
+       Long async operations can outlive a cached UI reference after a view
+       refresh. Reset worked because it emits immediately; Historical Delete
+       can finish after several server/UI refreshes. */
+    let container =
+        document.getElementById("toastContainer");
 
-    if(!container){
+    if(!container || !container.isConnected){
+        container = UI.elements.toastContainer;
+    }
+
+    if(!container || !container.isConnected){
 
         Logger.info(
             "Toast:",
@@ -3984,6 +3992,8 @@ function showToast(
 
         return;
     }
+
+    UI.elements.toastContainer = container;
 
     const toast =
         document.createElement(
