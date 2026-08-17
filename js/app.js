@@ -784,39 +784,20 @@ async function resetCurrentWorkspace(){
            A stale PC with the old generation is then physically unable
            to save its old order back to Supabase.
         */
-        const generationResult=await withTimeout(
-            authRpc("atomic_reset_pharmflow_current_workspace",{
+        const resetReceipt=await withTimeout(
+            authRpc("atomic_reset_pharmflow_current_workspace_v3",{
                 p_pharmacy_id:pharmacyId,
                 p_confirmation:"RESET CURRENT WORKSPACE"
             }),
-            12000,
+            15000,
             "Cloud reset timed out. Nothing was cleared locally — please try again."
         );
 
-        const newGeneration=Number(
-            Array.isArray(generationResult)
-                ? generationResult[0]
-                : generationResult
-        );
-
-        /* Dedicated Active Order Manifest is separate from the legacy
-           cloud workspace and must be cleared on an intentional reset. */
-        try{
-            await Promise.race([
-                clearActiveOrderManifest?.(),
-                new Promise(resolve=>setTimeout(resolve,2500))
-            ]);
-        }catch(_){}
-
-        try{
-            await Promise.race([
-                authRpc(
-                    "clear_pharmflow_receiving_transactions_v2",
-                    {p_pharmacy_id:pharmacyId}
-                ),
-                new Promise(resolve=>setTimeout(resolve,2500))
-            ]);
-        }catch(_){}
+        const receipt=Array.isArray(resetReceipt)?resetReceipt[0]:resetReceipt;
+        if(!receipt || receipt.success!==true){
+            throw new Error("Server did not confirm the workspace reset");
+        }
+        const newGeneration=Number(receipt.generation||0);
 
         if(typeof PharmFlowCloudWorkspace!=="undefined"){
             PharmFlowCloudWorkspace.generation=
@@ -849,9 +830,10 @@ async function resetCurrentWorkspace(){
         hideLoading();
 
         showToast(
-            activeOrderNumbers.length
-                ? "Current workspace reset on all devices"
-                : "Current workspace is clean",
+            "Current workspace reset on server · Active orders removed: "+
+            Number(receipt.active_orders_deleted||0)+
+            " · Receiving transactions removed: "+
+            Number(receipt.receiving_transactions_deleted||0),
             "success"
         );
 

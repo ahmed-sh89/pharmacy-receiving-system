@@ -1115,8 +1115,12 @@ async function deleteAllHistoricalData(){
 
         AppEvents.emit("archive:updated");
 
+        const remainingHistory=Array.isArray(AppState.archive?.orders)?AppState.archive.orders.length:0;
+        if(remainingHistory>0){
+            throw new Error("Historical deletion was not verified — "+remainingHistory+" archived order(s) remain");
+        }
         showToast(
-            "Historical data deleted successfully · Global GTIN Master remains active",
+            "Historical data deleted and verified · Active Orders unaffected · Global GTIN Master active",
             "success"
         );
 

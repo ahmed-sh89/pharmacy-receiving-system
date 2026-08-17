@@ -493,6 +493,8 @@ function serializeActiveOrderManifest(){
     };
 }
 
+window.serializeActiveOrderManifest=serializeActiveOrderManifest;
+
 async function saveActiveOrderManifest(options={}){
     const pharmacyId=cloudWorkspacePharmacyId();
     const silent=options?.silent===true;
@@ -524,10 +526,11 @@ async function saveActiveOrderManifest(options={}){
         );
 
         const result=await authRpc(
-            "save_pharmflow_active_order_manifest_v2",
+            "save_pharmflow_active_order_manifest_v3",
             {
                 p_pharmacy_id:pharmacyId,
-                p_manifest:manifest
+                p_manifest:manifest,
+                p_expected_generation:Number(PharmFlowCloudWorkspace.generation||0)
             }
         );
 
@@ -546,7 +549,7 @@ async function saveActiveOrderManifest(options={}){
         /* Read-after-write verification: do not report SYNCED merely
            because the RPC returned without throwing. */
         const verifyResult=await authRpc(
-            "get_pharmflow_active_order_manifest_v2",
+            "get_pharmflow_active_order_manifest_v3",
             {p_pharmacy_id:pharmacyId}
         );
 
@@ -662,7 +665,7 @@ function applyActiveOrderManifest(manifest,revision){
     return true;
 }
 
-async function pullActiveOrderManifest(){
+async function pullActiveOrderManifest(options={}){
     const pharmacyId=cloudWorkspacePharmacyId();
 
     if(
@@ -679,7 +682,7 @@ async function pullActiveOrderManifest(){
 
     try{
         const result=await authRpc(
-            "get_pharmflow_active_order_manifest_v2",
+            "get_pharmflow_active_order_manifest_v3",
             {p_pharmacy_id:pharmacyId}
         );
 
@@ -692,11 +695,19 @@ async function pullActiveOrderManifest(){
             PharmFlowCloudWorkspace.activeManifestPresent=false;
             PharmFlowCloudWorkspace.activeManifestRevision=0;
 
-            Logger.warn(
-                "No Active Order Manifest row returned",
-                {pharmacyId}
-            );
+            Logger.warn("No Active Order Manifest row returned",{pharmacyId});
 
+            if(options?.clearIfMissing===true){
+                /* Server-empty is authoritative after reset/sign-in. Never let
+                   stale local orders survive and later resurrect themselves. */
+                AppState.workspace=createEmptyWorkspace();
+                resetStatistics();
+                rebuildStateIndexes();
+                deleteWorkspaceSnapshot?.();
+                AppEvents.emit("files:updated",{source:"server-authority-empty"});
+                AppEvents.emit("receiving:updated",{source:"server-authority-empty"});
+                refreshEntireUI?.();
+            }
             return false;
         }
 
@@ -845,77 +856,9 @@ window.clearActiveOrderManifest=clearActiveOrderManifest;
 
 
 async function repairMissingActiveOrderManifestFromLocal(){
-    if(PharmFlowCloudWorkspace.manifestRepairBusy){
-        return false;
-    }
-
-    const pharmacyId=cloudWorkspacePharmacyId();
-
-    const hasLocalOrders=
-        Array.isArray(AppState?.workspace?.orderFiles) &&
-        AppState.workspace.orderFiles.length>0 &&
-        Array.isArray(AppState?.workspace?.orderData) &&
-        AppState.workspace.orderData.length>0;
-
-    if(
-        !navigator.onLine ||
-        !pharmacyId ||
-        !hasLocalOrders ||
-        typeof authRpc!=="function"
-    ){
-        return false;
-    }
-
-    PharmFlowCloudWorkspace.manifestRepairBusy=true;
-
-    try{
-        const current=await authRpc(
-            "get_pharmflow_active_order_manifest_v2",
-            {p_pharmacy_id:pharmacyId}
-        );
-
-        const row=Array.isArray(current)?current[0]:current;
-
-        const serverHasOrders=
-            !!row?.manifest &&
-            Number(row?.order_files||0)>0 &&
-            Number(row?.order_items||0)>0;
-
-        if(serverHasOrders){
-            PharmFlowCloudWorkspace.activeManifestPresent=true;
-            PharmFlowCloudWorkspace.activeManifestRevision=
-                Number(row.revision||0);
-            return true;
-        }
-
-        Logger.warn(
-            "Repairing missing Active Order Manifest from local active Orders",
-            {pharmacyId}
-        );
-
-        return await saveActiveOrderManifest({
-            silent:false
-        });
-    }
-    catch(error){
-        PharmFlowCloudWorkspace.lastManifestSaveError=
-            error?.message || String(error);
-
-        Logger.error(
-            "Active Order Manifest repair failed",
-            error
-        );
-
-        setCloudWorkspaceStatus(
-            "offline",
-            "Active Orders pending server sync"
-        );
-
-        return false;
-    }
-    finally{
-        PharmFlowCloudWorkspace.manifestRepairBusy=false;
-    }
+    /* Phase 2C.10.4.0: intentionally disabled. Local browser state is NEVER
+       allowed to recreate a missing server manifest. Supabase is authority. */
+    return false;
 }
 
 window.repairMissingActiveOrderManifestFromLocal=
@@ -1738,7 +1681,7 @@ function initializePharmFlowCloudWorkspace(){
                 AppState.workspace.orderData.length;
 
             if(hasLocalOrders){
-                await repairMissingActiveOrderManifestFromLocal();
+                await pullActiveOrderManifest({clearIfMissing:true});
             }
             else{
                 await bootstrapActiveOrdersOnEmptyDevice();
@@ -1773,7 +1716,7 @@ function initializePharmFlowCloudWorkspace(){
                 await bootstrapActiveOrdersOnEmptyDevice();
             }
             else{
-                await repairMissingActiveOrderManifestFromLocal();
+                await pullActiveOrderManifest({clearIfMissing:true});
                 await pullActiveOrderManifest();
             }
         }
@@ -1807,7 +1750,7 @@ function initializePharmFlowCloudWorkspace(){
             AppState.workspace.orderData.length;
 
         if(hasLocalOrders){
-            await repairMissingActiveOrderManifestFromLocal();
+            await pullActiveOrderManifest({clearIfMissing:true});
         }
         else{
             await bootstrapActiveOrdersOnEmptyDevice();
@@ -1829,7 +1772,7 @@ function initializePharmFlowCloudWorkspace(){
                 AppState.workspace.orderData.length;
 
             if(hasLocalOrders){
-                await repairMissingActiveOrderManifestFromLocal();
+                await pullActiveOrderManifest({clearIfMissing:true});
             }
             else{
                 await bootstrapActiveOrdersOnEmptyDevice();

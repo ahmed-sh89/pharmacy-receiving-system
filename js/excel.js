@@ -101,7 +101,7 @@ async function handleOrderFileSelection(event){
            with stale local state from overwriting active orders uploaded by
            another PC. */
         if(typeof pullActiveOrderManifest==="function"){
-            await pullActiveOrderManifest();
+            await pullActiveOrderManifest({clearIfMissing:true});
         }
 
         let importedRows = 0;
@@ -199,6 +199,36 @@ async function handleOrderFileSelection(event){
                         (lastError?.message ? lastError.message+" — " : "")+
                         "Order was imported locally but server verification did not complete. Do NOT upload it again; PharmFlow will keep it pending for synchronization."
                     );
+                }
+            }
+
+            /* Commit lifecycle + immutable source snapshots only after the
+               authoritative manifest exists. Retry transient RPC failures. */
+            const activeFiles=Array.isArray(AppState.workspace.orderFiles)
+                ? AppState.workspace.orderFiles : [];
+            for(const fileRecord of activeFiles){
+                const orderNumber=normalizeOrderNumber(fileRecord.documentId||fileRecord.orderNumber||"");
+                if(!orderNumber) continue;
+                const existing=typeof getOrderLifecycleRecord==="function"
+                    ? await getOrderLifecycleRecord(orderNumber).catch(()=>null) : null;
+                if(existing) continue;
+                const meta={orderNumber,orderDate:fileRecord.orderDate||null,fromWarehouse:fileRecord.fromWarehouse||"",
+                    toWarehouse:fileRecord.toWarehouse||"",fileName:fileRecord.name||""};
+                let committed=false,lastCommitError=null;
+                for(let attempt=1;attempt<=3 && !committed;attempt++){
+                    try{
+                        await registerUploadedOrder(meta,Number(fileRecord.rows||0));
+                        if(typeof saveOriginalUploadedOrderSnapshot==="function" && Array.isArray(fileRecord.sourceRows) && fileRecord.sourceRows.length){
+                            await saveOriginalUploadedOrderSnapshot(orderNumber,fileRecord.sourceRows);
+                        }
+                        committed=true;
+                    }catch(error){
+                        lastCommitError=error;
+                        if(attempt<3) await new Promise(resolve=>setTimeout(resolve,450*attempt));
+                    }
+                }
+                if(!committed){
+                    throw new Error("Order "+orderNumber+" is active and synchronized, but its registry/source commit is pending: "+(lastCommitError?.message||"server error"));
                 }
             }
 
@@ -607,16 +637,11 @@ async function importOrderFile(file, preflightMeta = null){
             }
         );
 
-        if(preflightMeta && typeof registerUploadedOrder === "function"){
-            await registerUploadedOrder(preflightMeta, validRowsInFile);
-
-            if(typeof saveOriginalUploadedOrderSnapshot === "function"){
-                await saveOriginalUploadedOrderSnapshot(
-                    preflightMeta.orderNumber,
-                    sourceOrderRows
-                );
-            }
-        }
+        /* Phase 2C.10.4.0: lifecycle registration is deliberately deferred
+           until AFTER the complete Active Order Manifest is server-verified.
+           This prevents a failed first upload from becoming a false
+           "Already Uploaded" on retry. The sourceRows stay staged on the
+           order-file record and are committed after manifest verification. */
 
         if(detectedOrderId){
 
