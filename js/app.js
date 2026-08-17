@@ -884,6 +884,13 @@ async function resetCurrentWorkspace(){
 
 function requestDeleteAllHistory(){
 
+    const previousReceipt=document.getElementById("historicalDeleteReceipt");
+    if(previousReceipt){
+        previousReceipt.hidden=true;
+        previousReceipt.textContent="";
+        previousReceipt.className="operationReceipt";
+    }
+
     showConfirmModal(
 
         "Delete All Historical Data",

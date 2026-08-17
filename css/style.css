@@ -1324,3 +1324,28 @@ body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
 }
 body{background:#F5F3EF;}
 .mainApplication,.mainContent,.appPage{background-color:#F5F3EF;}
+
+
+/* =====================================================
+   PHASE 2C.10.4.5 — SETTINGS OPERATION RECEIPT
+===================================================== */
+.operationReceipt {
+  margin: 14px 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+.operationReceipt.success {
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.35);
+  color: #15803d;
+}
+.operationReceipt.error {
+  background: rgba(220, 38, 38, 0.10);
+  border-color: rgba(220, 38, 38, 0.30);
+  color: #b91c1c;
+}
+.operationReceipt[hidden] { display: none !important; }

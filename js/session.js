@@ -1148,8 +1148,21 @@ async function deleteAllHistoricalData(){
         refreshEntireUI?.();
         hideLoading();
 
+        const successMessage =
+            "Historical data deleted successfully · Server verified · Active Orders unaffected · Global GTIN Master active";
+
+        /* Phase 2C.10.4.5 — persistent in-page receipt is the authoritative
+           operator confirmation. It is independent of toast timing, view
+           refreshes and cached toast references. */
+        const receipt = document.getElementById("historicalDeleteReceipt");
+        if(receipt){
+            receipt.textContent = successMessage;
+            receipt.className = "operationReceipt success";
+            receipt.hidden = false;
+        }
+
         showToast(
-            "Historical data deleted successfully · Server verified · Active Orders unaffected · Global GTIN Master active",
+            successMessage,
             "success",
             10000
         );
@@ -1190,10 +1203,19 @@ async function deleteAllHistoricalData(){
     }catch(error){
         Logger.error("Historical data deletion failed",error);
         hideLoading();
+
+        const failureMessage = error.message||"Unable to delete historical data";
+        const receipt = document.getElementById("historicalDeleteReceipt");
+        if(receipt){
+            receipt.textContent = failureMessage;
+            receipt.className = "operationReceipt error";
+            receipt.hidden = false;
+        }
+
         showToast(
-            error.message||"Unable to delete historical data",
+            failureMessage,
             "error",
-            8000
+            10000
         );
         return false;
     }
