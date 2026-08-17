@@ -1099,9 +1099,37 @@ async function deleteAllHistoricalData(){
         AppState.archive.orders=[];
         AppState.archive.transactions=[];
 
+        let lifecycleRows=[];
         if(typeof refreshOrderLifecycleRegistry==="function"){
-            await refreshOrderLifecycleRegistry();
+            lifecycleRows=await refreshOrderLifecycleRegistry();
         }
+
+        const receivedStillRegistered=(Array.isArray(lifecycleRows)?lifecycleRows:[])
+            .filter(row=>["received","finalized","closed"].includes(
+                String(row?.status||"").trim().toLowerCase()
+            ));
+
+        if(receivedStillRegistered.length){
+            throw new Error(
+                "Historical deletion was not verified on the server — "+
+                receivedStillRegistered.length+
+                " finalized/received Order registration(s) remain."
+            );
+        }
+
+        if(typeof authRpc==="function"){
+            const cloudArchives=await authRpc(
+                "list_pharmflow_finalized_archives",
+                {p_pharmacy_id:AuthState.context.pharmacy_id}
+            );
+            if(Array.isArray(cloudArchives) && cloudArchives.length){
+                throw new Error(
+                    "Historical deletion was not verified on the server — "+
+                    cloudArchives.length+" finalized archive(s) remain."
+                );
+            }
+        }
+
         if(typeof reconcileCloudWorkspaceAuthority==="function"){
             await reconcileCloudWorkspaceAuthority();
         }
@@ -1120,7 +1148,7 @@ async function deleteAllHistoricalData(){
             throw new Error("Historical deletion was not verified — "+remainingHistory+" archived order(s) remain");
         }
         showToast(
-            "Historical data deleted and verified · Active Orders unaffected · Global GTIN Master active",
+            "Historical data deleted successfully and verified on Supabase · Active Orders unaffected · Global GTIN Master active",
             "success"
         );
 

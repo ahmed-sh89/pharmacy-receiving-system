@@ -96,13 +96,25 @@ async function handleOrderFileSelection(event){
 
     try{
 
-        /* Phase 2C.10.3.9 — merge against the latest server-authoritative
-           Active Order Manifest before adding a new order. This prevents a PC
-           with stale local state from overwriting active orders uploaded by
-           another PC. */
+        /* Phase 2C.10.4.1 — first synchronize the server generation fence.
+           A second PC may have performed Reset after this browser last synced.
+           We must adopt that generation BEFORE any new local Order is parsed. */
+        if(typeof syncWorkspaceGenerationBeforeStructuralWrite==="function"){
+            await syncWorkspaceGenerationBeforeStructuralWrite();
+        }
+
+        /* Merge against latest server-authoritative Active Order Manifest.
+           Server-empty is authoritative after Reset. */
         if(typeof pullActiveOrderManifest==="function"){
             await pullActiveOrderManifest({clearIfMissing:true});
         }
+
+        const preImportWorkspace =
+            typeof deepClone==="function"
+                ? deepClone(AppState.workspace)
+                : JSON.parse(JSON.stringify(AppState.workspace));
+
+        const attemptedOrderNumbers=[];
 
         let importedRows = 0;
         let skippedRows = 0;
@@ -115,6 +127,12 @@ async function handleOrderFileSelection(event){
                 typeof inspectOrderFileMetadata === "function"
                 ? await inspectOrderFileMetadata(file)
                 : null;
+
+            if(orderMeta?.orderNumber){
+                attemptedOrderNumbers.push(
+                    normalizeOrderNumber(orderMeta.orderNumber)
+                );
+            }
 
             if(orderMeta && typeof assertOrderNumberCanUpload === "function"){
                 await assertOrderNumberCanUpload(orderMeta.orderNumber);
@@ -195,9 +213,57 @@ async function handleOrderFileSelection(event){
                 }
 
                 if(!manifestSaved){
+                    /* A save may have committed but its verification response
+                       may have been interrupted. Pull once and verify by Order
+                       Number before declaring failure. */
+                    try{
+                        if(typeof syncWorkspaceGenerationBeforeStructuralWrite==="function"){
+                            await syncWorkspaceGenerationBeforeStructuralWrite();
+                        }
+                        if(typeof pullActiveOrderManifest==="function"){
+                            await pullActiveOrderManifest({clearIfMissing:false});
+                        }
+
+                        const serverNumbers=new Set(
+                            (AppState.workspace.orderFiles||[])
+                                .map(file=>normalizeOrderNumber(
+                                    file?.documentId||file?.orderNumber||""
+                                ))
+                                .filter(Boolean)
+                        );
+
+                        manifestSaved=
+                            attemptedOrderNumbers.length>0 &&
+                            attemptedOrderNumbers.every(n=>serverNumbers.has(n));
+                    }catch(_){ }
+                }
+
+                if(!manifestSaved){
+                    /* No partial local Order is allowed to survive a failed
+                       authoritative commit. Restore the exact pre-import
+                       workspace so retrying does not create a false duplicate
+                       or misleading local-only state. */
+                    AppState.workspace=
+                        typeof deepClone==="function"
+                            ? deepClone(preImportWorkspace)
+                            : JSON.parse(JSON.stringify(preImportWorkspace));
+
+                    rebuildStateIndexes();
+                    recalculateStatistics();
+                    saveWorkspaceSnapshot?.();
+                    AppEvents.emit("files:updated",{source:"import-rollback"});
+                    AppEvents.emit("receiving:updated",{source:"import-rollback"});
+                    refreshEntireUI?.();
+
+                    const reason=
+                        (typeof PharmFlowCloudWorkspace!=="undefined" &&
+                         PharmFlowCloudWorkspace.lastManifestSaveError)
+                            ? PharmFlowCloudWorkspace.lastManifestSaveError
+                            : (lastError?.message||"Server manifest verification failed");
+
                     throw new Error(
-                        (lastError?.message ? lastError.message+" — " : "")+
-                        "Order was imported locally but server verification did not complete. Do NOT upload it again; PharmFlow will keep it pending for synchronization."
+                        "Order upload was rolled back safely because Supabase did not verify it. "+
+                        "Nothing was registered as Uploaded. Reason: "+reason
                     );
                 }
             }

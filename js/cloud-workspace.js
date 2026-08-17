@@ -384,6 +384,40 @@ async function getCloudWorkspaceGeneration(){
     return Number.isFinite(generation) ? generation : 0;
 }
 
+/* =====================================================
+   PHASE 2C.10.4.1 — GENERATION FENCE PRE-WRITE SYNC
+   Before an Order import changes local workspace structure, refresh the
+   server generation. If another PC performed Reset, clear the stale local
+   workspace BEFORE parsing/importing the new file. This prevents a valid
+   post-reset upload from being rejected as STALE_WORKSPACE_GENERATION and
+   prevents old local state from resurrecting.
+===================================================== */
+async function syncWorkspaceGenerationBeforeStructuralWrite(){
+    const serverGeneration=await getCloudWorkspaceGeneration();
+
+    if(serverGeneration===null){
+        throw new Error(
+            "Unable to verify the current workspace generation on Supabase."
+        );
+    }
+
+    const localGeneration=PharmFlowCloudWorkspace.generation;
+
+    if(
+        localGeneration!==null &&
+        Number(localGeneration)!==Number(serverGeneration)
+    ){
+        clearLocalWorkspaceFromRemoteReset(serverGeneration);
+    }else{
+        PharmFlowCloudWorkspace.generation=Number(serverGeneration);
+    }
+
+    return Number(serverGeneration);
+}
+
+window.syncWorkspaceGenerationBeforeStructuralWrite=
+    syncWorkspaceGenerationBeforeStructuralWrite;
+
 function cancelPendingCloudWorkspaceSave(){
     if(PharmFlowCloudWorkspace.saveTimer){
         clearTimeout(PharmFlowCloudWorkspace.saveTimer);
@@ -604,7 +638,7 @@ async function saveActiveOrderManifest(options={}){
 
         if(!silent){
             showToast?.(
-                "Active Orders are local only — cloud sharing failed",
+                "Active Orders cloud save failed: "+message,
                 "error"
             );
         }

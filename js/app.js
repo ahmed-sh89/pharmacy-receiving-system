@@ -890,14 +890,14 @@ function requestDeleteAllHistory(){
 
         "This will permanently delete all RECEIVED order history for this pharmacy from Supabase and this browser. Active uploaded orders, Global GTIN Master, Returns Archive, users, and other pharmacies are not affected. This action cannot be undone.",
 
-        function(){
+        async function(){
 
             if(
                 typeof deleteAllHistoricalData ===
                 "function"
             ){
 
-                deleteAllHistoricalData();
+                await deleteAllHistoricalData();
 
             }
             else{
