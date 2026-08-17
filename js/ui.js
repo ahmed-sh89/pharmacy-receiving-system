@@ -6487,7 +6487,9 @@ function resetZebraWorkingState(reason, options = {}){
 
     if(typeof saveWorkspaceSnapshot === "function"){ saveWorkspaceSnapshot(); }
     AppEvents.emit("session:updated");
-    AppEvents.emit("workspace:cleared");
+    /* Handheld detach/idle cleanup is device-local. It must never masquerade
+       as a pharmacy-wide Current Workspace reset. */
+    AppEvents.emit("receiving:updated",{source:"handheld-local-reset"});
     return true;
 }
 

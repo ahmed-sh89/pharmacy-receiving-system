@@ -774,6 +774,18 @@ async function refreshCloudSnapshot(options = {}){
         AppEvents.emit("receiving:updated",{cloudRefresh:true});
         AppEvents.emit("session:updated");
         saveWorkspaceSnapshot();
+
+        /* Phase 2C.10.3.8: live session is the Handheld connection/order
+           transport; the pharmacy-wide Receiving Ledger is the quantity
+           authority for BOTH PC and Handheld. Overlay it after every session
+           snapshot so a stale/legacy session transaction path can never
+           overwrite synchronized Received Qty. */
+        if(typeof repairSharedReceivingLedgerFromLocal === "function"){
+            await repairSharedReceivingLedgerFromLocal();
+        }
+        if(typeof pullCloudWorkspaceTransactions === "function"){
+            await pullCloudWorkspaceTransactions();
+        }
         return true;
     }
     catch(error){
@@ -944,14 +956,9 @@ async function leaveCloudSession(){
     };
     saveWorkspaceSnapshot();
     AppEvents.emit("session:updated");
-
-    /* Phase 2C.10.3.7: ending/detaching a live Handheld session is NOT a
-       workspace reset. Emitting workspace:cleared here caused the independent
-       Active Order Manifest and pharmacy-wide Receiving Ledger to be deleted
-       by cloud-workspace.js, which broke PC<->PC synchronization after a live
-       session was ended. Reset Current Workspace already performs its own
-       explicit server-side clears and must remain the only path that clears
-       those authorities. */
+    /* Ending/detaching a live Handheld session is NOT a Current Workspace reset.
+       Never emit workspace:cleared here; that event historically caused shared
+       Orders/Receiving state to be deleted by unrelated cleanup logic. */
     renderCloudSessionQR();
     showToast(wasPC ? "Shared session ended on all devices" : "Cloud session disconnected","success");
     return true;

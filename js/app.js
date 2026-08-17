@@ -811,7 +811,7 @@ async function resetCurrentWorkspace(){
         try{
             await Promise.race([
                 authRpc(
-                    "clear_pharmflow_receiving_transactions",
+                    "clear_pharmflow_receiving_transactions_v2",
                     {p_pharmacy_id:pharmacyId}
                 ),
                 new Promise(resolve=>setTimeout(resolve,2500))

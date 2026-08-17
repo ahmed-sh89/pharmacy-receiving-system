@@ -161,7 +161,7 @@ async function flushCloudWorkspaceQueue(){
 
     for(const tx of queue){
         try{
-            await authRpc("append_pharmflow_cloud_transaction",{
+            await authRpc("append_pharmflow_cloud_transaction_v2",{
                 p_pharmacy_id:pharmacyId,
                 p_transaction_id:tx.transactionId,
                 p_order_number:toSafeString(
@@ -1298,6 +1298,24 @@ function applyCloudTransaction(tx){
     return mergeCloudReceivingLedger([tx]);
 }
 
+async function repairSharedReceivingLedgerFromLocal(){
+    if(
+        PharmFlowCloudWorkspace.applyingRemote ||
+        PharmFlowCloudWorkspace.contextSwitching ||
+        !Array.isArray(AppState?.workspace?.receivingHistory) ||
+        !AppState.workspace.receivingHistory.length
+    ){
+        return true;
+    }
+
+    for(const tx of AppState.workspace.receivingHistory){
+        if(!tx?.transactionId || tx.cloudSynced===true) continue;
+        queueCloudWorkspaceTransaction(deepClone(tx));
+    }
+
+    return await flushCloudWorkspaceQueue();
+}
+
 async function pullCloudWorkspaceTransactions(){
     const pharmacyId=cloudWorkspacePharmacyId();
 
@@ -1337,7 +1355,7 @@ async function pullCloudWorkspaceTransactions(){
         }
 
         const rows=await authRpc(
-            "list_pharmflow_cloud_transactions",
+            "list_pharmflow_cloud_transactions_v2",
             {
                 p_pharmacy_id:pharmacyId,
                 p_limit:5000
@@ -1637,6 +1655,8 @@ async function reconcileCloudWorkspaceAuthority(){
 
 window.reconcileCloudWorkspaceAuthority=
     reconcileCloudWorkspaceAuthority;
+window.repairSharedReceivingLedgerFromLocal=repairSharedReceivingLedgerFromLocal;
+window.pullCloudWorkspaceTransactions=pullCloudWorkspaceTransactions;
 
 function attemptCloudWorkspaceHydration(){
     ensureCloudAccountContextIsolation();
@@ -1684,36 +1704,23 @@ function initializePharmFlowCloudWorkspace(){
             }
         },180);
     });
-    AppEvents.on("workspace:cleared",async()=>{
-        const pharmacyId=cloudWorkspacePharmacyId();
+    /* Phase 2C.10.3.8 — CRITICAL DATA-SAFETY RULE
+       workspace:cleared is a LOCAL lifecycle event used by several flows
+       (Handheld detach/end-session, archive/finalize transitions, remote reset
+       application, account switching). It MUST NEVER implicitly delete shared
+       server state. Intentional Reset Current Workspace already performs its
+       explicit authenticated server clears in app.js before local reset.
 
+       The old listener was the root cause of Active Orders / Receiving Ledger
+       disappearing after a device-local Handheld/session cleanup. */
+    AppEvents.on("workspace:cleared",()=>{
         if(PharmFlowCloudWorkspace.suppressNextClearRpc){
             PharmFlowCloudWorkspace.suppressNextClearRpc=false;
-            writeCloudQueue([]);
-            setCloudWorkspaceStatus("synced");
-            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
-            return;
         }
-
-        if(typeof authRpc!=="function" || !pharmacyId) return;
-
-        try{
-            await Promise.allSettled([
-                authRpc(
-                    "clear_pharmflow_cloud_workspace",
-                    {p_pharmacy_id:pharmacyId}
-                ),
-                clearActiveOrderManifest(),
-                authRpc(
-                    "clear_pharmflow_receiving_transactions",
-                    {p_pharmacy_id:pharmacyId}
-                )
-            ]);
-
-            writeCloudQueue([]);
-            setCloudWorkspaceStatus("synced");
-            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
-        }catch(_){}
+        setCloudWorkspaceStatus(
+            navigator.onLine ? "synced" : "offline",
+            navigator.onLine ? "Local workspace updated" : "Local workspace updated offline"
+        );
     });
     window.addEventListener("online",()=>{attemptCloudWorkspaceHydration();flushCloudWorkspaceQueue();pullCloudWorkspaceTransactions();});
     window.addEventListener("offline",()=>setCloudWorkspaceStatus("offline"));
@@ -1734,6 +1741,7 @@ function initializePharmFlowCloudWorkspace(){
                 await bootstrapActiveOrdersOnEmptyDevice();
             }
 
+            await repairSharedReceivingLedgerFromLocal();
             attemptCloudWorkspaceHydration();
         },0);
     });
@@ -1783,6 +1791,7 @@ function initializePharmFlowCloudWorkspace(){
             return;
         }
 
+        await repairSharedReceivingLedgerFromLocal();
         await flushCloudWorkspaceQueue();
         await pullCloudWorkspaceTransactions();
     },1000);
