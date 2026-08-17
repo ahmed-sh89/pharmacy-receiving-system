@@ -483,6 +483,9 @@ function serializeActiveOrderManifest(){
         active:!!workspace.active,
         selectedOrderNumber:
             workspace.selectedOrderNumber || "",
+        selectedOrderNumbers:Array.isArray(workspace.selectedOrderNumbers)
+            ? deepClone(workspace.selectedOrderNumbers)
+            : [],
         orderFiles:deepClone(workspace.orderFiles||[]),
         mappingFiles:deepClone(workspace.mappingFiles||[]),
         orderData,

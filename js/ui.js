@@ -1725,11 +1725,7 @@ function getSelectedOrderDashboardMetrics(){
                     .map(normalizeOrderNumber)
                     .includes(txOrder);
 
-            return (
-                inScope &&
-                toSafeString(tx?.deviceId||"")===
-                    toSafeString(localDevice||"")
-            );
+            return inScope;
         }).length;
 
     return {

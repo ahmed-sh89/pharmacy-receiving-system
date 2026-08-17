@@ -96,6 +96,14 @@ async function handleOrderFileSelection(event){
 
     try{
 
+        /* Phase 2C.10.3.9 — merge against the latest server-authoritative
+           Active Order Manifest before adding a new order. This prevents a PC
+           with stale local state from overwriting active orders uploaded by
+           another PC. */
+        if(typeof pullActiveOrderManifest==="function"){
+            await pullActiveOrderManifest();
+        }
+
         let importedRows = 0;
         let skippedRows = 0;
         let importedFiles = 0;
@@ -166,9 +174,37 @@ async function handleOrderFileSelection(event){
 
         if(importedRows > 0){
 
+            /* Phase 2C.10.3.9 — upload is not considered complete until the
+               complete Active Order Manifest is verified on Supabase. Retry
+               transient failures here instead of making the operator upload
+               the same file a second time (which creates a false duplicate
+               lifecycle conflict). */
+            if(typeof saveActiveOrderManifest==="function"){
+                let manifestSaved=false;
+                let lastError=null;
+
+                for(let attempt=1; attempt<=3 && !manifestSaved; attempt++){
+                    try{
+                        manifestSaved=await saveActiveOrderManifest({silent:true});
+                    }catch(error){
+                        lastError=error;
+                    }
+                    if(!manifestSaved && attempt<3){
+                        await new Promise(resolve=>setTimeout(resolve,450*attempt));
+                    }
+                }
+
+                if(!manifestSaved){
+                    throw new Error(
+                        (lastError?.message ? lastError.message+" — " : "")+
+                        "Order was imported locally but server verification did not complete. Do NOT upload it again; PharmFlow will keep it pending for synchronization."
+                    );
+                }
+            }
+
             showToast(
                 importedFiles +
-                " order file(s) imported — " +
+                " order file(s) uploaded and synchronized — " +
                 importedRows +
                 " rows",
                 "success"
@@ -616,16 +652,19 @@ async function importOrderFile(file, preflightMeta = null){
 
         /* Multi-order default is always ALL.
            A specific order remains selectable afterwards by the operator. */
+        /* Phase 2C.10.3.9 — ALL ORDERS is the authoritative default after
+           adding an order. Keep both the modern multi-select state and the
+           legacy scalar state aligned so Dashboard/Receiving cannot remain
+           silently scoped to the previously selected order. */
+        AppState.workspace.selectedOrderNumbers=activeImportedOrders.slice();
+
         if(activeImportedOrders.length>1){
             AppState.workspace.selectedOrderNumber="ALL";
             AppState.workspace.orderName="All Orders";
         }
-        else if(
-            !AppState.workspace.selectedOrderNumber &&
-            detectedOrderId
-        ){
-            AppState.workspace.selectedOrderNumber=
-                normalizeOrderNumber(detectedOrderId);
+        else if(activeImportedOrders.length===1){
+            AppState.workspace.selectedOrderNumber=activeImportedOrders[0];
+            AppState.workspace.orderName=activeImportedOrders[0];
         }
 
         result.success =
