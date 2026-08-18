@@ -25,6 +25,9 @@ const PharmFlowCloudWorkspace = {
     reconcilePromise:null,
     lastAppliedWorkspaceSignature:"",
     contextSwitching:false,
+    /* Phase 2C.10.4.7 — no structural cloud WRITE is allowed during
+       sign-in until server generation + Active Manifest authority are ready. */
+    loginAuthorityReady:false,
     statusTimer:null,
     visibleStatus:"",
     activeManifestRevision:0,
@@ -268,6 +271,7 @@ function resetRuntimeForAuthenticatedContextChange(newScope){
         PharmFlowCloudWorkspace.activeManifestRevision=0;
         PharmFlowCloudWorkspace.activeManifestPresent=false;
         PharmFlowCloudWorkspace.generation=null;
+        PharmFlowCloudWorkspace.loginAuthorityReady=false;
         PharmFlowCloudWorkspace.suppressNextClearRpc=true;
 
         if(typeof AppState!=="undefined"){
@@ -1657,13 +1661,30 @@ function initializePharmFlowCloudWorkspace(){
             saveWorkspaceSnapshot?.();
         }catch(_){}
 
-        /* A Manifest pulled from the server must never trigger
-           another Manifest upload/revision loop. */
-        if(event?.source==="active-manifest"){
+        /* Phase 2C.10.4.7 — hydration/empty-authority events are READ paths.
+           Never write the Manifest during sign-in before generation authority
+           has been reconciled with Supabase. */
+        if(
+            event?.source==="active-manifest" ||
+            event?.source==="server-authority-empty" ||
+            PharmFlowCloudWorkspace.applyingRemote ||
+            PharmFlowCloudWorkspace.contextSwitching ||
+            PharmFlowCloudWorkspace.loginAuthorityReady!==true ||
+            PharmFlowCloudWorkspace.generation===null
+        ){
             return;
         }
 
         setTimeout(async()=>{
+            if(
+                PharmFlowCloudWorkspace.loginAuthorityReady!==true ||
+                PharmFlowCloudWorkspace.contextSwitching ||
+                PharmFlowCloudWorkspace.applyingRemote ||
+                PharmFlowCloudWorkspace.generation===null
+            ){
+                return;
+            }
+
             const manifestSaved=
                 await saveActiveOrderManifest();
 
@@ -1706,23 +1727,49 @@ function initializePharmFlowCloudWorkspace(){
     window.addEventListener("offline",()=>setCloudWorkspaceStatus("offline"));
     window.addEventListener("auth:context-ready",()=>{
         ensureCloudAccountContextIsolation();
+        PharmFlowCloudWorkspace.loginAuthorityReady=false;
 
         setTimeout(async()=>{
-            const hasLocalOrders=
-                Array.isArray(AppState?.workspace?.orderFiles) &&
-                AppState.workspace.orderFiles.length &&
-                Array.isArray(AppState?.workspace?.orderData) &&
-                AppState.workspace.orderData.length;
+            try{
+                /* Phase 2C.10.4.7 — generation FIRST, server Manifest SECOND,
+                   structural writes LAST. This prevents sign-in from saving a
+                   valid Active Order with a stale pre-login generation. */
+                await reconcileWorkspaceGeneration();
 
-            if(hasLocalOrders){
-                await pullActiveOrderManifest({clearIfMissing:true});
-            }
-            else{
-                await bootstrapActiveOrdersOnEmptyDevice();
-            }
+                const hasLocalOrders=
+                    Array.isArray(AppState?.workspace?.orderFiles) &&
+                    AppState.workspace.orderFiles.length &&
+                    Array.isArray(AppState?.workspace?.orderData) &&
+                    AppState.workspace.orderData.length;
 
-            await repairSharedReceivingLedgerFromLocal();
-            attemptCloudWorkspaceHydration();
+                if(hasLocalOrders){
+                    await pullActiveOrderManifest({clearIfMissing:true});
+                }
+                else{
+                    await bootstrapActiveOrdersOnEmptyDevice();
+                }
+
+                /* Close a Reset race while the Manifest request was in flight. */
+                await reconcileWorkspaceGeneration();
+
+                PharmFlowCloudWorkspace.loginAuthorityReady=true;
+
+                await repairSharedReceivingLedgerFromLocal();
+                attemptCloudWorkspaceHydration();
+
+                setCloudWorkspaceStatus(
+                    "synced",
+                    "Server authority reconciled after sign-in"
+                );
+            }
+            catch(error){
+                PharmFlowCloudWorkspace.loginAuthorityReady=false;
+                Logger.error("Sign-in cloud authority bootstrap failed",error);
+                setCloudWorkspaceStatus(
+                    "offline",
+                    error?.message||"Unable to reconcile server authority"
+                );
+            }
         },0);
     });
 
@@ -1790,8 +1837,10 @@ function initializePharmFlowCloudWorkspace(){
             await bootstrapActiveOrdersOnEmptyDevice();
         }
 
-        reconcileWorkspaceGeneration()
-            .then(()=>reconcileCloudWorkspaceAuthority());
+        if(PharmFlowCloudWorkspace.loginAuthorityReady===true){
+            reconcileWorkspaceGeneration()
+                .then(()=>reconcileCloudWorkspaceAuthority());
+        }
 
         flushCloudWorkspaceQueue()
             .then(()=>pullCloudWorkspaceTransactions());
@@ -1812,8 +1861,10 @@ function initializePharmFlowCloudWorkspace(){
                 await bootstrapActiveOrdersOnEmptyDevice();
             }
 
-            reconcileWorkspaceGeneration()
-                .then(()=>reconcileCloudWorkspaceAuthority());
+            if(PharmFlowCloudWorkspace.loginAuthorityReady===true){
+                reconcileWorkspaceGeneration()
+                    .then(()=>reconcileCloudWorkspaceAuthority());
+            }
 
             flushCloudWorkspaceQueue()
                 .then(()=>pullCloudWorkspaceTransactions());
