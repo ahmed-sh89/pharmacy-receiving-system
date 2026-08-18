@@ -780,7 +780,9 @@ async function processScannerValue(rawValue){
 
 
         showToast(
-            "Unable to process barcode",
+            error?.message
+                ? "Scan failed: "+error.message
+                : "Unable to process barcode",
             "error"
         );
 

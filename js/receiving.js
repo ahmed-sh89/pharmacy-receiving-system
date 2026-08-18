@@ -77,90 +77,60 @@ function initializeReceiving(){
 ===================================================== */
 
 async function receiveParsedBarcode(parsed){
-
-    if(
-        !parsed ||
-        !parsed.gtin
-    ){
-
-        handleReceivingFailure(
-            "Barcode could not be identified"
-        );
-
+    if(!parsed||!parsed.gtin){
+        handleReceivingFailure("Barcode could not be identified");
         return false;
-
     }
 
-    if(
-        AppState.workspace
-            .orderData
-            .length === 0
-    ){
-
-        handleReceivingFailure(
-            "Load an order before receiving"
-        );
-
+    if(AppState.workspace.orderData.length===0){
+        handleReceivingFailure("Load an order before receiving");
         return false;
-
     }
 
-    let item =
-        findReceivingItemByGTIN(
-            parsed.gtin
-        );
-
-    /*
-       Phase 2B.8: if the current workspace index has not yet been
-       populated from Global GTIN, resolve the scan directly from
-       the central GTIN cache and attach that mapping to this order.
-       This prevents a valid barcode from failing only because the
-       mapping projection happened before/after auth or session load.
-    */
-    if(!item){
-        item = await findReceivingItemByGlobalGTIN(
-            parsed.gtin
-        );
+    const gtin=normalizeGTIN(parsed.gtin);
+    if(!gtin){
+        handleReceivingFailure("Barcode could not be identified");
+        return false;
     }
+
+    /* Phase 2C.10.5.0 — STRICT IDENTITY GATE.
+       Received Qty may change ONLY after the scanned GTIN is resolved by the
+       authoritative Global Master or an approved pharmacy-learned alias.
+       Stale browser mapping projections are never allowed to auto-receive. */
+    let masterRecord=null;
+    try{
+        masterRecord=await getMasterGTINRecordByGTIN(gtin);
+    }catch(error){
+        Logger.warn("Strict GTIN lookup failed",error);
+    }
+
+    if(!masterRecord?.itemCode){
+        return await quickResolveUnrecognizedGTIN(parsed,null);
+    }
+
+    const item=getReceivingItemByItemCode(masterRecord.itemCode);
 
     if(!item){
-        return await quickResolveUnrecognizedGTIN(parsed);
+        return await quickResolveUnrecognizedGTIN(parsed,masterRecord);
     }
 
-    const quantity =
-        getValidReceivingQuantity(
-            parsed.quantity
-        );
-
-    return receiveOrderItem({
-
-        item:item,
-
-        quantity:quantity,
-
-        gtin:
-            parsed.gtin,
-
-        lot:
-            parsed.lot,
-
-        expiry:
-            parsed.expiry,
-
-        serial:
-            parsed.serial,
-
-        source:
-            APP_CONFIG
-                .transactionSources
-                .scanner,
-
-        manual:false
-
+    addMappingRecord({
+        itemCode:item.itemCode,
+        gtin,
+        source:masterRecord.source||"MASTER"
     });
 
+    return receiveOrderItem({
+        item,
+        quantity:getValidReceivingQuantity(parsed.quantity),
+        gtin,
+        lot:parsed.lot,
+        expiry:parsed.expiry,
+        serial:parsed.serial,
+        source:APP_CONFIG.transactionSources.scanner,
+        manual:false
+    });
 }
-
 
 /* =====================================================
    PHASE 2C.6.1 - QUICK RESOLVE + SAFE PHARMACY LEARNING
@@ -181,6 +151,14 @@ function flashHandheldRed(){
     void document.body.offsetWidth;
     document.body.classList.add("handheldUnknownGTINFlash");
     setTimeout(()=>document.body.classList.remove("handheldUnknownGTINFlash"),650);
+}
+
+
+function getReceivingItemByItemCode(itemCode){
+    const code=String(itemCode||"").trim();
+    return (AppState?.workspace?.orderData||[]).find(
+        item=>String(item?.itemCode||"").trim()===code
+    )||null;
 }
 
 function getManualExtraTargetOrder(){
@@ -434,7 +412,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     return true;
 }
 
-async function quickResolveUnrecognizedGTIN(parsed){
+async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
     const gtin=normalizeGTIN(parsed?.gtin||"");
     if(!gtin){
         handleReceivingFailure("Barcode could not be identified");
@@ -1027,6 +1005,8 @@ function receiveOrderItem(options){
             item:item,
 
             quantity:quantity,
+
+            transactionId:options.transactionId || null,
 
             gtin:
                 options.gtin,
