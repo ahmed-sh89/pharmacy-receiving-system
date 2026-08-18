@@ -165,145 +165,339 @@ async function receiveParsedBarcode(parsed){
 /* =====================================================
    PHASE 2C.6.1 - QUICK RESOLVE + SAFE PHARMACY LEARNING
 ===================================================== */
-async function saveReceivingNeedsReview(parsed,options={}){
-    const pharmacyId =
-        typeof getCurrentPharmacyId==="function"
-            ? getCurrentPharmacyId()
-            : (typeof AuthState!=="undefined"
-                ? (AuthState?.context?.pharmacy_id||AuthState?.profile?.pharmacy_id||AuthState?.pharmacyId)
-                : null);
 
-    if(!pharmacyId || typeof authRpc!=="function") throw new Error("Review queue is not available");
+/* ============================================================
+   PHASE 2C.10.4.9 — FRESH HANDHELD GTIN CLASSIFICATION FLOW
+============================================================ */
 
-    const quantity=Math.max(1,Number(options.quantity||parsed?.quantity||1)||1);
-
-    return authRpc("save_pharmacy_needs_review",{
-        p_pharmacy_id:pharmacyId,p_workflow:"RECEIVING",p_gtin:normalizeGTIN(parsed?.gtin||""),
-        p_raw_barcode:toSafeString(parsed?.raw||parsed?.original||parsed?.gtin||""),
-        p_order_id:toSafeString(AppState.workspace.orderId||""),
-        p_order_name:toSafeString(AppState.workspace.orderName||""),
-        p_pending_quantity:quantity,p_expiry_month:null,p_expiry_year:null,p_worker_id:null,
-        p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():"",
-        p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC",
-        p_review_reason:options.reason||"UNKNOWN_GTIN"
-    });
-}
-
-function getReceivingItemByItemCode(itemCode){
-    const code=String(itemCode||"").trim();
-    return (AppState?.workspace?.orderData||[]).find(x=>String(x?.itemCode||"").trim()===code)||null;
-}
-function clearCurrentHandheldReviewDraft(){
-    window.__pfReceivingReviewDraft=null;
+function clearHandheldActionCard(){
     document.getElementById("handheldReceivingReviewCard")?.remove();
+    document.getElementById("handheldKnownExtraCard")?.remove();
+    window.__pfReceivingReviewDraft=null;
 }
 
-function flashHandheldUnknownGTIN(){
+function flashHandheldRed(){
     document.body.classList.remove("handheldUnknownGTINFlash");
     void document.body.offsetWidth;
     document.body.classList.add("handheldUnknownGTINFlash");
     setTimeout(()=>document.body.classList.remove("handheldUnknownGTINFlash"),650);
 }
 
-function renderHandheldReceivingReviewDraft(draft){
-    clearCurrentHandheldReviewDraft();
-    window.__pfReceivingReviewDraft=draft;
-    const lastScan=document.getElementById("lastScanCard");
-    if(!lastScan)return;
+function getManualExtraTargetOrder(){
+    const selected=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
 
-    const esc=v=>typeof escapeHTML==="function"?escapeHTML(String(v??"")):String(v??"");
-    const known=!!draft.itemCode;
-    const persistedQty=Math.max(1,Number(draft.pendingQuantity||1)||1);
+    if(selected.length===1){
+        return normalizeOrderNumber(selected[0]);
+    }
+
+    const current=
+        typeof nrV2CurrentOrderNumber==="function"
+            ? nrV2CurrentOrderNumber()
+            : "";
+
+    if(current){
+        return normalizeOrderNumber(current);
+    }
+
+    throw new Error(
+        "Select one target Order before adding an unordered item."
+    );
+}
+
+function prepareManualExtraItem(itemCode,itemName,gtin){
+    const targetOrder=getManualExtraTargetOrder();
+
+    let item=upsertOrderItem({
+        itemCode,
+        itemName,
+        orderedQty:0,
+        receivedQty:0,
+        manual:true
+    });
+
+    if(!item){
+        throw new Error("Unable to add unordered item");
+    }
+
+    item.manual=true;
+    item.orderNumbers=[targetOrder];
+    item.orderNumber=targetOrder;
+
+    if(gtin){
+        addMappingRecord({
+            itemCode,
+            gtin,
+            source:"MASTER"
+        });
+    }
+
+    return item;
+}
+
+function renderKnownNotInOrderHandheld(parsed,masterRecord){
+    clearHandheldActionCard();
+
+    const lastScan=document.getElementById("lastScanCard");
+    if(!lastScan) return false;
+
+    const gtin=normalizeGTIN(parsed?.gtin||"");
+    const code=normalizeItemCode(masterRecord?.itemCode||"");
+    const name=toSafeString(masterRecord?.itemName||masterRecord?.name||code);
+
+    const card=document.createElement("section");
+    card.id="handheldKnownExtraCard";
+    card.className="handheldKnownExtraCard";
+    card.innerHTML=`
+      <div class="handheldKnownExtraStatus">KNOWN ITEM · NOT IN ORDER</div>
+      <strong class="handheldKnownExtraName">${escapeHTML(name)}</strong>
+      <div class="handheldKnownExtraMeta">
+        <span>Item <b>${escapeHTML(code)}</b></span>
+        <span>GTIN <b>${escapeHTML(gtin)}</b></span>
+      </div>
+      <label class="handheldReviewQtyLabel">
+        <span>PHYSICAL QTY</span>
+        <input id="handheldKnownExtraQty" type="number" min="1" step="1" inputmode="numeric" value="1">
+      </label>
+      <button id="btnHandheldAddExtra" class="handheldReviewSave" type="button">ADD EXTRA &amp; NEXT</button>
+    `;
+
+    lastScan.insertAdjacentElement("afterend",card);
+
+    const qty=card.querySelector("#handheldKnownExtraQty");
+    const submit=async()=>{
+        const button=card.querySelector("#btnHandheldAddExtra");
+        if(button) button.disabled=true;
+
+        try{
+            const quantity=Math.max(1,Number(qty?.value||1)||1);
+            const item=prepareManualExtraItem(code,name,gtin);
+
+            const transaction=receiveOrderItem({
+                item,
+                quantity,
+                gtin,
+                lot:parsed?.lot||"",
+                expiry:parsed?.expiry||"",
+                serial:parsed?.serial||"",
+                source:APP_CONFIG.transactionSources.scanner,
+                manual:true
+            });
+
+            if(!transaction){
+                throw new Error("Unable to receive unordered item");
+            }
+
+            clearHandheldActionCard();
+            setScanBoxState?.("ready");
+            focusScannerInput?.();
+        }catch(error){
+            if(button) button.disabled=false;
+            setScanBoxState?.("error");
+            showToast?.(error?.message||"Unable to add item","error");
+        }
+    };
+
+    qty?.addEventListener("keydown",e=>{
+        if(e.key==="Enter"){
+            e.preventDefault();
+            submit();
+        }
+    });
+
+    card.querySelector("#btnHandheldAddExtra")?.addEventListener("click",submit);
+    setTimeout(()=>{qty?.focus({preventScroll:true});qty?.select();},40);
+    return true;
+}
+
+async function renderUnknownGTINHandheld(parsed,options={}){
+    clearHandheldActionCard();
+
+    const gtin=normalizeGTIN(parsed?.gtin||"");
+    if(!gtin){
+        handleReceivingFailure("Barcode could not be identified");
+        return false;
+    }
+
+    /* DATA SAFETY: the draft is saved BEFORE the worker sees quantity/photo.
+       Therefore a rapid next scan can never discard this GTIN. */
+    const draft=await nrV2CreateDraft(parsed,{
+        workflow:"RECEIVING",
+        reason:options.reason||"UNKNOWN_GTIN",
+        itemCode:options.itemCode||"",
+        itemName:options.itemName||"",
+        orderNumber:nrV2CurrentOrderNumber?.()||null
+    });
+
+    if(!draft?.review_id){
+        throw new Error("Needs Review draft was not created");
+    }
+
+    const lastScan=document.getElementById("lastScanCard");
+    if(!lastScan) return false;
 
     const card=document.createElement("section");
     card.id="handheldReceivingReviewCard";
     card.className="handheldReceivingReviewCard urgent";
     card.innerHTML=`
-      <div class="handheldReviewStatus">${known?"ITEM NOT IN CURRENT ORDER":"ITEM NOT RECOGNISED"}</div>
+      <div class="handheldReviewStatus">ITEM NOT RECOGNISED</div>
       <div class="handheldReviewBody">
-        <strong>${esc(draft.itemName||"Item not recognised")}</strong>
-        <div class="handheldReviewMeta">
-          ${draft.itemCode?`<span>Item Code <b>${esc(draft.itemCode)}</b></span>`:""}
-          <span>GTIN <b>${esc(draft.gtin||"")}</b></span>
+        <div class="handheldUnknownGTIN">
+          <span>GTIN</span>
+          <strong>${escapeHTML(gtin)}</strong>
+          <small>✓ SAVED TO NEEDS REVIEW</small>
         </div>
-        <label class="handheldReviewQtyLabel"><span>PHYSICAL QTY</span>
-          <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="${persistedQty}">
-        </label>
-        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE & CONTINUE</button>
-        <small class="handheldReviewSafety">GTIN already saved to Needs Review — quantity can be adjusted before continuing.</small>
-      </div>`;
-    lastScan.insertAdjacentElement("afterend",card);
-    flashHandheldUnknownGTIN();
 
-    const qty=document.getElementById("handheldReviewQty");
-    const save=async()=>{
-        const quantity=Math.max(1,Number(qty?.value||1)||1);
-        const btn=document.getElementById("btnSaveHandheldReview");
-        if(btn)btn.disabled=true;
+        <button id="btnHandheldReviewPhoto" class="handheldPhotoButton" type="button">
+          📷 PHOTO <small>OPTIONAL</small>
+        </button>
+        <input id="handheldReviewPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+
+        <label class="handheldReviewQtyLabel">
+          <span>PHYSICAL QTY</span>
+          <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="1">
+        </label>
+
+        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE &amp; NEXT</button>
+      </div>
+    `;
+
+    lastScan.insertAdjacentElement("afterend",card);
+    flashHandheldRed();
+
+    const photoButton=card.querySelector("#btnHandheldReviewPhoto");
+    const photoInput=card.querySelector("#handheldReviewPhotoInput");
+    const qty=card.querySelector("#handheldReviewQty");
+    const saveButton=card.querySelector("#btnSaveHandheldReview");
+
+    photoButton?.addEventListener("click",()=>photoInput?.click());
+
+    photoInput?.addEventListener("change",async()=>{
+        const file=photoInput.files?.[0];
+        if(!file) return;
+
+        photoButton.disabled=true;
+        photoButton.textContent="UPLOADING PHOTO…";
+
         try{
-            const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():AuthState?.context?.pharmacy_id;
-            if(!pharmacyId||!draft.reviewId)throw new Error("Needs Review draft was not persisted");
-            await authRpc("set_pharmacy_needs_review_quantity",{
-                p_pharmacy_id:pharmacyId,p_review_id:draft.reviewId,p_pending_quantity:quantity
-            });
+            await nrV2UploadPhoto(draft.review_id,file);
+            photoButton.textContent="✓ PHOTO ADDED";
+            photoButton.classList.add("added");
+        }catch(error){
+            photoButton.disabled=false;
+            photoButton.innerHTML='📷 PHOTO <small>OPTIONAL</small>';
+            showToast?.(error?.message||"Unable to upload photo","error");
+        }
+    });
+
+    const finish=async()=>{
+        saveButton.disabled=true;
+
+        try{
+            const quantity=Math.max(1,Number(qty?.value||1)||1);
+            await nrV2SetQty(draft.review_id,quantity);
+
             card.querySelector(".handheldReviewStatus").textContent="SAVED FOR REVIEW ✓";
-            card.classList.remove("urgent"); card.classList.add("saved");
+            card.classList.remove("urgent");
+            card.classList.add("saved");
+
             refreshNeedsReviewCounters?.();
+
             setTimeout(()=>{
-                clearCurrentHandheldReviewDraft();
+                clearHandheldActionCard();
                 setScanBoxState?.("ready");
                 focusScannerInput?.();
-            },300);
+            },250);
+
+            return true;
         }catch(error){
-            if(btn)btn.disabled=false;
+            saveButton.disabled=false;
             setScanBoxState?.("error");
-            showToast?.(error?.message||"Unable to update review quantity","error");
+            showToast?.(error?.message||"Unable to save quantity","error");
+            return false;
         }
     };
-    qty?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();save();}});
-    document.getElementById("btnSaveHandheldReview")?.addEventListener("click",save);
-    setTimeout(()=>{try{qty?.focus({preventScroll:true});qty?.select();}catch(_e){}},40);
-}
 
-async function persistAndRenderHandheldReview(parsed,details){
-    /* Data-safety rule: persist FIRST with qty=1. A fast next scan can never
-       discard an unrecognized GTIN. */
-    const result=await saveReceivingNeedsReview(parsed,{quantity:1,reason:details.reason});
-    const row=Array.isArray(result)?result[0]:result;
-    const draft={...details,parsed,gtin:normalizeGTIN(parsed?.gtin||""),reviewId:row?.review_id||row?.reviewId,
-        pendingQuantity:Number(row?.pending_quantity||1)};
-    renderHandheldReceivingReviewDraft(draft);
+    qty?.addEventListener("keydown",event=>{
+        if(event.key==="Enter"){
+            event.preventDefault();
+            finish();
+        }
+    });
+
+    saveButton?.addEventListener("click",finish);
+    setTimeout(()=>{qty?.focus({preventScroll:true});qty?.select();},60);
+
     refreshNeedsReviewCounters?.();
     return true;
 }
 
 async function quickResolveUnrecognizedGTIN(parsed){
     const gtin=normalizeGTIN(parsed?.gtin||"");
-    if(!gtin){handleReceivingFailure("Barcode could not be identified");return false;}
+    if(!gtin){
+        handleReceivingFailure("Barcode could not be identified");
+        return false;
+    }
 
     let masterRecord=null;
-    try{masterRecord=await getMasterGTINRecordByGTIN(gtin);}catch(_e){}
-    const isHandheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
+    try{
+        masterRecord=await getMasterGTINRecordByGTIN(gtin);
+    }catch(_){}
 
+    const isHandheld=
+        typeof isLikelyZebraDevice==="function" &&
+        isLikelyZebraDevice();
+
+    /*
+       CASE 1:
+       GTIN is known in Global Master but that Item is not in the Order.
+       Identity is certain: this is a true Unordered/Manual item.
+    */
     if(masterRecord?.itemCode){
         const orderItem=getReceivingItemByItemCode(masterRecord.itemCode);
+
         if(orderItem){
-            return receiveOrderItem({item:orderItem,quantity:getValidReceivingQuantity(parsed?.quantity),gtin,
-                lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",
-                source:APP_CONFIG.transactionSources.scanner,manual:false});
+            return receiveOrderItem({
+                item:orderItem,
+                quantity:getValidReceivingQuantity(parsed?.quantity),
+                gtin,
+                lot:parsed?.lot||"",
+                expiry:parsed?.expiry||"",
+                serial:parsed?.serial||"",
+                source:APP_CONFIG.transactionSources.scanner,
+                manual:false
+            });
         }
+
         if(isHandheld){
             setScanBoxState?.("action");
-            try{return await persistAndRenderHandheldReview(parsed,{itemCode:masterRecord.itemCode||"",
-                itemName:masterRecord.itemName||"Known item",reason:"KNOWN_NOT_IN_ORDER"});}
-            catch(error){handleReceivingFailure(error?.message||"Unable to save Needs Review");return false;}
+            return renderKnownNotInOrderHandheld(parsed,masterRecord);
         }
     }
 
+    /*
+       CASE 2 + CASE 3:
+       Unknown GTIN. The Handheld does NOT guess whether this is:
+       - an existing order item with a changed GTIN, or
+       - a genuinely new market item.
+       Worker records physical reality; pharmacist resolves identity on PC.
+    */
     if(isHandheld){
         setScanBoxState?.("action");
-        try{return await persistAndRenderHandheldReview(parsed,{itemCode:"",itemName:"Item not recognised",reason:"UNKNOWN_GTIN"});}
-        catch(error){handleReceivingFailure(error?.message||"Unable to save Needs Review");return false;}
+
+        try{
+            return await renderUnknownGTINHandheld(parsed,{
+                reason:"UNKNOWN_GTIN"
+            });
+        }catch(error){
+            handleReceivingFailure(
+                error?.message ||
+                "Unable to save unknown GTIN for review"
+            );
+            return false;
+        }
     }
 
     setScanBoxState?.("action");
@@ -387,12 +581,25 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             catch(error){ if(typeof setScanBoxState==="function")setScanBoxState("error"); }
         });
         panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
-            let item=upsertOrderItem({itemCode:knownCode,itemName:knownName,orderedQty:0,receivedQty:0,manual:true});
-            if(!item){ if(typeof setScanBoxState==="function") setScanBoxState("error"); return; }
-            item.manual=true;
-            addMappingRecord({itemCode:knownCode,gtin,source:knownRecord?.source||"MASTER"});
-            const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true});
-            finish(tx);
+            try{
+                const item=prepareManualExtraItem(knownCode,knownName,gtin);
+                const tx=receiveOrderItem({
+                    item,
+                    quantity:getValidReceivingQuantity(parsed.quantity),
+                    gtin,
+                    lot:parsed.lot,
+                    expiry:parsed.expiry,
+                    serial:parsed.serial,
+                    source:APP_CONFIG.transactionSources.scanner,
+                    manual:true
+                });
+                if(!tx) throw new Error("Unable to add unordered item");
+                finish(tx);
+            }catch(error){
+                if(typeof setScanBoxState==="function") setScanBoxState("error");
+                const msg=panel.querySelector('.gtinPanelMessage');
+                if(msg) msg.textContent=error?.message||"Unable to add item";
+            }
         });
         panel.querySelector('[data-extra]')?.addEventListener('click',async()=>{
             const code=normalizeItemCode(panel.querySelector('[data-code]').value), name=toSafeString(panel.querySelector('[data-name]').value).trim();
@@ -922,6 +1129,7 @@ function createReceivingTransaction(options){
     return addReceivingTransaction({
 
         transactionId:
+            options.transactionId ||
             createTransactionId(),
 
         orderId:transactionOrder||AppState.workspace.orderId,

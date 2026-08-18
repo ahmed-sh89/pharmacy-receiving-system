@@ -7235,75 +7235,369 @@ function getNeedsReviewPharmacyId(){
     return null;
 }
 
-async function loadNeedsReviewRows(workflow,orderId=null){
-    const pharmacyId = getNeedsReviewPharmacyId();
-    if(!pharmacyId || typeof authRpc !== "function") return [];
 
-    return await authRpc("list_pharmacy_needs_review",{
-        p_pharmacy_id:pharmacyId,
-        p_workflow:workflow||null,
-        p_order_id:orderId||null
-    }) || [];
+async function loadNeedsReviewRows(workflow,orderNumber=null){
+    if(typeof nrV2List!=="function") return [];
+    return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
+
 async function refreshNeedsReviewCounters(){
-    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+
     try{
-        /* Phase 2C.10.4.8 — Receiving review is pharmacy-scoped. Do not hide
-           Handheld rows because a linked device and PC use different local
-           workspace/order IDs. */
-        const [r,e]=await Promise.all([loadNeedsReviewRows("RECEIVING",null),loadNeedsReviewRows("EXPIRY",null)]);
-        const rc=document.getElementById("receivingNeedsReviewCount"),ec=document.getElementById("expiryNeedsReviewCount");
-        if(rc)rc.textContent=String(r.length); if(ec)ec.textContent=String(e.length);
-        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",r.length>0);
-        document.getElementById("btnExpiryNeedsReview")?.classList.toggle("hasItems",e.length>0);
-    }catch(error){console.warn("Needs Review count failed",error);}
+        /* Pharmacy-scoped by design. Never hide Handheld drafts because of
+           a PC-local order/workspace id mismatch. */
+        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const rc=document.getElementById("receivingNeedsReviewCount");
+
+        if(rc) rc.textContent=String(receiving.length);
+
+        document
+            .getElementById("btnReceivingNeedsReview")
+            ?.classList.toggle("hasItems",receiving.length>0);
+    }catch(error){
+        console.warn("Needs Review V2 count failed",error);
+    }
 }
+
 function ensureNeedsReviewButtons(){
-    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+
     const search=document.getElementById("btnQuickSearch");
-    if(search&&!document.getElementById("btnReceivingNeedsReview")){
-        const b=document.createElement("button");b.type="button";b.id="btnReceivingNeedsReview";b.className=(search.className||"")+" needsReviewButton";
-        b.innerHTML='Needs Review <strong id="receivingNeedsReviewCount">0</strong>';search.insertAdjacentElement("afterend",b);b.onclick=()=>openNeedsReviewPanel("RECEIVING");
+    if(search && !document.getElementById("btnReceivingNeedsReview")){
+        const button=document.createElement("button");
+        button.id="btnReceivingNeedsReview";
+        button.className="secondaryButton needsReviewButton";
+        button.type="button";
+        button.innerHTML='Needs Review <strong id="receivingNeedsReviewCount">0</strong>';
+        search.insertAdjacentElement("afterend",button);
+        button.onclick=()=>openNeedsReviewPanel("RECEIVING");
     }
-    const captured=document.getElementById("btnExpiryCaptured");
-    if(captured&&!document.getElementById("btnExpiryNeedsReview")){
-        const b=document.createElement("button");b.type="button";b.id="btnExpiryNeedsReview";b.className="expiryCapturedButton needsReviewButton";
-        b.innerHTML='REVIEW <strong id="expiryNeedsReviewCount">0</strong>';captured.insertAdjacentElement("beforebegin",b);b.onclick=()=>openNeedsReviewPanel("EXPIRY");
-    }
+
     refreshNeedsReviewCounters();
 }
-async function openNeedsReviewPanel(workflow){
-    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
+
+function nrV2FindOrderMatches(query){
+    const q=toSafeString(query).trim().toLowerCase();
+    if(!q) return [];
+
+    return (AppState?.workspace?.orderData||[])
+        .filter(item=>{
+            return (
+                toSafeString(item?.itemCode).toLowerCase().includes(q) ||
+                toSafeString(item?.itemName).toLowerCase().includes(q)
+            );
+        })
+        .slice(0,10);
+}
+
+async function nrV2ResolveToOrderItem(row,item){
+    const transactionId=nrV2ResolutionTransactionId(row.review_id);
+
+    /*
+       If receiving already succeeded during a previous attempt but the final
+       queue-status update failed, do NOT receive twice. Just finish resolution.
+    */
+    if(!nrV2HasLocalResolutionTransaction(row.review_id)){
+        await savePharmacyLearnedGTIN(
+            row.gtin,
+            item.itemCode,
+            item.itemName
+        );
+
+        addMappingRecord({
+            itemCode:item.itemCode,
+            gtin:row.gtin,
+            source:"PHARMACY_LEARNED"
+        });
+
+        const tx=receiveOrderItem({
+            item,
+            quantity:Math.max(1,Number(row.pending_quantity||1)||1),
+            gtin:row.gtin,
+            source:APP_CONFIG.transactionSources.scanner,
+            manual:false,
+            transactionId
+        });
+
+        if(!tx){
+            throw new Error("Unable to apply reviewed quantity");
+        }
+    }
+
+    await nrV2MarkResolved(
+        row,
+        item,
+        "LINK_ORDER_ITEM",
+        transactionId
+    );
+}
+
+async function nrV2ResolveAsUnordered(row,itemCode,itemName){
+    const transactionId=nrV2ResolutionTransactionId(row.review_id);
+
+    if(!nrV2HasLocalResolutionTransaction(row.review_id)){
+        await savePharmacyLearnedGTIN(
+            row.gtin,
+            itemCode,
+            itemName
+        );
+
+        const item=prepareManualExtraItem(
+            itemCode,
+            itemName,
+            row.gtin
+        );
+
+        const tx=receiveOrderItem({
+            item,
+            quantity:Math.max(1,Number(row.pending_quantity||1)||1),
+            gtin:row.gtin,
+            source:APP_CONFIG.transactionSources.scanner,
+            manual:true,
+            transactionId
+        });
+
+        if(!tx){
+            throw new Error("Unable to add unordered item");
+        }
+    }
+
+    await nrV2MarkResolved(
+        row,
+        {itemCode,itemName},
+        "ADD_UNORDERED",
+        transactionId
+    );
+}
+
+async function nrV2HydratePhoto(img,path){
+    if(!img || !path) return;
+
+    try{
+        const url=await nrV2PhotoObjectUrl(path);
+        if(url){
+            img.src=url;
+            img.hidden=false;
+        }
+    }catch(_){}
+}
+
+async function openNeedsReviewPanel(workflow="RECEIVING"){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+
     document.getElementById("needsReviewOverlay")?.remove();
-    const orderId=workflow==="RECEIVING"?String(AppState?.workspace?.orderId||""):null;
-    let rows=[];try{rows=await loadNeedsReviewRows(workflow,orderId);}catch(error){showToast?.(error?.message||"Unable to load Needs Review","error");return;}
-    const esc=v=>typeof escapeHTML==="function"?escapeHTML(String(v??"")):String(v??"");
-    const isExpiry=workflow==="EXPIRY";
-    const overlay=document.createElement("div");overlay.id="needsReviewOverlay";overlay.className="needsReviewOverlay";
-    overlay.innerHTML=`<button class="needsReviewScrim" data-close></button><aside class="needsReviewPanel"><header><div><span>${workflow}</span><h2>Needs Review</h2><p>${rows.length} pending</p></div><button class="needsReviewClose" data-close>✕</button></header><div class="needsReviewList">${
-      rows.length?rows.map((row,i)=>`<section class="needsReviewRow" data-i="${i}"><div class="needsReviewInfo"><span>GTIN</span><strong>${esc(row.gtin)}</strong><small>${isExpiry?`Qty ${row.pending_quantity} · ${String(row.expiry_month).padStart(2,"0")}/${row.expiry_year} · ${esc(row.captured_by_name)}`:`${row.review_reason==="KNOWN_NOT_IN_ORDER" ? "Known item — Not in current order" : "GTIN not recognized"} · Pending Qty: ${row.pending_quantity}`}</small></div><input data-search placeholder="${isExpiry?"Search Global Master — Item Code / Item Name":"Search current order item"}"><div class="needsReviewMatches"></div><button class="needsReviewDelete" data-delete>Delete</button></section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}</div></aside>`;
-    document.body.appendChild(overlay);overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>overlay.remove());
-    const orderItems=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
-    overlay.querySelectorAll(".needsReviewRow").forEach(sec=>{
-      const row=rows[Number(sec.dataset.i)],search=sec.querySelector("[data-search]"),matches=sec.querySelector(".needsReviewMatches");
-      let seq=0;
-      const render=async()=>{const my=++seq;const q=String(search.value||"").trim();let found=[];
-        if(isExpiry){ found=q&&typeof searchGlobalMasterItems==="function"?await searchGlobalMasterItems(q,6):[]; }
-        else { const lq=q.toLowerCase(); found=orderItems.filter(x=>!lq||String(x.itemName||"").toLowerCase().includes(lq)||String(x.itemCode||"").toLowerCase().includes(lq)).slice(0,6); }
-        if(my!==seq)return;
-        matches.innerHTML=found.map((x,i)=>`<button data-m="${i}"><span><strong>${esc(x.itemName)}</strong><small>${esc(x.itemCode)}${isExpiry&&x.gtinCount?` · ${x.gtinCount} GTIN${x.gtinCount>1?"s":""}`:""}</small></span><b>${isExpiry?"Add GTIN & Resolve":"Link"}</b></button>`).join("")||(isExpiry?'<small>Search the Global Master by Item Code or Item Name.</small>':'<small>Search current order. Manual item entry remains PC-only.</small>');
-        matches.querySelectorAll("[data-m]").forEach(b=>b.onclick=async()=>{const item=found[Number(b.dataset.m)];b.disabled=true;try{
-          const pharmacyId=getNeedsReviewPharmacyId();
-          await authRpc("resolve_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id,p_item_code:item.itemCode,p_item_name:item.itemName});
-          if(typeof savePharmacyLearnedGTIN==="function")await savePharmacyLearnedGTIN(row.gtin,item.itemCode,item.itemName);
-          if(typeof addMappingRecord==="function")addMappingRecord({itemCode:item.itemCode,gtin:row.gtin,source:"PHARMACY_LEARNED"});
-          if(workflow==="RECEIVING"&&typeof receiveOrderItem==="function")receiveOrderItem({item,quantity:Number(row.pending_quantity||1),gtin:row.gtin,lot:"",expiry:"",serial:"",source:APP_CONFIG.transactionSources.scanner,manual:item.manual===true});
-          else if(isExpiry)await authRpc("save_pharmacy_expiry_capture_smart",{p_pharmacy_id:pharmacyId,p_item_code:item.itemCode,p_item_name:item.itemName,p_gtin:row.gtin,p_category:item.category||"",p_quantity:Number(row.pending_quantity),p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),p_worker_id:row.worker_id,p_batch_no:"",p_sample_serial:"",p_device_id:row.device_id||"",p_source:row.source||"PC"});
-          sec.remove();refreshNeedsReviewCounters();
-        }catch(error){b.disabled=false;showToast?.(error?.message||"Unable to resolve","error");}});};
-      search.oninput=()=>{clearTimeout(search._nrTimer);search._nrTimer=setTimeout(render,120);}; render();
-      sec.querySelector("[data-delete]").onclick=async e=>{const b=e.currentTarget;if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected){b.dataset.c="";b.textContent="Delete";}},2500);return;}
-        try{const pharmacyId=getNeedsReviewPharmacyId();await authRpc("delete_pharmacy_needs_review",{p_pharmacy_id:pharmacyId,p_review_id:row.review_id});sec.remove();refreshNeedsReviewCounters();}catch(error){showToast?.(error?.message||"Unable to delete","error");}};
+
+    let rows=[];
+    try{
+        rows=await loadNeedsReviewRows(workflow,null);
+    }catch(error){
+        showToast?.(
+            error?.message||"Unable to load Needs Review",
+            "error"
+        );
+        return;
+    }
+
+    const esc=value=>escapeHTML(toSafeString(value));
+
+    const overlay=document.createElement("div");
+    overlay.id="needsReviewOverlay";
+    overlay.className="needsReviewOverlayV2";
+
+    overlay.innerHTML=`
+      <button class="needsReviewScrim" data-close aria-label="Close"></button>
+      <aside class="needsReviewPanel needsReviewPanelV2">
+        <header>
+          <div>
+            <span>RECEIVING</span>
+            <h2>Needs Review</h2>
+            <p>${rows.length} pending</p>
+          </div>
+          <button class="needsReviewClose" data-close>✕</button>
+        </header>
+
+        <div class="needsReviewList">
+          ${
+            rows.length
+            ? rows.map((row,index)=>`
+              <section class="needsReviewRow needsReviewRowV2" data-i="${index}">
+                <div class="needsReviewPhotoWrap ${row.photo_path?"hasPhoto":""}">
+                  ${
+                    row.photo_path
+                    ? `<img data-photo="${index}" alt="Product review photo" hidden>`
+                    : `<div class="needsReviewNoPhoto">NO PHOTO</div>`
+                  }
+                </div>
+
+                <div class="needsReviewInfo">
+                  <span>${row.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"UNKNOWN GTIN"}</span>
+                  <strong>${esc(row.gtin)}</strong>
+                  <small>
+                    Qty ${Number(row.pending_quantity||1)}
+                    ${row.order_number?` · Order ${esc(row.order_number)}`:""}
+                    ${row.source?` · ${esc(row.source)}`:""}
+                  </small>
+                  ${
+                    row.master_item_name_hint
+                    ? `<em>${esc(row.master_item_name_hint)} · ${esc(row.master_item_code_hint)}</em>`
+                    : ""
+                  }
+                </div>
+
+                <div class="needsReviewResolve">
+                  <label>
+                    Find item in current order
+                    <input data-search="${index}" placeholder="Item Code / Item Name">
+                  </label>
+                  <div class="needsReviewMatches" data-matches="${index}"></div>
+
+                  <details class="needsReviewExtra">
+                    <summary>Item truly not in the order?</summary>
+                    <div class="needsReviewExtraGrid">
+                      <input data-extra-code="${index}" placeholder="Item Code">
+                      <input data-extra-name="${index}" placeholder="Item Name">
+                      <button data-extra="${index}" type="button">ADD UNORDERED & RECEIVE</button>
+                    </div>
+                  </details>
+
+                  <button class="needsReviewDelete" data-delete="${index}" type="button">Delete review</button>
+                </div>
+              </section>
+            `).join("")
+            : `<div class="needsReviewEmpty">Nothing needs review.</div>`
+          }
+        </div>
+      </aside>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(button=>{
+        button.onclick=()=>overlay.remove();
+    });
+
+    rows.forEach((row,index)=>{
+        const section=overlay.querySelector(`[data-i="${index}"]`);
+        const search=overlay.querySelector(`[data-search="${index}"]`);
+        const matches=overlay.querySelector(`[data-matches="${index}"]`);
+
+        if(row.photo_path){
+            nrV2HydratePhoto(
+                overlay.querySelector(`[data-photo="${index}"]`),
+                row.photo_path
+            );
+        }
+
+        const renderMatches=()=>{
+            const items=nrV2FindOrderMatches(search?.value||"");
+
+            matches.innerHTML=
+                items.length
+                ? items.map((item,itemIndex)=>`
+                    <button type="button" data-match="${itemIndex}">
+                      <span>
+                        <strong>${esc(item.itemName)}</strong>
+                        <small>Item ${esc(item.itemCode)}</small>
+                      </span>
+                      <b>LINK GTIN & RECEIVE ${Number(row.pending_quantity||1)}</b>
+                    </button>
+                  `).join("")
+                : `<div class="gtinNoResult">Search the current order.</div>`;
+
+            matches.querySelectorAll("[data-match]").forEach(button=>{
+                button.onclick=async()=>{
+                    const item=items[Number(button.dataset.match)];
+                    button.disabled=true;
+
+                    try{
+                        await nrV2ResolveToOrderItem(row,item);
+                        section.remove();
+                        showToast?.(
+                            "GTIN linked and quantity received",
+                            "success"
+                        );
+                        refreshNeedsReviewCounters();
+                    }catch(error){
+                        button.disabled=false;
+                        showToast?.(
+                            error?.message||"Unable to resolve review",
+                            "error"
+                        );
+                    }
+                };
+            });
+        };
+
+        search?.addEventListener("input",renderMatches);
+        renderMatches();
+
+        overlay
+            .querySelector(`[data-extra="${index}"]`)
+            ?.addEventListener("click",async event=>{
+                const button=event.currentTarget;
+                const code=normalizeItemCode(
+                    overlay.querySelector(`[data-extra-code="${index}"]`)?.value||""
+                );
+                const name=toSafeString(
+                    overlay.querySelector(`[data-extra-name="${index}"]`)?.value||""
+                ).trim();
+
+                if(!code || !name){
+                    showToast?.(
+                        "Enter Item Code and Item Name",
+                        "warning"
+                    );
+                    return;
+                }
+
+                button.disabled=true;
+
+                try{
+                    await nrV2ResolveAsUnordered(row,code,name);
+                    section.remove();
+                    showToast?.(
+                        "Unordered item added and received",
+                        "success"
+                    );
+                    refreshNeedsReviewCounters();
+                }catch(error){
+                    button.disabled=false;
+                    showToast?.(
+                        error?.message||"Unable to add unordered item",
+                        "error"
+                    );
+                }
+            });
+
+        overlay
+            .querySelector(`[data-delete="${index}"]`)
+            ?.addEventListener("click",async event=>{
+                const button=event.currentTarget;
+
+                if(button.dataset.confirm!=="1"){
+                    button.dataset.confirm="1";
+                    button.textContent="Confirm delete";
+                    setTimeout(()=>{
+                        if(button.isConnected){
+                            button.dataset.confirm="";
+                            button.textContent="Delete review";
+                        }
+                    },2500);
+                    return;
+                }
+
+                try{
+                    await nrV2Delete(row.review_id);
+                    section.remove();
+                    refreshNeedsReviewCounters();
+                }catch(error){
+                    showToast?.(
+                        error?.message||"Unable to delete review",
+                        "error"
+                    );
+                }
+            });
     });
 }
 
