@@ -1059,73 +1059,58 @@ async function restoreHistoricalArchive(){
 
 async function deleteAllHistoricalData(){
 
-    /* Phase 2C.5.4.2: Historical deletion must be cloud + local.
-       The old implementation only cleared this browser, leaving received
-       Order Registry rows in Supabase and causing false duplicate blocks. */
     const phrase=window.prompt(
-        "Type DELETE ALL HISTORICAL DATA to permanently remove all received order history for this pharmacy.\n\nGlobal GTIN Master, Returns Archive, users, and active uploaded orders are not affected.",
+        "Type DELETE ALL HISTORICAL DATA to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Global GTIN Master, Returns Archive, and users are not affected.",
         ""
     );
+
     if(phrase!=="DELETE ALL HISTORICAL DATA"){
-        /* Cancel is intentionally silent. A stale warning toast must never
-           appear beside a successfully-clean Archive and imply data failure. */
         return false;
     }
 
-    showLoading("Deleting historical data...");
+    const pharmacyId=AuthState?.context?.pharmacy_id||"";
+    if(!pharmacyId || typeof authRpc!=="function"){
+        showToast(
+            "Pharmacy cloud context is unavailable. Sign in again before deleting historical data.",
+            "error",
+            10000
+        );
+        return false;
+    }
+
+    showLoading("Deleting and verifying historical data on Supabase...");
 
     try{
-        /* Supabase is authoritative across PCs. Delete finalized/received
-           Order Registry + immutable source snapshots first. If cloud
-           deletion fails, do NOT clear this browser and create split state. */
-        if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context?.pharmacy_id){
-            await authRpc("delete_all_pharmflow_received_history",{
-                p_pharmacy_id:AuthState.context.pharmacy_id,
+        /* Phase 2C.10.4.6 — ONE tenant-scoped database transaction is the
+           authority. Do not split Historical Orders and Finalized Archives
+           into independent delete calls. */
+        const rawReceipt=await authRpc(
+            "delete_all_pharmflow_historical_data_v2",
+            {
+                p_pharmacy_id:pharmacyId,
                 p_confirmation:"DELETE ALL HISTORICAL DATA"
-            });
-            await authRpc("delete_all_pharmflow_finalized_archives",{
-                p_pharmacy_id:AuthState.context.pharmacy_id,
-                p_confirmation:"DELETE ALL HISTORICAL DATA"
-            });
-        }else{
-            throw new Error("Pharmacy cloud context is unavailable. Sign in again before deleting historical data.");
-        }
-
-        /* Verify the authoritative server deletion directly before touching
-           local history. Do not rely on helper functions that intentionally
-           swallow RPC errors. */
-        const lifecycleRows=await authRpc(
-            "list_pharmflow_orders",
-            {p_pharmacy_id:AuthState.context.pharmacy_id}
+            }
         );
 
-        const receivedStillRegistered=(Array.isArray(lifecycleRows)?lifecycleRows:[])
-            .filter(row=>["received","finalized","closed"].includes(
-                String(row?.status||"").trim().toLowerCase()
-            ));
+        const receipt=Array.isArray(rawReceipt)
+            ? (rawReceipt[0]||{})
+            : (rawReceipt||{});
 
-        if(receivedStillRegistered.length){
+        if(receipt.success!==true){
+            throw new Error("Supabase did not confirm Historical Data deletion");
+        }
+
+        if(
+            Number(receipt.remaining_historical_orders||0)!==0 ||
+            Number(receipt.remaining_finalized_archives||0)!==0
+        ){
             throw new Error(
-                "Historical deletion was not verified on Supabase — "+
-                receivedStillRegistered.length+
-                " finalized/received Order registration(s) remain."
+                "Historical deletion verification failed on Supabase"
             );
         }
 
-        const cloudArchives=await authRpc(
-            "list_pharmflow_finalized_archives",
-            {p_pharmacy_id:AuthState.context.pharmacy_id}
-        );
-
-        if(Array.isArray(cloudArchives) && cloudArchives.length){
-            throw new Error(
-                "Historical deletion was not verified on Supabase — "+
-                cloudArchives.length+" finalized archive(s) remain."
-            );
-        }
-
-        /* Server verification succeeded. Now clear the local historical
-           stores only. Active Orders remain untouched. */
+        /* Clear only browser-side HISTORICAL stores after the server has
+           committed and verified. Current workspace/order state is untouched. */
         await dbClearStore(APP_CONFIG.database.stores.orders);
         await dbClearStore(APP_CONFIG.database.stores.transactions);
         await dbClearStore(APP_CONFIG.database.stores.sessions);
@@ -1135,6 +1120,10 @@ async function deleteAllHistoricalData(){
         AppState.archive.transactions=[];
 
         if(typeof OrderLifecycleEngine!=="undefined"){
+            const lifecycleRows=await authRpc(
+                "list_pharmflow_orders",
+                {p_pharmacy_id:pharmacyId}
+            );
             OrderLifecycleEngine.records=Array.isArray(lifecycleRows)
                 ? lifecycleRows
                 : [];
@@ -1142,54 +1131,31 @@ async function deleteAllHistoricalData(){
         }
 
         AppEvents.emit("archive:updated");
-
-        /* Re-render first, then resolve a fresh toast host and show the
-           receipt exactly like Reset Current Workspace does. */
         refreshEntireUI?.();
         hideLoading();
 
-        const successMessage =
-            "Historical data deleted successfully · Server verified · Active Orders unaffected · Global GTIN Master active";
+        const deletedOrders=Number(receipt.historical_orders_deleted||0);
+        const deletedArchives=Number(receipt.finalized_archives_deleted||0);
+        const preservedActive=Number(receipt.active_orders_preserved||0);
 
-        /* Phase 2C.10.4.5 — persistent in-page receipt is the authoritative
-           operator confirmation. It is independent of toast timing, view
-           refreshes and cached toast references. */
-        const receipt = document.getElementById("historicalDeleteReceipt");
-        if(receipt){
-            receipt.textContent = successMessage;
-            receipt.className = "operationReceipt success";
-            receipt.hidden = false;
+        const successMessage=
+            "Historical data deleted and server verified · "+
+            "Historical orders removed: "+deletedOrders+
+            " · Finalized archives removed: "+deletedArchives+
+            " · Active orders preserved: "+preservedActive;
+
+        const persistentReceipt=document.getElementById("historicalDeleteReceipt");
+        if(persistentReceipt){
+            persistentReceipt.textContent=successMessage;
+            persistentReceipt.className="operationReceipt success";
+            persistentReceipt.hidden=false;
         }
 
-        showToast(
-            successMessage,
-            "success",
-            10000
-        );
+        showToast(successMessage,"success",12000);
 
-        /* Non-critical maintenance MUST NOT delay or suppress the operator
-           receipt. Any failure here is logged only. */
+        /* Non-critical UI/source refreshes occur only after the authoritative
+           receipt is visible. They cannot change the deletion outcome. */
         Promise.resolve().then(async()=>{
-            try{
-                if(typeof reconcileCloudWorkspaceAuthority==="function"){
-                    await reconcileCloudWorkspaceAuthority();
-                }
-            }catch(error){
-                Logger.warn("Post-history-delete workspace reconcile failed",error);
-            }
-
-            try{
-                if(typeof syncGlobalMasterGTINFromCloud==="function"){
-                    await syncGlobalMasterGTINFromCloud();
-                }
-            }catch(error){
-                Logger.warn("Post-history-delete GTIN refresh failed",error);
-            }
-
-            try{
-                refreshMasterGTINUI?.();
-            }catch(_){}
-
             try{
                 if(typeof refreshItemTransferOrderOptions==="function"){
                     await Promise.resolve(refreshItemTransferOrderOptions());
@@ -1197,30 +1163,32 @@ async function deleteAllHistoricalData(){
             }catch(error){
                 Logger.warn("Post-history-delete Item Transfer refresh failed",error);
             }
+
+            try{
+                if(typeof refreshMasterGTINUI==="function"){
+                    refreshMasterGTINUI();
+                }
+            }catch(_){ }
         });
 
         return true;
-    }catch(error){
+    }
+    catch(error){
         Logger.error("Historical data deletion failed",error);
         hideLoading();
 
-        const failureMessage = error.message||"Unable to delete historical data";
-        const receipt = document.getElementById("historicalDeleteReceipt");
-        if(receipt){
-            receipt.textContent = failureMessage;
-            receipt.className = "operationReceipt error";
-            receipt.hidden = false;
+        const failureMessage=error?.message||"Unable to delete historical data";
+        const persistentReceipt=document.getElementById("historicalDeleteReceipt");
+        if(persistentReceipt){
+            persistentReceipt.textContent=failureMessage;
+            persistentReceipt.className="operationReceipt error";
+            persistentReceipt.hidden=false;
         }
 
-        showToast(
-            failureMessage,
-            "error",
-            10000
-        );
+        showToast(failureMessage,"error",12000);
         return false;
     }
 }
-
 
 /* =====================================================
    PREPARE ZEBRA WORK FILE
