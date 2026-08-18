@@ -7248,8 +7248,10 @@ async function loadNeedsReviewRows(workflow,orderId=null){
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())return;
     try{
-        const orderId=String(AppState?.workspace?.orderId||"");
-        const [r,e]=await Promise.all([loadNeedsReviewRows("RECEIVING",orderId||null),loadNeedsReviewRows("EXPIRY",null)]);
+        /* Phase 2C.10.4.8 — Receiving review is pharmacy-scoped. Do not hide
+           Handheld rows because a linked device and PC use different local
+           workspace/order IDs. */
+        const [r,e]=await Promise.all([loadNeedsReviewRows("RECEIVING",null),loadNeedsReviewRows("EXPIRY",null)]);
         const rc=document.getElementById("receivingNeedsReviewCount"),ec=document.getElementById("expiryNeedsReviewCount");
         if(rc)rc.textContent=String(r.length); if(ec)ec.textContent=String(e.length);
         document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",r.length>0);

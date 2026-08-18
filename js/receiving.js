@@ -197,6 +197,14 @@ function clearCurrentHandheldReviewDraft(){
     window.__pfReceivingReviewDraft=null;
     document.getElementById("handheldReceivingReviewCard")?.remove();
 }
+
+function flashHandheldUnknownGTIN(){
+    document.body.classList.remove("handheldUnknownGTINFlash");
+    void document.body.offsetWidth;
+    document.body.classList.add("handheldUnknownGTINFlash");
+    setTimeout(()=>document.body.classList.remove("handheldUnknownGTINFlash"),650);
+}
+
 function renderHandheldReceivingReviewDraft(draft){
     clearCurrentHandheldReviewDraft();
     window.__pfReceivingReviewDraft=draft;
@@ -205,86 +213,97 @@ function renderHandheldReceivingReviewDraft(draft){
 
     const esc=v=>typeof escapeHTML==="function"?escapeHTML(String(v??"")):String(v??"");
     const known=!!draft.itemCode;
+    const persistedQty=Math.max(1,Number(draft.pendingQuantity||1)||1);
 
     const card=document.createElement("section");
     card.id="handheldReceivingReviewCard";
-    card.className="handheldReceivingReviewCard";
+    card.className="handheldReceivingReviewCard urgent";
     card.innerHTML=`
-      <div class="handheldReviewStatus">${known?"ITEM NOT IN CURRENT ORDER":"GTIN NEEDS REVIEW"}</div>
+      <div class="handheldReviewStatus">${known?"ITEM NOT IN CURRENT ORDER":"ITEM NOT RECOGNISED"}</div>
       <div class="handheldReviewBody">
-        <strong>${esc(draft.itemName||"Item not recognized")}</strong>
+        <strong>${esc(draft.itemName||"Item not recognised")}</strong>
         <div class="handheldReviewMeta">
           ${draft.itemCode?`<span>Item Code <b>${esc(draft.itemCode)}</b></span>`:""}
           <span>GTIN <b>${esc(draft.gtin||"")}</b></span>
         </div>
-        <label class="handheldReviewQtyLabel"><span>Quantity</span>
-          <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="1">
+        <label class="handheldReviewQtyLabel"><span>PHYSICAL QTY</span>
+          <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="${persistedQty}">
         </label>
-        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE FOR REVIEW</button>
+        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE & CONTINUE</button>
+        <small class="handheldReviewSafety">GTIN already saved to Needs Review — quantity can be adjusted before continuing.</small>
       </div>`;
     lastScan.insertAdjacentElement("afterend",card);
+    flashHandheldUnknownGTIN();
 
     const qty=document.getElementById("handheldReviewQty");
-    qty?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();qty.blur();}});
-
-    document.getElementById("btnSaveHandheldReview")?.addEventListener("click",async()=>{
+    const save=async()=>{
         const quantity=Math.max(1,Number(qty?.value||1)||1);
         const btn=document.getElementById("btnSaveHandheldReview");
         if(btn)btn.disabled=true;
         try{
-            await saveReceivingNeedsReview(draft.parsed,{quantity,reason:draft.reason});
+            const pharmacyId=typeof getCurrentPharmacyId==="function"?getCurrentPharmacyId():AuthState?.context?.pharmacy_id;
+            if(!pharmacyId||!draft.reviewId)throw new Error("Needs Review draft was not persisted");
+            await authRpc("set_pharmacy_needs_review_quantity",{
+                p_pharmacy_id:pharmacyId,p_review_id:draft.reviewId,p_pending_quantity:quantity
+            });
             card.querySelector(".handheldReviewStatus").textContent="SAVED FOR REVIEW ✓";
-            card.classList.add("saved");
+            card.classList.remove("urgent"); card.classList.add("saved");
             refreshNeedsReviewCounters?.();
             setTimeout(()=>{
                 clearCurrentHandheldReviewDraft();
                 setScanBoxState?.("ready");
                 focusScannerInput?.();
-            },500);
+            },300);
         }catch(error){
             if(btn)btn.disabled=false;
             setScanBoxState?.("error");
-            showToast?.(error?.message||"Unable to save for review","error");
+            showToast?.(error?.message||"Unable to update review quantity","error");
         }
-    });
+    };
+    qty?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();save();}});
+    document.getElementById("btnSaveHandheldReview")?.addEventListener("click",save);
+    setTimeout(()=>{try{qty?.focus({preventScroll:true});qty?.select();}catch(_e){}},40);
 }
+
+async function persistAndRenderHandheldReview(parsed,details){
+    /* Data-safety rule: persist FIRST with qty=1. A fast next scan can never
+       discard an unrecognized GTIN. */
+    const result=await saveReceivingNeedsReview(parsed,{quantity:1,reason:details.reason});
+    const row=Array.isArray(result)?result[0]:result;
+    const draft={...details,parsed,gtin:normalizeGTIN(parsed?.gtin||""),reviewId:row?.review_id||row?.reviewId,
+        pendingQuantity:Number(row?.pending_quantity||1)};
+    renderHandheldReceivingReviewDraft(draft);
+    refreshNeedsReviewCounters?.();
+    return true;
+}
+
 async function quickResolveUnrecognizedGTIN(parsed){
     const gtin=normalizeGTIN(parsed?.gtin||"");
     if(!gtin){handleReceivingFailure("Barcode could not be identified");return false;}
 
     let masterRecord=null;
     try{masterRecord=await getMasterGTINRecordByGTIN(gtin);}catch(_e){}
-
     const isHandheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
 
     if(masterRecord?.itemCode){
         const orderItem=getReceivingItemByItemCode(masterRecord.itemCode);
-
         if(orderItem){
-            return receiveOrderItem({
-                item:orderItem,quantity:getValidReceivingQuantity(parsed?.quantity),
-                gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",
-                source:APP_CONFIG.transactionSources.scanner,manual:false
-            });
+            return receiveOrderItem({item:orderItem,quantity:getValidReceivingQuantity(parsed?.quantity),gtin,
+                lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",
+                source:APP_CONFIG.transactionSources.scanner,manual:false});
         }
-
         if(isHandheld){
             setScanBoxState?.("action");
-            renderHandheldReceivingReviewDraft({
-                parsed,gtin,itemCode:masterRecord.itemCode||"",
-                itemName:masterRecord.itemName||"Known item",
-                reason:"KNOWN_NOT_IN_ORDER"
-            });
-            return true;
+            try{return await persistAndRenderHandheldReview(parsed,{itemCode:masterRecord.itemCode||"",
+                itemName:masterRecord.itemName||"Known item",reason:"KNOWN_NOT_IN_ORDER"});}
+            catch(error){handleReceivingFailure(error?.message||"Unable to save Needs Review");return false;}
         }
     }
 
     if(isHandheld){
         setScanBoxState?.("action");
-        renderHandheldReceivingReviewDraft({
-            parsed,gtin,itemCode:"",itemName:"Item not recognized",reason:"UNKNOWN_GTIN"
-        });
-        return true;
+        try{return await persistAndRenderHandheldReview(parsed,{itemCode:"",itemName:"Item not recognised",reason:"UNKNOWN_GTIN"});}
+        catch(error){handleReceivingFailure(error?.message||"Unable to save Needs Review");return false;}
     }
 
     setScanBoxState?.("action");

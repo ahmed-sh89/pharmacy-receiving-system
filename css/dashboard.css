@@ -6684,3 +6684,25 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
   border-color:#8f5b43;
   color:#fff;
 }
+
+
+/* =====================================================
+   PHASE 2C.10.4.8 — HANDHELD RECEIVING / UNKNOWN GTIN
+===================================================== */
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetrics{
+    display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:5px!important;margin-top:5px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric{
+    display:block!important;min-width:0!important;padding:7px 3px!important;text-align:center!important;border-radius:9px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric span{font-size:8px!important;font-weight:900!important;letter-spacing:.05em!important}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{font-size:21px!important;font-weight:950!important;line-height:1!important}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricStatus{display:none!important}
+body.zebraDevice.zebraReceivingActive .lastScanMetaItem:first-child{display:block!important}
+body.zebraDevice.zebraReceivingActive .lastScanMetaItem:first-child strong{font-size:16px!important;font-weight:950!important}
+
+.handheldReceivingReviewCard.urgent{border:2px solid #dc2626!important;background:#fff1f2!important;box-shadow:0 0 0 3px rgba(220,38,38,.10)}
+.handheldReceivingReviewCard.urgent .handheldReviewStatus{background:#dc2626!important;color:#fff!important;font-size:15px!important;font-weight:950!important;letter-spacing:.04em!important}
+.handheldReviewSafety{display:block;margin-top:6px;color:#7f1d1d;font-size:10px;font-weight:750;line-height:1.25}
+body.handheldUnknownGTINFlash:after{content:"";position:fixed;inset:0;z-index:99999;pointer-events:none;border:10px solid #ef4444;animation:pfUnknownFlash .65s ease-out both}
+@keyframes pfUnknownFlash{0%{background:rgba(239,68,68,.30);opacity:1}100%{background:rgba(239,68,68,0);opacity:0}}
