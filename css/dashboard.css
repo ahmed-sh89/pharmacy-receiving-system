@@ -6976,3 +6976,37 @@ body.zebraDevice.zebraExpiryActive #expiryBarcodeInput{
         width:100%!important;
     }
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.10.5.1 — REVIEW + HANDHELD PRODUCTION POLISH
+============================================================ */
+.needsReviewOverlayV2 .needsReviewPanelV2{
+    width:min(860px,96vw)!important;max-width:860px!important;
+    overflow-x:hidden!important;
+}
+.needsReviewOverlayV2 .needsReviewList{padding:12px!important;overflow-x:hidden!important}
+.needsReviewOverlayV2 .needsReviewRowV2{
+    grid-template-columns:120px minmax(0,1fr)!important;
+    width:100%!important;box-sizing:border-box!important;
+}
+.needsReviewOverlayV2 .needsReviewInfo,
+.needsReviewOverlayV2 .needsReviewResolve{min-width:0!important;width:100%!important}
+.needsReviewOverlayV2 .needsReviewMatches button{
+    width:100%!important;min-width:0!important;flex-wrap:wrap!important;
+}
+.needsReviewOverlayV2 .needsReviewMatches button span{min-width:0!important;flex:1 1 260px!important}
+.needsReviewOverlayV2 .needsReviewMatches button strong{white-space:normal!important;overflow-wrap:anywhere!important}
+.needsReviewOverlayV2 .needsReviewExtraGrid input{min-width:0!important;width:100%!important}
+@media(max-width:680px){
+ .needsReviewOverlayV2 .needsReviewRowV2{grid-template-columns:1fr!important}
+ .needsReviewOverlayV2 .needsReviewPhotoWrap,
+ .needsReviewOverlayV2 .needsReviewInfo,
+ .needsReviewOverlayV2 .needsReviewResolve{grid-column:1!important;width:100%!important}
+ .needsReviewOverlayV2 .needsReviewPhotoWrap{height:150px!important}
+ .needsReviewOverlayV2 .needsReviewExtraGrid{grid-template-columns:1fr!important}
+}
+body.zebraDevice.zebraReceivingActive #receivingScannerCard>h2,
+body.zebraDevice.zebraReceivingActive #receivingScannerCard>.sectionHeader,
+body.zebraDevice.zebraReceivingActive .receivingScannerTitle{display:none!important}
+body.zebraDevice.zebraReceivingActive #receivingScannerCard{padding-top:4px!important}

@@ -136,7 +136,42 @@ function nrV2PhotoExtension(file){
     return "jpg";
 }
 
+
+async function nrV2PreparePhoto(file){
+    if(!file) return null;
+    const allowed=["image/jpeg","image/png","image/webp"];
+    if(!allowed.includes(String(file.type||"").toLowerCase())){
+        throw new Error("Use a JPG, PNG, or WEBP photo.");
+    }
+
+    /* Zebra camera photos are often >5 MB. Resize client-side so the worker
+       never has to change camera settings or retry a valid evidence photo. */
+    if(file.size<=3.5*1024*1024) return file;
+
+    const bitmap=await createImageBitmap(file);
+    const maxSide=1600;
+    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const ctx=canvas.getContext("2d",{alpha:false});
+    ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    bitmap.close?.();
+
+    let quality=.82;
+    let blob=null;
+    do{
+        blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
+        quality-=.1;
+    }while(blob && blob.size>4.5*1024*1024 && quality>=.42);
+
+    if(!blob) throw new Error("Unable to prepare photo");
+    if(blob.size>5*1024*1024) throw new Error("Photo could not be compressed below 5 MB.");
+    return new File([blob],"review-photo.jpg",{type:"image/jpeg",lastModified:Date.now()});
+}
+
 async function nrV2UploadPhoto(reviewId,file){
+    file=await nrV2PreparePhoto(file);
     if(!file) return null;
 
     if(file.size>5*1024*1024){

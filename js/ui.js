@@ -7281,12 +7281,21 @@ function nrV2FindOrderMatches(query){
     const q=toSafeString(query).trim().toLowerCase();
     if(!q) return [];
 
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+
     return (AppState?.workspace?.orderData||[])
         .filter(item=>{
-            return (
+            const textMatch=(
                 toSafeString(item?.itemCode).toLowerCase().includes(q) ||
                 toSafeString(item?.itemName).toLowerCase().includes(q)
             );
+            if(!textMatch) return false;
+            if(!selected.length) return true;
+            const memberships=(item?.orderNumbers||[item?.orderNumber])
+                .map(normalizeOrderNumber).filter(Boolean);
+            return memberships.some(order=>selected.includes(order));
         })
         .slice(0,10);
 }

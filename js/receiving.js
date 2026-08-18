@@ -155,10 +155,63 @@ function flashHandheldRed(){
 
 
 function getReceivingItemByItemCode(itemCode){
-    const code=String(itemCode||"").trim();
-    return (AppState?.workspace?.orderData||[]).find(
-        item=>String(item?.itemCode||"").trim()===code
+    const code=normalizeItemCode(itemCode||"");
+    if(!code) return null;
+
+    const selected=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+
+    const matches=(AppState?.workspace?.orderData||[]).filter(
+        item=>normalizeItemCode(item?.itemCode||"")===code
+    );
+
+    if(!matches.length) return null;
+    if(!selected.length) return matches[0];
+
+    return matches.find(item=>{
+        const memberships=(item?.orderNumbers||[item?.orderNumber])
+            .map(normalizeOrderNumber)
+            .filter(Boolean);
+        return memberships.some(order=>selected.includes(order));
+    })||null;
+}
+
+function getReceivingEligibleOrders(item){
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
+        .map(normalizeOrderNumber).filter(Boolean))];
+    return memberships.filter(order=>selected.includes(order));
+}
+
+function getReceivingOrderRow(item,orderNumber){
+    if(!item || !orderNumber || typeof getPerOrderReceivingRows!=="function") return null;
+    return getPerOrderReceivingRows(orderNumber).find(
+        row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(item.itemCode||"")
     )||null;
+}
+
+function chooseDeterministicReceivingOrder(item){
+    const eligible=getReceivingEligibleOrders(item);
+    if(!eligible.length) return "";
+    if(eligible.length===1) return eligible[0];
+
+    for(const order of eligible){
+        const row=getReceivingOrderRow(item,order);
+        if(row && toNumber(row["Received Qty"],0)<toNumber(row["Ordered Qty"],0)) return order;
+    }
+    return eligible[0];
+}
+
+function getReceivingDisplayMetrics(item,orderNumber){
+    const row=getReceivingOrderRow(item,orderNumber);
+    if(!row) return null;
+    const ordered=toNumber(row["Ordered Qty"],0);
+    const received=toNumber(row["Received Qty"],0);
+    return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
 }
 
 function getManualExtraTargetOrder(){
@@ -940,6 +993,14 @@ function receiveOrderItem(options){
             options.quantity
         );
 
+    let targetOrder="";
+    try{
+        targetOrder=resolveReceivingTransactionOrder(item,options.targetOrder||"");
+    }catch(error){
+        handleReceivingFailure(error?.message||"Unable to determine target Order");
+        return false;
+    }
+
     if(quantity <= 0){
 
         handleReceivingFailure(
@@ -957,11 +1018,10 @@ function receiveOrderItem(options){
         item.manual !== true
     ){
 
-        const remaining =
-            toNumber(
-                item.remainingQty,
-                0
-            );
+        const scopedMetrics=getReceivingDisplayMetrics(item,targetOrder);
+        const remaining = scopedMetrics
+            ? toNumber(scopedMetrics.remainingQty,0)
+            : toNumber(item.remainingQty,0);
 
         if(remaining <= 0){
 
@@ -1024,7 +1084,10 @@ function receiveOrderItem(options){
                 options.source,
 
             manual:
-                options.manual === true
+                options.manual === true,
+
+            targetOrder:
+                targetOrder
 
         });
 
@@ -1062,41 +1125,23 @@ function receiveOrderItem(options){
 ===================================================== */
 
 
-function resolveReceivingTransactionOrder(item){
-    const selectedOrders=
-        typeof getSelectedReceivingOrderNumbers==="function"
-            ? getSelectedReceivingOrderNumbers()
-            : [];
+function resolveReceivingTransactionOrder(item,preferredOrder=""){
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
+        .map(normalizeOrderNumber).filter(Boolean))];
+    const eligible=memberships.filter(order=>selectedOrders.includes(order));
+    const preferred=normalizeOrderNumber(preferredOrder||"");
 
-    const memberships=[
-        ...new Set(
-            (item?.orderNumbers||[])
-                .map(normalizeOrderNumber)
-                .filter(Boolean)
-        )
-    ];
-
-    const eligible=memberships.filter(
-        order=>selectedOrders.includes(order)
-    );
-
-    if(selectedOrders.length===1){
-        return selectedOrders[0];
-    }
-
-    if(eligible.length===1){
-        return eligible[0];
-    }
-
+    if(preferred && eligible.includes(preferred)) return preferred;
+    if(selectedOrders.length===1 && memberships.includes(selectedOrders[0])) return selectedOrders[0];
+    if(eligible.length===1) return eligible[0];
     if(eligible.length>1){
-        throw new Error(
-            "This item exists in more than one selected Order. Select one target Order before receiving it."
-        );
+        const deterministic=chooseDeterministicReceivingOrder(item);
+        if(deterministic) return deterministic;
     }
-
-    throw new Error(
-        "This item is not included in the selected Orders."
-    );
+    throw new Error("This item is not included in the selected Orders.");
 }
 
 
@@ -1104,7 +1149,7 @@ function createReceivingTransaction(options){
 
     const item=options.item;
     const transactionOrder=
-        resolveReceivingTransactionOrder(item);
+        resolveReceivingTransactionOrder(item,options.targetOrder||"");
 
     return addReceivingTransaction({
 
@@ -1150,7 +1195,10 @@ function createReceivingTransaction(options){
             (typeof ensureDeviceId === "function" ? ensureDeviceId() : AppState.session.deviceId),
 
         manual:
-            options.manual === true
+            options.manual === true,
+
+        targetOrder:
+            options.targetOrder || ""
 
     });
 
@@ -1841,6 +1889,9 @@ function updateLastScanFromReceiving(
     transaction
 ){
 
+    const txOrder=normalizeOrderNumber(transaction?.orderId||transaction?.orderNumber||transaction?.selectedOrderNumber||"");
+    const scoped=getReceivingDisplayMetrics(item,txOrder);
+
     setLastScan({
 
         itemCode:
@@ -1865,13 +1916,13 @@ function updateLastScanFromReceiving(
             transaction.quantity,
 
         orderedQty:
-            item.orderedQty,
+            scoped?.orderedQty ?? item.orderedQty,
 
         receivedQty:
-            item.receivedQty,
+            scoped?.receivedQty ?? item.receivedQty,
 
         remainingQty:
-            item.remainingQty,
+            scoped?.remainingQty ?? item.remainingQty,
 
         status:
             item.status,
