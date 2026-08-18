@@ -846,42 +846,153 @@ async function savePharmacyLearnedGTIN(gtin,itemCode,itemName){
     return Array.isArray(result)?result[0]:result;
 }
 
-async function getMasterGTINRecordByGTIN(gtin){
-    const normalized=normalizeGTIN(gtin);
-    if(!normalized){ return null; }
+const PharmFlowGTINScanCache = {
+    records:new Map(),
+    learnedMissUntil:new Map(),
+    maxRecords:750
+};
 
-    const learned=await getPharmacyLearnedGTINRecord(normalized);
-    if(learned){ return learned; }
-
-    if(typeof ensureGlobalMasterGTINReady === "function"){
-        try{ await ensureGlobalMasterGTINReady(); }
-        catch(error){ Logger.warn("Global GTIN unavailable during scan",error); }
+function cacheGTINScanRecord(gtin,record){
+    if(!gtin || !record) return;
+    if(PharmFlowGTINScanCache.records.size >= PharmFlowGTINScanCache.maxRecords){
+        const first=PharmFlowGTINScanCache.records.keys().next().value;
+        if(first) PharmFlowGTINScanCache.records.delete(first);
     }
-    if(!MasterGTINEngine.db){ return null; }
+    PharmFlowGTINScanCache.records.set(gtin,record);
+}
 
-    const variants=typeof createGTINVariants === "function" ? createGTINVariants(normalized) : [normalized];
-    if(!variants.includes(normalized)){ variants.unshift(normalized); }
+function getCurrentOrderItemCodes(){
+    return new Set(
+        (AppState?.workspace?.orderData||[])
+            .map(item=>normalizeItemCode(item?.itemCode))
+            .filter(Boolean)
+    );
+}
+
+async function getLocalGlobalMasterGTINRecord(gtin){
+    const normalized=normalizeGTIN(gtin);
+    if(!normalized) return null;
+
+    if(typeof ensureGlobalMasterGTINReady==="function" && !MasterGTINEngine.db){
+        try{
+            await ensureGlobalMasterGTINReady();
+        }catch(error){
+            Logger.warn("Global GTIN cache unavailable during scan",error);
+        }
+    }
+
+    if(!MasterGTINEngine.db) return null;
+
+    const variants=
+        typeof createGTINVariants==="function"
+            ? createGTINVariants(normalized)
+            : [normalized];
+
+    if(!variants.includes(normalized)) variants.unshift(normalized);
+
+    const currentOrderCodes=getCurrentOrderItemCodes();
 
     for(const candidate of variants){
         const records=await new Promise((resolve,reject)=>{
-            const tx=MasterGTINEngine.db.transaction(MasterGTINEngine.recordsStore,"readonly");
+            const tx=MasterGTINEngine.db.transaction(
+                MasterGTINEngine.recordsStore,
+                "readonly"
+            );
             const index=tx.objectStore(MasterGTINEngine.recordsStore).index("gtin");
             const request=index.getAll(candidate);
-            request.onsuccess=()=>resolve(Array.isArray(request.result)?request.result:[]);
+            request.onsuccess=()=>resolve(
+                Array.isArray(request.result) ? request.result : []
+            );
             request.onerror=()=>reject(request.error);
         });
-        if(records.length===0){ continue; }
 
-        const currentOrderCodes=new Set((AppState.workspace.orderData||[]).map(item=>normalizeItemCode(item.itemCode)).filter(Boolean));
-        const inOrder=records.filter(record=>currentOrderCodes.has(normalizeItemCode(record.itemCode)));
-        const candidates=inOrder.length>0 ? inOrder : records;
-        const owners=new Set(candidates.map(record=>normalizeItemCode(record.itemCode)).filter(Boolean));
-        if(owners.size===1){ return candidates[0]; }
-        Logger.warn("Ambiguous Global GTIN belongs to multiple item numbers",candidate,Array.from(owners));
+        if(!records.length) continue;
+
+        const inOrder=records.filter(record=>
+            currentOrderCodes.has(normalizeItemCode(record?.itemCode))
+        );
+
+        const candidates=inOrder.length ? inOrder : records;
+        const owners=new Set(
+            candidates
+                .map(record=>normalizeItemCode(record?.itemCode))
+                .filter(Boolean)
+        );
+
+        if(owners.size===1){
+            return candidates[0];
+        }
+
+        Logger.warn(
+            "Ambiguous Global GTIN belongs to multiple item numbers",
+            candidate,
+            Array.from(owners)
+        );
         return null;
     }
+
     return null;
 }
+
+async function getMasterGTINRecordByGTIN(gtin){
+    const normalized=normalizeGTIN(gtin);
+    if(!normalized) return null;
+
+    /*
+       Phase 2C.10.5.2 PERFORMANCE RULE:
+       Normal Receiving must not wait for a Supabase RPC on every scan.
+
+       1. Session cache.
+       2. Local IndexedDB copy of the authoritative Global Master.
+       3. Only if no Global Master match exists, try pharmacy-learned aliases.
+    */
+    const cached=PharmFlowGTINScanCache.records.get(normalized);
+    if(cached) return cached;
+
+    let globalRecord=null;
+    try{
+        globalRecord=await getLocalGlobalMasterGTINRecord(normalized);
+    }catch(error){
+        Logger.warn("Local Global GTIN lookup failed",error);
+    }
+
+    if(globalRecord){
+        cacheGTINScanRecord(normalized,globalRecord);
+        return globalRecord;
+    }
+
+    /*
+       Learned aliases are expected to be the minority path. A short negative
+       cache prevents repeated network waits when an unknown barcode is scanned
+       more than once during the same receiving run.
+    */
+    const missUntil=Number(
+        PharmFlowGTINScanCache.learnedMissUntil.get(normalized)||0
+    );
+
+    if(missUntil > Date.now()){
+        return null;
+    }
+
+    const learned=await getPharmacyLearnedGTINRecord(normalized);
+
+    if(learned){
+        cacheGTINScanRecord(normalized,learned);
+        return learned;
+    }
+
+    PharmFlowGTINScanCache.learnedMissUntil.set(
+        normalized,
+        Date.now()+120000
+    );
+
+    return null;
+}
+
+window.clearPharmFlowGTINScanCache=function(){
+    PharmFlowGTINScanCache.records.clear();
+    PharmFlowGTINScanCache.learnedMissUntil.clear();
+};
 
 function deleteMasterGTINDatabase(dbName){
 

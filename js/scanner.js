@@ -42,6 +42,16 @@ function initializeScanner(){
             "barcodeInput"
         );
 
+    /* Phase 2C.10.5.2 — Handheld hardware scanners should feel immediate.
+       Desktop keeps the more conservative mixed scan/search timing. */
+    if(
+        typeof isLikelyZebraDevice==="function" &&
+        isLikelyZebraDevice()
+    ){
+        ScannerEngine.autoProcessDelay=55;
+        ScannerEngine.searchDelay=160;
+    }
+
     if(!input){
 
         Logger.warn(

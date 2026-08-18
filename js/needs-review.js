@@ -137,37 +137,140 @@ function nrV2PhotoExtension(file){
 }
 
 
+async function nrV2LoadImageSource(file){
+    if(typeof createImageBitmap==="function"){
+        try{
+            const bitmap=await createImageBitmap(file);
+            return {
+                width:bitmap.width,
+                height:bitmap.height,
+                draw(ctx,w,h){
+                    ctx.drawImage(bitmap,0,0,w,h);
+                },
+                close(){
+                    bitmap.close?.();
+                }
+            };
+        }catch(_){}
+    }
+
+    /* Compatibility fallback for older enterprise Android browsers. */
+    return await new Promise((resolve,reject)=>{
+        const url=URL.createObjectURL(file);
+        const image=new Image();
+
+        image.onload=()=>{
+            resolve({
+                width:image.naturalWidth||image.width,
+                height:image.naturalHeight||image.height,
+                draw(ctx,w,h){
+                    ctx.drawImage(image,0,0,w,h);
+                },
+                close(){
+                    URL.revokeObjectURL(url);
+                }
+            });
+        };
+
+        image.onerror=()=>{
+            URL.revokeObjectURL(url);
+            reject(new Error("Unable to read camera photo"));
+        };
+
+        image.src=url;
+    });
+}
+
 async function nrV2PreparePhoto(file){
     if(!file) return null;
+
     const allowed=["image/jpeg","image/png","image/webp"];
     if(!allowed.includes(String(file.type||"").toLowerCase())){
         throw new Error("Use a JPG, PNG, or WEBP photo.");
     }
 
-    /* Zebra camera photos are often >5 MB. Resize client-side so the worker
-       never has to change camera settings or retry a valid evidence photo. */
-    if(file.size<=3.5*1024*1024) return file;
+    /*
+       Worker UX rule:
+       Camera file size is never the worker's problem.
+       Normalize evidence photos to a practical review size before upload.
+    */
+    if(file.size<=1.5*1024*1024){
+        return file;
+    }
 
-    const bitmap=await createImageBitmap(file);
-    const maxSide=1600;
-    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
-    const canvas=document.createElement("canvas");
-    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
-    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-    const ctx=canvas.getContext("2d",{alpha:false});
-    ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
-    bitmap.close?.();
+    const source=await nrV2LoadImageSource(file);
 
-    let quality=.82;
-    let blob=null;
-    do{
-        blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
-        quality-=.1;
-    }while(blob && blob.size>4.5*1024*1024 && quality>=.42);
+    try{
+        const maxSide=1280;
+        const scale=Math.min(
+            1,
+            maxSide/Math.max(source.width,source.height)
+        );
 
-    if(!blob) throw new Error("Unable to prepare photo");
-    if(blob.size>5*1024*1024) throw new Error("Photo could not be compressed below 5 MB.");
-    return new File([blob],"review-photo.jpg",{type:"image/jpeg",lastModified:Date.now()});
+        const canvas=document.createElement("canvas");
+        canvas.width=Math.max(
+            1,
+            Math.round(source.width*scale)
+        );
+        canvas.height=Math.max(
+            1,
+            Math.round(source.height*scale)
+        );
+
+        const ctx=canvas.getContext("2d",{alpha:false});
+
+        if(!ctx){
+            throw new Error("Unable to prepare camera photo");
+        }
+
+        ctx.fillStyle="#ffffff";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        source.draw(ctx,canvas.width,canvas.height);
+
+        let quality=.78;
+        let blob=null;
+
+        do{
+            blob=await new Promise(resolve=>
+                canvas.toBlob(
+                    resolve,
+                    "image/jpeg",
+                    quality
+                )
+            );
+
+            quality-=.08;
+
+        }while(
+            blob &&
+            blob.size>1.5*1024*1024 &&
+            quality>=.42
+        );
+
+        if(!blob){
+            throw new Error("Unable to compress camera photo");
+        }
+
+        /*
+           5 MB remains only the server safety ceiling.
+           A typical prepared image should be well below it.
+        */
+        if(blob.size>5*1024*1024){
+            throw new Error("Unable to prepare camera photo");
+        }
+
+        return new File(
+            [blob],
+            "review-photo.jpg",
+            {
+                type:"image/jpeg",
+                lastModified:Date.now()
+            }
+        );
+
+    }finally{
+        source.close?.();
+    }
 }
 
 async function nrV2UploadPhoto(reviewId,file){

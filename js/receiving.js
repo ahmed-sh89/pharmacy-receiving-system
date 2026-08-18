@@ -238,8 +238,11 @@ function getManualExtraTargetOrder(){
     );
 }
 
-function prepareManualExtraItem(itemCode,itemName,gtin){
-    const targetOrder=getManualExtraTargetOrder();
+function prepareManualExtraItem(itemCode,itemName,gtin,targetOrderOverride=""){
+    const targetOrder=
+        normalizeOrderNumber(targetOrderOverride||"")
+        ||
+        getManualExtraTargetOrder();
 
     let item=upsertOrderItem({
         itemCode,
@@ -277,6 +280,12 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     const gtin=normalizeGTIN(parsed?.gtin||"");
     const code=normalizeItemCode(masterRecord?.itemCode||"");
     const name=toSafeString(masterRecord?.itemName||masterRecord?.name||code);
+    const selectedOrders=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+
+    const needsPharmacistTarget=selectedOrders.length!==1;
 
     const card=document.createElement("section");
     card.id="handheldKnownExtraCard";
@@ -288,23 +297,78 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
         <span>Item <b>${escapeHTML(code)}</b></span>
         <span>GTIN <b>${escapeHTML(gtin)}</b></span>
       </div>
+      ${
+        needsPharmacistTarget
+        ? `<div class="handheldKnownExtraNote">
+             Multiple Orders are selected. The pharmacist will choose the target Order on PC.
+           </div>`
+        : ""
+      }
       <label class="handheldReviewQtyLabel">
         <span>PHYSICAL QTY</span>
         <input id="handheldKnownExtraQty" type="number" min="1" step="1" inputmode="numeric" value="1">
       </label>
-      <button id="btnHandheldAddExtra" class="handheldReviewSave" type="button">ADD EXTRA &amp; NEXT</button>
+      <button id="btnHandheldAddExtra" class="handheldReviewSave" type="button">
+        ${needsPharmacistTarget ? "SAVE EXTRA FOR REVIEW" : "ADD EXTRA & NEXT"}
+      </button>
     `;
 
     lastScan.insertAdjacentElement("afterend",card);
 
     const qty=card.querySelector("#handheldKnownExtraQty");
+
     const submit=async()=>{
         const button=card.querySelector("#btnHandheldAddExtra");
         if(button) button.disabled=true;
 
         try{
             const quantity=Math.max(1,Number(qty?.value||1)||1);
-            const item=prepareManualExtraItem(code,name,gtin);
+
+            /*
+               Multiple selected Orders:
+               Do NOT force a warehouse worker to choose accounting/reporting
+               ownership. Persist it to Needs Review and let the pharmacist
+               choose the target Order on PC.
+            */
+            if(needsPharmacistTarget){
+                const draft=await nrV2CreateDraft(parsed,{
+                    workflow:"RECEIVING",
+                    reason:"KNOWN_NOT_IN_ORDER",
+                    itemCode:code,
+                    itemName:name,
+                    orderNumber:null
+                });
+
+                if(!draft?.review_id){
+                    throw new Error("Unable to save extra item for review");
+                }
+
+                await nrV2SetQty(draft.review_id,quantity);
+                refreshNeedsReviewCounters?.();
+
+                card.querySelector(".handheldKnownExtraStatus").textContent=
+                    "SAVED FOR REVIEW ✓";
+
+                setTimeout(()=>{
+                    clearHandheldActionCard();
+                    setScanBoxState?.("ready");
+                    focusScannerInput?.();
+                },220);
+
+                return true;
+            }
+
+            /*
+               Exactly one selected Order:
+               target is unambiguous, so Receiving can remain one-tap fast.
+            */
+            const targetOrder=normalizeOrderNumber(selectedOrders[0]);
+            const item=prepareManualExtraItem(
+                code,
+                name,
+                gtin,
+                targetOrder
+            );
 
             const transaction=receiveOrderItem({
                 item,
@@ -314,7 +378,8 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
                 expiry:parsed?.expiry||"",
                 serial:parsed?.serial||"",
                 source:APP_CONFIG.transactionSources.scanner,
-                manual:true
+                manual:true,
+                targetOrder
             });
 
             if(!transaction){
@@ -324,10 +389,16 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
             clearHandheldActionCard();
             setScanBoxState?.("ready");
             focusScannerInput?.();
+            return true;
+
         }catch(error){
             if(button) button.disabled=false;
             setScanBoxState?.("error");
-            showToast?.(error?.message||"Unable to add item","error");
+            showToast?.(
+                error?.message||"Unable to process extra item",
+                "error"
+            );
+            return false;
         }
     };
 
@@ -338,8 +409,16 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
         }
     });
 
-    card.querySelector("#btnHandheldAddExtra")?.addEventListener("click",submit);
-    setTimeout(()=>{qty?.focus({preventScroll:true});qty?.select();},40);
+    card.querySelector("#btnHandheldAddExtra")
+        ?.addEventListener("click",submit);
+
+    setTimeout(()=>{
+        try{
+            qty?.focus({preventScroll:true});
+            qty?.select();
+        }catch(_){}
+    },30);
+
     return true;
 }
 

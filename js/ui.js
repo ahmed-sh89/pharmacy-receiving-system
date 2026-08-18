@@ -7342,7 +7342,7 @@ async function nrV2ResolveToOrderItem(row,item){
     );
 }
 
-async function nrV2ResolveAsUnordered(row,itemCode,itemName){
+async function nrV2ResolveAsUnordered(row,itemCode,itemName,targetOrder=""){
     const transactionId=nrV2ResolutionTransactionId(row.review_id);
 
     if(!nrV2HasLocalResolutionTransaction(row.review_id)){
@@ -7355,7 +7355,8 @@ async function nrV2ResolveAsUnordered(row,itemCode,itemName){
         const item=prepareManualExtraItem(
             itemCode,
             itemName,
-            row.gtin
+            row.gtin,
+            targetOrder
         );
 
         const tx=receiveOrderItem({
@@ -7412,7 +7413,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     const overlay=document.createElement("div");
     overlay.id="needsReviewOverlay";
-    overlay.className="needsReviewOverlayV2";
+    overlay.className="needsReviewOverlay needsReviewOverlayV2";
 
     overlay.innerHTML=`
       <button class="needsReviewScrim" data-close aria-label="Close"></button>
@@ -7466,6 +7467,20 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                     <div class="needsReviewExtraGrid">
                       <input data-extra-code="${index}" placeholder="Item Code">
                       <input data-extra-name="${index}" placeholder="Item Name">
+                      <label class="needsReviewTargetOrder">
+                        Target Order
+                        <select data-extra-order="${index}">
+                          ${
+                            (
+                              typeof getSelectedReceivingOrderNumbers==="function"
+                                ? getSelectedReceivingOrderNumbers()
+                                : []
+                            ).map(order=>
+                              `<option value="${esc(order)}">${esc(order)}</option>`
+                            ).join("")
+                          }
+                        </select>
+                      </label>
                       <button data-extra="${index}" type="button">ADD UNORDERED & RECEIVE</button>
                     </div>
                   </details>
@@ -7562,8 +7577,29 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
                 button.disabled=true;
 
+                const targetOrder=
+                    normalizeOrderNumber(
+                        overlay.querySelector(
+                            `[data-extra-order="${index}"]`
+                        )?.value||""
+                    );
+
+                if(!targetOrder){
+                    showToast?.(
+                        "Select the target Order",
+                        "warning"
+                    );
+                    button.disabled=false;
+                    return;
+                }
+
                 try{
-                    await nrV2ResolveAsUnordered(row,code,name);
+                    await nrV2ResolveAsUnordered(
+                        row,
+                        code,
+                        name,
+                        targetOrder
+                    );
                     section.remove();
                     showToast?.(
                         "Unordered item added and received",

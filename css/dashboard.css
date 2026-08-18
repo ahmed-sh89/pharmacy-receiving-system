@@ -7010,3 +7010,199 @@ body.zebraDevice.zebraReceivingActive #receivingScannerCard>h2,
 body.zebraDevice.zebraReceivingActive #receivingScannerCard>.sectionHeader,
 body.zebraDevice.zebraReceivingActive .receivingScannerTitle{display:none!important}
 body.zebraDevice.zebraReceivingActive #receivingScannerCard{padding-top:4px!important}
+
+
+/* ============================================================
+   PHARMFLOW 2C.10.5.2 — RECEIVING ROOT UX / PERFORMANCE
+============================================================ */
+
+/* PC Needs Review is a real centered operational workspace, not an
+   unpositioned side fragment. */
+.needsReviewOverlay.needsReviewOverlayV2{
+    position:fixed!important;
+    inset:0!important;
+    z-index:100050!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:20px!important;
+    box-sizing:border-box!important;
+}
+.needsReviewOverlayV2 .needsReviewScrim{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    border:0!important;
+    background:rgba(31,26,22,.46)!important;
+}
+.needsReviewOverlayV2 .needsReviewPanelV2{
+    position:relative!important;
+    z-index:1!important;
+    width:min(1040px,calc(100vw - 40px))!important;
+    max-width:1040px!important;
+    height:min(760px,calc(100vh - 40px))!important;
+    max-height:calc(100vh - 40px)!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border:1px solid #e5d5c8!important;
+    border-radius:18px!important;
+    background:#fffaf5!important;
+    box-shadow:0 26px 70px rgba(42,30,22,.28)!important;
+}
+.needsReviewOverlayV2 .needsReviewPanelV2>header{
+    position:sticky!important;
+    top:0!important;
+    z-index:3!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    min-height:78px!important;
+    padding:16px 20px!important;
+    box-sizing:border-box!important;
+    border-bottom:1px solid #eadbd0!important;
+    background:#fffaf5!important;
+}
+.needsReviewOverlayV2 .needsReviewPanelV2>header h2{
+    margin:1px 0 0!important;
+    font-size:25px!important;
+}
+.needsReviewOverlayV2 .needsReviewPanelV2>header p{
+    margin:2px 0 0!important;
+}
+.needsReviewOverlayV2 .needsReviewList{
+    height:calc(100% - 78px)!important;
+    overflow:auto!important;
+    padding:16px!important;
+    box-sizing:border-box!important;
+}
+.needsReviewOverlayV2 .needsReviewRowV2{
+    display:grid!important;
+    grid-template-columns:180px minmax(0,1fr)!important;
+    gap:16px!important;
+    width:100%!important;
+    margin:0 0 14px!important;
+    padding:16px!important;
+    box-sizing:border-box!important;
+    border:1px solid #eadbd0!important;
+    border-radius:15px!important;
+    background:#fff!important;
+}
+.needsReviewOverlayV2 .needsReviewPhotoWrap{
+    grid-column:1!important;
+    grid-row:1 / span 2!important;
+    width:180px!important;
+    height:180px!important;
+    min-height:180px!important;
+    border-radius:12px!important;
+}
+.needsReviewOverlayV2 .needsReviewPhotoWrap img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+}
+.needsReviewOverlayV2 .needsReviewInfo{
+    grid-column:2!important;
+    padding:2px 0 4px!important;
+}
+.needsReviewOverlayV2 .needsReviewInfo>strong{
+    display:block!important;
+    margin:4px 0!important;
+    font-size:22px!important;
+    letter-spacing:.02em!important;
+}
+.needsReviewOverlayV2 .needsReviewResolve{
+    grid-column:2!important;
+    display:grid!important;
+    gap:9px!important;
+}
+.needsReviewOverlayV2 .needsReviewResolve input,
+.needsReviewOverlayV2 .needsReviewResolve select{
+    width:100%!important;
+    min-height:42px!important;
+    box-sizing:border-box!important;
+}
+.needsReviewOverlayV2 .needsReviewMatches button{
+    min-height:54px!important;
+    padding:9px 11px!important;
+    border-radius:10px!important;
+}
+.needsReviewOverlayV2 .needsReviewExtra{
+    margin-top:3px!important;
+    padding-top:8px!important;
+}
+.needsReviewOverlayV2 .needsReviewExtraGrid{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+}
+.needsReviewOverlayV2 .needsReviewTargetOrder{
+    grid-column:1/-1!important;
+    display:grid!important;
+    gap:4px!important;
+    font-size:11px!important;
+    font-weight:850!important;
+}
+.needsReviewOverlayV2 .needsReviewExtraGrid button{
+    min-height:44px!important;
+}
+
+@media(max-width:760px){
+    .needsReviewOverlay.needsReviewOverlayV2{
+        padding:8px!important;
+    }
+    .needsReviewOverlayV2 .needsReviewPanelV2{
+        width:calc(100vw - 16px)!important;
+        height:calc(100vh - 16px)!important;
+        max-height:calc(100vh - 16px)!important;
+    }
+    .needsReviewOverlayV2 .needsReviewRowV2{
+        grid-template-columns:1fr!important;
+    }
+    .needsReviewOverlayV2 .needsReviewPhotoWrap,
+    .needsReviewOverlayV2 .needsReviewInfo,
+    .needsReviewOverlayV2 .needsReviewResolve{
+        grid-column:1!important;
+        grid-row:auto!important;
+        width:100%!important;
+    }
+    .needsReviewOverlayV2 .needsReviewPhotoWrap{
+        height:160px!important;
+        min-height:160px!important;
+    }
+    .needsReviewOverlayV2 .needsReviewExtraGrid{
+        grid-template-columns:1fr!important;
+    }
+}
+
+/* Handheld: remove more dead vertical space so action/qty stays visible. */
+body.zebraDevice.zebraReceivingActive .zebraReceivingTop{
+    min-height:48px!important;
+    padding:5px 7px!important;
+}
+body.zebraDevice.zebraReceivingActive #receivingScannerCard{
+    padding:4px!important;
+    margin-top:3px!important;
+}
+body.zebraDevice.zebraReceivingActive .scanPanelHeader{
+    display:none!important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox{
+    min-height:52px!important;
+}
+body.zebraDevice.zebraReceivingActive #barcodeInput{
+    min-height:50px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard{
+    margin-top:4px!important;
+    padding:5px!important;
+}
+.handheldKnownExtraNote{
+    margin:5px 8px 0!important;
+    padding:6px 7px!important;
+    border-radius:8px!important;
+    background:#fff7ed!important;
+    color:#9a3412!important;
+    font-size:10px!important;
+    font-weight:800!important;
+    line-height:1.25!important;
+}
