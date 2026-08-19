@@ -81,6 +81,13 @@ function initializeScanner(){
         "false"
     );
 
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        /* Keep hardware wedge focus while suppressing the Android soft keyboard. */
+        input.setAttribute("inputmode","none");
+        input.setAttribute("enterkeyhint","done");
+        input.placeholder="READY TO SCAN";
+    }
+
 
     input.addEventListener(
         "keydown",

@@ -7301,24 +7301,11 @@ function ensureNeedsReviewButtons(){
 function nrV2FindOrderMatches(query){
     const q=toSafeString(query).trim().toLowerCase();
     if(!q) return [];
-
-    const selected=typeof getSelectedReceivingOrderNumbers==="function"
-        ? getSelectedReceivingOrderNumbers()
-        : [];
-
-    return (AppState?.workspace?.orderData||[])
-        .filter(item=>{
-            const textMatch=(
-                toSafeString(item?.itemCode).toLowerCase().includes(q) ||
-                toSafeString(item?.itemName).toLowerCase().includes(q)
-            );
-            if(!textMatch) return false;
-            if(!selected.length) return true;
-            const memberships=(item?.orderNumbers||[item?.orderNumber])
-                .map(normalizeOrderNumber).filter(Boolean);
-            return memberships.some(order=>selected.includes(order));
-        })
-        .slice(0,10);
+    const source=typeof getSearchableItems==="function" ? getSearchableItems() : (AppState?.workspace?.orderData||[]);
+    return source.filter(item=>
+        toSafeString(item?.itemCode).toLowerCase().includes(q) ||
+        toSafeString(item?.itemName).toLowerCase().includes(q)
+    ).slice(0,20);
 }
 
 async function nrV2ResolveToOrderItem(row,item){
@@ -7440,7 +7427,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     overlay.innerHTML=`
       <button class="needsReviewScrim" data-close aria-label="Close"></button>
-      <aside class="needsReviewPanel needsReviewPanelV2">
+      <section class="needsReviewPanel needsReviewPanelV2 needsReviewWorkspace">
         <header>
           <div>
             <span>RECEIVING</span>
@@ -7515,7 +7502,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             : `<div class="needsReviewEmpty">Nothing needs review.</div>`
           }
         </div>
-      </aside>
+      </section>
     `;
 
     document.body.appendChild(overlay);

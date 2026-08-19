@@ -382,12 +382,24 @@ async function nrV2DeletePhoto(photoPath){
 async function nrV2ClearReceivingQueue(){
     const pharmacyId=nrV2PharmacyId();
     if(!pharmacyId || typeof authRpc!=="function") return false;
-    const result=await authRpc("clear_pharmflow_receiving_needs_review_v2",{p_pharmacy_id:pharmacyId});
+
+    /* Storage objects MUST be deleted through Storage API, never SQL tables. */
+    let rows=[];
+    try{ rows=await nrV2List("RECEIVING",null); }catch(_){ rows=[]; }
+    const paths=[...new Set(rows.map(row=>row?.photo_path).filter(Boolean))];
+    for(const path of paths){
+        try{ await nrV2DeletePhoto(path); }catch(error){
+            console.warn("Review photo cleanup failed",path,error);
+        }
+    }
+
+    const result=await authRpc("clear_pharmflow_receiving_needs_review_v3",{
+        p_pharmacy_id:pharmacyId
+    });
     for(const url of NeedsReviewV2.photoUrls.values()){ try{ URL.revokeObjectURL(url); }catch(_){} }
     NeedsReviewV2.photoUrls.clear();
     return result;
 }
-
 function nrV2ResolutionTransactionId(reviewId){
     return "NEEDS_REVIEW_V2:"+String(reviewId||"");
 }

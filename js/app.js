@@ -771,6 +771,16 @@ async function resetCurrentWorkspace(){
             cancelPendingCloudWorkspaceSave();
         }
 
+        /* Temporary review media is Storage API owned. Clean it before the
+           database reset so SQL never attempts forbidden storage.objects DML. */
+        if(typeof nrV2ClearReceivingQueue==="function"){
+            await withTimeout(
+                nrV2ClearReceivingQueue(),
+                12000,
+                "Needs Review cleanup timed out"
+            );
+        }
+
         if(typeof PharmFlowCloudWorkspace!=="undefined"){
             PharmFlowCloudWorkspace.suppressNextClearRpc=true;
         }
@@ -836,7 +846,8 @@ async function resetCurrentWorkspace(){
             "Current workspace reset on server · Active orders removed: "+
             Number(receipt.active_orders_deleted||0)+
             " · Receiving transactions removed: "+
-            Number(receipt.receiving_transactions_deleted||0),
+            Number(receipt.receiving_transactions_deleted||0)+
+            " · Needs Review cleared",
             "success"
         );
 

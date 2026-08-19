@@ -154,37 +154,61 @@ function flashHandheldRed(){
 }
 
 
+function getReceivingActiveOrders(){
+    return typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
+        : [];
+}
+function getReceivingSelectedOrders(){
+    const active=getReceivingActiveOrders();
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
+        : [];
+    return selected.length ? [...new Set(selected)] : active;
+}
+function getSourceOrderMembershipsForItemCode(itemCode){
+    const code=normalizeItemCode(itemCode||"");
+    if(!code) return [];
+    const found=[];
+    getReceivingActiveOrders().forEach(order=>{
+        const rows=typeof getWorkspaceOrderSourceRows==="function"
+            ? getWorkspaceOrderSourceRows(order)
+            : [];
+        if(rows.some(row=>normalizeItemCode(row?.itemCode||row?.item_code||"")===code)) found.push(order);
+    });
+    return [...new Set(found)];
+}
+function getReceivingOrderMemberships(item){
+    if(!item) return [];
+    const code=normalizeItemCode(item.itemCode||"");
+    const source=getSourceOrderMembershipsForItemCode(code);
+    if(source.length) return source;
+    const declared=[...(Array.isArray(item.orderNumbers)?item.orderNumbers:[]),item.orderNumber]
+        .map(normalizeOrderNumber).filter(Boolean);
+    return [...new Set(declared)];
+}
+function repairReceivingItemMembership(item){
+    if(!item) return item;
+    const memberships=getReceivingOrderMemberships(item);
+    if(memberships.length){
+        item.orderNumbers=[...memberships];
+        if(!memberships.includes(normalizeOrderNumber(item.orderNumber||""))) item.orderNumber=memberships[0];
+    }
+    return item;
+}
 function getReceivingItemByItemCode(itemCode){
     const code=normalizeItemCode(itemCode||"");
     if(!code) return null;
-
-    const selected=
-        typeof getSelectedReceivingOrderNumbers==="function"
-            ? getSelectedReceivingOrderNumbers()
-            : [];
-
-    const matches=(AppState?.workspace?.orderData||[]).filter(
-        item=>normalizeItemCode(item?.itemCode||"")===code
-    );
-
-    if(!matches.length) return null;
-    if(!selected.length) return matches[0];
-
-    return matches.find(item=>{
-        const memberships=(item?.orderNumbers||[item?.orderNumber])
-            .map(normalizeOrderNumber)
-            .filter(Boolean);
-        return memberships.some(order=>selected.includes(order));
-    })||null;
+    const item=(AppState?.workspace?.orderData||[]).find(row=>normalizeItemCode(row?.itemCode||"")===code)||null;
+    if(!item) return null;
+    repairReceivingItemMembership(item);
+    const selected=getReceivingSelectedOrders();
+    const memberships=getReceivingOrderMemberships(item);
+    return (!selected.length || memberships.some(order=>selected.includes(order))) ? item : null;
 }
-
 function getReceivingEligibleOrders(item){
-    const selected=typeof getSelectedReceivingOrderNumbers==="function"
-        ? getSelectedReceivingOrderNumbers()
-        : [];
-    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
-        .map(normalizeOrderNumber).filter(Boolean))];
-    return memberships.filter(order=>selected.includes(order));
+    const selected=getReceivingSelectedOrders();
+    return getReceivingOrderMemberships(item).filter(order=>selected.includes(order));
 }
 
 function getReceivingOrderRow(item,orderNumber){

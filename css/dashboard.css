@@ -7219,3 +7219,25 @@ body.zebraDevice.zebraReceivingActive #lastScanCard{
 .needsReviewPhotoViewerCard img{display:block;max-width:calc(94vw - 24px);max-height:calc(92vh - 24px);object-fit:contain;border-radius:10px}
 .needsReviewPhotoViewerClose{position:absolute;right:20px;top:20px;z-index:2;width:38px;height:38px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-size:18px;cursor:pointer}
 .gtinKnownTarget{display:grid;gap:5px;margin:10px 0 8px;font-size:11px;font-weight:850}.gtinKnownTarget select{min-height:42px;border:1px solid #dfcfc2;border-radius:10px;background:#fff;padding:0 10px}
+
+
+/* ============================================================
+   PHARMFLOW 2C.10.5.4 — UNIFIED RECEIVING UX
+============================================================ */
+.needsReviewOverlayV2{position:fixed!important;inset:0!important;z-index:100050!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(31,26,22,.28)!important}
+.needsReviewOverlayV2>.needsReviewScrim{position:absolute!important;inset:0!important;border:0!important;background:rgba(31,26,22,.36)!important}
+.needsReviewWorkspace{position:relative!important;z-index:1!important;width:min(1120px,calc(100vw - 36px))!important;height:min(780px,calc(100vh - 36px))!important;max-width:none!important;right:auto!important;left:auto!important;top:auto!important;bottom:auto!important;transform:none!important;border-radius:20px!important;overflow:hidden!important;background:#fffaf5!important;box-shadow:0 28px 80px rgba(42,30,22,.30)!important}
+.needsReviewWorkspace>header{min-height:76px!important;padding:16px 22px!important;border-bottom:1px solid #eadbd0!important;background:#fffaf5!important}
+.needsReviewWorkspace .needsReviewList{height:calc(100% - 76px)!important;overflow:auto!important;padding:18px!important;box-sizing:border-box!important}
+.needsReviewWorkspace .needsReviewRowV2{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:18px!important;margin:0 0 16px!important;padding:16px!important;border:1px solid #eadbd0!important;border-radius:16px!important;background:#fff!important;box-sizing:border-box!important}
+.needsReviewWorkspace .needsReviewPhotoWrap{grid-column:1!important;grid-row:1 / span 2!important;width:210px!important;height:210px!important;min-height:210px!important;border-radius:14px!important;overflow:hidden!important}
+.needsReviewWorkspace .needsReviewInfo,.needsReviewWorkspace .needsReviewResolve{grid-column:2!important;min-width:0!important}
+.needsReviewWorkspace .needsReviewResolve input,.needsReviewWorkspace .needsReviewResolve select{width:100%!important;min-height:44px!important;box-sizing:border-box!important}
+.needsReviewWorkspace .needsReviewMatches{max-height:210px!important;overflow:auto!important}
+.needsReviewWorkspace .needsReviewMatches button{display:flex!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:58px!important;margin:6px 0!important;padding:10px 12px!important;border-radius:11px!important}
+@media(max-width:760px){.needsReviewWorkspace{width:calc(100vw - 12px)!important;height:calc(100vh - 12px)!important}.needsReviewWorkspace .needsReviewRowV2{grid-template-columns:1fr!important}.needsReviewWorkspace .needsReviewPhotoWrap,.needsReviewWorkspace .needsReviewInfo,.needsReviewWorkspace .needsReviewResolve{grid-column:1!important;grid-row:auto!important;width:100%!important}.needsReviewWorkspace .needsReviewPhotoWrap{height:170px!important;min-height:170px!important}}
+body.zebraDevice.zebraReceivingActive #barcodeInput{caret-color:transparent!important;user-select:none!important;text-align:center!important;font-weight:950!important;letter-spacing:.04em!important}
+body.zebraDevice.zebraReceivingActive #scanBox{border:2px solid #7bb18b!important;background:#f3fbf5!important}
+body.zebraDevice.zebraReceivingActive #scanBox:after{content:"HARDWARE SCANNER READY";display:block;font-size:9px;font-weight:900;color:#35724a;letter-spacing:.08em;text-align:center}
+body.zebraDevice.zebraReceivingActive:has(.handheldReceivingReviewCard) #lastScanCard,
+body.zebraDevice.zebraReceivingActive:has(.handheldKnownExtraCard) #lastScanCard{display:none!important}

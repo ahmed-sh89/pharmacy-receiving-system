@@ -1128,10 +1128,52 @@ function deleteWorkspaceSnapshot(){
 ===================================================== */
 
 function getSearchableItems(){
+    const workspaceItems=Array.isArray(AppState?.workspace?.orderData)
+        ? AppState.workspace.orderData
+        : [];
+    const byCode=new Map();
+    workspaceItems.forEach(item=>{
+        const code=normalizeItemCode(item?.itemCode||"");
+        if(code) byCode.set(code,item);
+    });
 
-    return AppState.workspace
-        .orderData;
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const active=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const orders=selected.length?selected:active;
+    const results=[];
+    const seen=new Set();
 
+    orders.forEach(order=>{
+        const rows=typeof getWorkspaceOrderSourceRows==="function"
+            ? getWorkspaceOrderSourceRows(order)
+            : [];
+        rows.forEach(row=>{
+            const code=normalizeItemCode(row?.itemCode||row?.item_code||"");
+            if(!code || seen.has(code)) return;
+            seen.add(code);
+            const live=byCode.get(code);
+            results.push(live||{
+                itemCode:code,
+                itemName:toSafeString(row?.itemName||row?.item_name||""),
+                orderedQty:toNumber(row?.orderedQty??row?.ordered_qty,0),
+                receivedQty:0,
+                remainingQty:toNumber(row?.orderedQty??row?.ordered_qty,0),
+                category:toSafeString(row?.category||""),
+                orderNumbers:[normalizeOrderNumber(order)],
+                orderNumber:normalizeOrderNumber(order),
+                manual:false
+            });
+        });
+    });
+
+    /* Compatibility: if source rows are temporarily unavailable during cloud
+       hydration, never make Search blank while live orderData is present. */
+    if(!results.length) return workspaceItems;
+    return results;
 }
 
 
