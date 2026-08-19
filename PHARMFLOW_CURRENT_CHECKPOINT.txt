@@ -1,31 +1,36 @@
 PHARMFLOW CURRENT CHECKPOINT
+Version: Phase 2C.10.5.5 — Zebra Full GS1 Raw Capture
+Date: 2026-08-19
 
-Date: 19 August 2026
-Current Workstream: Phase 2C.10.5.4 — Handheld Runtime Recovery
-Status: READY FOR TEST
+STATUS
+- Blocker #25: IN DEVELOPMENT / READY FOR USER TEST.
+- Evidence: PC reads full GS1 payload 0106287043583491~1022296~21...~17280613, while Zebra previously processed only 131022296.
+- Root cause identified in client scanner timing: Zebra auto-processing at 55ms could fire during pauses between GS1 AI groups, clear the input, and process a truncated fragment.
 
-USER VERIFIED
-- Item 24: PC Receiving scan-box search by Item Name / Item Code against uploaded orders.
-
-FAILED / UNRESOLVED
-- Prior combined items 1–23 remain unresolved unless separately user verified.
-- Handheld runtime regression: normal scans may produce no response / appear frozen.
-- PC End Session regression: Handheld may remain connected after PC disconnect.
-
-PHASE 2C.10.5.4 CHANGE
-- Handheld Receiving treats every scan-box hardware payload as a scan, independent of barcode length/key timing.
-- Added document-level hardware-key fallback when the scan box loses focus.
-- Added stale scanner-processing-lock recovery.
-- Added an independent 550 ms server termination watcher on joined Handheld sessions.
-- PC server termination now forces Handheld polling/watch shutdown and returns Handheld to mode selection.
+CHANGE
+- Removed the Phase 2C.10.5.4 global document keyboard fallback from the active capture path.
+- Zebra barcodeInput now assembles the complete raw DataWedge/browser value.
+- Scanner-supplied Enter terminator processes immediately.
+- Without Enter, a 420ms quiet window auto-processes the complete payload.
+- No manual Enter is required from the worker.
+- Desktop/PC scanner behavior remains unchanged.
 - No SQL migration.
 
-FOCUSED TEST
-1. Join Handheld to PC session.
-2. Scan a known item repeatedly; every hardware scan must produce a visible result and scanner must remain usable.
-3. Scan a deliberately unknown value; it must produce error/review behavior, never silent no-response.
-4. From PC press Disconnect/End Session. Handheld must leave the session automatically within about 1–2 seconds, clear the old session and disable receiving scan until rejoin.
-5. Rejoin and verify normal scan still works.
+CHANGED FILES
+- js/scanner.js
+- index.html (cache version only)
 
-NEXT ACTION AFTER SUCCESS
-Continue the consolidated Receiving / Needs Review / Handheld root-fix backlog.
+FOCUSED TEST
+1. Hard refresh Zebra after deployment.
+2. Join active PC session.
+3. Scan the exact product whose PC raw value contains GTIN 06287043583491 / batch 22296 / expiry 06-2028.
+4. Expected: Zebra must no longer stop at 131022296; Last Scan must resolve the item using GTIN 06287043583491 and remain ready for the next scan.
+5. Repeat scan 3 times to verify no freeze.
+6. End session on PC and verify Zebra exits automatically (2C.10.5.4 behavior must not regress).
+
+NON-REGRESSION
+- Hardware scan remains automatic; worker does not press Enter.
+- Scan field must not summon soft keyboard.
+- PC receiving remains unchanged.
+- Cloud session remains authoritative for Zebra receiving.
+- Do not infer a GTIN from truncated fragments.
