@@ -628,12 +628,15 @@ function openQuickGTINResolver(parsed,knownRecord=null){
 
         const knownCode=normalizeItemCode(knownRecord?.itemCode||"");
         const knownName=toSafeString(knownRecord?.itemName||knownRecord?.name||knownCode);
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+        const knownOrderOptions=selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("");
         const knownBlock=knownCode ? `
           <section class="gtinSuggestedMatch">
-            <span class="gtinMiniLabel">MASTER MATCH</span>
+            <span class="gtinMiniLabel">MASTER MATCH · KNOWN ITEM</span>
             <strong>${escapeHTML(knownName)}</strong>
-            <small>Item ${escapeHTML(knownCode)} · Not in the current order</small>
-            <button type="button" class="gtinPrimaryAction" data-known>Add to Order &amp; Receive +1</button>
+            <small>Item ${escapeHTML(knownCode)} · GTIN ${escapeHTML(gtin)} · Not in the selected order</small>
+            ${selectedOrders.length>1?`<label class="gtinKnownTarget">Target Order<select data-known-order>${knownOrderOptions}</select></label>`:""}
+            <button type="button" class="gtinPrimaryAction" data-known>ADD &amp; RECEIVE</button>
           </section>` : "";
 
         panel.innerHTML=`
@@ -692,7 +695,11 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         });
         panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
             try{
-                const item=prepareManualExtraItem(knownCode,knownName,gtin);
+                const targetOrder=normalizeOrderNumber(
+                    panel.querySelector("[data-known-order]")?.value || selectedOrders[0] || ""
+                );
+                if(!targetOrder) throw new Error("Select the target Order");
+                const item=prepareManualExtraItem(knownCode,knownName,gtin,targetOrder);
                 const tx=receiveOrderItem({
                     item,
                     quantity:getValidReceivingQuantity(parsed.quantity),

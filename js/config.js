@@ -18,7 +18,7 @@ const APP_CONFIG = Object.freeze({
         "PF",
 
     version:
-        "2C.10.3.8",
+        "2C.10.5.3",
 
     edition:
         "Enterprise",

@@ -827,6 +827,9 @@ async function resetCurrentWorkspace(){
 
         refreshEntireUI();
         navigateTo("dashboard");
+        if(typeof refreshNeedsReviewCounters==="function"){
+            await refreshNeedsReviewCounters();
+        }
         hideLoading();
 
         showToast(

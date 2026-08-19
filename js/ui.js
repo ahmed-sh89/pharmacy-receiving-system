@@ -1740,6 +1740,22 @@ function getSelectedOrderDashboardMetrics(){
 
 function refreshDashboard(){
 
+    /* 2C.10.5.3 authority gate: no active Order means no operational metrics.
+       Never render stale browser statistics when the manifest/workspace is empty. */
+    const hasActiveOrder=!!(
+        AppState.workspace?.active===true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
+
+    if(!hasActiveOrder){
+        resetStatistics?.();
+        [UI.elements.statTotalItems,UI.elements.statCompleted,UI.elements.statRemaining,
+         UI.elements.statOver,UI.elements.statManual,UI.elements.statScans]
+            .forEach(el=>setElementText(el,0));
+        refreshProgress();
+        return;
+    }
+
     recalculateStatistics();
 
     const stats=AppState.statistics;
@@ -3091,11 +3107,16 @@ function refreshSessionUI(){
     const session =
         AppState.session;
 
+    const hasActiveOrder=!!(
+        AppState.workspace?.active===true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
+
     setElementText(
         UI.elements.sessionPageId,
-        session.cloud === true
-            ? "CONNECTED"
-            : (AppState.workspace?.active === true ? "LOCAL" : "INACTIVE")
+        !hasActiveOrder
+            ? "INACTIVE"
+            : (session.cloud === true ? "CONNECTED" : "LOCAL")
     );
 
     setElementText(
@@ -7340,6 +7361,7 @@ async function nrV2ResolveToOrderItem(row,item){
         "LINK_ORDER_ITEM",
         transactionId
     );
+    if(row.photo_path) await nrV2DeletePhoto?.(row.photo_path);
 }
 
 async function nrV2ResolveAsUnordered(row,itemCode,itemName,targetOrder=""){
@@ -7379,6 +7401,7 @@ async function nrV2ResolveAsUnordered(row,itemCode,itemName,targetOrder=""){
         "ADD_UNORDERED",
         transactionId
     );
+    if(row.photo_path) await nrV2DeletePhoto?.(row.photo_path);
 }
 
 async function nrV2HydratePhoto(img,path){
@@ -7435,7 +7458,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 <div class="needsReviewPhotoWrap ${row.photo_path?"hasPhoto":""}">
                   ${
                     row.photo_path
-                    ? `<img data-photo="${index}" alt="Product review photo" hidden>`
+                    ? `<button class="needsReviewPhotoButton" data-photo-open="${index}" type="button" title="Open photo"><img data-photo="${index}" alt="Product review photo" hidden><span>OPEN PHOTO</span></button>`
                     : `<div class="needsReviewNoPhoto">NO PHOTO</div>`
                   }
                 </div>
@@ -7465,8 +7488,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                   <details class="needsReviewExtra">
                     <summary>Item truly not in the order?</summary>
                     <div class="needsReviewExtraGrid">
-                      <input data-extra-code="${index}" placeholder="Item Code">
-                      <input data-extra-name="${index}" placeholder="Item Name">
+                      <input data-extra-code="${index}" placeholder="Item Code" value="${esc(row.master_item_code_hint||"")}">
+                      <input data-extra-name="${index}" placeholder="Item Name" value="${esc(row.master_item_name_hint||"")}">
                       <label class="needsReviewTargetOrder">
                         Target Order
                         <select data-extra-order="${index}">
@@ -7512,6 +7535,18 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 row.photo_path
             );
         }
+
+        overlay.querySelector(`[data-photo-open="${index}"]`)?.addEventListener("click",async()=>{
+            const url=await nrV2PhotoObjectUrl(row.photo_path);
+            if(!url){ showToast?.("Unable to open review photo","error"); return; }
+            document.getElementById("needsReviewPhotoViewer")?.remove();
+            const viewer=document.createElement("div");
+            viewer.id="needsReviewPhotoViewer";
+            viewer.className="needsReviewPhotoViewer";
+            viewer.innerHTML=`<button type="button" class="needsReviewPhotoViewerScrim" aria-label="Close"></button><div class="needsReviewPhotoViewerCard"><button type="button" class="needsReviewPhotoViewerClose">✕</button><img src="${url}" alt="Product review photo"></div>`;
+            document.body.appendChild(viewer);
+            viewer.querySelectorAll("button").forEach(btn=>btn.onclick=()=>viewer.remove());
+        });
 
         const renderMatches=()=>{
             const items=nrV2FindOrderMatches(search?.value||"");
@@ -7634,6 +7669,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
                 try{
                     await nrV2Delete(row.review_id);
+                    if(row.photo_path) await nrV2DeletePhoto?.(row.photo_path);
                     section.remove();
                     refreshNeedsReviewCounters();
                 }catch(error){

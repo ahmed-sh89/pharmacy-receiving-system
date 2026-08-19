@@ -362,6 +362,32 @@ async function nrV2PhotoObjectUrl(photoPath){
     return objectUrl;
 }
 
+
+async function nrV2DeletePhoto(photoPath){
+    if(!photoPath) return true;
+    const pharmacyId=nrV2PharmacyId();
+    const token=getSupabaseAccessToken?.();
+    if(!pharmacyId || !token) return false;
+    const url=getSupabaseProjectUrl()+"/storage/v1/object/"+encodeURIComponent(NeedsReviewV2.bucket)+"/"+photoPath.split("/").map(encodeURIComponent).join("/");
+    const response=await fetch(url,{method:"DELETE",headers:{"apikey":getSupabasePublishableKey(),"Authorization":"Bearer "+token}});
+    if(response.ok || response.status===404){
+        const cached=NeedsReviewV2.photoUrls.get(photoPath);
+        if(cached) URL.revokeObjectURL(cached);
+        NeedsReviewV2.photoUrls.delete(photoPath);
+        return true;
+    }
+    return false;
+}
+
+async function nrV2ClearReceivingQueue(){
+    const pharmacyId=nrV2PharmacyId();
+    if(!pharmacyId || typeof authRpc!=="function") return false;
+    const result=await authRpc("clear_pharmflow_receiving_needs_review_v2",{p_pharmacy_id:pharmacyId});
+    for(const url of NeedsReviewV2.photoUrls.values()){ try{ URL.revokeObjectURL(url); }catch(_){} }
+    NeedsReviewV2.photoUrls.clear();
+    return result;
+}
+
 function nrV2ResolutionTransactionId(reviewId){
     return "NEEDS_REVIEW_V2:"+String(reviewId||"");
 }
@@ -379,6 +405,8 @@ window.nrV2MarkResolved=nrV2MarkResolved;
 window.nrV2Delete=nrV2Delete;
 window.nrV2UploadPhoto=nrV2UploadPhoto;
 window.nrV2PhotoObjectUrl=nrV2PhotoObjectUrl;
+window.nrV2DeletePhoto=nrV2DeletePhoto;
+window.nrV2ClearReceivingQueue=nrV2ClearReceivingQueue;
 window.nrV2ResolutionTransactionId=nrV2ResolutionTransactionId;
 window.nrV2HasLocalResolutionTransaction=nrV2HasLocalResolutionTransaction;
 window.nrV2CurrentOrderNumber=nrV2CurrentOrderNumber;

@@ -502,6 +502,13 @@ async function finalizeCurrentReceiving(){
 
         await refreshOrderLifecycleRegistry();
 
+        /* Receiving review photos/drafts are temporary operational evidence.
+           Once receiving is finalized they must not survive as orphaned storage. */
+        if(typeof nrV2ClearReceivingQueue==="function"){
+            await nrV2ClearReceivingQueue();
+            refreshNeedsReviewCounters?.();
+        }
+
         if(
             finalizedDiscrepancyReport &&
             Number(finalizedDiscrepancyReport.totalDiscrepancies||0)>0 &&
