@@ -19,8 +19,6 @@ const CLOUD_CONFIG = Object.freeze({
 const CloudSyncEngine = {
     initialized:false,
     pollingTimer:null,
-    terminationTimer:null,
-    terminationCheckRunning:false,
     pollRunning:false,
     applyingRemote:false,
     online:navigator.onLine,
@@ -60,9 +58,6 @@ function initializeSupabaseCloud(){
 
     document.addEventListener("visibilitychange", function(){
         if(document.visibilityState === "visible" && isCloudSessionActive()){
-            if(isJoinedHandheldCloudSession()){
-                startHandheldSessionTerminationWatch();
-            }
             flushCloudPendingQueue();
             refreshCloudSnapshot();
         }
@@ -650,7 +645,6 @@ async function markCloudSessionEndedOnServer(){
 }
 
 function terminateZebraFromServer(reason = "server-session-ended"){
-    stopCloudPolling();
     if(typeof resetZebraWorkingState === "function"){
         resetZebraWorkingState(reason,{force:true});
     }
@@ -874,71 +868,9 @@ function safeParseJSON(value,fallback){
     try{ return JSON.parse(value); }catch(_){ return fallback; }
 }
 
-function isJoinedHandheldCloudSession(){
-    return !!(
-        typeof isLikelyZebraDevice === "function" &&
-        isLikelyZebraDevice() &&
-        AppState?.session?.role === "ZEBRA" &&
-        AppState?.session?.cloud === true &&
-        AppState?.session?.id &&
-        AppState?.session?.secret
-    );
-}
-
-async function checkHandheldSessionTermination(){
-    if(!isJoinedHandheldCloudSession() || !navigator.onLine){
-        return false;
-    }
-    if(CloudSyncEngine.terminationCheckRunning){
-        return false;
-    }
-
-    CloudSyncEngine.terminationCheckRunning=true;
-    try{
-        if(await isCloudSessionTerminatedOnServer()){
-            stopHandheldSessionTerminationWatch();
-            terminateZebraFromServer("server-termination-watch");
-            return true;
-        }
-        return false;
-    }catch(error){
-        /* Snapshot polling remains the secondary recovery path. A transient
-           termination-check failure must not disconnect an active worker. */
-        Logger.warn("Handheld session termination check failed",error);
-        return false;
-    }finally{
-        CloudSyncEngine.terminationCheckRunning=false;
-    }
-}
-
-function startHandheldSessionTerminationWatch(){
-    stopHandheldSessionTerminationWatch();
-    if(!isJoinedHandheldCloudSession()) return;
-
-    CloudSyncEngine.terminationTimer=setInterval(()=>{
-        if(document.visibilityState!=="hidden"){
-            checkHandheldSessionTermination();
-        }
-    },550);
-
-    /* Do not wait for the first interval after join/resume. */
-    setTimeout(checkHandheldSessionTermination,80);
-}
-
-function stopHandheldSessionTerminationWatch(){
-    if(CloudSyncEngine.terminationTimer){
-        clearInterval(CloudSyncEngine.terminationTimer);
-        CloudSyncEngine.terminationTimer=null;
-    }
-    CloudSyncEngine.terminationCheckRunning=false;
-}
-
 function startCloudPolling(){
     stopCloudPolling();
     if(!isCloudSessionActive()){ return; }
-    if(isJoinedHandheldCloudSession()){
-        startHandheldSessionTerminationWatch();
-    }
     const intervalMs = (
         typeof isLikelyZebraDevice === "function" &&
         isLikelyZebraDevice() &&
@@ -959,7 +891,6 @@ function stopCloudPolling(){
         clearInterval(CloudSyncEngine.pollingTimer);
         CloudSyncEngine.pollingTimer = null;
     }
-    stopHandheldSessionTerminationWatch();
 }
 
 function updateCloudConnectionUI(label){
@@ -1042,6 +973,3 @@ window.renderCloudSessionQR = renderCloudSessionQR;
 window.leaveCloudSession = leaveCloudSession;
 window.isCloudSessionTerminatedOnServer = isCloudSessionTerminatedOnServer;
 window.markCloudSessionEndedOnServer = markCloudSessionEndedOnServer;
-window.checkHandheldSessionTermination = checkHandheldSessionTermination;
-window.startHandheldSessionTerminationWatch = startHandheldSessionTerminationWatch;
-window.stopHandheldSessionTerminationWatch = stopHandheldSessionTerminationWatch;

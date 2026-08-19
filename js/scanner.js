@@ -22,46 +22,10 @@ const ScannerEngine = {
     autoProcessDelay:130,
     searchDelay:220,
 
-    fastKeyThreshold:45,
-
-    /* Phase 2C.10.5.5 — Zebra raw scan assembly.
-       Never process a partial DataWedge burst merely because one AI group
-       paused for a few milliseconds. Enter from the scanner suffix processes
-       immediately; otherwise a conservative quiet window processes the full
-       payload automatically. */
-    handheldRawBuffer:"",
-    handheldQuietTimer:null,
-    handheldQuietDelay:420
+    fastKeyThreshold:45
 
 };
 
-
-function isHandheldReceivingScannerActive(){
-    return !!(
-        typeof isLikelyZebraDevice === "function" &&
-        isLikelyZebraDevice() &&
-        document.body.classList.contains("zebraReceivingActive") &&
-        AppState?.session?.role === "ZEBRA" &&
-        AppState?.session?.cloud === true &&
-        AppState?.session?.id &&
-        AppState?.session?.secret
-    );
-}
-
-function resetHandheldRawAssembly(){
-    clearTimeout(ScannerEngine.handheldQuietTimer);
-    ScannerEngine.handheldQuietTimer=null;
-    ScannerEngine.handheldRawBuffer="";
-}
-
-function scheduleHandheldRawScan(input){
-    clearTimeout(ScannerEngine.handheldQuietTimer);
-    ScannerEngine.handheldQuietTimer=setTimeout(()=>{
-        const value=toSafeString(ScannerEngine.handheldRawBuffer || input?.value);
-        resetHandheldRawAssembly();
-        if(value){ processScannerValue(value); }
-    },ScannerEngine.handheldQuietDelay);
-}
 
 /* =====================================================
    INITIALIZE
@@ -77,19 +41,6 @@ function initializeScanner(){
         document.getElementById(
             "barcodeInput"
         );
-
-    /* Phase 2C.10.5.2 — Handheld hardware scanners should feel immediate.
-       Desktop keeps the more conservative mixed scan/search timing. */
-    if(
-        typeof isLikelyZebraDevice==="function" &&
-        isLikelyZebraDevice()
-    ){
-        /* Do not use the desktop short debounce on Zebra. GS1/DataMatrix
-           keyboard-wedge delivery may pause between AI groups. Processing at
-           55ms was the root cause of truncated values such as 131022296. */
-        ScannerEngine.autoProcessDelay=ScannerEngine.handheldQuietDelay;
-        ScannerEngine.searchDelay=160;
-    }
 
     if(!input){
 
@@ -108,9 +59,7 @@ function initializeScanner(){
     */
 
     input.placeholder =
-        (typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice())
-            ? "Scan barcode"
-            : "Scan barcode or search by Item Number / Item Name";
+        "Scan barcode or search by Item Number / Item Name";
 
     input.setAttribute(
         "autocomplete",
@@ -226,15 +175,6 @@ function handleScannerKeydown(event){
 
         event.preventDefault();
 
-        if(isHandheldReceivingScannerActive()){
-            clearTimeout(ScannerEngine.inputTimer);
-            clearTimeout(ScannerEngine.handheldQuietTimer);
-            const input=event.target;
-            const value=toSafeString(ScannerEngine.handheldRawBuffer || input?.value);
-            resetHandheldRawAssembly();
-            if(value){ processScannerValue(value); }
-            return;
-        }
 
         clearTimeout(
             ScannerEngine.inputTimer
@@ -257,8 +197,6 @@ function handleScannerKeydown(event){
 
 
         if(
-            isHandheldReceivingScannerActive()
-            ||
             shouldTreatAsBarcode(
                 value,
                 true
@@ -315,20 +253,11 @@ function handleSmartScannerInput(event){
     }
 
 
-    /* Phase 2C.10.5.5 — Zebra is a raw hardware-scan surface. Keep the
-       complete current input as one assembly and wait for scanner Enter or a
-       conservative quiet window. Critically, do NOT process/clear the field
-       after a short pause between GS1 AI groups. */
-    if(isHandheldReceivingScannerActive()){
-        ScannerEngine.handheldRawBuffer=value;
-        scheduleHandheldRawScan(input);
-        return;
-    }
-
-    const barcodeCandidate = shouldTreatAsBarcode(
-        value,
-        false
-    );
+    const barcodeCandidate =
+        shouldTreatAsBarcode(
+            value,
+            false
+        );
 
 
     /*
@@ -711,15 +640,12 @@ function isFastScannerTyping(){
 
 async function processScannerValue(rawValue){
 
-    if(ScannerEngine.processing){
-        /* A healthy scan normally releases this in finally. If a legacy path
-           left the flag set, do not freeze the worker indefinitely. */
-        const age=Date.now()-Number(ScannerEngine.processingSince||0);
-        if(age<5000){
-            return false;
-        }
-        Logger.warn("Recovering stale Handheld scanner processing lock",age);
-        ScannerEngine.processing=false;
+    if(
+        ScannerEngine.processing
+    ){
+
+        return false;
+
     }
 
 
@@ -733,10 +659,6 @@ async function processScannerValue(rawValue){
         cleanScannerInput(
             rawValue
         );
-
-    if(isHandheldReceivingScannerActive()){
-        resetHandheldRawAssembly();
-    }
 
 
     /* Phase 2B.5 hard guard: Zebra Receiving is never allowed to become a
@@ -769,7 +691,6 @@ async function processScannerValue(rawValue){
 
     ScannerEngine.processing =
         true;
-    ScannerEngine.processingSince=Date.now();
 
 
     clearSmartSearchResults();
@@ -859,9 +780,7 @@ async function processScannerValue(rawValue){
 
 
         showToast(
-            error?.message
-                ? "Scan failed: "+error.message
-                : "Unable to process barcode",
+            "Unable to process barcode",
             "error"
         );
 
@@ -873,7 +792,6 @@ async function processScannerValue(rawValue){
 
         ScannerEngine.processing =
             false;
-        ScannerEngine.processingSince=0;
 
 
         resetScannerTypingMetrics();

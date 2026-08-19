@@ -1,36 +1,34 @@
 PHARMFLOW CURRENT CHECKPOINT
-Version: Phase 2C.10.5.5 — Zebra Full GS1 Raw Capture
-Date: 2026-08-19
 
-STATUS
-- Blocker #25: IN DEVELOPMENT / READY FOR USER TEST.
-- Evidence: PC reads full GS1 payload 0106287043583491~1022296~21...~17280613, while Zebra previously processed only 131022296.
-- Root cause identified in client scanner timing: Zebra auto-processing at 55ms could fire during pauses between GS1 AI groups, clear the input, and process a truncated fragment.
+Date: 19 August 2026
+Version: Phase 2C.10.6.0 — Clean Handheld Runtime Baseline
+Status: READY FOR TEST
 
-CHANGE
-- Removed the Phase 2C.10.5.4 global document keyboard fallback from the active capture path.
-- Zebra barcodeInput now assembles the complete raw DataWedge/browser value.
-- Scanner-supplied Enter terminator processes immediately.
-- Without Enter, a 420ms quiet window auto-processes the complete payload.
-- No manual Enter is required from the worker.
-- Desktop/PC scanner behavior remains unchanged.
-- No SQL migration.
+USER VERIFIED
+- #24 PC Receiving search by Item Name / Item Code searches uploaded Orders.
 
-CHANGED FILES
-- js/scanner.js
-- index.html (cache version only)
+UNRESOLVED / FAILED
+- Items #1–23 remain unresolved unless separately verified.
+- #25 Handheld scan runtime freeze/no-response is BLOCKER.
+- #26 PC End Session automatic Handheld disconnect regressed.
 
-FOCUSED TEST
-1. Hard refresh Zebra after deployment.
-2. Join active PC session.
-3. Scan the exact product whose PC raw value contains GTIN 06287043583491 / batch 22296 / expiry 06-2028.
-4. Expected: Zebra must no longer stop at 131022296; Last Scan must resolve the item using GTIN 06287043583491 and remain ready for the next scan.
-5. Repeat scan 3 times to verify no freeze.
-6. End session on PC and verify Zebra exits automatically (2C.10.5.4 behavior must not regress).
+DECISION
+Stop layering patches on Zebra runtime.
+2C.10.6.0 restores only the last stable scanner + session runtime while
+preserving the current Receiving/order-matching/search business logic.
 
 NON-REGRESSION
-- Hardware scan remains automatic; worker does not press Enter.
-- Scan field must not summon soft keyboard.
-- PC receiving remains unchanged.
-- Cloud session remains authoritative for Zebra receiving.
-- Do not infer a GTIN from truncated fragments.
+- Do not restore the old 'item exists but Not in Order' behavior.
+- Keep current uploaded-order membership resolver.
+- Keep #24 verified PC search fix.
+- Keep Global GTIN Master protected.
+- No new scanner fallback may be added without removing/replacing the old path.
+
+EXACT NEXT TEST
+GTIN 06287043583491:
+Handheld normal scan -> repeat x3 -> PC End Session -> auto Handheld disconnect -> rejoin -> scan again.
+
+NEXT ACTION
+If this clean baseline passes, freeze it as USER VERIFIED Handheld Runtime
+Baseline before continuing Needs Review / UX / Expiry changes.
+If it fails, audit Zebra DataWedge output/configuration before touching app code again.
