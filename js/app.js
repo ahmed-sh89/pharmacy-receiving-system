@@ -795,7 +795,7 @@ async function resetCurrentWorkspace(){
            to save its old order back to Supabase.
         */
         const resetReceipt=await withTimeout(
-            authRpc("atomic_reset_pharmflow_current_workspace_v3",{
+            authRpc("atomic_reset_pharmflow_current_workspace_v4",{
                 p_pharmacy_id:pharmacyId,
                 p_confirmation:"RESET CURRENT WORKSPACE"
             }),
@@ -830,6 +830,20 @@ async function resetCurrentWorkspace(){
             deleteWorkspaceSnapshot();
         }
 
+        /* Server reset is authoritative. Never retain a connected local session
+           or stale operational counters after a confirmed reset. */
+        AppState.session=createEmptySession();
+        ensureDeviceId();
+        AppState.workspace.active=false;
+        AppState.workspace.orderData=[];
+        AppState.workspace.orderFiles=[];
+        AppState.workspace.receivingHistory=[];
+        AppState.workspace.selectedOrderNumbers=[];
+        AppState.workspace.selectedOrderNumber="";
+        resetStatistics?.();
+        deleteWorkspaceSnapshot?.();
+        stopCloudPolling?.();
+
         if(typeof ReceivingEngine!=="undefined"){
             ReceivingEngine.recentScans=[];
             ReceivingEngine.lastTransaction=null;
@@ -842,14 +856,17 @@ async function resetCurrentWorkspace(){
         }
         hideLoading();
 
-        showToast(
-            "Current workspace reset on server · Active orders removed: "+
+        const resetMessage=
+            "Current workspace reset successfully · Active orders removed: "+
             Number(receipt.active_orders_deleted||0)+
             " · Receiving transactions removed: "+
             Number(receipt.receiving_transactions_deleted||0)+
-            " · Needs Review cleared",
-            "success"
-        );
+            " · Needs Review cleared";
+
+        showToast(resetMessage,"success",12000);
+        if(typeof showPharmFlowOperationReceipt==="function"){
+            showPharmFlowOperationReceipt(resetMessage,"success");
+        }
 
         /* Everything below is background maintenance only.
            Reset success does not wait for it. */

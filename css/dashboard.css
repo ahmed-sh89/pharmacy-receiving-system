@@ -7241,3 +7241,128 @@ body.zebraDevice.zebraReceivingActive #scanBox{border:2px solid #7bb18b!importan
 body.zebraDevice.zebraReceivingActive #scanBox:after{content:"HARDWARE SCANNER READY";display:block;font-size:9px;font-weight:900;color:#35724a;letter-spacing:.08em;text-align:center}
 body.zebraDevice.zebraReceivingActive:has(.handheldReceivingReviewCard) #lastScanCard,
 body.zebraDevice.zebraReceivingActive:has(.handheldKnownExtraCard) #lastScanCard{display:none!important}
+
+
+/* ============================================================
+   PHARMFLOW 2C.10.5.5 — HANDHELD READY STATE / REVIEW WORKSPACE
+============================================================ */
+.handheldLastScanSuppressed{
+    display:none!important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox{
+    position:relative!important;
+    border:2px solid #22c55e!important;
+    background:#f0fdf4!important;
+    box-shadow:0 0 0 3px rgba(34,197,94,.08)!important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox:before{
+    content:"● READY TO SCAN";
+    position:absolute;
+    left:10px;
+    top:4px;
+    z-index:2;
+    color:#15803d;
+    font-size:9px;
+    font-weight:950;
+    letter-spacing:.05em;
+    pointer-events:none;
+}
+body.zebraDevice.zebraReceivingActive #barcodeInput{
+    padding-top:13px!important;
+    caret-color:transparent!important;
+}
+body.zebraDevice.zebraReceivingActive #barcodeInput::placeholder{
+    color:#166534!important;
+    opacity:.72!important;
+}
+body.zebraDevice.zebraReceivingActive #handheldReceivingReviewCard,
+body.zebraDevice.zebraReceivingActive #handheldKnownExtraCard{
+    margin-top:4px!important;
+    max-height:calc(100vh - 160px)!important;
+    overflow:auto!important;
+}
+body.zebraDevice.zebraReceivingActive .handheldReviewBody{
+    padding:6px!important;
+}
+body.zebraDevice.zebraReceivingActive .handheldPhotoButton,
+body.zebraDevice.zebraReceivingActive .handheldReviewSave{
+    min-height:40px!important;
+}
+body.zebraDevice.zebraReceivingActive .handheldReviewQtyLabel input{
+    min-height:44px!important;
+}
+
+/* PC Needs Review — deliberate production workspace. */
+.needsReviewOverlayV2 .needsReviewPanelV2{
+    width:min(1120px,calc(100vw - 48px))!important;
+    height:min(800px,calc(100vh - 48px))!important;
+    background:#fffdfb!important;
+    border:1px solid #eadfd7!important;
+}
+.needsReviewOverlayV2 .needsReviewList{
+    padding:18px!important;
+    background:linear-gradient(180deg,#fffaf6,#fff)!important;
+}
+.needsReviewOverlayV2 .needsReviewRowV2{
+    grid-template-columns:210px minmax(0,1fr)!important;
+    gap:18px!important;
+    padding:18px!important;
+    border:1px solid #eadfd7!important;
+    box-shadow:0 10px 30px rgba(75,45,28,.07)!important;
+}
+.needsReviewOverlayV2 .needsReviewPhotoWrap{
+    width:210px!important;
+    height:210px!important;
+    min-height:210px!important;
+    background:#f9f5f1!important;
+}
+.needsReviewOverlayV2 .needsReviewInfo>span{
+    display:inline-flex!important;
+    padding:5px 8px!important;
+    border-radius:999px!important;
+    background:#fff1f2!important;
+    color:#b91c1c!important;
+    font-size:10px!important;
+    font-weight:950!important;
+}
+.needsReviewOverlayV2 .needsReviewResolve>label{
+    display:grid!important;
+    gap:5px!important;
+    font-weight:900!important;
+}
+.needsReviewOverlayV2 .needsReviewResolve input{
+    border:1px solid #d8c9bd!important;
+    background:#fff!important;
+    min-height:46px!important;
+    border-radius:11px!important;
+    padding:0 12px!important;
+}
+.needsReviewOverlayV2 .needsReviewMatches button{
+    background:#fff!important;
+    border:1px solid #e5d8ce!important;
+}
+.needsReviewOverlayV2 .needsReviewMatches button:hover{
+    border-color:#c08b69!important;
+    box-shadow:0 4px 15px rgba(106,72,52,.10)!important;
+}
+
+/* Independent, guaranteed-visible operation receipt for destructive actions. */
+.pharmFlowOperationReceipt{
+    position:fixed!important;
+    top:18px!important;
+    left:50%!important;
+    transform:translateX(-50%)!important;
+    z-index:200000!important;
+    width:min(760px,calc(100vw - 32px))!important;
+    padding:14px 18px!important;
+    border-radius:13px!important;
+    color:#fff!important;
+    font-size:13px!important;
+    font-weight:900!important;
+    line-height:1.4!important;
+    text-align:center!important;
+    box-shadow:0 18px 48px rgba(0,0,0,.22)!important;
+}
+.pharmFlowOperationReceipt.success{background:#15803d!important}
+.pharmFlowOperationReceipt.error{background:#b91c1c!important}
+.pharmFlowOperationReceipt[hidden]{display:none!important}

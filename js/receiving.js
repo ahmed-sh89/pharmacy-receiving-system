@@ -143,6 +143,7 @@ async function receiveParsedBarcode(parsed){
 function clearHandheldActionCard(){
     document.getElementById("handheldReceivingReviewCard")?.remove();
     document.getElementById("handheldKnownExtraCard")?.remove();
+    document.getElementById("lastScanCard")?.classList.remove("handheldLastScanSuppressed");
     window.__pfReceivingReviewDraft=null;
 }
 
@@ -199,12 +200,33 @@ function repairReceivingItemMembership(item){
 function getReceivingItemByItemCode(itemCode){
     const code=normalizeItemCode(itemCode||"");
     if(!code) return null;
-    const item=(AppState?.workspace?.orderData||[]).find(row=>normalizeItemCode(row?.itemCode||"")===code)||null;
+
+    const item=(AppState?.workspace?.orderData||[]).find(
+        row=>normalizeItemCode(row?.itemCode||"")===code
+    )||null;
+
     if(!item) return null;
+
+    /* Phase 2C.10.5.5 — a joined Handheld receives a server snapshot that is
+       already scoped by the PC session. The snapshot row itself is therefore
+       authoritative proof that this item belongs to the connected Receiving
+       context. Do not reject it because the Handheld has no local orderFiles. */
+    const joinedHandheld=!!(
+        AppState?.session?.cloud===true &&
+        AppState?.session?.role==="ZEBRA"
+    );
+
+    if(joinedHandheld){
+        return item;
+    }
+
     repairReceivingItemMembership(item);
     const selected=getReceivingSelectedOrders();
     const memberships=getReceivingOrderMemberships(item);
-    return (!selected.length || memberships.some(order=>selected.includes(order))) ? item : null;
+
+    return (!selected.length || memberships.some(order=>selected.includes(order)))
+        ? item
+        : null;
 }
 function getReceivingEligibleOrders(item){
     const selected=getReceivingSelectedOrders();
@@ -338,6 +360,7 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     `;
 
     lastScan.insertAdjacentElement("afterend",card);
+    lastScan.classList.add("handheldLastScanSuppressed");
 
     const qty=card.querySelector("#handheldKnownExtraQty");
 
@@ -429,7 +452,8 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     qty?.addEventListener("keydown",e=>{
         if(e.key==="Enter"){
             e.preventDefault();
-            submit();
+            qty.blur();
+            document.getElementById("btnHandheldAddExtra")?.scrollIntoView({block:"nearest"});
         }
     });
 
@@ -499,6 +523,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     `;
 
     lastScan.insertAdjacentElement("afterend",card);
+    lastScan.classList.add("handheldLastScanSuppressed");
     flashHandheldRed();
 
     const photoButton=card.querySelector("#btnHandheldReviewPhoto");
@@ -557,7 +582,8 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     qty?.addEventListener("keydown",event=>{
         if(event.key==="Enter"){
             event.preventDefault();
-            finish();
+            qty.blur();
+            document.getElementById("btnSaveHandheldReview")?.scrollIntoView({block:"nearest"});
         }
     });
 
@@ -575,10 +601,12 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
         return false;
     }
 
-    let masterRecord=null;
-    try{
-        masterRecord=await getMasterGTINRecordByGTIN(gtin);
-    }catch(_){}
+    let masterRecord=knownRecord||null;
+    if(!masterRecord){
+        try{
+            masterRecord=await getMasterGTINRecordByGTIN(gtin);
+        }catch(_){}
+    }
 
     const isHandheld=
         typeof isLikelyZebraDevice==="function" &&
@@ -707,15 +735,43 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         };
         const render=()=>{
             const q=toSafeString(search.value).toLowerCase().trim();
-            const items=(AppState.workspace.orderData||[]).filter(i=>!q||toSafeString(i.itemName).toLowerCase().includes(q)||toSafeString(i.itemCode).toLowerCase().includes(q)).slice(0,8);
+            const source=typeof getSearchableItems==="function"
+                ? getSearchableItems()
+                : (AppState.workspace.orderData||[]);
+            const items=source.filter(i=>
+                !q ||
+                toSafeString(i.itemName).toLowerCase().includes(q) ||
+                toSafeString(i.itemCode).toLowerCase().includes(q)
+            ).slice(0,12);
             results.innerHTML=items.length?items.map((i,n)=>`<button type="button" class="gtinResult" data-i="${n}"><span><strong>${escapeHTML(i.itemName)}</strong><small>Item ${escapeHTML(i.itemCode)}</small></span><b>Link GTIN &amp; Receive +1</b></button>`).join(''):'<div class="gtinNoResult">No matching order item.</div>';
             results.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>receiveMatched(items[Number(btn.dataset.i)],false));
         };
         search.oninput=render; render();
         panel.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>finish(false));
         panel.querySelector('[data-review]')?.addEventListener('click',async()=>{
-            try{ await saveReceivingNeedsReview(parsed); if(typeof refreshNeedsReviewCounters==="function")refreshNeedsReviewCounters(); finish(true); }
-            catch(error){ if(typeof setScanBoxState==="function")setScanBoxState("error"); }
+            try{
+                const draft=await nrV2CreateDraft(parsed,{
+                    workflow:"RECEIVING",
+                    reason:knownCode ? "KNOWN_NOT_IN_ORDER" : "UNKNOWN_GTIN",
+                    itemCode:knownCode||"",
+                    itemName:knownName||"",
+                    orderNumber:nrV2CurrentOrderNumber?.()||null
+                });
+                if(!draft?.review_id){
+                    throw new Error("Needs Review draft was not created");
+                }
+                await nrV2SetQty(
+                    draft.review_id,
+                    getValidReceivingQuantity(parsed.quantity)
+                );
+                refreshNeedsReviewCounters?.();
+                finish(true);
+            }
+            catch(error){
+                if(typeof setScanBoxState==="function")setScanBoxState("error");
+                const msg=panel.querySelector('.gtinPanelMessage');
+                if(msg) msg.textContent=error?.message||"Unable to save Needs Review";
+            }
         });
         panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
             try{

@@ -1,43 +1,53 @@
-# PHARMFLOW_CURRENT_CHECKPOINT
+# PHARMFLOW CURRENT CHECKPOINT
 
-Date: 2026-08-19
-Version: Phase 2C.10.5.4
-Status: READY FOR TEST
+Date: 19 August 2026
+Current Version/Workstream: Phase 2C.10.5.5 — Runtime Root Cleanup
+Platform: GitHub Pages + Supabase
+Primary Devices: Windows PC + Handheld
 
-## Source of truth
-Built from pharmacy-receiving-system-main(3).zip supplied by Product Owner on 2026-08-19.
+## VERIFIED / DONE
+- Account/pharmacy isolation: USER VERIFIED / DONE.
+- Active Order Manifest server storage and receiving synchronization baseline previously user-verified.
+- Phase 2C.10.4.6 tenant-scoped Historical Delete: USER VERIFIED / DONE.
+- Phase 2C.10.4.7 stale workspace generation on login: USER VERIFIED / DONE.
+- Requirement #24: PC Receiving Search by Item Code / Item Name against uploaded orders: USER VERIFIED / DONE.
+- Needs Review photo can open on PC: USER VERIFIED.
 
-## Implemented in this phase
-- Unified Receiving item/order membership against original uploaded Order source rows.
-- PC Receiving Search and Needs Review Search now use uploaded-order source data.
-- Known Global GTIN + genuinely not in selected Order remains Known Extra; no manual re-entry of known identity.
-- Needs Review desktop workspace redesigned and photo open behavior preserved.
-- Handheld scan box suppresses soft keyboard and visibly indicates hardware scanner readiness.
-- Handheld exception card replaces Last Scan space to reduce scrolling.
-- Reset media cleanup moved to Supabase Storage API; SQL no longer deletes storage.objects directly.
-- Reset clears Receiving Needs Review before authoritative workspace reset.
-- Existing No Active Order dashboard zero gate preserved.
-- Historical Delete success/error flow preserved for focused retest.
-- Existing Expiry GS1 behavior preserved: parsed expiry/batch auto-read; GTIN-only requires manual expiry fields.
+## FAILED / UNRESOLVED BEFORE 2C.10.5.5
+The prior combined patch was NOT successful. Items #1–23 remained unresolved, especially Handheld behavior. Observed runtime defects included:
+- PC/Handheld could classify an order item as NOT IN ORDER despite valid order membership.
+- Handheld CONNECTED did not prove correct selected-order context was loaded.
+- GTIN mismatch / unknown resolution paths diverged between PC, Handheld and Needs Review.
+- Needs Review PC workspace/search remained inconsistent.
+- Handheld scan interaction remained slow/awkward and exception flow required scroll.
+- Reset could fail/partially clear state and leave stale metrics/session/Needs Review.
+- Historical deletion could complete with no visible success notification.
 
-## Critical verification required
-1. Known GTIN + item in uploaded Order: PC normal receive.
-2. Same item on Handheld linked to ALL ORDERS: normal receive, not Known Extra.
-3. PC Search finds uploaded item by Item Code and Item Name.
-4. GTIN mismatch/unknown review search finds uploaded item and links it.
-5. Known Master item genuinely outside selected Orders: Add & Receive as Extra.
-6. Needs Review desktop layout and photo viewer.
-7. Handheld no soft keyboard during normal scanning; exception actions fit without scroll.
-8. Reset Current Workspace succeeds once, zeroes counters, clears Needs Review and ends session.
-9. Delete All Historical Data shows visible success/error receipt.
-10. Sign-out/in with No Active Order does not restore stale counters/session.
-11. Expiry GS1 auto-read regression test and GTIN-only manual date regression test.
+## 2C.10.5.5 ROOT CHANGES
+- Runtime resolver: Handheld cloud snapshot is authoritative session order context.
+- PC live session now publishes Selected Orders source rows, not an uncontrolled merged workspace projection.
+- Handheld session only becomes READY TO SCAN after a non-empty order snapshot loads.
+- PC GTIN resolver and Needs Review search use the same uploaded-order searchable source used by verified requirement #24.
+- Removed undefined legacy saveReceivingNeedsReview runtime call; all new review saves use Needs Review V2.
+- Known GTIN / Not In Order keeps direct ADD & RECEIVE path; Unknown GTIN keeps autosave/photo/qty review path.
+- Handheld exception card suppresses Last Scan to keep actions within one viewport.
+- Quantity Enter/Done hides keyboard; explicit action button remains required.
+- Reset now calls new atomic_reset_pharmflow_current_workspace_v4 and force-clears local session/counters after server confirmation.
+- Reset and Historical Delete have independent guaranteed-visible top operation receipts.
+- Global GTIN Master / Returns Archive boundaries preserved.
+- Expiry GS1 behavior preserved: extracted lot/expiry stays automatic; GTIN-only requires manual date entry.
 
-## Migration
-Run PHASE2C1054_RECEIVING_LIFECYCLE_STORAGE_SAFE.sql once.
+## STATUS
+Phase 2C.10.5.5: READY FOR TEST.
+Not DONE until user verifies the focused sequence below.
 
-## Non-regression
-Global GTIN Master must never be deleted by Reset/Historical cleanup. Historical Data, Returns Archive, Current Workspace and Expiry remain separate domains. Official order reports remain based on original uploaded Order data.
-
-## Next action
-Deploy migration + modified files, Hard Refresh PC and Handheld, then run focused verification above.
+## EXACT NEXT TEST
+1. Run PHASE2C1055_RUNTIME_ROOT_CLEANUP.sql.
+2. Deploy changed files and Hard Refresh PC + Handheld.
+3. Create a NEW Handheld session after deployment.
+4. With All Orders selected, scan a known GTIN that is definitely in an uploaded Order on PC and Handheld. Both must receive normally.
+5. Scan a known Global Master item genuinely not in the selected Orders. PC should offer ADD & RECEIVE without retyping item identity.
+6. Scan an unknown/new GTIN. Handheld must autosave to Needs Review; PC Needs Review search must find uploaded-order items by name/code.
+7. Reset Current Workspace ONCE. Expected: active order/session/receiving/Needs Review counters = 0, session inactive, green receipt.
+8. Test Delete All Historical Data once. Expected: visible green server-verified receipt.
+9. Regression: Global GTIN Master remains intact.

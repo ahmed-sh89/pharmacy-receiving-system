@@ -1152,6 +1152,9 @@ async function deleteAllHistoricalData(){
         }
 
         showToast(successMessage,"success",12000);
+        if(typeof showPharmFlowOperationReceipt==="function"){
+            showPharmFlowOperationReceipt(successMessage,"success");
+        }
 
         /* Non-critical UI/source refreshes occur only after the authoritative
            receipt is visible. They cannot change the deletion outcome. */

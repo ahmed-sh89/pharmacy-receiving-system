@@ -1752,6 +1752,10 @@ function refreshDashboard(){
         [UI.elements.statTotalItems,UI.elements.statCompleted,UI.elements.statRemaining,
          UI.elements.statOver,UI.elements.statManual,UI.elements.statScans]
             .forEach(el=>setElementText(el,0));
+        setElementText(document.getElementById("receivingNeedsReviewCount"),0);
+        if(UI.elements.headerSessionId){
+            setElementText(UI.elements.headerSessionId,"INACTIVE");
+        }
         refreshProgress();
         return;
     }
@@ -7300,8 +7304,12 @@ function ensureNeedsReviewButtons(){
 
 function nrV2FindOrderMatches(query){
     const q=toSafeString(query).trim().toLowerCase();
-    if(!q) return [];
-    const source=typeof getSearchableItems==="function" ? getSearchableItems() : (AppState?.workspace?.orderData||[]);
+    const source=typeof getSearchableItems==="function"
+        ? getSearchableItems()
+        : (AppState?.workspace?.orderData||[]);
+
+    if(!q) return source.slice(0,20);
+
     return source.filter(item=>
         toSafeString(item?.itemCode).toLowerCase().includes(q) ||
         toSafeString(item?.itemName).toLowerCase().includes(q)
@@ -7432,7 +7440,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
           <div>
             <span>RECEIVING</span>
             <h2>Needs Review</h2>
-            <p>${rows.length} pending</p>
+            <p>${rows.length} pending · Review scanned exceptions without interrupting the Handheld worker</p>
           </div>
           <button class="needsReviewClose" data-close>✕</button>
         </header>
@@ -7468,7 +7476,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 <div class="needsReviewResolve">
                   <label>
                     Find item in current order
-                    <input data-search="${index}" placeholder="Item Code / Item Name">
+                    <input data-search="${index}" placeholder="Search uploaded orders by Item Code or Item Name" autocomplete="off" spellcheck="false">
                   </label>
                   <div class="needsReviewMatches" data-matches="${index}"></div>
 
@@ -7576,6 +7584,11 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         };
 
         search?.addEventListener("input",renderMatches);
+        if(search && row.master_item_code_hint){
+            search.value=row.master_item_code_hint;
+        }else if(search && row.master_item_name_hint){
+            search.value=row.master_item_name_hint;
+        }
         renderMatches();
 
         overlay

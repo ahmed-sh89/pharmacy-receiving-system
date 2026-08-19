@@ -777,3 +777,9 @@ if(typeof AppEvents !== "undefined" && AppEvents?.on){
         }
     });
 }
+
+
+/* Phase 2C.10.5.5 non-regression: Expiry remains GS1-smart.
+   GS1/2D extracted lot/expiry stays automatic; GTIN-only requires manual date.
+   Review photos are temporary identification evidence and may be deleted after
+   successful resolution by the Needs Review media lifecycle. */

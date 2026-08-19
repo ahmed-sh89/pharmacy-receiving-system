@@ -192,6 +192,8 @@ async function createCloudReceivingSession(){
         };
 
         await uploadCurrentOrderToCloud();
+        AppState.session.orderContextReady=true;
+        AppState.session.syncedItemCount=buildCloudOrderItems().length;
         await uploadExistingTransactionsToCloud();
 
         saveWorkspaceSnapshot();
@@ -215,31 +217,79 @@ async function createCloudReceivingSession(){
 }
 
 function buildCloudOrderItems(){
-    const gtinsByItem = new Map();
+    const gtinsByItem=new Map();
 
-    (AppState.workspace.mappingData || []).forEach(mapping=>{
-        const code = normalizeItemCode(mapping.itemCode);
-        const gtin = normalizeGTIN(mapping.gtin);
-        if(!code || !gtin){ return; }
-        if(!gtinsByItem.has(code)){ gtinsByItem.set(code,[]); }
-        const list = gtinsByItem.get(code);
-        if(!list.includes(gtin)){ list.push(gtin); }
+    (AppState.workspace.mappingData||[]).forEach(mapping=>{
+        const code=normalizeItemCode(mapping.itemCode);
+        const gtin=normalizeGTIN(mapping.gtin);
+        if(!code||!gtin) return;
+        if(!gtinsByItem.has(code)) gtinsByItem.set(code,[]);
+        const list=gtinsByItem.get(code);
+        if(!list.includes(gtin)) list.push(gtin);
     });
 
-    return (AppState.workspace.orderData || []).map(item=>{
-        const code = normalizeItemCode(item.itemCode);
-        const gtins = gtinsByItem.get(code) || [];
+    /* Phase 2C.10.5.5 — the PC publishes exactly the Selected Orders context
+       to the live Handheld session. This makes CONNECTED mean both transport
+       connection AND correct receiving scope. */
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const active=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const targetOrders=selected.length ? selected : active;
+    const byCode=new Map();
+
+    targetOrders.forEach(orderNumber=>{
+        const rows=typeof getWorkspaceOrderSourceRows==="function"
+            ? getWorkspaceOrderSourceRows(orderNumber)
+            : [];
+
+        rows.forEach(row=>{
+            const code=normalizeItemCode(row?.itemCode||row?.item_code||"");
+            if(!code) return;
+            const current=byCode.get(code)||{
+                item_code:code,
+                item_name:toSafeString(row?.itemName||row?.item_name||""),
+                category:toSafeString(row?.category||""),
+                ordered_qty:0,
+                order_numbers:[]
+            };
+            current.ordered_qty+=toNumber(row?.orderedQty??row?.ordered_qty,0);
+            if(!current.order_numbers.includes(orderNumber)){
+                current.order_numbers.push(orderNumber);
+            }
+            byCode.set(code,current);
+        });
+    });
+
+    /* Compatibility fallback while an older workspace hydrates. */
+    if(!byCode.size){
+        (AppState.workspace.orderData||[]).forEach(item=>{
+            const code=normalizeItemCode(item.itemCode);
+            if(!code) return;
+            byCode.set(code,{
+                item_code:code,
+                item_name:toSafeString(item.itemName),
+                category:toSafeString(item.category||""),
+                ordered_qty:toNumber(item.orderedQty,0),
+                order_numbers:Array.isArray(item.orderNumbers)?item.orderNumbers:[]
+            });
+        });
+    }
+
+    return Array.from(byCode.values()).map(item=>{
+        const gtins=gtinsByItem.get(item.item_code)||[];
         return {
-            item_code:code,
-            item_name:toSafeString(item.itemName),
-            gtin:gtins[0] || "",
-            gtins:gtins,
-            category:toSafeString(item.category || ""),
-            ordered_qty:toNumber(item.orderedQty,0)
+            item_code:item.item_code,
+            item_name:item.item_name,
+            gtin:gtins[0]||"",
+            gtins,
+            category:item.category,
+            ordered_qty:item.ordered_qty
         };
     });
 }
-
 async function uploadCurrentOrderToCloud(){
     if(!isCloudSessionActive()){
         throw new Error("No active cloud session");
@@ -332,6 +382,14 @@ async function joinCloudReceivingSession(sessionCode){
             refreshCloudSnapshot({replaceWorkspace:true}),
             "Order sync timed out — try again"
         );
+
+        if(!Array.isArray(AppState.workspace.orderData) || !AppState.workspace.orderData.length){
+            throw new Error("Session connected but Order context did not load");
+        }
+
+        AppState.session.orderContextReady=true;
+        AppState.session.syncedItemCount=AppState.workspace.orderData.length;
+        updateCloudConnectionUI("READY TO SCAN");
 
         saveWorkspaceSnapshot();
         AppEvents.emit("session:updated");

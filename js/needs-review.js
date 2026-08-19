@@ -422,3 +422,33 @@ window.nrV2ClearReceivingQueue=nrV2ClearReceivingQueue;
 window.nrV2ResolutionTransactionId=nrV2ResolutionTransactionId;
 window.nrV2HasLocalResolutionTransaction=nrV2HasLocalResolutionTransaction;
 window.nrV2CurrentOrderNumber=nrV2CurrentOrderNumber;
+
+
+/* ============================================================
+   PHASE 2C.10.5.5 — OPERATION RECEIPT + MEDIA LIFECYCLE
+============================================================ */
+function showPharmFlowOperationReceipt(message,type="success"){
+    let receipt=document.getElementById("pharmFlowOperationReceipt");
+    if(!receipt){
+        receipt=document.createElement("div");
+        receipt.id="pharmFlowOperationReceipt";
+        receipt.setAttribute("role","status");
+        receipt.setAttribute("aria-live","assertive");
+        document.body.appendChild(receipt);
+    }
+    receipt.className="pharmFlowOperationReceipt "+(type==="error"?"error":"success");
+    receipt.textContent=toSafeString(message||"");
+    receipt.hidden=false;
+    clearTimeout(window.__pfOperationReceiptTimer);
+    window.__pfOperationReceiptTimer=setTimeout(()=>{
+        if(receipt?.isConnected) receipt.hidden=true;
+    },12000);
+}
+
+async function nrV2DeleteResolvedPhoto(photoPath){
+    if(!photoPath) return true;
+    return await nrV2DeletePhoto(photoPath);
+}
+
+window.showPharmFlowOperationReceipt=showPharmFlowOperationReceipt;
+window.nrV2DeleteResolvedPhoto=nrV2DeleteResolvedPhoto;
