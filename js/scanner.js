@@ -19,7 +19,7 @@ const ScannerEngine = {
 
     processing:false,
 
-    autoProcessDelay:130,
+    autoProcessDelay:180,
     searchDelay:220,
 
     fastKeyThreshold:45
@@ -42,14 +42,17 @@ function initializeScanner(){
             "barcodeInput"
         );
 
-    /* Phase 2C.10.5.2 — Handheld hardware scanners should feel immediate.
-       Desktop keeps the more conservative mixed scan/search timing. */
+    /* Phase 2C.10.5.6 — Zebra/DataWedge sends some GS1 DataMatrix payloads in
+       bursts. The old 55 ms quiet-window could fire between bursts, clear the
+       input, and leave only a tail such as "131022296" on screen.
+       Wait for a real end-of-scan quiet window instead. Enter terminators are
+       still processed immediately by handleScannerKeydown(). */
     if(
         typeof isLikelyZebraDevice==="function" &&
         isLikelyZebraDevice()
     ){
-        ScannerEngine.autoProcessDelay=55;
-        ScannerEngine.searchDelay=160;
+        ScannerEngine.autoProcessDelay=220;
+        ScannerEngine.searchDelay=260;
     }
 
     if(!input){
@@ -657,12 +660,11 @@ function isFastScannerTyping(){
 
 async function processScannerValue(rawValue){
 
-    if(
-        ScannerEngine.processing
-    ){
-
+    if(ScannerEngine.processing){
+        /* A second timer/terminator can arrive while the previous transaction
+           is finishing. Never clear or consume the current input here; the
+           input handler will schedule it again after the active transaction. */
         return false;
-
     }
 
 
@@ -815,8 +817,24 @@ async function processScannerValue(rawValue){
 
         resetScannerTypingMetrics();
 
+        /* If DataWedge delivered more characters while the async receiving
+           transaction was running, do not strand them in the scan box. Wait
+           for the same quiet window and process the complete accumulated
+           payload. */
+        const pendingInput = document.getElementById("barcodeInput");
+        const pendingValue = toSafeString(pendingInput?.value || "");
 
-        focusScannerInput();
+        if(pendingValue){
+            clearTimeout(ScannerEngine.inputTimer);
+            ScannerEngine.inputTimer=setTimeout(()=>{
+                const latest=toSafeString(pendingInput?.value || "");
+                if(latest && !ScannerEngine.processing){
+                    processScannerValue(latest);
+                }
+            },ScannerEngine.autoProcessDelay);
+        }else{
+            focusScannerInput();
+        }
 
     }
 
