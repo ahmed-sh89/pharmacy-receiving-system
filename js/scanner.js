@@ -19,13 +19,79 @@ const ScannerEngine = {
 
     processing:false,
 
-    autoProcessDelay:180,
+    autoProcessDelay:130,
     searchDelay:220,
 
-    fastKeyThreshold:45
+    fastKeyThreshold:45,
+
+    /* Phase 2C.10.5.4 — independent hardware-capture fallback. */
+    handheldBuffer:"",
+    handheldBufferTimer:null,
+    globalHandheldCaptureInstalled:false
 
 };
 
+
+function isHandheldReceivingScannerActive(){
+    return !!(
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice() &&
+        document.body.classList.contains("zebraReceivingActive") &&
+        AppState?.session?.role === "ZEBRA" &&
+        AppState?.session?.cloud === true &&
+        AppState?.session?.id &&
+        AppState?.session?.secret
+    );
+}
+
+function scheduleHandheldBufferedScan(){
+    clearTimeout(ScannerEngine.handheldBufferTimer);
+    ScannerEngine.handheldBufferTimer=setTimeout(()=>{
+        const value=toSafeString(ScannerEngine.handheldBuffer);
+        ScannerEngine.handheldBuffer="";
+        if(value){ processScannerValue(value); }
+    },70);
+}
+
+function handleGlobalHandheldScannerKeydown(event){
+    if(!isHandheldReceivingScannerActive()) return;
+
+    const target=event.target;
+    const barcodeInput=document.getElementById("barcodeInput");
+
+    /* The normal barcode input already owns its events. */
+    if(target===barcodeInput) return;
+
+    /* Never steal keys while the worker intentionally edits quantity/photo/search. */
+    if(
+        target &&
+        (
+            target.tagName==="INPUT" ||
+            target.tagName==="TEXTAREA" ||
+            target.tagName==="SELECT" ||
+            target.isContentEditable
+        )
+    ){
+        return;
+    }
+
+    if(event.key==="Enter"){
+        if(ScannerEngine.handheldBuffer){
+            event.preventDefault();
+            clearTimeout(ScannerEngine.handheldBufferTimer);
+            const value=ScannerEngine.handheldBuffer;
+            ScannerEngine.handheldBuffer="";
+            processScannerValue(value);
+        }
+        return;
+    }
+
+    if(event.key && event.key.length===1){
+        event.preventDefault();
+        ScannerEngine.handheldBuffer+=event.key;
+        scheduleHandheldBufferedScan();
+    }
+}
 
 /* =====================================================
    INITIALIZE
@@ -42,17 +108,14 @@ function initializeScanner(){
             "barcodeInput"
         );
 
-    /* Phase 2C.10.5.6 — Zebra/DataWedge sends some GS1 DataMatrix payloads in
-       bursts. The old 55 ms quiet-window could fire between bursts, clear the
-       input, and leave only a tail such as "131022296" on screen.
-       Wait for a real end-of-scan quiet window instead. Enter terminators are
-       still processed immediately by handleScannerKeydown(). */
+    /* Phase 2C.10.5.2 — Handheld hardware scanners should feel immediate.
+       Desktop keeps the more conservative mixed scan/search timing. */
     if(
         typeof isLikelyZebraDevice==="function" &&
         isLikelyZebraDevice()
     ){
-        ScannerEngine.autoProcessDelay=220;
-        ScannerEngine.searchDelay=260;
+        ScannerEngine.autoProcessDelay=55;
+        ScannerEngine.searchDelay=160;
     }
 
     if(!input){
@@ -72,7 +135,18 @@ function initializeScanner(){
     */
 
     input.placeholder =
-        "Scan barcode or search by Item Number / Item Name";
+        (typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice())
+            ? "Scan barcode"
+            : "Scan barcode or search by Item Number / Item Name";
+
+    if(!ScannerEngine.globalHandheldCaptureInstalled){
+        document.addEventListener(
+            "keydown",
+            handleGlobalHandheldScannerKeydown,
+            true
+        );
+        ScannerEngine.globalHandheldCaptureInstalled=true;
+    }
 
     input.setAttribute(
         "autocomplete",
@@ -83,13 +157,6 @@ function initializeScanner(){
         "spellcheck",
         "false"
     );
-
-    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
-        /* Keep hardware wedge focus while suppressing the Android soft keyboard. */
-        input.setAttribute("inputmode","none");
-        input.setAttribute("enterkeyhint","done");
-        input.placeholder="READY TO SCAN";
-    }
 
 
     input.addEventListener(
@@ -217,6 +284,8 @@ function handleScannerKeydown(event){
 
 
         if(
+            isHandheldReceivingScannerActive()
+            ||
             shouldTreatAsBarcode(
                 value,
                 true
@@ -273,7 +342,14 @@ function handleSmartScannerInput(event){
     }
 
 
+    /* Phase 2C.10.5.4 — on the Handheld Receiving screen this input exists
+       for the hardware scanner, not human item search. DataWedge/browser
+       combinations can deliver one complete value without per-key timing, so
+       barcode classification must never depend on 8/12/13/14-digit length or
+       fast-key metrics here. */
     const barcodeCandidate =
+        isHandheldReceivingScannerActive()
+        ||
         shouldTreatAsBarcode(
             value,
             false
@@ -661,10 +737,14 @@ function isFastScannerTyping(){
 async function processScannerValue(rawValue){
 
     if(ScannerEngine.processing){
-        /* A second timer/terminator can arrive while the previous transaction
-           is finishing. Never clear or consume the current input here; the
-           input handler will schedule it again after the active transaction. */
-        return false;
+        /* A healthy scan normally releases this in finally. If a legacy path
+           left the flag set, do not freeze the worker indefinitely. */
+        const age=Date.now()-Number(ScannerEngine.processingSince||0);
+        if(age<5000){
+            return false;
+        }
+        Logger.warn("Recovering stale Handheld scanner processing lock",age);
+        ScannerEngine.processing=false;
     }
 
 
@@ -710,6 +790,7 @@ async function processScannerValue(rawValue){
 
     ScannerEngine.processing =
         true;
+    ScannerEngine.processingSince=Date.now();
 
 
     clearSmartSearchResults();
@@ -813,28 +894,13 @@ async function processScannerValue(rawValue){
 
         ScannerEngine.processing =
             false;
+        ScannerEngine.processingSince=0;
 
 
         resetScannerTypingMetrics();
 
-        /* If DataWedge delivered more characters while the async receiving
-           transaction was running, do not strand them in the scan box. Wait
-           for the same quiet window and process the complete accumulated
-           payload. */
-        const pendingInput = document.getElementById("barcodeInput");
-        const pendingValue = toSafeString(pendingInput?.value || "");
 
-        if(pendingValue){
-            clearTimeout(ScannerEngine.inputTimer);
-            ScannerEngine.inputTimer=setTimeout(()=>{
-                const latest=toSafeString(pendingInput?.value || "");
-                if(latest && !ScannerEngine.processing){
-                    processScannerValue(latest);
-                }
-            },ScannerEngine.autoProcessDelay);
-        }else{
-            focusScannerInput();
-        }
+        focusScannerInput();
 
     }
 

@@ -1,0 +1,31 @@
+PHARMFLOW CURRENT CHECKPOINT
+
+Date: 19 August 2026
+Current Workstream: Phase 2C.10.5.4 — Handheld Runtime Recovery
+Status: READY FOR TEST
+
+USER VERIFIED
+- Item 24: PC Receiving scan-box search by Item Name / Item Code against uploaded orders.
+
+FAILED / UNRESOLVED
+- Prior combined items 1–23 remain unresolved unless separately user verified.
+- Handheld runtime regression: normal scans may produce no response / appear frozen.
+- PC End Session regression: Handheld may remain connected after PC disconnect.
+
+PHASE 2C.10.5.4 CHANGE
+- Handheld Receiving treats every scan-box hardware payload as a scan, independent of barcode length/key timing.
+- Added document-level hardware-key fallback when the scan box loses focus.
+- Added stale scanner-processing-lock recovery.
+- Added an independent 550 ms server termination watcher on joined Handheld sessions.
+- PC server termination now forces Handheld polling/watch shutdown and returns Handheld to mode selection.
+- No SQL migration.
+
+FOCUSED TEST
+1. Join Handheld to PC session.
+2. Scan a known item repeatedly; every hardware scan must produce a visible result and scanner must remain usable.
+3. Scan a deliberately unknown value; it must produce error/review behavior, never silent no-response.
+4. From PC press Disconnect/End Session. Handheld must leave the session automatically within about 1–2 seconds, clear the old session and disable receiving scan until rejoin.
+5. Rejoin and verify normal scan still works.
+
+NEXT ACTION AFTER SUCCESS
+Continue the consolidated Receiving / Needs Review / Handheld root-fix backlog.
