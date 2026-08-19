@@ -1,0 +1,5 @@
+PharmFlow Production Clean Package
+Version: Phase 2C.10.6.1
+Purpose: GitHub production source upload.
+Historical patch README files, duplicate nested repository, duplicate CSS/root JS files, and superseded documentation were intentionally excluded.
+No runtime application file was functionally edited during cleanup; runtime files are from the 2C.10.6.1 Zebra Scanner Pipeline Root Fix package.

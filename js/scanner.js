@@ -18,8 +18,10 @@ const ScannerEngine = {
     keyIntervals:[],
 
     processing:false,
+    pendingRawValue:"",
 
     autoProcessDelay:130,
+    zebraSettleDelay:420,
     searchDelay:220,
 
     fastKeyThreshold:45
@@ -268,17 +270,30 @@ function handleSmartScannerInput(event){
 
     if(barcodeCandidate){
 
+        /*
+           Phase 2C.10.6.1 ROOT FIX — Zebra/DataWedge sends a GS1 payload as
+           keyboard-wedge chunks. A short pause can occur at FNC1/GS boundaries.
+           The old 130 ms debounce could therefore process the prefix, clear the
+           input, and leave the suffix (for example 131022296) on screen while
+           the first async receive was still running. That made the Handheld
+           appear frozen even though DataWedge had delivered the complete code.
+
+           On Zebra we wait for one stable payload before processing. Desktop
+           scanner latency is unchanged.
+        */
+        const settleDelay =
+            (typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice())
+                ? ScannerEngine.zebraSettleDelay
+                : ScannerEngine.autoProcessDelay;
+
         ScannerEngine.inputTimer =
             setTimeout(
                 function(){
-
-                    processScannerValue(
-                        value
-                    );
-
+                    const liveInput=document.getElementById("barcodeInput");
+                    const stableValue=toSafeString(liveInput?.value || value);
+                    processScannerValue(stableValue);
                 },
-                ScannerEngine
-                    .autoProcessDelay
+                settleDelay
             );
 
 
@@ -643,9 +658,12 @@ async function processScannerValue(rawValue){
     if(
         ScannerEngine.processing
     ){
-
+        /* Never discard a second hardware payload that arrives while the prior
+           async receive is completing. Keep the latest complete value and run
+           it immediately after the current transaction releases the pipeline. */
+        const queued=cleanScannerInput(rawValue);
+        if(queued){ ScannerEngine.pendingRawValue=queued; }
         return false;
-
     }
 
 
@@ -798,6 +816,12 @@ async function processScannerValue(rawValue){
 
 
         focusScannerInput();
+
+        const pending=ScannerEngine.pendingRawValue;
+        ScannerEngine.pendingRawValue="";
+        if(pending && pending !== cleaned){
+            setTimeout(()=>processScannerValue(pending),0);
+        }
 
     }
 
@@ -1001,6 +1025,12 @@ function cleanScannerInput(value){
             )
             .replace(
                 /\u0651+/g,
+                "\x1D"
+            )
+            /* Some Android keyboard-wedge paths render ASCII GS (0x1D) as
+               the Unicode replacement glyph. Treat it as the GS1 separator. */
+            .replace(
+                /\uFFFD+/g,
                 "\x1D"
             )
             /*
