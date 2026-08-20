@@ -1,45 +1,35 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 20 August 2026
-Version: Phase 2C.10.7.0 — Handheld + Receiving Lifecycle Stabilization
+Version: Phase 2C.10.7.1 — Handheld Order Context + Focus Root Fix
 Status: READY FOR TEST
 
-## SOURCE OF TRUTH
-Built from user-uploaded GitHub package: pharmacy-receiving-system-main(7).zip.
-This package supersedes the prior 2C.10.5.x/2C.10.6.x experimental patch chain.
+## TEST EVIDENCE FROM 2C.10.7.0
+- Known item physically in the active PC order: Handheld scan produced no item card. FAILED.
+- Unknown/not-in-order scan: Handheld reached Item Not Recognised and showed identity data. This proves raw Zebra capture/parser path is now active.
+- Quantity numeric keyboard repeatedly opened/closed. FAILED.
 
-## USER VERIFIED / DONE
-- #24 PC Receiving search by Item Code / Item Name against uploaded Orders.
-- Needs Review photo opening on PC.
-- Previously verified PC↔PC / PC↔Handheld sync baseline remains protected.
+## ROOT CAUSES ADDRESSED
+1. Live session snapshot rows arrive on Handheld without browser-local `orderNumbers` membership metadata. Receiving then rejected a genuine session item during deterministic order selection even though the item row itself came from the authenticated PC live session.
+2. Handheld runtime auto-focus could reclaim scanner focus while the worker was editing Quantity, causing numeric keyboard instability.
 
-## AUTHORITATIVE ZEBRA DIAGNOSTIC
-Standalone test on the actual Zebra proved hardware + DataWedge + Chrome deliver the COMPLETE GS1 in one input insertion. keydown/keyup are Unidentified. Therefore the failure was inside application Handheld runtime, not scanner hardware.
+## 2C.10.7.1 CHANGE
+- A row present in an authenticated live Handheld session snapshot is treated as authoritative current-session membership when local per-order metadata is absent. It is NOT converted to Manual/Over Stock.
+- Aggregate session metrics use the session item's Ordered/Received/Remaining values when per-order membership is unavailable.
+- Auto-focus never steals focus from Quantity/date/photo/action inputs.
+- Scanner focus returns after the action finishes.
+- READY label now exposes actual transported context: ITEMS n · ORDERS n/SESSION.
+- No SQL migration.
 
-## 2C.10.7.0 ROOT ARCHITECTURE
-- New js/handheld-runtime.js is the ONE Handheld hardware input boundary for BOTH Receiving and Expiry.
-- It intercepts the complete input value in capture phase and prevents legacy target listeners from creating competing transactions.
-- Receiving passes one full raw GS1 to shared parser -> receiving resolver.
-- Expiry passes one full raw GS1 to the existing Expiry resolver.
-- READY is truthful: Receiving shows READY only when joined cloud session + non-empty order snapshot exist.
-- Animated scan beam is active only in ready state; blocked state removes it.
-- Scan inputs do not summon the soft keyboard. Numeric keypad remains limited to quantity/date fields.
-- Independent Handheld server-termination watcher runs outside snapshot polling.
-- PC Sign Out now ends a PC-owned live session BEFORE revoking authentication.
-- Finalize ends in true No Active Order state; it no longer creates a phantom fresh workspace.
-- Historical Delete refreshes Archive/Reports/order lifecycle after verified server deletion.
-- Expiry Workers remain configuration data and are intentionally NOT deleted by Delete All Historical Data.
-- Global GTIN Master and Returns Archive remain protected independent domains.
+## PRESERVED
+- PC Receiving search #24 remains USER VERIFIED.
+- Unknown GTIN still goes to Needs Review.
+- Known GTIN not in session/order remains Extra/Needs Review path.
+- Global GTIN / Returns Archive boundaries unchanged.
 
-## DATABASE
-No new SQL migration in 2C.10.7.0. Existing session-termination and historical-delete RPCs are reused.
-
-## FOCUSED ACCEPTANCE TEST
-A. Receiving: join new PC session, scan GTIN 06287043583491 x3. Must resolve, +1 each scan, no freeze.
-B. Expiry: switch mode and scan same GS1. Must resolve same item; GS1 batch/expiry auto-extract; worker enters Qty only.
-C. Session: PC Disconnect -> Handheld leaves automatically within ~1-2 sec. Rejoin. PC Sign Out while live -> session also ends.
-D. Finalize: finalize one order -> archive persists, Current Workspace shows No Active Order and counters zero without Reset.
-E. Historical Delete: one execution -> visible green receipt; finalized Archive and derived historical report sources disappear. Active orders preserved. Global GTIN, Returns Archive and Expiry Workers preserved.
-
-## STOP RULE
-Do not add another scanner timing/listener patch. If A or B fails, inspect the single HandheldRuntime call result and resolver data, not the hardware capture layer.
+## EXACT NEXT TEST
+1. Hard refresh Handheld and join a NEW PC session.
+2. Before scanning, read the READY line and record ITEMS/ORDERS.
+3. Scan the same known order item GTIN 06287043583491 once, then x3. Expected correct item +1 each scan, no freeze.
+4. Scan one unknown/not-in-order item; tap Physical Qty and type 3. Numeric keypad must remain stable until Enter/Save.
+5. Send screenshot only if known item still fails; the READY line will reveal whether the PC session transported item rows.

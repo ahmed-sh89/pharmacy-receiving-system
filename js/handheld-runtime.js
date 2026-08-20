@@ -59,8 +59,13 @@ function hhSetVisualState(state,label){
 function hhRefreshReadyState(){
     const mode=hhMode();
     if(mode==="RECEIVING"){
-        if(hhReceivingSessionReady()) hhSetVisualState("ready","READY TO SCAN · ORDERS SYNCED");
-        else hhSetVisualState("blocked","SESSION / ORDERS NOT READY");
+        const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData.length:0;
+        const orders=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles.length:0;
+        if(hhReceivingSessionReady()){
+            hhSetVisualState("ready",`READY · ITEMS ${items} · ORDERS ${orders||"SESSION"}`);
+        }else{
+            hhSetVisualState("blocked",`DATA NOT READY · ITEMS ${items} · ORDERS ${orders}`);
+        }
     }else if(mode==="EXPIRY"){
         hhSetVisualState("ready","READY TO SCAN");
     }else{
@@ -161,8 +166,32 @@ function hhCaptureKey(event){
     }
 }
 
-function hhFocusActiveScanner(){
+function hhWorkerIsEditing(){
+    const active=document.activeElement;
+    if(!active || active===document.body) return false;
+
+    if(active.id==="barcodeInput" || active.id==="expiryBarcodeInput") return false;
+
+    const tag=String(active.tagName||"").toUpperCase();
+    const type=String(active.getAttribute?.("type")||"").toLowerCase();
+    const editable=active.isContentEditable===true;
+    const operationalInput=(tag==="INPUT" || tag==="TEXTAREA" || tag==="SELECT" || editable);
+    const actionCard=!!active.closest?.(
+        "#handheldReceivingReviewCard,#handheldKnownExtraCard,.expiryEntryCard,.expiryCaptureCard,.modal"
+    );
+
+    return operationalInput || actionCard || type==="file";
+}
+
+function hhFocusActiveScanner(force=false){
     if(!hhIsDevice()) return;
+
+    /* Never fight the worker for focus. This is the root cause of the numeric
+       keypad opening/closing while Quantity is being entered. Scanner focus is
+       restored only after Save/Next, mode entry, or when no operational field
+       owns focus. */
+    if(!force && hhWorkerIsEditing()) return;
+
     const mode=hhMode();
     const input=mode==="RECEIVING"
         ? document.getElementById("barcodeInput")
@@ -230,7 +259,7 @@ function hhInstall(){
 
     hhStartTerminationWatch();
     setInterval(()=>{ hhRefreshReadyState(); },1500);
-    setTimeout(()=>{hhRefreshReadyState();hhFocusActiveScanner();hhCheckServerTermination();},100);
+    setTimeout(()=>{hhRefreshReadyState();hhFocusActiveScanner(true);hhCheckServerTermination();},100);
 }
 
 window.HandheldRuntime=HandheldRuntime;
