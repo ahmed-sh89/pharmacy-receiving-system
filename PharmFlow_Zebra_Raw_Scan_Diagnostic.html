@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PharmFlow Zebra Raw Scan Diagnostic</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f7f3ee;color:#241f1b}
+main{max-width:760px;margin:auto;padding:18px}
+h1{font-size:24px;margin:0 0 6px}.sub{font-size:14px;color:#655b53;margin-bottom:16px}
+.card{background:#fff;border:1px solid #d9cec4;border-radius:14px;padding:14px;margin:10px 0}
+#scan{width:100%;box-sizing:border-box;font-size:22px;padding:16px;border:3px solid #169b62;border-radius:12px;background:#f3fff9}
+.ready{font-weight:900;color:#087a49;margin-bottom:8px}.label{font-size:11px;font-weight:900;color:#766a61;margin-top:10px}
+pre{white-space:pre-wrap;word-break:break-all;background:#171717;color:#e8e8e8;border-radius:10px;padding:12px;min-height:70px;font-size:13px}
+button{width:100%;min-height:46px;border:0;border-radius:10px;font-weight:900;margin-top:8px}#clear{background:#eee3d8}#copy{background:#2d6cdf;color:white}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#faf7f3;border-radius:10px;padding:10px}.stat b{display:block;font-size:20px}
+</style>
+</head>
+<body>
+<main>
+<h1>Zebra Raw Scan Diagnostic</h1>
+<div class="sub">Standalone test — does not use PharmFlow scanner, parser, session, or Receiving code.</div>
+<div class="card">
+<div class="ready">● READY — scan the SAME medicine once</div>
+<input id="scan" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" autofocus>
+<div class="stats">
+<div class="stat">Characters<b id="chars">0</b></div>
+<div class="stat">Events<b id="events">0</b></div>
+</div>
+<div class="label">FINAL BROWSER INPUT VALUE</div><pre id="value"></pre>
+<div class="label">EVENT TIMELINE</div><pre id="log"></pre>
+<button id="copy">COPY RESULT</button><button id="clear">CLEAR & TEST AGAIN</button>
+</div>
+</main>
+<script>
+'use strict';
+const scan=document.getElementById('scan'), value=document.getElementById('value'), log=document.getElementById('log'), chars=document.getElementById('chars'), events=document.getElementById('events');
+let rows=[], last=performance.now();
+function visible(s){return String(s??'').replace(/\x1D/g,'<GS>').replace(/\r/g,'<CR>').replace(/\n/g,'<LF>').replace(/\t/g,'<TAB>');}
+function add(type,detail=''){const now=performance.now(),dt=Math.round(now-last);last=now;rows.push(`${rows.length+1}. +${dt}ms ${type} ${detail}`);if(rows.length>300)rows.shift();log.textContent=rows.join('\n');events.textContent=String(rows.length);}
+function render(){value.textContent=visible(scan.value);chars.textContent=String(scan.value.length);}
+scan.addEventListener('keydown',e=>add('keydown',`key=${visible(e.key)} code=${e.code}`),true);
+scan.addEventListener('beforeinput',e=>add('beforeinput',`type=${e.inputType} data=${visible(e.data)}`),true);
+scan.addEventListener('input',e=>{add('input',`value=${visible(scan.value)}`);render();},true);
+scan.addEventListener('keyup',e=>add('keyup',`key=${visible(e.key)} code=${e.code}`),true);
+scan.addEventListener('change',()=>add('change',`value=${visible(scan.value)}`),true);
+scan.addEventListener('paste',e=>add('paste',visible(e.clipboardData?.getData('text')||'')),true);
+document.getElementById('clear').onclick=()=>{scan.value='';rows=[];last=performance.now();render();log.textContent='';events.textContent='0';scan.focus();};
+document.getElementById('copy').onclick=async()=>{const text=`VALUE:\n${visible(scan.value)}\n\nEVENTS:\n${rows.join('\n')}`;try{await navigator.clipboard.writeText(text);alert('Copied');}catch(_){alert(text);}};
+window.addEventListener('load',()=>{scan.focus();render();});
+</script>
+</body>
+</html>
