@@ -76,6 +76,55 @@ function initializeReceiving(){
    RECEIVE PARSED BARCODE
 ===================================================== */
 
+function resolveCurrentWorkspaceGTIN(gtin){
+    const normalized=normalizeGTIN(gtin);
+    if(!normalized) return null;
+
+    /*
+       Current-session mappings are safe for a normal receive only when their
+       mapped Item Code exists in the CURRENT workspace orderData.
+       MASTER mappings are projected only for current order items; CLOUD
+       mappings are the PC shared-session projection of those current items.
+    */
+    const indexedCode=normalizeItemCode(
+        AppState?.indexes?.itemByGTIN?.get(normalized)||""
+    );
+
+    if(indexedCode){
+        const item=(AppState?.workspace?.orderData||[]).find(row=>
+            normalizeItemCode(row?.itemCode||"")===indexedCode
+        )||null;
+
+        if(item){
+            return {
+                item,
+                itemCode:indexedCode,
+                source:"CURRENT_WORKSPACE"
+            };
+        }
+    }
+
+    /* Defensive direct lookup in case index rebuild is one render behind. */
+    const mapping=(AppState?.workspace?.mappingData||[]).find(record=>
+        normalizeGTIN(record?.gtin||"")===normalized
+    );
+
+    if(!mapping) return null;
+
+    const code=normalizeItemCode(mapping.itemCode||"");
+    const item=(AppState?.workspace?.orderData||[]).find(row=>
+        normalizeItemCode(row?.itemCode||"")===code
+    )||null;
+
+    return item
+        ? {
+            item,
+            itemCode:code,
+            source:mapping.source||"CURRENT_WORKSPACE"
+        }
+        : null;
+}
+
 async function receiveParsedBarcode(parsed){
     if(!parsed||!parsed.gtin){
         handleReceivingFailure("Barcode could not be identified");
@@ -93,15 +142,39 @@ async function receiveParsedBarcode(parsed){
         return false;
     }
 
-    /* Phase 2C.10.5.0 — STRICT IDENTITY GATE.
-       Received Qty may change ONLY after the scanned GTIN is resolved by the
-       authoritative Global Master or an approved pharmacy-learned alias.
-       Stale browser mapping projections are never allowed to auto-receive. */
+    /* =========================================================
+       PHASE 2C.10.6.1 — CURRENT SESSION FIRST
+
+       The PC session already sends the exact current-order GTIN mappings to
+       the Handheld. A normal scan must therefore resolve from the current
+       workspace immediately instead of waiting for the entire 52k-record
+       Global Master cache on the Handheld.
+       ========================================================= */
+    const current=resolveCurrentWorkspaceGTIN(gtin);
+
+    if(current?.item){
+        return receiveOrderItem({
+            item:current.item,
+            quantity:getValidReceivingQuantity(parsed.quantity),
+            gtin,
+            lot:parsed.lot,
+            expiry:parsed.expiry,
+            serial:parsed.serial,
+            source:APP_CONFIG.transactionSources.scanner,
+            manual:false
+        });
+    }
+
+    /*
+       Only scans NOT represented in the current session/order mapping need
+       the complete Global Master / pharmacy-learned lookup to distinguish:
+       known-extra vs true unknown.
+    */
     let masterRecord=null;
     try{
         masterRecord=await getMasterGTINRecordByGTIN(gtin);
     }catch(error){
-        Logger.warn("Strict GTIN lookup failed",error);
+        Logger.warn("Global GTIN fallback lookup failed",error);
     }
 
     if(!masterRecord?.itemCode){
@@ -143,7 +216,6 @@ async function receiveParsedBarcode(parsed){
 function clearHandheldActionCard(){
     document.getElementById("handheldReceivingReviewCard")?.remove();
     document.getElementById("handheldKnownExtraCard")?.remove();
-    document.getElementById("lastScanCard")?.classList.remove("handheldLastScanSuppressed");
     window.__pfReceivingReviewDraft=null;
 }
 
@@ -155,82 +227,37 @@ function flashHandheldRed(){
 }
 
 
-function getReceivingActiveOrders(){
-    return typeof getActiveReceivingOrderNumbers==="function"
-        ? getActiveReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
-        : [];
-}
-function getReceivingSelectedOrders(){
-    const active=getReceivingActiveOrders();
-    const selected=typeof getSelectedReceivingOrderNumbers==="function"
-        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
-        : [];
-    return selected.length ? [...new Set(selected)] : active;
-}
-function getSourceOrderMembershipsForItemCode(itemCode){
-    const code=normalizeItemCode(itemCode||"");
-    if(!code) return [];
-    const found=[];
-    getReceivingActiveOrders().forEach(order=>{
-        const rows=typeof getWorkspaceOrderSourceRows==="function"
-            ? getWorkspaceOrderSourceRows(order)
-            : [];
-        if(rows.some(row=>normalizeItemCode(row?.itemCode||row?.item_code||"")===code)) found.push(order);
-    });
-    return [...new Set(found)];
-}
-function getReceivingOrderMemberships(item){
-    if(!item) return [];
-    const code=normalizeItemCode(item.itemCode||"");
-    const source=getSourceOrderMembershipsForItemCode(code);
-    if(source.length) return source;
-    const declared=[...(Array.isArray(item.orderNumbers)?item.orderNumbers:[]),item.orderNumber]
-        .map(normalizeOrderNumber).filter(Boolean);
-    return [...new Set(declared)];
-}
-function repairReceivingItemMembership(item){
-    if(!item) return item;
-    const memberships=getReceivingOrderMemberships(item);
-    if(memberships.length){
-        item.orderNumbers=[...memberships];
-        if(!memberships.includes(normalizeOrderNumber(item.orderNumber||""))) item.orderNumber=memberships[0];
-    }
-    return item;
-}
 function getReceivingItemByItemCode(itemCode){
     const code=normalizeItemCode(itemCode||"");
     if(!code) return null;
 
-    const item=(AppState?.workspace?.orderData||[]).find(
-        row=>normalizeItemCode(row?.itemCode||"")===code
-    )||null;
+    const selected=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
 
-    if(!item) return null;
-
-    /* Phase 2C.10.5.5 — a joined Handheld receives a server snapshot that is
-       already scoped by the PC session. The snapshot row itself is therefore
-       authoritative proof that this item belongs to the connected Receiving
-       context. Do not reject it because the Handheld has no local orderFiles. */
-    const joinedHandheld=!!(
-        AppState?.session?.cloud===true &&
-        AppState?.session?.role==="ZEBRA"
+    const matches=(AppState?.workspace?.orderData||[]).filter(
+        item=>normalizeItemCode(item?.itemCode||"")===code
     );
 
-    if(joinedHandheld){
-        return item;
-    }
+    if(!matches.length) return null;
+    if(!selected.length) return matches[0];
 
-    repairReceivingItemMembership(item);
-    const selected=getReceivingSelectedOrders();
-    const memberships=getReceivingOrderMemberships(item);
-
-    return (!selected.length || memberships.some(order=>selected.includes(order)))
-        ? item
-        : null;
+    return matches.find(item=>{
+        const memberships=(item?.orderNumbers||[item?.orderNumber])
+            .map(normalizeOrderNumber)
+            .filter(Boolean);
+        return memberships.some(order=>selected.includes(order));
+    })||null;
 }
+
 function getReceivingEligibleOrders(item){
-    const selected=getReceivingSelectedOrders();
-    return getReceivingOrderMemberships(item).filter(order=>selected.includes(order));
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
+        .map(normalizeOrderNumber).filter(Boolean))];
+    return memberships.filter(order=>selected.includes(order));
 }
 
 function getReceivingOrderRow(item,orderNumber){
@@ -360,7 +387,6 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     `;
 
     lastScan.insertAdjacentElement("afterend",card);
-    lastScan.classList.add("handheldLastScanSuppressed");
 
     const qty=card.querySelector("#handheldKnownExtraQty");
 
@@ -452,8 +478,7 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     qty?.addEventListener("keydown",e=>{
         if(e.key==="Enter"){
             e.preventDefault();
-            qty.blur();
-            document.getElementById("btnHandheldAddExtra")?.scrollIntoView({block:"nearest"});
+            submit();
         }
     });
 
@@ -523,7 +548,6 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     `;
 
     lastScan.insertAdjacentElement("afterend",card);
-    lastScan.classList.add("handheldLastScanSuppressed");
     flashHandheldRed();
 
     const photoButton=card.querySelector("#btnHandheldReviewPhoto");
@@ -582,8 +606,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     qty?.addEventListener("keydown",event=>{
         if(event.key==="Enter"){
             event.preventDefault();
-            qty.blur();
-            document.getElementById("btnSaveHandheldReview")?.scrollIntoView({block:"nearest"});
+            finish();
         }
     });
 
@@ -601,12 +624,10 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
         return false;
     }
 
-    let masterRecord=knownRecord||null;
-    if(!masterRecord){
-        try{
-            masterRecord=await getMasterGTINRecordByGTIN(gtin);
-        }catch(_){}
-    }
+    let masterRecord=null;
+    try{
+        masterRecord=await getMasterGTINRecordByGTIN(gtin);
+    }catch(_){}
 
     const isHandheld=
         typeof isLikelyZebraDevice==="function" &&
@@ -735,43 +756,15 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         };
         const render=()=>{
             const q=toSafeString(search.value).toLowerCase().trim();
-            const source=typeof getSearchableItems==="function"
-                ? getSearchableItems()
-                : (AppState.workspace.orderData||[]);
-            const items=source.filter(i=>
-                !q ||
-                toSafeString(i.itemName).toLowerCase().includes(q) ||
-                toSafeString(i.itemCode).toLowerCase().includes(q)
-            ).slice(0,12);
+            const items=(AppState.workspace.orderData||[]).filter(i=>!q||toSafeString(i.itemName).toLowerCase().includes(q)||toSafeString(i.itemCode).toLowerCase().includes(q)).slice(0,8);
             results.innerHTML=items.length?items.map((i,n)=>`<button type="button" class="gtinResult" data-i="${n}"><span><strong>${escapeHTML(i.itemName)}</strong><small>Item ${escapeHTML(i.itemCode)}</small></span><b>Link GTIN &amp; Receive +1</b></button>`).join(''):'<div class="gtinNoResult">No matching order item.</div>';
             results.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>receiveMatched(items[Number(btn.dataset.i)],false));
         };
         search.oninput=render; render();
         panel.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>finish(false));
         panel.querySelector('[data-review]')?.addEventListener('click',async()=>{
-            try{
-                const draft=await nrV2CreateDraft(parsed,{
-                    workflow:"RECEIVING",
-                    reason:knownCode ? "KNOWN_NOT_IN_ORDER" : "UNKNOWN_GTIN",
-                    itemCode:knownCode||"",
-                    itemName:knownName||"",
-                    orderNumber:nrV2CurrentOrderNumber?.()||null
-                });
-                if(!draft?.review_id){
-                    throw new Error("Needs Review draft was not created");
-                }
-                await nrV2SetQty(
-                    draft.review_id,
-                    getValidReceivingQuantity(parsed.quantity)
-                );
-                refreshNeedsReviewCounters?.();
-                finish(true);
-            }
-            catch(error){
-                if(typeof setScanBoxState==="function")setScanBoxState("error");
-                const msg=panel.querySelector('.gtinPanelMessage');
-                if(msg) msg.textContent=error?.message||"Unable to save Needs Review";
-            }
+            try{ await saveReceivingNeedsReview(parsed); if(typeof refreshNeedsReviewCounters==="function")refreshNeedsReviewCounters(); finish(true); }
+            catch(error){ if(typeof setScanBoxState==="function")setScanBoxState("error"); }
         });
         panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
             try{

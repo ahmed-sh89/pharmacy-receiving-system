@@ -1,0 +1,20 @@
+Zebra / Chrome / GitHub Pages diagnostic — 20 Aug 2026
+
+Characters: 48
+Events: 7
+Observed event model:
+- keydown/keyup report key=Unidentified
+- beforeinput inputType=insertText contains the full GS1 payload
+- input contains the final full GS1 value
+
+Observed payload:
+01062870435834912101UA44UUW5STIO<GS>172806131022296
+
+Expected parsed identity:
+GTIN: 06287043583491
+Expiry AI 17: 280613
+Batch AI 10: 22296
+
+Conclusion:
+Hardware, DataWedge and Chrome are healthy. The failure is inside the PharmFlow
+Handheld input/receiving application pipeline.

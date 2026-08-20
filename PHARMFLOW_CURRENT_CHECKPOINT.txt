@@ -1,34 +1,41 @@
 PHARMFLOW CURRENT CHECKPOINT
 
-Date: 19 August 2026
-Version: Phase 2C.10.6.0 — Clean Handheld Runtime Baseline
+Date: 20 August 2026
+Version: Phase 2C.10.6.1 — Zebra Input + Receiving Root Fix
 Status: READY FOR TEST
 
+AUTHORITATIVE DIAGNOSTIC
+Standalone browser test on the actual Zebra proved that DataWedge inserts the
+complete GS1 payload in one beforeinput/input operation. Keyboard events are
+key=Unidentified. The application must therefore consume final input.value
+atomically and must not infer Zebra scan boundaries from keyboard timing.
+
+ROOT FIX
+- Zebra Handheld consumes the atomic final input value after 25 ms.
+- Scan field clears immediately before processing.
+- Desktop PC scan/search behavior is unchanged.
+- Normal Handheld receiving resolves current PC-session/current-order GTIN
+  mappings first, without waiting for the complete Global Master cache.
+- Full Global Master fallback remains for known-extra and unknown cases.
+- No SQL migration.
+
 USER VERIFIED
-- #24 PC Receiving search by Item Name / Item Code searches uploaded Orders.
+- #24 PC Receiving scan-box search by Item Name / Item Code.
 
-UNRESOLVED / FAILED
-- Items #1–23 remain unresolved unless separately verified.
-- #25 Handheld scan runtime freeze/no-response is BLOCKER.
-- #26 PC End Session automatic Handheld disconnect regressed.
+READY FOR TEST
+- #25 Handheld known-item scan / no-freeze.
+- #26 PC End Session -> Handheld automatic disconnect remains a mandatory
+  regression test.
 
-DECISION
-Stop layering patches on Zebra runtime.
-2C.10.6.0 restores only the last stable scanner + session runtime while
-preserving the current Receiving/order-matching/search business logic.
+EXACT TEST
+1. Hard refresh Handheld.
+2. Join the PC session.
+3. Scan the package with GTIN 06287043583491.
+4. Expected: immediate correct Last Scan, Ordered/Received/Remaining, +1.
+5. Repeat x3; no freeze.
+6. PC End Session; Handheld must leave automatically.
 
-NON-REGRESSION
-- Do not restore the old 'item exists but Not in Order' behavior.
-- Keep current uploaded-order membership resolver.
-- Keep #24 verified PC search fix.
-- Keep Global GTIN Master protected.
-- No new scanner fallback may be added without removing/replacing the old path.
-
-EXACT NEXT TEST
-GTIN 06287043583491:
-Handheld normal scan -> repeat x3 -> PC End Session -> auto Handheld disconnect -> rejoin -> scan again.
-
-NEXT ACTION
-If this clean baseline passes, freeze it as USER VERIFIED Handheld Runtime
-Baseline before continuing Needs Review / UX / Expiry changes.
-If it fails, audit Zebra DataWedge output/configuration before touching app code again.
+STOP RULE
+If the exact known-item scan still does not create a transaction, do not add
+another scanner patch. Inspect the Handheld session snapshot/mappingData because
+raw browser capture has already been proven correct.

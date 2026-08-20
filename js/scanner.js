@@ -18,13 +18,18 @@ const ScannerEngine = {
     keyIntervals:[],
 
     processing:false,
-    pendingRawValue:"",
 
     autoProcessDelay:130,
-    zebraSettleDelay:420,
     searchDelay:220,
 
-    fastKeyThreshold:45
+    fastKeyThreshold:45,
+
+    /* Phase 2C.10.6.1 — Zebra browser diagnostic proved that DataWedge
+       inserts the COMPLETE GS1 payload in one beforeinput/input operation
+       while keydown/keyup report key=Unidentified. Do not infer Zebra scans
+       from key timing; consume the final input value atomically. */
+    handheldInputTimer:null,
+    handheldPendingRaw:""
 
 };
 
@@ -176,52 +181,62 @@ function handleScannerKeydown(event){
     if(event.key === "Enter"){
 
         event.preventDefault();
+        clearTimeout(ScannerEngine.inputTimer);
 
+        const input=event.target;
+        const value=toSafeString(input.value);
 
-        clearTimeout(
-            ScannerEngine.inputTimer
-        );
+        if(!value){ return; }
 
-
-        const input =
-            event.target;
-
-
-        const value =
-            toSafeString(
-                input.value
-            );
-
-
-        if(!value){
+        if(isZebraReceivingInput()){
+            clearTimeout(ScannerEngine.handheldInputTimer);
+            input.value="";
+            processScannerValue(value);
             return;
         }
 
-
-        if(
-            shouldTreatAsBarcode(
-                value,
-                true
-            )
-        ){
-
-            processScannerValue(
-                value
-            );
-
-        }
-        else{
-
-            triggerManualSearch(
-                value
-            );
-
+        if(shouldTreatAsBarcode(value,true)){
+            processScannerValue(value);
+        }else{
+            triggerManualSearch(value);
         }
 
     }
 
 }
 
+
+function isZebraReceivingInput(){
+    return !!(
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice()
+    );
+}
+
+function queueZebraAtomicInput(input){
+    if(!input) return;
+
+    clearTimeout(ScannerEngine.handheldInputTimer);
+
+    ScannerEngine.handheldInputTimer=setTimeout(()=>{
+        /* Read the CURRENT input value, not a value captured by an earlier
+           keyboard event. This matches the measured DataWedge event model. */
+        const raw=toSafeString(input.value);
+        if(!raw) return;
+
+        ScannerEngine.handheldPendingRaw=raw;
+
+        /* Clear immediately so the field cannot remain visually parked on
+           the tail of the GS1 string and the next scan always has an empty
+           target. */
+        input.value="";
+
+        Promise.resolve(processScannerValue(raw))
+            .finally(()=>{
+                ScannerEngine.handheldPendingRaw="";
+            });
+    },25);
+}
 
 /* =====================================================
    SMART INPUT
@@ -229,99 +244,46 @@ function handleScannerKeydown(event){
 
 function handleSmartScannerInput(event){
 
-    const input =
-        event.target;
+    const input=event.target;
+    const value=toSafeString(input.value);
 
-
-    const value =
-        toSafeString(
-            input.value
-        );
-
-
-    clearTimeout(
-        ScannerEngine.inputTimer
-    );
-
+    clearTimeout(ScannerEngine.inputTimer);
 
     if(!value){
-
         clearSmartSearchResults();
-
         resetScannerTypingMetrics();
-
         return;
-
     }
 
+    /* =========================================================
+       ZEBRA HARDWARE PATH — ONE PATH ONLY
+       Measured 20 Aug 2026:
+       - keydown/keyup: key=Unidentified
+       - beforeinput: insertText contains full GS1
+       - input: final full GS1 value
+       Therefore Handheld scan boundaries are based on the atomic INPUT value,
+       never on key timing or barcode-length heuristics.
+       ========================================================= */
+    if(isZebraReceivingInput()){
+        clearSmartSearchResults();
+        queueZebraAtomicInput(input);
+        return;
+    }
 
-    const barcodeCandidate =
-        shouldTreatAsBarcode(
-            value,
-            false
-        );
-
-
-    /*
-       Scanner:
-       process automatically after the incoming
-       characters stop for a very short period.
-    */
+    /* Desktop keeps its scan/search dual behavior. */
+    const barcodeCandidate=shouldTreatAsBarcode(value,false);
 
     if(barcodeCandidate){
-
-        /*
-           Phase 2C.10.6.1 ROOT FIX — Zebra/DataWedge sends a GS1 payload as
-           keyboard-wedge chunks. A short pause can occur at FNC1/GS boundaries.
-           The old 130 ms debounce could therefore process the prefix, clear the
-           input, and leave the suffix (for example 131022296) on screen while
-           the first async receive was still running. That made the Handheld
-           appear frozen even though DataWedge had delivered the complete code.
-
-           On Zebra we wait for one stable payload before processing. Desktop
-           scanner latency is unchanged.
-        */
-        const settleDelay =
-            (typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice())
-                ? ScannerEngine.zebraSettleDelay
-                : ScannerEngine.autoProcessDelay;
-
-        ScannerEngine.inputTimer =
-            setTimeout(
-                function(){
-                    const liveInput=document.getElementById("barcodeInput");
-                    const stableValue=toSafeString(liveInput?.value || value);
-                    processScannerValue(stableValue);
-                },
-                settleDelay
-            );
-
-
+        ScannerEngine.inputTimer=setTimeout(()=>{
+            processScannerValue(toSafeString(input.value)||value);
+        },ScannerEngine.autoProcessDelay);
         return;
-
     }
 
-
-    /*
-       Human typing:
-       use the exact same box for item search.
-    */
-
-    ScannerEngine.inputTimer =
-        setTimeout(
-            function(){
-
-                triggerManualSearch(
-                    value
-                );
-
-            },
-            ScannerEngine
-                .searchDelay
-        );
-
+    ScannerEngine.inputTimer=setTimeout(()=>{
+        triggerManualSearch(toSafeString(input.value)||value);
+    },ScannerEngine.searchDelay);
 }
-
 
 /* =====================================================
    PASTE SUPPORT
@@ -658,12 +620,9 @@ async function processScannerValue(rawValue){
     if(
         ScannerEngine.processing
     ){
-        /* Never discard a second hardware payload that arrives while the prior
-           async receive is completing. Keep the latest complete value and run
-           it immediately after the current transaction releases the pipeline. */
-        const queued=cleanScannerInput(rawValue);
-        if(queued){ ScannerEngine.pendingRawValue=queued; }
+
         return false;
+
     }
 
 
@@ -816,12 +775,6 @@ async function processScannerValue(rawValue){
 
 
         focusScannerInput();
-
-        const pending=ScannerEngine.pendingRawValue;
-        ScannerEngine.pendingRawValue="";
-        if(pending && pending !== cleaned){
-            setTimeout(()=>processScannerValue(pending),0);
-        }
 
     }
 
@@ -1025,12 +978,6 @@ function cleanScannerInput(value){
             )
             .replace(
                 /\u0651+/g,
-                "\x1D"
-            )
-            /* Some Android keyboard-wedge paths render ASCII GS (0x1D) as
-               the Unicode replacement glyph. Treat it as the GS1 separator. */
-            .replace(
-                /\uFFFD+/g,
                 "\x1D"
             )
             /*
