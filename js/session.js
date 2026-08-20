@@ -913,16 +913,25 @@ async function closeAndArchiveCurrentOrder(){
         await restoreHistoricalArchive();
 
 
+        /* 2C.10.7.0 — Finalize must end in TRUE No Active Order state.
+           startNewWorkspace() previously recreated an empty active workspace,
+           allowing stale counters/order identity to survive until Reset. */
         clearCurrentWorkspace();
-
-
-        startNewWorkspace();
-
+        AppState.workspace.active=false;
+        AppState.workspace.orderId=null;
+        AppState.workspace.orderName="";
+        AppState.workspace.orderFiles=[];
+        AppState.workspace.mappingFiles=[];
+        AppState.workspace.orderData=[];
+        AppState.workspace.mappingData=[];
+        AppState.workspace.receivingHistory=[];
+        AppState.workspace.lastScan=null;
+        resetStatistics?.();
+        rebuildStateIndexes?.();
 
         deleteWorkspaceSnapshot();
-
-
         saveWorkspaceSnapshot();
+        refreshEntireUI?.();
 
 
         AppEvents.emit(
@@ -1132,6 +1141,9 @@ async function deleteAllHistoricalData(){
 
         AppEvents.emit("archive:updated");
         refreshEntireUI?.();
+        refreshArchiveUI?.();
+        refreshOpenOrderStatusReport?.();
+        renderOrderLifecycleRegistry?.();
         hideLoading();
 
         const deletedOrders=Number(receipt.historical_orders_deleted||0);

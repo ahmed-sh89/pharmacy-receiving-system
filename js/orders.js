@@ -502,6 +502,12 @@ async function finalizeCurrentReceiving(){
 
         await refreshOrderLifecycleRegistry();
 
+        /* 2C.10.7.0 — Finalize is a terminal Current Workspace transition.
+           Archive is already durable at this point; force a clean no-active-order
+           UI immediately instead of waiting for a later Reset/refresh. */
+        refreshEntireUI?.();
+        refreshFinalizeReceivingButton?.();
+
         /* Receiving review photos/drafts are temporary operational evidence.
            Once receiving is finalized they must not survive as orphaned storage. */
         if(typeof nrV2ClearReceivingQueue==="function"){

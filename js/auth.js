@@ -1027,6 +1027,24 @@ function normalizeInviteToken(value){
 async function signOutCurrentUser(){
     clearRecoveryArtifacts();
     resetResponsiveSidebarAfterAuth();
+
+    /* 2C.10.7.0 — a PC-owned live session must be ended while authentication
+       still exists. Logging out first previously left the Handheld attached to
+       an orphaned server session. Handheld sign-out still only detaches itself. */
+    try{
+        if(AppState?.session?.role==="PC" && AppState?.session?.cloud===true && typeof leaveCloudSession==="function"){
+            const ended=await leaveCloudSession();
+            if(ended===false){
+                showToast("End the shared Handheld session before signing out","warning");
+                return false;
+            }
+        }
+    }catch(error){
+        Logger?.error?.("Unable to end shared session before sign out",error);
+        showToast(error?.message||"Unable to end shared session before sign out","error");
+        return false;
+    }
+
     const token = getSupabaseAccessToken();
     try{
         if(token){

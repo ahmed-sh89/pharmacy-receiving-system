@@ -7366,3 +7366,51 @@ body.zebraDevice.zebraReceivingActive .handheldReviewQtyLabel input{
 .pharmFlowOperationReceipt.success{background:#15803d!important}
 .pharmFlowOperationReceipt.error{background:#b91c1c!important}
 .pharmFlowOperationReceipt[hidden]{display:none!important}
+
+
+/* ============================================================
+   PHARMFLOW 2C.10.7.0 — CLEAN HANDHELD OPERATIONAL SURFACE
+============================================================ */
+body.zebraDevice.zebraReceivingActive #scanBox{
+    position:relative!important;min-height:82px!important;padding:24px 12px 12px!important;
+    border:1.5px solid #a7c9b1!important;border-radius:16px!important;background:#f8fcf9!important;
+    box-shadow:0 8px 24px rgba(24,72,44,.07)!important;overflow:hidden!important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox:before{
+    content:attr(data-hh-label)!important;position:absolute!important;left:12px!important;top:8px!important;
+    font-size:10px!important;font-weight:950!important;letter-spacing:.06em!important;color:#176a39!important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox:after{
+    content:""!important;position:absolute!important;left:12%!important;right:12%!important;top:58%!important;height:2px!important;
+    border-radius:99px!important;background:currentColor!important;color:#2f9e5b!important;opacity:.8;
+    animation:pfScanBeam 1.35s ease-in-out infinite!important;
+}
+@keyframes pfScanBeam{0%,100%{transform:translateY(-10px);opacity:.2}50%{transform:translateY(10px);opacity:.95}}
+body.zebraDevice[data-hh-state="processing"] #scanBox:after{animation:none!important;opacity:.25!important}
+body.zebraDevice[data-hh-state="blocked"] #scanBox{border-color:#d8b37a!important;background:#fffaf0!important}
+body.zebraDevice[data-hh-state="blocked"] #scanBox:before{color:#9a5a08!important}
+body.zebraDevice[data-hh-state="blocked"] #scanBox:after{display:none!important}
+body.zebraDevice.zebraReceivingActive #barcodeInput{
+    position:absolute!important;width:1px!important;height:1px!important;opacity:.01!important;left:50%!important;bottom:4px!important;
+    pointer-events:none!important;font-size:16px!important;padding:0!important;border:0!important;
+}
+body.zebraDevice.zebraReceivingActive #scanBox .scanBoxIcon,
+body.zebraDevice.zebraReceivingActive #scanBox .scanBoxIndicator{visibility:hidden!important}
+body.zebraDevice.zebraReceivingActive #scanBox::selection{background:transparent!important}
+
+/* Expiry uses the same truthful runtime state without changing PC layout. */
+body.zebraDevice.zebraExpiryActive .expiryScannerCard{position:relative!important;border-radius:16px!important;overflow:hidden!important}
+body.zebraDevice.zebraExpiryActive .expiryScannerCard:before{
+    content:attr(data-hh-label);display:block;margin-bottom:7px;font-size:10px;font-weight:950;letter-spacing:.06em;color:#176a39;
+}
+body.zebraDevice.zebraExpiryActive #expiryBarcodeInput{caret-color:transparent!important}
+
+/* Numeric keypad is opt-in only for operational number fields. */
+body.zebraDevice input[type="number"]{font-variant-numeric:tabular-nums}
+
+/* Operation receipts must be visible above every application surface. */
+.pharmFlowOperationReceipt{position:fixed!important;z-index:2147483000!important;top:14px!important;left:50%!important;transform:translateX(-50%)!important;
+    width:min(760px,calc(100vw - 28px))!important;padding:14px 16px!important;border-radius:12px!important;font-weight:900!important;
+    box-shadow:0 18px 48px rgba(0,0,0,.22)!important;text-align:center!important}
+.pharmFlowOperationReceipt.success{background:#ecfdf3!important;color:#116b38!important;border:1px solid #86d6a7!important}
+.pharmFlowOperationReceipt.error{background:#fff1f2!important;color:#9f1239!important;border:1px solid #f5a3b3!important}
