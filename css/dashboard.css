@@ -7431,3 +7431,211 @@ body.zebraDevice input[type="number"]{font-variant-numeric:tabular-nums}
 body.zebraDevice.zebraHomeActive #zebraHome{display:block!important}
 body.zebraDevice[data-hh-state="ready"] #scanBox:before{color:#176a39!important}
 body.zebraDevice[data-hh-state="blocked"] #scanBox:before{color:#9a5a08!important}
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.1 — HANDHELD RECEIVING UX
+   Presentation only. 2C.11.0 Unified Workspace scan/sync runtime is protected.
+============================================================ */
+
+body.zebraDevice.zebraReceivingActive #lastScanCard{
+    display:block!important;
+    margin:6px 0 0!important;
+    padding:9px!important;
+    border-radius:14px!important;
+    border:1px solid #d9e6dc!important;
+    background:#fff!important;
+    box-shadow:0 7px 18px rgba(26,58,37,.06)!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    margin:0 0 6px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .sectionEyebrow{display:none!important}
+body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader h3{
+    margin:0!important;
+    font-size:13px!important;
+    font-weight:950!important;
+    letter-spacing:.04em!important;
+    text-transform:uppercase!important;
+    color:#55705d!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanTime{font-size:10px!important;color:#758177!important}
+
+/* Keep only operational identity + the three numbers the worker needs. */
+body.zebraDevice.zebraReceivingActive #lastScanCard .professionalLastScanLayout,
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanHero{
+    padding:7px 8px!important;
+    margin:0!important;
+    border-radius:10px!important;
+    background:#f8fbf9!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanHeroName{
+    font-size:17px!important;
+    line-height:1.18!important;
+    margin:0 0 3px!important;
+    font-weight:950!important;
+    color:#1f2f25!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetaRow{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetaItem{
+    display:none!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetaItem:first-child{
+    display:flex!important;
+    min-height:0!important;
+    padding:2px 0!important;
+    border:0!important;
+    background:transparent!important;
+    font-size:11px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetrics{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+    margin:7px 0 0!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric{
+    display:block!important;
+    min-width:0!important;
+    padding:6px 3px!important;
+    text-align:center!important;
+    border-radius:9px!important;
+    background:#f4f7f5!important;
+    border:1px solid #e3ebe5!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric span{
+    display:block!important;
+    font-size:8px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.04em!important;
+    color:#718075!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{
+    display:block!important;
+    margin-top:3px!important;
+    font-size:19px!important;
+    line-height:1!important;
+    font-weight:950!important;
+    color:#21352a!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricStatus{display:none!important}
+
+/* Correction controls: visible but secondary, no extra explanatory clutter. */
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls{
+    position:static!important;
+    display:block!important;
+    margin:7px 0 0!important;
+    padding:0!important;
+    border:0!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls .lastScanQtyTitle,
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls .lastScanQtyHint,
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls .handheldScanContext{
+    display:none!important;
+}
+body.zebraDevice.zebraReceivingActive .lastScanQtyActions{
+    display:grid!important;
+    grid-template-columns:48px minmax(0,1fr) 48px!important;
+    gap:6px!important;
+    margin:0!important;
+}
+body.zebraDevice.zebraReceivingActive .lastScanQtyButton,
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue{
+    min-height:40px!important;
+    height:40px!important;
+    border-radius:9px!important;
+    font-size:18px!important;
+    font-weight:950!important;
+}
+body.zebraDevice.zebraReceivingActive .lastScanQtyValue:before{content:"QTY ";font-size:9px;font-weight:900;color:#718075}
+
+/* Header action becomes a small Recent button, not another dashboard KPI. */
+body.zebraDevice .handheldRecentButton{
+    width:auto!important;
+    min-width:74px!important;
+    min-height:34px!important;
+    padding:5px 9px!important;
+    margin:4px 0 0 auto!important;
+    border-radius:10px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    font-size:9px!important;
+}
+body.zebraDevice .handheldRecentButton strong{font-size:13px!important}
+
+/* Recent scans is a correction drawer, not a full history/archive screen. */
+.handheldRecentOverlay{
+    position:fixed!important;
+    inset:0!important;
+    z-index:2147482500!important;
+    display:flex!important;
+    align-items:flex-end!important;
+    justify-content:center!important;
+    padding:0!important;
+    background:rgba(22,29,24,.42)!important;
+}
+.handheldRecentPanel{
+    width:100%!important;
+    max-width:560px!important;
+    max-height:76vh!important;
+    margin:0!important;
+    border-radius:18px 18px 0 0!important;
+    background:#fff!important;
+    box-shadow:0 -18px 50px rgba(0,0,0,.18)!important;
+    overflow:hidden!important;
+}
+.handheldRecentPanel header{
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:flex-start!important;
+    padding:13px 14px 9px!important;
+    border-bottom:1px solid #edf0ed!important;
+}
+.handheldRecentPanel header div{display:grid!important;gap:1px!important}
+.handheldRecentPanel header span{font-size:8px!important;font-weight:950!important;letter-spacing:.08em!important;color:#6d7d70!important}
+.handheldRecentPanel header strong{font-size:18px!important;color:#1c2d22!important}
+.handheldRecentPanel header small{font-size:9px!important;color:#7f8b82!important}
+.handheldRecentPanel header button{border:0!important;background:#f0f3f1!important;border-radius:9px!important;width:34px!important;height:34px!important;font-size:16px!important}
+.handheldRecentList{padding:8px 10px!important;overflow:auto!important;max-height:56vh!important;display:grid!important;gap:6px!important}
+.handheldRecentRow{
+    display:grid!important;
+    grid-template-columns:25px minmax(0,1fr) 38px 54px!important;
+    gap:6px!important;
+    align-items:center!important;
+    padding:7px!important;
+    border:1px solid #e5ebe6!important;
+    border-radius:10px!important;
+    background:#fbfcfb!important;
+}
+.handheldRecentIndex{font-size:9px!important;color:#8a968d!important;text-align:center!important}
+.handheldRecentInfo{min-width:0!important;display:grid!important;gap:2px!important}
+.handheldRecentInfo strong{font-size:12px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.handheldRecentInfo span{font-size:9px!important;color:#78847a!important}
+.handheldRecentQty{font-size:14px!important;font-weight:950!important;text-align:center!important;color:#1d6e3d!important}
+.handheldRecentRow .handheldUndoItem{
+    min-height:32px!important;
+    padding:4px 6px!important;
+    border-radius:8px!important;
+    font-size:9px!important;
+    font-weight:950!important;
+}
+.handheldRecentFooter{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 86px!important;
+    gap:8px!important;
+    align-items:center!important;
+    padding:8px 10px 12px!important;
+    border-top:1px solid #edf0ed!important;
+}
+.handheldRecentFooter span{font-size:8px!important;color:#7a857d!important;line-height:1.25!important}
+.handheldRecentFooter .handheldPanelDone{min-height:36px!important;border-radius:9px!important;font-size:10px!important;font-weight:950!important}

@@ -1,10 +1,7 @@
-# PHARMFLOW CHANGELOG — 2C.11.0
+# PHARMFLOW CHANGELOG — 2C.11.1
 
-- Introduced Unified Pharmacy Workspace for Handheld Receiving.
-- Removed user-facing dependency on Create/Join Session and QR pairing.
-- Handheld now hydrates Active Orders directly from pharmacy-scoped Active Order Manifest.
-- READY state now reflects actual synchronized Active Order data.
-- Retained existing shared receiving ledger for PC/Handheld transaction synchronization.
-- Hid legacy Session UI during verification; code remains dormant for safe rollback until user verification.
-- Updated project specification and decision register with approved Item Movement, Expiry, Needs Review and UI simplification direction.
-- No SQL migration.
+- Simplified Handheld Last Scan presentation around Item + Ordered/Received/Remaining.
+- Added compact Recent Scans correction drawer for the current Handheld.
+- Recent drawer displays last 20 exact scans rather than grouping away individual mistakes.
+- Undo remains audit-safe through correction transactions.
+- Protected 2C.11.0 Unified Workspace runtime and synchronization.

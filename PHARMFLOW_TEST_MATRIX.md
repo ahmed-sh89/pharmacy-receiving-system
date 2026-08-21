@@ -1,11 +1,11 @@
-# PHARMFLOW TEST MATRIX — 2C.11.0
+# PHARMFLOW TEST MATRIX — 2C.11.1
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| UW1 | Handheld same pharmacy login | Modes available without Join Session | READY FOR TEST |
-| UW2 | Open Receiving | Direct Active Manifest hydration; no code/QR | READY FOR TEST |
-| UW3 | Workspace readiness | ONLINE · WORKSPACE SYNCED + non-zero Orders/Items | READY FOR TEST |
-| UW4 | Known GTIN x3 | Correct item; +1 each scan; no freeze | READY FOR TEST |
-| UW5 | Cross-device sync | PC sees Handheld +3 | READY FOR TEST |
-| UW6 | No Active Order | WAITING FOR ACTIVE ORDER; no stale counters | READY FOR TEST |
-| NR24 | PC Item Name/Code search | Searches uploaded Orders | USER VERIFIED |
+| UW1 | Direct Handheld Receiving | No join/session code | USER VERIFIED |
+| UW4 | Known scan | Correct item +1 | USER VERIFIED |
+| UW5 | PC↔Handheld sync | Shared quantities sync | USER VERIFIED |
+| UX1 | Last Scan | Name/code + Ordered/Received/Remaining visible | READY FOR TEST |
+| UX2 | Recent drawer | Last 20 exact Handheld scans | READY FOR TEST |
+| UX3 | Undo accidental scan | -1 correction syncs to PC; history retained | READY FOR TEST |
+| UX4 | Scanner after drawer | Returns ready; next scan works | READY FOR TEST |

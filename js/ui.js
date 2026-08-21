@@ -6896,12 +6896,12 @@ function ensureHandheldReceivingTools(){
             <div class="zebraFinalHeader">
                 <div class="zebraFinalTitle">
                     <strong>Receive Order</strong>
-                    <span class="zebraConnectedDot">CONNECTED</span>
+                    <span class="zebraConnectedDot">ONLINE</span>
                 </div>
                 <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
             </div>
-            <button id="btnHandheldTotalScans" class="handheldTotalScansButton" type="button">
-                <span>TOTAL SCANS</span>
+            <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton" type="button" aria-label="Open recent scans">
+                <span>RECENT</span>
                 <strong id="handheldTotalScansValue">0</strong>
             </button>
         `;
@@ -6920,83 +6920,89 @@ function refreshHandheldReceivingTools(){
 function openHandheldScansPanel(){
     document.getElementById("handheldScansOverlay")?.remove();
 
-    const recent = typeof getHandheldDeviceScannerRows === "function"
+    const recent=(typeof getHandheldDeviceScannerRows==="function"
         ? getHandheldDeviceScannerRows()
-        : [];
+        : [])
+        .slice()
+        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
+        .slice(0,20);
 
-    const groups = new Map();
-    recent.forEach(row => {
-        if(row.undone) return;
-        const key = String(row.itemCode || row.itemName || "");
-        if(!groups.has(key)){
-            groups.set(key,{
-                itemCode:row.itemCode || "",
-                itemName:row.itemName || "Item",
-                qty:0,
-                latest:null
-            });
-        }
-        const group = groups.get(key);
-        group.qty += Number(row.quantity || 1);
-        if(!group.latest || String(row.dateTime || "") > String(group.latest.dateTime || "")){
-            group.latest = row;
-        }
-    });
+    const esc=value=>typeof escapeHtml==="function"
+        ? escapeHtml(String(value??""))
+        : String(value??"");
 
-    const esc = value => typeof escapeHtml === "function"
-        ? escapeHtml(String(value ?? ""))
-        : String(value ?? "");
+    const formatTime=value=>{
+        try{
+            const d=new Date(value);
+            if(!Number.isFinite(d.getTime())) return "";
+            return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+        }catch(_){ return ""; }
+    };
 
-    const overlay = document.createElement("div");
-    overlay.id = "handheldScansOverlay";
-    overlay.className = "handheldScansOverlay";
+    const overlay=document.createElement("div");
+    overlay.id="handheldScansOverlay";
+    overlay.className="handheldScansOverlay handheldRecentOverlay";
 
-    const rows = Array.from(groups.values());
-    overlay.innerHTML = `
-        <section class="handheldScansPanel">
+    overlay.innerHTML=`
+        <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
             <header>
-                <div><span>THIS HANDHELD</span><strong>Total Scans</strong></div>
-                <button type="button" data-close>✕</button>
+                <div>
+                    <span>THIS HANDHELD</span>
+                    <strong>Recent Scans</strong>
+                    <small>Last ${Math.min(recent.length,20)} actions · corrections stay in the audit trail</small>
+                </div>
+                <button type="button" data-close aria-label="Close">✕</button>
             </header>
-            <div class="handheldScansCount">${getHandheldTotalScans()}</div>
-            <div class="handheldScansList">
-                ${rows.length ? rows.map(row => `
-                    <div class="handheldScanItem">
-                        <div>
-                            <strong>${esc(row.itemName)}</strong>
-                            <span>${esc(row.itemCode)} · Qty ${row.qty}</span>
-                        </div>
-                        <button type="button" class="handheldUndoItem"
-                                data-undo-item="${esc(row.latest?.transactionId || "")}">
-                            Undo Item
-                        </button>
-                    </div>
-                `).join("") : `<div class="handheldScansEmpty">No scans from this Handheld yet.</div>`}
+
+            <div class="handheldRecentList">
+                ${recent.length ? recent.map((row,index)=>{
+                    const qty=Math.max(1,Number(row?.quantity||1)||1);
+                    const corrected=String(row?.source||"").toUpperCase()==="SCAN_UNDO" || Number(row?.quantity||0)<0;
+                    return `
+                        <article class="handheldRecentRow ${corrected?"corrected":""}">
+                            <div class="handheldRecentIndex">${index+1}</div>
+                            <div class="handheldRecentInfo">
+                                <strong>${esc(row?.itemName||"Item")}</strong>
+                                <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))}</span>
+                            </div>
+                            <div class="handheldRecentQty">+${qty}</div>
+                            <button type="button" class="handheldUndoItem"
+                                    data-undo-item="${esc(row?.transactionId||"")}">
+                                Undo
+                            </button>
+                        </article>`;
+                }).join("") : `<div class="handheldScansEmpty">No scans from this Handheld yet.</div>`}
             </div>
-            <button type="button" class="handheldPanelDone" data-close>Done</button>
-        </section>
-    `;
+
+            <div class="handheldRecentFooter">
+                <span>Undo creates a correction transaction. History is never silently deleted.</span>
+                <button type="button" class="handheldPanelDone" data-close>DONE</button>
+            </div>
+        </section>`;
 
     document.body.appendChild(overlay);
-    overlay.querySelectorAll("[data-close]").forEach(btn => btn.onclick = () => {
-        overlay.remove();
-        setTimeout(()=>focusScannerInput?.(),40);
-    });
 
-    overlay.querySelectorAll("[data-undo-item]").forEach(btn => {
-        btn.onclick = () => {
-            const transactionId = btn.getAttribute("data-undo-item");
+    const close=()=>{
+        overlay.remove();
+        setTimeout(()=>window.hhRefreshReadyState?.(),20);
+    };
+    overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=close);
+
+    overlay.querySelectorAll("[data-undo-item]").forEach(btn=>{
+        btn.onclick=()=>{
+            const transactionId=btn.getAttribute("data-undo-item");
             if(!transactionId) return;
-            const ok = typeof undoRecentScannerTransaction === "function"
+            const result=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
                 : false;
-            if(ok){
+            if(result){
                 refreshHandheldReceivingTools();
-                openHandheldScansPanel();
+                setTimeout(openHandheldScansPanel,40);
             }
         };
     });
 }
+
 
 if(typeof AppEvents !== "undefined" && AppEvents?.on){
     AppEvents.on("receiving:updated", () => {
