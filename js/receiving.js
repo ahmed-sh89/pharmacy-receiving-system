@@ -14,11 +14,15 @@ const ReceivingEngine = {
     recentScans:[],
 
     /*
-       2C.11.4.0 Regression Recovery
-       Current Batch Qty is an operational LOCAL runtime value.
-       It is deliberately independent from cloud history hydration.
+       2C.11.4.1
+       Current Batch Qty = the consecutive run of the CURRENT item on THIS
+       device. Switching to another item closes that batch. Returning to the
+       previous item starts again from 1.
     */
-    localBatchQtyByItem:{},
+    currentLocalBatch:{
+        itemCode:"",
+        quantity:0
+    },
 
     adjustmentSources:{
 
@@ -1771,36 +1775,69 @@ function setItemReceivedQuantity(
 
 function getLocalRuntimeBatchQuantity(itemCode){
     const code=normalizeItemCode(itemCode);
-    if(!code) return 0;
-    return Math.max(
-        0,
-        toNumber(ReceivingEngine.localBatchQtyByItem?.[code],0)
+    const active=normalizeItemCode(
+        ReceivingEngine?.currentLocalBatch?.itemCode||""
     );
-}
 
-function setLocalRuntimeBatchQuantity(itemCode,quantity){
-    const code=normalizeItemCode(itemCode);
-    if(!code) return 0;
-
-    if(!ReceivingEngine.localBatchQtyByItem){
-        ReceivingEngine.localBatchQtyByItem={};
+    if(!code || code!==active){
+        return 0;
     }
 
-    const value=Math.max(0,toNumber(quantity,0));
-    ReceivingEngine.localBatchQtyByItem[code]=value;
-    return value;
-}
-
-function adjustLocalRuntimeBatchQuantity(itemCode,difference){
-    const current=getLocalRuntimeBatchQuantity(itemCode);
-    return setLocalRuntimeBatchQuantity(
-        itemCode,
-        current+toNumber(difference,0)
+    return Math.max(
+        0,
+        toNumber(ReceivingEngine.currentLocalBatch?.quantity,0)
     );
 }
 
-function resetLocalRuntimeBatchQuantity(itemCode){
-    return setLocalRuntimeBatchQuantity(itemCode,0);
+function setCurrentLocalBatch(itemCode,quantity){
+    const code=normalizeItemCode(itemCode);
+
+    ReceivingEngine.currentLocalBatch={
+        itemCode:code,
+        quantity:Math.max(0,toNumber(quantity,0))
+    };
+
+    return ReceivingEngine.currentLocalBatch.quantity;
+}
+
+function resetCurrentLocalBatch(){
+    ReceivingEngine.currentLocalBatch={
+        itemCode:"",
+        quantity:0
+    };
+}
+
+function applyCurrentLocalBatchTransaction(itemCode,difference){
+    const code=normalizeItemCode(itemCode);
+    const delta=toNumber(difference,0);
+
+    if(!code){
+        return 0;
+    }
+
+    const active=normalizeItemCode(
+        ReceivingEngine?.currentLocalBatch?.itemCode||""
+    );
+
+    /*
+       Positive quantity on a different item starts a NEW consecutive batch.
+       Example:
+       Dompy x10 -> Panadol x10 -> Dompy scan => Dompy Batch Qty = 1.
+    */
+    if(code!==active){
+        if(delta>0){
+            return setCurrentLocalBatch(code,delta);
+        }
+
+        /* A correction to an older/different item must not modify the
+           currently active batch shown to the worker. */
+        return getLocalRuntimeBatchQuantity(active);
+    }
+
+    return setCurrentLocalBatch(
+        code,
+        getLocalRuntimeBatchQuantity(code)+delta
+    );
 }
 
 function isCurrentDeviceReceivingTransaction(transaction){
@@ -1827,22 +1864,23 @@ function updateLocalRuntimeBatchFromTransaction(item,transaction){
     const qty=toNumber(transaction?.quantity,0);
 
     /*
-       A pharmacist "Correct Received Total" establishes a new operational
-       baseline. Do not carry the previous local batch through that correction.
+       Correct Received Total is a correction of the shared total, not part of
+       the worker's current physical batch. It closes the active local batch.
     */
     if(
         source===toSafeString(ReceivingEngine.adjustmentSources.editIncrease).toUpperCase() ||
         source===toSafeString(ReceivingEngine.adjustmentSources.editDecrease).toUpperCase()
     ){
-        resetLocalRuntimeBatchQuantity(item.itemCode);
+        resetCurrentLocalBatch();
         return;
     }
 
     /*
-       Scanner, Handheld remaining-pack entry, quick +/- and Undo are all local
-       operational changes. Apply their signed transaction quantity directly.
+       The local batch follows only the consecutive item sequence on this
+       device. Undo/negative changes affect the visible batch only when they
+       refer to the currently active item.
     */
-    adjustLocalRuntimeBatchQuantity(item.itemCode,qty);
+    applyCurrentLocalBatchTransaction(item.itemCode,qty);
 }
 
 

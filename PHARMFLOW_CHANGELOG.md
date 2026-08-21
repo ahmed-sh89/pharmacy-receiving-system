@@ -1,9 +1,8 @@
-# PHARMFLOW CHANGELOG — 2C.11.4.0
+# PHARMFLOW CHANGELOG — 2C.11.4.1
 
-- Replaced cloud-history-derived Current Batch Qty with immediate local runtime state.
-- Fixed Batch Qty zero/stale/one-scan-behind regression.
-- Fixed Handheld Undo after reload/sync by resolving the visible transaction from workspace history.
-- Preserved audit-safe correction transactions.
-- Added conservative Zebra combined-Lot GS1 recovery for Dompy-like scans.
-- Preserved PC Dompy parsing, Conestal parsing, Auto Clear and Unified Workspace sync.
+- Corrected Batch Qty semantics from per-item cumulative local quantity to
+  current consecutive item batch.
+- Switching items now closes the previous batch.
+- Returning to a previously scanned item starts its Batch Qty from 1.
+- Shared Received Total remains unchanged and synchronized.
 - No SQL migration.
