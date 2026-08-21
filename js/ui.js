@@ -5486,45 +5486,59 @@ function getCurrentLastScanItem(){
  REFRESH LAST SCAN QUANTITY CONTROL
 ===================================================== */
 
-function getOperationalCurrentBatchQuantity(itemCode){
-    const calculated=Math.max(0,toNumber(getCurrentBatchQuantity(itemCode),0));
+function getPcLegacyCurrentBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    const deviceId=getCurrentDeviceId();
+    if(!code || !deviceId) return 0;
 
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory : [];
+
+    const local=history.map((tx,index)=>({tx,index})).filter(row=>
+        toSafeString(row.tx?.deviceId||"")===deviceId
+    ).sort((a,b)=>{
+        const ta=new Date(a.tx?.dateTime||0).getTime();
+        const tb=new Date(b.tx?.dateTime||0).getTime();
+        return ta===tb ? a.index-b.index : ta-tb;
+    });
+
+    if(!local.length) return 0;
+    if(normalizeItemCode(local[local.length-1]?.tx?.itemCode)!==code) return 0;
+
+    let qty=0;
+    for(let i=local.length-1;i>=0;i--){
+        if(normalizeItemCode(local[i]?.tx?.itemCode)!==code) break;
+        qty+=toNumber(local[i]?.tx?.quantity,0);
+    }
+    return Math.max(0,qty);
+}
+
+function getOperationalCurrentBatchQuantity(itemCode){
     let isHandheld=false;
     try{
         isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
     }catch(_){}
 
-    if(isHandheld || calculated>0){
-        return calculated;
-    }
-
     /*
-       PC legacy behavior:
-       Immediately after the first local scan, Received may already be +1
-       while receivingHistory/cloud hydration is one render behind.
-       The PC Batch Qty must still show 1 immediately instead of 0.
+       2C.11.3.9 recovery rule:
+       PC keeps the previously verified legacy consecutive-scan batch counter.
+       Handheld keeps the worker-batch boundary behavior introduced later.
     */
+    const calculated=Math.max(0,toNumber(
+        isHandheld ? getCurrentBatchQuantity(itemCode) : getPcLegacyCurrentBatchQuantity(itemCode),
+        0
+    ));
+
+    if(calculated>0) return calculated;
+
     const scan=AppState?.workspace?.lastScan;
-
-    if(
-        scan &&
-        normalizeItemCode(scan?.itemCode)===normalizeItemCode(itemCode)
-    ){
+    if(scan && normalizeItemCode(scan?.itemCode)===normalizeItemCode(itemCode)){
         const scanDelta=toNumber(scan?.quantity,0);
-
-        if(scanDelta>0){
-            return scanDelta;
-        }
-
-        /* A successful scanner Last Scan represents at least one pack. */
-        if(toNumber(scan?.receivedQty,0)>0){
-            return 1;
-        }
+        if(scanDelta>0) return scanDelta;
+        if(toNumber(scan?.receivedQty,0)>0) return 1;
     }
-
-    return calculated;
+    return 0;
 }
-
 
 function refreshLastScanQuantityControl(){
 

@@ -1571,25 +1571,40 @@ function isPlausibleGS1ExpiryYYMMDD(value){
 
 function findImplicitGS1VariableBoundary(data,startIndex,maxLength){
     /*
-       2C.11.3.8 — DATA INTEGRITY RULE
-
-       Never infer AI 17 from digits occurring inside a variable-length
-       Batch/Lot (AI 10) or Serial (AI 21).
-
-       Example failure:
-       a legitimate batch ending in "...17" followed by expiry digits was
-       truncated because those batch digits were incorrectly treated as the
-       start of AI 17.
-
-       GS1 variable-length fields are therefore terminated only by:
-       - a real FNC1 / GS separator (normalized to \x1D), or
-       - their maximum permitted length.
-
-       Parenthesized GS1 remains explicitly parsed by AI labels.
+       Recovery fallback for scanner/browser paths that drop FNC1.
+       Real GS separators always win. For separator-loss only, infer the next
+       AI conservatively from a structurally valid downstream sequence.
     */
+    const limit=Math.min(data.length,startIndex+maxLength);
+
+    const hasPlausibleExpiryAfter=(from,maxAhead=22)=>{
+        const stop=Math.min(data.length,from+maxAhead);
+        for(let j=from;j<stop;j++){
+            const tail=data.slice(j);
+            if(
+                tail.startsWith("17") &&
+                /^17\d{6}/.test(tail) &&
+                isPlausibleGS1ExpiryYYMMDD(tail.slice(2,8))
+            ) return true;
+        }
+        return false;
+    };
+
+    for(let i=startIndex+1;i<limit;i++){
+        const tail=data.slice(i);
+
+        if(
+            tail.startsWith("17") &&
+            /^17\d{6}/.test(tail) &&
+            isPlausibleGS1ExpiryYYMMDD(tail.slice(2,8))
+        ) return i;
+
+        /* Typical medicine sequence: AI10 lot -> AI21 serial -> AI17 expiry. */
+        if(tail.startsWith("21") && hasPlausibleExpiryAfter(i+2,22)) return i;
+    }
+
     return -1;
 }
-
 
 function readVariableGS1Field(
     data,
