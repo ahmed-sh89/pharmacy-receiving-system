@@ -223,6 +223,85 @@ async function hhRefreshWorkspaceAuthority(){
     }
 }
 
+function hhScannerInputForMode(){
+    const mode=hhMode();
+
+    if(mode==="RECEIVING"){
+        return document.getElementById("barcodeInput");
+    }
+
+    if(mode==="EXPIRY"){
+        return document.getElementById("expiryBarcodeInput");
+    }
+
+    return null;
+}
+
+function hhRepairScannerFocus(reason="watchdog"){
+    if(!hhIsDevice()) return false;
+    if(document.visibilityState==="hidden") return false;
+    if(hhWorkerIsEditing()) return false;
+
+    const input=hhScannerInputForMode();
+    if(!input) return false;
+
+    const active=document.activeElement;
+
+    /* If Android/Chrome dropped the hardware target during idle, restore it.
+       Do not refocus repeatedly while the correct scanner input already owns
+       focus, and never fight Quantity/photo/select controls. */
+    if(active===input){
+        return true;
+    }
+
+    const now=Date.now();
+
+    /* Debounce repeated focus events during browser wake/resume. */
+    if(now-HandheldRuntime.lastFocusRepairAt<250){
+        return false;
+    }
+
+    HandheldRuntime.lastFocusRepairAt=now;
+
+    try{
+        input.setAttribute("inputmode","none");
+        input.setAttribute("autocomplete","off");
+        input.setAttribute("autocapitalize","off");
+        input.setAttribute("spellcheck","false");
+        input.focus({preventScroll:true});
+    }catch(_){
+        try{ input.focus(); }catch(__){}
+    }
+
+    Logger?.info?.("Handheld scanner focus repaired",{
+        reason,
+        mode:hhMode()
+    });
+
+    return document.activeElement===input;
+}
+
+function hhStartFocusWatch(){
+    clearInterval(HandheldRuntime.focusWatchTimer);
+
+    /*
+       This is deliberately local-only. It does NOT poll Supabase.
+       Android/Chrome can silently drop input focus after several idle minutes
+       even while the page remains visible. Without a focused scanner target,
+       DataWedge sends a scan but the app receives no input event.
+    */
+    HandheldRuntime.focusWatchTimer=setInterval(()=>{
+        hhRefreshReadyState();
+
+        if(
+            hhMode()==="RECEIVING" ||
+            hhMode()==="EXPIRY"
+        ){
+            hhRepairScannerFocus("idle-watch");
+        }
+    },900);
+}
+
 function hhStartWorkspaceWatch(){
     clearInterval(HandheldRuntime.terminationTimer);
     HandheldRuntime.terminationTimer=setInterval(()=>{
@@ -238,26 +317,54 @@ function hhInstall(){
     document.addEventListener("input",hhCaptureInput,true);
     document.addEventListener("keydown",hhCaptureKey,true);
     document.addEventListener("focusin",()=>setTimeout(hhRefreshReadyState,0),true);
+    const wakeHandheldRuntime=reason=>{
+        if(!hhIsDevice()) return;
+
+        hhRefreshReadyState();
+
+        /* Let Chrome finish restoring the document before repairing the
+           hardware scanner target. */
+        setTimeout(()=>hhRepairScannerFocus(reason),30);
+        setTimeout(()=>hhRepairScannerFocus(reason+"-settled"),220);
+
+        hhRefreshWorkspaceAuthority();
+    };
+
     document.addEventListener("visibilitychange",()=>{
         if(document.visibilityState==="visible"){
-            hhRefreshReadyState();
-            hhFocusActiveScanner();
-            hhRefreshWorkspaceAuthority();
+            wakeHandheldRuntime("visibility");
         }
     });
 
+    window.addEventListener("focus",()=>wakeHandheldRuntime("window-focus"));
+    window.addEventListener("pageshow",()=>wakeHandheldRuntime("pageshow"));
+    window.addEventListener("online",()=>wakeHandheldRuntime("online"));
+
     if(typeof AppEvents!=="undefined"){
         AppEvents.on?.("session:updated",()=>{hhRefreshReadyState();setTimeout(hhFocusActiveScanner,30);});
-        AppEvents.on?.("workspace:updated",hhRefreshReadyState);
-        AppEvents.on?.("receiving:updated",hhRefreshReadyState);
+        AppEvents.on?.("workspace:updated",()=>{
+            hhRefreshReadyState();
+            setTimeout(()=>hhRepairScannerFocus("workspace-update"),20);
+        });
+        AppEvents.on?.("receiving:updated",()=>{
+            hhRefreshReadyState();
+            setTimeout(()=>hhRepairScannerFocus("receiving-update"),20);
+        });
     }
 
     hhStartWorkspaceWatch();
-    setInterval(()=>{ hhRefreshReadyState(); },1500);
-    setTimeout(()=>{hhRefreshReadyState();hhFocusActiveScanner(true);hhRefreshWorkspaceAuthority();},100);
+    hhStartFocusWatch();
+
+    setTimeout(()=>{
+        hhRefreshReadyState();
+        hhFocusActiveScanner(true);
+        hhRepairScannerFocus("install");
+        hhRefreshWorkspaceAuthority();
+    },100);
 }
 
 window.HandheldRuntime=HandheldRuntime;
 window.hhRefreshReadyState=hhRefreshReadyState;
+window.hhRepairScannerFocus=hhRepairScannerFocus;
 
 window.addEventListener("load",()=>setTimeout(hhInstall,120));

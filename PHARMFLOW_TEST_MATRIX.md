@@ -1,12 +1,12 @@
-# PHARMFLOW TEST MATRIX — 2C.11.1.7
+# PHARMFLOW TEST MATRIX — 2C.11.1.8
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
 | UW1 | Direct Handheld Receiving | No pairing | USER VERIFIED |
 | UW4 | Known scan | Correct item +1 | USER VERIFIED |
-| CLR-H1 | Handheld Clear Screen | Clears visual Last Scan only | READY FOR TEST |
-| CLR-H2 | Handheld data after clear | Received/history unchanged | READY FOR TEST |
-| CLR-P1 | PC Clear Screen | Clears visual Last Scan only | READY FOR TEST |
-| CLR-P2 | PC data after clear | Received/history unchanged | READY FOR TEST |
-| PCB1 | PC Batch Qty | Tracks current device batch | READY FOR TEST |
-| BURST | Rapid + burst | PC converges automatically | READY FOR TEST |
+| IDLE1 | 6–7 min no interaction | Next hardware scan works without reload | READY FOR TEST |
+| IDLE2 | Browser loses/gets focus | Scanner target restored | READY FOR TEST |
+| IDLE3 | Quantity editing | Watchdog does not steal numeric input focus | READY FOR TEST |
+| IDLE4 | Expiry idle recovery | Hardware scan works after idle | READY FOR TEST |
+| CLR1 | Clear Screen | Returns immediately to scanner-ready state | READY FOR TEST |
+| BURST | Rapid quantity burst | PC converges automatically | READY FOR TEST |

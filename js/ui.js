@@ -5363,7 +5363,10 @@ function createLastScanQuantityControls(){
 
           try{ document.activeElement?.blur?.(); }catch(_){}
 
-          setTimeout(()=>focusScannerInput?.(),40);
+          setTimeout(()=>{
+              focusScannerInput?.();
+              window.hhRepairScannerFocus?.("clear-screen");
+          },40);
       });
 
 }
