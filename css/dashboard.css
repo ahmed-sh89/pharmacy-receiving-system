@@ -8850,3 +8850,32 @@ table th,
 .expiryCapturedButtonLabel{
     white-space:nowrap;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.7 — EXPIRY AUTO CLEAR + PC CLEAR LAYOUT
+============================================================ */
+
+/* PC Receiving must never show the Handheld-specific Clear Screen control. */
+body:not(.zebraDevice) #btnHandheldClearLastScan,
+body:not(.zebraDevice) .handheldClearLastScan{
+    display:none!important;
+}
+
+/* Keep one clean PC Clear Screen below the metric row. */
+body:not(.zebraDevice) #lastScanCard .pcClearLastScan{
+    display:inline-flex!important;
+    position:static!important;
+    order:20!important;
+    align-self:flex-start!important;
+    width:auto!important;
+    min-height:30px!important;
+    margin:8px 0 0!important;
+    padding:5px 11px!important;
+    z-index:auto!important;
+    white-space:nowrap!important;
+}
+
+body:not(.zebraDevice) #lastScanCard{
+    overflow:visible!important;
+}

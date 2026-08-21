@@ -963,7 +963,16 @@ function cleanScannerInput(value){
                 ""
             )
             .replace(
-                /<GS>/gi,
+                /(?:<GS>|\\u001D|\\x1D)/gi,
+                "\x1D"
+            )
+            /*
+               Some Android/Chrome/DataWedge paths render FNC1/GS as a visible
+               control-picture or as the Unicode replacement character.
+               Treat only these known separator representations as GS.
+            */
+            .replace(
+                /[\u241D\uFFFD]+/g,
                 "\x1D"
             )
             /*
@@ -1541,6 +1550,48 @@ function parseParenthesizedGS1(value){
    VARIABLE GS1 FIELD
 ===================================================== */
 
+function isPlausibleGS1ExpiryYYMMDD(value){
+    const digits=toSafeString(value).replace(/\D/g,"");
+
+    if(digits.length!==6){
+        return false;
+    }
+
+    const month=Number(digits.slice(2,4));
+    const day=Number(digits.slice(4,6));
+
+    if(month<1 || month>12){
+        return false;
+    }
+
+    /* GS1 may use day 00 to represent the last day/unspecified day of month. */
+    return day>=0 && day<=31;
+}
+
+
+function findImplicitGS1VariableBoundary(data,startIndex,maxLength){
+    const hardEnd=Math.min(data.length,startIndex+maxLength);
+
+    /*
+       Do not guess arbitrary AI boundaries inside alphanumeric serial/batch
+       values. The only separator-less recovery accepted here is AI 17 with a
+       syntactically valid fixed-length expiry date. This directly covers the
+       DataWedge failure mode where GS disappears before expiry.
+    */
+    for(let i=startIndex+1;i+8<=hardEnd;i++){
+        if(
+            data.slice(i,i+2)==="17" &&
+            /^\d{6}/.test(data.slice(i+2,i+8)) &&
+            isPlausibleGS1ExpiryYYMMDD(data.slice(i+2,i+8))
+        ){
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+
 function readVariableGS1Field(
     data,
     startIndex,
@@ -1549,6 +1600,14 @@ function readVariableGS1Field(
 
     let endIndex =
         startIndex;
+
+
+    const implicitBoundary =
+        findImplicitGS1VariableBoundary(
+            data,
+            startIndex,
+            maxLength
+        );
 
 
     while(
@@ -1561,6 +1620,11 @@ function readVariableGS1Field(
         &&
         data[endIndex] !==
         "\x1D"
+        &&
+        (
+            implicitBoundary < 0 ||
+            endIndex < implicitBoundary
+        )
     ){
 
         endIndex++;

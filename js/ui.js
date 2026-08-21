@@ -481,7 +481,13 @@ function ensurePcClearScreenButton(){
         button.type="button";
         button.className="pcClearLastScan";
         button.textContent="CLEAR SCREEN";
-        card.appendChild(button);
+
+        const metrics=card.querySelector(".lastScanMetrics");
+        if(metrics){
+            metrics.insertAdjacentElement("afterend",button);
+        }else{
+            card.appendChild(button);
+        }
     }
 
     button.onclick=()=>{

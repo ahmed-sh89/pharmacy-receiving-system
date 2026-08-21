@@ -14,6 +14,8 @@ const ExpiryCaptureEngine = {
     scannedGS1: null,
     dateSource: "NONE",
     savedClearTimer: null,
+    scanClearTimer: null,
+    formDirty: false,
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -135,6 +137,36 @@ function setExpiryStatus(kind, text){
     box.textContent = text || "READY TO SCAN";
 }
 
+function cancelExpiryScanAutoClear(){
+    clearTimeout(ExpiryCaptureEngine.scanClearTimer);
+    ExpiryCaptureEngine.scanClearTimer=null;
+}
+
+function markExpiryFormDirty(){
+    ExpiryCaptureEngine.formDirty=true;
+    cancelExpiryScanAutoClear();
+}
+
+function scheduleExpiryScanAutoClear(){
+    cancelExpiryScanAutoClear();
+    ExpiryCaptureEngine.formDirty=false;
+
+    ExpiryCaptureEngine.scanClearTimer=setTimeout(()=>{
+        if(
+            !ExpiryCaptureEngine.currentItem ||
+            ExpiryCaptureEngine.formDirty ||
+            expiryWorkerIsEditing()
+        ){
+            return;
+        }
+
+        clearExpiryScreen({
+            clearSaved:false,
+            savedOnly:false
+        });
+    },30000);
+}
+
 function expiryWorkerIsEditing(){
     const active=document.activeElement;
     if(!active || active===document.body) return false;
@@ -206,6 +238,8 @@ function clearExpiryScreen(options={}){
     try{ document.activeElement?.blur?.(); }catch(_){}
 
     clearTimeout(ExpiryCaptureEngine.scanTimer);
+    cancelExpiryScanAutoClear();
+    ExpiryCaptureEngine.formDirty=false;
     ExpiryCaptureEngine.lastResolvedRaw="";
 
     /*
@@ -233,6 +267,8 @@ function clearExpiryScreen(options={}){
 }
 
 function resetExpiryCaptureForm(options = {}){
+    cancelExpiryScanAutoClear();
+    ExpiryCaptureEngine.formDirty=false;
     ExpiryCaptureEngine.currentItem = null;
     ExpiryCaptureEngine.scannedGS1 = null;
 
@@ -391,6 +427,8 @@ async function resolveExpiryScannedValue(rawValue){
             window.hhRepairScannerFocus?.("expiry-unknown-resolved");
         },40);
 
+        scheduleExpiryScanAutoClear();
+
         return true;
     }
 
@@ -456,11 +494,15 @@ async function resolveExpiryScannedValue(rawValue){
         window.hhRepairScannerFocus?.("expiry-known-resolved");
     },40);
 
+    scheduleExpiryScanAutoClear();
+
     return true;
 }
 
 async function saveExpiryCapture(){
     if(ExpiryCaptureEngine.busy) return;
+
+    cancelExpiryScanAutoClear();
 
     const item = ExpiryCaptureEngine.currentItem;
     const workerId = ExpiryCaptureEngine.selectedWorkerId;
@@ -676,7 +718,7 @@ async function refreshExpiryCapturedCount(){
         if(btn){
             btn.dataset.loaded="1";
 
-            const label=expiryIsHandheld() ? "RECENT" : "CAPTURED";
+            const label="RECENT";
 
             /* Avoid mutating anonymous text nodes around the counter. That
                produced duplicate visible CAPTURED labels on some builds. */
@@ -687,9 +729,7 @@ async function refreshExpiryCapturedCount(){
 
             btn.setAttribute(
                 "aria-label",
-                expiryIsHandheld()
-                    ? "Recent expiry captures"
-                    : "Captured expiry items"
+                "Recent expiry captures"
             );
         }
 
@@ -769,7 +809,7 @@ async function openExpiryCapturedPanel(){
             <header>
               <div>
                 <span>NEAR EXPIRY</span>
-                <strong>${expiryIsHandheld() ? "Recent Expiry" : "Captured Items"}</strong>
+                <strong>Recent Expiry</strong>
                 <small>${expiryEscapeHtml(sourceLabel(state.source))} · ${expiryEscapeHtml(rangeLabel(state.range))}</small>
               </div>
               <button type="button" data-close>✕</button>
@@ -998,6 +1038,7 @@ function bindExpiryCaptureUI(){
         const unlockQuantity=()=>{
             if(!ExpiryCaptureEngine.currentItem) return;
 
+            markExpiryFormDirty();
             qtyInput.readOnly=false;
             qtyInput.dataset.intentionalEdit="1";
 
@@ -1036,6 +1077,7 @@ function bindExpiryCaptureUI(){
     if(monthSelect && monthSelect.dataset.bound !== "1"){
         monthSelect.dataset.bound="1";
         monthSelect.addEventListener("change",()=>{
+            markExpiryFormDirty();
             const label=document.getElementById("expiryMonthName");
             if(label) label.textContent=expiryMonthName(monthSelect.value);
         });
@@ -1114,12 +1156,15 @@ function bindExpiryCaptureUI(){
         el.dataset.bound = "1";
 
         el.addEventListener("input", () => {
+            markExpiryFormDirty();
             if(id === "expiryMonth"){
                 const m = Number(el.value || 0);
                 const name = document.getElementById("expiryMonthName");
                 if(name) name.textContent = m >= 1 && m <= 12 ? expiryMonthName(m) : "";
             }
         });
+
+        el.addEventListener("pointerdown", markExpiryFormDirty);
 
         el.addEventListener("keydown", event => {
             if(event.key !== "Enter") return;
