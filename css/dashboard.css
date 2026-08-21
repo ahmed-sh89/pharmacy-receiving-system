@@ -7934,3 +7934,65 @@ body.quantityQuickConfirmed.zebraDevice #btnLastScanEdit,
 body.quantityQuickConfirmed:not(.zebraDevice) #lastScanCard{
     box-shadow:0 0 0 2px rgba(44,150,82,.18)!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.1.5 — BATCH BOUNDARY + CLEAR LAST SCAN
+============================================================ */
+
+body.zebraDevice.zebraReceivingActive .handheldClearLastScan{
+    display:block!important;
+    width:auto!important;
+    min-height:26px!important;
+    margin:5px auto 0!important;
+    padding:3px 10px!important;
+    border:1px solid #d9e0db!important;
+    border-radius:7px!important;
+    background:#fff!important;
+    color:#79847d!important;
+    font-size:8px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.04em!important;
+    box-shadow:none!important;
+}
+
+/* Keep it intentionally secondary to +/- and Quantity. */
+body.zebraDevice.zebraReceivingActive .handheldClearLastScan:active{
+    background:#f1f4f2!important;
+}
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.1.7 — CLEAR SCREEN (PC + HANDHELD)
+   Visual-only control. Never changes receiving data/history.
+============================================================ */
+
+body:not(.zebraDevice) #lastScanCard{
+    position:relative!important;
+}
+
+body:not(.zebraDevice) .pcClearLastScan{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:28px!important;
+    margin:8px 0 0 auto!important;
+    padding:4px 10px!important;
+    border:1px solid #d9e0db!important;
+    border-radius:7px!important;
+    background:#fff!important;
+    color:#748079!important;
+    font-size:9px!important;
+    font-weight:900!important;
+    letter-spacing:.04em!important;
+    box-shadow:none!important;
+}
+
+body:not(.zebraDevice) .pcClearLastScan:active{
+    background:#f1f4f2!important;
+}
+
+body.zebraDevice.zebraReceivingActive .handheldClearLastScan{
+    color:#748079!important;
+}

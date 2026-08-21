@@ -1,9 +1,8 @@
-# PHARMFLOW CHANGELOG — 2C.11.1.3
+# PHARMFLOW CHANGELOG — 2C.11.1.7
 
-- Restored/preserved PC Last Scan UI.
-- Returned Handheld primary quantity to current local Handheld batch quantity.
-- Handheld quantity edit now adds additional physical packs to the current local batch.
-- Kept Ordered / Total Received / Remaining as compact all-device context.
-- Removed large green success toast for direct +/- adjustments on PC and Handheld; retained subtle green confirmation.
-- Preserved exception Cancel and Recent tabs from 2C.11.1.2.
+- Renamed Handheld `CANCEL SCAN` to `CLEAR SCREEN`.
+- Changed Clear Screen semantics to visual-only; it no longer creates a local batch boundary.
+- Added small PC `CLEAR SCREEN` control to the existing Last Scan card.
+- Clear Screen does not modify Received, history, corrections, Supabase, or current batch accounting.
+- Preserved all prior Unified Workspace, burst sync, Add Quantity, Batch Qty and exception-flow fixes.
 - No SQL migration.

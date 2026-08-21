@@ -464,6 +464,38 @@ function createSmartScanSearchUI(){
    MOVE LAST SCAN
 ===================================================== */
 
+
+function ensurePcClearScreenButton(){
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        return;
+    }
+
+    const card=document.getElementById("lastScanCard");
+    if(!card) return;
+
+    let button=document.getElementById("btnPcClearLastScan");
+
+    if(!button){
+        button=document.createElement("button");
+        button.id="btnPcClearLastScan";
+        button.type="button";
+        button.className="pcClearLastScan";
+        button.textContent="CLEAR SCREEN";
+        card.appendChild(button);
+    }
+
+    button.onclick=()=>{
+        /*
+           Visual-only clear. Does not modify receiving quantities/history.
+        */
+        AppState.workspace.lastScan=null;
+        refreshEntireUI?.();
+
+        try{ document.activeElement?.blur?.(); }catch(_){}
+        setTimeout(()=>focusScannerInput?.(),30);
+    };
+}
+
 function moveLastScanBelowScanBox(){
 
     const lastScanCard =
@@ -1502,6 +1534,7 @@ function refreshEntireUI(){
 
     refreshOpenOrderStatusReport();
 
+    ensurePcClearScreenButton?.();
 }
 
 
@@ -2290,46 +2323,136 @@ function getDeviceItemReceivedQuantity(itemCode){
    As soon as this device works on another item, the next scan of the original
    item starts a fresh batch at 1. Other devices never reset this local batch.
 */
-function getCurrentBatchQuantity(itemCode){
-    const code = normalizeItemCode(itemCode);
-    const deviceId = getCurrentDeviceId();
+const HANDHELD_BATCH_BOUNDARY_KEY="PRS_HH_BATCH_BOUNDARIES_V1";
 
-    if(!code || !deviceId){
-        return 0;
+function readHandheldBatchBoundaries(){
+    try{
+        const parsed=JSON.parse(localStorage.getItem(HANDHELD_BATCH_BOUNDARY_KEY)||"{}");
+        return parsed && typeof parsed==="object" ? parsed : {};
+    }catch(_){
+        return {};
     }
+}
 
-    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+function writeHandheldBatchBoundaries(value){
+    try{
+        localStorage.setItem(
+            HANDHELD_BATCH_BOUNDARY_KEY,
+            JSON.stringify(value||{})
+        );
+    }catch(_){}
+}
+
+function setHandheldBatchBoundary(itemCode,at=nowISO()){
+    const code=normalizeItemCode(itemCode);
+    if(!code) return;
+
+    const map=readHandheldBatchBoundaries();
+    map[code]=String(at||nowISO());
+    writeHandheldBatchBoundaries(map);
+}
+
+function getHandheldBatchBoundaryTime(itemCode){
+    const code=normalizeItemCode(itemCode);
+    if(!code) return 0;
+
+    let boundary=0;
+
+    /* Explicit local Clear/Cancel starts a new worker batch without deleting
+       receiving transactions. */
+    try{
+        const local=readHandheldBatchBoundaries()[code];
+        const localTime=new Date(local||0).getTime();
+        if(Number.isFinite(localTime)){
+            boundary=Math.max(boundary,localTime);
+        }
+    }catch(_){}
+
+    /* A direct quantity edit on ANOTHER device is an authoritative
+       reconciliation boundary. Example: pharmacist sets Received to zero on PC.
+       Old Handheld batch UI must not continue showing the pre-correction batch. */
+    const deviceId=getCurrentDeviceId();
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
         ? AppState.workspace.receivingHistory
         : [];
 
-    const local = history
-        .map((tx,index)=>({tx,index}))
-        .filter(row=>toSafeString(row.tx?.deviceId||"")===deviceId)
-        .sort((a,b)=>{
-            const ta = new Date(a.tx?.dateTime||0).getTime();
-            const tb = new Date(b.tx?.dateTime||0).getTime();
-            return ta===tb ? a.index-b.index : ta-tb;
-        });
+    history.forEach(tx=>{
+        if(normalizeItemCode(tx?.itemCode)!==code) return;
+        if(toSafeString(tx?.deviceId||"")===deviceId) return;
+
+        const source=toSafeString(tx?.source||"").toUpperCase();
+        if(
+            source!==String(ReceivingEngine?.adjustmentSources?.editIncrease||"MANUAL_EDIT_INCREASE").toUpperCase() &&
+            source!==String(ReceivingEngine?.adjustmentSources?.editDecrease||"MANUAL_EDIT_DECREASE").toUpperCase()
+        ){
+            return;
+        }
+
+        const time=new Date(tx?.dateTime||0).getTime();
+        if(Number.isFinite(time)){
+            boundary=Math.max(boundary,time);
+        }
+    });
+
+    return boundary;
+}
+
+function getCurrentBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    const currentDeviceId=getCurrentDeviceId();
+    if(!code) return 0;
+
+    const boundaryTime=getHandheldBatchBoundaryTime(code);
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory : [];
+    const lastScan=AppState?.workspace?.lastScan;
+    const lastScanMatches=normalizeItemCode(lastScan?.itemCode)===code;
+
+    let anchoredDeviceId=currentDeviceId;
+    if(lastScanMatches && lastScan?.transactionId){
+        const anchorTx=history.find(tx=>
+            toSafeString(tx?.transactionId||"")===toSafeString(lastScan.transactionId||"")
+        );
+        if(anchorTx?.deviceId) anchoredDeviceId=toSafeString(anchorTx.deviceId);
+    }
+
+    if(!anchoredDeviceId){
+        return lastScanMatches ? Math.max(0,toNumber(lastScan?.quantity,0)) : 0;
+    }
+
+    const local=history.map((tx,index)=>({tx,index})).filter(row=>{
+        if(toSafeString(row.tx?.deviceId||"")!==anchoredDeviceId) return false;
+        const time=new Date(row.tx?.dateTime||0).getTime();
+        return !Number.isFinite(boundaryTime) || time>boundaryTime;
+    }).sort((a,b)=>{
+        const ta=new Date(a.tx?.dateTime||0).getTime();
+        const tb=new Date(b.tx?.dateTime||0).getTime();
+        return ta===tb ? a.index-b.index : ta-tb;
+    });
 
     if(!local.length){
-        return 0;
+        return lastScanMatches ? Math.max(0,toNumber(lastScan?.quantity,0)) : 0;
     }
 
-    const lastCode = normalizeItemCode(local[local.length-1].tx?.itemCode);
-    if(lastCode !== code){
-        return 0;
+    let endIndex=local.length-1;
+    if(lastScanMatches && lastScan?.transactionId){
+        const wanted=toSafeString(lastScan.transactionId);
+        const found=local.findIndex(row=>toSafeString(row.tx?.transactionId||"")===wanted);
+        if(found>=0) endIndex=found;
     }
 
-    let qty = 0;
-    for(let i=local.length-1; i>=0; i--){
-        const txCode = normalizeItemCode(local[i].tx?.itemCode);
-        if(txCode !== code){
-            break;
-        }
-        qty += toNumber(local[i].tx?.quantity,0);
+    if(normalizeItemCode(local[endIndex]?.tx?.itemCode)!==code){
+        return lastScanMatches ? Math.max(0,toNumber(lastScan?.quantity,0)) : 0;
     }
 
-    return Math.max(0, qty);
+    let qty=0;
+    for(let i=endIndex;i>=0;i--){
+        const txCode=normalizeItemCode(local[i]?.tx?.itemCode);
+        if(txCode!==code) break;
+        qty+=toNumber(local[i]?.tx?.quantity,0);
+    }
+    if(qty===0 && lastScanMatches) return Math.max(0,toNumber(lastScan?.quantity,0));
+    return Math.max(0,qty);
 }
 
 function getDeviceLastItemActionQuantity(itemCode){
@@ -2395,7 +2518,7 @@ function openQuantityEditPrompt(item){
 
             const close=()=>{
                 try{ document.activeElement?.blur?.(); }catch(_){}
-                handheldModal.classList.remove("active");
+                handheldModal.classList.remove("open");
                 setTimeout(()=>window.hhRefreshReadyState?.(),20);
             };
 
@@ -2426,7 +2549,7 @@ function openQuantityEditPrompt(item){
 
                 const tx=addItemReceivedQuantity(code,additional,"HANDHELD_BATCH_ADD");
                 if(tx){
-                    handheldModal.classList.remove("active");
+                    handheldModal.classList.remove("open");
                     refreshEntireUI?.();
                     setTimeout(()=>window.hhRefreshReadyState?.(),20);
                 }
@@ -2448,7 +2571,7 @@ function openQuantityEditPrompt(item){
         const input=document.getElementById("handheldBatchAddInput");
         if(input){ input.value="1"; }
 
-        handheldModal.classList.add("active");
+        handheldModal.classList.add("open");
 
         setTimeout(()=>{
             try{
@@ -5116,6 +5239,14 @@ function createLastScanQuantityControls(){
 
       </div>
 
+      <button
+          type="button"
+          id="btnHandheldClearLastScan"
+          class="handheldClearLastScan"
+      >
+          CLEAR SCREEN
+      </button>
+
   `;
 
   card.appendChild(
@@ -5210,6 +5341,30 @@ function createLastScanQuantityControls(){
 
           }
       );
+
+  document
+      .getElementById("btnHandheldClearLastScan")
+      ?.addEventListener("click",function(){
+
+          /*
+             2C.11.1.7 — CLEAR SCREEN is visual only.
+             It MUST NOT:
+             - reverse a receiving transaction,
+             - change Received,
+             - create a correction,
+             - start a new local batch,
+             - alter history,
+             - write to Supabase.
+          */
+          AppState.workspace.lastScan=null;
+
+          refreshEntireUI?.();
+          window.hhRefreshReadyState?.();
+
+          try{ document.activeElement?.blur?.(); }catch(_){}
+
+          setTimeout(()=>focusScannerInput?.(),40);
+      });
 
 }
 
@@ -8004,4 +8159,13 @@ if(typeof AppEvents!=="undefined"&&AppEvents?.on){
         },30);
     });
     AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));
+}
+
+
+if(typeof AppEvents !== "undefined"){
+    try{
+        AppEvents.on?.("workspace:updated",()=>setTimeout(()=>ensurePcClearScreenButton?.(),20));
+        AppEvents.on?.("receiving:updated",()=>setTimeout(()=>ensurePcClearScreenButton?.(),20));
+        AppEvents.on?.("scan:processed",()=>setTimeout(()=>ensurePcClearScreenButton?.(),20));
+    }catch(_){}
 }

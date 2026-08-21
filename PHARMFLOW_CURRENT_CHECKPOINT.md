@@ -1,40 +1,42 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.1.3 — Handheld Local Qty + PC Preserve
+Version: Phase 2C.11.1.7 — Clear Screen PC + Handheld
 Status: READY FOR TEST
 
-## USER VERIFIED / PROTECTED
-- 2C.11.0 Unified Pharmacy Workspace is USER VERIFIED.
-- Handheld enters Receiving without pairing.
-- Known scans work on PC and Handheld.
-- PC↔Handheld synchronization works.
+## DEPLOYMENT
+2C.11.1.7 supersedes 2C.11.1.6 and includes all prior 2C.11.1.x fixes.
 
-## APPROVED QUANTITY MODEL
-PC:
-- Preserve existing PC Last Scan design and behavior. Handheld UX work must not remove or redesign it.
+## APPROVED CLEAR SCREEN RULE
+`CLEAR SCREEN` is a purely visual action on both Handheld and PC.
 
-Handheld:
-- Large editable number = quantity physically handled in the CURRENT LOCAL HANDHELD BATCH for the current item.
-- Example: PC1=20, PC2=30, Handheld worker scans one pack then enters 9 additional packs. Local Handheld Qty becomes 10.
-- Compact row below displays Ordered / Total Received across all devices / Remaining.
-- In the example: Ordered 100 / Total Received 60 / Remaining 40.
-- Tapping local quantity asks for ADDITIONAL packs, not shared-total replacement.
-- Enter closes numeric keyboard and adds the entered packs.
+It MUST NOT:
+- delete the last receiving transaction,
+- decrease Received,
+- change Total Received,
+- create an Undo/correction transaction,
+- clear receiving history,
+- start/reset a local Handheld batch,
+- write any receiving change to Supabase.
 
-## QUICK +/- FEEDBACK
-- +/- on PC and Handheld no longer creates a large green success toast.
-- Existing small green visual confirmation remains.
+Its only job:
+- clear the visible Last Scan card,
+- return the user to a clean ready-to-scan screen.
 
-## OTHER 2C.11.1.2 BEHAVIOR PRESERVED
-- Known Item Not in Order: no auto keyboard; Cancel Scan available.
-- Unknown/GTIN mismatch: no auto keyboard; Cancel Scan discards accidental review draft/photo.
-- Recent: THIS HANDHELD default with Undo; ALL DEVICES view-only.
+If a scan itself was a receiving mistake, the user must use the proper audit-safe correction path such as RECENT -> Undo or Adjust Quantity.
 
-## TEST
-1. PC Last Scan must remain visible and unchanged.
-2. Handheld: scan known item once => local quantity 1.
-3. Enter 9 additional packs and press Enter => keyboard closes; local quantity 10.
-4. If PC1 had 20 and PC2 had 30, compact row must show Total Received 60 when Handheld local reaches 10.
-5. +/- must update quantity with only subtle green feedback and no large success toast.
-6. PC↔Handheld synchronization must remain correct.
+## IMPLEMENTED
+- Handheld button renamed from `CANCEL SCAN` to `CLEAR SCREEN`.
+- Removed prior batch-boundary side effect from this button.
+- Added a matching small `CLEAR SCREEN` button to PC Last Scan.
+- PC Last Scan design otherwise remains preserved.
+- No SQL migration.
+
+## EXACT TEST
+1. Handheld: scan known item once; note Received.
+2. Press CLEAR SCREEN.
+3. Last Scan card clears, but Received and Recent History remain unchanged.
+4. Scan same item again; current local batch logic continues normally.
+5. PC: scan known item; press CLEAR SCREEN.
+6. PC Last Scan clears only. Received must not change.
+7. Refresh either device: cleared visual Last Scan may rehydrate only if application intentionally restores lastScan state; receiving totals/history must remain correct.

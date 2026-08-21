@@ -35,6 +35,7 @@ const PharmFlowCloudWorkspace = {
     activeManifestBusy:false,
     receivingSyncBusy:false,
     receivingSyncTimer:null,
+    receivingFlushPromise:null,
     lastReceivingSyncAt:null,
     lastReceivingSyncError:null
 };
@@ -135,98 +136,193 @@ function writeCloudQueue(rows){
 }
 function queueCloudWorkspaceTransaction(tx){
     if(!tx || PharmFlowCloudWorkspace.applyingRemote) return;
+
     const q=readCloudQueue();
-    if(!q.some(x=>x.transactionId===tx.transactionId)) q.push(tx);
-    writeCloudQueue(q);
+
+    if(!q.some(row=>row.transactionId===tx.transactionId)){
+        q.push(tx);
+        writeCloudQueue(q);
+    }
+
+    /* Fire-and-forget is safe because flushCloudWorkspaceQueue is now a
+       single-flight worker. Rapid +/- can no longer create overlapping
+       stale queue writers. */
     flushCloudWorkspaceQueue();
 }
 
+function removeCloudQueueTransactions(transactionIds){
+    const ids=new Set(
+        (transactionIds||[])
+            .map(value=>toSafeString(value))
+            .filter(Boolean)
+    );
+
+    if(!ids.size) return;
+
+    const latest=readCloudQueue();
+
+    writeCloudQueue(
+        latest.filter(row=>!ids.has(toSafeString(row?.transactionId||"")))
+    );
+}
+
+async function uploadCloudReceivingTransaction(tx,pharmacyId){
+    await authRpc("append_pharmflow_cloud_transaction_v2",{
+        p_pharmacy_id:pharmacyId,
+        p_transaction_id:tx.transactionId,
+        p_order_number:toSafeString(
+            tx.selectedOrderNumber ||
+            tx.orderId ||
+            ""
+        ),
+        p_item_code:toSafeString(tx.itemCode||""),
+        p_item_name:toSafeString(tx.itemName||""),
+        p_gtin:toSafeString(tx.gtin||""),
+        p_quantity:toNumber(tx.quantity,0),
+        p_source:toSafeString(tx.source||"RECEIVING"),
+        p_device_id:toSafeString(
+            tx.deviceId ||
+            cloudWorkspaceDeviceId()
+        ),
+        p_occurred_at:tx.dateTime||nowISO(),
+        p_payload:tx
+    });
+
+    const local=(AppState?.workspace?.receivingHistory||[])
+        .find(row=>row.transactionId===tx.transactionId);
+
+    if(local){
+        local.cloudSynced=true;
+    }
+
+    return tx.transactionId;
+}
+
 async function flushCloudWorkspaceQueue(){
-    const pharmacyId=cloudWorkspacePharmacyId();
-
-    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function"){
-        if(readCloudQueue().length){
-            setCloudWorkspaceStatus("offline","Receiving changes pending sync");
-        }
-        return false;
+    if(PharmFlowCloudWorkspace.receivingFlushPromise){
+        return PharmFlowCloudWorkspace.receivingFlushPromise;
     }
 
-    const queue=readCloudQueue();
+    PharmFlowCloudWorkspace.receivingFlushPromise=(async()=>{
+        const pharmacyId=cloudWorkspacePharmacyId();
 
-    if(!queue.length){
-        return true;
-    }
-
-    setCloudWorkspaceStatus("syncing","Syncing receiving changes");
-
-    const remain=[];
-    let syncedCount=0;
-
-    for(const tx of queue){
-        try{
-            await authRpc("append_pharmflow_cloud_transaction_v2",{
-                p_pharmacy_id:pharmacyId,
-                p_transaction_id:tx.transactionId,
-                p_order_number:toSafeString(
-                    tx.selectedOrderNumber ||
-                    tx.orderId ||
-                    ""
-                ),
-                p_item_code:toSafeString(tx.itemCode||""),
-                p_item_name:toSafeString(tx.itemName||""),
-                p_gtin:toSafeString(tx.gtin||""),
-                p_quantity:toNumber(tx.quantity,0),
-                p_source:toSafeString(tx.source||"RECEIVING"),
-                p_device_id:toSafeString(
-                    tx.deviceId ||
-                    cloudWorkspaceDeviceId()
-                ),
-                p_occurred_at:tx.dateTime||nowISO(),
-                p_payload:tx
-            });
-
-            syncedCount++;
-
-            const local=(AppState?.workspace?.receivingHistory||[])
-                .find(row=>row.transactionId===tx.transactionId);
-
-            if(local){
-                local.cloudSynced=true;
+        if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function"){
+            if(readCloudQueue().length){
+                setCloudWorkspaceStatus("offline","Receiving changes pending sync");
             }
+            return false;
         }
-        catch(error){
-            Logger.warn(
-                "Receiving transaction upload failed",
-                {
-                    transactionId:tx?.transactionId,
-                    error:error?.message||String(error)
-                }
+
+        setCloudWorkspaceStatus("syncing","Syncing receiving changes");
+
+        let syncedAny=false;
+        let failedInPass=false;
+
+        /* Small controlled concurrency keeps a burst of 50–100 +/- actions
+           responsive without launching one independent flush per click. */
+        const CHUNK_SIZE=4;
+
+        while(
+            navigator.onLine &&
+            cloudWorkspacePharmacyId()===pharmacyId
+        ){
+            const latestQueue=readCloudQueue();
+
+            if(!latestQueue.length){
+                break;
+            }
+
+            const chunk=latestQueue.slice(0,CHUNK_SIZE);
+
+            const results=await Promise.all(
+                chunk.map(async tx=>{
+                    try{
+                        const transactionId=
+                            await uploadCloudReceivingTransaction(tx,pharmacyId);
+
+                        return {
+                            ok:true,
+                            transactionId
+                        };
+                    }
+                    catch(error){
+                        Logger.warn(
+                            "Receiving transaction upload failed",
+                            {
+                                transactionId:tx?.transactionId,
+                                error:error?.message||String(error)
+                            }
+                        );
+
+                        PharmFlowCloudWorkspace.lastReceivingSyncError=
+                            error?.message || String(error);
+
+                        return {
+                            ok:false,
+                            transactionId:tx?.transactionId,
+                            error
+                        };
+                    }
+                })
             );
 
-            PharmFlowCloudWorkspace.lastReceivingSyncError=
-                error?.message || String(error);
+            const successes=results
+                .filter(row=>row.ok)
+                .map(row=>row.transactionId);
 
-            remain.push(tx);
+            if(successes.length){
+                syncedAny=true;
+
+                /* Critical: remove successful IDs from the LATEST queue.
+                   Never replace localStorage with an old snapshot. */
+                removeCloudQueueTransactions(successes);
+            }
+
+            const failures=results.filter(row=>!row.ok);
+
+            if(failures.length){
+                failedInPass=true;
+                break;
+            }
+        }
+
+        const remaining=readCloudQueue();
+
+        if(syncedAny){
+            saveWorkspaceSnapshot?.();
+        }
+
+        if(remaining.length){
+            setCloudWorkspaceStatus(
+                navigator.onLine ? "syncing" : "offline",
+                `${remaining.length} receiving change(s) pending`
+            );
+
+            return false;
+        }
+
+        PharmFlowCloudWorkspace.lastReceivingSyncError=null;
+        setCloudWorkspaceStatus("synced","Receiving synchronized");
+
+        return !failedInPass;
+    })();
+
+    try{
+        return await PharmFlowCloudWorkspace.receivingFlushPromise;
+    }
+    finally{
+        PharmFlowCloudWorkspace.receivingFlushPromise=null;
+
+        /* A new transaction may have arrived between the final queue read and
+           promise teardown. Immediately start one more pass if needed. */
+        if(
+            navigator.onLine &&
+            readCloudQueue().length &&
+            cloudWorkspacePharmacyId()
+        ){
+            setTimeout(()=>flushCloudWorkspaceQueue(),0);
         }
     }
-
-    writeCloudQueue(remain);
-
-    if(remain.length){
-        setCloudWorkspaceStatus(
-            navigator.onLine ? "syncing" : "offline",
-            `${remain.length} receiving change(s) pending`
-        );
-        return false;
-    }
-
-    if(syncedCount){
-        saveWorkspaceSnapshot?.();
-    }
-
-    PharmFlowCloudWorkspace.lastReceivingSyncError=null;
-    setCloudWorkspaceStatus("synced","Receiving synchronized");
-    return true;
 }
 
 
