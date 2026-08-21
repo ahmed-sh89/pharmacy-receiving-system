@@ -8294,3 +8294,119 @@ body.zebraDevice.zebraExpiryActive .expiryScanBox{
 body.zebraDevice.zebraExpiryActive .expiryItemMeta{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.2 — EXPIRY HISTORY UI + DELETE ALL
+============================================================ */
+
+.expiryCapturedButton{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+}
+
+.expiryCapturedButtonLabel{
+    font-size:8px!important;
+    font-weight:950!important;
+    letter-spacing:.04em!important;
+}
+
+#expiryCapturedCount{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-width:20px!important;
+    height:20px!important;
+    padding:0 5px!important;
+    border-radius:999px!important;
+    background:#9b5a2d!important;
+    color:#fff!important;
+    font-size:10px!important;
+    font-weight:950!important;
+}
+
+/* Dangerous action is intentionally isolated inside ALL DEVICES + ALL HISTORY. */
+.expiryHistoryDangerZone{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:10px!important;
+    align-items:center!important;
+    margin:10px 0 4px!important;
+    padding:10px!important;
+    border:1px solid #e7c6c6!important;
+    border-radius:10px!important;
+    background:#fff7f7!important;
+}
+
+.expiryHistoryDangerZone > div{
+    display:grid!important;
+    gap:2px!important;
+}
+
+.expiryHistoryDangerZone strong{
+    font-size:10px!important;
+    color:#8d3a3a!important;
+}
+
+.expiryHistoryDangerZone span{
+    font-size:8px!important;
+    line-height:1.25!important;
+    color:#8e7474!important;
+}
+
+#btnDeleteAllExpiryHistory{
+    min-height:34px!important;
+    padding:5px 8px!important;
+    border:1px solid #c96666!important;
+    border-radius:8px!important;
+    background:#fff!important;
+    color:#a63f3f!important;
+    font-size:8px!important;
+    font-weight:950!important;
+}
+
+#btnDeleteAllExpiryHistory.confirming{
+    background:#fff1e7!important;
+    border-color:#c87c46!important;
+    color:#9c5429!important;
+}
+
+#btnDeleteAllExpiryHistory.finalConfirm{
+    background:#b64040!important;
+    border-color:#b64040!important;
+    color:#fff!important;
+}
+
+body.zebraDevice .expiryHistoryDangerZone{
+    grid-template-columns:1fr!important;
+}
+
+body.zebraDevice #btnDeleteAllExpiryHistory{
+    width:100%!important;
+}
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.3 — EXPIRY HISTORY DELETE PC-ONLY
+============================================================ */
+
+.expiryHistoryViewOnly{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:30px!important;
+    padding:4px 8px!important;
+    border-radius:7px!important;
+    background:#f3f6f4!important;
+    color:#839087!important;
+    font-size:8px!important;
+    font-weight:900!important;
+}
+
+body.zebraDevice .expiryDeleteRecord,
+body.zebraDevice #btnDeleteAllExpiryHistory,
+body.zebraDevice .expiryHistoryDangerZone{
+    display:none!important;
+}

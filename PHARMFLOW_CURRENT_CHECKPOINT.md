@@ -1,59 +1,50 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.3.1 — Expiry UX + History Scope + 30s Auto Clear
+Version: Phase 2C.11.3.4 — Expiry History Consolidated
 Status: READY FOR TEST
 
-## VERIFIED / PROTECTED
-- Receiving 2C.11.1.9 baseline is USER VERIFIED.
-- Unified Workspace, receiving live sync, high-volume quantity behavior and idle/wake recovery remain protected.
-- PC Expiry GS1 flow from 2C.11.3.0 was reported working.
+## CONSOLIDATION
+This package replaces BOTH:
+- Phase 2C.11.3.2 — Expiry History UI + Delete All
+- Phase 2C.11.3.3 — Expiry History Delete PC-Only
 
-## USER-REPORTED 2C.11.3.0 EXPIRY ISSUES
-- Handheld CLEAR SCREEN was not practically visible.
-- Numeric keyboard appeared automatically after Handheld Expiry scan.
-- CAPTURED opened very old history without useful operational scoping.
-- Worker area needed a smaller, more professional Handheld layout.
-- 30-second Clear Screen behavior had not been implemented as requested.
+2C.11.3.3 was implemented on top of 2C.11.3.2, therefore this consolidated
+package preserves both change sets in one deployment.
 
-## 2C.11.3.1 FIXES
-### Handheld keyboard
-- Expiry Quantity is readonly after scan.
-- Numeric keypad can open only after intentional worker tap on Quantity.
-- After scan, focus is restored to hardware scanner target instead of Quantity.
-- Enter closes keypad and re-locks Quantity.
-- GTIN-only then proceeds to Month/Year dropdowns.
+## INCLUDED CHANGES
+1. Expiry counter UI duplication fixed.
+   - PC: CAPTURED + count.
+   - Handheld: RECENT + count.
+2. Expiry History source/range behavior retained.
+3. PC:
+   - Single-record Delete available.
+   - DELETE ALL EXPIRY HISTORY available only in ALL DEVICES + ALL HISTORY.
+   - Delete All retains protected multi-stage confirmation.
+4. Handheld:
+   - Expiry History is view-only.
+   - No single-record Delete.
+   - No Delete All.
+   - CLEAR SCREEN remains UI-only.
+5. Defensive Handheld guards prevent destructive history actions even if stale UI/cache appears.
+6. Expiry History deletion is intended to affect current-pharmacy Expiry captures only.
+7. Receiving, Orders, Global GTIN, Returns Archive and unrelated historical domains remain protected.
 
-### CLEAR SCREEN
-- Manual CLEAR SCREEN remains UI-only and is made persistently visible on Handheld.
-- After successful Save, a true 30-second inactivity timer runs on PC + Handheld.
-- At 30 seconds, saved visual confirmation/status is cleared and scanner returns READY.
-- Saved database records are never deleted.
-- If a new unsaved item exists or worker is editing, Auto Clear defers instead of destroying work.
+## DATABASE NOTE
+Delete All expects the pharmacy-scoped RPC:
+delete_all_pharmacy_expiry_captures(p_pharmacy_id)
 
-### Worker bar
-- Handheld uses one compact Worker row: icon + WORKER + selected worker dropdown.
-- No second oversized worker strip is required.
-
-### Expiry operational history
-- Handheld button is presented as RECENT.
-- Default history scope is TODAY + current device class (HANDHELD on Handheld, PC on PC).
-- Source tabs: HANDHELD / PC / ALL DEVICES.
-- Range tabs: TODAY / 7 DAYS / ALL HISTORY.
-- Operational panel shows latest 50 in a selected view.
-- Full historical reporting remains the responsibility of Expiry Reports, not the operational Recent drawer.
-- Existing expiry data is not deleted or migrated.
-
-## DATABASE
-No SQL migration.
+If the RPC is not present in Supabase, Delete All must remain unverified and should fail safely rather than performing an unsafe browser-side bulk delete.
 
 ## TEST
-1. Handheld full GS1 scan: no keyboard must open automatically.
-2. Tap Quantity intentionally: numeric keyboard opens; Enter closes it.
-3. Handheld CLEAR SCREEN is visible without reload and returns READY.
-4. Save an Expiry capture. Do not touch screen for 30 seconds. Saved visual state must clear automatically on PC and Handheld.
-5. Start editing a new unsaved item before 30 seconds: Auto Clear must NOT remove it.
-6. Open RECENT/CAPTURED: default TODAY + current source.
-7. Switch HANDHELD / PC / ALL DEVICES and TODAY / 7 DAYS / ALL HISTORY.
-8. Verify old records remain accessible only when explicitly choosing wider history.
-9. Quick Receiving regression scan.
+- PC counter shows one CAPTURED label.
+- Handheld counter shows RECENT.
+- Handheld history has no destructive controls.
+- PC single-record Delete works.
+- PC Delete All appears only under ALL DEVICES + ALL HISTORY.
+- Delete All requires confirmation.
+- Verify unrelated PharmFlow data remains untouched.
+
+## EXACT NEXT ACTION
+Deploy this package INSTEAD OF deploying 2C.11.3.2 and 2C.11.3.3 separately,
+then run the focused Expiry History tests above.

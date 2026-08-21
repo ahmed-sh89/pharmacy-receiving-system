@@ -1,14 +1,10 @@
-# PHARMFLOW TEST MATRIX — 2C.11.3.1
+# PHARMFLOW TEST MATRIX — 2C.11.3.3
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| REC | Receiving regression | Known scan still works | USER VERIFIED BASELINE |
-| EXP-K1 | Handheld scan | No auto numeric keyboard | READY FOR TEST |
-| EXP-K2 | Intentional Qty tap | Keypad opens only on tap; Enter closes | READY FOR TEST |
-| EXP-C1 | Manual Clear Screen | Visible and UI-only | READY FOR TEST |
-| EXP-C2 | 30s Auto Clear | Saved visual state clears on PC + Handheld | READY FOR TEST |
-| EXP-C3 | Unsaved protection | Auto Clear does not erase active unsaved work | READY FOR TEST |
-| EXP-W1 | Worker bar | One compact Handheld worker row | READY FOR TEST |
-| EXP-H1 | Default history | Today + current source | READY FOR TEST |
-| EXP-H2 | Source filters | Handheld / PC / All Devices | READY FOR TEST |
-| EXP-H3 | Range filters | Today / 7 Days / All History | READY FOR TEST |
+| EXP-HDEL1 | Handheld row history | No Delete; view-only | READY FOR TEST |
+| EXP-HDEL2 | Handheld All History | No Delete All | READY FOR TEST |
+| EXP-PDEL1 | PC row history | Single Delete visible | READY FOR TEST |
+| EXP-PDEL2 | PC All Devices + All History | Delete All visible | READY FOR TEST |
+| EXP-PDEL3 | Delete All confirmation | Protected confirmation flow retained | READY FOR TEST |
+| EXP-CLR | Clear Screen | Still UI-only on both devices | READY FOR TEST |

@@ -676,20 +676,21 @@ async function refreshExpiryCapturedCount(){
         if(btn){
             btn.dataset.loaded="1";
 
-            if(expiryIsHandheld()){
-                btn.childNodes.forEach(node=>{
-                    if(node.nodeType===Node.TEXT_NODE){
-                        node.textContent="RECENT ";
-                    }
-                });
-                btn.setAttribute("aria-label","Recent expiry captures");
-            }else{
-                btn.childNodes.forEach(node=>{
-                    if(node.nodeType===Node.TEXT_NODE){
-                        node.textContent="CAPTURED ";
-                    }
-                });
-            }
+            const label=expiryIsHandheld() ? "RECENT" : "CAPTURED";
+
+            /* Avoid mutating anonymous text nodes around the counter. That
+               produced duplicate visible CAPTURED labels on some builds. */
+            btn.innerHTML=`
+                <span class="expiryCapturedButtonLabel">${label}</span>
+                <strong id="expiryCapturedCount">${operational.length}</strong>
+            `;
+
+            btn.setAttribute(
+                "aria-label",
+                expiryIsHandheld()
+                    ? "Recent expiry captures"
+                    : "Captured expiry items"
+            );
         }
 
         return rows;
@@ -698,6 +699,34 @@ async function refreshExpiryCapturedCount(){
         return [];
     }
 }
+
+async function deleteAllExpiryHistoryProtected(){
+    const pharmacyId=expiryPharmacyId();
+
+    if(!pharmacyId){
+        throw new Error("Pharmacy context unavailable");
+    }
+
+    /*
+       Protected destructive action.
+       Scope: Expiry Capture History for CURRENT pharmacy only.
+       It must not touch Receiving, Orders, Global GTIN, Returns, or other
+       historical domains.
+    */
+    if(typeof authRpc!=="function"){
+        throw new Error("Expiry History API unavailable");
+    }
+
+    const result=await authRpc(
+        "delete_all_pharmacy_expiry_captures",
+        {
+            p_pharmacy_id:pharmacyId
+        }
+    );
+
+    return result;
+}
+
 
 async function openExpiryCapturedPanel(){
     document.getElementById("expiryCapturedOverlay")?.remove();
@@ -770,13 +799,25 @@ async function openExpiryCapturedPanel(){
                         • ${expiryEscapeHtml(sourceLabel(String(row.source||"PC").toUpperCase()))}
                     </small>
                   </div>
-                  <button class="expiryDeleteRecord" type="button" data-delete="${expiryEscapeHtml(row.capture_id)}">Delete</button>
+                  ${expiryIsHandheld()
+                      ? `<span class="expiryHistoryViewOnly">View only</span>`
+                      : `<button class="expiryDeleteRecord" type="button" data-delete="${expiryEscapeHtml(row.capture_id)}">Delete</button>`}
                 </div>`).join("") :
                 `<div class="expiryCapturedEmpty">No expiry captures in this view.</div>`}
             </div>
 
             ${filterExpiryCapturedRows(allRows,state).length>50
                 ? `<div class="expiryHistoryLimitNote">Showing latest 50. Use Expiry Reports for full historical review.</div>`
+                : ""}
+
+            ${!expiryIsHandheld() && state.source==="ALL" && state.range==="ALL"
+                ? `<div class="expiryHistoryDangerZone">
+                     <div>
+                       <strong>Expiry History</strong>
+                       <span>Deletes all captured expiry records for this pharmacy only.</span>
+                     </div>
+                     <button type="button" id="btnDeleteAllExpiryHistory">DELETE ALL EXPIRY HISTORY</button>
+                   </div>`
                 : ""}
 
             <button class="expiryCapturedDone" type="button" data-close>Done</button>
@@ -806,8 +847,87 @@ async function openExpiryCapturedPanel(){
             };
         });
 
+        const deleteAllButton=overlay.querySelector("#btnDeleteAllExpiryHistory");
+
+        if(deleteAllButton){
+            deleteAllButton.onclick=async()=>{
+                if(expiryIsHandheld()){
+                    return;
+                }
+                const stage=Number(deleteAllButton.dataset.stage||0);
+
+                if(stage===0){
+                    deleteAllButton.dataset.stage="1";
+                    deleteAllButton.textContent="CONFIRM DELETE ALL";
+                    deleteAllButton.classList.add("confirming");
+
+                    setTimeout(()=>{
+                        if(
+                            deleteAllButton.isConnected &&
+                            Number(deleteAllButton.dataset.stage||0)===1
+                        ){
+                            deleteAllButton.dataset.stage="0";
+                            deleteAllButton.textContent="DELETE ALL EXPIRY HISTORY";
+                            deleteAllButton.classList.remove("confirming");
+                        }
+                    },5000);
+
+                    return;
+                }
+
+                if(stage===1){
+                    deleteAllButton.dataset.stage="2";
+                    deleteAllButton.textContent="FINAL CONFIRM — DELETE";
+                    deleteAllButton.classList.add("finalConfirm");
+
+                    setTimeout(()=>{
+                        if(
+                            deleteAllButton.isConnected &&
+                            Number(deleteAllButton.dataset.stage||0)===2
+                        ){
+                            deleteAllButton.dataset.stage="0";
+                            deleteAllButton.textContent="DELETE ALL EXPIRY HISTORY";
+                            deleteAllButton.classList.remove("confirming","finalConfirm");
+                        }
+                    },5000);
+
+                    return;
+                }
+
+                deleteAllButton.disabled=true;
+
+                try{
+                    await deleteAllExpiryHistoryProtected();
+
+                    allRows=[];
+
+                    await refreshExpiryCapturedCount();
+                    render();
+
+                    if(typeof showToast==="function"){
+                        showToast("Expiry History deleted successfully","success");
+                    }
+                }catch(error){
+                    deleteAllButton.disabled=false;
+                    deleteAllButton.dataset.stage="0";
+                    deleteAllButton.textContent="DELETE ALL EXPIRY HISTORY";
+                    deleteAllButton.classList.remove("confirming","finalConfirm");
+
+                    if(typeof showToast==="function"){
+                        showToast(
+                            error?.message || "Unable to delete Expiry History",
+                            "error"
+                        );
+                    }
+                }
+            };
+        }
+
         overlay.querySelectorAll("[data-delete]").forEach(button=>{
             button.onclick=async()=>{
+                if(expiryIsHandheld()){
+                    return;
+                }
                 const id=button.getAttribute("data-delete");
 
                 if(button.dataset.confirm!=="1"){
