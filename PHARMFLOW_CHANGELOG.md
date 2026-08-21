@@ -1,8 +1,11 @@
-# PHARMFLOW CHANGELOG — 2C.11.1.1
+# PHARMFLOW CHANGELOG — 2C.11.1.2
 
-- Restored visible Recent Scans entry hidden by an older Handheld CSS rule.
-- Promoted editable QTY directly below Last Scan item identity.
-- Reduced +/- and secondary metric visual weight to avoid quantity confusion.
-- Fixed misleading zero primary QTY immediately after a successful Handheld scan.
-- Explicitly closes numeric keyboard on Enter/Done before quantity action.
-- Preserved verified Unified Workspace scan/synchronization architecture.
+- Made shared Received the single Handheld quantity truth.
+- Simplified manual quantity edit to direct total correction.
+- Removed duplicated quantity labels and Received metric.
+- Hid persistent PC Last Scan card.
+- Stopped auto keyboard on Known Extra and Unknown GTIN.
+- Added Cancel Scan without page reload.
+- Cancelled Unknown scan discards autosaved review draft/photo.
+- Added This Handheld / All Devices Recent tabs; All Devices is view-only.
+- Preserved verified Unified Workspace scan/sync.

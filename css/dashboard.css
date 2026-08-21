@@ -7782,3 +7782,87 @@ body.zebraDevice.zebraReceivingActive #lastScanCard .legacyLastScanGrid{order:4!
 body.zebraDevice.zebraReceivingActive #lastScanCard .legacyLastScanGrid{
     display:none!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.1.2 — QUANTITY / EXCEPTION / RECENT FIX
+============================================================ */
+
+body:not(.zebraDevice) #lastScanCard{
+    display:none!important;
+}
+
+body.zebraDevice.zebraReceivingActive #btnLastScanEdit.lastScanQtyValue:before{
+    content:""!important;
+    display:none!important;
+}
+body.zebraDevice.zebraReceivingActive #btnLastScanEdit.lastScanQtyValue{
+    font-size:24px!important;
+    font-weight:950!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls .lastScanQtyTitle,
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls .lastScanQtyHint,
+body.zebraDevice.zebraReceivingActive #lastScanQuantityControls .handheldScanContext{
+    display:none!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived{
+    display:none!important;
+}
+
+body.zebraDevice .handheldReviewCancel{
+    display:block!important;
+    width:100%!important;
+    min-height:38px!important;
+    margin-top:7px!important;
+    border:1px solid #d9dfdb!important;
+    border-radius:9px!important;
+    background:#fff!important;
+    color:#66736a!important;
+    font-size:10px!important;
+    font-weight:950!important;
+    letter-spacing:.04em!important;
+}
+
+body.zebraDevice .handheldReceivedEditCard{
+    width:min(92vw,420px)!important;
+    padding:13px!important;
+}
+body.zebraDevice .handheldReceivedEditCard .quantityAdjustmentInput{
+    min-height:60px!important;
+    font-size:28px!important;
+    text-align:center!important;
+    font-weight:950!important;
+}
+
+.handheldRecentTabs{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:5px!important;
+    padding:7px 10px 2px!important;
+}
+.handheldRecentTabs button{
+    min-height:34px!important;
+    border:1px solid #dfe6e1!important;
+    border-radius:8px!important;
+    background:#f7f9f8!important;
+    color:#65736a!important;
+    font-size:9px!important;
+    font-weight:950!important;
+}
+.handheldRecentTabs button.active{
+    background:#eaf6ee!important;
+    border-color:#a9d1b6!important;
+    color:#1f6b3d!important;
+}
+.handheldRecentViewOnly{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:30px!important;
+    font-size:8px!important;
+    font-weight:900!important;
+    color:#8a958e!important;
+}

@@ -390,6 +390,9 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
       <button id="btnHandheldAddExtra" class="handheldReviewSave" type="button">
         ${needsPharmacistTarget ? "SAVE EXTRA FOR REVIEW" : "ADD EXTRA & NEXT"}
       </button>
+      <button id="btnHandheldCancelExtra" class="handheldReviewCancel" type="button">
+        CANCEL SCAN
+      </button>
     `;
 
     lastScan.insertAdjacentElement("afterend",card);
@@ -484,19 +487,24 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     qty?.addEventListener("keydown",e=>{
         if(e.key==="Enter"){
             e.preventDefault();
-            submit();
+            try{ qty.blur(); }catch(_){}
         }
     });
 
     card.querySelector("#btnHandheldAddExtra")
         ?.addEventListener("click",submit);
 
-    setTimeout(()=>{
-        try{
-            qty?.focus({preventScroll:true});
-            qty?.select();
-        }catch(_){}
-    },30);
+    card.querySelector("#btnHandheldCancelExtra")
+        ?.addEventListener("click",()=>{
+            try{ document.activeElement?.blur?.(); }catch(_){}
+            clearHandheldActionCard();
+            setScanBoxState?.("ready");
+            window.hhRefreshReadyState?.();
+            setTimeout(()=>focusScannerInput?.(),40);
+        });
+
+    /* Qty defaults to 1. Keyboard appears only after the worker taps Qty. */
+    try{ document.activeElement?.blur?.(); }catch(_){}
 
     return true;
 }
@@ -550,6 +558,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
         </label>
 
         <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE &amp; NEXT</button>
+        <button id="btnCancelHandheldReview" class="handheldReviewCancel" type="button">CANCEL SCAN</button>
       </div>
     `;
 
@@ -560,6 +569,8 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     const photoInput=card.querySelector("#handheldReviewPhotoInput");
     const qty=card.querySelector("#handheldReviewQty");
     const saveButton=card.querySelector("#btnSaveHandheldReview");
+    const cancelButton=card.querySelector("#btnCancelHandheldReview");
+    let uploadedPhotoPath=null;
 
     photoButton?.addEventListener("click",()=>photoInput?.click());
 
@@ -571,7 +582,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
         photoButton.textContent="UPLOADING PHOTO…";
 
         try{
-            await nrV2UploadPhoto(draft.review_id,file);
+            uploadedPhotoPath=await nrV2UploadPhoto(draft.review_id,file);
             photoButton.textContent="✓ PHOTO ADDED";
             photoButton.classList.add("added");
         }catch(error){
@@ -612,12 +623,40 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     qty?.addEventListener("keydown",event=>{
         if(event.key==="Enter"){
             event.preventDefault();
-            finish();
+            try{ qty.blur(); }catch(_){}
         }
     });
 
     saveButton?.addEventListener("click",finish);
-    setTimeout(()=>{qty?.focus({preventScroll:true});qty?.select();},60);
+
+    cancelButton?.addEventListener("click",async()=>{
+        if(cancelButton.disabled) return;
+        cancelButton.disabled=true;
+        if(saveButton) saveButton.disabled=true;
+        try{ document.activeElement?.blur?.(); }catch(_){}
+
+        try{
+            if(uploadedPhotoPath && typeof nrV2DeletePhoto==="function"){
+                try{ await nrV2DeletePhoto(uploadedPhotoPath); }catch(_){}
+            }
+            if(typeof nrV2Delete==="function"){
+                await nrV2Delete(draft.review_id);
+            }
+
+            clearHandheldActionCard();
+            refreshNeedsReviewCounters?.();
+            setScanBoxState?.("ready");
+            window.hhRefreshReadyState?.();
+            setTimeout(()=>focusScannerInput?.(),40);
+        }catch(error){
+            cancelButton.disabled=false;
+            if(saveButton) saveButton.disabled=false;
+            showToast?.(error?.message||"Unable to cancel this scan","error");
+        }
+    });
+
+    /* Default Qty is 1. Do not auto-focus it. */
+    try{ document.activeElement?.blur?.(); }catch(_){}
 
     refreshNeedsReviewCounters?.();
     return true;

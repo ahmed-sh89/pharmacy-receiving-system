@@ -2356,6 +2356,83 @@ function openQuantityEditPrompt(item){
         return;
     }
 
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        let handheldModal=document.getElementById("handheldReceivedEditModal");
+
+        if(!handheldModal){
+            handheldModal=document.createElement("div");
+            handheldModal.id="handheldReceivedEditModal";
+            handheldModal.className="quantityAdjustmentModal handheldReceivedEditModal";
+            handheldModal.innerHTML=`
+              <div class="quantityAdjustmentCard handheldReceivedEditCard">
+                <div class="quantityAdjustmentHeader">
+                  <div>
+                    <span class="sectionEyebrow">RECEIVED</span>
+                    <h3 id="handheldReceivedEditName">-</h3>
+                  </div>
+                  <button type="button" id="btnCloseHandheldReceivedEdit" class="iconButton" aria-label="Close">✕</button>
+                </div>
+
+                <input id="handheldReceivedEditInput" class="quantityAdjustmentInput"
+                       type="number" min="0" step="1" inputmode="numeric" value="0">
+
+                <button type="button" id="btnSetHandheldReceived" class="primaryButton">
+                  SAVE
+                </button>
+              </div>`;
+
+            document.body.appendChild(handheldModal);
+
+            const close=()=>{
+                try{ document.activeElement?.blur?.(); }catch(_){}
+                handheldModal.classList.remove("active");
+                setTimeout(()=>window.hhRefreshReadyState?.(),20);
+            };
+
+            document.getElementById("btnCloseHandheldReceivedEdit")?.addEventListener("click",close);
+            handheldModal.addEventListener("click",event=>{
+                if(event.target===handheldModal) close();
+            });
+
+            document.getElementById("handheldReceivedEditInput")?.addEventListener("keydown",event=>{
+                if(event.key==="Enter"){
+                    event.preventDefault();
+                    try{ event.target.blur(); }catch(_){}
+                    document.getElementById("btnSetHandheldReceived")?.click();
+                }
+            });
+
+            document.getElementById("btnSetHandheldReceived")?.addEventListener("click",()=>{
+                try{ document.activeElement?.blur?.(); }catch(_){}
+                const code=handheldModal.dataset.itemCode;
+                const input=document.getElementById("handheldReceivedEditInput");
+                const total=toNumber(input?.value,-1);
+
+                if(total<0){
+                    showToast("Enter a valid received quantity","warning");
+                    return;
+                }
+
+                const transaction=setItemReceivedQuantity(code,total);
+                if(transaction || total===toNumber(getItemByCode(code)?.receivedQty,0)){
+                    handheldModal.classList.remove("active");
+                    refreshEntireUI?.();
+                    setTimeout(()=>window.hhRefreshReadyState?.(),20);
+                }
+            });
+        }
+
+        handheldModal.dataset.itemCode=item.itemCode;
+        setElementText(document.getElementById("handheldReceivedEditName"),item.itemName||item.itemCode);
+        const input=document.getElementById("handheldReceivedEditInput");
+        if(input) input.value=String(toNumber(item.receivedQty,0));
+        handheldModal.classList.add("active");
+        setTimeout(()=>{
+            try{ input?.focus(); input?.select(); }catch(_){}
+        },20);
+        return;
+    }
+
     let modal =
         document.getElementById(
             "quantityAdjustmentModal"
@@ -5179,28 +5256,10 @@ function refreshLastScanQuantityControl(){
           0
       );
 
-  let thisDeviceReceived =
-      getCurrentBatchQuantity(
-          item.itemCode
-      );
-
-  /* 2C.11.1.1 — Current batch history can momentarily lag the freshly
-     synchronized Last Scan on Handheld. Never show a misleading zero after a
-     successful scan; use the current Last Scan quantity as the immediate
-     display floor, then normal history refresh takes over. */
-  if(
-      thisDeviceReceived <= 0 &&
-      scan &&
-      normalizeItemCode(scan.itemCode) === normalizeItemCode(item.itemCode)
-  ){
-      thisDeviceReceived = Math.max(
-          1,
-          toNumber(scan.quantity,1)
-      );
-  }
-
+  /* 2C.11.1.2 — the large editable number is the single authoritative
+     Received total shared by all devices. */
   button.textContent =
-      String(thisDeviceReceived);
+      String(totalReceived);
 
   if(totalReceivedElement){
       totalReceivedElement.textContent =
@@ -6900,6 +6959,19 @@ function getHandheldDeviceScannerRows(){
     });
 }
 
+function getAllWorkspaceScannerRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    return history.filter(tx=>{
+        const source=String(tx?.source||"").toUpperCase();
+        const isScan=source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase()
+            || source.includes("SCAN");
+        return isScan && Number(tx?.quantity||0)>0;
+    });
+}
+
 function getHandheldTotalScans(){
     return getHandheldDeviceScannerRows().length;
 }
@@ -6961,15 +7033,12 @@ function refreshHandheldReceivingTools(){
     if(value) value.textContent = String(getHandheldTotalScans());
 }
 
-function openHandheldScansPanel(){
+function openHandheldScansPanel(initialTab="THIS"){
     document.getElementById("handheldScansOverlay")?.remove();
 
-    const recent=(typeof getHandheldDeviceScannerRows==="function"
-        ? getHandheldDeviceScannerRows()
-        : [])
-        .slice()
-        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
-        .slice(0,20);
+    const ownDeviceId=typeof ensureDeviceId==="function"
+        ? String(ensureDeviceId()||"")
+        : String(AppState?.session?.deviceId||"");
 
     const esc=value=>typeof escapeHtml==="function"
         ? escapeHtml(String(value??""))
@@ -6983,57 +7052,86 @@ function openHandheldScansPanel(){
         }catch(_){ return ""; }
     };
 
+    const deviceLabel=row=>{
+        const id=String(row?.deviceId||"");
+        if(id && id===ownDeviceId) return "This Handheld";
+        if(!id) return "Shared Device";
+        return "Device "+id.slice(-4).toUpperCase();
+    };
+
+    const rowsFor=tab=>{
+        const source=tab==="ALL"
+            ? getAllWorkspaceScannerRows()
+            : getHandheldDeviceScannerRows();
+
+        return source.slice()
+            .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
+            .slice(0,20);
+    };
+
     const overlay=document.createElement("div");
     overlay.id="handheldScansOverlay";
     overlay.className="handheldScansOverlay handheldRecentOverlay";
+    overlay.dataset.tab=initialTab==="ALL"?"ALL":"THIS";
 
-    overlay.innerHTML=`
-        <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
+    const render=()=>{
+        const tab=overlay.dataset.tab||"THIS";
+        const recent=rowsFor(tab);
+
+        overlay.innerHTML=`
+          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
             <header>
-                <div>
-                    <span>THIS HANDHELD</span>
-                    <strong>Recent Scans</strong>
-                    <small>Last ${Math.min(recent.length,20)} actions · corrections stay in the audit trail</small>
-                </div>
-                <button type="button" data-close aria-label="Close">✕</button>
+              <div>
+                <span>RECEIVING HISTORY</span>
+                <strong>Recent Scans</strong>
+                <small>Last ${Math.min(recent.length,20)} scan transactions</small>
+              </div>
+              <button type="button" data-close aria-label="Close">✕</button>
             </header>
 
+            <div class="handheldRecentTabs">
+              <button type="button" data-tab="THIS" class="${tab==="THIS"?"active":""}">THIS HANDHELD</button>
+              <button type="button" data-tab="ALL" class="${tab==="ALL"?"active":""}">ALL DEVICES</button>
+            </div>
+
             <div class="handheldRecentList">
-                ${recent.length ? recent.map((row,index)=>{
-                    const qty=Math.max(1,Number(row?.quantity||1)||1);
-                    const corrected=String(row?.source||"").toUpperCase()==="SCAN_UNDO" || Number(row?.quantity||0)<0;
-                    return `
-                        <article class="handheldRecentRow ${corrected?"corrected":""}">
-                            <div class="handheldRecentIndex">${index+1}</div>
-                            <div class="handheldRecentInfo">
-                                <strong>${esc(row?.itemName||"Item")}</strong>
-                                <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))}</span>
-                            </div>
-                            <div class="handheldRecentQty">+${qty}</div>
-                            <button type="button" class="handheldUndoItem"
-                                    data-undo-item="${esc(row?.transactionId||"")}">
-                                Undo
-                            </button>
-                        </article>`;
-                }).join("") : `<div class="handheldScansEmpty">No scans from this Handheld yet.</div>`}
+              ${recent.length ? recent.map((row,index)=>{
+                const qty=Math.max(1,Number(row?.quantity||1)||1);
+                const canUndo=tab==="THIS" && String(row?.deviceId||"")===ownDeviceId;
+                return `
+                  <article class="handheldRecentRow">
+                    <div class="handheldRecentIndex">${index+1}</div>
+                    <div class="handheldRecentInfo">
+                      <strong>${esc(row?.itemName||"Item")}</strong>
+                      <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))} · ${esc(deviceLabel(row))}</span>
+                    </div>
+                    <div class="handheldRecentQty">+${qty}</div>
+                    ${canUndo
+                      ? `<button type="button" class="handheldUndoItem" data-undo-item="${esc(row?.transactionId||"")}">Undo</button>`
+                      : `<span class="handheldRecentViewOnly">View</span>`}
+                  </article>`;
+              }).join("") : `<div class="handheldScansEmpty">No recent scans.</div>`}
             </div>
 
             <div class="handheldRecentFooter">
-                <span>Undo creates a correction transaction. History is never silently deleted.</span>
-                <button type="button" class="handheldPanelDone" data-close>DONE</button>
+              <span>${tab==="THIS"
+                ?"Undo is available only for this Handheld and remains in the audit trail."
+                :"All Devices is view-only to prevent accidental corrections to another device."}</span>
+              <button type="button" class="handheldPanelDone" data-close>DONE</button>
             </div>
-        </section>`;
+          </section>`;
 
-    document.body.appendChild(overlay);
+        overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>{
+            overlay.remove();
+            setTimeout(()=>window.hhRefreshReadyState?.(),20);
+        });
 
-    const close=()=>{
-        overlay.remove();
-        setTimeout(()=>window.hhRefreshReadyState?.(),20);
-    };
-    overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=close);
+        overlay.querySelectorAll("[data-tab]").forEach(btn=>btn.onclick=()=>{
+            overlay.dataset.tab=btn.dataset.tab;
+            render();
+        });
 
-    overlay.querySelectorAll("[data-undo-item]").forEach(btn=>{
-        btn.onclick=()=>{
+        overlay.querySelectorAll("[data-undo-item]").forEach(btn=>btn.onclick=()=>{
             const transactionId=btn.getAttribute("data-undo-item");
             if(!transactionId) return;
             const result=typeof undoRecentScannerTransaction==="function"
@@ -7041,10 +7139,13 @@ function openHandheldScansPanel(){
                 : false;
             if(result){
                 refreshHandheldReceivingTools();
-                setTimeout(openHandheldScansPanel,40);
+                render();
             }
-        };
-    });
+        });
+    };
+
+    document.body.appendChild(overlay);
+    render();
 }
 
 
