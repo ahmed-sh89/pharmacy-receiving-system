@@ -8410,3 +8410,443 @@ body.zebraDevice #btnDeleteAllExpiryHistory,
 body.zebraDevice .expiryHistoryDangerZone{
     display:none!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.5 — GLOBAL READABILITY / TYPOGRAPHY PASS
+   CSS/UI ONLY — no receiving/expiry/sync logic changes.
+============================================================ */
+
+/* ---------- Global desktop readability ---------- */
+
+@media (min-width: 769px){
+
+    body{
+        font-size:15px!important;
+    }
+
+    /* Top application header/status cards */
+    .topbar,
+    .appTopbar,
+    .dashboardHeader,
+    .pageHeader{
+        font-size:14px!important;
+    }
+
+    .topbar small,
+    .appTopbar small,
+    .dashboardHeader small,
+    .pageHeader small,
+    .topbar .label,
+    .appTopbar .label,
+    .dashboardHeader .label,
+    .pageHeader .label{
+        font-size:10px!important;
+        line-height:1.25!important;
+        letter-spacing:.04em!important;
+    }
+
+    .topbar strong,
+    .appTopbar strong,
+    .dashboardHeader strong,
+    .pageHeader strong{
+        font-size:13px!important;
+    }
+
+    /* Sidebar */
+    .sidebar a,
+    .sidebar button,
+    .sidebar .navItem,
+    .sideNav a,
+    .sideNav button{
+        font-size:14px!important;
+    }
+
+    /* General section eyebrow / micro labels */
+    .sectionEyebrow,
+    .eyebrow,
+    .fieldLabel,
+    .metaLabel,
+    .cardLabel{
+        font-size:10px!important;
+        line-height:1.2!important;
+        letter-spacing:.045em!important;
+    }
+
+    /* Buttons and pills that had very small captions */
+    button,
+    .button,
+    .pill,
+    .badge{
+        font-size:12px;
+    }
+
+    /* Form controls */
+    input,
+    select,
+    textarea{
+        font-size:14px!important;
+    }
+
+    /* Tables globally: improve labels/rows while preserving dense workspace */
+    table{
+        font-size:13px!important;
+    }
+
+    table thead th{
+        font-size:11px!important;
+        line-height:1.25!important;
+        letter-spacing:.025em!important;
+    }
+
+    table tbody td{
+        font-size:13px!important;
+        line-height:1.35!important;
+    }
+}
+
+/* ---------- Receiving desktop ---------- */
+
+body:not(.zebraDevice) #page-dashboard .metricCard span,
+body:not(.zebraDevice) #page-dashboard .metricCard small,
+body:not(.zebraDevice) #page-dashboard .summaryCard span,
+body:not(.zebraDevice) #page-dashboard .summaryCard small{
+    font-size:10px!important;
+    line-height:1.2!important;
+}
+
+body:not(.zebraDevice) #page-dashboard .metricCard strong,
+body:not(.zebraDevice) #page-dashboard .summaryCard strong{
+    font-size:22px!important;
+    line-height:1!important;
+}
+
+body:not(.zebraDevice) #lastScanCard .lastScanMetaItem span,
+body:not(.zebraDevice) #lastScanCard .lastScanMetric span,
+body:not(.zebraDevice) #lastScanCard .lastScanQtyTitle,
+body:not(.zebraDevice) #lastScanCard .lastScanQtyHint{
+    font-size:10px!important;
+}
+
+body:not(.zebraDevice) #lastScanCard .lastScanMetaItem strong{
+    font-size:13px!important;
+}
+
+body:not(.zebraDevice) #lastScanCard .lastScanMetric strong{
+    font-size:20px!important;
+}
+
+body:not(.zebraDevice) #lastScanCard .lastScanHeroName{
+    font-size:22px!important;
+}
+
+/* Receiving item tables / order browser */
+.receivingTable,
+.receivingItemsTable,
+.orderItemsTable,
+.orderItemBrowser table,
+.orderItemBrowserTable,
+#orderItemsTable{
+    font-size:13px!important;
+}
+
+.receivingTable th,
+.receivingItemsTable th,
+.orderItemsTable th,
+.orderItemBrowser th,
+.orderItemBrowserTable th,
+#orderItemsTable th{
+    font-size:11px!important;
+    line-height:1.25!important;
+    font-weight:900!important;
+}
+
+.receivingTable td,
+.receivingItemsTable td,
+.orderItemsTable td,
+.orderItemBrowser td,
+.orderItemBrowserTable td,
+#orderItemsTable td{
+    font-size:13px!important;
+    line-height:1.35!important;
+}
+
+.orderItemBrowser h2,
+.orderItemBrowser h3,
+.orderItemBrowser .modalTitle{
+    font-size:20px!important;
+}
+
+.orderItemBrowser input,
+.orderItemBrowser select,
+.orderItemBrowser button{
+    font-size:12px!important;
+}
+
+/* ---------- Near Expiry desktop ---------- */
+
+body:not(.zebraDevice).zebraExpiryActive .expiryCaptureCard,
+body:not(.zebraDevice) .expiryCaptureCard{
+    font-size:14px!important;
+}
+
+body:not(.zebraDevice) .expiryWorkerBar label,
+body:not(.zebraDevice) .expiryCaptureCard label > span,
+body:not(.zebraDevice) .expiryItemMeta span,
+body:not(.zebraDevice) .expiryItemCard > span{
+    font-size:10px!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+    letter-spacing:.035em!important;
+}
+
+body:not(.zebraDevice) #expiryItemName{
+    font-size:21px!important;
+    line-height:1.2!important;
+}
+
+body:not(.zebraDevice) #expiryItemCode,
+body:not(.zebraDevice) #expiryItemGTIN,
+body:not(.zebraDevice) #expiryItemCategory,
+body:not(.zebraDevice) #expiryItemBatch,
+body:not(.zebraDevice) #expiryItemSerial{
+    font-size:13px!important;
+    line-height:1.3!important;
+}
+
+body:not(.zebraDevice) #expiryQuantity,
+body:not(.zebraDevice) #expiryMonth,
+body:not(.zebraDevice) #expiryYear{
+    font-size:17px!important;
+}
+
+body:not(.zebraDevice) #expiryQuantity{
+    font-size:21px!important;
+    font-weight:950!important;
+}
+
+body:not(.zebraDevice) #expiryMonthName{
+    font-size:10px!important;
+    line-height:1.25!important;
+}
+
+body:not(.zebraDevice) .expiryScanStatus{
+    font-size:11px!important;
+    font-weight:900!important;
+}
+
+body:not(.zebraDevice) .expiryScanBox,
+body:not(.zebraDevice) #expiryBarcodeInput{
+    font-size:16px!important;
+}
+
+body:not(.zebraDevice) .expirySaveButton{
+    font-size:13px!important;
+    font-weight:950!important;
+}
+
+body:not(.zebraDevice) .expiryClearScreenButton{
+    font-size:10px!important;
+    font-weight:900!important;
+}
+
+/* Captured / Recent button should be readable without becoming visually dominant */
+.expiryCapturedButton{
+    min-height:34px!important;
+    padding:5px 10px!important;
+    gap:6px!important;
+}
+
+.expiryCapturedButtonLabel{
+    font-size:10px!important;
+    line-height:1!important;
+}
+
+#expiryCapturedCount{
+    min-width:22px!important;
+    height:22px!important;
+    font-size:11px!important;
+}
+
+/* Expiry history panel */
+.expiryCapturedPanel header span{
+    font-size:10px!important;
+}
+
+.expiryCapturedPanel header strong{
+    font-size:21px!important;
+}
+
+.expiryCapturedPanel header small{
+    font-size:10px!important;
+}
+
+.expiryCapturedMain strong{
+    font-size:15px!important;
+    line-height:1.25!important;
+}
+
+.expiryCapturedMain span{
+    font-size:13px!important;
+    line-height:1.3!important;
+}
+
+.expiryCapturedMain small{
+    font-size:11px!important;
+    line-height:1.3!important;
+}
+
+.expiryHistorySourceTabs button,
+.expiryHistoryRangeTabs button{
+    font-size:10px!important;
+}
+
+.expiryDeleteRecord,
+.expiryCapturedDone,
+#btnDeleteAllExpiryHistory{
+    font-size:10px!important;
+}
+
+/* ---------- Orders selector popover ---------- */
+
+.ordersPopover,
+.orderSelectionPopover,
+.selectOrdersPopover,
+#orderSelectionPopover{
+    font-size:13px!important;
+}
+
+.ordersPopover h3,
+.orderSelectionPopover h3,
+.selectOrdersPopover h3,
+#orderSelectionPopover h3{
+    font-size:16px!important;
+}
+
+.ordersPopover small,
+.orderSelectionPopover small,
+.selectOrdersPopover small,
+#orderSelectionPopover small{
+    font-size:10px!important;
+}
+
+.ordersPopover label,
+.orderSelectionPopover label,
+.selectOrdersPopover label,
+#orderSelectionPopover label{
+    font-size:12px!important;
+}
+
+/* ---------- Handheld readability ----------
+   Increase tiny labels only. Preserve compact geometry and avoid overflow. */
+
+body.zebraDevice{
+    font-size:14px!important;
+}
+
+body.zebraDevice .sectionEyebrow,
+body.zebraDevice .eyebrow,
+body.zebraDevice .fieldLabel,
+body.zebraDevice .metaLabel{
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader h3{
+    font-size:14px!important;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanHeroName{
+    font-size:18px!important;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetaItem:first-child span{
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetaItem:first-child strong{
+    font-size:11px!important;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric span{
+    font-size:8px!important;
+}
+
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{
+    font-size:18px!important;
+}
+
+body.zebraDevice .handheldRecentInfo strong{
+    font-size:13px!important;
+}
+
+body.zebraDevice .handheldRecentInfo span{
+    font-size:10px!important;
+}
+
+/* Handheld Expiry */
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar label{
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar select{
+    font-size:13px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemCard > span,
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid label > span{
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryItemName{
+    font-size:18px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta span{
+    font-size:8px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta strong,
+body.zebraDevice.zebraExpiryActive #expiryItemCode,
+body.zebraDevice.zebraExpiryActive #expiryItemGTIN,
+body.zebraDevice.zebraExpiryActive #expiryItemCategory,
+body.zebraDevice.zebraExpiryActive #expiryItemBatch,
+body.zebraDevice.zebraExpiryActive #expiryItemSerial{
+    font-size:11px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity{
+    font-size:22px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryMonth,
+body.zebraDevice.zebraExpiryActive #expiryYear{
+    font-size:16px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryMonthName{
+    font-size:8px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expirySaveButton{
+    font-size:11px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryClearScreenButton{
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryCapturedButtonLabel{
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryCapturedCount{
+    font-size:11px!important;
+}
+
+/* Avoid wrapping tiny headings after font increase */
+table th,
+.expiryHistorySourceTabs button,
+.expiryHistoryRangeTabs button,
+.expiryCapturedButtonLabel{
+    white-space:nowrap;
+}

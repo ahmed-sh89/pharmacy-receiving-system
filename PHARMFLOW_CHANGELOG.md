@@ -1,12 +1,8 @@
-# PHARMFLOW CHANGELOG — 2C.11.3.4
+# PHARMFLOW CHANGELOG — 2C.11.3.5
 
-Consolidated release replacing 2C.11.3.2 + 2C.11.3.3.
-
-- Fixed duplicated CAPTURED counter label.
-- PC uses CAPTURED; Handheld uses RECENT.
-- Added protected PC Delete All Expiry History inside ALL DEVICES + ALL HISTORY.
-- Retained PC single-record Delete.
-- Restricted all Expiry History deletion to PC.
-- Handheld Expiry History is view-only.
-- Added defensive Handheld delete guards.
-- Preserved Clear Screen and prior Expiry UX behavior.
+- Added global readability and typography improvements.
+- Enlarged very small labels, table text, history filters and metadata.
+- Improved Near Expiry readability on PC and Handheld.
+- Improved Receiving and Order Item Browser typography.
+- Improved Captured/Recent counter readability.
+- CSS-only release; no functional logic changed.

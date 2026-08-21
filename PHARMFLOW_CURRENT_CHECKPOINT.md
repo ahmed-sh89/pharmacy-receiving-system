@@ -1,50 +1,47 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.3.4 — Expiry History Consolidated
+Version: Phase 2C.11.3.5 — Global Readability & Typography Pass
 Status: READY FOR TEST
 
-## CONSOLIDATION
-This package replaces BOTH:
-- Phase 2C.11.3.2 — Expiry History UI + Delete All
-- Phase 2C.11.3.3 — Expiry History Delete PC-Only
+## SCOPE
+CSS/UI readability only.
 
-2C.11.3.3 was implemented on top of 2C.11.3.2, therefore this consolidated
-package preserves both change sets in one deployment.
+No application logic, receiving logic, expiry logic, synchronization,
+database, Global GTIN, history, delete behavior, scanner behavior or
+persistence behavior was changed.
 
-## INCLUDED CHANGES
-1. Expiry counter UI duplication fixed.
-   - PC: CAPTURED + count.
-   - Handheld: RECENT + count.
-2. Expiry History source/range behavior retained.
-3. PC:
-   - Single-record Delete available.
-   - DELETE ALL EXPIRY HISTORY available only in ALL DEVICES + ALL HISTORY.
-   - Delete All retains protected multi-stage confirmation.
-4. Handheld:
-   - Expiry History is view-only.
-   - No single-record Delete.
-   - No Delete All.
-   - CLEAR SCREEN remains UI-only.
-5. Defensive Handheld guards prevent destructive history actions even if stale UI/cache appears.
-6. Expiry History deletion is intended to affect current-pharmacy Expiry captures only.
-7. Receiving, Orders, Global GTIN, Returns Archive and unrelated historical domains remain protected.
+## USER-REPORTED ISSUE
+Multiple PC and Handheld areas used typography that was too small to read
+comfortably, especially:
+- Near Expiry item metadata and Auto Read labels
+- CAPTURED / RECENT counter
+- top status/header cards
+- Receiving tables
+- Order Item Browser
+- small badges, labels and secondary text
 
-## DATABASE NOTE
-Delete All expects the pharmacy-scoped RPC:
-delete_all_pharmacy_expiry_captures(p_pharmacy_id)
+## CHANGES
+- Increased micro-label sizes consistently.
+- Increased desktop table header/body readability.
+- Increased Near Expiry item metadata and form-control text.
+- Enlarged CAPTURED / RECENT button label and count.
+- Improved Expiry History row and filter text.
+- Improved Receiving Last Scan supporting text.
+- Improved Order Item Browser table and filter text.
+- Increased Handheld micro-text conservatively without materially expanding layout.
+- Preserved compact operational workspace and avoided broad global zoom.
 
-If the RPC is not present in Supabase, Delete All must remain unverified and should fail safely rather than performing an unsafe browser-side bulk delete.
+## NON-REGRESSION
+- Receiving 2C.11.1.9 behavior remains protected.
+- Expiry workflow and history logic from 2C.11.3.x remain unchanged.
+- No SQL migration.
+- No JS production logic changed.
 
 ## TEST
-- PC counter shows one CAPTURED label.
-- Handheld counter shows RECENT.
-- Handheld history has no destructive controls.
-- PC single-record Delete works.
-- PC Delete All appears only under ALL DEVICES + ALL HISTORY.
-- Delete All requires confirmation.
-- Verify unrelated PharmFlow data remains untouched.
-
-## EXACT NEXT ACTION
-Deploy this package INSTEAD OF deploying 2C.11.3.2 and 2C.11.3.3 separately,
-then run the focused Expiry History tests above.
+1. PC Dashboard/Receiving: verify headers, metric labels and table text are easier to read.
+2. Open Order Item Browser: verify names, quantities, statuses and headers remain readable without clipping.
+3. Near Expiry PC: verify Item Code / GTIN / Category / Batch / Serial and Auto Read text.
+4. Expiry Captured/Recent: verify label/count and history filters.
+5. Handheld Receiving and Expiry: verify increased micro-text does not cause overflow or extra scrolling.
+6. Perform one Receiving scan and one Expiry scan as visual regression checks.
