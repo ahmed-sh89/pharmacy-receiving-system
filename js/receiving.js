@@ -13,6 +13,13 @@ const ReceivingEngine = {
 
     recentScans:[],
 
+    /*
+       2C.11.4.0 Regression Recovery
+       Current Batch Qty is an operational LOCAL runtime value.
+       It is deliberately independent from cloud history hydration.
+    */
+    localBatchQtyByItem:{},
+
     adjustmentSources:{
 
         search:
@@ -1762,6 +1769,83 @@ function setItemReceivedQuantity(
 }
 
 
+function getLocalRuntimeBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    if(!code) return 0;
+    return Math.max(
+        0,
+        toNumber(ReceivingEngine.localBatchQtyByItem?.[code],0)
+    );
+}
+
+function setLocalRuntimeBatchQuantity(itemCode,quantity){
+    const code=normalizeItemCode(itemCode);
+    if(!code) return 0;
+
+    if(!ReceivingEngine.localBatchQtyByItem){
+        ReceivingEngine.localBatchQtyByItem={};
+    }
+
+    const value=Math.max(0,toNumber(quantity,0));
+    ReceivingEngine.localBatchQtyByItem[code]=value;
+    return value;
+}
+
+function adjustLocalRuntimeBatchQuantity(itemCode,difference){
+    const current=getLocalRuntimeBatchQuantity(itemCode);
+    return setLocalRuntimeBatchQuantity(
+        itemCode,
+        current+toNumber(difference,0)
+    );
+}
+
+function resetLocalRuntimeBatchQuantity(itemCode){
+    return setLocalRuntimeBatchQuantity(itemCode,0);
+}
+
+function isCurrentDeviceReceivingTransaction(transaction){
+    const ownDeviceId=typeof ensureDeviceId==="function"
+        ? toSafeString(ensureDeviceId()||"")
+        : toSafeString(AppState?.session?.deviceId||"");
+
+    const txDeviceId=toSafeString(transaction?.deviceId||"");
+
+    /*
+       Local transactions created by this browser normally carry deviceId.
+       If either side is unavailable, finishReceivingChange is still the local
+       execution path, so it is safe to treat it as local.
+    */
+    return !ownDeviceId || !txDeviceId || ownDeviceId===txDeviceId;
+}
+
+function updateLocalRuntimeBatchFromTransaction(item,transaction){
+    if(!item || !transaction || !isCurrentDeviceReceivingTransaction(transaction)){
+        return;
+    }
+
+    const source=toSafeString(transaction?.source||"").toUpperCase();
+    const qty=toNumber(transaction?.quantity,0);
+
+    /*
+       A pharmacist "Correct Received Total" establishes a new operational
+       baseline. Do not carry the previous local batch through that correction.
+    */
+    if(
+        source===toSafeString(ReceivingEngine.adjustmentSources.editIncrease).toUpperCase() ||
+        source===toSafeString(ReceivingEngine.adjustmentSources.editDecrease).toUpperCase()
+    ){
+        resetLocalRuntimeBatchQuantity(item.itemCode);
+        return;
+    }
+
+    /*
+       Scanner, Handheld remaining-pack entry, quick +/- and Undo are all local
+       operational changes. Apply their signed transaction quantity directly.
+    */
+    adjustLocalRuntimeBatchQuantity(item.itemCode,qty);
+}
+
+
 /* =====================================================
    PHASE 2C.6 FINAL - FAST SCAN SAFETY
    Keep normal receiving instant. Corrections are one-tap
@@ -1804,7 +1888,53 @@ function getRecentScannerTransactions(){
 }
 
 function undoRecentScannerTransaction(transactionId){
-    const entry=ReceivingEngine.recentScans.find(row=>row.transactionId===transactionId);
+    let entry=ReceivingEngine.recentScans.find(row=>row.transactionId===transactionId);
+
+    /*
+       Recent Scans UI is rendered from authoritative workspace history.
+       After reload/sync, the in-memory recentScans array can be empty even
+       though the transaction is visible. Reconstruct the undo target from
+       history instead of showing a dead Undo button.
+    */
+    if(!entry){
+        const history=Array.isArray(AppState?.workspace?.receivingHistory)
+            ? AppState.workspace.receivingHistory
+            : [];
+
+        const tx=history.find(row=>
+            toSafeString(row?.transactionId||"")===toSafeString(transactionId||"")
+        );
+
+        if(tx && isScannerTransaction(tx)){
+            const ownDeviceId=typeof ensureDeviceId==="function"
+                ? toSafeString(ensureDeviceId()||"")
+                : toSafeString(AppState?.session?.deviceId||"");
+
+            if(
+                ownDeviceId &&
+                toSafeString(tx?.deviceId||"") &&
+                toSafeString(tx.deviceId)!==ownDeviceId
+            ){
+                showToast("Undo is available only for this Handheld","warning");
+                return false;
+            }
+
+            const itemForEntry=getItemByCode(tx.itemCode);
+            entry={
+                transactionId:tx.transactionId,
+                itemCode:tx.itemCode,
+                itemName:itemForEntry?.itemName||tx.itemName||tx.itemCode,
+                quantity:Math.max(1,toNumber(tx.quantity,1)),
+                receivedQty:toNumber(itemForEntry?.receivedQty,0),
+                orderedQty:toNumber(itemForEntry?.orderedQty,0),
+                dateTime:tx.dateTime||nowISO(),
+                gtin:tx.gtin||"",
+                undone:false
+            };
+            ReceivingEngine.recentScans.unshift(entry);
+        }
+    }
+
     if(!entry || entry.undone){ showToast("This scan is already corrected","warning"); return false; }
     const item=getItemByCode(entry.itemCode);
     if(!item){ showToast("Item is no longer available in the current order","error"); return false; }
@@ -2050,6 +2180,8 @@ function finishReceivingChange(
 
     ReceivingEngine.lastTransaction =
         transaction;
+
+    updateLocalRuntimeBatchFromTransaction(item,transaction);
 
     rememberRecentScannerTransaction(item, transaction);
 

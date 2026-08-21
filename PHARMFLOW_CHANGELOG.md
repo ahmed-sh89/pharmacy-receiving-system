@@ -1,8 +1,9 @@
-# PHARMFLOW CHANGELOG — 2C.11.3.10
+# PHARMFLOW CHANGELOG — 2C.11.4.0
 
-- Fixed one-transaction lag in current batch quantity on PC and Handheld.
-- Moved Handheld Expiry Clear Screen to the top title area.
-- Removed lower Handheld Clear Screen beside Save.
-- Added additional Zebra/DataWedge separator normalization.
-- Added conservative separator-loss GS1 medicine recovery.
-- Preserved verified Auto Clear and synchronization behavior.
+- Replaced cloud-history-derived Current Batch Qty with immediate local runtime state.
+- Fixed Batch Qty zero/stale/one-scan-behind regression.
+- Fixed Handheld Undo after reload/sync by resolving the visible transaction from workspace history.
+- Preserved audit-safe correction transactions.
+- Added conservative Zebra combined-Lot GS1 recovery for Dompy-like scans.
+- Preserved PC Dompy parsing, Conestal parsing, Auto Clear and Unified Workspace sync.
+- No SQL migration.

@@ -1,44 +1,64 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.3.10 — Focused Receiving + Expiry Fix
+Version: Phase 2C.11.4.0 — Regression Recovery
 Status: READY FOR TEST
 
-## USER VERIFIED / PRESERVED
+## BASIS
+Built directly from the Product Owner supplied current GitHub/main ZIP.
+This is a regression-recovery release, not another history-derived Batch Qty patch.
+
+## PRESERVED USER VERIFIED BEHAVIOR
+- Unified Workspace: no Handheld Create/Join Session.
+- PC ↔ Handheld receiving synchronization baseline.
 - Receiving PC Auto Clear after 30 seconds.
-- Expiry Auto Clear after 30 seconds on PC and Handheld.
-- Confirm Correct Total button blue.
-- Expiry item recognition.
-- Unified Receiving synchronization baseline.
+- Expiry PC + Handheld Auto Clear after 30 seconds.
+- Confirm Correct Total blue.
+- Dompy Expiry parsing on PC is working and is protected.
+- Conestal Expiry parsing is working and is protected.
 
-## FIX — CURRENT BATCH QUANTITY
-Observed current device batch was one transaction behind:
-Received 1 / Batch 0, then Received 3 / Batch 1, etc.
+## ROOT CAUSE — BATCH QTY
+Later releases derived Current Batch Qty from cloud receivingHistory.
+That made an operational UI counter depend on asynchronous history hydration,
+causing zero/stale/one-scan-behind values.
 
-Root fix:
-- compute current device batch from receiving history;
-- if Last Scan transaction has not hydrated into history yet, add its delta exactly once;
-- once the same transaction is present in history it is not added again.
-Expected after reset-to-zero: 1 -> 2 -> 3 with each scan.
+## FIX — LOCAL RUNTIME BATCH
+- Current Batch Qty is now a local runtime counter per browser/device and item.
+- Every successful local receiving transaction changes it immediately.
+- Scanner +1 therefore displays 1,2,3... without waiting for Supabase/history.
+- Handheld ADD REMAINING updates the same local counter.
+- Quick +/- and Undo apply their signed quantity.
+- Correct Received Total establishes a new baseline and resets the local batch.
+- Shared Received remains server/workspace synchronized and independent.
+- No database/schema change.
 
-## FIX — HANDHELD EXPIRY CLEAR SCREEN
-- Handheld Clear Screen moved to the top title position replacing `Capture`.
-- Lower Clear Screen beside SAVE & NEXT hidden on Handheld.
-- PC layout remains unchanged.
-- Clear is UI-only.
+## ROOT CAUSE — HANDHELD UNDO
+Recent Scans is rendered from workspace receivingHistory, but Undo previously
+looked only in ReceivingEngine.recentScans, an in-memory list lost on reload/sync.
+
+## FIX — HANDHELD UNDO
+- Undo first uses local recentScans.
+- If missing, it reconstructs the exact scanner transaction from authoritative
+  receivingHistory.
+- It refuses to undo another device's transaction.
+- Correction remains audit-safe through SCAN_UNDO; history is not deleted.
 
 ## FIX — DOMPY HANDHELD GS1
-- Normal FNC1 parser remains authoritative.
-- Added normalization for ASCII FS/RS/US controls that can appear from Zebra/DataWedge.
-- Added conservative fallback for structurally valid separator-lost medicine sequences:
-  AI01 + AI10 + AI17 + AI21
-  AI01 + AI10 + AI21 + AI17
-- Correctly parsed Conestal path remains unchanged.
+PC already parses the same Dompy pack correctly.
+Handheld can receive the GS1 tail as one AI10 Lot string when FNC1 is stripped.
+A conservative recovery now splits a combined Lot only when it contains:
+- a structurally plausible AI17 YYMMDD expiry, and
+- AI21 serial.
+Normal FNC1 parsing remains primary, protecting PC and Conestal.
 
-## TEST
-1. Receiving PC: after zero, scan same item 3 times -> Batch Qty 1,2,3.
-2. Receiving Handheld: same -> local worker batch 1,2,3.
-3. Handheld Expiry: Clear Screen appears at top, no lower Clear beside Save.
-4. Conestal Handheld remains correct.
-5. Dompy Handheld Batch/Serial/Expiry matches the same pack on PC.
-6. Reconfirm Auto Clear regressions.
+## EXACT TEST
+1. PC Receiving: Correct Total to zero, then scan same item 3 times.
+   Expected Batch Qty: 1 -> 2 -> 3; Received: 1 -> 2 -> 3.
+2. Handheld Receiving: same repeated-scan test.
+3. Handheld Recent Scans: Undo latest own scan.
+   Expected Received and local Batch both decrease by that scan quantity.
+4. Handheld Expiry Dompy: Batch/Serial/Expiry must match the already-correct PC read.
+5. Handheld Expiry Conestal: must remain correct.
+6. Reconfirm Auto Clear only as a quick regression check.
+
+## NO SQL MIGRATION

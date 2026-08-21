@@ -5514,50 +5514,17 @@ function getPcLegacyCurrentBatchQuantity(itemCode){
 }
 
 function getOperationalCurrentBatchQuantity(itemCode){
-    let isHandheld=false;
-    try{
-        isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
-    }catch(_){}
-
-    let calculated=Math.max(0,toNumber(
-        isHandheld
-            ? getCurrentBatchQuantity(itemCode)
-            : getPcLegacyCurrentBatchQuantity(itemCode),
-        0
-    ));
-
-    const scan=AppState?.workspace?.lastScan;
-    const code=normalizeItemCode(itemCode);
-
-    if(!scan || normalizeItemCode(scan?.itemCode)!==code){
-        return calculated;
-    }
-
-    const scanDelta=Math.max(0,toNumber(scan?.quantity,0));
-    const txId=toSafeString(scan?.transactionId||"");
-    const history=Array.isArray(AppState?.workspace?.receivingHistory)
-        ? AppState.workspace.receivingHistory
-        : [];
-
     /*
-       Last Scan reaches the UI before receivingHistory on some sync/render
-       cycles. Add that delta only while its transaction is still missing.
-       Once history hydrates, the transaction is already inside calculated,
-       so it is never double-counted.
+       2C.11.4.0
+       Batch Qty is the packs handled by THIS browser/device in the current
+       operational batch. It must update immediately and must not depend on
+       Supabase/history hydration.
     */
-    const alreadyHydrated=txId
-        ? history.some(tx=>toSafeString(tx?.transactionId||"")===txId)
-        : false;
-
-    if(scanDelta>0 && !alreadyHydrated){
-        calculated+=scanDelta;
+    if(typeof getLocalRuntimeBatchQuantity==="function"){
+        return getLocalRuntimeBatchQuantity(itemCode);
     }
 
-    if(calculated<=0 && toNumber(scan?.receivedQty,0)>0){
-        return Math.max(1,scanDelta||1);
-    }
-
-    return Math.max(0,calculated);
+    return 0;
 }
 
 function refreshLastScanQuantityControl(){

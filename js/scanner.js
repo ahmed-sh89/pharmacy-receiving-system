@@ -1106,6 +1106,8 @@ function parseGS1Barcode(rawBarcode){
     }
 
 
+    gs1=recoverMedicineFieldsFromCombinedLot(gs1);
+
     if(gs1.gtin){
 
         result.gtin =
@@ -1175,6 +1177,50 @@ function parseGS1Barcode(rawBarcode){
 /* =====================================================
    GS1 APPLICATION IDENTIFIERS
 ===================================================== */
+
+function recoverMedicineFieldsFromCombinedLot(gs1){
+    const lot=toSafeString(gs1?.lot||"");
+    if(!lot) return gs1;
+
+    /*
+       Zebra can deliver the entire tail as AI10 when the FNC1 after Batch is
+       stripped before JavaScript sees it. Recover only highly structured
+       medicine tails containing a plausible AI17 date and AI21 serial.
+       Example:
+       2402761726113021KY5X4W2MWOQK
+       -> Batch 240276 / Expiry 261130 / Serial KY5X4W2MWOQK
+    */
+    let match=lot.match(/^(.{1,20}?)17(\d{6})21(.{1,20})$/);
+
+    if(
+        match &&
+        isPlausibleGS1ExpiryYYMMDD(match[2])
+    ){
+        return {
+            ...gs1,
+            lot:match[1],
+            expiry:formatGS1Date(match[2]),
+            serial:match[3]
+        };
+    }
+
+    match=lot.match(/^(.{1,20}?)21(.{1,20}?)17(\d{6})$/);
+
+    if(
+        match &&
+        isPlausibleGS1ExpiryYYMMDD(match[3])
+    ){
+        return {
+            ...gs1,
+            lot:match[1],
+            serial:match[2],
+            expiry:formatGS1Date(match[3])
+        };
+    }
+
+    return gs1;
+}
+
 
 function recoverSeparatorlessMedicineGS1(value){
     const data=toSafeString(value).replace(/\x1D/g,"");
