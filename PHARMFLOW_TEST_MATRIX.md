@@ -2,9 +2,10 @@
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| HH-DOMPY-B | Dompy Batch | CL0117 | READY FOR TEST |
-| HH-DOMPY-S | Dompy Serial | 2073835044260 | READY FOR TEST |
-| HH-DOMPY-E | Dompy Expiry | 10/2028 | READY FOR TEST |
-| HH-CONESTAL | Conestal | No regression | READY FOR TEST |
-| REG-BATCH | Consecutive Batch Qty | Preserved | USER VERIFIED |
-| REG-CLEAR | HH Clear Screen top | Preserved | USER VERIFIED |
+| PC-GS1-RESTORE | PC known medicine | Batch/Serial/Expiry populated | READY FOR TEST |
+| PC-DOMPY | PC Dompy | CL0117 / 2073835044260 / Oct 2028 | READY FOR TEST |
+| HH-DOMPY | Handheld Dompy | CL0117 / 2073835044260 / Oct 2028 | READY FOR TEST |
+| HH-CONESTAL | Handheld Conestal | 240276 / KY5X4W2MWOQK / Nov 2026 | READY FOR TEST |
+| REG-BATCH | Consecutive receiving Batch Qty | Preserved | USER VERIFIED |
+| REG-CLEAR | Handheld top Clear Screen | Preserved | USER VERIFIED |
+| REG-UNDO | Undo quantity execution | Preserved | USER VERIFIED |

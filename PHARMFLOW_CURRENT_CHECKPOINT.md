@@ -1,49 +1,51 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.4.3 — Dompy Batch Edge Fix
+Version: Phase 2C.11.4.3 — PC Parser Restore + Handheld Batch Edge Fix
 Status: READY FOR TEST
 
-## PRESERVED / USER VERIFIED
-- Consecutive Batch Qty behavior is USER VERIFIED.
-- Handheld Undo transaction itself works.
-- Handheld Clear Screen is correctly located at the top.
-- PC Dompy Expiry parsing is correct.
-- More than 10 other Handheld Expiry products parse correctly.
-- Receiving / Expiry Auto Clear behavior is preserved.
+## CRITICAL REGRESSION
+After 2C.11.4.2, PC Expiry began resolving item/GTIN but Batch, Serial and Expiry
+were blank for medicines. Before that change PC Dompy was explicitly verified:
+Batch CL0117, Serial 2073835044260, Expiry October 2028.
 
-## EXACT REMAINING GS1 EDGE CASE
-Dompy Handheld scan was returning an incomplete Batch while PC returned the
-correct pack data.
+## ROOT RECOVERY — PC
+- scanner.js is restored byte-for-byte to the 2C.11.4.1 version.
+- No new global GS1 parser logic is applied.
+- PC Expiry parser path is therefore returned to the last user-verified working baseline.
 
-Physical pack confirms:
-- GTIN: 06285128000307
-- Batch: CL0117
-- Serial: 2073835044260
-- Expiry: 10/2028
+## HANDHELD-ONLY DOMPY EDGE FIX
+Observed on the same pack:
+- printed Batch = CL0117
+- Handheld parsed Batch = 11
+- Serial and Expiry were already correct.
 
-The Batch itself contains the digits `17`, which are also GS1 AI17 (Expiry).
-A separator-loss fallback must therefore never split at the first `17`.
+Cause:
+Batch contains digits `17`, which can be confused with GS1 AI17 when Zebra strips
+the FNC1 following AI10.
 
-## ROOT FIX
-- General GS1/FNC1 parser is unchanged.
-- Recovery is used only when the combined AI10 Lot needs separator-loss repair.
-- Every possible AI17 candidate is validated.
-- Candidate must contain:
-  valid YYMMDD expiry + immediately following AI21 + valid Serial length.
-- The RIGHTMOST valid AI17 candidate is selected.
-- This preserves the longest legitimate Batch prefix, including values such as
-  `CL0117`, instead of interpreting the Batch's own `17` as the Expiry AI.
+Fix:
+- no global parser change;
+- Handheld-only post-parse recovery;
+- work from the RIGHT side using exact parsed Serial (AI21);
+- locate the LAST structurally valid AI17 YYMMDD before that serial;
+- recover the complete AI10 Batch up to that boundary.
+This preserves embedded `17` inside Batch, including CL0117.
+
+## PRESERVED USER VERIFIED
+- Consecutive Batch Qty semantics.
+- Undo quantity execution.
+- Clear Screen top location.
+- Receiving/Expiry Auto Clear.
+- Confirm Correct Total blue.
+- Conestal and >10 known-good Handheld medicine scans.
 
 ## TEST
-1. Handheld Expiry: scan the same Dompy pack.
-   Expected:
-   Batch CL0117
-   Serial 2073835044260
-   Expiry 10/2028
-2. Scan Conestal.
-   Expected: unchanged correct result.
-3. Scan one additional previously-correct medicine as regression check.
-4. PC Dompy smoke check only; no PC behavior was intentionally changed.
-
-## NO SQL MIGRATION
+1. PC Expiry: scan any known medicine (Conestal or Dompy).
+   Batch + Serial + Expiry must be populated again.
+2. PC Dompy must show:
+   Batch CL0117 / Serial 2073835044260 / Expiry Oct 2028.
+3. Handheld Dompy must show the same exact values.
+4. Handheld Conestal must remain:
+   Batch 240276 / Serial KY5X4W2MWOQK / Expiry Nov 2026.
+5. No Receiving regression testing beyond a quick smoke scan.
