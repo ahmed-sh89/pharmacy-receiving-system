@@ -1,9 +1,10 @@
-# PHARMFLOW CHANGELOG — 2C.11.1.8
+# PHARMFLOW CHANGELOG — 2C.11.1.9
 
-- Fixed Handheld hardware scanning becoming unresponsive after several idle minutes.
-- Added conservative local focus watchdog for Receiving and Expiry scanner inputs.
-- Added Android/browser wake recovery on visibility, window focus, pageshow and network return.
-- Focus repair respects worker quantity/photo/select editing and does not fight the numeric keyboard.
-- CLEAR SCREEN now explicitly restores scanner readiness.
-- Preserved Unified Workspace, PC UI, receiving data and synchronization behavior.
+- Added explicit Handheld acknowledgement that the barcode scan already saved the first physical pack.
+- Changed manual Handheld quantity entry to `Add remaining packs`.
+- Removed default `1` from additional quantity input to prevent accidental double counting.
+- Added transaction deviceType metadata for future friendly device labeling.
+- Replaced visible raw receiving device UUIDs with friendly PC/Handheld labels.
+- Preserved internal device IDs for synchronization and audit.
+- Preserved verified Unified Workspace, burst sync and idle/wake behavior.
 - No SQL migration.

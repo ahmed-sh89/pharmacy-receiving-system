@@ -1317,6 +1317,11 @@ function normalizeCloudReceivingTransaction(tx){
             payload?.deviceId ||
             "REMOTE"
         ),
+        deviceType:toSafeString(
+            payload?.deviceType ||
+            payload?.device_type ||
+            ""
+        ).toUpperCase(),
         manual:payload?.manual===true,
         cloudSynced:true
     };

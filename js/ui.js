@@ -2491,26 +2491,26 @@ function openQuantityEditPrompt(item){
               <div class="quantityAdjustmentCard handheldReceivedEditCard">
                 <div class="quantityAdjustmentHeader">
                   <div>
-                    <span class="sectionEyebrow">ADD PACKS</span>
+                    <span class="sectionEyebrow">ADD REMAINING PACKS</span>
                     <h3 id="handheldBatchAddName">-</h3>
                   </div>
                   <button type="button" id="btnCloseHandheldBatchAdd" class="iconButton" aria-label="Close">✕</button>
                 </div>
 
-                <div class="handheldBatchCurrent">
-                  <span>Current Handheld Qty</span>
-                  <strong id="handheldBatchCurrentQty">0</strong>
+                <div class="handheldScanAcknowledgement">
+                  <span>✓ FIRST PACK ALREADY SCANNED</span>
+                  <strong id="handheldBatchCurrentQty">1</strong>
                 </div>
 
                 <label class="quantityAdjustmentLabel" for="handheldBatchAddInput">
-                  Additional packs
+                  Add remaining packs
                 </label>
 
                 <input id="handheldBatchAddInput" class="quantityAdjustmentInput"
-                       type="number" min="1" step="1" inputmode="numeric" value="1">
+                       type="number" min="1" step="1" inputmode="numeric" value="">
 
                 <button type="button" id="btnAddHandheldBatchQty" class="primaryButton">
-                  ADD
+                  ADD REMAINING
                 </button>
               </div>`;
 
@@ -2569,7 +2569,7 @@ function openQuantityEditPrompt(item){
         );
 
         const input=document.getElementById("handheldBatchAddInput");
-        if(input){ input.value="1"; }
+        if(input){ input.value=""; }
 
         handheldModal.classList.add("open");
 
@@ -5233,6 +5233,10 @@ function createLastScanQuantityControls(){
 
       </div>
 
+      <div id="handheldScanSavedAck" class="handheldScanSavedAck">
+          ✓ SCANNED +1 · PACK SAVED
+      </div>
+
       <div class="lastScanQtyHint">
 
           Current local batch only. Scanning another item starts a new batch.
@@ -5462,6 +5466,22 @@ function refreshLastScanQuantityControl(){
       thisScanElement.textContent =
           (localDelta > 0 ? "+" : "") +
           String(localDelta);
+  }
+
+  const savedAck=document.getElementById("handheldScanSavedAck");
+  if(savedAck){
+      const localDelta=
+          scan && normalizeItemCode(scan.itemCode)===normalizeItemCode(item.itemCode)
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      if(localDelta>0){
+          savedAck.textContent=
+              `✓ SCANNED +${localDelta} · ${localDelta===1 ? "PACK" : "PACKS"} SAVED`;
+          savedAck.hidden=false;
+      }else{
+          savedAck.hidden=true;
+      }
   }
 
 }
@@ -7129,6 +7149,43 @@ function setZebraExpiryMode(){
     }
 }
 
+
+function getFriendlyReceivingDeviceLabel(row,options={}){
+    const ownDeviceId=toSafeString(
+        options.ownDeviceId ||
+        (typeof ensureDeviceId==="function" ? ensureDeviceId() : AppState?.session?.deviceId) ||
+        ""
+    );
+
+    const rowDeviceId=toSafeString(row?.deviceId||"");
+    const type=toSafeString(row?.deviceType||"").toUpperCase();
+
+    if(type==="HANDHELD"){
+        return "Handheld";
+    }
+
+    if(type==="PC"){
+        return rowDeviceId && rowDeviceId===ownDeviceId
+            ? "This PC"
+            : "PC";
+    }
+
+    /* Legacy transactions may predate deviceType. Never expose UUIDs.
+       We can still identify the current browser safely. */
+    if(rowDeviceId && rowDeviceId===ownDeviceId){
+        try{
+            return typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()
+                ? "Handheld"
+                : "This PC";
+        }catch(_){
+            return "This Device";
+        }
+    }
+
+    return "Other Device";
+}
+
+
 function getHandheldDeviceScannerRows(){
     const history = Array.isArray(AppState?.workspace?.receivingHistory)
         ? AppState.workspace.receivingHistory
@@ -7240,10 +7297,8 @@ function openHandheldScansPanel(initialTab="THIS"){
     };
 
     const deviceLabel=row=>{
-        const id=String(row?.deviceId||"");
-        if(id && id===ownDeviceId) return "This Handheld";
-        if(!id) return "Shared Device";
-        return "Device "+id.slice(-4).toUpperCase();
+        const label=getFriendlyReceivingDeviceLabel(row,{ownDeviceId});
+        return label==="This PC" ? "PC" : label;
     };
 
     const rowsFor=tab=>{
@@ -7561,7 +7616,7 @@ function renderDashboardKpiPanel(key,body){
         if(!allRows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
         const recent=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
         const undoMap=new Map(recent.map(row=>[row.transactionId,row]));
-        body.innerHTML=`<div class="phase263BrowserToolbar"><button type="button" class="phase263Filter ${mode==="this"?"active":""}" data-scan-device="this">This Device</button><button type="button" class="phase263Filter ${mode==="all"?"active":""}" data-scan-device="all">All Devices</button></div>${rows.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Item</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After Action</th><th>Action</th></tr></thead><tbody>${rows.map(row=>{const undo=undoMap.get(row.transactionId);const q=toNumber(row.qtyChange,0);const device=toSafeString(row.deviceId||"Unknown");return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>${esc(device===toSafeString(localDevice||"")?"This Device":device)}</td><td>${esc(getActivitySourceLabel(row.source))}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${q>0?'+':''}${esc(q)}</td><td><b>${esc(row.totalAfterAction)}</b></td><td>${undo?`<button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${undo.undone?'disabled':''}>${undo.undone?'Corrected':'Undo scan'}</button>`:'—'}</td></tr>`;}).join('')}</tbody></table></div>`:'<div class="tableEmptyState">No activity from this device yet.</div>'}`;
+        body.innerHTML=`<div class="phase263BrowserToolbar"><button type="button" class="phase263Filter ${mode==="this"?"active":""}" data-scan-device="this">This Device</button><button type="button" class="phase263Filter ${mode==="all"?"active":""}" data-scan-device="all">All Devices</button></div>${rows.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Item</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After Action</th><th>Action</th></tr></thead><tbody>${rows.map(row=>{const undo=undoMap.get(row.transactionId);const q=toNumber(row.qtyChange,0);const device=getFriendlyReceivingDeviceLabel(row,{ownDeviceId:localDevice});return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>${esc(device)}</td><td>${esc(getActivitySourceLabel(row.source))}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${q>0?'+':''}${esc(q)}</td><td><b>${esc(row.totalAfterAction)}</b></td><td>${undo?`<button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${undo.undone?'disabled':''}>${undo.undone?'Corrected':'Undo scan'}</button>`:'—'}</td></tr>`;}).join('')}</tbody></table></div>`:'<div class="tableEmptyState">No activity from this device yet.</div>'}`;
         body.querySelectorAll("[data-scan-device]").forEach(btn=>btn.onclick=()=>{body.dataset.scanDeviceMode=btn.dataset.scanDevice;renderDashboardKpiPanel("scans",body);});
         body.querySelectorAll("[data-undo]").forEach(btn=>btn.onclick=()=>{if(typeof undoRecentScannerTransaction==="function") undoRecentScannerTransaction(btn.dataset.undo);});
         return;

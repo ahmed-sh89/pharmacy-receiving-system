@@ -1349,6 +1349,18 @@ function resolveReceivingTransactionOrder(item,preferredOrder=""){
 }
 
 
+
+function getReceivingRuntimeDeviceType(){
+    try{
+        if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+            return "HANDHELD";
+        }
+    }catch(_){}
+
+    return "PC";
+}
+
+
 function createReceivingTransaction(options){
 
     const item=options.item;
@@ -1397,6 +1409,9 @@ function createReceivingTransaction(options){
 
         deviceId:
             (typeof ensureDeviceId === "function" ? ensureDeviceId() : AppState.session.deviceId),
+
+        deviceType:
+            getReceivingRuntimeDeviceType(),
 
         manual:
             options.manual === true,
@@ -1947,6 +1962,9 @@ function applyQuantityAdjustment(options){
 
             deviceId:
                 (typeof ensureDeviceId === "function" ? ensureDeviceId() : AppState.session.deviceId),
+
+            deviceType:
+                getReceivingRuntimeDeviceType(),
 
             manual:
                 item.manual === true

@@ -7996,3 +7996,56 @@ body:not(.zebraDevice) .pcClearLastScan:active{
 body.zebraDevice.zebraReceivingActive .handheldClearLastScan{
     color:#748079!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.1.9 — SCAN ACK + FRIENDLY DEVICE LABELS
+============================================================ */
+
+/* The worker must immediately understand that the barcode scan itself
+   already counted one physical pack before typing the remaining packs. */
+body.zebraDevice.zebraReceivingActive .handheldScanSavedAck{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:25px!important;
+    margin:5px 0 0!important;
+    padding:4px 8px!important;
+    border:1px solid #b9ddc4!important;
+    border-radius:7px!important;
+    background:#edf8f0!important;
+    color:#21663b!important;
+    font-size:8px!important;
+    font-weight:950!important;
+    letter-spacing:.04em!important;
+}
+
+body.zebraDevice .handheldScanAcknowledgement{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    margin:6px 0 10px!important;
+    padding:8px 10px!important;
+    border:1px solid #b9ddc4!important;
+    border-radius:9px!important;
+    background:#edf8f0!important;
+    color:#21663b!important;
+}
+
+body.zebraDevice .handheldScanAcknowledgement span{
+    font-size:9px!important;
+    font-weight:950!important;
+    letter-spacing:.03em!important;
+}
+
+body.zebraDevice .handheldScanAcknowledgement strong{
+    min-width:30px!important;
+    text-align:center!important;
+    font-size:20px!important;
+    font-weight:950!important;
+}
+
+body.zebraDevice #handheldBatchAddInput::placeholder{
+    color:#a2aaa5!important;
+}

@@ -1,49 +1,43 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.1.8 — Handheld Idle/Wake Root Fix
+Version: Phase 2C.11.1.9 — Handheld Scan Acknowledgement + Friendly Device Labels
 Status: READY FOR TEST
 
-## USER VERIFIED / PROTECTED
-- Unified Pharmacy Workspace direct Handheld Receiving.
-- Known item scan on PC and Handheld.
-- PC↔Handheld normal synchronization baseline.
-- PC Last Scan remains unchanged.
-- CLEAR SCREEN is visual-only.
+## USER VERIFIED / DONE BASELINE
+- 2C.11.0 Unified Pharmacy Workspace direct Handheld Receiving.
+- Known-item PC and Handheld scanning.
+- PC↔Handheld live synchronization.
+- Rapid quantity / receiving verification reported successful.
+- Handheld idle/wake test passed: scanner resumes after inactivity without reload.
 
-## NEW BUG
-After approximately 5 minutes with no scanning, the Handheld Receiving page remained visibly ONLINE / WORKSPACE SYNCED but stopped accepting hardware scans. User had to reload the page and re-enter Receiving.
+## APPROVED HANDHELD QUANTITY UX
+For a worker physically holding 10 packs:
+1. Worker scans the first pack.
+2. That first pack is already committed as +1.
+3. UI must explicitly say the first scanned pack was saved.
+4. Worker enters only the remaining 9 packs.
+5. Current Handheld local batch becomes 10.
+6. Compact shared metrics continue to show Ordered / Total Received / Remaining.
 
-## CLASSIFICATION
-Handheld browser/input focus lifecycle.
-The workspace was still synchronized; this was not an Active Order or GTIN resolution failure.
-
-## ROOT CAUSE
-The Handheld runtime refreshed visual READY state periodically but only restored hardware scanner focus on mode entry / explicit visibility changes / transaction completion.
-Android Chrome can silently drop the focused input target after idle time while the document remains visible.
-DataWedge then has no active scanner input target, so the physical scan appears to do nothing.
-
-## ROOT FIX
-- Added local scanner-focus watchdog every 900 ms.
-- Watchdog does NOT poll Supabase and does not alter receiving data.
-- It restores focus only when:
-  - page is visible,
-  - Receiving or Expiry mode is active,
-  - worker is not editing Quantity/photo/select/other operational fields,
-  - correct scanner input does not already own focus.
-- Added wake recovery on visibilitychange, window focus, pageshow and online.
-- Added double repair after browser wake (30 ms + 220 ms) to survive Android resume timing.
-- Workspace and receiving updates repair scanner focus after rendering.
-- CLEAR SCREEN explicitly restores scanner target.
-- No DataWedge configuration change.
+## 2C.11.1.9 IMPLEMENTATION
+- Added green `SCANNED +1 · PACK SAVED` acknowledgement on normal Handheld Last Scan.
+- Handheld manual quantity modal now says `FIRST PACK ALREADY SCANNED`.
+- Manual field is `Add remaining packs` and starts blank, not pre-filled with 1.
+- Example: physical 10 packs => scan first + type 9 => local batch 10.
+- Receiving transactions now store a lightweight deviceType (`PC` / `HANDHELD`) in transaction payload.
+- Cloud receiving normalization preserves deviceType.
+- PC and Handheld receiving history never expose raw device UUIDs.
+- Friendly labels are `Handheld`, `PC`, `This PC`, or `Other Device` for legacy records.
+- Existing UUID remains internally available for sync/audit/device isolation.
 - No SQL migration.
 
-## EXACT TEST
-1. Deploy 2C.11.1.8 directly.
-2. Enter Handheld Receiving and confirm a known scan works.
-3. Leave the device on this page untouched for at least 6–7 minutes.
-4. Without touching/reloading the screen, press the hardware scanner.
-5. Scan must be processed immediately.
-6. Repeat after screen/browser loses focus then returns.
-7. Quantity numeric keyboard must remain stable while worker intentionally edits quantity; watchdog must NOT steal focus.
-8. Expiry scan should also recover after idle because the same scanner runtime is shared.
+## TEST
+1. Handheld scan one known pack: verify visible `SCANNED +1 · PACK SAVED`.
+2. Tap quantity: modal states first pack is already scanned.
+3. Enter 9 remaining packs and press Enter.
+4. Local Handheld batch must become 10, not 9 or 11.
+5. Shared Total Received / Remaining must update correctly.
+6. Open Handheld Recent / All Devices: no raw DEV-UUID should be visible.
+7. Open PC Receiving activity/history: no raw DEV-UUID should be visible.
+8. PC↔Handheld synchronization and idle/wake behavior must remain working.
