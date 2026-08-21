@@ -317,127 +317,6 @@ function focusExpiryScanner(){
     try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
 }
 
-function recoverHandheldBatchFromRightSideGS1(rawValue,parsed){
-    /*
-       2C.11.4.3 — HANDHELD-ONLY GS1 EDGE RECOVERY
-
-       Some Zebra/DataWedge paths strip FNC1 after AI10. If a Batch itself
-       ends with digits "17" (example: CL0117), a left-to-right heuristic can
-       mistake those digits for AI17 and truncate the Batch.
-
-       Recovery strategy:
-       - PC parser is not touched.
-       - Run only on Handheld.
-       - Require parsed GTIN + Serial + Expiry to already be valid.
-       - Work from the RIGHT side:
-           locate AI21 + exact parsed Serial,
-           then find the LAST structurally valid AI17 YYMMDD immediately
-           before AI21,
-           then treat everything after AI10 up to that AI17 as the Batch.
-       This preserves embedded "17" characters inside the Batch.
-    */
-    let isHandheld=false;
-    try{
-        isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
-    }catch(_){}
-
-    if(!isHandheld){
-        return parsed;
-    }
-
-    const current={...(parsed||{})};
-    const serial=String(current.serial||"").trim();
-    const gtin=String(current.gtin||"").replace(/\D/g,"");
-    const expiry=String(current.expiry||"").trim();
-
-    if(!gtin || !serial || !expiry){
-        return current;
-    }
-
-    const raw=String(rawValue||"")
-        .replace(/[\x1C\x1D\x1E\x1F\u241D\uFFFD]/g,"")
-        .trim();
-
-    if(!raw){
-        return current;
-    }
-
-    const serialMarker=`21${serial}`;
-    const serialPos=raw.lastIndexOf(serialMarker);
-
-    if(serialPos<0){
-        return current;
-    }
-
-    const beforeSerial=raw.slice(0,serialPos);
-
-    /*
-       Find the LAST valid AI17 + YYMMDD candidate before AI21.
-       Never use the first "17" seen in the Lot.
-    */
-    let expiryAiPos=-1;
-    let expiryDigits="";
-
-    for(let i=beforeSerial.length-8;i>=0;i--){
-        if(beforeSerial.slice(i,i+2)!=="17") continue;
-
-        const digits=beforeSerial.slice(i+2,i+8);
-        if(!/^\d{6}$/.test(digits)) continue;
-
-        let plausible=true;
-        try{
-            plausible=typeof isPlausibleGS1ExpiryYYMMDD==="function"
-                ? isPlausibleGS1ExpiryYYMMDD(digits)
-                : true;
-        }catch(_){}
-
-        if(plausible){
-            expiryAiPos=i;
-            expiryDigits=digits;
-            break;
-        }
-    }
-
-    if(expiryAiPos<0){
-        return current;
-    }
-
-    /*
-       AI10 should be after the GTIN segment. Use the last AI10 before the
-       confirmed AI17 boundary so earlier "10" digits cannot steal the Lot.
-    */
-    const prefix=beforeSerial.slice(0,expiryAiPos);
-    const lotAiPos=prefix.lastIndexOf("10");
-
-    if(lotAiPos<0){
-        return current;
-    }
-
-    const recoveredLot=prefix.slice(lotAiPos+2);
-
-    if(
-        !recoveredLot ||
-        recoveredLot.length>20
-    ){
-        return current;
-    }
-
-    /*
-       Only replace when the current parsed lot is missing/suspiciously short
-       or differs from the structurally recovered full Lot.
-    */
-    if(
-        !current.lot ||
-        String(current.lot).length<=2 ||
-        recoveredLot.length>String(current.lot).length
-    ){
-        current.lot=recoveredLot;
-    }
-
-    return current;
-}
-
-
 async function resolveExpiryScannedValue(rawValue){
     const cleaned = typeof cleanScannerInput === "function"
         ? cleanScannerInput(rawValue)
@@ -456,8 +335,6 @@ async function resolveExpiryScannedValue(rawValue){
     let parsed = typeof parseGS1Barcode === "function"
         ? parseGS1Barcode(cleaned)
         : {gtin: cleaned};
-
-    parsed=recoverHandheldBatchFromRightSideGS1(cleaned,parsed);
 
     const gtin = String(parsed?.gtin || (typeof extractLikelyGTIN === "function" ? extractLikelyGTIN(cleaned) : "") || "").replace(/\D/g,"");
     ExpiryCaptureEngine.scannedGS1 = parsed || null;

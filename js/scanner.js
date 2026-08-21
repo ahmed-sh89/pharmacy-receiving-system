@@ -1086,27 +1086,58 @@ function parseGS1Barcode(rawBarcode){
             raw
         );
 
+    /*
+       Normal FNC1 parsing remains authoritative.
+       Only recover when medicine fields are incomplete.
+    */
     if(
         gs1.gtin &&
         (
+            !gs1.lot ||
             !gs1.expiry ||
-            (!gs1.serial && toSafeString(gs1.lot||"").length>=18)
+            !gs1.serial
         )
     ){
-        const recovered=recoverSeparatorlessMedicineGS1(raw);
+        const recovered=recoverGS1FieldsFromRightSide(raw,gs1);
 
-        if(recovered.gtin){
-            gs1={
-                ...gs1,
-                lot:recovered.lot || gs1.lot,
-                expiry:recovered.expiry || gs1.expiry,
-                serial:recovered.serial || gs1.serial
-            };
+        gs1={
+            ...gs1,
+            lot:gs1.lot || recovered.lot || "",
+            expiry:gs1.expiry || recovered.expiry || "",
+            serial:gs1.serial || recovered.serial || ""
+        };
+
+        /*
+           If AI10 swallowed the full tail, the existing lot is not usable.
+           Prefer a complete structural recovery over that combined value.
+        */
+        if(
+            recovered.lot &&
+            recovered.expiry &&
+            recovered.serial &&
+            (
+                !gs1.lot ||
+                String(gs1.lot).length>20 ||
+                String(gs1.lot).includes("21"+recovered.serial)
+            )
+        ){
+            gs1.lot=recovered.lot;
+        }
+
+        /*
+           More generally, if normal parser produced an implausibly tiny lot
+           but structural recovery found a fuller valid lot, use it.
+           This fixes CL0117 -> 11 without special-casing a product name.
+        */
+        if(
+            recovered.lot &&
+            recovered.lot.length>String(gs1.lot||"").length &&
+            String(gs1.lot||"").length<=2
+        ){
+            gs1.lot=recovered.lot;
         }
     }
 
-
-    gs1=recoverMedicineFieldsFromCombinedLot(gs1);
 
     if(gs1.gtin){
 
@@ -1178,78 +1209,129 @@ function parseGS1Barcode(rawBarcode){
    GS1 APPLICATION IDENTIFIERS
 ===================================================== */
 
-function recoverMedicineFieldsFromCombinedLot(gs1){
-    const lot=toSafeString(gs1?.lot||"");
-    if(!lot) return gs1;
-
+function recoverGS1FieldsFromRightSide(value,existing={}){
     /*
-       Zebra can deliver the entire tail as AI10 when the FNC1 after Batch is
-       stripped before JavaScript sees it. Recover only highly structured
-       medicine tails containing a plausible AI17 date and AI21 serial.
-       Example:
-       2402761726113021KY5X4W2MWOQK
-       -> Batch 240276 / Expiry 261130 / Serial KY5X4W2MWOQK
+       2C.11.4.4 — SAFE SEPARATOR-LOSS RECOVERY
+
+       Some scanner/browser paths lose FNC1 after variable AI10/AI21.
+       Left-to-right guessing is unsafe when the Batch itself contains "17"
+       (e.g. CL0117).
+
+       Recovery is therefore structural and right-sided:
+       - requires AI01 + 14-digit GTIN;
+       - accepts only valid AI17 YYMMDD dates;
+       - uses AI21 as the serial boundary when present;
+       - chooses the LAST valid AI17 before AI21 for order 10->17->21;
+       - also supports 10->21->17;
+       - never replaces a complete normal parse.
     */
-    let match=lot.match(/^(.{1,20}?)17(\d{6})21(.{1,20})$/);
+    const raw=cleanScannerInput(value);
+    const data=String(raw||"").replace(/\x1D/g,"");
 
-    if(
-        match &&
-        isPlausibleGS1ExpiryYYMMDD(match[2])
-    ){
-        return {
-            ...gs1,
-            lot:match[1],
-            expiry:formatGS1Date(match[2]),
-            serial:match[3]
-        };
-    }
-
-    match=lot.match(/^(.{1,20}?)21(.{1,20}?)17(\d{6})$/);
-
-    if(
-        match &&
-        isPlausibleGS1ExpiryYYMMDD(match[3])
-    ){
-        return {
-            ...gs1,
-            lot:match[1],
-            serial:match[2],
-            expiry:formatGS1Date(match[3])
-        };
-    }
-
-    return gs1;
-}
-
-
-function recoverSeparatorlessMedicineGS1(value){
-    const data=toSafeString(value).replace(/\x1D/g,"");
-    const out={gtin:"",lot:"",expiry:"",serial:"",quantity:1};
+    const out={
+        gtin:existing?.gtin||"",
+        lot:existing?.lot||"",
+        expiry:existing?.expiry||"",
+        serial:existing?.serial||"",
+        quantity:existing?.quantity||1
+    };
 
     if(!/^01\d{14}/.test(data)){
         return out;
     }
 
-    out.gtin=normalizeGTIN(data.slice(2,16));
+    const gtin=normalizeGTIN(data.slice(2,16));
+    if(!gtin){
+        return out;
+    }
+    out.gtin=out.gtin||gtin;
+
     const tail=data.slice(16);
 
-    let match=tail.match(/^10(.{1,20}?)17(\d{6})21(.{1,20})$/);
-    if(match && isPlausibleGS1ExpiryYYMMDD(match[2])){
-        out.lot=match[1];
-        out.expiry=formatGS1Date(match[2]);
-        out.serial=match[3];
-        return out;
+    function validDateAt(str,pos){
+        if(pos<0 || str.slice(pos,pos+2)!=="17") return "";
+        const digits=str.slice(pos+2,pos+8);
+        if(!/^\d{6}$/.test(digits)) return "";
+        try{
+            if(typeof isPlausibleGS1ExpiryYYMMDD==="function" &&
+               !isPlausibleGS1ExpiryYYMMDD(digits)){
+                return "";
+            }
+        }catch(_){}
+        return digits;
     }
 
-    match=tail.match(/^10(.{1,20}?)21(.{1,20}?)17(\d{6})$/);
-    if(match && isPlausibleGS1ExpiryYYMMDD(match[3])){
-        out.lot=match[1];
-        out.serial=match[2];
-        out.expiry=formatGS1Date(match[3]);
-        return out;
+    /* ---------- Order: AI10 Batch -> AI17 Expiry -> AI21 Serial ---------- */
+    const ai21Positions=[];
+    for(let i=0;i<tail.length-1;i++){
+        if(tail.slice(i,i+2)==="21"){
+            ai21Positions.push(i);
+        }
     }
 
-    return {gtin:"",lot:"",expiry:"",serial:"",quantity:1};
+    for(let p=ai21Positions.length-1;p>=0;p--){
+        const ai21=ai21Positions[p];
+        const serial=tail.slice(ai21+2);
+
+        if(!serial || serial.length>20) continue;
+
+        let ai17=-1, exp="";
+        for(let i=ai21-8;i>=0;i--){
+            const d=validDateAt(tail,i);
+            if(d){
+                ai17=i;
+                exp=d;
+                break; // LAST valid AI17 before AI21
+            }
+        }
+
+        if(ai17<0) continue;
+
+        const beforeExpiry=tail.slice(0,ai17);
+        const ai10=beforeExpiry.indexOf("10");
+        if(ai10!==0) continue;
+
+        const lot=beforeExpiry.slice(2);
+        if(!lot || lot.length>20) continue;
+
+        return {
+            ...out,
+            lot,
+            expiry:formatGS1Date(exp),
+            serial
+        };
+    }
+
+    /* ---------- Order: AI10 Batch -> AI21 Serial -> AI17 Expiry ---------- */
+    for(let i=tail.length-8;i>=0;i--){
+        const exp=validDateAt(tail,i);
+        if(!exp) continue;
+
+        const beforeExpiry=tail.slice(0,i);
+        if(!beforeExpiry.startsWith("10")) continue;
+
+        /*
+           Find the LAST plausible AI21 marker after AI10.
+           Serial must be 1..20 chars and Batch must be 1..20 chars.
+        */
+        for(let j=beforeExpiry.length-2;j>=2;j--){
+            if(beforeExpiry.slice(j,j+2)!=="21") continue;
+
+            const lot=beforeExpiry.slice(2,j);
+            const serial=beforeExpiry.slice(j+2);
+
+            if(!lot || lot.length>20 || !serial || serial.length>20) continue;
+
+            return {
+                ...out,
+                lot,
+                expiry:formatGS1Date(exp),
+                serial
+            };
+        }
+    }
+
+    return out;
 }
 
 
