@@ -1,43 +1,49 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.4.2 — Handheld Final Recovery
+Version: Phase 2C.11.4.3 — Dompy Batch Edge Fix
 Status: READY FOR TEST
 
-## USER VERIFIED / PRESERVED
-- Consecutive Batch Qty semantics fixed in 2C.11.4.1.
-- PC Receiving current behavior is protected.
+## PRESERVED / USER VERIFIED
+- Consecutive Batch Qty behavior is USER VERIFIED.
+- Handheld Undo transaction itself works.
+- Handheld Clear Screen is correctly located at the top.
 - PC Dompy Expiry parsing is correct.
-- More than 10 tested Handheld Expiry products parse correctly.
-- Receiving/Expiry Auto Clear verified.
-- Confirm Correct Total blue verified.
+- More than 10 other Handheld Expiry products parse correctly.
+- Receiving / Expiry Auto Clear behavior is preserved.
 
-## HANDHELD UNDO UX
-Undo transaction execution already works. The defect was UI feedback:
-the Recent list appeared frozen and toast was hidden behind the modal.
-Fix:
-- Undo button changes immediately to UNDONE -N.
-- Inline feedback inside Recent says N pack(s) undone.
-- Recent panel refreshes without requiring close/reopen.
-- Existing audit-safe SCAN_UNDO transaction behavior is unchanged.
+## EXACT REMAINING GS1 EDGE CASE
+Dompy Handheld scan was returning an incomplete Batch while PC returned the
+correct pack data.
 
-## HANDHELD EXPIRY CLEAR SCREEN
-- Removed the lower Clear Screen button from the HTML DOM entirely.
-- The only Expiry Clear Screen is the top action replacing Capture.
-- This avoids accidental tapping near SAVE & NEXT.
+Physical pack confirms:
+- GTIN: 06285128000307
+- Batch: CL0117
+- Serial: 2073835044260
+- Expiry: 10/2028
 
-## DOMPY HANDHELD EDGE CASE
-- General GS1 parser is NOT changed.
-- PC Dompy path is protected.
-- Conestal and the >10 correctly parsed Handheld products are protected.
-- Recovery activates only if AI10 Lot itself contains a complete valid
-  AI17 YYMMDD + AI21 Serial sequence, which matches the observed Zebra
-  separator-loss edge case.
+The Batch itself contains the digits `17`, which are also GS1 AI17 (Expiry).
+A separator-loss fallback must therefore never split at the first `17`.
+
+## ROOT FIX
+- General GS1/FNC1 parser is unchanged.
+- Recovery is used only when the combined AI10 Lot needs separator-loss repair.
+- Every possible AI17 candidate is validated.
+- Candidate must contain:
+  valid YYMMDD expiry + immediately following AI21 + valid Serial length.
+- The RIGHTMOST valid AI17 candidate is selected.
+- This preserves the longest legitimate Batch prefix, including values such as
+  `CL0117`, instead of interpreting the Batch's own `17` as the Expiry AI.
 
 ## TEST
-1. Handheld Recent: Undo one +1 scan -> button/inline feedback immediately says 1 pack undone.
-2. Undo a multi-pack transaction if available -> exact N shown.
-3. Handheld Expiry: only one CLEAR SCREEN at top; none above/below SAVE.
-4. Dompy Handheld: Batch/Serial/Expiry match PC.
-5. Conestal plus one other known-good item remain correct.
-6. No PC regression test beyond a quick smoke check.
+1. Handheld Expiry: scan the same Dompy pack.
+   Expected:
+   Batch CL0117
+   Serial 2073835044260
+   Expiry 10/2028
+2. Scan Conestal.
+   Expected: unchanged correct result.
+3. Scan one additional previously-correct medicine as regression check.
+4. PC Dompy smoke check only; no PC behavior was intentionally changed.
+
+## NO SQL MIGRATION

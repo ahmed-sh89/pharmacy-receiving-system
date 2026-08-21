@@ -1183,33 +1183,110 @@ function recoverMedicineFieldsFromCombinedLot(gs1){
     if(!lot) return gs1;
 
     /*
-       Handheld-only transport edge case observed on Dompy:
-       Zebra may strip FNC1 and the normal parser then stores
-       Batch + AI17 + Expiry + AI21 + Serial inside AI10 Lot.
+       2C.11.4.3 — Dompy edge-case fix
 
-       Recover only when the LOT ITSELF contains a complete, structurally
-       valid AI17/AI21 sequence. Correct normal scans (including Conestal)
-       never enter this branch.
+       A legitimate Batch can itself contain the digits "17".
+       Example batch: CL0117
+
+       When Zebra/browser strips FNC1, the tail can become:
+         Batch + 17 + YYMMDD + 21 + Serial
+
+       Therefore we MUST NOT split at the first "17".
+
+       Recovery rule:
+       - inspect every possible AI17 position;
+       - require six date digits;
+       - require AI21 immediately after the date;
+       - require a plausible GS1 expiry;
+       - require Batch and Serial to stay within GS1 max lengths;
+       - choose the RIGHTMOST valid AI17 candidate, preserving the longest
+         legitimate Batch prefix.
+
+       Normal FNC1 parsing remains the primary path.
     */
-    let match=lot.match(/^(.{1,20}?)17(\d{6})21(.{1,20})$/);
 
-    if(match && isPlausibleGS1ExpiryYYMMDD(match[2])){
+    const candidates=[];
+
+    for(let i=1;i<=Math.min(20,lot.length-10);i++){
+        if(lot.slice(i,i+2)!=="17") continue;
+
+        const date=lot.slice(i+2,i+8);
+        if(!/^\d{6}$/.test(date)) continue;
+        if(!isPlausibleGS1ExpiryYYMMDD(date)) continue;
+        if(lot.slice(i+8,i+10)!=="21") continue;
+
+        const batch=lot.slice(0,i);
+        const serial=lot.slice(i+10);
+
+        if(!batch || batch.length>20) continue;
+        if(!serial || serial.length>20) continue;
+
+        candidates.push({
+            batch,
+            expiry:formatGS1Date(date),
+            serial,
+            ai17Index:i
+        });
+    }
+
+    if(candidates.length){
+        /*
+           Longest batch prefix = rightmost valid AI17.
+           This is what preserves CL0117 instead of truncating it.
+        */
+        candidates.sort((a,b)=>b.ai17Index-a.ai17Index);
+        const best=candidates[0];
+
         return {
             ...gs1,
-            lot:match[1],
-            expiry:formatGS1Date(match[2]),
-            serial:match[3]
+            lot:best.batch,
+            expiry:best.expiry,
+            serial:best.serial
         };
     }
 
-    match=lot.match(/^(.{1,20}?)21(.{1,20}?)17(\d{6})$/);
+    /*
+       Keep the already-working alternate layout support, but again prefer the
+       latest valid AI17 after AI21 rather than guessing from the first digits.
+    */
+    const altCandidates=[];
 
-    if(match && isPlausibleGS1ExpiryYYMMDD(match[3])){
+    for(let ai21Index=1;ai21Index<=Math.min(20,lot.length-10);ai21Index++){
+        if(lot.slice(ai21Index,ai21Index+2)!=="21") continue;
+
+        const batch=lot.slice(0,ai21Index);
+        const serialAndDate=lot.slice(ai21Index+2);
+
+        for(let j=1;j<=Math.min(20,serialAndDate.length-8);j++){
+            if(serialAndDate.slice(j,j+2)!=="17") continue;
+
+            const date=serialAndDate.slice(j+2,j+8);
+            if(!/^\d{6}$/.test(date)) continue;
+            if(!isPlausibleGS1ExpiryYYMMDD(date)) continue;
+
+            const serial=serialAndDate.slice(0,j);
+
+            if(!batch || batch.length>20) continue;
+            if(!serial || serial.length>20) continue;
+
+            altCandidates.push({
+                batch,
+                serial,
+                expiry:formatGS1Date(date),
+                ai17Index:j
+            });
+        }
+    }
+
+    if(altCandidates.length){
+        altCandidates.sort((a,b)=>b.ai17Index-a.ai17Index);
+        const best=altCandidates[0];
+
         return {
             ...gs1,
-            lot:match[1],
-            serial:match[2],
-            expiry:formatGS1Date(match[3])
+            lot:best.batch,
+            serial:best.serial,
+            expiry:best.expiry
         };
     }
 
