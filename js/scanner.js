@@ -1570,24 +1570,23 @@ function isPlausibleGS1ExpiryYYMMDD(value){
 
 
 function findImplicitGS1VariableBoundary(data,startIndex,maxLength){
-    const hardEnd=Math.min(data.length,startIndex+maxLength);
-
     /*
-       Do not guess arbitrary AI boundaries inside alphanumeric serial/batch
-       values. The only separator-less recovery accepted here is AI 17 with a
-       syntactically valid fixed-length expiry date. This directly covers the
-       DataWedge failure mode where GS disappears before expiry.
-    */
-    for(let i=startIndex+1;i+8<=hardEnd;i++){
-        if(
-            data.slice(i,i+2)==="17" &&
-            /^\d{6}/.test(data.slice(i+2,i+8)) &&
-            isPlausibleGS1ExpiryYYMMDD(data.slice(i+2,i+8))
-        ){
-            return i;
-        }
-    }
+       2C.11.3.8 — DATA INTEGRITY RULE
 
+       Never infer AI 17 from digits occurring inside a variable-length
+       Batch/Lot (AI 10) or Serial (AI 21).
+
+       Example failure:
+       a legitimate batch ending in "...17" followed by expiry digits was
+       truncated because those batch digits were incorrectly treated as the
+       start of AI 17.
+
+       GS1 variable-length fields are therefore terminated only by:
+       - a real FNC1 / GS separator (normalized to \x1D), or
+       - their maximum permitted length.
+
+       Parenthesized GS1 remains explicitly parsed by AI labels.
+    */
     return -1;
 }
 

@@ -8879,3 +8879,186 @@ body:not(.zebraDevice) #lastScanCard .pcClearLastScan{
 body:not(.zebraDevice) #lastScanCard{
     overflow:visible!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.8 — RECEIVING PC + EXPIRY GS1/LAYOUT ROOT FIX
+============================================================ */
+
+/* ------------------------------------------------------------
+   PC Receiving: preserve the older, cleaner batch presentation.
+   The green SCANNED +1 acknowledgement is Handheld-only.
+------------------------------------------------------------ */
+body:not(.zebraDevice) .handheldScanSavedAck,
+body:not(.zebraDevice) .handheldScanContext,
+body:not(.zebraDevice) .lastScanQtyHint{
+    display:none!important;
+}
+
+body:not(.zebraDevice) #lastScanQuantityControls{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:7px!important;
+    flex-wrap:wrap!important;
+}
+
+body:not(.zebraDevice) #lastScanQuantityControls .lastScanQtyTitle{
+    display:block!important;
+    margin:0 2px 0 auto!important;
+}
+
+body:not(.zebraDevice) #lastScanQuantityControls .lastScanQtyActions{
+    display:inline-flex!important;
+    align-items:center!important;
+}
+
+/* PC pharmacist correction action returns to the approved blue primary cue. */
+body:not(.zebraDevice) #btnQuantitySetTotal{
+    background:#2563eb!important;
+    border-color:#2563eb!important;
+    color:#fff!important;
+    font-weight:900!important;
+}
+
+body:not(.zebraDevice) #btnQuantitySetTotal:hover{
+    filter:brightness(.96);
+}
+
+/* ------------------------------------------------------------
+   Handheld Expiry: restore compact one-screen operational layout.
+   Typography remains readable, but vertical density is reduced so
+   normal capture does not require scrolling.
+------------------------------------------------------------ */
+body.zebraDevice.zebraExpiryActive .zebraExpiryTop{
+    min-height:40px!important;
+    padding:4px 6px!important;
+    margin-bottom:4px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar{
+    min-height:34px!important;
+    margin:0 0 4px!important;
+    padding:3px 5px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar select{
+    height:27px!important;
+    min-height:27px!important;
+    font-size:12px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryScanStatus{
+    min-height:20px!important;
+    margin:0 0 3px!important;
+    padding:2px 5px!important;
+    font-size:9px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryScanBox{
+    min-height:42px!important;
+    margin-bottom:4px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryBarcodeInput{
+    min-height:40px!important;
+    font-size:15px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryCaptureCard{
+    padding:6px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemCard{
+    margin-top:4px!important;
+    padding:6px!important;
+    border-radius:10px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryItemName{
+    margin:2px 0 4px!important;
+    font-size:16px!important;
+    line-height:1.1!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:3px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta > div{
+    min-height:34px!important;
+    padding:3px 5px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta span{
+    font-size:7px!important;
+    line-height:1!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta strong,
+body.zebraDevice.zebraExpiryActive #expiryItemCode,
+body.zebraDevice.zebraExpiryActive #expiryItemGTIN,
+body.zebraDevice.zebraExpiryActive #expiryItemCategory,
+body.zebraDevice.zebraExpiryActive #expiryItemBatch,
+body.zebraDevice.zebraExpiryActive #expiryItemSerial{
+    font-size:10px!important;
+    line-height:1.08!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid{
+    gap:4px!important;
+    margin-top:5px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid label > span{
+    font-size:8px!important;
+    margin-bottom:1px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity,
+body.zebraDevice.zebraExpiryActive #expiryMonth,
+body.zebraDevice.zebraExpiryActive #expiryYear{
+    min-height:38px!important;
+    height:38px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity{
+    font-size:19px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryMonth,
+body.zebraDevice.zebraExpiryActive #expiryYear{
+    font-size:14px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryMonthName{
+    min-height:9px!important;
+    margin-top:1px!important;
+    font-size:7px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expirySaveButton{
+    min-height:38px!important;
+    margin-top:5px!important;
+    font-size:10px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryClearScreenButton{
+    min-height:25px!important;
+    margin:4px auto 0!important;
+    padding:3px 9px!important;
+    font-size:8px!important;
+    position:static!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryLastSaved{
+    margin-top:3px!important;
+}
+
+/* Avoid sticky action controls covering the form on small Zebra screens. */
+body.zebraDevice.zebraExpiryActive #btnClearExpiryScreen,
+body.zebraDevice.zebraExpiryActive .expirySaveButton{
+    position:static!important;
+    bottom:auto!important;
+}
