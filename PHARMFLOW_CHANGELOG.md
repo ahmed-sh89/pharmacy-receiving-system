@@ -1,7 +1,8 @@
-# PHARMFLOW CHANGELOG — 2C.11.1
+# PHARMFLOW CHANGELOG — 2C.11.1.1
 
-- Simplified Handheld Last Scan presentation around Item + Ordered/Received/Remaining.
-- Added compact Recent Scans correction drawer for the current Handheld.
-- Recent drawer displays last 20 exact scans rather than grouping away individual mistakes.
-- Undo remains audit-safe through correction transactions.
-- Protected 2C.11.0 Unified Workspace runtime and synchronization.
+- Restored visible Recent Scans entry hidden by an older Handheld CSS rule.
+- Promoted editable QTY directly below Last Scan item identity.
+- Reduced +/- and secondary metric visual weight to avoid quantity confusion.
+- Fixed misleading zero primary QTY immediately after a successful Handheld scan.
+- Explicitly closes numeric keyboard on Enter/Done before quantity action.
+- Preserved verified Unified Workspace scan/synchronization architecture.

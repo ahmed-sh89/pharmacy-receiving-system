@@ -1,30 +1,37 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.1 — Handheld Receiving UX
+Version: Phase 2C.11.1.1 — Handheld Quantity + Recent UX Fix
 Status: READY FOR TEST
 
-## VERIFIED BASELINE PROTECTED
-2C.11.0 Unified Pharmacy Workspace is USER VERIFIED:
-- Handheld enters Receiving directly without Create/Join Session.
-- Known item scanned successfully on both PC and Handheld.
-- PC↔Handheld synchronization worked correctly.
+## USER VERIFIED / PROTECTED
+- 2C.11.0 Unified Pharmacy Workspace: Handheld enters Receiving without pairing.
+- Known item scan works on PC and Handheld.
+- PC↔Handheld synchronization works.
+These are protected non-regression requirements.
 
-## 2C.11.1 SCOPE
-Presentation/correction UX only. No scanner/session/workspace/ledger architecture changes.
-- Last Scan simplified to Item identity + Ordered / Received / Remaining.
-- Quantity correction controls remain directly below Last Scan.
-- Added compact RECENT access instead of a large Total Scans KPI.
-- Recent Scans shows the latest 20 exact scanner transactions from THIS Handheld in chronological order.
-- Each recent transaction can be Undo corrected individually. Undo creates a negative correction transaction; it never silently deletes receiving history.
-- PC UI is unaffected.
+## USER FEEDBACK ON 2C.11.1
+- Last Scan item identity and Ordered/Received/Remaining display correctly.
+- Primary Handheld Quantity counter displayed 0 after successful scans; user preferred the earlier working counter.
+- Manual Quantity entry must close numeric keyboard on Enter/Done.
+- Large Item Number box under the name should not compete visually with Quantity.
+- Recent/Total Scan history entry was not visible.
 
-## ACCEPTANCE TEST
-1. Confirm 2C.11.0 normal known scan still works and syncs.
-2. Verify Last Scan shows Item Name/Code + Ordered/Received/Remaining without scrolling in normal operation.
-3. Scan same item twice, open RECENT, verify two distinct rows.
-4. Undo the latest accidental scan. Expected Received -1 on Handheld and PC after sync, while audit history remains.
-5. Close RECENT and scan again. Scanner must remain ready.
+## 2C.11.1.1 CHANGE
+- Primary editable QTY is promoted directly under item identity.
+- Item Number remains small metadata.
+- +/- buttons are reduced in size so only one quantity control looks primary.
+- Ordered/Received/Remaining are compact secondary metrics.
+- Quantity display falls back to latest successful scan quantity if local batch history momentarily lags.
+- Enter/Done explicitly blurs numeric field before applying quantity, closing Android numeric keyboard.
+- RECENT button is explicitly restored despite a legacy CSS rule that hid Total Scans.
+- Recent shows current-Handheld scan history and keeps audit-safe Undo behavior.
+- No scanner/workspace/sync architecture changed.
+- No SQL migration.
 
-## NEXT
-After verification: continue 2C.11.1 exception UX (Known Extra / Unknown GTIN) or proceed to 2C.11.2 Needs Review Rebuild per approved plan.
+## EXACT TEST
+1. Scan known item once. QTY must show 1 (not 0).
+2. Scan same item again. QTY/current batch must advance appropriately.
+3. Tap QTY, enter 5, press Enter. Keyboard closes and quantity is applied.
+4. RECENT must be visible; open it and verify recent scans.
+5. Confirm PC sync still works.

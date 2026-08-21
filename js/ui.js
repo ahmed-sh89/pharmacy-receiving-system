@@ -2471,6 +2471,9 @@ function openQuantityEditPrompt(item){
             const correctionMode = !document.getElementById("quantityCorrectionMode")?.hidden;
             event.preventDefault();
 
+            /* Close Android numeric keyboard deterministically before saving. */
+            try{ document.activeElement?.blur?.(); }catch(_){ }
+
             if(correctionMode){
                 document.getElementById("btnQuantitySetTotal")?.click();
             }else{
@@ -2530,6 +2533,7 @@ function openQuantityEditPrompt(item){
     };
 
     addButton.onclick = function(){
+        try{ document.activeElement?.blur?.(); }catch(_){ }
         const code = modal.dataset.itemCode;
         const quantity = toNumber(input?.value, 0);
 
@@ -2545,6 +2549,7 @@ function openQuantityEditPrompt(item){
     };
 
     setButton.onclick = function(){
+        try{ document.activeElement?.blur?.(); }catch(_){ }
         const code = modal.dataset.itemCode;
         const total = toNumber(correctionInput?.value, -1);
 
@@ -5174,10 +5179,25 @@ function refreshLastScanQuantityControl(){
           0
       );
 
-  const thisDeviceReceived =
+  let thisDeviceReceived =
       getCurrentBatchQuantity(
           item.itemCode
       );
+
+  /* 2C.11.1.1 — Current batch history can momentarily lag the freshly
+     synchronized Last Scan on Handheld. Never show a misleading zero after a
+     successful scan; use the current Last Scan quantity as the immediate
+     display floor, then normal history refresh takes over. */
+  if(
+      thisDeviceReceived <= 0 &&
+      scan &&
+      normalizeItemCode(scan.itemCode) === normalizeItemCode(item.itemCode)
+  ){
+      thisDeviceReceived = Math.max(
+          1,
+          toNumber(scan.quantity,1)
+      );
+  }
 
   button.textContent =
       String(thisDeviceReceived);
@@ -6890,9 +6910,18 @@ function ensureHandheldReceivingTools(){
     const page = document.getElementById("page-dashboard");
     if(!page) return;
 
-    const oldHeader = document.getElementById("zebraQuickHeader");
-    if(oldHeader){
-        oldHeader.innerHTML = `
+    let header = document.getElementById("zebraQuickHeader");
+
+    if(!header){
+        header=document.createElement("section");
+        header.id="zebraQuickHeader";
+        header.className="zebraQuickHeader";
+        page.insertBefore(header,page.firstChild);
+    }
+
+    let finalHeader=header.querySelector(".zebraFinalHeader");
+    if(!finalHeader){
+        header.innerHTML=`
             <div class="zebraFinalHeader">
                 <div class="zebraFinalTitle">
                     <strong>Receive Order</strong>
@@ -6900,15 +6929,30 @@ function ensureHandheldReceivingTools(){
                 </div>
                 <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
             </div>
-            <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton" type="button" aria-label="Open recent scans">
-                <span>RECENT</span>
-                <strong id="handheldTotalScansValue">0</strong>
-            </button>
         `;
-        document.getElementById("btnZebraModes")?.addEventListener("click", setZebraHomeMode);
-        document.getElementById("btnHandheldTotalScans")?.addEventListener("click", openHandheldScansPanel);
+        finalHeader=header.querySelector(".zebraFinalHeader");
+    }else{
+        const state=header.querySelector(".zebraConnectedDot");
+        if(state){ state.textContent="ONLINE"; }
     }
 
+    document.getElementById("btnZebraModes")?.addEventListener("click", setZebraHomeMode);
+
+    let recent=document.getElementById("btnHandheldTotalScans");
+    if(!recent){
+        recent=document.createElement("button");
+        recent.id="btnHandheldTotalScans";
+        recent.className="handheldTotalScansButton handheldRecentButton";
+        recent.type="button";
+        recent.setAttribute("aria-label","Open recent scans");
+        recent.innerHTML=`
+            <span>RECENT</span>
+            <strong id="handheldTotalScansValue">0</strong>
+        `;
+        header.appendChild(recent);
+    }
+
+    recent.onclick=openHandheldScansPanel;
     refreshHandheldReceivingTools();
 }
 
