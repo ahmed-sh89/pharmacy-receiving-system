@@ -1,8 +1,6 @@
-# PHARMFLOW CHANGELOG — 2C.11.4.1
-
-- Corrected Batch Qty semantics from per-item cumulative local quantity to
-  current consecutive item batch.
-- Switching items now closes the previous batch.
-- Returning to a previously scanned item starts its Batch Qty from 1.
-- Shared Received Total remains unchanged and synchronized.
+# PHARMFLOW CHANGELOG — 2C.11.4.2
+- Added immediate in-modal Handheld Undo quantity feedback.
+- Removed lower Expiry Clear Screen from DOM; top action is the only Clear Screen.
+- Restricted Dompy recovery to combined AI10 Lot containing valid AI17 + AI21.
+- Preserved verified PC and consecutive Batch Qty behavior.
 - No SQL migration.

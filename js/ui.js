@@ -7460,6 +7460,8 @@ function openHandheldScansPanel(initialTab="THIS"){
               <button type="button" data-tab="ALL" class="${tab==="ALL"?"active":""}">ALL DEVICES</button>
             </div>
 
+            <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
+
             <div class="handheldRecentList">
               ${recent.length ? recent.map((row,index)=>{
                 const qty=Math.max(1,Number(row?.quantity||1)||1);
@@ -7499,13 +7501,56 @@ function openHandheldScansPanel(initialTab="THIS"){
 
         overlay.querySelectorAll("[data-undo-item]").forEach(btn=>btn.onclick=()=>{
             const transactionId=btn.getAttribute("data-undo-item");
-            if(!transactionId) return;
+            if(!transactionId || btn.disabled) return;
+
+            const row=recent.find(item=>
+                String(item?.transactionId||"")===String(transactionId)
+            );
+            const qty=Math.max(1,Number(row?.quantity||1)||1);
+
+            btn.disabled=true;
+            btn.textContent="UNDOING…";
+
             const result=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
                 : false;
+
             if(result){
+                /*
+                   Do not wait for Supabase/history hydration before giving the
+                   worker feedback. Mark this transaction locally as corrected,
+                   then refresh from authoritative history on the next event.
+                */
+                const localTx=ReceivingEngine?.recentScans?.find?.(item=>
+                    String(item?.transactionId||"")===String(transactionId)
+                );
+                if(localTx) localTx.undone=true;
+
+                btn.textContent=`UNDONE -${qty}`;
+                btn.classList.add("undone");
+                btn.disabled=true;
+
+                const feedback=overlay.querySelector("#handheldRecentFeedback");
+                if(feedback){
+                    feedback.textContent=`${qty} pack${qty===1?"":"s"} undone`;
+                    feedback.classList.add("show");
+                }
+
                 refreshHandheldReceivingTools();
-                render();
+
+                setTimeout(()=>{
+                    if(document.body.contains(overlay)){
+                        render();
+                        const refreshedFeedback=overlay.querySelector("#handheldRecentFeedback");
+                        if(refreshedFeedback){
+                            refreshedFeedback.textContent=`${qty} pack${qty===1?"":"s"} undone`;
+                            refreshedFeedback.classList.add("show");
+                        }
+                    }
+                },250);
+            }else{
+                btn.disabled=false;
+                btn.textContent="Undo";
             }
         });
     };

@@ -9094,3 +9094,26 @@ body.zebraDevice.zebraExpiryActive .expiryClearScreenTop{
 body.zebraDevice.zebraExpiryActive #btnClearExpiryScreen{
     display:none!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.4.2 — HANDHELD FINAL RECOVERY
+============================================================ */
+.handheldRecentFeedback{
+    display:none;
+    margin:6px 10px 2px;
+    padding:7px 9px;
+    border-radius:8px;
+    background:#ecfdf5;
+    border:1px solid #86efac;
+    color:#166534;
+    font-size:12px;
+    font-weight:900;
+    text-align:center;
+}
+.handheldRecentFeedback.show{display:block}
+.handheldUndoItem.undone,
+.handheldUndoItem:disabled{
+    opacity:.72;
+    cursor:default;
+}
