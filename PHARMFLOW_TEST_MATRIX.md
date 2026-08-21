@@ -1,12 +1,14 @@
-# PHARMFLOW TEST MATRIX — 2C.11.3.7
+# PHARMFLOW TEST MATRIX — 2C.11.3.8
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| PC-CLR1 | PC Receiving Last Scan | One Clear Screen, no overlap | READY FOR TEST |
-| EXP-AC1 | PC untouched Expiry scan 30s | Clears to READY | READY FOR TEST |
-| EXP-AC2 | Handheld untouched Expiry scan 30s | Clears to READY | READY FOR TEST |
-| EXP-AC3 | Touch Qty/date before 30s | Unsaved work protected | READY FOR TEST |
-| GS1-1 | Medicine 2D PC | Correct Batch/Serial/Expiry | READY FOR TEST |
-| GS1-2 | Medicine 2D Handheld | Correct Batch/Serial/Expiry | READY FOR TEST |
-| UI-R1 | Expiry counter | RECENT on PC + Handheld | READY FOR TEST |
-| REG-R1 | Receiving scan | No regression | READY FOR TEST |
+| GS1-B1 | Expiry Batch PC | Exact batch | READY FOR TEST |
+| GS1-B2 | Expiry Batch Handheld | Exact batch | READY FOR TEST |
+| GS1-S1 | Expiry Serial PC | Exact serial | READY FOR TEST |
+| GS1-S2 | Expiry Serial Handheld | Exact serial | READY FOR TEST |
+| HH-L1 | Handheld Expiry layout | Normal flow without routine scroll | READY FOR TEST |
+| PC-B1 | First PC scan | Received 1 / Batch Qty 1 | READY FOR TEST |
+| PC-B2 | PC scan UI | No SCANNED +1 badge | READY FOR TEST |
+| PC-AC1 | Receiving PC idle 30s | Last Scan clears; data unchanged | READY FOR TEST |
+| PC-Q1 | Correct Total modal | Confirm button blue | READY FOR TEST |
+| REG-S1 | PC↔Handheld sync | No regression | READY FOR TEST |

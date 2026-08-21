@@ -1,8 +1,10 @@
-# PHARMFLOW CHANGELOG — 2C.11.3.7
+# PHARMFLOW CHANGELOG — 2C.11.3.8
 
-- Added real 30-second auto-clear for untouched Expiry scan results.
-- Protected active Quantity/Month/Year edits from automatic clearing.
-- Removed duplicate Handheld Clear Screen from PC Receiving.
-- Repositioned PC Clear Screen below Last Scan metrics.
-- Included GS1 parser and RECENT label fixes from 2C.11.3.6.
+- Removed unsafe implicit AI17 guessing inside GS1 Batch/Serial.
+- Restored exact FNC1-delimited Batch/Serial parsing for PC + Handheld Expiry.
+- Restored compact no-routine-scroll Handheld Expiry layout.
+- Restored old PC Batch Qty presentation and made Scan acknowledgement Handheld-only.
+- Fixed first PC scan showing Batch Qty 0 while Received was 1.
+- Added PC Receiving 30-second visual Auto Clear.
+- Restored Confirm Correct Total blue action styling.
 - No SQL migration.

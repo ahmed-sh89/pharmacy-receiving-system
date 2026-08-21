@@ -465,6 +465,79 @@ function createSmartScanSearchUI(){
 ===================================================== */
 
 
+let pcReceivingAutoClearTimer=null;
+let pcReceivingAutoClearKey="";
+
+function cancelPcReceivingAutoClear(){
+    clearTimeout(pcReceivingAutoClearTimer);
+    pcReceivingAutoClearTimer=null;
+    pcReceivingAutoClearKey="";
+}
+
+function pcReceivingLastScanKey(scan){
+    if(!scan) return "";
+
+    return toSafeString(
+        scan.transactionId ||
+        [
+            scan.itemCode,
+            scan.dateTime,
+            scan.receivedQty,
+            scan.gtin
+        ].join("|")
+    );
+}
+
+function schedulePcReceivingAutoClear(scan){
+    let isHandheld=false;
+
+    try{
+        isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+    }catch(_){}
+
+    if(isHandheld || !scan){
+        return;
+    }
+
+    const key=pcReceivingLastScanKey(scan);
+
+    if(!key || key===pcReceivingAutoClearKey){
+        return;
+    }
+
+    cancelPcReceivingAutoClear();
+    pcReceivingAutoClearKey=key;
+
+    pcReceivingAutoClearTimer=setTimeout(()=>{
+        const current=AppState?.workspace?.lastScan;
+
+        if(
+            !current ||
+            pcReceivingLastScanKey(current)!==key
+        ){
+            return;
+        }
+
+        /* Do not clear while the pharmacist is actively adjusting quantity. */
+        const quantityModal=document.getElementById("quantityAdjustmentModal");
+
+        if(quantityModal?.classList?.contains("open")){
+            pcReceivingAutoClearKey="";
+            schedulePcReceivingAutoClear(current);
+            return;
+        }
+
+        AppState.workspace.lastScan=null;
+        cancelPcReceivingAutoClear();
+
+        refreshEntireUI?.();
+
+        try{ document.activeElement?.blur?.(); }catch(_){}
+        setTimeout(()=>focusScannerInput?.(),30);
+    },30000);
+}
+
+
 function ensurePcClearScreenButton(){
     if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
         return;
@@ -494,6 +567,7 @@ function ensurePcClearScreenButton(){
         /*
            Visual-only clear. Does not modify receiving quantities/history.
         */
+        cancelPcReceivingAutoClear();
         AppState.workspace.lastScan=null;
         refreshEntireUI?.();
 
@@ -1956,6 +2030,7 @@ function refreshLastScan(){
 
     if(!scan){
 
+        cancelPcReceivingAutoClear();
         clearLastScanUI();
 
         refreshProfessionalLastScan(
@@ -1966,6 +2041,8 @@ function refreshLastScan(){
 
         return;
     }
+
+    schedulePcReceivingAutoClear(scan);
 
     /*
        Keep legacy elements updated for compatibility
@@ -2723,7 +2800,7 @@ function openQuantityEditPrompt(item){
     );
 
     const allDevicesQty = toNumber(item.receivedQty, 0);
-    const thisDeviceQty = getCurrentBatchQuantity(item.itemCode);
+    const thisDeviceQty = getOperationalCurrentBatchQuantity(item.itemCode);
 
     setElementText(document.getElementById("quantityAdjustmentCurrent"), allDevicesQty);
     setElementText(document.getElementById("quantityAdjustmentDeviceCurrent"), thisDeviceQty);
@@ -5409,6 +5486,46 @@ function getCurrentLastScanItem(){
  REFRESH LAST SCAN QUANTITY CONTROL
 ===================================================== */
 
+function getOperationalCurrentBatchQuantity(itemCode){
+    const calculated=Math.max(0,toNumber(getCurrentBatchQuantity(itemCode),0));
+
+    let isHandheld=false;
+    try{
+        isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+    }catch(_){}
+
+    if(isHandheld || calculated>0){
+        return calculated;
+    }
+
+    /*
+       PC legacy behavior:
+       Immediately after the first local scan, Received may already be +1
+       while receivingHistory/cloud hydration is one render behind.
+       The PC Batch Qty must still show 1 immediately instead of 0.
+    */
+    const scan=AppState?.workspace?.lastScan;
+
+    if(
+        scan &&
+        normalizeItemCode(scan?.itemCode)===normalizeItemCode(itemCode)
+    ){
+        const scanDelta=toNumber(scan?.quantity,0);
+
+        if(scanDelta>0){
+            return scanDelta;
+        }
+
+        /* A successful scanner Last Scan represents at least one pack. */
+        if(toNumber(scan?.receivedQty,0)>0){
+            return 1;
+        }
+    }
+
+    return calculated;
+}
+
+
 function refreshLastScanQuantityControl(){
 
   const button =
@@ -5453,7 +5570,7 @@ function refreshLastScanQuantityControl(){
 
   /* 2C.11.1.3 — Handheld primary quantity is the worker's CURRENT LOCAL
      BATCH on this device. Shared totals remain informational below. */
-  const localBatchQty=getCurrentBatchQuantity(item.itemCode);
+  const localBatchQty=getOperationalCurrentBatchQuantity(item.itemCode);
 
   button.textContent =
       String(localBatchQty);
