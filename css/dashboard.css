@@ -7414,3 +7414,20 @@ body.zebraDevice input[type="number"]{font-variant-numeric:tabular-nums}
     box-shadow:0 18px 48px rgba(0,0,0,.22)!important;text-align:center!important}
 .pharmFlowOperationReceipt.success{background:#ecfdf3!important;color:#116b38!important;border:1px solid #86d6a7!important}
 .pharmFlowOperationReceipt.error{background:#fff1f2!important;color:#9f1239!important;border:1px solid #f5a3b3!important}
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.0 — UNIFIED PHARMACY WORKSPACE CORE
+   Legacy Create/Join Session UI is removed from the user experience.
+   The underlying old module remains dormant in this core release only so
+   rollback is possible while Unified Workspace is being user-verified.
+============================================================ */
+[data-page="sessions"],
+#page-sessions,
+#zebraJoinPanel,
+#zebraJoinHeader{
+    display:none!important;
+}
+body.zebraDevice.zebraHomeActive #zebraHome{display:block!important}
+body.zebraDevice[data-hh-state="ready"] #scanBox:before{color:#176a39!important}
+body.zebraDevice[data-hh-state="blocked"] #scanBox:before{color:#9a5a08!important}

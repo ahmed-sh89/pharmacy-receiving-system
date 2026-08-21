@@ -1,35 +1,45 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
-Date: 20 August 2026
-Version: Phase 2C.10.7.1 — Handheld Order Context + Focus Root Fix
+Date: 21 August 2026
+Version: Phase 2C.11.0 — Unified Pharmacy Workspace Core
 Status: READY FOR TEST
 
-## TEST EVIDENCE FROM 2C.10.7.0
-- Known item physically in the active PC order: Handheld scan produced no item card. FAILED.
-- Unknown/not-in-order scan: Handheld reached Item Not Recognised and showed identity data. This proves raw Zebra capture/parser path is now active.
-- Quantity numeric keyboard repeatedly opened/closed. FAILED.
+## AUTHORITATIVE SOURCE
+Built from user-uploaded GitHub ZIP `pharmacy-receiving-system-main(8).zip`.
+The deployed baseline was 2C.10.7.1. Phase 2C.10.7.2 was NOT uploaded by the user and is explicitly excluded.
 
-## ROOT CAUSES ADDRESSED
-1. Live session snapshot rows arrive on Handheld without browser-local `orderNumbers` membership metadata. Receiving then rejected a genuine session item during deterministic order selection even though the item row itself came from the authenticated PC live session.
-2. Handheld runtime auto-focus could reclaim scanner focus while the worker was editing Quantity, causing numeric keyboard instability.
+## ARCHITECTURE CHANGE
+Handheld is now a first-class authenticated client of the same pharmacy-scoped Supabase workspace used by PCs. User-facing Create Session / Join Code / QR pairing is no longer required for Receiving.
 
-## 2C.10.7.1 CHANGE
-- A row present in an authenticated live Handheld session snapshot is treated as authoritative current-session membership when local per-order metadata is absent. It is NOT converted to Manual/Over Stock.
-- Aggregate session metrics use the session item's Ordered/Received/Remaining values when per-order membership is unavailable.
-- Auto-focus never steals focus from Quantity/date/photo/action inputs.
-- Scanner focus returns after the action finishes.
-- READY label now exposes actual transported context: ITEMS n · ORDERS n/SESSION.
-- No SQL migration.
+Authoritative path:
+PC Upload Order -> Active Order Manifest (Supabase) -> PC/Handheld direct hydration -> shared receiving ledger.
 
-## PRESERVED
-- PC Receiving search #24 remains USER VERIFIED.
-- Unknown GTIN still goes to Needs Review.
-- Known GTIN not in session/order remains Extra/Needs Review path.
-- Global GTIN / Returns Archive boundaries unchanged.
+## 2C.11.0 IMPLEMENTATION
+- Handheld Receiving mode pulls the pharmacy Active Order Manifest directly.
+- No legacy cloud-session id/secret is required for Handheld READY state.
+- Handheld displays `ONLINE · WORKSPACE SYNCED · N ORDERS · N ITEMS` only when real Active Order data is present.
+- If no Active Order exists it displays `WAITING FOR ACTIVE ORDER`.
+- Existing Active Order Manifest preserves per-item order membership, eliminating session-snapshot membership loss.
+- Receiving transactions continue through the existing authenticated pharmacy-scoped shared receiving ledger.
+- Legacy Create/Join Session UI is hidden/dormant during the user-verification gate; destructive removal is deferred until the new core is verified.
+- Expiry remains accessible from Handheld Modes and does not require a PC session.
+- No SQL migration is required for this core because the existing Active Order Manifest + receiving ledger already provide the required server authority.
 
-## EXACT NEXT TEST
-1. Hard refresh Handheld and join a NEW PC session.
-2. Before scanning, read the READY line and record ITEMS/ORDERS.
-3. Scan the same known order item GTIN 06287043583491 once, then x3. Expected correct item +1 each scan, no freeze.
-4. Scan one unknown/not-in-order item; tap Physical Qty and type 3. Numeric keypad must remain stable until Enter/Save.
-5. Send screenshot only if known item still fails; the READY line will reveal whether the PC session transported item rows.
+## USER VERIFIED / PROTECTED
+- PC Receiving search #24: Item Name / Item Code against uploaded Orders.
+- Existing PC multi-device cloud workspace architecture must not regress.
+- Global GTIN, Returns Archive and historical-domain boundaries remain unchanged.
+
+## ACCEPTANCE GATE — TEST ONLY THIS FIRST
+1. PC: sign in and upload/retain an Active Order containing GTIN 06287043583491.
+2. Handheld: hard refresh and sign in with the SAME pharmacy account.
+3. Choose Receiving. There must be NO Join Code / QR step.
+4. Handheld must show `ONLINE · WORKSPACE SYNCED` with non-zero Orders/Items.
+5. Scan GTIN 06287043583491 three times. Correct item must appear and Received must increase +1 each scan without freeze.
+6. PC must show the same +3 through shared receiving synchronization.
+
+## STOP RULE
+If this gate fails, do not patch DataWedge, session snapshots, Needs Review, Expiry UI or Reports. Trace only Active Manifest hydration -> item membership -> shared receiving transaction.
+
+## NEXT AFTER USER VERIFICATION
+2C.11.1 — Handheld Receiving UX + Runtime (known extra, unknown GTIN, keyboard/focus, polished state UI).

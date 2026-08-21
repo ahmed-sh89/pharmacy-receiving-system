@@ -251,16 +251,6 @@ function getReceivingItemByItemCode(itemCode){
     })||null;
 }
 
-function isHandheldCloudReceivingContext(){
-    return !!(
-        typeof isLikelyZebraDevice==="function" &&
-        isLikelyZebraDevice() &&
-        AppState?.session?.role==="ZEBRA" &&
-        AppState?.session?.cloud===true &&
-        AppState?.session?.id
-    );
-}
-
 function getReceivingEligibleOrders(item){
     const selected=typeof getSelectedReceivingOrderNumbers==="function"
         ? getSelectedReceivingOrderNumbers()
@@ -268,29 +258,12 @@ function getReceivingEligibleOrders(item){
     const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
         .map(normalizeOrderNumber).filter(Boolean))];
 
-    if(memberships.length){
-        return selected.length
-            ? memberships.filter(order=>selected.includes(order))
-            : memberships;
-    }
-
-    /* 2C.10.7.1 — LIVE HANDHELD SESSION RULE
-       get_session_snapshot currently transports the PC session's aggregate
-       order rows but not each row's local orderNumbers metadata. A row that
-       exists in the authenticated live session snapshot is therefore already
-       authoritative evidence that the item belongs to the PC's active session.
-       Do NOT reclassify that row as Not in Order merely because browser-local
-       membership metadata was not transported.
-
-       If the PC exposed one concrete selected Order, use it. Otherwise return
-       the live-session aggregate target; receiveOrderItem will update the
-       shared item/ledger without inventing a false manual/over-stock item. */
-    if(isHandheldCloudReceivingContext()){
-        if(selected.length===1) return [selected[0]];
-        return ["__LIVE_SESSION__"];
-    }
-
-    return [];
+    /* 2C.11.0: Active Order Manifest is shared directly by PC and Handheld,
+       including per-item order membership. No session snapshot fallback and no
+       synthetic order sentinel are allowed in the authoritative path. */
+    if(!memberships.length) return [];
+    if(!selected.length) return memberships;
+    return memberships.filter(order=>selected.includes(order));
 }
 
 function getReceivingOrderRow(item,orderNumber){
@@ -313,11 +286,6 @@ function chooseDeterministicReceivingOrder(item){
 }
 
 function getReceivingDisplayMetrics(item,orderNumber){
-    if(orderNumber==="__LIVE_SESSION__"){
-        const ordered=toNumber(item?.orderedQty,0);
-        const received=toNumber(item?.receivedQty,0);
-        return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
-    }
     const row=getReceivingOrderRow(item,orderNumber);
     if(!row) return null;
     const ordered=toNumber(row["Ordered Qty"],0);

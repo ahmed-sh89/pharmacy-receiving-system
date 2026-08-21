@@ -37,11 +37,13 @@ function hhMode(){
 }
 
 function hhReceivingSessionReady(){
+    /* 2C.11.0: READY means authenticated pharmacy + authoritative Active
+       Order data. There is intentionally no Create/Join session dependency. */
     return !!(
-        AppState?.session?.role==="ZEBRA" &&
-        AppState?.session?.cloud===true &&
-        AppState?.session?.id &&
-        AppState?.session?.secret &&
+        typeof AuthState!=="undefined" &&
+        AuthState?.context?.pharmacy_id &&
+        Array.isArray(AppState?.workspace?.orderFiles) &&
+        AppState.workspace.orderFiles.length>0 &&
         Array.isArray(AppState?.workspace?.orderData) &&
         AppState.workspace.orderData.length>0
     );
@@ -62,9 +64,9 @@ function hhRefreshReadyState(){
         const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData.length:0;
         const orders=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles.length:0;
         if(hhReceivingSessionReady()){
-            hhSetVisualState("ready",`READY · ITEMS ${items} · ORDERS ${orders||"SESSION"}`);
+            hhSetVisualState("ready",`ONLINE · WORKSPACE SYNCED · ${orders} ORDERS · ${items} ITEMS`);
         }else{
-            hhSetVisualState("blocked",`DATA NOT READY · ITEMS ${items} · ORDERS ${orders}`);
+            hhSetVisualState("blocked",`WAITING FOR ACTIVE ORDER · ${orders} ORDERS · ${items} ITEMS`);
         }
     }else if(mode==="EXPIRY"){
         hhSetVisualState("ready","READY TO SCAN");
@@ -86,7 +88,7 @@ async function hhProcessReceiving(raw,input){
     if(!hhReceivingSessionReady()){
         if(input) input.value="";
         hhSetVisualState("blocked","SESSION / ORDERS NOT READY");
-        showToast("Receiving session is not ready. Rejoin the active PC session.","warning");
+        showToast("No synchronized Active Order is available for this pharmacy","warning");
         return false;
     }
     if(hhIsImmediateDuplicate(raw)) return false;
@@ -206,33 +208,26 @@ function hhFocusActiveScanner(force=false){
     try{ input.focus({preventScroll:true}); }catch(_){ try{input.focus();}catch(__){} }
 }
 
-async function hhCheckServerTermination(){
-    if(!hhIsDevice() || !navigator.onLine || HandheldRuntime.terminationBusy) return;
-    if(!(AppState?.session?.role==="ZEBRA" && AppState?.session?.cloud===true && AppState?.session?.id && AppState?.session?.secret)) return;
-    if(typeof isCloudSessionTerminatedOnServer!=="function") return;
-
+async function hhRefreshWorkspaceAuthority(){
+    if(!hhIsDevice() || !navigator.onLine) return false;
+    if(typeof refreshUnifiedHandheldWorkspace!=="function") return false;
+    if(HandheldRuntime.terminationBusy) return false;
     HandheldRuntime.terminationBusy=true;
     try{
-        const ended=await isCloudSessionTerminatedOnServer();
-        if(ended===true){
-            if(typeof terminateZebraFromServer==="function") terminateZebraFromServer("handheld-runtime-watch");
-            else{
-                resetZebraWorkingState?.("handheld-runtime-watch",{force:true});
-                setZebraHomeMode?.();
-            }
-        }
+        return await refreshUnifiedHandheldWorkspace({silent:true});
     }catch(error){
-        Logger?.warn?.("Handheld termination watch failed",error);
+        Logger?.warn?.("Handheld workspace authority refresh failed",error);
+        return false;
     }finally{
         HandheldRuntime.terminationBusy=false;
     }
 }
 
-function hhStartTerminationWatch(){
+function hhStartWorkspaceWatch(){
     clearInterval(HandheldRuntime.terminationTimer);
     HandheldRuntime.terminationTimer=setInterval(()=>{
-        if(document.visibilityState!=="hidden") hhCheckServerTermination();
-    },900);
+        if(document.visibilityState!=="hidden") hhRefreshWorkspaceAuthority();
+    },2200);
 }
 
 function hhInstall(){
@@ -247,7 +242,7 @@ function hhInstall(){
         if(document.visibilityState==="visible"){
             hhRefreshReadyState();
             hhFocusActiveScanner();
-            hhCheckServerTermination();
+            hhRefreshWorkspaceAuthority();
         }
     });
 
@@ -257,9 +252,9 @@ function hhInstall(){
         AppEvents.on?.("receiving:updated",hhRefreshReadyState);
     }
 
-    hhStartTerminationWatch();
+    hhStartWorkspaceWatch();
     setInterval(()=>{ hhRefreshReadyState(); },1500);
-    setTimeout(()=>{hhRefreshReadyState();hhFocusActiveScanner(true);hhCheckServerTermination();},100);
+    setTimeout(()=>{hhRefreshReadyState();hhFocusActiveScanner(true);hhRefreshWorkspaceAuthority();},100);
 }
 
 window.HandheldRuntime=HandheldRuntime;

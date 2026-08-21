@@ -6578,27 +6578,24 @@ function initializeZebraInterface(){
         barcodeInput.setAttribute("autocomplete","off");
     }
 
-    /* Phase 2B.4 one-time Zebra migration: previous builds could leave an old
-       cloud/local order attached to this handheld indefinitely. Back it up once
-       and clear it so the first screen is Modes, with no phantom Order Number. */
-    const zebraMigrationKey = "PRS_V3_ZEBRA_PHASE2B4_CLEANED";
-    let migrated = false;
-    try{ migrated = localStorage.getItem(zebraMigrationKey) === "1"; }catch(_){ migrated = false; }
-
-    const hasOldWorkspace = !!(
-        AppState?.workspace?.orderId ||
-        AppState?.workspace?.orderName ||
-        (Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0) ||
-        (Array.isArray(AppState?.workspace?.receivingHistory) && AppState.workspace.receivingHistory.length > 0)
-    );
-    const isValidCloudZebra = AppState?.session?.role === "ZEBRA" && AppState?.session?.cloud === true && AppState?.session?.id && AppState?.session?.secret;
-
-    if(!migrated){
-        resetZebraWorkingState("phase2b4-one-time-stale-session-cleanup", {force:true});
-        try{ localStorage.setItem(zebraMigrationKey,"1"); }catch(_){ }
-    }else if(hasOldWorkspace && !isValidCloudZebra){
-        resetZebraWorkingState("legacy-or-local-zebra-workspace", {force:true});
-    }
+    /* =========================================================
+       PHASE 2C.11.0 — UNIFIED PHARMACY WORKSPACE
+       The Handheld is now a first-class client of the authenticated pharmacy
+       workspace. It MUST NOT clear a valid Active Order merely because there is
+       no legacy Create/Join cloud session. Active Order Manifest + receiving
+       ledger are the same server authorities already used by PC2/PC3.
+       ========================================================= */
+    AppState.session = {
+        ...createEmptySession(),
+        id:null,
+        secret:null,
+        deviceId:ensureDeviceId(),
+        role:"HANDHELD_WORKSPACE",
+        cloud:false,
+        createdAt:nowISO(),
+        pendingQueue:[]
+    };
+    AppEvents.emit("session:updated",{source:"unified-pharmacy-workspace"});
 
     if(!document.getElementById("zebraHome")){
         const home = document.createElement("section");
@@ -6617,7 +6614,7 @@ function initializeZebraInterface(){
             <div class="zebraModeCards">
                 <button id="btnZebraReceivingMode" class="zebraModeCard" type="button">
                     <span class="zebraModeIcon">▥</span>
-                    <div><strong>Receiving</strong><small>Join the PC session and count the order live.</small></div>
+                    <div><strong>Receiving</strong><small>Open the pharmacy Active Orders and count live.</small></div>
                 </button>
                 <button id="btnZebraExpiryMode" class="zebraModeCard" type="button">
                     <span class="zebraModeIcon">◷</span>
@@ -6628,12 +6625,8 @@ function initializeZebraInterface(){
         `;
         document.querySelector(".mainContent")?.prepend(home);
 
-        document.getElementById("btnZebraReceivingMode")?.addEventListener("click", function(){
-            if(AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true){
-                setZebraReceivingMode();
-            }else{
-                setZebraJoinMode();
-            }
+        document.getElementById("btnZebraReceivingMode")?.addEventListener("click", async function(){
+            await openUnifiedHandheldReceiving();
         });
         document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
             setZebraExpiryMode();
@@ -6644,8 +6637,7 @@ function initializeZebraInterface(){
                 showToast("Sync pending Handheld work before signing out","warning");
                 return;
             }
-            /* Signing out detaches this handheld from the old order/session. */
-            resetZebraWorkingState("zebra-sign-out", {force:true});
+            /* Unified Workspace has no user-created Handheld session to detach. */
             document.getElementById("btnLogout")?.click();
         });
     }
@@ -6689,10 +6681,10 @@ function initializeZebraInterface(){
     /* Near Expiry is now a permanent appPage in index.html.
        PC and Zebra share the exact same capture markup and data logic. */
 
-    /* Never expose a restored order before cloud validation. New sign-in starts
-       from Modes; validateRestoredZebraCloudSession() may resume a genuinely
-       active session after Supabase confirms it. */
+    /* Unified Workspace starts at Modes. Receiving pulls the authoritative
+       Active Order Manifest directly; no Join Code / QR / session validation. */
     setZebraHomeMode();
+    setTimeout(()=>refreshUnifiedHandheldWorkspace({silent:true}),120);
 }
 
 function clearZebraModeClasses(){
@@ -6782,6 +6774,55 @@ function setZebraJoinMode(){
         code.setAttribute("autocomplete","off");
     }
 }
+async function refreshUnifiedHandheldWorkspace(options={}){
+    if(!isLikelyZebraDevice()) return false;
+    if(typeof AuthState==="undefined" || !AuthState?.context?.pharmacy_id) return false;
+    if(typeof pullActiveOrderManifest!=="function") return false;
+
+    try{
+        const loaded=await pullActiveOrderManifest({clearIfMissing:true});
+        if(typeof pullCloudWorkspaceTransactions==="function"){
+            await pullCloudWorkspaceTransactions();
+        }
+        rebuildStateIndexes?.();
+        recalculateStatistics?.();
+        refreshZebraInterface();
+        window.hhRefreshReadyState?.();
+        return !!(
+            loaded &&
+            Array.isArray(AppState?.workspace?.orderData) &&
+            AppState.workspace.orderData.length>0
+        );
+    }catch(error){
+        Logger?.warn?.("Unified Handheld workspace refresh failed",error);
+        if(options?.silent!==true){
+            showToast(error?.message||"Unable to load pharmacy Active Orders","error");
+        }
+        return false;
+    }
+}
+
+async function openUnifiedHandheldReceiving(){
+    if(!isLikelyZebraDevice()) return false;
+
+    clearZebraModeClasses();
+    document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
+    try{ window.scrollTo(0,0); }catch(_){ }
+
+    window.hhRefreshReadyState?.();
+    const ready=await refreshUnifiedHandheldWorkspace({silent:true});
+
+    setZebraReceivingMode();
+
+    if(!ready){
+        showToast("No Active Order is available for this pharmacy yet","warning");
+    }
+    return ready;
+}
+
+window.refreshUnifiedHandheldWorkspace=refreshUnifiedHandheldWorkspace;
+window.openUnifiedHandheldReceiving=openUnifiedHandheldReceiving;
+
 function setZebraReceivingMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
@@ -6972,8 +7013,6 @@ function setZebraInterfaceMode(enabled){
 }
 function refreshZebraInterface(){
     if(!isLikelyZebraDevice()){ return; }
-    const isZebra = AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true;
-    if(!isZebra){ return; }
 
     setElementText(
         document.getElementById("zebraQuickOrder"),
