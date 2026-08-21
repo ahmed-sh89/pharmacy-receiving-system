@@ -9062,3 +9062,35 @@ body.zebraDevice.zebraExpiryActive .expirySaveButton{
     position:static!important;
     bottom:auto!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.10 — FOCUSED RECEIVING / EXPIRY FIX
+============================================================ */
+
+body:not(.zebraDevice) .expiryClearScreenTop{
+    display:none!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryDesktopCaptureTitle{
+    display:none!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryClearScreenTop{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:30px!important;
+    padding:4px 9px!important;
+    border:1px solid #d6c8bc!important;
+    border-radius:8px!important;
+    background:#fff!important;
+    color:#756960!important;
+    font-size:9px!important;
+    font-weight:950!important;
+    white-space:nowrap!important;
+}
+
+body.zebraDevice.zebraExpiryActive #btnClearExpiryScreen{
+    display:none!important;
+}

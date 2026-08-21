@@ -1180,6 +1180,12 @@ function bindExpiryCaptureUI(){
         });
     });
 
+    const clearTopButton=document.getElementById("btnClearExpiryScreenTop");
+    if(clearTopButton && clearTopButton.dataset.bound!=="1"){
+        clearTopButton.dataset.bound="1";
+        clearTopButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
+    }
+
     const clearButton=document.getElementById("btnClearExpiryScreen");
     if(clearButton && clearButton.dataset.bound!=="1"){
         clearButton.dataset.bound="1";

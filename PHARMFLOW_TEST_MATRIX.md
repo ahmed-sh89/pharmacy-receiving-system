@@ -1,14 +1,12 @@
-# PHARMFLOW TEST MATRIX — 2C.11.3.8
+# PHARMFLOW TEST MATRIX — 2C.11.3.10
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| GS1-B1 | Expiry Batch PC | Exact batch | READY FOR TEST |
-| GS1-B2 | Expiry Batch Handheld | Exact batch | READY FOR TEST |
-| GS1-S1 | Expiry Serial PC | Exact serial | READY FOR TEST |
-| GS1-S2 | Expiry Serial Handheld | Exact serial | READY FOR TEST |
-| HH-L1 | Handheld Expiry layout | Normal flow without routine scroll | READY FOR TEST |
-| PC-B1 | First PC scan | Received 1 / Batch Qty 1 | READY FOR TEST |
-| PC-B2 | PC scan UI | No SCANNED +1 badge | READY FOR TEST |
-| PC-AC1 | Receiving PC idle 30s | Last Scan clears; data unchanged | READY FOR TEST |
-| PC-Q1 | Correct Total modal | Confirm button blue | READY FOR TEST |
-| REG-S1 | PC↔Handheld sync | No regression | READY FOR TEST |
+| BATCH-P1 | PC scans after zero | 1 -> 2 -> 3 | READY FOR TEST |
+| BATCH-H1 | Handheld scans after zero | 1 -> 2 -> 3 | READY FOR TEST |
+| EXP-CLR1 | Handheld Clear location | Top only | READY FOR TEST |
+| GS1-C1 | Conestal Handheld | Remains correct | READY FOR TEST |
+| GS1-D1 | Dompy Handheld | Exact Batch/Serial/Expiry | READY FOR TEST |
+| GS1-D2 | Dompy PC | Remains correct | READY FOR TEST |
+| REG-AC1 | Receiving PC Auto Clear | Preserved | USER VERIFIED |
+| REG-AC2 | Expiry PC/HH Auto Clear | Preserved | USER VERIFIED |

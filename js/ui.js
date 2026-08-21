@@ -5519,25 +5519,45 @@ function getOperationalCurrentBatchQuantity(itemCode){
         isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
     }catch(_){}
 
-    /*
-       2C.11.3.9 recovery rule:
-       PC keeps the previously verified legacy consecutive-scan batch counter.
-       Handheld keeps the worker-batch boundary behavior introduced later.
-    */
-    const calculated=Math.max(0,toNumber(
-        isHandheld ? getCurrentBatchQuantity(itemCode) : getPcLegacyCurrentBatchQuantity(itemCode),
+    let calculated=Math.max(0,toNumber(
+        isHandheld
+            ? getCurrentBatchQuantity(itemCode)
+            : getPcLegacyCurrentBatchQuantity(itemCode),
         0
     ));
 
-    if(calculated>0) return calculated;
-
     const scan=AppState?.workspace?.lastScan;
-    if(scan && normalizeItemCode(scan?.itemCode)===normalizeItemCode(itemCode)){
-        const scanDelta=toNumber(scan?.quantity,0);
-        if(scanDelta>0) return scanDelta;
-        if(toNumber(scan?.receivedQty,0)>0) return 1;
+    const code=normalizeItemCode(itemCode);
+
+    if(!scan || normalizeItemCode(scan?.itemCode)!==code){
+        return calculated;
     }
-    return 0;
+
+    const scanDelta=Math.max(0,toNumber(scan?.quantity,0));
+    const txId=toSafeString(scan?.transactionId||"");
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    /*
+       Last Scan reaches the UI before receivingHistory on some sync/render
+       cycles. Add that delta only while its transaction is still missing.
+       Once history hydrates, the transaction is already inside calculated,
+       so it is never double-counted.
+    */
+    const alreadyHydrated=txId
+        ? history.some(tx=>toSafeString(tx?.transactionId||"")===txId)
+        : false;
+
+    if(scanDelta>0 && !alreadyHydrated){
+        calculated+=scanDelta;
+    }
+
+    if(calculated<=0 && toNumber(scan?.receivedQty,0)>0){
+        return Math.max(1,scanDelta||1);
+    }
+
+    return Math.max(0,calculated);
 }
 
 function refreshLastScanQuantityControl(){

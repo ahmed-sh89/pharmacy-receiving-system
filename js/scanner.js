@@ -975,6 +975,10 @@ function cleanScannerInput(value){
                 /[\u241D\uFFFD]+/g,
                 "\x1D"
             )
+            .replace(
+                /[\x1C\x1E\x1F]+/g,
+                "\x1D"
+            )
             /*
                Zebra/DataWedge may expose the GS1 separator as ~, ~~
                or \~ depending on profile / browser keyboard handling.
@@ -1077,10 +1081,29 @@ function parseGS1Barcode(rawBarcode){
        Standard GS1 parser
     */
 
-    const gs1 =
+    let gs1 =
         parseGS1ApplicationIdentifiers(
             raw
         );
+
+    if(
+        gs1.gtin &&
+        (
+            !gs1.expiry ||
+            (!gs1.serial && toSafeString(gs1.lot||"").length>=18)
+        )
+    ){
+        const recovered=recoverSeparatorlessMedicineGS1(raw);
+
+        if(recovered.gtin){
+            gs1={
+                ...gs1,
+                lot:recovered.lot || gs1.lot,
+                expiry:recovered.expiry || gs1.expiry,
+                serial:recovered.serial || gs1.serial
+            };
+        }
+    }
 
 
     if(gs1.gtin){
@@ -1152,6 +1175,37 @@ function parseGS1Barcode(rawBarcode){
 /* =====================================================
    GS1 APPLICATION IDENTIFIERS
 ===================================================== */
+
+function recoverSeparatorlessMedicineGS1(value){
+    const data=toSafeString(value).replace(/\x1D/g,"");
+    const out={gtin:"",lot:"",expiry:"",serial:"",quantity:1};
+
+    if(!/^01\d{14}/.test(data)){
+        return out;
+    }
+
+    out.gtin=normalizeGTIN(data.slice(2,16));
+    const tail=data.slice(16);
+
+    let match=tail.match(/^10(.{1,20}?)17(\d{6})21(.{1,20})$/);
+    if(match && isPlausibleGS1ExpiryYYMMDD(match[2])){
+        out.lot=match[1];
+        out.expiry=formatGS1Date(match[2]);
+        out.serial=match[3];
+        return out;
+    }
+
+    match=tail.match(/^10(.{1,20}?)21(.{1,20}?)17(\d{6})$/);
+    if(match && isPlausibleGS1ExpiryYYMMDD(match[3])){
+        out.lot=match[1];
+        out.serial=match[2];
+        out.expiry=formatGS1Date(match[3]);
+        return out;
+    }
+
+    return {gtin:"",lot:"",expiry:"",serial:"",quantity:1};
+}
+
 
 function parseGS1ApplicationIdentifiers(value){
 
