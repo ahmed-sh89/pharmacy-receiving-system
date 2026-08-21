@@ -2357,27 +2357,37 @@ function openQuantityEditPrompt(item){
     }
 
     if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
-        let handheldModal=document.getElementById("handheldReceivedEditModal");
+        let handheldModal=document.getElementById("handheldBatchAddModal");
 
         if(!handheldModal){
             handheldModal=document.createElement("div");
-            handheldModal.id="handheldReceivedEditModal";
+            handheldModal.id="handheldBatchAddModal";
             handheldModal.className="quantityAdjustmentModal handheldReceivedEditModal";
+
             handheldModal.innerHTML=`
               <div class="quantityAdjustmentCard handheldReceivedEditCard">
                 <div class="quantityAdjustmentHeader">
                   <div>
-                    <span class="sectionEyebrow">RECEIVED</span>
-                    <h3 id="handheldReceivedEditName">-</h3>
+                    <span class="sectionEyebrow">ADD PACKS</span>
+                    <h3 id="handheldBatchAddName">-</h3>
                   </div>
-                  <button type="button" id="btnCloseHandheldReceivedEdit" class="iconButton" aria-label="Close">✕</button>
+                  <button type="button" id="btnCloseHandheldBatchAdd" class="iconButton" aria-label="Close">✕</button>
                 </div>
 
-                <input id="handheldReceivedEditInput" class="quantityAdjustmentInput"
-                       type="number" min="0" step="1" inputmode="numeric" value="0">
+                <div class="handheldBatchCurrent">
+                  <span>Current Handheld Qty</span>
+                  <strong id="handheldBatchCurrentQty">0</strong>
+                </div>
 
-                <button type="button" id="btnSetHandheldReceived" class="primaryButton">
-                  SAVE
+                <label class="quantityAdjustmentLabel" for="handheldBatchAddInput">
+                  Additional packs
+                </label>
+
+                <input id="handheldBatchAddInput" class="quantityAdjustmentInput"
+                       type="number" min="1" step="1" inputmode="numeric" value="1">
+
+                <button type="button" id="btnAddHandheldBatchQty" class="primaryButton">
+                  ADD
                 </button>
               </div>`;
 
@@ -2389,32 +2399,33 @@ function openQuantityEditPrompt(item){
                 setTimeout(()=>window.hhRefreshReadyState?.(),20);
             };
 
-            document.getElementById("btnCloseHandheldReceivedEdit")?.addEventListener("click",close);
+            document.getElementById("btnCloseHandheldBatchAdd")?.addEventListener("click",close);
             handheldModal.addEventListener("click",event=>{
                 if(event.target===handheldModal) close();
             });
 
-            document.getElementById("handheldReceivedEditInput")?.addEventListener("keydown",event=>{
+            document.getElementById("handheldBatchAddInput")?.addEventListener("keydown",event=>{
                 if(event.key==="Enter"){
                     event.preventDefault();
                     try{ event.target.blur(); }catch(_){}
-                    document.getElementById("btnSetHandheldReceived")?.click();
+                    document.getElementById("btnAddHandheldBatchQty")?.click();
                 }
             });
 
-            document.getElementById("btnSetHandheldReceived")?.addEventListener("click",()=>{
+            document.getElementById("btnAddHandheldBatchQty")?.addEventListener("click",()=>{
                 try{ document.activeElement?.blur?.(); }catch(_){}
-                const code=handheldModal.dataset.itemCode;
-                const input=document.getElementById("handheldReceivedEditInput");
-                const total=toNumber(input?.value,-1);
 
-                if(total<0){
-                    showToast("Enter a valid received quantity","warning");
+                const code=handheldModal.dataset.itemCode;
+                const input=document.getElementById("handheldBatchAddInput");
+                const additional=toNumber(input?.value,0);
+
+                if(additional<=0){
+                    showToast("Enter additional packs","warning");
                     return;
                 }
 
-                const transaction=setItemReceivedQuantity(code,total);
-                if(transaction || total===toNumber(getItemByCode(code)?.receivedQty,0)){
+                const tx=addItemReceivedQuantity(code,additional,"HANDHELD_BATCH_ADD");
+                if(tx){
                     handheldModal.classList.remove("active");
                     refreshEntireUI?.();
                     setTimeout(()=>window.hhRefreshReadyState?.(),20);
@@ -2423,13 +2434,29 @@ function openQuantityEditPrompt(item){
         }
 
         handheldModal.dataset.itemCode=item.itemCode;
-        setElementText(document.getElementById("handheldReceivedEditName"),item.itemName||item.itemCode);
-        const input=document.getElementById("handheldReceivedEditInput");
-        if(input) input.value=String(toNumber(item.receivedQty,0));
+
+        setElementText(
+            document.getElementById("handheldBatchAddName"),
+            item.itemName||item.itemCode
+        );
+
+        setElementText(
+            document.getElementById("handheldBatchCurrentQty"),
+            getCurrentBatchQuantity(item.itemCode)
+        );
+
+        const input=document.getElementById("handheldBatchAddInput");
+        if(input){ input.value="1"; }
+
         handheldModal.classList.add("active");
+
         setTimeout(()=>{
-            try{ input?.focus(); input?.select(); }catch(_){}
+            try{
+                input?.focus();
+                input?.select();
+            }catch(_){}
         },20);
+
         return;
     }
 
@@ -5256,10 +5283,12 @@ function refreshLastScanQuantityControl(){
           0
       );
 
-  /* 2C.11.1.2 — the large editable number is the single authoritative
-     Received total shared by all devices. */
+  /* 2C.11.1.3 — Handheld primary quantity is the worker's CURRENT LOCAL
+     BATCH on this device. Shared totals remain informational below. */
+  const localBatchQty=getCurrentBatchQuantity(item.itemCode);
+
   button.textContent =
-      String(totalReceived);
+      String(localBatchQty);
 
   if(totalReceivedElement){
       totalReceivedElement.textContent =

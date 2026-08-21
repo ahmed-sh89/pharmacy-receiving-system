@@ -7788,10 +7788,6 @@ body.zebraDevice.zebraReceivingActive #lastScanCard .legacyLastScanGrid{
    PHARMFLOW 2C.11.1.2 — QUANTITY / EXCEPTION / RECENT FIX
 ============================================================ */
 
-body:not(.zebraDevice) #lastScanCard{
-    display:none!important;
-}
-
 body.zebraDevice.zebraReceivingActive #btnLastScanEdit.lastScanQtyValue:before{
     content:""!important;
     display:none!important;
@@ -7865,4 +7861,76 @@ body.zebraDevice .handheldReceivedEditCard .quantityAdjustmentInput{
     font-size:8px!important;
     font-weight:900!important;
     color:#8a958e!important;
+}
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.1.3 — LOCAL HANDHELD QTY / PC PRESERVE
+============================================================ */
+
+/* PC remains exactly on its established Last Scan workflow. */
+body:not(.zebraDevice) #lastScanCard{
+    display:block;
+}
+
+/* Handheld: the worker's local batch quantity is primary. */
+body.zebraDevice.zebraReceivingActive #btnLastScanEdit.lastScanQtyValue{
+    min-height:44px!important;
+    height:44px!important;
+    font-size:25px!important;
+    font-weight:950!important;
+    color:#1d5d38!important;
+    background:#f4faf6!important;
+    border:1.5px solid #9bc9aa!important;
+}
+
+/* Keep all-device operational context in one compact row. */
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetrics{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:4px!important;
+    margin-top:6px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived{
+    display:block!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived span{
+    font-size:0!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived span:after{
+    content:"TOTAL RECEIVED";
+    font-size:7px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric{
+    min-height:42px!important;
+    padding:4px 2px!important;
+}
+body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{
+    font-size:16px!important;
+}
+
+/* Compact add-more modal. */
+body.zebraDevice .handheldBatchCurrent{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    margin:6px 0 10px!important;
+    padding:8px 10px!important;
+    border-radius:9px!important;
+    background:#f4f8f5!important;
+}
+body.zebraDevice .handheldBatchCurrent span{
+    font-size:9px!important;
+    font-weight:900!important;
+    color:#69786e!important;
+}
+body.zebraDevice .handheldBatchCurrent strong{
+    font-size:20px!important;
+    color:#1e623a!important;
+}
+
+/* Quick +/- confirmation: subtle green pulse only, no blocking toast. */
+body.quantityQuickConfirmed.zebraDevice #btnLastScanEdit,
+body.quantityQuickConfirmed:not(.zebraDevice) #lastScanCard{
+    box-shadow:0 0 0 2px rgba(44,150,82,.18)!important;
 }

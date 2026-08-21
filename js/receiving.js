@@ -1986,15 +1986,30 @@ function applyQuantityAdjustment(options){
         :
         "";
 
-    showToast(
-        item.itemName +
-        "  " +
-        sign +
-        difference +
-        " → Received " +
-        item.receivedQty,
-        "success"
-    );
+    const adjustmentSource=toSafeString(options.source||"").toUpperCase();
+    const isQuickButtonAdjustment=
+        adjustmentSource==="MANUAL_INCREASE" ||
+        adjustmentSource==="MANUAL_DECREASE";
+
+    if(!isQuickButtonAdjustment){
+        showToast(
+            item.itemName +
+            "  " +
+            sign +
+            difference +
+            " → Received " +
+            item.receivedQty,
+            "success"
+        );
+    }else{
+        /* Quick +/- should confirm without interrupting scanning. The existing
+           green scan-box / Last Scan flash from finishReceivingChange is the
+           lightweight acknowledgement. */
+        try{
+            document.body?.classList.add("quantityQuickConfirmed");
+            setTimeout(()=>document.body?.classList.remove("quantityQuickConfirmed"),320);
+        }catch(_){}
+    }
 
     return transaction;
 }
