@@ -1,13 +1,13 @@
-# PHARMFLOW DECISION REGISTER — EXPIRY ADDITIONS
+# PHARMFLOW DECISION REGISTER — EXPIRY 2C.11.3.1
 
-## D-2026-08-21-EXP-01 — GS1-smart Expiry
-APPROVED. Encoded medicine Batch/Expiry/Serial are automatically extracted. Worker enters only Quantity when date is encoded.
+## D-2026-08-21-EXP-05 — Expiry keyboard ownership
+APPROVED. Expiry Quantity is not an automatic focus target. Numeric keypad opens only after intentional user tap.
 
-## D-2026-08-21-EXP-02 — GTIN-only expiry date entry
-APPROVED. Quantity + Month dropdown (1 Jan–12 Dec) + Year dropdown. Avoid free typing.
+## D-2026-08-21-EXP-06 — 30-second Auto Clear
+APPROVED. After successful Save, PC and Handheld clear saved visual state after 30 seconds inactivity. Saved data is untouched and active unsaved work is protected.
 
-## D-2026-08-21-EXP-03 — Expiry Clear Screen
-APPROVED. Manual Clear Screen is UI-only. Saved confirmation may auto-clear after a short delay, but unsaved active work is never auto-cleared.
+## D-2026-08-21-EXP-07 — Operational history scope
+APPROVED. Expiry operational history defaults to Today + current device class and provides source/range filters. Full historical analysis belongs to Expiry Reports.
 
-## D-2026-08-21-EXP-04 — Serial preservation
-APPROVED. Preserve/display actual encoded serial when available, especially useful for single serialized packs.
+## D-2026-08-21-EXP-08 — Compact worker UX
+APPROVED. Handheld Expiry uses a single compact worker control rather than multiple large worker strips.

@@ -3,15 +3,15 @@
 Updated: 21 August 2026
 
 ## Handheld Expiry Capture
-- Handheld-first.
-- Worker selection is pharmacy configuration and remembered per device.
-- Medicine GS1/QR/2D: parse available GTIN, Batch/Lot, Expiry and Serial automatically.
-- When encoded expiry exists, worker enters Quantity only then Save.
-- GTIN-only: worker enters Quantity and selects Expiry Month and Year from dropdowns.
-- Month dropdown is 1–12 with Jan–Dec labels; Year is dropdown to minimize typing errors.
-- Do not summon numeric keyboard automatically after scan.
-- Actual Serial is retained/displayed when encoded.
-- Manual CLEAR SCREEN is visual only and never deletes saved capture data.
-- Saved confirmation may auto-clear after a short inactivity period; unsaved active input must never be auto-cleared.
-- Shared Handheld idle/wake scanner recovery applies to Expiry.
-- Future Expiry Report: filter selected month(s), category, worker. Medicine shows Item Name, Expiry, Qty, Batch, Serial when available. Cosmetics/accessories show captured fields such as Qty + Expiry.
+- Handheld-first professional compact UI.
+- Worker selection is one compact row and remembered per device.
+- Full medicine GS1/2D automatically extracts available GTIN, Batch/Lot, Expiry and Serial.
+- When expiry is encoded, worker enters Quantity only then Save.
+- GTIN-only uses Quantity + Month dropdown (1 Jan–12 Dec) + Year dropdown.
+- Quantity numeric keyboard MUST NOT open automatically after scan; only intentional tap may open it.
+- Manual CLEAR SCREEN is visible and UI-only.
+- After successful Save, visual saved state auto-clears after 30 seconds of inactivity on PC and Handheld.
+- Auto Clear never deletes saved records and never discards an active unsaved/editing form.
+- Operational history is recent/scoped, not a replacement for Reports.
+- History can distinguish HANDHELD / PC / ALL DEVICES and Today / 7 Days / All History.
+- Full historical reporting is handled by Expiry Reports.

@@ -1,15 +1,14 @@
-# PHARMFLOW TEST MATRIX — 2C.11.3.0
+# PHARMFLOW TEST MATRIX — 2C.11.3.1
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| REC1 | Receiving known scan | No regression | USER VERIFIED BASELINE |
-| EXP1 | Full GS1 medicine | Item/Batch/Expiry/Serial auto | READY FOR TEST |
-| EXP2 | Full GS1 date controls | Month/Year disabled; Qty only | READY FOR TEST |
-| EXP3 | GTIN-only medicine | Qty + Month dropdown + Year dropdown | READY FOR TEST |
-| EXP4 | Month dropdown | 1 Jan through 12 Dec | READY FOR TEST |
-| EXP5 | Quantity Enter | Keyboard closes; no focus instability | READY FOR TEST |
-| EXP6 | Save | Capture saved; returns READY | READY FOR TEST |
-| EXP7 | Clear Screen | UI-only; no saved-data deletion | READY FOR TEST |
-| EXP8 | Saved auto-clear | Confirmation clears ~12 sec; unsaved form protected | READY FOR TEST |
-| EXP9 | Idle/wake | Scan works after >6 min idle | READY FOR TEST |
-| EXP10 | Serial | Actual encoded serial shown/saved when present | READY FOR TEST |
+| REC | Receiving regression | Known scan still works | USER VERIFIED BASELINE |
+| EXP-K1 | Handheld scan | No auto numeric keyboard | READY FOR TEST |
+| EXP-K2 | Intentional Qty tap | Keypad opens only on tap; Enter closes | READY FOR TEST |
+| EXP-C1 | Manual Clear Screen | Visible and UI-only | READY FOR TEST |
+| EXP-C2 | 30s Auto Clear | Saved visual state clears on PC + Handheld | READY FOR TEST |
+| EXP-C3 | Unsaved protection | Auto Clear does not erase active unsaved work | READY FOR TEST |
+| EXP-W1 | Worker bar | One compact Handheld worker row | READY FOR TEST |
+| EXP-H1 | Default history | Today + current source | READY FOR TEST |
+| EXP-H2 | Source filters | Handheld / PC / All Devices | READY FOR TEST |
+| EXP-H3 | Range filters | Today / 7 Days / All History | READY FOR TEST |

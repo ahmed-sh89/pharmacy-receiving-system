@@ -8151,3 +8151,146 @@ body.zebraDevice.zebraExpiryActive .expiryClearScreenButton{
 body.zebraDevice.zebraExpiryActive .expiryLastSaved{
     margin-top:6px!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.1 — EXPIRY UX / HISTORY / 30s AUTO CLEAR
+============================================================ */
+
+/* One compact professional worker control on Handheld. */
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:7px!important;
+    min-height:38px!important;
+    margin:0 0 6px!important;
+    padding:4px 6px!important;
+    border:1px solid #d8c9bc!important;
+    border-radius:10px!important;
+    background:#fffaf5!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerCompactLabel{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    padding-left:2px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerIcon{
+    font-size:12px!important;
+    line-height:1!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar label{
+    font-size:8px!important;
+    font-weight:950!important;
+    letter-spacing:.06em!important;
+    color:#6f6258!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryWorkerBar select{
+    height:30px!important;
+    min-height:30px!important;
+    padding:0 26px 0 8px!important;
+    border-radius:8px!important;
+    font-size:12px!important;
+    font-weight:850!important;
+}
+
+/* Clear Screen must be visible without the numeric keyboard or scrolling. */
+body.zebraDevice.zebraExpiryActive #btnClearExpiryScreen.expiryClearScreenButton{
+    display:inline-flex!important;
+    position:sticky!important;
+    bottom:6px!important;
+    z-index:12!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:30px!important;
+    margin:6px auto 0!important;
+    padding:4px 12px!important;
+    background:#fff!important;
+}
+
+/* Quantity is visually ready but cannot summon keypad until intentional tap. */
+body.zebraDevice.zebraExpiryActive #expiryQuantity[readonly]{
+    background:#f8fbf9!important;
+    color:#244c34!important;
+    caret-color:transparent!important;
+}
+
+/* Operational expiry history: source + time scope instead of opening years of data. */
+.expiryCapturedPanel header small{
+    margin-top:2px!important;
+    font-size:9px!important;
+    color:#88776b!important;
+}
+
+.expiryHistorySourceTabs,
+.expiryHistoryRangeTabs{
+    display:grid!important;
+    gap:5px!important;
+    margin:5px 0!important;
+}
+
+.expiryHistorySourceTabs{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
+.expiryHistoryRangeTabs{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    margin-bottom:9px!important;
+}
+
+.expiryHistorySourceTabs button,
+.expiryHistoryRangeTabs button{
+    min-height:32px!important;
+    padding:4px 5px!important;
+    border:1px solid #ddcdbf!important;
+    border-radius:8px!important;
+    background:#fff!important;
+    color:#74645a!important;
+    font-size:8px!important;
+    font-weight:950!important;
+}
+
+.expiryHistorySourceTabs button.active,
+.expiryHistoryRangeTabs button.active{
+    background:#f0e4da!important;
+    border-color:#b98665!important;
+    color:#7e442b!important;
+}
+
+.expiryHistoryLimitNote{
+    padding:7px 4px 2px!important;
+    text-align:center!important;
+    font-size:8px!important;
+    color:#897970!important;
+}
+
+/* On Handheld, CAPTURED becomes a compact RECENT operational entry point. */
+body.zebraDevice.zebraExpiryActive .expiryCapturedButton{
+    min-height:34px!important;
+    max-width:100px!important;
+    padding:0 8px!important;
+    font-size:8px!important;
+}
+
+/* Keep the Expiry action area within one Handheld viewport as much as possible. */
+body.zebraDevice.zebraExpiryActive .zebraExpiryTop{
+    min-height:48px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryScanStatus{
+    min-height:24px!important;
+    margin-bottom:4px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryScanBox{
+    min-height:48px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}

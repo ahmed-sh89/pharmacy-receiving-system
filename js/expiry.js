@@ -112,6 +112,8 @@ function renderExpiryWorkerSelects(){
     const label = document.getElementById("expiryActiveWorkerName");
     const selected = ExpiryCaptureEngine.workers.find(w => w.worker_id === ExpiryCaptureEngine.selectedWorkerId);
     if(label) label.textContent = selected ? selected.worker_name : "Select worker";
+
+    renderExpiryWorkerCompactState?.();
 }
 
 function selectExpiryWorker(workerId){
@@ -183,13 +185,21 @@ function scheduleExpirySavedAutoClear(){
     clearTimeout(ExpiryCaptureEngine.savedClearTimer);
 
     ExpiryCaptureEngine.savedClearTimer=setTimeout(()=>{
-        /* Saved confirmation only. Never discard an unsaved active item. */
-        if(!ExpiryCaptureEngine.currentItem && !expiryWorkerIsEditing()){
-            clearExpirySavedConfirmation();
-            setExpiryStatus("ready","READY TO SCAN");
-            focusExpiryScanner();
+        /*
+           2C.11.3.1 — real 30-second CLEAR SCREEN after a successful save.
+           Saved database data is untouched. If the worker has started a new
+           unsaved item or is editing a field, defer instead of clearing work.
+        */
+        if(ExpiryCaptureEngine.currentItem || expiryWorkerIsEditing()){
+            scheduleExpirySavedAutoClear();
+            return;
         }
-    },12000);
+
+        clearExpiryScreen({
+            clearSaved:true,
+            savedOnly:true
+        });
+    },30000);
 }
 
 function clearExpiryScreen(options={}){
@@ -200,12 +210,15 @@ function clearExpiryScreen(options={}){
 
     /*
        CLEAR SCREEN is UI-only:
-       - does not delete a saved expiry capture,
-       - does not modify quantity/history,
-       - does not touch Needs Review already saved on server.
-       For an unsaved scanned item it simply abandons the current visual form.
+       - never deletes a saved expiry capture,
+       - never changes quantity/history,
+       - never touches Needs Review data.
+       Manual Clear may abandon the current unsaved visual form.
+       Auto Clear runs only after Save and therefore uses savedOnly.
     */
-    resetExpiryCaptureForm({focus:false});
+    if(options.savedOnly!==true){
+        resetExpiryCaptureForm({focus:false});
+    }
 
     if(options.clearSaved!==false){
         clearExpirySavedConfirmation();
@@ -236,6 +249,8 @@ function resetExpiryCaptureForm(options = {}){
     if(qty){
         qty.value = "";
         qty.disabled=false;
+        qty.readOnly=true;
+        qty.dataset.intentionalEdit="0";
     }
     if(month){
         month.value = "";
@@ -351,6 +366,8 @@ async function resolveExpiryScannedValue(rawValue){
         if(qty){
             qty.value="1";
             qty.disabled=false;
+            qty.readOnly=true;
+            qty.dataset.intentionalEdit="0";
         }
 
         const autoExpiry=toSafeString(parsed?.expiry||"");
@@ -369,6 +386,10 @@ async function resolveExpiryScannedValue(rawValue){
 
         /* No automatic soft keyboard. Worker taps Qty only if adjustment is needed. */
         try{ document.activeElement?.blur?.(); }catch(_){}
+        setTimeout(()=>{
+            focusExpiryScanner();
+            window.hhRepairScannerFocus?.("expiry-unknown-resolved");
+        },40);
 
         return true;
     }
@@ -410,7 +431,11 @@ async function resolveExpiryScannedValue(rawValue){
     }
 
     const qty = document.getElementById("expiryQuantity");
-    if(qty) qty.value = "1";
+    if(qty){
+        qty.value = "1";
+        qty.readOnly=true;
+        qty.dataset.intentionalEdit="0";
+    }
 
     document.getElementById("btnSaveExpiryCapture")?.removeAttribute("disabled");
 
@@ -426,6 +451,10 @@ async function resolveExpiryScannedValue(rawValue){
        For full GS1 the worker only taps Qty if total > 1, then Save.
        For GTIN-only the worker chooses Month + Year from dropdowns. */
     try{ document.activeElement?.blur?.(); }catch(_){}
+    setTimeout(()=>{
+        focusExpiryScanner();
+        window.hhRepairScannerFocus?.("expiry-known-resolved");
+    },40);
 
     return true;
 }
@@ -539,6 +568,77 @@ async function saveExpiryCapture(){
 }
 
 
+function expiryIsHandheld(){
+    try{
+        return typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+    }catch(_){
+        return false;
+    }
+}
+
+function expiryCurrentSource(){
+    return expiryIsHandheld() ? "HANDHELD" : "PC";
+}
+
+function expiryCapturedAt(row){
+    const raw=row?.captured_at || row?.created_at || row?.date_time || "";
+    const time=Date.parse(raw);
+    return Number.isFinite(time) ? time : 0;
+}
+
+function expiryIsToday(row){
+    const time=expiryCapturedAt(row);
+    if(!time) return false;
+
+    const d=new Date(time);
+    const now=new Date();
+
+    return (
+        d.getFullYear()===now.getFullYear() &&
+        d.getMonth()===now.getMonth() &&
+        d.getDate()===now.getDate()
+    );
+}
+
+function filterExpiryCapturedRows(rows,options={}){
+    const source=String(options.source||"ALL").toUpperCase();
+    const range=String(options.range||"TODAY").toUpperCase();
+    const now=Date.now();
+
+    return (rows||[]).filter(row=>{
+        const rowSource=String(row?.source||"PC").toUpperCase();
+
+        if(source!=="ALL" && rowSource!==source){
+            return false;
+        }
+
+        if(range==="TODAY"){
+            return expiryIsToday(row);
+        }
+
+        if(range==="7D"){
+            const time=expiryCapturedAt(row);
+            return !!time && (now-time)<=7*24*60*60*1000;
+        }
+
+        return true;
+    });
+}
+
+function renderExpiryWorkerCompactState(){
+    const bar=document.querySelector(".expiryWorkerBar");
+    const label=bar?.querySelector("label");
+    const select=document.getElementById("expiryWorkerSelect");
+
+    if(!bar || !select) return;
+
+    if(label){
+        label.textContent="WORKER";
+    }
+
+    bar.dataset.selected=ExpiryCaptureEngine.selectedWorkerId ? "1" : "0";
+}
+
 async function loadExpiryCapturedRecords(){
     const pharmacyId = expiryPharmacyId();
     if(!pharmacyId || typeof authRpc !== "function") return [];
@@ -565,8 +665,33 @@ async function refreshExpiryCapturedCount(){
         const rows = await loadExpiryCapturedRecords();
         const btn = document.getElementById("btnExpiryCaptured");
         const count = document.getElementById("expiryCapturedCount");
-        if(count) count.textContent=String(rows.length);
-        if(btn) btn.dataset.loaded="1";
+
+        const operational=filterExpiryCapturedRows(rows,{
+            source:expiryCurrentSource(),
+            range:"TODAY"
+        });
+
+        if(count) count.textContent=String(operational.length);
+
+        if(btn){
+            btn.dataset.loaded="1";
+
+            if(expiryIsHandheld()){
+                btn.childNodes.forEach(node=>{
+                    if(node.nodeType===Node.TEXT_NODE){
+                        node.textContent="RECENT ";
+                    }
+                });
+                btn.setAttribute("aria-label","Recent expiry captures");
+            }else{
+                btn.childNodes.forEach(node=>{
+                    if(node.nodeType===Node.TEXT_NODE){
+                        node.textContent="CAPTURED ";
+                    }
+                });
+            }
+        }
+
         return rows;
     }catch(error){
         console.warn("Unable to refresh expiry captured count",error);
@@ -576,9 +701,11 @@ async function refreshExpiryCapturedCount(){
 
 async function openExpiryCapturedPanel(){
     document.getElementById("expiryCapturedOverlay")?.remove();
-    let rows=[];
+
+    let allRows=[];
+
     try{
-        rows=await loadExpiryCapturedRecords();
+        allRows=await loadExpiryCapturedRecords();
     }catch(error){
         setExpiryStatus("error","UNABLE TO LOAD CAPTURED");
         return;
@@ -587,69 +714,144 @@ async function openExpiryCapturedPanel(){
     const overlay=document.createElement("div");
     overlay.id="expiryCapturedOverlay";
     overlay.className="expiryCapturedOverlay";
-    overlay.innerHTML=`
-      <section class="expiryCapturedPanel">
-        <header>
-          <div><span>NEAR EXPIRY</span><strong>Captured Items</strong></div>
-          <button type="button" data-close>✕</button>
-        </header>
-        <div class="expiryCapturedList">
-          ${rows.length ? rows.map(row=>`
-            <div class="expiryCapturedRow" data-capture="${expiryEscapeHtml(row.capture_id)}">
-              <div class="expiryCapturedMain">
-                <strong>${expiryEscapeHtml(row.item_name || "Item")}</strong>
-                <span>Qty ${Number(row.quantity||0)} • ${expiryEscapeHtml(expiryMonthName(row.expiry_month))} ${Number(row.expiry_year||0)}</span>
-                <small>
-                    ${expiryEscapeHtml(row.captured_by_name || "")}
-                    ${row.category ? " • "+expiryEscapeHtml(row.category) : ""}
-                    • ${expiryEscapeHtml(String(row.source || "PC").toUpperCase())}
-                </small>
+
+    const state={
+        source:expiryCurrentSource(),
+        range:"TODAY"
+    };
+
+    const sourceLabel=source=>{
+        if(source==="HANDHELD") return "Handheld";
+        if(source==="PC") return "PC";
+        return "All Devices";
+    };
+
+    const rangeLabel=range=>{
+        if(range==="TODAY") return "Today";
+        if(range==="7D") return "Last 7 Days";
+        return "All History";
+    };
+
+    const render=()=>{
+        const rows=filterExpiryCapturedRows(allRows,state).slice(0,50);
+
+        overlay.innerHTML=`
+          <section class="expiryCapturedPanel">
+            <header>
+              <div>
+                <span>NEAR EXPIRY</span>
+                <strong>${expiryIsHandheld() ? "Recent Expiry" : "Captured Items"}</strong>
+                <small>${expiryEscapeHtml(sourceLabel(state.source))} · ${expiryEscapeHtml(rangeLabel(state.range))}</small>
               </div>
-              <button class="expiryDeleteRecord" type="button" data-delete="${expiryEscapeHtml(row.capture_id)}">Delete</button>
-            </div>`).join("") :
-            `<div class="expiryCapturedEmpty">No captured expiry items yet.</div>`}
-        </div>
-        <button class="expiryCapturedDone" type="button" data-close>Done</button>
-      </section>`;
-    document.body.appendChild(overlay);
+              <button type="button" data-close>✕</button>
+            </header>
 
-    overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{
-        overlay.remove();
-        if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) focusExpiryScanner();
-    });
+            <div class="expiryHistorySourceTabs">
+              <button type="button" data-source="HANDHELD" class="${state.source==="HANDHELD"?"active":""}">HANDHELD</button>
+              <button type="button" data-source="PC" class="${state.source==="PC"?"active":""}">PC</button>
+              <button type="button" data-source="ALL" class="${state.source==="ALL"?"active":""}">ALL DEVICES</button>
+            </div>
 
-    overlay.querySelectorAll("[data-delete]").forEach(button=>{
-        button.onclick=async()=>{
-            const id=button.getAttribute("data-delete");
-            if(button.dataset.confirm!=="1"){
-                button.dataset.confirm="1";
-                button.textContent="Confirm";
+            <div class="expiryHistoryRangeTabs">
+              <button type="button" data-range="TODAY" class="${state.range==="TODAY"?"active":""}">TODAY</button>
+              <button type="button" data-range="7D" class="${state.range==="7D"?"active":""}">7 DAYS</button>
+              <button type="button" data-range="ALL" class="${state.range==="ALL"?"active":""}">ALL HISTORY</button>
+            </div>
+
+            <div class="expiryCapturedList">
+              ${rows.length ? rows.map(row=>`
+                <div class="expiryCapturedRow" data-capture="${expiryEscapeHtml(row.capture_id)}">
+                  <div class="expiryCapturedMain">
+                    <strong>${expiryEscapeHtml(row.item_name || "Item")}</strong>
+                    <span>Qty ${Number(row.quantity||0)} • ${expiryEscapeHtml(expiryMonthName(row.expiry_month))} ${Number(row.expiry_year||0)}</span>
+                    <small>
+                        ${expiryEscapeHtml(row.captured_by_name || "")}
+                        ${row.category ? " • "+expiryEscapeHtml(row.category) : ""}
+                        • ${expiryEscapeHtml(sourceLabel(String(row.source||"PC").toUpperCase()))}
+                    </small>
+                  </div>
+                  <button class="expiryDeleteRecord" type="button" data-delete="${expiryEscapeHtml(row.capture_id)}">Delete</button>
+                </div>`).join("") :
+                `<div class="expiryCapturedEmpty">No expiry captures in this view.</div>`}
+            </div>
+
+            ${filterExpiryCapturedRows(allRows,state).length>50
+                ? `<div class="expiryHistoryLimitNote">Showing latest 50. Use Expiry Reports for full historical review.</div>`
+                : ""}
+
+            <button class="expiryCapturedDone" type="button" data-close>Done</button>
+          </section>`;
+
+        overlay.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{
+            overlay.remove();
+            if(expiryIsHandheld()){
                 setTimeout(()=>{
-                    if(button.isConnected && button.dataset.confirm==="1"){
-                        button.dataset.confirm="";
-                        button.textContent="Delete";
-                    }
-                },3000);
-                return;
+                    focusExpiryScanner();
+                    window.hhRepairScannerFocus?.("expiry-history-close");
+                },30);
             }
-            button.disabled=true;
-            try{
-                await authRpc("delete_pharmacy_expiry_capture",{
-                    p_pharmacy_id:expiryPharmacyId(),
-                    p_capture_id:id
-                });
-                button.closest(".expiryCapturedRow")?.remove();
-                await refreshExpiryCapturedCount();
-            }catch(error){
-                button.disabled=false;
-                button.dataset.confirm="";
-                button.textContent="Delete";
-                if(typeof showToast==="function"){
-                    showToast(error?.message || "Unable to delete expiry record","error");
+        });
+
+        overlay.querySelectorAll("[data-source]").forEach(button=>{
+            button.onclick=()=>{
+                state.source=button.dataset.source||"ALL";
+                render();
+            };
+        });
+
+        overlay.querySelectorAll("[data-range]").forEach(button=>{
+            button.onclick=()=>{
+                state.range=button.dataset.range||"TODAY";
+                render();
+            };
+        });
+
+        overlay.querySelectorAll("[data-delete]").forEach(button=>{
+            button.onclick=async()=>{
+                const id=button.getAttribute("data-delete");
+
+                if(button.dataset.confirm!=="1"){
+                    button.dataset.confirm="1";
+                    button.textContent="Confirm";
+
+                    setTimeout(()=>{
+                        if(button.isConnected && button.dataset.confirm==="1"){
+                            button.dataset.confirm="";
+                            button.textContent="Delete";
+                        }
+                    },3000);
+
+                    return;
                 }
-            }
-        };
-    });
+
+                button.disabled=true;
+
+                try{
+                    await authRpc("delete_pharmacy_expiry_capture",{
+                        p_pharmacy_id:expiryPharmacyId(),
+                        p_capture_id:id
+                    });
+
+                    allRows=allRows.filter(row=>String(row.capture_id)!==String(id));
+
+                    await refreshExpiryCapturedCount();
+                    render();
+
+                }catch(error){
+                    button.disabled=false;
+                    button.dataset.confirm="";
+                    button.textContent="Delete";
+
+                    if(typeof showToast==="function"){
+                        showToast(error?.message || "Unable to delete expiry record","error");
+                    }
+                }
+            };
+        });
+    };
+
+    document.body.appendChild(overlay);
+    render();
 }
 
 function bindExpiryCaptureUI(){
@@ -670,6 +872,27 @@ function bindExpiryCaptureUI(){
     }
 
     const qtyInput = document.getElementById("expiryQuantity");
+    if(qtyInput && qtyInput.dataset.intentBound!=="1"){
+        qtyInput.dataset.intentBound="1";
+
+        const unlockQuantity=()=>{
+            if(!ExpiryCaptureEngine.currentItem) return;
+
+            qtyInput.readOnly=false;
+            qtyInput.dataset.intentionalEdit="1";
+
+            setTimeout(()=>{
+                try{
+                    qtyInput.focus();
+                    qtyInput.select();
+                }catch(_){}
+            },0);
+        };
+
+        qtyInput.addEventListener("pointerdown",unlockQuantity);
+        qtyInput.addEventListener("click",unlockQuantity);
+    }
+
     if(qtyInput && qtyInput.dataset.enterBound !== "1"){
         qtyInput.dataset.enterBound="1";
         qtyInput.addEventListener("keydown",event=>{
@@ -677,6 +900,9 @@ function bindExpiryCaptureUI(){
                 event.preventDefault();
 
                 qtyInput.blur();
+                qtyInput.readOnly=true;
+                qtyInput.dataset.intentionalEdit="0";
+
                 try{ document.activeElement?.blur?.(); }catch(_){}
 
                 if(ExpiryCaptureEngine.dateSource!=="AUTO"){
@@ -752,7 +978,13 @@ function bindExpiryCaptureUI(){
         worker.dataset.bound = "1";
         worker.addEventListener("change", () => {
             selectExpiryWorker(worker.value);
-            if(worker.value) focusExpiryScanner();
+
+            if(worker.value){
+                setTimeout(()=>{
+                    focusExpiryScanner();
+                    window.hhRepairScannerFocus?.("expiry-worker-change");
+                },40);
+            }
         });
     }
 
@@ -805,6 +1037,7 @@ async function activateExpiryCapture(){
     populateExpiryDateDropdowns();
     refreshExpiryCapturedCount();
     await loadExpiryWorkers();
+    renderExpiryWorkerCompactState();
     clearExpirySavedConfirmation();
     resetExpiryCaptureForm({focus:false});
 

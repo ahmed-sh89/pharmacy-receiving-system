@@ -1,65 +1,59 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 21 August 2026
-Version: Phase 2C.11.3.0 — Handheld Expiry Workflow
+Version: Phase 2C.11.3.1 — Expiry UX + History Scope + 30s Auto Clear
 Status: READY FOR TEST
 
-## USER VERIFIED / PROTECTED
-- 2C.11.1.9 Receiving baseline is USER VERIFIED / DONE.
-- Unified Pharmacy Workspace direct Handheld Receiving.
-- PC↔Handheld live synchronization.
-- Receiving high-volume quantity tests.
-- Handheld idle/wake recovery.
-- Receiving quantity flow and friendly device labels.
+## VERIFIED / PROTECTED
+- Receiving 2C.11.1.9 baseline is USER VERIFIED.
+- Unified Workspace, receiving live sync, high-volume quantity behavior and idle/wake recovery remain protected.
+- PC Expiry GS1 flow from 2C.11.3.0 was reported working.
 
-Receiving files are carried forward unchanged in behavior and are non-regression protected.
+## USER-REPORTED 2C.11.3.0 EXPIRY ISSUES
+- Handheld CLEAR SCREEN was not practically visible.
+- Numeric keyboard appeared automatically after Handheld Expiry scan.
+- CAPTURED opened very old history without useful operational scoping.
+- Worker area needed a smaller, more professional Handheld layout.
+- 30-second Clear Screen behavior had not been implemented as requested.
 
-## EXPIRY BUSINESS RULES IMPLEMENTED
-### Medicine GS1 / QR / 2D
-- Shared GS1 parser extracts available GTIN, Batch/Lot, Expiry and Serial.
-- Global GTIN resolves Item identity/category.
-- Batch, Expiry and Serial display automatically.
-- Month/Year controls become read-only/disabled when expiry was encoded.
-- Worker enters Quantity only and presses SAVE & NEXT.
-- Numeric keyboard is NOT opened automatically after scan.
+## 2C.11.3.1 FIXES
+### Handheld keyboard
+- Expiry Quantity is readonly after scan.
+- Numeric keypad can open only after intentional worker tap on Quantity.
+- After scan, focus is restored to hardware scanner target instead of Quantity.
+- Enter closes keypad and re-locks Quantity.
+- GTIN-only then proceeds to Month/Year dropdowns.
 
-### GTIN-only barcode
-- Item resolves from Global GTIN.
-- Worker enters Quantity.
-- Worker selects Month from dropdown `1 · Jan` through `12 · Dec`.
-- Worker selects Year from dropdown.
-- Manual free typing of expiry month/year is not required.
+### CLEAR SCREEN
+- Manual CLEAR SCREEN remains UI-only and is made persistently visible on Handheld.
+- After successful Save, a true 30-second inactivity timer runs on PC + Handheld.
+- At 30 seconds, saved visual confirmation/status is cleared and scanner returns READY.
+- Saved database records are never deleted.
+- If a new unsaved item exists or worker is editing, Auto Clear defers instead of destroying work.
 
-### Unknown item
-- Available raw GS1 details (Batch/Expiry/Serial) remain visible when encoded.
-- No automatic numeric keyboard.
-- Existing Needs Review save path remains available.
-- Dedicated photo/advanced Unknown Expiry review remains planned with Needs Review lifecycle; this core does not alter storage schema.
+### Worker bar
+- Handheld uses one compact Worker row: icon + WORKER + selected worker dropdown.
+- No second oversized worker strip is required.
 
-## CLEAR SCREEN
-- Manual `CLEAR SCREEN` is available in Expiry.
-- It clears only the current visual/unsaved form and returns scanner to READY.
-- It never deletes a saved expiry record or changes saved quantity/history.
-- Saved confirmation automatically clears after 12 seconds.
-- Auto-clear NEVER discards an unsaved active item or steals focus while worker is editing.
-
-## SERIAL
-- Actual Serial value is shown when present (not only `Detected`).
-- Existing expiry capture RPC continues storing sample_serial.
+### Expiry operational history
+- Handheld button is presented as RECENT.
+- Default history scope is TODAY + current device class (HANDHELD on Handheld, PC on PC).
+- Source tabs: HANDHELD / PC / ALL DEVICES.
+- Range tabs: TODAY / 7 DAYS / ALL HISTORY.
+- Operational panel shows latest 50 in a selected view.
+- Full historical reporting remains the responsibility of Expiry Reports, not the operational Recent drawer.
+- Existing expiry data is not deleted or migrated.
 
 ## DATABASE
-No SQL migration. Existing Expiry worker and capture RPC/schema are reused.
+No SQL migration.
 
-## EXACT TEST
-1. Select worker.
-2. Scan a medicine GS1/2D containing expiry/batch.
-   Expected: item + batch + actual serial (if encoded) + expiry auto-filled; Month/Year disabled; Qty=1.
-3. Tap Qty only if needed, enter total quantity, Enter closes keyboard, then Save.
-4. After Save: screen returns READY; saved confirmation disappears automatically after ~12 seconds.
-5. Scan GTIN-only barcode.
-   Expected: Item resolved; Month/Year enabled; dropdown Month shows `1 · Jan` ... `12 · Dec`; Year dropdown available.
-6. CLEAR SCREEN before Save.
-   Expected: current visual form clears; no saved capture is created/deleted.
-7. Leave Expiry idle >6 minutes and scan again.
-   Expected: scanner still works due shared verified idle/wake runtime.
-8. Quick regression: Receiving known scan still works.
+## TEST
+1. Handheld full GS1 scan: no keyboard must open automatically.
+2. Tap Quantity intentionally: numeric keyboard opens; Enter closes it.
+3. Handheld CLEAR SCREEN is visible without reload and returns READY.
+4. Save an Expiry capture. Do not touch screen for 30 seconds. Saved visual state must clear automatically on PC and Handheld.
+5. Start editing a new unsaved item before 30 seconds: Auto Clear must NOT remove it.
+6. Open RECENT/CAPTURED: default TODAY + current source.
+7. Switch HANDHELD / PC / ALL DEVICES and TODAY / 7 DAYS / ALL HISTORY.
+8. Verify old records remain accessible only when explicitly choosing wider history.
+9. Quick Receiving regression scan.
