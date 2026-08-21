@@ -1,12 +1,15 @@
-# PHARMFLOW TEST MATRIX — 2C.11.1.9
+# PHARMFLOW TEST MATRIX — 2C.11.3.0
 
 | ID | Test | Expected | Status |
 |---|---|---|---|
-| UW1 | Direct Handheld Receiving | No pairing | USER VERIFIED |
-| SYNC1 | PC↔Handheld live sync | Automatic | USER VERIFIED |
-| IDLE1 | Idle then scan | Works without reload | USER VERIFIED |
-| ACK1 | First physical scan | `SCANNED +1 · PACK SAVED` visible | READY FOR TEST |
-| ADD1 | 10 physical packs | Scan 1 + enter remaining 9 = local batch 10 | READY FOR TEST |
-| DEV1 | Handheld Recent | No raw device UUID | READY FOR TEST |
-| DEV2 | PC activity/history | Friendly device label, no raw UUID | READY FOR TEST |
-| REG1 | Sync after manual add | Shared totals remain correct | READY FOR TEST |
+| REC1 | Receiving known scan | No regression | USER VERIFIED BASELINE |
+| EXP1 | Full GS1 medicine | Item/Batch/Expiry/Serial auto | READY FOR TEST |
+| EXP2 | Full GS1 date controls | Month/Year disabled; Qty only | READY FOR TEST |
+| EXP3 | GTIN-only medicine | Qty + Month dropdown + Year dropdown | READY FOR TEST |
+| EXP4 | Month dropdown | 1 Jan through 12 Dec | READY FOR TEST |
+| EXP5 | Quantity Enter | Keyboard closes; no focus instability | READY FOR TEST |
+| EXP6 | Save | Capture saved; returns READY | READY FOR TEST |
+| EXP7 | Clear Screen | UI-only; no saved-data deletion | READY FOR TEST |
+| EXP8 | Saved auto-clear | Confirmation clears ~12 sec; unsaved form protected | READY FOR TEST |
+| EXP9 | Idle/wake | Scan works after >6 min idle | READY FOR TEST |
+| EXP10 | Serial | Actual encoded serial shown/saved when present | READY FOR TEST |

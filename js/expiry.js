@@ -12,6 +12,8 @@ const ExpiryCaptureEngine = {
     scanTimer: null,
     lastResolvedRaw: "",
     scannedGS1: null,
+    dateSource: "NONE",
+    savedClearTimer: null,
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -20,6 +22,12 @@ const ExpiryCaptureEngine = {
 
 function expiryPharmacyId(){
     return (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || null;
+}
+
+function expiryMonthShortName(month){
+    const names=["","Jan","Feb","Mar","Apr","May","Jun",
+                 "Jul","Aug","Sep","Oct","Nov","Dec"];
+    return names[Number(month)] || "";
 }
 
 function expiryMonthName(month){
@@ -44,8 +52,8 @@ function populateExpiryDateDropdowns(){
         const selected = month.value;
         month.innerHTML = `<option value="">Month</option>` +
             Array.from({length:12},(_,i)=>{
-                const n=i+1, mm=String(n).padStart(2,"0");
-                return `<option value="${n}">${mm}</option>`;
+                const n=i+1;
+                return `<option value="${n}">${n} · ${expiryMonthShortName(n)}</option>`;
             }).join("");
         if(selected) month.value=selected;
     }
@@ -125,6 +133,92 @@ function setExpiryStatus(kind, text){
     box.textContent = text || "READY TO SCAN";
 }
 
+function expiryWorkerIsEditing(){
+    const active=document.activeElement;
+    if(!active || active===document.body) return false;
+
+    if(active.id==="expiryBarcodeInput") return false;
+
+    return !!(
+        ["INPUT","SELECT","TEXTAREA"].includes(String(active.tagName||"").toUpperCase()) ||
+        active.isContentEditable
+    );
+}
+
+function setExpiryDateMode(mode){
+    const month=document.getElementById("expiryMonth");
+    const year=document.getElementById("expiryYear");
+    const label=document.getElementById("expiryMonthName");
+
+    ExpiryCaptureEngine.dateSource=mode==="AUTO" ? "AUTO" : "MANUAL";
+
+    if(mode==="AUTO"){
+        if(month) month.disabled=true;
+        if(year) year.disabled=true;
+        if(label){
+            const selected=Number(month?.value||0);
+            label.textContent=selected
+                ? `${expiryMonthName(selected)} · AUTO READ ✓`
+                : "AUTO READ ✓";
+        }
+    }else{
+        if(month) month.disabled=false;
+        if(year) year.disabled=false;
+        if(label){
+            const selected=Number(month?.value||0);
+            label.textContent=selected ? expiryMonthName(selected) : "";
+        }
+    }
+}
+
+function clearExpirySavedConfirmation(){
+    clearTimeout(ExpiryCaptureEngine.savedClearTimer);
+    ExpiryCaptureEngine.savedClearTimer=null;
+
+    const saved=document.getElementById("expiryLastSaved");
+    if(saved) saved.innerHTML="";
+}
+
+function scheduleExpirySavedAutoClear(){
+    clearTimeout(ExpiryCaptureEngine.savedClearTimer);
+
+    ExpiryCaptureEngine.savedClearTimer=setTimeout(()=>{
+        /* Saved confirmation only. Never discard an unsaved active item. */
+        if(!ExpiryCaptureEngine.currentItem && !expiryWorkerIsEditing()){
+            clearExpirySavedConfirmation();
+            setExpiryStatus("ready","READY TO SCAN");
+            focusExpiryScanner();
+        }
+    },12000);
+}
+
+function clearExpiryScreen(options={}){
+    try{ document.activeElement?.blur?.(); }catch(_){}
+
+    clearTimeout(ExpiryCaptureEngine.scanTimer);
+    ExpiryCaptureEngine.lastResolvedRaw="";
+
+    /*
+       CLEAR SCREEN is UI-only:
+       - does not delete a saved expiry capture,
+       - does not modify quantity/history,
+       - does not touch Needs Review already saved on server.
+       For an unsaved scanned item it simply abandons the current visual form.
+    */
+    resetExpiryCaptureForm({focus:false});
+
+    if(options.clearSaved!==false){
+        clearExpirySavedConfirmation();
+    }
+
+    setExpiryStatus("ready","READY TO SCAN");
+
+    setTimeout(()=>{
+        focusExpiryScanner();
+        window.hhRepairScannerFocus?.("expiry-clear-screen");
+    },40);
+}
+
 function resetExpiryCaptureForm(options = {}){
     ExpiryCaptureEngine.currentItem = null;
     ExpiryCaptureEngine.scannedGS1 = null;
@@ -139,10 +233,21 @@ function resetExpiryCaptureForm(options = {}){
     const year = document.getElementById("expiryYear");
     const monthName = document.getElementById("expiryMonthName");
 
-    if(qty) qty.value = "";
-    if(month) month.value = "";
-    if(year) year.value = "";
+    if(qty){
+        qty.value = "";
+        qty.disabled=false;
+    }
+    if(month){
+        month.value = "";
+        month.disabled=false;
+    }
+    if(year){
+        year.value = "";
+        year.disabled=false;
+    }
     if(monthName) monthName.textContent = "";
+
+    ExpiryCaptureEngine.dateSource="NONE";
 
     document.getElementById("btnSaveExpiryCapture")?.setAttribute("disabled","disabled");
 
@@ -221,17 +326,50 @@ async function resolveExpiryScannedValue(rawValue){
     }
 
     if(!record){
-        ExpiryCaptureEngine.currentItem={itemCode:"",itemName:"Item not recognized",gtin,category:"",needsReview:true,rawBarcode:cleaned};
+        ExpiryCaptureEngine.currentItem={
+            itemCode:"",
+            itemName:"Item not recognized",
+            gtin,
+            category:"",
+            needsReview:true,
+            rawBarcode:cleaned
+        };
+
         document.getElementById("expiryItemName").textContent="Item not recognized";
         document.getElementById("expiryItemCode").textContent="Needs Review";
         document.getElementById("expiryItemGTIN").textContent=gtin;
         document.getElementById("expiryItemCategory").textContent="Pending";
+
+        const batch=toSafeString(parsed?.lot||"").trim();
+        const serial=toSafeString(parsed?.serial||"").trim();
+        const batchEl=document.getElementById("expiryItemBatch");
+        const serialEl=document.getElementById("expiryItemSerial");
+        if(batchEl) batchEl.textContent=batch||"—";
+        if(serialEl) serialEl.textContent=serial||"—";
+
         const qty=document.getElementById("expiryQuantity");
-        if(qty){qty.value="";qty.disabled=false;setTimeout(()=>qty.focus(),40);}
-        document.getElementById("expiryMonth").disabled=false;
-        document.getElementById("expiryYear").disabled=false;
+        if(qty){
+            qty.value="1";
+            qty.disabled=false;
+        }
+
+        const autoExpiry=toSafeString(parsed?.expiry||"");
+        const autoMatch=autoExpiry.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+        if(autoMatch){
+            document.getElementById("expiryMonth").value=String(Number(autoMatch[2]));
+            document.getElementById("expiryYear").value=String(Number(autoMatch[1]));
+            setExpiryDateMode("AUTO");
+        }else{
+            setExpiryDateMode("MANUAL");
+        }
+
         document.getElementById("btnSaveExpiryCapture").disabled=false;
         setExpiryStatus("action","SAVE FOR REVIEW");
+
+        /* No automatic soft keyboard. Worker taps Qty only if adjustment is needed. */
+        try{ document.activeElement?.blur?.(); }catch(_){}
+
         return true;
     }
 
@@ -252,18 +390,23 @@ async function resolveExpiryScannedValue(rawValue){
     const batchEl=document.getElementById("expiryItemBatch");
     const serialEl=document.getElementById("expiryItemSerial");
     if(batchEl) batchEl.textContent=batch || "—";
-    if(serialEl) serialEl.textContent=serial ? "Detected ✓" : "—";
+    if(serialEl) serialEl.textContent=serial || "—";
 
     /* GS1 AI 17 is authoritative for the scanned representative pack.
        The worker still enters the total quantity for this Batch/Expiry group. */
     const autoExpiry=toSafeString(parsed?.expiry || "");
     const m=autoExpiry.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
     if(m){
-        const month=document.getElementById("expiryMonth"), year=document.getElementById("expiryYear");
+        const month=document.getElementById("expiryMonth");
+        const year=document.getElementById("expiryYear");
+
         if(month) month.value=String(Number(m[2]));
         if(year) year.value=String(Number(m[1]));
-        const monthName=document.getElementById("expiryMonthName");
-        if(monthName) monthName.textContent=expiryMonthName(Number(m[2])) + " · AUTO READ ✓";
+
+        setExpiryDateMode("AUTO");
+    }else{
+        setExpiryDateMode("MANUAL");
     }
 
     const qty = document.getElementById("expiryQuantity");
@@ -271,15 +414,18 @@ async function resolveExpiryScannedValue(rawValue){
 
     document.getElementById("btnSaveExpiryCapture")?.removeAttribute("disabled");
 
-    setExpiryStatus("success","ITEM FOUND");
+    setExpiryStatus(
+        "success",
+        m ? "ITEM FOUND · DATE AUTO READ" : "ITEM FOUND · SELECT EXPIRY"
+    );
 
     const input = document.getElementById("expiryBarcodeInput");
     if(input) input.value = "";
 
-    setTimeout(()=>{
-        document.getElementById("expiryQuantity")?.focus();
-        document.getElementById("expiryQuantity")?.select();
-    },80);
+    /* Keep Handheld simple and stable: do not summon the keypad automatically.
+       For full GS1 the worker only taps Qty if total > 1, then Save.
+       For GTIN-only the worker chooses Month + Year from dropdowns. */
+    try{ document.activeElement?.blur?.(); }catch(_){}
 
     return true;
 }
@@ -338,7 +484,12 @@ async function saveExpiryCapture(){
             });
             setExpiryStatus("success","✓ SAVED FOR REVIEW");
             if(typeof refreshNeedsReviewCounters==="function")refreshNeedsReviewCounters();
-            setTimeout(()=>resetExpiryCaptureForm({focus:true}),500);
+
+            setTimeout(()=>{
+                resetExpiryCaptureForm({focus:true});
+                scheduleExpirySavedAutoClear();
+            },500);
+
             return;
         }
 
@@ -369,7 +520,11 @@ async function saveExpiryCapture(){
 
         setExpiryStatus("success","✓ SAVED — NEXT ITEM");
         refreshExpiryCapturedCount();
-        setTimeout(()=>resetExpiryCaptureForm({focus:true}),500);
+
+        setTimeout(()=>{
+            resetExpiryCaptureForm({focus:true});
+            scheduleExpirySavedAutoClear();
+        },500);
 
     }catch(error){
         console.error("Unable to save expiry capture",error);
@@ -520,9 +675,13 @@ function bindExpiryCaptureUI(){
         qtyInput.addEventListener("keydown",event=>{
             if(event.key==="Enter"){
                 event.preventDefault();
+
                 qtyInput.blur();
                 try{ document.activeElement?.blur?.(); }catch(_){}
-                document.getElementById("expiryMonth")?.focus();
+
+                if(ExpiryCaptureEngine.dateSource!=="AUTO"){
+                    setTimeout(()=>document.getElementById("expiryMonth")?.focus(),30);
+                }
             }
         });
     }
@@ -597,7 +756,7 @@ function bindExpiryCaptureUI(){
         });
     }
 
-    ["expiryQuantity","expiryMonth","expiryYear"].forEach(id => {
+    ["expiryMonth","expiryYear"].forEach(id => {
         const el = document.getElementById(id);
         if(!el || el.dataset.bound === "1") return;
         el.dataset.bound = "1";
@@ -624,6 +783,12 @@ function bindExpiryCaptureUI(){
         });
     });
 
+    const clearButton=document.getElementById("btnClearExpiryScreen");
+    if(clearButton && clearButton.dataset.bound!=="1"){
+        clearButton.dataset.bound="1";
+        clearButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
+    }
+
     const save = document.getElementById("btnSaveExpiryCapture");
     if(save && save.dataset.bound !== "1"){
         save.dataset.bound = "1";
@@ -640,6 +805,7 @@ async function activateExpiryCapture(){
     populateExpiryDateDropdowns();
     refreshExpiryCapturedCount();
     await loadExpiryWorkers();
+    clearExpirySavedConfirmation();
     resetExpiryCaptureForm({focus:false});
 
     if(ExpiryCaptureEngine.workers.length === 0){

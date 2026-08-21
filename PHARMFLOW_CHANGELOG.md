@@ -1,10 +1,13 @@
-# PHARMFLOW CHANGELOG — 2C.11.1.9
+# PHARMFLOW CHANGELOG — 2C.11.3.0
 
-- Added explicit Handheld acknowledgement that the barcode scan already saved the first physical pack.
-- Changed manual Handheld quantity entry to `Add remaining packs`.
-- Removed default `1` from additional quantity input to prevent accidental double counting.
-- Added transaction deviceType metadata for future friendly device labeling.
-- Replaced visible raw receiving device UUIDs with friendly PC/Handheld labels.
-- Preserved internal device IDs for synchronization and audit.
-- Preserved verified Unified Workspace, burst sync and idle/wake behavior.
+- Implemented approved Handheld Expiry capture workflow.
+- Full medicine GS1/2D auto-populates encoded Batch, Expiry and Serial.
+- Full GS1 requires worker Quantity only; date fields are locked to encoded expiry.
+- GTIN-only uses Quantity + Month dropdown (1 Jan–12 Dec) + Year dropdown.
+- Removed automatic numeric keyboard after Expiry scan.
+- Added manual Expiry CLEAR SCREEN.
+- Added safe saved-confirmation auto-clear after 12 seconds without clearing unsaved work.
+- Display actual Serial when available.
+- Preserved existing Expiry worker selection and capture RPCs.
+- Preserved verified Receiving architecture.
 - No SQL migration.

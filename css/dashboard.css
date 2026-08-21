@@ -8049,3 +8049,105 @@ body.zebraDevice .handheldScanAcknowledgement strong{
 body.zebraDevice #handheldBatchAddInput::placeholder{
     color:#a2aaa5!important;
 }
+
+
+/* ============================================================
+   PHARMFLOW 2C.11.3.0 — HANDHELD EXPIRY WORKFLOW
+============================================================ */
+
+body.zebraDevice.zebraExpiryActive .expiryCaptureCard{
+    padding:10px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemCard{
+    margin-top:7px!important;
+    padding:9px!important;
+    border-radius:12px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemCard > span{
+    font-size:8px!important;
+    font-weight:950!important;
+    letter-spacing:.06em!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryItemName{
+    display:block!important;
+    margin:3px 0 6px!important;
+    font-size:17px!important;
+    line-height:1.2!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta{
+    gap:5px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryItemMeta > div{
+    padding:5px!important;
+    min-height:42px!important;
+    border-radius:8px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid{
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:6px!important;
+    margin-top:8px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryEntryGrid label > span{
+    font-size:8px!important;
+    font-weight:950!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity,
+body.zebraDevice.zebraExpiryActive #expiryMonth,
+body.zebraDevice.zebraExpiryActive #expiryYear{
+    min-height:42px!important;
+    font-size:15px!important;
+    border-radius:8px!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryQuantity{
+    text-align:center!important;
+    font-size:20px!important;
+    font-weight:950!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryMonth:disabled,
+body.zebraDevice.zebraExpiryActive #expiryYear:disabled{
+    opacity:.75!important;
+    background:#eef7f0!important;
+    color:#25623d!important;
+}
+
+body.zebraDevice.zebraExpiryActive #expiryMonthName{
+    display:block!important;
+    min-height:11px!important;
+    margin-top:2px!important;
+    font-size:7px!important;
+    color:#3f7553!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expirySaveButton{
+    min-height:42px!important;
+    margin-top:8px!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryClearScreenButton{
+    display:block!important;
+    width:auto!important;
+    min-height:27px!important;
+    margin:6px auto 0!important;
+    padding:4px 11px!important;
+    border:1px solid #d9e0db!important;
+    border-radius:7px!important;
+    background:#fff!important;
+    color:#748079!important;
+    font-size:8px!important;
+    font-weight:900!important;
+    letter-spacing:.04em!important;
+}
+
+body.zebraDevice.zebraExpiryActive .expiryLastSaved{
+    margin-top:6px!important;
+}

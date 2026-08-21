@@ -1,19 +1,13 @@
-# PHARMFLOW DECISION REGISTER
+# PHARMFLOW DECISION REGISTER — EXPIRY ADDITIONS
 
-## D-2026-08-21-01 — Unified Pharmacy Workspace
-APPROVED. Supersedes user-facing PC-created Handheld session pairing. Handheld authenticates to the pharmacy and reads the same Supabase Active Workspace/Orders as PCs.
+## D-2026-08-21-EXP-01 — GS1-smart Expiry
+APPROVED. Encoded medicine Batch/Expiry/Serial are automatically extracted. Worker enters only Quantity when date is encoded.
 
-## D-2026-08-21-02 — Handheld-first
-APPROVED. Zebra/Handheld is primary. Generic Android/iPhone UX is architecturally allowed but deferred if it adds delay or complexity.
+## D-2026-08-21-EXP-02 — GTIN-only expiry date entry
+APPROVED. Quantity + Month dropdown (1 Jan–12 Dec) + Year dropdown. Avoid free typing.
 
-## D-2026-08-21-03 — Simplify visible UI
-APPROVED. Remove/hide obsolete/redundant visible controls. Hide Returns Archive from navigation without deleting its data. Use Order History as the user-facing Archive label in a later UI cleanup phase.
+## D-2026-08-21-EXP-03 — Expiry Clear Screen
+APPROVED. Manual Clear Screen is UI-only. Saved confirmation may auto-clear after a short delay, but unsaved active work is never auto-cleared.
 
-## D-2026-08-21-04 — Item Movement authority
-APPROVED. Item Movement quantity is original Ordered Qty/document quantity, not actual Receiving count. Movement-only bulk imports are not Active Orders. On-screen preview precedes export.
-
-## D-2026-08-21-05 — Expiry capture/report
-APPROVED. Full GS1/2D auto-extracts encoded medicine data; worker enters Qty only. GTIN-only uses Qty + Month dropdown + Year dropdown. Report supports month(s), category and worker filters.
-
-## D-2026-08-21-06 — Clean architecture rule
-APPROVED. Prefer simpler production-sound architecture over repeated patches. One owner per runtime responsibility; proactively replace fragile complexity when a simpler safe architecture exists.
+## D-2026-08-21-EXP-04 — Serial preservation
+APPROVED. Preserve/display actual encoded serial when available, especially useful for single serialized packs.
