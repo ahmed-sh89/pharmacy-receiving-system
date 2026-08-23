@@ -1633,57 +1633,47 @@ function openDashboardAfterAuthentication(){
     }catch(_){}
 }
 
-function unlockApplicationAfterAuth(){
-    finishAuthBootState();
-
+async function unlockApplicationAfterAuth(){
+    /*
+       2C.11.4.9 — ATOMIC AUTH REVEAL ROOT FIX
+       Keep the authentication cover visible until the complete authoritative
+       workspace hydration has finished. The previous function exposed the
+       already-mounted stale Dashboard DOM first, which is the observed flash.
+    */
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
+        finishAuthBootState();
         lockApplicationForAuth(true);
         showAuthPanel("recovery",{history:"replace"});
-        return;
+        return false;
     }
 
-    /*
-       Close the login keyboard BEFORE exposing the app.
-       Zebra must land on Mode Selection with no software keyboard.
-    */
     try{ document.activeElement?.blur?.(); }catch(_){}
     document.querySelectorAll("#authGate input, #authGate select, #authGate textarea")
         .forEach(el=>{ try{ el.blur(); }catch(_){} });
 
     resetResponsiveSidebarAfterAuth();
-    document.body.classList.remove("authLocked");
 
     const handheld =
         typeof isLikelyZebraDevice === "function" &&
         isLikelyZebraDevice();
 
-    if(!handheld){
-        openDashboardAfterAuthentication();
-    }
+    /* Do not expose the underlying application yet. */
+    document.body.classList.add("authLocked");
 
-    const overlay = document.getElementById("authGate");
-    if(overlay){ overlay.classList.remove("visible"); }
+    try{
+        if(typeof window.bootProtectedApplication==="function"){
+            await window.bootProtectedApplication({reveal:false});
+        }
+        else if(typeof startApplication==="function"){
+            await startApplication();
+        }
+        else{
+            throw new Error("Protected application bootstrap is unavailable.");
+        }
 
-    if(
-        typeof PharmacyApp!=="undefined" &&
-        PharmacyApp.initialized===true
-    ){
-        /* Signing into another account in the same browser must not
-           reuse the previous account's in-memory AppState. */
-        ensureCloudAccountContextIsolation?.();
-        refreshEntireUI?.();
-        restoreCloudWorkspaceOnLogin?.();
-        restoreHistoricalArchive?.();
-    }
-    else if(typeof window.bootProtectedApplication === "function"){
-        window.bootProtectedApplication();
-    }
-    else if(typeof refreshEntireUI === "function"){
-        refreshEntireUI();
-    }
-
-    if(handheld){
-        const openHandheldHome = ()=>{
+        if(!handheld){
+            openDashboardAfterAuthentication();
+        }else{
             try{
                 if(typeof initializeZebraInterface === "function"){
                     initializeZebraInterface();
@@ -1696,10 +1686,23 @@ function unlockApplicationAfterAuth(){
             }catch(error){
                 console.warn("Handheld home routing failed",error);
             }
-        };
+        }
 
-        /* Re-assert after asynchronous application/UI boot callbacks. */
-        setTimeout(openHandheldHome,50);
-        setTimeout(openHandheldHome,350);
+        /* Reveal only after authoritative state is ready. */
+        finishAuthBootState();
+        const overlay=document.getElementById("authGate");
+        if(overlay){ overlay.classList.remove("visible"); }
+        document.body.classList.remove("authLocked");
+        return true;
+    }
+    catch(error){
+        console.error("Unable to open authenticated PharmFlow workspace",error);
+        finishAuthBootState();
+        lockApplicationForAuth(true);
+        if(typeof renderAuthState==="function"){ renderAuthState(); }
+        if(typeof setAuthMessage==="function"){
+            setAuthMessage(error?.message || "Unable to load the pharmacy workspace.","error");
+        }
+        return false;
     }
 }

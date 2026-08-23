@@ -1,42 +1,19 @@
 # PHARMFLOW CURRENT CHECKPOINT
-
 Date: 23 August 2026
-Version: Phase 2C.11.4.8 — Authoritative First Render
+Version: Phase 2C.11.4.9 — Atomic Auth Reveal Root Fix
 Status: READY FOR TEST
 
-## 2C.11.4.7 TEST RESULT
-FAILED: old finalized Order statistics still flashed briefly after Sign In.
+2C.11.4.7: FAILED.
+2C.11.4.8: FAILED.
 
-## EXACT ROOT CAUSE
-2C.11.4.7 corrected the cloud account-context path, but initial application
-bootstrap still called initializeState() -> loadWorkspaceSnapshot() BEFORE
-router/UI initialization.
+ROOT CAUSE CONFIRMED BY FULL SOURCE TRACE:
+unlockApplicationAfterAuth() exposed the existing Dashboard DOM before awaiting
+authenticated cloud hydration. The visible 328 items / 956 scans were stale DOM
+from the previous runtime.
 
-That meant stale local receiving statistics/order data could enter AppState
-before Supabase hydration and become the first visible render.
+FIX:
+Keep auth gate/lock active until server-authoritative startApplication() has
+completed, then reveal the application atomically.
 
-## ROOT FIX
-- initializeState no longer loads Current Workspace from browser persistence.
-- It starts with a deliberately empty runtime.
-- startApplication now AWAITS restoreCloudWorkspaceOnLogin BEFORE startRouter
-  and initializeUI.
-- Same-tab re-authentication also hydrates server authority BEFORE refreshUI.
-- Supabase Active Order Manifest / Cloud Workspace therefore determines the
-  first authenticated render, not browser cache.
-
-## DATA SAFETY
-- No SQL.
-- No Receiving quantity logic changes.
-- No Finalize/Archive changes.
-- No Expiry/GS1 changes.
-- Local snapshot functions remain available for persistence; they are simply
-  not allowed to outrank server authority during authenticated startup.
-
-## NON-REGRESSION TEST
-1. With empty server Current Workspace:
-   Sign Out -> Sign In.
-   Expected: NO flash of old 328 items / 956 scans / old Order data.
-2. Refresh the page while signed in.
-   Expected: remains empty, no flash.
-3. Later with a real Active Order on server:
-   another PC/sign-in must hydrate and display that Active Order normally.
+Affected: js/auth.js + index cache bust only.
+No SQL. No Receiving, Finalize, Archive, GTIN, Expiry or Handheld business logic changed.
