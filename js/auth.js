@@ -1452,22 +1452,7 @@ function renderAuthState(){
         renderPendingAccessPanel();
     }
     else{
-        /*
-           2C.11.4.12 — AUTH GATE MUST REMAIN ATOMIC
-
-           A valid authenticated context does NOT mean the operational
-           workspace is ready to render. Previously renderAuthState() removed
-           the overlay here immediately after loadMyAppContext(), while
-           unlockApplicationAfterAuth() was still asynchronously hydrating
-           Supabase Current Workspace state.
-
-           That exposed the already-mounted Dashboard DOM for a brief frame
-           (the observed old Order/statistics flash).
-
-           Do not reveal the application here. The only code allowed to remove
-           authGate.visible is unlockApplicationAfterAuth(), after it has
-           awaited the complete server-authoritative hydration path.
-        */
+        if(overlay){ overlay.classList.remove("visible"); }
         if(accessPanel){ accessPanel.hidden = true; }
     }
 
@@ -1648,76 +1633,27 @@ function openDashboardAfterAuthentication(){
     }catch(_){}
 }
 
-async function unlockApplicationAfterAuth(){
-    /*
-       2C.11.4.9 — ATOMIC AUTH REVEAL ROOT FIX
-       Keep the authentication cover visible until the complete authoritative
-       workspace hydration has finished. The previous function exposed the
-       already-mounted stale Dashboard DOM first, which is the observed flash.
-    */
+function unlockApplicationAfterAuth(){
+    finishAuthBootState();
+
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
-        finishAuthBootState();
         lockApplicationForAuth(true);
         showAuthPanel("recovery",{history:"replace"});
-        return false;
+        return;
     }
 
-    try{ document.activeElement?.blur?.(); }catch(_){}
-    document.querySelectorAll("#authGate input, #authGate select, #authGate textarea")
-        .forEach(el=>{ try{ el.blur(); }catch(_){} });
-
+    // A sidebar drawer can remain open behind the auth screen after Sign Out.
+    // If it survives the next Sign In, its backdrop covers the application and
+    // makes the main content look frozen while the sidebar remains interactive.
     resetResponsiveSidebarAfterAuth();
-
-    const handheld =
-        typeof isLikelyZebraDevice === "function" &&
-        isLikelyZebraDevice();
-
-    /* Do not expose the underlying application yet. */
-    document.body.classList.add("authLocked");
-
-    try{
-        if(typeof window.bootProtectedApplication==="function"){
-            await window.bootProtectedApplication({reveal:false});
-        }
-        else if(typeof startApplication==="function"){
-            await startApplication();
-        }
-        else{
-            throw new Error("Protected application bootstrap is unavailable.");
-        }
-
-        if(!handheld){
-            openDashboardAfterAuthentication();
-        }else{
-            try{
-                if(typeof initializeZebraInterface === "function"){
-                    initializeZebraInterface();
-                }
-                if(typeof setZebraHomeMode === "function"){
-                    setZebraHomeMode();
-                }
-                document.activeElement?.blur?.();
-                window.scrollTo?.(0,0);
-            }catch(error){
-                console.warn("Handheld home routing failed",error);
-            }
-        }
-
-        /* Reveal only after authoritative state is ready. */
-        finishAuthBootState();
-        const overlay=document.getElementById("authGate");
-        if(overlay){ overlay.classList.remove("visible"); }
-        document.body.classList.remove("authLocked");
-        return true;
+    document.body.classList.remove("authLocked");
+    openDashboardAfterAuthentication();
+    const overlay = document.getElementById("authGate");
+    if(overlay){ overlay.classList.remove("visible"); }
+    if(typeof window.bootProtectedApplication === "function"){
+        window.bootProtectedApplication();
     }
-    catch(error){
-        console.error("Unable to open authenticated PharmFlow workspace",error);
-        finishAuthBootState();
-        lockApplicationForAuth(true);
-        if(typeof renderAuthState==="function"){ renderAuthState(); }
-        if(typeof setAuthMessage==="function"){
-            setAuthMessage(error?.message || "Unable to load the pharmacy workspace.","error");
-        }
-        return false;
+    else if(typeof refreshEntireUI === "function"){
+        refreshEntireUI();
     }
 }

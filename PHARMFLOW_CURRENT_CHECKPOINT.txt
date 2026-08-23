@@ -1,43 +1,36 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 23 August 2026
-Version: Phase 2C.11.4.12 — Auth Gate Atomic Reveal Root Fix
+Version: Phase 2C.11.4.13 — Production Sign-In Speed Restore
+Target: PRODUCTION A ONLY
 Status: READY FOR TEST
 
-## DIAGNOSTIC UPDATE
-The flash persisted even after Reset Current Order.
-This disproved the remaining-workspace-persistence explanation for the visible
-frame itself.
+## USER-REPORTED REGRESSION
+The anti-flash authentication changes made Sign In wait roughly 2–3 seconds
+before opening Dashboard, while the stale flash itself was not solved.
 
-## FULL SOURCE TRACE — CONFIRMED ROOT CAUSE
-Sign-in flow was:
+## DECISION
+The blocking auth-gate strategy is not worth keeping on Production A.
 
-1. authenticate;
-2. loadMyAppContext();
-3. renderAuthState();
-4. renderAuthState() saw valid application access and immediately executed:
-      authGate.classList.remove("visible")
-5. only after that, unlockApplicationAfterAuth() started/continued the async
-   server-authoritative workspace hydration;
-6. the already-mounted Dashboard DOM was exposed between steps 4 and 5/6.
+## CHANGE
+Restored the last fast authentication reveal behavior:
+- valid Sign In opens Dashboard immediately;
+- cloud/server workspace boot continues in the background;
+- authentication/access checks remain unchanged;
+- no Receiving, Finalize, Archive, Expiry, Global GTIN, database or sync
+  business logic is modified.
 
-Therefore the flash could survive even when Current Workspace was reset.
-It was a UI reveal race in auth.js.
+## EXPECTED
+After pressing Sign In, Dashboard opens promptly again instead of waiting for
+the full cloud hydration cycle.
 
-2C.11.4.9 attempted to keep the gate until hydration, but renderAuthState()
-was independently removing the gate first.
+## KNOWN SEPARATE ISSUE
+The brief stale Dashboard flash is NOT claimed fixed by this release.
+It remains a separate deferred issue and must not be confused with Sign-In speed.
 
-## ROOT FIX
-- renderAuthState() no longer hides authGate for an authenticated user.
-- unlockApplicationAfterAuth() is the ONLY reveal authority.
-- It already waits for server-authoritative hydration, then removes authGate.
-- No state, persistence, Receiving, Finalize, Archive, Expiry, GTIN or database
-  logic changed.
-
-## EXACT TEST
-1. Hard refresh once after deployment.
-2. Sign Out.
-3. Sign In.
-4. The login/auth screen may remain visible briefly while synchronization runs.
-5. Dashboard must appear once in its final authoritative state.
-6. No previous Order/statistics frame may be visible.
+## TEST
+1. Deploy to Production A only.
+2. Hard refresh once.
+3. Sign Out -> Sign In.
+4. Confirm Dashboard opens promptly (target: near the previous fast behavior).
+5. Quick check that authenticated pharmacy/account context is correct.
