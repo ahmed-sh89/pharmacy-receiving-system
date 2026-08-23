@@ -1,74 +1,47 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 23 August 2026
-Version: Phase 2C.11.4.10 — Finalize Persistence Root Fix
+Version: Phase 2C.11.4.11 — Consolidated Runtime Load Root Fix
 Status: READY FOR TEST
 
-## DIAGNOSTIC RESULT
-After two Orders were independently finalized and archived:
-- Active Order Manifest was cleaned correctly.
-- Receiving eventually became empty.
-- Sign Out -> Sign In still flashed stale 328 items / 956 scans.
-- Reset Current Workspace made the flash disappear permanently.
+## FULL TRACE FINDING
+The repeated persistence/sign-in fixes were not all reaching the browser runtime.
 
-This diagnostic proves the stale data was persisted CURRENT WORKSPACE state,
-not Historical Archive and not merely a rendering/auth-gate problem.
+The deployed index.html still referenced stale cache keys:
+- auth.js -> 2C1070
+- session.js -> 2C1146
+- cloud-workspace.js -> 2C1147
 
-## FULL TRACE ROOT CAUSE
-PharmFlow has TWO synchronized current-workspace authorities:
-1. pharmflow_active_order_manifest_v1 — structural active Orders.
-2. the legacy/full Cloud Workspace snapshot — workspace/session compatibility.
+while newer fixes had already been written into those files.
 
-2C.11.4.6 updated/cleared #1 after Finalize but did not overwrite #2.
-The full Cloud Workspace therefore still contained finalized Orders,
-receivingHistory and old session scan state.
-
-On later hydration, that stale snapshot could be restored before the empty
-Active Manifest reconciled it. Reset Current Workspace appeared to fix the
-problem because its server RPC clears BOTH authorities.
+This meant Chrome could continue executing older cached JavaScript even after the
+new source files were uploaded to GitHub. It also explains why later fixes appeared
+to have no effect despite correct source changes.
 
 ## ROOT FIX
-Finalize now completes one end-to-end persistence transaction in application flow:
+This release consolidates the latest intended versions of all startup/persistence
+files and gives them ONE new runtime version key: 2C11411.
 
-Selected Order Finalize:
-- archive selected Order only;
-- remove only its source quantities and receiving transactions;
-- if other active Orders remain:
-  - rebuild/recalculate the reduced workspace;
-  - reset current-workspace scan total to the remaining transaction ledger;
-  - save the reduced Active Order Manifest;
-  - overwrite the full Cloud Workspace with the SAME reduced state;
-- if the last active Order is finalized:
-  - reset the Current Workspace and operational session to true empty state;
-  - clear the Active Order Manifest;
-  - overwrite the full Cloud Workspace with an explicit EMPTY snapshot;
-- only after both server authorities accept the new state is local persistence saved and success UI shown.
+Included:
+- state.js: server-authoritative first state
+- app.js: await cloud hydration before first UI
+- auth.js: keep auth gate until hydration completes
+- session.js: complete finalize cleanup
+- cloud-workspace.js: persist/clear full cloud workspace after finalize
+- index.html: exact cache-busting refs for all five files
 
-## DATA BOUNDARIES PRESERVED
-- Receiving Archive: untouched except normal selected-order archive creation.
-- Global GTIN: untouched.
-- Returns Archive: untouched.
-- Near Expiry: untouched.
-- Historical Data: untouched.
-- Authentication/account isolation: unchanged.
-- No SQL migration.
+## IMPORTANT
+No SQL.
+No Receiving quantity logic change.
+No Archive deletion.
+No Global GTIN change.
+No Expiry/GS1 change.
 
-## EXACT VERIFICATION
-Use TWO new test Orders.
-
-1. Upload Order A + Order B.
-2. Receive/Finalize Order A.
-Expected:
-- Archive contains A independently.
-- A disappears immediately from Receiving.
-- B remains active.
-- Dashboard/statistics describe B only.
-- Sign Out -> Sign In: A must never flash or return.
-
-3. Receive/Finalize Order B.
-Expected:
-- Archive contains B independently.
-- Current Workspace becomes truly empty automatically.
-- Dashboard is zero/empty.
-- Sign Out -> Sign In: no old Order/statistics flash.
-- No Reset Current Workspace should be required.
+## VERIFICATION
+1. Upload this entire patch.
+2. Hard refresh once (Ctrl+Shift+R) because this release intentionally changes runtime cache keys.
+3. Sign Out -> Sign In.
+Expected: no old finalized order/statistics flash.
+4. With a fresh test order later, Finalize the last active order.
+5. Sign Out -> Sign In again.
+Expected: no stale order/statistics flash and no Reset Current Order needed.
