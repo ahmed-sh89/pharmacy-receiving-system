@@ -1225,6 +1225,13 @@ function bindUIEvents(){
                         refreshReceivingTable();
                         refreshHealthSummary?.();
                         refreshOpenOrderStatusReport?.();
+                        /* Phase 2C.11.4.4 — Finalize selection-state sync.
+                           The header picker updates the receiving order scope, but the
+                           Finalize button is maintained by orders.js and is not rebuilt
+                           by the normal Receiving UI refresh. Re-evaluate it immediately
+                           so a persisted multi-order workspace can finalize the single
+                           order the operator just selected. */
+                        refreshFinalizeReceivingButton?.();
 
                         showToast?.(
                             selected.length===active.length

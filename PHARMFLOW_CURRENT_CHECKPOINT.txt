@@ -1,41 +1,40 @@
 PHARMFLOW CURRENT CHECKPOINT
 
-Date: 20 August 2026
-Version: Phase 2C.10.6.1 — Zebra Input + Receiving Root Fix
+Date: 23 August 2026
+Version: Phase 2C.11.4.4 — Finalize Order Selection Sync Fix
 Status: READY FOR TEST
 
-AUTHORITATIVE DIAGNOSTIC
-Standalone browser test on the actual Zebra proved that DataWedge inserts the
-complete GS1 payload in one beforeinput/input operation. Keyboard events are
-key=Unidentified. The application must therefore consume final input.value
-atomically and must not infer Zebra scan boundaries from keyboard timing.
+LATEST USER-VERIFIED BASELINE
+- PC Receiving current batch quantity issue: fixed.
+- PC Near Expiry parsing: working.
+- Handheld Near Expiry: working for tested products except Dompy batch edge case, which is ON HOLD by Product Owner.
+- Handheld Clear Screen moved to top.
+- Handheld Undo changes receiving quantity; recent-list visual state still requires separate follow-up if needed.
 
-ROOT FIX
-- Zebra Handheld consumes the atomic final input value after 25 ms.
-- Scan field clears immediately before processing.
-- Desktop PC scan/search behavior is unchanged.
-- Normal Handheld receiving resolves current PC-session/current-order GTIN
-  mappings first, without waiting for the complete Global Master cache.
-- Full Global Master fallback remains for known-extra and unknown cases.
+CURRENT ROOT FIX
+- Existing persisted order remained blocked for Finalize after selecting one order.
+- Root cause: header order picker updated selected-order AppState but did not refresh the independently maintained Finalize button.
+- Added immediate Finalize button refresh after confirmed order-scope selection.
 - No SQL migration.
 
-USER VERIFIED
-- #24 PC Receiving scan-box search by Item Name / Item Code.
+FOCUSED TEST
+1. Load the existing workspace/order without Reset/Delete/re-upload.
+2. ALL ORDERS -> Finalize must be blocked.
+3. Select exactly one order and press OK.
+4. Finalize must become enabled immediately; stale "Select one order..." tooltip must disappear.
+5. Re-select ALL ORDERS -> Finalize must become blocked again.
 
-READY FOR TEST
-- #25 Handheld known-item scan / no-freeze.
-- #26 PC End Session -> Handheld automatic disconnect remains a mandatory
-  regression test.
+VERIFICATION STATUS
+- Code/root-cause review: complete.
+- Production behavior: READY FOR TEST, not DONE until user verifies.
 
-EXACT TEST
-1. Hard refresh Handheld.
-2. Join the PC session.
-3. Scan the package with GTIN 06287043583491.
-4. Expected: immediate correct Last Scan, Ordered/Received/Remaining, +1.
-5. Repeat x3; no freeze.
-6. PC End Session; Handheld must leave automatically.
+CRITICAL NON-REGRESSION
+- Do not change Receiving quantities or batch semantics.
+- Do not change PC/Handheld GS1 parser behavior in this patch.
+- Dompy Handheld batch parsing remains ON HOLD.
+- Preserve PC/Handheld synchronization and pharmacy/account isolation.
+- Preserve original uploaded order as authoritative source for official reports.
+- Finalize remains manual and single-order only when multiple active orders exist.
 
-STOP RULE
-If the exact known-item scan still does not create a transaction, do not add
-another scanner patch. Inspect the Handheld session snapshot/mappingData because
-raw browser capture has already been proven correct.
+EXACT NEXT ACTION
+Deploy Phase 2C.11.4.4 and test the existing blocked order by selecting exactly one order.
