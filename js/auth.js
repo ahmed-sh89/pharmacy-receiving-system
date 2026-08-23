@@ -1452,7 +1452,22 @@ function renderAuthState(){
         renderPendingAccessPanel();
     }
     else{
-        if(overlay){ overlay.classList.remove("visible"); }
+        /*
+           2C.11.4.12 — AUTH GATE MUST REMAIN ATOMIC
+
+           A valid authenticated context does NOT mean the operational
+           workspace is ready to render. Previously renderAuthState() removed
+           the overlay here immediately after loadMyAppContext(), while
+           unlockApplicationAfterAuth() was still asynchronously hydrating
+           Supabase Current Workspace state.
+
+           That exposed the already-mounted Dashboard DOM for a brief frame
+           (the observed old Order/statistics flash).
+
+           Do not reveal the application here. The only code allowed to remove
+           authGate.visible is unlockApplicationAfterAuth(), after it has
+           awaited the complete server-authoritative hydration path.
+        */
         if(accessPanel){ accessPanel.hidden = true; }
     }
 

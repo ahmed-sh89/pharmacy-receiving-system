@@ -1,47 +1,43 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 23 August 2026
-Version: Phase 2C.11.4.11 — Consolidated Runtime Load Root Fix
+Version: Phase 2C.11.4.12 — Auth Gate Atomic Reveal Root Fix
 Status: READY FOR TEST
 
-## FULL TRACE FINDING
-The repeated persistence/sign-in fixes were not all reaching the browser runtime.
+## DIAGNOSTIC UPDATE
+The flash persisted even after Reset Current Order.
+This disproved the remaining-workspace-persistence explanation for the visible
+frame itself.
 
-The deployed index.html still referenced stale cache keys:
-- auth.js -> 2C1070
-- session.js -> 2C1146
-- cloud-workspace.js -> 2C1147
+## FULL SOURCE TRACE — CONFIRMED ROOT CAUSE
+Sign-in flow was:
 
-while newer fixes had already been written into those files.
+1. authenticate;
+2. loadMyAppContext();
+3. renderAuthState();
+4. renderAuthState() saw valid application access and immediately executed:
+      authGate.classList.remove("visible")
+5. only after that, unlockApplicationAfterAuth() started/continued the async
+   server-authoritative workspace hydration;
+6. the already-mounted Dashboard DOM was exposed between steps 4 and 5/6.
 
-This meant Chrome could continue executing older cached JavaScript even after the
-new source files were uploaded to GitHub. It also explains why later fixes appeared
-to have no effect despite correct source changes.
+Therefore the flash could survive even when Current Workspace was reset.
+It was a UI reveal race in auth.js.
+
+2C.11.4.9 attempted to keep the gate until hydration, but renderAuthState()
+was independently removing the gate first.
 
 ## ROOT FIX
-This release consolidates the latest intended versions of all startup/persistence
-files and gives them ONE new runtime version key: 2C11411.
+- renderAuthState() no longer hides authGate for an authenticated user.
+- unlockApplicationAfterAuth() is the ONLY reveal authority.
+- It already waits for server-authoritative hydration, then removes authGate.
+- No state, persistence, Receiving, Finalize, Archive, Expiry, GTIN or database
+  logic changed.
 
-Included:
-- state.js: server-authoritative first state
-- app.js: await cloud hydration before first UI
-- auth.js: keep auth gate until hydration completes
-- session.js: complete finalize cleanup
-- cloud-workspace.js: persist/clear full cloud workspace after finalize
-- index.html: exact cache-busting refs for all five files
-
-## IMPORTANT
-No SQL.
-No Receiving quantity logic change.
-No Archive deletion.
-No Global GTIN change.
-No Expiry/GS1 change.
-
-## VERIFICATION
-1. Upload this entire patch.
-2. Hard refresh once (Ctrl+Shift+R) because this release intentionally changes runtime cache keys.
-3. Sign Out -> Sign In.
-Expected: no old finalized order/statistics flash.
-4. With a fresh test order later, Finalize the last active order.
-5. Sign Out -> Sign In again.
-Expected: no stale order/statistics flash and no Reset Current Order needed.
+## EXACT TEST
+1. Hard refresh once after deployment.
+2. Sign Out.
+3. Sign In.
+4. The login/auth screen may remain visible briefly while synchronization runs.
+5. Dashboard must appear once in its final authoritative state.
+6. No previous Order/statistics frame may be visible.
