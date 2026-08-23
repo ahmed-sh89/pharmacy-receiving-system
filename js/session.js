@@ -976,6 +976,47 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
         if(typeof recalculateStatistics==="function")recalculateStatistics();
         if(typeof saveApplicationState==="function")saveApplicationState("finalize-selected-order");
         saveWorkspaceSnapshot?.();
+
+        /*
+           2C.11.4.6 — SUPABASE ACTIVE MANIFEST IS AUTHORITATIVE.
+           2C.11.4.5 removed the finalized order only from this browser.
+           It did not update the server Active Order Manifest, so the next
+           cloud hydration could resurrect finalized orders in Receiving.
+
+           Persist the reduced manifest when other active orders remain.
+           When the last active order is finalized, remove the server manifest
+           entirely. Do this before claiming Finalize success.
+        */
+        if(remainingOrders.length){
+            if(typeof saveActiveOrderManifest!=="function"){
+                throw new Error(
+                    "Order was archived, but Active Order cloud synchronization is unavailable. Refresh before continuing."
+                );
+            }
+
+            const manifestSaved=await saveActiveOrderManifest({silent:true});
+
+            if(manifestSaved!==true){
+                throw new Error(
+                    "Order was archived, but the remaining Active Orders could not be synchronized. Do not continue receiving until refresh/recovery."
+                );
+            }
+        }else{
+            if(typeof clearActiveOrderManifest!=="function"){
+                throw new Error(
+                    "Order was archived, but the Active Order cloud manifest could not be cleared. Refresh before continuing."
+                );
+            }
+
+            const manifestCleared=await clearActiveOrderManifest();
+
+            if(manifestCleared!==true){
+                throw new Error(
+                    "Order was archived, but the finalized order could not be removed from the cloud Current Workspace. Refresh/recovery is required."
+                );
+            }
+        }
+
         refreshEntireUI?.();
 
         AppEvents.emit(

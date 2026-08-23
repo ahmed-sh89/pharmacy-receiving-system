@@ -1,40 +1,42 @@
-PHARMFLOW CURRENT CHECKPOINT
+# PHARMFLOW CURRENT CHECKPOINT
 
 Date: 23 August 2026
-Version: Phase 2C.11.4.4 — Finalize Order Selection Sync Fix
+Version: Phase 2C.11.4.6 — Finalize Manifest Cleanup Root Fix
 Status: READY FOR TEST
 
-LATEST USER-VERIFIED BASELINE
-- PC Receiving current batch quantity issue: fixed.
-- PC Near Expiry parsing: working.
-- Handheld Near Expiry: working for tested products except Dompy batch edge case, which is ON HOLD by Product Owner.
-- Handheld Clear Screen moved to top.
-- Handheld Undo changes receiving quantity; recent-list visual state still requires separate follow-up if needed.
+## USER TEST RESULT FROM 2C.11.4.5
+- Selected-order Archive separation: PASS.
+- TO-000455987 archived independently.
+- TO-000457715 archived independently.
+- Delete Order appears independently in Archive.
+- FAILED: finalized orders remained visible in Receiving / Select Orders.
 
-CURRENT ROOT FIX
-- Existing persisted order remained blocked for Finalize after selecting one order.
-- Root cause: header order picker updated selected-order AppState but did not refresh the independently maintained Finalize button.
-- Added immediate Finalize button refresh after confirmed order-scope selection.
-- No SQL migration.
+## ROOT CAUSE
+Supabase Active Order Manifest is authoritative across PCs.
+2C.11.4.5 removed finalized orders only from local AppState and local snapshot.
+The server manifest was not updated, so cloud hydration restored the old orders.
 
-FOCUSED TEST
-1. Load the existing workspace/order without Reset/Delete/re-upload.
-2. ALL ORDERS -> Finalize must be blocked.
-3. Select exactly one order and press OK.
-4. Finalize must become enabled immediately; stale "Select one order..." tooltip must disappear.
-5. Re-select ALL ORDERS -> Finalize must become blocked again.
+## ROOT FIX
+After every selected-order Finalize:
+- if active orders remain: save the reduced Active Order Manifest to Supabase;
+- if no active orders remain: clear the Supabase Active Order Manifest;
+- Finalize does not report success until this authoritative step succeeds.
 
-VERIFICATION STATUS
-- Code/root-cause review: complete.
-- Production behavior: READY FOR TEST, not DONE until user verifies.
+## CURRENT DATA RECOVERY
+Both test orders are already Received and independently archived.
+A guarded one-time SQL removes ONLY the stale Active Order Manifest after verifying:
+- both lifecycle rows are Received;
+- both independent archives exist;
+- the manifest contains exactly those two orders.
 
-CRITICAL NON-REGRESSION
-- Do not change Receiving quantities or batch semantics.
-- Do not change PC/Handheld GS1 parser behavior in this patch.
-- Dompy Handheld batch parsing remains ON HOLD.
-- Preserve PC/Handheld synchronization and pharmacy/account isolation.
-- Preserve original uploaded order as authoritative source for official reports.
-- Finalize remains manual and single-order only when multiple active orders exist.
+No archive, Global GTIN, Returns Archive or lifecycle data is deleted.
 
-EXACT NEXT ACTION
-Deploy Phase 2C.11.4.4 and test the existing blocked order by selecting exactly one order.
+## EXACT TEST
+1. Deploy session.js + index.html.
+2. Run PHASE2C1146_CLEAR_STALE_FINALIZED_MANIFEST.sql once.
+3. Refresh PharmFlow.
+4. Receiving must show no active orders.
+5. Archive must still show both independent Received orders.
+6. Upload/use two new test orders:
+   - Finalize first -> first disappears from Receiving, second remains.
+   - Finalize second -> Current Workspace becomes empty automatically.
