@@ -387,19 +387,20 @@ function resetRuntimeForAuthenticatedContextChange(newScope){
             }
         }
 
-        /* Restore ONLY the local cache that belongs to the new
-           authenticated pharmacy+user. Never the previous account. */
-        let restored=false;
-        try{
-            restored=
-                typeof loadWorkspaceSnapshot==="function"
-                    ? loadWorkspaceSnapshot()
-                    : false;
-        }catch(_){
-            restored=false;
-        }
+        /*
+           2C.11.4.7 — SERVER-FIRST LOGIN HYDRATION
 
-        if(!restored && typeof AppState!=="undefined"){
+           Do NOT restore the account-scoped browser workspace before the
+           Supabase authorities have answered. A stale local snapshot could
+           otherwise render finalized/old Order numbers for ~1 second after
+           sign-in, then disappear when Active Order Manifest reconciled.
+
+           Keep runtime intentionally empty during login. The authoritative
+           Active Order Manifest / Cloud Workspace will hydrate immediately
+           afterwards. The scoped local snapshot remains only as persistence,
+           never as the first authenticated render.
+        */
+        if(typeof AppState!=="undefined"){
             AppState.workspace=createEmptyWorkspace();
             AppState.session=createEmptySession();
             ensureDeviceId?.();
@@ -1541,8 +1542,6 @@ async function restoreCloudWorkspaceOnLogin(){
             const row=Array.isArray(result)?result[0]:result;
             const cloudState=row?.workspace;
             const cloudHasOrder=cloudState?.workspace && Array.isArray(cloudState.workspace.orderData) && cloudState.workspace.orderData.length>0;
-            const localHasOrder=Array.isArray(AppState.workspace?.orderData) && AppState.workspace.orderData.length>0;
-
             if(cloudHasOrder){
                 PharmFlowCloudWorkspace.applyingRemote=true;
                 restoreWorkspaceState(cloudState);
@@ -1567,14 +1566,13 @@ async function restoreCloudWorkspaceOnLogin(){
 
             if(
                 !cloudHasOrder &&
-                localHasOrder &&
                 !PharmFlowCloudWorkspace.activeManifestPresent
             ){
                 /*
-                  Only clear a stale local workspace when BOTH cloud
-                  authorities say there is no active Order.
-                  A valid Active Order Manifest must never be erased by
-                  an empty legacy Cloud Workspace snapshot.
+                  Both server authorities say there is NO active Order.
+                  Remove any account-scoped stale browser snapshot even though
+                  we deliberately did not render it during sign-in. This makes
+                  the cleanup permanent and prevents future flashes.
                 */
                 PharmFlowCloudWorkspace.applyingRemote=true;
                 clearCurrentWorkspace();

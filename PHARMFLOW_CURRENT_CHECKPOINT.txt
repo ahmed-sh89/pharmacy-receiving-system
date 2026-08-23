@@ -1,42 +1,46 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 23 August 2026
-Version: Phase 2C.11.4.6 — Finalize Manifest Cleanup Root Fix
+Version: Phase 2C.11.4.7 — Server-First Login Hydration
 Status: READY FOR TEST
 
-## USER TEST RESULT FROM 2C.11.4.5
-- Selected-order Archive separation: PASS.
-- TO-000455987 archived independently.
-- TO-000457715 archived independently.
-- Delete Order appears independently in Archive.
-- FAILED: finalized orders remained visible in Receiving / Select Orders.
+## OBSERVED AFTER 2C.11.4.6
+Finalize/manifest cleanup succeeded and finalized orders disappear correctly.
+After Sign Out -> Sign In, old order numbers flashed for about one second and
+then disappeared.
+
+## BUG CLASSIFICATION
+Local persistence hydration / UI first-render mismatch.
+Not a server data-integrity regression.
 
 ## ROOT CAUSE
-Supabase Active Order Manifest is authoritative across PCs.
-2C.11.4.5 removed finalized orders only from local AppState and local snapshot.
-The server manifest was not updated, so cloud hydration restored the old orders.
+On authenticated context switch PharmFlow restored the account-scoped local
+workspace snapshot and refreshed the UI BEFORE Supabase Active Order Manifest
+and Cloud Workspace authority reconciled.
+
+A stale browser snapshot could therefore render old/finalized Orders briefly.
 
 ## ROOT FIX
-After every selected-order Finalize:
-- if active orders remain: save the reduced Active Order Manifest to Supabase;
-- if no active orders remain: clear the Supabase Active Order Manifest;
-- Finalize does not report success until this authoritative step succeeds.
+- Authenticated sign-in starts with an empty runtime workspace.
+- Account-scoped local workspace is no longer allowed to be the first render.
+- Active Order Manifest / Cloud Workspace remains authoritative.
+- If BOTH server authorities say there is no active Order, the stale scoped
+  local snapshot is deleted and replaced with an empty snapshot permanently.
+- No SQL migration.
+- No Receiving / Finalize / Archive / Expiry business logic changed.
 
-## CURRENT DATA RECOVERY
-Both test orders are already Received and independently archived.
-A guarded one-time SQL removes ONLY the stale Active Order Manifest after verifying:
-- both lifecycle rows are Received;
-- both independent archives exist;
-- the manifest contains exactly those two orders.
+## NON-REGRESSION
+An actually active server Order must still hydrate after sign-in on PC2/PC3.
+The fix prevents stale local-first display; it does not suppress cloud Orders.
 
-No archive, Global GTIN, Returns Archive or lifecycle data is deleted.
+## TEST
+A. Empty workspace:
+1. Sign Out.
+2. Sign In.
+3. Old/finalized order numbers must NOT flash.
+4. Receiving remains empty after sync.
 
-## EXACT TEST
-1. Deploy session.js + index.html.
-2. Run PHASE2C1146_CLEAR_STALE_FINALIZED_MANIFEST.sql once.
-3. Refresh PharmFlow.
-4. Receiving must show no active orders.
-5. Archive must still show both independent Received orders.
-6. Upload/use two new test orders:
-   - Finalize first -> first disappears from Receiving, second remains.
-   - Finalize second -> Current Workspace becomes empty automatically.
+B. Active workspace later:
+1. Upload an active order on PC1.
+2. Sign in/reload on another PC.
+3. The server active order must appear after hydration.
