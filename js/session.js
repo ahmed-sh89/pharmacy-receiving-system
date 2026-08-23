@@ -688,10 +688,41 @@ async function dbClearStore(
    ARCHIVE CURRENT ORDER
 ===================================================== */
 
-async function closeAndArchiveCurrentOrder(){
+async function closeAndArchiveCurrentOrder(targetOrderNumber){
 
     const workspace =
         AppState.workspace;
+
+    const targetOrder = typeof normalizeOrderNumber==="function"
+        ? normalizeOrderNumber(targetOrderNumber||"")
+        : String(targetOrderNumber||"").trim();
+    if(!targetOrder){
+        showToast("Select one order before Finalize Receiving","warning");
+        return false;
+    }
+    const targetFile=(workspace.orderFiles||[]).find(file=>
+        normalizeOrderNumber(file.documentId||file.orderNumber||"")===targetOrder
+    );
+    if(!targetFile){
+        throw new Error("Selected order is not present in the current workspace: "+targetOrder);
+    }
+    const perOrderRows=typeof getPerOrderReceivingRows==="function"
+        ? getPerOrderReceivingRows(targetOrder)
+        : [];
+    const targetItems=perOrderRows.map(row=>({
+        itemCode:row["Item Number"]||"",
+        itemName:row["Item Name"]||"",
+        orderedQty:Number(row["Ordered Qty"]||0),
+        receivedQty:Number(row["Received Qty"]||0),
+        remainingQty:Math.max(0,Number(row["Ordered Qty"]||0)-Number(row["Received Qty"]||0)),
+        category:row["Category"]||"",
+        manual:row.issueKey==="manual",
+        orderNumbers:[targetOrder]
+    }));
+    const targetTransactions=(workspace.receivingHistory||[]).filter(tx=>{
+        const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
+        return explicit===targetOrder;
+    });
 
 
     if(
@@ -752,8 +783,7 @@ async function closeAndArchiveCurrentOrder(){
                 closedAt,
 
             totalItems:
-                workspace.orderData
-                    .length,
+                targetItems.length,
 
             completedItems:
                 AppState.statistics
@@ -772,17 +802,13 @@ async function closeAndArchiveCurrentOrder(){
                     .manualItems,
 
             totalTransactions:
-                workspace
-                    .receivingHistory
-                    .length,
+                targetTransactions.length,
 
             totalReceivedUnits:
-                totalReceivedUnits,
+                targetItems.reduce((sum,item)=>sum+Number(item.receivedQty||0),0),
 
             orderFiles:
-                deepClone(
-                    workspace.orderFiles
-                ),
+                deepClone([targetFile]),
 
             mappingFiles:
                 deepClone(
@@ -790,9 +816,7 @@ async function closeAndArchiveCurrentOrder(){
                 ),
 
             items:
-                deepClone(
-                    workspace.orderData
-                ),
+                deepClone(targetItems),
 
             status:
                 "Received",
@@ -828,9 +852,7 @@ async function closeAndArchiveCurrentOrder(){
         ){
             const orderNumbers = Array.from(
                 new Set(
-                    (workspace.orderFiles||[])
-                        .map(file=>String(file.documentId||file.orderNumber||"").trim())
-                        .filter(Boolean)
+                    [targetOrder]
                 )
             );
 
@@ -847,8 +869,7 @@ async function closeAndArchiveCurrentOrder(){
 
 
         const historicalTransactions =
-            workspace
-                .receivingHistory
+            targetTransactions
                 .map(transaction=>({
 
                     ...deepClone(
@@ -913,26 +934,49 @@ async function closeAndArchiveCurrentOrder(){
         await restoreHistoricalArchive();
 
 
-        /* 2C.10.7.0 — Finalize must end in TRUE No Active Order state.
-           startNewWorkspace() previously recreated an empty active workspace,
-           allowing stale counters/order identity to survive until Reset. */
-        clearCurrentWorkspace();
-        AppState.workspace.active=false;
-        AppState.workspace.orderId=null;
-        AppState.workspace.orderName="";
-        AppState.workspace.orderFiles=[];
-        AppState.workspace.mappingFiles=[];
-        AppState.workspace.orderData=[];
-        AppState.workspace.mappingData=[];
-        AppState.workspace.receivingHistory=[];
-        AppState.workspace.lastScan=null;
-        resetStatistics?.();
-        rebuildStateIndexes?.();
+        /* 2C.11.4.5 — Finalize is ORDER-SCOPED. Remove only the selected
+           order from Current Workspace; other active orders must survive. */
+        let sourceRows=[];
+        if(typeof getOriginalUploadedOrderSnapshot==="function"){
+            try{ sourceRows=await getOriginalUploadedOrderSnapshot(targetOrder)||[]; }catch(_){ sourceRows=[]; }
+        }
+        /* Remove only quantities transactionally attributed to the finalized order
+           so they cannot leak/reallocate into another still-active order. */
+        targetTransactions.forEach(tx=>{
+            const code=normalizeItemCode(tx?.itemCode||"");
+            const item=typeof getItemByCode==="function"?getItemByCode(code):null;
+            if(!item)return;
+            item.receivedQty=Math.max(0,Number(item.receivedQty||0)-Number(tx?.quantity||0));
+            if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
+        });
 
-        deleteWorkspaceSnapshot();
-        saveWorkspaceSnapshot();
+        sourceRows.forEach(row=>{
+            const code=normalizeItemCode(row.item_code||row.itemCode||"");
+            const item=typeof getItemByCode==="function"?getItemByCode(code):null;
+            if(!item)return;
+            item.orderedQty=Math.max(0,Number(item.orderedQty||0)-Number(row.ordered_qty??row.orderedQty??0));
+            if(Array.isArray(item.orderNumbers)){
+                item.orderNumbers=item.orderNumbers.filter(n=>normalizeOrderNumber(n)!==targetOrder);
+            }
+            if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
+        });
+        workspace.orderFiles=(workspace.orderFiles||[]).filter(file=>
+            normalizeOrderNumber(file.documentId||file.orderNumber||"")!==targetOrder
+        );
+        workspace.receivingHistory=(workspace.receivingHistory||[]).filter(tx=>!targetTransactions.includes(tx));
+        workspace.orderData=(workspace.orderData||[]).filter(item=>
+            !(Number(item.orderedQty||0)<=0 && Number(item.receivedQty||0)<=0 && item.manual!==true)
+        );
+        const remainingOrders=workspace.orderFiles.map(file=>normalizeOrderNumber(file.documentId||file.orderNumber||"")).filter(Boolean);
+        workspace.selectedOrderNumbers=remainingOrders.slice();
+        workspace.selectedOrderNumber=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?"ALL":"");
+        workspace.orderName=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?remainingOrders.join(" + "):"");
+        workspace.active=remainingOrders.length>0;
+        if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
+        if(typeof recalculateStatistics==="function")recalculateStatistics();
+        if(typeof saveApplicationState==="function")saveApplicationState("finalize-selected-order");
+        saveWorkspaceSnapshot?.();
         refreshEntireUI?.();
-
 
         AppEvents.emit(
             "archive:updated"
@@ -944,13 +988,13 @@ async function closeAndArchiveCurrentOrder(){
         );
 
 
-        navigateTo(
-            "dashboard"
-        );
+        if(!(workspace.orderFiles||[]).length){
+            navigateTo("dashboard");
+        }
 
 
         showToast(
-            "Order archived successfully",
+            targetOrder+" archived successfully",
             "success"
         );
 

@@ -157,11 +157,14 @@ async function registerUploadedOrder(meta,rowCount){
     return result;
 }
 
-async function markWorkspaceOrdersReceived(){
-    const records=(AppState.workspace.orderFiles||[]).filter(x=>x.documentId);
-    if(!records.length){return true;}
-    for(const record of records){
-        await authRpc("finalize_pharmflow_order",{p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:normalizeOrderNumber(record.documentId)});
+async function markWorkspaceOrdersReceived(orderNumbers){
+    const wanted=new Set((orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean));
+    if(!wanted.size){throw new Error("A single selected Order Number is required for Finalize");}
+    for(const orderNumber of wanted){
+        await authRpc("finalize_pharmflow_order",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_order_number:orderNumber
+        });
     }
     await refreshOrderLifecycleRegistry();
     return true;
@@ -490,12 +493,12 @@ async function finalizeCurrentReceiving(){
             }
         }
 
-        await markWorkspaceOrdersReceived();
+        await markWorkspaceOrdersReceived(summary.orderNumbers);
 
         if(typeof closeAndArchiveCurrentOrder!=="function"){
             throw new Error("Receiving archive module is unavailable");
         }
-        const archived=await closeAndArchiveCurrentOrder();
+        const archived=await closeAndArchiveCurrentOrder(summary.orderNumbers[0]);
         if(!archived){
             throw new Error("Order was marked Received but the local receiving archive could not be completed. Do not scan this order again; refresh and retry archive recovery.");
         }
