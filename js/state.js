@@ -1236,21 +1236,21 @@ function initializeState(){
        Never allow that unsafe legacy cache to cross account boundaries. */
     removeLegacyUnscopedWorkspaceSnapshot();
 
-    const restored =
-        loadWorkspaceSnapshot();
+    /*
+       2C.11.4.8 — AUTHORITATIVE FIRST RENDER
 
+       Do not restore the browser workspace during authenticated application
+       bootstrap. That snapshot is persistence/fallback data, not the source of
+       truth. Loading it here caused finalized Orders to render for a fraction
+       of a second before Supabase Active Order Manifest corrected the UI.
 
-    if(!restored){
-
-        /* A fresh/sign-in state must be truly empty. A workspace/order is
-           created only by an actual receiving workflow, not by page startup. */
-        AppState.workspace = createEmptyWorkspace();
-        AppState.session = createEmptySession();
-        resetStatistics();
-        rebuildStateIndexes();
-
-    }
-
+       Start empty; startApplication() now awaits cloud authority BEFORE the
+       router/UI is initialized.
+    */
+    AppState.workspace = createEmptyWorkspace();
+    AppState.session = createEmptySession();
+    resetStatistics();
+    rebuildStateIndexes();
 
     recalculateStatistics();
 

@@ -112,19 +112,21 @@ window.bootProtectedApplication = async function(){
 async function startApplication(){
 
     if(PharmacyApp.initialized){
-        /* Re-authentication in the same tab: refresh the authenticated
-           pharmacy context without carrying the previous runtime state. */
+        /*
+           Re-authentication in the same tab must also be server-first.
+           Never render the previous/stale runtime before cloud authority.
+        */
         ensureCloudAccountContextIsolation?.();
-        refreshEntireUI?.();
 
         if(typeof restoreCloudWorkspaceOnLogin==="function"){
-            restoreCloudWorkspaceOnLogin();
+            await restoreCloudWorkspaceOnLogin();
         }
 
         if(typeof restoreHistoricalArchive==="function"){
-            restoreHistoricalArchive();
+            await Promise.resolve(restoreHistoricalArchive());
         }
 
+        refreshEntireUI?.();
         return;
     }
 
@@ -144,8 +146,17 @@ async function startApplication(){
 
         PharmacyApp.modules.state = true;
 
-        /* Phase 2C.5.3.1: Supabase is authoritative across PCs.
-           Validate any restored local workspace before exposing it. */
+        /*
+           2C.11.4.8 — BLOCK FIRST UI RENDER UNTIL SERVER AUTHORITY.
+           cloud-workspace.js is loaded before app.js, so the function is
+           available here. An empty runtime is hydrated from the authoritative
+           Active Order Manifest / Cloud Workspace before router/UI startup.
+        */
+        if(typeof restoreCloudWorkspaceOnLogin==="function"){
+            await restoreCloudWorkspaceOnLogin();
+        }
+
+        /* Legacy compatibility guard, after authoritative hydration only. */
         if(typeof reconcileRestoredWorkspaceWithCloud === "function"){
             await reconcileRestoredWorkspaceWithCloud({reason:"startup"});
         }

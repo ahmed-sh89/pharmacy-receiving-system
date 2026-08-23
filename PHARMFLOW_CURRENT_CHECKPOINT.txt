@@ -1,46 +1,42 @@
 # PHARMFLOW CURRENT CHECKPOINT
 
 Date: 23 August 2026
-Version: Phase 2C.11.4.7 — Server-First Login Hydration
+Version: Phase 2C.11.4.8 — Authoritative First Render
 Status: READY FOR TEST
 
-## OBSERVED AFTER 2C.11.4.6
-Finalize/manifest cleanup succeeded and finalized orders disappear correctly.
-After Sign Out -> Sign In, old order numbers flashed for about one second and
-then disappeared.
+## 2C.11.4.7 TEST RESULT
+FAILED: old finalized Order statistics still flashed briefly after Sign In.
 
-## BUG CLASSIFICATION
-Local persistence hydration / UI first-render mismatch.
-Not a server data-integrity regression.
+## EXACT ROOT CAUSE
+2C.11.4.7 corrected the cloud account-context path, but initial application
+bootstrap still called initializeState() -> loadWorkspaceSnapshot() BEFORE
+router/UI initialization.
 
-## ROOT CAUSE
-On authenticated context switch PharmFlow restored the account-scoped local
-workspace snapshot and refreshed the UI BEFORE Supabase Active Order Manifest
-and Cloud Workspace authority reconciled.
-
-A stale browser snapshot could therefore render old/finalized Orders briefly.
+That meant stale local receiving statistics/order data could enter AppState
+before Supabase hydration and become the first visible render.
 
 ## ROOT FIX
-- Authenticated sign-in starts with an empty runtime workspace.
-- Account-scoped local workspace is no longer allowed to be the first render.
-- Active Order Manifest / Cloud Workspace remains authoritative.
-- If BOTH server authorities say there is no active Order, the stale scoped
-  local snapshot is deleted and replaced with an empty snapshot permanently.
-- No SQL migration.
-- No Receiving / Finalize / Archive / Expiry business logic changed.
+- initializeState no longer loads Current Workspace from browser persistence.
+- It starts with a deliberately empty runtime.
+- startApplication now AWAITS restoreCloudWorkspaceOnLogin BEFORE startRouter
+  and initializeUI.
+- Same-tab re-authentication also hydrates server authority BEFORE refreshUI.
+- Supabase Active Order Manifest / Cloud Workspace therefore determines the
+  first authenticated render, not browser cache.
 
-## NON-REGRESSION
-An actually active server Order must still hydrate after sign-in on PC2/PC3.
-The fix prevents stale local-first display; it does not suppress cloud Orders.
+## DATA SAFETY
+- No SQL.
+- No Receiving quantity logic changes.
+- No Finalize/Archive changes.
+- No Expiry/GS1 changes.
+- Local snapshot functions remain available for persistence; they are simply
+  not allowed to outrank server authority during authenticated startup.
 
-## TEST
-A. Empty workspace:
-1. Sign Out.
-2. Sign In.
-3. Old/finalized order numbers must NOT flash.
-4. Receiving remains empty after sync.
-
-B. Active workspace later:
-1. Upload an active order on PC1.
-2. Sign in/reload on another PC.
-3. The server active order must appear after hydration.
+## NON-REGRESSION TEST
+1. With empty server Current Workspace:
+   Sign Out -> Sign In.
+   Expected: NO flash of old 328 items / 956 scans / old Order data.
+2. Refresh the page while signed in.
+   Expected: remains empty, no flash.
+3. Later with a real Active Order on server:
+   another PC/sign-in must hydrate and display that Active Order normally.
