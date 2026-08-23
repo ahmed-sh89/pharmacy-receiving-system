@@ -967,30 +967,79 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
         workspace.orderData=(workspace.orderData||[]).filter(item=>
             !(Number(item.orderedQty||0)<=0 && Number(item.receivedQty||0)<=0 && item.manual!==true)
         );
-        const remainingOrders=workspace.orderFiles.map(file=>normalizeOrderNumber(file.documentId||file.orderNumber||"")).filter(Boolean);
-        workspace.selectedOrderNumbers=remainingOrders.slice();
-        workspace.selectedOrderNumber=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?"ALL":"");
-        workspace.orderName=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?remainingOrders.join(" + "):"");
-        workspace.active=remainingOrders.length>0;
-        if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
-        if(typeof recalculateStatistics==="function")recalculateStatistics();
-        if(typeof saveApplicationState==="function")saveApplicationState("finalize-selected-order");
-        saveWorkspaceSnapshot?.();
+        const remainingOrders=workspace.orderFiles
+            .map(file=>normalizeOrderNumber(file.documentId||file.orderNumber||""))
+            .filter(Boolean);
+
+        if(remainingOrders.length){
+            workspace.selectedOrderNumbers=remainingOrders.slice();
+            workspace.selectedOrderNumber=
+                remainingOrders.length===1
+                    ? remainingOrders[0]
+                    : "ALL";
+            workspace.orderName=
+                remainingOrders.length===1
+                    ? remainingOrders[0]
+                    : remainingOrders.join(" + ");
+            workspace.active=true;
+
+            /*
+               Cloud total scans is a CURRENT-workspace metric. Do not retain
+               finalized-order scans after order-scoped finalize.
+            */
+            if(AppState?.session?.cloud===true){
+                AppState.session.cloudTotalScans=
+                    Array.isArray(workspace.receivingHistory)
+                        ? workspace.receivingHistory.length
+                        : 0;
+            }
+
+            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
+            if(typeof recalculateStatistics==="function")recalculateStatistics();
+        }else{
+            /*
+               Last active Order finalized:
+               reset only the CURRENT operational domain to a true empty state.
+               Historical Archive, Global GTIN, Returns Archive and account
+               context are untouched.
+            */
+            const deviceId=
+                typeof ensureDeviceId==="function"
+                    ? ensureDeviceId()
+                    : AppState?.session?.deviceId;
+
+            if(typeof clearCurrentWorkspace==="function"){
+                clearCurrentWorkspace();
+            }else{
+                AppState.workspace=createEmptyWorkspace();
+                resetStatistics?.();
+                rebuildStateIndexes?.();
+            }
+
+            AppState.session=createEmptySession();
+
+            if(deviceId){
+                AppState.session.deviceId=deviceId;
+            }
+
+            ensureDeviceId?.();
+
+            deleteWorkspaceSnapshot?.();
+            saveWorkspaceSnapshot?.();
+        }
 
         /*
-           2C.11.4.6 — SUPABASE ACTIVE MANIFEST IS AUTHORITATIVE.
-           2C.11.4.5 removed the finalized order only from this browser.
-           It did not update the server Active Order Manifest, so the next
-           cloud hydration could resurrect finalized orders in Receiving.
+           FINALIZE MUST UPDATE BOTH SERVER AUTHORITIES BEFORE SUCCESS:
+           1) structural Active Order Manifest
+           2) compatibility/full Cloud Workspace snapshot
 
-           Persist the reduced manifest when other active orders remain.
-           When the last active order is finalized, remove the server manifest
-           entirely. Do this before claiming Finalize success.
+           This is the root fix for finalized Orders/statistics surviving
+           sign-in until Reset Current Workspace was performed.
         */
         if(remainingOrders.length){
             if(typeof saveActiveOrderManifest!=="function"){
                 throw new Error(
-                    "Order was archived, but Active Order cloud synchronization is unavailable. Refresh before continuing."
+                    "Order was archived, but Active Order cloud synchronization is unavailable."
                 );
             }
 
@@ -998,13 +1047,13 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
 
             if(manifestSaved!==true){
                 throw new Error(
-                    "Order was archived, but the remaining Active Orders could not be synchronized. Do not continue receiving until refresh/recovery."
+                    "Order was archived, but the remaining Active Orders could not be synchronized."
                 );
             }
         }else{
             if(typeof clearActiveOrderManifest!=="function"){
                 throw new Error(
-                    "Order was archived, but the Active Order cloud manifest could not be cleared. Refresh before continuing."
+                    "Order was archived, but the Active Order cloud manifest could not be cleared."
                 );
             }
 
@@ -1012,9 +1061,38 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
 
             if(manifestCleared!==true){
                 throw new Error(
-                    "Order was archived, but the finalized order could not be removed from the cloud Current Workspace. Refresh/recovery is required."
+                    "Order was archived, but the finalized order could not be removed from the Active Order Manifest."
                 );
             }
+        }
+
+        if(typeof syncCloudWorkspaceAfterFinalize!=="function"){
+            throw new Error(
+                "Order was archived, but finalized workspace persistence is unavailable."
+            );
+        }
+
+        const fullWorkspaceSynced=
+            await syncCloudWorkspaceAfterFinalize(
+                remainingOrders.length
+                    ? "Remaining Active Orders synchronized"
+                    : "Current Workspace finalized and cleared"
+            );
+
+        if(fullWorkspaceSynced!==true){
+            throw new Error(
+                "Order was archived, but the finalized Current Workspace did not synchronize completely. Do not continue until refresh/recovery."
+            );
+        }
+
+        /*
+           Local persistence is written only AFTER both server authorities
+           accepted the post-finalize state.
+        */
+        if(typeof saveApplicationState==="function"){
+            saveApplicationState(false);
+        }else{
+            saveWorkspaceSnapshot?.();
         }
 
         refreshEntireUI?.();

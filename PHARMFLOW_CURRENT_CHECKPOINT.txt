@@ -1,19 +1,74 @@
 # PHARMFLOW CURRENT CHECKPOINT
+
 Date: 23 August 2026
-Version: Phase 2C.11.4.9 — Atomic Auth Reveal Root Fix
+Version: Phase 2C.11.4.10 — Finalize Persistence Root Fix
 Status: READY FOR TEST
 
-2C.11.4.7: FAILED.
-2C.11.4.8: FAILED.
+## DIAGNOSTIC RESULT
+After two Orders were independently finalized and archived:
+- Active Order Manifest was cleaned correctly.
+- Receiving eventually became empty.
+- Sign Out -> Sign In still flashed stale 328 items / 956 scans.
+- Reset Current Workspace made the flash disappear permanently.
 
-ROOT CAUSE CONFIRMED BY FULL SOURCE TRACE:
-unlockApplicationAfterAuth() exposed the existing Dashboard DOM before awaiting
-authenticated cloud hydration. The visible 328 items / 956 scans were stale DOM
-from the previous runtime.
+This diagnostic proves the stale data was persisted CURRENT WORKSPACE state,
+not Historical Archive and not merely a rendering/auth-gate problem.
 
-FIX:
-Keep auth gate/lock active until server-authoritative startApplication() has
-completed, then reveal the application atomically.
+## FULL TRACE ROOT CAUSE
+PharmFlow has TWO synchronized current-workspace authorities:
+1. pharmflow_active_order_manifest_v1 — structural active Orders.
+2. the legacy/full Cloud Workspace snapshot — workspace/session compatibility.
 
-Affected: js/auth.js + index cache bust only.
-No SQL. No Receiving, Finalize, Archive, GTIN, Expiry or Handheld business logic changed.
+2C.11.4.6 updated/cleared #1 after Finalize but did not overwrite #2.
+The full Cloud Workspace therefore still contained finalized Orders,
+receivingHistory and old session scan state.
+
+On later hydration, that stale snapshot could be restored before the empty
+Active Manifest reconciled it. Reset Current Workspace appeared to fix the
+problem because its server RPC clears BOTH authorities.
+
+## ROOT FIX
+Finalize now completes one end-to-end persistence transaction in application flow:
+
+Selected Order Finalize:
+- archive selected Order only;
+- remove only its source quantities and receiving transactions;
+- if other active Orders remain:
+  - rebuild/recalculate the reduced workspace;
+  - reset current-workspace scan total to the remaining transaction ledger;
+  - save the reduced Active Order Manifest;
+  - overwrite the full Cloud Workspace with the SAME reduced state;
+- if the last active Order is finalized:
+  - reset the Current Workspace and operational session to true empty state;
+  - clear the Active Order Manifest;
+  - overwrite the full Cloud Workspace with an explicit EMPTY snapshot;
+- only after both server authorities accept the new state is local persistence saved and success UI shown.
+
+## DATA BOUNDARIES PRESERVED
+- Receiving Archive: untouched except normal selected-order archive creation.
+- Global GTIN: untouched.
+- Returns Archive: untouched.
+- Near Expiry: untouched.
+- Historical Data: untouched.
+- Authentication/account isolation: unchanged.
+- No SQL migration.
+
+## EXACT VERIFICATION
+Use TWO new test Orders.
+
+1. Upload Order A + Order B.
+2. Receive/Finalize Order A.
+Expected:
+- Archive contains A independently.
+- A disappears immediately from Receiving.
+- B remains active.
+- Dashboard/statistics describe B only.
+- Sign Out -> Sign In: A must never flash or return.
+
+3. Receive/Finalize Order B.
+Expected:
+- Archive contains B independently.
+- Current Workspace becomes truly empty automatically.
+- Dashboard is zero/empty.
+- Sign Out -> Sign In: no old Order/statistics flash.
+- No Reset Current Workspace should be required.

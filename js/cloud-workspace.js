@@ -1145,6 +1145,89 @@ async function forceCloudWorkspaceSnapshot(reason="manual"){
 window.forceCloudWorkspaceSnapshot=forceCloudWorkspaceSnapshot;
 
 
+/*
+   2C.11.4.10 — FINALIZE PERSISTENCE ROOT FIX
+
+   Active Order Manifest is the structural authority, but PharmFlow still
+   keeps the legacy full Cloud Workspace as compatibility/session state.
+   Finalize previously updated only the Manifest. That left a stale full
+   Cloud Workspace containing finalized Orders, which was later hydrated
+   briefly on sign-in until the empty Manifest corrected it.
+
+   This function synchronizes the COMPLETE post-finalize workspace to the
+   same guarded server authority. Unlike the ordinary autosave helper, it
+   intentionally allows an EMPTY workspace so the last finalized Order can
+   never survive in the legacy cloud snapshot.
+*/
+async function syncCloudWorkspaceAfterFinalize(reason="Finalize synchronized"){
+    const pharmacyId=cloudWorkspacePharmacyId();
+
+    if(
+        !navigator.onLine ||
+        !pharmacyId ||
+        typeof authRpc!=="function"
+    ){
+        setCloudWorkspaceStatus("offline","Finalize workspace sync unavailable");
+        return false;
+    }
+
+    try{
+        ensureCloudAccountContextIsolation();
+
+        cancelPendingCloudWorkspaceSave();
+
+        if(PharmFlowCloudWorkspace.generation===null){
+            PharmFlowCloudWorkspace.generation=
+                await getCloudWorkspaceGeneration();
+        }
+
+        setCloudWorkspaceStatus("syncing","Finalizing workspace");
+
+        const snapshot=serializeCurrentWorkspace();
+
+        const saved=await authRpc(
+            "save_pharmflow_cloud_workspace_guarded",
+            {
+                p_pharmacy_id:pharmacyId,
+                p_workspace:snapshot,
+                p_device_id:cloudWorkspaceDeviceId(),
+                p_expected_generation:Number(
+                    PharmFlowCloudWorkspace.generation||0
+                )
+            }
+        );
+
+        if(saved!==true){
+            throw new Error("Server did not confirm finalized workspace snapshot");
+        }
+
+        PharmFlowCloudWorkspace.lastAppliedWorkspaceSignature=
+            stableCloudWorkspaceSignature(snapshot,{});
+
+        PharmFlowCloudWorkspace.lastCloudUpdate=nowISO();
+
+        setCloudWorkspaceStatus("synced",reason);
+        return true;
+    }
+    catch(error){
+        const message=String(error?.message||"");
+
+        if(message.includes("WORKSPACE_RESET_CONFLICT")){
+            await reconcileWorkspaceGeneration();
+        }
+
+        setCloudWorkspaceStatus(
+            "offline",
+            message || "Finalize workspace sync failed"
+        );
+
+        return false;
+    }
+}
+
+window.syncCloudWorkspaceAfterFinalize=syncCloudWorkspaceAfterFinalize;
+
+
 function scheduleCloudWorkspaceSnapshot(){
     const pharmacyId=cloudWorkspacePharmacyId();
     if(PharmFlowCloudWorkspace.applyingRemote || !pharmacyId) return;
