@@ -79,11 +79,19 @@ function renderIdleSleepNotice(){
     if(!el){
         el=document.createElement("div");
         el.id="pharmflowIdleSleepNotice";
-        el.setAttribute("role","alert");
-        el.setAttribute("aria-live","assertive");
-        el.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(20,24,30,.86);backdrop-filter:blur(2px);font-family:system-ui,-apple-system,Segoe UI,sans-serif;pointer-events:auto";
-        el.innerHTML='<div style="max-width:560px;width:100%;padding:24px;border-radius:16px;background:#20242b;color:#fff;box-shadow:0 12px 36px rgba(0,0,0,.45);text-align:center"><div style="font-size:20px;font-weight:800;margin-bottom:8px">Session paused after 10 minutes of inactivity</div><div style="font-size:15px;line-height:1.5">Scanning and quantity changes are locked while synchronization is paused.<br>Refresh the page to resume receiving.</div></div>';
+        el.setAttribute("role","dialog");
+        el.setAttribute("aria-modal","true");
+        el.setAttribute("aria-labelledby","pharmflowIdleTitle");
+        el.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(9,13,20,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-family:system-ui,-apple-system,Segoe UI,sans-serif;pointer-events:auto";
+        el.innerHTML='<div style="box-sizing:border-box;max-width:460px;width:min(460px,calc(100vw - 40px));padding:38px 34px 32px;border:1px solid rgba(255,255,255,.10);border-radius:22px;background:#171c24;color:#fff;box-shadow:0 24px 70px rgba(0,0,0,.48);text-align:center"><div aria-hidden="true" style="width:54px;height:54px;margin:0 auto 20px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);font-size:26px">Ⅱ</div><div id="pharmflowIdleTitle" style="font-size:28px;font-weight:800;letter-spacing:-.3px;margin-bottom:13px">Session Paused</div><div style="font-size:16px;line-height:1.6;color:#cbd3df;margin-bottom:27px">No activity for 10 minutes.<br>Refresh to continue.</div><button id="pharmflowIdleRefreshButton" type="button" style="appearance:none;border:0;border-radius:12px;min-width:170px;padding:13px 28px;background:#fff;color:#111827;font:700 16px system-ui,-apple-system,Segoe UI,sans-serif;cursor:pointer;box-shadow:0 5px 18px rgba(0,0,0,.22)">Refresh</button></div>';
         document.body?.appendChild(el);
+        const refreshButton=el.querySelector("#pharmflowIdleRefreshButton");
+        refreshButton?.addEventListener("click",event=>{
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            window.location.reload();
+        },true);
+        setTimeout(()=>refreshButton?.focus?.(),0);
     }
 }
 
@@ -148,6 +156,8 @@ function noteRealUserActivity(){
 function blockInteractionDuringIdle(event){
     if(!isIdleInteractionLocked()) return;
     if(event?.type==="keydown" && isRefreshShortcut(event)) return;
+    const refreshButton=event?.target?.closest?.("#pharmflowIdleRefreshButton");
+    if(refreshButton && (event?.type==="click" || event?.type==="pointerdown" || event?.type==="pointerup" || event?.type==="touchstart" || event?.type==="touchend")) return;
     try{ event?.preventDefault?.(); }catch(_){}
     try{ event?.stopImmediatePropagation?.(); }catch(_){}
     try{ event?.stopPropagation?.(); }catch(_){}
