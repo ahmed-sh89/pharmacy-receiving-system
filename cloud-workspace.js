@@ -40,7 +40,140 @@ const PharmFlowCloudWorkspace = {
     lastReceivingSyncError:null,
     lastReceivingActivityAt:0,
     authoritySchedulerTimer:null,
-    receivingSchedulerTimer:null
+    receivingSchedulerTimer:null,
+    idleSleepTimer:null,
+    idleSleepStartedAt:0,
+    idleSleeping:false,
+    idleEnteringSleep:false,
+    idleSleepMs:10*60*1000,
+    idleNoticeShown:false
+};
+
+
+
+/* =====================================================
+   PROJECT A — 10-MINUTE IDLE NETWORK SLEEP FAILSAFE
+   - Counts deliberate user activity while awake.
+   - After 10 minutes, periodic cloud traffic is stopped.
+   - Focus/visibility/touch do NOT wake a sleeping page.
+   - Only a full page refresh starts cloud networking again.
+   - Pending receiving writes are flushed once before sleep when possible.
+===================================================== */
+function isCloudNetworkSleeping(){
+    return PharmFlowCloudWorkspace.idleSleeping===true;
+}
+
+function isIdleInteractionLocked(){
+    return PharmFlowCloudWorkspace.idleSleeping===true ||
+        PharmFlowCloudWorkspace.idleEnteringSleep===true;
+}
+
+function isRefreshShortcut(event){
+    if(!event) return false;
+    if(event.key==="F5") return true;
+    return (event.ctrlKey || event.metaKey) && String(event.key||"").toLowerCase()==="r";
+}
+
+function renderIdleSleepNotice(){
+    let el=document.getElementById("pharmflowIdleSleepNotice");
+    if(!el){
+        el=document.createElement("div");
+        el.id="pharmflowIdleSleepNotice";
+        el.setAttribute("role","alert");
+        el.setAttribute("aria-live","assertive");
+        el.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(20,24,30,.86);backdrop-filter:blur(2px);font-family:system-ui,-apple-system,Segoe UI,sans-serif;pointer-events:auto";
+        el.innerHTML='<div style="max-width:560px;width:100%;padding:24px;border-radius:16px;background:#20242b;color:#fff;box-shadow:0 12px 36px rgba(0,0,0,.45);text-align:center"><div style="font-size:20px;font-weight:800;margin-bottom:8px">Session paused after 10 minutes of inactivity</div><div style="font-size:15px;line-height:1.5">Scanning and quantity changes are locked while synchronization is paused.<br>Refresh the page to resume receiving.</div></div>';
+        document.body?.appendChild(el);
+    }
+}
+
+async function enterIdleNetworkSleep(){
+    if(isIdleInteractionLocked()) return;
+
+    /* Lock user receiving immediately at the 10-minute boundary, while
+       still allowing one final network flush of transactions queued before it. */
+    PharmFlowCloudWorkspace.idleEnteringSleep=true;
+    renderIdleSleepNotice();
+
+    /* Give already-queued receiving writes one final safe flush before sleep. */
+    try{
+        if(navigator.onLine && readCloudQueue().length){
+            await flushCloudWorkspaceQueue();
+        }
+    }catch(error){
+        Logger.warn("Final pre-sleep receiving flush failed",error);
+    }
+
+    PharmFlowCloudWorkspace.idleSleeping=true;
+    PharmFlowCloudWorkspace.idleEnteringSleep=false;
+    PharmFlowCloudWorkspace.idleSleepStartedAt=Date.now();
+
+    for(const key of [
+        "authoritySchedulerTimer",
+        "receivingSchedulerTimer",
+        "pollTimer",
+        "receivingSyncTimer",
+        "contextWatchTimer",
+        "saveTimer"
+    ]){
+        const timer=PharmFlowCloudWorkspace[key];
+        if(timer){
+            clearTimeout(timer);
+            clearInterval(timer);
+            PharmFlowCloudWorkspace[key]=null;
+        }
+    }
+
+    try{ stopCloudPolling?.(); }catch(_){}
+    setCloudWorkspaceStatus("paused","Idle network sleep — refresh to resume");
+    renderIdleSleepNotice();
+}
+
+function armIdleNetworkSleep(){
+    if(PharmFlowCloudWorkspace.idleSleeping) return;
+    if(PharmFlowCloudWorkspace.idleSleepTimer){
+        clearTimeout(PharmFlowCloudWorkspace.idleSleepTimer);
+    }
+    PharmFlowCloudWorkspace.idleSleepTimer=setTimeout(
+        enterIdleNetworkSleep,
+        PharmFlowCloudWorkspace.idleSleepMs
+    );
+}
+
+function noteRealUserActivity(){
+    if(isIdleInteractionLocked()) return;
+    armIdleNetworkSleep();
+}
+
+function blockInteractionDuringIdle(event){
+    if(!isIdleInteractionLocked()) return;
+    if(event?.type==="keydown" && isRefreshShortcut(event)) return;
+    try{ event?.preventDefault?.(); }catch(_){}
+    try{ event?.stopImmediatePropagation?.(); }catch(_){}
+    try{ event?.stopPropagation?.(); }catch(_){}
+    renderIdleSleepNotice();
+}
+
+/* Defense in depth: the full-screen overlay blocks pointer actions, while
+   capture-phase event guards stop hardware scanner keystrokes and keyboard
+   quantity edits before scanner/receiving handlers can see them. */
+["keydown","keypress","keyup","beforeinput","input","change","click","dblclick","pointerdown","pointerup","touchstart","touchend","submit"].forEach(type=>{
+    window.addEventListener(type,blockInteractionDuringIdle,{capture:true,passive:false});
+});
+
+async function cloudAuthRpc(name,args){
+    if(isCloudNetworkSleeping()){
+        const error=new Error("Network sync is paused after inactivity. Refresh the page to resume.");
+        error.code="PHARMFLOW_IDLE_SLEEP";
+        throw error;
+    }
+    return authRpc(name,args);
+}
+
+window.PharmFlowIdleSleep={
+    get sleeping(){ return isCloudNetworkSleeping(); },
+    get interactionLocked(){ return isIdleInteractionLocked(); },
+    refreshRequired:true
 };
 
 function cloudWorkspacePharmacyId(){
@@ -78,7 +211,9 @@ function renderCloudWorkspaceStatus(state, detail=""){
                     ? "● SYNCING"
                     : state==="offline"
                         ? "● OFFLINE — PENDING SYNC"
-                        : "● CLOUD";
+                        : state==="paused"
+                            ? "● PAUSED — REFRESH"
+                            : "● CLOUD";
 
         el.title=detail||"PharmFlow Cloud Workspace";
     }
@@ -150,7 +285,12 @@ function queueCloudWorkspaceTransaction(tx){
     /* Fire-and-forget is safe because flushCloudWorkspaceQueue is now a
        single-flight worker. Rapid +/- can no longer create overlapping
        stale queue writers. */
-    flushCloudWorkspaceQueue();
+    if(!isCloudNetworkSleeping()){
+        flushCloudWorkspaceQueue();
+    }else{
+        setCloudWorkspaceStatus("paused","Receiving change queued — refresh to resume sync");
+        renderIdleSleepNotice();
+    }
 }
 
 function removeCloudQueueTransactions(transactionIds){
@@ -170,7 +310,7 @@ function removeCloudQueueTransactions(transactionIds){
 }
 
 async function uploadCloudReceivingTransaction(tx,pharmacyId){
-    await authRpc("append_pharmflow_cloud_transaction_v2",{
+    await cloudAuthRpc("append_pharmflow_cloud_transaction_v2",{
         p_pharmacy_id:pharmacyId,
         p_transaction_id:tx.transactionId,
         p_order_number:toSafeString(
@@ -202,6 +342,7 @@ async function uploadCloudReceivingTransaction(tx,pharmacyId){
 }
 
 async function flushCloudWorkspaceQueue(){
+    if(isCloudNetworkSleeping()) return false;
     if(PharmFlowCloudWorkspace.receivingFlushPromise){
         return PharmFlowCloudWorkspace.receivingFlushPromise;
     }
@@ -477,7 +618,7 @@ async function getCloudWorkspaceGeneration(){
     const pharmacyId=cloudWorkspacePharmacyId();
     if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function") return null;
 
-    const value=await authRpc("get_pharmflow_workspace_generation",{
+    const value=await cloudAuthRpc("get_pharmflow_workspace_generation",{
         p_pharmacy_id:pharmacyId
     });
 
@@ -663,7 +804,7 @@ async function saveActiveOrderManifest(options={}){
             "Saving Active Orders"
         );
 
-        const result=await authRpc(
+        const result=await cloudAuthRpc(
             "save_pharmflow_active_order_manifest_v3",
             {
                 p_pharmacy_id:pharmacyId,
@@ -686,7 +827,7 @@ async function saveActiveOrderManifest(options={}){
 
         /* Read-after-write verification: do not report SYNCED merely
            because the RPC returned without throwing. */
-        const verifyResult=await authRpc(
+        const verifyResult=await cloudAuthRpc(
             "get_pharmflow_active_order_manifest_v3",
             {p_pharmacy_id:pharmacyId}
         );
@@ -819,7 +960,7 @@ async function pullActiveOrderManifest(options={}){
     PharmFlowCloudWorkspace.activeManifestBusy=true;
 
     try{
-        const result=await authRpc(
+        const result=await cloudAuthRpc(
             "get_pharmflow_active_order_manifest_v3",
             {p_pharmacy_id:pharmacyId}
         );
@@ -972,7 +1113,7 @@ async function clearActiveOrderManifest(){
     }
 
     try{
-        await authRpc(
+        await cloudAuthRpc(
             "clear_pharmflow_active_order_manifest_v2",
             {p_pharmacy_id:pharmacyId}
         );
@@ -1115,7 +1256,7 @@ async function forceCloudWorkspaceSnapshot(reason="manual"){
                 await getCloudWorkspaceGeneration();
         }
 
-        await authRpc("save_pharmflow_cloud_workspace_guarded",{
+        await cloudAuthRpc("save_pharmflow_cloud_workspace_guarded",{
             p_pharmacy_id:pharmacyId,
             p_workspace:serializeCurrentWorkspace(),
             p_device_id:cloudWorkspaceDeviceId(),
@@ -1188,7 +1329,7 @@ async function syncCloudWorkspaceAfterFinalize(reason="Finalize synchronized"){
 
         const snapshot=serializeCurrentWorkspace();
 
-        const saved=await authRpc(
+        const saved=await cloudAuthRpc(
             "save_pharmflow_cloud_workspace_guarded",
             {
                 p_pharmacy_id:pharmacyId,
@@ -1251,7 +1392,7 @@ async function saveCloudWorkspaceSnapshot(){
             PharmFlowCloudWorkspace.generation=await getCloudWorkspaceGeneration();
         }
 
-        await authRpc("save_pharmflow_cloud_workspace_guarded",{
+        await cloudAuthRpc("save_pharmflow_cloud_workspace_guarded",{
             p_pharmacy_id:pharmacyId,
             p_workspace:serializeCurrentWorkspace(),
             p_device_id:cloudWorkspaceDeviceId(),
@@ -1526,7 +1667,7 @@ async function pullCloudWorkspaceTransactions(){
             return false;
         }
 
-        const rows=await authRpc(
+        const rows=await cloudAuthRpc(
             "list_pharmflow_cloud_transactions_v2",
             {
                 p_pharmacy_id:pharmacyId,
@@ -1625,7 +1766,7 @@ async function restoreCloudWorkspaceOnLogin(){
                 PharmFlowCloudWorkspace.generation=serverGeneration;
             }
 
-            const result=await authRpc("get_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
+            const result=await cloudAuthRpc("get_pharmflow_cloud_workspace",{p_pharmacy_id:pharmacyId});
             const row=Array.isArray(result)?result[0]:result;
             const cloudState=row?.workspace;
             const cloudHasOrder=cloudState?.workspace && Array.isArray(cloudState.workspace.orderData) && cloudState.workspace.orderData.length>0;
@@ -1725,7 +1866,7 @@ async function reconcileCloudWorkspaceAuthority(){
         }
 
         try{
-            const result=await authRpc(
+            const result=await cloudAuthRpc(
                 "get_pharmflow_cloud_workspace",
                 {p_pharmacy_id:pharmacyId}
             );
@@ -1840,7 +1981,17 @@ function initializePharmFlowCloudWorkspace(){
     if(PharmFlowCloudWorkspace.initialized) return;
     PharmFlowCloudWorkspace.initialized=true;
     AppEvents.on("receiving:transaction",transaction=>{
+        /* Never create/queue a new receiving transaction after the idle lock.
+           UI capture guards should prevent this path; this is a final safety net. */
+        if(isIdleInteractionLocked()){
+            renderIdleSleepNotice();
+            Logger.warn("Receiving transaction blocked during idle sleep",{
+                transactionId:transaction?.transactionId || null
+            });
+            return;
+        }
         PharmFlowCloudWorkspace.lastReceivingActivityAt=Date.now();
+        noteRealUserActivity();
         queueCloudWorkspaceTransaction(transaction);
     });
     /* Local save is not cloud structural authority. */
@@ -1849,6 +2000,8 @@ function initializePharmFlowCloudWorkspace(){
         try{
             saveWorkspaceSnapshot?.();
         }catch(_){}
+
+        if(isCloudNetworkSleeping()) return;
 
         /* Phase 2C.10.4.7 — hydration/empty-authority events are READ paths.
            Never write the Manifest during sign-in before generation authority
@@ -1912,9 +2065,15 @@ function initializePharmFlowCloudWorkspace(){
             navigator.onLine ? "Local workspace updated" : "Local workspace updated offline"
         );
     });
-    window.addEventListener("online",()=>{attemptCloudWorkspaceHydration();flushCloudWorkspaceQueue();pullCloudWorkspaceTransactions();});
+    window.addEventListener("online",()=>{
+        if(isCloudNetworkSleeping()) return;
+        attemptCloudWorkspaceHydration();
+        flushCloudWorkspaceQueue();
+        pullCloudWorkspaceTransactions();
+    });
     window.addEventListener("offline",()=>setCloudWorkspaceStatus("offline"));
     window.addEventListener("auth:context-ready",()=>{
+        if(isCloudNetworkSleeping()) return;
         ensureCloudAccountContextIsolation();
         PharmFlowCloudWorkspace.loginAuthorityReady=false;
 
@@ -1970,6 +2129,7 @@ function initializePharmFlowCloudWorkspace(){
     );
     /* Project A Egress Root Fix: one slow structural authority scheduler. */
     const runAuthorityScheduler=async()=>{
+        if(isCloudNetworkSleeping()) return;
         if(document.visibilityState==="visible"){
             ensureCloudAccountContextIsolation();
             const hasLocalOrders=
@@ -1988,27 +2148,33 @@ function initializePharmFlowCloudWorkspace(){
             attemptCloudWorkspaceHydration();
             await reconcileCloudWorkspaceAuthority();
         }
-        PharmFlowCloudWorkspace.authoritySchedulerTimer=
-            setTimeout(runAuthorityScheduler,60000);
+        if(!isCloudNetworkSleeping()){
+            PharmFlowCloudWorkspace.authoritySchedulerTimer=
+                setTimeout(runAuthorityScheduler,60000);
+        }
     };
 
     /* Receiving stays responsive while active, but idle PCs stop 1-second
        full-ledger polling. */
     const runReceivingScheduler=async()=>{
+        if(isCloudNetworkSleeping()) return;
         if(document.visibilityState==="visible" && !PharmFlowCloudWorkspace.contextSwitching){
             await repairSharedReceivingLedgerFromLocal();
             await flushCloudWorkspaceQueue();
             await pullCloudWorkspaceTransactions();
         }
         const active=Date.now()-Number(PharmFlowCloudWorkspace.lastReceivingActivityAt||0)<30000;
-        PharmFlowCloudWorkspace.receivingSchedulerTimer=
-            setTimeout(runReceivingScheduler,active ? 3000 : 15000);
+        if(!isCloudNetworkSleeping()){
+            PharmFlowCloudWorkspace.receivingSchedulerTimer=
+                setTimeout(runReceivingScheduler,active ? 3000 : 15000);
+        }
     };
 
     PharmFlowCloudWorkspace.pollTimer=setTimeout(runAuthorityScheduler,60000);
     PharmFlowCloudWorkspace.receivingSyncTimer=setTimeout(runReceivingScheduler,15000);
 
     window.addEventListener("focus",async()=>{
+        if(isCloudNetworkSleeping()) return;
         const hasLocalOrders=
             Array.isArray(AppState?.workspace?.orderFiles) &&
             AppState.workspace.orderFiles.length &&
@@ -2032,6 +2198,7 @@ function initializePharmFlowCloudWorkspace(){
     });
 
     document.addEventListener("visibilitychange",async()=>{
+        if(isCloudNetworkSleeping()) return;
         if(document.visibilityState==="visible"){
             const hasLocalOrders=
                 Array.isArray(AppState?.workspace?.orderFiles) &&
@@ -2055,6 +2222,12 @@ function initializePharmFlowCloudWorkspace(){
                 .then(()=>pullCloudWorkspaceTransactions());
         }
     });
+    /* Deliberate interaction resets the 10-minute countdown only while awake.
+       It can never wake a page that has already entered idle sleep. */
+    ["pointerdown","keydown","input","touchstart"].forEach(type=>{
+        window.addEventListener(type,noteRealUserActivity,{passive:true,capture:true});
+    });
+    armIdleNetworkSleep();
     attemptCloudWorkspaceHydration();
 }
 
