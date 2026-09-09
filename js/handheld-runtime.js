@@ -369,4 +369,34 @@ window.HandheldRuntime=HandheldRuntime;
 window.hhRefreshReadyState=hhRefreshReadyState;
 window.hhRepairScannerFocus=hhRepairScannerFocus;
 
+/* Production safety repair: a stale persisted Handheld flag must never
+   classify a normal desktop browser as Handheld by itself. Keep the flag only
+   when the current environment independently qualifies as Handheld or an
+   explicit test override is active. */
+(function repairPersistedHandheldFlag(){
+    try{
+        if(localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")!=="1") return;
+
+        const ua=String(navigator.userAgent||"").toLowerCase();
+        const enterpriseHandheld=/zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
+        const params=new URLSearchParams(window.location.search||"");
+        const explicitHandheld=
+            params.get("handheld")==="1" ||
+            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE")==="1";
+        const android=/android/i.test(ua);
+        const shortestScreenSide=Math.min(
+            Number(window.screen?.width||window.innerWidth||9999),
+            Number(window.screen?.height||window.innerHeight||9999)
+        );
+        const handheldFormFactor=
+            android &&
+            shortestScreenSide<=600 &&
+            Number(navigator.maxTouchPoints||0)>0;
+
+        if(!enterpriseHandheld && !explicitHandheld && !handheldFormFactor){
+            localStorage.removeItem("PHARMFLOW_HANDHELD_DEVICE");
+        }
+    }catch(_){}
+})();
+
 window.addEventListener("load",()=>setTimeout(hhInstall,120));
