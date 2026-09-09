@@ -1050,6 +1050,18 @@ function buildReceivedQuantityByOrder(){
     const totals=new Map();
     const activeOrders=getActiveReceivingOrderNumbers();
 
+    if(typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()){
+        rebuildReceivingQuantitiesFromLedger();
+        getActiveCloudReceivingTransactions().forEach(tx=>{
+            const order=normalizeOrderNumber(tx.selectedOrderNumber || tx.orderId || tx.orderNumber || "");
+            const code=normalizeItemCode(tx.itemCode||"");
+            if(!code) return;
+            const key=order+"||"+code;
+            totals.set(key,(totals.get(key)||0)+toNumber(tx.quantity,0));
+        });
+        return totals;
+    }
+
     const ensure=(order,itemCode)=>{
         const key=normalizeOrderNumber(order)+"||"+normalizeItemCode(itemCode);
         if(!totals.has(key)) totals.set(key,0);
@@ -1197,10 +1209,9 @@ function getPerOrderReceivingRows(orderNumber){
                 tx?.undone!==true
             );
 
-        const received=txs.reduce(
-            (sum,tx)=>sum+toNumber(tx?.quantity,0),
-            0
-        );
+        const received=typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()
+            ? toNumber(receivedMap.get(normalized+"||"+normalizeItemCode(item.itemCode)),0)
+            : txs.reduce((sum,tx)=>sum+toNumber(tx?.quantity,0),0);
 
         if(received>0){
             rows.push({

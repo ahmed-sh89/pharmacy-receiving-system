@@ -42,6 +42,8 @@ function hhReceivingSessionReady(){
     return !!(
         typeof AuthState!=="undefined" &&
         AuthState?.context?.pharmacy_id &&
+        typeof PharmFlowCloudWorkspace!=="undefined" &&
+        PharmFlowCloudWorkspace.hydratedPharmacyId===AuthState.context.pharmacy_id &&
         Array.isArray(AppState?.workspace?.orderFiles) &&
         AppState.workspace.orderFiles.length>0 &&
         Array.isArray(AppState?.workspace?.orderData) &&

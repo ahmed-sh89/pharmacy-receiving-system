@@ -1831,7 +1831,8 @@ function getSelectedOrderDashboardMetrics(){
         });
     });
 
-    const totalScans=(AppState.workspace?.receivingHistory||[])
+    const ledgerBacked=typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving();
+    const totalScans=(ledgerBacked ? getActiveCloudReceivingTransactions() : (AppState.workspace?.receivingHistory||[]))
         .filter(tx=>{
             const txOrder=normalizeOrderNumber(
                 tx?.selectedOrderNumber ||
@@ -1845,7 +1846,10 @@ function getSelectedOrderDashboardMetrics(){
                     .map(normalizeOrderNumber)
                     .includes(txOrder);
 
-            return inScope;
+            const source=toSafeString(tx?.source||"").toUpperCase();
+            const scanner=toSafeString(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
+            return inScope && (!ledgerBacked || (toNumber(tx?.quantity,0)>0 &&
+                (source===scanner || source.includes("SCAN")) && !source.includes("UNDO")));
         }).length;
 
     return {
@@ -1947,7 +1951,9 @@ function refreshDashboard(){
     );
     setElementText(UI.elements.statOver,scoped.overReceivedItems);
     setElementText(UI.elements.statManual,scoped.manualItems);
-    setElementText(UI.elements.statScans,scoped.totalScans);
+    setElementText(UI.elements.statScans,
+        !selectedMetrics && typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()
+            ? stats.totalScans : scoped.totalScans);
 
     refreshProgress();
 }

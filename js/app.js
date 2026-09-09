@@ -119,7 +119,8 @@ async function startApplication(){
         ensureCloudAccountContextIsolation?.();
 
         if(typeof restoreCloudWorkspaceOnLogin==="function"){
-            await restoreCloudWorkspaceOnLogin();
+            const ready=await restoreCloudWorkspaceOnLogin();
+            if(isAuthenticatedLedgerReceiving() && !ready) return false;
         }
 
         if(typeof restoreHistoricalArchive==="function"){
@@ -153,7 +154,8 @@ async function startApplication(){
            Active Order Manifest / Cloud Workspace before router/UI startup.
         */
         if(typeof restoreCloudWorkspaceOnLogin==="function"){
-            await restoreCloudWorkspaceOnLogin();
+            const ready=await restoreCloudWorkspaceOnLogin();
+            if(isAuthenticatedLedgerReceiving() && !ready) return false;
         }
 
         /* Legacy compatibility guard, after authoritative hydration only. */
@@ -1881,8 +1883,11 @@ setTimeout(enforceOwnerOnlyMasterGTINUI,500);
    PHASE 2C.6.2 — CONSISTENT LIVE DASHBOARD METRICS
 ===================================================== */
 function calculateDashboardMetrics(){
+    const ledgerBacked=typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving();
+    if(ledgerBacked) rebuildReceivingQuantitiesFromLedger();
     const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
-    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const history=ledgerBacked ? getActiveCloudReceivingTransactions()
+        : (Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[]);
     let completedItems=0, remainingItems=0, remainingUnits=0, overReceivedItems=0, manualItems=0;
     items.forEach(item=>{
         const ordered=Math.max(0,toNumber(item?.orderedQty,0));

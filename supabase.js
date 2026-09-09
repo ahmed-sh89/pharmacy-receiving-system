@@ -668,6 +668,10 @@ async function refreshCloudSnapshot(options = {}){
     }
 
     CloudSyncEngine.pollRunning = true;
+    const sessionAtStart=AppState.session;
+    const scopeAtStart=typeof currentCloudAccountScope==="function" ? currentCloudAccountScope() : "";
+    const contextChanged=()=>AppState.session!==sessionAtStart ||
+        (typeof currentCloudAccountScope==="function" && currentCloudAccountScope()!==scopeAtStart);
 
     try{
         const zebraJoinedForEndCheck = !!(
@@ -677,7 +681,9 @@ async function refreshCloudSnapshot(options = {}){
             AppState.session?.cloud === true
         );
 
-        if(zebraJoinedForEndCheck && await isCloudSessionTerminatedOnServer()){
+        const sessionEnded=zebraJoinedForEndCheck && await isCloudSessionTerminatedOnServer();
+        if(contextChanged()) return false;
+        if(sessionEnded){
             terminateZebraFromServer("server-termination-signal");
             return false;
         }
@@ -686,6 +692,7 @@ async function refreshCloudSnapshot(options = {}){
             p_session_id:AppState.session.id,
             p_session_secret:AppState.session.secret
         });
+        if(contextChanged()) return false;
 
         const rows = Array.isArray(result) ? result : [];
 
@@ -706,6 +713,20 @@ async function refreshCloudSnapshot(options = {}){
             updateCloudConnectionUI("SESSION ENDED");
             showToast("PC session ended — Handheld scan locked until you join a new session","warning");
             return false;
+        }
+
+        if(typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()){
+            // Preserve session validation/status, but never use this transport
+            // snapshot to mutate manifest structure, quantities, history or queue.
+            if(rows.length && rows[0].transaction_count!==undefined){
+                AppState.session.cloudTotalScans=toNumber(rows[0].transaction_count,0);
+            }
+            CloudSyncEngine.lastSnapshotAt=nowISO();
+            AppState.session.lastSave=CloudSyncEngine.lastSnapshotAt;
+            updateCloudConnectionUI(AppState.session.pendingQueue.length ? "SYNC PENDING" : "SYNCED");
+            AppEvents.emit("session:updated");
+            saveWorkspaceSnapshot();
+            return true;
         }
 
         const pendingByItem = getPendingQuantityByItem();
@@ -799,6 +820,7 @@ async function refreshCloudSnapshot(options = {}){
         /* A confirmed terminal session response is different from a network
            problem. Terminal = close Zebra immediately; network issue = preserve
            the current work and wait for reconnection. */
+        if(contextChanged()) return false;
         const zebraJoined = !!(
             typeof isLikelyZebraDevice === "function" &&
             isLikelyZebraDevice() &&

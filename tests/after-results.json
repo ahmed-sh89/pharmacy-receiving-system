@@ -1,0 +1,191 @@
+{
+  "verdict": "POST-FIX ROLLBACK PREVENTED",
+  "results": [
+    {
+      "scenario": "2 -> 0 -> 2",
+      "pendingFixture": false,
+      "before": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "afterStale": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "recovered": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "afterEmptyDelta": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "negativeControlReceived": 9,
+      "rpcCount": 4,
+      "rpcNames": [
+        "get_pharmflow_workspace_generation",
+        "list_pharmflow_cloud_transactions_v2"
+      ]
+    },
+    {
+      "scenario": "1000 -> 997 -> 1000",
+      "pendingFixture": false,
+      "before": {
+        "received": 11,
+        "remaining": 0,
+        "history": 1000,
+        "ids": 1000,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "afterStale": {
+        "received": 11,
+        "remaining": 0,
+        "history": 1000,
+        "ids": 1000,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "recovered": {
+        "received": 11,
+        "remaining": 0,
+        "history": 1000,
+        "ids": 1000,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "afterEmptyDelta": {
+        "received": 11,
+        "remaining": 0,
+        "history": 1000,
+        "ids": 1000,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "negativeControlReceived": 9,
+      "rpcCount": 4,
+      "rpcNames": [
+        "get_pharmflow_workspace_generation",
+        "list_pharmflow_cloud_transactions_v2"
+      ]
+    },
+    {
+      "scenario": "2 -> 0 -> 2",
+      "pendingFixture": true,
+      "before": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 2,
+        "generation": 7,
+        "revision": 9
+      },
+      "afterStale": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 2,
+        "generation": 7,
+        "revision": 9
+      },
+      "recovered": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "afterEmptyDelta": {
+        "received": 11,
+        "remaining": 0,
+        "history": 2,
+        "ids": 2,
+        "perOrder": 11,
+        "completedItems": 1,
+        "remainingItems": 0,
+        "totalScans": 1,
+        "pending": 0,
+        "generation": 7,
+        "revision": 9
+      },
+      "negativeControlReceived": 9,
+      "rpcCount": 4,
+      "rpcNames": [
+        "get_pharmflow_workspace_generation",
+        "list_pharmflow_cloud_transactions_v2"
+      ]
+    }
+  ]
+}
