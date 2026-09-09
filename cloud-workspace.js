@@ -496,6 +496,7 @@ function stopCloudWorkspacePendingOperations(){
 
     PharmFlowCloudWorkspace.hydrationPromise=null;
     PharmFlowCloudWorkspace.manifestReadPromise=null;
+    PharmFlowCloudWorkspace.emptyManifestScope="";
     PharmFlowCloudWorkspace.receivingReadPromise=null;
     PharmFlowCloudWorkspace.reconcilePromise=null;
     PharmFlowCloudWorkspace.generationCheckBusy=false;
@@ -969,6 +970,7 @@ async function pullActiveOrderManifest(options={}){
 async function readActiveOrderManifest(options={}){
     const pharmacyId=cloudWorkspacePharmacyId();
     const scope=currentCloudAccountScope();
+    PharmFlowCloudWorkspace.emptyManifestScope="";
 
     if(
         !navigator.onLine ||
@@ -994,7 +996,11 @@ async function readActiveOrderManifest(options={}){
         PharmFlowCloudWorkspace.lastManifestPullAt=nowISO();
         PharmFlowCloudWorkspace.lastManifestPullError=null;
 
-        if(!row?.manifest){
+        const emptyManifest=!row?.manifest || (
+            Array.isArray(row.manifest.orderFiles) && !row.manifest.orderFiles.length &&
+            Array.isArray(row.manifest.orderData) && !row.manifest.orderData.length
+        );
+        if(emptyManifest){
             PharmFlowCloudWorkspace.activeManifestPresent=false;
             PharmFlowCloudWorkspace.activeManifestRevision=0;
 
@@ -1011,6 +1017,7 @@ async function readActiveOrderManifest(options={}){
                 AppEvents.emit("receiving:updated",{source:"server-authority-empty"});
                 refreshEntireUI?.();
             }
+            PharmFlowCloudWorkspace.emptyManifestScope=scope;
             return false;
         }
 
@@ -1831,6 +1838,18 @@ async function restoreCloudWorkspaceOnLogin(){
             // receiving evidence nor a fallback structure for this authenticated path.
             const manifestReady=await pullActiveOrderManifest({clearIfMissing:true});
             if(scope!==currentCloudAccountScope()) return false;
+            // A confirmed empty manifest is ready for the application shell,
+            // but has no active receiving ledger to hydrate or pending writes to flush.
+            if(!manifestReady && PharmFlowCloudWorkspace.emptyManifestScope===scope){
+                AppState.workspace=createEmptyWorkspace();
+                resetStatistics();
+                rebuildStateIndexes();
+                PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+                PharmFlowCloudWorkspace.loginAuthorityReady=true;
+                saveWorkspaceSnapshot();
+                setCloudWorkspaceStatus("synced","No active orders");
+                return true;
+            }
             if(!manifestReady) return false;
             if(!await pullCloudWorkspaceTransactions()) return false;
             if(scope!==currentCloudAccountScope()) return false;
