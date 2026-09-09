@@ -1645,7 +1645,7 @@ function refreshHeader(){
     );
 
     {
-        const orderLabel=UI.elements.headerOrderId;
+        const orderLabel=UI.elements.headerOrderId || document.getElementById("headerOrderId");
         const picker=document.getElementById("headerOrderPicker");
         const pickerLabel=document.getElementById("headerOrderPickerLabel");
         const pickerMenu=document.getElementById("headerOrderPickerMenu");
@@ -1666,7 +1666,7 @@ function refreshHeader(){
                 : "";
 
         if(hasActiveOrder && activeOrders.length>1 && picker){
-            orderLabel.hidden=true;
+            if(orderLabel) orderLabel.hidden=true;
             picker.hidden=false;
 
             const allSelected=
@@ -1733,7 +1733,7 @@ function refreshHeader(){
             }
         }else{
             if(picker) picker.hidden=true;
-            orderLabel.hidden=false;
+            if(orderLabel) orderLabel.hidden=false;
 
             setElementText(
                 orderLabel,
