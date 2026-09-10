@@ -399,4 +399,99 @@ window.hhRepairScannerFocus=hhRepairScannerFocus;
     }catch(_){}
 })();
 
+/* ============================================================
+   RECEIVING VISUAL CLEAR + LOCAL BATCH BOUNDARY
+
+   CLEAR SCREEN is still UI-only: it never edits the ledger, Received Total,
+   or Supabase. It only closes the current local consecutive-scan batch so the
+   next scan of the same item starts at Batch Qty 1.
+
+   PC already owns its 30-second visual auto-clear in ui.js. This lightweight
+   local watcher observes that clear (and either device's manual Clear Screen)
+   and closes the batch. Handheld additionally gets the same 30-second visual
+   auto-clear. No network polling is added here.
+============================================================ */
+const ReceivingVisualClear={
+    lastKey:"",
+    timer:null,
+    watchTimer:null
+};
+
+function pfReceivingLastScanKey(scan){
+    if(!scan) return "";
+    return String(
+        scan.transactionId ||
+        [scan.itemCode,scan.dateTime,scan.receivedQty,scan.gtin].join("|")
+    );
+}
+
+function pfResetCurrentLocalBatch(){
+    if(typeof ReceivingEngine==="undefined" || !ReceivingEngine?.currentLocalBatch) return;
+    ReceivingEngine.currentLocalBatch.itemCode="";
+    ReceivingEngine.currentLocalBatch.quantity=0;
+}
+
+function pfReceivingVisualClearBlocked(){
+    return !!document.querySelector(
+        "#handheldReceivingReviewCard,#handheldKnownExtraCard,.modal.open"
+    );
+}
+
+function pfArmHandheldAutoClear(key){
+    clearTimeout(ReceivingVisualClear.timer);
+    ReceivingVisualClear.timer=null;
+
+    if(!hhIsDevice() || !key) return;
+
+    ReceivingVisualClear.timer=setTimeout(()=>{
+        const current=AppState?.workspace?.lastScan;
+        if(pfReceivingLastScanKey(current)!==key) return;
+
+        if(pfReceivingVisualClearBlocked()){
+            pfArmHandheldAutoClear(key);
+            return;
+        }
+
+        AppState.workspace.lastScan=null;
+        pfResetCurrentLocalBatch();
+        ReceivingVisualClear.lastKey="";
+        clearTimeout(ReceivingVisualClear.timer);
+        ReceivingVisualClear.timer=null;
+
+        refreshEntireUI?.();
+        window.hhRefreshReadyState?.();
+        try{ document.activeElement?.blur?.(); }catch(_){}
+        setTimeout(()=>focusScannerInput?.(),30);
+    },30000);
+}
+
+function pfWatchReceivingVisualClear(){
+    if(typeof AppState==="undefined" || !AppState?.workspace) return;
+
+    const current=AppState.workspace.lastScan;
+    const key=pfReceivingLastScanKey(current);
+
+    if(key && key!==ReceivingVisualClear.lastKey){
+        ReceivingVisualClear.lastKey=key;
+        pfArmHandheldAutoClear(key);
+        return;
+    }
+
+    /* PC auto-clear/manual clear and Handheld manual clear all converge here.
+       Detect the visual transition to empty and close only the local batch. */
+    if(!key && ReceivingVisualClear.lastKey){
+        pfResetCurrentLocalBatch();
+        ReceivingVisualClear.lastKey="";
+        clearTimeout(ReceivingVisualClear.timer);
+        ReceivingVisualClear.timer=null;
+    }
+}
+
+function pfInstallReceivingVisualClear(){
+    clearInterval(ReceivingVisualClear.watchTimer);
+    ReceivingVisualClear.watchTimer=setInterval(pfWatchReceivingVisualClear,250);
+    pfWatchReceivingVisualClear();
+}
+
+window.addEventListener("load",()=>setTimeout(pfInstallReceivingVisualClear,180));
 window.addEventListener("load",()=>setTimeout(hhInstall,120));
