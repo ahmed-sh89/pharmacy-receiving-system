@@ -1,0 +1,98 @@
+name: Receiving Ledger Authority Hotfix
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/receiving-ledger-hotfix.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch authoritative receiving hydration
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('cloud-workspace.js')
+          s=p.read_text(encoding='utf-8')
+          start=s.index('async function readCloudWorkspaceTransactions(){')
+          end=s.index('\nfunction recoverCurrentDeviceLastScan(){', start)
+          replacement=r'''async function readCloudWorkspaceTransactions(){
+              const pharmacyId=cloudWorkspacePharmacyId();
+              const scope=currentCloudAccountScope();
+              if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function" ||
+                 PharmFlowCloudWorkspace.receivingSyncBusy || PharmFlowCloudWorkspace.contextSwitching){
+                  return false;
+              }
+              PharmFlowCloudWorkspace.receivingSyncBusy=true;
+              try{
+                  if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length){
+                      if(typeof pullActiveOrderManifest==="function") await pullActiveOrderManifest();
+                  }
+                  if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length) return false;
+
+                  const rows=await cloudAuthRpc("list_pharmflow_cloud_transactions_v2",{
+                      p_pharmacy_id:pharmacyId,
+                      p_limit:5000
+                  });
+                  if(scope!==currentCloudAccountScope()) return false;
+
+                  const serverRows=(Array.isArray(rows)?rows:[])
+                      .map(normalizeCloudReceivingTransaction)
+                      .filter(tx=>tx.transactionId && tx.itemCode);
+                  const serverIds=new Set(serverRows.map(tx=>tx.transactionId));
+                  const pending=readCloudQueue().filter(tx=>
+                      tx?.transactionId && !serverIds.has(toSafeString(tx.transactionId))
+                  );
+
+                  /* Production recovery rule: Supabase ledger is authoritative.
+                     Rebuild the in-memory evidence from the complete server ledger,
+                     then overlay only genuinely pending local writes. This prevents a
+                     stale browser/workspace history from blocking hydration through
+                     immutable-ID conflict checks. */
+                  PharmFlowCloudWorkspace.applyingRemote=true;
+                  AppState.workspace.receivingHistory=[];
+                  rebuildStateIndexes();
+                  for(const tx of serverRows) addReceivingTransaction(tx);
+                  for(const tx of pending) addReceivingTransaction({...tx,cloudSynced:false});
+                  removeCloudQueueTransactions([...serverIds]);
+                  rebuildStateIndexes();
+                  rebuildReceivingQuantitiesFromLedger();
+                  recalculateStatistics();
+                  saveWorkspaceSnapshot();
+                  PharmFlowCloudWorkspace.lastReceivingActivityAt=Date.now();
+                  AppEvents.emit("receiving:updated",{source:"cloud-ledger-authoritative",synchronized:true});
+                  if(typeof refreshEntireUI==="function") refreshEntireUI();
+                  else if(typeof refreshAllUI==="function") refreshAllUI();
+                  PharmFlowCloudWorkspace.lastReceivingSyncAt=nowISO();
+                  PharmFlowCloudWorkspace.lastReceivingSyncError=null;
+                  setCloudWorkspaceStatus("synced","Receiving ledger restored");
+                  return true;
+              }catch(error){
+                  Logger.warn("Receiving transaction pull failed",error);
+                  PharmFlowCloudWorkspace.lastReceivingSyncError=error?.message||String(error);
+                  setCloudWorkspaceStatus("offline","Receiving sync unavailable");
+                  return false;
+              }finally{
+                  PharmFlowCloudWorkspace.applyingRemote=false;
+                  PharmFlowCloudWorkspace.receivingSyncBusy=false;
+              }
+          }
+          '''
+          p.write_text(s[:start]+replacement+s[end:],encoding='utf-8')
+
+          i=Path('index.html')
+          h=i.read_text(encoding='utf-8')
+          old='cloud-workspace.js?v=A_IDLE10_UI1'
+          new='cloud-workspace.js?v=A_LEDGER_AUTH_20260915_2'
+          if old not in h and new not in h:
+              raise SystemExit('cloud-workspace script version marker not found')
+          i.write_text(h.replace(old,new),encoding='utf-8')
+      - name: Commit hotfix
+        run: |
+          git config user.name "PharmFlow Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add cloud-workspace.js index.html
+          git commit -m "Fix authoritative receiving hydration"
+          git push
