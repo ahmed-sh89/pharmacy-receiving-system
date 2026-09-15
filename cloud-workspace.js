@@ -1718,8 +1718,9 @@ async function readCloudWorkspaceTransactions(){
         }
         if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length) return false;
 
-        const rows=await cloudAuthRpc("list_pharmflow_cloud_transactions_v2",{
+        const rows=await cloudAuthRpc("list_pharmflow_cloud_transactions_v3",{
             p_pharmacy_id:pharmacyId,
+            p_order_numbers:getActiveReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean),
             p_limit:5000
         });
         if(scope!==currentCloudAccountScope()) return false;
