@@ -1707,101 +1707,60 @@ async function pullCloudWorkspaceTransactions(options={}){
 async function readCloudWorkspaceTransactions(){
     const pharmacyId=cloudWorkspacePharmacyId();
     const scope=currentCloudAccountScope();
-
-    if(
-        !navigator.onLine ||
-        !pharmacyId ||
-        typeof authRpc!=="function" ||
-        PharmFlowCloudWorkspace.receivingSyncBusy ||
-        PharmFlowCloudWorkspace.contextSwitching
-    ){
+    if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function" ||
+       PharmFlowCloudWorkspace.receivingSyncBusy || PharmFlowCloudWorkspace.contextSwitching){
         return false;
     }
-
     PharmFlowCloudWorkspace.receivingSyncBusy=true;
-
     try{
-        /*
-           The original bug was here:
-           transaction pulling was blocked by hydratedPharmacyId, even when
-           PC2 already had its orders from the Active Order Manifest.
-           Receiving sync is now independent from the old workspace snapshot.
-        */
-        if(
-            !Array.isArray(AppState?.workspace?.orderData) ||
-            !AppState.workspace.orderData.length
-        ){
-            if(typeof pullActiveOrderManifest==="function"){
-                await pullActiveOrderManifest();
-            }
+        if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length){
+            if(typeof pullActiveOrderManifest==="function") await pullActiveOrderManifest();
         }
+        if(!Array.isArray(AppState?.workspace?.orderData) || !AppState.workspace.orderData.length) return false;
 
-        if(
-            !Array.isArray(AppState?.workspace?.orderData) ||
-            !AppState.workspace.orderData.length
-        ){
-            return false;
-        }
-
-        const rows=await cloudAuthRpc(
-            "list_pharmflow_cloud_transactions_v2",
-            {
-                p_pharmacy_id:pharmacyId,
-                p_limit:5000
-            }
-        );
-
+        const rows=await cloudAuthRpc("list_pharmflow_cloud_transactions_v2",{
+            p_pharmacy_id:pharmacyId,
+            p_limit:5000
+        });
         if(scope!==currentCloudAccountScope()) return false;
-        PharmFlowCloudWorkspace.applyingRemote=true;
 
-        const changed=mergeCloudReceivingLedger(
-            Array.isArray(rows) ? rows : []
+        const serverRows=(Array.isArray(rows)?rows:[])
+            .map(normalizeCloudReceivingTransaction)
+            .filter(tx=>tx.transactionId && tx.itemCode);
+        const serverIds=new Set(serverRows.map(tx=>tx.transactionId));
+        const pending=readCloudQueue().filter(tx=>
+            tx?.transactionId && !serverIds.has(toSafeString(tx.transactionId))
         );
 
-        if(changed){
-            PharmFlowCloudWorkspace.lastReceivingActivityAt=Date.now();
-            rebuildStateIndexes();
-            recalculateStatistics();
-            saveWorkspaceSnapshot();
-
-            AppEvents.emit(
-                "receiving:updated",
-                {
-                    source:"cloud-ledger",
-                    synchronized:true
-                }
-            );
-
-            if(typeof refreshEntireUI==="function"){
-                refreshEntireUI();
-            }
-            else if(typeof refreshAllUI==="function"){
-                refreshAllUI();
-            }
-        }
-
+        /* Production recovery rule: Supabase ledger is authoritative.
+           Rebuild the in-memory evidence from the complete server ledger,
+           then overlay only genuinely pending local writes. This prevents a
+           stale browser/workspace history from blocking hydration through
+           immutable-ID conflict checks. */
+        PharmFlowCloudWorkspace.applyingRemote=true;
+        AppState.workspace.receivingHistory=[];
+        rebuildStateIndexes();
+        for(const tx of serverRows) addReceivingTransaction(tx);
+        for(const tx of pending) addReceivingTransaction({...tx,cloudSynced:false});
+        removeCloudQueueTransactions([...serverIds]);
+        rebuildStateIndexes();
+        rebuildReceivingQuantitiesFromLedger();
+        recalculateStatistics();
+        saveWorkspaceSnapshot();
+        PharmFlowCloudWorkspace.lastReceivingActivityAt=Date.now();
+        AppEvents.emit("receiving:updated",{source:"cloud-ledger-authoritative",synchronized:true});
+        if(typeof refreshEntireUI==="function") refreshEntireUI();
+        else if(typeof refreshAllUI==="function") refreshAllUI();
         PharmFlowCloudWorkspace.lastReceivingSyncAt=nowISO();
         PharmFlowCloudWorkspace.lastReceivingSyncError=null;
-
+        setCloudWorkspaceStatus("synced","Receiving ledger restored");
         return true;
-    }
-    catch(error){
-        Logger.warn(
-            "Receiving transaction pull failed",
-            error
-        );
-
-        PharmFlowCloudWorkspace.lastReceivingSyncError=
-            error?.message || String(error);
-
-        setCloudWorkspaceStatus(
-            "offline",
-            "Receiving sync unavailable"
-        );
-
+    }catch(error){
+        Logger.warn("Receiving transaction pull failed",error);
+        PharmFlowCloudWorkspace.lastReceivingSyncError=error?.message||String(error);
+        setCloudWorkspaceStatus("offline","Receiving sync unavailable");
         return false;
-    }
-    finally{
+    }finally{
         PharmFlowCloudWorkspace.applyingRemote=false;
         PharmFlowCloudWorkspace.receivingSyncBusy=false;
     }
