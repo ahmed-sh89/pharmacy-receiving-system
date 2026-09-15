@@ -1,0 +1,4 @@
+PharmFlow Production A deployment marker.
+Purpose: force GitHub Pages to publish the current authoritative Receiving Ledger code already present on main.
+No database or receiving data changes.
+Date: 2026-09-15
