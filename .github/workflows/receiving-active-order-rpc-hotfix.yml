@@ -1,0 +1,39 @@
+name: Receiving Active Order RPC Hotfix
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/receiving-active-order-rpc-hotfix.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch active-order ledger read
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('cloud-workspace.js')
+          s=p.read_text(encoding='utf-8')
+          old='''const rows=await cloudAuthRpc("list_pharmflow_cloud_transactions_v2",{\n                      p_pharmacy_id:pharmacyId,\n                      p_limit:5000\n                  });'''
+          new='''const activeOrderNumbers=(typeof getActiveReceivingOrderNumbers==="function"\n                      ? getActiveReceivingOrderNumbers()\n                      : [])\n                      .map(normalizeOrderNumber)\n                      .filter(Boolean);\n                  const rows=await cloudAuthRpc("list_pharmflow_cloud_transactions_v3",{\n                      p_pharmacy_id:pharmacyId,\n                      p_order_numbers:activeOrderNumbers,\n                      p_limit:5000\n                  });'''
+          if old not in s:
+              raise SystemExit('Expected v2 ledger read block not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          i=Path('index.html')
+          h=i.read_text(encoding='utf-8')
+          import re
+          h,n=re.subn(r'cloud-workspace\.js\?v=[^"\']+', 'cloud-workspace.js?v=A_ACTIVE_LEDGER_V3_20260915_1', h, count=1)
+          if n!=1:
+              raise SystemExit('cloud-workspace version marker not found')
+          i.write_text(h,encoding='utf-8')
+      - name: Commit hotfix
+        run: |
+          git config user.name "PharmFlow Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add cloud-workspace.js index.html
+          git commit -m "Fix active order ledger truncation"
+          git push
