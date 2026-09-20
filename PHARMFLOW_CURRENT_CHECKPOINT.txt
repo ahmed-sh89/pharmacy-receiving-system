@@ -1,36 +1,23 @@
 # PHARMFLOW CURRENT CHECKPOINT
-
-Date: 23 August 2026
-Version: Phase 2C.11.4.13 — Production Sign-In Speed Restore
-Target: PRODUCTION A ONLY
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: DEVISO3 — Authentication Boundary Root Fix
 Status: READY FOR TEST
 
-## USER-REPORTED REGRESSION
-The anti-flash authentication changes made Sign In wait roughly 2–3 seconds
-before opening Dashboard, while the stale flash itself was not solved.
+Verified before this patch:
+- DEV001 created and active.
+- DEV001 Admin login works.
+- Global GTIN readable and no Admin update control shown.
 
-## DECISION
-The blocking auth-gate strategy is not worth keeping on Production A.
+Failed before this patch:
+- Hard isolation: Test 01 rendered its own Orders/Receiving workspace on B.
 
-## CHANGE
-Restored the last fast authentication reveal behavior:
-- valid Sign In opens Dashboard immediately;
-- cloud/server workspace boot continues in the background;
-- authentication/access checks remain unchanged;
-- no Receiving, Finalize, Archive, Expiry, Global GTIN, database or sync
-  business logic is modified.
+Root fix:
+Non-DEV pharmacy context is rejected before AppState assignment,
+auth:context-ready publication, cloud hydration, or application rendering.
 
-## EXPECTED
-After pressing Sign In, Dashboard opens promptly again instead of waiting for
-the full cloud hydration cycle.
+Authorized tenant:
+DEV001 / ffcac9ca-dfca-4344-9490-a77dcdba9d01
 
-## KNOWN SEPARATE ISSUE
-The brief stale Dashboard flash is NOT claimed fixed by this release.
-It remains a separate deferred issue and must not be confused with Sign-In speed.
-
-## TEST
-1. Deploy to Production A only.
-2. Hard refresh once.
-3. Sign Out -> Sign In.
-4. Confirm Dashboard opens promptly (target: near the previous fast behavior).
-5. Quick check that authenticated pharmacy/account context is correct.
+Exact next action:
+Deploy the three modified runtime files and retest Test 01 on B.

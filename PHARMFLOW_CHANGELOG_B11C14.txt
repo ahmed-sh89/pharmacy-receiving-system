@@ -1,0 +1,5 @@
+B11 Clean14 — Mobile Scroll + Quantity Fix
+- Root cause: mobile filter row was clipped by its parent while scrolling was assigned to the inner row; stale <=430px card-grid rules also remained.
+- Fix: parent is now the touch scroll viewport and inner filter row is max-content one-line.
+- Mobile Batch Qty control reduced to <=260px / 58vw.
+- No JS, Supabase, receiving transaction, PC, or Handheld changes.

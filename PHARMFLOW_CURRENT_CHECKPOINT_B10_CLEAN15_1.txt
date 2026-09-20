@@ -1,0 +1,14 @@
+PHARMFLOW CHECKPOINT — B10 CLEAN15.1
+Status: CODE COMPLETE — REQUIRES USER VERIFICATION
+Target: Project B / pharmflow-dev ONLY
+Production Project A: UNTOUCHED
+
+Change: Handheld authentication refresh race root fix.
+Preserves B10 Clean15 RPC/Egress adaptive scheduler.
+No SQL and no Receiving UI/business logic changes.
+
+User verification required:
+- 20-30 rapid consecutive Handheld scans without returning to Sign In.
+- Handheld -> PC quantity sync.
+- PC -> Handheld quantity sync.
+- Active Order Manifest / REMOVE unchanged.

@@ -1,0 +1,5 @@
+B10 Clean15.3 — HANDHELD RECEIVING REBUILD
+Target: Project B / pharmflow-dev ONLY
+Status: DELIVERED — REQUIRES USER VERIFICATION
+PC: HARD NON-REGRESSION / untouched by Handheld presentation selectors
+Project A: untouched

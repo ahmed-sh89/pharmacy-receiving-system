@@ -111,23 +111,30 @@ window.bootProtectedApplication = async function(){
 
 async function startApplication(){
 
+    /* Do not expose partially hydrated KPI/dashboard markup while the
+       authoritative workspace is still loading. */
+    document.body.classList.add("workspaceBooting");
+
     if(PharmacyApp.initialized){
         /*
            Re-authentication in the same tab must also be server-first.
            Never render the previous/stale runtime before cloud authority.
         */
-        ensureCloudAccountContextIsolation?.();
+        try{
+            ensureCloudAccountContextIsolation?.();
 
-        if(typeof restoreCloudWorkspaceOnLogin==="function"){
-            const ready=await restoreCloudWorkspaceOnLogin();
-            if(isAuthenticatedLedgerReceiving() && !ready) return false;
+            if(typeof restoreCloudWorkspaceOnLogin==="function"){
+                await restoreCloudWorkspaceOnLogin();
+            }
+
+            if(typeof restoreHistoricalArchive==="function"){
+                await Promise.resolve(restoreHistoricalArchive());
+            }
+
+            refreshEntireUI?.();
+        }finally{
+            document.body.classList.remove("workspaceBooting");
         }
-
-        if(typeof restoreHistoricalArchive==="function"){
-            await Promise.resolve(restoreHistoricalArchive());
-        }
-
-        refreshEntireUI?.();
         return;
     }
 
@@ -154,8 +161,7 @@ async function startApplication(){
            Active Order Manifest / Cloud Workspace before router/UI startup.
         */
         if(typeof restoreCloudWorkspaceOnLogin==="function"){
-            const ready=await restoreCloudWorkspaceOnLogin();
-            if(isAuthenticatedLedgerReceiving() && !ready) return false;
+            await restoreCloudWorkspaceOnLogin();
         }
 
         /* Legacy compatibility guard, after authoritative hydration only. */
@@ -204,6 +210,8 @@ async function startApplication(){
 
         PharmacyApp.initialized = true;
 
+        document.body.classList.remove("workspaceBooting");
+
 
         setSystemStatus(
             "READY",
@@ -217,6 +225,8 @@ async function startApplication(){
 
     }
     catch(error){
+
+        document.body.classList.remove("workspaceBooting");
 
         handleFatalStartupError(
             error
@@ -1883,11 +1893,8 @@ setTimeout(enforceOwnerOnlyMasterGTINUI,500);
    PHASE 2C.6.2 — CONSISTENT LIVE DASHBOARD METRICS
 ===================================================== */
 function calculateDashboardMetrics(){
-    const ledgerBacked=typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving();
-    if(ledgerBacked) rebuildReceivingQuantitiesFromLedger();
     const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
-    const history=ledgerBacked ? getActiveCloudReceivingTransactions()
-        : (Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[]);
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
     let completedItems=0, remainingItems=0, remainingUnits=0, overReceivedItems=0, manualItems=0;
     items.forEach(item=>{
         const ordered=Math.max(0,toNumber(item?.orderedQty,0));

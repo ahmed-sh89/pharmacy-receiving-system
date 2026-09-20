@@ -98,6 +98,18 @@ async function nrV2SetQty(reviewId,quantity){
     return Array.isArray(result) ? result[0] : result;
 }
 
+async function nrV2Count(workflow="RECEIVING"){
+    const pharmacyId=nrV2PharmacyId();
+    if(!pharmacyId || typeof authRpc!=="function") return 0;
+    const result=await authRpc("count_pharmflow_needs_review_v2",{
+        p_pharmacy_id:pharmacyId,
+        p_workflow:workflow
+    });
+    if(Array.isArray(result)) return Number(result[0]?.pending_count||result[0]||0)||0;
+    if(result && typeof result==="object") return Number(result.pending_count||0)||0;
+    return Number(result||0)||0;
+}
+
 async function nrV2List(workflow="RECEIVING",orderNumber=null){
     const pharmacyId=nrV2PharmacyId();
     if(!pharmacyId || typeof authRpc!=="function") return [];
@@ -110,6 +122,20 @@ async function nrV2List(workflow="RECEIVING",orderNumber=null){
 
     return Array.isArray(rows) ? rows : [];
 }
+
+async function nrV3ListHistory(workflow="RECEIVING",orderNumber=null){
+    const pharmacyId=nrV2PharmacyId();
+    if(!pharmacyId||typeof authRpc!=="function") return [];
+    try{
+        const rows=await authRpc("list_pharmflow_needs_review_history_v3",{p_pharmacy_id:pharmacyId,p_workflow:workflow,p_order_number:orderNumber||null});
+        return Array.isArray(rows)?rows:[];
+    }catch(error){
+        const message=String(error?.message||error||"").toLowerCase();
+        if(message.includes("could not find the function")||message.includes("schema cache")||message.includes("does not exist")) return await nrV2List(workflow,orderNumber);
+        throw error;
+    }
+}
+window.nrV3ListHistory=nrV3ListHistory;
 
 async function nrV2MarkResolved(row,item,resolutionType,transactionId){
     return authRpc("resolve_pharmflow_needs_review_v2",{
@@ -452,3 +478,5 @@ async function nrV2DeleteResolvedPhoto(photoPath){
 
 window.showPharmFlowOperationReceipt=showPharmFlowOperationReceipt;
 window.nrV2DeleteResolvedPhoto=nrV2DeleteResolvedPhoto;
+
+window.nrV2Count=nrV2Count;

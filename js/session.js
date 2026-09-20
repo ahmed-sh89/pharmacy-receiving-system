@@ -697,7 +697,7 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
         ? normalizeOrderNumber(targetOrderNumber||"")
         : String(targetOrderNumber||"").trim();
     if(!targetOrder){
-        showToast("Select one order before Finalize Receiving","warning");
+        showToast("Select one order before Complete Receiving","warning");
         return false;
     }
     const targetFile=(workspace.orderFiles||[]).find(file=>
@@ -755,93 +755,45 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
             getCurrentOrderReceivedUnits();
 
 
-        const archiveRecord = {
-
-            orderId:
-                workspace.orderId
-                ||
-                createOrderId(),
-
-            orderName:
-                workspace.orderName
-                ||
-                "Receiving Order",
-
-            createdAt:
-                workspace.createdAt
-                ||
-                closedAt,
-
-            startedAt:
-                workspace.startedAt
-                ||
-                workspace.createdAt
-                ||
-                closedAt,
-
-            closedAt:
-                closedAt,
-
-            totalItems:
-                targetItems.length,
-
-            completedItems:
-                AppState.statistics
-                    .completedItems,
-
-            remainingItems:
-                AppState.statistics
-                    .remainingItems,
-
-            overReceivedItems:
-                AppState.statistics
-                    .overReceivedItems,
-
-            manualItems:
-                AppState.statistics
-                    .manualItems,
-
-            totalTransactions:
-                targetTransactions.length,
-
-            totalReceivedUnits:
-                targetItems.reduce((sum,item)=>sum+Number(item.receivedQty||0),0),
-
-            orderFiles:
-                deepClone([targetFile]),
-
-            mappingFiles:
-                deepClone(
-                    workspace.mappingFiles
-                ),
-
-            items:
-                deepClone(targetItems),
-
-            status:
-                "Received",
-
-            sessionId:
-                AppState.session.id,
-
-            deviceId:
-                AppState.session.deviceId,
-
-            /* Permanent report snapshot created at Finalize.
-               Stored inside the cloud archive payload so it survives page
-               close, sign-out and use from another PC. */
-            discrepancyReport:
-                window.__pfFinalizedDiscrepancyReport
-                    ? deepClone(window.__pfFinalizedDiscrepancyReport)
-                    : null,
-
-            fullReceivingReport:
-                window.__pfFinalizedFullReceivingReport
-                    ? deepClone(window.__pfFinalizedFullReceivingReport)
-                    : null
-
+        const minimalOrderFile={
+            documentId:targetOrder,
+            orderNumber:targetOrder,
+            orderDate:targetFile?.orderDate||targetFile?.order_date||targetFile?.documentDate||targetFile?.reportDate||""
         };
 
+        const discrepancySnapshot=window.__pfFinalizedDiscrepancyReport
+            ? deepClone(window.__pfFinalizedDiscrepancyReport)
+            : null;
+        const discrepancyCount=Number(discrepancySnapshot?.totalDiscrepancies||discrepancySnapshot?.rows?.length||0);
+
+        /* B10 Clean 4 — minimal historical retention.
+           Receiving completion keeps only operational identity/date plus a
+           discrepancy snapshot when a difference exists. Source files,
+           photos, per-item workspace rows and receiving transaction history
+           are intentionally not retained in the finalized archive payload. */
+        const archiveRecord = {
+            orderId:workspace.orderId||createOrderId(),
+            orderName:targetOrder,
+            orderNumber:targetOrder,
+            createdAt:workspace.createdAt||closedAt,
+            startedAt:workspace.startedAt||workspace.createdAt||closedAt,
+            closedAt,
+            totalItems:0,
+            completedItems:0,
+            remainingItems:0,
+            overReceivedItems:0,
+            manualItems:0,
+            totalTransactions:0,
+            totalReceivedUnits:0,
+            orderFiles:[minimalOrderFile],
+            mappingFiles:[],
+            items:[],
+            status:"Received",
+            sessionId:AppState.session.id,
+            deviceId:AppState.session.deviceId,
+            discrepancyReport:discrepancyCount>0?discrepancySnapshot:null,
+            fullReceivingReport:null
+        };
 
         /* Phase 2C.10.1: finalized archive is saved server-side BEFORE
            clearing this PC. This is the cross-PC authoritative copy. */
@@ -868,68 +820,10 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
         }
 
 
-        const historicalTransactions =
-            targetTransactions
-                .map(transaction=>({
-
-                    ...deepClone(
-                        transaction
-                    ),
-
-                    orderId:
-                        archiveRecord
-                            .orderId
-
-                }));
-
-
         await dbPut(
-            APP_CONFIG
-                .database
-                .stores
-                .orders,
-
+            APP_CONFIG.database.stores.orders,
             archiveRecord
         );
-
-
-        await dbPutMany(
-            APP_CONFIG
-                .database
-                .stores
-                .transactions,
-
-            historicalTransactions
-        );
-
-
-        await dbPut(
-            APP_CONFIG
-                .database
-                .stores
-                .sessions,
-
-            {
-
-                ...deepClone(
-                    AppState.session
-                ),
-
-                id:
-                    AppState.session.id
-                    ||
-                    createSessionId(),
-
-                archivedAt:
-                    closedAt,
-
-                orderId:
-                    archiveRecord
-                        .orderId
-
-            }
-        );
-
 
         await restoreHistoricalArchive();
 
@@ -1236,7 +1130,25 @@ async function deleteAllHistoricalData(){
         ""
     );
 
-    if(phrase!=="DELETE ALL HISTORICAL DATA"){
+    if(phrase===null){
+        return false;
+    }
+
+    /* Root fix B10 Clean 5: the destructive phrase is semantically exact but
+       case/extra whitespace is not meaningful.  Older code silently returned
+       when the user typed e.g. "Delete All Historical Data", making it look
+       like the delete succeeded while the lifecycle row correctly survived. */
+    const normalizedConfirmation=String(phrase)
+        .trim()
+        .replace(/\s+/g," ")
+        .toUpperCase();
+
+    if(normalizedConfirmation!=="DELETE ALL HISTORICAL DATA"){
+        showToast(
+            "Historical data was not deleted — confirmation phrase did not match.",
+            "warning",
+            9000
+        );
         return false;
     }
 
@@ -1281,6 +1193,23 @@ async function deleteAllHistoricalData(){
             );
         }
 
+        /* Independent read-back closes the lifecycle/duplicate-protection loop.
+           A success UI is shown only after Supabase confirms no historical
+           lifecycle/archive rows remain for this pharmacy. */
+        const rawVerification=await authRpc(
+            "verify_pharmflow_historical_state_v2",
+            {p_pharmacy_id:pharmacyId}
+        );
+        const verification=Array.isArray(rawVerification)
+            ? (rawVerification[0]||{})
+            : (rawVerification||{});
+
+        if(verification.historical_data_empty!==true){
+            throw new Error(
+                "Historical deletion read-back failed — historical order lock still exists"
+            );
+        }
+
         /* Clear only browser-side HISTORICAL stores after the server has
            committed and verified. Current workspace/order state is untouched. */
         await dbClearStore(APP_CONFIG.database.stores.orders);
@@ -1314,9 +1243,9 @@ async function deleteAllHistoricalData(){
         const preservedActive=Number(receipt.active_orders_preserved||0);
 
         const successMessage=
-            "Historical data deleted and server verified · "+
-            "Historical orders removed: "+deletedOrders+
-            " · Finalized archives removed: "+deletedArchives+
+            "Historical Receiving Data deleted successfully · "+
+            "Orders removed: "+deletedOrders+
+            " · Reports removed: "+deletedArchives+
             " · Active orders preserved: "+preservedActive;
 
         const persistentReceipt=document.getElementById("historicalDeleteReceipt");

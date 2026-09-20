@@ -1,0 +1,6 @@
+B11 Clean10 — Responsive Auth
+- Preserved approved Clean9 light premium Login identity.
+- Repositioned desktop P mark above PharmFlow, centered.
+- Added clean mobile single-column responsive layout.
+- Prevented desktop split layout from leaking into phone viewport.
+- No business logic or backend changes.

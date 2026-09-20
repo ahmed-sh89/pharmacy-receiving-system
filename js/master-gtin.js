@@ -15,6 +15,8 @@
 
 const MasterGTINEngine = {
     initialized:false,
+    initializationPromise:null,
+    syncPromise:null,
     db:null,
     dbName:null,
     recordsStore:"records",
@@ -43,11 +45,17 @@ const MasterGTINEngine = {
 
 async function initializeMasterGTIN(){
 
+    if(MasterGTINEngine.initializationPromise){
+        return MasterGTINEngine.initializationPromise;
+    }
+
     if(MasterGTINEngine.initialized){
-        return;
+        return true;
     }
 
     MasterGTINEngine.initialized = true;
+
+    MasterGTINEngine.initializationPromise=(async()=>{
 
     try{
 
@@ -144,6 +152,15 @@ async function initializeMasterGTIN(){
         );
 
     }
+
+    finally{
+        MasterGTINEngine.initializationPromise=null;
+    }
+
+    return !!MasterGTINEngine.db;
+    })();
+
+    return MasterGTINEngine.initializationPromise;
 }
 
 
@@ -375,11 +392,13 @@ async function parseMasterGTINFile(file){
             const gtin = normalizeBarcodeFromExcel(row[header.gtin]);
             const itemCode = normalizeItemCode(row[header.itemCode]);
             const itemName = toSafeString(row[header.itemName]);
-            const category = header.category >= 0 ? toSafeString(row[header.category]) : "";
+            const groupName=header.groupName>=0?toSafeString(row[header.groupName]):"";
+            const category=header.category>=0?toSafeString(row[header.category]):"";
+            const subCategory=header.subCategory>=0?toSafeString(row[header.subCategory]):"";
             if(!gtin || !itemCode){ continue; }
 
-            const key = itemCode + "|" + gtin;
-            recordMap.set(key,{itemCode,gtin,itemName,category});
+            const key=itemCode+"|"+gtin;
+            recordMap.set(key,{itemCode,gtin,itemName,group_name:groupName,category,sub_category:subCategory});
 
             if(!gtinOwners.has(gtin)){ gtinOwners.set(gtin,new Set()); }
             gtinOwners.get(gtin).add(itemCode);
@@ -466,18 +485,9 @@ function findMasterGTINHeader(matrix){
                 ].includes(value)
             );
 
-        const category =
-            normalized.findIndex(value=>
-                [
-                    "category",
-                    "item category",
-                    "product category",
-                    "department",
-                    "group",
-                    "item group",
-                    "classification"
-                ].includes(value)
-            );
+        const groupName=normalized.findIndex(value=>["group","item group","department"].includes(value));
+        const category=normalized.findIndex(value=>["category","item category","product category"].includes(value));
+        const subCategory=normalized.findIndex(value=>["sub category","subcategory","sub-category"].includes(value));
 
         if(gtin >= 0 && itemCode >= 0){
 
@@ -489,7 +499,9 @@ function findMasterGTINHeader(matrix){
                     itemName >= 0
                     ? itemName
                     : itemCode,
-                category:category
+                groupName:groupName,
+                category:category,
+                subCategory:subCategory
             };
 
         }
@@ -634,9 +646,17 @@ async function applyMasterGTINToCurrentOrder(
         });
 
         const orderItem = AppState.indexes.itemByCode.get(record.itemCode);
-        if(orderItem && record.category){
-            orderItem.category = record.category;
+        if(orderItem){
+            if(record.group_name) orderItem.group_name=record.group_name;
+            if(record.category) orderItem.category=record.category;
+            if(record.sub_category) orderItem.sub_category=record.sub_category;
         }
+        (AppState.workspace.orderFiles||[]).forEach(file=>(file.sourceRows||[]).forEach(sourceRow=>{
+            if(normalizeItemCode(sourceRow?.itemCode||"")!==record.itemCode)return;
+            if(record.group_name)sourceRow.group_name=record.group_name;
+            if(record.category)sourceRow.category=record.category;
+            if(record.sub_category)sourceRow.sub_category=record.sub_category;
+        }));
 
         matchedCodes.add(
             record.itemCode
@@ -826,24 +846,42 @@ function getMasterGTINRecordsByItemCodes(db,itemCodes){
    GTIN directly and then attach it to the current order.
 ===================================================== */
 
-async function getPharmacyLearnedGTINRecord(gtin){
+async function getPharmacyLearnedGTINRecord(gtin,{strict=false}={}){
     const normalized=normalizeGTIN(gtin);
     if(!normalized || typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){ return null; }
     try{
-        const rows=await authRpc("resolve_pharmacy_learned_gtin",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized});
+        const rows=await authRpc("resolve_pharmacy_learned_gtin_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized});
         const row=Array.isArray(rows)?rows[0]:rows;
         if(!row || !row.item_code){ return null; }
-        return {gtin:normalized,itemCode:row.item_code,itemName:row.item_name||"",source:"PHARMACY_LEARNED"};
-    }catch(error){ Logger.warn("Local learned GTIN lookup failed",error); return null; }
+        return {
+            mappingId:toSafeString(row.mapping_id||row.mappingId),
+            mappingRevision:toSafeString(row.mapping_revision||row.mappingRevision),
+            gtin:normalizeGTIN(row.gtin||normalized),
+            itemCode:normalizeItemCode(row.item_code||row.itemCode),
+            itemName:toSafeString(row.item_name||row.itemName||""),
+            source:"PHARMACY_LEARNED"
+        };
+    }catch(error){
+        Logger.warn("Local learned GTIN lookup failed",error);
+        if(strict) throw error;
+        return null;
+    }
 }
 
 async function savePharmacyLearnedGTIN(gtin,itemCode,itemName){
     const normalized=normalizeGTIN(gtin), code=normalizeItemCode(itemCode), name=toSafeString(itemName).trim();
     if(!normalized || !code || !name){ throw new Error("GTIN, Item Code and Item Name are required"); }
     if(typeof authRpc!=="function" || !AuthState?.context?.pharmacy_id){ throw new Error("Pharmacy context is unavailable"); }
-    const result=await authRpc("learn_pharmacy_gtin",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized,p_item_code:code,p_item_name:name});
+    await authRpc("learn_pharmacy_gtin",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized,p_item_code:code,p_item_name:name});
+    const learnedRecord=await getPharmacyLearnedGTINRecord(normalized,{strict:true});
+    if(!learnedRecord) throw new Error("Learned GTIN was saved but could not be resolved authoritatively");
     addMappingRecord({itemCode:code,gtin:normalized,source:"PHARMACY_LEARNED"});
-    return Array.isArray(result)?result[0]:result;
+    /* B11 Clean5: a GTIN may have been negatively cached before Needs Review
+       was resolved. The device that performs the resolution must see the new
+       mapping immediately. */
+    PharmFlowGTINScanCache.learnedMissUntil.delete(normalized);
+    cacheGTINScanRecord(normalized,learnedRecord);
+    return learnedRecord;
 }
 
 const PharmFlowGTINScanCache = {
@@ -947,6 +985,9 @@ async function getMasterGTINRecordByGTIN(gtin){
        3. Only if no Global Master match exists, try pharmacy-learned aliases.
     */
     const cached=PharmFlowGTINScanCache.records.get(normalized);
+    /* Learned aliases are pharmacy-scoped mutable data. Callers may use this
+       cached result for classification, but receiving revalidates it before
+       mutation. Global Master records remain entirely local and fast. */
     if(cached) return cached;
 
     let globalRecord=null;
@@ -966,11 +1007,17 @@ async function getMasterGTINRecordByGTIN(gtin){
        cache prevents repeated network waits when an unknown barcode is scanned
        more than once during the same receiving run.
     */
+    const isHandheld=(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice());
     const missUntil=Number(
         PharmFlowGTINScanCache.learnedMissUntil.get(normalized)||0
     );
 
-    if(missUntil > Date.now()){
+    /* B11 Clean5: do not honor a stale negative learned-GTIN cache on the
+       Handheld. Needs Review can be resolved on the PC at any moment and the
+       very next Handheld scan must use the pharmacy-authoritative mapping.
+       This RPC is only on the Global-Master-miss path, so normal scans remain
+       local/cache fast and Clean14 egress behavior is preserved. */
+    if(!isHandheld && missUntil > Date.now()){
         return null;
     }
 
@@ -981,10 +1028,12 @@ async function getMasterGTINRecordByGTIN(gtin){
         return learned;
     }
 
-    PharmFlowGTINScanCache.learnedMissUntil.set(
-        normalized,
-        Date.now()+120000
-    );
+    if(!isHandheld){
+        PharmFlowGTINScanCache.learnedMissUntil.set(
+            normalized,
+            Date.now()+120000
+        );
+    }
 
     return null;
 }
@@ -1023,18 +1072,22 @@ async function uploadGlobalMasterGTINInChunks(records,sourceFile){
     const chunkSize=750;
     for(let start=0; start<records.length; start+=chunkSize){
         const chunk=records.slice(start,start+chunkSize);
-        await authRpc("append_global_master_gtin_import",{
-            p_import_id:importId,
-            p_records:chunk
-        });
+        try{
+            await authRpc("append_global_master_gtin_import_v2",{p_import_id:importId,p_records:chunk});
+        }catch(error){
+            const message=String(error?.message||"");
+            if(/PGRST202|append_global_master_gtin_import_v2.*(does not exist|schema cache)/i.test(message)){
+                await authRpc("append_global_master_gtin_import",{p_import_id:importId,p_records:chunk});
+            }else throw error;
+        }
         if(typeof setLoadingText === "function"){
             setLoadingText("Uploading Global GTIN " + Math.min(start+chunk.length,records.length) + " / " + records.length + "...");
         }
     }
 
-    const commitResult=await authRpc("commit_global_master_gtin_import",{
-        p_import_id:importId
-    });
+    let commitResult;
+    try{commitResult=await authRpc("commit_global_master_gtin_import_v2",{p_import_id:importId});}
+    catch(error){const message=String(error?.message||"");if(/PGRST202|commit_global_master_gtin_import_v2.*(does not exist|schema cache)/i.test(message))commitResult=await authRpc("commit_global_master_gtin_import",{p_import_id:importId});else throw error;}
     const row=Array.isArray(commitResult)?commitResult[0]:commitResult;
     return row || {version:String(importId),item_count:records.length};
 }
@@ -1048,7 +1101,7 @@ async function getGlobalMasterGTINCloudMeta(){
     return row || null;
 }
 
-async function syncGlobalMasterGTINFromCloud(options = {}){
+async function performGlobalMasterGTINSync(options = {}){
     if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
         return false;
     }
@@ -1086,10 +1139,15 @@ async function syncGlobalMasterGTINFromCloud(options = {}){
     const pageSize=1000;
     const records=[];
     for(let offset=0; offset<cloudCount; offset+=pageSize){
-        const pageResult=await authRpc("get_global_master_gtin_page",{
-            p_offset:offset,
-            p_limit:pageSize
-        });
+        let pageResult;
+        try{
+            pageResult=await authRpc("get_global_master_gtin_page_v2",{p_offset:offset,p_limit:pageSize});
+        }catch(error){
+            const message=String(error?.message||"");
+            if(/PGRST202|get_global_master_gtin_page_v2.*(does not exist|schema cache)/i.test(message)){
+                pageResult=await authRpc("get_global_master_gtin_page",{p_offset:offset,p_limit:pageSize});
+            }else throw error;
+        }
         const rows=Array.isArray(pageResult)?pageResult:[];
         rows.forEach(row=>{
             const itemCode=normalizeItemCode(row.item_code);
@@ -1099,7 +1157,9 @@ async function syncGlobalMasterGTINFromCloud(options = {}){
                     itemCode,
                     gtin,
                     itemName:toSafeString(row.item_name || ""),
-                    category:toSafeString(row.category || "")
+                    group_name:toSafeString(row.group_name || ""),
+                    category:toSafeString(row.category || ""),
+                    sub_category:toSafeString(row.sub_category || "")
                 });
             }
         });
@@ -1141,9 +1201,28 @@ async function syncGlobalMasterGTINFromCloud(options = {}){
     return true;
 }
 
+async function syncGlobalMasterGTINFromCloud(options = {}){
+    /* The optional-module loader and startApplication can request readiness
+       together. Join one authoritative download/index pass instead of making
+       older Handhelds process the 52k Global Master twice concurrently. */
+    if(MasterGTINEngine.syncPromise){
+        return MasterGTINEngine.syncPromise;
+    }
+
+    MasterGTINEngine.syncPromise=performGlobalMasterGTINSync(options);
+    try{
+        return await MasterGTINEngine.syncPromise;
+    }finally{
+        MasterGTINEngine.syncPromise=null;
+    }
+}
+
 async function ensureGlobalMasterGTINReady(options = {}){
     const forceCloud=options.forceCloud===true;
     try{
+        if(MasterGTINEngine.initializationPromise){
+            await MasterGTINEngine.initializationPromise;
+        }
         const meta=await getGlobalMasterGTINCloudMeta();
         const cloudVersion=meta ? String(meta.version || "") : "";
         const cloudCount=meta ? Number(meta.item_count || 0) : 0;
@@ -1233,3 +1312,78 @@ async function searchGlobalMasterItems(query, limit = 8){
     });
 }
 window.searchGlobalMasterItems=searchGlobalMasterItems;
+
+/* =====================================================
+   B11 CLEAN 4 — SAFE PHARMACY GTIN CORRECTIONS
+   Corrections are pharmacy-scoped and never mutate System Global Master.
+===================================================== */
+function purgePharmacyLearnedGTINFromWorkspace(gtin){
+    const normalized=normalizeGTIN(gtin);
+    if(!normalized) return;
+    if(Array.isArray(AppState?.workspace?.mappingData)){
+        AppState.workspace.mappingData=AppState.workspace.mappingData.filter(mapping=>
+            !(normalizeGTIN(mapping?.gtin)===normalized && String(mapping?.source||"").toUpperCase()==="PHARMACY_LEARNED")
+        );
+    }
+    PharmFlowGTINScanCache.records.delete(normalized);
+    PharmFlowGTINScanCache.learnedMissUntil.delete(normalized);
+}
+
+function createLearnedGTINLifecycleOperationId(){
+    if(globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    if(!globalThis.crypto?.getRandomValues) throw new Error("Secure operation ID generation is unavailable");
+    const bytes=new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    bytes[6]=(bytes[6]&15)|64;
+    bytes[8]=(bytes[8]&63)|128;
+    const hex=Array.from(bytes,value=>value.toString(16).padStart(2,"0")).join("");
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
+async function reconcileLearnedGTINLifecycleReceiving(){
+    /* Lifecycle V3 writes compensating ledger rows on the server. Pull those
+       rows before rendering so item search, per-order KPIs and every client
+       project exactly the same authoritative ledger after the RPC returns. */
+    if(typeof pullCloudWorkspaceTransactions==="function"){
+        await pullCloudWorkspaceTransactions({force:true});
+    }
+    if(typeof rebuildReceivingQuantitiesFromLedger==="function"){
+        rebuildReceivingQuantitiesFromLedger();
+    }
+    recalculateStatistics?.();
+    refreshEntireUI?.();
+}
+
+async function previewPharmacyLearnedGTINLifecycleV3(gtin,action,newItemCode=null){
+    const normalized=normalizeGTIN(gtin), lifecycleAction=toSafeString(action).trim().toUpperCase();
+    const code=newItemCode==null?null:normalizeItemCode(newItemCode);
+    if(!normalized||!["CORRECT","REMOVE"].includes(lifecycleAction)) throw new Error("Valid GTIN and lifecycle action are required");
+    const result=await authRpc("preview_pharmacy_learned_gtin_lifecycle_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized,p_action:lifecycleAction,p_new_item_code:code});
+    return Array.isArray(result)?result[0]:result;
+}
+
+async function correctPharmacyLearnedGTIN(preview,itemCode,itemName,reason,operationId){
+    const normalized=normalizeGTIN(preview?.gtin), code=normalizeItemCode(itemCode), name=toSafeString(itemName).trim(), why=toSafeString(reason).trim();
+    const mappingId=toSafeString(preview?.mapping?.id), mappingRevision=toSafeString(preview?.mapping?.revision);
+    if(!normalized||!mappingId||!mappingRevision||!code||!name||!why||!operationId) throw new Error("Approved preview, replacement, reason and operation ID are required");
+    if(typeof isPharmacyAdmin==="function" && !isPharmacyAdmin()) throw new Error("Pharmacy ADMIN access is required");
+    const result=await authRpc("correct_pharmacy_learned_gtin_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_operation_id:operationId,p_gtin:normalized,p_expected_mapping_id:mappingId,p_expected_mapping_revision:mappingRevision,p_new_item_code:code,p_new_item_name:name,p_reason:why});
+    purgePharmacyLearnedGTINFromWorkspace(normalized);
+    await reconcileLearnedGTINLifecycleReceiving();
+    return Array.isArray(result)?result[0]:result;
+}
+
+async function removePharmacyLearnedGTIN(preview,reason,operationId){
+    const normalized=normalizeGTIN(preview?.gtin), why=toSafeString(reason).trim();
+    const mappingId=toSafeString(preview?.mapping?.id), mappingRevision=toSafeString(preview?.mapping?.revision);
+    if(!normalized||!mappingId||!mappingRevision||!why||!operationId) throw new Error("Approved preview, reason and operation ID are required");
+    if(typeof isPharmacyAdmin==="function" && !isPharmacyAdmin()) throw new Error("Pharmacy ADMIN access is required");
+    const result=await authRpc("remove_pharmacy_learned_gtin_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_operation_id:operationId,p_gtin:normalized,p_expected_mapping_id:mappingId,p_expected_mapping_revision:mappingRevision,p_reason:why});
+    purgePharmacyLearnedGTINFromWorkspace(normalized);
+    await reconcileLearnedGTINLifecycleReceiving();
+    return Array.isArray(result)?result[0]:result;
+}
+window.createLearnedGTINLifecycleOperationId=createLearnedGTINLifecycleOperationId;
+window.previewPharmacyLearnedGTINLifecycleV3=previewPharmacyLearnedGTINLifecycleV3;
+window.correctPharmacyLearnedGTIN=correctPharmacyLearnedGTIN;
+window.removePharmacyLearnedGTIN=removePharmacyLearnedGTIN;

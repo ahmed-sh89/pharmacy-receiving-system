@@ -1,0 +1,42 @@
+# PHARMFLOW CURRENT CHECKPOINT — B5
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: B5 — Dashboard Parity + Blue Root Fix
+Status: READY FOR TEST
+
+USER-REPORTED B4 REGRESSION
+- KPI cards stacked vertically.
+- Legacy brown receiving palette leaked into the new blue design.
+- Proven Project A dashboard actions were below/clipped from the normal viewport.
+
+ROOT CAUSE
+B4 used display:revert on Dashboard children. Because statisticsGrid is a SECTION,
+its reverted display became block instead of grid. Legacy late-loaded !important
+Latte rules also remained stronger than the first B blue overrides.
+
+ROOT FIX
+- Force six-column KPI grid on PC.
+- Override legacy Latte operational surfaces with approved light-blue/navy palette.
+- Compact Scanner + Last Scan + progress to the proven Project-A proportions.
+- Keep dynamic ui.js actions visible: Search Item, Received Items, Order Items,
+  Needs Review and Receiving Report.
+- Preserve Batch Qty, Clear Screen and Last Scan quantity controls.
+
+NO BUSINESS LOGIC CHANGES
+- receiving.js unchanged.
+- orders.js unchanged.
+- ui.js unchanged.
+- scanner.js unchanged.
+- session/sync unchanged.
+- Supabase/SQL unchanged.
+- DEVISO3 unchanged.
+- Production A untouched.
+
+TEST
+1. Hard refresh B.
+2. Confirm six KPIs are horizontal.
+3. Confirm Dashboard contains no brown operational surfaces.
+4. Confirm Search Item / Received Items / Order Items / Needs Review /
+   Receiving Report are visible.
+5. Scan a known DEV item.
+6. Confirm Batch Qty + Received/Remaining + progress use the existing logic.

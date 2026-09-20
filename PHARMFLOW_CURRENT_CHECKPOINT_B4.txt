@@ -1,0 +1,47 @@
+# PHARMFLOW CURRENT CHECKPOINT — B4
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: B4 — Operational Dashboard Workflow
+Status: READY FOR TEST
+
+APPROVED WORKFLOW
+Orders -> Dashboard -> Receiving
+
+Orders
+- Upload/import order files.
+- Global GTIN matching / Order Data Check.
+- Existing duplicate protections remain unchanged.
+
+Dashboard
+- Restored the existing operational receiving dashboard from the codebase.
+- Total Items / Completed / Remaining / Over Received / Manual / Total Scans.
+- Scan GS1 / Barcode and Item Number / Item Name search.
+- Last Scan + Batch Qty + Ordered / Received / Remaining / Status.
+- Search Item / Needs Review / Received Items / Order Items / Receiving Report.
+- Receiving Progress.
+
+Receiving
+- Reconciliation and discrepancy review.
+- Discrepancy filters and category/search controls.
+- Finalize Receiving.
+- Excel / PDF / Email Differences.
+- Existing receiving table and quantity controls preserved.
+
+NON-REGRESSION
+- No SQL/Supabase schema changes.
+- No receiving.js, orders.js, scanner.js, session.js or report business logic changes.
+- Global GTIN logic unchanged.
+- Repeated-scan quantity logic unchanged.
+- Select Orders logic unchanged.
+- Tenant/pharmacy isolation unchanged.
+- Item Movement and Near Expiry remain independent.
+- Production A untouched.
+
+VERIFY
+1. Upload DEV order from Orders.
+2. Open Dashboard and confirm all six counters.
+3. Scan one known DEV item.
+4. Confirm Last Scan, Received, Remaining, Status and Progress update.
+5. Open Receiving and confirm discrepancy result reflects same scan.
+6. Confirm Excel/PDF/Email/Finalize controls remain present.
+7. Do not mark DONE until user verification.

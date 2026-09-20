@@ -1,0 +1,5 @@
+B10 Clean15.2 — HANDHELD AUTH / INITIALIZATION ROOT FIX
+Status: PLANNED — REQUIRES USER VERIFICATION
+Project: B / pharmflow-dev only
+Preserves: Clean15 adaptive Egress/RPC fix; PC↔Handheld receiving sync; Active Order Manifest/REMOVE; Supabase authority.
+Hard acceptance: 30 consecutive Handheld scans without navigation to Sign In; no zero-KPI boot flash; correct workspace/Active Order status.

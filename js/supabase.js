@@ -12,7 +12,7 @@
 const CLOUD_CONFIG = Object.freeze({
     url:"https://zznoshzcyxmtwfbznjyr.supabase.co",
     publishableKey:"sb_publishable_dulQyE_y0NZK2XyJyW_0TA_xhvwIxCS",
-    pollIntervalMs:1500,
+    pollIntervalMs:5000,
     rpcTimeoutMs:9000
 });
 
@@ -875,7 +875,7 @@ function startCloudPolling(){
         typeof isLikelyZebraDevice === "function" &&
         isLikelyZebraDevice() &&
         AppState.session?.role === "ZEBRA"
-    ) ? 700 : CLOUD_CONFIG.pollIntervalMs;
+    ) ? 2500 : CLOUD_CONFIG.pollIntervalMs;
 
     CloudSyncEngine.pollingTimer = setInterval(function(){
         if(document.visibilityState !== "hidden"){

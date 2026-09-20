@@ -1,0 +1,30 @@
+PHARMFLOW CURRENT CHECKPOINT — B11 CLEAN6 REBUILD BASELINE
+Date: 01 September 2026
+Target: Project B / pharmflow-dev application only
+Shared Supabase: YES — Project A and B share the same Supabase project.
+
+STATUS
+B11 Clean5.1: TEST FAILED / REJECTED.
+B11 Clean6: READY FOR TEST.
+
+PURPOSE
+Clean rollback/rebuild from the last pre-Clean3 B11 application baseline rather than stacking patches on rejected Clean5.1.
+This package intentionally restores the Clean2 application files, then applies one isolated authentication visual owner block.
+No database migration is included or required. The additive GTIN correction SQL already applied to the shared database is left in place and is not rolled back.
+
+CHANGED / RESTORED
+- Restores index.html, dashboard.css, ui.js and receiving.js to the pre-Clean3 Clean2 baseline.
+- Rebuilds auth.css with a single final Clean6 owner block.
+- Desktop Sign In: modern corporate layout, stronger hierarchy, better screen utilization, larger operational form, integrated Show control.
+- Handheld Sign In: separately scoped compact layout designed to fit the device viewport without page scrolling.
+- No Clean5.1 cloud-workspace/state/master-gtin application overrides are shipped in this rollback package.
+
+IMPORTANT
+This package is a stabilization baseline, not completion of the four newly reproduced Receiving defects.
+Known defects to fix from this clean baseline: quantity local/global state conflict; 30-second Last Scan auto-clear; stale Last Scan render race; PC/Handheld learned-GTIN resolver divergence.
+Authentication forced-return-to-login seen in Clean5.1 must not reproduce on this baseline.
+
+NON-REGRESSION
+Preserve Clean9 Active Order REMOVE behavior and Clean14 authoritative sync/egress behavior already present in the underlying project.
+Production A application files remain untouched.
+Do not mark DONE until user verification.

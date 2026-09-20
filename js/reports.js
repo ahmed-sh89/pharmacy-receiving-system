@@ -911,31 +911,104 @@ function getActiveReceivingOrderNumbers(){
 
 function getSelectedReceivingOrderNumbers(){
     const active=getActiveReceivingOrderNumbers();
+    /* The Handheld is a worker surface. Its work scope is assigned by an
+       authorized PC user and saved in the Active Order manifest; it must not
+       read a device-local order preference. Existing workspaces keep their
+       all-active behaviour until an administrator makes the first assignment. */
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        const configured=AppState?.workspace?.handheldScopeConfigured===true;
+        const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+            ? AppState.workspace.handheldOrderNumbers.map(normalizeOrderNumber).filter(order=>active.includes(order))
+            : [];
+        return configured ? [...new Set(assigned)] : active.slice();
+    }
+    /* Receiving Release: order selection is a device-local work scope, never
+       shared business state.  An empty saved scope means ALL ACTIVE ORDERS. */
+    if(window.PharmFlowDeviceWorkScope){
+        /* Local/cache state is rendered before the authoritative manifest can
+           arrive during refresh and sign-in. Never prune against that
+           transient startup state; prune only after manifest authority exists. */
+        const manifestAuthoritative=
+            window.PharmFlowCloudWorkspace?.activeManifestPresent===true &&
+            window.PharmFlowCloudWorkspace?.hydratedPharmacyId===AuthState?.context?.pharmacy_id;
+        return window.PharmFlowDeviceWorkScope.resolve(
+            active,
+            {authoritative:manifestAuthoritative}
+        ).orders;
+    }
     const saved=Array.isArray(AppState?.workspace?.selectedOrderNumbers)
-        ? AppState.workspace.selectedOrderNumbers
-              .map(normalizeOrderNumber)
-              .filter(order=>active.includes(order))
+        ? AppState.workspace.selectedOrderNumbers.map(normalizeOrderNumber).filter(order=>active.includes(order))
         : [];
-
-    if(saved.length){
-        return [...new Set(saved)];
-    }
-
-    const legacy=toSafeString(
-        AppState?.workspace?.selectedOrderNumber || ""
-    ).trim();
-
-    if(legacy.toUpperCase()==="ALL"){
-        return active.slice();
-    }
-
+    if(saved.length) return [...new Set(saved)];
+    const legacy=toSafeString(AppState?.workspace?.selectedOrderNumber||"").trim();
+    if(legacy.toUpperCase()==="ALL") return active.slice();
     const normalized=normalizeOrderNumber(legacy);
-    if(normalized && active.includes(normalized)){
-        return [normalized];
+    return normalized&&active.includes(normalized)?[normalized]:active.slice();
+}
+
+async function setHandheldAssignedOrderNumbers(orderNumbers){
+    /* Assignment must start from fresh manifest + generation authority.
+       This avoids a visible failed first click after refresh. */
+    const prepared=typeof window.prepareActiveOrderManifestWrite==="function"
+        ? await window.prepareActiveOrderManifestWrite()
+        : true;
+    if(!prepared){
+        showToast?.("Unable to refresh Active Orders for assignment","error");
+        return false;
     }
 
-    return active.slice();
+    const active=getActiveReceivingOrderNumbers();
+    const selected=[...new Set((Array.isArray(orderNumbers)?orderNumbers:[])
+        .map(normalizeOrderNumber)
+        .filter(order=>active.includes(order)))];
+    if(!selected.length) return false;
+
+    const previousOrders=Array.isArray(AppState.workspace.handheldOrderNumbers)
+        ? AppState.workspace.handheldOrderNumbers.slice()
+        : [];
+    const previousConfigured=AppState.workspace.handheldScopeConfigured===true;
+    AppState.workspace.handheldOrderNumbers=selected;
+    AppState.workspace.handheldScopeConfigured=true;
+    saveWorkspaceSnapshot?.();
+    AppEvents?.emit?.("receiving:updated",{source:"handheld-assignment"});
+    const save=()=>typeof saveActiveOrderManifest==="function"
+        ? saveActiveOrderManifest({silent:true})
+        : false;
+    let saved=await save();
+
+    /* A reset can occur in the tiny interval after the pre-write refresh.
+       Recover once from that specific generation fence and retry silently.
+       Revision conflicts remain explicit so another administrator's manifest
+       change is never overwritten without a fresh user choice. */
+    const staleGeneration=()=>String(
+        window.PharmFlowCloudWorkspace?.lastManifestSaveError||""
+    ).includes("STALE_WORKSPACE_GENERATION");
+    if(!saved && staleGeneration()){
+        const refreshed=typeof window.prepareActiveOrderManifestWrite==="function"
+            ? await window.prepareActiveOrderManifestWrite()
+            : false;
+        const retryActive=getActiveReceivingOrderNumbers();
+        const retrySelected=selected.filter(order=>retryActive.includes(order));
+        if(refreshed && retrySelected.length){
+            AppState.workspace.handheldOrderNumbers=retrySelected;
+            AppState.workspace.handheldScopeConfigured=true;
+            saveWorkspaceSnapshot?.();
+            AppEvents?.emit?.("receiving:updated",{source:"handheld-assignment-retry"});
+            saved=await save();
+        }
+    }
+    if(!saved){
+        AppState.workspace.handheldOrderNumbers=previousOrders;
+        AppState.workspace.handheldScopeConfigured=previousConfigured;
+        saveWorkspaceSnapshot?.();
+        AppEvents?.emit?.("receiving:updated",{source:"handheld-assignment-reverted"});
+        showToast?.("Handheld assignment could not be saved. Please try again.","error");
+        return false;
+    }
+    if(saved) showToast?.("Handheld orders assigned","success");
+    return saved;
 }
+window.setHandheldAssignedOrderNumbers=setHandheldAssignedOrderNumbers;
 
 function isAllReceivingOrdersSelected(){
     const active=getActiveReceivingOrderNumbers();
@@ -957,33 +1030,16 @@ function getSelectedReceivingOrderNumber(){
 
 function setSelectedReceivingOrderNumbers(orderNumbers){
     const active=getActiveReceivingOrderNumbers();
-    let selected=(Array.isArray(orderNumbers)?orderNumbers:[])
-        .map(normalizeOrderNumber)
-        .filter(order=>active.includes(order));
-
-    selected=[...new Set(selected)];
-
-    if(!selected.length){
-        return false;
+    let selected=[...new Set((Array.isArray(orderNumbers)?orderNumbers:[]).map(normalizeOrderNumber).filter(order=>active.includes(order)))];
+    if(!selected.length) return false;
+    if(window.PharmFlowDeviceWorkScope){
+        if(selected.length===active.length) window.PharmFlowDeviceWorkScope.setAll();
+        else window.PharmFlowDeviceWorkScope.setSelected(selected);
+    }else{
+        AppState.workspace.selectedOrderNumbers=selected;
+        AppState.workspace.selectedOrderNumber=selected.length===active.length?"ALL":selected.length===1?selected[0]:"MULTI";
+        saveWorkspaceSnapshot?.();
     }
-
-    AppState.workspace.selectedOrderNumbers=selected;
-
-    if(selected.length===active.length){
-        AppState.workspace.selectedOrderNumber="ALL";
-        AppState.workspace.orderName="All Orders";
-    }
-    else if(selected.length===1){
-        AppState.workspace.selectedOrderNumber=selected[0];
-        AppState.workspace.orderName=selected[0];
-    }
-    else{
-        AppState.workspace.selectedOrderNumber="MULTI";
-        AppState.workspace.orderName=
-            selected.length+" Orders Selected";
-    }
-
-    saveWorkspaceSnapshot?.();
     refreshEntireUI?.();
     return true;
 }
@@ -1049,18 +1105,6 @@ function getWorkspaceOrderSourceRows(orderNumber){
 function buildReceivedQuantityByOrder(){
     const totals=new Map();
     const activeOrders=getActiveReceivingOrderNumbers();
-
-    if(typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()){
-        rebuildReceivingQuantitiesFromLedger();
-        getActiveCloudReceivingTransactions().forEach(tx=>{
-            const order=normalizeOrderNumber(tx.selectedOrderNumber || tx.orderId || tx.orderNumber || "");
-            const code=normalizeItemCode(tx.itemCode||"");
-            if(!code) return;
-            const key=order+"||"+code;
-            totals.set(key,(totals.get(key)||0)+toNumber(tx.quantity,0));
-        });
-        return totals;
-    }
 
     const ensure=(order,itemCode)=>{
         const key=normalizeOrderNumber(order)+"||"+normalizeItemCode(itemCode);
@@ -1153,6 +1197,23 @@ function buildReceivedQuantityByOrder(){
     return totals;
 }
 
+function getOperationalGroupForReceivingRow(row){
+    const direct=toSafeString(row?.group_name||row?.groupName||row?.Group||"").trim();
+    if(direct) return direct;
+
+    const code=normalizeItemCode(row?.itemCode||row?.["Item Number"]||"");
+    if(!code) return "";
+
+    const workspaceItem=(AppState?.workspace?.orderData||[])
+        .find(item=>normalizeItemCode(item?.itemCode||"")===code);
+    return toSafeString(
+        workspaceItem?.group_name||
+        workspaceItem?.groupName||
+        workspaceItem?.Group||
+        ""
+    ).trim();
+}
+
 function getPerOrderReceivingRows(orderNumber){
     const normalized=normalizeOrderNumber(orderNumber);
     const source=getWorkspaceOrderSourceRows(normalized);
@@ -1193,7 +1254,9 @@ function getPerOrderReceivingRows(orderNumber){
             "Difference":difference,
             "Issue Type":issueType,
             issueKey,
-            "Category":row.category||""
+            "Group":getOperationalGroupForReceivingRow(row),
+            "Category":row.category||"",
+            "Sub Category":row.sub_category||row.subCategory||""
         };
     });
 
@@ -1209,9 +1272,10 @@ function getPerOrderReceivingRows(orderNumber){
                 tx?.undone!==true
             );
 
-        const received=typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()
-            ? toNumber(receivedMap.get(normalized+"||"+normalizeItemCode(item.itemCode)),0)
-            : txs.reduce((sum,tx)=>sum+toNumber(tx?.quantity,0),0);
+        const received=txs.reduce(
+            (sum,tx)=>sum+toNumber(tx?.quantity,0),
+            0
+        );
 
         if(received>0){
             rows.push({
@@ -1223,7 +1287,9 @@ function getPerOrderReceivingRows(orderNumber){
                 "Difference":received,
                 "Issue Type":"Manual / Unordered Extra",
                 issueKey:"manual",
-                "Category":item.category||""
+                "Group":getOperationalGroupForReceivingRow(item),
+                "Category":item.category||"",
+                "Sub Category":item.sub_category||item.subCategory||""
             });
         }
     });
@@ -1253,11 +1319,9 @@ function buildMultiOrderReceivingReport(options={}){
         ? getCurrentReceivingFilterKeys()
         : new Set(["not_received","partial","received_any","over","manual"]);
 
-    const category=
-        visibleOnly &&
-        typeof UI!=="undefined"
-            ? (UI.receivingFilters?.category||"all")
-            : "all";
+    const classification=visibleOnly&&typeof UI!=="undefined"
+        ? (UI.receivingFilters?.classification||{})
+        : {};
 
     const groups=[];
     const flatRows=[];
@@ -1280,17 +1344,12 @@ function buildMultiOrderReceivingReport(options={}){
         const allRows=getPerOrderReceivingRows(orderNumber);
 
         const rows=allRows.filter(row=>{
-            if(!row.issueKey || !selectedKeys.has(row.issueKey)){
+            const received=Number(row?.["Received Qty"]||0);
+            if(!(selectedKeys.has(row.issueKey) || (selectedKeys.has("received_any") && received>0))){
                 return false;
             }
 
-            if(
-                category!=="all" &&
-                toSafeString(row["Category"]||"").trim()!==category
-            ){
-                return false;
-            }
-
+            if(window.PharmFlowClassificationFilters&&!window.PharmFlowClassificationFilters.filter([row],classification).length) return false;
             return true;
         });
 
@@ -1400,9 +1459,12 @@ function getLiveReceivingItemStatus(item){
 }
 
 function buildLiveReceivingReport(options={}){
-    const sourceItems=Array.isArray(options.items)
+    const allSourceItems=Array.isArray(options.items)
         ? options.items
         : (Array.isArray(AppState?.workspace?.orderData) ? AppState.workspace.orderData : []);
+    const sourceItems=options.classification && window.PharmFlowClassificationFilters
+        ? window.PharmFlowClassificationFilters.filter(allSourceItems,options.classification)
+        : allSourceItems;
 
     const orderMetadata=
         typeof getReceivingOrderMetadata==="function"
@@ -1422,7 +1484,9 @@ function buildLiveReceivingReport(options={}){
             "Received Qty":received,
             "Difference":difference,
             "Status":status,
+            "Group":item?.group_name||item?.groupName||item?.Group||item?.category||"",
             "Category":item?.category||"",
+            "Sub Category":item?.sub_category||item?.subCategory||"",
             "Manual":item?.manual===true
         };
     });
@@ -1471,21 +1535,56 @@ function buildLiveReceivingReport(options={}){
 
 function buildReceivingEmailDifferencesReport(liveReport=null){
     const live=liveReport || buildLiveReceivingReport();
-    const rows=(live?.rows||[])
-        .filter(row=>String(row?.Status||"").toUpperCase()!=="COMPLETED")
-        .map(row=>({
-            "Item Number":row["Item Number"],
-            "Item Name":row["Item Name"],
-            "Ordered Qty":row["Ordered Qty"],
-            "Received Qty":row["Received Qty"],
-            "Difference":row["Difference"],
-            "Issue Type":row["Status"],
-            "Category":row["Category"]||""
-        }));
+    const toEmailRow=row=>({
+        "Item Number":row["Item Number"],
+        "Item Name":row["Item Name"],
+        "Ordered Qty":row["Ordered Qty"],
+        "Received Qty":row["Received Qty"],
+        "Difference":row["Difference"],
+        "Issue Type":row["Issue Type"]||row["Status"],
+        "Category":row["Category"]||""
+    });
+
+    /* The email must retain per-order boundaries. A live receiving snapshot
+       is flat, so derive the canonical grouped report while its workspace is
+       still active instead of merging multiple orders into one item table. */
+    const grouped=Array.isArray(live?.orderGroups)
+        ? live
+        : (typeof buildMultiOrderReceivingReport==="function"
+            ? buildMultiOrderReceivingReport({visibleOnly:false})
+            : null);
+
+    const orderGroups=Array.isArray(grouped?.orderGroups)
+        ? grouped.orderGroups
+            .map(group=>{
+                const rows=(group.rows||[]).map(toEmailRow);
+                return {
+                    ...group,
+                    summary:{
+                        ...(group.summary||{}),
+                        discrepancyItems:rows.length
+                    },
+                    rows
+                };
+            })
+            .filter(group=>group.rows.length)
+        : [];
+
+    const rows=orderGroups.length
+        ? orderGroups.flatMap(group=>group.rows)
+        : (live?.rows||[])
+            .filter(row=>String(row?.Status||"").toUpperCase()!=="COMPLETED")
+            .map(toEmailRow);
 
     return {
         orderId:live?.orderId||"",
-        orders:Array.isArray(live?.orders)?live.orders:[],
+        orders:orderGroups.length
+            ? orderGroups.map(group=>({
+                orderNumber:group.orderNumber,
+                orderDate:group.orderDate||""
+            }))
+            : (Array.isArray(live?.orders)?live.orders:[]),
+        orderGroups,
         totalDiscrepancies:rows.length,
         shortageItems:rows.filter(r=>["SHORTAGE","NOT RECEIVED"].includes(r["Issue Type"])).length,
         partialShortageItems:rows.filter(r=>r["Issue Type"]==="SHORTAGE").length,
@@ -1622,7 +1721,9 @@ function buildReceivingDiscrepancyReportLegacy(options={}){
             "Received Qty":received,
             "Difference":difference,
             "Issue Type":issueType,
-            "Category":item.category||""
+            "Group":item.group_name||item.groupName||item.category||"",
+            "Category":item.category||"",
+            "Sub Category":item.sub_category||item.subCategory||""
         });
     });
 
@@ -1696,6 +1797,7 @@ function refreshReceivingVerificationSummary(){
         rsDisplayedItems:visible.totalDiscrepancies,
         rsTotalItems:all.totalDiscrepancies,
         rsShort:all.shortageItems,
+        rsReceived:(all.rows||[]).filter(row=>Number(row?.["Received Qty"]||0)>0).length,
         rsOver:all.overItems,
         rsManual:all.manualExtraItems
     };
@@ -1722,12 +1824,17 @@ window.buildEmailReportFromDisplayedReceiving=
 
 
 function getReceivingReportFileBase(summary){
-    const orderNumbers=(summary?.orders||[])
-        .map(o=>toSafeString(o?.orderNumber||"").trim())
-        .filter(Boolean);
-    const raw=(orderNumbers.length ? orderNumbers.join("_") : toSafeString(summary?.orderId||"Receiving").trim());
-    const safe=raw.replace(/[^a-z0-9_-]+/gi,"_").replace(/^_+|_+$/g,"") || "Receiving";
-    return safe+"-PharmFlow";
+    const orderNumbers=(summary?.orders||[]).map(o=>toSafeString(o?.orderNumber||"").trim()).filter(Boolean);
+    const pharmacyCode=toSafeString(
+        (typeof AuthState!=="undefined" && (AuthState?.context?.pharmacy_code||AuthState?.profile?.pharmacy_code)) ||
+        AppState?.account?.pharmacyCode ||
+        document.getElementById("dashboardPharmacyCode")?.textContent ||
+        document.querySelector("[data-pharmacy-code]")?.textContent ||
+        "PHARMACY"
+    ).trim();
+    const orderPart=orderNumbers.length===1 ? orderNumbers[0] : (orderNumbers.length>1 ? `${orderNumbers.length} Orders` : "Receiving");
+    const safe=value=>toSafeString(value).replace(/[\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim();
+    return `${safe(orderPart)} - ${safe(pharmacyCode||"PHARMACY")}`;
 }
 
 function exportReceivingSummaryExcel(){
@@ -1740,8 +1847,8 @@ function exportReceivingSummaryExcel(){
     (s.orders||[]).forEach(o=>aoa.push([o.orderNumber,o.orderDate,o.fromWarehouse,o.toWarehouse,o.sourceFile]));
     aoa.push([]);
     const headerRow=aoa.length+1;
-    aoa.push(["Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Category"]);
-    s.rows.forEach(r=>aoa.push([r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Category]));
+    aoa.push(["Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Group"]);
+    s.rows.forEach(r=>aoa.push([r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""]));
     const ws=XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"]=[{wch:18},{wch:44},{wch:13},{wch:13},{wch:12},{wch:25},{wch:22}];
     ws["!freeze"]={xSplit:0,ySplit:headerRow};
@@ -1767,7 +1874,7 @@ function exportReceivingSummaryPDF(){
         {key:"Received Qty",label:"Received",x:454,w:68},
         {key:"Difference",label:"Difference",x:522,w:68},
         {key:"Issue Type",label:"Issue Type",x:590,w:150},
-        {key:"Category",label:"Category",x:740,w:68}
+        {key:"Group",label:"Group",x:740,w:68}
     ];
     const rowH=24;
     let y=0,pageNo=0;
@@ -1809,7 +1916,7 @@ function exportReceivingSummaryPDF(){
         if(y+rowH>pageH-38){footer();doc.addPage();header();}
         doc.setFont("helvetica","normal");doc.setFontSize(8);
         const nameLines=doc.splitTextToSize(String(r["Item Name"]||""),cols[1].w-8).slice(0,2);
-        const catLines=doc.splitTextToSize(String(r.Category||""),cols[6].w-4).slice(0,2);
+        const catLines=doc.splitTextToSize(String(r.Group||""),cols[6].w-4).slice(0,2);
         doc.text(String(r["Item Number"]||""),cols[0].x,y);
         doc.text(nameLines,cols[1].x,y);
         doc.text(String(r["Ordered Qty"]),cols[2].x,y);

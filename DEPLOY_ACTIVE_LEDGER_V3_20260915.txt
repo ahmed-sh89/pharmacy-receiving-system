@@ -1,2 +1,0 @@
-Deploy production receiving active-order ledger v3 fix.
-Source commit: edf930a8ecaff91a445fcd398ec7146bb5434381

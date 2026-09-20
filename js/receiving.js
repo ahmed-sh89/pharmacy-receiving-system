@@ -97,6 +97,9 @@ function resolveCurrentWorkspaceGTIN(gtin){
        MASTER mappings are projected only for current order items; CLOUD
        mappings are the PC shared-session projection of those current items.
     */
+    const mapping=(AppState?.workspace?.mappingData||[]).find(record=>
+        normalizeGTIN(record?.gtin||"")===normalized
+    );
     const indexedCode=normalizeItemCode(
         AppState?.indexes?.itemByGTIN?.get(normalized)||""
     );
@@ -110,16 +113,12 @@ function resolveCurrentWorkspaceGTIN(gtin){
             return {
                 item,
                 itemCode:indexedCode,
-                source:"CURRENT_WORKSPACE"
+                source:mapping?.source||"CURRENT_WORKSPACE"
             };
         }
     }
 
     /* Defensive direct lookup in case index rebuild is one render behind. */
-    const mapping=(AppState?.workspace?.mappingData||[]).find(record=>
-        normalizeGTIN(record?.gtin||"")===normalized
-    );
-
     if(!mapping) return null;
 
     const code=normalizeItemCode(mapping.itemCode||"");
@@ -136,7 +135,24 @@ function resolveCurrentWorkspaceGTIN(gtin){
         : null;
 }
 
-async function receiveParsedBarcode(parsed){
+async function revalidateLearnedGTINForReceiving(gtin){
+    const learned=await getPharmacyLearnedGTINRecord(gtin,{strict:true});
+    if(!learned){
+        purgePharmacyLearnedGTINFromWorkspace(gtin);
+        return null;
+    }
+    purgePharmacyLearnedGTINFromWorkspace(gtin);
+    addMappingRecord({itemCode:learned.itemCode,gtin:learned.gtin,source:"PHARMACY_LEARNED"});
+    return learned;
+}
+
+function learnedGTINResolution(record){
+    if(!record||String(record.source||"").toUpperCase()!=="PHARMACY_LEARNED") return null;
+    if(!record.mappingId||!record.mappingRevision) return null;
+    return {kind:"PHARMACY_LEARNED",mappingId:record.mappingId,mappingRevision:record.mappingRevision,normalizedGtin:normalizeGTIN(record.gtin),resolvedItemCode:normalizeItemCode(record.itemCode)};
+}
+
+async function receiveParsedBarcode(parsed,queueOptions={}){
     if(!parsed||!parsed.gtin){
         handleReceivingFailure("Barcode could not be identified");
         return false;
@@ -161,18 +177,35 @@ async function receiveParsedBarcode(parsed){
        workspace immediately instead of waiting for the entire 52k-record
        Global Master cache on the Handheld.
        ========================================================= */
-    const current=resolveCurrentWorkspaceGTIN(gtin);
+    let current=resolveCurrentWorkspaceGTIN(gtin);
+
+    if(current?.item && String(current.source||"").toUpperCase()==="PHARMACY_LEARNED"){
+        let authoritative;
+        try{ authoritative=await revalidateLearnedGTINForReceiving(gtin); }
+        catch(error){ handleReceivingFailure(error?.message||"Unable to verify learned GTIN mapping"); return false; }
+        if(authoritative){
+            current={...current,item:getReceivingItemByItemCode(authoritative.itemCode),itemCode:authoritative.itemCode,source:authoritative.source,learnedRecord:authoritative};
+        }else{
+            current=null;
+        }
+    }
 
     if(current?.item){
+        if(isKnownItemOutsideHandheldScope(current.item)){
+            return showKnownItemOutsideHandheldScope(current.item);
+        }
+
         return receiveOrderItem({
             item:current.item,
             quantity:getValidReceivingQuantity(parsed.quantity),
+            transactionId:queueOptions.transactionId||null,
             gtin,
             lot:parsed.lot,
             expiry:parsed.expiry,
             serial:parsed.serial,
             source:APP_CONFIG.transactionSources.scanner,
-            manual:false
+            manual:false,
+            gtinResolution:learnedGTINResolution(current.learnedRecord)
         });
     }
 
@@ -188,8 +221,21 @@ async function receiveParsedBarcode(parsed){
         Logger.warn("Global GTIN fallback lookup failed",error);
     }
 
+    if(String(masterRecord?.source||"").toUpperCase()==="PHARMACY_LEARNED"){
+        try{ masterRecord=await revalidateLearnedGTINForReceiving(gtin); }
+        catch(error){ handleReceivingFailure(error?.message||"Unable to verify learned GTIN mapping"); return false; }
+    }
+
     if(!masterRecord?.itemCode){
         return await quickResolveUnrecognizedGTIN(parsed,null);
+    }
+
+    const workspaceItem=(AppState?.workspace?.orderData||[]).find(row=>
+        normalizeItemCode(row?.itemCode||"")===normalizeItemCode(masterRecord.itemCode||"")
+    )||null;
+
+    if(isKnownItemOutsideHandheldScope(workspaceItem)){
+        return showKnownItemOutsideHandheldScope(workspaceItem);
     }
 
     const item=getReceivingItemByItemCode(masterRecord.itemCode);
@@ -207,12 +253,14 @@ async function receiveParsedBarcode(parsed){
     return receiveOrderItem({
         item,
         quantity:getValidReceivingQuantity(parsed.quantity),
+        transactionId:queueOptions.transactionId||null,
         gtin,
         lot:parsed.lot,
         expiry:parsed.expiry,
         serial:parsed.serial,
         source:APP_CONFIG.transactionSources.scanner,
-        manual:false
+        manual:false,
+        gtinResolution:learnedGTINResolution(masterRecord)
     });
 }
 
@@ -227,6 +275,7 @@ async function receiveParsedBarcode(parsed){
 function clearHandheldActionCard(){
     document.getElementById("handheldReceivingReviewCard")?.remove();
     document.getElementById("handheldKnownExtraCard")?.remove();
+    document.body.classList.remove("handheldActionCardActive");
     window.__pfReceivingReviewDraft=null;
 }
 
@@ -260,6 +309,34 @@ function getReceivingItemByItemCode(itemCode){
             .filter(Boolean);
         return memberships.some(order=>selected.includes(order));
     })||null;
+}
+
+/* A Handheld can identify an item from the shared Active Orders workspace
+   while that item belongs only to an order assigned elsewhere. Keep this
+   separate from an unknown GTIN and from an unordered extra: it must never
+   alter quantities or invite the worker to add the item. */
+function isKnownItemOutsideHandheldScope(item){
+    const isHandheld=
+        typeof isLikelyZebraDevice==="function" &&
+        isLikelyZebraDevice();
+
+    return Boolean(isHandheld && item && getReceivingEligibleOrders(item).length===0);
+}
+
+function showKnownItemOutsideHandheldScope(item){
+    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
+        .map(normalizeOrderNumber)
+        .filter(Boolean))];
+    const orderLabel=memberships.length ? memberships.join(", ") : "another active order";
+
+    setScanBoxState?.("action");
+    Logger.warn("Known item scanned outside Handheld assignment",item?.itemCode,memberships);
+    showToast?.(
+        `ITEM IN ANOTHER ACTIVE ORDER (${orderLabel}) — NOT ASSIGNED TO THIS HANDHELD`,
+        "warning"
+    );
+    focusScannerInput?.();
+    return false;
 }
 
 function getReceivingEligibleOrders(item){
@@ -394,10 +471,14 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
            </div>`
         : ""
       }
-      <label class="handheldReviewQtyLabel">
+      <div class="handheldReviewQtyLabel">
         <span>PHYSICAL QTY</span>
-        <input id="handheldKnownExtraQty" type="number" min="1" step="1" inputmode="numeric" value="1">
-      </label>
+        <div class="handheldReviewQtyStepper">
+          <button type="button" data-qty-step="-1" aria-label="Decrease quantity">−</button>
+          <input id="handheldKnownExtraQty" type="number" min="1" step="1" inputmode="numeric" value="1">
+          <button type="button" data-qty-step="1" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
       <button id="btnHandheldAddExtra" class="handheldReviewSave" type="button">
         ${needsPharmacistTarget ? "SAVE EXTRA FOR REVIEW" : "ADD EXTRA & NEXT"}
       </button>
@@ -406,9 +487,19 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
       </button>
     `;
 
-    lastScan.insertAdjacentElement("afterend",card);
+    /* Keep the exception card in the worker's immediate scan path, above
+       Last Scan, while the compact one-screen layout hides Last Scan until
+       the exception is saved or cancelled. */
+    lastScan.insertAdjacentElement("beforebegin",card);
+    document.body.classList.add("handheldActionCardActive");
 
     const qty=card.querySelector("#handheldKnownExtraQty");
+    card.querySelectorAll("[data-qty-step]").forEach(button=>{
+        button.addEventListener("click",()=>{
+            const next=Math.max(1,(Number(qty?.value||1)||1)+Number(button.dataset.qtyStep||0));
+            if(qty) qty.value=String(next);
+        });
+    });
 
     const submit=async()=>{
         const button=card.querySelector("#btnHandheldAddExtra");
@@ -555,7 +646,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
         <div class="handheldUnknownGTIN">
           <span>GTIN</span>
           <strong>${escapeHTML(gtin)}</strong>
-          <small>✓ SAVED TO NEEDS REVIEW</small>
+          <small>NOT FOUND IN GLOBAL GTIN MASTER</small>
         </div>
 
         <button id="btnHandheldReviewPhoto" class="handheldPhotoButton" type="button">
@@ -563,17 +654,22 @@ async function renderUnknownGTINHandheld(parsed,options={}){
         </button>
         <input id="handheldReviewPhotoInput" type="file" accept="image/*" capture="environment" hidden>
 
-        <label class="handheldReviewQtyLabel">
+        <div class="handheldReviewQtyLabel">
           <span>PHYSICAL QTY</span>
-          <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="1">
-        </label>
+          <div class="handheldReviewQtyStepper">
+            <button type="button" data-qty-step="-1" aria-label="Decrease quantity">−</button>
+            <input id="handheldReviewQty" type="number" min="1" step="1" inputmode="numeric" value="1">
+            <button type="button" data-qty-step="1" aria-label="Increase quantity">+</button>
+          </div>
+        </div>
 
-        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE &amp; NEXT</button>
+        <button id="btnSaveHandheldReview" class="handheldReviewSave" type="button">SAVE &amp; SEND TO NEEDS REVIEW</button>
         <button id="btnCancelHandheldReview" class="handheldReviewCancel" type="button">CANCEL SCAN</button>
       </div>
     `;
 
-    lastScan.insertAdjacentElement("afterend",card);
+    lastScan.insertAdjacentElement("beforebegin",card);
+    document.body.classList.add("handheldActionCardActive");
     flashHandheldRed();
 
     const photoButton=card.querySelector("#btnHandheldReviewPhoto");
@@ -581,6 +677,12 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     const qty=card.querySelector("#handheldReviewQty");
     const saveButton=card.querySelector("#btnSaveHandheldReview");
     const cancelButton=card.querySelector("#btnCancelHandheldReview");
+    card.querySelectorAll("[data-qty-step]").forEach(button=>{
+        button.addEventListener("click",()=>{
+            const next=Math.max(1,(Number(qty?.value||1)||1)+Number(button.dataset.qtyStep||0));
+            if(qty) qty.value=String(next);
+        });
+    });
     let uploadedPhotoPath=null;
 
     photoButton?.addEventListener("click",()=>photoInput?.click());
@@ -610,7 +712,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
             const quantity=Math.max(1,Number(qty?.value||1)||1);
             await nrV2SetQty(draft.review_id,quantity);
 
-            card.querySelector(".handheldReviewStatus").textContent="SAVED FOR REVIEW ✓";
+            card.querySelector(".handheldReviewStatus").textContent="SAVED TO NEEDS REVIEW ✓";
             card.classList.remove("urgent");
             card.classList.add("saved");
 
@@ -800,9 +902,9 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         };
         const receiveMatched=async(item,manual=false)=>{
             try{
-                await savePharmacyLearnedGTIN(gtin,item.itemCode,item.itemName);
+                const learned=await savePharmacyLearnedGTIN(gtin,item.itemCode,item.itemName);
                 addMappingRecord({itemCode:item.itemCode,gtin,source:"PHARMACY_LEARNED"});
-                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual});
+                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual,gtinResolution:learnedGTINResolution(learned)});
                 finish(tx);
             }catch(e){
                 if(typeof setScanBoxState==="function") setScanBoxState("error");
@@ -832,6 +934,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 const tx=receiveOrderItem({
                     item,
                     quantity:getValidReceivingQuantity(parsed.quantity),
+                    transactionId:queueOptions.transactionId||null,
                     gtin,
                     lot:parsed.lot,
                     expiry:parsed.expiry,
@@ -851,9 +954,9 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             const code=normalizeItemCode(panel.querySelector('[data-code]').value), name=toSafeString(panel.querySelector('[data-name]').value).trim();
             if(!code||!name){ panel.querySelector('.gtinPanelMessage').textContent="Enter Item Code and Item Name"; return; }
             try{
-                await savePharmacyLearnedGTIN(gtin,code,name);
+                const learned=await savePharmacyLearnedGTIN(gtin,code,name);
                 let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true}); item.manual=true;
-                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true});
+                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true,gtinResolution:learnedGTINResolution(learned)});
                 finish(tx);
             }catch(e){ if(typeof setScanBoxState==="function") setScanBoxState("error"); panel.querySelector('.gtinPanelMessage').textContent=e.message||"Unable to add extra"; }
         });
@@ -1302,7 +1405,10 @@ function receiveOrderItem(options){
                 options.manual === true,
 
             targetOrder:
-                targetOrder
+                targetOrder,
+
+            gtinResolution:
+                options.gtinResolution||null
 
         });
 
@@ -1321,6 +1427,12 @@ function receiveOrderItem(options){
 
         return false;
 
+    }
+
+    /* AppState normalizes transaction fields; attach learned provenance to
+       the stored record before finishReceivingChange emits the queue event. */
+    if(options.gtinResolution){
+        transaction.gtinResolution=options.gtinResolution;
     }
 
     finishReceivingChange(
@@ -2037,6 +2149,12 @@ function applyQuantityAdjustment(options){
 
     }
 
+    const targetOrder=resolveReceivingTransactionOrder(item,options.targetOrder||"");
+    const scopedMetrics=getReceivingDisplayMetrics(item,targetOrder);
+    const oldScopedReceived=scopedMetrics
+        ? toNumber(scopedMetrics.receivedQty,0)
+        : toNumber(item.receivedQty,0);
+
     const oldReceived =
         toNumber(
             item.receivedQty,
@@ -2047,7 +2165,7 @@ function applyQuantityAdjustment(options){
         oldReceived +
         difference;
 
-    if(newReceived < 0){
+    if(oldScopedReceived+difference < 0){
 
         showToast(
             "Received quantity cannot be below zero",
@@ -2065,13 +2183,11 @@ function applyQuantityAdjustment(options){
         item.manual !== true
     ){
 
-        const ordered =
-            toNumber(
-                item.orderedQty,
-                0
-            );
+        const ordered = scopedMetrics
+            ? toNumber(scopedMetrics.orderedQty,0)
+            : toNumber(item.orderedQty,0);
 
-        if(newReceived > ordered){
+        if(oldScopedReceived+difference > ordered){
 
             showToast(
                 "Quantity exceeds ordered quantity",
@@ -2098,10 +2214,10 @@ function applyQuantityAdjustment(options){
                 createTransactionId(),
 
             orderId:
-                resolveReceivingTransactionOrder(item),
+                targetOrder,
 
             selectedOrderNumber:
-                resolveReceivingTransactionOrder(item),
+                targetOrder,
 
             dateTime:
                 nowISO(),
@@ -2133,6 +2249,12 @@ function applyQuantityAdjustment(options){
 
             deviceType:
                 getReceivingRuntimeDeviceType(),
+
+            correctionReason:
+                options.correctionReason || "",
+
+            correctsTransactionId:
+                options.correctsTransactionId || "",
 
             manual:
                 item.manual === true

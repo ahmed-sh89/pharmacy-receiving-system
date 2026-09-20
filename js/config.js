@@ -374,6 +374,22 @@ const APP_CONFIG = Object.freeze({
 
         },
 
+        itemMovement:{
+
+            id:
+                "itemMovement",
+
+            elementId:
+                "page-item-movement",
+
+            title:
+                "Item Movement",
+
+            subtitle:
+                "Import order data and analyze item movement"
+
+        },
+
         expiry:{
 
             id:

@@ -1,0 +1,89 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-08-31 — B11 CLEAN 1
+
+STATUS
+- Target: Project B / pharmflow-dev ONLY.
+- Production A: UNTOUCHED.
+- B10 Clean 9 Active Order REMOVE root fix: USER VERIFIED / DONE — NON-REGRESSION.
+- B10 Clean 14 PC↔Handheld receiving quantity sync: USER VERIFIED for functional sync; egress reduction remains under observation and is not yet DONE.
+- B11 Clean 1 Handheld Receiving Alignment: READY FOR TEST — NOT DONE.
+
+B11 CLEANUP PRINCIPLE APPLIED
+- No patch-on-patch implementation.
+- Reviewed the current Handheld/Needs Review ownership path first.
+- Removed overlapping legacy Handheld/Needs Review CSS ownership blocks and replaced them with one B11 owner block.
+- Replaced the legacy auth orange/scroll patch stack with one PharmFlow B11 auth owner block.
+- Desktop administrative Receiving controls are disabled at the Handheld DOM permission boundary, not merely visually covered.
+
+IMPLEMENTED — HANDHELD UX
+1) Sign In
+- PharmFlow logo/name lockup rebalanced.
+- Legacy orange/brown auth accents removed from the active owner block.
+- Inputs/buttons/focus states aligned to the new blue PharmFlow identity.
+- Compact Handheld layout targets a single viewport without requiring normal Sign In scrolling.
+
+2) Mode Selection
+- Receiving / Expiry mode selector rebuilt with the new PharmFlow identity, clearer hierarchy and larger touch targets.
+- No receiving/expiry business logic changed.
+
+3) Receiving Worker Surface
+- PC/admin controls removed from Handheld worker access: Needs Review administration, Adjust, Receiving Report, Manage Orders, Select Orders and Session Status.
+- History/Recent remains available to the worker.
+- Scan-ready indicator changed to a compact pulsing vertical green indicator.
+- Existing receiving scan logic, +1 transaction behavior and local-batch semantics preserved.
+- Existing large-quantity path remains additive: tapping batch quantity opens ADD REMAINING PACKS; it does not edit global Received Total.
+
+4) Known Item · Not in Order
+- Warning state uses amber, distinct from blue item/action data.
+- Quantity control redesigned with large +/- controls.
+- Existing target-order/review logic preserved.
+
+5) Unknown GTIN
+- Red exception card redesigned for clarity and one-screen operation.
+- Explicit NOT FOUND IN GLOBAL GTIN MASTER state.
+- Large +/- physical quantity controls.
+- SAVE & SEND TO NEEDS REVIEW action is explicit.
+- Internal durable draft-before-save safety is preserved; user-facing copy no longer falsely implies PC sync before final Save.
+
+6) Recent / Undo
+- Recent/History entry point made clearer.
+- Undo action redesigned as a touch-safe red-outline correction action.
+- Existing audit-trail behavior and This Handheld vs All Devices permissions preserved.
+
+IMPLEMENTED — PC NEEDS REVIEW
+- PC Needs Review redesigned to the new PharmFlow blue/slate/red semantic identity.
+- Grouped review-case behavior is preserved.
+- Added a lightweight pharmacy-scoped grouped pending-count RPC and PC watcher so Handheld Needs Review submissions become visible on PC without full workspace polling.
+- Full review rows are still fetched only when the PC review panel is opened; this protects the B10 Clean14 egress objective.
+
+DATABASE MIGRATION
+- REQUIRED on Project B before deploying B11 JS:
+  PHASE_B11_HANDHELD_NEEDS_REVIEW_SYNC.sql
+- Backward-compatible: adds one index + one read-only count RPC.
+- No deletes, no destructive schema change, no Global GTIN change, no RLS weakening.
+
+CHANGED FILES
+- index.html
+- css/auth.css
+- css/dashboard.css
+- js/ui.js
+- js/receiving.js
+- js/needs-review.js
+- PHASE_B11_HANDHELD_NEEDS_REVIEW_SYNC.sql
+
+FOCUSED VERIFICATION
+1) Handheld Sign In: all normal login controls visible in one screen; no legacy orange/brown input styling.
+2) Mode screen: Receiving and Expiry render cleanly; both open the correct workflow.
+3) Handheld Receiving: PC/admin controls are absent and cannot receive focus/clicks.
+4) Scan known ordered item: +1 still records; PC quantity converges; refresh persists.
+5) Quantity: +/- affects current local batch; tap batch quantity and add remaining packs (e.g. first scan +1, add 99 => total +100), without editing global Received Total.
+6) Known Not in Order: amber warning, quantity +/- and existing save path work.
+7) Unknown GTIN: set qty, Save & Send; within ~6 seconds PC Needs Review badge increments; open panel and confirm grouped case/quantity appears.
+8) Recent/History: This Handheld Undo works; All Devices remains view-only; audit correction persists.
+9) Regression: Clean 9 Active Order REMOVE remains fixed.
+10) Regression: B10 Clean14 PC↔Handheld receiving sync remains correct and no idle/full-workspace polling is reintroduced.
+
+EXACT NEXT ACTION
+- Run PHASE_B11_HANDHELD_NEEDS_REVIEW_SYNC.sql on DEV Supabase.
+- Deploy this B11 Clean 1 modified-files package to Project B.
+- Hard refresh PC and Handheld, then run tests 1–10 above.
+- Keep status READY FOR TEST until Product Owner verification.

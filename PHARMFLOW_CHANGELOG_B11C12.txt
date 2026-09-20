@@ -1,0 +1,5 @@
+B11 Clean12 — Mobile Compact Cards
+- Compact mobile Order Item Browser cards.
+- Single-line horizontally scrollable item names on phone.
+- Horizontal mobile filter/sort rail for Order, Category, High Priority and Quantity.
+- No desktop, Handheld, logic, SQL, Auth or GTIN changes.

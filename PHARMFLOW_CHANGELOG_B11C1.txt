@@ -1,0 +1,11 @@
+31 AUGUST 2026 — B11 CLEAN 1
+- Handheld Receiving visual/permission cleanup implemented using one consolidated ownership pass; old overlapping Handheld/Needs Review CSS ownership removed rather than covered by a new patch.
+- Auth screen aligned to PharmFlow new identity and compact Handheld viewport.
+- Mode selector redesigned.
+- Handheld worker no longer has desktop administrative Receiving controls.
+- Scan-ready vertical indicator, clearer History/Recent, simplified Undo, Known-not-in-order amber warning and Unknown-GTIN red review flow implemented.
+- Existing additive batch quantity behavior preserved; no global Received Total edit granted to worker.
+- PC Needs Review redesigned.
+- Added lightweight grouped Needs Review count RPC + PC count watcher for cross-device visibility without full-row polling.
+- Project B only; Production A untouched.
+- Status: READY FOR TEST.

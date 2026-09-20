@@ -1,0 +1,72 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-01 — B11 CLEAN5.1 — SHARED DB SAFE
+Status: READY FOR TEST (NOT DONE)
+Target: App files -> Project B / pharmflow-dev ONLY. Shared Supabase migration -> additive compatibility layer used by B; Production A app remains untouched.
+
+BASELINE
+- User had NOT deployed B11 Clean3 or Clean4.
+- Before-fix issues reproduced on Project B:
+  1) Handheld local Batch Qty remained above authoritative Received Total after PC correction to zero.
+  2) Last Scan did not auto-clear after 30 seconds.
+  3) Last Scan could display an older item (Neorin) after Sapofen scans while Neorin received quantity did not change.
+  4) Needs Review learned GTIN resolved on PC but immediate Handheld rescan returned Item Not Recognised.
+
+ROOT-CAUSE CHANGES
+- Quantity state: Handheld runtime batch is reconciled/clamped to authoritative Received Total after sync; UI-only reconciliation never writes Supabase.
+- Auto-clear: 30-second Last Scan cleanup now applies to Handheld too and uses CLEAR SCREEN semantics (UI-only; no undo/delete/quantity change).
+- Last Scan integrity: device-local Last Scan is preserved across legacy cloud snapshot refresh; setLastScan rejects older scan timestamps replacing a newer result.
+- GTIN consistency: Handheld bypasses stale negative pharmacy-learned GTIN cache on Global-Master miss; learning clears negative cache and seeds positive cache on resolving device.
+- Includes B11 Clean3 UX work and B11 Clean4 GTIN Corrections/Audit.
+- Clean14 delta receiving sync/egress files are preserved; cloud-workspace is based on Clean14 and only adds device-local Last Scan protection.
+
+DATABASE
+- Project A and Project B share the SAME Supabase database.
+- PHASE_B11C5_SAFE_GTIN_CORRECTIONS.sql was re-audited for shared-database compatibility.
+- Transactional + dependency preflight; failure rolls back.
+- Additive only: new pharmacy-scoped audit table + new correction/removal RPC names.
+- Does NOT replace receiving/manifest/transaction RPCs used by Production A.
+- Does NOT modify System Global GTIN Master or existing learned-GTIN rows during migration.
+- Correction/removal only occurs later when an authorized admin explicitly uses the B UI.
+
+MODIFIED FILES
+index.html
+css/auth.css
+css/dashboard.css
+js/state.js
+js/ui.js
+js/receiving.js
+js/master-gtin.js
+js/cloud-workspace.js
+PHASE_B11C5_SAFE_GTIN_CORRECTIONS.sql
+
+FOCUSED VERIFICATION
+A. Quantity reconciliation
+1. Handheld scan item twice; Batch Qty=2.
+2. PC correct authoritative Received Total to 0.
+3. Wait for sync.
+Expected: Handheld Total Received=0, Remaining correct, Batch Qty=0; minus must not present a contradictory positive batch.
+
+B. Auto-clear
+1. Scan a normal item and do nothing.
+2. Wait 30 seconds.
+Expected: Last Scan/current result clears only; received quantity/history remain unchanged.
+
+C. Last Scan identity
+1. Reproduce Sapofen repeated scans.
+Expected: Last Scan never reverts to older Neorin. Receiving totals remain correct.
+
+D. GTIN cross-device
+1. Keep existing deliberately wrong learned GTIN test case.
+2. Immediately rescan same GTIN on Handheld.
+Expected before correction: Handheld now resolves the same pharmacy-learned item as PC (no stale Item Not Recognised).
+3. Use GTIN Corrections to correct/remove mapping, then rescan.
+Expected: corrected behavior immediately; System Global Master unchanged.
+
+REGRESSION
+- PC↔Handheld quantity sync.
+- Clean9 Active Order REMOVE.
+- Needs Review grouping/photos/strict cleanup.
+- Global Master normal scan/read.
+- Clean14 egress/delta sync behavior.
+
+EXACT NEXT ACTION
+Run the shared-safe SQL migration once on the shared Supabase, then deploy APP FILES from this package to Project B only. Do not deploy app files to Project A. Hard refresh B PC + Handheld, then execute tests A-D in order.

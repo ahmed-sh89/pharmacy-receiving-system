@@ -1,0 +1,68 @@
+PHARMFLOW CURRENT CHECKPOINT — PROJECT B RECEIVING RELEASE
+Date: 2026-09-19
+Branch: receiving-release-build
+Status: READY FOR TEST — DATABASE MIGRATION APPLIED, NOT USER VERIFIED
+
+Verified baseline preserved:
+- Project A untouched.
+- Handheld auth/session root fix and RECONNECTING behavior are protected.
+- Prior 20 consecutive Handheld scans remain the non-regression baseline.
+- Active Order Manifest remains authoritative and was not rebuilt.
+
+Implemented on isolated Project B branch:
+- Durable Handheld scan acceptance queue in IndexedDB with unique transaction IDs and ordered processing.
+- Cloud receiving upload serialized; v4 fallback is limited to function-missing/schema-cache pre-migration cases.
+- Device-local My Work Orders scope, stale-order pruning, ALL ACTIVE ORDERS semantics, Handheld CHANGE ORDERS.
+- Compact Handheld status: ONLINE/OFFLINE/RECONNECTING with one order number or order count.
+- Recognized receiving activity grouped by contiguous same-item/order/device scanner action; Edit and Delete Entry create compensating receiving transactions, never delete item/order.
+- Needs Review photo Storage objects preserved on resolve/delete; History client prepared for PENDING/RESOLVED/DELETED through versioned RPC.
+- Group → Category → Sub Category model preserved in Global Master parsing/cache, order items, source rows and reports.
+- Cascading Receiving classification filters and Order Items classification controls.
+- High Priority print path retained; existing 80mm receipt sizing/borders/ellipsis behavior preserved.
+- Handheld compact/no-scroll CSS guard and high-contrast minus control.
+- Additive Receiving Release migration applied successfully to shared Supabase; legacy RPCs preserved.
+
+Prepared migration:
+PHASE2C1151_RECEIVING_RELEASE_PREPARED.sql
+- additive group_name/sub_category columns
+- append_pharmflow_receiving_action_v4 idempotent acknowledgement + authoritative aggregate
+- Needs Review history v3
+- versioned Global GTIN hierarchy import/commit/page RPCs
+- versioned order source save/get RPCs
+- authenticated-only grants; legacy RPCs unchanged
+
+Changed release files:
+- cloud-workspace.js
+- index.html
+- ui.js
+- js/handheld-runtime.js
+- js/master-gtin.js
+- js/needs-review.js
+- js/orders.js
+- js/receiving-release.js
+- js/receiving.js
+- js/reports.js
+- js/state.js
+- css/responsive.css
+- PHASE2C1151_RECEIVING_RELEASE_PREPARED.sql
+
+Database verification after migration:
+- Receiving ledger unchanged at 3,610 rows.
+- Global GTIN Master unchanged at 52,792 rows.
+- Order source rows unchanged at 4,536 rows.
+- group_name/category/sub_category columns verified on all three target tables.
+- All seven versioned release RPCs verified present.
+- New SECURITY DEFINER RPCs: anon EXECUTE=false, authenticated EXECUTE=true, fixed search_path.
+- Security Advisor shows pre-existing legacy warnings; no new release RPC is exposed to anon.
+
+Still required before USER VERIFIED / DONE:
+1. Project B real-device tests: rapid scans; restart/reconnect queue recovery; concurrent same-item PC+Handheld; device Work Scope; grouped History Edit/Delete; Needs Review states; classification consistency; Handheld no-scroll; High Priority receipt printer.
+2. Only after user verification: separate controlled B→A promotion.
+3. Then close Receiving feature work and move Project B to Expiry.
+
+Critical non-regression:
+- Do not modify Project A during B verification.
+- Do not change Active Order Manifest authority.
+- Supabase remains authoritative; local Work Scope is preference only and IndexedDB queue is transport only.
+- No time-based same-GTIN debounce for Receiving.
+- Do not delete Needs Review Storage photos until lifecycle safety is separately proven.

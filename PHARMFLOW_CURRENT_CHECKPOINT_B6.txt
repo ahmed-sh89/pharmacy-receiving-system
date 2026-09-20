@@ -1,0 +1,43 @@
+# PHARMFLOW CURRENT CHECKPOINT — B6
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: B6 — Dashboard Exact Layout
+Status: READY FOR TEST
+
+USER REQUEST
+- Put KPI counters at top.
+- Fix KPI overlap.
+- Keep them horizontal.
+- Increase text size.
+- Fix Receiving Progress visual.
+- Match the approved reference layout.
+- Stop generating design images; apply changes directly in code.
+
+IMPLEMENTATION
+- 6 KPI cards at top in one row.
+- Scanner immediately below.
+- Single clean Last Scan block.
+- Existing Project A action buttons directly below Last Scan.
+- Receiving Progress directly below actions.
+- Light-blue / navy only.
+- Larger typography.
+- No receiving/scanning business logic changed.
+
+NO BUSINESS LOGIC CHANGES
+- receiving.js unchanged
+- orders.js unchanged
+- scanner.js unchanged
+- ui.js unchanged
+- session/sync unchanged
+- Supabase/SQL unchanged
+- DEVISO3 unchanged
+- Production A untouched
+
+TEST
+1. Hard refresh B.
+2. Confirm six KPIs are first and horizontal.
+3. Confirm no KPI overlap.
+4. Confirm one Last Scan block only.
+5. Confirm Search Item / Received Items / Order Items / Receiving Report / Needs Review visible.
+6. Confirm progress bar is clean and directly below actions.
+7. Scan one DEV item and verify existing count logic.

@@ -1,0 +1,37 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-01 — B11 Clean8 Auth Clean Rebuild
+
+STATUS
+READY FOR TEST — Project B only. Production A application untouched.
+
+SCOPE
+Login visual rebuild only. No auth/session/business logic, Receiving, GTIN, Supabase schema, RPC, data, or synchronization changes.
+
+ROOT CLEANUP
+- Removed the prior B11 Clean2 Handheld auth override block.
+- Removed B11 Clean6 auth rebuild overrides.
+- Removed B11 Clean7 light-login override block.
+- auth.css now has one B11 login owner block after the stable base/account styles.
+
+IMPLEMENTED
+- No visual separator line between Brand and Sign-in areas.
+- No white form panel / white empty columns; shell is one continuous light cool-blue surface.
+- Larger desktop typography and controls.
+- Email and Password have distinct light field colors for rapid visual recognition.
+- Larger, cleaner focus states and password Show control.
+- Old copper PharmFlow mark recolored to the approved blue/navy identity.
+- PC and Handheld remain explicitly responsive; Handheld login remains designed to fit one operational screen.
+
+AFFECTED FILES
+- index.html (auth.css cache version only)
+- css/auth.css
+- assets/pharmflow-mark.svg
+
+NON-REGRESSION
+No JavaScript changed. No SQL. No Supabase changes. No Production A deployment.
+
+EXACT TEST
+1. Deploy modified files to Project B only.
+2. Hard refresh PC.
+3. Verify: no vertical divider; no white blank form panel; larger text; blue logo; colored Email/Password fields; clean focus/Show control.
+4. Check Handheld login fits without whole-page scroll.
+5. Sign in once to verify login behavior remains unchanged.

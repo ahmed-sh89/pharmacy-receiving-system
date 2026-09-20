@@ -22,7 +22,8 @@ const HandheldRuntime={
     terminationTimer:null,
     focusTimer:null,
     lastRaw:"",
-    lastAt:0
+    lastAt:0,
+    lastVisibleItemCode:""
 };
 
 function hhIsDevice(){
@@ -42,8 +43,6 @@ function hhReceivingSessionReady(){
     return !!(
         typeof AuthState!=="undefined" &&
         AuthState?.context?.pharmacy_id &&
-        typeof PharmFlowCloudWorkspace!=="undefined" &&
-        PharmFlowCloudWorkspace.hydratedPharmacyId===AuthState.context.pharmacy_id &&
         Array.isArray(AppState?.workspace?.orderFiles) &&
         AppState.workspace.orderFiles.length>0 &&
         Array.isArray(AppState?.workspace?.orderData) &&
@@ -63,16 +62,45 @@ function hhSetVisualState(state,label){
 function hhRefreshReadyState(){
     const mode=hhMode();
     if(mode==="RECEIVING"){
-        const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData.length:0;
-        const orders=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles.length:0;
-        if(hhReceivingSessionReady()){
-            hhSetVisualState("ready",`ONLINE · WORKSPACE SYNCED · ${orders} ORDERS · ${items} ITEMS`);
-        }else{
-            hhSetVisualState("blocked",`WAITING FOR ACTIVE ORDER · ${orders} ORDERS · ${items} ITEMS`);
+        const visibleCode=String(AppState?.workspace?.lastScan?.itemCode||"").trim();
+        if(HandheldRuntime.lastVisibleItemCode && !visibleCode){
+            /* Last Scan disappearing is a visual batch boundary only. Saved
+               quantities remain untouched; a later scan of the same item starts
+               a fresh local batch at 1. */
+            if(typeof resetCurrentLocalBatch==="function"){
+                resetCurrentLocalBatch();
+            }
         }
+        HandheldRuntime.lastVisibleItemCode=visibleCode;
+        const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData.length:0;
+        const activeOrders=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():activeOrders;
+        const orders=selectedOrders.length;
+        const orderScopeLabel=orders===1?"ORDER "+selectedOrders[0]:orders+" ORDERS";
+        const authenticated=!!AuthState?.context?.pharmacy_id;
+        const authReconnecting=AuthState?.connectionDegraded===true;
+        const online=navigator.onLine!==false;
+        const initializing=document.body.dataset.hhWorkspaceLoading==="1";
+
+        if(initializing){
+            hhSetVisualState("syncing","SYNCING WORKSPACE…");
+        }else if(authReconnecting){
+            hhSetVisualState("offline",`RECONNECTING • ${orderScopeLabel}`);
+        }else if(!online){
+            hhSetVisualState("offline",`OFFLINE • ${orderScopeLabel}`);
+        }else if(!authenticated){
+            hhSetVisualState("blocked","WORKSPACE NOT CONNECTED");
+        }else if(hhReceivingSessionReady()){
+            hhSetVisualState("ready",`ONLINE • ${orderScopeLabel}`);
+        }else{
+            hhSetVisualState("blocked","WORKSPACE CONNECTED · NO ACTIVE ORDERS");
+        }
+        window.refreshHandheldWorkspaceStatus?.();
     }else if(mode==="EXPIRY"){
+        HandheldRuntime.lastVisibleItemCode="";
         hhSetVisualState("ready","READY TO SCAN");
     }else{
+        HandheldRuntime.lastVisibleItemCode="";
         hhSetVisualState("idle","");
     }
 }
@@ -86,14 +114,19 @@ function hhIsImmediateDuplicate(raw){
 }
 
 async function hhProcessReceiving(raw,input){
-    if(HandheldRuntime.receivingBusy) return false;
     if(!hhReceivingSessionReady()){
         if(input) input.value="";
         hhSetVisualState("blocked","SESSION / ORDERS NOT READY");
         showToast("No synchronized Active Order is available for this pharmacy","warning");
         return false;
     }
-    if(hhIsImmediateDuplicate(raw)) return false;
+    /* Every genuine hardware scan is durably accepted before resolver/network
+       work. Equal GTIN values are not time-debounced. */
+    if(window.PharmFlowReceivingScanQueue?.enqueue){
+        if(input) input.value="";
+        hhSetVisualState("processing","PROCESSING…");
+        return window.PharmFlowReceivingScanQueue.enqueue(raw);
+    }
 
     HandheldRuntime.receivingBusy=true;
     if(input) input.value="";
@@ -171,6 +204,10 @@ function hhCaptureKey(event){
 }
 
 function hhWorkerIsEditing(){
+    /* History/Needs Review is an operational modal. Keep the hardware scan
+       target suspended until the worker closes it. */
+    if(document.getElementById("handheldScansOverlay")) return true;
+
     const active=document.activeElement;
     if(!active || active===document.body) return false;
 
@@ -304,13 +341,6 @@ function hhStartFocusWatch(){
     },900);
 }
 
-function hhStartWorkspaceWatch(){
-    clearInterval(HandheldRuntime.terminationTimer);
-    HandheldRuntime.terminationTimer=setInterval(()=>{
-        if(document.visibilityState!=="hidden") hhRefreshWorkspaceAuthority();
-    },2200);
-}
-
 function hhInstall(){
     if(HandheldRuntime.installed || !hhIsDevice()) return;
     HandheldRuntime.installed=true;
@@ -341,6 +371,7 @@ function hhInstall(){
     window.addEventListener("focus",()=>wakeHandheldRuntime("window-focus"));
     window.addEventListener("pageshow",()=>wakeHandheldRuntime("pageshow"));
     window.addEventListener("online",()=>wakeHandheldRuntime("online"));
+    window.addEventListener("pharmflow:auth-connection",hhRefreshReadyState);
 
     if(typeof AppEvents!=="undefined"){
         AppEvents.on?.("session:updated",()=>{hhRefreshReadyState();setTimeout(hhFocusActiveScanner,30);});
@@ -354,7 +385,6 @@ function hhInstall(){
         });
     }
 
-    hhStartWorkspaceWatch();
     hhStartFocusWatch();
 
     setTimeout(()=>{
@@ -369,129 +399,13 @@ window.HandheldRuntime=HandheldRuntime;
 window.hhRefreshReadyState=hhRefreshReadyState;
 window.hhRepairScannerFocus=hhRepairScannerFocus;
 
-/* Production safety repair: a stale persisted Handheld flag must never
-   classify a normal desktop browser as Handheld by itself. Keep the flag only
-   when the current environment independently qualifies as Handheld or an
-   explicit test override is active. */
-(function repairPersistedHandheldFlag(){
-    try{
-        if(localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")!=="1") return;
-
-        const ua=String(navigator.userAgent||"").toLowerCase();
-        const enterpriseHandheld=/zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
-        const params=new URLSearchParams(window.location.search||"");
-        const explicitHandheld=
-            params.get("handheld")==="1" ||
-            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE")==="1";
-        const android=/android/i.test(ua);
-        const shortestScreenSide=Math.min(
-            Number(window.screen?.width||window.innerWidth||9999),
-            Number(window.screen?.height||window.innerHeight||9999)
-        );
-        const handheldFormFactor=
-            android &&
-            shortestScreenSide<=600 &&
-            Number(navigator.maxTouchPoints||0)>0;
-
-        if(!enterpriseHandheld && !explicitHandheld && !handheldFormFactor){
-            localStorage.removeItem("PHARMFLOW_HANDHELD_DEVICE");
-        }
-    }catch(_){}
-})();
-
-/* ============================================================
-   RECEIVING VISUAL CLEAR + LOCAL BATCH BOUNDARY
-
-   CLEAR SCREEN is still UI-only: it never edits the ledger, Received Total,
-   or Supabase. It only closes the current local consecutive-scan batch so the
-   next scan of the same item starts at Batch Qty 1.
-
-   PC already owns its 30-second visual auto-clear in ui.js. This lightweight
-   local watcher observes that clear (and either device's manual Clear Screen)
-   and closes the batch. Handheld additionally gets the same 30-second visual
-   auto-clear. No network polling is added here.
-============================================================ */
-const ReceivingVisualClear={
-    lastKey:"",
-    timer:null,
-    watchTimer:null
-};
-
-function pfReceivingLastScanKey(scan){
-    if(!scan) return "";
-    return String(
-        scan.transactionId ||
-        [scan.itemCode,scan.dateTime,scan.receivedQty,scan.gtin].join("|")
-    );
+/* Install the hardware boundary as soon as the DOM is ready. Waiting for the
+   full window load lets slow cache/network work leave DataWedge input parked
+   in the scan field before the capture listener exists. Keep load as an
+   idempotent fallback for older Zebra Chrome builds. */
+if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(hhInstall,0),{once:true});
+}else{
+    setTimeout(hhInstall,0);
 }
-
-function pfResetCurrentLocalBatch(){
-    if(typeof ReceivingEngine==="undefined" || !ReceivingEngine?.currentLocalBatch) return;
-    ReceivingEngine.currentLocalBatch.itemCode="";
-    ReceivingEngine.currentLocalBatch.quantity=0;
-}
-
-function pfReceivingVisualClearBlocked(){
-    return !!document.querySelector(
-        "#handheldReceivingReviewCard,#handheldKnownExtraCard,.modal.open"
-    );
-}
-
-function pfArmHandheldAutoClear(key){
-    clearTimeout(ReceivingVisualClear.timer);
-    ReceivingVisualClear.timer=null;
-
-    if(!hhIsDevice() || !key) return;
-
-    ReceivingVisualClear.timer=setTimeout(()=>{
-        const current=AppState?.workspace?.lastScan;
-        if(pfReceivingLastScanKey(current)!==key) return;
-
-        if(pfReceivingVisualClearBlocked()){
-            pfArmHandheldAutoClear(key);
-            return;
-        }
-
-        AppState.workspace.lastScan=null;
-        pfResetCurrentLocalBatch();
-        ReceivingVisualClear.lastKey="";
-        clearTimeout(ReceivingVisualClear.timer);
-        ReceivingVisualClear.timer=null;
-
-        refreshEntireUI?.();
-        window.hhRefreshReadyState?.();
-        try{ document.activeElement?.blur?.(); }catch(_){}
-        setTimeout(()=>focusScannerInput?.(),30);
-    },30000);
-}
-
-function pfWatchReceivingVisualClear(){
-    if(typeof AppState==="undefined" || !AppState?.workspace) return;
-
-    const current=AppState.workspace.lastScan;
-    const key=pfReceivingLastScanKey(current);
-
-    if(key && key!==ReceivingVisualClear.lastKey){
-        ReceivingVisualClear.lastKey=key;
-        pfArmHandheldAutoClear(key);
-        return;
-    }
-
-    /* PC auto-clear/manual clear and Handheld manual clear all converge here.
-       Detect the visual transition to empty and close only the local batch. */
-    if(!key && ReceivingVisualClear.lastKey){
-        pfResetCurrentLocalBatch();
-        ReceivingVisualClear.lastKey="";
-        clearTimeout(ReceivingVisualClear.timer);
-        ReceivingVisualClear.timer=null;
-    }
-}
-
-function pfInstallReceivingVisualClear(){
-    clearInterval(ReceivingVisualClear.watchTimer);
-    ReceivingVisualClear.watchTimer=setInterval(pfWatchReceivingVisualClear,250);
-    pfWatchReceivingVisualClear();
-}
-
-window.addEventListener("load",()=>setTimeout(pfInstallReceivingVisualClear,180));
-window.addEventListener("load",()=>setTimeout(hhInstall,120));
+window.addEventListener("load",()=>setTimeout(hhInstall,0),{once:true});

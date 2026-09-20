@@ -1,377 +1,291 @@
-/*======================================================
-RESPONSIVE
-======================================================*/
+/* =============================================================
+   PHARMFLOW B11 CLEAN 11 — RESPONSIVE APPLICATION OWNER
+   Clean replacement for the legacy responsive rules.
+   Mobile browser and Handheld are intentionally different owners.
+============================================================= */
 
 @media (max-width:1400px){
-
-  .statisticsGrid{
-
-      grid-template-columns:repeat(3,1fr);
-
-  }
-
+  body:not(.zebraDevice) .statisticsGrid{grid-template-columns:repeat(3,minmax(0,1fr));}
 }
 
-
-
-@media (max-width:1200px){
-
-  .mainApplication{
-
-      margin-left:220px;
-
-  }
-
-  .sidebar{
-
-      width:220px;
-
-  }
-
+@media (max-width:1200px) and (min-width:1025px){
+  body:not(.zebraDevice) .mainApplication{margin-left:220px;}
+  body:not(.zebraDevice) .sidebar{width:220px;}
 }
-
-
 
 @media (max-width:1024px){
-
-  .sidebar{
-
-      transform:translateX(-100%);
-
-      width:260px;
-
-  }
-
-  .sidebar.show{
-
-      transform:translateX(0);
-
-  }
-
-  .sidebarCloseButton{
-
-      display:flex;
-
-      align-items:center;
-
-      justify-content:center;
-
-  }
-
-  .mainApplication{
-
-      margin-left:0;
-
-  }
-
-  .sidebarOverlay.show{
-
-      display:block;
-
-  }
-
-  .statisticsGrid{
-
-      grid-template-columns:repeat(2,1fr);
-
-  }
-
-  .twoColumnLayout{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .reportSummaryGrid{
-
-      grid-template-columns:repeat(2,1fr);
-
-  }
-
-  .actionCardGrid{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .healthGrid,
-
-  .sessionInfoGrid,
-
-  .archiveSummaryGrid{
-
-      grid-template-columns:repeat(2,1fr);
-
-  }
-
-  .lastScanGrid{
-
-      grid-template-columns:repeat(2,1fr);
-
-  }
-
+  body:not(.zebraDevice) .sidebar{transform:translateX(-100%);width:260px;}
+  body:not(.zebraDevice) .sidebar.show{transform:translateX(0);}
+  body:not(.zebraDevice) .sidebarCloseButton{display:flex;align-items:center;justify-content:center;}
+  body:not(.zebraDevice) .mainApplication{margin-left:0;}
+  body:not(.zebraDevice) .sidebarOverlay.show{display:block;}
+  body:not(.zebraDevice) .statisticsGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  body:not(.zebraDevice) .twoColumnLayout,
+  body:not(.zebraDevice) .actionCardGrid{grid-template-columns:1fr;}
+  body:not(.zebraDevice) .reportSummaryGrid,
+  body:not(.zebraDevice) .healthGrid,
+  body:not(.zebraDevice) .sessionInfoGrid,
+  body:not(.zebraDevice) .archiveSummaryGrid,
+  body:not(.zebraDevice) .lastScanGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 
-
-
+/* ---------- Normal phone browser (NOT the pharmacy Handheld) ---------- */
 @media (max-width:768px){
-
-  .mainContent{
-
-      padding:14px;
-
+  html,body:not(.zebraDevice){max-width:100%;overflow-x:hidden;}
+  body:not(.zebraDevice) .mainApplication,
+  body:not(.zebraDevice) .mainContent,
+  body:not(.zebraDevice) .appPage,
+  body:not(.zebraDevice) .contentCard,
+  body:not(.zebraDevice) .scanPanel{
+    width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
   }
+  body:not(.zebraDevice) .mainApplication{margin-left:0!important;overflow-x:hidden!important;}
+  body:not(.zebraDevice) .mainContent{padding:10px!important;overflow-x:hidden!important;}
 
-  .topBar{
-
-      padding:12px;
-
+  /* Header becomes a compact mobile app bar. Desktop status cards are hidden;
+     the sidebar hamburger remains the navigation entry point. */
+  body:not(.zebraDevice) .topBar{
+    width:100%!important;min-width:0!important;min-height:58px!important;padding:8px 10px!important;
+    gap:7px!important;box-sizing:border-box!important;overflow:hidden!important;
   }
+  body:not(.zebraDevice) .topBarLeft{min-width:0!important;flex:1 1 auto!important;gap:7px!important;overflow:hidden!important;}
+  body:not(.zebraDevice) .topBarRight{display:none!important;}
+  body:not(.zebraDevice) .topBar .brandText,
+  body:not(.zebraDevice) .topBar .pageContext,
+  body:not(.zebraDevice) .topBarLeft>*{min-width:0!important;}
+  body:not(.zebraDevice) .topBar .brandText strong{font-size:16px!important;white-space:nowrap!important;}
+  body:not(.zebraDevice) .topBar .brandText span{font-size:8px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
 
-  .topBarRight{
+  body:not(.zebraDevice) .pageHeading{margin-bottom:8px!important;}
+  body:not(.zebraDevice) .pageHeading h1{font-size:20px!important;line-height:1.08!important;}
+  body:not(.zebraDevice) #pageHeadingSubtitle{font-size:10px!important;}
 
-      display:none;
-
+  /* Useful two-column KPI overview instead of a scaled-down desktop canvas. */
+  body:not(.zebraDevice) #page-dashboard .statisticsGrid,
+  body:not(.zebraDevice) #page-dashboard .dashboardStats{
+    width:100%!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;
   }
-
-  .pageHeading h1{
-
-      font-size:19px;
-
+  body:not(.zebraDevice) #page-dashboard .statCard{
+    width:100%!important;min-width:0!important;min-height:72px!important;padding:9px 8px 8px 42px!important;
   }
+  body:not(.zebraDevice) #page-dashboard .statCard::before{left:8px!important;width:28px!important;height:28px!important;font-size:16px!important;}
+  body:not(.zebraDevice) #page-dashboard .statCardLabel{font-size:8px!important;}
+  body:not(.zebraDevice) #page-dashboard .statCard strong{font-size:21px!important;}
 
-  .scanPanel{
+  /* Receiving workspace owns the full phone width. */
+  body:not(.zebraDevice) #page-dashboard .scanPanel{margin:0 0 8px!important;padding:10px!important;border-radius:12px!important;}
+  body:not(.zebraDevice) #page-dashboard .scanPanelHeader{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;}
+  body:not(.zebraDevice) #page-dashboard .scanPanelHeader h2{font-size:17px!important;}
+  body:not(.zebraDevice) #page-dashboard #scanBox{width:100%!important;min-width:0!important;min-height:52px!important;height:auto!important;padding:6px!important;}
+  body:not(.zebraDevice) #page-dashboard #barcodeInput{min-width:0!important;width:100%!important;font-size:14px!important;}
+  body:not(.zebraDevice) #page-dashboard .scanBoxIndicator{font-size:8px!important;padding:0 7px!important;}
 
-      padding:18px;
+  /* Action bar wraps instead of extending beyond the viewport. */
+  body:not(.zebraDevice) #page-dashboard .pfnActionBar{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;width:100%!important;min-width:0!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnReceivingActionGroup{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnReceivingActionGroup .pfnAction{width:100%!important;min-width:0!important;min-height:38px!important;font-size:9px!important;padding:5px!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnOrderControlGroup{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;width:100%!important;min-width:0!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnManageOrdersButton{width:100%!important;min-width:0!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector{width:100%!important;min-width:0!important;max-width:none!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnSessionStatus{display:none!important;}
 
-  }
+  body:not(.zebraDevice) #page-dashboard #lastScanCard{padding:10px!important;}
+  body:not(.zebraDevice) #page-dashboard .lastScanGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  body:not(.zebraDevice) #page-dashboard .lastScanField{min-width:0!important;}
+  body:not(.zebraDevice) #page-dashboard .lastScanField:first-child{grid-column:1/-1!important;}
 
-  .scanPanelHeader{
-
-      flex-direction:column;
-
-  }
-
-  .scanStatusBadge{
-
-      align-self:flex-start;
-
-  }
-
-  .scanBox{
-
-      min-height:66px;
-
-  }
-
-  #barcodeInput{
-
-      font-size:18px;
-
-  }
-
-  .statisticsGrid{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .reportFilterGrid{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .reportSummaryGrid{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .healthGrid,
-
-  .sessionInfoGrid,
-
-  .archiveSummaryGrid{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .lastScanGrid{
-
-      grid-template-columns:1fr;
-
-  }
-
-  .settingsButtonGrid{
-
-      flex-direction:column;
-
-  }
-
-  .settingsButtonGrid button{
-
-      width:100%;
-
-  }
-
-  .modalCard{
-
-      width:100%;
-
-      margin:12px;
-
-  }
-
+  body:not(.zebraDevice) .reportFilterGrid,
+  body:not(.zebraDevice) .reportSummaryGrid,
+  body:not(.zebraDevice) .healthGrid,
+  body:not(.zebraDevice) .sessionInfoGrid,
+  body:not(.zebraDevice) .archiveSummaryGrid{grid-template-columns:1fr!important;}
+  body:not(.zebraDevice) .settingsButtonGrid{flex-direction:column!important;}
+  body:not(.zebraDevice) .settingsButtonGrid button{width:100%!important;}
+  body:not(.zebraDevice) .modalCard{width:calc(100vw - 20px)!important;max-width:calc(100vw - 20px)!important;margin:10px!important;}
 }
-
-
 
 @media (max-width:480px){
-
-  .brandText{
-
-      display:block;
-
-  }
-
-  .topBar{
-
-      min-height:auto;
-
-  }
-
-  .scanPanelHeader h2{
-
-      font-size:21px;
-
-  }
-
-  .contentCard{
-
-      padding:16px;
-
-  }
-
-  .scanBox{
-
-      padding:8px;
-
-  }
-
-  .scanBoxIcon{
-
-      width:44px;
-
-      height:44px;
-
-      font-size:22px;
-
-  }
-
-  #barcodeInput{
-
-      font-size:16px;
-
-  }
-
-  .primaryButton,
-
-  .secondaryButton,
-
-  .warningButton,
-
-  .dangerButton,
-
-  .dangerOutlineButton{
-
-      width:100%;
-
-  }
-
+  body:not(.zebraDevice) .mainContent{padding:8px!important;}
+  body:not(.zebraDevice) #page-dashboard .statisticsGrid,
+  body:not(.zebraDevice) #page-dashboard .dashboardStats{gap:6px!important;}
+  body:not(.zebraDevice) #page-dashboard .scanPanel{padding:8px!important;}
+  body:not(.zebraDevice) #page-dashboard .pfnOrderControlGroup{grid-template-columns:1fr!important;}
 }
 
+/* PharmFlow Receiving Release */
+.pfrClassificationFilters{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.pfrClassificationFilters details{position:relative;min-width:150px}
+.pfrClassificationFilters summary{cursor:pointer;padding:8px 10px;border:1px solid #d7dce3;border-radius:8px;background:#fff;font-weight:600;list-style:none}
+.pfrFilterMenu{position:absolute;z-index:10040;top:calc(100% + 4px);left:0;min-width:240px;max-height:min(320px,calc(100vh - 120px));overflow:hidden;padding:0;background:#fff;border:1px solid #d7dce3;border-radius:8px;box-shadow:0 10px 24px rgba(0,0,0,.12);display:flex;flex-direction:column}
+.pfrFilterMenu label{display:flex;gap:8px;align-items:center;padding:5px 3px}
+.pfrFilterOptions{overflow-y:auto;min-height:0;padding:8px}
+.pfrFilterActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:5px 6px;border-top:1px solid #e5e9ef;background:#fff;flex:0 0 auto}
+.pfrFilterActions button{min-height:27px;padding:3px 4px;font-size:10px;font-weight:800;line-height:1.1}
+.pfrWorkScopeOverlay{z-index:10020}
+.pfrWorkScopeCard{width:min(92vw,380px);max-height:85vh;overflow:auto;background:#fff;border-radius:14px;padding:16px}
+.pfrWorkScopeCard h3{margin:0 0 4px}.pfrWorkScopeCard p{margin:0 0 12px}
+.pfrWorkAll,.pfrWorkOrders label{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #edf0f3}
+.pfrWorkActions{display:flex;justify-content:flex-end;gap:8px;padding-top:12px}
+.pfrChangeOrders{margin-top:5px;border:1px solid currentColor;border-radius:7px;background:transparent;font-size:11px;font-weight:700;padding:5px 8px}
 
+/* One owner for the first authenticated render: operational content never
+   appears with bootstrap counters before the workspace is hydrated. */
+.workspaceBootOverlay{display:none}
+body.authBooting .mainApplication,body.workspaceBooting .mainApplication{visibility:hidden!important}
+body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverlay{position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#e8f3fb 0%,#dceef9 52%,#eef7fd 100%)}
+.workspaceBootCard{display:grid;justify-items:center;gap:7px;min-width:280px;padding:30px;border:1px solid #a9cbe5;border-radius:18px;background:#eef7fd;color:#173d63;box-shadow:0 14px 36px rgba(23,61,99,.12)}
+.workspaceBootCard span{font-size:10px;font-weight:900;letter-spacing:.1em;color:#5d7692}.workspaceBootCard strong{font-size:23px}.workspaceBootCard small{font-size:13px;color:#60758b}
+.workspaceBootCard .authBootSpinner{display:block!important;width:42px!important;height:42px!important;margin:0 0 10px!important;border:4px solid rgba(11,111,175,.18)!important;border-top-color:#0b6faf!important;border-radius:50%!important;animation:pfnWorkspaceBootSpin .75s linear infinite!important}
+@keyframes pfnWorkspaceBootSpin{to{transform:rotate(360deg)}}
+body.zebraDevice #page-dashboard{overflow:hidden!important}
+body.zebraDevice #page-dashboard .pageContent{overflow:hidden!important;padding-bottom:2px!important}
+body.zebraDevice #page-dashboard .scanPanel{margin-bottom:4px!important;padding-bottom:4px!important}
+body.zebraDevice #page-dashboard #lastScanCard{margin-top:4px!important;margin-bottom:0!important}
+body.zebraDevice #page-dashboard .quantityButton,
+body.zebraDevice #page-dashboard .tableQtyButton{font-size:24px!important;font-weight:800!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+body.zebraDevice #page-dashboard [data-action="minus"],
+body.zebraDevice #page-dashboard #btnSmartQtyMinus{background:#fff!important;color:#111!important;border:2px solid #111!important}
+body.zebraDevice #handheldWorkspaceStatus{cursor:default!important}
+body.zebraDevice #pfrChangeOrders{display:none!important}
 
-/*======================================================
-ZEBRA DEVICE
-======================================================*/
-
-@media (pointer:coarse){
-
-  button{
-
-      min-height:48px;
-
+/* B11.5 Consolidated Receiving controls — clean owner, no stacked selector patch */
+@media (min-width:769px){
+  /* Work Orders and Manage Orders: one clear, compact control group. */
+  body:not(.zebraDevice) #page-dashboard .pfnOrderControlGroup{
+    display:flex!important;align-items:flex-end!important;gap:10px!important;padding:8px 10px!important;
+    border:1px solid #e2e8f0!important;border-radius:12px!important;background:#f8fafc!important
+  }
+  body:not(.zebraDevice) #page-dashboard .pfnManageOrdersButton{
+    height:42px!important;min-width:150px!important;border-radius:9px!important
+  }
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector{
+    display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:4px!important;
+    min-height:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important
+  }
+  body:not(.zebraDevice) #page-dashboard .pfnLegacyOrderId{display:none!important}
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector>span{
+    margin:0 0 0 2px!important;font-size:10px!important;font-weight:800!important;letter-spacing:.08em!important;
+    line-height:1!important;color:#64748b!important;text-transform:uppercase!important
+  }
+  body:not(.zebraDevice) #page-dashboard .headerOrderPicker{display:block!important;position:relative!important;margin:0!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerButton{
+    min-width:210px!important;height:42px!important;padding:0 12px!important;border:1px solid #cbd5e1!important;
+    border-radius:9px!important;background:#fff!important;box-shadow:none!important
+  }
+  body:not(.zebraDevice) #page-dashboard #headerOrderPickerLabel{font-size:13px!important;font-weight:800!important;color:#334155!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerMenu{
+    position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;
+    width:min(350px,calc(100vw - 40px))!important;max-height:min(430px,calc(100vh - 72px))!important;
+    display:flex!important;flex-direction:column!important;overflow:hidden!important;background:#fff!important;
+    border:1px solid #d8dee8!important;border-radius:12px!important;box-shadow:0 18px 48px rgba(15,23,42,.22)!important;
+    z-index:10050!important
+  }
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerMenu[hidden]{display:none!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerTitle{padding:11px 12px 6px!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerTitle strong{font-size:14px!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerOptions{overflow-y:auto!important;min-height:0!important;padding:2px 8px!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderCheckOption{min-height:36px!important;padding:4px!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerActions{
+    display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:6px!important;padding:7px 8px!important;
+    border-top:1px solid #e5e9ef!important;background:#fff!important;flex:0 0 auto!important
   }
 
-  input{
-
-      min-height:46px;
-
+  /* Receiving Report selectors share one visual language. */
+  body:not(.zebraDevice) #page-receiving .receivingFilterBar{
+    display:flex!important;align-items:flex-start!important;gap:10px!important;flex-wrap:nowrap!important
+  }
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter{
+    position:relative!important;width:230px!important;min-width:230px!important;margin:0!important
+  }
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter>summary{
+    box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:center!important;
+    width:100%!important;height:58px!important;min-height:58px!important;padding:8px 38px 8px 14px!important;
+    border:1px solid #d8dee8!important;border-radius:12px!important;background:#fff!important;list-style:none!important;
+    cursor:pointer!important;position:relative!important
+  }
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter>summary::-webkit-details-marker{display:none!important}
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter>summary::after{
+    content:"⌄";position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:13px;color:#64748b
+  }
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter>summary span{
+    display:block!important;margin:0 0 2px!important;font-size:10px!important;font-weight:800!important;
+    line-height:1.1!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:#64748b!important
+  }
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter>summary strong{
+    display:block!important;margin:0!important;font-size:14px!important;font-weight:800!important;
+    line-height:1.25!important;color:#334155!important
   }
 
-  .sidebarItem{
+  body:not(.zebraDevice) #page-receiving .pfrClassificationFilters{display:block!important}
+  body:not(.zebraDevice) #page-receiving .pfnMultiSelector .pfrFilterMenu,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterMenu{
+    position:absolute!important;top:calc(100% + 5px)!important;left:0!important;right:auto!important;
+    width:260px!important;min-width:260px!important;max-width:calc(100vw - 32px)!important;
+    max-height:min(285px,calc(100vh - 110px))!important;overflow:hidden!important;
+    display:flex!important;flex-direction:column!important;padding:0!important;background:#fff!important;
+    border:1px solid #d8dee8!important;border-radius:11px!important;box-shadow:0 12px 30px rgba(15,23,42,.16)!important;
+    z-index:10045!important
+  }
+  body:not(.zebraDevice) #page-receiving .pfrFilterOptions,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterOptions{
+    overflow-y:auto!important;overflow-x:hidden!important;min-height:0!important;padding:5px 6px!important;flex:1 1 auto!important
+  }
+  body:not(.zebraDevice) #page-receiving .pfrFilterOptions label,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterOptions label{
+    display:flex!important;align-items:center!important;gap:8px!important;min-height:30px!important;
+    margin:0!important;padding:4px 6px!important;border-radius:7px!important;font-size:13px!important;
+    font-weight:600!important;line-height:1.2!important;color:#334155!important
+  }
+  body:not(.zebraDevice) #page-receiving .pfrFilterOptions label:hover,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterOptions label:hover{background:#f6f8fb!important}
+  body:not(.zebraDevice) #page-receiving .pfrFilterOptions input,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterOptions input{flex:0 0 auto!important;margin:0!important}
 
-      min-height:52px;
-
+  body:not(.zebraDevice) #page-receiving .pfrFilterActions,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterActions{
+    position:sticky!important;bottom:0!important;display:grid!important;grid-template-columns:1fr 1fr 1fr!important;
+    gap:5px!important;padding:6px!important;border-top:1px solid #e5e9ef!important;background:#fff!important;
+    flex:0 0 auto!important
+  }
+  body:not(.zebraDevice) #page-receiving .pfrFilterActions button,
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterActions button{
+    width:100%!important;min-width:0!important;min-height:32px!important;padding:4px 5px!important;
+    border:1px solid #d8dee8!important;border-radius:7px!important;background:#fff!important;
+    font-size:11px!important;font-weight:800!important
+  }
+  body:not(.zebraDevice) #page-receiving .pfrFilterActions [data-group-action="ok"],
+  body:not(.zebraDevice) #page-receiving .issueMultiFilterActions .issueFilterOkButton{
+    background:#0b8fd3!important;border-color:#0b8fd3!important;color:#fff!important
   }
 
-  .scanBox{
-
-      min-height:78px;
-
+  /* Order Item Browser uses the same compact Group option rows and fixed actions. */
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{display:block!important}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnMultiSelector{position:relative!important;min-width:180px!important}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnMultiSelector>summary{
+    display:flex!important;align-items:center!important;min-height:42px!important;min-width:190px!important;
+    padding:8px 12px!important;border:1px solid #d8dee8!important;border-radius:8px!important;
+    background:#fff!important;font-size:13px!important;font-weight:800!important;color:#334155!important;list-style:none!important
   }
-
-  #barcodeInput{
-
-      font-size:20px;
-
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnMultiSelector>summary::after{content:"⌄";margin-left:auto;color:#64748b}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterMenu{
+    position:absolute!important;top:calc(100% + 5px)!important;left:0!important;width:250px!important;max-height:260px!important;
+    display:flex!important;flex-direction:column!important;overflow:hidden!important;padding:0!important;background:#fff!important;
+    border:1px solid #d8dee8!important;border-radius:10px!important;box-shadow:0 12px 28px rgba(15,23,42,.16)!important;z-index:10045!important
   }
-
-}
-
-
-
-/*======================================================
-PRINT
-======================================================*/
-
-@media print{
-
-  .sidebar,
-
-  .topBar,
-
-  .primaryButton,
-
-  .secondaryButton,
-
-  .warningButton,
-
-  .dangerButton,
-
-  .dangerOutlineButton,
-
-  .sidebarOverlay{
-
-      display:none !important;
-
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterOptions{overflow-y:auto!important;padding:5px!important;min-height:0!important}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterOptions label{
+    display:flex!important;align-items:center!important;gap:8px!important;min-height:30px!important;padding:4px 6px!important;
+    margin:0!important;border-radius:7px!important;font-size:13px!important;font-weight:600!important
   }
-
-  .mainApplication{
-
-      margin:0;
-
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterActions{
+    display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:5px!important;padding:6px!important;
+    border-top:1px solid #e5e9ef!important;background:#fff!important;flex:0 0 auto!important
   }
-
-  .contentCard{
-
-      border:none;
-
-      box-shadow:none;
-
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterActions button{
+    min-height:32px!important;padding:4px!important;border:1px solid #d8dee8!important;border-radius:7px!important;
+    background:#fff!important;font-size:11px!important;font-weight:800!important
   }
-
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterActions [data-group-action="ok"]{
+    background:#0b8fd3!important;border-color:#0b8fd3!important;color:#fff!important
+  }
 }

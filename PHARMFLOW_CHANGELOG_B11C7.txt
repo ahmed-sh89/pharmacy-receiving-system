@@ -1,0 +1,6 @@
+B11 Clean7 — 2026-09-01
+- Light Premium Corporate login redesign.
+- Added visually distinct Email and Password field surfaces.
+- Removed dark desktop login presentation in favor of calm light blue/off-white/lilac surfaces.
+- Preserved PC/Handheld responsive ownership.
+- No auth/business/database logic changes.

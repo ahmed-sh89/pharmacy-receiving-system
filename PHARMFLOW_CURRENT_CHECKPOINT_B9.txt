@@ -1,0 +1,33 @@
+# PHARMFLOW CURRENT CHECKPOINT — B9
+Date: 26 August 2026
+Environment: B / pharmflow-dev
+Version: B9 — Last Scan Flash + KPI Icon Alignment + Blue Order Picker
+Status: READY FOR TEST
+
+USER REQUEST
+1. Apply green/red scan flash to the whole Last Scan card, not the whole page.
+2. Fix KPI icon/value placement so the symbol sits immediately beside the value.
+3. Restyle Select Orders / All Orders picker from legacy brown to the approved
+   light-blue/navy design and increase its text size.
+
+IMPLEMENTATION
+- Scan feedback is now localized to #lastScanCard:
+  success = green Last Scan card flash
+  failure = red Last Scan card flash
+- B8 full-page overlay is disabled.
+- KPI icon circles moved directly beside the numeric value with reserved spacing.
+- Full Select Orders menu converted to light-blue/navy:
+  button, chevron, popup, checkboxes, typography and Select All/Clear/OK actions.
+
+NON-REGRESSION
+- No receiving business logic changed.
+- No scanner parsing / GTIN / quantities / persistence changes.
+- No order selection logic changes.
+- No Supabase / SQL changes.
+- Production A untouched.
+
+VERIFY
+- Known scan -> whole Last Scan card flashes green.
+- Failed scan -> whole Last Scan card flashes red.
+- KPI icons are immediately beside values without overlap.
+- All Orders popup uses blue/navy palette and larger readable text.

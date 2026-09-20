@@ -1,0 +1,29 @@
+# PHARMFLOW CURRENT CHECKPOINT — B3
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: B3 — Readability + Orders/Receiving UI Restore
+Status: READY FOR TEST
+
+FIXES
+1. Added Orders back to the compact Next sidebar.
+2. Restored access to the existing legacy Orders page and its existing order upload input/button.
+3. Increased text sizes across sidebar, forms, tables, metrics and controls.
+4. Reworked Sign In to fit one desktop viewport without shrinking typography.
+5. Added blue/navy favicon using the same approved PharmFlow mark geometry.
+6. Corrected desktop fit behavior so functionality is never hidden merely to avoid page scroll.
+7. Receiving business logic is untouched; only presentation/layout CSS changed.
+
+NON-REGRESSION
+- No Supabase / SQL changes.
+- No receiving.js / orders.js / scanner.js / session.js changes.
+- DEVISO3 unchanged.
+- Production A untouched.
+
+VERIFY
+- Hard refresh B.
+- Check favicon blue.
+- Check Sign In: no desktop vertical scroll, readable text.
+- Orders visible in sidebar; + Add Order Files opens file chooser.
+- Load a DEV test order only.
+- Receiving still shows original metrics, scan/search, last scan, progress and report controls.
+- Scan one known DEV item and confirm existing counting logic.

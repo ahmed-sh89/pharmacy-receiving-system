@@ -27,6 +27,10 @@ const AppState = {
 
         selectedOrderNumber:"",
 
+        handheldOrderNumbers:[],
+
+        handheldScopeConfigured:false,
+
         orderFiles:[],
 
         mappingFiles:[],
@@ -187,6 +191,10 @@ function createEmptyWorkspace(){
         active:false,
 
         selectedOrderNumber:"",
+
+        handheldOrderNumbers:[],
+
+        handheldScopeConfigured:false,
 
         orderFiles:[],
 
@@ -511,9 +519,9 @@ function upsertOrderItem(item){
 
     if(existing){
 
-        if(!existing.category && item.category){
-            existing.category = toSafeString(item.category);
-        }
+        if(!existing.group_name && item.group_name) existing.group_name=toSafeString(item.group_name);
+        if(!existing.category && item.category) existing.category=toSafeString(item.category);
+        if(!existing.sub_category && item.sub_category) existing.sub_category=toSafeString(item.sub_category);
 
         existing.orderedQty +=
             orderedQty;
@@ -543,10 +551,9 @@ function upsertOrderItem(item){
                 item.itemName
             ),
 
-        category:
-            toSafeString(
-                item.category || ""
-            ),
+        group_name:toSafeString(item.group_name||item.groupName||""),
+        category:toSafeString(item.category||""),
+        sub_category:toSafeString(item.sub_category||item.subCategory||""),
 
         orderedQty:
             orderedQty,
@@ -815,6 +822,15 @@ function addReceivingTransaction(
             ||
             AppState.session.deviceId,
 
+        deviceType:
+            toSafeString(transaction.deviceType),
+
+        correctionReason:
+            toSafeString(transaction.correctionReason),
+
+        correctsTransactionId:
+            toSafeString(transaction.correctsTransactionId),
+
         manual:
             transaction.manual === true,
 
@@ -850,16 +866,38 @@ function addReceivingTransaction(
 
 function setLastScan(data){
 
+    const incomingScanTime=data?.scanTime || nowISO();
+    const current=AppState?.workspace?.lastScan || null;
+    const incomingMs=new Date(incomingScanTime).getTime();
+    const currentMs=new Date(current?.scanTime||0).getTime();
+
+    /* B11 Clean5: Last Scan is monotonic device-local presentation state.
+       An older asynchronous/snapshot result must never replace a newer scan
+       that the worker has already seen. Receiving transactions themselves are
+       unaffected by this UI guard. */
+    if(
+        current &&
+        Number.isFinite(incomingMs) &&
+        Number.isFinite(currentMs) &&
+        incomingMs < currentMs
+    ){
+        if(typeof Logger!=="undefined" && typeof Logger.warn==="function"){
+            Logger.warn("Ignored stale Last Scan render",{
+                incomingItemCode:data?.itemCode||"",
+                incomingScanTime,
+                currentItemCode:current?.itemCode||"",
+                currentScanTime:current?.scanTime||""
+            });
+        }
+        return current;
+    }
+
     AppState.workspace.lastScan = {
-
         ...data,
-
-        scanTime:
-            data.scanTime
-            ||
-            nowISO()
-
+        scanTime:incomingScanTime
     };
+
+    return AppState.workspace.lastScan;
 
 }
 

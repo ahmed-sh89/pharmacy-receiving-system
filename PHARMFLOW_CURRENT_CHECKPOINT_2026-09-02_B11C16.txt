@@ -1,0 +1,23 @@
+PHARMFLOW CURRENT CHECKPOINT — B11 CLEAN16
+Date: 2026-09-02
+Status: READY FOR TEST
+Target: Project B only. Production A untouched.
+
+ROOT CAUSE
+Clean15 mobile rules lived in dashboard.css, but pharmflow-next.css loads after dashboard.css and still contained broad non-Handheld !important desktop rules for .pfnBrowserControlRow and Last Scan quantity controls. Those later rules overrode the intended mobile owner.
+
+CHANGE
+- Removed the B11 mobile owner from dashboard.css.
+- Moved/rebuilt it as ONE mobile owner at the END of pharmflow-next.css, the last-loaded application stylesheet.
+- No additional mobile owner remains in dashboard.css.
+- Filter row itself owns horizontal scrolling and fixed-width children force real overflow: Order, Category, High Priority, Quantity Sort.
+- Mobile Batch Qty reduced to 40vw, max 168px.
+- Desktop and Handheld excluded by max-width and .zebraDevice scope.
+- No JS, Supabase, GTIN, auth, transaction, or receiving-state changes.
+
+VERIFY
+1. Project B only; hard refresh.
+2. Open Order Item Browser on phone; swipe filter strip horizontally and reach High Priority + Quantity Sort.
+3. Scan/open Last Scan; Batch Qty must be clearly under half phone width.
+4. Verify PC layout unchanged.
+5. Verify Handheld layout unchanged.

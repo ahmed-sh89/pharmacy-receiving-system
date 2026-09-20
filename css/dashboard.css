@@ -2977,7 +2977,23 @@ body.zebraDevice.zebraJoinActive .cloudJoinCard>small{display:block;margin-top:8
 .discrepancyGrid .displayedMetric{border-color:#bcd6fb;background:#f3f8ff}
 .discrepancyGrid .displayedMetric strong{color:#0d63dc}
 @media(max-width:900px){.issueMultiFilter{width:100%}.issueMultiFilterMenu{width:100%}.discrepancyGrid{grid-template-columns:repeat(2,1fr)}}
-\n\n/* =====================================================\n   PHASE 2C.4 — MANUAL FINALIZE RECEIVING\n===================================================== */\n.finalizeReceivingButton{\n    min-width:190px;\n    font-weight:700;\n}\n.finalizeReceivingButton:disabled{\n    opacity:.5;\n    cursor:not-allowed;\n}\n@media (max-width:1100px){\n    .receivingSummaryActions .finalizeReceivingButton{\n        flex-basis:100%;\n    }\n}\n
+
+/* =====================================================
+   PHASE 2C.4 — MANUAL FINALIZE RECEIVING
+===================================================== */
+.finalizeReceivingButton{
+    min-width:190px;
+    font-weight:700;
+}
+.finalizeReceivingButton:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+@media (max-width:1100px){
+    .receivingSummaryActions .finalizeReceivingButton{
+        flex-basis:100%;
+    }
+}
 /* =====================================================
    PHASE 2C.5 — ITEM TRANSFER REPORT
 ===================================================== */
@@ -3155,18 +3171,55 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
 }
 
 /* =====================================================
-   PHASE 2C.5.4.3 — COMPACT PC MANUAL/SEARCH SELECTION
-   Goal: keep selected-item quantity entry + Last Scan visible
-   on one desktop viewport with minimal vertical scrolling.
+   B10 CLEAN15.6 — PC SEARCH / QUANTITY READABILITY
+   Consolidated desktop-only replacement for the former tiny
+   manual/search selection styling. No receiving totals logic changes.
 ===================================================== */
 @media (min-width: 769px){
-  /* The selected result becomes a compact two-row operator strip. */
+  #page-dashboard .smartSearchResult{
+    min-height:54px;
+    padding:10px 12px;
+    border-color:#c9d9ee;
+    background:#f6f9ff;
+  }
+
+  #page-dashboard .smartSearchResultMain strong{
+    font-size:16px;
+    line-height:1.2;
+    font-weight:800;
+    color:#10243f;
+  }
+
+  #page-dashboard .smartSearchResultMain span{
+    font-size:12px;
+    font-weight:700;
+    color:#536982;
+  }
+
+  #page-dashboard .smartSearchResultQty{
+    min-width:112px;
+    padding:6px 9px;
+    border-radius:9px;
+    background:#eaf3ff;
+  }
+
+  #page-dashboard .smartSearchResultQty span{
+    font-size:16px;
+    font-weight:800;
+  }
+
+  #page-dashboard .smartSearchResultQty small{
+    font-size:9px;
+    font-weight:700;
+  }
+
   #page-dashboard .smartScanSelected{
-    margin-top:6px;
-    padding:8px 10px;
+    margin-top:7px;
+    padding:10px 12px;
+    border:1px solid #b8cfee;
     border-radius:11px;
+    background:#f2f7ff;
     box-shadow:none;
-    background:#fbfdff;
   }
 
   #page-dashboard .smartSelectedMain{
@@ -3175,28 +3228,26 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
     align-items:center;
     gap:10px;
     margin:0;
-    min-height:34px;
+    min-height:40px;
   }
 
   #page-dashboard .smartSelectedMain > div:first-child{
     min-width:0;
     display:flex;
     align-items:baseline;
-    gap:10px;
+    gap:12px;
     overflow:hidden;
   }
 
-  #page-dashboard .smartSelectedMain .sectionEyebrow{
-    display:none;
-  }
+  #page-dashboard .smartSelectedMain .sectionEyebrow{display:none;}
 
   #page-dashboard .smartSelectedMain h3{
     margin:0;
     min-width:0;
-    max-width:68%;
-    font-size:15px;
-    line-height:1.1;
-    font-weight:700;
+    max-width:72%;
+    font-size:18px;
+    line-height:1.15;
+    font-weight:800;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -3205,146 +3256,136 @@ body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
 
   #page-dashboard .smartSelectedCode{
     flex:0 0 auto;
-    font-size:10px;
-    line-height:1;
+    font-size:12px;
+    line-height:1.1;
     font-weight:700;
     white-space:nowrap;
-    color:#65778d;
+    color:#536982;
   }
 
   #page-dashboard .smartSelectedCode strong{
-    font-weight:700;
+    font-weight:800;
+    color:#1d5fae;
   }
 
   #page-dashboard #btnCloseSmartSelection{
-    width:30px;
-    height:30px;
-    min-width:30px;
+    width:32px;
+    height:32px;
+    min-width:32px;
     padding:0;
   }
 
-  /* Statistics stay on one thin line instead of three large cards. */
   #page-dashboard .smartSelectedStats{
     display:flex;
     align-items:stretch;
-    gap:0;
-    margin:6px 0 0;
-    border:1px solid #e1e8f1;
-    border-radius:9px;
-    overflow:hidden;
-    background:#fff;
+    gap:7px;
+    margin:8px 0 0;
+    border:0;
+    overflow:visible;
+    background:transparent;
   }
 
   #page-dashboard .smartSelectedStats > div{
     flex:1 1 0;
     min-width:0;
-    padding:5px 10px;
-    border:0;
-    border-right:1px solid #e1e8f1;
-    border-radius:0;
+    min-height:46px;
+    padding:7px 10px;
+    border:1px solid #cbd9ea;
+    border-radius:9px;
+    text-align:center;
+  }
+
+  #page-dashboard .smartSelectedStats > div:nth-child(1){background:#eaf3ff;}
+  #page-dashboard .smartSelectedStats > div:nth-child(2){background:#eaf8ef;}
+  #page-dashboard .smartSelectedStats > div:nth-child(3){background:#fff7df;}
+
+  #page-dashboard .smartSelectedStats span{
+    display:block;
+    margin:0 0 3px;
+    font-size:10px;
+    line-height:1.1;
+    font-weight:800;
+    letter-spacing:.03em;
+    color:#52667e;
+  }
+
+  #page-dashboard .smartSelectedStats strong{
+    display:block;
+    font-size:18px;
+    line-height:1;
+    font-weight:800;
+    color:#10243f;
+  }
+
+  #page-dashboard .smartQuantityRow{
+    display:grid;
+    grid-template-columns:auto 150px minmax(150px,220px);
+    justify-content:end;
+    align-items:center;
+    gap:9px;
+    margin-top:8px;
+    padding:7px 8px;
+    border:1px solid #d3def0;
+    border-radius:10px;
+    background:#edf4ff;
+  }
+
+  #page-dashboard .smartQuantityLabel{
+    font-size:12px;
+    line-height:1;
+    font-weight:800;
+    color:#284868;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
+
+  #page-dashboard .smartQuantityControl{
+    height:38px;
+    border-color:#b9cce5;
+    border-radius:9px;
+    background:#fff;
+  }
+
+  #page-dashboard .smartQuantityControl .quantityButton{
+    width:40px;
+    min-width:40px;
+    height:38px;
+    font-size:21px;
+    font-weight:800;
+  }
+
+  #page-dashboard #smartQuantityInput{
+    width:68px;
+    height:38px;
+    font-size:18px;
+    font-weight:800;
     text-align:center;
     background:#fff;
   }
 
-  #page-dashboard .smartSelectedStats > div:last-child{
-    border-right:0;
-  }
-
-  #page-dashboard .smartSelectedStats span{
-    display:inline;
-    margin:0 6px 0 0;
-    font-size:8px;
-    line-height:1;
-    font-weight:700;
-    letter-spacing:.04em;
-  }
-
-  #page-dashboard .smartSelectedStats strong{
-    display:inline;
-    font-size:14px;
-    line-height:1;
-    font-weight:700;
-  }
-
-  /* Quantity entry becomes one compact horizontal action strip. */
-  #page-dashboard .smartQuantityRow{
-    display:grid;
-    grid-template-columns:auto 132px minmax(130px,220px);
-    justify-content:end;
-    align-items:center;
-    gap:8px;
-    margin-top:6px;
-  }
-
-  #page-dashboard .smartQuantityLabel{
-    font-size:9px;
-    font-weight:700;
-  }
-
-  #page-dashboard .smartQuantityControl{
-    height:32px;
-    border-radius:8px;
-  }
-
-  #page-dashboard .smartQuantityControl .quantityButton{
-    width:36px;
-    min-width:36px;
-    height:32px;
-    font-size:18px;
-    font-weight:700;
-  }
-
-  #page-dashboard #smartQuantityInput{
-    width:60px;
-    height:32px;
-    font-size:14px;
-    font-weight:700;
-    text-align:center;
-  }
-
   #page-dashboard #btnAddSmartQuantity{
-    min-height:32px;
-    height:32px;
-    padding:0 14px;
-    border-radius:8px;
-    font-size:11px;
-    line-height:32px;
-    font-weight:700;
+    min-height:38px;
+    height:38px;
+    padding:0 16px;
+    border-radius:9px;
+    font-size:12px;
+    line-height:38px;
+    font-weight:800;
   }
 
-  /* Tighten the gap before Last Scan / Progress without altering logic. */
-  #page-dashboard .smartScanSearchArea{
-    margin-bottom:0;
-  }
-
-  #page-dashboard #lastScanCard{
-    margin-top:6px;
-  }
+  #page-dashboard .smartScanSearchArea{margin-bottom:0;}
+  #page-dashboard #lastScanCard{margin-top:6px;}
 }
 
-/* Extra compression for common 768–900px-high desktop/laptop screens. */
 @media (min-width: 769px) and (max-height: 900px){
-  #page-dashboard .smartScanSelected{
-    padding:6px 9px;
-    margin-top:5px;
-  }
-  #page-dashboard .smartSelectedMain{
-    min-height:28px;
-  }
-  #page-dashboard .smartSelectedMain h3{
-    font-size:14px;
-  }
-  #page-dashboard .smartSelectedStats{
-    margin-top:4px;
-  }
-  #page-dashboard .smartSelectedStats > div{
-    padding:4px 8px;
-  }
-  #page-dashboard .smartQuantityRow{
-    margin-top:4px;
-  }
+  #page-dashboard .smartScanSelected{padding:8px 10px;margin-top:5px;}
+  #page-dashboard .smartSelectedMain{min-height:34px;}
+  #page-dashboard .smartSelectedMain h3{font-size:16px;}
+  #page-dashboard .smartSelectedStats{margin-top:6px;}
+  #page-dashboard .smartSelectedStats > div{min-height:42px;padding:6px 8px;}
+  #page-dashboard .smartSelectedStats strong{font-size:16px;}
+  #page-dashboard .smartQuantityRow{margin-top:6px;padding:6px 7px;}
 }
-
 
 /* =====================================================
    PHASE 2C.5.4.4 — POLISHED SIDEBAR + KPI VISUAL SYSTEM
@@ -4677,7 +4718,7 @@ body.zebraDevice.zebraHomeActive select{
 
 /* Hardware receiving scanner remains keyboard-free. */
 body.zebraDevice.zebraReceivingActive #barcodeInput{
-  caret-color:transparent !important;
+  caret-color:#16864f !important;
 }
 
 
@@ -5298,14 +5339,6 @@ body.zebraDevice.zebraReceivingActive .lastScanQtyHint{
 }
 
 /* PHASE 2C.9.6 */
-.needsReviewButton strong{display:inline-flex;min-width:22px;height:22px;align-items:center;justify-content:center;margin-left:5px;padding:0 6px;border-radius:999px;background:#EEE6DF}
-.needsReviewButton.hasItems{border-color:#D49A42!important;background:#FFF7E8!important;color:#8A5713!important}.needsReviewButton.hasItems strong{background:#C57A16;color:#fff}
-.needsReviewOverlay{position:fixed;inset:0;z-index:100050;display:flex;justify-content:flex-end}.needsReviewScrim{position:absolute;inset:0;border:0;background:rgba(31,26,22,.34)}
-.needsReviewPanel{position:relative;z-index:1;width:min(520px,94vw);height:100%;overflow:auto;padding:18px;background:#FFF9F3;box-shadow:-14px 0 40px rgba(40,30,23,.18)}
-.needsReviewPanel>header{display:flex;justify-content:space-between;border-bottom:1px solid #E1D1C4;padding-bottom:12px}.needsReviewPanel h2{margin:2px 0}.needsReviewClose{width:42px;height:42px}
-.needsReviewList{display:grid;gap:9px;margin-top:12px}.needsReviewRow{padding:11px;border:1px solid #DDCBBB;border-radius:13px;background:#fff}.needsReviewInfo{display:flex;flex-direction:column}.needsReviewInfo span{font-size:8px;color:#9A5434;font-weight:900}.needsReviewInfo strong{font-size:16px}.needsReviewInfo small{color:#75665C}
-.needsReviewRow>input{width:100%;height:42px;margin-top:8px;padding:0 9px;border:1px solid #CDBEAF;border-radius:9px}.needsReviewMatches{display:grid;gap:4px;margin-top:5px}.needsReviewMatches button{display:flex;justify-content:space-between;width:100%;padding:7px;border:1px solid #E1D4C9;border-radius:8px;background:#FAF6F2;text-align:left}.needsReviewMatches button span{display:flex;flex-direction:column}.needsReviewDelete{margin-top:8px;border:1px solid #B74747;border-radius:8px;background:#FFF5F5;color:#A52B2B;padding:8px 12px}
-body.zebraDevice .needsReviewButton,body.zebraDevice .needsReviewOverlay{display:none!important}
 body.zebraDevice.zebraExpiryActive .expiryEntryGrid{grid-template-columns:30% 34% 36%!important;gap:5px!important}body.zebraDevice.zebraExpiryActive .expiryEntryGrid label{min-width:0!important}body.zebraDevice.zebraExpiryActive .expiryEntryGrid input,body.zebraDevice.zebraExpiryActive .expiryEntryGrid select{width:100%!important;min-width:0!important;max-width:100%!important;padding:0 4px!important;font-size:17px!important}
 body.zebraDevice.zebraExpiryActive #zebraJoinPanel,body.zebraDevice.zebraExpiryActive .zebraJoinPanel,body.zebraDevice.zebraExpiryActive #page-dashboard,body.zebraDevice.zebraExpiryActive #page-receiving{display:none!important}
 body.zebraDevice.zebraJoinActive #zebraExpiryShell,body.zebraDevice.zebraReceivingActive #zebraExpiryShell{display:none!important}
@@ -6687,736 +6720,6 @@ body.zebraDevice.zebraExpiryActive #zebraExpiryShell{
 
 
 /* ============================================================
-   PHARMFLOW 2C.10.4.9 — HANDHELD FAST FLOW
-============================================================ */
-
-/* Receiving: remove redundant title band + total scan card. */
-body.zebraDevice.zebraReceivingActive .scanPanelHeader{
-    min-height:0!important;
-    margin:0 0 4px!important;
-}
-body.zebraDevice.zebraReceivingActive .scanPanelHeader>div:first-child{
-    display:none!important;
-}
-body.zebraDevice.zebraReceivingActive #btnHandheldTotalScans,
-body.zebraDevice.zebraReceivingActive .handheldTotalScansButton{
-    display:none!important;
-}
-body.zebraDevice.zebraReceivingActive .scanPanel{
-    padding:5px!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox{
-    margin:0!important;
-    min-height:58px!important;
-}
-body.zebraDevice.zebraReceivingActive #barcodeInput{
-    min-height:54px!important;
-    font-size:20px!important;
-}
-body.zebraDevice.zebraReceivingActive #barcodeInput::placeholder{
-    font-size:18px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard{
-    margin-top:5px!important;
-    padding:7px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetrics{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:5px!important;
-    margin-top:5px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric{
-    display:block!important;
-    min-width:0!important;
-    padding:6px 2px!important;
-    text-align:center!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric span{
-    font-size:8px!important;
-    font-weight:900!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{
-    font-size:20px!important;
-    line-height:1!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricStatus{
-    display:none!important;
-}
-
-/* Unknown GTIN: everything visible in one viewport. */
-.handheldReceivingReviewCard,
-.handheldKnownExtraCard{
-    margin:5px 0 0!important;
-    border-radius:12px!important;
-    padding:0!important;
-    overflow:hidden!important;
-}
-.handheldReceivingReviewCard.urgent{
-    border:2px solid #dc2626!important;
-    background:#fff1f2!important;
-}
-.handheldReviewStatus,
-.handheldKnownExtraStatus{
-    padding:8px 10px!important;
-    font-size:14px!important;
-    font-weight:950!important;
-    text-align:center!important;
-}
-.handheldReceivingReviewCard.urgent .handheldReviewStatus{
-    background:#dc2626!important;
-    color:#fff!important;
-}
-.handheldKnownExtraStatus{
-    background:#f59e0b!important;
-    color:#fff!important;
-}
-.handheldReviewBody{
-    padding:8px!important;
-}
-.handheldUnknownGTIN{
-    display:grid!important;
-    gap:2px!important;
-    text-align:center!important;
-}
-.handheldUnknownGTIN span{
-    font-size:9px!important;
-    font-weight:900!important;
-}
-.handheldUnknownGTIN strong{
-    font-size:21px!important;
-    letter-spacing:.02em!important;
-}
-.handheldUnknownGTIN small{
-    color:#15803d!important;
-    font-weight:850!important;
-}
-.handheldPhotoButton{
-    width:100%!important;
-    min-height:42px!important;
-    margin-top:7px!important;
-    border-radius:10px!important;
-    font-weight:900!important;
-}
-.handheldPhotoButton small{
-    font-size:9px!important;
-    opacity:.7!important;
-}
-.handheldPhotoButton.added{
-    background:#dcfce7!important;
-    color:#166534!important;
-}
-.handheldReviewQtyLabel{
-    display:grid!important;
-    gap:3px!important;
-    margin-top:7px!important;
-}
-.handheldReviewQtyLabel span{
-    font-size:10px!important;
-    font-weight:950!important;
-}
-.handheldReviewQtyLabel input{
-    width:100%!important;
-    min-height:48px!important;
-    font-size:24px!important;
-    font-weight:950!important;
-    text-align:center!important;
-    border-radius:10px!important;
-}
-.handheldReviewSave{
-    width:100%!important;
-    min-height:46px!important;
-    margin-top:7px!important;
-    border-radius:10px!important;
-    font-weight:950!important;
-}
-.handheldKnownExtraName{
-    display:block!important;
-    padding:8px 8px 2px!important;
-    font-size:17px!important;
-    line-height:1.1!important;
-}
-.handheldKnownExtraMeta{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-    gap:4px!important;
-    padding:4px 8px!important;
-    font-size:10px!important;
-}
-.handheldKnownExtraCard .handheldReviewQtyLabel,
-.handheldKnownExtraCard .handheldReviewSave{
-    margin-left:8px!important;
-    margin-right:8px!important;
-    width:calc(100% - 16px)!important;
-}
-.handheldKnownExtraCard .handheldReviewSave{
-    margin-bottom:8px!important;
-}
-
-body.handheldUnknownGTINFlash:after{
-    content:"";
-    position:fixed;
-    inset:0;
-    z-index:99999;
-    pointer-events:none;
-    border:9px solid #ef4444;
-    animation:pfUnknownFlash .65s ease-out both;
-}
-@keyframes pfUnknownFlash{
-    0%{background:rgba(239,68,68,.32);opacity:1}
-    100%{background:rgba(239,68,68,0);opacity:0}
-}
-
-/* Expiry: same philosophy — scanner first, no wasted header height. */
-body.zebraDevice.zebraExpiryActive .zebraExpiryTop{
-    padding:4px 5px!important;
-    min-height:38px!important;
-}
-body.zebraDevice.zebraExpiryActive .expiryPageTitle span{
-    display:none!important;
-}
-body.zebraDevice.zebraExpiryActive .expiryPageTitle strong{
-    font-size:17px!important;
-}
-body.zebraDevice.zebraExpiryActive .expiryCaptureCard{
-    padding:6px!important;
-}
-body.zebraDevice.zebraExpiryActive .expiryScanStatus{
-    margin-bottom:3px!important;
-}
-body.zebraDevice.zebraExpiryActive .expiryScanBox{
-    min-height:54px!important;
-}
-body.zebraDevice.zebraExpiryActive #expiryBarcodeInput{
-    min-height:50px!important;
-    font-size:19px!important;
-}
-
-/* ============================================================
-   PC NEEDS REVIEW V2
-============================================================ */
-.needsReviewPanelV2{
-    width:min(720px,96vw)!important;
-}
-.needsReviewRowV2{
-    display:grid!important;
-    grid-template-columns:130px minmax(0,1fr)!important;
-    gap:12px!important;
-    align-items:start!important;
-}
-.needsReviewPhotoWrap{
-    width:130px!important;
-    min-height:110px!important;
-    border-radius:12px!important;
-    overflow:hidden!important;
-    background:#f8fafc!important;
-    border:1px solid #e2e8f0!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-}
-.needsReviewPhotoWrap img{
-    width:100%!important;
-    height:130px!important;
-    object-fit:cover!important;
-}
-.needsReviewNoPhoto{
-    font-size:10px!important;
-    font-weight:900!important;
-    color:#94a3b8!important;
-}
-.needsReviewInfo,
-.needsReviewResolve{
-    grid-column:2!important;
-}
-.needsReviewInfo em{
-    display:block!important;
-    margin-top:4px!important;
-    font-style:normal!important;
-    color:#92400e!important;
-}
-.needsReviewResolve{
-    display:grid!important;
-    gap:8px!important;
-}
-.needsReviewMatches{
-    display:grid!important;
-    gap:5px!important;
-}
-.needsReviewMatches button{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:space-between!important;
-    gap:10px!important;
-    text-align:left!important;
-}
-.needsReviewExtra{
-    border-top:1px solid #e5e7eb!important;
-    padding-top:7px!important;
-}
-.needsReviewExtraGrid{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-    gap:6px!important;
-    margin-top:6px!important;
-}
-.needsReviewExtraGrid button{
-    grid-column:1/-1!important;
-}
-@media (max-width:720px){
-    .needsReviewRowV2{
-        grid-template-columns:1fr!important;
-    }
-    .needsReviewPhotoWrap,
-    .needsReviewInfo,
-    .needsReviewResolve{
-        grid-column:1!important;
-    }
-    .needsReviewPhotoWrap{
-        width:100%!important;
-    }
-}
-
-
-/* ============================================================
-   PHARMFLOW 2C.10.5.1 — REVIEW + HANDHELD PRODUCTION POLISH
-============================================================ */
-.needsReviewOverlayV2 .needsReviewPanelV2{
-    width:min(860px,96vw)!important;max-width:860px!important;
-    overflow-x:hidden!important;
-}
-.needsReviewOverlayV2 .needsReviewList{padding:12px!important;overflow-x:hidden!important}
-.needsReviewOverlayV2 .needsReviewRowV2{
-    grid-template-columns:120px minmax(0,1fr)!important;
-    width:100%!important;box-sizing:border-box!important;
-}
-.needsReviewOverlayV2 .needsReviewInfo,
-.needsReviewOverlayV2 .needsReviewResolve{min-width:0!important;width:100%!important}
-.needsReviewOverlayV2 .needsReviewMatches button{
-    width:100%!important;min-width:0!important;flex-wrap:wrap!important;
-}
-.needsReviewOverlayV2 .needsReviewMatches button span{min-width:0!important;flex:1 1 260px!important}
-.needsReviewOverlayV2 .needsReviewMatches button strong{white-space:normal!important;overflow-wrap:anywhere!important}
-.needsReviewOverlayV2 .needsReviewExtraGrid input{min-width:0!important;width:100%!important}
-@media(max-width:680px){
- .needsReviewOverlayV2 .needsReviewRowV2{grid-template-columns:1fr!important}
- .needsReviewOverlayV2 .needsReviewPhotoWrap,
- .needsReviewOverlayV2 .needsReviewInfo,
- .needsReviewOverlayV2 .needsReviewResolve{grid-column:1!important;width:100%!important}
- .needsReviewOverlayV2 .needsReviewPhotoWrap{height:150px!important}
- .needsReviewOverlayV2 .needsReviewExtraGrid{grid-template-columns:1fr!important}
-}
-body.zebraDevice.zebraReceivingActive #receivingScannerCard>h2,
-body.zebraDevice.zebraReceivingActive #receivingScannerCard>.sectionHeader,
-body.zebraDevice.zebraReceivingActive .receivingScannerTitle{display:none!important}
-body.zebraDevice.zebraReceivingActive #receivingScannerCard{padding-top:4px!important}
-
-
-/* ============================================================
-   PHARMFLOW 2C.10.5.2 — RECEIVING ROOT UX / PERFORMANCE
-============================================================ */
-
-/* PC Needs Review is a real centered operational workspace, not an
-   unpositioned side fragment. */
-.needsReviewOverlay.needsReviewOverlayV2{
-    position:fixed!important;
-    inset:0!important;
-    z-index:100050!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    padding:20px!important;
-    box-sizing:border-box!important;
-}
-.needsReviewOverlayV2 .needsReviewScrim{
-    position:absolute!important;
-    inset:0!important;
-    width:100%!important;
-    height:100%!important;
-    border:0!important;
-    background:rgba(31,26,22,.46)!important;
-}
-.needsReviewOverlayV2 .needsReviewPanelV2{
-    position:relative!important;
-    z-index:1!important;
-    width:min(1040px,calc(100vw - 40px))!important;
-    max-width:1040px!important;
-    height:min(760px,calc(100vh - 40px))!important;
-    max-height:calc(100vh - 40px)!important;
-    margin:0!important;
-    padding:0!important;
-    overflow:hidden!important;
-    border:1px solid #e5d5c8!important;
-    border-radius:18px!important;
-    background:#fffaf5!important;
-    box-shadow:0 26px 70px rgba(42,30,22,.28)!important;
-}
-.needsReviewOverlayV2 .needsReviewPanelV2>header{
-    position:sticky!important;
-    top:0!important;
-    z-index:3!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:space-between!important;
-    min-height:78px!important;
-    padding:16px 20px!important;
-    box-sizing:border-box!important;
-    border-bottom:1px solid #eadbd0!important;
-    background:#fffaf5!important;
-}
-.needsReviewOverlayV2 .needsReviewPanelV2>header h2{
-    margin:1px 0 0!important;
-    font-size:25px!important;
-}
-.needsReviewOverlayV2 .needsReviewPanelV2>header p{
-    margin:2px 0 0!important;
-}
-.needsReviewOverlayV2 .needsReviewList{
-    height:calc(100% - 78px)!important;
-    overflow:auto!important;
-    padding:16px!important;
-    box-sizing:border-box!important;
-}
-.needsReviewOverlayV2 .needsReviewRowV2{
-    display:grid!important;
-    grid-template-columns:180px minmax(0,1fr)!important;
-    gap:16px!important;
-    width:100%!important;
-    margin:0 0 14px!important;
-    padding:16px!important;
-    box-sizing:border-box!important;
-    border:1px solid #eadbd0!important;
-    border-radius:15px!important;
-    background:#fff!important;
-}
-.needsReviewOverlayV2 .needsReviewPhotoWrap{
-    grid-column:1!important;
-    grid-row:1 / span 2!important;
-    width:180px!important;
-    height:180px!important;
-    min-height:180px!important;
-    border-radius:12px!important;
-}
-.needsReviewOverlayV2 .needsReviewPhotoWrap img{
-    width:100%!important;
-    height:100%!important;
-    object-fit:cover!important;
-}
-.needsReviewOverlayV2 .needsReviewInfo{
-    grid-column:2!important;
-    padding:2px 0 4px!important;
-}
-.needsReviewOverlayV2 .needsReviewInfo>strong{
-    display:block!important;
-    margin:4px 0!important;
-    font-size:22px!important;
-    letter-spacing:.02em!important;
-}
-.needsReviewOverlayV2 .needsReviewResolve{
-    grid-column:2!important;
-    display:grid!important;
-    gap:9px!important;
-}
-.needsReviewOverlayV2 .needsReviewResolve input,
-.needsReviewOverlayV2 .needsReviewResolve select{
-    width:100%!important;
-    min-height:42px!important;
-    box-sizing:border-box!important;
-}
-.needsReviewOverlayV2 .needsReviewMatches button{
-    min-height:54px!important;
-    padding:9px 11px!important;
-    border-radius:10px!important;
-}
-.needsReviewOverlayV2 .needsReviewExtra{
-    margin-top:3px!important;
-    padding-top:8px!important;
-}
-.needsReviewOverlayV2 .needsReviewExtraGrid{
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-}
-.needsReviewOverlayV2 .needsReviewTargetOrder{
-    grid-column:1/-1!important;
-    display:grid!important;
-    gap:4px!important;
-    font-size:11px!important;
-    font-weight:850!important;
-}
-.needsReviewOverlayV2 .needsReviewExtraGrid button{
-    min-height:44px!important;
-}
-
-@media(max-width:760px){
-    .needsReviewOverlay.needsReviewOverlayV2{
-        padding:8px!important;
-    }
-    .needsReviewOverlayV2 .needsReviewPanelV2{
-        width:calc(100vw - 16px)!important;
-        height:calc(100vh - 16px)!important;
-        max-height:calc(100vh - 16px)!important;
-    }
-    .needsReviewOverlayV2 .needsReviewRowV2{
-        grid-template-columns:1fr!important;
-    }
-    .needsReviewOverlayV2 .needsReviewPhotoWrap,
-    .needsReviewOverlayV2 .needsReviewInfo,
-    .needsReviewOverlayV2 .needsReviewResolve{
-        grid-column:1!important;
-        grid-row:auto!important;
-        width:100%!important;
-    }
-    .needsReviewOverlayV2 .needsReviewPhotoWrap{
-        height:160px!important;
-        min-height:160px!important;
-    }
-    .needsReviewOverlayV2 .needsReviewExtraGrid{
-        grid-template-columns:1fr!important;
-    }
-}
-
-/* Handheld: remove more dead vertical space so action/qty stays visible. */
-body.zebraDevice.zebraReceivingActive .zebraReceivingTop{
-    min-height:48px!important;
-    padding:5px 7px!important;
-}
-body.zebraDevice.zebraReceivingActive #receivingScannerCard{
-    padding:4px!important;
-    margin-top:3px!important;
-}
-body.zebraDevice.zebraReceivingActive .scanPanelHeader{
-    display:none!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox{
-    min-height:52px!important;
-}
-body.zebraDevice.zebraReceivingActive #barcodeInput{
-    min-height:50px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard{
-    margin-top:4px!important;
-    padding:5px!important;
-}
-.handheldKnownExtraNote{
-    margin:5px 8px 0!important;
-    padding:6px 7px!important;
-    border-radius:8px!important;
-    background:#fff7ed!important;
-    color:#9a3412!important;
-    font-size:10px!important;
-    font-weight:800!important;
-    line-height:1.25!important;
-}
-
-/* ============================================================
-   PHARMFLOW 2C.10.5.3 — REVIEW MEDIA + KNOWN EXTRA POLISH
-============================================================ */
-.needsReviewPhotoButton{position:relative;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:zoom-in;border-radius:12px;overflow:hidden}
-.needsReviewPhotoButton img{display:block!important}
-.needsReviewPhotoButton span{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 8px;border-radius:8px;background:rgba(25,22,20,.76);color:#fff;font-size:10px;font-weight:900;letter-spacing:.06em}
-.needsReviewPhotoViewer{position:fixed;inset:0;z-index:100090;display:grid;place-items:center;padding:24px}
-.needsReviewPhotoViewerScrim{position:absolute;inset:0;border:0;background:rgba(20,17,15,.78)}
-.needsReviewPhotoViewerCard{position:relative;z-index:1;max-width:min(1100px,94vw);max-height:92vh;padding:12px;border-radius:16px;background:#fff;box-shadow:0 28px 80px rgba(0,0,0,.38)}
-.needsReviewPhotoViewerCard img{display:block;max-width:calc(94vw - 24px);max-height:calc(92vh - 24px);object-fit:contain;border-radius:10px}
-.needsReviewPhotoViewerClose{position:absolute;right:20px;top:20px;z-index:2;width:38px;height:38px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-size:18px;cursor:pointer}
-.gtinKnownTarget{display:grid;gap:5px;margin:10px 0 8px;font-size:11px;font-weight:850}.gtinKnownTarget select{min-height:42px;border:1px solid #dfcfc2;border-radius:10px;background:#fff;padding:0 10px}
-
-
-/* ============================================================
-   PHARMFLOW 2C.10.5.4 — UNIFIED RECEIVING UX
-============================================================ */
-.needsReviewOverlayV2{position:fixed!important;inset:0!important;z-index:100050!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(31,26,22,.28)!important}
-.needsReviewOverlayV2>.needsReviewScrim{position:absolute!important;inset:0!important;border:0!important;background:rgba(31,26,22,.36)!important}
-.needsReviewWorkspace{position:relative!important;z-index:1!important;width:min(1120px,calc(100vw - 36px))!important;height:min(780px,calc(100vh - 36px))!important;max-width:none!important;right:auto!important;left:auto!important;top:auto!important;bottom:auto!important;transform:none!important;border-radius:20px!important;overflow:hidden!important;background:#fffaf5!important;box-shadow:0 28px 80px rgba(42,30,22,.30)!important}
-.needsReviewWorkspace>header{min-height:76px!important;padding:16px 22px!important;border-bottom:1px solid #eadbd0!important;background:#fffaf5!important}
-.needsReviewWorkspace .needsReviewList{height:calc(100% - 76px)!important;overflow:auto!important;padding:18px!important;box-sizing:border-box!important}
-.needsReviewWorkspace .needsReviewRowV2{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:18px!important;margin:0 0 16px!important;padding:16px!important;border:1px solid #eadbd0!important;border-radius:16px!important;background:#fff!important;box-sizing:border-box!important}
-.needsReviewWorkspace .needsReviewPhotoWrap{grid-column:1!important;grid-row:1 / span 2!important;width:210px!important;height:210px!important;min-height:210px!important;border-radius:14px!important;overflow:hidden!important}
-.needsReviewWorkspace .needsReviewInfo,.needsReviewWorkspace .needsReviewResolve{grid-column:2!important;min-width:0!important}
-.needsReviewWorkspace .needsReviewResolve input,.needsReviewWorkspace .needsReviewResolve select{width:100%!important;min-height:44px!important;box-sizing:border-box!important}
-.needsReviewWorkspace .needsReviewMatches{max-height:210px!important;overflow:auto!important}
-.needsReviewWorkspace .needsReviewMatches button{display:flex!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:58px!important;margin:6px 0!important;padding:10px 12px!important;border-radius:11px!important}
-@media(max-width:760px){.needsReviewWorkspace{width:calc(100vw - 12px)!important;height:calc(100vh - 12px)!important}.needsReviewWorkspace .needsReviewRowV2{grid-template-columns:1fr!important}.needsReviewWorkspace .needsReviewPhotoWrap,.needsReviewWorkspace .needsReviewInfo,.needsReviewWorkspace .needsReviewResolve{grid-column:1!important;grid-row:auto!important;width:100%!important}.needsReviewWorkspace .needsReviewPhotoWrap{height:170px!important;min-height:170px!important}}
-body.zebraDevice.zebraReceivingActive #barcodeInput{caret-color:transparent!important;user-select:none!important;text-align:center!important;font-weight:950!important;letter-spacing:.04em!important}
-body.zebraDevice.zebraReceivingActive #scanBox{border:2px solid #7bb18b!important;background:#f3fbf5!important}
-body.zebraDevice.zebraReceivingActive #scanBox:after{content:"HARDWARE SCANNER READY";display:block;font-size:9px;font-weight:900;color:#35724a;letter-spacing:.08em;text-align:center}
-body.zebraDevice.zebraReceivingActive:has(.handheldReceivingReviewCard) #lastScanCard,
-body.zebraDevice.zebraReceivingActive:has(.handheldKnownExtraCard) #lastScanCard{display:none!important}
-
-
-/* ============================================================
-   PHARMFLOW 2C.10.5.5 — HANDHELD READY STATE / REVIEW WORKSPACE
-============================================================ */
-.handheldLastScanSuppressed{
-    display:none!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox{
-    position:relative!important;
-    border:2px solid #22c55e!important;
-    background:#f0fdf4!important;
-    box-shadow:0 0 0 3px rgba(34,197,94,.08)!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox:before{
-    content:"● READY TO SCAN";
-    position:absolute;
-    left:10px;
-    top:4px;
-    z-index:2;
-    color:#15803d;
-    font-size:9px;
-    font-weight:950;
-    letter-spacing:.05em;
-    pointer-events:none;
-}
-body.zebraDevice.zebraReceivingActive #barcodeInput{
-    padding-top:13px!important;
-    caret-color:transparent!important;
-}
-body.zebraDevice.zebraReceivingActive #barcodeInput::placeholder{
-    color:#166534!important;
-    opacity:.72!important;
-}
-body.zebraDevice.zebraReceivingActive #handheldReceivingReviewCard,
-body.zebraDevice.zebraReceivingActive #handheldKnownExtraCard{
-    margin-top:4px!important;
-    max-height:calc(100vh - 160px)!important;
-    overflow:auto!important;
-}
-body.zebraDevice.zebraReceivingActive .handheldReviewBody{
-    padding:6px!important;
-}
-body.zebraDevice.zebraReceivingActive .handheldPhotoButton,
-body.zebraDevice.zebraReceivingActive .handheldReviewSave{
-    min-height:40px!important;
-}
-body.zebraDevice.zebraReceivingActive .handheldReviewQtyLabel input{
-    min-height:44px!important;
-}
-
-/* PC Needs Review — deliberate production workspace. */
-.needsReviewOverlayV2 .needsReviewPanelV2{
-    width:min(1120px,calc(100vw - 48px))!important;
-    height:min(800px,calc(100vh - 48px))!important;
-    background:#fffdfb!important;
-    border:1px solid #eadfd7!important;
-}
-.needsReviewOverlayV2 .needsReviewList{
-    padding:18px!important;
-    background:linear-gradient(180deg,#fffaf6,#fff)!important;
-}
-.needsReviewOverlayV2 .needsReviewRowV2{
-    grid-template-columns:210px minmax(0,1fr)!important;
-    gap:18px!important;
-    padding:18px!important;
-    border:1px solid #eadfd7!important;
-    box-shadow:0 10px 30px rgba(75,45,28,.07)!important;
-}
-.needsReviewOverlayV2 .needsReviewPhotoWrap{
-    width:210px!important;
-    height:210px!important;
-    min-height:210px!important;
-    background:#f9f5f1!important;
-}
-.needsReviewOverlayV2 .needsReviewInfo>span{
-    display:inline-flex!important;
-    padding:5px 8px!important;
-    border-radius:999px!important;
-    background:#fff1f2!important;
-    color:#b91c1c!important;
-    font-size:10px!important;
-    font-weight:950!important;
-}
-.needsReviewOverlayV2 .needsReviewResolve>label{
-    display:grid!important;
-    gap:5px!important;
-    font-weight:900!important;
-}
-.needsReviewOverlayV2 .needsReviewResolve input{
-    border:1px solid #d8c9bd!important;
-    background:#fff!important;
-    min-height:46px!important;
-    border-radius:11px!important;
-    padding:0 12px!important;
-}
-.needsReviewOverlayV2 .needsReviewMatches button{
-    background:#fff!important;
-    border:1px solid #e5d8ce!important;
-}
-.needsReviewOverlayV2 .needsReviewMatches button:hover{
-    border-color:#c08b69!important;
-    box-shadow:0 4px 15px rgba(106,72,52,.10)!important;
-}
-
-/* Independent, guaranteed-visible operation receipt for destructive actions. */
-.pharmFlowOperationReceipt{
-    position:fixed!important;
-    top:18px!important;
-    left:50%!important;
-    transform:translateX(-50%)!important;
-    z-index:200000!important;
-    width:min(760px,calc(100vw - 32px))!important;
-    padding:14px 18px!important;
-    border-radius:13px!important;
-    color:#fff!important;
-    font-size:13px!important;
-    font-weight:900!important;
-    line-height:1.4!important;
-    text-align:center!important;
-    box-shadow:0 18px 48px rgba(0,0,0,.22)!important;
-}
-.pharmFlowOperationReceipt.success{background:#15803d!important}
-.pharmFlowOperationReceipt.error{background:#b91c1c!important}
-.pharmFlowOperationReceipt[hidden]{display:none!important}
-
-
-/* ============================================================
-   PHARMFLOW 2C.10.7.0 — CLEAN HANDHELD OPERATIONAL SURFACE
-============================================================ */
-body.zebraDevice.zebraReceivingActive #scanBox{
-    position:relative!important;min-height:82px!important;padding:24px 12px 12px!important;
-    border:1.5px solid #a7c9b1!important;border-radius:16px!important;background:#f8fcf9!important;
-    box-shadow:0 8px 24px rgba(24,72,44,.07)!important;overflow:hidden!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox:before{
-    content:attr(data-hh-label)!important;position:absolute!important;left:12px!important;top:8px!important;
-    font-size:10px!important;font-weight:950!important;letter-spacing:.06em!important;color:#176a39!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox:after{
-    content:""!important;position:absolute!important;left:12%!important;right:12%!important;top:58%!important;height:2px!important;
-    border-radius:99px!important;background:currentColor!important;color:#2f9e5b!important;opacity:.8;
-    animation:pfScanBeam 1.35s ease-in-out infinite!important;
-}
-@keyframes pfScanBeam{0%,100%{transform:translateY(-10px);opacity:.2}50%{transform:translateY(10px);opacity:.95}}
-body.zebraDevice[data-hh-state="processing"] #scanBox:after{animation:none!important;opacity:.25!important}
-body.zebraDevice[data-hh-state="blocked"] #scanBox{border-color:#d8b37a!important;background:#fffaf0!important}
-body.zebraDevice[data-hh-state="blocked"] #scanBox:before{color:#9a5a08!important}
-body.zebraDevice[data-hh-state="blocked"] #scanBox:after{display:none!important}
-body.zebraDevice.zebraReceivingActive #barcodeInput{
-    position:absolute!important;width:1px!important;height:1px!important;opacity:.01!important;left:50%!important;bottom:4px!important;
-    pointer-events:none!important;font-size:16px!important;padding:0!important;border:0!important;
-}
-body.zebraDevice.zebraReceivingActive #scanBox .scanBoxIcon,
-body.zebraDevice.zebraReceivingActive #scanBox .scanBoxIndicator{visibility:hidden!important}
-body.zebraDevice.zebraReceivingActive #scanBox::selection{background:transparent!important}
-
-/* Expiry uses the same truthful runtime state without changing PC layout. */
-body.zebraDevice.zebraExpiryActive .expiryScannerCard{position:relative!important;border-radius:16px!important;overflow:hidden!important}
-body.zebraDevice.zebraExpiryActive .expiryScannerCard:before{
-    content:attr(data-hh-label);display:block;margin-bottom:7px;font-size:10px;font-weight:950;letter-spacing:.06em;color:#176a39;
-}
-body.zebraDevice.zebraExpiryActive #expiryBarcodeInput{caret-color:transparent!important}
-
-/* Numeric keypad is opt-in only for operational number fields. */
-body.zebraDevice input[type="number"]{font-variant-numeric:tabular-nums}
-
-/* Operation receipts must be visible above every application surface. */
-.pharmFlowOperationReceipt{position:fixed!important;z-index:2147483000!important;top:14px!important;left:50%!important;transform:translateX(-50%)!important;
-    width:min(760px,calc(100vw - 28px))!important;padding:14px 16px!important;border-radius:12px!important;font-weight:900!important;
-    box-shadow:0 18px 48px rgba(0,0,0,.22)!important;text-align:center!important}
-.pharmFlowOperationReceipt.success{background:#ecfdf3!important;color:#116b38!important;border:1px solid #86d6a7!important}
-.pharmFlowOperationReceipt.error{background:#fff1f2!important;color:#9f1239!important;border:1px solid #f5a3b3!important}
-
-
-/* ============================================================
    PHARMFLOW 2C.11.0 — UNIFIED PHARMACY WORKSPACE CORE
    Legacy Create/Join Session UI is removed from the user experience.
    The underlying old module remains dormant in this core release only so
@@ -7862,6 +7165,41 @@ body.zebraDevice .handheldReceivedEditCard .quantityAdjustmentInput{
     font-weight:900!important;
     color:#8a958e!important;
 }
+.handheldReviewHistoryRow{
+    grid-template-columns:25px minmax(0,1fr) 86px 48px!important;
+}
+.handheldReviewHistoryQty{
+    display:grid!important;
+    grid-template-columns:24px 30px 24px!important;
+    gap:3px!important;
+    align-items:center!important;
+}
+.handheldReviewHistoryQty button{
+    width:24px!important;
+    height:28px!important;
+    padding:0!important;
+    border:1px solid #bad3c2!important;
+    border-radius:7px!important;
+    background:#eef8f1!important;
+    color:#23653d!important;
+    font-size:15px!important;
+    font-weight:950!important;
+}
+.handheldReviewHistoryQty strong{
+    text-align:center!important;
+    font-size:14px!important;
+    color:#234d33!important;
+}
+.handheldReviewDelete{
+    min-height:28px!important;
+    padding:3px!important;
+    border:1px solid #e6c2c2!important;
+    border-radius:7px!important;
+    background:#fff5f5!important;
+    color:#a53c3c!important;
+    font-size:7px!important;
+    font-weight:950!important;
+}
 
 
 /* ============================================================
@@ -7871,42 +7209,6 @@ body.zebraDevice .handheldReceivedEditCard .quantityAdjustmentInput{
 /* PC remains exactly on its established Last Scan workflow. */
 body:not(.zebraDevice) #lastScanCard{
     display:block;
-}
-
-/* Handheld: the worker's local batch quantity is primary. */
-body.zebraDevice.zebraReceivingActive #btnLastScanEdit.lastScanQtyValue{
-    min-height:44px!important;
-    height:44px!important;
-    font-size:25px!important;
-    font-weight:950!important;
-    color:#1d5d38!important;
-    background:#f4faf6!important;
-    border:1.5px solid #9bc9aa!important;
-}
-
-/* Keep all-device operational context in one compact row. */
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetrics{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:4px!important;
-    margin-top:6px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived{
-    display:block!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived span{
-    font-size:0!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived span:after{
-    content:"TOTAL RECEIVED";
-    font-size:7px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric{
-    min-height:42px!important;
-    padding:4px 2px!important;
-}
-body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{
-    font-size:16px!important;
 }
 
 /* Compact add-more modal. */
@@ -7933,33 +7235,6 @@ body.zebraDevice .handheldBatchCurrent strong{
 body.quantityQuickConfirmed.zebraDevice #btnLastScanEdit,
 body.quantityQuickConfirmed:not(.zebraDevice) #lastScanCard{
     box-shadow:0 0 0 2px rgba(44,150,82,.18)!important;
-}
-
-
-/* ============================================================
-   PHARMFLOW 2C.11.1.5 — BATCH BOUNDARY + CLEAR LAST SCAN
-============================================================ */
-
-body.zebraDevice.zebraReceivingActive .handheldClearLastScan{
-    display:block!important;
-    width:auto!important;
-    min-height:26px!important;
-    margin:5px auto 0!important;
-    padding:3px 10px!important;
-    border:1px solid #d9e0db!important;
-    border-radius:7px!important;
-    background:#fff!important;
-    color:#79847d!important;
-    font-size:8px!important;
-    line-height:1!important;
-    font-weight:900!important;
-    letter-spacing:.04em!important;
-    box-shadow:none!important;
-}
-
-/* Keep it intentionally secondary to +/- and Quantity. */
-body.zebraDevice.zebraReceivingActive .handheldClearLastScan:active{
-    background:#f1f4f2!important;
 }
 
 
@@ -7993,32 +7268,10 @@ body:not(.zebraDevice) .pcClearLastScan:active{
     background:#f1f4f2!important;
 }
 
-body.zebraDevice.zebraReceivingActive .handheldClearLastScan{
-    color:#748079!important;
-}
-
 
 /* ============================================================
    PHARMFLOW 2C.11.1.9 — SCAN ACK + FRIENDLY DEVICE LABELS
 ============================================================ */
-
-/* The worker must immediately understand that the barcode scan itself
-   already counted one physical pack before typing the remaining packs. */
-body.zebraDevice.zebraReceivingActive .handheldScanSavedAck{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    min-height:25px!important;
-    margin:5px 0 0!important;
-    padding:4px 8px!important;
-    border:1px solid #b9ddc4!important;
-    border-radius:7px!important;
-    background:#edf8f0!important;
-    color:#21663b!important;
-    font-size:8px!important;
-    font-weight:950!important;
-    letter-spacing:.04em!important;
-}
 
 body.zebraDevice .handheldScanAcknowledgement{
     display:flex!important;
@@ -8870,7 +8123,7 @@ body:not(.zebraDevice) #lastScanCard .pcClearLastScan{
     align-self:flex-start!important;
     width:auto!important;
     min-height:30px!important;
-    margin:8px 0 0!important;
+    margin:8px 0 0 auto!important;
     padding:5px 11px!important;
     z-index:auto!important;
     white-space:nowrap!important;
@@ -9096,24 +8349,84 @@ body.zebraDevice.zebraExpiryActive #btnClearExpiryScreen{
 }
 
 
-/* ============================================================
-   PHARMFLOW 2C.11.4.2 — HANDHELD FINAL RECOVERY
-============================================================ */
-.handheldRecentFeedback{
-    display:none;
-    margin:6px 10px 2px;
-    padding:7px 9px;
-    border-radius:8px;
-    background:#ecfdf5;
-    border:1px solid #86efac;
-    color:#166534;
-    font-size:12px;
-    font-weight:900;
-    text-align:center;
+/* =============================================================
+   PHARMFLOW B11 CLEAN 2 — RESPONSIBILITY-SCOPED UI OWNER
+   Root fix: Handheld selectors are Zebra-scoped. Desktop layout is
+   not shared with Handheld quantity/review components.
+============================================================= */
+:root{--pf-blue:#1557c0;--pf-navy:#102746;--pf-slate:#64748b;--pf-green:#16a34a;--pf-violet:#7c3aed;--pf-amber:#d97706;--pf-red:#dc2626;--pf-soft:#f7faff}
+
+/* ---------- Handheld Mode: compact, clear, no brown ---------- */
+body.zebraDevice.zebraHomeActive #zebraHome{
+ display:block!important;min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important;
+ padding:7px!important;background:linear-gradient(180deg,#f7faff,#eef5ff)!important;color:var(--pf-navy)!important;
 }
-.handheldRecentFeedback.show{display:block}
-.handheldUndoItem.undone,
-.handheldUndoItem:disabled{
-    opacity:.72;
-    cursor:default;
-}
+body.zebraDevice .zebraBrandRow{display:flex!important;align-items:center!important;padding:8px 9px!important;border:1px solid #d9e5f3!important;border-radius:12px!important;background:#fff!important;box-shadow:none!important}
+body.zebraDevice .zebraBrandLockup{display:flex!important;align-items:center!important;gap:8px!important}
+body.zebraDevice .zebraBrandMark{width:36px!important;height:36px!important;border-radius:9px!important;display:grid!important;place-items:center!important;background:#eef5ff!important;border:1px solid #d6e4f5!important}
+body.zebraDevice .zebraBrandMark img{width:24px!important;height:24px!important;object-fit:contain!important}
+body.zebraDevice .zebraBrandLockup strong{display:block!important;font-size:19px!important;color:#123c72!important;line-height:1!important}
+body.zebraDevice .zebraBrandLockup span{font-size:9px!important;color:#6b7a90!important}
+body.zebraDevice .zebraModeIntro{padding:10px 5px 7px!important;border:1px solid #d8e5f3!important;border-radius:12px!important;background:#f0fdfa!important}
+body.zebraDevice .zebraModeIntro>span{font-size:8px!important;font-weight:900!important;letter-spacing:.12em!important;color:#0f766e!important}
+body.zebraDevice .zebraModeIntro h1{margin:3px 0 0!important;font-size:20px!important;line-height:1.05!important;color:var(--pf-navy)!important}
+body.zebraDevice .zebraModeIntro p{display:none!important}
+body.zebraDevice .zebraModeCards{display:grid!important;gap:8px!important;margin-top:8px!important}
+body.zebraDevice .zebraModeCard{width:100%!important;display:grid!important;grid-template-columns:44px 1fr 18px!important;align-items:center!important;gap:9px!important;min-height:74px!important;padding:9px 11px!important;border-radius:13px!important;text-align:left!important;box-shadow:none!important}
+body.zebraDevice .zebraModeCard .zebraModeIcon{width:42px!important;height:42px!important;display:grid!important;place-items:center!important;border-radius:11px!important;font-size:22px!important}
+body.zebraDevice .zebraModeCard strong{display:block!important;font-size:17px!important;color:var(--pf-navy)!important}
+body.zebraDevice .zebraModeCard small{display:block!important;margin-top:2px!important;font-size:9px!important;color:#5f6f82!important}
+body.zebraDevice .zebraModeArrow{font-size:24px!important}
+body.zebraDevice .zebraModeReceiving{border:1px solid #a7dfb5!important;background:#edf9f0!important}
+body.zebraDevice .zebraModeReceiving .zebraModeIcon{background:#d8f3df!important;color:#15803d!important}
+body.zebraDevice .zebraModeReceiving .zebraModeArrow{color:#15803d!important}
+body.zebraDevice .zebraModeExpiry{border:1px solid #cdbdfb!important;background:#f5f1ff!important}
+body.zebraDevice .zebraModeExpiry .zebraModeIcon{background:#e9e0ff!important;color:#7c3aed!important}
+body.zebraDevice .zebraModeExpiry .zebraModeArrow{color:#7c3aed!important}
+body.zebraDevice .zebraSignOut{width:100%!important;min-height:34px!important;margin-top:8px!important;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#f8fafc!important;color:#475569!important;font-weight:850!important}
+
+/* Action states replace the ordinary Last Scan card; never stack below it. */
+body.zebraDevice.zebraReceivingActive.handheldActionCardActive #lastScanCard{display:none!important}
+body.zebraDevice.zebraReceivingActive.handheldActionCardActive #page-dashboard .scanPanel{flex:0 0 auto!important}
+body.zebraDevice.zebraReceivingActive .handheldKnownExtraCard,
+body.zebraDevice.zebraReceivingActive .handheldReceivingReviewCard{flex:1 1 auto!important;min-height:0!important;margin:0!important;border-radius:11px!important;overflow:hidden!important;background:#fff!important;box-shadow:none!important;box-sizing:border-box!important}
+body.zebraDevice.zebraReceivingActive .handheldKnownExtraCard{border:1px solid #edb55d!important;display:flex!important;flex-direction:column!important}
+body.zebraDevice.zebraReceivingActive .handheldKnownExtraStatus{padding:7px 8px!important;background:#d97706!important;color:#fff!important;text-align:center!important;font-size:11px!important;font-weight:950!important}
+body.zebraDevice.zebraReceivingActive .handheldKnownExtraName{display:block!important;padding:7px 8px 1px!important;color:var(--pf-navy)!important;font-size:16px!important;line-height:1.05!important}
+body.zebraDevice.zebraReceivingActive .handheldKnownExtraMeta{display:grid!important;grid-template-columns:1fr 1fr!important;gap:3px!important;padding:3px 8px!important;font-size:8px!important;color:#607087!important}
+body.zebraDevice.zebraReceivingActive .handheldKnownExtraNote{margin:3px 8px!important;padding:5px!important;border-radius:7px!important;background:#fff7ed!important;color:#9a5410!important;font-size:8px!important;line-height:1.15!important}
+body.zebraDevice.zebraReceivingActive .handheldReceivingReviewCard.urgent{border:2px solid var(--pf-red)!important;display:flex!important;flex-direction:column!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewStatus{padding:7px 8px!important;background:var(--pf-red)!important;color:#fff!important;text-align:center!important;font-size:11px!important;font-weight:950!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewBody{padding:6px!important;display:flex!important;flex-direction:column!important;gap:4px!important;min-height:0!important}
+body.zebraDevice.zebraReceivingActive .handheldUnknownGTIN{display:grid!important;gap:1px!important;text-align:center!important}
+body.zebraDevice.zebraReceivingActive .handheldUnknownGTIN span{font-size:7px!important;font-weight:900!important;color:#596b80!important}
+body.zebraDevice.zebraReceivingActive .handheldUnknownGTIN strong{font-size:18px!important;color:var(--pf-navy)!important;letter-spacing:.02em!important;line-height:1!important}
+body.zebraDevice.zebraReceivingActive .handheldUnknownGTIN small{font-size:7px!important;color:var(--pf-red)!important;font-weight:900!important}
+body.zebraDevice.zebraReceivingActive .handheldPhotoButton{width:100%!important;min-height:31px!important;margin:2px 0 0!important;border:1px solid #9dbce7!important;border-radius:8px!important;background:#fff!important;color:var(--pf-blue)!important;font-size:9px!important;font-weight:900!important}
+body.zebraDevice.zebraReceivingActive .handheldPhotoButton.added{background:#ecfdf5!important;border-color:#86d5a4!important;color:#15803d!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewQtyLabel{display:grid!important;gap:2px!important;margin:2px 0 0!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewQtyLabel>span{font-size:8px!important;font-weight:950!important;color:#536579!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewQtyStepper{display:grid!important;grid-template-columns:50px minmax(0,1fr) 50px!important;gap:5px!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewQtyStepper button{min-height:42px!important;height:42px!important;border:0!important;border-radius:9px!important;background:var(--pf-blue)!important;color:#fff!important;font-size:24px!important;font-weight:950!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewQtyStepper input{width:100%!important;min-height:42px!important;height:42px!important;border:1px solid #cad8e8!important;border-radius:9px!important;background:#fff!important;text-align:center!important;font-size:21px!important;font-weight:950!important;box-sizing:border-box!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewSave{width:100%!important;min-height:38px!important;margin:2px 0 0!important;border:0!important;border-radius:8px!important;background:var(--pf-blue)!important;color:#fff!important;font-size:9px!important;font-weight:950!important}
+body.zebraDevice.zebraReceivingActive .handheldReviewCancel{width:100%!important;min-height:30px!important;margin:1px 0 0!important;border:1px solid #c9d8e9!important;border-radius:8px!important;background:#fff!important;color:#38506b!important;font-size:8px!important;font-weight:900!important}
+body.zebraDevice.zebraReceivingActive .handheldReceivingReviewCard.saved{border-color:#6fc58f!important}body.zebraDevice.zebraReceivingActive .handheldReceivingReviewCard.saved .handheldReviewStatus{background:#15803d!important}
+body.zebraDevice.handheldUnknownGTINFlash:after{content:"";position:fixed;inset:0;z-index:99999;pointer-events:none;border:7px solid #ef4444;animation:pfUnknownFlash .65s ease-out both}
+
+/* Recent / Undo - Handheld only. */
+body.zebraDevice .handheldRecentOverlay{position:fixed!important;inset:0!important;z-index:100100!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;padding:5px!important;background:rgba(7,20,38,.42)!important}
+body.zebraDevice .handheldRecentPanel{width:min(520px,100%)!important;max-height:90dvh!important;border-radius:16px 16px 10px 10px!important;background:#fff!important;overflow:hidden!important;box-shadow:0 18px 50px rgba(7,20,38,.22)!important}
+body.zebraDevice .handheldRecentPanel header{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;padding:10px!important;border-bottom:1px solid #e6edf5!important}
+body.zebraDevice .handheldRecentPanel header span{font-size:8px!important;color:#64748b!important}body.zebraDevice .handheldRecentPanel header strong{display:block!important;font-size:18px!important;color:var(--pf-navy)!important}body.zebraDevice .handheldRecentPanel header small{font-size:8px!important;color:#7b8796!important}
+body.zebraDevice .handheldRecentTabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;padding:7px 9px 2px!important}body.zebraDevice .handheldRecentTabs button{min-height:34px!important;border:1px solid #cad8e8!important;border-radius:8px!important;background:#fff!important;color:#526276!important;font-size:8px!important;font-weight:900!important}body.zebraDevice .handheldRecentTabs button.active{border-color:#7ca7e5!important;background:#eef5ff!important;color:var(--pf-blue)!important}
+body.zebraDevice .handheldRecentList{display:grid!important;gap:5px!important;padding:7px 9px!important;overflow:hidden!important}body.zebraDevice .handheldRecentRow{display:grid!important;grid-template-columns:22px minmax(0,1fr) 34px 72px!important;align-items:center!important;gap:5px!important;padding:7px 6px!important;border:1px solid #e1e9f2!important;border-radius:9px!important;background:#fff!important}body.zebraDevice .handheldRecentInfo strong{display:block!important;font-size:11px!important;color:var(--pf-navy)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}body.zebraDevice .handheldRecentInfo span{font-size:7px!important;color:#738195!important}body.zebraDevice .handheldRecentQty{font-size:13px!important;font-weight:950!important;color:#15803d!important;text-align:center!important}body.zebraDevice .handheldUndoItem{min-height:32px!important;border:1px solid #ef9a9a!important;border-radius:8px!important;background:#fff7f7!important;color:#c62828!important;font-size:8px!important;font-weight:950!important}body.zebraDevice .handheldRecentFooter{display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:6px!important;padding:7px 9px 9px!important;border-top:1px solid #e8eef5!important}body.zebraDevice .handheldRecentFooter span{font-size:7px!important;color:#748195!important}body.zebraDevice .handheldPanelDone{min-height:32px!important;padding:0 14px!important;border:0!important;border-radius:8px!important;background:var(--pf-blue)!important;color:#fff!important;font-weight:900!important}
+
+
+/* B10 Clean15.2 — Handheld workspace authority states */
+body.zebraDevice .zebraConnectedDot.isSyncing{background:#eef4ff;color:#315f9e}
+body.zebraDevice .zebraConnectedDot.isSyncing:before{background:#5b8fd6}
+body.zebraDevice .zebraConnectedDot.isOffline{background:#fff0f0;color:#a33b3b}
+body.zebraDevice .zebraConnectedDot.isOffline:before{background:#d14b4b}
+body.zebraDevice .zebraConnectedDot.isEmpty{background:#fff7e8;color:#8a641c}
+body.zebraDevice .zebraConnectedDot.isEmpty:before{background:#d69a2d}

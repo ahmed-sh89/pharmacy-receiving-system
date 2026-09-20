@@ -10,10 +10,7 @@
         content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     >
 
-    <meta
-        name="theme-color"
-        content="#A65F3A"
-    >
+    <meta name="theme-color" content="#EAF4FE">
 
     <meta
         name="description"
@@ -22,9 +19,9 @@
 
     <title>PharmFlow | Pharmacy Operations Platform</title>
 
-    <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark.svg">
-    <link rel="shortcut icon" href="assets/pharmflow-mark.svg">
-    <link rel="apple-touch-icon" href="assets/pharmflow-mark.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark-blue.svg">
+    <link rel="shortcut icon" href="assets/pharmflow-mark-blue.svg">
+    <link rel="apple-touch-icon" href="assets/pharmflow-mark-blue.svg">
 
     <!-- ================================
          STYLES
@@ -32,33 +29,51 @@
 
     <link
         rel="stylesheet"
-        href="css/style.css?v=2C1054"
+        href="css/style.css?v=B10CLEAN15_15"
     >
 
     <link
         rel="stylesheet"
-        href="css/sidebar.css?v=2C1054"
+        href="css/sidebar.css?v=B10CLEAN15_15"
     >
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=2C1142"
+        href="css/dashboard.css?v=B13ROOTFIX1"
     >
 
     <link
         rel="stylesheet"
-        href="css/responsive.css?v=2C1054"
+        href="css/responsive.css?v=B18HANDHELDASSIGN1"
     >
 
     <link
         rel="stylesheet"
-        href="css/auth.css?v=2C1054"
+        href="css/auth.css?v=B10CLEAN15_15"
     >
 
+<link rel="stylesheet" href="css/pharmflow-next.css?v=B17HANDHELDSCOPE1">
+<link rel="stylesheet" href="css/receiving-surface.css?v=B21SCOPEFEEDBACK1">
+
+    <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
+    <style id="pharmflowAuthBootstrapGate">
+        body.authBooting #authGate { visibility: hidden !important; }
+        body.authBooting .mainApplication {
+            visibility: hidden !important;
+        }
+    </style>
 </head>
 
 
 <body class="authBooting">
+<div id="workspaceBootOverlay" class="workspaceBootOverlay" role="status" aria-live="polite" aria-label="Loading PharmFlow">
+    <div class="workspaceBootCard">
+        <div class="authBootSpinner" aria-hidden="true"></div>
+        <span>LOADING WORKSPACE</span>
+        <strong>Preparing PharmFlow</strong>
+        <small>Loading your receiving workspace…</small>
+    </div>
+</div>
 <script>
 (function(){
     try{
@@ -314,137 +329,12 @@
         <!-- NAVIGATION -->
 
         <nav class="sidebarNavigation">
-
-
-            <button
-                class="sidebarItem active"
-                type="button"
-                data-page="dashboard"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.2a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
-
-                <span>
-                    Dashboard
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="receiving"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span>
-
-                <span>
-                    Receiving
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="files"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span>
-
-                <span>
-                    Orders
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="expiry"
-            >
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3l-2 3v3l2 3v6H7v-6l2-3V9L7 6z"/></svg></span>
-                <span>Near Expiry</span>
-            </button>
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="reports"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
-
-                <span>
-                    Reports
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="sessions"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3M18 7l3 3-3 3M6 17l-3-3 3-3"/></svg></span>
-
-                <span>
-                    Handheld & Sessions
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="archive"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM3 4h18v4H3zM9 12h6"/></svg></span>
-
-                <span>
-                    Archive
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="returnsArchive"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H4v5M4 12a8 8 0 1 0 2-5"/></svg></span>
-
-                <span>
-                    Returns Archive
-                </span>
-
-            </button>
-
-
-            <button
-                class="sidebarItem"
-                type="button"
-                data-page="settings"
-            >
-
-                <span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span>
-
-                <span>
-                    Settings
-                </span>
-
-            </button>
-
-
+            <button class="sidebarItem active" type="button" data-page="dashboard"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Receiving</span></button>
+            <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
+            <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
+            <button class="sidebarItem" type="button" data-page="itemMovement"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 17h12M13 14l3 3-3 3M20 7H8M11 4 8 7l3 3"/></svg></span><span>Item Movement</span></button>
+            <button class="sidebarItem" type="button" data-page="expiry"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M7 3h10v3l-2 3v3l2 3v6H7v-6l2-3V9L7 6z"/></svg></span><span>Near Expiry</span></button>
+            <button class="sidebarItem" type="button" data-page="settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
         </nav>
 
 
@@ -524,74 +414,28 @@
             </div>
 
 
-            <div class="topBarRight">
+            <div class="topBarRight pfnContextBar">
 
-
-                <div class="headerInfo">
-
-                    <span>
-                        Select Orders
+                <div class="pfnPharmacyIdentity" title="Current pharmacy workspace">
+                    <span class="pfnPharmacyIdentityIcon" aria-hidden="true">P</span>
+                    <span class="pfnPharmacyIdentityText">
+                        <small>Current Pharmacy</small>
+                        <strong id="topBarPharmacyName">Pharmacy</strong>
                     </span>
-
-                    <strong id="headerOrderId">
-                        No Order
-                    </strong>
-
-                    <div
-                        id="headerOrderPicker"
-                        class="headerOrderPicker"
-                        hidden
-                    >
-                        <button
-                            id="headerOrderPickerButton"
-                            class="headerOrderPickerButton"
-                            type="button"
-                            aria-haspopup="true"
-                            aria-expanded="false"
-                        >
-                            <span id="headerOrderPickerLabel">All Orders</span>
-                            <span class="headerOrderPickerChevron" aria-hidden="true">⌄</span>
-                        </button>
-
-                        <div
-                            id="headerOrderPickerMenu"
-                            class="headerOrderPickerMenu"
-                            role="menu"
-                            hidden
-                        ></div>
-                    </div>
-
+                    <span id="topBarPharmacyCode" class="pfnPharmacyIdentityCode">—</span>
                 </div>
-
-
-                <div class="headerInfo">
-
-                    <span>
-                        Session Status
-                    </span>
-
-                    <strong id="headerSessionId">
-                        INACTIVE
-                    </strong>
-
-                </div>
-
 
                 <div class="headerInfo globalMasterHeaderInfo" title="Global GTIN Master status">
                     <span>Global Master</span>
                     <strong id="headerMasterGTINStatus">SYNCING</strong>
                 </div>
 
-
                 <div
                     id="systemStatus"
                     class="systemStatus ready"
                 >
-
                     READY
-
                 </div>
-
 
             </div>
 
@@ -615,8 +459,7 @@
                 class="appPage active"
             >
 
-
-                <!-- STATISTICS -->
+<!-- STATISTICS -->
 
                 <section class="statisticsGrid">
 
@@ -655,7 +498,24 @@
                     </article>
 
 
-                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remaining" role="button" tabindex="0" aria-label="Open remaining items">
+                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remainingItems" role="button" tabindex="0" aria-label="Open remaining items">
+
+                        <div class="statCardLabel">
+
+                            Remaining Items
+
+                        </div>
+
+                        <strong id="statRemainingItems">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remaining" role="button" tabindex="0" aria-label="Open remaining units">
 
                         <div class="statCardLabel">
 
@@ -706,11 +566,11 @@
                     </article>
 
 
-                    <article class="statCard dashboardKpiCard" data-kpi="scans" role="button" tabindex="0" aria-label="Open recent scans">
+                    <article class="statCard dashboardKpiCard" data-kpi="scans" role="button" tabindex="0" aria-label="Open receiving activity">
 
                         <div class="statCardLabel">
 
-                            Total Scans
+                            Receiving Activity
 
                         </div>
 
@@ -745,16 +605,9 @@
 
                             <h2>
 
-                                Scan GS1 / Barcode
+                                Scan item
 
                             </h2>
-
-                            <p>
-
-                                Keep the cursor in the highlighted box and scan
-                                the product barcode.
-
-                            </p>
 
                         </div>
 
@@ -794,7 +647,8 @@
                             autocomplete="off"
                             autocapitalize="off"
                             spellcheck="false"
-                            placeholder="SCAN BARCODE HERE"
+                            placeholder=""
+                            aria-label="Scan item"
                         >
 
 
@@ -808,27 +662,39 @@
                     </div>
 
 
-                    <div class="scanPanelFooter">
+                    <div class="scanPanelFooter pfnActionBar">
+                        <div class="pfnReceivingActionGroup" aria-label="Receiving actions">
+                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
+                            <button id="btnReceivedItems" class="pfnAction pfnActionReceived" type="button">Received Items</button>
+                            <button id="btnAdjustReceiving" class="pfnAction pfnActionAdjust" type="button">Adjust</button>
+                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
+                        </div>
 
+                        <div class="pfnOrderControlGroup" aria-label="Active order controls">
+                            <button id="pfnManageOrders" class="pfnManageOrdersButton" type="button">
+                                <svg class="pfnManageOrdersIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M14.5 6.5 8.7 12.3a2.5 2.5 0 0 0 3.5 3.5l6.1-6.1a4 4 0 0 0-5.7-5.7L6.2 10.4a5.5 5.5 0 0 0 7.8 7.8l5.3-5.3"/>
+                                </svg>
+                                <span>Manage Orders</span>
+                            </button>
 
-                        <button
-                            id="btnQuickSearch"
-                            class="secondaryButton"
-                            type="button"
-                        >
+                            <div class="headerInfo pfnOrderSelector">
+                                <span>Work Orders</span>
+                                <strong id="headerOrderId" class="pfnLegacyOrderId" aria-hidden="true">No Active Order</strong>
+                                <div id="headerOrderPicker" class="headerOrderPicker" hidden>
+                                    <button id="headerOrderPickerButton" class="headerOrderPickerButton" type="button" aria-haspopup="true" aria-expanded="false">
+                                        <span id="headerOrderPickerLabel">ALL ACTIVE ORDERS</span>
+                                        <span class="headerOrderPickerChevron" aria-hidden="true">⌄</span>
+                                    </button>
+                                    <div id="headerOrderPickerMenu" class="headerOrderPickerMenu" role="menu" hidden></div>
+                                </div>
+                            </div>
 
-                            🔍 Search Item
-
-                        </button>
-
-
-                        <span>
-
-                            The scanner input will be captured automatically.
-
-                        </span>
-
-
+                            <div class="headerInfo pfnSessionStatus">
+                                <span>Session Status</span>
+                                <strong id="headerSessionId">INACTIVE</strong>
+                            </div>
+                        </div>
                     </div>
 
 
@@ -1075,39 +941,12 @@
 
                         <div class="headerActions receivingFilterBar">
 
-                            <details id="receivingIssueFilter" class="issueMultiFilter">
-                                <summary>
-                                    <span>Discrepancy Types</span>
-                                    <strong id="receivingIssueFilterLabel">All discrepancies</strong>
-                                </summary>
-                                <div class="issueMultiFilterMenu" role="group" aria-label="Discrepancy types">
-                                    <label><input type="checkbox" data-receiving-issue value="not_received" checked> Not Received</label>
-                                    <label><input type="checkbox" data-receiving-issue value="partial" checked> Partial Shortage</label>
-                                    <label><input type="checkbox" data-receiving-issue value="received_any" checked> Received Any Quantity</label>
-                                    <label><input type="checkbox" data-receiving-issue value="over" checked> Over Received</label>
-                                    <label><input type="checkbox" data-receiving-issue value="manual" checked> Manual / Unordered Extra</label>
-                                    <div class="issueMultiFilterActions">
-                                        <button type="button" id="btnSelectAllReceivingIssues">Select all</button>
-                                        <button type="button" id="btnClearReceivingIssues">Clear</button>
-                                        <button type="button" id="btnOkReceivingIssues" class="issueFilterOkButton">OK</button>
-                                    </div>
-                                </div>
-                            </details>
-
-                            <select id="receivingCategoryFilter" class="compactSelect" aria-label="Category filter">
-                                <option value="all">All Categories</option>
-                            </select>
-
-                            <button
-                                id="btnReceivingSearch"
-                                class="secondaryButton"
-                                type="button"
-                            >
-
-                                🔍 Search
-
-                            </button>
-
+                            <div id="receivingClassificationFilters" class="pfrClassificationFilters pfrGroupOnlyFilters" aria-label="Group filter">
+                                <details data-class-filter="groups" class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect">
+                                    <summary><span>Group</span><strong id="receivingGroupFilterLabel">All groups</strong></summary>
+                                    <div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div>
+                                </details>
+                            </div>
 
                         </div>
 
@@ -1117,26 +956,37 @@
 
                     <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
                         <div class="receivingSummaryHeader">
-                            <div>
+                            <div class="pfnReportTitleBlock">
                                 <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
-                                <h3>Discrepancy Report Preview</h3>
-                                <p>Select the receiving types above. The table, exports and Email Differences use exactly the rows currently displayed.</p>
+                                <div class="pfnReportTitleLine"><h3>Discrepancy Report</h3></div>
                             </div>
                             <div class="receivingSummaryActions">
-                                <button id="btnExportReceivingSummaryExcel" class="secondaryButton" type="button">Export Discrepancies · Excel</button>
-                                <button id="btnExportReceivingSummaryPDF" class="secondaryButton" type="button">Export Discrepancies · PDF</button>
-                                <button id="btnEmailReceivingDifferences" class="secondaryButton" type="button">✉ Email Differences</button>
-                                <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Finalize Receiving</button>
+                                <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
+                                <details class="pfnReportActionMenu">
+                                    <summary><span aria-hidden="true">↗</span> Export / Share</summary>
+                                    <div>
+                                        <button id="btnExportReceivingSummaryExcel" type="button">Excel</button>
+                                        <button id="btnExportReceivingSummaryPDF" type="button">PDF</button>
+                                        <button id="btnEmailReceivingDifferences" type="button">Copy Email</button>
+                                    </div>
+                                </details>
+                                <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Complete Receiving</button>
                             </div>
                         </div>
                         <div class="receivingSummaryGrid discrepancyGrid">
-                            <div class="displayedMetric"><span>Displayed Items</span><strong id="rsDisplayedItems">0</strong></div>
-                            <div><span>All Discrepancies</span><strong id="rsTotalItems">0</strong></div>
-                            <div><span>Shortage Items</span><strong id="rsShort">0</strong></div>
-                            <div><span>Over Received</span><strong id="rsOver">0</strong></div>
-                            <div><span>Manual Extras</span><strong id="rsManual">0</strong></div>
+                            <button type="button" class="displayedMetric pfnIssueCard active" data-issue-card="all"><span>All Discrepancies</span><strong id="rsTotalItems">0</strong></button>
+                            <button type="button" class="pfnIssueCard active" data-issue-card="shortage"><span>Shortage Items</span><strong id="rsShort">0</strong></button>
+                            <button type="button" class="pfnIssueCard active" data-issue-card="received"><span>Received Any Quantity</span><strong id="rsReceived">0</strong></button>
+                            <button type="button" class="pfnIssueCard active" data-issue-card="over"><span>Over Received</span><strong id="rsOver">0</strong></button>
+                            <button type="button" class="pfnIssueCard active" data-issue-card="manual"><span>Manual Extras</span><strong id="rsManual">0</strong></button>
+                            <span class="pfnDisplayedItems">Displayed <strong id="rsDisplayedItems">0</strong></span>
                         </div>
                     </section>
+
+                    <div class="pfnReceivingSearchBlock">
+                        <input id="receivingInlineSearch" type="search" placeholder="Search by Item Name or Item Number" autocomplete="off" aria-label="Search receiving report items">
+                        <div id="receivingInlineResult" class="pfnReceivingInlineResult" hidden></div>
+                    </div>
 
                     <div class="tableContainer">
 
@@ -1153,11 +1003,19 @@
                                 </th>
 
                                 <th>
+                                    Order Number
+                                </th>
+
+                                <th>
                                     Item Number
                                 </th>
 
                                 <th>
                                     Item Name
+                                </th>
+
+                                <th>
+                                    Group
                                 </th>
 
                                 <th>
@@ -1169,7 +1027,7 @@
                                 </th>
 
                                 <th>
-                                    Remaining
+                                    Difference
                                 </th>
 
                                 <th>
@@ -1429,6 +1287,8 @@
                  NEAR EXPIRY PAGE
                  Shared by PC and Zebra. Device CSS changes layout only.
             =================================================== -->
+
+            <section id="page-item-movement" class="appPage"><div class="pfnMovementIntro"><section class="pfnModuleHero"><span class="pfnEyebrow">ITEM MOVEMENT · FOUNDATION</span><h2>Order data in. Movement intelligence out.</h2><p>This module is intentionally independent from Receiving. In the next phase it will read bulk order files, normalize their commercial data, discard the source files and generate item movement analysis from the extracted records.</p></section><section class="pfnModuleGrid"><article class="pfnModuleCard"><span class="pfnPrototypeTag">NEXT PHASE</span><h3>Import Orders</h3><p>Select tens or hundreds of warehouse and pharmacy-transfer order files in one operation. Files will be read locally and only structured order data will be persisted.</p><button class="pfnActionButton secondary" type="button" disabled>Bulk Import Foundation</button></article><article class="pfnModuleCard"><span class="pfnPrototypeTag">NEXT PHASE</span><h3>Movement Report</h3><p>Search by Item Code or Item Name, choose a date range and analyze quantity, source, destination and order history without relying on Receiving results.</p><button class="pfnActionButton secondary" type="button" disabled>Report Foundation</button></article></section></div></section>
 
             <section
                 id="zebraExpiryShell"
@@ -2879,43 +2739,50 @@
      APPLICATION FILES
 =================================================== -->
 
-<script src="js/config.js?v=2C1054"></script>
+<script src="js/config.js?v=B10CLEAN15_15"></script>
 
-<script src="js/utils.js?v=2C1054"></script>
+<script src="js/utils.js?v=B10CLEAN15_15"></script>
 
-<script src="js/state.js?v=2C11411"></script>
+<script src="js/state.js?v=B17HANDHELDSCOPE1"></script>
 
-<script src="js/router.js?v=2C1054"></script>
+<script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="js/ui.js?v=2C1142"></script>
+<script src="ui.js?v=B21SCOPEFEEDBACK1"></script>
 
-<script src="js/excel.js?v=2C1054"></script>
+<script src="js/excel.js?v=B10CLEAN15_15"></script>
 
-<script src="js/master-gtin.js?v=2C1054"></script>
+<script src="js/master-gtin.js?v=B11RECEIVING4"></script>
 
-<script src="js/scanner.js?v=2C1144"></script>
+<script src="js/scanner.js?v=B13ROOTFIX1"></script>
 
-<script src="js/receiving.js?v=2C1142"></script>
+<script src="js/receiving.js?v=B21SCOPEFEEDBACK1"></script>
 
-<script src="js/session.js?v=2C11411"></script>
+<script src="js/session.js?v=B10CLEAN15_15"></script>
 
-<script src="js/reports.js?v=2C1054"></script>
+<script src="js/reports.js?v=B20ASSIGNRETRY1"></script>
 
-<script src="supabase.js?v=A_IDLE10_2"></script>
+<script src="js/supabase.js?v=B10CLEAN15_15"></script>
 
-<script src="js/orders.js?v=2C1070"></script>
+<script src="js/orders.js?v=B17HANDHELDSCOPE1"></script>
 
-<script src="js/auth.js?v=2C11413"></script>
+<script src="js/auth.js?v=B10CLEAN22"></script>
 
-<script src="js/needs-review.js?v=2C1054"></script>
+<!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
+<script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
 
-<script src="js/expiry.js?v=2C1144"></script>
+<script src="js/needs-review.js?v=B11RECEIVING4"></script>
 
-<script src="cloud-workspace.js?v=A_ACTIVE_LEDGER_V3_20260915_2"></script>
+<script src="js/expiry.js?v=B10CLEAN15_15"></script>
 
-<script src="js/app.js?v=2C11411"></script>
+<script src="cloud-workspace.js?v=B20ASSIGNRETRY1"></script>
 
-<script src="js/handheld-runtime.js?v=2C1140"></script>
+<script src="js/data-layer.js?v=B10CLEAN15_15"></script>
+<script src="js/pharmflow-next.js?v=B19ASSIGNMENTSOURCE1"></script>
+
+<script src="js/app.js?v=B13ROOTFIX1"></script>
+
+<script src="js/handheld-runtime.js?v=B17HANDHELDSCOPE1"></script>
+<script src="js/receiving-release.js?v=B17HANDHELDSCOPE1"></script>
 
 
 </body>

@@ -1,0 +1,6 @@
+B11 Clean16 — Mobile CSS Ownership Root Fix
+- Root-fixed stylesheet load-order conflict between dashboard.css and pharmflow-next.css.
+- Consolidated phone application ownership into one final mobile block in the last-loaded stylesheet.
+- Restored true horizontal filter-strip scrolling.
+- Reduced mobile Batch Qty width to 40vw / 168px max.
+- Desktop and Handheld behavior intentionally unchanged.

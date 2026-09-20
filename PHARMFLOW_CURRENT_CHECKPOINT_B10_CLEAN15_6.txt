@@ -1,0 +1,6 @@
+B10 CLEAN15.6 — PC SEARCH UX + BATCH RESET
+Status: READY FOR USER VERIFICATION
+Project: B only
+Modified files: js/ui.js, css/dashboard.css
+Hard non-regression: no Handheld change; no quantity aggregation change; no SQL/Supabase change.
+Supersedes for deployment: do NOT deploy the uninstalled Clean15.5 package.

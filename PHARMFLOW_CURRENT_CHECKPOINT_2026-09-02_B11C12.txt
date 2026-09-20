@@ -1,0 +1,26 @@
+PHARMFLOW CURRENT CHECKPOINT — B11 Clean12
+Date: 2026-09-02
+Status: READY FOR TEST
+Target: Project B application only. Production A application untouched. Shared Supabase unchanged by this release.
+
+Change scope:
+- Mobile-only compact Order Item Browser cards.
+- Item Name remains on one line on phone; horizontal touch scroll is allowed for long names.
+- Mobile Order/Category/High Priority/Quantity controls use one horizontal scroll rail instead of wrapping/crushing.
+- Smaller mobile typography/padding for item cards and priority badges.
+- Desktop PC layout intentionally unchanged.
+- Handheld/Zebra layout intentionally unchanged.
+
+Regression protection:
+- No Receiving transaction logic changes.
+- No Auth changes.
+- No GTIN changes.
+- No Supabase/SQL changes.
+- Preserve existing desktop Order Item Browser behavior and filters.
+
+Verification:
+1. Project B mobile: open Total Items / Order Item Browser.
+2. Confirm long item name stays one line and can scroll horizontally if needed.
+3. Confirm Order, Category, High Priority and Quantity controls remain accessible by horizontal swipe.
+4. Confirm cards are materially shorter and readable.
+5. PC: confirm Order Item Browser is visually unchanged.

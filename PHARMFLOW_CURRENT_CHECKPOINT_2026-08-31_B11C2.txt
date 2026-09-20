@@ -1,0 +1,88 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-08-31 — B11 CLEAN 2
+
+STATUS
+- Target: Project B / pharmflow-dev ONLY.
+- Production A: UNTOUCHED.
+- B10 Clean 9 Active Order REMOVE root fix: USER VERIFIED / DONE — NON-REGRESSION.
+- B10 Clean 14 PC↔Handheld receiving quantity sync: USER VERIFIED for functional sync; egress reduction remains under observation.
+- B11 Clean 1: TEST FAILED due UI ownership regressions found by Product Owner.
+- B11 Clean 2 Responsive Ownership Root Fix: READY FOR TEST — NOT DONE.
+
+ROOT CAUSE FIXED
+- Clean1 Handheld CSS owner block contained shared/unscoped selectors (notably quantity/review component selectors), allowing Handheld styling to affect PC Login/Receiving layout.
+- Clean1 Handheld Login owner also changed desktop auth because core auth selectors were global.
+- Special Handheld Known/Unknown cards were appended below the normal Last Scan card, creating vertical stacking and unavoidable scrolling.
+- Clean2 removes the Clean1 owner blocks and replaces them with responsibility-scoped owners; this is not an additive patch over Clean1.
+
+CLEAN2 CHANGES
+1) PC NON-REGRESSION / OWNERSHIP
+- Desktop auth styling restored to the pre-B11 owner path; all new auth rules are body.zebraDevice scoped.
+- Handheld quantity/Recent/Known/Unknown selectors are all Zebra scoped.
+- Desktop Batch Qty layout is no longer owned by Handheld CSS.
+- PC Needs Review styling is scoped to #needsReviewOverlay only, preventing it from owning Dashboard content.
+
+2) HANDHELD SIGN IN
+- Compact single-viewport login owner.
+- Brand block reduced to a short horizontal lockup; logo no longer consumes half the screen.
+- Email, Password, Show, Remember, Sign In, Forgot Password, Register and Activate remain visible without normal vertical scrolling on target Handheld viewport.
+- Blue/slate PharmFlow identity; old brown/orange is not used by the active Handheld owner.
+
+3) MODE SELECTION
+- Compact layout.
+- Receiving uses clear green treatment; Expiry uses clear violet treatment; Work Mode uses teal/neutral treatment.
+- No brown/legacy colors.
+- No workflow/business logic changed.
+
+4) HANDHELD RECEIVING — ONE VIEWPORT
+- Main worker page is height constrained to the Handheld viewport; non-worker dashboard sections are removed from the Handheld layout.
+- Header and Scan/Search strip shortened.
+- Scan Ready indicator is a small vertical green bar BEFORE the barcode square/icon at the left edge.
+- Successful scan gives a full green field flash; visual only.
+- Last Scan, quantity +/- , saved acknowledgement, Clear Screen and Ordered/Received/Remaining are compressed while remaining touch-safe.
+- PC/admin controls remain unavailable to the Handheld worker.
+
+5) KNOWN/UNKNOWN ACTION STATES
+- Known Item · Not in Order and Unknown GTIN action cards REPLACE the normal Last Scan card while active instead of stacking underneath it.
+- This removes the root cause of action-state scrolling.
+- Known item warning remains amber; item/action controls remain blue.
+- Unknown GTIN remains red exception with blue operational actions.
+- Existing receiving and Needs Review transaction logic is unchanged.
+
+6) PC NEEDS REVIEW
+- Overlay-only operator workspace; cannot render as a Dashboard-owned layout.
+- Review cases use structured fields: GTIN, Quantity, Order, Source, Entries, reason and resolution controls.
+- Text hierarchy/alignment rebuilt for quick operational reading.
+- Existing grouped-case logic, photo handling and resolution behavior preserved.
+
+DATABASE
+- No new migration in Clean2.
+- If PHASE_B11_HANDHELD_NEEDS_REVIEW_SYNC.sql from Clean1 was already applied, do not run it again for Clean2.
+
+CHANGED FILES
+- index.html
+- css/auth.css
+- css/dashboard.css
+- js/receiving.js
+- js/ui.js
+
+FOCUSED VERIFICATION
+1) PC Login matches pre-B11 desktop layout; no Handheld sizing/layout contamination.
+2) PC Receiving Batch Qty +/- remains aligned inside its original row and does not overlap fields.
+3) PC Dashboard does not show Needs Review review-case content unless Needs Review overlay is explicitly opened.
+4) PC Needs Review opens as a clean overlay with structured, aligned case information.
+5) Handheld Login: all normal login controls visible without vertical scroll.
+6) Handheld Mode screen: Receiving green, Expiry violet; no brown/legacy blocks; no scroll.
+7) Handheld Receiving ready state: no page scroll; Scan/Search, Last Scan, +/- controls, acknowledgement, Clear Screen and quantities visible.
+8) Successful known-item scan: Scan/Search field gives obvious green success flash; +1 behavior unchanged and PC sync still converges.
+9) Scan Ready vertical green bar is positioned before the barcode square at the left of the field.
+10) Known Item · Not in Order: action card replaces Last Scan; all required actions visible without page scroll.
+11) Unknown GTIN: action card replaces Last Scan; Save to Needs Review remains functional and PC badge/case appears using Clean1 lightweight cloud count path.
+12) Recent/Undo remains functional and audit behavior persists.
+13) Regression: Clean9 Active Order REMOVE remains fixed.
+14) Regression: Clean14 PC↔Handheld receiving sync remains correct.
+
+EXACT NEXT ACTION
+- Deploy B11 Clean2 modified files to Project B.
+- No SQL is required for Clean2 itself.
+- Hard refresh PC and Handheld.
+- Run tests 1–14, starting with PC Login + PC Batch Qty + Handheld no-scroll layout before broader workflow testing.

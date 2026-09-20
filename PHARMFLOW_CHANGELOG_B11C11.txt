@@ -1,0 +1,5 @@
+B11 Clean11 — Mobile Responsive Rebuild
+- Added phone-only application layout ownership.
+- Reflowed mobile top bar, KPIs, scan/last-scan, action controls and smart results.
+- Converted KPI Order Item Browser rows to mobile card presentation using semantic data labels.
+- Preserved desktop and Handheld selectors and all receiving/auth/database logic.

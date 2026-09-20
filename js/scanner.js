@@ -65,8 +65,15 @@ function initializeScanner(){
        3. Item Name search
     */
 
-    input.placeholder =
-        "Scan barcode or search by Item Number / Item Name";
+    /* Handheld receiving is scanner-only. A placeholder competes with the
+       real caret and made an old message reappear after the Handheld UI had
+       intentionally cleared it. Desktop retains the search guidance. */
+    input.placeholder = isZebraReceivingInput()
+        ? ""
+        : "Scan barcode or search by Item Number / Item Name";
+    input.setAttribute("aria-label",isZebraReceivingInput()
+        ? "Scan item"
+        : "Scan barcode or search by item number or item name");
 
     input.setAttribute(
         "autocomplete",

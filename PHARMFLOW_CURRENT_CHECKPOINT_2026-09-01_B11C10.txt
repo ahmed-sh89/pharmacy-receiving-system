@@ -1,0 +1,20 @@
+PHARMFLOW CURRENT CHECKPOINT — B11 CLEAN10
+Date: 2026-09-01
+Status: READY FOR TEST
+Scope: Project B application only. Production A untouched. Shared Supabase unchanged.
+
+USER-APPROVED BASELINE
+- B11 Clean9 desktop Login accepted as visually acceptable.
+
+CHANGED
+- Auth CSS owner rules edited directly; no new legacy patch stack.
+- Desktop branding: PharmFlow P mark is centered above the PharmFlow wordmark/tagline.
+- Added explicit phone/mobile responsive ownership <=760px.
+- Mobile Login is single-column, full-width, viewport-contained; desktop split layout cannot overflow horizontally into phone view.
+- Handheld rules remain independently owned by body.zebraDevice.
+- No Auth JS, Receiving, GTIN, Supabase, schema, or data changes.
+
+VERIFY
+1. Desktop: P mark centered above PharmFlow; entire Login remains visible without page scroll.
+2. iPhone/mobile: no horizontal overflow; brand above form; all controls fit screen width.
+3. Handheld: existing compact Login remains intact.

@@ -1,0 +1,10 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-02 — B11 Clean14
+Status: READY FOR TEST
+Scope: Project B mobile CSS only. Project A / PC / Handheld behavior untouched.
+Changes:
+- Order Item Browser mobile filter strip uses one true horizontal scroll viewport.
+- Filter controls remain one line and can pan left/right by touch.
+- Mobile Last Scan Batch Qty control reduced to max 260px / 58vw and aligned safely.
+- Removed stale <=430px card-grid rules conflicting with horizontal table rows.
+Regression risks: Mobile CSS only; verify PC and Handheld unchanged.
+Exact test: iPhone hard refresh; swipe filter strip horizontally to reveal High Priority and Quantity Sort; verify item table rows horizontally scroll; verify Batch Qty control compact; verify PC and Handheld layouts unchanged.

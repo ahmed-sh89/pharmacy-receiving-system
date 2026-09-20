@@ -1,0 +1,7 @@
+B11 Clean15 — Mobile Owner Cleanup
+- Replaced the prior B11 mobile owner instead of stacking another patch.
+- Fixed filter scrolling at the responsible element: pfnBrowserControlRow now owns horizontal overflow.
+- Filter controls remain one line with fixed non-shrinking widths; Quantity Sort is reachable by swipe.
+- Reduced mobile-only Batch Qty to 42vw / max 180px and compacted its +/- controls.
+- Removed the duplicate <=430px browser-row override from the mobile owner.
+- PC, Handheld, JS, Supabase, and receiving transaction logic unchanged.

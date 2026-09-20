@@ -1,0 +1,32 @@
+# PHARMFLOW CURRENT CHECKPOINT — B7
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: B7 — Dashboard Visual Root Fix
+Status: READY FOR TEST
+
+USER-REPORTED DEFECTS
+1. KPI decorative graphics still overlapped numeric values.
+2. Needs Review/action row was clipped or not fully visible.
+3. Receiving Progress was visually misaligned.
+
+ROOT CAUSE
+Legacy dashboard.css pseudo-elements (::before) remained active on KPI cards after
+the compact B layout changed their padding. The action row and progress card also
+inherited conflicting late-loaded desktop sizing rules.
+
+FIX
+- Removed KPI pseudo-decoration entirely; numbers and labels now have dedicated space.
+- Forced all Project A dynamic action buttons visible, including Needs Review counter.
+- Rebuilt only the visual alignment of Receiving Progress.
+- Preserved the approved light-blue/navy identity.
+
+NON-REGRESSION
+No changes to receiving.js, orders.js, ui.js, scanner.js, sync/session,
+Supabase, SQL, GTIN logic, quantities, reports, tenant isolation or Production A.
+
+VERIFY
+Hard refresh B and confirm:
+- 6 KPI cards: no icon/number overlap.
+- Needs Review fully visible.
+- Search / Received / Order Items / Receiving Report remain visible.
+- Progress title, percentage, bar, Completed and Remaining are aligned.

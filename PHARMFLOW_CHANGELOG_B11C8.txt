@@ -1,0 +1,9 @@
+B11 Clean8 — Auth Clean Rebuild — 2026-09-01
+
+- Rebuilt the Login stylesheet from a single B11 owner instead of stacking old auth patches.
+- Removed prior B11 Clean2/Clean6/Clean7 auth override blocks.
+- Replaced separated white-panel composition with a seamless light premium surface.
+- Increased desktop typography and input/control sizes.
+- Added visually distinct light-blue Email and light-lavender Password fields.
+- Recolored PharmFlow SVG mark from legacy copper to blue/navy.
+- Preserved auth/session and all business JavaScript unchanged.

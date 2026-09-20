@@ -18,8 +18,10 @@ const UI = {
     reportSearchResults:[],
 
     receivingFilters:{
-        issues:new Set(["not_received","partial","over","manual"]),
-        category:"all"
+        issues:new Set(["not_received","partial","received_any","over","manual"]),
+        category:"all",
+        classification:{groups:[],categories:[],subCategories:[]},
+        search:""
     },
 
     smartScan:{
@@ -69,6 +71,9 @@ function cacheUIElements(){
 
         statCompleted:
             document.getElementById("statCompleted"),
+
+        statRemainingItems:
+            document.getElementById("statRemainingItems"),
 
         statRemaining:
             document.getElementById("statRemaining"),
@@ -464,6 +469,127 @@ function createSmartScanSearchUI(){
    MOVE LAST SCAN
 ===================================================== */
 
+
+let receivingAutoClearTimer=null;
+let receivingAutoClearKey="";
+
+function cancelReceivingAutoClear(){
+    clearTimeout(receivingAutoClearTimer);
+    receivingAutoClearTimer=null;
+    receivingAutoClearKey="";
+}
+
+function receivingLastScanKey(scan){
+    if(!scan) return "";
+
+    return toSafeString(
+        scan.transactionId ||
+        [
+            scan.itemCode,
+            scan.dateTime,
+            scan.receivedQty,
+            scan.gtin
+        ].join("|")
+    );
+}
+
+function scheduleReceivingAutoClear(scan){
+    if(!scan) return;
+
+    const key=receivingLastScanKey(scan);
+
+    /* Cloud/workspace refreshes may render Last Scan repeatedly. The timer is
+       tied to the actual scan identity, so sync cannot postpone the 30-second
+       operator inactivity boundary. */
+    if(!key || key===receivingAutoClearKey) return;
+
+    cancelReceivingAutoClear();
+    receivingAutoClearKey=key;
+
+    receivingAutoClearTimer=setTimeout(()=>{
+        const current=AppState?.workspace?.lastScan;
+
+        if(!current || receivingLastScanKey(current)!==key) return;
+
+        let isHandheld=false;
+        try{
+            isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+        }catch(_){}
+
+        /* PC quantity editing is deliberate activity. Handheld has no modal
+           dependency here, so its Last Scan always clears after 30 seconds. */
+        if(!isHandheld){
+            const quantityModal=document.getElementById("quantityAdjustmentModal");
+            if(quantityModal?.classList?.contains("open")){
+                receivingAutoClearKey="";
+                scheduleReceivingAutoClear(current);
+                return;
+            }
+        }
+
+        /* UI/local-batch boundary only. Never reverse a receiving transaction
+           or change cumulative Received/history. */
+        if(typeof resetCurrentLocalBatch==="function") resetCurrentLocalBatch();
+
+        AppState.workspace.lastScan=null;
+        cancelReceivingAutoClear();
+        refreshEntireUI?.();
+        window.hhRefreshReadyState?.();
+
+        try{ document.activeElement?.blur?.(); }catch(_){}
+        setTimeout(()=>{
+            focusScannerInput?.();
+            if(isHandheld) window.hhRepairScannerFocus?.("last-scan-auto-clear");
+        },30);
+    },30000);
+}
+
+
+function ensurePcClearScreenButton(){
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        return;
+    }
+
+    const card=document.getElementById("lastScanCard");
+    if(!card) return;
+
+    let button=document.getElementById("btnPcClearLastScan");
+
+    if(!button){
+        button=document.createElement("button");
+        button.id="btnPcClearLastScan";
+        button.type="button";
+        button.className="pcClearLastScan";
+        button.textContent="CLEAR SCREEN";
+
+        const metrics=card.querySelector(".lastScanMetrics");
+        if(metrics){
+            metrics.insertAdjacentElement("afterend",button);
+        }else{
+            card.appendChild(button);
+        }
+    }
+
+    button.onclick=()=>{
+        /*
+           Visual-only clear. Does not modify receiving quantities/history.
+        */
+        cancelReceivingAutoClear();
+
+        /* CLEAR SCREEN is UI-only for shared receiving data, but it is an
+           explicit boundary for this PC's local current batch. */
+        if(typeof resetCurrentLocalBatch === "function"){
+            resetCurrentLocalBatch();
+        }
+
+        AppState.workspace.lastScan=null;
+        refreshEntireUI?.();
+
+        try{ document.activeElement?.blur?.(); }catch(_){}
+        setTimeout(()=>focusScannerInput?.(),30);
+    };
+}
+
 function moveLastScanBelowScanBox(){
 
     const lastScanCard =
@@ -589,6 +715,28 @@ function bindSmartScanSelectionControls(){
             addSelectedSmartQuantity
         );
 
+    document
+        .getElementById(
+            "smartQuantityInput"
+        )
+        ?.addEventListener(
+            "keydown",
+            function(event){
+                let isHandheld=false;
+                try{
+                    isHandheld=typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice();
+                }catch(_){ }
+
+                if(isHandheld || event.key !== "Enter" || event.repeat){
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                addSelectedSmartQuantity();
+            }
+        );
+
 }
 
 
@@ -685,71 +833,73 @@ function renderSmartScanSearchResults(
 
     results.forEach(item=>{
 
-        const button =
-            document.createElement(
-                "button"
-            );
+        const row = document.createElement("div");
+        row.className = "smartSearchResultRow";
+        row.style.display = "flex";
+        row.style.alignItems = "stretch";
+        row.style.gap = "6px";
 
-        button.type =
-            "button";
-
-        button.className =
-            "smartSearchResult";
-
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "smartSearchResult";
+        button.style.flex = "1 1 auto";
         button.innerHTML = `
-
             <div class="smartSearchResultMain">
-
-                <strong>
-                    ${escapeHTML(
-                        item.itemName
-                    )}
-                </strong>
-
-                <span>
-                    ${escapeHTML(
-                        item.itemCode
-                    )}
-                </span>
-
+                <strong>${escapeHTML(item.itemName)}</strong>
+                <span>${escapeHTML(item.itemCode)}</span>
             </div>
-
             <div class="smartSearchResultQty">
+                <span>${toNumber(item.receivedQty,0)} / ${toNumber(item.orderedQty,0)}</span>
+                <small>Received</small>
+            </div>`;
 
-                <span>
-                    ${toNumber(
-                        item.receivedQty,
-                        0
-                    )}
-                    /
-                    ${toNumber(
-                        item.orderedQty,
-                        0
-                    )}
-                </span>
+        button.addEventListener("click",function(){
+            selectSmartScanItem(item);
+        });
+        row.appendChild(button);
 
-                <small>
-                    Received
-                </small>
+        /* Phase 2C.7.6: the Dashboard inline search must expose the same
+           historical review/correction workflow as the Receiving search. */
+        if(item.manual===true && toNumber(item.receivedQty,0)===0){
+            const remove=document.createElement("button");
+            remove.type="button";
+            remove.className="secondaryButton removeManualSearchButton";
+            remove.textContent="Remove Manual Item";
+            remove.style.flex="0 0 auto";
+            remove.addEventListener("click",function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                if(typeof deleteManualItem==="function" && deleteManualItem(item.itemCode)){
+                    renderSmartScanSearchResults(
+                        searchItems(
+                            getSearchableItems(),
+                            query,
+                            APP_CONFIG.receiving.searchResultLimit
+                        ),
+                        query
+                    );
+                }
+            });
+            row.appendChild(remove);
+        }
 
-            </div>
+        if(toNumber(item.receivedQty,0) > 0){
+            const review=document.createElement("button");
+            review.type="button";
+            review.className="secondaryButton smartSearchReviewButton";
+            review.textContent="Review / Adjust";
+            review.style.flex="0 0 auto";
+            review.style.padding="0 10px";
+            review.addEventListener("click",function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                closeSmartScanSearch(false);
+                openSearchedItemReview(item);
+            });
+            row.appendChild(review);
+        }
 
-        `;
-
-        button.addEventListener(
-            "click",
-            function(){
-
-                selectSmartScanItem(
-                    item
-                );
-
-            }
-        );
-
-        fragment.appendChild(
-            button
-        );
+        fragment.appendChild(row);
 
     });
 
@@ -1006,10 +1156,149 @@ function closeSmartScanSearch(
 function bindUIEvents(){
 
     setupDashboardKpiInteractivity();
+    setupPhase263ActionDelegation();
     refreshScanSafetyUI();
 
     document.getElementById("btnExportReceivingSummaryExcel")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryExcel==="function") exportReceivingSummaryExcel(); });
     document.getElementById("btnExportReceivingSummaryPDF")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryPDF==="function") exportReceivingSummaryPDF(); });
+    document.getElementById("btnEmailReceivingDifferences")?.addEventListener("click",()=>{
+        if(
+            typeof buildEmailReportFromDisplayedReceiving!=="function" ||
+            typeof openFinalizedDiscrepancyEmailPreview!=="function"
+        ){
+            showToast?.("Email report is unavailable","error");
+            return;
+        }
+
+        const report=buildEmailReportFromDisplayedReceiving();
+
+        if(!report.rows.length){
+            showToast?.("No displayed rows to email","warning");
+            return;
+        }
+
+        openFinalizedDiscrepancyEmailPreview(report,{
+            fromArchive:false,
+            liveReport:true,
+            filteredView:true
+        });
+    });
+
+    {
+        const pickerButton=document.getElementById("headerOrderPickerButton");
+        const pickerMenu=document.getElementById("headerOrderPickerMenu");
+
+        pickerButton?.addEventListener("click",event=>{
+            event.preventDefault();
+            event.stopPropagation();
+
+            const willOpen=pickerMenu?.hidden!==false;
+
+            if(pickerMenu){
+                pickerMenu.hidden=!willOpen;
+            }
+
+            pickerButton.setAttribute(
+                "aria-expanded",
+                willOpen ? "true" : "false"
+            );
+        });
+
+        pickerMenu?.addEventListener("click",event=>{
+            const action=event.target.closest("[data-order-picker-action]");
+            const option=event.target.closest("[data-header-order]");
+
+            if(action){
+                event.preventDefault();
+                const active=
+                    typeof getActiveReceivingOrderNumbers==="function"
+                        ? getActiveReceivingOrderNumbers()
+                        : [];
+
+                if(action.dataset.orderPickerAction==="all"){
+                    pickerMenu
+                        .querySelectorAll("[data-header-order]")
+                        .forEach(el=>{ el.checked=true; });
+                }
+                else if(action.dataset.orderPickerAction==="clear"){
+                    pickerMenu
+                        .querySelectorAll("[data-header-order]")
+                        .forEach(el=>{ el.checked=false; });
+                }
+                else if(action.dataset.orderPickerAction==="ok"){
+                    const selected=[
+                        ...pickerMenu.querySelectorAll(
+                            "[data-header-order]:checked"
+                        )
+                    ].map(el=>el.dataset.headerOrder);
+
+                    if(!selected.length){
+                        showToast?.(
+                            "Select at least one Order",
+                            "warning"
+                        );
+                        return;
+                    }
+
+                    if(
+                        typeof setSelectedReceivingOrderNumbers==="function" &&
+                        setSelectedReceivingOrderNumbers(selected)
+                    ){
+                        window.PharmFlowOrderScope=
+                            selected.length===active.length
+                                ? "ALL"
+                                : selected.join("|");
+
+                        pickerMenu.hidden=true;
+                        pickerButton?.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                        refreshHeader();
+                        refreshDashboard();
+                        refreshProgress();
+                        refreshReceivingTable();
+                        refreshHealthSummary?.();
+                        refreshOpenOrderStatusReport?.();
+                        /* Phase 2C.11.4.4 — Finalize selection-state sync.
+                           The header picker updates the receiving order scope, but the
+                           Finalize button is maintained by orders.js and is not rebuilt
+                           by the normal Receiving UI refresh. Re-evaluate it immediately
+                           so a persisted multi-order workspace can finalize the single
+                           order the operator just selected. */
+                        refreshFinalizeReceivingButton?.();
+
+                        showToast?.(
+                            selected.length===active.length
+                                ? "Showing all active orders"
+                                : selected.length===1
+                                    ? "Selected order: "+selected[0]
+                                    : selected.length+" Orders Selected",
+                            "success"
+                        );
+                    }
+                }
+                return;
+            }
+
+            if(option){
+                event.stopPropagation();
+            }
+        });
+
+        document.addEventListener("click",event=>{
+            if(
+                pickerMenu &&
+                !pickerMenu.hidden &&
+                !event.target.closest("#headerOrderPicker")
+            ){
+                pickerMenu.hidden=true;
+                pickerButton?.setAttribute("aria-expanded","false");
+            }
+        });
+    }
+
 
     document
         .getElementById("btnQuickSearch")
@@ -1019,47 +1308,34 @@ function bindUIEvents(){
         );
 
 
-    document
-        .getElementById("btnReceivingSearch")
-        ?.addEventListener(
-            "click",
-            openItemSearchModal
-        );
 
-
-    document.querySelectorAll("[data-receiving-issue]").forEach(input=>{
-        input.addEventListener("change",function(){
-            const selected=new Set(
-                Array.from(document.querySelectorAll("[data-receiving-issue]:checked"))
-                    .map(el=>el.value)
-            );
-            UI.receivingFilters.issues=selected;
-            refreshReceivingIssueFilterLabel();
-            refreshReceivingTable();
+    document.querySelectorAll("[data-issue-card]").forEach(card=>{
+        card.addEventListener("click",()=>{
+            toggleReceivingIssueCard(card.dataset.issueCard||"");
         });
     });
 
-    document.getElementById("btnSelectAllReceivingIssues")?.addEventListener("click",function(event){
-        event.preventDefault();
-        document.querySelectorAll("[data-receiving-issue]").forEach(el=>{el.checked=true;});
-        UI.receivingFilters.issues=new Set(["not_received","partial","received_any","over","manual"]);
-        refreshReceivingIssueFilterLabel();
-        refreshReceivingTable();
-    });
-
-    document.getElementById("btnClearReceivingIssues")?.addEventListener("click",function(event){
-        event.preventDefault();
-        document.querySelectorAll("[data-receiving-issue]").forEach(el=>{el.checked=false;});
-        UI.receivingFilters.issues=new Set();
-        refreshReceivingIssueFilterLabel();
-        refreshReceivingTable();
-    });
+    /* Operational selectors are mutually exclusive: opening one closes its sibling. */
+    {
+        const groupFilter=document.querySelector("#receivingClassificationFilters [data-class-filter=\"groups\"]");
+        groupFilter?.addEventListener("toggle",()=>{ if(groupFilter.open) document.querySelectorAll(".pfnReportActionMenu[open]").forEach(menu=>menu.open=false); });
+    }
 
     UI.elements.receivingCategoryFilter
         ?.addEventListener("change",function(event){
             UI.receivingFilters.category = event.target.value || "all";
             refreshReceivingTable();
         });
+
+    document.getElementById("receivingInlineSearch")?.addEventListener("input",function(event){
+        UI.receivingFilters.search=toSafeString(event.target.value||"").trim().toLowerCase();
+        refreshReceivingTable();
+    });
+
+    document.getElementById("btnBackToReceivingDashboard")?.addEventListener("click",function(){
+        if(typeof navigateTo==="function"){ navigateTo("dashboard"); return; }
+        document.querySelector('.sidebarItem[data-page="dashboard"]')?.click();
+    });
 
 
     document
@@ -1336,6 +1612,8 @@ function bindUIStateEvents(){
 
 function refreshEntireUI(){
 
+    if(typeof refreshSafeAccountIdentity === "function"){ refreshSafeAccountIdentity(); }
+
     refreshHeader();
 
     refreshDashboard();
@@ -1358,6 +1636,7 @@ function refreshEntireUI(){
 
     refreshOpenOrderStatusReport();
 
+    ensurePcClearScreenButton?.();
 }
 
 
@@ -1366,6 +1645,24 @@ function refreshEntireUI(){
 ===================================================== */
 
 function refreshHeader(){
+
+    // Global pharmacy identity belongs to the shell and is visible on every module.
+    {
+        const ctx = window.AuthState?.context || {};
+        const pharmacyName = String(
+            ctx.pharmacy_name ||
+            document.getElementById("accountPharmacyName")?.textContent ||
+            "Pharmacy"
+        ).trim() || "Pharmacy";
+        const pharmacyCode = String(
+            ctx.pharmacy_code ||
+            document.getElementById("settingsPharmacyCode")?.textContent ||
+            "—"
+        ).trim() || "—";
+
+        setElementText(document.getElementById("topBarPharmacyName"), pharmacyName);
+        setElementText(document.getElementById("topBarPharmacyCode"), pharmacyCode);
+    }
 
     // Approved compact Dashboard identity: show the signed-in pharmacy name.
     const dashboardActive = document.getElementById("page-dashboard")?.classList.contains("active");
@@ -1379,22 +1676,121 @@ function refreshHeader(){
         AppState.workspace?.active === true &&
         (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
     );
+    const manageOrdersLabel=document.querySelector("#pfnManageOrders span");
+    if(manageOrdersLabel){
+        manageOrdersLabel.textContent=hasActiveOrder ? "Manage Orders" : "Upload / Manage Orders";
+    }
 
-    setElementText(
-        UI.elements.headerOrderId,
-        hasActiveOrder
-            ? (AppState.workspace.orderName || "Active Order")
-            : "No Active Order"
-    );
+    {
+        const orderLabel=UI.elements.headerOrderId;
+        const picker=document.getElementById("headerOrderPicker");
+        const pickerLabel=document.getElementById("headerOrderPickerLabel");
+        const pickerMenu=document.getElementById("headerOrderPickerMenu");
+
+        const activeOrders=
+            typeof getActiveReceivingOrderNumbers==="function"
+                ? getActiveReceivingOrderNumbers()
+                : [];
+
+        const selectedOrders=
+            typeof getSelectedReceivingOrderNumbers==="function"
+                ? getSelectedReceivingOrderNumbers()
+                : [];
+
+        const selected=
+            typeof getSelectedReceivingOrderNumber==="function"
+                ? getSelectedReceivingOrderNumber()
+                : "";
+
+        if(hasActiveOrder && activeOrders.length && picker){
+            orderLabel.hidden=true;
+            picker.hidden=false;
+
+            const allSelected=
+                selectedOrders.length===activeOrders.length;
+
+            if(pickerLabel){
+                pickerLabel.textContent=
+                    allSelected
+                        ? "ALL ACTIVE ORDERS"
+                        : selectedOrders.length===1
+                            ? selectedOrders[0]
+                            : selectedOrders.length+" ORDERS";
+            }
+
+            if(pickerMenu){
+                const signature=
+                    activeOrders.join("|")+
+                    "::"+
+                    selectedOrders.join("|");
+
+                if(pickerMenu.dataset.signature!==signature){
+                    pickerMenu.innerHTML=`
+                        <div class="headerOrderPickerTitle">
+                            <strong>Work Orders</strong>
+                            <span>Choose one or multiple active orders</span>
+                        </div>
+
+                        <div class="headerOrderPickerOptions">
+                            ${activeOrders.map(order=>`
+                                <label class="headerOrderCheckOption">
+                                    <input
+                                        type="checkbox"
+                                        data-header-order="${escapeHTML(order)}"
+                                        ${selectedOrders.includes(order) ? "checked" : ""}
+                                    >
+                                    <span class="headerOrderCheckBox"></span>
+                                    <span class="headerOrderCheckText">
+                                        <strong>${escapeHTML(order)}</strong>
+                                        <small>Include in Receiving</small>
+                                    </span>
+                                </label>
+                            `).join("")}
+                        </div>
+
+                        <div class="headerOrderPickerActions">
+                            <button
+                                type="button"
+                                data-order-picker-action="all"
+                            >Select All</button>
+                            <button
+                                type="button"
+                                data-order-picker-action="clear"
+                            >Clear</button>
+                            <button
+                                type="button"
+                                class="headerOrderPickerOk"
+                                data-order-picker-action="ok"
+                            >OK</button>
+                        </div>
+                    `;
+
+                    pickerMenu.dataset.signature=signature;
+                }
+            }
+        }else{
+            if(picker) picker.hidden=true;
+            orderLabel.hidden=false;
+
+            setElementText(
+                orderLabel,
+                hasActiveOrder
+                    ? (
+                        activeOrders[0] ||
+                        AppState.workspace.orderName ||
+                        "Active Order"
+                    )
+                    : "No Active Order"
+            );
+        }
+    }
 
 
     setElementText(
         UI.elements.headerSessionId,
         hasActiveOrder
-            ? ((AppState.session.cloud === true
-                ? (AppState.session.code || AppState.session.id)
-                : AppState.session.id) || "No Session")
-            : "No Session"
+            ? (AppState.session.cloud === true ? "CONNECTED" : "LOCAL")
+            : "INACTIVE"
     );
 
 }
@@ -1404,54 +1800,200 @@ function refreshHeader(){
    DASHBOARD
 ===================================================== */
 
+function getSelectedOrderDashboardMetrics(){
+    const selected=
+        typeof getSelectedReceivingOrderNumber==="function"
+            ? getSelectedReceivingOrderNumber()
+            : "";
+
+    if(
+        !selected ||
+        typeof getPerOrderReceivingRows!=="function"
+    ){
+        return null;
+    }
+
+    const activeOrders=
+        typeof getActiveReceivingOrderNumbers==="function"
+            ? getActiveReceivingOrderNumbers()
+            : [];
+
+    const targetOrders=
+        typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : (
+                selected==="ALL"
+                    ? activeOrders
+                    : [selected]
+            );
+
+    if(!targetOrders.length){
+        return null;
+    }
+
+    const localDevice=
+        typeof ensureDeviceId==="function"
+            ? ensureDeviceId()
+            : AppState.session?.deviceId;
+
+    let totalItems=0;
+    let completedItems=0;
+    let remainingUnits=0;
+    let remainingItems=0;
+    let overReceivedItems=0;
+    let manualItems=0;
+
+    targetOrders.forEach(orderNumber=>{
+        const rows=getPerOrderReceivingRows(orderNumber);
+
+        rows.forEach(row=>{
+            const ordered=toNumber(row["Ordered Qty"],0);
+            const received=toNumber(row["Received Qty"],0);
+
+            if(ordered>0){
+                totalItems++;
+
+                if(received===ordered){
+                    completedItems++;
+                }
+
+                remainingUnits+=Math.max(0,ordered-received);
+                if(received<ordered) remainingItems++;
+
+                if(received>ordered){
+                    overReceivedItems++;
+                }
+            }
+            else if(row.issueKey==="manual" && received>0){
+                manualItems++;
+            }
+        });
+    });
+
+    const totalScans=(AppState.workspace?.receivingHistory||[])
+        .filter(tx=>{
+            const txOrder=normalizeOrderNumber(
+                tx?.selectedOrderNumber ||
+                tx?.orderId ||
+                tx?.orderNumber ||
+                ""
+            );
+
+            const inScope=
+                targetOrders
+                    .map(normalizeOrderNumber)
+                    .includes(txOrder);
+
+            return inScope;
+        }).length;
+
+    return {
+        totalItems,
+        completedItems,
+        remainingUnits,
+        remainingItems,
+        overReceivedItems,
+        manualItems,
+        totalScans
+    };
+}
+
 function refreshDashboard(){
+
+    /* 2C.10.5.3 authority gate: no active Order means no operational metrics.
+       Never render stale browser statistics when the manifest/workspace is empty. */
+    const hasActiveOrder=!!(
+        AppState.workspace?.active===true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
+
+    if(!hasActiveOrder){
+        resetStatistics?.();
+        [UI.elements.statTotalItems,UI.elements.statCompleted,UI.elements.statRemainingItems,UI.elements.statRemaining,
+         UI.elements.statOver,UI.elements.statManual,UI.elements.statScans]
+            .forEach(el=>setElementText(el,0));
+        setElementText(document.getElementById("receivingNeedsReviewCount"),0);
+        if(UI.elements.headerSessionId){
+            setElementText(UI.elements.headerSessionId,"INACTIVE");
+        }
+        refreshProgress();
+        return;
+    }
 
     recalculateStatistics();
 
-    const stats =
-        AppState.statistics;
+    const stats=AppState.statistics;
+    const selectedMetrics=getSelectedOrderDashboardMetrics();
 
+    let scoped;
 
-    setElementText(
-        UI.elements.statTotalItems,
-        stats.totalItems
-    );
+    if(selectedMetrics){
+        scoped=selectedMetrics;
+    }else{
+        const scopedItems=getScopedOrderItems();
+        const scopeActive=getActiveOrderScope()!=="ALL";
 
+        scoped=scopeActive ? {
+            totalItems:scopedItems.length,
+            completedItems:scopedItems.filter(i=>
+                toNumber(i.orderedQty,0)>0 &&
+                toNumber(i.receivedQty,0)===toNumber(i.orderedQty,0)
+            ).length,
+            remainingUnits:scopedItems.reduce(
+                (n,i)=>n+Math.max(
+                    0,
+                    toNumber(i.orderedQty,0)-toNumber(i.receivedQty,0)
+                ),
+                0
+            ),
+            remainingItems:scopedItems.filter(i=>Math.max(0,toNumber(i.orderedQty,0)-toNumber(i.receivedQty,0))>0).length,
+            overReceivedItems:scopedItems.filter(i=>
+                toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0)
+            ).length,
+            manualItems:scopedItems.filter(i=>i.manual===true).length,
+            totalScans:(AppState.workspace?.receivingHistory||[]).filter(tx=>{
+                const item=getItemByCode?.(tx.itemCode);
+                const localDevice=
+                    typeof ensureDeviceId==="function"
+                        ? ensureDeviceId()
+                        : AppState.session?.deviceId;
 
-    setElementText(
-        UI.elements.statCompleted,
-        stats.completedItems
-    );
+                return (
+                    (!item || itemBelongsToOrderScope(item)) &&
+                    toSafeString(tx.deviceId||"")===
+                        toSafeString(localDevice||"")
+                );
+            }).length
+        } : {
+            ...stats,
+            remainingUnits:AppState.workspace.orderData.reduce((sum,item)=>sum+Math.max(0,toNumber(item.orderedQty,0)-toNumber(item.receivedQty,0)),0),
+            totalScans:(AppState.workspace?.receivingHistory||[]).filter(tx=>{
+                const localDevice=
+                    typeof ensureDeviceId==="function"
+                        ? ensureDeviceId()
+                        : AppState.session?.deviceId;
 
+                return toSafeString(tx.deviceId||"")===
+                    toSafeString(localDevice||"");
+            }).length
+        };
+    }
 
+    setElementText(UI.elements.statTotalItems,scoped.totalItems);
+    setElementText(UI.elements.statCompleted,scoped.completedItems);
+    setElementText(UI.elements.statRemainingItems,scoped.remainingItems);
     setElementText(
         UI.elements.statRemaining,
-        Number.isFinite(stats.remainingUnits) ? stats.remainingUnits : stats.remainingItems
+        Number.isFinite(scoped.remainingUnits)
+            ? scoped.remainingUnits
+            : stats.remainingItems
     );
-
-
-    setElementText(
-        UI.elements.statOver,
-        stats.overReceivedItems
-    );
-
-
-    setElementText(
-        UI.elements.statManual,
-        stats.manualItems
-    );
-
-
-    setElementText(
-        UI.elements.statScans,
-        stats.totalScans
-    );
-
+    setElementText(UI.elements.statOver,scoped.overReceivedItems);
+    setElementText(UI.elements.statManual,scoped.manualItems);
+    setElementText(UI.elements.statScans,scoped.totalScans);
 
     refreshProgress();
-
 }
-
 
 /* =====================================================
    PROGRESS
@@ -1459,13 +2001,20 @@ function refreshDashboard(){
 
 function refreshProgress(){
 
+    const selectedMetrics=
+        typeof getSelectedOrderDashboardMetrics==="function"
+            ? getSelectedOrderDashboardMetrics()
+            : null;
+
     const total =
-        AppState.statistics
-            .totalItems;
+        selectedMetrics
+            ? selectedMetrics.totalItems
+            : AppState.statistics.totalItems;
 
     const completed =
-        AppState.statistics
-            .completedItems;
+        selectedMetrics
+            ? selectedMetrics.completedItems
+            : AppState.statistics.completedItems;
 
     let percent = 0;
 
@@ -1531,6 +2080,7 @@ function refreshLastScan(){
 
     if(!scan){
 
+        cancelReceivingAutoClear();
         clearLastScanUI();
 
         refreshProfessionalLastScan(
@@ -1541,6 +2091,8 @@ function refreshLastScan(){
 
         return;
     }
+
+    scheduleReceivingAutoClear(scan);
 
     /*
        Keep legacy elements updated for compatibility
@@ -1644,15 +2196,65 @@ function refreshReceivingIssueFilterLabel(){
     const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Manual Extra"};
     const discrepancyKeys=["not_received","partial","over","manual"];
     const allDiscrepancies=discrepancyKeys.every(key=>set.has(key));
-    if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All receiving types"; return; }
+    if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All selected"; return; }
     if(set.size===4 && allDiscrepancies && !set.has("received_any")){ label.textContent="All discrepancies"; return; }
     if(set.size===0){ label.textContent="None selected"; return; }
     if(set.size===1){ label.textContent=names[Array.from(set)[0]]||"1 selected"; return; }
     label.textContent=set.size+" selected";
 }
 
+const RECEIVING_ISSUE_CARD_KEYS={
+    all:["not_received","partial","received_any","over","manual"],
+    shortage:["not_received","partial"],
+    received:["received_any"],
+    over:["over"],
+    manual:["manual"]
+};
+
+function refreshReceivingIssueCards(){
+    const selected=UI.receivingFilters.issues instanceof Set
+        ? UI.receivingFilters.issues
+        : new Set();
+    Object.entries(RECEIVING_ISSUE_CARD_KEYS).forEach(([card,keys])=>{
+        const button=document.querySelector(`[data-issue-card="${card}"]`);
+        if(!button) return;
+        const active=card==="all"
+            ? keys.every(key=>selected.has(key))
+            : keys.every(key=>selected.has(key));
+        button.classList.toggle("active",active);
+        button.setAttribute("aria-pressed",active?"true":"false");
+    });
+}
+
+function toggleReceivingIssueCard(card){
+    const keys=RECEIVING_ISSUE_CARD_KEYS[card];
+    if(!keys) return;
+    const current=UI.receivingFilters.issues instanceof Set
+        ? new Set(UI.receivingFilters.issues)
+        : new Set();
+    const isActive=keys.every(key=>current.has(key));
+    if(card==="all"){
+        UI.receivingFilters.issues=isActive ? new Set() : new Set(keys);
+    }else{
+        keys.forEach(key=>isActive ? current.delete(key) : current.add(key));
+        UI.receivingFilters.issues=current;
+    }
+    refreshReceivingIssueFilterLabel();
+    refreshReceivingIssueCards();
+    refreshReceivingTable();
+}
+
 function getVisibleReceivingItemsForExport(){
     return Array.isArray(UI.receivingVisibleItems) ? UI.receivingVisibleItems.slice() : [];
+}
+
+/* Presentation-only: the report shows the signed reconciliation result.
+   Stored remaining quantities remain non-negative for receiving safeguards. */
+function renderReceivingDifference(orderedQty,receivedQty){
+    const difference=toNumber(receivedQty,0)-toNumber(orderedQty,0);
+    const tone=difference<0 ? "isShort" : (difference>0 ? "isOver" : "isEven");
+    const label=difference>0 ? "+"+difference : String(difference);
+    return `<span class="pfnDifferenceValue ${tone}">${label}</span>`;
 }
 
 /* =====================================================
@@ -1660,73 +2262,62 @@ function getVisibleReceivingItemsForExport(){
 ===================================================== */
 
 function refreshReceivingTable(){
-    const tbody = UI.elements.receivingTableBody;
-    if(!tbody){ return; }
-
-    refreshReceivingCategoryFilter();
-    tbody.innerHTML = "";
-
-    const allItems = AppState.workspace.orderData || [];
-    const selectedIssues = UI.receivingFilters.issues instanceof Set
-        ? UI.receivingFilters.issues
-        : new Set(["not_received","partial","over","manual"]);
-    const categoryFilter = UI.receivingFilters.category || "all";
-
-    const items = allItems.filter(item=>{
-        const issue = getReceivingIssueKey(item);
-        const received = toNumber(item?.receivedQty,0);
-        const matchesReceivedAny = selectedIssues.has("received_any") && received > 0;
-        const matchesIssue = !!issue && selectedIssues.has(issue);
-        if(!matchesReceivedAny && !matchesIssue){ return false; }
-        const category = toSafeString(item.category || "").trim();
-        return categoryFilter === "all" || category === categoryFilter;
-    });
-
-    UI.receivingVisibleItems = items.slice();
-    const displayed=document.getElementById("rsDisplayedItems");
-    if(displayed){ displayed.textContent=items.length; }
-    if(typeof refreshReceivingVerificationSummary==="function") refreshReceivingVerificationSummary();
-
-    if(allItems.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No order items loaded.</td></tr>`;
-        return;
+    const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
+    const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]);
+    const searchFilter=toSafeString(UI.receivingFilters.search||"").trim().toLowerCase();
+    const active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
+    let rows=[];
+    if(typeof getPerOrderReceivingRows==="function"&&active.length){
+        const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);
+        orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{
+            const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",match=issues.has(issue)||(issues.has("received_any")&&received>0);
+            if(match) rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],group_name:r["Group"]||r.group_name||"",category:r["Category"]||"",sub_category:r["Sub Category"]||r.sub_category||"",manual:r.issueKey==="manual"});
+        }));
+    }else{
+        rows=(AppState.workspace.orderData||[]).filter(item=>{
+            if(selectedOrders.length&&!selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;
+            const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0);
+            return issues.has(issue)||(issues.has("received_any")&&received>0);
+        });
     }
-
-    if(items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="tableEmptyState">No items match the selected filters.</td></tr>`;
-        return;
+    if(window.PharmFlowClassificationFilters) rows=window.PharmFlowClassificationFilters.filter(rows,UI.receivingFilters.classification||{});
+    if(searchFilter) rows=rows.filter(item=>toSafeString(item.itemName||"").toLowerCase().includes(searchFilter)||toSafeString(item.itemCode||"").toLowerCase().includes(searchFilter));
+    UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
+    const inline=document.getElementById("receivingInlineResult");
+    if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>';return;}
+    if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>';return;}
+    rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
+    if(inline){
+        if(searchFilter&&rows.length){const item=rows[0],order=item.orderNumber||((Array.isArray(item.orderNumbers)&&item.orderNumbers[0])||"—"),cl=window.PharmFlowClassificationFilters?.normalize(item)||{};
+            inline.hidden=false;inline.innerHTML=`<div class="pfnInlineRow"><span>${escapeHTML(order)}</span><b>${escapeHTML(item.itemCode||"")}</b><strong>${escapeHTML(item.itemName||"")}</strong><span>${escapeHTML(cl.group||"—")}</span><span>Ordered <b>${toNumber(item.orderedQty,0)}</b></span><div class="tableQtyControl"><button type="button" class="tableQtyButton" data-inline-minus>−</button><button type="button" class="tableQtyValue" data-inline-edit>${toNumber(item.receivedQty,0)}</button><button type="button" class="tableQtyButton" data-inline-plus>+</button></div><span>Difference ${renderReceivingDifference(item.orderedQty,item.receivedQty)}</span><span>${escapeHTML(item.status||"")}</span></div>`;
+            inline.querySelector('[data-inline-plus]')?.addEventListener('click',()=>increaseItemQuantity(item.itemCode,1));inline.querySelector('[data-inline-minus]')?.addEventListener('click',()=>decreaseItemQuantity(item.itemCode,1));inline.querySelector('[data-inline-edit]')?.addEventListener('click',()=>openQuantityEditPrompt(item));
+        }else{inline.hidden=true;inline.innerHTML="";}
     }
-
-    const fragment = document.createDocumentFragment();
-    items.forEach((item,index)=>{
-        fragment.appendChild(createReceivingTableRow(item,index));
-    });
-    tbody.appendChild(fragment);
 }
-
 function refreshReceivingCategoryFilter(){
-    const select = UI.elements.receivingCategoryFilter;
-    if(!select){ return; }
-
-    const categories = Array.from(new Set(
-        (AppState.workspace.orderData || [])
-            .map(item=>toSafeString(item.category || "").trim())
-            .filter(Boolean)
-    )).sort((a,b)=>a.localeCompare(b));
-
-    const current = UI.receivingFilters.category || "all";
-    select.innerHTML = `<option value="all">All Categories</option>` +
-        categories.map(category=>`<option value="${escapeHTML(category)}">${escapeHTML(category)}</option>`).join("");
-
-    if(current !== "all" && categories.includes(current)){
-        select.value = current;
-    }
-    else{
-        UI.receivingFilters.category = "all";
-        select.value = "all";
+    const host=document.getElementById("receivingClassificationFilters");if(!host||!window.PharmFlowClassificationFilters)return;
+    const active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
+    const scoped=(AppState.workspace.orderData||[]).filter(item=>!selected.length||selected.some(order=>itemBelongsToOrderScope(item,order)));
+    const state=UI.receivingFilters.classification||(UI.receivingFilters.classification={groups:[],categories:[],subCategories:[]});
+    const choices=window.PharmFlowClassificationFilters.choices(scoped,state);
+    const labels={groups:"GROUPS"};
+    ["groups"].forEach(key=>{
+        const details=host.querySelector('[data-class-filter="'+key+'"]'),menu=details?.querySelector(".pfrFilterMenu");if(!menu)return;
+        const allowed=new Set(choices[key]);state[key]=(state[key]||[]).filter(v=>allowed.has(v));
+        const sig=choices[key].join("|")+"::"+state[key].join("|");if(menu.dataset.signature===sig)return;menu.dataset.signature=sig;
+        menu.innerHTML=`<div class="pfrFilterOptions">${choices[key].length?choices[key].map(v=>`<label><input type="checkbox" value="${escapeHTML(v)}" ${state[key].includes(v)?"checked":""}><span>${escapeHTML(v)}</span></label>`).join(""):'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
+        const groupLabel=details.querySelector("#receivingGroupFilterLabel")||details.querySelector("summary strong");
+        const groupText=!state[key].length||state[key].length===choices[key].length?"All groups":state[key].length===1?state[key][0]:state[key].length+" groups";
+        if(groupLabel) groupLabel.textContent=groupText;
+    });
+    if(host.dataset.bound!=="1"){
+        host.dataset.bound="1";
+        host.addEventListener("change",event=>{const details=event.target.closest("[data-class-filter]");if(!details)return;const key=details.dataset.classFilter;state[key]=[...details.querySelectorAll('input:checked')].map(x=>x.value);if(key==="groups"){state.categories=[];state.subCategories=[];}if(key==="categories")state.subCategories=[];refreshReceivingTable();});
+        host.addEventListener("click",event=>{const action=event.target.closest('[data-group-action]')?.dataset.groupAction;if(!action)return;event.preventDefault();const details=event.target.closest('details'),boxes=[...details.querySelectorAll('input[type="checkbox"]')];if(action==="all")boxes.forEach(box=>box.checked=true);if(action==="clear")boxes.forEach(box=>box.checked=false);if(action==="ok")details.open=false;state.groups=boxes.filter(box=>box.checked).map(box=>box.value);state.categories=[];state.subCategories=[];refreshReceivingTable();});
     }
 }
-
 
 /* =====================================================
    RECEIVING TABLE ROW
@@ -1756,6 +2347,10 @@ function createReceivingTableRow(
             ${index + 1}
         </td>
 
+        <td class="receivingOrderCell">
+            ${escapeHTML(toSafeString(item.orderNumber || (Array.isArray(item.orderNumbers) ? item.orderNumbers[0] : "") || "—"))}
+        </td>
+
         <td>
             ${escapeHTML(
                 item.itemCode
@@ -1776,6 +2371,10 @@ function createReceivingTableRow(
                 ""
             }
 
+        </td>
+
+        <td class="receivingCategoryCell">
+            ${escapeHTML(toSafeString((window.PharmFlowClassificationFilters?.normalize(item)?.group || "—")))}
         </td>
 
         <td>
@@ -1820,12 +2419,7 @@ function createReceivingTableRow(
 
         </td>
 
-        <td>
-            ${toNumber(
-                item.remainingQty,
-                0
-            )}
-        </td>
+        <td>${renderReceivingDifference(item.orderedQty,item.receivedQty)}</td>
 
         <td>
             ${renderStatusBadge(
@@ -1846,10 +2440,8 @@ function createReceivingTableRow(
 
                 event.stopPropagation();
 
-                increaseItemQuantity(
-                    item.itemCode,
-                    1
-                );
+                if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
+                increaseItemQuantity(item.itemCode,1);
 
             }
         );
@@ -1865,10 +2457,8 @@ function createReceivingTableRow(
 
                 event.stopPropagation();
 
-                decreaseItemQuantity(
-                    item.itemCode,
-                    1
-                );
+                if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
+                decreaseItemQuantity(item.itemCode,1);
 
             }
         );
@@ -1884,9 +2474,8 @@ function createReceivingTableRow(
 
                 event.stopPropagation();
 
-                openQuantityEditPrompt(
-                    item
-                );
+                if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
+                openQuantityEditPrompt(getItemByCode?.(item.itemCode)||item);
 
             }
         );
@@ -1898,12 +2487,309 @@ function createReceivingTableRow(
 
 
 /* =====================================================
+   DEVICE-LOCAL QUANTITY HELPERS
+   Phase 2C.7.3
+===================================================== */
+
+function getCurrentDeviceId(){
+    try{
+        if(typeof ensureDeviceId === "function"){
+            return toSafeString(ensureDeviceId());
+        }
+    }catch(_){ }
+
+    return toSafeString(AppState?.session?.deviceId || "");
+}
+
+function getDeviceItemReceivedQuantity(itemCode){
+    const code = normalizeItemCode(itemCode);
+    const deviceId = getCurrentDeviceId();
+
+    if(!code || !deviceId){
+        return 0;
+    }
+
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    const net = history.reduce((sum, tx)=>{
+        if(normalizeItemCode(tx?.itemCode) !== code){
+            return sum;
+        }
+
+        if(toSafeString(tx?.deviceId || "") !== deviceId){
+            return sum;
+        }
+
+        return sum + toNumber(tx?.quantity, 0);
+    }, 0);
+
+    return Math.max(0, net);
+}
+
+/*
+   Current batch = the uninterrupted run of actions for the item on THIS device.
+   As soon as this device works on another item, the next scan of the original
+   item starts a fresh batch at 1. Other devices never reset this local batch.
+*/
+const HANDHELD_BATCH_BOUNDARY_KEY="PRS_HH_BATCH_BOUNDARIES_V1";
+
+function readHandheldBatchBoundaries(){
+    try{
+        const parsed=JSON.parse(localStorage.getItem(HANDHELD_BATCH_BOUNDARY_KEY)||"{}");
+        return parsed && typeof parsed==="object" ? parsed : {};
+    }catch(_){
+        return {};
+    }
+}
+
+function writeHandheldBatchBoundaries(value){
+    try{
+        localStorage.setItem(
+            HANDHELD_BATCH_BOUNDARY_KEY,
+            JSON.stringify(value||{})
+        );
+    }catch(_){}
+}
+
+function setHandheldBatchBoundary(itemCode,at=nowISO()){
+    const code=normalizeItemCode(itemCode);
+    if(!code) return;
+
+    const map=readHandheldBatchBoundaries();
+    map[code]=String(at||nowISO());
+    writeHandheldBatchBoundaries(map);
+}
+
+function getHandheldBatchBoundaryTime(itemCode){
+    const code=normalizeItemCode(itemCode);
+    if(!code) return 0;
+
+    let boundary=0;
+
+    /* Explicit local Clear/Cancel starts a new worker batch without deleting
+       receiving transactions. */
+    try{
+        const local=readHandheldBatchBoundaries()[code];
+        const localTime=new Date(local||0).getTime();
+        if(Number.isFinite(localTime)){
+            boundary=Math.max(boundary,localTime);
+        }
+    }catch(_){}
+
+    /* A direct quantity edit on ANOTHER device is an authoritative
+       reconciliation boundary. Example: pharmacist sets Received to zero on PC.
+       Old Handheld batch UI must not continue showing the pre-correction batch. */
+    const deviceId=getCurrentDeviceId();
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    history.forEach(tx=>{
+        if(normalizeItemCode(tx?.itemCode)!==code) return;
+        if(toSafeString(tx?.deviceId||"")===deviceId) return;
+
+        const source=toSafeString(tx?.source||"").toUpperCase();
+        if(
+            source!==String(ReceivingEngine?.adjustmentSources?.editIncrease||"MANUAL_EDIT_INCREASE").toUpperCase() &&
+            source!==String(ReceivingEngine?.adjustmentSources?.editDecrease||"MANUAL_EDIT_DECREASE").toUpperCase()
+        ){
+            return;
+        }
+
+        const time=new Date(tx?.dateTime||0).getTime();
+        if(Number.isFinite(time)){
+            boundary=Math.max(boundary,time);
+        }
+    });
+
+    return boundary;
+}
+
+function getCurrentBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    const currentDeviceId=getCurrentDeviceId();
+    if(!code) return 0;
+
+    const boundaryTime=getHandheldBatchBoundaryTime(code);
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory : [];
+    const lastScan=AppState?.workspace?.lastScan;
+    const lastScanMatches=normalizeItemCode(lastScan?.itemCode)===code;
+
+    let anchoredDeviceId=currentDeviceId;
+    if(lastScanMatches && lastScan?.transactionId){
+        const anchorTx=history.find(tx=>
+            toSafeString(tx?.transactionId||"")===toSafeString(lastScan.transactionId||"")
+        );
+        if(anchorTx?.deviceId) anchoredDeviceId=toSafeString(anchorTx.deviceId);
+    }
+
+    if(!anchoredDeviceId){
+        return lastScanMatches ? Math.max(0,toNumber(lastScan?.quantity,0)) : 0;
+    }
+
+    const local=history.map((tx,index)=>({tx,index})).filter(row=>{
+        if(toSafeString(row.tx?.deviceId||"")!==anchoredDeviceId) return false;
+        const time=new Date(row.tx?.dateTime||0).getTime();
+        return !Number.isFinite(boundaryTime) || time>boundaryTime;
+    }).sort((a,b)=>{
+        const ta=new Date(a.tx?.dateTime||0).getTime();
+        const tb=new Date(b.tx?.dateTime||0).getTime();
+        return ta===tb ? a.index-b.index : ta-tb;
+    });
+
+    if(!local.length){
+        return lastScanMatches ? Math.max(0,toNumber(lastScan?.quantity,0)) : 0;
+    }
+
+    let endIndex=local.length-1;
+    if(lastScanMatches && lastScan?.transactionId){
+        const wanted=toSafeString(lastScan.transactionId);
+        const found=local.findIndex(row=>toSafeString(row.tx?.transactionId||"")===wanted);
+        if(found>=0) endIndex=found;
+    }
+
+    if(normalizeItemCode(local[endIndex]?.tx?.itemCode)!==code){
+        return lastScanMatches ? Math.max(0,toNumber(lastScan?.quantity,0)) : 0;
+    }
+
+    let qty=0;
+    for(let i=endIndex;i>=0;i--){
+        const txCode=normalizeItemCode(local[i]?.tx?.itemCode);
+        if(txCode!==code) break;
+        qty+=toNumber(local[i]?.tx?.quantity,0);
+    }
+    if(qty===0 && lastScanMatches) return Math.max(0,toNumber(lastScan?.quantity,0));
+    return Math.max(0,qty);
+}
+
+function getDeviceLastItemActionQuantity(itemCode){
+    const code = normalizeItemCode(itemCode);
+    const deviceId = getCurrentDeviceId();
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    const row = history
+        .filter(tx=>normalizeItemCode(tx?.itemCode)===code && toSafeString(tx?.deviceId||"")===deviceId)
+        .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0))[0];
+
+    return row ? toNumber(row.quantity,0) : 0;
+}
+
+/* =====================================================
    EDIT QUANTITY
 ===================================================== */
 
 function openQuantityEditPrompt(item){
 
     if(!item){
+        return;
+    }
+
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        let handheldModal=document.getElementById("handheldBatchAddModal");
+
+        if(!handheldModal){
+            handheldModal=document.createElement("div");
+            handheldModal.id="handheldBatchAddModal";
+            handheldModal.className="quantityAdjustmentModal handheldReceivedEditModal";
+
+            handheldModal.innerHTML=`
+              <div class="quantityAdjustmentCard handheldReceivedEditCard">
+                <div class="quantityAdjustmentHeader">
+                  <div>
+                    <span class="sectionEyebrow">ADD REMAINING PACKS</span>
+                    <h3 id="handheldBatchAddName">-</h3>
+                  </div>
+                  <button type="button" id="btnCloseHandheldBatchAdd" class="iconButton" aria-label="Close">✕</button>
+                </div>
+
+                <div class="handheldScanAcknowledgement">
+                  <span>✓ FIRST PACK ALREADY SCANNED</span>
+                  <strong id="handheldBatchCurrentQty">1</strong>
+                </div>
+
+                <label class="quantityAdjustmentLabel" for="handheldBatchAddInput">
+                  Add remaining packs
+                </label>
+
+                <input id="handheldBatchAddInput" class="quantityAdjustmentInput"
+                       type="number" min="1" step="1" inputmode="numeric" value="">
+
+                <button type="button" id="btnAddHandheldBatchQty" class="primaryButton">
+                  ADD REMAINING
+                </button>
+              </div>`;
+
+            document.body.appendChild(handheldModal);
+
+            const close=()=>{
+                try{ document.activeElement?.blur?.(); }catch(_){}
+                handheldModal.classList.remove("open");
+                setTimeout(()=>window.hhRefreshReadyState?.(),20);
+            };
+
+            document.getElementById("btnCloseHandheldBatchAdd")?.addEventListener("click",close);
+            handheldModal.addEventListener("click",event=>{
+                if(event.target===handheldModal) close();
+            });
+
+            document.getElementById("handheldBatchAddInput")?.addEventListener("keydown",event=>{
+                if(event.key==="Enter"){
+                    event.preventDefault();
+                    try{ event.target.blur(); }catch(_){}
+                    document.getElementById("btnAddHandheldBatchQty")?.click();
+                }
+            });
+
+            document.getElementById("btnAddHandheldBatchQty")?.addEventListener("click",()=>{
+                try{ document.activeElement?.blur?.(); }catch(_){}
+
+                const code=handheldModal.dataset.itemCode;
+                const input=document.getElementById("handheldBatchAddInput");
+                const additional=toNumber(input?.value,0);
+
+                if(additional<=0){
+                    showToast("Enter additional packs","warning");
+                    return;
+                }
+
+                const tx=addItemReceivedQuantity(code,additional,"HANDHELD_BATCH_ADD");
+                if(tx){
+                    handheldModal.classList.remove("open");
+                    refreshEntireUI?.();
+                    setTimeout(()=>window.hhRefreshReadyState?.(),20);
+                }
+            });
+        }
+
+        handheldModal.dataset.itemCode=item.itemCode;
+
+        setElementText(
+            document.getElementById("handheldBatchAddName"),
+            item.itemName||item.itemCode
+        );
+
+        setElementText(
+            document.getElementById("handheldBatchCurrentQty"),
+            getCurrentBatchQuantity(item.itemCode)
+        );
+
+        const input=document.getElementById("handheldBatchAddInput");
+        if(input){ input.value=""; }
+
+        handheldModal.classList.add("open");
+
+        setTimeout(()=>{
+            try{
+                input?.focus();
+                input?.select();
+            }catch(_){}
+        },20);
+
         return;
     }
 
@@ -1914,203 +2800,213 @@ function openQuantityEditPrompt(item){
 
     if(!modal){
 
-        modal =
-            document.createElement(
-                "div"
-            );
-
-        modal.id =
-            "quantityAdjustmentModal";
-
-        modal.className =
-            "quantityAdjustmentModal";
+        modal = document.createElement("div");
+        modal.id = "quantityAdjustmentModal";
+        modal.className = "quantityAdjustmentModal";
 
         modal.innerHTML = `
-
             <div class="quantityAdjustmentCard">
-
                 <div class="quantityAdjustmentHeader">
                     <div>
                         <span class="sectionEyebrow">QUANTITY</span>
                         <h3 id="quantityAdjustmentItemName">-</h3>
                     </div>
-                    <button type="button" id="btnCloseQuantityAdjustment" class="iconButton">✕</button>
+                    <button type="button" id="btnCloseQuantityAdjustment" class="iconButton" aria-label="Close">✕</button>
                 </div>
 
                 <div class="quantityCurrentTotal">
-                    <span>Current Received</span>
+                    <span>Received — All Devices</span>
                     <strong id="quantityAdjustmentCurrent">0</strong>
                 </div>
 
-                <label class="quantityAdjustmentLabel" for="quantityAdjustmentInput">
-                    Quantity
-                </label>
+                <div class="quantityCurrentTotal" style="margin-top:8px;">
+                    <span>Current Batch Qty</span>
+                    <strong id="quantityAdjustmentDeviceCurrent">0</strong>
+                </div>
 
-                <input
-                    id="quantityAdjustmentInput"
-                    class="quantityAdjustmentInput"
-                    type="number"
-                    min="0"
-                    step="1"
-                    value="1"
-                    inputmode="numeric"
-                >
+                <div id="quantityAddMode">
+                    <label class="quantityAdjustmentLabel" for="quantityAdjustmentInput">
+                        Additional quantity from this batch
+                    </label>
 
-                <p class="quantityAdjustmentHelp">
-                    <strong>Add Quantity</strong> adds to what was already received.
-                    Use <strong>Correct Total</strong> only when you want to replace the final received total.
-                </p>
+                    <input
+                        id="quantityAdjustmentInput"
+                        class="quantityAdjustmentInput"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="1"
+                        inputmode="numeric"
+                    >
 
-                <div class="quantityAdjustmentActions">
-                    <button type="button" id="btnQuantityAdd" class="primaryButton">
-                        + Add Quantity
-                    </button>
-                    <button type="button" id="btnQuantitySetTotal" class="secondaryButton">
-                        Correct Total
+                    <div class="quantityCurrentTotal" style="margin-top:8px;">
+                        <span>New Batch Qty</span>
+                        <strong id="quantityAdjustmentPreview">0</strong>
+                    </div>
+
+                    <p class="quantityAdjustmentHelp">
+                        Enter only the <strong>additional</strong> packs in front of you after the scanned pack(s).
+                        Press <strong>Enter</strong> to add them and return to scanning.
+                    </p>
+
+                    <div class="quantityAdjustmentActions">
+                        <button type="button" id="btnQuantityAdd" class="primaryButton">+ Add 1</button>
+                    </div>
+
+                    <button type="button" id="btnShowQuantityCorrection" class="authSecondaryLink" style="margin-top:8px;">
+                        Correct received total
                     </button>
                 </div>
 
+                <div id="quantityCorrectionMode" hidden>
+                    <label class="quantityAdjustmentLabel" for="quantityCorrectionInput">
+                        Replace all-device received total with
+                    </label>
+                    <input
+                        id="quantityCorrectionInput"
+                        class="quantityAdjustmentInput"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value="0"
+                        inputmode="numeric"
+                    >
+                    <p class="quantityAdjustmentHelp">
+                        This is a correction to the <strong>shared total across all devices</strong>. Use only when the current received total is wrong.
+                    </p>
+                    <div class="quantityAdjustmentActions">
+                        <button type="button" id="btnQuantitySetTotal" class="secondaryButton">Confirm Correct Total</button>
+                        <button type="button" id="btnCancelQuantityCorrection" class="secondaryButton">Back</button>
+                    </div>
+                </div>
             </div>
-
         `;
 
-        document.body.appendChild(
-            modal
-        );
+        document.body.appendChild(modal);
 
         document
-            .getElementById(
-                "btnCloseQuantityAdjustment"
-            )
-            ?.addEventListener(
-                "click",
-                closeQuantityAdjustmentModal
-            );
+            .getElementById("btnCloseQuantityAdjustment")
+            ?.addEventListener("click", closeQuantityAdjustmentModal);
 
-        modal.addEventListener(
-            "click",
-            function(event){
-                if(event.target === modal){
-                    closeQuantityAdjustmentModal();
-                }
+        modal.addEventListener("click", function(event){
+            if(event.target === modal){
+                closeQuantityAdjustmentModal();
             }
-        );
+        });
 
+        modal.addEventListener("keydown", function(event){
+            if(event.key === "Escape"){
+                event.preventDefault();
+                closeQuantityAdjustmentModal();
+                return;
+            }
+
+            if(event.key !== "Enter"){
+                return;
+            }
+
+            const correctionMode = !document.getElementById("quantityCorrectionMode")?.hidden;
+            event.preventDefault();
+
+            /* Close Android numeric keyboard deterministically before saving. */
+            try{ document.activeElement?.blur?.(); }catch(_){ }
+
+            if(correctionMode){
+                document.getElementById("btnQuantitySetTotal")?.click();
+            }else{
+                document.getElementById("btnQuantityAdd")?.click();
+            }
+        });
     }
 
-    modal.dataset.itemCode =
-        item.itemCode;
+    modal.dataset.itemCode = item.itemCode;
 
     setElementText(
-        document.getElementById(
-            "quantityAdjustmentItemName"
-        ),
+        document.getElementById("quantityAdjustmentItemName"),
         item.itemName
     );
 
-    setElementText(
-        document.getElementById(
-            "quantityAdjustmentCurrent"
-        ),
-        toNumber(
-            item.receivedQty,
-            0
-        )
-    );
+    const allDevicesQty = toNumber(item.receivedQty, 0);
+    const thisDeviceQty = getOperationalCurrentBatchQuantity(item.itemCode);
 
-    const input =
-        document.getElementById(
-            "quantityAdjustmentInput"
-        );
+    setElementText(document.getElementById("quantityAdjustmentCurrent"), allDevicesQty);
+    setElementText(document.getElementById("quantityAdjustmentDeviceCurrent"), thisDeviceQty);
 
-    if(input){
-        input.value = "1";
+    const input = document.getElementById("quantityAdjustmentInput");
+    const correctionInput = document.getElementById("quantityCorrectionInput");
+    const addMode = document.getElementById("quantityAddMode");
+    const correctionMode = document.getElementById("quantityCorrectionMode");
+    const addButton = document.getElementById("btnQuantityAdd");
+    const setButton = document.getElementById("btnQuantitySetTotal");
+    const preview = document.getElementById("quantityAdjustmentPreview");
+
+    if(addMode){ addMode.hidden = false; }
+    if(correctionMode){ correctionMode.hidden = true; }
+    if(input){ input.value = "1"; }
+    if(correctionInput){ correctionInput.value = String(allDevicesQty); }
+
+    function refreshAddPreview(){
+        const additional = Math.max(0, toNumber(input?.value, 0));
+        if(preview){ preview.textContent = String(thisDeviceQty + additional); }
+        if(addButton){ addButton.textContent = `+ Add ${additional}`; }
     }
 
-    const addButton =
-        document.getElementById(
-            "btnQuantityAdd"
-        );
+    input?.addEventListener("input", refreshAddPreview, {once:false});
+    refreshAddPreview();
 
-    const setButton =
-        document.getElementById(
-            "btnQuantitySetTotal"
-        );
+    document.getElementById("btnShowQuantityCorrection").onclick = function(){
+        if(addMode){ addMode.hidden = true; }
+        if(correctionMode){ correctionMode.hidden = false; }
+        if(correctionInput){
+            correctionInput.value = String(toNumber(getItemByCode(modal.dataset.itemCode)?.receivedQty, allDevicesQty));
+            setTimeout(()=>{ correctionInput.focus(); correctionInput.select(); }, 20);
+        }
+    };
 
-    addButton.onclick =
-        function(){
+    document.getElementById("btnCancelQuantityCorrection").onclick = function(){
+        if(correctionMode){ correctionMode.hidden = true; }
+        if(addMode){ addMode.hidden = false; }
+        setTimeout(()=>{ input?.focus(); input?.select(); }, 20);
+    };
 
-            const code =
-                modal.dataset.itemCode;
+    addButton.onclick = function(){
+        try{ document.activeElement?.blur?.(); }catch(_){ }
+        const code = modal.dataset.itemCode;
+        const quantity = toNumber(input?.value, 0);
 
-            const quantity =
-                toNumber(
-                    input?.value,
-                    0
-                );
+        if(quantity <= 0){
+            showToast("Enter the additional quantity to add", "warning");
+            return;
+        }
 
-            if(quantity <= 0){
-                showToast(
-                    "Enter a quantity greater than zero",
-                    "warning"
-                );
-                return;
-            }
+        const transaction = addItemReceivedQuantity(code, quantity, "MANUAL_ADD");
+        if(transaction){
+            closeQuantityAdjustmentModal();
+        }
+    };
 
-            const transaction =
-                addItemReceivedQuantity(
-                    code,
-                    quantity,
-                    "MANUAL_ADD"
-                );
+    setButton.onclick = function(){
+        try{ document.activeElement?.blur?.(); }catch(_){ }
+        const code = modal.dataset.itemCode;
+        const total = toNumber(correctionInput?.value, -1);
 
-            if(transaction){
-                closeQuantityAdjustmentModal();
-            }
+        if(total < 0){
+            showToast("Enter a valid total quantity", "warning");
+            return;
+        }
 
-        };
+        const transaction = setItemReceivedQuantity(code, total);
+        if(transaction){
+            closeQuantityAdjustmentModal();
+        }
+    };
 
-    setButton.onclick =
-        function(){
-
-            const code =
-                modal.dataset.itemCode;
-
-            const total =
-                toNumber(
-                    input?.value,
-                    -1
-                );
-
-            if(total < 0){
-                showToast(
-                    "Enter a valid total quantity",
-                    "warning"
-                );
-                return;
-            }
-
-            const transaction =
-                setItemReceivedQuantity(
-                    code,
-                    total
-                );
-
-            if(transaction){
-                closeQuantityAdjustmentModal();
-            }
-
-        };
-
-    modal.classList.add(
-        "open"
-    );
+    modal.classList.add("open");
 
     setTimeout(()=>{
         input?.focus();
         input?.select();
     },30);
-
 }
 
 
@@ -2435,11 +3331,18 @@ function refreshMasterGTINUI(){
         ? getMasterGTINStatus()
         : null;
 
+    const headerMaster=document.getElementById("headerMasterGTINStatus");
+
     if(!status || status.installed !== true){
+
+        if(headerMaster){
+            headerMaster.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
+            headerMaster.title="Global GTIN Master is not available on this device yet";
+        }
 
         setElementText(
             UI.elements.masterGTINStatus,
-            "Not installed"
+            (navigator.onLine ? "CONNECTED — MASTER UNAVAILABLE" : "OFFLINE")
         );
 
         setElementText(
@@ -2459,17 +3362,38 @@ function refreshMasterGTINUI(){
 
         if(UI.elements.masterGTINNotice){
             UI.elements.masterGTINNotice.textContent =
-                "Update Master GTIN once. Mapping files will then be optional for normal orders.";
+                "System Global GTIN is not available on this device yet. PharmFlow will sync it automatically after sign-in.";
             UI.elements.masterGTINNotice.className =
                 "masterGTINNotice";
+        }
+
+        const ordersMasterStatus=document.getElementById("ordersMasterStatus");
+        const ordersMasterCount=document.getElementById("ordersMasterItemCount");
+        const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
+        const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
+
+        if(ordersMasterStatus){
+            ordersMasterStatus.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
+        }
+        if(ordersMasterCount) ordersMasterCount.textContent="0";
+        if(ordersMasterUpdated) ordersMasterUpdated.textContent="-";
+        if(ordersMasterCard){
+            ordersMasterCard.classList.remove("isActive");
+            ordersMasterCard.classList.add("isSyncing");
         }
 
         return;
     }
 
+    if(headerMaster){
+        const count=toInteger(status.itemCount,0);
+        headerMaster.textContent=navigator.onLine ? "ACTIVE · "+count.toLocaleString() : "CACHED · "+count.toLocaleString();
+        headerMaster.title="Global GTIN Master — "+count.toLocaleString()+" items";
+    }
+
     setElementText(
         UI.elements.masterGTINStatus,
-        "Ready"
+        (navigator.onLine ? "CONNECTED — ACTIVE" : "OFFLINE — CACHED")
     );
 
     setElementText(
@@ -2494,6 +3418,32 @@ function refreshMasterGTINUI(){
         ? formatDateTime(status.updatedAt)
         : "-"
     );
+
+    /* Orders page uses the same Global Master status object as Settings
+       and the header. It is a database status card, not a local file. */
+    {
+        const ordersMasterStatus=document.getElementById("ordersMasterStatus");
+        const ordersMasterCount=document.getElementById("ordersMasterItemCount");
+        const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
+        const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
+        const count=toInteger(status.itemCount,0);
+
+        if(ordersMasterStatus){
+            ordersMasterStatus.textContent=navigator.onLine ? "ACTIVE" : "CACHED";
+        }
+        if(ordersMasterCount){
+            ordersMasterCount.textContent=count.toLocaleString();
+        }
+        if(ordersMasterUpdated){
+            ordersMasterUpdated.textContent=status.updatedAt
+                ? formatDateTime(status.updatedAt)
+                : "-";
+        }
+        if(ordersMasterCard){
+            ordersMasterCard.classList.remove("isSyncing");
+            ordersMasterCard.classList.add("isActive");
+        }
+    }
 
     if(UI.elements.masterGTINNotice){
 
@@ -2532,7 +3482,7 @@ function refreshMasterGTINUI(){
         else{
 
             UI.elements.masterGTINNotice.textContent =
-                "Master GTIN is active for the current order. Mapping file is not required.";
+                "System Global GTIN is active for the current order. Mapping file is not required.";
 
             UI.elements.masterGTINNotice.className =
                 "masterGTINNotice success";
@@ -2603,11 +3553,16 @@ function refreshSessionUI(){
     const session =
         AppState.session;
 
+    const hasActiveOrder=!!(
+        AppState.workspace?.active===true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
+
     setElementText(
         UI.elements.sessionPageId,
-        session.cloud === true
-        ? (session.code || session.id || "Cloud")
-        : (session.id || "Local")
+        !hasActiveOrder
+            ? "INACTIVE"
+            : (session.cloud === true ? "CONNECTED" : "LOCAL")
     );
 
     setElementText(
@@ -2732,9 +3687,47 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
         }
         if(typeof deleteArchivedOrderLocalData!=="function")throw new Error("Local archive delete helper is unavailable");
         await deleteArchivedOrderLocalData(internalOrderId);
-        if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry().catch(()=>{});
-        if(typeof refreshItemTransferOrderOptions==="function")refreshItemTransferOrderOptions();
-        showToast("Order "+safeOrder+" deleted","success");
+
+        /* Cloud is authoritative: reload Archive and lifecycle after deletion,
+           then verify before ever showing a success toast. */
+        if(typeof restoreHistoricalArchive==="function"){
+            await restoreHistoricalArchive();
+        }
+        if(typeof refreshOrderLifecycleRegistry==="function"){
+            await refreshOrderLifecycleRegistry();
+        }
+        if(typeof refreshItemTransferOrderOptions==="function"){
+            refreshItemTransferOrderOptions();
+        }
+
+        if(
+            typeof ReportsEngine!=="undefined" &&
+            ReportsEngine.itemTransfer &&
+            typeof normalizeOrderNumber==="function" &&
+            normalizeOrderNumber(ReportsEngine.itemTransfer.orderNumber)===normalizeOrderNumber(safeOrder)
+        ){
+            ReportsEngine.itemTransfer={orderNumber:"",orderMeta:null,rows:[]};
+            if(typeof renderItemTransferReport==="function")renderItemTransferReport();
+        }
+
+        const stillInArchive=(AppState.archive.orders||[]).some(order=>
+            getArchiveOrderNumbers(order).some(number=>
+                normalizeOrderNumber(number)===normalizeOrderNumber(safeOrder)
+            )
+        );
+
+        const stillInRegistry=(
+            typeof OrderLifecycleEngine!=="undefined" &&
+            Array.isArray(OrderLifecycleEngine.records)
+        ) ? OrderLifecycleEngine.records.some(row=>
+            normalizeOrderNumber(row.order_number)===normalizeOrderNumber(safeOrder)
+        ) : false;
+
+        if(stillInArchive || stillInRegistry){
+            throw new Error("Deletion was not confirmed by the cloud. The order remains protected.");
+        }
+
+        showToast("Order "+safeOrder+" permanently deleted","success");
         return true;
     }catch(error){
         Logger.error("Delete archived order failed",error);
@@ -2743,6 +3736,55 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
     }finally{hideLoading();}
 }
 window.requestDeleteArchivedOrder=requestDeleteArchivedOrder;
+
+
+function openArchivedDiscrepancyReport(internalOrderId){
+    const order=(AppState.archive.orders||[]).find(
+        row=>String(row?.orderId||"")===String(internalOrderId||"")
+    );
+
+    if(!order){
+        showToast("Archived order could not be found","error");
+        return false;
+    }
+
+    const fullReport=order.fullReceivingReport;
+    const emailReport=order.discrepancyReport;
+
+    if(fullReport && Array.isArray(fullReport.rows)){
+        if(typeof openOrderStatusReportFromSnapshot==="function"){
+            openOrderStatusReportFromSnapshot(
+                JSON.parse(JSON.stringify(fullReport))
+            );
+            return true;
+        }
+
+        if(typeof printLiveReceivingReport==="function"){
+            printLiveReceivingReport(
+                JSON.parse(JSON.stringify(fullReport))
+            );
+            return true;
+        }
+    }
+
+    /* Compatibility for reports finalized by 2C.10.2.2. */
+    if(emailReport && Array.isArray(emailReport.rows)){
+        openFinalizedDiscrepancyEmailPreview?.(
+            JSON.parse(JSON.stringify(emailReport)),
+            {fromArchive:true}
+        );
+        return true;
+    }
+
+    showToast(
+        "No saved report is available for this older archive record",
+        "warning"
+    );
+    return false;
+}
+
+window.openArchivedDiscrepancyReport=openArchivedDiscrepancyReport;
+
 
 function renderArchiveTable(orders){
     const tbody=UI.elements.archiveTableBody;
@@ -2763,9 +3805,25 @@ function renderArchiveTable(orders){
             <td>${toInteger(order.totalItems,0)}</td>
             <td>${toNumber(order.totalReceivedUnits,0)}</td>
             <td><span class="archiveStatus completed">${escapeHTML(order.status||"Received")}</span></td>
-            <td>${numbers.length===1?`<button type="button" class="archiveDeleteOrderButton" data-delete-archive-order="${escapeHTML(order.orderId)}" data-order-number="${escapeHTML(numbers[0])}">Delete Order</button>`:`<span class="archiveActionNote">${numbers.length>1?"Batch record":"Order number unavailable"}</span>`}</td>`;
+            <td>
+              <div class="archiveRowActions">
+                ${order.discrepancyReport && Array.isArray(order.discrepancyReport.rows)
+                    ? `<button type="button" class="archiveViewReportButton" data-view-archive-report="${escapeHTML(order.orderId)}">View Report</button>`
+                    : `<span class="archiveActionNote">No saved report</span>`}
+                ${numbers.length===1
+                    ? `<button type="button" class="archiveDeleteOrderButton" data-delete-archive-order="${escapeHTML(order.orderId)}" data-order-number="${escapeHTML(numbers[0])}">Delete Order</button>`
+                    : `<span class="archiveActionNote">${numbers.length>1?"Batch record":"Order number unavailable"}</span>`}
+              </div>
+            </td>`;
         tbody.appendChild(row);
     });
+    tbody.querySelectorAll("[data-view-archive-report]").forEach(button=>{
+        button.addEventListener(
+            "click",
+            ()=>openArchivedDiscrepancyReport(button.dataset.viewArchiveReport)
+        );
+    });
+
     tbody.querySelectorAll("[data-delete-archive-order]").forEach(button=>{
         button.addEventListener("click",()=>requestDeleteArchivedOrder(button.dataset.deleteArchiveOrder,button.dataset.orderNumber));
     });
@@ -2969,7 +4027,14 @@ function renderGlobalSearchResults(searchText){
 
         button.addEventListener(
             "click",
-            function(){
+            function(event){
+
+                if(event.target?.closest?.("[data-review-item]")){
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openSearchedItemReview(item);
+                    return;
+                }
 
                 selectSmartScanItem(
                     item
@@ -2980,6 +4045,42 @@ function renderGlobalSearchResults(searchText){
             }
         );
 
+        if(item.manual===true && toNumber(item.receivedQty,0)===0){
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "secondaryButton removeManualSearchButton";
+            remove.style.marginLeft = "10px";
+            remove.style.padding = "7px 10px";
+            remove.textContent = "Remove Manual Item";
+            remove.addEventListener("click", function(event){
+                event.preventDefault();
+                event.stopPropagation();
+
+                if(typeof deleteManualItem==="function" && deleteManualItem(item.itemCode)){
+                    renderGlobalSearchResults(
+                        UI.elements.globalSearchInput?.value || ""
+                    );
+                }
+            });
+            button.appendChild(remove);
+        }
+
+        if(toNumber(item.receivedQty,0) > 0){
+            const review = document.createElement("button");
+            review.type = "button";
+            review.className = "secondaryButton";
+            review.setAttribute("data-review-item", item.itemCode);
+            review.style.marginLeft = "10px";
+            review.style.padding = "7px 10px";
+            review.textContent = "Review / Adjust";
+            review.addEventListener("click", function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                openSearchedItemReview(item);
+            });
+            button.appendChild(review);
+        }
+
         container.appendChild(
             button
         );
@@ -2987,6 +4088,154 @@ function renderGlobalSearchResults(searchText){
     });
 
 }
+
+
+/* =====================================================
+   PHASE 2C.7.5 - SEARCHED ITEM REVIEW / CORRECTION
+===================================================== */
+function openSearchedItemReview(item){
+    if(!item) return;
+
+    closeItemSearchModal();
+
+    let modal=document.getElementById("searchedItemReviewModal");
+    if(!modal){
+        modal=document.createElement("div");
+        modal.id="searchedItemReviewModal";
+        modal.className="quantityAdjustmentModal";
+        modal.innerHTML=`
+          <div class="quantityAdjustmentCard" style="max-width:680px;">
+            <div class="quantityAdjustmentHeader">
+              <div><span class="sectionEyebrow">ITEM REVIEW</span><h3 id="searchedReviewName">-</h3></div>
+              <button type="button" id="btnCloseSearchedReview" class="iconButton" aria-label="Close">✕</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">
+              <div class="quantityCurrentTotal"><span>Ordered</span><strong id="searchedReviewOrdered">0</strong></div>
+              <div class="quantityCurrentTotal"><span>Received — All Devices</span><strong id="searchedReviewReceived">0</strong></div>
+              <div class="quantityCurrentTotal"><span>Remaining</span><strong id="searchedReviewRemaining">0</strong></div>
+            </div>
+            <div class="quantityCurrentTotal" style="margin-bottom:10px;">
+              <span>Last Update</span><strong id="searchedReviewLastUpdate">-</strong>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button type="button" id="btnSearchedAdjust" class="primaryButton">Adjust Received Qty</button>
+              <button type="button" id="btnSearchedActivity" class="secondaryButton">View Activity</button>
+              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Manual Item</button>
+            </div>
+            <div id="searchedReviewCorrection" hidden>
+              <label class="quantityAdjustmentLabel" for="searchedReviewCorrectionInput">Correct total received to</label>
+              <input id="searchedReviewCorrectionInput" class="quantityAdjustmentInput" type="number" min="0" step="1" inputmode="numeric">
+              <p class="quantityAdjustmentHelp">This changes the shared total for this item. PharmFlow records only the difference as a correction, so the audit history remains intact.</p>
+              <div class="quantityAdjustmentActions">
+                <button type="button" id="btnApplySearchedCorrection" class="primaryButton">Apply Correction</button>
+                <button type="button" id="btnCancelSearchedCorrection" class="secondaryButton">Cancel</button>
+              </div>
+            </div>
+            <div id="searchedReviewActivity" hidden style="margin-top:10px;"></div>
+          </div>`;
+        document.body.appendChild(modal);
+        document.getElementById("btnCloseSearchedReview")?.addEventListener("click",closeSearchedItemReview);
+        modal.addEventListener("click",e=>{if(e.target===modal)closeSearchedItemReview();});
+        modal.addEventListener("keydown",e=>{
+            if(e.key==="Escape"){e.preventDefault();closeSearchedItemReview();return;}
+            if(e.key==="Enter" && !document.getElementById("searchedReviewCorrection")?.hidden){
+                e.preventDefault(); document.getElementById("btnApplySearchedCorrection")?.click();
+            }
+        });
+    }
+
+    modal.dataset.itemCode=item.itemCode;
+    setElementText(document.getElementById("searchedReviewName"),item.itemName||item.itemCode);
+    setElementText(document.getElementById("searchedReviewOrdered"),toNumber(item.orderedQty,0));
+    setElementText(document.getElementById("searchedReviewReceived"),toNumber(item.receivedQty,0));
+    setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(item.orderedQty,0)-toNumber(item.receivedQty,0)));
+
+    const history=(Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[])
+      .filter(tx=>normalizeItemCode(tx?.itemCode)===normalizeItemCode(item.itemCode))
+      .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+    const last=history[0];
+    setElementText(document.getElementById("searchedReviewLastUpdate"),last?.dateTime?(typeof formatDateTime==="function"?formatDateTime(last.dateTime):last.dateTime):"No activity yet");
+
+    const correction=document.getElementById("searchedReviewCorrection");
+    const activity=document.getElementById("searchedReviewActivity");
+    const removeManualButton=document.getElementById("btnSearchedRemoveManual");
+    if(removeManualButton){
+        removeManualButton.hidden = !(
+            item.manual===true &&
+            toNumber(item.receivedQty,0)===0
+        );
+        removeManualButton.onclick=()=>{
+            const current=getItemByCode(modal.dataset.itemCode);
+            if(!current || current.manual!==true || toNumber(current.receivedQty,0)!==0){
+                showToast("Set the manual item quantity to zero first","warning");
+                return;
+            }
+            showConfirmModal(
+                "Remove Manual Item",
+                "Remove this manually-added item from the current receiving workspace? It will no longer appear in Search or reports.",
+                ()=>{
+                    if(deleteManualItem(current.itemCode)){
+                        closeSearchedItemReview();
+                    }
+                }
+            );
+        };
+    }
+    if(correction) correction.hidden=true;
+    if(activity){activity.hidden=true;activity.innerHTML="";}
+
+    document.getElementById("btnSearchedAdjust").onclick=()=>{
+        if(activity) activity.hidden=true;
+        if(correction) correction.hidden=false;
+        const current=getItemByCode(modal.dataset.itemCode);
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        if(input){input.value=String(toNumber(current?.receivedQty,item.receivedQty));setTimeout(()=>{input.focus();input.select();},20);}
+    };
+
+    document.getElementById("btnCancelSearchedCorrection").onclick=()=>{if(correction) correction.hidden=true;};
+
+    document.getElementById("btnApplySearchedCorrection").onclick=()=>{
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        const total=toNumber(input?.value,-1);
+        if(total<0){showToast("Enter a valid received total","warning");return;}
+        const tx=setItemReceivedQuantity(modal.dataset.itemCode,total);
+        if(!tx) return;
+        const current=getItemByCode(modal.dataset.itemCode);
+        setElementText(document.getElementById("searchedReviewReceived"),toNumber(current?.receivedQty,total));
+        setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(current?.orderedQty,0)-toNumber(current?.receivedQty,total)));
+        if(correction) correction.hidden=true;
+
+        if(removeManualButton){
+            removeManualButton.hidden = !(
+                current?.manual===true &&
+                toNumber(current?.receivedQty,0)===0
+            );
+        }
+
+        showToast("Received quantity corrected. History preserved.","success");
+    };
+
+    document.getElementById("btnSearchedActivity").onclick=()=>{
+        if(correction) correction.hidden=true;
+        if(!activity) return;
+        const rows=(typeof getReceivingActivityRows==="function"?getReceivingActivityRows():[])
+          .filter(row=>normalizeItemCode(row?.itemCode)===normalizeItemCode(modal.dataset.itemCode))
+          .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+        activity.hidden=false;
+        activity.innerHTML=rows.length?`<div class="phase263TableWrap" style="max-height:260px;"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After</th></tr></thead><tbody>${rows.map(row=>{const q=toNumber(row.qtyChange,0);return `<tr><td>${escapeHTML(typeof formatDateTime==="function"?formatDateTime(row.dateTime):toSafeString(row.dateTime))}</td><td>${escapeHTML(toSafeString(row.deviceId||"Unknown"))}</td><td>${escapeHTML(typeof getActivitySourceLabel==="function"?getActivitySourceLabel(row.source):toSafeString(row.source))}</td><td>${q>0?"+":""}${escapeHTML(q)}</td><td><b>${escapeHTML(toNumber(row.totalAfterAction,0))}</b></td></tr>`;}).join("")}</tbody></table></div>`:'<div class="tableEmptyState">No receiving activity for this item.</div>';
+    };
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden","false");
+}
+
+function closeSearchedItemReview(){
+    const modal=document.getElementById("searchedItemReviewModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden","true");
+    focusScannerInput();
+}
+window.openSearchedItemReview=openSearchedItemReview;
 
 
 /* =====================================================
@@ -3132,15 +4381,46 @@ function closeConfirmModal(){
 }
 
 
-function handleConfirmOK(){
+async function handleConfirmOK(){
 
-    const callback =
-        UI.confirmCallback;
+    /* Phase 2C.10.4.3 — confirmation actions that perform Supabase work must
+       be single-flight and awaited. This prevents a long destructive action
+       from being detached from its UI lifecycle and losing its final receipt. */
+    if(UI.confirmInProgress){
+        return;
+    }
+
+    const callback = UI.confirmCallback;
+
+    if(!callback){
+        closeConfirmModal();
+        return;
+    }
+
+    UI.confirmInProgress = true;
+
+    const confirmButton = document.getElementById("btnConfirmOK");
+    if(confirmButton){
+        confirmButton.disabled = true;
+    }
 
     closeConfirmModal();
 
-    if(callback){
-        callback();
+    try{
+        await Promise.resolve(callback());
+    }
+    catch(error){
+        Logger.error("Confirmed action failed",error);
+        showToast(
+            error?.message || "Unable to complete the requested action",
+            "error"
+        );
+    }
+    finally{
+        UI.confirmInProgress = false;
+        if(confirmButton){
+            confirmButton.disabled = false;
+        }
     }
 
 }
@@ -3159,10 +4439,18 @@ function showToast(
             .toastDurationMs
 ){
 
-    const container =
-        UI.elements.toastContainer;
+    /* Phase 2C.10.4.4 — always resolve the live toast host from the DOM.
+       Long async operations can outlive a cached UI reference after a view
+       refresh. Reset worked because it emits immediately; Historical Delete
+       can finish after several server/UI refreshes. */
+    let container =
+        document.getElementById("toastContainer");
 
-    if(!container){
+    if(!container || !container.isConnected){
+        container = UI.elements.toastContainer;
+    }
+
+    if(!container || !container.isConnected){
 
         Logger.info(
             "Toast:",
@@ -3171,6 +4459,8 @@ function showToast(
 
         return;
     }
+
+    UI.elements.toastContainer = container;
 
     const toast =
         document.createElement(
@@ -3307,11 +4597,7 @@ function focusScannerInput(){
         return;
     }
 
-    if(
-        document.querySelector(
-            ".modalOverlay.open"
-        )
-    ){
+    if(document.querySelector(".modalOverlay.open, .gtinResolutionShell.open")){
         return;
     }
 
@@ -3347,6 +4633,43 @@ function focusScannerInput(){
    SCAN BOX STATE
 ===================================================== */
 
+function triggerScanFieldFlash(kind="success"){
+
+    const scanBox = UI.elements.scanBox || document.getElementById("scanBox");
+    if(!scanBox){ return; }
+
+    let layer = scanBox.querySelector(":scope > .pfnScanFlashLayer");
+    if(!layer){
+        layer = document.createElement("span");
+        layer.className = "pfnScanFlashLayer";
+        layer.setAttribute("aria-hidden","true");
+        scanBox.appendChild(layer);
+    }
+
+    const flashClass = kind === "error"
+        ? "pfnScanFlashLayerError"
+        : "pfnScanFlashLayerSuccess";
+
+    layer.classList.remove(
+        "pfnScanFlashLayerSuccess",
+        "pfnScanFlashLayerError",
+        "pfnScanFlashLayerActive"
+    );
+
+    /* Restart the transition even for two consecutive scans with the same
+       result.  The layer is a real element above the input/icon backgrounds,
+       so the whole Scan/Search field receives one continuous tint. */
+    void layer.offsetWidth;
+    layer.classList.add(flashClass,"pfnScanFlashLayerActive");
+
+    clearTimeout(scanBox._pfnFullFieldFlashTimer);
+    scanBox._pfnFullFieldFlashTimer=setTimeout(()=>{
+        layer.classList.remove("pfnScanFlashLayerActive");
+    },760);
+}
+
+window.triggerScanFieldFlash=triggerScanFieldFlash;
+
 function setScanBoxState(
     state = "ready"
 ){
@@ -3365,7 +4688,8 @@ function setScanBoxState(
         "success",
         "error",
         "flashSuccess",
-        "flashError"
+        "flashError",
+        "action"
     );
 
     if(state === "success"){
@@ -3374,6 +4698,8 @@ function setScanBoxState(
             "success",
             "flashSuccess"
         );
+
+        triggerScanFieldFlash("success");
 
         if(badge){
 
@@ -3401,12 +4727,23 @@ function setScanBoxState(
         return;
     }
 
+    if(state === "action") {
+        scanBox.classList.add("action");
+        if(badge){
+            badge.className="scanStatusBadge action";
+            badge.innerHTML=`<span class="scanPulse"></span>ACTION REQUIRED`;
+        }
+        return;
+    }
+
     if(state === "error"){
 
         scanBox.classList.add(
             "error",
             "flashError"
         );
+
+        triggerScanFieldFlash("error");
 
         if(badge){
 
@@ -3482,14 +4819,16 @@ function flashLastScanCard(
         "scanError"
     );
 
-    setTimeout(()=>{
-
-        card.classList.remove(
-            "scanSuccess",
-            "scanError"
-        );
-
-    },700);
+    /*
+       Keep the successful Last Scan visually green until the
+       next scan replaces it.  An error is temporary because
+       the previous successful item is still the last received item.
+    */
+    if(!success){
+        setTimeout(()=>{
+            card.classList.remove("scanError");
+        },1400);
+    }
 
 }
 
@@ -4100,17 +5439,17 @@ function createLastScanQuantityControls(){
 
       <div class="lastScanQtyTitle">
 
-          Quick Quantity Adjustment
+          BATCH QTY
 
       </div>
 
       <div class="handheldScanContext" aria-live="polite">
           <div>
-              <span>THIS SCAN</span>
+              <span>LAST ACTION</span>
               <strong id="handheldThisScan">+0</strong>
           </div>
           <div>
-              <span>TOTAL RECEIVED</span>
+              <span>ALL DEVICES</span>
               <strong id="handheldTotalReceived">0</strong>
           </div>
       </div>
@@ -4129,6 +5468,8 @@ function createLastScanQuantityControls(){
               type="button"
               id="btnLastScanEdit"
               class="lastScanQtyValue"
+              aria-label="Add Quantity"
+              title="Add Quantity"
           >
               0
           </button>
@@ -4143,17 +5484,53 @@ function createLastScanQuantityControls(){
 
       </div>
 
+      <div id="handheldScanSavedAck" class="handheldScanSavedAck">
+          ✓ SCANNED +1 · PACK SAVED
+      </div>
+
       <div class="lastScanQtyHint">
 
-          Tap the number to add quantity or correct the total.
+          Current local batch only. Scanning another item starts a new batch.
 
       </div>
 
+      <button
+          type="button"
+          id="btnHandheldClearLastScan"
+          class="handheldClearLastScan"
+      >
+          CLEAR SCREEN
+      </button>
+
   `;
 
-  card.appendChild(
-      controls
-  );
+  const isHandheld=
+      typeof isLikelyZebraDevice === "function" &&
+      isLikelyZebraDevice();
+
+  const professionalLayout=
+      document.getElementById(
+          "professionalLastScanLayout"
+      );
+
+  const metrics=
+      professionalLayout?.querySelector(
+          ".lastScanMetrics"
+      );
+
+  /* Keep the Handheld identity, batch quantity and operational totals in one
+     expanding Last Scan surface. Desktop retains its established placement. */
+  if(isHandheld && professionalLayout && metrics){
+      professionalLayout.insertBefore(
+          controls,
+          metrics
+      );
+  }
+  else{
+      card.appendChild(
+          controls
+      );
+  }
 
 
   document
@@ -4244,6 +5621,30 @@ function createLastScanQuantityControls(){
           }
       );
 
+  document
+      .getElementById("btnHandheldClearLastScan")
+      ?.addEventListener("click",function(){
+
+          /* CLEAR is data-safe: it never reverses a transaction or changes
+             Received/history. It does end the worker's visible local batch, so
+             the next scan of the same item correctly starts again at 1. */
+          if(typeof resetCurrentLocalBatch==="function"){
+              resetCurrentLocalBatch();
+          }
+          cancelReceivingAutoClear();
+          AppState.workspace.lastScan=null;
+
+          refreshEntireUI?.();
+          window.hhRefreshReadyState?.();
+
+          try{ document.activeElement?.blur?.(); }catch(_){}
+
+          setTimeout(()=>{
+              focusScannerInput?.();
+              window.hhRepairScannerFocus?.("clear-screen");
+          },40);
+      });
+
 }
 
 
@@ -4273,6 +5674,47 @@ function getCurrentLastScanItem(){
 /* =====================================================
  REFRESH LAST SCAN QUANTITY CONTROL
 ===================================================== */
+
+function getPcLegacyCurrentBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    const deviceId=getCurrentDeviceId();
+    if(!code || !deviceId) return 0;
+
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory : [];
+
+    const local=history.map((tx,index)=>({tx,index})).filter(row=>
+        toSafeString(row.tx?.deviceId||"")===deviceId
+    ).sort((a,b)=>{
+        const ta=new Date(a.tx?.dateTime||0).getTime();
+        const tb=new Date(b.tx?.dateTime||0).getTime();
+        return ta===tb ? a.index-b.index : ta-tb;
+    });
+
+    if(!local.length) return 0;
+    if(normalizeItemCode(local[local.length-1]?.tx?.itemCode)!==code) return 0;
+
+    let qty=0;
+    for(let i=local.length-1;i>=0;i--){
+        if(normalizeItemCode(local[i]?.tx?.itemCode)!==code) break;
+        qty+=toNumber(local[i]?.tx?.quantity,0);
+    }
+    return Math.max(0,qty);
+}
+
+function getOperationalCurrentBatchQuantity(itemCode){
+    /*
+       2C.11.4.0
+       Batch Qty is the packs handled by THIS browser/device in the current
+       operational batch. It must update immediately and must not depend on
+       Supabase/history hydration.
+    */
+    if(typeof getLocalRuntimeBatchQuantity==="function"){
+        return getLocalRuntimeBatchQuantity(itemCode);
+    }
+
+    return 0;
+}
 
 function refreshLastScanQuantityControl(){
 
@@ -4316,8 +5758,12 @@ function refreshLastScanQuantityControl(){
           0
       );
 
+  /* 2C.11.1.3 — Handheld primary quantity is the worker's CURRENT LOCAL
+     BATCH on this device. Shared totals remain informational below. */
+  const localBatchQty=getOperationalCurrentBatchQuantity(item.itemCode);
+
   button.textContent =
-      String(totalReceived);
+      String(localBatchQty);
 
   if(totalReceivedElement){
       totalReceivedElement.textContent =
@@ -4333,6 +5779,22 @@ function refreshLastScanQuantityControl(){
       thisScanElement.textContent =
           (localDelta > 0 ? "+" : "") +
           String(localDelta);
+  }
+
+  const savedAck=document.getElementById("handheldScanSavedAck");
+  if(savedAck){
+      const localDelta=
+          scan && normalizeItemCode(scan.itemCode)===normalizeItemCode(item.itemCode)
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      if(localDelta>0){
+          savedAck.textContent=
+              `✓ SCANNED +${localDelta} · ${localDelta===1 ? "PACK" : "PACKS"} SAVED`;
+          savedAck.hidden=false;
+      }else{
+          savedAck.hidden=true;
+      }
   }
 
 }
@@ -4919,7 +6381,7 @@ function createOrderStatusReportButton(){
         " orderStatusReportButton";
 
     button.innerHTML =
-        "📋 Order Status Report";
+        "📋 Receiving Report";
 
     button.addEventListener(
         "click",
@@ -4965,13 +6427,17 @@ function getOrderStatusReportRows(filter = "all"){
                 let reportStatus =
                     "complete";
 
-                if(difference < 0){
-                    reportStatus =
-                        "shortage";
+                if(item.manual===true || ordered===0){
+                    reportStatus = received>0 ? "unordered" : "complete";
+                }
+                else if(received===0 && ordered>0){
+                    reportStatus = "not_received";
+                }
+                else if(difference < 0){
+                    reportStatus = "shortage";
                 }
                 else if(difference > 0){
-                    reportStatus =
-                        "over";
+                    reportStatus = "over";
                 }
 
                 return {
@@ -5059,9 +6525,9 @@ function openOrderStatusReport(
 
                     <div>
                         <span>LIVE ORDER REPORT</span>
-                        <h2>Order Status Report</h2>
+                        <h2>Receiving Report</h2>
                         <p>
-                            Current shortage and over-received quantities.
+                            Live snapshot of the current receiving progress. Available before Finalize.
                         </p>
                     </div>
 
@@ -5113,6 +6579,16 @@ function openOrderStatusReport(
                         id="orderStatusReportSummary"
                         class="orderStatusReportSummary"
                     ></div>
+
+                    <div class="liveReceivingReportActions">
+                        <button id="btnPrintLiveReceivingReport" type="button" class="secondaryButton">
+                            Print / Save PDF
+                        </button>
+
+                        <button id="btnEmailLiveReceivingDifferences" type="button" class="primaryButton">
+                            Email Differences
+                        </button>
+                    </div>
 
                 </div>
 
@@ -5182,6 +6658,42 @@ function openOrderStatusReport(
                     }
                 );
 
+            });
+
+
+        document.getElementById("btnPrintLiveReceivingReport")
+            ?.addEventListener("click",()=>{
+                if(typeof buildLiveReceivingReport==="function" && typeof printLiveReceivingReport==="function"){
+                    printLiveReceivingReport(buildLiveReceivingReport());
+                }
+            });
+
+        document.getElementById("btnEmailLiveReceivingDifferences")
+            ?.addEventListener("click",()=>{
+                if(
+                    typeof buildLiveReceivingReport!=="function" ||
+                    typeof buildReceivingEmailDifferencesReport!=="function" ||
+                    typeof openFinalizedDiscrepancyEmailPreview!=="function"
+                ){
+                    showToast?.("Email report is unavailable","error");
+                    return;
+                }
+
+                const live=buildLiveReceivingReport();
+                const emailReport=buildReceivingEmailDifferencesReport(live);
+
+                if(!emailReport.rows.length){
+                    showToast?.("All items are Completed. There are no differences to email.","success");
+                    return;
+                }
+
+                openFinalizedDiscrepancyEmailPreview(
+                    emailReport,
+                    {
+                        fromArchive:false,
+                        liveReport:true
+                    }
+                );
             });
 
     }
@@ -5337,19 +6849,16 @@ function renderOrderStatusReport(
             );
 
         if(rowData.reportStatus === "over"){
-            tr.classList.add(
-                "rowOver"
-            );
+            tr.classList.add("rowOver");
         }
-        else if(rowData.reportStatus === "shortage"){
-            tr.classList.add(
-                "orderStatusShortageRow"
-            );
+        else if(["shortage","not_received"].includes(rowData.reportStatus)){
+            tr.classList.add("orderStatusShortageRow");
+        }
+        else if(rowData.reportStatus === "unordered"){
+            tr.classList.add("orderStatusUnorderedRow");
         }
         else{
-            tr.classList.add(
-                "rowCompleted"
-            );
+            tr.classList.add("rowCompleted");
         }
 
         let differenceHTML =
@@ -5358,23 +6867,21 @@ function renderOrderStatusReport(
         let statusHTML =
             '<span class="statusBadge statusCompleted">Complete</span>';
 
-        if(rowData.difference < 0){
-
-            differenceHTML =
-                `<strong class="differenceShortage">${rowData.difference}</strong>`;
-
-            statusHTML =
-                `<span class="statusBadge statusShortage">Shortage ${Math.abs(rowData.difference)}</span>`;
-
+        if(rowData.reportStatus==="not_received"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Not Received</span>`;
         }
-        else if(rowData.difference > 0){
-
-            differenceHTML =
-                `<strong class="differenceOver">+${rowData.difference}</strong>`;
-
-            statusHTML =
-                `<span class="statusBadge statusOver">Over +${rowData.difference}</span>`;
-
+        else if(rowData.reportStatus==="shortage"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Shortage ${Math.abs(rowData.difference)}</span>`;
+        }
+        else if(rowData.reportStatus==="over"){
+            differenceHTML=`<span class="differenceOver">+${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusOver">Over +${rowData.difference}</span>`;
+        }
+        else if(rowData.reportStatus==="unordered"){
+            differenceHTML=`<span class="differenceOver">+${rowData.received}</span>`;
+            statusHTML=`<span class="statusBadge statusUnordered">Unordered</span>`;
         }
 
         tr.innerHTML = `
@@ -5400,6 +6907,101 @@ function renderOrderStatusReport(
     });
 
 }
+
+
+
+function openOrderStatusReportFromSnapshot(report){
+    if(!report || !Array.isArray(report.rows)){
+        showToast?.("Saved report is unavailable","warning");
+        return false;
+    }
+
+    document.getElementById("archivedReceivingReportOverlay")?.remove();
+
+    const esc=v=>typeof escapeHTML==="function"
+        ? escapeHTML(String(v??""))
+        : String(v??"");
+
+    const orders=Array.isArray(report.orders)?report.orders:[];
+    const orderLabel=orders.map(o=>o.orderNumber).filter(Boolean).join(" + ") || report.orderId || "-";
+    const orderDate=orders.map(o=>o.orderDate).filter(Boolean)[0] || "-";
+
+    const overlay=document.createElement("div");
+    overlay.id="archivedReceivingReportOverlay";
+    overlay.className="orderStatusReportModal open";
+
+    overlay.innerHTML=`
+      <div class="orderStatusReportCard archivedReceivingReportCard">
+        <div class="orderStatusReportHeader">
+          <div>
+            <span>SAVED RECEIVING REPORT</span>
+            <h2>Receiving Report</h2>
+            <p>${esc(orderLabel)} · ${esc(orderDate)} · Finalized snapshot</p>
+          </div>
+          <button type="button" class="statItemsClose" data-close>✕</button>
+        </div>
+
+        <div class="archivedReportSummary">
+          <div><span>Total Items</span><strong>${report.counts?.total||report.rows.length}</strong></div>
+          <div><span>Completed</span><strong>${report.counts?.COMPLETED||0}</strong></div>
+          <div><span>Requires Review</span><strong>${report.counts?.requiresReview||0}</strong></div>
+          <div><span>Generated</span><strong>${esc(report.generatedAt ? new Date(report.generatedAt).toLocaleString() : "-")}</strong></div>
+        </div>
+
+        <div class="liveReceivingReportActions archiveLiveReportActions">
+          <button type="button" class="secondaryButton" id="btnPrintArchivedReceivingReport">Print / Save PDF</button>
+          <button type="button" class="primaryButton" id="btnEmailArchivedDifferences">Email Differences</button>
+        </div>
+
+        <div class="orderStatusReportTableWrap">
+          <table class="dataTable orderStatusReportTable">
+            <thead><tr>
+              <th>Item Number</th><th>Item Name</th><th>Ordered</th>
+              <th>Received</th><th>Difference</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${report.rows.map(row=>{
+                  const diff=Number(row["Difference"]||0);
+                  return `<tr>
+                    <td>${esc(row["Item Number"])}</td>
+                    <td>${esc(row["Item Name"])}</td>
+                    <td>${row["Ordered Qty"]}</td>
+                    <td>${row["Received Qty"]}</td>
+                    <td>${diff>0?"+":""}${diff}</td>
+                    <td><span class="statusBadge">${esc(row.Status)}</span></td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(button=>{
+        button.onclick=()=>overlay.remove();
+    });
+
+    document.getElementById("btnPrintArchivedReceivingReport")?.addEventListener("click",()=>{
+        printLiveReceivingReport?.(report);
+    });
+
+    document.getElementById("btnEmailArchivedDifferences")?.addEventListener("click",()=>{
+        const emailReport=buildReceivingEmailDifferencesReport?.(report);
+        if(!emailReport?.rows?.length){
+            showToast?.("All items are Completed. There are no differences to email.","success");
+            return;
+        }
+        openFinalizedDiscrepancyEmailPreview?.(
+            emailReport,
+            {fromArchive:true}
+        );
+    });
+
+    return true;
+}
+
+window.openOrderStatusReportFromSnapshot=openOrderStatusReportFromSnapshot;
 
 
 function refreshOpenOrderStatusReport(){
@@ -5451,25 +7053,50 @@ function closeOrderStatusReport(){
 function isLikelyZebraDevice(){
     const ua = String(navigator.userAgent || "").toLowerCase();
 
-    /* Phase 2C.6:
-       Handheld UI is reserved for Zebra/enterprise handheld hardware.
-       Generic Android phones must NOT silently switch into the operational
-       handheld workflow. A deliberate ?handheld=1 override remains available
-       for controlled testing when the Zebra is not physically available. */
     const enterpriseHandheld =
         /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
 
     let explicitHandheld = false;
+    let persistedHandheld = false;
+
     try{
         const params = new URLSearchParams(window.location.search || "");
         explicitHandheld =
             params.get("handheld") === "1" ||
             localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
-    }catch(_){
-        explicitHandheld = false;
+
+        persistedHandheld =
+            localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
+    }catch(_){}
+
+    /*
+       Chrome on some Zebra builds reports a generic Android user-agent.
+       PharmFlow therefore also recognizes the narrow Android enterprise
+       form factor, then remembers this browser as a Handheld.
+    */
+    const android = /android/i.test(ua);
+    const shortestScreenSide = Math.min(
+        Number(window.screen?.width || window.innerWidth || 9999),
+        Number(window.screen?.height || window.innerHeight || 9999)
+    );
+    const handheldFormFactor =
+        android &&
+        shortestScreenSide <= 600 &&
+        Number(navigator.maxTouchPoints || 0) > 0;
+
+    const detected =
+        enterpriseHandheld ||
+        explicitHandheld ||
+        persistedHandheld ||
+        handheldFormFactor;
+
+    if(detected){
+        try{
+            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
+        }catch(_){}
     }
 
-    return enterpriseHandheld || explicitHandheld;
+    return detected;
 }
 
 function backupLegacyZebraWorkspace(reason){
@@ -5521,13 +7148,22 @@ function resetZebraWorkingState(reason, options = {}){
 
     if(typeof saveWorkspaceSnapshot === "function"){ saveWorkspaceSnapshot(); }
     AppEvents.emit("session:updated");
-    AppEvents.emit("workspace:cleared");
+    /* Handheld detach/idle cleanup is device-local. It must never masquerade
+       as a pharmacy-wide Current Workspace reset. */
+    AppEvents.emit("receiving:updated",{source:"handheld-local-reset"});
     return true;
 }
 
 function initializeZebraInterface(){
     if(!isLikelyZebraDevice()){
-        document.body.classList.remove("zebraDevice","zebraHomeActive","zebraJoinActive","zebraExpiryActive");
+        document.body.classList.remove(
+            "zebraDevice",
+            "zebraHomeActive",
+            "zebraJoinActive",
+            "zebraReceivingActive",
+            "zebraExpiryActive",
+            "zebraMode"
+        );
         return;
     }
 
@@ -5541,27 +7177,24 @@ function initializeZebraInterface(){
         barcodeInput.setAttribute("autocomplete","off");
     }
 
-    /* Phase 2B.4 one-time Zebra migration: previous builds could leave an old
-       cloud/local order attached to this handheld indefinitely. Back it up once
-       and clear it so the first screen is Modes, with no phantom Order Number. */
-    const zebraMigrationKey = "PRS_V3_ZEBRA_PHASE2B4_CLEANED";
-    let migrated = false;
-    try{ migrated = localStorage.getItem(zebraMigrationKey) === "1"; }catch(_){ migrated = false; }
-
-    const hasOldWorkspace = !!(
-        AppState?.workspace?.orderId ||
-        AppState?.workspace?.orderName ||
-        (Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0) ||
-        (Array.isArray(AppState?.workspace?.receivingHistory) && AppState.workspace.receivingHistory.length > 0)
-    );
-    const isValidCloudZebra = AppState?.session?.role === "ZEBRA" && AppState?.session?.cloud === true && AppState?.session?.id && AppState?.session?.secret;
-
-    if(!migrated){
-        resetZebraWorkingState("phase2b4-one-time-stale-session-cleanup", {force:true});
-        try{ localStorage.setItem(zebraMigrationKey,"1"); }catch(_){ }
-    }else if(hasOldWorkspace && !isValidCloudZebra){
-        resetZebraWorkingState("legacy-or-local-zebra-workspace", {force:true});
-    }
+    /* =========================================================
+       PHASE 2C.11.0 — UNIFIED PHARMACY WORKSPACE
+       The Handheld is now a first-class client of the authenticated pharmacy
+       workspace. It MUST NOT clear a valid Active Order merely because there is
+       no legacy Create/Join cloud session. Active Order Manifest + receiving
+       ledger are the same server authorities already used by PC2/PC3.
+       ========================================================= */
+    AppState.session = {
+        ...createEmptySession(),
+        id:null,
+        secret:null,
+        deviceId:ensureDeviceId(),
+        role:"HANDHELD_WORKSPACE",
+        cloud:false,
+        createdAt:nowISO(),
+        pendingQueue:[]
+    };
+    AppEvents.emit("session:updated",{source:"unified-pharmacy-workspace"});
 
     if(!document.getElementById("zebraHome")){
         const home = document.createElement("section");
@@ -5569,34 +7202,34 @@ function initializeZebraInterface(){
         home.className = "zebraHome";
         home.innerHTML = `
             <div class="zebraBrandRow">
-                <img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true">
-                <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
+                <div class="zebraBrandLockup">
+                    <span class="zebraBrandMark"><img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true"></span>
+                    <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
+                </div>
             </div>
             <div class="zebraModeIntro">
-                <span>SELECT MODE</span>
-                <h1>What are you working on?</h1>
-                <p>Only the tools needed for the selected Handheld workflow will be shown.</p>
+                <span>WORK MODE</span>
+                <h1>Choose your workspace</h1>
+                <p>Fast access to the tools needed for the current task.</p>
             </div>
             <div class="zebraModeCards">
-                <button id="btnZebraReceivingMode" class="zebraModeCard" type="button">
-                    <span class="zebraModeIcon">▥</span>
-                    <div><strong>Receiving</strong><small>Join the PC session and count the order live.</small></div>
+                <button id="btnZebraReceivingMode" class="zebraModeCard zebraModeReceiving" type="button">
+                    <span class="zebraModeIcon" aria-hidden="true">▥</span>
+                    <div><strong>Receiving</strong><small>Scan and count active orders.</small></div>
+                    <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
-                <button id="btnZebraExpiryMode" class="zebraModeCard" type="button">
-                    <span class="zebraModeIcon">◷</span>
-                    <div><strong>Expiry</strong><small>Scan products and capture quantity + expiry date.</small></div>
+                <button id="btnZebraExpiryMode" class="zebraModeCard zebraModeExpiry" type="button">
+                    <span class="zebraModeIcon" aria-hidden="true">◷</span>
+                    <div><strong>Expiry</strong><small>Capture quantity and expiry date.</small></div>
+                    <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
             </div>
             <button id="btnZebraSignOut" class="zebraSignOut" type="button">Sign Out</button>
         `;
         document.querySelector(".mainContent")?.prepend(home);
 
-        document.getElementById("btnZebraReceivingMode")?.addEventListener("click", function(){
-            if(AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true){
-                setZebraReceivingMode();
-            }else{
-                setZebraJoinMode();
-            }
+        document.getElementById("btnZebraReceivingMode")?.addEventListener("click", async function(){
+            await openUnifiedHandheldReceiving();
         });
         document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
             setZebraExpiryMode();
@@ -5607,8 +7240,7 @@ function initializeZebraInterface(){
                 showToast("Sync pending Handheld work before signing out","warning");
                 return;
             }
-            /* Signing out detaches this handheld from the old order/session. */
-            resetZebraWorkingState("zebra-sign-out", {force:true});
+            /* Unified Workspace has no user-created Handheld session to detach. */
             document.getElementById("btnLogout")?.click();
         });
     }
@@ -5649,54 +7281,676 @@ function initializeZebraInterface(){
         }
     }
 
-    if(!document.getElementById("zebraExpiryShell")){
-        const shell = document.createElement("section");
-        shell.id = "zebraExpiryShell";
-        shell.className = "zebraExpiryShell";
-        shell.innerHTML = `
-            <div class="zebraExpiryTop"><button id="btnExpiryBackToModes" type="button">‹ Modes</button><strong>Expiry</strong></div>
-            <div class="zebraExpiryPlaceholder">
-                <span>EXPIRY WORKFLOW</span>
-                <h2>Expiry capture is reserved for the Expiry implementation phase.</h2>
-                <p>The fixed flow is: Scan → Global GTIN item → numeric quantity → numeric month → numeric year.</p>
-            </div>
-        `;
-        document.querySelector(".mainContent")?.prepend(shell);
-        document.getElementById("btnExpiryBackToModes")?.addEventListener("click", setZebraHomeMode);
-    }
+    /* Near Expiry is now a permanent appPage in index.html.
+       PC and Zebra share the exact same capture markup and data logic. */
 
-    /* Never expose a restored order before cloud validation. New sign-in starts
-       from Modes; validateRestoredZebraCloudSession() may resume a genuinely
-       active session after Supabase confirms it. */
+    /* Unified Workspace starts at Modes. Receiving pulls the authoritative
+       Active Order Manifest directly; no Join Code / QR / session validation. */
     setZebraHomeMode();
+    setTimeout(()=>refreshUnifiedHandheldWorkspace({silent:true}),120);
 }
+
+/* ============================================================
+   B11 — HANDHELD WORKER PERMISSION BOUNDARY
+   Handheld workers receive operational scan/history controls only.
+   Desktop administrative controls are disabled at the DOM boundary,
+   not merely covered by visual CSS.
+============================================================ */
+function setHandheldWorkerSurface(active){
+    if(!isLikelyZebraDevice()) return;
+
+    const selectors=[
+        "#page-dashboard .scanPanelFooter.pfnActionBar",
+        "#pfnManageOrders",
+        "#btnReceivingNeedsReview",
+        "#btnAdjustReceiving",
+        "#btnReceivingReportAction",
+        ".pfnOrderControlGroup",
+        ".pfnSessionStatus"
+    ];
+
+    selectors.forEach(selector=>{
+        document.querySelectorAll(selector).forEach(el=>{
+            if(active){
+                el.dataset.handheldWorkerHidden="1";
+                el.hidden=true;
+                el.setAttribute("aria-hidden","true");
+                try{ el.inert=true; }catch(_){}
+            }else if(el.dataset.handheldWorkerHidden==="1"){
+                el.hidden=false;
+                el.removeAttribute("aria-hidden");
+                try{ el.inert=false; }catch(_){}
+                delete el.dataset.handheldWorkerHidden;
+            }
+        });
+    });
+}
+window.setHandheldWorkerSurface=setHandheldWorkerSurface;
 
 function clearZebraModeClasses(){
     document.body.classList.remove("zebraHomeActive","zebraJoinActive","zebraReceivingActive","zebraExpiryActive","zebraMode");
 }
 function setZebraHomeMode(){
     if(!isLikelyZebraDevice()){ return; }
+    setHandheldWorkerSurface(false);
+
+    /*
+       Strict mode isolation:
+       before showing Home, deactivate every app page and every operational
+       Zebra surface so no previous Receiving / Join / Expiry markup can remain
+       visible underneath Mode Selection.
+    */
     clearZebraModeClasses();
-    document.body.classList.add("zebraHomeActive");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    [
+        "zebraExpiryShell",
+        "zebraJoinPanel",
+        "page-dashboard",
+        "page-receiving",
+        "page-files",
+        "page-reports",
+        "page-sessions",
+        "page-archive",
+        "page-returnsArchive",
+        "page-settings"
+    ].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el){
+            el.classList.remove("active");
+        }
+    });
+
+    document.body.classList.add("zebraDevice","zebraHomeActive");
+
+    try{ document.activeElement?.blur?.(); }catch(_){}
+
+    [
+        "authEmail",
+        "authPassword",
+        "barcodeInput",
+        "cloudSessionCodeInput",
+        "expiryBarcodeInput",
+        "searchInput",
+        "smartScanSearchInput"
+    ].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && typeof el.blur === "function"){
+            try{ el.blur(); }catch(_){}
+        }
+    });
+
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
 }
 function setZebraJoinMode(){
     if(!isLikelyZebraDevice()){ return; }
+
     clearZebraModeClasses();
-    document.body.classList.add("zebraJoinActive");
-    document.getElementById("cloudSessionCodeInput")?.focus();
+    document.body.classList.add("zebraDevice","zebraJoinActive");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    document.getElementById("zebraExpiryShell")?.classList.remove("active");
+    document.getElementById("page-dashboard")?.classList.remove("active");
+
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
+
+    const code = document.getElementById("cloudSessionCodeInput");
+    if(code){
+        code.setAttribute("inputmode","numeric");
+        code.setAttribute("autocomplete","off");
+    }
 }
+async function refreshUnifiedHandheldWorkspace(options={}){
+    if(!isLikelyZebraDevice()) return false;
+    if(typeof AuthState==="undefined" || !AuthState?.context?.pharmacy_id) return false;
+    if(typeof pullActiveOrderManifest!=="function") return false;
+
+    /* Background reconciliation must never replace the worker surface. The
+       shared cloud scheduler already owns normal syncing; this indicator is
+       reserved for the initial route entry before the scan panel is shown. */
+    const blocking=options?.blocking===true;
+    if(blocking){
+        document.body.dataset.hhWorkspaceLoading="1";
+        window.hhRefreshReadyState?.();
+    }
+    try{
+        await pullActiveOrderManifest({clearIfMissing:true});
+        if(typeof pullCloudWorkspaceTransactions==="function"){
+            await pullCloudWorkspaceTransactions();
+        }
+        rebuildStateIndexes?.();
+        recalculateStatistics?.();
+        refreshZebraInterface();
+        window.hhRefreshReadyState?.();
+
+        /* Manifest refresh may legitimately report "unchanged". Readiness is
+           determined from the authoritative hydrated workspace, not from the
+           transport return flag. This prevents the false "No Active Order"
+           warning while Active Orders are already present. */
+        return !!(
+            Array.isArray(AppState?.workspace?.orderFiles) &&
+            AppState.workspace.orderFiles.length>0 &&
+            Array.isArray(AppState?.workspace?.orderData) &&
+            AppState.workspace.orderData.length>0
+        );
+    }catch(error){
+        Logger?.warn?.("Unified Handheld workspace refresh failed",error);
+        if(options?.silent!==true){
+            showToast(error?.message||"Unable to load pharmacy Active Orders","error");
+        }
+        return false;
+    }finally{
+        if(blocking) delete document.body.dataset.hhWorkspaceLoading;
+        window.hhRefreshReadyState?.();
+        refreshHandheldWorkspaceStatus?.();
+    }
+}
+
+async function openUnifiedHandheldReceiving(){
+    if(!isLikelyZebraDevice()) return false;
+
+    clearZebraModeClasses();
+    document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
+    try{ window.scrollTo(0,0); }catch(_){ }
+
+    window.hhRefreshReadyState?.();
+    const ready=await refreshUnifiedHandheldWorkspace({silent:true,blocking:true});
+
+    setZebraReceivingMode();
+
+    if(!ready){
+        showToast("No Active Order is available for this pharmacy yet","warning");
+    }
+    return ready;
+}
+
+window.refreshUnifiedHandheldWorkspace=refreshUnifiedHandheldWorkspace;
+window.openUnifiedHandheldReceiving=openUnifiedHandheldReceiving;
+
 function setZebraReceivingMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
-    document.body.classList.add("zebraReceivingActive","zebraMode");
+    setHandheldWorkerSurface(true);
+    document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
+    try{ window.scrollTo(0,0); }catch(_){}
     refreshZebraInterface();
-    setTimeout(()=>focusScannerInput(),50);
+    if(typeof ensureHandheldReceivingTools === "function"){
+        ensureHandheldReceivingTools();
+    }
+    setTimeout(()=>focusScannerInput(),80);
 }
 function setZebraExpiryMode(){
     if(!isLikelyZebraDevice()){ return; }
+
+    setHandheldWorkerSurface(false);
     clearZebraModeClasses();
-    document.body.classList.add("zebraExpiryActive");
+    document.body.classList.add("zebraDevice","zebraExpiryActive");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    document.getElementById("zebraJoinPanel")?.classList.remove("active");
+    document.getElementById("page-dashboard")?.classList.remove("active");
+    document.getElementById("page-receiving")?.classList.remove("active");
+
+    const expiryPage = document.getElementById("zebraExpiryShell");
+    expiryPage?.classList.add("active");
+
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
+
+    if(typeof activateExpiryCapture === "function"){
+        setTimeout(()=>activateExpiryCapture(),40);
+    }
 }
+
+
+function getFriendlyReceivingDeviceLabel(row,options={}){
+    const ownDeviceId=toSafeString(
+        options.ownDeviceId ||
+        (typeof ensureDeviceId==="function" ? ensureDeviceId() : AppState?.session?.deviceId) ||
+        ""
+    );
+
+    const rowDeviceId=toSafeString(row?.deviceId||"");
+    const type=toSafeString(row?.deviceType||"").toUpperCase();
+
+    if(type==="HANDHELD"){
+        return "Handheld";
+    }
+
+    if(type==="PC"){
+        return rowDeviceId && rowDeviceId===ownDeviceId
+            ? "This PC"
+            : "PC";
+    }
+
+    /* Legacy transactions may predate deviceType. Never expose UUIDs.
+       We can still identify the current browser safely. */
+    if(rowDeviceId && rowDeviceId===ownDeviceId){
+        try{
+            return typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()
+                ? "Handheld"
+                : "This PC";
+        }catch(_){
+            return "This Device";
+        }
+    }
+
+    return "Other Device";
+}
+
+
+function getHandheldDeviceScannerRows(){
+    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+    const deviceId = typeof ensureDeviceId === "function"
+        ? ensureDeviceId()
+        : AppState?.session?.deviceId;
+
+    return history.filter(tx => {
+        const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
+        const source = String(tx?.source || "").toUpperCase();
+        const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
+            || source.includes("SCAN");
+        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+    });
+}
+
+function getAllWorkspaceScannerRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    return history.filter(tx=>{
+        const source=String(tx?.source||"").toUpperCase();
+        const isScan=source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase()
+            || source.includes("SCAN");
+        return isScan && Number(tx?.quantity||0)>0;
+    });
+}
+
+function getHandheldTotalScans(){
+    return getHandheldDeviceScannerRows().length;
+}
+
+
+function refreshHandheldWorkspaceStatus(){
+    if(!isLikelyZebraDevice()) return;
+    const state=document.getElementById("handheldWorkspaceStatus");
+    if(!state) return;
+    const activeOrders=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : activeOrders;
+    const authenticated=!!AuthState?.context?.pharmacy_id;
+    const loading=document.body.dataset.hhWorkspaceLoading==="1";
+    const online=navigator.onLine!==false;
+
+    const assignedButton=document.getElementById("btnHandheldAssignedOrders");
+    const setStatus=connection=>{
+        state.replaceChildren();
+        const connectionEl=document.createElement("span");
+        connectionEl.className="handheldConnectionState";
+        connectionEl.textContent=connection;
+        state.appendChild(connectionEl);
+    };
+    const setAssignedOrders=()=>{
+        if(!assignedButton) return;
+        const count=selectedOrders.length;
+        assignedButton.disabled=count===0;
+        assignedButton.textContent=count===1 ? "1 ORDER" : `${count} ORDERS`;
+        assignedButton.title=count
+            ? "View orders assigned from the computer"
+            : "No orders assigned from the computer";
+    };
+    state.classList.remove("isSyncing","isOffline","isEmpty");
+    if(loading){
+        setStatus("SYNCING WORKSPACE…");
+        state.classList.add("isSyncing");
+    }else if(!online){
+        setStatus("OFFLINE");
+        state.classList.add("isOffline");
+    }else if(!authenticated){
+        setStatus("NOT CONNECTED");
+        state.classList.add("isOffline");
+    }else if(activeOrders.length>0){
+        setStatus("CONNECTED");
+    }else{
+        setStatus("CONNECTED");
+        state.classList.add("isEmpty");
+    }
+    setAssignedOrders();
+}
+window.refreshHandheldWorkspaceStatus=refreshHandheldWorkspaceStatus;
+
+function ensureHandheldReceivingTools(){
+    if(!isLikelyZebraDevice()) return;
+
+    const page = document.getElementById("page-dashboard");
+    if(!page) return;
+
+    let header = document.getElementById("zebraQuickHeader");
+
+    if(!header){
+        header=document.createElement("section");
+        header.id="zebraQuickHeader";
+        header.className="zebraQuickHeader";
+        page.insertBefore(header,page.firstChild);
+    }
+
+    let finalHeader=header.querySelector(".zebraFinalHeader");
+    if(!finalHeader){
+        header.innerHTML=`
+            <div class="zebraFinalHeader">
+                <div class="zebraFinalTitle">
+                    <div id="handheldWorkspaceStatus" class="zebraConnectedDot" aria-live="polite">SYNCING…</div>
+                    <button id="btnHandheldAssignedOrders" class="handheldAssignedOrdersButton" type="button" aria-label="View assigned orders">0 ORDERS</button>
+                </div>
+                <div class="zebraFinalActions">
+                    <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton" type="button" aria-label="Open recent scans"><span>HISTORY</span><strong id="handheldTotalScansValue">0</strong></button>
+                    <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
+                </div>
+            </div>
+        `;
+        finalHeader=header.querySelector(".zebraFinalHeader");
+    }else{
+        refreshHandheldWorkspaceStatus();
+    }
+
+    document.getElementById("btnZebraModes").onclick=setZebraHomeMode;
+    document.getElementById("btnHandheldTotalScans").onclick=openHandheldScansPanel;
+    document.getElementById("btnHandheldAssignedOrders").onclick=openHandheldAssignedOrdersPanel;
+
+    /* History is the only work control. Assignment is read-only here and is
+       managed on the computer, so staff cannot broaden their own scope. */
+    document.getElementById("btnHandheldMonitoring")?.remove();
+    refreshHandheldWorkspaceStatus();
+    refreshHandheldReceivingTools();
+}
+
+function refreshHandheldReceivingTools(){
+    const value = document.getElementById("handheldTotalScansValue");
+    if(value) value.textContent = String(getHandheldTotalScans());
+}
+
+function openHandheldAssignedOrdersPanel(){
+    document.getElementById("handheldAssignedOrdersOverlay")?.remove();
+    const active=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const assigned=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const esc=value=>typeof escapeHtml==="function"
+        ? escapeHtml(String(value??""))
+        : String(value??"");
+    const rows=assigned.length
+        ? assigned.map((order,index)=>`<article class="handheldAssignedOrderRow"><span>${index+1}</span><strong>${esc(order)}</strong></article>`).join("")
+        : `<div class="handheldScansEmpty">No orders have been assigned from the computer.</div>`;
+    const overlay=document.createElement("div");
+    overlay.id="handheldAssignedOrdersOverlay";
+    overlay.className="handheldScansOverlay handheldRecentOverlay handheldAssignedOrdersOverlay";
+    overlay.innerHTML=`
+      <section class="handheldScansPanel handheldRecentPanel handheldAssignedOrdersPanel" role="dialog" aria-modal="true" aria-label="Assigned orders">
+        <header><div><span>COMPUTER ASSIGNMENT</span><strong>Assigned Orders</strong><small>${assigned.length} of ${active.length} active order${active.length===1?"":"s"} available on this Handheld</small></div><button type="button" data-close aria-label="Close">✕</button></header>
+        <div class="handheldRecentList handheldAssignedOrdersList">${rows}</div>
+        <div class="handheldRecentFooter"><span>Order access is controlled from Manage Orders on the computer.</span><button type="button" class="handheldPanelDone" data-close>DONE</button></div>
+      </section>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>{
+        overlay.remove();
+        setTimeout(()=>window.hhRefreshReadyState?.(),20);
+    });
+}
+
+function openHandheldReviewPhoto(url,title){
+    document.getElementById("handheldReviewPhotoOverlay")?.remove();
+    const overlay=document.createElement("div");
+    overlay.id="handheldReviewPhotoOverlay";
+    overlay.className="handheldReviewPhotoOverlay";
+    overlay.innerHTML=`<button type="button" data-close aria-label="Close photo"></button><section role="dialog" aria-modal="true" aria-label="Needs Review photo"><header><strong>${typeof escapeHtml==="function"?escapeHtml(title):title}</strong><button type="button" data-close>✕</button></header><img src="${url}" alt="Needs Review evidence photo"></section>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>overlay.remove());
+}
+
+function openHandheldScansPanel(initialTab="SCANS"){
+    document.getElementById("handheldScansOverlay")?.remove();
+    try{ document.activeElement?.blur?.(); }catch(_){ }
+
+    const ownDeviceId=typeof ensureDeviceId==="function"
+        ? String(ensureDeviceId()||"")
+        : String(AppState?.session?.deviceId||"");
+
+    const esc=value=>typeof escapeHtml==="function"
+        ? escapeHtml(String(value??""))
+        : String(value??"");
+
+    const formatTime=value=>{
+        try{
+            const d=new Date(value);
+            if(!Number.isFinite(d.getTime())) return "";
+            return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+        }catch(_){ return ""; }
+    };
+
+    const scanRows=()=>getHandheldDeviceScannerRows().slice()
+        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
+        .slice(0,3);
+
+    let reviewRows=[];
+    let reviewLoading=true;
+    let reviewError="";
+
+    const overlay=document.createElement("div");
+    overlay.id="handheldScansOverlay";
+    overlay.className="handheldScansOverlay handheldRecentOverlay";
+    overlay.dataset.tab=initialTab==="REVIEW"?"REVIEW":"SCANS";
+
+    const render=()=>{
+        const tab=overlay.dataset.tab||"SCANS";
+        const recent=scanRows();
+        const showingReview=tab==="REVIEW";
+
+        const scanMarkup=recent.length ? recent.map((row,index)=>{
+            const qty=Math.max(1,Number(row?.quantity||1)||1);
+            return `
+              <article class="handheldRecentRow handheldScanHistoryRow">
+                <div class="handheldRecentIndex">${index+1}</div>
+                <div class="handheldRecentInfo">
+                  <strong>${esc(row?.itemName||"Item")}</strong>
+                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))}</span>
+                </div>
+                <div class="handheldRecentQty">+${qty}</div>
+                ${index===0
+                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(row?.transactionId||"")}">REMOVE</button>`
+                    : `<span class="handheldRecentViewOnly">Saved</span>`}
+              </article>`;
+        }).join("") : `<div class="handheldScansEmpty">No recent scans on this Handheld.</div>`;
+
+        const reviewMarkup=reviewLoading
+            ? `<div class="handheldScansEmpty">Loading Needs Review…</div>`
+            : reviewError
+                ? `<div class="handheldScansEmpty">${esc(reviewError)}</div>`
+                : reviewRows.length
+                    ? reviewRows.slice(0,3).map((row,index)=>{
+                        const qty=Math.max(1,Number(row?.pending_quantity||1)||1);
+                        const title=row?.master_item_name_hint || row?.item_name || "Item not recognised";
+                        return `
+                          <article class="handheldRecentRow handheldReviewHistoryRow" data-review-row="${esc(row?.review_id||"")}">
+                            <div class="handheldRecentIndex">${index+1}</div>
+                            <div class="handheldRecentInfo">
+                              <strong>${esc(title)}</strong>
+                              <span>GTIN ${esc(row?.gtin||"-")} · ${esc(formatTime(row?.created_at||row?.updated_at))}</span>
+                            </div>
+                            <div class="handheldReviewHistoryQty" aria-label="Needs Review quantity">
+                              <button type="button" data-review-step="-1">−</button>
+                              <strong>${qty}</strong>
+                              <button type="button" data-review-step="1">+</button>
+                            </div>
+                            <div class="handheldReviewActions">
+                              ${row?.photo_path?`<button type="button" class="handheldReviewPhoto" data-review-photo>PHOTO</button>`:""}
+                              <button type="button" class="handheldReviewDelete" data-review-delete>DELETE</button>
+                            </div>
+                          </article>`;
+                    }).join("")
+                    : `<div class="handheldScansEmpty">No pending Needs Review items from this Handheld.</div>`;
+
+        overlay.innerHTML=`
+          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
+            <header>
+              <div>
+                <span>RECEIVING HISTORY</span>
+                <strong>Recent Scans</strong>
+                <small>${showingReview?"Pending items saved by this Handheld":`Last ${recent.length} scan transactions`}</small>
+              </div>
+              <button type="button" data-close aria-label="Close">✕</button>
+            </header>
+
+            <div class="handheldRecentTabs">
+              <button type="button" data-tab="SCANS" class="${tab==="SCANS"?"active":""}">SCANS</button>
+              <button type="button" data-tab="REVIEW" class="${tab==="REVIEW"?"active":""}">NEEDS REVIEW ${reviewRows.length?`(${reviewRows.length})`:""}</button>
+            </div>
+
+            <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
+
+            <div class="handheldRecentList">
+              ${showingReview?reviewMarkup:scanMarkup}
+            </div>
+
+            <div class="handheldRecentFooter">
+              <span>${showingReview
+                ?"Quantity can be corrected here. Delete removes only the selected pending review item."
+                :"Only the latest scan can be removed. The correction is saved to the shared receiving record."}</span>
+              <button type="button" class="handheldPanelDone" data-close>DONE</button>
+            </div>
+          </section>`;
+
+        overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>{
+            overlay.remove();
+            setTimeout(()=>window.hhRefreshReadyState?.(),20);
+        });
+
+        overlay.querySelectorAll("[data-tab]").forEach(btn=>btn.onclick=()=>{
+            overlay.dataset.tab=btn.dataset.tab;
+            render();
+        });
+
+        overlay.querySelector("[data-remove-last]")?.addEventListener("click",()=>{
+            const transactionId=overlay.querySelector("[data-remove-last]")?.dataset.removeLast||"";
+            const latest=scanRows()[0];
+            if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
+            if(!window.confirm(`Remove last scan: ${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))}?`)) return;
+            const removed=typeof undoRecentScannerTransaction==="function"
+                ? undoRecentScannerTransaction(transactionId)
+                : false;
+            if(removed){
+                setTimeout(()=>{
+                    if(document.body.contains(overlay)) render();
+                },0);
+            }
+        });
+
+        overlay.querySelectorAll("[data-review-step]").forEach(btn=>btn.onclick=async()=>{
+            const article=btn.closest("[data-review-row]");
+            const reviewId=article?.dataset.reviewRow;
+            const row=reviewRows.find(item=>String(item?.review_id||"")===String(reviewId||""));
+            if(!row || btn.disabled) return;
+            const next=Math.max(1,(Number(row.pending_quantity||1)||1)+Number(btn.dataset.reviewStep||0));
+            overlay.querySelectorAll("[data-review-step],[data-review-delete]").forEach(el=>el.disabled=true);
+            try{
+                await nrV2SetQty(reviewId,next);
+                row.pending_quantity=next;
+                render();
+            }catch(error){
+                showToast?.(error?.message||"Unable to update review quantity","error");
+                render();
+            }
+        });
+
+        overlay.querySelectorAll("[data-review-delete]").forEach(btn=>btn.onclick=async()=>{
+            const article=btn.closest("[data-review-row]");
+            const reviewId=article?.dataset.reviewRow;
+            const row=reviewRows.find(item=>String(item?.review_id||"")===String(reviewId||""));
+            if(!row || btn.disabled) return;
+            if(!window.confirm("Delete this pending Needs Review item?")) return;
+            overlay.querySelectorAll("[data-review-step],[data-review-delete]").forEach(el=>el.disabled=true);
+            try{
+                await nrV2Delete(reviewId);
+                reviewRows=reviewRows.filter(item=>String(item?.review_id||"")!==String(reviewId));
+                refreshNeedsReviewCounters?.();
+                render();
+            }catch(error){
+                showToast?.(error?.message||"Unable to delete review item","error");
+                render();
+            }
+        });
+
+        overlay.querySelectorAll("[data-review-photo]").forEach(btn=>btn.onclick=async()=>{
+            const article=btn.closest("[data-review-row]");
+            const reviewId=article?.dataset.reviewRow;
+            const row=reviewRows.find(item=>String(item?.review_id||"")===String(reviewId||""));
+            if(!row?.photo_path) return;
+            try{
+                const url=await nrV2PhotoObjectUrl(row.photo_path);
+                if(!url) throw new Error("Photo is unavailable");
+                openHandheldReviewPhoto(url,row?.master_item_name_hint||row?.item_name||"Needs Review photo");
+            }catch(error){
+                showToast?.(error?.message||"Unable to open review photo","warning");
+            }
+        });
+    };
+
+    document.body.appendChild(overlay);
+    render();
+
+    Promise.resolve(typeof nrV2List==="function"?nrV2List("RECEIVING",null):[])
+        .then(rows=>{
+            reviewRows=(Array.isArray(rows)?rows:[]).filter(row=>
+                !ownDeviceId || String(row?.device_id||"")===ownDeviceId
+            );
+            reviewLoading=false;
+            if(document.body.contains(overlay)) render();
+        })
+        .catch(error=>{
+            reviewLoading=false;
+            reviewError=error?.message||"Unable to load Needs Review history.";
+            if(document.body.contains(overlay)) render();
+        });
+}
+
+
+if(typeof AppEvents !== "undefined" && AppEvents?.on){
+    AppEvents.on("receiving:updated", () => {
+        if(typeof refreshHandheldReceivingTools === "function"){
+            setTimeout(refreshHandheldReceivingTools,0);
+        }
+    });
+}
+
 function setZebraInterfaceMode(enabled){
     initializeZebraInterface();
     if(enabled === true){ setZebraReceivingMode(); }
@@ -5704,8 +7958,6 @@ function setZebraInterfaceMode(enabled){
 }
 function refreshZebraInterface(){
     if(!isLikelyZebraDevice()){ return; }
-    const isZebra = AppState.session?.role === "ZEBRA" && AppState.session?.cloud === true;
-    if(!isZebra){ return; }
 
     setElementText(
         document.getElementById("zebraQuickOrder"),
@@ -5742,16 +7994,57 @@ function setupDashboardKpiInteractivity(){
     }
 }
 
-function getKpiPanelItems(key){
+function getActiveOrderScope(){
+    const selected=
+        typeof getSelectedReceivingOrderNumber==="function"
+            ? getSelectedReceivingOrderNumber()
+            : "";
+
+    return toSafeString(
+        selected ||
+        window.PharmFlowOrderScope ||
+        "ALL"
+    );
+}
+
+function itemBelongsToOrderScope(item, scope=getActiveOrderScope()){
+    if(!scope || scope==="ALL") return true;
+    const list=Array.isArray(item?.orderNumbers)?item.orderNumbers:[];
+    if(list.length) return list.map(normalizeOrderNumber).includes(normalizeOrderNumber(scope));
+    /* Legacy workspaces created before 2C.7 have no per-item membership.
+       Keep them visible rather than hiding valid stock. */
+    return true;
+}
+
+function getScopedOrderItems(){
     const items=Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    return selected.length
+        ? items.filter(item=>selected.some(order=>itemBelongsToOrderScope(item,order)))
+        : items;
+}
+
+function getKpiPanelItems(key){
+    const items=getScopedOrderItems();
     if(key==="total") return items.slice();
-    if(key==="completed") return items.filter(i=>{
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+    const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+        orderNumber:order,
+        itemCode:row["Item Number"], itemName:row["Item Name"],
+        orderedQty:toNumber(row["Ordered Qty"],0), receivedQty:toNumber(row["Received Qty"],0),
+        remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
+        status:row["Issue Type"], manual:row.issueKey==="manual"
+    }))) : [];
+    const scoped=perOrderRows.length ? perOrderRows : items;
+    if(key==="completed") return scoped.filter(i=>{
         const o=toNumber(i.orderedQty,0),r=toNumber(i.receivedQty,0);
         return o>0 && r===o;
     });
-    if(key==="remaining") return items.filter(i=>toNumber(i.remainingQty,0)>0);
-    if(key==="over") return items.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
-    if(key==="manual") return items.filter(i=>i.manual===true);
+    if(key==="remaining"||key==="remainingItems") return scoped.filter(i=>toNumber(i.remainingQty,0)>0);
+    if(key==="over") return scoped.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
+    if(key==="manual") return scoped.filter(i=>i.manual===true);
     return [];
 }
 
@@ -5760,6 +8053,7 @@ function kpiTitle(key){
         total:"Order Item Browser",
         completed:"Completed Items",
         remaining:"Remaining Items",
+        remainingItems:"Remaining Items",
         over:"Over Received",
         manual:"Manual / Unordered Extras",
         scans:"Receiving Activity History",
@@ -5775,13 +8069,31 @@ function openDashboardKpiPanel(key){
     overlay.className="quickKpiOverlay";
     overlay.innerHTML=`<div class="quickKpiPanel phase263Panel"><div class="quickKpiHeader"><h3>${kpiTitle(key)}</h3><button type="button" class="quickKpiClose" data-close>✕</button></div><div data-body></div></div>`;
     document.body.appendChild(overlay);
+    window.PharmFlowModalStack?.open(overlay);
     overlay.querySelector("[data-close]").onclick=closeDashboardKpiPanel;
     overlay.addEventListener("click",event=>{if(event.target===overlay) closeDashboardKpiPanel();});
-    renderDashboardKpiPanel(key,overlay.querySelector("[data-body]"));
+    const body=overlay.querySelector("[data-body]");
+    const cloudReady=
+        window.PharmFlowCloudWorkspace?.startupAuthorityReady!==false;
+    if(
+        key==="total" && !cloudReady &&
+        typeof ensureStartupCloudAuthority==="function"
+    ){
+        body.innerHTML='<div class="tableEmptyState">Loading current order items…</div>';
+        Promise.resolve(ensureStartupCloudAuthority()).finally(()=>{
+            if(document.body.contains(overlay)){
+                renderDashboardKpiPanel(key,body);
+            }
+        });
+    }else{
+        renderDashboardKpiPanel(key,body);
+    }
 }
 
 function closeDashboardKpiPanel(){
-    document.getElementById("dashboardKpiOverlay")?.remove();
+    const overlay=document.getElementById("dashboardKpiOverlay");
+    window.PharmFlowModalStack?.close(overlay);
+    overlay?.remove();
     activeKpiKey=null;
     focusScannerInput?.();
 }
@@ -5795,60 +8107,376 @@ function refreshOpenKpiPanel(){
 function getReceivingActivityRows(){
     const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
     const totals=new Map();
-    const rows=[];
-    history.forEach(tx=>{
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber) : [];
+    const scopedHistory=history.filter(tx=>!selectedOrders.length||selectedOrders.includes(normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderId||tx?.orderNumber||"")));
+
+    /* Always calculate totals in true chronological order.
+       The stored history may be newest-first or oldest-first depending on
+       the source/device, so array position must never decide the result. */
+    const chronological=scopedHistory.slice().sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return ta-tb;
+    });
+
+    const rows=chronological.map(tx=>{
         const code=toSafeString(tx?.itemCode||"");
         const change=toNumber(tx?.quantity,0);
         const total=Math.max(0,toNumber(totals.get(code),0)+change);
         totals.set(code,total);
-        rows.push({...tx,qtyChange:change,totalAfterAction:total});
+        return {...tx,qtyChange:change,totalAfterAction:total};
     });
-    return rows.reverse();
+
+    /* Review screen requirement: newest activity is always first. */
+    return rows.sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return tb-ta;
+    });
+}
+
+function getGroupedReceivingActivityRows(){
+    const rows=getReceivingActivityRows();
+    const chronological=rows.slice().sort((a,b)=>(new Date(a?.dateTime||0).getTime()||0)-(new Date(b?.dateTime||0).getTime()||0));
+    const grouped=[];
+    for(const row of chronological){
+        const source=toSafeString(row?.source||"").toUpperCase();
+        const isScanner=source.includes("SCAN")&&!source.includes("CORRECTION");
+        const order=normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+        const previous=grouped[grouped.length-1];
+        if(isScanner&&previous?.__scannerGroup===true&&normalizeItemCode(previous.itemCode)===normalizeItemCode(row.itemCode)&&normalizeOrderNumber(previous.selectedOrderNumber||previous.orderId||"")===order&&toSafeString(previous.deviceId||"")===toSafeString(row.deviceId||"")){
+            previous.quantity=toNumber(previous.quantity,0)+toNumber(row.quantity,0);
+            previous.qtyChange=previous.quantity;
+            previous.transactionIds.push(row.transactionId);
+            previous.dateTime=row.dateTime||previous.dateTime;
+        }else{
+            grouped.push({...row,__scannerGroup:isScanner,transactionIds:[row.transactionId],quantity:toNumber(row.quantity,0),qtyChange:toNumber(row.quantity,0)});
+        }
+    }
+    return grouped.sort((a,b)=>(new Date(b?.dateTime||0).getTime()||0)-(new Date(a?.dateTime||0).getTime()||0));
 }
 
 function getActivitySourceLabel(source){
     const value=toSafeString(source||"").toUpperCase();
-    if(value.includes("UNDO")) return "Correction";
+    if(value.includes("UNDO")||value.includes("CORRECTION")) return "Correction";
+    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Manual Item";
     if(value.includes("SCAN")) return "Scanner";
     if(value.includes("SEARCH")) return "Manual Quantity";
     if(value.includes("MANUAL")||value.includes("EDIT")||value.includes("ADJUST")) return "Manual Quantity";
     return source||"Receiving";
 }
 
-function toggleHighPriority(itemCode){
-    const item=typeof getItemByCode==="function"?getItemByCode(itemCode):null;
-    if(!item) return;
-    item.highPriority=item.highPriority!==true;
-    if(typeof saveApplicationState==="function") saveApplicationState("high-priority");
-    refreshOpenKpiPanel();
-    showToast(`${item.itemName} — ${item.highPriority?"High Priority enabled":"High Priority removed"}`,"success");
+function getReceivingActivitySource(row){
+    const source=toSafeString(row?.source||"").toUpperCase();
+    if(source.includes("UNDO")||source.includes("CORRECTION")) return "Correction";
+    if(source.includes("MANUAL")||source.includes("SEARCH")||source.includes("EDIT")||source.includes("ADJUST")) return "Manual";
+    if(source.includes("SCAN")) return toSafeString(row?.deviceType||"").toUpperCase()==="HANDHELD" ? "Handheld" : "PC Scan";
+    return toSafeString(row?.deviceType||"").toUpperCase()==="HANDHELD" ? "Handheld" : "Receiving";
+}
+
+function getActivityEffectiveQuantity(row,allRows){
+    return toNumber(row?.quantity,0)+(allRows||[]).filter(tx=>toSafeString(tx?.correctsTransactionId||"")===toSafeString(row?.transactionId||"")).reduce((sum,tx)=>sum+toNumber(tx?.quantity,0),0);
+}
+
+function openReceivingActivityEditor(row,allRows){
+    const current=getActivityEffectiveQuantity(row,allRows);
+    const order=normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+    const item=getItemByCode?.(row?.itemCode);
+    if(!item||current<0){showToast?.("This activity cannot be edited","warning");return;}
+    const esc=value=>escapeHTML(toSafeString(value));
+    const modal=document.createElement("div");
+    modal.className="quickKpiOverlay pfnActivityEditOverlay";
+    modal.innerHTML=`<form class="pfnActivityEdit" aria-label="Edit receiving activity"><h3>Edit Receiving Activity</h3><p><b>${esc(row.itemName||item.itemName)}</b><br>Item ${esc(row.itemCode)} · Order ${esc(order||"Current")}</p><label>Current transaction quantity<input value="${esc(current)}" disabled></label><label>Correct quantity<input data-corrected type="number" min="0" step="1" value="${esc(current)}" required></label><div><button type="button" data-cancel>Cancel</button><button type="button" class="dangerButton" data-delete-entry>Delete Entry</button><button type="submit">Save Correction</button></div></form>`;
+    document.body.appendChild(modal);
+    window.PharmFlowModalStack?.open(modal);
+    const close=()=>{window.PharmFlowModalStack?.close(modal);modal.remove();};
+    modal.querySelector("[data-cancel]").onclick=close;
+    modal.querySelector("[data-delete-entry]").onclick=()=>{
+        if(!window.confirm("Delete this receiving contribution? The item and order will not be deleted.")) return;
+        const effective=getActivityEffectiveQuantity(row,allRows);
+        if(effective<=0){showToast?.("This entry is already cancelled","warning");return;}
+        const tx=applyQuantityAdjustment({item,difference:-effective,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:"Receiving activity deleted",correctsTransactionId:row.transactionId});
+        if(!tx)return;
+        close();refreshDashboard?.();refreshOpenKpiPanel();showToast?.("Receiving entry cancelled","success");
+    };
+    modal.addEventListener("click",event=>{if(event.target===modal) close();});
+    modal.querySelector("form").addEventListener("submit",event=>{
+        event.preventDefault();
+        const corrected=Number(modal.querySelector("[data-corrected]").value);
+        if(!Number.isInteger(corrected)||corrected<0){showToast?.("Enter a whole quantity of zero or more","warning");return;}
+        const difference=corrected-current;
+        if(difference===0){showToast?.("The corrected quantity is unchanged","warning");return;}
+        const tx=applyQuantityAdjustment({item,difference,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:"Receiving activity edit",correctsTransactionId:row.transactionId});
+        if(!tx) return;
+        close(); refreshDashboard?.(); refreshOpenKpiPanel();
+        showToast?.(`${item.itemName} correction recorded (${difference>0?"+":""}${difference})`,"success");
+    });
+    modal.querySelector("[data-corrected]").focus();
+}
+
+const itemPriorityPendingSelections=new Map();
+let itemPriorityBatchTimer=null;
+let itemPriorityBatchPromise=null;
+let itemPriorityBatchVersion=0;
+let itemPriorityRetryCount=0;
+
+function applyPendingItemPrioritySelections(){
+    itemPriorityPendingSelections.forEach((entry,itemCode)=>{
+        const current=getItemByCode?.(itemCode);
+        if(current){
+            current.priorityType=entry.priorityType;
+            current.highPriority=!!entry.priorityType;
+        }
+    });
+}
+window.applyPendingItemPrioritySelections=applyPendingItemPrioritySelections;
+
+function getEffectiveItemPriority(item){
+    const itemCode=toSafeString(item?.itemCode||item?.itemNumber||"");
+    return itemPriorityPendingSelections.has(itemCode)
+        ? itemPriorityPendingSelections.get(itemCode).priorityType
+        : toSafeString(item?.priorityType||"");
+}
+
+function savePriorityApplicationState(){
+    const nextUi=window.PharmFlowNext;
+    const previousSuppression=nextUi?.suppressPriorityToast===true;
+    try{
+        if(nextUi) nextUi.suppressPriorityToast=true;
+        saveApplicationState?.(false);
+    }finally{
+        if(nextUi) nextUi.suppressPriorityToast=previousSuppression;
+    }
+}
+
+function queueItemPrioritySelection(item,priorityType){
+    const itemCode=toSafeString(item?.itemCode||item?.itemNumber||"");
+    if(!itemCode) return Promise.resolve(false);
+
+    const nextType=toSafeString(priorityType||"");
+    const version=++itemPriorityBatchVersion;
+    itemPriorityPendingSelections.set(itemCode,{priorityType:nextType,version});
+    item.priorityType=nextType;
+    item.highPriority=!!nextType;
+    applyPendingItemPrioritySelections();
+    itemPriorityRetryCount=0;
+
+    clearTimeout(itemPriorityBatchTimer);
+    itemPriorityBatchTimer=setTimeout(flushItemPriorityBatch,220);
+    return Promise.resolve(true);
+}
+
+async function flushItemPriorityBatch(){
+    if(itemPriorityBatchPromise) return itemPriorityBatchPromise;
+
+    const batch=Array.from(itemPriorityPendingSelections.entries()).map(
+        ([itemCode,entry])=>({itemCode,...entry})
+    );
+    if(!batch.length) return true;
+
+    /* Persist the complete optimistic batch once. Saving the whole workspace
+       on every rapid click made older pharmacy PCs appear unresponsive. */
+    applyPendingItemPrioritySelections();
+    savePriorityApplicationState();
+
+    itemPriorityBatchPromise=(async()=>{
+        let saved=false;
+        for(let attempt=1;attempt<=2&&!saved;attempt++){
+            saved=await patchActiveOrderPriorities?.(
+                batch.map(({itemCode,priorityType})=>({itemCode,priorityType}))
+            )===true;
+            if(!saved) applyPendingItemPrioritySelections();
+        }
+
+        if(saved){
+            itemPriorityRetryCount=0;
+            batch.forEach(entry=>{
+                const pending=itemPriorityPendingSelections.get(entry.itemCode);
+                if(pending?.version===entry.version){
+                    itemPriorityPendingSelections.delete(entry.itemCode);
+                }
+            });
+            savePriorityApplicationState();
+        }
+
+        applyPendingItemPrioritySelections();
+        return saved;
+    })().finally(()=>{
+        itemPriorityBatchPromise=null;
+        if(itemPriorityPendingSelections.size&&itemPriorityRetryCount<2){
+            itemPriorityRetryCount+=1;
+            clearTimeout(itemPriorityBatchTimer);
+            itemPriorityBatchTimer=setTimeout(flushItemPriorityBatch,2000);
+        }
+    });
+
+    return itemPriorityBatchPromise;
+}
+
+function queueClearVisiblePriorities(items){
+    items.forEach(item=>queueItemPrioritySelection(item,""));
+    clearTimeout(itemPriorityBatchTimer);
+    itemPriorityBatchTimer=setTimeout(flushItemPriorityBatch,0);
+    return Promise.resolve(true);
 }
 
 function renderItemBrowser(body, rows, options={}){
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
-    const showPriority=options.showPriority===true;
+    const orderMode=options.showPriority===true;
     const receivedMode=options.receivedMode===true;
-    const totalUnits=rows.reduce((sum,item)=>sum+Math.max(0,toNumber(item.receivedQty,0)),0);
+    const orderNumbers=Array.from(new Set(rows.flatMap(item=>Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean)));
     body.innerHTML=`
-      <div class="phase263BrowserToolbar">
-        <input class="phase263Search" type="search" placeholder="Search by Item Name / Item Number" aria-label="Search items">
-        ${showPriority?'<button type="button" class="phase263Filter active" data-filter="all">All Items</button><button type="button" class="phase263Filter" data-filter="priority">★ High Priority</button>':''}
+      <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
+        ${orderMode?`<div class="pfnBrowserControlRow"><label>Order<select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button><label>Quantity<select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
+        <input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items">
       </div>
-      ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b><span>Total Received Units: <b>${totalUnits}</b></span></div>`:''}
-      <div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr>${showPriority?'<th>Priority</th>':''}<th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody data-rows></tbody></table></div>`;
+      ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
+      <div class="phase263TableWrap pfnCleanWorklist"><table class="quickKpiTable phase263Table"><thead><tr>${orderMode?'<th>Item Code</th><th>Item Name</th><th>Priority</th><th>Group</th><th>Quantity</th><th>Order No.</th>':'<th>Item Code</th><th>Item Name</th><th>Ordered</th>'}${receivedMode?'<th>Received</th>':''}</tr></thead><tbody data-rows></tbody></table></div>`;
     const input=body.querySelector('.phase263Search');
     const tbody=body.querySelector('[data-rows]');
-    let filter='all';
+    const orderFilter=body.querySelector('[data-order-filter]');
+    const qtySort=body.querySelector('[data-qty-sort]');
+    const groupFilter=body.querySelector('[data-group-filter]');
+    let selectedGroups=[];
+    const priorityFilter=body.querySelector('[data-priority-filter]');
+    const printPriority=body.querySelector('[data-print-priority]');
+    const clearPriority=body.querySelector('[data-clear-priority]');
+    let priorityOnly=false;
+    let visibleRows=[];
+    const rowHtml=item=>{
+        const orders=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean).join(', ')||'—';
+        const pt=getEffectiveItemPriority(item);
+        if(orderMode)return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
+    };
     const draw=()=>{
         const q=toSafeString(input?.value||'').trim().toLowerCase();
-        let visible=rows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
-        if(showPriority&&filter==='priority') visible=visible.filter(item=>item.highPriority===true);
-        visible.sort((a,b)=>(b.highPriority===true)-(a.highPriority===true)||toSafeString(a.itemName).localeCompare(toSafeString(b.itemName)));
-        tbody.innerHTML=visible.length?visible.map(item=>`<tr class="${item.highPriority===true?'phase263PriorityRow':''}">${showPriority?`<td><button type="button" class="phase263Star ${item.highPriority===true?'active':''}" data-priority="${esc(item.itemCode)}" title="Toggle High Priority">${item.highPriority===true?'★':'☆'}</button></td>`:''}<td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||'')}</td></tr>`).join(''):'<tr><td colspan="7" class="tableEmptyState">No matching items.</td></tr>';
-        tbody.querySelectorAll('[data-priority]').forEach(btn=>btn.onclick=()=>toggleHighPriority(btn.dataset.priority));
+        const currentRows=orderMode?getKpiPanelItems("total"):rows;
+        applyPendingItemPrioritySelections();
+        let visible=currentRows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
+        const selectedOrder=orderFilter?.value||'ALL';
+        if(orderMode&&selectedOrder!=='ALL') visible=visible.filter(item=>(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).includes(selectedOrder));
+        if(orderMode&&window.PharmFlowClassificationFilters){
+            const selection={groups:selectedGroups,categories:[],subCategories:[]};
+            visible=window.PharmFlowClassificationFilters.filter(visible,selection);
+        }
+        if(orderMode&&priorityOnly) visible=visible.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
+        const sort=qtySort?.value||'desc';
+        if(sort==='desc') visible=visible.slice().sort((a,b)=>toNumber(b.orderedQty,0)-toNumber(a.orderedQty,0));
+        if(sort==='asc') visible=visible.slice().sort((a,b)=>toNumber(a.orderedQty,0)-toNumber(b.orderedQty,0));
+        visibleRows=visible;
+        if(orderMode&&priorityOnly){
+            const groups=[['SHORT',visible.filter(i=>getEffectiveItemPriority(i)==='SHORT')],['NEW',visible.filter(i=>getEffectiveItemPriority(i)==='NEW')]];
+            tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
+        }else{
+            const colspan=orderMode?6:(receivedMode?4:3);
+            tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+        }
+        tbody.querySelectorAll('[data-mark]').forEach(btn=>btn.onclick=async()=>{
+            const item=typeof getItemByCode==='function'?getItemByCode(btn.dataset.code):null;if(!item)return;
+            const previousType=getEffectiveItemPriority(item);
+            const nextType=previousType===btn.dataset.mark?'':btn.dataset.mark;
+            item.priorityType=nextType;
+            item.highPriority=!!nextType;
+            const segment=btn.closest('.pfnPrioritySegment');
+            segment?.querySelectorAll('[data-mark]').forEach(mark=>{
+                const active=mark.dataset.mark===nextType;
+                mark.classList.toggle('active',active);
+                mark.classList.toggle('short',active&&nextType==='SHORT');
+                mark.classList.toggle('new',active&&nextType==='NEW');
+            });
+            const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;
+            const saved=await queueItemPrioritySelection(item,nextType);
+            if(!saved||priorityOnly){
+                draw();
+                const finalWrap=body.querySelector('.phase263TableWrap');
+                if(finalWrap) finalWrap.scrollTop=top;
+            }
+        });
     };
-    input?.addEventListener('input',draw);
-    body.querySelectorAll('[data-filter]').forEach(btn=>btn.onclick=()=>{filter=btn.dataset.filter;body.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b===btn));draw();});
+    const rebuildClassification=()=>{
+        if(!orderMode||!window.PharmFlowClassificationFilters)return;
+        const currentRows=getKpiPanelItems("total");
+        const selected={groups:selectedGroups,categories:[],subCategories:[]};
+        const choices=window.PharmFlowClassificationFilters.choices(currentRows,selected);
+        const menu=groupFilter?.querySelector('.pfrFilterMenu');
+        if(!menu)return;
+        const allowed=new Set(choices.groups);selectedGroups=selectedGroups.filter(value=>allowed.has(value));
+        menu.innerHTML=`<div class="pfrFilterOptions">${choices.groups.map(value=>`<label><input type="checkbox" value="${esc(value)}" ${selectedGroups.includes(value)?"checked":""}><span>${esc(value)}</span></label>`).join('')||'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
+        const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?selectedGroups[0]:selectedGroups.length+' groups';
+    };
+    rebuildClassification();
+    input?.addEventListener('input',draw);orderFilter?.addEventListener('change',draw);
+    groupFilter?.addEventListener('click',event=>{const action=event.target.closest('[data-group-action]')?.dataset.groupAction;if(!action)return;event.preventDefault();const boxes=[...groupFilter.querySelectorAll('input[type="checkbox"]')];if(action==='all')boxes.forEach(box=>box.checked=true);if(action==='clear')boxes.forEach(box=>box.checked=false);if(action==='ok')groupFilter.open=false;selectedGroups=boxes.filter(box=>box.checked).map(box=>box.value);rebuildClassification();draw();});
+    groupFilter?.addEventListener('change',event=>{if(!event.target.matches('input[type="checkbox"]'))return;selectedGroups=[...groupFilter.querySelectorAll('input:checked')].map(box=>box.value);rebuildClassification();draw();});
+    groupFilter?.addEventListener('toggle',()=>{if(groupFilter.open){orderFilter?.blur();qtySort?.blur();}});
+    qtySort?.addEventListener('change',draw);
+    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;draw();});
+    clearPriority?.addEventListener('click',async()=>{
+        const targets=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
+        if(!targets.length) return;
+        if(!window.confirm(`Clear High Priority from ${targets.length} visible item(s)?`)) return;
+        const top=body.querySelector('.phase263TableWrap')?.scrollTop||0;
+        const clearRequest=queueClearVisiblePriorities(targets);
+        draw();
+        let finalWrap=body.querySelector('.phase263TableWrap');
+        if(finalWrap) finalWrap.scrollTop=top;
+        const cleared=await clearRequest;
+        if(!cleared){
+            draw();
+            finalWrap=body.querySelector('.phase263TableWrap');
+            if(finalWrap) finalWrap.scrollTop=top;
+        }
+    });
+    printPriority?.addEventListener('click',()=>{
+        const printable=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
+        if(!printable.length) return;
+
+        const selectedOrder=orderFilter?.value||'ALL';
+        const receipt=document.createElement('iframe');
+        receipt.setAttribute('aria-hidden','true');
+        receipt.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        document.body.appendChild(receipt);
+
+        const receiptDocument=receipt.contentDocument;
+        receiptDocument.open();
+        receiptDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>High Priority Items</title><style>
+          @page{size:80mm auto;margin:0}
+          *{box-sizing:border-box}
+          html,body{width:80mm;margin:0;padding:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+          header{margin:0 0 1.5mm;padding:0 0 1mm;border-bottom:.35mm solid #000;text-align:center}
+          h1{margin:0;font-size:14pt;line-height:1.1;font-weight:800}
+          .meta{margin-top:.8mm;font-size:10pt;line-height:1.1;font-weight:700}
+          table{width:100%;border:.35mm solid #000;border-collapse:collapse;table-layout:fixed}
+          th,td{border-right:.35mm solid #000;border-bottom:.25mm solid #000;vertical-align:middle;color:#000}
+          th{padding:.8mm 1mm;background:#fff;font-size:10pt;line-height:1;text-align:left;font-weight:800}
+          td{height:5.5mm;padding:.7mm 1mm;font-size:10pt;line-height:1.05;white-space:nowrap;font-weight:600}
+          td.name{overflow:hidden;text-overflow:ellipsis}
+          th.qty,td.qty{position:relative;width:14mm;padding-left:.5mm;padding-right:3.5mm;text-align:center;border-right:0}
+          th.qty{font-size:10pt;font-weight:800}
+          td.qty{font-size:11pt;font-weight:700}
+          th.qty::after,td.qty::after{content:"";position:absolute;top:0;right:1.5mm;bottom:0;border-right:.35mm solid #000}
+          tr.group td{height:5mm;padding:.6mm 1mm;background:#fff;font-size:10pt;font-weight:900;border-top:.5mm solid #000;border-bottom:.5mm solid #000}
+          tr:last-child td{border-bottom:0}
+        </style></head><body><header><h1>HIGH PRIORITY ITEMS</h1><div class="meta">${selectedOrder==='ALL'?'All Orders':`Order: ${esc(selectedOrder)}`}</div></header><table><thead><tr><th>ITEM NAME</th><th class="qty">QTY</th></tr></thead><tbody>${['SHORT','NEW'].map(type=>{
+            const group=printable.filter(item=>getEffectiveItemPriority(item)===type);
+            if(!group.length) return '';
+            return `<tr class="group"><td colspan="2">${type}</td></tr>${group.map(item=>{
+                const name=toSafeString(item.itemName||item.itemCode||'—');
+                const fontSize=name.length>64?'8pt':name.length>48?'8.5pt':'10pt';
+                return `<tr><td class="name" style="font-size:${fontSize}">${esc(name)}</td><td class="qty">${esc(toNumber(item.orderedQty,0))}</td></tr>`;
+            }).join('')}`;
+        }).join('')}</tbody></table></body></html>`);
+        receiptDocument.close();
+
+        const removeReceipt=()=>setTimeout(()=>receipt.remove(),500);
+        receipt.contentWindow.addEventListener('afterprint',removeReceipt,{once:true});
+        setTimeout(()=>{
+            receipt.contentWindow.focus();
+            receipt.contentWindow.print();
+        },100);
+        setTimeout(removeReceipt,60000);
+    });
     draw();
 }
 
@@ -5856,16 +8484,23 @@ function renderDashboardKpiPanel(key,body){
     if(!body) return;
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
     if(key==="scans"){
-        const rows=getReceivingActivityRows();
-        if(!rows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
-        const recent=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
-        const undoMap=new Map(recent.map(row=>[row.transactionId,row]));
-        body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Item</th><th>Source</th><th>Qty Change</th><th>Total After Action</th><th>Action</th></tr></thead><tbody>${rows.map(row=>{const undo=undoMap.get(row.transactionId);const q=toNumber(row.qtyChange,0);return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>${esc(getActivitySourceLabel(row.source))}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${q>0?'+':''}${esc(q)}</td><td><b>${esc(row.totalAfterAction)}</b></td><td>${undo?`<button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${undo.undone?'disabled':''}>${undo.undone?'Corrected':'Undo scan'}</button>`:'—'}</td></tr>`;}).join('')}</tbody></table></div>`;
-        body.querySelectorAll("[data-undo]").forEach(btn=>btn.onclick=()=>{if(typeof undoRecentScannerTransaction==="function") undoRecentScannerTransaction(btn.dataset.undo);});
+        const allRows=getGroupedReceivingActivityRows();
+        if(!allRows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
+        body.innerHTML=`<div class="pfnActivityControls"><label for="pfnActivitySourceFilter">Source</label><select id="pfnActivitySourceFilter"><option value="All">All</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Manual</option><option value="Correction">Correction</option></select></div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Recent Action Qty</th><th>Source</th><th>Order Number</th><th>Action</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
+        const tbody=body.querySelector("[data-activity-rows]");
+        const sourceFilter=body.querySelector("#pfnActivitySourceFilter");
+        const draw=()=>{
+            const selected=sourceFilter.value;
+            const rows=selected==="All"?allRows:allRows.filter(row=>getReceivingActivitySource(row)===selected);
+            tbody.innerHTML=rows.length?rows.map(row=>{const q=toNumber(row.qtyChange,0);const correction=toSafeString(row.source).toUpperCase().includes("CORRECTION");const editable=!correction&&q>0&&!!getItemByCode?.(row.itemCode);return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}</b></td><td>${esc(row.itemCode)}</td><td>${esc(row.gtin||"—")}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${correction?'Correction':'Received'} ${q>0?'+':''}${esc(q)}</td><td>${esc(getReceivingActivitySource(row))}</td><td>${esc(row.selectedOrderNumber||row.orderId||row.orderNumber||"—")}</td><td>${editable?`<button class="quickUndoButton" data-edit="${esc(row.transactionId)}">Edit</button>`:'—'}</td></tr>`;}).join(''):'<tr><td colspan="8" class="tableEmptyState">No activity from this source.</td></tr>';
+            tbody.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>{const row=allRows.find(entry=>toSafeString(entry.transactionId)===btn.dataset.edit);if(row)openReceivingActivityEditor(row,allRows);});
+        };
+        sourceFilter.addEventListener("change",draw);
+        draw();
         return;
     }
     if(key==="received"){
-        const rows=(Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[]).filter(i=>toNumber(i.receivedQty,0)>0);
+        const rows=getScopedOrderItems().filter(i=>toNumber(i.receivedQty,0)>0);
         renderItemBrowser(body,rows,{receivedMode:true});
         return;
     }
@@ -5875,27 +8510,530 @@ function renderDashboardKpiPanel(key,body){
     }
     const rows=getKpiPanelItems(key);
     if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
-    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
+    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td><td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="Remaining">${esc(toNumber(item.remainingQty,0))}</td><td data-label="Status">${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* =====================================================
    PHASE 2C.6 FINAL - ONE-TAP ACCIDENTAL SCAN CORRECTION
 ===================================================== */
 function refreshScanSafetyUI(){
-    /* Phase 2C.6.3: remove the risky dashboard Undo button. */
     document.querySelector("#lastScanCard .scanSafetyBar")?.remove();
+    ensureNeedsReviewButtons();
+}
 
-    /* Keep a safe review entry point beside Search Item. */
-    const searchButton=document.getElementById("btnQuickSearch");
-    if(searchButton && !document.getElementById("btnReceivedItems")){
-        const button=document.createElement("button");
-        button.type="button";
-        button.id="btnReceivedItems";
-        button.className=(searchButton.className||"")+" receivedItemsButton";
-        button.innerHTML="✓ Received Items";
-        button.addEventListener("click",()=>openDashboardKpiPanel("received"));
-        searchButton.insertAdjacentElement("afterend",button);
+
+
+function getNeedsReviewPharmacyId(){
+    if(typeof getCurrentPharmacyId === "function"){
+        const id = getCurrentPharmacyId();
+        if(id) return id;
     }
+
+    if(typeof AuthState !== "undefined"){
+        return (
+            AuthState?.context?.pharmacy_id ||
+            AuthState?.profile?.pharmacy_id ||
+            AuthState?.pharmacyId ||
+            null
+        );
+    }
+
+    return null;
+}
+
+
+async function loadNeedsReviewRows(workflow,orderNumber=null){
+    if(typeof nrV2List!=="function") return [];
+    return await nrV2List(workflow||"RECEIVING",orderNumber||null);
+}
+
+async function refreshNeedsReviewCounters(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+
+    try{
+        /* Pharmacy-scoped by design. Never hide Handheld drafts because of
+           a PC-local order/workspace id mismatch. */
+        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const rc=document.getElementById("receivingNeedsReviewCount");
+
+        const grouped=groupNeedsReviewRows(receiving);
+        if(rc) rc.textContent=String(grouped.length);
+
+        document
+            .getElementById("btnReceivingNeedsReview")
+            ?.classList.toggle("hasItems",grouped.length>0);
+    }catch(error){
+        console.warn("Needs Review V2 count failed",error);
+    }
+}
+
+function ensureNeedsReviewButtons(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+    const button=document.getElementById("btnReceivingNeedsReview");
+    if(button && button.dataset.bound!=="1"){button.dataset.bound="1";button.onclick=()=>openNeedsReviewPanel("RECEIVING");}
+    refreshNeedsReviewCounters();
+}
+
+
+function nrV2FindOrderMatches(query){
+    const q=toSafeString(query).trim().toLowerCase();
+    /* Needs Review is an order-resolution tool, not a Global Master search.
+       Respect the same active-order scope used by the Receiving item browser. */
+    const source=typeof getScopedOrderItems==="function"
+        ? getScopedOrderItems()
+        : (AppState?.workspace?.orderData||[]);
+
+    if(!q) return source.slice(0,20);
+
+    return source.filter(item=>
+        toSafeString(item?.itemCode).toLowerCase().includes(q) ||
+        toSafeString(item?.itemName).toLowerCase().includes(q)
+    ).slice(0,20);
+}
+
+async function nrV2HydratePhoto(img,path){
+    if(!img || !path) return;
+
+    try{
+        const url=await nrV2PhotoObjectUrl(path);
+        if(url){
+            img.src=url;
+            img.hidden=false;
+        }
+    }catch(_){}
+}
+
+function groupNeedsReviewRows(rows){
+    const groups=new Map();
+    (rows||[]).forEach(row=>{
+        const gtin=toSafeString(row?.gtin||"").trim();
+        const order=toSafeString(row?.order_number||"").trim();
+        const reason=toSafeString(row?.review_reason||"UNKNOWN_GTIN").trim();
+        const key=[gtin,order,reason].join("|");
+        if(!groups.has(key)){
+            groups.set(key,{
+                key,
+                gtin,
+                order_number:order,
+                review_reason:reason,
+                source:row?.source||"",
+                rows:[],
+                total_quantity:0,
+                photos:[],
+                master_item_name_hint:row?.master_item_name_hint||"",
+                master_item_code_hint:row?.master_item_code_hint||""
+            });
+        }
+        const group=groups.get(key);
+        group.rows.push(row);
+        group.total_quantity+=Math.max(0,Number(row?.pending_quantity||0)||0);
+        if(row?.photo_path) group.photos.push(row.photo_path);
+        if(!group.master_item_name_hint && row?.master_item_name_hint) group.master_item_name_hint=row.master_item_name_hint;
+        if(!group.master_item_code_hint && row?.master_item_code_hint) group.master_item_code_hint=row.master_item_code_hint;
+    });
+    return Array.from(groups.values()).map(group=>({
+        ...group,
+        total_quantity:Math.max(1,group.total_quantity||0),
+        rows:group.rows.slice().sort((a,b)=>String(a?.created_at||a?.date_time||"").localeCompare(String(b?.created_at||b?.date_time||"")))
+    }));
+}
+
+function nrV2GroupTransactionId(group){
+    const safe=value=>toSafeString(value||"").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"").slice(0,42);
+    return `NEEDS_REVIEW_GROUP_${safe(group?.order_number||"ALL")}_${safe(group?.gtin||"UNKNOWN")}`;
+}
+
+function nrV2HasTransactionId(transactionId){
+    return (AppState?.workspace?.receivingHistory||[]).some(tx=>toSafeString(tx?.transactionId||"")===transactionId);
+}
+
+async function nrV2ResolveGroupToOrderItem(group,item){
+    const transactionId=nrV2GroupTransactionId(group);
+    if(!nrV2HasTransactionId(transactionId)){
+        const learned=await savePharmacyLearnedGTIN(group.gtin,item.itemCode,item.itemName);
+        addMappingRecord({itemCode:item.itemCode,gtin:group.gtin,source:"PHARMACY_LEARNED"});
+        const tx=receiveOrderItem({
+            item,
+            quantity:Math.max(1,Number(group.total_quantity||1)||1),
+            gtin:group.gtin,
+            source:APP_CONFIG.transactionSources.scanner,
+            manual:false,
+            targetOrder:group.order_number||"",
+            transactionId,
+            gtinResolution:typeof learnedGTINResolution==="function"?learnedGTINResolution(learned):null
+        });
+        if(!tx) throw new Error("Unable to apply reviewed quantity");
+    }
+    for(const row of group.rows){
+        await nrV2MarkResolved(row,item,"LINK_ORDER_ITEM",transactionId);
+    }
+}
+
+function nrV2ItemMetrics(item){
+    const ordered=toNumber(item?.orderedQty,0);
+    const received=toNumber(item?.receivedQty,0);
+    return {ordered,received,remaining:Math.max(0,toNumber(item?.remainingQty,ordered-received))};
+}
+
+function nrV2ItemSummary(item,esc){
+    const metrics=nrV2ItemMetrics(item);
+    return `<span><small>Item Name</small><strong>${esc(item.itemName)}</strong><small>Item Code <b>${esc(item.itemCode)}</b></small></span><span class="needsReviewResultQty"><small>Ordered <b>${metrics.ordered}</b></small><small>Received <b>${metrics.received}</b></small><small>Remaining <b>${metrics.remaining}</b></small></span>`;
+}
+
+function closeNeedsReviewPhotoViewer(){
+    document.getElementById("needsReviewPhotoViewer")?.remove();
+}
+
+function openNeedsReviewPhotoViewer(url){
+    closeNeedsReviewPhotoViewer();
+    const viewer=document.createElement("div");
+    viewer.id="needsReviewPhotoViewer";
+    viewer.className="needsReviewPhotoViewer";
+    viewer.setAttribute("role","dialog");
+    viewer.setAttribute("aria-modal","true");
+    viewer.setAttribute("aria-label","Temporary product photo");
+    viewer.innerHTML=`<button class="needsReviewPhotoScrim" type="button" data-photo-close aria-label="Close photo"></button><section><img src="${url}" alt="Temporary product review photo"><button type="button" data-photo-close>Close photo</button></section>`;
+    document.body.appendChild(viewer);
+    viewer.querySelectorAll("[data-photo-close]").forEach(button=>button.addEventListener("click",closeNeedsReviewPhotoViewer));
+}
+
+async function openNeedsReviewPanel(workflow="RECEIVING"){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+    closeNeedsReviewPhotoViewer();
+    document.getElementById("needsReviewOverlay")?.remove();
+
+    let rawRows=[];
+    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
+
+    const groups=groupNeedsReviewRows(rawRows);
+    const esc=value=>escapeHTML(toSafeString(value));
+    const admin=typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
+    const overlay=document.createElement("div");
+    overlay.id="needsReviewOverlay";
+    overlay.className="needsReviewOverlay";
+    overlay.setAttribute("role","dialog");
+    overlay.setAttribute("aria-modal","true");
+    overlay.setAttribute("aria-labelledby","needsReviewTitle");
+    overlay.innerHTML=`
+      <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
+      <section class="needsReviewPanel">
+        <header>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Resolve each grouped unknown GTIN to an item in the current Active Order.</p></div>
+          <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+        </header>
+        ${admin?`<details class="needsReviewAdmin"><summary>Pharmacy learned GTIN maintenance</summary><div class="needsReviewAdminBody">
+          <p>Correct or remove a pharmacy-scoped learned mapping. Global GTIN Master data is never changed.</p>
+          <div class="needsReviewAdminLookup"><label>Learned GTIN<input data-admin-gtin inputmode="numeric" autocomplete="off" placeholder="Scan or enter GTIN"></label><button type="button" data-admin-load>View mapping</button></div>
+          <div data-admin-workspace></div>
+        </div></details>`:""}
+        <div class="needsReviewList" data-review-list>
+          ${groups.length?groups.map((group,index)=>`
+            <section class="needsReviewRow" data-i="${index}">
+              <div class="needsReviewInfo">
+                <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNISED"}</span>
+                <span class="pfnReviewLabel">GTIN</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong>
+                <div class="pfnReviewMeta">
+                  <div class="important"><span>Quantity</span><b>${group.total_quantity}</b></div>
+                  <div class="important"><span>Entries</span><b>${group.rows.length}</b></div>
+                  <div><span>Source</span><b>${esc(group.source||"Unknown")}</b></div>
+                  <div><span>Order Number</span><b>${group.order_number?esc(group.order_number):"Needs assignment"}</b></div>
+                </div>
+                ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
+              </div>
+              <div class="needsReviewResolve">
+                <label>Search Current Active Order<input type="search" data-search="${index}" placeholder="Item Name or Item Code" autocomplete="off" spellcheck="false"></label>
+                <div class="needsReviewMatches" data-matches="${index}"></div>
+                <div class="needsReviewSelection" data-selection="${index}" hidden></div>
+                <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+              </div>
+            </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
+        </div>
+      </section>`;
+    document.body.appendChild(overlay);
+
+    const closePanel=()=>{
+        if(overlay.dataset.busy==="1"||overlay.dataset.confirming==="1") return;
+        closeNeedsReviewPhotoViewer();
+        overlay.remove();
+    };
+    overlay.querySelectorAll("[data-review-close]").forEach(button=>button.addEventListener("click",closePanel));
+    overlay.querySelector("[data-review-history]")?.addEventListener("click",async()=>{
+        const list=overlay.querySelector("[data-review-list]");if(!list)return;
+        try{
+            const history=await nrV3ListHistory?.(workflow,null)||[];
+            list.innerHTML=history.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Status</th><th>Updated</th><th>GTIN</th><th>Order</th><th>Quantity</th><th>Photo</th></tr></thead><tbody>${history.slice().sort((a,b)=>String(b.updated_at||b.created_at||"").localeCompare(String(a.updated_at||a.created_at||""))).map(row=>`<tr><td><b>${esc(row.status||"PENDING")}</b></td><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.updated_at||row.created_at):row.updated_at||row.created_at||"—")}</td><td>${esc(row.gtin||"—")}</td><td>${esc(row.order_number||"—")}</td><td>${esc(row.pending_quantity||1)}</td><td>${row.photo_path?"Photo retained":"—"}</td></tr>`).join("")}</tbody></table></div>`:'<div class="needsReviewEmpty">No Needs Review history.</div>';
+        }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
+    });
+
+    groups.forEach((group,index)=>{
+        const section=overlay.querySelector(`[data-i="${index}"]`);
+        const search=overlay.querySelector(`[data-search="${index}"]`);
+        const matches=overlay.querySelector(`[data-matches="${index}"]`);
+        const selection=overlay.querySelector(`[data-selection="${index}"]`);
+        const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
+        let selectedItem=null;
+
+        cancelReview?.addEventListener("click",async()=>{
+            if(!window.confirm(`Cancel this Needs Review group for GTIN ${group.gtin}?\n\nThis will not learn the GTIN or change any received quantity.`)) return;
+            const reason=toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
+            if(!reason){showToast?.("A cancellation reason is required","warning");return;}
+            cancelReview.disabled=true; overlay.dataset.busy="1";
+            try{
+                /* The current V2 delete RPC has no reason field. Deletion is
+                   intentionally limited to the exact rows in this displayed
+                   GTIN/order/reason group; Storage objects are intentionally preserved until a verified lifecycle policy exists. */
+                for(const row of group.rows) await nrV2Delete(row.review_id);
+                section.remove(); await refreshNeedsReviewCounters();
+                const count=overlay.querySelectorAll(".needsReviewRow").length;
+                const countNode=overlay.querySelector(".pfnReviewCount");
+                if(countNode) countNode.textContent=String(count);
+                if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
+                showToast?.(`Needs Review cancelled — ${reason}`,"success");
+            }catch(error){cancelReview.disabled=false;showToast?.(error?.message||"Unable to cancel review","error");}
+            finally{overlay.dataset.busy="";}
+        });
+
+        group.photos.forEach((path,pidx)=>nrV2HydratePhoto(overlay.querySelector(`[data-photo="${index}:${pidx}"]`),path));
+        group.photos.forEach((path,pidx)=>overlay.querySelector(`[data-photo-open="${index}:${pidx}"]`)?.addEventListener("click",async()=>{
+            try{
+                const url=await nrV2PhotoObjectUrl(path);
+                if(!url) throw new Error("Photo is unavailable");
+                openNeedsReviewPhotoViewer(url);
+            }catch(error){ showToast?.(error?.message||"Unable to open review photo","error"); }
+        }));
+
+        const drawSelection=()=>{
+            if(!selectedItem){ selection.hidden=true;selection.innerHTML="";return; }
+            selection.hidden=false;
+            selection.innerHTML=`<span class="needsReviewSelectionLabel">SELECTED ITEM</span><div>${nrV2ItemSummary(selectedItem,esc)}</div><button type="button" data-resolve>Resolve &amp; Learn</button>`;
+            selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
+                const button=event.currentTarget;
+                button.disabled=true;
+                overlay.dataset.busy="1";
+                try{
+                    await nrV2ResolveGroupToOrderItem(group,selectedItem);
+                    section.remove();
+                    await refreshNeedsReviewCounters();
+                    const count=overlay.querySelectorAll(".needsReviewRow").length;
+                    const countNode=overlay.querySelector(".pfnReviewCount");
+                    if(countNode) countNode.textContent=String(count);
+                    if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
+                    showToast?.(`GTIN resolved and learned — ${group.total_quantity} received`,"success");
+                }catch(error){ button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error"); }
+                finally{ overlay.dataset.busy=""; }
+            });
+        };
+        const drawMatches=()=>{
+            selectedItem=null;
+            drawSelection();
+            const q=toSafeString(search?.value||"").trim();
+            if(!q){matches.innerHTML="";return;}
+            const items=nrV2FindOrderMatches(q).slice(0,8);
+            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the current Active Order.</div>`;
+            matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{
+                selectedItem=items[Number(button.dataset.match)]||null;
+                matches.querySelectorAll("button").forEach(result=>result.classList.toggle("selected",result===button));
+                drawSelection();
+            }));
+        };
+        search?.addEventListener("input",drawMatches);
+    });
+
+    if(admin){
+        const gtinInput=overlay.querySelector("[data-admin-gtin]");
+        const workspace=overlay.querySelector("[data-admin-workspace]");
+        let currentMapping=null;
+        let replacement=null;
+        let pendingLifecycle=null;
+        const renderMaintenance=()=>{
+            if(!currentMapping){workspace.innerHTML="";return;}
+            workspace.innerHTML=`<div class="needsReviewMappingCurrent"><span>CURRENT PHARMACY MAPPING</span><strong>${esc(currentMapping.gtin)} → ${esc(currentMapping.itemCode)} → ${esc(currentMapping.itemName||"Unnamed item")}</strong></div>
+              <label>Choose replacement from Current Active Order<input type="search" data-admin-search placeholder="Item Name or Item Code" autocomplete="off"></label>
+              <div class="needsReviewMatches" data-admin-matches></div><div data-admin-selection></div>
+              <div class="needsReviewMappingActions"><label>Mandatory Reason<textarea data-admin-reason rows="2" placeholder="Reason for this audited change"></textarea></label>
+              <button type="button" data-admin-correct disabled>Correct Mapping</button><button class="danger" type="button" data-admin-remove>Remove Mapping</button></div>
+              <div data-admin-impact></div>
+              <p class="needsReviewGlobalNotice">Removal affects only this pharmacy learned mapping — not the Global GTIN Master.</p>`;
+            const search=workspace.querySelector("[data-admin-search]");
+            const matches=workspace.querySelector("[data-admin-matches]");
+            const selected=workspace.querySelector("[data-admin-selection]");
+            const correct=workspace.querySelector("[data-admin-correct]");
+            const reason=workspace.querySelector("[data-admin-reason]");
+            const impact=workspace.querySelector("[data-admin-impact]");
+            const invalidatePreview=()=>{
+                pendingLifecycle=null;
+                overlay.dataset.confirming="";
+                impact.innerHTML="";
+                correct.textContent="Preview Correction";
+                const remove=workspace.querySelector("[data-admin-remove]");
+                if(remove) remove.textContent="Preview Removal";
+            };
+            const previewSignature=(action,why)=>[
+                action,currentMapping.gtin,replacement?.itemCode||"",why
+            ].join("|");
+            const renderImpact=preview=>{
+                const provable=Number(preview?.provable?.quantity||0);
+                const compensated=Number(preview?.alreadyCompensated?.quantity||0);
+                const ambiguous=Number(preview?.ambiguous?.quantity||0);
+                const eligible=Number(preview?.reallocation?.eligibleQuantity||0);
+                const nonReallocatable=Number(preview?.reallocation?.nonReallocatableQuantity||0);
+                impact.innerHTML=`<div class="needsReviewMappingCompare"><span>PROVABLE QUANTITY TO REVERSE</span><strong>${esc(provable)}</strong><span>ALREADY COMPENSATED</span><strong>${esc(compensated)}</strong><span>AMBIGUOUS — UNTOUCHED</span><strong>${esc(ambiguous)}</strong>${String(preview?.action||"").toUpperCase()==="CORRECT"?`<span>ELIGIBLE TO REALLOCATE</span><strong>${esc(eligible)}</strong><span>NON-REALLOCATABLE</span><strong>${esc(nonReallocatable)}</strong>`:""}</div><button type="button" data-admin-cancel-preview>Cancel Preview</button>`;
+                impact.querySelector("[data-admin-cancel-preview]")?.addEventListener("click",invalidatePreview);
+            };
+            search.addEventListener("input",()=>{
+                replacement=null;correct.disabled=true;selected.innerHTML="";invalidatePreview();
+                const q=toSafeString(search.value).trim();
+                const items=q?nrV2FindOrderMatches(q).slice(0,8):[];
+                matches.innerHTML=items.length?items.map((item,i)=>`<button type="button" data-admin-match="${i}">${nrV2ItemSummary(item,esc)}</button>`).join(""):q?`<div class="needsReviewNoMatches">No matching item in the current Active Order.</div>`:"";
+                matches.querySelectorAll("[data-admin-match]").forEach(button=>button.addEventListener("click",()=>{
+                    replacement=items[Number(button.dataset.adminMatch)]||null;
+                    invalidatePreview();
+                    matches.querySelectorAll("button").forEach(result=>result.classList.toggle("selected",result===button));
+                    if(replacement){selected.innerHTML=`<div class="needsReviewMappingCompare"><span>OLD</span><strong>${esc(currentMapping.itemCode)} — ${esc(currentMapping.itemName||"Unnamed item")}</strong><span>NEW</span><strong>${esc(replacement.itemCode)} — ${esc(replacement.itemName)}</strong></div>`;correct.disabled=false;}
+                }));
+            });
+            reason.addEventListener("input",invalidatePreview);
+            correct.addEventListener("click",async()=>{
+                const why=toSafeString(reason.value).trim();
+                if(!replacement){showToast?.("Select the corrected item first","warning");return;}
+                if(!why){showToast?.("A correction reason is required","warning");reason.focus();return;}
+                const signature=previewSignature("CORRECT",why);
+                correct.disabled=true;overlay.dataset.busy="1";
+                try{
+                    if(!pendingLifecycle||pendingLifecycle.signature!==signature){
+                        const preview=await previewPharmacyLearnedGTINLifecycleV3(currentMapping.gtin,"CORRECT",replacement.itemCode);
+                        if(!preview?.mapping?.id||!preview?.mapping?.revision) throw new Error("Lifecycle preview is incomplete");
+                        pendingLifecycle={preview,operationId:createLearnedGTINLifecycleOperationId(),signature};
+                        renderImpact(preview);correct.textContent="Confirm Correction";overlay.dataset.confirming="1";
+                    }else{
+                        await correctPharmacyLearnedGTIN(pendingLifecycle.preview,replacement.itemCode,replacement.itemName,why,pendingLifecycle.operationId);
+                        currentMapping=await getPharmacyLearnedGTINRecord(currentMapping.gtin,{strict:true});
+                        if(!currentMapping) throw new Error("Corrected mapping could not be reloaded");
+                        replacement=null;pendingLifecycle=null;overlay.dataset.confirming="";renderMaintenance();showToast?.("Pharmacy learned GTIN mapping corrected","success");
+                    }
+                }
+                catch(error){correct.disabled=false;showToast?.(error?.message||"Unable to correct mapping","error");}
+                finally{overlay.dataset.busy="";correct.disabled=!replacement;}
+            });
+            workspace.querySelector("[data-admin-remove]").addEventListener("click",async event=>{
+                const why=toSafeString(reason.value).trim();
+                if(!why){showToast?.("A removal reason is required","warning");reason.focus();return;}
+                const button=event.currentTarget;
+                button.disabled=true;overlay.dataset.busy="1";
+                try{
+                    const signature=previewSignature("REMOVE",why);
+                    if(!pendingLifecycle||pendingLifecycle.signature!==signature){
+                        const preview=await previewPharmacyLearnedGTINLifecycleV3(currentMapping.gtin,"REMOVE");
+                        if(!preview?.mapping?.id||!preview?.mapping?.revision) throw new Error("Lifecycle preview is incomplete");
+                        pendingLifecycle={preview,operationId:createLearnedGTINLifecycleOperationId(),signature};
+                        renderImpact(preview);button.textContent="Confirm Remove Mapping";overlay.dataset.confirming="1";
+                    }else{
+                        await removePharmacyLearnedGTIN(pendingLifecycle.preview,why,pendingLifecycle.operationId);
+                        currentMapping=null;pendingLifecycle=null;overlay.dataset.confirming="";workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Pharmacy learned mapping removed. Global GTIN Master was not changed. A future unresolved scan can create Needs Review.</div>";showToast?.("Pharmacy learned GTIN mapping removed","success");
+                    }
+                }
+                catch(error){button.disabled=false;showToast?.(error?.message||"Unable to remove mapping","error");}
+                finally{overlay.dataset.busy="";button.disabled=false;}
+            });
+        };
+        gtinInput.addEventListener("input",()=>{pendingLifecycle=null;overlay.dataset.confirming="";workspace.innerHTML="";currentMapping=null;replacement=null;});
+        overlay.querySelector("[data-admin-load]").addEventListener("click",async event=>{
+            const gtin=normalizeGTIN(gtinInput.value);
+            if(!gtin){showToast?.("Enter a valid GTIN","warning");return;}
+            event.currentTarget.disabled=true;
+            try{currentMapping=await getPharmacyLearnedGTINRecord(gtin);if(!currentMapping){workspace.innerHTML="<div class=\"needsReviewNoMatches\">No pharmacy learned mapping exists for this GTIN.</div>";return;}renderMaintenance();}
+            catch(error){showToast?.(error?.message||"Unable to load learned mapping","error");}
+            finally{event.currentTarget.disabled=false;}
+        });
+    }
+
+    overlay.addEventListener("keydown",event=>{
+        if(event.key!=="Escape"||overlay.dataset.busy==="1") return;
+        if(document.getElementById("needsReviewPhotoViewer")){closeNeedsReviewPhotoViewer();event.stopPropagation();return;}
+        closePanel();
+    });
+}
+
+window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
+
+/* B11: lightweight cross-device Needs Review awareness.
+   Full review rows are fetched only when the PC panel is opened; the watcher
+   asks Supabase for a tiny count so a Handheld submission becomes visible on
+   the PC without refreshing the whole workspace. */
+let needsReviewCloudWatchTimer=null;
+let needsReviewCloudWatchBusy=false;
+let needsReviewCloudLastReadAt=0;
+async function refreshNeedsReviewCountFromCloud({force=false}={}){
+    if(window.PharmFlowIdleSleep?.active) return;
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) return;
+    if(document.hidden || needsReviewCloudWatchBusy || typeof nrV2Count!=="function") return;
+    const now=Date.now();
+    /* B10 Clean20 — Needs Review awareness remains live, but idle PC tabs no
+       longer hit Supabase every 6 seconds. Focus/visibility calls are also
+       deduped so mobile browsers cannot double-fire the same count request. */
+    if(!force && now-needsReviewCloudLastReadAt<25000) return;
+    needsReviewCloudWatchBusy=true;
+    needsReviewCloudLastReadAt=now;
+    try{
+        const count=await nrV2Count("RECEIVING");
+        setElementText(document.getElementById("receivingNeedsReviewCount"),count);
+        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
+    }catch(error){
+        Logger?.warn?.("Needs Review count sync failed",error);
+    }finally{
+        needsReviewCloudWatchBusy=false;
+    }
+}
+function startNeedsReviewCloudWatch(){
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) return;
+    clearInterval(needsReviewCloudWatchTimer);
+    refreshNeedsReviewCountFromCloud({force:true});
+    needsReviewCloudWatchTimer=setInterval(refreshNeedsReviewCountFromCloud,30000);
+}
+window.startNeedsReviewCloudWatch=startNeedsReviewCloudWatch;
+window.addEventListener("focus",()=>refreshNeedsReviewCountFromCloud());
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshNeedsReviewCountFromCloud(); });
+setTimeout(startNeedsReviewCloudWatch,1200);
+window.openNeedsReviewPanel=openNeedsReviewPanel;
+
+function refreshOrderScopeControl(){
+    const host=document.querySelector('.currentReceivingCard, .dashboardWorkspaceCard, .dashboardHeader') || document.querySelector('#dashboardPage');
+    if(!host) return;
+    let wrap=document.getElementById('orderScopeControl');
+    if(!wrap){
+        wrap=document.createElement('div'); wrap.id='orderScopeControl'; wrap.className='orderScopeControl';
+        host.appendChild(wrap);
+    }
+    const files=Array.isArray(AppState.workspace?.orderFiles)?AppState.workspace.orderFiles:[];
+    const orders=Array.from(new Set(files.map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||'')).filter(Boolean)));
+    const current=getActiveOrderScope();
+    if(current!=='ALL' && !orders.includes(current)) window.PharmFlowOrderScope='ALL';
+    wrap.innerHTML=`<label>Order View</label><select id="orderScopeSelect"><option value="ALL">All Active Orders</option>${orders.map(o=>`<option value="${escapeHtml(o)}" ${getActiveOrderScope()===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}</select>`;
+    wrap.querySelector('select').onchange=e=>{ window.PharmFlowOrderScope=e.target.value||'ALL'; refreshDashboard(); refreshOpenKpiPanel(); };
+}
+
+AppEvents.on('workspace:saved',()=>setTimeout(refreshOrderScopeControl,0));
+AppEvents.on('receiving:updated',()=>setTimeout(refreshOrderScopeControl,0));
+window.addEventListener('auth:context-ready',()=>setTimeout(refreshOrderScopeControl,250));
+setTimeout(refreshOrderScopeControl,800);
+function setupPhase263ActionDelegation(){
+    if(document.documentElement.dataset.phase263ActionsBound==="1") return;
+    document.documentElement.dataset.phase263ActionsBound="1";
+    document.addEventListener("click",event=>{
+        /* Phase 2C.7.6: Dashboard Search Item and Receiving Search are one
+           workflow. Capture binding prevents an older page-specific handler
+           from opening a different/stale search implementation. */
+        const unifiedSearch=event.target.closest?.("#btnReceivingSearch");
+        if(unifiedSearch){
+            event.preventDefault();
+            event.stopImmediatePropagation?.();
+            openItemSearchModal();
+            return;
+        }
+        const received=event.target.closest?.("#btnReceivedItems");
+        if(received){event.preventDefault();openDashboardKpiPanel("received");return;}
+    },true);
 }
 
 
@@ -5913,22 +9051,226 @@ function openCurrentMissingGTINPanel(){
 
 async function requestRemoveActiveOrderFile(fileId){
     const files=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles:[];
-    const file=files.find(f=>f.id===fileId);if(!file)return;
-    const orderNumber=typeof normalizeOrderNumber==="function"?normalizeOrderNumber(file.documentId||file.orderNumber||""):toSafeString(file.documentId||"");
-    if(files.length<=1){showToast("Use Reset Current Workspace to discard the only active order","warning");return;}
-    showConfirmModal("Remove Active Order",`Remove ${orderNumber||file.name} from the current workspace only? Other uploaded orders will remain. Physical scans already recorded are not silently deleted.`,async()=>{
+    const file=files.find(f=>f.id===fileId);
+    if(!file)return;
+
+    const orderNumber=typeof normalizeOrderNumber==="function"
+        ? normalizeOrderNumber(file.documentId||file.orderNumber||"")
+        : toSafeString(file.documentId||"");
+    if(!orderNumber){
+        showToast("Unable to identify this active Order Number","error");
+        return;
+    }
+
+    /* B10 Clean 8 — REMOVE is a structural, order-scoped operation.
+       Source contribution comes from the active file's embedded sourceRows
+       first. This is the same source used by order/report filtering and avoids
+       relying on a historical/server snapshot that may be absent or delayed. */
+    let sourceRows=[];
+    try{
+        sourceRows=typeof getWorkspaceOrderSourceRows==="function"
+            ? (getWorkspaceOrderSourceRows(orderNumber)||[])
+            : [];
+    }catch(_){ sourceRows=[]; }
+    if(!sourceRows.length){
+        try{
+            sourceRows=typeof getOriginalUploadedOrderSnapshot==="function"
+                ? (await getOriginalUploadedOrderSnapshot(orderNumber)||[])
+                : [];
+        }catch(_){ sourceRows=[]; }
+    }
+
+    const targetMembership=(item)=>{
+        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
+            .map(normalizeOrderNumber)
+            .filter(Boolean);
+        return memberships.includes(orderNumber);
+    };
+
+    /* Transactions created by older builds did not always stamp orderNumber.
+       If an item belongs to exactly one active order, attribution is still
+       deterministic and safe. Shared-item transactions without an explicit
+       order are deliberately NOT guessed. */
+    const activeOrders=files
+        .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
+        .filter(Boolean);
+    const perOrderTransactions=(Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : []).filter(tx=>{
+            const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
+            if(explicit)return explicit===orderNumber;
+            const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
+            const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
+                .map(normalizeOrderNumber)
+                .filter(n=>activeOrders.includes(n));
+            return memberships.length===1 && memberships[0]===orderNumber;
+        });
+
+    const receivedUnits=perOrderTransactions.reduce((sum,tx)=>sum+Number(tx?.quantity||0),0);
+    const reviewRows=await loadNeedsReviewRows("RECEIVING",orderNumber).catch(()=>[]);
+    const hasOperationalData=Math.abs(receivedUnits)>0 || reviewRows.length>0;
+    const message=hasOperationalData
+        ? `Remove ${orderNumber}?\n\nThis permanently removes THIS active order from Receiving, including its receiving quantities/scans and unresolved Needs Review cases. Other active orders are not affected.`
+        : `Remove ${orderNumber} from Active Receiving?\n\nOther active orders are not affected.`;
+
+    showConfirmModal("Remove Active Order",message,async()=>{
         try{
             showLoading("Removing order...");
-            const sourceRows=typeof getOriginalUploadedOrderSnapshot==="function"&&orderNumber?await getOriginalUploadedOrderSnapshot(orderNumber):[];
-            if(orderNumber&&typeof authRpc==="function"&&typeof AuthState!=="undefined"&&AuthState.context?.pharmacy_id){await authRpc("discard_pharmflow_active_order",{p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:orderNumber,p_confirmation:orderNumber});}
-            sourceRows.forEach(row=>{const code=normalizeItemCode(row.item_code||row.itemCode);const item=getItemByCode(code);if(!item)return;item.orderedQty=Math.max(0,toNumber(item.orderedQty,0)-toNumber(row.ordered_qty??row.orderedQty,0));if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);});
-            AppState.workspace.orderData=AppState.workspace.orderData.filter(item=>!(toNumber(item.orderedQty,0)<=0&&toNumber(item.receivedQty,0)<=0&&item.manual!==true));
+
+            if(typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){
+                throw new Error("Pharmacy cloud context is unavailable. Sign in again before removing the order.");
+            }
+            if(!sourceRows.length){
+                throw new Error("Order source data could not be resolved safely. No data was removed.");
+            }
+
+            /* Server structural authority first. If this fails, local state is
+               untouched and no success message can be shown. */
+            await authRpc("discard_pharmflow_active_order",{
+                p_pharmacy_id:AuthState.context.pharmacy_id,
+                p_order_number:orderNumber,
+                p_confirmation:orderNumber
+            });
+
+            /* Temporary review evidence belongs to this active order only. */
+            for(const row of reviewRows){
+                try{
+                    if(row?.review_id && typeof nrV2Delete==="function")await nrV2Delete(row.review_id);
+                }catch(reviewError){
+                    Logger.warn?.("Temporary review cleanup failed after active-order removal",reviewError);
+                }
+            }
+
+            /* Remove received contribution first, then ordered contribution. */
+            perOrderTransactions.forEach(tx=>{
+                const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
+                if(!item)return;
+                item.receivedQty=Math.max(0,Number(item.receivedQty||0)-Number(tx?.quantity||0));
+                if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
+            });
+
+            sourceRows.forEach(row=>{
+                const code=normalizeItemCode(row?.item_code||row?.itemCode||"");
+                const item=typeof getItemByCode==="function"?getItemByCode(code):null;
+                if(!item)return;
+                item.orderedQty=Math.max(0,Number(item.orderedQty||0)-Number(row?.ordered_qty??row?.orderedQty??0));
+                if(Array.isArray(item.orderNumbers)){
+                    item.orderNumbers=item.orderNumbers.filter(n=>normalizeOrderNumber(n)!==orderNumber);
+                }
+                if(normalizeOrderNumber(item.orderNumber||"")===orderNumber){
+                    const surviving=(item.orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean);
+                    item.orderNumber=surviving[0]||"";
+                }
+                if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
+            });
+
+            AppState.workspace.receivingHistory=(AppState.workspace.receivingHistory||[])
+                .filter(tx=>!perOrderTransactions.includes(tx));
             AppState.workspace.orderFiles=files.filter(f=>f.id!==fileId);
-            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
-            const remaining=AppState.workspace.orderFiles.map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||"")).filter(Boolean);
+            AppState.workspace.orderData=(AppState.workspace.orderData||[]).filter(item=>
+                !(Number(item.orderedQty||0)<=0 && Number(item.receivedQty||0)<=0 && item.manual!==true)
+            );
+
+            const remaining=AppState.workspace.orderFiles
+                .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
+                .filter(Boolean);
+            AppState.workspace.selectedOrderNumbers=remaining.slice();
+            AppState.workspace.selectedOrderNumber=remaining.length===1?remaining[0]:(remaining.length?"ALL":"");
             AppState.workspace.orderName=remaining.length===1?remaining[0]:(remaining.length?remaining.join(" + "):"");
-            recalculateStatistics();if(typeof saveApplicationState==="function")saveApplicationState("remove-order");refreshEntireUI();
-            showToast(`${orderNumber||file.name} removed. ${remaining.length} active order(s) remain.`,"success");
-        }catch(error){Logger.error("Remove active order failed",error);showToast(error?.message||"Unable to remove order","error");}finally{hideLoading();}
+            AppState.workspace.active=remaining.length>0;
+
+            if(typeof ReceivingEngine!=="undefined"){
+                ReceivingEngine.recentScans=(ReceivingEngine.recentScans||[]).filter(tx=>{
+                    const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
+                    if(explicit)return explicit!==orderNumber;
+                    const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
+                    return !targetMembership(item);
+                });
+                const last=ReceivingEngine.lastTransaction;
+                const lastOrder=normalizeOrderNumber(last?.selectedOrderNumber||last?.orderNumber||last?.orderId||"");
+                if(lastOrder===orderNumber)ReceivingEngine.lastTransaction=null;
+            }
+
+            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
+            if(typeof recalculateStatistics==="function")recalculateStatistics();
+
+            /* Local persistence does not announce a separate "Workspace saved"
+               toast. More importantly, REMOVE must update the full cloud
+               workspace even when the last order was removed. Normal autosave
+               intentionally skips empty workspaces and was the root cause of
+               the deleted order being hydrated back into Manage Orders. */
+            if(typeof saveWorkspaceSnapshot==="function")saveWorkspaceSnapshot();
+
+            if(typeof syncReceivingStructureAfterChange!=="function"){
+                throw new Error("Structural receiving synchronization is unavailable. Reload and try again.");
+            }
+            const structureSaved=await syncReceivingStructureAfterChange("Active order removal synchronized");
+            if(structureSaved!==true){
+                throw new Error("The server did not confirm removal from the Active Order Manifest. No success was recorded. Reload before continuing.");
+            }
+
+            /* Re-read the structural authority before success. This prevents a
+               stale Active Order Manifest from silently re-hydrating the order
+               after the green toast. Empty server state is authoritative. */
+            if(typeof pullActiveOrderManifest==="function"){
+                await pullActiveOrderManifest({clearIfMissing:remaining.length===0});
+            }
+            if(typeof verifyActiveOrderManifestMatchesLocal==="function"){
+                const verified=await verifyActiveOrderManifestMatchesLocal();
+                if(verified!==true){
+                    throw new Error("Active Order removal verification failed. Reload before continuing.");
+                }
+            }
+
+            if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry();
+            if(typeof refreshEntireUI==="function")refreshEntireUI();
+            if(typeof refreshNeedsReviewCounters==="function")await refreshNeedsReviewCounters();
+
+            showToast(
+                `${orderNumber} removed successfully. ${remaining.length} active order(s) remain.`,
+                "success",
+                9000
+            );
+        }catch(error){
+            Logger.error("Remove active order failed",error);
+            showToast(error?.message||"Unable to remove order","error",10000);
+        }finally{
+            hideLoading();
+        }
     });
+}
+
+/* PharmFlow 2C.9 — handheld quantity semantics.
+   Manual entry is ADDITIONAL quantity, not total quantity. */
+function refreshHandheldQuantityGuidance(){
+    const hint=document.getElementById("handheldQtyHint");
+    if(!hint) return;
+    const receivedEl=document.getElementById("lastReceived");
+    const remainingEl=document.getElementById("lastRemaining");
+    const deviceEl=document.getElementById("lastThisPcQty") || document.getElementById("lastThisDeviceQty");
+    const d=deviceEl ? (deviceEl.textContent||"0").trim() : "0";
+    const r=remainingEl ? (remainingEl.textContent||"0").trim() : "0";
+    hint.textContent=`Scanned on this device: ${d} • Remaining to order: ${r}`;
+}
+
+if(typeof AppEvents!=="undefined"&&AppEvents?.on){
+    AppEvents.on("route:changed",payload=>{
+        setTimeout(()=>{
+            ensureNeedsReviewButtons();
+            refreshNeedsReviewCounters();
+            if(payload?.routeName==="expiry"){
+                refreshNeedsReviewCounters();
+            }
+        },30);
+    });
+    AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));
+}
+
+
+if(typeof AppEvents !== "undefined"){
+    try{
+        AppEvents.on?.("workspace:updated",()=>setTimeout(()=>ensurePcClearScreenButton?.(),20));
+        AppEvents.on?.("receiving:updated",()=>setTimeout(()=>ensurePcClearScreenButton?.(),20));
+        AppEvents.on?.("scan:processed",()=>setTimeout(()=>ensurePcClearScreenButton?.(),20));
+    }catch(_){}
 }

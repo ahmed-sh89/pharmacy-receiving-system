@@ -1,0 +1,19 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-02 — B11 Clean15
+Status: READY FOR TEST
+Scope: Project B mobile CSS cleanup only. Project A / PC / Handheld behavior untouched.
+Root cause confirmed:
+- B11 mobile CSS ownership had accumulated contradictory overrides.
+- Filter row used max-content sizing while scroll ownership sat on its parent, so the visible row could clip without becoming the real swipe viewport.
+- Batch Qty was explicitly sized to 58vw, which did not satisfy the requested compact mobile control.
+Code cleanup performed:
+- Removed the previous B11 Clean11 mobile owner block as a whole and replaced it with one B11 Clean15 mobile owner.
+- No new patch was appended after the old owner.
+- Filter ROW now owns overflow-x:auto at width:100%; filter children use fixed non-shrinking widths, so High Priority and Quantity Sort are reachable by touch swipe.
+- Mobile Batch Qty now uses 42vw, min 144px, max 180px, with compact 40px +/- controls.
+- PC and body.zebraDevice Handheld selectors remain excluded.
+Regression risks: CSS/mobile presentation only. No JS, receiving transactions, auth, GTIN, Supabase, or database changes.
+Exact verification:
+1) iPhone hard refresh. Open Order Item Browser. Swipe the filter row itself left until High Priority and Quantity Sort are fully visible.
+2) Verify item rows still horizontally scroll.
+3) Open Last Scan and verify Batch Qty is clearly below half screen width.
+4) Verify PC layout and Handheld receiving layout are unchanged.

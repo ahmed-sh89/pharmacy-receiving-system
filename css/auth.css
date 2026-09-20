@@ -237,1594 +237,393 @@
     .registrationRequestTop{ align-items:center; }
 }
 
-/* =====================================================
-   MEDRYVO AUTH — BLUE / ORANGE PREMIUM THEME
-===================================================== */
-.authGate{
-    background:
-      radial-gradient(circle at 15% 15%,rgba(255,138,0,.14),transparent 30%),
-      radial-gradient(circle at 88% 12%,rgba(25,118,210,.20),transparent 32%),
-      linear-gradient(145deg,#041a3d 0%,#082d68 50%,#0D47A1 100%);
-}
-.authShell{width:min(1040px,100%);border-radius:30px;border:1px solid rgba(255,255,255,.18);box-shadow:0 38px 95px rgba(0,23,57,.38);}
-.authBrandPanel{padding:56px;background:linear-gradient(150deg,#0D47A1 0%,#0a3b8c 58%,#072b65 100%);}
-.authBrandPanel:before{content:"";position:absolute;inset:0;background:linear-gradient(130deg,transparent 45%,rgba(255,138,0,.10));pointer-events:none;}
-.authBrandPanel:after{background:rgba(255,138,0,.13);}
-.authBrandMark{width:82px;height:82px;padding:10px;border-radius:24px;background:#fff;border:0;box-shadow:0 18px 38px rgba(0,0,0,.18);}
-.authBrandPanel h1{font-size:46px;margin-bottom:3px;letter-spacing:-1.2px;}
-.authBrandTagline{color:#FFB04A;font-size:11px;font-weight:900;letter-spacing:1.65px;margin-bottom:22px;}
-.authFeature span:first-child{background:#FF8A00;color:#fff;font-weight:900;}
-.authFormPanel{padding:54px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);}
-.authEyebrow{color:#FF8A00;}
-.authFormPanel h2{font-size:34px;color:#102746;}
-.authField input,.authField select{border-color:#dce4ef;background:#fff;box-shadow:0 1px 2px rgba(16,39,70,.02);}
-.authField input:focus,.authField select:focus{border-color:#1976D2;box-shadow:0 0 0 4px rgba(13,71,161,.10);}
-.authPrimaryButton{background:linear-gradient(135deg,#0D47A1,#1769c2);box-shadow:0 13px 26px rgba(13,71,161,.22);}
-.authPrimaryButton:hover{background:linear-gradient(135deg,#08367b,#0D47A1);}
-.authSecondaryLink{color:#0D47A1;}
-.authSignupLink{border-color:#d9e4f3;background:#fff;box-shadow:0 4px 12px rgba(13,71,161,.04);}
-.authSignupLink:hover{border-color:#FFB04A;background:#fff8ef;color:#c96600;}
-.authMessage.info{color:#0D47A1;}
-.pendingApprovalCard{border-color:#d8e4f2;background:linear-gradient(180deg,#fff,#f7faff);}
-.registrationStatus.pending{background:#fff1df;color:#b75f00;}
-@media(max-width:760px){
-  .authBrandPanel{padding:24px 24px 20px;}
-  .authBrandPanel h1{font-size:31px;}
-  .authBrandTagline{font-size:9px;margin-bottom:10px;}
-  .authBrandMark{width:58px;height:58px;border-radius:18px;}
-}
 
 
-/* =====================================================
-   MEDRYVO PHASE 1 PATCH — AUTH SCROLL + VISIBLE BACK
-===================================================== */
-.authGate{
-    min-height:100vh;
-    min-height:100dvh;
-    overflow-y:auto;
-    overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch;
+/* =============================================================
+   PHARMFLOW B11 CLEAN 8 — AUTH SINGLE OWNER
+   Clean rebuild: previous B11 Clean2/Clean6/Clean7 auth patches removed.
+   One responsive owner for desktop + Handheld. Visual-only; auth logic unchanged.
+============================================================= */
+:root{
+  --pf-auth-bg-a:#eaf5ff;
+  --pf-auth-bg-b:#edf4ff;
+  --pf-auth-bg-c:#f0f4ff;
+  --pf-auth-surface:#e9f3fc;
+  --pf-auth-surface-2:#eef5fd;
+  --pf-auth-ink:#102f50;
+  --pf-auth-muted:#536f8b;
+  --pf-auth-blue:#1769d2;
+  --pf-auth-blue-2:#2455ad;
+  --pf-auth-email:#dceeff;
+  --pf-auth-password:#e7e6ff;
+  --pf-auth-line:#b9d2e7;
+  --pf-auth-focus:#3d7ed0;
 }
 
-.authShell{
-    height:min(760px, calc(100dvh - 48px));
-    min-height:0;
-    max-height:calc(100dvh - 48px);
+/* ---------- shared auth ownership ---------- */
+#authGate.authGate{
+  box-sizing:border-box!important;
+  background:
+    radial-gradient(circle at 10% 12%,rgba(79,156,222,.16),transparent 31%),
+    radial-gradient(circle at 88% 84%,rgba(108,111,218,.10),transparent 32%),
+    linear-gradient(135deg,var(--pf-auth-bg-a) 0%,var(--pf-auth-bg-b) 52%,var(--pf-auth-bg-c) 100%)!important;
+}
+#authGate .authShell,
+#authGate .authBrandPanel,
+#authGate .authFormPanel,
+#authGate .authFormPanelInner{box-sizing:border-box!important;}
+#authGate .authBrandPanel:before,
+#authGate .authBrandPanel:after{display:none!important;content:none!important;}
+#authGate .authBrandMinimal{position:relative!important;z-index:1!important;}
+#authGate .authBrandLogoCard{
+  display:grid!important;place-items:center!important;
+  background:#dcecff!important;border:1px solid #bfd7eb!important;
+  box-shadow:0 10px 30px rgba(60,104,147,.10)!important;
+}
+#authGate .authBrandLogoCard img{display:block!important;object-fit:contain!important;filter:none!important;}
+#authGate .authBrandName{color:#123f70!important;font-weight:900!important;}
+#authGate .authBrandTagline{color:#547595!important;font-weight:850!important;}
+#authGate .authEyebrow{color:#2d6fb7!important;font-weight:900!important;}
+#authGate .authFormPanel h2{color:var(--pf-auth-ink)!important;font-weight:900!important;}
+#authGate .authLead{color:var(--pf-auth-muted)!important;}
+#authGate .authField label{color:#294d70!important;font-weight:850!important;}
+#authGate .authField input,
+#authGate .authField select{
+  box-sizing:border-box!important;width:100%!important;
+  color:#102f50!important;border:1px solid var(--pf-auth-line)!important;
+  outline:none!important;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease,transform .16s ease!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.60),0 4px 12px rgba(46,87,126,.035)!important;
+}
+#authGate .authField input::placeholder{color:#7890a8!important;opacity:1!important;}
+#authGate #authEmail,
+#authGate #publicSignupEmail,
+#authGate #inviteSignupEmail,
+#authGate #ownerSignupEmail{background:var(--pf-auth-email)!important;}
+#authGate #authPassword,
+#authGate #publicSignupPassword,
+#authGate #inviteSignupPassword,
+#authGate #ownerSignupPassword,
+#authGate #authRecoveryPassword,
+#authGate #authRecoveryPasswordConfirm{background:var(--pf-auth-password)!important;}
+#authGate .authField input:focus,
+#authGate .authField select:focus{
+  border-color:var(--pf-auth-focus)!important;background:#f8fbff!important;
+  box-shadow:0 0 0 4px rgba(61,126,208,.13),0 9px 22px rgba(55,98,141,.08)!important;
+}
+#authGate .authPasswordWrap{position:relative!important;}
+#authGate .authPasswordToggle{
+  position:absolute!important;top:50%!important;transform:translateY(-50%)!important;
+  border:0!important;cursor:pointer!important;background:#d7e6f7!important;color:#315d8c!important;font-weight:850!important;
+}
+#authGate .authRememberRow{display:flex!important;align-items:center!important;color:#496781!important;font-weight:650!important;}
+#authGate .authRememberRow input{accent-color:var(--pf-auth-blue)!important;}
+#authGate .authPrimaryButton{
+  border:0!important;cursor:pointer!important;color:#fff!important;font-weight:850!important;
+  background:linear-gradient(135deg,var(--pf-auth-blue) 0%,var(--pf-auth-blue-2) 100%)!important;
+  box-shadow:0 12px 28px rgba(36,85,173,.18)!important;
+  transition:transform .15s ease,filter .15s ease,box-shadow .15s ease!important;
+}
+#authGate .authPrimaryButton:hover{filter:brightness(1.035)!important;transform:translateY(-1px)!important;box-shadow:0 15px 32px rgba(36,85,173,.22)!important;}
+#authGate .authSecondaryLink{color:#315f90!important;font-weight:800!important;}
+#authGate .authForgotPassword{color:#1769d2!important;}
+#authGate .authSignupLink{
+  background:#e3effa!important;border:1px solid #c3d7e9!important;color:#244e78!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55)!important;
+}
+#authGate .authBackButton{
+  border:0!important;background:transparent!important;color:#315f90!important;font-weight:800!important;cursor:pointer!important;
+}
+#authGate .authInfoBox,#authGate .authSetupNote{
+  background:#dfeefb!important;border:1px solid #c5dced!important;color:#355a7e!important;border-radius:14px!important;
+}
+#authGate .authDivider:before{background:#c8d9e8!important;}
+#authGate .authDivider span{background:var(--pf-auth-surface-2)!important;color:#617b94!important;}
+#authGate .authBootSpinner{border-color:rgba(23,105,210,.14)!important;border-top-color:var(--pf-auth-blue)!important;}
+
+/* ---------- desktop / PC ---------- */
+body:not(.zebraDevice) #authGate.authGate{
+  min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;
+  padding:clamp(14px,2.4vh,28px) clamp(18px,3vw,40px)!important;align-items:center!important;justify-content:center!important;
+}
+body:not(.zebraDevice) #authGate .authShell{
+  width:min(1120px,94vw)!important;height:min(620px,calc(100dvh - 28px))!important;min-height:0!important;max-height:calc(100dvh - 28px)!important;
+  display:grid!important;grid-template-columns:minmax(330px,.82fr) minmax(520px,1.18fr)!important;
+  overflow:hidden!important;border:0!important;border-radius:30px!important;
+  background:
+    radial-gradient(circle at 17% 20%,rgba(255,255,255,.34),transparent 29%),
+    linear-gradient(125deg,#e1f0fb 0%,#e7f1fb 48%,#e9effb 100%)!important;
+  box-shadow:0 30px 78px rgba(63,102,139,.18),0 2px 10px rgba(63,102,139,.07)!important;
+}
+body:not(.zebraDevice) #authGate .authBrandPanel{
+  min-width:0!important;padding:38px 42px!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  color:var(--pf-auth-ink)!important;background:transparent!important;border:0!important;
+}
+body:not(.zebraDevice) #authGate .authBrandMinimal{
+  width:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:12px!important;text-align:center!important;
+}
+body:not(.zebraDevice) #authGate .authBrandLogoCard{
+  width:82px!important;height:82px!important;border-radius:23px!important;
+}
+body:not(.zebraDevice) #authGate .authBrandLogoCard img{width:56px!important;height:56px!important;}
+body:not(.zebraDevice) #authGate .authBrandName{
+  font-size:46px!important;line-height:1!important;letter-spacing:-1.45px!important;
+}
+body:not(.zebraDevice) #authGate .authBrandTagline{
+  margin-top:-3px!important;font-size:11px!important;line-height:1.25!important;letter-spacing:1.45px!important;text-align:center!important;
+}
+body:not(.zebraDevice) #authGate .authFormPanel{
+  min-width:0!important;height:100%!important;min-height:0!important;padding:24px 58px!important;display:flex!important;align-items:center!important;overflow:hidden!important;
+  background:transparent!important;border:0!important;
+}
+body:not(.zebraDevice) #authGate .authFormPanelInner{width:100%!important;max-width:540px!important;max-height:100%!important;margin:0 auto!important;overflow:hidden!important;}
+body:not(.zebraDevice) #authGate .authEyebrow{font-size:12px!important;line-height:1!important;letter-spacing:1.55px!important;}
+body:not(.zebraDevice) #authGate .authFormPanel h2{margin:6px 0 6px!important;font-size:36px!important;line-height:1!important;letter-spacing:-.9px!important;}
+body:not(.zebraDevice) #authGate .authLead{margin:0 0 14px!important;font-size:14px!important;line-height:1.35!important;}
+body:not(.zebraDevice) #authGate .authField{gap:6px!important;margin-bottom:12px!important;}
+body:not(.zebraDevice) #authGate .authField label{font-size:14px!important;line-height:1.1!important;}
+body:not(.zebraDevice) #authGate .authField input,
+body:not(.zebraDevice) #authGate .authField select{
+  min-height:52px!important;height:52px!important;border-radius:15px!important;padding:0 17px!important;font-size:15px!important;font-weight:650!important;
+}
+body:not(.zebraDevice) #authGate .authPasswordWrap input{padding-right:88px!important;}
+body:not(.zebraDevice) #authGate .authPasswordToggle{
+  right:7px!important;height:36px!important;min-width:66px!important;border-radius:10px!important;font-size:11px!important;
+}
+body:not(.zebraDevice) #authGate .authRememberRow{gap:9px!important;margin:0 0 9px!important;font-size:13px!important;}
+body:not(.zebraDevice) #authGate .authRememberRow input{width:18px!important;height:18px!important;}
+body:not(.zebraDevice) #authGate .authPrimaryButton{min-height:48px!important;height:48px!important;border-radius:14px!important;font-size:15px!important;}
+body:not(.zebraDevice) #authGate .authSecondaryLink{min-height:32px!important;margin-top:4px!important;font-size:13px!important;}
+body:not(.zebraDevice) #authGate .authSignupLink{min-height:42px!important;border-radius:13px!important;font-size:13px!important;}
+body:not(.zebraDevice) #authGate .authMessage{font-size:14px!important;}
+body:not(.zebraDevice) #authGate .authInfoBox,
+body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font-size:14px!important;line-height:1.5!important;}
+
+/* Compact-height desktop: keep every login action visible without page scroll. */
+@media (min-width:901px) and (max-height:700px){
+  body:not(.zebraDevice) #authGate .authShell{height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;}
+  body:not(.zebraDevice) #authGate .authBrandPanel{padding:24px 36px!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard{width:72px!important;height:72px!important;border-radius:20px!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard img{width:49px!important;height:49px!important;}
+  body:not(.zebraDevice) #authGate .authBrandName{font-size:40px!important;text-align:center!important;}
+  body:not(.zebraDevice) #authGate .authBrandTagline{margin-top:7px!important;font-size:9.5px!important;}
+  body:not(.zebraDevice) #authGate .authFormPanel{padding:16px 54px!important;}
+  body:not(.zebraDevice) #authGate .authEyebrow{font-size:10px!important;}
+  body:not(.zebraDevice) #authGate .authFormPanel h2{margin:4px 0!important;font-size:30px!important;}
+  body:not(.zebraDevice) #authGate .authLead{margin-bottom:9px!important;font-size:12px!important;}
+  body:not(.zebraDevice) #authGate .authField{gap:4px!important;margin-bottom:8px!important;}
+  body:not(.zebraDevice) #authGate .authField label{font-size:12px!important;}
+  body:not(.zebraDevice) #authGate .authField input,
+  body:not(.zebraDevice) #authGate .authField select{height:44px!important;min-height:44px!important;border-radius:12px!important;font-size:14px!important;}
+  body:not(.zebraDevice) #authGate .authPasswordToggle{height:31px!important;min-width:60px!important;font-size:10px!important;}
+  body:not(.zebraDevice) #authGate .authRememberRow{margin-bottom:5px!important;font-size:11px!important;}
+  body:not(.zebraDevice) #authGate .authRememberRow input{width:16px!important;height:16px!important;}
+  body:not(.zebraDevice) #authGate .authPrimaryButton{height:42px!important;min-height:42px!important;font-size:14px!important;}
+  body:not(.zebraDevice) #authGate .authSecondaryLink{min-height:27px!important;margin-top:2px!important;font-size:11px!important;}
+  body:not(.zebraDevice) #authGate .authSignupLink{min-height:36px!important;border-radius:11px!important;font-size:11px!important;}
 }
 
-.authBrandPanel{
-    min-height:0;
-    overflow:hidden;
+/* ---------- tablet ---------- */
+@media (max-width:900px) and (min-width:761px){
+  body:not(.zebraDevice) #authGate.authGate{height:100dvh!important;min-height:100dvh!important;padding:12px!important;overflow:hidden!important;}
+  body:not(.zebraDevice) #authGate .authShell{width:min(680px,96vw)!important;height:calc(100dvh - 24px)!important;grid-template-columns:1fr!important;grid-template-rows:130px minmax(0,1fr)!important;}
+  body:not(.zebraDevice) #authGate .authBrandPanel{padding:15px 28px 8px!important;}
+  body:not(.zebraDevice) #authGate .authBrandMinimal{display:flex!important;flex-direction:column!important;gap:5px!important;align-items:center!important;text-align:center!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard{width:54px!important;height:54px!important;border-radius:16px!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard img{width:38px!important;height:38px!important;}
+  body:not(.zebraDevice) #authGate .authBrandName{font-size:31px!important;}
+  body:not(.zebraDevice) #authGate .authBrandTagline{margin:0!important;font-size:8px!important;}
+  body:not(.zebraDevice) #authGate .authFormPanel{padding:12px 42px 22px!important;}
 }
 
-.authFormPanel{
-    min-height:0;
-    overflow:hidden;
-    align-items:stretch;
-}
-
-.authFormPanelInner{
-    width:100%;
-    min-height:0;
-    max-height:100%;
-    overflow-y:auto;
-    overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-gutter:stable;
-    padding-right:8px;
-}
-
-#authFormsPanel,
-#authAccessPanel{
-    padding-top:2px;
-    padding-bottom:20px;
-}
-
-.authBackButton{
-    appearance:none;
-    display:inline-flex;
-    align-items:center;
-    justify-content:flex-start;
-    gap:8px;
-    min-height:38px;
-    margin:0 0 14px;
-    padding:0;
-    border:0;
-    background:transparent;
-    color:#0D47A1;
-    font:inherit;
-    font-size:13px;
-    font-weight:800;
-    cursor:pointer;
-}
-.authBackButton:hover{ color:#FF7A00; }
-.authBackButton:focus-visible{
-    outline:3px solid rgba(255,138,0,.22);
-    outline-offset:4px;
-    border-radius:8px;
-}
-
-.authFormPanelInner::-webkit-scrollbar{ width:9px; }
-.authFormPanelInner::-webkit-scrollbar-track{ background:transparent; }
-.authFormPanelInner::-webkit-scrollbar-thumb{
-    background:#cfdaea;
-    border:2px solid #fff;
-    border-radius:999px;
-}
-.authFormPanelInner::-webkit-scrollbar-thumb:hover{ background:#aebfd5; }
-
+/* ---------- phone / mobile browser ----------
+   Mobile owns its layout independently from desktop and Handheld. */
 @media (max-width:760px){
-    .authGate{
-        display:none;
-        align-items:flex-start;
-        padding:10px;
-        overflow-y:auto;
-    }
-    .authGate.visible{ display:flex; }
-
-    .authShell{
-        height:auto;
-        min-height:0;
-        max-height:none;
-        overflow:visible;
-        margin:auto 0;
-    }
-
-    .authBrandPanel{ overflow:hidden; }
-
-    .authFormPanel{
-        overflow:visible;
-        padding:26px 22px 32px;
-    }
-
-    .authFormPanelInner{
-        max-height:none;
-        overflow:visible;
-        padding-right:0;
-    }
-}
-
-@media (max-height:700px) and (min-width:761px){
-    .authGate{
-        align-items:flex-start;
-        padding-top:14px;
-        padding-bottom:14px;
-    }
-    .authShell{
-        height:calc(100dvh - 28px);
-        max-height:calc(100dvh - 28px);
-    }
-    .authBrandPanel{
-        padding-top:34px;
-        padding-bottom:34px;
-    }
-    .authFormPanel{
-        padding-top:30px;
-        padding-bottom:30px;
-    }
-}
-
-
-/* =====================================================
-   MEDRYVO DESIGN 2 — APPROVED AUTH EXPERIENCE
-   Full blue canvas + minimal brand + floating white card
-===================================================== */
-:root{
-    --medryvo-blue:#0754c9;
-    --medryvo-deep:#052d72;
-    --medryvo-navy:#071c42;
-    --medryvo-orange:#ff8a00;
-    --medryvo-ink:#0b1f44;
-}
-
-.authGate{
-    background:
-      radial-gradient(circle at 78% 12%, rgba(39,130,255,.34), transparent 30%),
-      radial-gradient(circle at 8% 88%, rgba(29,116,255,.30), transparent 27%),
-      linear-gradient(135deg, var(--medryvo-navy) 0%, var(--medryvo-deep) 44%, var(--medryvo-blue) 100%);
-    padding:28px;
-}
-
-.authGate::before{
-    content:"";
-    position:fixed;
-    inset:0;
-    pointer-events:none;
-    opacity:.22;
-    background-image:
-      linear-gradient(115deg, transparent 0 72%, rgba(255,138,0,.35) 72.15%, transparent 72.3%),
-      radial-gradient(circle at 12% 18%, rgba(255,255,255,.22) 0 2px, transparent 3px);
-    background-size:auto, 34px 34px;
-}
-
-.authShell{
-    width:min(1180px, 100%);
-    height:min(760px, calc(100dvh - 56px));
-    max-height:calc(100dvh - 56px);
-    background:transparent;
-    border:0;
-    box-shadow:none;
-    overflow:visible;
-    gap:64px;
-    grid-template-columns:minmax(330px,.9fr) minmax(440px,1fr);
-}
-
-.authBrandPanel{
-    background:transparent;
-    border:0;
-    padding:58px 32px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    overflow:visible;
-}
-.authBrandPanel::before,
-.authBrandPanel::after{ display:none; }
-
-.authBrandInner{
-    width:100%;
-    max-width:430px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-}
-.authBrandLogo{
-    width:104px;
-    height:104px;
-    margin:0 auto 24px;
-    border-radius:26px;
-    background:#fff;
-    box-shadow:0 18px 44px rgba(0,0,0,.22);
-}
-.authBrandTitle{
-    margin:0;
-    font-size:clamp(44px,5vw,68px);
-    line-height:1;
-    letter-spacing:-2.2px;
-}
-.authBrandKicker{
-    margin-top:16px;
-    font-size:14px;
-    letter-spacing:3px;
-    color:#ff9b19;
-}
-.authBrandText,
-.authBrandPoints{
-    display:none !important;
-}
-
-.authFormPanel{
-    align-self:center;
-    height:min(720px, calc(100dvh - 72px));
-    max-height:calc(100dvh - 72px);
-    padding:0;
-    background:rgba(255,255,255,.985);
-    border:1px solid rgba(255,255,255,.65);
-    border-radius:34px;
-    box-shadow:0 30px 80px rgba(2,22,65,.30);
-    overflow:hidden;
-}
-.authFormPanelInner{
-    max-width:none;
-    padding:38px 44px 42px;
-    overflow-y:auto;
-}
-.authEyebrow{
-    color:var(--medryvo-orange);
-    letter-spacing:1.7px;
-}
-.authFormPanel h1{
-    color:var(--medryvo-ink);
-    letter-spacing:-1.2px;
-}
-.authInfoBox{
-    border:0;
-    background:linear-gradient(135deg,#eef6ff,#e5f0ff);
-    color:#294b7d;
-    border-radius:15px;
-}
-.authInput{
-    min-height:52px;
-    border-radius:13px;
-    border-color:#d4deec;
-    background:#fff;
-}
-.authInput:focus{
-    border-color:#1b6fe8;
-    box-shadow:0 0 0 4px rgba(27,111,232,.11);
-}
-.authPrimaryButton{
-    min-height:54px;
-    border-radius:13px;
-    background:linear-gradient(90deg,#0649c9,#0878f7);
-    box-shadow:0 13px 28px rgba(8,102,224,.25);
-}
-.authPrimaryButton:hover{
-    transform:translateY(-1px);
-    box-shadow:0 17px 34px rgba(8,102,224,.30);
-}
-.authBackButton{
-    display:inline-flex !important;
-    visibility:visible !important;
-    position:relative;
-    z-index:5;
-    margin:0 0 18px;
-    color:#0754c9;
-    font-size:14px;
-    font-weight:800;
-}
-.authBackButton:hover{ color:var(--medryvo-orange); }
-
-@media (max-width:900px){
-    .authGate{ padding:18px; }
-    .authShell{
-        display:block;
-        height:auto;
-        max-height:none;
-        width:min(650px,100%);
-    }
-    .authBrandPanel{
-        min-height:auto;
-        padding:30px 20px 26px;
-    }
-    .authBrandLogo{
-        width:76px;
-        height:76px;
-        border-radius:20px;
-        margin-bottom:15px;
-    }
-    .authBrandTitle{
-        font-size:44px;
-        letter-spacing:-1.5px;
-    }
-    .authBrandKicker{
-        margin-top:10px;
-        font-size:11px;
-        letter-spacing:2px;
-    }
-    .authFormPanel{
-        height:auto;
-        max-height:none;
-        border-radius:26px;
-        overflow:visible;
-    }
-    .authFormPanelInner{
-        max-height:none;
-        overflow:visible;
-        padding:30px 26px 36px;
-    }
-}
-
-
-/* ==============================================================
-   MEDRYVO AUTH — FINAL APPROVED DESIGN
-   Reference: full blue canvas + compact vertical white card.
-   ============================================================== */
-:root{
-    --mv-blue-950:#061b4f;
-    --mv-blue-900:#072a73;
-    --mv-blue-800:#063fa8;
-    --mv-blue-600:#0877f5;
-    --mv-orange:#ff8a00;
-    --mv-white:#ffffff;
-    --mv-ink:#0b1d49;
-    --mv-muted:#5d6d89;
-    --mv-border:#d8e1ef;
-}
-
-body.authLocked{
-    overflow:hidden !important;
-}
-
-.authGate{
-    position:fixed;
-    inset:0;
-    z-index:99999;
-    display:none;
-    min-height:100vh;
-    min-height:100dvh;
-    overflow:auto;
-    padding:28px 34px 46px;
-    background:
-        radial-gradient(circle at 86% 9%, rgba(65,151,255,.32), transparent 26%),
-        radial-gradient(circle at 8% 88%, rgba(28,103,240,.28), transparent 27%),
-        linear-gradient(135deg, #061a4b 0%, #06358f 52%, #075cd7 100%);
-    isolation:isolate;
-}
-.authGate.visible{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.authGate::before,
-.authGate::after{
-    content:"";
-    position:absolute;
-    pointer-events:none;
-    z-index:-1;
-}
-.authGate::before{
-    inset:0;
-    background:
-        radial-gradient(circle at 8% 12%, rgba(52,137,255,.65) 0 3px, transparent 4px),
-        radial-gradient(circle at 92% 86%, rgba(52,137,255,.65) 0 3px, transparent 4px);
-    background-size:30px 30px;
-    opacity:.22;
-    mask-image:linear-gradient(135deg,#000 0 18%,transparent 34% 68%,#000 84%);
-}
-.authGate::after{
-    width:620px;
-    height:620px;
-    left:-260px;
-    bottom:-330px;
-    border:1px solid rgba(255,255,255,.11);
-    border-radius:50%;
-    box-shadow:
-        0 0 0 70px rgba(25,112,247,.06),
-        0 0 0 150px rgba(25,112,247,.035);
-}
-
-.authShell{
-    width:min(1180px, 100%);
-    height:auto;
-    min-height:0;
-    max-height:none;
-    display:grid;
-    grid-template-columns:minmax(340px,.92fr) minmax(410px,500px);
-    align-items:center;
-    justify-content:center;
-    gap:clamp(54px,8vw,130px);
-    background:transparent;
-    border:0;
-    box-shadow:none;
-    overflow:visible;
-}
-
-.authBrandPanel{
-    min-width:0;
-    padding:20px;
-    background:transparent;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    overflow:visible;
-}
-.authBrandPanel::before,
-.authBrandPanel::after{
-    display:none !important;
-}
-.authBrandMinimal{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    width:100%;
-}
-.authBrandLogoCard{
-    width:108px;
-    height:108px;
-    display:grid;
-    place-items:center;
-    padding:17px;
-    border-radius:27px;
-    background:#fff;
-    box-shadow:0 22px 54px rgba(0,15,55,.30);
-}
-.authBrandLogoCard img{
-    display:block;
-    width:100%;
-    height:100%;
-    object-fit:contain;
-}
-.authBrandName{
-    margin-top:25px;
-    color:#fff;
-    font-size:clamp(54px,5.3vw,76px);
-    font-weight:900;
-    line-height:.98;
-    letter-spacing:-3px;
-}
-.authBrandTagline{
-    margin-top:18px;
-    color:#ff9b16;
-    font-size:clamp(11px,1vw,15px);
-    font-weight:900;
-    letter-spacing:3.1px;
-}
-
-.authFormPanel{
-    align-self:center;
-    width:100%;
-    height:auto;
-    max-height:min(820px, calc(100dvh - 72px));
-    padding:0;
-    background:rgba(255,255,255,.985);
-    border:1px solid rgba(255,255,255,.78);
-    border-radius:30px;
-    box-shadow:0 30px 75px rgba(0,22,71,.34);
-    overflow:hidden;
-}
-.authFormPanelInner{
-    width:100%;
-    max-width:none;
-    max-height:min(820px, calc(100dvh - 72px));
-    overflow-y:auto;
-    padding:34px 36px 35px;
-    scrollbar-width:thin;
-    scrollbar-color:#bdcbe0 transparent;
-}
-.authFormPanelInner::-webkit-scrollbar{ width:8px; }
-.authFormPanelInner::-webkit-scrollbar-track{ background:transparent; }
-.authFormPanelInner::-webkit-scrollbar-thumb{
-    background:#bdcbe0;
-    border:2px solid #fff;
-    border-radius:100px;
-}
-
-.authFormPanel h2{
-    margin:4px 0 8px;
-    color:var(--mv-ink);
-    font-size:clamp(27px,2.2vw,38px);
-    letter-spacing:-1.4px;
-}
-.authLead{
-    margin:0 0 22px;
-    color:var(--mv-muted);
-    font-size:14px;
-    line-height:1.6;
-}
-.authEyebrow{
-    color:var(--mv-orange);
-    font-size:11px;
-    font-weight:900;
-    letter-spacing:1.9px;
-}
-.authField{
-    margin-bottom:14px;
-}
-.authField label{
-    display:block;
-    margin:0 0 6px;
-    color:#122651;
-    font-size:12px;
-    font-weight:800;
-}
-.authField input,
-.authField select,
-.authInput{
-    width:100%;
-    min-height:48px;
-    padding:0 14px;
-    color:#182c55;
-    background:#fff;
-    border:1px solid var(--mv-border);
-    border-radius:12px;
-    outline:0;
-    transition:.18s ease;
-}
-.authField input:focus,
-.authField select:focus,
-.authInput:focus{
-    border-color:#3385f2;
-    box-shadow:0 0 0 4px rgba(51,133,242,.11);
-}
-.authPrimaryButton{
-    min-height:52px;
-    border:0;
-    border-radius:12px;
-    background:linear-gradient(90deg,#0646d0,#0877f5);
-    color:#fff;
-    font-weight:900;
-    box-shadow:0 13px 28px rgba(8,94,219,.22);
-}
-.authPrimaryButton:hover{
-    transform:translateY(-1px);
-    box-shadow:0 17px 35px rgba(8,94,219,.29);
-}
-.authSecondaryLink{
-    color:#084fbf;
-    font-weight:800;
-}
-.authBackButton{
-    display:inline-flex !important;
-    visibility:visible !important;
-    align-items:center;
-    min-height:34px;
-    margin:0 0 14px;
-    padding:0;
-    border:0;
-    background:transparent;
-    color:#075bd3;
-    font-size:13px;
-    font-weight:900;
-    cursor:pointer;
-}
-.authBackButton:hover{ color:var(--mv-orange); }
-
-.authInfoBox,
-.authSetupNote{
-    border:0;
-    border-radius:13px;
-    background:#edf5ff;
-    color:#294d80;
-}
-
-.authCopyright{
-    position:absolute;
-    left:50%;
-    bottom:15px;
-    transform:translateX(-50%);
-    color:rgba(255,255,255,.72);
-    font-size:12px;
-    white-space:nowrap;
-}
-
-/* Laptop / smaller desktop */
-@media (max-width:1050px){
-    .authShell{
-        grid-template-columns:minmax(280px,.8fr) minmax(390px,470px);
-        gap:44px;
-    }
-    .authBrandName{
-        font-size:54px;
-    }
-}
-
-/* Tablet and Zebra landscape/portrait:
-   brand becomes compact and the form remains vertically scrollable. */
-@media (max-width:820px){
-    body.authLocked{ overflow:auto !important; }
-
-    .authGate{
-        position:fixed;
-        display:none;
-        padding:18px 14px 34px;
-        overflow-y:auto;
-    }
-    .authGate.visible{
-        display:flex;
-        align-items:flex-start;
-    }
-    .authShell{
-        width:min(590px,100%);
-        display:flex;
-        flex-direction:column;
-        gap:18px;
-        margin:auto;
-    }
-    .authBrandPanel{
-        padding:14px 10px 2px;
-    }
-    .authBrandLogoCard{
-        width:70px;
-        height:70px;
-        padding:11px;
-        border-radius:19px;
-    }
-    .authBrandName{
-        margin-top:12px;
-        font-size:38px;
-        letter-spacing:-1.5px;
-    }
-    .authBrandTagline{
-        margin-top:8px;
-        font-size:9px;
-        letter-spacing:2px;
-    }
-    .authFormPanel{
-        width:100%;
-        max-height:none;
-        border-radius:24px;
-        overflow:visible;
-    }
-    .authFormPanelInner{
-        max-height:none;
-        overflow:visible;
-        padding:26px 22px 30px;
-    }
-    .authCopyright{
-        position:static;
-        transform:none;
-        width:100%;
-        margin:2px auto 0;
-        text-align:center;
-        white-space:normal;
-    }
-}
-
-/* Compact Zebra screens */
-@media (max-width:480px){
-    .authGate{
-        padding:10px 9px 25px;
-    }
-    .authShell{ gap:11px; }
-    .authBrandPanel{ padding-top:4px; }
-    .authBrandLogoCard{
-        width:58px;
-        height:58px;
-        padding:9px;
-        border-radius:16px;
-    }
-    .authBrandName{
-        margin-top:9px;
-        font-size:31px;
-    }
-    .authBrandTagline{
-        margin-top:5px;
-        font-size:8px;
-        letter-spacing:1.45px;
-    }
-    .authFormPanel{
-        border-radius:20px;
-    }
-    .authFormPanelInner{
-        padding:23px 17px 26px;
-    }
-    .authFormPanel h2{
-        font-size:26px;
-    }
-    .authField{
-        margin-bottom:11px;
-    }
-    .authField input,
-    .authField select,
-    .authInput{
-        min-height:46px;
-        font-size:16px; /* prevents Android browser zoom on focus */
-    }
-    .authPrimaryButton{
-        min-height:49px;
-    }
-}
-
-
-/* ==============================================================
-   MEDRYVO AUTH — NO-SCROLL RESPONSIVE FIT
-   Keeps every authentication screen inside the visible viewport
-   on supported desktop / tablet / Zebra portrait sizes.
-   ============================================================== */
-body.authLocked{
-    width:100%;
-    height:100vh;
-    height:100dvh;
-    overflow:hidden !important;
-}
-
-.authGate,
-.authGate.visible{
-    width:100vw;
-    height:100vh;
-    height:100dvh;
-    min-height:0 !important;
-    overflow:hidden !important;
-    padding:clamp(8px,2.2vh,24px) clamp(10px,2.5vw,34px) !important;
-    align-items:center !important;
-}
-
-.authShell{
-    width:min(1160px,100%);
-    height:min(94dvh,790px) !important;
-    min-height:0 !important;
-    max-height:94dvh !important;
-    grid-template-columns:minmax(280px,.92fr) minmax(380px,490px);
-    gap:clamp(28px,6vw,100px);
-    align-items:center;
-}
-
-.authFormPanel{
-    width:100%;
-    height:auto !important;
-    max-height:92dvh !important;
-    overflow:hidden !important;
-    border-radius:clamp(20px,2.2vw,30px);
-}
-
-.authFormPanelInner{
-    width:100%;
-    height:auto !important;
-    max-height:none !important;
-    overflow:hidden !important;
-    scrollbar-width:none !important;
-    padding:clamp(20px,3.5vh,34px) clamp(20px,2.8vw,36px) !important;
-}
-.authFormPanelInner::-webkit-scrollbar{ display:none !important; }
-
-.authFormPanel h2{
-    font-size:clamp(24px,3.2vh,36px) !important;
-    line-height:1.08;
-    margin:2px 0 clamp(5px,1vh,10px) !important;
-}
-.authLead{
-    font-size:clamp(11px,1.55vh,14px) !important;
-    line-height:1.45 !important;
-    margin-bottom:clamp(10px,1.8vh,20px) !important;
-}
-.authEyebrow{
-    font-size:clamp(9px,1.25vh,11px) !important;
-}
-.authField{
-    margin-bottom:clamp(7px,1.45vh,14px) !important;
-}
-.authField label{
-    margin-bottom:4px !important;
-    font-size:clamp(10px,1.35vh,12px) !important;
-}
-.authField input,
-.authField select,
-.authInput{
-    min-height:clamp(38px,5.6vh,48px) !important;
-    height:clamp(38px,5.6vh,48px) !important;
-    padding:0 13px !important;
-    font-size:clamp(13px,1.8vh,16px) !important;
-}
-.authPrimaryButton{
-    min-height:clamp(42px,6vh,52px) !important;
-    height:clamp(42px,6vh,52px) !important;
-    font-size:clamp(12px,1.7vh,15px) !important;
-}
-.authSecondaryLink,
-.authBackButton{
-    font-size:clamp(11px,1.55vh,14px) !important;
-}
-.authBackButton{
-    min-height:28px !important;
-    margin-bottom:clamp(6px,1.1vh,13px) !important;
-}
-.authInfoBox,
-.authSetupNote{
-    padding:clamp(8px,1.3vh,12px) !important;
-    font-size:clamp(10px,1.4vh,13px) !important;
-    line-height:1.35 !important;
-    margin-bottom:clamp(8px,1.3vh,14px) !important;
-}
-.authMessage{
-    margin-top:clamp(7px,1.1vh,12px) !important;
-    font-size:clamp(10px,1.35vh,13px) !important;
-    line-height:1.3 !important;
-}
-
-.authBrandLogoCard{
-    width:clamp(66px,11vh,108px) !important;
-    height:clamp(66px,11vh,108px) !important;
-    padding:clamp(10px,1.8vh,17px) !important;
-}
-.authBrandName{
-    margin-top:clamp(10px,2.2vh,24px) !important;
-    font-size:clamp(36px,7.3vh,72px) !important;
-}
-.authBrandTagline{
-    margin-top:clamp(6px,1.5vh,16px) !important;
-    font-size:clamp(8px,1.35vh,14px) !important;
-    letter-spacing:clamp(1.4px,.28vw,3px) !important;
-}
-.authCopyright{
-    bottom:clamp(4px,1vh,14px) !important;
-    font-size:clamp(9px,1.2vh,12px) !important;
-}
-
-/* Short laptop displays: compress vertically without creating scroll. */
-@media (min-width:821px) and (max-height:720px){
-    .authShell{
-        height:96dvh !important;
-        max-height:96dvh !important;
-    }
-    .authFormPanelInner{
-        padding:16px 28px !important;
-    }
-    .authLead{ margin-bottom:8px !important; }
-    .authField{ margin-bottom:7px !important; }
-    .authInfoBox,.authSetupNote{ margin-bottom:7px !important; }
-}
-
-/* Tablet / Zebra portrait: compact brand header + card, all in one viewport. */
-@media (max-width:820px){
-    body.authLocked{ overflow:hidden !important; }
-    .authGate,
-    .authGate.visible{
-        padding:6px 9px 8px !important;
-        overflow:hidden !important;
-        align-items:center !important;
-    }
-    .authShell{
-        width:min(570px,100%);
-        height:98dvh !important;
-        max-height:98dvh !important;
-        display:grid !important;
-        grid-template-columns:1fr !important;
-        grid-template-rows:auto minmax(0,1fr) auto;
-        gap:clamp(5px,1.2vh,11px) !important;
-        margin:0 auto !important;
-    }
-    .authBrandPanel{
-        padding:0 !important;
-        min-height:0 !important;
-    }
-    .authBrandMinimal{
-        display:grid !important;
-        grid-template-columns:auto auto;
-        grid-template-rows:auto auto;
-        column-gap:10px;
-        align-items:center;
-        justify-content:center;
-    }
-    .authBrandLogoCard{
-        grid-row:1 / span 2;
-        width:clamp(42px,7.5vh,62px) !important;
-        height:clamp(42px,7.5vh,62px) !important;
-        padding:7px !important;
-        border-radius:14px !important;
-    }
-    .authBrandName{
-        margin:0 !important;
-        font-size:clamp(24px,4.8vh,36px) !important;
-        line-height:1 !important;
-        letter-spacing:-1px !important;
-        text-align:left;
-    }
-    .authBrandTagline{
-        margin:1px 0 0 !important;
-        font-size:clamp(6.8px,1.15vh,9px) !important;
-        line-height:1.1 !important;
-        letter-spacing:1.1px !important;
-        text-align:left;
-    }
-    .authFormPanel{
-        align-self:center !important;
-        height:auto !important;
-        max-height:calc(98dvh - 76px) !important;
-        overflow:hidden !important;
-        border-radius:19px !important;
-    }
-    .authFormPanelInner{
-        padding:clamp(12px,2vh,20px) clamp(14px,4vw,22px) !important;
-        overflow:hidden !important;
-    }
-    .authCopyright{
-        position:static !important;
-        transform:none !important;
-        margin:0 !important;
-        font-size:8px !important;
-        text-align:center;
-    }
-}
-
-/* Very narrow Zebra / Android portrait. */
-@media (max-width:480px){
-    .authGate,.authGate.visible{ padding:4px 6px !important; }
-    .authShell{ height:99dvh !important; max-height:99dvh !important; }
-    .authFormPanelInner{ padding:11px 13px !important; }
-    .authFormPanel h2{ font-size:clamp(21px,3.8vh,27px) !important; }
-    .authLead{ font-size:10.5px !important; margin-bottom:7px !important; }
-    .authField{ margin-bottom:6px !important; }
-    .authField label{ font-size:9.5px !important; }
-    .authField input,.authField select,.authInput{
-        min-height:38px !important;
-        height:38px !important;
-        font-size:16px !important; /* prevents Android focus zoom */
-    }
-    .authPrimaryButton{ min-height:40px !important; height:40px !important; }
-    .authInfoBox,.authSetupNote{ padding:7px 9px !important; font-size:9.5px !important; }
-    .authBackButton{ min-height:24px !important; margin-bottom:4px !important; }
-}
-
-
-/* =====================================================
-   MEDRYVO PHASE 1D — PASSWORD RECOVERY
-===================================================== */
-.authForgotPassword{
-    width:max-content !important;
-    min-height:26px !important;
-    height:auto !important;
-    margin:6px auto 0 !important;
-    padding:2px 6px !important;
-    display:block;
-    font-size:clamp(10px,1.35vh,13px) !important;
-}
-#authRecoveryForm .authRecoveryInfo{
-    margin-bottom:clamp(7px,1.2vh,12px) !important;
-}
-#authRecoveryForm .authField{
-    margin-bottom:clamp(7px,1.2vh,11px) !important;
-}
-#authRecoveryMessage{
-    min-height:18px;
-}
-
-
-/* ==============================================================
-   MEDRYVO PHASE 1E — LOGIN UX / PASSWORD VISIBILITY
-   ============================================================== */
-.authPasswordWrap{
-    position:relative;
-    width:100%;
-}
-.authPasswordWrap input{
-    width:100%;
-    padding-right:72px !important;
-}
-.authPasswordToggle{
-    position:absolute;
-    top:50%;
-    right:10px;
-    transform:translateY(-50%);
-    min-width:52px;
-    min-height:34px;
-    padding:0 8px;
-    border:0;
-    border-radius:9px;
-    background:#eef5ff;
-    color:#0754c9;
-    font:inherit;
-    font-size:11px;
-    font-weight:900;
-    cursor:pointer;
-}
-.authPasswordToggle:hover{
-    background:#e2efff;
-    color:#ff7a00;
-}
-.authPasswordToggle:focus-visible{
-    outline:3px solid rgba(8,119,245,.18);
-    outline-offset:2px;
-}
-
-.authRememberRow{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    width:max-content;
-    max-width:100%;
-    margin:-2px 0 10px;
-    color:#53647f;
-    font-size:11px;
-    font-weight:700;
-    cursor:pointer;
-    user-select:none;
-}
-.authRememberRow input{
-    width:15px;
-    height:15px;
-    accent-color:#0754c9;
-}
-
-/* Browser/password managers remain responsible for password storage.
-   Medryvo only stores the email address when Remember email is enabled. */
-
-
-/* ==============================================================
-   MEDRYVO PHASE 1K — HARD RECOVERY VISIBILITY GATE
-   The reset-password form can only render during a real recovery URL.
-   ============================================================== */
-#authRecoveryForm{
-    display:none !important;
-}
-body.medryvoRecoveryMode #authRecoveryForm:not([hidden]){
-    display:block !important;
-}
-
-/* During ordinary sign-in/dashboard transitions recovery UI is physically
-   prevented from rendering, eliminating stale-state flashes. */
-body:not(.medryvoRecoveryMode) #authRecoveryForm{
-    display:none !important;
-}
-
-
-/* ==============================================================
-   MEDRYVO PHASE 1L — RECOVERY DOM ISOLATION
-   The recovery form lives inside <template> during normal use.
-   Template content is not part of the rendered DOM, so it cannot flash.
-   ============================================================== */
-#authRecoveryTemplate{
-    display:none !important;
-}
-
-
-/* ==============================================================
-   MEDRYVO PHASE 2A.4 — NEUTRAL AUTH BOOT STATE
-   No Login / Complete Access decision is rendered until Supabase
-   session + pharmacy role context have both been resolved.
-   ============================================================== */
-.authBootPanel{
-    display:none;
-    width:100%;
-    text-align:left;
-}
-
-body.authBooting #authBootPanel{
-    display:block;
-}
-
-body.authBooting #authFormsPanel,
-body.authBooting #authAccessPanel{
-    display:none !important;
-}
-
-.authBootSpinner{
-    width:38px;
-    height:38px;
-    margin:0 0 18px;
-    border:4px solid rgba(13,71,161,.14);
-    border-top-color:#0D5FE8;
-    border-radius:50%;
-    animation:medryvoAuthBootSpin .8s linear infinite;
-}
-
-@keyframes medryvoAuthBootSpin{
-    to{ transform:rotate(360deg); }
-}
-
-@media (prefers-reduced-motion:reduce){
-    .authBootSpinner{
-        animation:none;
-        border-top-color:#0D5FE8;
-    }
-}
-
-/* PHARMFLOW AUTH BRANDING — PHASE 2B */
-.authBrandLogo img{filter:drop-shadow(0 14px 28px rgba(11,94,215,.16))}.authBrandName{letter-spacing:-.035em}.authBrandPanel{background:radial-gradient(circle at 18% 18%,rgba(255,138,0,.13),transparent 17rem),linear-gradient(145deg,#071A34 0%,#0D3D79 100%)!important}
-
-/* ==============================================================
-   PHARMFLOW — APPROVED LIGHT AUTH VISUAL SYSTEM
-   Centered brand, calm semi-light panel, refined inputs.
-   ============================================================== */
-.authGate,
-.authGate.visible{
-    background:linear-gradient(145deg,#f5f8fc 0%,#eef4fb 100%) !important;
-}
-.authGate::before{
-    opacity:.28 !important;
-    background:radial-gradient(circle,rgba(43,105,190,.16) 0 1.4px,transparent 1.8px) !important;
-    background-size:28px 28px !important;
-    mask-image:linear-gradient(135deg,#000 0 17%,transparent 38% 100%) !important;
-}
-.authGate::after{
-    border-color:rgba(46,103,180,.08) !important;
-    box-shadow:0 0 0 72px rgba(46,103,180,.025),0 0 0 150px rgba(46,103,180,.018) !important;
-}
-.authShell{
-    width:min(1180px,100%) !important;
-    grid-template-columns:minmax(360px,.98fr) minmax(390px,500px) !important;
-    gap:clamp(34px,5.5vw,82px) !important;
-}
-.authBrandPanel{
-    align-self:stretch !important;
-    min-height:440px;
-    padding:clamp(34px,5vw,68px) !important;
-    border:1px solid #d9e6f5;
-    border-radius:30px;
-    background:linear-gradient(145deg,#e9f2ff 0%,#f6f9fe 54%,#e6f0fd 100%) !important;
-    box-shadow:0 24px 62px rgba(39,83,145,.10);
-}
-.authBrandMinimal{
-    height:100%;
-    min-height:100%;
-    align-items:center !important;
-    justify-content:center !important;
-    text-align:center !important;
-}
-.authBrandLogoCard{
-    width:clamp(76px,10vh,104px) !important;
-    height:clamp(76px,10vh,104px) !important;
-    padding:15px !important;
-    border:1px solid #dbe7f4 !important;
-    border-radius:27px !important;
-    box-shadow:0 16px 38px rgba(30,75,136,.12) !important;
-}
-.authBrandName{
-    margin-top:22px !important;
-    color:#102f68 !important;
-    font-size:clamp(43px,5.3vw,68px) !important;
-    font-weight:700 !important;
-    line-height:1 !important;
-    letter-spacing:-2.2px !important;
-    text-align:center !important;
-}
-.authBrandTagline{
-    margin-top:13px !important;
-    color:#41638f !important;
-    font-size:clamp(9px,1vw,13px) !important;
-    font-weight:600 !important;
-    letter-spacing:2.2px !important;
-    text-align:center !important;
-}
-.authFormPanel{
-    border-color:#dce6f1 !important;
-    box-shadow:0 24px 60px rgba(39,83,145,.12) !important;
-}
-.authField label{font-weight:600 !important;color:#263f62 !important;}
-.authField input,
-.authField select,
-.authInput{
-    background:#fbfdff !important;
-    border:1px solid #cbd9e9 !important;
-    box-shadow:inset 0 1px 2px rgba(24,56,98,.025),0 1px 2px rgba(24,56,98,.025) !important;
-}
-.authField input:hover,
-.authField select:hover,
-.authInput:hover{
-    border-color:#aac4e3 !important;
-    background:#fff !important;
-}
-.authField input:focus,
-.authField select:focus,
-.authInput:focus{
-    border-color:#5e9ee8 !important;
-    box-shadow:0 0 0 3px rgba(50,124,218,.10),0 5px 16px rgba(35,94,170,.06) !important;
-}
-.authField input::placeholder,.authInput::placeholder{color:#93a4ba;}
-@media(max-width:820px){
-    .authBrandPanel{min-height:0;border-radius:20px;padding:12px 16px !important;}
-    .authBrandMinimal{min-height:0;}
-}
-
-/* =====================================================
-   PHARMFLOW — WARM PEARL AUTH BACKGROUND
-===================================================== */
-.authGate{
-  background:
-    radial-gradient(circle at 12% 14%,rgba(206,181,144,.13),transparent 25rem),
-    radial-gradient(circle at 88% 86%,rgba(160,171,181,.10),transparent 28rem),
-    linear-gradient(145deg,#F7F5F1 0%,#F1EEE8 100%) !important;
-}
-.authGate::before{background:rgba(174,151,119,.035) !important;}
-.authGate::after{border-color:rgba(145,126,101,.07) !important;box-shadow:0 0 0 72px rgba(145,126,101,.022),0 0 0 150px rgba(145,126,101,.014) !important;}
-.authBrandPanel{
-  border-color:#E3DDD4 !important;
-  background:linear-gradient(145deg,#EEE9E1 0%,#F8F6F2 54%,#EAE5DD 100%) !important;
-  box-shadow:0 24px 62px rgba(80,69,55,.09) !important;
-}
-.authBrandLogoCard{border-color:#E5DED5 !important;box-shadow:0 16px 38px rgba(78,67,53,.10) !important;}
-.authFormPanel{border-color:#E4DED5 !important;box-shadow:0 24px 60px rgba(74,65,53,.10) !important;}
-.authField input,.authField select,.authInput{background:#FFFDF9 !important;border-color:#D9D1C7 !important;}
-.authField input:hover,.authField select:hover,.authInput:hover{border-color:#C8BDB0 !important;background:#fff !important;}
-
-
-/* =====================================================
-   PHARMFLOW — LIGHT LATTE AUTH CANVAS
-===================================================== */
-.authGate,
-.authGate.visible{
-  background:
-    radial-gradient(circle at 12% 14%,rgba(177,132,90,.12),transparent 26rem),
-    radial-gradient(circle at 88% 86%,rgba(116,96,79,.07),transparent 29rem),
-    linear-gradient(145deg,#F5EEE7 0%,#EBDCCF 100%) !important;
-}
-.authGate::before{
-  background:radial-gradient(circle,rgba(120,91,67,.08) 0 1.3px,transparent 1.8px) !important;
-  background-size:28px 28px !important;
-  opacity:.38 !important;
-}
-.authGate::after{
-  border-color:rgba(113,88,66,.08) !important;
-  box-shadow:0 0 0 72px rgba(113,88,66,.024),0 0 0 150px rgba(113,88,66,.015) !important;
-}
-.authBrandPanel{
-  border-color:#D6C3B0 !important;
-  background:linear-gradient(145deg,#E9DCCF 0%,#E5D5C3 55%,#DDC9B5 100%) !important;
-  box-shadow:0 24px 62px rgba(76,55,38,.10) !important;
-}
-.authBrandName{color:#44372E !important;}
-.authBrandTagline{color:#755F4D !important;}
-.authBrandLogoCard{
-  border-color:#D8C5B2 !important;
-  box-shadow:0 16px 38px rgba(76,55,38,.10) !important;
-}
-.authFormPanel{
-  background:#FFFEFC !important;
-  border-color:#DED1C5 !important;
-  box-shadow:0 24px 60px rgba(76,55,38,.10) !important;
-}
-.authField input,
-.authField select,
-.authInput{
-  background:#FFFCF8 !important;
-  border-color:#D9C9BA !important;
-}
-.authField input:hover,
-.authField select:hover,
-.authInput:hover{border-color:#C8B29D !important;}
-
-
-/* =========================================================
-   PHARMFLOW 2C.8.5 — FINAL AUTH SOURCE RULES
-   These rules are last in the loaded stylesheet by design.
-========================================================= */
-.authGate,.authGate.visible{
-  background:linear-gradient(145deg,#F1E2D4 0%,#E7D2C0 100%) !important;
-}
-.authShell{
-  width:min(560px,calc(100% - 28px)) !important;
-  grid-template-columns:1fr !important;
-  gap:10px !important;
-}
-.authBrandPanel{
-  min-height:0 !important;padding:4px 10px 6px !important;
-  background:transparent !important;border:0 !important;box-shadow:none !important;
-}
-.authBrandMinimal{min-height:0 !important;}
-.authBrandLogoCard{
-  width:88px !important;height:88px !important;padding:0 !important;
-  background:transparent !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;
-}
-.authBrandLogoCard img{width:100% !important;height:100% !important;object-fit:contain !important;}
-.authBrandName{color:#35281F !important;font-weight:800 !important;}
-.authBrandTagline,.authEyebrow{color:#9B5433 !important;}
-.authFormPanel{
-  background:linear-gradient(155deg,#F7E9DC 0%,#F1DFCF 100%) !important;
-  border:1px solid #CEB49D !important;border-radius:28px !important;
-  box-shadow:0 24px 58px rgba(88,57,38,.14) !important;
-}
-.authFormPanel h2{color:#2E251F !important;}
-.authLead{color:#6F5E52 !important;}
-.authField label{color:#46362C !important;}
-.authField input,.authField select,.authInput{
-  background:#FFF8F1 !important;border-color:#CDAF97 !important;color:#302720 !important;
-}
-.authField input:hover,.authField select:hover,.authInput:hover{background:#FFF9F4 !important;border-color:#B98D70 !important;}
-.authField input:focus,.authField select:focus,.authInput:focus{
-  border-color:#A65F3A !important;
-  box-shadow:0 0 0 3px rgba(166,95,58,.13) !important;
-}
-.authPrimaryButton{
-  background:linear-gradient(135deg,#B46B44,#914B2D) !important;
-  border:1px solid #914B2D !important;color:#fff !important;
-  box-shadow:0 10px 22px rgba(130,68,40,.18) !important;
-}
-.authPrimaryButton:hover{background:linear-gradient(135deg,#9A5130,#7C3F27) !important;}
-.authSecondaryLink,.authSignupLink,.authBackButton{color:#7D432B !important;}
-.authSignupLink{background:#F9ECE1 !important;border-color:#CDB29B !important;}
-.authPasswordToggle{background:#F4E3D5 !important;color:#7C432B !important;}
-.authRemember input{accent-color:#A65F3A !important;}
-
-
-/* =========================================================
-   PHARMFLOW 2C.8.6 — AUTH VIEWPORT FIT
-   Keep the approved centered design visible on common laptop
-   screens without hiding the bottom actions.
-========================================================= */
-.authGate,.authGate.visible{
-  padding:8px 14px 10px !important;
-  overflow:hidden !important;
-}
-.authShell{
-  width:min(560px,100%) !important;
-  height:calc(100dvh - 18px) !important;
-  max-height:calc(100dvh - 18px) !important;
-  display:grid !important;
-  grid-template-columns:1fr !important;
-  grid-template-rows:auto minmax(0,1fr) !important;
-  gap:5px !important;
-  align-content:center !important;
-}
-.authBrandPanel{
-  padding:0 8px 2px !important;
-}
-.authBrandMinimal{
-  display:grid !important;
-  grid-template-columns:auto auto !important;
-  grid-template-rows:auto auto !important;
-  column-gap:10px !important;
-  justify-content:center !important;
-  align-items:center !important;
-}
-.authBrandLogoCard{
-  grid-row:1 / span 2 !important;
-  width:54px !important;
-  height:54px !important;
-  margin:0 !important;
-}
-.authBrandName{
-  margin:0 !important;
-  font-size:34px !important;
-  line-height:1 !important;
-  letter-spacing:-1.2px !important;
-  text-align:left !important;
-}
-.authBrandTagline{
-  margin:2px 0 0 !important;
-  font-size:8px !important;
-  line-height:1.1 !important;
-  letter-spacing:1.35px !important;
-  text-align:left !important;
-}
-.authFormPanel{
-  align-self:center !important;
-  max-height:calc(100dvh - 76px) !important;
-  border-radius:24px !important;
-  overflow:hidden !important;
-}
-.authFormPanelInner{
-  max-height:calc(100dvh - 76px) !important;
-  overflow:hidden !important;
-  padding:18px 26px 20px !important;
-}
-.authFormPanel h2{
-  font-size:26px !important;
-  margin:2px 0 4px !important;
-}
-.authLead{
-  font-size:12px !important;
-  margin-bottom:10px !important;
-  line-height:1.35 !important;
-}
-.authEyebrow{
-  font-size:9px !important;
-}
-.authField{
-  margin-bottom:8px !important;
-}
-.authField label{
-  font-size:10px !important;
-  margin-bottom:3px !important;
-}
-.authField input,
-.authField select,
-.authInput{
-  height:40px !important;
-  min-height:40px !important;
-  font-size:13px !important;
-}
-.authPrimaryButton{
-  height:43px !important;
-  min-height:43px !important;
-}
-.authSecondaryLink{
-  min-height:29px !important;
-  margin-top:5px !important;
-  font-size:10px !important;
-}
-.authSignupLink{
-  min-height:38px !important;
-  margin-top:7px !important;
-}
-.authDivider{
-  margin:9px 0 !important;
-}
-.authMessage{
-  min-height:16px !important;
-  margin-top:5px !important;
-  font-size:10px !important;
-}
-.authCopyright{
-  font-size:9px !important;
-  bottom:3px !important;
-}
-@media(min-width:821px) and (min-height:820px){
-  .authShell{
-    height:auto !important;
-    max-height:94dvh !important;
-    gap:10px !important;
+  body:not(.zebraDevice) #authGate.authGate{
+    width:100%!important;max-width:100vw!important;height:100dvh!important;min-height:100dvh!important;
+    padding:8px!important;overflow:hidden!important;align-items:center!important;justify-content:center!important;
   }
-  .authBrandMinimal{
-    display:flex !important;
+  body:not(.zebraDevice) #authGate .authShell{
+    width:100%!important;max-width:520px!important;height:calc(100dvh - 16px)!important;max-height:calc(100dvh - 16px)!important;min-height:0!important;
+    display:grid!important;grid-template-columns:1fr!important;grid-template-rows:118px minmax(0,1fr)!important;
+    overflow:hidden!important;border-radius:24px!important;
   }
-  .authBrandLogoCard{
-    width:82px !important;height:82px !important;
+  body:not(.zebraDevice) #authGate .authBrandPanel{
+    min-width:0!important;height:118px!important;padding:12px 18px 5px!important;overflow:hidden!important;
   }
-  .authBrandName{
-    margin-top:7px !important;font-size:46px !important;text-align:center !important;
+  body:not(.zebraDevice) #authGate .authBrandMinimal{
+    width:100%!important;height:100%!important;display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;gap:5px!important;text-align:center!important;
   }
-  .authBrandTagline{
-    margin-top:4px !important;font-size:10px !important;text-align:center !important;
+  body:not(.zebraDevice) #authGate .authBrandLogoCard{width:48px!important;height:48px!important;border-radius:14px!important;flex:0 0 auto!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard img{width:34px!important;height:34px!important;}
+  body:not(.zebraDevice) #authGate .authBrandName{font-size:29px!important;line-height:1!important;letter-spacing:-.7px!important;text-align:center!important;}
+  body:not(.zebraDevice) #authGate .authBrandTagline{margin:0!important;font-size:7px!important;line-height:1!important;letter-spacing:1px!important;text-align:center!important;}
+  body:not(.zebraDevice) #authGate .authFormPanel{
+    width:100%!important;min-width:0!important;height:100%!important;min-height:0!important;padding:7px 18px 12px!important;
+    align-items:flex-start!important;overflow:hidden!important;
   }
-  .authFormPanelInner{
-    padding:26px 32px 28px !important;
+  body:not(.zebraDevice) #authGate .authFormPanelInner{width:100%!important;max-width:none!important;height:100%!important;max-height:100%!important;overflow:hidden!important;}
+  body:not(.zebraDevice) #authGate #authLoginForm{height:100%!important;overflow:hidden!important;}
+  body:not(.zebraDevice) #authGate .authEyebrow{font-size:9px!important;letter-spacing:1.15px!important;}
+  body:not(.zebraDevice) #authGate .authFormPanel h2{margin:3px 0!important;font-size:27px!important;line-height:1!important;}
+  body:not(.zebraDevice) #authGate .authLead{margin:0 0 7px!important;font-size:11px!important;line-height:1.2!important;}
+  body:not(.zebraDevice) #authGate .authField{gap:4px!important;margin-bottom:7px!important;}
+  body:not(.zebraDevice) #authGate .authField label{font-size:11px!important;}
+  body:not(.zebraDevice) #authGate .authField input,
+  body:not(.zebraDevice) #authGate .authField select{height:42px!important;min-height:42px!important;border-radius:12px!important;padding:0 13px!important;font-size:14px!important;}
+  body:not(.zebraDevice) #authGate .authPasswordWrap input{padding-right:68px!important;}
+  body:not(.zebraDevice) #authGate .authPasswordToggle{right:5px!important;height:30px!important;min-width:54px!important;border-radius:8px!important;font-size:9px!important;}
+  body:not(.zebraDevice) #authGate .authRememberRow{gap:7px!important;margin:0 0 5px!important;font-size:10px!important;}
+  body:not(.zebraDevice) #authGate .authRememberRow input{width:16px!important;height:16px!important;}
+  body:not(.zebraDevice) #authGate .authPrimaryButton{height:40px!important;min-height:40px!important;border-radius:11px!important;font-size:13px!important;}
+  body:not(.zebraDevice) #authGate .authSecondaryLink{min-height:27px!important;margin-top:1px!important;font-size:10px!important;}
+  body:not(.zebraDevice) #authGate .authSignupLink{height:35px!important;min-height:35px!important;margin-top:2px!important;border-radius:10px!important;font-size:10px!important;}
+  body:not(.zebraDevice) #authGate .authMessage{margin-top:2px!important;font-size:10px!important;line-height:1.1!important;}
+}
+@media (max-width:760px) and (max-height:690px){
+  body:not(.zebraDevice) #authGate .authShell{grid-template-rows:94px minmax(0,1fr)!important;}
+  body:not(.zebraDevice) #authGate .authBrandPanel{height:94px!important;padding:7px 16px 3px!important;}
+  body:not(.zebraDevice) #authGate .authBrandMinimal{gap:3px!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard{width:40px!important;height:40px!important;border-radius:12px!important;}
+  body:not(.zebraDevice) #authGate .authBrandLogoCard img{width:29px!important;height:29px!important;}
+  body:not(.zebraDevice) #authGate .authBrandName{font-size:25px!important;}
+  body:not(.zebraDevice) #authGate .authBrandTagline{font-size:6px!important;}
+  body:not(.zebraDevice) #authGate .authFormPanel{padding:5px 16px 8px!important;}
+  body:not(.zebraDevice) #authGate .authLead{display:none!important;}
+  body:not(.zebraDevice) #authGate .authField{margin-bottom:5px!important;}
+  body:not(.zebraDevice) #authGate .authField input{height:38px!important;min-height:38px!important;}
+  body:not(.zebraDevice) #authGate .authPrimaryButton{height:37px!important;min-height:37px!important;}
+}
+
+/* ---------- Handheld ---------- */
+body.zebraDevice #authGate.authGate{
+  min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;
+  padding:5px!important;align-items:center!important;justify-content:center!important;
+}
+body.zebraDevice #authGate .authShell{
+  width:100%!important;height:calc(100dvh - 10px)!important;min-height:0!important;max-height:none!important;
+  display:grid!important;grid-template-columns:1fr!important;grid-template-rows:72px minmax(0,1fr)!important;
+  overflow:hidden!important;border:0!important;border-radius:16px!important;
+  background:linear-gradient(155deg,#e6f2fc 0%,#eaf3fb 55%,#eceffc 100%)!important;
+  box-shadow:0 8px 24px rgba(62,98,132,.10)!important;
+}
+body.zebraDevice #authGate .authBrandPanel{
+  min-height:0!important;height:72px!important;padding:8px 13px!important;overflow:hidden!important;
+  background:transparent!important;color:var(--pf-auth-ink)!important;border:0!important;
+}
+body.zebraDevice #authGate .authBrandMinimal{
+  height:100%!important;display:grid!important;grid-template-columns:47px minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;column-gap:10px!important;align-content:center!important;align-items:center!important;
+}
+body.zebraDevice #authGate .authBrandLogoCard{
+  grid-row:1/3!important;width:45px!important;height:45px!important;margin:0!important;border-radius:12px!important;
+}
+body.zebraDevice #authGate .authBrandLogoCard img{width:35px!important;height:35px!important;}
+body.zebraDevice #authGate .authBrandName{font-size:24px!important;line-height:1!important;letter-spacing:-.45px!important;}
+body.zebraDevice #authGate .authBrandTagline{grid-column:2!important;margin-top:4px!important;font-size:7px!important;line-height:1!important;letter-spacing:.85px!important;}
+body.zebraDevice #authGate .authFormPanel{
+  height:100%!important;min-height:0!important;padding:8px 13px 7px!important;align-items:flex-start!important;overflow:hidden!important;
+  background:transparent!important;border:0!important;
+}
+body.zebraDevice #authGate .authFormPanelInner{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;}
+body.zebraDevice #authGate #authLoginForm{height:100%!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow:hidden!important;}
+body.zebraDevice #authGate #authLoginForm .authEyebrow{font-size:9px!important;letter-spacing:1.1px!important;}
+body.zebraDevice #authGate #authLoginForm h2{margin:3px 0 3px!important;font-size:25px!important;line-height:1!important;}
+body.zebraDevice #authGate #authLoginForm .authLead{margin:0 0 7px!important;font-size:10.5px!important;line-height:1.15!important;}
+body.zebraDevice #authGate #authLoginForm .authField{gap:4px!important;margin:0 0 6px!important;}
+body.zebraDevice #authGate #authLoginForm .authField label{font-size:10px!important;line-height:1!important;}
+body.zebraDevice #authGate #authLoginForm .authField input{
+  min-height:40px!important;height:40px!important;padding:0 11px!important;border-radius:10px!important;font-size:13px!important;
+}
+body.zebraDevice #authGate #authLoginForm .authPasswordWrap input{padding-right:61px!important;}
+body.zebraDevice #authGate #authLoginForm .authPasswordToggle{right:5px!important;height:29px!important;min-width:49px!important;border-radius:8px!important;font-size:9px!important;}
+body.zebraDevice #authGate #authLoginForm .authRememberRow{gap:6px!important;min-height:25px!important;margin:0 0 4px!important;font-size:9.5px!important;}
+body.zebraDevice #authGate #authLoginForm .authRememberRow input{width:15px!important;height:15px!important;}
+body.zebraDevice #authGate #authLoginForm .authPrimaryButton{min-height:40px!important;height:40px!important;border-radius:10px!important;font-size:12px!important;box-shadow:none!important;}
+body.zebraDevice #authGate #authLoginForm .authSecondaryLink{min-height:29px!important;height:29px!important;margin:1px 0 0!important;font-size:10px!important;}
+body.zebraDevice #authGate #authLoginForm .authSignupLink{min-height:35px!important;height:35px!important;margin-top:2px!important;border-radius:9px!important;font-size:10px!important;}
+body.zebraDevice #authGate #authLoginForm .authMessage{min-height:0!important;margin:2px 0 0!important;font-size:9px!important;line-height:1.1!important;}
+@media (max-height:560px){
+  body.zebraDevice #authGate .authShell{grid-template-rows:60px minmax(0,1fr)!important;}
+  body.zebraDevice #authGate .authBrandPanel{height:60px!important;padding:5px 11px!important;}
+  body.zebraDevice #authGate .authBrandMinimal{grid-template-columns:39px 1fr!important;column-gap:8px!important;}
+  body.zebraDevice #authGate .authBrandLogoCard{width:38px!important;height:38px!important;border-radius:10px!important;}
+  body.zebraDevice #authGate .authBrandLogoCard img{width:30px!important;height:30px!important;}
+  body.zebraDevice #authGate .authBrandName{font-size:21px!important;}
+  body.zebraDevice #authGate .authBrandTagline{font-size:6px!important;}
+  body.zebraDevice #authGate .authFormPanel{padding:6px 11px 5px!important;}
+  body.zebraDevice #authGate #authLoginForm .authLead{display:none!important;}
+  body.zebraDevice #authGate #authLoginForm .authField input{height:35px!important;min-height:35px!important;}
+  body.zebraDevice #authGate #authLoginForm .authPrimaryButton{height:36px!important;min-height:36px!important;}
+}
+
+/* =============================================================
+   PHARMFLOW B11 CLEAN 11 — AUTH SUB-SCREEN FIT
+   Direct extension of the single auth owner. No auth logic changes.
+============================================================= */
+
+/* Keep Back visible at the top of every secondary auth journey. */
+#authGate .authPublicBackButton{
+  display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;
+  min-height:30px!important;margin:0 0 5px!important;padding:0!important;
+  font-size:12px!important;line-height:1!important;
+}
+
+/* Desktop registration is deliberately compact and two-column so the complete
+   form + actions fit in the same production viewport as Sign In. */
+@media (min-width:901px){
+  body:not(.zebraDevice) #authGate #authPublicSignupForm{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:14px;align-content:center;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm[hidden]{display:none!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authBackButton,
+  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authEyebrow,
+  body:not(.zebraDevice) #authGate #authPublicSignupForm>h2,
+  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authLead,
+  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authPrimaryButton{
+    grid-column:1/-1!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authField:last-of-type{grid-column:1/-1!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{margin-bottom:8px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{margin-bottom:9px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{margin-top:2px!important;}
+
+  /* Secondary auth screens share the same bounded viewport contract. */
+  body:not(.zebraDevice) #authGate #authInviteSignupForm,
+  body:not(.zebraDevice) #authGate #authOwnerSignupForm,
+  body:not(.zebraDevice) #authGate #authRecoveryForm{
+    max-height:100%!important;overflow:auto!important;overscroll-behavior:contain!important;padding-right:4px!important;
   }
 }
 
-
-/* =========================================================
-   PHARMFLOW 2C.8.7 — TWO-COLUMN AUTH LAYOUT
-   Brand left, access form right. Warm, balanced, laptop-safe.
-========================================================= */
-@media (min-width: 821px){
-  .authGate,.authGate.visible{
-    padding:24px 34px !important;
-    overflow:auto !important;
-  }
-  .authShell{
-    width:min(1080px,94vw) !important;
-    height:auto !important;
-    max-height:none !important;
-    display:grid !important;
-    grid-template-columns:minmax(300px,.82fr) minmax(440px,1.18fr) !important;
-    grid-template-rows:1fr !important;
-    gap:42px !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
-  .authBrandPanel{
-    min-height:520px !important;
-    padding:42px 30px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    background:transparent !important;
-    border:0 !important;
-    box-shadow:none !important;
-  }
-  .authBrandMinimal{
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:flex-start !important;
-    justify-content:center !important;
-    min-height:0 !important;
-    width:100% !important;
-  }
-  .authBrandLogoCard{
-    width:128px !important;
-    height:128px !important;
-    margin:0 0 22px !important;
-    padding:0 !important;
-    background:transparent !important;
-    border:0 !important;
-    box-shadow:none !important;
-  }
-  .authBrandName{
-    margin:0 !important;
-    font-size:58px !important;
-    line-height:.98 !important;
-    letter-spacing:-2.2px !important;
-    text-align:left !important;
-    color:#35281F !important;
-  }
-  .authBrandTagline{
-    margin:13px 0 0 !important;
-    max-width:340px !important;
-    font-size:11px !important;
-    line-height:1.5 !important;
-    letter-spacing:2.15px !important;
-    text-align:left !important;
-    color:#9B5433 !important;
-  }
-  .authFormPanel{
-    width:100% !important;
-    max-width:560px !important;
-    max-height:none !important;
-    justify-self:end !important;
-    align-self:center !important;
-    overflow:visible !important;
-    border-radius:28px !important;
-  }
-  .authFormPanelInner{
-    max-height:none !important;
-    overflow:visible !important;
-    padding:32px 38px 34px !important;
-  }
-  .authFormPanel h2{
-    font-size:31px !important;
-    margin:3px 0 6px !important;
-  }
-  .authLead{
-    font-size:13px !important;
-    margin-bottom:16px !important;
-  }
-  .authEyebrow{font-size:10px !important;letter-spacing:1.6px !important;}
-  .authField{margin-bottom:12px !important;}
-  .authField label{font-size:11px !important;margin-bottom:5px !important;}
-  .authField input,.authField select,.authInput{
-    height:46px !important;min-height:46px !important;font-size:14px !important;
-  }
-  .authPrimaryButton{height:48px !important;min-height:48px !important;font-size:13px !important;}
-  .authSecondaryLink{min-height:32px !important;font-size:11px !important;}
-  .authSignupLink{min-height:42px !important;}
+@media (min-width:901px) and (max-height:700px){
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authBackButton{min-height:23px!important;margin-bottom:1px!important;font-size:10px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm h2{margin:2px 0 3px!important;font-size:27px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{font-size:10px!important;line-height:1.18!important;margin-bottom:5px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{gap:3px!important;margin-bottom:5px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField label{font-size:10px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField input{height:37px!important;min-height:37px!important;font-size:12px!important;border-radius:10px!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{height:37px!important;min-height:37px!important;font-size:11px!important;border-radius:10px!important;}
 }
-@media (min-width:821px) and (max-height:680px){
-  .authGate,.authGate.visible{padding:12px 28px !important;}
-  .authBrandPanel{min-height:0 !important;padding:22px 24px !important;}
-  .authBrandLogoCard{width:98px !important;height:98px !important;margin-bottom:15px !important;}
-  .authBrandName{font-size:48px !important;}
-  .authBrandTagline{margin-top:8px !important;font-size:9px !important;}
-  .authFormPanelInner{padding:22px 32px 24px !important;}
-  .authFormPanel h2{font-size:27px !important;}
-  .authLead{margin-bottom:10px !important;}
-  .authField{margin-bottom:8px !important;}
-  .authField input,.authField select,.authInput{height:40px !important;min-height:40px !important;}
-  .authPrimaryButton{height:42px !important;min-height:42px !important;}
-  .authSecondaryLink{min-height:27px !important;margin-top:4px !important;}
-  .authSignupLink{min-height:36px !important;}
+
+/* Mobile auth: same approved light identity, one column, no horizontal drift.
+   Long secondary journeys scroll inside the form panel rather than moving the
+   whole page sideways or clipping their primary action. */
+@media (max-width:760px){
+  body:not(.zebraDevice) #authGate .authFormPanelInner{overflow:hidden!important;}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm,
+  body:not(.zebraDevice) #authGate #authInviteSignupForm,
+  body:not(.zebraDevice) #authGate #authOwnerSignupForm,
+  body:not(.zebraDevice) #authGate #authRecoveryForm{
+    width:100%!important;max-width:100%!important;height:100%!important;max-height:100%!important;
+    overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;
+    padding:0 2px 8px!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authBackButton,
+  body:not(.zebraDevice) #authGate #authInviteSignupForm .authBackButton,
+  body:not(.zebraDevice) #authGate #authOwnerSignupForm .authBackButton{
+    position:sticky!important;top:0!important;z-index:2!important;width:max-content!important;
+    padding:5px 7px!important;margin:0 0 4px -5px!important;border-radius:8px!important;
+    background:rgba(234,243,252,.94)!important;backdrop-filter:blur(8px)!important;
+  }
 }

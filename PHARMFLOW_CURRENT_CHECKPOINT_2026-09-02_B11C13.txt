@@ -1,0 +1,24 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-02 — B11 Clean13
+STATUS: READY FOR TEST
+SCOPE: Project B only. Production A untouched.
+
+USER-REQUESTED CHANGE
+- Mobile Order Item Browser: one item must occupy one compact horizontal row.
+- All item fields remain on the same line; horizontal swipe reveals off-screen columns.
+- Mobile filter/sort strip remains one horizontal scroll row (Order, Category, High Priority, Quantity Sort).
+- Desktop and Handheld layouts must not change.
+
+IMPLEMENTATION
+- Replaced the B11C12 mobile card-grid presentation with a horizontal table owner inside the existing mobile media block.
+- Restored visible column header row on mobile.
+- Each item row is fixed-height and nowrap; table uses a deliberate min-width and horizontal touch scrolling.
+- Filter bar uses nowrap + horizontal touch scrolling with fixed control widths.
+- No JS/business logic/Supabase/Receiving transaction/GTIN changes.
+
+VERIFICATION REQUIRED
+1. Mobile: open Order Item Browser.
+2. Confirm each item is one compact row, not a full-screen card.
+3. Swipe table horizontally and verify Item Number, Item Name, Priority, Category, Quantity, Order No. remain aligned.
+4. Swipe filter strip horizontally and verify High Priority and Quantity Sort are accessible.
+5. PC: confirm original desktop table remains unchanged.
+6. Handheld: confirm scanning workflow remains unchanged.

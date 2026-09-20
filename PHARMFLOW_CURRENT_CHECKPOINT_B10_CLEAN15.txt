@@ -1,0 +1,8 @@
+Checkpoint: B10 Clean15 — RPC & Egress Root Fix
+Status: PATCH READY — REQUIRES USER VERIFICATION
+Base: user-provided pharmflow-dev-main.zip (2026-09-02)
+Modified application files: index.html, js/cloud-workspace.js
+No SQL changes.
+No production/Supabase mutation performed.
+Do not mark verified until PC + Handheld sync, Manifest/REMOVE, API Requests,
+and Egress measurements pass.

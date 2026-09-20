@@ -1,0 +1,5 @@
+B11 Clean13 — Mobile Horizontal Rows
+- Rebuilt mobile Order Item Browser from stacked cards to compact single-line rows.
+- Added touch horizontal scrolling for item columns and filter/sort controls.
+- Preserved desktop and Handheld layouts.
+- UI/CSS only; no business logic or database changes.

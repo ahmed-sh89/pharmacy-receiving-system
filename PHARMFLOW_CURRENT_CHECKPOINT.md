@@ -1,61 +1,11 @@
-# PHARMFLOW CURRENT CHECKPOINT
 
-Date: 21 August 2026
-Version: Phase 2C.11.4.4 — Unified GS1 Right-Side Recovery
-Status: READY FOR TEST
+### B10 Clean15.13 — Awaiting user verification
+Unified Auth Gate root fix applied after Supabase logs confirmed refresh-token rejection (400) followed by protected RPC 401s. Expected result: stale session causes one terminal auth recovery to Sign In; no Complete access false state and no refresh-token request storm. Receiving/Handheld operational paths unchanged.
 
-## WHY THIS RELEASE
-2C.11.4.3 did not restore PC medicine Batch/Serial/Expiry. PC could resolve
-Item/GTIN but fields remained blank. Meanwhile Handheld Dompy still truncated
-Batch CL0117 to 11.
 
-The previous approach had separate/global plus Handheld-specific recovery paths.
-That made the parser difficult to reason about.
+### B10 Clean15.14 — Awaiting user verification
+Supabase Auth header error-code root fix. `authRequest()` now reads `x-sb-error-code` (with underscore fallback) before body error codes, so `refresh_token_not_found` is recognized as terminal immediately. This allows the existing Clean15.12/15.13 stale-session invalidation and unified auth gate to stop protected RPCs and route to Sign In instead of false Complete access. No Receiving, Handheld, manifest, ledger, SQL, or Egress polling logic changed.
 
-## ROOT FIX
-There is now ONE separator-loss recovery inside scanner.js for both PC and
-Handheld.
 
-Normal GS/FNC1 parsing remains authoritative.
-
-Fallback runs only if the normal parse has GTIN but one or more medicine fields
-are incomplete.
-
-It parses from the RIGHT side so Batch values containing digits `17` are safe:
-- AI10 Batch -> AI17 Expiry -> AI21 Serial
-- AI10 Batch -> AI21 Serial -> AI17 Expiry
-
-For 10->17->21 it uses the LAST structurally valid AI17 date before AI21,
-not the first occurrence of digits `17`.
-
-## EXPECTED KNOWN CASES
-Dompy:
-- GTIN 06285128000307
-- Batch CL0117
-- Serial 2073835044260
-- Expiry Oct 2028
-
-Conestal:
-- GTIN 06286059000510
-- Batch 240276
-- Serial KY5X4W2MWOQK
-- Expiry Nov 2026
-
-## REMOVED
-- Handheld-specific Batch post-processing from expiry.js.
-- Product-specific logic remains prohibited.
-
-## PRESERVED
-- Consecutive Batch Qty: USER VERIFIED.
-- Handheld Clear Screen top position: USER VERIFIED.
-- Undo quantity execution: USER VERIFIED.
-- Auto Clear behavior.
-- No Receiving logic change.
-- No SQL migration.
-
-## TEST
-1. PC Conestal -> all four GS1 fields populated.
-2. PC Dompy -> CL0117 / 2073835044260 / Oct 2028.
-3. Handheld Conestal -> unchanged correct values.
-4. Handheld Dompy -> CL0117 / 2073835044260 / Oct 2028.
-5. One additional known-good medicine on each device.
+### B10 Clean15.15 — Awaiting user verification
+Auth bootstrap UI gate applied after clean Incognito verification showed: valid Sign In -> workspace, then Refresh -> brief Sign In flash -> workspace. Expected result is now Refresh -> Preparing PharmFlow -> workspace, with no transient Sign In or Complete access screen. Business/auth network logic is unchanged.

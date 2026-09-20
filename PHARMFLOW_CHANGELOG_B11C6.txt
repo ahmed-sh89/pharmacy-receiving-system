@@ -1,0 +1,7 @@
+B11 CLEAN6 — 01 Sep 2026
+- Rejected Clean5.1 as a deployment baseline after authentication/session regression and incomplete UX implementation.
+- Rebuilt from pre-Clean3 Clean2 application baseline.
+- Replaced login presentation with isolated desktop and Handheld auth ownership.
+- Removed Clean5.1 application overrides from this package to avoid patch stacking.
+- No SQL/database change in this package.
+Status: READY FOR TEST.

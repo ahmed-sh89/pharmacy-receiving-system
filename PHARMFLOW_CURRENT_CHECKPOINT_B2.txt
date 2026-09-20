@@ -1,0 +1,35 @@
+# PHARMFLOW CURRENT CHECKPOINT — B2
+
+Date: 25 August 2026
+Environment: B / pharmflow-dev
+Version: B2 — Approved Blue Design System
+Status: READY FOR TEST
+
+USER-APPROVED DESIGN RULES
+- Light-blue background across Dashboard, Receiving, Item Movement, Near Expiry and Settings.
+- Sidebar uses the same blue family, only slightly darker.
+- Existing PharmFlow logo shape is preserved; logo and PharmFlow wordmark use dark navy.
+- Sign-in screen warm beige/brown palette removed and replaced with light blue + dark navy.
+- Desktop operational views are compacted to minimize whole-page scrolling.
+- Large datasets remain safe inside bounded table/list areas; no data is deliberately clipped or removed.
+- Handheld-specific workflows are not redesigned by this desktop visual phase.
+
+NON-REGRESSION
+- No Supabase schema or SQL changes.
+- DEVISO3 tenant isolation retained.
+- Auth logic retained.
+- Receiving / Expiry / Global GTIN / persistence business logic unchanged.
+- Production A untouched.
+
+FILES TO UPLOAD TO pharmflow-dev ONLY
+- css/pharmflow-next.css
+- js/pharmflow-next.js
+- index.html
+
+VERIFY
+1. Hard refresh B.
+2. Verify Sign In is light blue and navy.
+3. Verify Dashboard + sidebar are blue-family only.
+4. Open Receiving, Item Movement, Near Expiry, Settings.
+5. Verify primary desktop page content fits the viewport without whole-page scrolling where practical.
+6. Verify large tables remain accessible and no operational controls are missing.

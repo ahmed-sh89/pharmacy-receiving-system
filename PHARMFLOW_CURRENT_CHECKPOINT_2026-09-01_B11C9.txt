@@ -1,0 +1,34 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-01 — B11 Clean9 Auth Viewport Fit
+
+STATUS
+READY FOR TEST — Project B only. Production A application untouched.
+
+BASELINE
+B11 Clean8 Auth Clean Rebuild — user approved overall login design.
+
+SCOPE
+Login viewport-fit refinement only. No auth/session/business logic, Receiving, GTIN, Supabase schema, RPC, data, or synchronization changes.
+
+IMPLEMENTED
+- Preserved the approved Clean8 light premium visual design.
+- Reduced desktop Sign in heading size and vertical spacing.
+- Reduced form/control heights only enough to keep the full login action stack visible.
+- Activate Pharmacy Admin is now required to remain visible in the desktop viewport without whole-page scrolling.
+- Added explicit compact-height desktop ownership for short PC browser viewports.
+- Kept Email and Password visual field differentiation and the blue/navy PharmFlow identity unchanged.
+- Edited the single Clean8 auth owner rather than stacking another legacy style patch.
+
+AFFECTED FILES
+- index.html (auth.css cache version only)
+- css/auth.css
+
+NON-REGRESSION
+No JavaScript changed. No SQL. No Supabase changes. No Production A deployment.
+
+EXACT TEST
+1. Deploy modified files to Project B only.
+2. Hard refresh PC at the same browser size used in the reported screenshot.
+3. Verify entire login card is visible without scrolling.
+4. Verify Activate Pharmacy Admin is fully visible.
+5. Verify Sign in heading is smaller while the approved Clean8 overall design remains intact.
+6. Sign in once to confirm login behavior is unchanged.

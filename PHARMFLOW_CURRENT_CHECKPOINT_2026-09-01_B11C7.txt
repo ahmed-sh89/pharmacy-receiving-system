@@ -1,0 +1,20 @@
+PHARMFLOW CURRENT CHECKPOINT — 2026-09-01 — B11 Clean7
+STATUS: READY FOR TEST
+TARGET: Project B application only. Production A application untouched. Shared Supabase unchanged by this release.
+
+CHANGE:
+- Rebuilt Sign In visual system to Light Premium Corporate direction requested by Product Owner.
+- Light comfortable background; no dark full-screen brand panel.
+- Email and Password inputs have distinct subtle field colors for visual recognition.
+- Clear focus state, improved hierarchy, restrained shadows/borders, premium light branding.
+- Separate Handheld responsive treatment remains screen-fit oriented.
+- Login visual/CSS only. No authentication/session, receiving, GTIN, Supabase, synchronization, or persistence logic changed.
+
+VERIFICATION REQUIRED:
+1. PC Sign In visual acceptance.
+2. Handheld Sign In visual acceptance and no whole-page scroll.
+3. Sign In functionality unchanged.
+
+IMPORTANT:
+- This release intentionally does NOT claim the previously reported Receiving bugs are fixed.
+- Do not deploy to Project A.

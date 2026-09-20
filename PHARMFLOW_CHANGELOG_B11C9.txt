@@ -1,0 +1,7 @@
+B11 Clean9 — Auth Viewport Fit — 2026-09-01
+
+- Preserved the user-approved Clean8 light premium login design.
+- Reduced Sign in heading size and vertical form spacing.
+- Added compact-height desktop sizing so all login actions fit in the viewport without page scroll.
+- Ensured Activate Pharmacy Admin remains visible on short PC browser viewports.
+- Changed only auth CSS and the auth.css cache version; no JavaScript, SQL, Supabase, Receiving, or GTIN changes.

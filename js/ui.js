@@ -19,7 +19,8 @@ const UI = {
 
     receivingFilters:{
         issues:new Set(["not_received","partial","received_any","over","manual"]),
-        category:"all"
+        category:"all",
+        search:""
     },
 
     smartScan:{
@@ -465,16 +466,16 @@ function createSmartScanSearchUI(){
 ===================================================== */
 
 
-let pcReceivingAutoClearTimer=null;
-let pcReceivingAutoClearKey="";
+let receivingAutoClearTimer=null;
+let receivingAutoClearKey="";
 
-function cancelPcReceivingAutoClear(){
-    clearTimeout(pcReceivingAutoClearTimer);
-    pcReceivingAutoClearTimer=null;
-    pcReceivingAutoClearKey="";
+function cancelReceivingAutoClear(){
+    clearTimeout(receivingAutoClearTimer);
+    receivingAutoClearTimer=null;
+    receivingAutoClearKey="";
 }
 
-function pcReceivingLastScanKey(scan){
+function receivingLastScanKey(scan){
     if(!scan) return "";
 
     return toSafeString(
@@ -488,52 +489,54 @@ function pcReceivingLastScanKey(scan){
     );
 }
 
-function schedulePcReceivingAutoClear(scan){
-    let isHandheld=false;
+function scheduleReceivingAutoClear(scan){
+    if(!scan) return;
 
-    try{
-        isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
-    }catch(_){}
+    const key=receivingLastScanKey(scan);
 
-    if(isHandheld || !scan){
-        return;
-    }
+    /* Cloud/workspace refreshes may render Last Scan repeatedly. The timer is
+       tied to the actual scan identity, so sync cannot postpone the 30-second
+       operator inactivity boundary. */
+    if(!key || key===receivingAutoClearKey) return;
 
-    const key=pcReceivingLastScanKey(scan);
+    cancelReceivingAutoClear();
+    receivingAutoClearKey=key;
 
-    if(!key || key===pcReceivingAutoClearKey){
-        return;
-    }
-
-    cancelPcReceivingAutoClear();
-    pcReceivingAutoClearKey=key;
-
-    pcReceivingAutoClearTimer=setTimeout(()=>{
+    receivingAutoClearTimer=setTimeout(()=>{
         const current=AppState?.workspace?.lastScan;
 
-        if(
-            !current ||
-            pcReceivingLastScanKey(current)!==key
-        ){
-            return;
+        if(!current || receivingLastScanKey(current)!==key) return;
+
+        let isHandheld=false;
+        try{
+            isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+        }catch(_){}
+
+        /* PC quantity editing is deliberate activity. Handheld has no modal
+           dependency here, so its Last Scan always clears after 30 seconds. */
+        if(!isHandheld){
+            const quantityModal=document.getElementById("quantityAdjustmentModal");
+            if(quantityModal?.classList?.contains("open")){
+                receivingAutoClearKey="";
+                scheduleReceivingAutoClear(current);
+                return;
+            }
         }
 
-        /* Do not clear while the pharmacist is actively adjusting quantity. */
-        const quantityModal=document.getElementById("quantityAdjustmentModal");
-
-        if(quantityModal?.classList?.contains("open")){
-            pcReceivingAutoClearKey="";
-            schedulePcReceivingAutoClear(current);
-            return;
-        }
+        /* UI/local-batch boundary only. Never reverse a receiving transaction
+           or change cumulative Received/history. */
+        if(typeof resetCurrentLocalBatch==="function") resetCurrentLocalBatch();
 
         AppState.workspace.lastScan=null;
-        cancelPcReceivingAutoClear();
-
+        cancelReceivingAutoClear();
         refreshEntireUI?.();
+        window.hhRefreshReadyState?.();
 
         try{ document.activeElement?.blur?.(); }catch(_){}
-        setTimeout(()=>focusScannerInput?.(),30);
+        setTimeout(()=>{
+            focusScannerInput?.();
+            if(isHandheld) window.hhRepairScannerFocus?.("last-scan-auto-clear");
+        },30);
     },30000);
 }
 
@@ -567,7 +570,14 @@ function ensurePcClearScreenButton(){
         /*
            Visual-only clear. Does not modify receiving quantities/history.
         */
-        cancelPcReceivingAutoClear();
+        cancelReceivingAutoClear();
+
+        /* CLEAR SCREEN is UI-only for shared receiving data, but it is an
+           explicit boundary for this PC's local current batch. */
+        if(typeof resetCurrentLocalBatch === "function"){
+            resetCurrentLocalBatch();
+        }
+
         AppState.workspace.lastScan=null;
         refreshEntireUI?.();
 
@@ -699,6 +709,28 @@ function bindSmartScanSelectionControls(){
         ?.addEventListener(
             "click",
             addSelectedSmartQuantity
+        );
+
+    document
+        .getElementById(
+            "smartQuantityInput"
+        )
+        ?.addEventListener(
+            "keydown",
+            function(event){
+                let isHandheld=false;
+                try{
+                    isHandheld=typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice();
+                }catch(_){ }
+
+                if(isHandheld || event.key !== "Enter" || event.repeat){
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                addSelectedSmartQuantity();
+            }
         );
 
 }
@@ -1272,13 +1304,6 @@ function bindUIEvents(){
         );
 
 
-    document
-        .getElementById("btnReceivingSearch")
-        ?.addEventListener(
-            "click",
-            openItemSearchModal
-        );
-
 
     document.querySelectorAll("[data-receiving-issue]").forEach(input=>{
         input.addEventListener("change",function(){
@@ -1321,6 +1346,16 @@ function bindUIEvents(){
             UI.receivingFilters.category = event.target.value || "all";
             refreshReceivingTable();
         });
+
+    document.getElementById("receivingInlineSearch")?.addEventListener("input",function(event){
+        UI.receivingFilters.search=toSafeString(event.target.value||"").trim().toLowerCase();
+        refreshReceivingTable();
+    });
+
+    document.getElementById("btnBackToReceivingDashboard")?.addEventListener("click",function(){
+        if(typeof navigateTo==="function"){ navigateTo("dashboard"); return; }
+        document.querySelector('.sidebarItem[data-page="dashboard"]')?.click();
+    });
 
 
     document
@@ -1631,6 +1666,24 @@ function refreshEntireUI(){
 
 function refreshHeader(){
 
+    // Global pharmacy identity belongs to the shell and is visible on every module.
+    {
+        const ctx = window.AuthState?.context || {};
+        const pharmacyName = String(
+            ctx.pharmacy_name ||
+            document.getElementById("accountPharmacyName")?.textContent ||
+            "Pharmacy"
+        ).trim() || "Pharmacy";
+        const pharmacyCode = String(
+            ctx.pharmacy_code ||
+            document.getElementById("settingsPharmacyCode")?.textContent ||
+            "—"
+        ).trim() || "—";
+
+        setElementText(document.getElementById("topBarPharmacyName"), pharmacyName);
+        setElementText(document.getElementById("topBarPharmacyCode"), pharmacyCode);
+    }
+
     // Approved compact Dashboard identity: show the signed-in pharmacy name.
     const dashboardActive = document.getElementById("page-dashboard")?.classList.contains("active");
     if(dashboardActive){
@@ -1645,7 +1698,7 @@ function refreshHeader(){
     );
 
     {
-        const orderLabel=UI.elements.headerOrderId || document.getElementById("headerOrderId");
+        const orderLabel=UI.elements.headerOrderId;
         const picker=document.getElementById("headerOrderPicker");
         const pickerLabel=document.getElementById("headerOrderPickerLabel");
         const pickerMenu=document.getElementById("headerOrderPickerMenu");
@@ -1666,7 +1719,7 @@ function refreshHeader(){
                 : "";
 
         if(hasActiveOrder && activeOrders.length>1 && picker){
-            if(orderLabel) orderLabel.hidden=true;
+            orderLabel.hidden=true;
             picker.hidden=false;
 
             const allSelected=
@@ -1733,7 +1786,7 @@ function refreshHeader(){
             }
         }else{
             if(picker) picker.hidden=true;
-            if(orderLabel) orderLabel.hidden=false;
+            orderLabel.hidden=false;
 
             setElementText(
                 orderLabel,
@@ -1831,8 +1884,7 @@ function getSelectedOrderDashboardMetrics(){
         });
     });
 
-    const ledgerBacked=typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving();
-    const totalScans=(ledgerBacked ? getActiveCloudReceivingTransactions() : (AppState.workspace?.receivingHistory||[]))
+    const totalScans=(AppState.workspace?.receivingHistory||[])
         .filter(tx=>{
             const txOrder=normalizeOrderNumber(
                 tx?.selectedOrderNumber ||
@@ -1846,10 +1898,7 @@ function getSelectedOrderDashboardMetrics(){
                     .map(normalizeOrderNumber)
                     .includes(txOrder);
 
-            const source=toSafeString(tx?.source||"").toUpperCase();
-            const scanner=toSafeString(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
-            return inScope && (!ledgerBacked || (toNumber(tx?.quantity,0)>0 &&
-                (source===scanner || source.includes("SCAN")) && !source.includes("UNDO")));
+            return inScope;
         }).length;
 
     return {
@@ -1951,9 +2000,7 @@ function refreshDashboard(){
     );
     setElementText(UI.elements.statOver,scoped.overReceivedItems);
     setElementText(UI.elements.statManual,scoped.manualItems);
-    setElementText(UI.elements.statScans,
-        !selectedMetrics && typeof isAuthenticatedLedgerReceiving==="function" && isAuthenticatedLedgerReceiving()
-            ? stats.totalScans : scoped.totalScans);
+    setElementText(UI.elements.statScans,scoped.totalScans);
 
     refreshProgress();
 }
@@ -2043,7 +2090,7 @@ function refreshLastScan(){
 
     if(!scan){
 
-        cancelPcReceivingAutoClear();
+        cancelReceivingAutoClear();
         clearLastScanUI();
 
         refreshProfessionalLastScan(
@@ -2055,7 +2102,7 @@ function refreshLastScan(){
         return;
     }
 
-    schedulePcReceivingAutoClear(scan);
+    scheduleReceivingAutoClear(scan);
 
     /*
        Keep legacy elements updated for compatibility
@@ -2176,13 +2223,24 @@ function getVisibleReceivingItemsForExport(){
 
 function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
-    const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]), categoryFilter=UI.receivingFilters.category||"all";
+    const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]), categoryFilter=UI.receivingFilters.category||"all", searchFilter=toSafeString(UI.receivingFilters.search||"").trim().toLowerCase();
     const scope=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"ALL", active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[], selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():(scope==="ALL"?active:[scope].filter(Boolean)), allMode=selectedOrders.length>1;
-    const hr=tbody.closest("table")?.querySelector("thead tr");if(hr){let h=hr.querySelector('[data-order-column="1"]');if(allMode&&!h){h=document.createElement("th");h.dataset.orderColumn="1";h.textContent="Order Number";const cells=hr.querySelectorAll("th");hr.insertBefore(h,cells[1]||null);}else if(!allMode&&h)h.remove();}
     let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(selectedOrders.length && !selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
+    if(searchFilter){rows=rows.filter(item=>toSafeString(item.itemName||"").toLowerCase().includes(searchFilter)||toSafeString(item.itemCode||"").toLowerCase().includes(searchFilter));}
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
-    if(!(AppState.workspace.orderData||[]).length){tbody.innerHTML=`<tr><td colspan="${allMode?9:8}" class="tableEmptyState">No order items loaded.</td></tr>`;return;}if(!rows.length){tbody.innerHTML=`<tr><td colspan="${allMode?9:8}" class="tableEmptyState">No items match the selected filters.</td></tr>`;return;}
-    rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);if(allMode){const c=document.createElement("td");c.className="receivingOrderCell";c.innerHTML=`<span class="receivingOrderBadge">${escapeHTML(item.orderNumber||"")}</span>`;tr.insertBefore(c,tr.children[1]||null);}tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
+    const inline=document.getElementById("receivingInlineResult");
+    if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML=`<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>`;return;}if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML=`<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>`;return;}
+    rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
+    if(inline){
+        if(searchFilter&&rows.length){
+            const item=rows[0], order=item.orderNumber||((Array.isArray(item.orderNumbers)&&item.orderNumbers[0])||"—");
+            inline.hidden=false;
+            inline.innerHTML=`<div class="pfnInlineRow"><span>${escapeHTML(order)}</span><b>${escapeHTML(item.itemCode||"")}</b><strong>${escapeHTML(item.itemName||"")}</strong><span>${escapeHTML(item.category||"—")}</span><span>Ordered <b>${toNumber(item.orderedQty,0)}</b></span><div class="tableQtyControl"><button type="button" class="tableQtyButton" data-inline-minus>−</button><button type="button" class="tableQtyValue" data-inline-edit>${toNumber(item.receivedQty,0)}</button><button type="button" class="tableQtyButton" data-inline-plus>+</button></div><span>Remaining <b>${toNumber(item.remainingQty,0)}</b></span><span>${escapeHTML(item.status||"")}</span></div>`;
+            inline.querySelector('[data-inline-plus]')?.addEventListener('click',()=>increaseItemQuantity(item.itemCode,1));
+            inline.querySelector('[data-inline-minus]')?.addEventListener('click',()=>decreaseItemQuantity(item.itemCode,1));
+            inline.querySelector('[data-inline-edit]')?.addEventListener('click',()=>openQuantityEditPrompt(item));
+        }else{inline.hidden=true;inline.innerHTML="";}
+    }
 }
 function refreshReceivingCategoryFilter(){
     const select = UI.elements.receivingCategoryFilter;
@@ -2236,6 +2294,10 @@ function createReceivingTableRow(
             ${index + 1}
         </td>
 
+        <td class="receivingOrderCell">
+            ${escapeHTML(toSafeString(item.orderNumber || (Array.isArray(item.orderNumbers) ? item.orderNumbers[0] : "") || "—"))}
+        </td>
+
         <td>
             ${escapeHTML(
                 item.itemCode
@@ -2256,6 +2318,10 @@ function createReceivingTableRow(
                 ""
             }
 
+        </td>
+
+        <td class="receivingCategoryCell">
+            ${escapeHTML(toSafeString(item.category || "—"))}
         </td>
 
         <td>
@@ -4519,6 +4585,43 @@ function focusScannerInput(){
    SCAN BOX STATE
 ===================================================== */
 
+function triggerScanFieldFlash(kind="success"){
+
+    const scanBox = UI.elements.scanBox || document.getElementById("scanBox");
+    if(!scanBox){ return; }
+
+    let layer = scanBox.querySelector(":scope > .pfnScanFlashLayer");
+    if(!layer){
+        layer = document.createElement("span");
+        layer.className = "pfnScanFlashLayer";
+        layer.setAttribute("aria-hidden","true");
+        scanBox.appendChild(layer);
+    }
+
+    const flashClass = kind === "error"
+        ? "pfnScanFlashLayerError"
+        : "pfnScanFlashLayerSuccess";
+
+    layer.classList.remove(
+        "pfnScanFlashLayerSuccess",
+        "pfnScanFlashLayerError",
+        "pfnScanFlashLayerActive"
+    );
+
+    /* Restart the transition even for two consecutive scans with the same
+       result.  The layer is a real element above the input/icon backgrounds,
+       so the whole Scan/Search field receives one continuous tint. */
+    void layer.offsetWidth;
+    layer.classList.add(flashClass,"pfnScanFlashLayerActive");
+
+    clearTimeout(scanBox._pfnFullFieldFlashTimer);
+    scanBox._pfnFullFieldFlashTimer=setTimeout(()=>{
+        layer.classList.remove("pfnScanFlashLayerActive");
+    },760);
+}
+
+window.triggerScanFieldFlash=triggerScanFieldFlash;
+
 function setScanBoxState(
     state = "ready"
 ){
@@ -4547,6 +4650,8 @@ function setScanBoxState(
             "success",
             "flashSuccess"
         );
+
+        triggerScanFieldFlash("success");
 
         if(badge){
 
@@ -4589,6 +4694,8 @@ function setScanBoxState(
             "error",
             "flashError"
         );
+
+        triggerScanFieldFlash("error");
 
         if(badge){
 
@@ -5446,16 +5553,13 @@ function createLastScanQuantityControls(){
       .getElementById("btnHandheldClearLastScan")
       ?.addEventListener("click",function(){
 
-          /*
-             2C.11.1.7 — CLEAR SCREEN is visual only.
-             It MUST NOT:
-             - reverse a receiving transaction,
-             - change Received,
-             - create a correction,
-             - start a new local batch,
-             - alter history,
-             - write to Supabase.
-          */
+          /* CLEAR is data-safe: it never reverses a transaction or changes
+             Received/history. It does end the worker's visible local batch, so
+             the next scan of the same item correctly starts again at 1. */
+          if(typeof resetCurrentLocalBatch==="function"){
+              resetCurrentLocalBatch();
+          }
+          cancelReceivingAutoClear();
           AppState.workspace.lastScan=null;
 
           refreshEntireUI?.();
@@ -7026,22 +7130,26 @@ function initializeZebraInterface(){
         home.className = "zebraHome";
         home.innerHTML = `
             <div class="zebraBrandRow">
-                <img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true">
-                <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
+                <div class="zebraBrandLockup">
+                    <span class="zebraBrandMark"><img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true"></span>
+                    <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
+                </div>
             </div>
             <div class="zebraModeIntro">
-                <span>SELECT MODE</span>
-                <h1>What are you working on?</h1>
-                <p>Only the tools needed for the selected Handheld workflow will be shown.</p>
+                <span>WORK MODE</span>
+                <h1>Choose your workspace</h1>
+                <p>Fast access to the tools needed for the current task.</p>
             </div>
             <div class="zebraModeCards">
-                <button id="btnZebraReceivingMode" class="zebraModeCard" type="button">
-                    <span class="zebraModeIcon">▥</span>
-                    <div><strong>Receiving</strong><small>Open the pharmacy Active Orders and count live.</small></div>
+                <button id="btnZebraReceivingMode" class="zebraModeCard zebraModeReceiving" type="button">
+                    <span class="zebraModeIcon" aria-hidden="true">▥</span>
+                    <div><strong>Receiving</strong><small>Scan and count active orders.</small></div>
+                    <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
-                <button id="btnZebraExpiryMode" class="zebraModeCard" type="button">
-                    <span class="zebraModeIcon">◷</span>
-                    <div><strong>Expiry</strong><small>Scan products and capture quantity + expiry date.</small></div>
+                <button id="btnZebraExpiryMode" class="zebraModeCard zebraModeExpiry" type="button">
+                    <span class="zebraModeIcon" aria-hidden="true">◷</span>
+                    <div><strong>Expiry</strong><small>Capture quantity and expiry date.</small></div>
+                    <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
             </div>
             <button id="btnZebraSignOut" class="zebraSignOut" type="button">Sign Out</button>
@@ -7110,11 +7218,49 @@ function initializeZebraInterface(){
     setTimeout(()=>refreshUnifiedHandheldWorkspace({silent:true}),120);
 }
 
+/* ============================================================
+   B11 — HANDHELD WORKER PERMISSION BOUNDARY
+   Handheld workers receive operational scan/history controls only.
+   Desktop administrative controls are disabled at the DOM boundary,
+   not merely covered by visual CSS.
+============================================================ */
+function setHandheldWorkerSurface(active){
+    if(!isLikelyZebraDevice()) return;
+
+    const selectors=[
+        "#page-dashboard .scanPanelFooter.pfnActionBar",
+        "#pfnManageOrders",
+        "#btnReceivingNeedsReview",
+        "#btnAdjustReceiving",
+        "#btnReceivingReportAction",
+        ".pfnOrderControlGroup",
+        ".pfnSessionStatus"
+    ];
+
+    selectors.forEach(selector=>{
+        document.querySelectorAll(selector).forEach(el=>{
+            if(active){
+                el.dataset.handheldWorkerHidden="1";
+                el.hidden=true;
+                el.setAttribute("aria-hidden","true");
+                try{ el.inert=true; }catch(_){}
+            }else if(el.dataset.handheldWorkerHidden==="1"){
+                el.hidden=false;
+                el.removeAttribute("aria-hidden");
+                try{ el.inert=false; }catch(_){}
+                delete el.dataset.handheldWorkerHidden;
+            }
+        });
+    });
+}
+window.setHandheldWorkerSurface=setHandheldWorkerSurface;
+
 function clearZebraModeClasses(){
     document.body.classList.remove("zebraHomeActive","zebraJoinActive","zebraReceivingActive","zebraExpiryActive","zebraMode");
 }
 function setZebraHomeMode(){
     if(!isLikelyZebraDevice()){ return; }
+    setHandheldWorkerSurface(false);
 
     /*
        Strict mode isolation:
@@ -7202,8 +7348,10 @@ async function refreshUnifiedHandheldWorkspace(options={}){
     if(typeof AuthState==="undefined" || !AuthState?.context?.pharmacy_id) return false;
     if(typeof pullActiveOrderManifest!=="function") return false;
 
+    document.body.dataset.hhWorkspaceLoading="1";
+    window.hhRefreshReadyState?.();
     try{
-        const loaded=await pullActiveOrderManifest({clearIfMissing:true});
+        await pullActiveOrderManifest({clearIfMissing:true});
         if(typeof pullCloudWorkspaceTransactions==="function"){
             await pullCloudWorkspaceTransactions();
         }
@@ -7211,8 +7359,14 @@ async function refreshUnifiedHandheldWorkspace(options={}){
         recalculateStatistics?.();
         refreshZebraInterface();
         window.hhRefreshReadyState?.();
+
+        /* Manifest refresh may legitimately report "unchanged". Readiness is
+           determined from the authoritative hydrated workspace, not from the
+           transport return flag. This prevents the false "No Active Order"
+           warning while Active Orders are already present. */
         return !!(
-            loaded &&
+            Array.isArray(AppState?.workspace?.orderFiles) &&
+            AppState.workspace.orderFiles.length>0 &&
             Array.isArray(AppState?.workspace?.orderData) &&
             AppState.workspace.orderData.length>0
         );
@@ -7222,6 +7376,10 @@ async function refreshUnifiedHandheldWorkspace(options={}){
             showToast(error?.message||"Unable to load pharmacy Active Orders","error");
         }
         return false;
+    }finally{
+        delete document.body.dataset.hhWorkspaceLoading;
+        window.hhRefreshReadyState?.();
+        refreshHandheldWorkspaceStatus?.();
     }
 }
 
@@ -7249,6 +7407,7 @@ window.openUnifiedHandheldReceiving=openUnifiedHandheldReceiving;
 function setZebraReceivingMode(){
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
+    setHandheldWorkerSurface(true);
     document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
     try{ window.scrollTo(0,0); }catch(_){}
     refreshZebraInterface();
@@ -7260,6 +7419,7 @@ function setZebraReceivingMode(){
 function setZebraExpiryMode(){
     if(!isLikelyZebraDevice()){ return; }
 
+    setHandheldWorkerSurface(false);
     clearZebraModeClasses();
     document.body.classList.add("zebraDevice","zebraExpiryActive");
 
@@ -7357,6 +7517,35 @@ function getHandheldTotalScans(){
     return getHandheldDeviceScannerRows().length;
 }
 
+
+function refreshHandheldWorkspaceStatus(){
+    if(!isLikelyZebraDevice()) return;
+    const state=document.getElementById("handheldWorkspaceStatus");
+    if(!state) return;
+    const orders=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles.length:0;
+    const authenticated=!!AuthState?.context?.pharmacy_id;
+    const loading=document.body.dataset.hhWorkspaceLoading==="1";
+    const online=navigator.onLine!==false;
+
+    state.classList.remove("isSyncing","isOffline","isEmpty");
+    if(loading){
+        state.textContent="SYNCING WORKSPACE…";
+        state.classList.add("isSyncing");
+    }else if(!online){
+        state.textContent="OFFLINE · RECONNECTING";
+        state.classList.add("isOffline");
+    }else if(!authenticated){
+        state.textContent="WORKSPACE NOT CONNECTED";
+        state.classList.add("isOffline");
+    }else if(orders>0){
+        state.textContent=`CONNECTED · ${orders} ACTIVE ORDER${orders===1?"":"S"}`;
+    }else{
+        state.textContent="CONNECTED · NO ACTIVE ORDERS";
+        state.classList.add("isEmpty");
+    }
+}
+window.refreshHandheldWorkspaceStatus=refreshHandheldWorkspaceStatus;
+
 function ensureHandheldReceivingTools(){
     if(!isLikelyZebraDevice()) return;
 
@@ -7377,16 +7566,14 @@ function ensureHandheldReceivingTools(){
         header.innerHTML=`
             <div class="zebraFinalHeader">
                 <div class="zebraFinalTitle">
-                    <strong>Receive Order</strong>
-                    <span class="zebraConnectedDot">ONLINE</span>
+                    <span id="handheldWorkspaceStatus" class="zebraConnectedDot">SYNCING…</span>
                 </div>
                 <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
             </div>
         `;
         finalHeader=header.querySelector(".zebraFinalHeader");
     }else{
-        const state=header.querySelector(".zebraConnectedDot");
-        if(state){ state.textContent="ONLINE"; }
+        refreshHandheldWorkspaceStatus();
     }
 
     document.getElementById("btnZebraModes")?.addEventListener("click", setZebraHomeMode);
@@ -7399,7 +7586,7 @@ function ensureHandheldReceivingTools(){
         recent.type="button";
         recent.setAttribute("aria-label","Open recent scans");
         recent.innerHTML=`
-            <span>RECENT</span>
+            <span>HISTORY</span>
             <strong id="handheldTotalScansValue">0</strong>
         `;
         header.appendChild(recent);
@@ -7488,7 +7675,7 @@ function openHandheldScansPanel(initialTab="THIS"){
                     </div>
                     <div class="handheldRecentQty">+${qty}</div>
                     ${canUndo
-                      ? `<button type="button" class="handheldUndoItem" data-undo-item="${esc(row?.transactionId||"")}">Undo</button>`
+                      ? `<button type="button" class="handheldUndoItem" data-undo-item="${esc(row?.transactionId||"")}" aria-label="Undo this scan"><span aria-hidden="true">↶</span> UNDO</button>`
                       : `<span class="handheldRecentViewOnly">View</span>`}
                   </article>`;
               }).join("") : `<div class="handheldScansEmpty">No recent scans.</div>`}
@@ -7563,7 +7750,7 @@ function openHandheldScansPanel(initialTab="THIS"){
                 },250);
             }else{
                 btn.disabled=false;
-                btn.textContent="Undo";
+                btn.innerHTML='<span aria-hidden="true">↶</span> UNDO';
             }
         });
     };
@@ -7746,44 +7933,62 @@ function toggleHighPriority(itemCode, options={}){
     item.highPriority=item.highPriority!==true;
     if(typeof saveApplicationState==="function") saveApplicationState("high-priority");
     if(options.refresh!==false) refreshOpenKpiPanel();
-    if(options.toast!==false) showToast(`${item.itemName} — ${item.highPriority?"High Priority enabled":"High Priority removed"}`,"success");
+    
     return item;
 }
 
 function renderItemBrowser(body, rows, options={}){
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
-    const showPriority=options.showPriority===true;
+    const orderMode=options.showPriority===true;
     const receivedMode=options.receivedMode===true;
-    const totalUnits=rows.reduce((sum,item)=>sum+Math.max(0,toNumber(item.receivedQty,0)),0);
+    const orderNumbers=Array.from(new Set(rows.flatMap(item=>Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean)));
     body.innerHTML=`
-      <div class="phase263BrowserToolbar">
-        <input class="phase263Search" type="search" placeholder="Search by Item Name / Item Number" aria-label="Search items">
-        ${showPriority?'<button type="button" class="phase263Filter active" data-filter="all">All Items</button><button type="button" class="phase263Filter" data-filter="priority">★ High Priority</button>':''}
+      <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
+        ${orderMode?`<div class="pfnBrowserControlRow"><label>Order<select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><label>Category<select data-category-filter><option value="ALL">All Categories</option>${Array.from(new Set(rows.map(i=>toSafeString(i.category||i.Category||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b)).map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></label><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><label>Quantity<select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
+        <input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items">
       </div>
-      ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b><span>Total Received Units: <b>${totalUnits}</b></span></div>`:''}
-      <div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr>${showPriority?'<th>Priority</th>':''}<th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody data-rows></tbody></table></div>`;
+      ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
+      <div class="phase263TableWrap pfnCleanWorklist"><table class="quickKpiTable phase263Table"><thead><tr>${orderMode?'<th>Item Code</th><th>Item Name</th><th>Priority</th><th>Category</th><th>Quantity</th><th>Order No.</th>':'<th>Item Code</th><th>Item Name</th><th>Ordered</th>'}${receivedMode?'<th>Received</th>':''}</tr></thead><tbody data-rows></tbody></table></div>`;
     const input=body.querySelector('.phase263Search');
     const tbody=body.querySelector('[data-rows]');
-    let filter='all';
+    const orderFilter=body.querySelector('[data-order-filter]');
+    const qtySort=body.querySelector('[data-qty-sort]');
+    const categoryFilter=body.querySelector('[data-category-filter]');
+    const priorityFilter=body.querySelector('[data-priority-filter]');
+    let priorityOnly=false;
+    const rowHtml=item=>{
+        const orders=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean).join(', ')||'—';
+        const pt=item.priorityType||'';
+        if(orderMode)return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Category">${esc(item.category||item.Category||'—')}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
+    };
     const draw=()=>{
         const q=toSafeString(input?.value||'').trim().toLowerCase();
         let visible=rows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
-        if(showPriority&&filter==='priority') visible=visible.filter(item=>item.highPriority===true);
-        visible.sort((a,b)=>(b.highPriority===true)-(a.highPriority===true)||toSafeString(a.itemName).localeCompare(toSafeString(b.itemName)));
-        tbody.innerHTML=visible.length?visible.map(item=>`<tr class="${item.highPriority===true?'phase263PriorityRow':''}">${showPriority?`<td><button type="button" class="phase263Star ${item.highPriority===true?'active':''}" data-priority="${esc(item.itemCode)}" title="Toggle High Priority">${item.highPriority===true?'★':'☆'}</button></td>`:''}<td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||'')}</td></tr>`).join(''):'<tr><td colspan="7" class="tableEmptyState">No matching items.</td></tr>';
-        tbody.querySelectorAll('[data-priority]').forEach(btn=>btn.onclick=(event)=>{
-            event.preventDefault();
-            const wrap=body.querySelector('.phase263TableWrap');
-            const savedTop=wrap?.scrollTop||0;
-            const savedLeft=wrap?.scrollLeft||0;
-            toggleHighPriority(btn.dataset.priority,{refresh:false});
-            draw();
-            const nextWrap=body.querySelector('.phase263TableWrap');
-            if(nextWrap){nextWrap.scrollTop=savedTop;nextWrap.scrollLeft=savedLeft;}
+        const selectedOrder=orderFilter?.value||'ALL';
+        if(orderMode&&selectedOrder!=='ALL') visible=visible.filter(item=>(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).includes(selectedOrder));
+        const selectedCategory=categoryFilter?.value||'ALL';
+        if(orderMode&&selectedCategory!=='ALL') visible=visible.filter(item=>toSafeString(item.category||item.Category||'').trim()===selectedCategory);
+        if(orderMode&&priorityOnly) visible=visible.filter(item=>item.priorityType==='NEW'||item.priorityType==='SHORT');
+        const sort=qtySort?.value||'desc';
+        if(sort==='desc') visible=visible.slice().sort((a,b)=>toNumber(b.orderedQty,0)-toNumber(a.orderedQty,0));
+        if(sort==='asc') visible=visible.slice().sort((a,b)=>toNumber(a.orderedQty,0)-toNumber(b.orderedQty,0));
+        if(orderMode&&priorityOnly){
+            const groups=[['SHORT',visible.filter(i=>i.priorityType==='SHORT')],['NEW',visible.filter(i=>i.priorityType==='NEW')]];
+            tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
+        }else{
+            const colspan=orderMode?6:(receivedMode?4:3);
+            tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+        }
+        tbody.querySelectorAll('[data-mark]').forEach(btn=>btn.onclick=()=>{
+            const item=typeof getItemByCode==='function'?getItemByCode(btn.dataset.code):null;if(!item)return;
+            item.priorityType=item.priorityType===btn.dataset.mark?'':btn.dataset.mark;item.highPriority=!!item.priorityType;
+            try{if(window.PharmFlowNext)window.PharmFlowNext.suppressPriorityToast=true;if(typeof saveApplicationState==='function')saveApplicationState('item-priority');}finally{if(window.PharmFlowNext)window.PharmFlowNext.suppressPriorityToast=false;}
+            const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;draw();const next=body.querySelector('.phase263TableWrap');if(next)next.scrollTop=top;
         });
     };
-    input?.addEventListener('input',draw);
-    body.querySelectorAll('[data-filter]').forEach(btn=>btn.onclick=()=>{filter=btn.dataset.filter;body.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b===btn));draw();});
+    input?.addEventListener('input',draw);orderFilter?.addEventListener('change',draw);categoryFilter?.addEventListener('change',draw);qtySort?.addEventListener('change',draw);
+    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);draw();});
     draw();
 }
 
@@ -7798,7 +8003,7 @@ function renderDashboardKpiPanel(key,body){
         if(!allRows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
         const recent=typeof getRecentScannerTransactions==="function"?getRecentScannerTransactions():[];
         const undoMap=new Map(recent.map(row=>[row.transactionId,row]));
-        body.innerHTML=`<div class="phase263BrowserToolbar"><button type="button" class="phase263Filter ${mode==="this"?"active":""}" data-scan-device="this">This Device</button><button type="button" class="phase263Filter ${mode==="all"?"active":""}" data-scan-device="all">All Devices</button></div>${rows.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Item</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After Action</th><th>Action</th></tr></thead><tbody>${rows.map(row=>{const undo=undoMap.get(row.transactionId);const q=toNumber(row.qtyChange,0);const device=getFriendlyReceivingDeviceLabel(row,{ownDeviceId:localDevice});return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName)}</b><br><span>${esc(row.itemCode)}</span></td><td>${esc(device)}</td><td>${esc(getActivitySourceLabel(row.source))}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${q>0?'+':''}${esc(q)}</td><td><b>${esc(row.totalAfterAction)}</b></td><td>${undo?`<button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${undo.undone?'disabled':''}>${undo.undone?'Corrected':'Undo scan'}</button>`:'—'}</td></tr>`;}).join('')}</tbody></table></div>`:'<div class="tableEmptyState">No activity from this device yet.</div>'}`;
+        body.innerHTML=`<div class="phase263BrowserToolbar"><button type="button" class="phase263Filter ${mode==="this"?"active":""}" data-scan-device="this">This Device</button><button type="button" class="phase263Filter ${mode==="all"?"active":""}" data-scan-device="all">All Devices</button></div>${rows.length?`<div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Item</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After Action</th><th>Action</th></tr></thead><tbody>${rows.map(row=>{const undo=undoMap.get(row.transactionId);const q=toNumber(row.qtyChange,0);const device=getFriendlyReceivingDeviceLabel(row,{ownDeviceId:localDevice});return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td class="pfnActivityItem"><span class="pfnActivityItemCode">${esc(row.itemCode)}</span><span class="pfnActivityItemDivider" aria-hidden="true"></span><span class="pfnActivityItemName">${esc(row.itemName)}</span></td><td>${esc(device)}</td><td>${esc(getActivitySourceLabel(row.source))}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${q>0?'+':''}${esc(q)}</td><td><b>${esc(row.totalAfterAction)}</b></td><td>${undo?`<button class="quickUndoButton" data-undo="${esc(row.transactionId)}" ${undo.undone?'disabled':''}>${undo.undone?'Corrected':'Undo scan'}</button>`:'—'}</td></tr>`;}).join('')}</tbody></table></div>`:'<div class="tableEmptyState">No activity from this device yet.</div>'}`;
         body.querySelectorAll("[data-scan-device]").forEach(btn=>btn.onclick=()=>{body.dataset.scanDeviceMode=btn.dataset.scanDevice;renderDashboardKpiPanel("scans",body);});
         body.querySelectorAll("[data-undo]").forEach(btn=>btn.onclick=()=>{if(typeof undoRecentScannerTransaction==="function") undoRecentScannerTransaction(btn.dataset.undo);});
         return;
@@ -7814,43 +8019,14 @@ function renderDashboardKpiPanel(key,body){
     }
     const rows=getKpiPanelItems(key);
     if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
-    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${esc(item.itemCode)}</td><td><b>${esc(item.itemName)}</b></td><td>${esc(toNumber(item.orderedQty,0))}</td><td>${esc(toNumber(item.receivedQty,0))}</td><td>${esc(toNumber(item.remainingQty,0))}</td><td>${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
+    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td><td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="Remaining">${esc(toNumber(item.remainingQty,0))}</td><td data-label="Status">${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* =====================================================
    PHASE 2C.6 FINAL - ONE-TAP ACCIDENTAL SCAN CORRECTION
 ===================================================== */
 function refreshScanSafetyUI(){
-    /* Phase 2C.6.3+: remove the risky dashboard Undo button. */
     document.querySelector("#lastScanCard .scanSafetyBar")?.remove();
-
-    /* Always expose the two fast review workflows beside Search Item.
-       Handlers are assigned every refresh AND backed by delegated binding
-       below so a re-render can never leave a dead button. */
-    const searchButton=document.getElementById("btnQuickSearch");
-    if(!searchButton) return;
-
-    let received=document.getElementById("btnReceivedItems");
-    if(!received){
-        received=document.createElement("button");
-        received.type="button";
-        received.id="btnReceivedItems";
-        received.className=(searchButton.className||"")+" receivedItemsButton";
-        received.innerHTML="✓ Received Items";
-        searchButton.insertAdjacentElement("afterend",received);
-    }
-    received.onclick=()=>openDashboardKpiPanel("received");
-
-    let priority=document.getElementById("btnOrderItemsPriority");
-    if(!priority){
-        priority=document.createElement("button");
-        priority.type="button";
-        priority.id="btnOrderItemsPriority";
-        priority.className=(searchButton.className||"")+" priorityItemsButton";
-        priority.innerHTML="★ Order Items";
-        received.insertAdjacentElement("afterend",priority);
-    }
-    priority.onclick=()=>openDashboardKpiPanel("total");
     ensureNeedsReviewButtons();
 }
 
@@ -7889,11 +8065,12 @@ async function refreshNeedsReviewCounters(){
         const receiving=await loadNeedsReviewRows("RECEIVING",null);
         const rc=document.getElementById("receivingNeedsReviewCount");
 
-        if(rc) rc.textContent=String(receiving.length);
+        const grouped=groupNeedsReviewRows(receiving);
+        if(rc) rc.textContent=String(grouped.length);
 
         document
             .getElementById("btnReceivingNeedsReview")
-            ?.classList.toggle("hasItems",receiving.length>0);
+            ?.classList.toggle("hasItems",grouped.length>0);
     }catch(error){
         console.warn("Needs Review V2 count failed",error);
     }
@@ -7901,20 +8078,11 @@ async function refreshNeedsReviewCounters(){
 
 function ensureNeedsReviewButtons(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
-
-    const search=document.getElementById("btnQuickSearch");
-    if(search && !document.getElementById("btnReceivingNeedsReview")){
-        const button=document.createElement("button");
-        button.id="btnReceivingNeedsReview";
-        button.className="secondaryButton needsReviewButton";
-        button.type="button";
-        button.innerHTML='Needs Review <strong id="receivingNeedsReviewCount">0</strong>';
-        search.insertAdjacentElement("afterend",button);
-        button.onclick=()=>openNeedsReviewPanel("RECEIVING");
-    }
-
+    const button=document.getElementById("btnReceivingNeedsReview");
+    if(button && button.dataset.bound!=="1"){button.dataset.bound="1";button.onclick=()=>openNeedsReviewPanel("RECEIVING");}
     refreshNeedsReviewCounters();
 }
+
 
 function nrV2FindOrderMatches(query){
     const q=toSafeString(query).trim().toLowerCase();
@@ -7956,6 +8124,7 @@ async function nrV2ResolveToOrderItem(row,item){
             gtin:row.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
+            targetOrder:group.order_number||"",
             transactionId
         });
 
@@ -7996,6 +8165,7 @@ async function nrV2ResolveAsUnordered(row,itemCode,itemName,targetOrder=""){
             gtin:row.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:true,
+            targetOrder:targetOrder||group.order_number||"",
             transactionId
         });
 
@@ -8025,278 +8195,229 @@ async function nrV2HydratePhoto(img,path){
     }catch(_){}
 }
 
+function groupNeedsReviewRows(rows){
+    const groups=new Map();
+    (rows||[]).forEach(row=>{
+        const gtin=toSafeString(row?.gtin||"").trim();
+        const order=toSafeString(row?.order_number||"").trim();
+        const reason=toSafeString(row?.review_reason||"UNKNOWN_GTIN").trim();
+        const key=[gtin,order,reason].join("|");
+        if(!groups.has(key)){
+            groups.set(key,{
+                key,
+                gtin,
+                order_number:order,
+                review_reason:reason,
+                source:row?.source||"",
+                rows:[],
+                total_quantity:0,
+                photos:[],
+                master_item_name_hint:row?.master_item_name_hint||"",
+                master_item_code_hint:row?.master_item_code_hint||""
+            });
+        }
+        const group=groups.get(key);
+        group.rows.push(row);
+        group.total_quantity+=Math.max(0,Number(row?.pending_quantity||0)||0);
+        if(row?.photo_path) group.photos.push(row.photo_path);
+        if(!group.master_item_name_hint && row?.master_item_name_hint) group.master_item_name_hint=row.master_item_name_hint;
+        if(!group.master_item_code_hint && row?.master_item_code_hint) group.master_item_code_hint=row.master_item_code_hint;
+    });
+    return Array.from(groups.values()).map(group=>({
+        ...group,
+        total_quantity:Math.max(1,group.total_quantity||0),
+        rows:group.rows.slice().sort((a,b)=>String(a?.created_at||a?.date_time||"").localeCompare(String(b?.created_at||b?.date_time||"")))
+    }));
+}
+
+function nrV2GroupTransactionId(group){
+    const safe=value=>toSafeString(value||"").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"").slice(0,42);
+    return `NEEDS_REVIEW_GROUP_${safe(group?.order_number||"ALL")}_${safe(group?.gtin||"UNKNOWN")}`;
+}
+
+function nrV2HasTransactionId(transactionId){
+    return (AppState?.workspace?.receivingHistory||[]).some(tx=>toSafeString(tx?.transactionId||"")===transactionId);
+}
+
+async function nrV2ResolveGroupToOrderItem(group,item){
+    const transactionId=nrV2GroupTransactionId(group);
+    if(!nrV2HasTransactionId(transactionId)){
+        await savePharmacyLearnedGTIN(group.gtin,item.itemCode,item.itemName);
+        addMappingRecord({itemCode:item.itemCode,gtin:group.gtin,source:"PHARMACY_LEARNED"});
+        const tx=receiveOrderItem({
+            item,
+            quantity:Math.max(1,Number(group.total_quantity||1)||1),
+            gtin:group.gtin,
+            source:APP_CONFIG.transactionSources.scanner,
+            manual:false,
+            transactionId
+        });
+        if(!tx) throw new Error("Unable to apply reviewed quantity");
+    }
+    for(const row of group.rows){
+        await nrV2MarkResolved(row,item,"LINK_ORDER_ITEM",transactionId);
+    }
+    for(const path of group.photos){
+        try{ await nrV2DeletePhoto?.(path); }catch(_){ }
+    }
+}
+
+async function nrV2ResolveGroupAsUnordered(group,itemCode,itemName,targetOrder=""){
+    const transactionId=nrV2GroupTransactionId(group);
+    if(!nrV2HasTransactionId(transactionId)){
+        await savePharmacyLearnedGTIN(group.gtin,itemCode,itemName);
+        const item=prepareManualExtraItem(itemCode,itemName,group.gtin,targetOrder||group.order_number||"");
+        const tx=receiveOrderItem({
+            item,
+            quantity:Math.max(1,Number(group.total_quantity||1)||1),
+            gtin:group.gtin,
+            source:APP_CONFIG.transactionSources.scanner,
+            manual:true,
+            transactionId
+        });
+        if(!tx) throw new Error("Unable to add unordered item");
+    }
+    for(const row of group.rows){
+        await nrV2MarkResolved(row,{itemCode,itemName},"ADD_UNORDERED",transactionId);
+    }
+    for(const path of group.photos){
+        try{ await nrV2DeletePhoto?.(path); }catch(_){ }
+    }
+}
+
 async function openNeedsReviewPanel(workflow="RECEIVING"){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
-
     document.getElementById("needsReviewOverlay")?.remove();
 
-    let rows=[];
-    try{
-        rows=await loadNeedsReviewRows(workflow,null);
-    }catch(error){
-        showToast?.(
-            error?.message||"Unable to load Needs Review",
-            "error"
-        );
-        return;
-    }
+    let rawRows=[];
+    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
+    const groups=groupNeedsReviewRows(rawRows);
     const esc=value=>escapeHTML(toSafeString(value));
-
     const overlay=document.createElement("div");
     overlay.id="needsReviewOverlay";
-    overlay.className="needsReviewOverlay needsReviewOverlayV2";
-
+    overlay.className="needsReviewOverlay needsReviewOverlayV2 pfnNeedsReviewModern";
     overlay.innerHTML=`
       <button class="needsReviewScrim" data-close aria-label="Close"></button>
       <section class="needsReviewPanel needsReviewPanelV2 needsReviewWorkspace">
         <header>
-          <div>
-            <span>RECEIVING</span>
-            <h2>Needs Review</h2>
-            <p>${rows.length} pending · Review scanned exceptions without interrupting the Handheld worker</p>
-          </div>
+          <div><span>RECEIVING EXCEPTIONS</span><h2>Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Resolve each unknown GTIN once. Repeated scans are grouped automatically.</p></div>
           <button class="needsReviewClose" data-close>✕</button>
         </header>
-
-        <div class="needsReviewList">
-          ${
-            rows.length
-            ? rows.map((row,index)=>`
-              <section class="needsReviewRow needsReviewRowV2" data-i="${index}">
-                <div class="needsReviewPhotoWrap ${row.photo_path?"hasPhoto":""}">
-                  ${
-                    row.photo_path
-                    ? `<button class="needsReviewPhotoButton" data-photo-open="${index}" type="button" title="Open photo"><img data-photo="${index}" alt="Product review photo" hidden><span>OPEN PHOTO</span></button>`
-                    : `<div class="needsReviewNoPhoto">NO PHOTO</div>`
-                  }
+        <div class="pfnNeedsReviewToolbar"><input type="search" data-review-filter placeholder="Search by GTIN, Item Number or Item Name"></div>
+        <div class="needsReviewList" data-review-list>
+          ${groups.length?groups.map((group,index)=>`
+            <section class="needsReviewRow needsReviewRowV2 pfnGroupedReview" data-i="${index}" data-search-text="${esc([group.gtin,group.master_item_code_hint,group.master_item_name_hint,group.order_number].join(' ').toLowerCase())}">
+              <div class="needsReviewInfo">
+                <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNIZED"}</span>
+                <strong class="pfnReviewGTIN">${esc(group.gtin)}</strong>
+                <div class="pfnReviewMeta">
+                  <div><span>Quantity</span><b>${group.total_quantity}</b></div>
+                  <div><span>Order</span><b>${group.order_number?esc(group.order_number):"Needs assignment"}</b></div>
+                  <div><span>Source</span><b>${esc(group.source||"Handheld")}</b></div>
+                  <div><span>Entries</span><b>${group.rows.length}</b></div>
                 </div>
-
-                <div class="needsReviewInfo">
-                  <span>${row.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"UNKNOWN GTIN"}</span>
-                  <strong>${esc(row.gtin)}</strong>
-                  <small>
-                    Qty ${Number(row.pending_quantity||1)}
-                    ${row.order_number?` · Order ${esc(row.order_number)}`:""}
-                    ${row.source?` · ${esc(row.source)}`:""}
-                  </small>
-                  ${
-                    row.master_item_name_hint
-                    ? `<em>${esc(row.master_item_name_hint)} · ${esc(row.master_item_code_hint)}</em>`
-                    : ""
-                  }
-                </div>
-
-                <div class="needsReviewResolve">
-                  <label>
-                    Find item in current order
-                    <input data-search="${index}" placeholder="Search uploaded orders by Item Code or Item Name" autocomplete="off" spellcheck="false">
-                  </label>
-                  <div class="needsReviewMatches" data-matches="${index}"></div>
-
-                  <details class="needsReviewExtra">
-                    <summary>Item truly not in the order?</summary>
-                    <div class="needsReviewExtraGrid">
-                      <input data-extra-code="${index}" placeholder="Item Code" value="${esc(row.master_item_code_hint||"")}">
-                      <input data-extra-name="${index}" placeholder="Item Name" value="${esc(row.master_item_name_hint||"")}">
-                      <label class="needsReviewTargetOrder">
-                        Target Order
-                        <select data-extra-order="${index}">
-                          ${
-                            (
-                              typeof getSelectedReceivingOrderNumbers==="function"
-                                ? getSelectedReceivingOrderNumbers()
-                                : []
-                            ).map(order=>
-                              `<option value="${esc(order)}">${esc(order)}</option>`
-                            ).join("")
-                          }
-                        </select>
-                      </label>
-                      <button data-extra="${index}" type="button">ADD UNORDERED & RECEIVE</button>
-                    </div>
-                  </details>
-
-                  <button class="needsReviewDelete" data-delete="${index}" type="button">Delete review</button>
-                </div>
-              </section>
-            `).join("")
-            : `<div class="needsReviewEmpty">Nothing needs review.</div>`
-          }
+                <small class="pfnReviewSubline">${group.photos.length?`${group.photos.length} temporary photo${group.photos.length===1?"":"s"} · `:""}Resolve this case once; repeated scans are already grouped.</small>
+              </div>
+              <div class="needsReviewResolve">
+                ${group.photos.length?`<details class="pfnReviewPhotos"><summary>View temporary photo${group.photos.length===1?"":"s"}</summary><div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Product review photo" hidden><span>Photo ${pidx+1}</span></button>`).join('')}</div></details>`:""}
+                <label>Search Current Order<input data-search="${index}" placeholder="Search by Item Name or Item Number" autocomplete="off" spellcheck="false"></label>
+                <div class="needsReviewMatches" data-matches="${index}"></div>
+                <details class="needsReviewExtra"><summary>+ Add Extra Item</summary><div class="needsReviewExtraGrid"><input data-extra-code="${index}" placeholder="Item Code" value="${esc(group.master_item_code_hint||"")}"><input data-extra-name="${index}" placeholder="Item Name" value="${esc(group.master_item_name_hint||"")}"><label class="needsReviewTargetOrder">Target Order<select data-extra-order="${index}">${(typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():[]).map(order=>`<option value="${esc(order)}" ${normalizeOrderNumber(order)===normalizeOrderNumber(group.order_number)?"selected":""}>${esc(order)}</option>`).join("")}</select></label><button data-extra="${index}" type="button">ADD EXTRA &amp; RECEIVE ${group.total_quantity}</button></div></details>
+                <button class="needsReviewDelete" data-delete="${index}" type="button">Delete review case</button>
+              </div>
+            </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
-      </section>
-    `;
-
+      </section>`;
     document.body.appendChild(overlay);
+    overlay.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>overlay.remove());
 
-    overlay.querySelectorAll("[data-close]").forEach(button=>{
-        button.onclick=()=>overlay.remove();
+    const reviewFilter=overlay.querySelector('[data-review-filter]');
+    reviewFilter?.addEventListener('input',()=>{
+        const q=toSafeString(reviewFilter.value).trim().toLowerCase();
+        overlay.querySelectorAll('.pfnGroupedReview').forEach(row=>{row.hidden=!!q&&!toSafeString(row.dataset.searchText).includes(q);});
     });
 
-    rows.forEach((row,index)=>{
+    groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
         const search=overlay.querySelector(`[data-search="${index}"]`);
         const matches=overlay.querySelector(`[data-matches="${index}"]`);
 
-        if(row.photo_path){
-            nrV2HydratePhoto(
-                overlay.querySelector(`[data-photo="${index}"]`),
-                row.photo_path
-            );
-        }
-
-        overlay.querySelector(`[data-photo-open="${index}"]`)?.addEventListener("click",async()=>{
-            const url=await nrV2PhotoObjectUrl(row.photo_path);
-            if(!url){ showToast?.("Unable to open review photo","error"); return; }
+        group.photos.forEach((path,pidx)=>nrV2HydratePhoto(overlay.querySelector(`[data-photo="${index}:${pidx}"]`),path));
+        group.photos.forEach((path,pidx)=>overlay.querySelector(`[data-photo-open="${index}:${pidx}"]`)?.addEventListener('click',async()=>{
+            const url=await nrV2PhotoObjectUrl(path); if(!url){showToast?.("Unable to open review photo","error");return;}
             document.getElementById("needsReviewPhotoViewer")?.remove();
-            const viewer=document.createElement("div");
-            viewer.id="needsReviewPhotoViewer";
-            viewer.className="needsReviewPhotoViewer";
-            viewer.innerHTML=`<button type="button" class="needsReviewPhotoViewerScrim" aria-label="Close"></button><div class="needsReviewPhotoViewerCard"><button type="button" class="needsReviewPhotoViewerClose">✕</button><img src="${url}" alt="Product review photo"></div>`;
-            document.body.appendChild(viewer);
-            viewer.querySelectorAll("button").forEach(btn=>btn.onclick=()=>viewer.remove());
-        });
+            const viewer=document.createElement("div");viewer.id="needsReviewPhotoViewer";viewer.className="needsReviewPhotoViewer";
+            viewer.innerHTML=`<button type="button" data-close aria-label="Close"></button><div><img src="${url}" alt="Product review photo"><button type="button" data-close>Close</button></div>`;
+            document.body.appendChild(viewer);viewer.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>viewer.remove());
+        }));
 
-        const renderMatches=()=>{
-            const items=nrV2FindOrderMatches(search?.value||"");
-
-            matches.innerHTML=
-                items.length
-                ? items.map((item,itemIndex)=>`
-                    <button type="button" data-match="${itemIndex}">
-                      <span>
-                        <strong>${esc(item.itemName)}</strong>
-                        <small>Item ${esc(item.itemCode)}</small>
-                      </span>
-                      <b>LINK GTIN & RECEIVE ${Number(row.pending_quantity||1)}</b>
-                    </button>
-                  `).join("")
-                : `<div class="gtinNoResult">Search the current order.</div>`;
-
-            matches.querySelectorAll("[data-match]").forEach(button=>{
-                button.onclick=async()=>{
-                    const item=items[Number(button.dataset.match)];
-                    button.disabled=true;
-
-                    try{
-                        await nrV2ResolveToOrderItem(row,item);
-                        section.remove();
-                        showToast?.(
-                            "GTIN linked and quantity received",
-                            "success"
-                        );
-                        refreshNeedsReviewCounters();
-                    }catch(error){
-                        button.disabled=false;
-                        showToast?.(
-                            error?.message||"Unable to resolve review",
-                            "error"
-                        );
-                    }
-                };
+        const drawMatches=()=>{
+            const q=toSafeString(search?.value||"").trim();
+            if(!q){matches.innerHTML="";return;}
+            const items=nrV2FindOrderMatches(q).slice(0,6);
+            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}"><span><strong>${esc(item.itemName)}</strong><small>Item ${esc(item.itemCode)}</small></span><b>Resolve &amp; Receive ${group.total_quantity}</b></button>`).join(""):`<div class="needsReviewNoMatches">No matching order item.</div>`;
+            matches.querySelectorAll('[data-match]').forEach(button=>button.onclick=async()=>{
+                const item=items[Number(button.dataset.match)]; if(!item)return;
+                button.disabled=true;
+                try{await nrV2ResolveGroupToOrderItem(group,item);section.remove();await refreshNeedsReviewCounters();showToast?.(`GTIN resolved — ${group.total_quantity} received`,"success");}
+                catch(error){button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error");}
             });
         };
+        search?.addEventListener('input',drawMatches);
 
-        search?.addEventListener("input",renderMatches);
-        if(search && row.master_item_code_hint){
-            search.value=row.master_item_code_hint;
-        }else if(search && row.master_item_name_hint){
-            search.value=row.master_item_name_hint;
-        }
-        renderMatches();
+        overlay.querySelector(`[data-extra="${index}"]`)?.addEventListener('click',async event=>{
+            const code=normalizeItemCode(overlay.querySelector(`[data-extra-code="${index}"]`)?.value||"");
+            const name=toSafeString(overlay.querySelector(`[data-extra-name="${index}"]`)?.value||"").trim();
+            const target=normalizeOrderNumber(overlay.querySelector(`[data-extra-order="${index}"]`)?.value||group.order_number||"");
+            if(!code||!name){showToast?.("Enter Item Code and Item Name","warning");return;}
+            event.currentTarget.disabled=true;
+            try{await nrV2ResolveGroupAsUnordered(group,code,name,target);section.remove();await refreshNeedsReviewCounters();showToast?.(`Extra item added — ${group.total_quantity} received`,"success");}
+            catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add extra item","error");}
+        });
 
-        overlay
-            .querySelector(`[data-extra="${index}"]`)
-            ?.addEventListener("click",async event=>{
-                const button=event.currentTarget;
-                const code=normalizeItemCode(
-                    overlay.querySelector(`[data-extra-code="${index}"]`)?.value||""
-                );
-                const name=toSafeString(
-                    overlay.querySelector(`[data-extra-name="${index}"]`)?.value||""
-                ).trim();
-
-                if(!code || !name){
-                    showToast?.(
-                        "Enter Item Code and Item Name",
-                        "warning"
-                    );
-                    return;
-                }
-
-                button.disabled=true;
-
-                const targetOrder=
-                    normalizeOrderNumber(
-                        overlay.querySelector(
-                            `[data-extra-order="${index}"]`
-                        )?.value||""
-                    );
-
-                if(!targetOrder){
-                    showToast?.(
-                        "Select the target Order",
-                        "warning"
-                    );
-                    button.disabled=false;
-                    return;
-                }
-
-                try{
-                    await nrV2ResolveAsUnordered(
-                        row,
-                        code,
-                        name,
-                        targetOrder
-                    );
-                    section.remove();
-                    showToast?.(
-                        "Unordered item added and received",
-                        "success"
-                    );
-                    refreshNeedsReviewCounters();
-                }catch(error){
-                    button.disabled=false;
-                    showToast?.(
-                        error?.message||"Unable to add unordered item",
-                        "error"
-                    );
-                }
-            });
-
-        overlay
-            .querySelector(`[data-delete="${index}"]`)
-            ?.addEventListener("click",async event=>{
-                const button=event.currentTarget;
-
-                if(button.dataset.confirm!=="1"){
-                    button.dataset.confirm="1";
-                    button.textContent="Confirm delete";
-                    setTimeout(()=>{
-                        if(button.isConnected){
-                            button.dataset.confirm="";
-                            button.textContent="Delete review";
-                        }
-                    },2500);
-                    return;
-                }
-
-                try{
-                    await nrV2Delete(row.review_id);
-                    if(row.photo_path) await nrV2DeletePhoto?.(row.photo_path);
-                    section.remove();
-                    refreshNeedsReviewCounters();
-                }catch(error){
-                    showToast?.(
-                        error?.message||"Unable to delete review",
-                        "error"
-                    );
-                }
-            });
+        overlay.querySelector(`[data-delete="${index}"]`)?.addEventListener('click',async event=>{
+            const button=event.currentTarget;
+            if(button.dataset.confirm!=="1"){button.dataset.confirm="1";button.textContent="Confirm delete";setTimeout(()=>{if(button.isConnected){button.dataset.confirm="";button.textContent="Delete review case";}},2500);return;}
+            try{for(const row of group.rows)await nrV2Delete(row.review_id);for(const path of group.photos){try{await nrV2DeletePhoto?.(path);}catch(_){}}section.remove();await refreshNeedsReviewCounters();}
+            catch(error){showToast?.(error?.message||"Unable to delete review","error");}
+        });
     });
 }
 
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
+
+/* B11: lightweight cross-device Needs Review awareness.
+   Full review rows are fetched only when the PC panel is opened; the watcher
+   asks Supabase for a tiny count so a Handheld submission becomes visible on
+   the PC without refreshing the whole workspace. */
+let needsReviewCloudWatchTimer=null;
+let needsReviewCloudWatchBusy=false;
+async function refreshNeedsReviewCountFromCloud(){
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) return;
+    if(document.hidden || needsReviewCloudWatchBusy || typeof nrV2Count!=="function") return;
+    needsReviewCloudWatchBusy=true;
+    try{
+        const count=await nrV2Count("RECEIVING");
+        setElementText(document.getElementById("receivingNeedsReviewCount"),count);
+        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
+    }catch(error){
+        Logger?.warn?.("Needs Review count sync failed",error);
+    }finally{
+        needsReviewCloudWatchBusy=false;
+    }
+}
+function startNeedsReviewCloudWatch(){
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) return;
+    clearInterval(needsReviewCloudWatchTimer);
+    refreshNeedsReviewCountFromCloud();
+    needsReviewCloudWatchTimer=setInterval(refreshNeedsReviewCountFromCloud,6000);
+}
+window.startNeedsReviewCloudWatch=startNeedsReviewCloudWatch;
+window.addEventListener("focus",refreshNeedsReviewCountFromCloud);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshNeedsReviewCountFromCloud(); });
+setTimeout(startNeedsReviewCloudWatch,1200);
 window.openNeedsReviewPanel=openNeedsReviewPanel;
 
 function refreshOrderScopeControl(){
@@ -8326,7 +8447,7 @@ function setupPhase263ActionDelegation(){
         /* Phase 2C.7.6: Dashboard Search Item and Receiving Search are one
            workflow. Capture binding prevents an older page-specific handler
            from opening a different/stale search implementation. */
-        const unifiedSearch=event.target.closest?.("#btnQuickSearch, #btnReceivingSearch");
+        const unifiedSearch=event.target.closest?.("#btnReceivingSearch");
         if(unifiedSearch){
             event.preventDefault();
             event.stopImmediatePropagation?.();
@@ -8335,8 +8456,6 @@ function setupPhase263ActionDelegation(){
         }
         const received=event.target.closest?.("#btnReceivedItems");
         if(received){event.preventDefault();openDashboardKpiPanel("received");return;}
-        const priority=event.target.closest?.("#btnOrderItemsPriority");
-        if(priority){event.preventDefault();openDashboardKpiPanel("total");}
     },true);
 }
 
@@ -8355,23 +8474,193 @@ function openCurrentMissingGTINPanel(){
 
 async function requestRemoveActiveOrderFile(fileId){
     const files=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles:[];
-    const file=files.find(f=>f.id===fileId);if(!file)return;
-    const orderNumber=typeof normalizeOrderNumber==="function"?normalizeOrderNumber(file.documentId||file.orderNumber||""):toSafeString(file.documentId||"");
-    if(files.length<=1){showToast("Use Reset Current Workspace to discard the only active order","warning");return;}
-    showConfirmModal("Remove Active Order",`Remove ${orderNumber||file.name} from the current workspace only? Other uploaded orders will remain. Physical scans already recorded are not silently deleted.`,async()=>{
+    const file=files.find(f=>f.id===fileId);
+    if(!file)return;
+
+    const orderNumber=typeof normalizeOrderNumber==="function"
+        ? normalizeOrderNumber(file.documentId||file.orderNumber||"")
+        : toSafeString(file.documentId||"");
+    if(!orderNumber){
+        showToast("Unable to identify this active Order Number","error");
+        return;
+    }
+
+    /* B10 Clean 8 — REMOVE is a structural, order-scoped operation.
+       Source contribution comes from the active file's embedded sourceRows
+       first. This is the same source used by order/report filtering and avoids
+       relying on a historical/server snapshot that may be absent or delayed. */
+    let sourceRows=[];
+    try{
+        sourceRows=typeof getWorkspaceOrderSourceRows==="function"
+            ? (getWorkspaceOrderSourceRows(orderNumber)||[])
+            : [];
+    }catch(_){ sourceRows=[]; }
+    if(!sourceRows.length){
+        try{
+            sourceRows=typeof getOriginalUploadedOrderSnapshot==="function"
+                ? (await getOriginalUploadedOrderSnapshot(orderNumber)||[])
+                : [];
+        }catch(_){ sourceRows=[]; }
+    }
+
+    const targetMembership=(item)=>{
+        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
+            .map(normalizeOrderNumber)
+            .filter(Boolean);
+        return memberships.includes(orderNumber);
+    };
+
+    /* Transactions created by older builds did not always stamp orderNumber.
+       If an item belongs to exactly one active order, attribution is still
+       deterministic and safe. Shared-item transactions without an explicit
+       order are deliberately NOT guessed. */
+    const activeOrders=files
+        .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
+        .filter(Boolean);
+    const perOrderTransactions=(Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : []).filter(tx=>{
+            const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
+            if(explicit)return explicit===orderNumber;
+            const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
+            const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
+                .map(normalizeOrderNumber)
+                .filter(n=>activeOrders.includes(n));
+            return memberships.length===1 && memberships[0]===orderNumber;
+        });
+
+    const receivedUnits=perOrderTransactions.reduce((sum,tx)=>sum+Number(tx?.quantity||0),0);
+    const reviewRows=await loadNeedsReviewRows("RECEIVING",orderNumber).catch(()=>[]);
+    const hasOperationalData=Math.abs(receivedUnits)>0 || reviewRows.length>0;
+    const message=hasOperationalData
+        ? `Remove ${orderNumber}?\n\nThis permanently removes THIS active order from Receiving, including its receiving quantities/scans and unresolved Needs Review cases. Other active orders are not affected.`
+        : `Remove ${orderNumber} from Active Receiving?\n\nOther active orders are not affected.`;
+
+    showConfirmModal("Remove Active Order",message,async()=>{
         try{
             showLoading("Removing order...");
-            const sourceRows=typeof getOriginalUploadedOrderSnapshot==="function"&&orderNumber?await getOriginalUploadedOrderSnapshot(orderNumber):[];
-            if(orderNumber&&typeof authRpc==="function"&&typeof AuthState!=="undefined"&&AuthState.context?.pharmacy_id){await authRpc("discard_pharmflow_active_order",{p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:orderNumber,p_confirmation:orderNumber});}
-            sourceRows.forEach(row=>{const code=normalizeItemCode(row.item_code||row.itemCode);const item=getItemByCode(code);if(!item)return;item.orderedQty=Math.max(0,toNumber(item.orderedQty,0)-toNumber(row.ordered_qty??row.orderedQty,0));if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);});
-            AppState.workspace.orderData=AppState.workspace.orderData.filter(item=>!(toNumber(item.orderedQty,0)<=0&&toNumber(item.receivedQty,0)<=0&&item.manual!==true));
+
+            if(typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){
+                throw new Error("Pharmacy cloud context is unavailable. Sign in again before removing the order.");
+            }
+            if(!sourceRows.length){
+                throw new Error("Order source data could not be resolved safely. No data was removed.");
+            }
+
+            /* Server structural authority first. If this fails, local state is
+               untouched and no success message can be shown. */
+            await authRpc("discard_pharmflow_active_order",{
+                p_pharmacy_id:AuthState.context.pharmacy_id,
+                p_order_number:orderNumber,
+                p_confirmation:orderNumber
+            });
+
+            /* Temporary review evidence belongs to this active order only. */
+            for(const row of reviewRows){
+                try{
+                    if(row?.photo_path && typeof nrV2DeletePhoto==="function")await nrV2DeletePhoto(row.photo_path);
+                    if(row?.review_id && typeof nrV2Delete==="function")await nrV2Delete(row.review_id);
+                }catch(reviewError){
+                    Logger.warn?.("Temporary review cleanup failed after active-order removal",reviewError);
+                }
+            }
+
+            /* Remove received contribution first, then ordered contribution. */
+            perOrderTransactions.forEach(tx=>{
+                const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
+                if(!item)return;
+                item.receivedQty=Math.max(0,Number(item.receivedQty||0)-Number(tx?.quantity||0));
+                if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
+            });
+
+            sourceRows.forEach(row=>{
+                const code=normalizeItemCode(row?.item_code||row?.itemCode||"");
+                const item=typeof getItemByCode==="function"?getItemByCode(code):null;
+                if(!item)return;
+                item.orderedQty=Math.max(0,Number(item.orderedQty||0)-Number(row?.ordered_qty??row?.orderedQty??0));
+                if(Array.isArray(item.orderNumbers)){
+                    item.orderNumbers=item.orderNumbers.filter(n=>normalizeOrderNumber(n)!==orderNumber);
+                }
+                if(normalizeOrderNumber(item.orderNumber||"")===orderNumber){
+                    const surviving=(item.orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean);
+                    item.orderNumber=surviving[0]||"";
+                }
+                if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
+            });
+
+            AppState.workspace.receivingHistory=(AppState.workspace.receivingHistory||[])
+                .filter(tx=>!perOrderTransactions.includes(tx));
             AppState.workspace.orderFiles=files.filter(f=>f.id!==fileId);
-            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
-            const remaining=AppState.workspace.orderFiles.map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||"")).filter(Boolean);
+            AppState.workspace.orderData=(AppState.workspace.orderData||[]).filter(item=>
+                !(Number(item.orderedQty||0)<=0 && Number(item.receivedQty||0)<=0 && item.manual!==true)
+            );
+
+            const remaining=AppState.workspace.orderFiles
+                .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
+                .filter(Boolean);
+            AppState.workspace.selectedOrderNumbers=remaining.slice();
+            AppState.workspace.selectedOrderNumber=remaining.length===1?remaining[0]:(remaining.length?"ALL":"");
             AppState.workspace.orderName=remaining.length===1?remaining[0]:(remaining.length?remaining.join(" + "):"");
-            recalculateStatistics();if(typeof saveApplicationState==="function")saveApplicationState("remove-order");refreshEntireUI();
-            showToast(`${orderNumber||file.name} removed. ${remaining.length} active order(s) remain.`,"success");
-        }catch(error){Logger.error("Remove active order failed",error);showToast(error?.message||"Unable to remove order","error");}finally{hideLoading();}
+            AppState.workspace.active=remaining.length>0;
+
+            if(typeof ReceivingEngine!=="undefined"){
+                ReceivingEngine.recentScans=(ReceivingEngine.recentScans||[]).filter(tx=>{
+                    const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
+                    if(explicit)return explicit!==orderNumber;
+                    const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
+                    return !targetMembership(item);
+                });
+                const last=ReceivingEngine.lastTransaction;
+                const lastOrder=normalizeOrderNumber(last?.selectedOrderNumber||last?.orderNumber||last?.orderId||"");
+                if(lastOrder===orderNumber)ReceivingEngine.lastTransaction=null;
+            }
+
+            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
+            if(typeof recalculateStatistics==="function")recalculateStatistics();
+
+            /* Local persistence does not announce a separate "Workspace saved"
+               toast. More importantly, REMOVE must update the full cloud
+               workspace even when the last order was removed. Normal autosave
+               intentionally skips empty workspaces and was the root cause of
+               the deleted order being hydrated back into Manage Orders. */
+            if(typeof saveWorkspaceSnapshot==="function")saveWorkspaceSnapshot();
+
+            if(typeof syncReceivingStructureAfterChange!=="function"){
+                throw new Error("Structural receiving synchronization is unavailable. Reload and try again.");
+            }
+            const structureSaved=await syncReceivingStructureAfterChange("Active order removal synchronized");
+            if(structureSaved!==true){
+                throw new Error("The server did not confirm removal from the Active Order Manifest. No success was recorded. Reload before continuing.");
+            }
+
+            /* Re-read the structural authority before success. This prevents a
+               stale Active Order Manifest from silently re-hydrating the order
+               after the green toast. Empty server state is authoritative. */
+            if(typeof pullActiveOrderManifest==="function"){
+                await pullActiveOrderManifest({clearIfMissing:remaining.length===0});
+            }
+            if(typeof verifyActiveOrderManifestMatchesLocal==="function"){
+                const verified=await verifyActiveOrderManifestMatchesLocal();
+                if(verified!==true){
+                    throw new Error("Active Order removal verification failed. Reload before continuing.");
+                }
+            }
+
+            if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry();
+            if(typeof refreshEntireUI==="function")refreshEntireUI();
+            if(typeof refreshNeedsReviewCounters==="function")await refreshNeedsReviewCounters();
+
+            showToast(
+                `${orderNumber} removed successfully. ${remaining.length} active order(s) remain.`,
+                "success",
+                9000
+            );
+        }catch(error){
+            Logger.error("Remove active order failed",error);
+            showToast(error?.message||"Unable to remove order","error",10000);
+        }finally{
+            hideLoading();
+        }
     });
 }
 

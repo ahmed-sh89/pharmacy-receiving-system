@@ -11,6 +11,10 @@ const MEDRYVO_RECOVERY_REDIRECT = "https://ahmed-sh89.github.io/pharmacy-receivi
 const AUTH_PENDING_INVITE_KEY = "PRS_V3_PENDING_INVITE";
 const AUTH_PENDING_OWNER_KEY = "PRS_V3_PENDING_OWNER_SETUP";
 const AUTH_PENDING_REGISTRATION_KEY = "PRS_V3_PENDING_PHARMACY_REGISTRATION";
+const AUTH_REFRESH_LOCK_KEY = "PRS_V3_SUPABASE_AUTH_REFRESH_LOCK";
+const AUTH_REFRESH_LOCK_MS = 8000;
+const AUTH_REQUEST_TIMEOUT_MS = 12000;
+const AUTH_TAB_ID = "auth-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
 
 const AuthState = {
     initialized:false,
@@ -18,9 +22,18 @@ const AuthState = {
     session:null,
     user:null,
     context:null,
+    contextError:null,
     contextLoading:false,
     ownerExists:true,
     refreshTimer:null,
+    /* B10 Clean15.1 — serialize token refreshes. Scan bursts can create
+       several concurrent authenticated RPCs; refresh-token rotation must
+       never let a losing refresh attempt clear an otherwise valid session. */
+    refreshPromise:null,
+    /* A background refresh failure must not destroy an active Handheld
+       Receiving workspace. This flag is UI/runtime state only; it never
+       grants access or treats a failed request as successful. */
+    connectionDegraded:false,
     busy:false,
     registration:null,
     ownerRegistrations:[],
@@ -448,7 +461,10 @@ function restoreAuthSession(){
 function persistAuthSession(session){
     AuthState.session = session || null;
     AuthState.user = session && session.user ? session.user : null;
+    AuthState.contextError = null;
+
     if(session){
+        AuthState.connectionDegraded=false;
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
         scheduleTokenRefresh(session);
     }
@@ -457,6 +473,61 @@ function persistAuthSession(session){
         if(AuthState.refreshTimer){ clearTimeout(AuthState.refreshTimer); }
         AuthState.refreshTimer = null;
     }
+}
+
+function isActiveHandheldWorkspace(){
+    return !!(
+        AuthState.context?.pharmacy_id &&
+        typeof isLikelyZebraDevice==="function" &&
+        isLikelyZebraDevice() &&
+        (
+            document.body.classList.contains("zebraReceivingActive") ||
+            document.body.classList.contains("zebraExpiryActive")
+        )
+    );
+}
+
+function setAuthConnectionDegraded(degraded){
+    AuthState.connectionDegraded=degraded===true;
+    try{
+        window.dispatchEvent(new CustomEvent("pharmflow:auth-connection",{
+            detail:{degraded:AuthState.connectionDegraded}
+        }));
+    }catch(_){ }
+}
+
+function clearRejectedAuthSession(expectedRefreshToken){
+    const stored=readStoredAuthSession();
+    if(
+        stored?.refresh_token &&
+        String(stored.refresh_token)!==String(expectedRefreshToken||"")
+    ){
+        persistAuthSession(stored);
+        return false;
+    }
+
+    const previousScope=String(AuthState.lastContextScope||"");
+    AuthState.session=null;
+    AuthState.user=null;
+    AuthState.context=null;
+    AuthState.registration=null;
+    AuthState.lastContextScope="";
+    AuthState.contextError=null;
+    if(AuthState.refreshTimer){ clearTimeout(AuthState.refreshTimer); }
+    AuthState.refreshTimer=null;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_REFRESH_LOCK_KEY);
+    publishAuthenticatedContextReady(previousScope,"");
+
+    queueMicrotask(()=>{
+        lockApplicationForAuth?.();
+        renderAuthState?.();
+        setAuthMessage?.(
+            "Your saved sign-in expired. Please sign in again.",
+            "error"
+        );
+    });
+    return true;
 }
 
 function scheduleTokenRefresh(session){
@@ -472,7 +543,37 @@ async function authRequest(path, options = {}){
         "Content-Type":"application/json",
         ...(options.headers || {})
     };
-    const response = await fetch(getSupabaseProjectUrl() + path, {...options, headers});
+    let abortTimer=null;
+    let controller=null;
+    let requestOptions={...options,headers};
+
+    if(typeof AbortController!=="undefined" && !options.signal){
+        controller=new AbortController();
+        requestOptions={...requestOptions,signal:controller.signal};
+        abortTimer=setTimeout(()=>controller.abort(),AUTH_REQUEST_TIMEOUT_MS);
+    }
+
+    let response;
+    let timeoutTimer=null;
+    try{
+        response=await Promise.race([
+            fetch(getSupabaseProjectUrl() + path,requestOptions),
+            new Promise((_,reject)=>{
+                timeoutTimer=setTimeout(
+                    ()=>reject(new Error("PharmFlow connection timed out. Please try again.")),
+                    AUTH_REQUEST_TIMEOUT_MS
+                );
+            })
+        ]);
+    }catch(error){
+        if(error?.name==="AbortError"){
+            throw new Error("PharmFlow connection timed out. Please try again.");
+        }
+        throw error;
+    }finally{
+        if(abortTimer){ clearTimeout(abortTimer); }
+        if(timeoutTimer){ clearTimeout(timeoutTimer); }
+    }
     const text = await response.text();
     let data = null;
     try{ data = text ? JSON.parse(text) : null; }
@@ -789,25 +890,204 @@ async function signUpInitialOwner(){
     finally{ setAuthBusy(false); }
 }
 
-async function refreshAuthToken(){
-    if(!AuthState.session || !AuthState.session.refresh_token){ return false; }
+function readStoredAuthSession(){
     try{
-        const session = await authRequest("/auth/v1/token?grant_type=refresh_token",{
-            method:"POST",
-            body:JSON.stringify({refresh_token:AuthState.session.refresh_token})
-        });
-        persistAuthSession(session);
-        return true;
-    }
-    catch(_){
-        persistAuthSession(null);
-        AuthState.context = null;
-    AuthState.registration = null;
-        lockApplicationForAuth();
-        renderAuthState();
-        return false;
+        const raw=localStorage.getItem(AUTH_STORAGE_KEY);
+        if(!raw){ return null; }
+        const parsed=JSON.parse(raw);
+        return parsed && parsed.access_token && parsed.refresh_token
+            ? parsed
+            : null;
+    }catch(_){
+        return null;
     }
 }
+
+function isIrrecoverableRefreshError(error){
+    const message=String(error?.message||"").toLowerCase();
+    return (
+        message.includes("invalid refresh token") ||
+        message.includes("refresh token not found") ||
+        message.includes("refresh token has expired") ||
+        message.includes("refresh_token_not_found")
+    );
+}
+
+function readAuthRefreshLock(){
+    try{
+        const parsed=JSON.parse(localStorage.getItem(AUTH_REFRESH_LOCK_KEY)||"null");
+        return parsed && parsed.owner && Number(parsed.expiresAt)>Date.now()
+            ? parsed
+            : null;
+    }catch(_){
+        return null;
+    }
+}
+
+function acquireAuthRefreshLock(){
+    const current=readAuthRefreshLock();
+    if(current && current.owner!==AUTH_TAB_ID){ return false; }
+
+    const lock={owner:AUTH_TAB_ID,expiresAt:Date.now()+AUTH_REFRESH_LOCK_MS};
+    try{
+        localStorage.setItem(AUTH_REFRESH_LOCK_KEY,JSON.stringify(lock));
+        return readAuthRefreshLock()?.owner===AUTH_TAB_ID;
+    }catch(_){
+        return true;
+    }
+}
+
+function releaseAuthRefreshLock(){
+    try{
+        if(readAuthRefreshLock()?.owner===AUTH_TAB_ID){
+            localStorage.removeItem(AUTH_REFRESH_LOCK_KEY);
+        }
+    }catch(_){ }
+}
+
+function waitForRotatedStoredSession(startingAccessToken,timeoutMs=3500){
+    return new Promise(resolve=>{
+        const deadline=Date.now()+timeoutMs;
+        const inspect=()=>{
+            const stored=readStoredAuthSession();
+            if(
+                stored?.access_token &&
+                String(stored.access_token)!==String(startingAccessToken||"")
+            ){
+                persistAuthSession(stored);
+                resolve(true);
+                return;
+            }
+            if(Date.now()>=deadline){ resolve(false); return; }
+            setTimeout(inspect,100);
+        };
+        inspect();
+    });
+}
+
+window.addEventListener("storage",event=>{
+    if(event.key!==AUTH_STORAGE_KEY || !event.newValue){ return; }
+    const stored=readStoredAuthSession();
+    if(
+        stored?.access_token &&
+        String(stored.access_token)!==String(AuthState.session?.access_token||"")
+    ){
+        persistAuthSession(stored);
+    }
+});
+
+async function refreshAuthToken(){
+    if(!AuthState.session || !AuthState.session.refresh_token){ return false; }
+
+    /* B10 Clean15.1 — SINGLE-FLIGHT AUTH REFRESH.
+       A rapid Handheld scan burst can overlap write + delta-sync RPCs. If the
+       JWT expires in that window, several callers used to rotate the same
+       refresh token concurrently. The first refresh succeeded; a later losing
+       request could then execute persistAuthSession(null), forcing the scanner
+       back to Sign In despite a valid freshly-refreshed session.
+
+       All callers in this page now share one refresh promise. A failed attempt
+       also adopts a newer session from storage (e.g. another same-origin tab)
+       before deciding that authentication is actually lost. Transient network
+       failures never destroy the stored session. */
+    if(AuthState.refreshPromise){
+        return AuthState.refreshPromise;
+    }
+
+    const startingSession=AuthState.session;
+    const startingAccessToken=String(startingSession?.access_token||"");
+    const startingRefreshToken=String(startingSession?.refresh_token||"");
+
+    AuthState.refreshPromise=(async()=>{
+        let ownsRefreshLock=false;
+        try{
+            const storedBeforeRefresh=readStoredAuthSession();
+            if(
+                storedBeforeRefresh?.access_token &&
+                String(storedBeforeRefresh.access_token)!==startingAccessToken
+            ){
+                persistAuthSession(storedBeforeRefresh);
+                return true;
+            }
+
+            ownsRefreshLock=acquireAuthRefreshLock();
+            if(!ownsRefreshLock){
+                const adopted=await waitForRotatedStoredSession(startingAccessToken);
+                if(adopted){ return true; }
+                ownsRefreshLock=acquireAuthRefreshLock();
+                if(!ownsRefreshLock){ return false; }
+            }
+
+            const session=await authRequest("/auth/v1/token?grant_type=refresh_token",{
+                method:"POST",
+                body:JSON.stringify({refresh_token:startingRefreshToken})
+            });
+            persistAuthSession(session);
+            setAuthConnectionDegraded(false);
+            return true;
+        }catch(error){
+            /* If another context refreshed while this request was in flight,
+               adopt that newer session instead of treating this race as logout. */
+            const memorySession=AuthState.session;
+            if(
+                memorySession?.access_token &&
+                String(memorySession.access_token)!==startingAccessToken
+            ){
+                return true;
+            }
+
+            const storedSession=readStoredAuthSession();
+            if(
+                storedSession?.access_token &&
+                String(storedSession.access_token)!==startingAccessToken
+            ){
+                persistAuthSession(storedSession);
+                return true;
+            }
+
+            if(isIrrecoverableRefreshError(error)){
+                /* Give another tab's successful rotation one final chance to
+                   arrive before removing only this rejected local session. */
+                const adopted=await waitForRotatedStoredSession(startingAccessToken,500);
+                if(adopted){ return true; }
+                if(isActiveHandheldWorkspace()){
+                    /* B10 Clean15.3 — a scan burst can overlap a refresh-token
+                       rotation or a short connection failure. Preserve the last
+                       authenticated Handheld workspace and let later activity /
+                       reconnect retry through the existing single-flight path.
+                       Failed RPCs still fail; this does not bypass authorization
+                       and does not manufacture a successful scan. */
+                    setAuthConnectionDegraded(true);
+                    Logger?.warn?.(
+                        "Auth refresh rejected; preserving active Handheld workspace",
+                        error
+                    );
+                }else{
+                    /* At boot (or outside an active Handheld workflow), clear a
+                       genuinely stale session so Preparing PharmFlow cannot hang. */
+                    clearRejectedAuthSession(startingRefreshToken);
+                    Logger?.warn?.("Expired local auth session cleared",error);
+                }
+            }
+            return false;
+        }finally{
+            if(ownsRefreshLock){ releaseAuthRefreshLock(); }
+            AuthState.refreshPromise=null;
+        }
+    })();
+
+    return AuthState.refreshPromise;
+}
+
+window.addEventListener("online",()=>{
+    if(!AuthState.connectionDegraded || !isActiveHandheldWorkspace()) return;
+    refreshAuthToken().then(refreshed=>{
+        if(refreshed){
+            setAuthConnectionDegraded(false);
+            window.refreshUnifiedHandheldWorkspace?.({silent:true});
+        }
+    }).catch(()=>{});
+});
 
 
 function getAuthContextScope(row=AuthState.context){
@@ -846,11 +1126,13 @@ window.getAuthContextScope=getAuthContextScope;
 async function loadMyAppContext(){
     if(!getSupabaseAccessToken()){
         AuthState.context = null;
+        AuthState.contextError = null;
         AuthState.contextLoading = false;
         return null;
     }
 
     AuthState.contextLoading = true;
+    AuthState.contextError = null;
     try{
         const rows = await authRpc("get_my_app_context",{});
         const row = Array.isArray(rows) ? rows[0] : rows;
@@ -859,6 +1141,43 @@ async function loadMyAppContext(){
         );
 
         AuthState.context = row || null;
+        AuthState.contextError = null;
+
+        /*
+           DEVISO3 AUTHENTICATION BOUNDARY HOOK
+
+           Development B is allowed to authenticate against the shared
+           Supabase project, but it must NEVER hydrate/render another
+           pharmacy workspace.  The environment hook is evaluated here,
+           before AppState receives the account and before auth:context-ready
+           can wake cloud/workspace listeners.
+        */
+        if(
+            typeof window.pharmFlowDevValidateAuthenticatedContext === "function" &&
+            window.pharmFlowDevValidateAuthenticatedContext(row) !== true
+        ){
+            AuthState.lastContextScope="";
+
+            if(typeof AppState !== "undefined"){
+                if(typeof createEmptyAccountContext === "function"){
+                    AppState.account=createEmptyAccountContext();
+                }
+                if(typeof createEmptyWorkspace === "function"){
+                    AppState.workspace=createEmptyWorkspace();
+                }
+                if(typeof createEmptySession === "function"){
+                    AppState.session=createEmptySession();
+                }
+                if(AppState.archive){
+                    AppState.archive.orders=[];
+                    AppState.archive.transactions=[];
+                }
+                resetStatistics?.();
+                rebuildStateIndexes?.();
+            }
+
+            return row;
+        }
 
         if(typeof AppState !== "undefined"){
             AppState.account = normalizeAccountContext(row);
@@ -879,6 +1198,7 @@ async function loadMyAppContext(){
             const refreshed = await refreshAuthToken();
             if(refreshed){ return loadMyAppContext(); }
         }
+        AuthState.contextError = error;
         throw error;
     }
     finally{
@@ -900,7 +1220,21 @@ function normalizeAccountContext(row){
 }
 
 function hasApplicationAccess(){
-    return !!(AuthState.context && AuthState.context.pharmacy_id);
+    const baseAccess=!!(AuthState.context && AuthState.context.pharmacy_id);
+
+    if(!baseAccess){
+        return false;
+    }
+
+    /*
+       B-only environment policy may further restrict application access.
+       Production A has no hook, so its behavior is unchanged.
+    */
+    if(typeof window.pharmFlowDevValidateAuthenticatedContext === "function"){
+        return window.pharmFlowDevValidateAuthenticatedContext(AuthState.context) === true;
+    }
+
+    return true;
 }
 
 
@@ -1063,6 +1397,7 @@ async function signOutCurrentUser(){
     );
 
     AuthState.context = null;
+    AuthState.contextError = null;
     AuthState.registration = null;
     AuthState.lastContextScope="";
 
@@ -1419,9 +1754,8 @@ function isPharmacyAdmin(){
 }
 
 function renderAuthState(){
-    finishAuthBootState();
-
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
+        finishAuthBootState();
         lockApplicationForAuth(true);
         showAuthPanel("recovery",{history:"replace"});
         return;
@@ -1431,10 +1765,41 @@ function renderAuthState(){
     const formsPanel = document.getElementById("authFormsPanel");
     const account = AuthState.context;
 
-    // Authenticated session exists, but pharmacy/role context is still loading.
-    // Keep the current auth gate state unchanged rather than showing
-    // "Complete access" prematurely.
+    /*
+       DEVISO3: allow the development environment to render an explicit
+       fail-closed access screen instead of exposing another tenant or
+       mislabeling it as an unassigned pharmacy account.
+    */
+    if(
+        AuthState.session &&
+        account &&
+        typeof window.pharmFlowDevRenderAccessBoundary === "function" &&
+        window.pharmFlowDevRenderAccessBoundary(account) === true
+    ){
+        return;
+    }
+
+    if(typeof window.pharmFlowDevHideAccessBoundary === "function"){
+        window.pharmFlowDevHideAccessBoundary();
+    }
+
     if(AuthState.session && AuthState.contextLoading){
+        return;
+    }
+
+    finishAuthBootState();
+
+    /* A failed context request is not proof that this account has no
+       pharmacy. Reserve Complete access for a successful empty response. */
+    if(AuthState.session && AuthState.contextError && !account){
+        if(overlay){ overlay.classList.add("visible"); }
+        if(formsPanel){ formsPanel.hidden = false; }
+        if(accessPanel){ accessPanel.hidden = true; }
+        showAuthPanel("login");
+        setAuthMessage(
+            "We could not verify your pharmacy access. Check the connection, then sign in again.",
+            "error"
+        );
         return;
     }
 
@@ -1634,26 +1999,66 @@ function openDashboardAfterAuthentication(){
 }
 
 function unlockApplicationAfterAuth(){
-    finishAuthBootState();
-
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
+        finishAuthBootState();
         lockApplicationForAuth(true);
         showAuthPanel("recovery",{history:"replace"});
         return;
     }
+
+    /* The authenticated shell must remain covered until app.js completes
+       authoritative workspace hydration. This is render orchestration only:
+       session, account context, and sync behavior remain untouched. */
+    document.body.classList.add("workspaceBooting");
+    finishAuthBootState();
 
     // A sidebar drawer can remain open behind the auth screen after Sign Out.
     // If it survives the next Sign In, its backdrop covers the application and
     // makes the main content look frozen while the sidebar remains interactive.
     resetResponsiveSidebarAfterAuth();
     document.body.classList.remove("authLocked");
-    openDashboardAfterAuthentication();
     const overlay = document.getElementById("authGate");
     if(overlay){ overlay.classList.remove("visible"); }
+
+    /* B10 Clean15.2 — Handheld boot must not expose the desktop Dashboard
+       with placeholder zero KPIs while Active Order authority is hydrating.
+       Boot the protected app first, then route Handhelds directly to their
+       dedicated mode surface. Desktop keeps the existing Dashboard route. */
+    const handheld = typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice();
+    if(!handheld){
+        openDashboardAfterAuthentication();
+    }
+
     if(typeof window.bootProtectedApplication === "function"){
         window.bootProtectedApplication();
     }
     else if(typeof refreshEntireUI === "function"){
         refreshEntireUI();
+    }
+
+    if(handheld){
+        try{
+            /* Handheld auth resume is state-preserving. Background token/context
+               refresh during a scan must never route an active worker away from
+               Receiving. Initialize the Handheld shell once, then restore the
+               mode that was active before authentication resumed. */
+            const wasReceiving=document.body.classList.contains("zebraReceivingActive");
+            const wasExpiry=document.body.classList.contains("zebraExpiryActive");
+            const handheldInitialized=!!document.getElementById("zebraHome");
+
+            if(!handheldInitialized){
+                initializeZebraInterface?.();
+            }
+
+            if(wasReceiving){
+                setZebraReceivingMode?.();
+            }else if(wasExpiry){
+                setZebraExpiryMode?.();
+            }else if(!handheldInitialized){
+                setZebraHomeMode?.();
+            }
+        }catch(error){
+            Logger?.warn?.("Unable to restore Handheld workspace surface",error);
+        }
     }
 }

@@ -1,0 +1,8 @@
+PHARMFLOW CURRENT CHECKPOINT — DEVELOPMENT B
+Date: 25 August 2026
+Version: B1 — New Shell + Data Layer Foundation
+Status: READY FOR TEST
+
+Protected: Production A, DEVISO3, DEV001-only writes, Global GTIN read-only.
+B1: new shell, task navigation, dashboard, Item Movement foundation, thin data layer.
+Next after verification: B2 Item Movement bulk parser + normalized movement model.

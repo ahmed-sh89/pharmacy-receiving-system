@@ -1,0 +1,29 @@
+PHARMFLOW CURRENT CHECKPOINT — B11 CLEAN11
+Date: 2026-09-02
+Target: Project B / pharmflow-dev only
+Status: READY FOR TEST
+
+CHANGE
+- Mobile application responsive rebuild for Dashboard / Receiving / Order Item Browser.
+- Desktop layout preserved.
+- Handheld/Zebra ownership explicitly excluded from phone media rules.
+- Order Item Browser switches from crushed desktop table to readable mobile item cards.
+- Mobile top bar, KPI grid, scan panel, Last Scan and unified receiving controls now fit phone width.
+- No Supabase, schema, auth logic, receiving transaction logic or GTIN logic changes.
+
+FILES
+- index.html (cache bust only)
+- css/dashboard.css
+- css/pharmflow-next.css
+- js/ui.js (mobile data-label markup only; no receiving logic changes)
+
+VERIFY
+1. iPhone/mobile Dashboard uses full screen width; no huge blank right area or horizontal overflow.
+2. KPI cards remain readable in 2 columns.
+3. Scan/Search and Last Scan fit screen without desktop geometry.
+4. Total Items -> Order Item Browser renders each item as a readable card; no overlapping columns/text.
+5. PC layout remains unchanged from approved state.
+6. Handheld Receiving remains unchanged.
+
+NON-REGRESSION
+Do not deploy to Project A. No SQL required.

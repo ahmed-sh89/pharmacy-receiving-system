@@ -1,0 +1,15 @@
+B11 Clean5 — Unified Receiving State + GTIN Safety — 2026-09-01
+Status: READY FOR TEST
+
+- Fixed Handheld Batch Qty contradiction after authoritative PC quantity reductions by clamping device-local runtime batch to current Received Total without server writes.
+- Enabled approved 30-second Last Scan auto-clear on Handheld; UI-only and equivalent to CLEAR SCREEN.
+- Protected device-local Last Scan from legacy cloud snapshot replacement and rejected older timestamped Last Scan renders.
+- Fixed immediate PC→Handheld pharmacy-learned GTIN visibility by bypassing stale negative learned cache on Handheld and invalidating/seeding cache on learning.
+- Retained B11 Clean3 UX changes and B11 Clean4 pharmacy-scoped GTIN correction/audit capability.
+- Preserved Clean14 delta synchronization/egress architecture.
+
+B11 Clean5.1 Shared-DB Safety Review
+- Corrected deployment assumption: Project A and B share one Supabase database.
+- Reworked GTIN correction migration as transactional/additive shared-DB-safe migration with dependency preflight.
+- Production A app behavior/RPCs are not replaced by this migration.
+- GTIN correction no longer rewrites created_by when correcting an existing learned mapping.

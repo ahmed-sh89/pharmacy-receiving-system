@@ -87,13 +87,66 @@ async function assertOrderNumberCanUpload(orderNumber){
 
     const status = String(existing.status || "uploaded").trim().toLowerCase();
 
-    /* Received/finalized orders remain protected from duplicate upload.
-       They can only be removed through the protected Archive/Historical
-       deletion workflows. */
+    /* B10 Clean 6 — completed-order recovery.
+       A completed order is still protected by default, but an accidental
+       Complete Receiving must not trap the pharmacy permanently. Reopening
+       is an explicit destructive recovery action: remove only this order's
+       finalized/history record, then allow the uploaded source file to start
+       a brand-new Receiving cycle at zero. Global GTIN, other orders and
+       Item Movement remain independent and untouched. */
     if(["received","finalized","closed"].includes(status)){
-        throw new Error(
-            "Order "+normalized+" was already uploaded (status: "+(existing.status||"received")+"). Duplicate upload is blocked."
+        const reopen = window.confirm(
+            "Order "+normalized+" was already completed.\n\n"+
+            "If Complete Receiving was done by mistake, you can reopen this order and start Receiving again from zero.\n\n"+
+            "The previous Receiving history and discrepancy report for THIS order will be permanently removed. Global GTIN and other orders are not affected.\n\n"+
+            "Press OK to Reopen Receiving, or Cancel to keep the completed order protected."
         );
+
+        if(!reopen){
+            throw new Error(
+                "Order "+normalized+" is already completed. Duplicate upload remains blocked."
+            );
+        }
+
+        const typed = window.prompt(
+            "Type the Order Number exactly to reopen Receiving:\n"+normalized,
+            ""
+        );
+        if(normalizeOrderNumber(typed)!==normalized){
+            throw new Error("Reopen Receiving cancelled. Completed order remains protected.");
+        }
+
+        if(typeof authRpc!=="function" || !AuthState.context?.pharmacy_id){
+            throw new Error("Pharmacy cloud context is unavailable. Sign in again and retry.");
+        }
+
+        await authRpc("delete_pharmflow_order_complete",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_order_number:normalized,
+            p_confirmation:normalized
+        });
+
+        /* Cloud is authoritative. Re-read both historical archive and lifecycle
+           before allowing the upload to continue. Never rely on stale browser
+           state after a destructive recovery operation. */
+        if(typeof restoreHistoricalArchive==="function"){
+            await restoreHistoricalArchive();
+        }
+        await refreshOrderLifecycleRegistry();
+
+        const remaining = await getOrderLifecycleRecord(normalized);
+        if(remaining){
+            throw new Error(
+                "The completed order could not be reopened safely because its cloud lifecycle record still exists. No new upload was started."
+            );
+        }
+
+        showToast(
+            "Order "+normalized+" reopened — Receiving will start again from zero",
+            "success",
+            9000
+        );
+        return true;
     }
 
     /* Phase 2C.5.4.5 legacy orphan recovery. Older builds could clear a
@@ -248,7 +301,9 @@ async function saveOriginalUploadedOrderSnapshot(orderNumber, rows){
             item_code:normalizeItemCode(row.itemCode),
             item_name:toSafeString(row.itemName),
             ordered_qty:Number(row.orderedQty||0),
+            group_name:toSafeString(row.group_name||row.groupName||""),
             category:toSafeString(row.category||""),
+            sub_category:toSafeString(row.sub_category||row.subCategory||""),
             source_sheet:toSafeString(row.sourceSheet||""),
             source_row:Number(row.sourceRow||0)
         }
@@ -258,22 +313,18 @@ async function saveOriginalUploadedOrderSnapshot(orderNumber, rows){
 
     const batchSize=500;
     for(let start=0;start<cleanRows.length;start+=batchSize){
-        await authRpc("save_pharmflow_order_source_items",{
-            p_pharmacy_id:AuthState.context.pharmacy_id,
-            p_order_number:normalizeOrderNumber(orderNumber),
-            p_items:cleanRows.slice(start,start+batchSize),
-            p_replace:start===0
-        });
+        const params={p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:normalizeOrderNumber(orderNumber),p_items:cleanRows.slice(start,start+batchSize),p_replace:start===0};
+        try{await authRpc("save_pharmflow_order_source_items_v2",params);}
+        catch(error){const message=String(error?.message||"");if(/PGRST202|save_pharmflow_order_source_items_v2.*(does not exist|schema cache)/i.test(message))await authRpc("save_pharmflow_order_source_items",params);else throw error;}
     }
     return cleanRows.length;
 }
 
 async function getOriginalUploadedOrderSnapshot(orderNumber){
     if(!AuthState.context || !AuthState.context.pharmacy_id){return [];}
-    const result=await authRpc("get_pharmflow_order_source_items",{
-        p_pharmacy_id:AuthState.context.pharmacy_id,
-        p_order_number:normalizeOrderNumber(orderNumber)
-    });
+    const params={p_pharmacy_id:AuthState.context.pharmacy_id,p_order_number:normalizeOrderNumber(orderNumber)};
+    let result;try{result=await authRpc("get_pharmflow_order_source_items_v2",params);}
+    catch(error){const message=String(error?.message||"");if(/PGRST202|get_pharmflow_order_source_items_v2.*(does not exist|schema cache)/i.test(message))result=await authRpc("get_pharmflow_order_source_items",params);else throw error;}
     return Array.isArray(result)?result:[];
 }
 
@@ -408,6 +459,22 @@ async function validateWorkspaceCanFinalize(){
     if(received.length){
         throw new Error("Already received/finalized: "+received.join(", "));
     }
+    if(typeof nrV2List==="function"){
+        const pending=[];
+        try{
+            const rows=await nrV2List("RECEIVING",null);
+            const selected=new Set(summary.orderNumbers.map(normalizeOrderNumber));
+            (Array.isArray(rows)?rows:[]).forEach(row=>{
+                const order=normalizeOrderNumber(row?.order_number||"");
+                if(!order || selected.has(order)) pending.push(row);
+            });
+        }catch(error){
+            throw new Error("Needs Review could not be verified. Complete Receiving was blocked for safety.");
+        }
+        if(pending.length){
+            throw new Error("Resolve Needs Review before Complete Receiving ("+pending.length+" pending scan"+(pending.length===1?"":"s")+").");
+        }
+    }
     return summary;
 }
 
@@ -423,8 +490,8 @@ function refreshFinalizeReceivingButton(){
     const needsSpecificOrder=
         active.length>1 && selectedOrders.length!==1;
     button.disabled=!hasOrder||FinalizeReceivingEngine.busy||needsSpecificOrder;
-    button.title=needsSpecificOrder?"Select one order before Finalize Receiving":"";
-    button.textContent=FinalizeReceivingEngine.busy?"Finalizing…":"✓ Finalize Receiving";
+    button.title=needsSpecificOrder?"Select one order before Complete Receiving":"";
+    button.textContent=FinalizeReceivingEngine.busy?"Completing…":"✓ Complete Receiving";
 }
 
 function requestFinalizeReceiving(){
@@ -432,12 +499,12 @@ function requestFinalizeReceiving(){
     validateWorkspaceCanFinalize().then(summary=>{
         const orders=summary.orderNumbers.join(", ");
         const message=[
-            "Finalize receiving manually for: "+orders+".",
+            "Complete receiving for: "+orders+".",
             "This confirms the physical count is finished even when quantities do not match.",
             "Discrepancies: "+summary.discrepancies+" (Shortage "+summary.shortages+", Over "+summary.over+", Manual "+summary.manual+").",
-            "The original uploaded order remains the source for official reports. After finalization, this receiving workspace will be archived and cleared."
+            "The order number, order date, completion time and any discrepancy report will be retained. The active receiving workspace for this order will then be cleared."
         ].join(" ");
-        showConfirmModal("Finalize Receiving",message,function(){
+        showConfirmModal("Complete Receiving",message,function(){
             finalizeCurrentReceiving().catch(()=>{});
         });
     }).catch(error=>{
@@ -450,7 +517,7 @@ async function finalizeCurrentReceiving(){
     if(FinalizeReceivingEngine.busy){ return false; }
     FinalizeReceivingEngine.busy=true;
     refreshFinalizeReceivingButton();
-    showLoading("Finalizing receiving…");
+    showLoading("Completing receiving…");
     try{
         const summary=await validateWorkspaceCanFinalize();
 
@@ -531,8 +598,8 @@ async function finalizeCurrentReceiving(){
 
         showToast(
             summary.orderNumbers.length>1
-                ? summary.orderNumbers.length+" orders finalized as Received"
-                : "Order "+summary.orderNumbers[0]+" finalized as Received",
+                ? summary.orderNumbers.length+" orders completed"
+                : "Order "+summary.orderNumbers[0]+" completed",
             "success"
         );
         return true;
@@ -598,83 +665,76 @@ function buildFinalizedDiscrepancyEmailHTML(report){
     const groups=getEmailReportOrderGroups(report)
         .filter(group=>Array.isArray(group.rows) && group.rows.length);
 
-    const totalRows=groups.reduce(
-        (sum,group)=>sum+group.rows.length,
-        0
-    );
+    const formatOrderDate=value=>{
+        const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(!match) return String(value||"-");
+        return `${match[3]} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(match[2])-1]} ${match[1]}`;
+    };
+    const summaryRows=groups.map(group=>`
+      <tr>
+        <td style="padding:9px 8px;border-bottom:1px solid #dce8f3;font-weight:700;color:#133d65">${esc(group.orderNumber||"-")}</td>
+        <td style="padding:9px 8px;border-bottom:1px solid #dce8f3">${esc(formatOrderDate(group.orderDate))}</td>
+        <td style="padding:9px 8px;border-bottom:1px solid #dce8f3;font-weight:800;color:#b42318">${esc(group.summary?.discrepancyItems??group.rows.length)}</td>
+      </tr>`).join("");
 
-    const sections=groups.map((group,index)=>{
+    const sections=groups.map(group=>{
         const rows=group.rows;
-
+        const orderHeading=`الطلبية ${group.orderNumber||"-"}`;
         return `
-        <div style="margin:24px 0 0;border:1px solid #ddc9bb;border-radius:14px;overflow:hidden;background:#ffffff">
-          <div style="padding:16px;background:#f5ebe3;border-bottom:1px solid #ddc9bb;text-align:center">
-            <div style="font-size:11px;letter-spacing:.08em;color:#9a6246;font-weight:700">ORDER ${index+1}</div>
-            <div style="font-size:18px;color:#342d28;font-weight:700;margin-top:3px">${esc(group.orderNumber||"-")}</div>
-            <div style="font-size:12px;color:#76675d;margin-top:3px">
-              Order Date: ${esc(group.orderDate||"-")}
-              &nbsp;&nbsp;•&nbsp;&nbsp;
-              Displayed Items: ${rows.length}
-            </div>
+        <section dir="rtl" style="margin:22px 0 0;border:1px solid #b8d4e9;border-radius:10px;overflow:hidden;background:#edf6fc">
+          <div style="padding:12px 16px;background:#0b5f9f;color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:700;text-align:center">${esc(orderHeading)}</div>
+          <div style="padding:12px">
+            <table dir="ltr" role="presentation" style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:Arial,sans-serif;font-size:12px;color:#1d3954;border:1px solid #cbddea" cellpadding="0" cellspacing="0">
+              <thead>
+                <tr style="background:#dceefb;color:#103d66">
+                  <th style="width:13%;padding:9px 6px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Code</th>
+                  <th style="width:43%;padding:9px 8px;border-bottom:1px solid #b7d3e8;text-align:left;font-weight:800">Item Name</th>
+                  <th style="width:10%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Ordered</th>
+                  <th style="width:10%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Received</th>
+                  <th style="width:10%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Diff</th>
+                  <th style="width:14%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map((row,index)=>{
+                    const diff=Number(row["Difference"]||0);
+                    const status=String(row["Issue Type"]||row["Status"]||"");
+                    const diffStyle=diff<0
+                        ? "color:#b42318;background:#fff0ef"
+                        : diff>0
+                            ? "color:#9a6200;background:#fff5da"
+                            : "color:#315b7e;background:#edf4fa";
+                    return `
+                    <tr style="background:${index%2?"#eaf4fb":"#f6fbff"}">
+                      <td style="padding:9px 6px;border-bottom:1px solid #e1ebf3;text-align:center;white-space:nowrap">${esc(row["Item Number"]||"")}</td>
+                      <td style="padding:9px 8px;border-bottom:1px solid #e1ebf3;text-align:left;overflow-wrap:anywhere">${esc(row["Item Name"]||"")}</td>
+                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center"><strong style="font-weight:800;color:#103d66">${esc(row["Ordered Qty"]??0)}</strong></td>
+                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center"><strong style="font-weight:800;color:#103d66">${esc(row["Received Qty"]??0)}</strong></td>
+                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center"><strong style="display:inline-block;min-width:28px;padding:3px 5px;border-radius:5px;font-weight:800;${diffStyle}">${diff>0?"+":""}${esc(diff)}</strong></td>
+                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center;font-weight:700">${esc(status)}</td>
+                    </tr>`;
+                }).join("")}
+              </tbody>
+            </table>
           </div>
-
-          <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;text-align:center" cellpadding="0" cellspacing="0">
-            <thead>
-              <tr style="background:#9a6246;color:#ffffff">
-                <th style="padding:10px 8px;text-align:center;font-weight:800">Item Code</th>
-                <th style="padding:10px 8px;text-align:center;font-weight:800">Item Name</th>
-                <th style="padding:10px 8px;text-align:center;font-weight:800">Ordered</th>
-                <th style="padding:10px 8px;text-align:center;font-weight:800">Received</th>
-                <th style="padding:10px 8px;text-align:center;font-weight:800">Difference</th>
-                <th style="padding:10px 8px;text-align:center;font-weight:800">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.map(row=>{
-                  const diff=Number(row["Difference"]||0);
-                  const status=String(
-                      row["Issue Type"] ||
-                      row["Status"] ||
-                      ""
-                  );
-
-                  return `
-                  <tr>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Item Number"]||"")}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Item Name"]||"")}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Ordered Qty"]??0)}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center">${esc(row["Received Qty"]??0)}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center;font-weight:700;color:${diff<0?"#a54343":(diff>0?"#9a6a20":"#47795a")}">${diff>0?"+":""}${esc(diff)}</td>
-                    <td style="padding:9px 8px;border-bottom:1px solid #eee4dc;text-align:center;font-weight:700">${esc(status)}</td>
-                  </tr>`;
-              }).join("")}
-            </tbody>
-          </table>
-        </div>`;
+        </section>`;
     }).join("");
 
     return `
-    <div style="max-width:980px;margin:0 auto;font-family:Arial,Tahoma,sans-serif;color:#342d28;background:#ffffff;text-align:center;font-size:15px;line-height:1.7">
-      <div dir="rtl" style="text-align:center;padding:18px 14px 8px">
-        <div style="font-size:30px;line-height:1.45;font-weight:800;color:#6f432e;text-align:center">الإخوة الكرام بالمستودع</div>
-        <div style="font-size:21px;line-height:1.7;font-weight:800;color:#8b5d46;margin-top:6px;text-align:center">تحية طيبة وبعد،</div>
-        <div style="font-size:18px;line-height:1.9;font-weight:700;color:#443832;margin:12px auto 0;max-width:800px;text-align:center">
-          يوجد فرق توريد في الطلبية الموضحة أدناه، نأمل التكرم بالمراجعة والتشييك.
-        </div>
+    <div dir="rtl" style="max-width:920px;margin:0 auto;padding:24px;background:#f2f7fb;font-family:Arial,sans-serif;color:#173d63;text-align:center">
+      <div style="max-width:840px;margin:0 auto;padding:30px 28px;background:#eaf4fb;border:1px solid #b8d5e9;border-radius:14px;box-shadow:0 5px 18px rgba(23,61,99,.10)">
+      <div style="padding:20px 18px;border:1px solid #97c3e3;border-radius:10px;background:#d5eaf8">
+        <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;line-height:2.05;font-weight:800;color:#173d63">الإخوة الكرام بالمستودع<br>تحية طيبة وبعد<br>يوجد فرق توريد موضح أدناه<br>نأمل التكرم بالمراجعة والتشييك</p>
       </div>
-
-      <div style="display:block;margin:12px 0;padding:12px 14px;border-radius:12px;background:#f8f3ef;border:1px solid #e3d6cc;text-align:center">
-        <span style="font-size:12px;color:#7c6d63">Orders with displayed results:</span>
-        <strong style="font-size:14px;color:#342d28">${groups.length}</strong>
-        <span style="font-size:12px;color:#7c6d63">&nbsp;&nbsp;•&nbsp;&nbsp;Total displayed items:</span>
-        <strong style="font-size:14px;color:#342d28">${totalRows}</strong>
-      </div>
-
+      <section style="margin:26px 0 0;border:1px solid #b8d4e9;border-radius:10px;overflow:hidden;background:#f5faff">
+        <div style="padding:12px 14px;background:#0b6faf;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:800">ملخص الطلبيات التي بها فروقات</div>
+        <table dir="ltr" role="presentation" style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;color:#1d3954" cellpadding="0" cellspacing="0">
+          <thead><tr style="background:#f1f8fe;color:#103d66"><th style="padding:9px 8px;border-bottom:1px solid #c7ddeb;font-weight:800">Order Number</th><th style="padding:9px 8px;border-bottom:1px solid #c7ddeb;font-weight:800">Order Date</th><th style="padding:9px 8px;border-bottom:1px solid #c7ddeb;font-weight:800">Discrepant Items</th></tr></thead>
+          <tbody>${summaryRows}</tbody>
+        </table>
+      </section>
       ${sections}
-
-      <div dir="rtl" style="text-align:center;margin-top:28px;font-size:18px;line-height:1.9;color:#443832">
-        <div style="font-weight:700">للإفادة والمراجعة والتشييك.</div>
-        <div style="margin-top:8px;font-size:19px;font-weight:800;color:#6f432e">خالص الشكر والتقدير.</div>
+      <div style="margin:26px 0 0;padding:14px 18px;border:1px solid #97c3e3;border-radius:10px;background:#d5eaf8;font-family:Arial,sans-serif;font-size:18px;line-height:1.8;font-weight:700;color:#173d63">خالص الشكر والتقدير</div>
       </div>
     </div>`;
 }
@@ -712,17 +772,24 @@ function buildFinalizedDiscrepancyEmailText(report){
         .filter(group=>Array.isArray(group.rows) && group.rows.length);
 
     const lines=[
-        "الإخوة الكرام بالمستودع",
+        "الإخوة الكرام بالمستودع،",
         "تحية طيبة وبعد،",
-        "",
-        "يوجد فرق توريد في الطلبية الموضحة أدناه، نأمل التكرم بالمراجعة والتشييك.",
+        "يوجد فرق توريد موضح أدناه.",
+        "نأمل التكرم بالمراجعة والتشييك.",
         ""
     ];
 
-    groups.forEach((group,index)=>{
+    lines.push("ملخص الطلبيات التي بها فروقات", "Order Number | Order Date | Discrepant Items");
+    groups.forEach(group=>lines.push([
+        group.orderNumber||"-",
+        group.orderDate||"-",
+        group.summary?.discrepancyItems??group.rows.length
+    ].join(" | ")));
+    lines.push("");
+
+    groups.forEach(group=>{
         lines.push(
-            "ORDER "+(index+1)+": "+(group.orderNumber||"-"),
-            "Order Date: "+(group.orderDate||"-"),
+            "الطلبية "+(group.orderNumber||"-")+" | التاريخ "+(group.orderDate||"-"),
             "",
             "Item Code | Item Name | Ordered | Received | Difference | Status"
         );
@@ -741,13 +808,7 @@ function buildFinalizedDiscrepancyEmailText(report){
 
         lines.push("");
     });
-
-    lines.push(
-        "للإفادة والمراجعة والتشييك.",
-        "",
-        "خالص الشكر والتقدير."
-    );
-
+    lines.push("خالص الشكر والتقدير.");
     return lines.join("\r\n");
 }
 
@@ -817,14 +878,10 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
 
     const orders=Array.isArray(report?.orders)?report.orders:[];
     const orderLabel=orders.map(x=>x.orderNumber).filter(Boolean).join(" + ") || report?.orderId || "";
-    const orderDate=orders.map(x=>x.orderDate).filter(Boolean)[0] || "";
     const reportGroups=getEmailReportOrderGroups(report)
         .filter(group=>Array.isArray(group.rows) && group.rows.length);
 
-    const subject=
-        reportGroups.length>1
-            ? `Supply Discrepancy Report | ${reportGroups.length} Orders | ${new Date().toISOString().slice(0,10)}`
-            : "Supply Discrepancy | Order "+orderLabel+(orderDate?" | "+orderDate:"");
+    const subject=`فرق توريد — ${orderLabel||"-"}`;
     const rows=Array.isArray(report?.rows)?report.rows:[];
 
     const overlay=document.createElement("div");
@@ -838,29 +895,16 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         <header class="finalizedEmailHeader">
           <div>
             <span class="finalizedEmailKicker">${options.fromArchive?"SAVED REPORT":(options.liveReport?"LIVE RECEIVING REPORT":"ORDER FINALIZED")}</span>
-            <h2>Supply Discrepancy Report</h2>
-            <p>${rows.length} discrepancy item${rows.length===1?"":"s"} · Review before opening Gmail</p>
+            <h2>${esc(subject)}</h2>
           </div>
 
           <button type="button" class="finalizedEmailClose" data-close aria-label="Close">✕</button>
         </header>
 
-        <section class="finalizedEmailSummary">
-          <div><span>ORDER NUMBER</span><strong>${esc(orderLabel||"-")}</strong></div>
-          <div><span>ORDER DATE</span><strong>${esc(orderDate||"-")}</strong></div>
-          <div><span>DISCREPANCIES</span><strong>${rows.length}</strong></div>
-          <div><span>STATUS</span><strong>${options.fromArchive?"Finalized":(options.liveReport?"In Progress":"Finalized")}</strong></div>
-        </section>
-
         <section class="finalizedEmailCompose">
           <label>
             <span>To</span>
             <input id="finalizedEmailTo" type="email" placeholder="warehouse@example.com" autocomplete="email">
-          </label>
-
-          <label>
-            <span>Subject</span>
-            <input id="finalizedEmailSubject" type="text" value="${esc(subject)}">
           </label>
         </section>
 
@@ -871,14 +915,6 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         </article>
 
         <footer class="finalizedEmailFooter">
-          <div class="finalizedEmailSavedNote">
-            <span>✓</span>
-            <div>
-              <strong>${options.fromArchive?"Saved in PharmFlow Archive":(options.liveReport?"Live report — Finalize not required":"Saved in PharmFlow Archive")}</strong>
-              <small>${options.liveReport?"Email includes every current status except Completed.":"You can close this window and reopen the report at any time."}</small>
-            </div>
-          </div>
-
           <div class="finalizedEmailActions">
             <button type="button" class="secondaryButton" id="btnCopyFinalizedEmail">Copy Email</button>
             <button type="button" class="primaryButton" id="btnOpenFinalizedGmail">Open in Gmail</button>
@@ -911,10 +947,6 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
             document.getElementById("finalizedEmailTo")?.value||""
         ).trim();
 
-        const subjectValue=String(
-            document.getElementById("finalizedEmailSubject")?.value||subject
-        ).trim();
-
         try{
             await copyFormattedReceivingEmail(report);
         }catch(_){}
@@ -924,7 +956,7 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
            One paste keeps the professional HTML design intact. */
         const opened=openGmailComposeSafely({
             to,
-            subject:subjectValue,
+            subject,
             body:""
         });
 

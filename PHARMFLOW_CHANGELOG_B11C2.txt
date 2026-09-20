@@ -1,0 +1,10 @@
+31 AUGUST 2026 — B11 CLEAN 2
+- Root-fixed Clean1 responsive ownership regression instead of stacking new overrides over it.
+- Restored desktop auth/quantity ownership and isolated all new Handheld UI rules to Zebra scope.
+- Rebuilt compact Handheld Sign In and Mode layouts.
+- Reworked Handheld Receiving to one-viewport worker surface with compact Scan/Search, vertical ready indicator and obvious green success flash.
+- Known/Unknown action cards now replace Last Scan instead of stacking below it, removing action-state scroll root cause.
+- Rebuilt PC Needs Review as overlay-owned structured operator workspace.
+- No database migration added; Clean1 Needs Review sync migration remains valid.
+- Project B only; Production A untouched.
+- Status: READY FOR TEST.
