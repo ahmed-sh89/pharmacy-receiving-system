@@ -8490,18 +8490,19 @@ function renderItemBrowser(body, rows, options={}){
           th:last-child,td:last-child{border-right:0}
           th{padding:.7mm 1mm;background:#fff;font-size:9pt;line-height:1;text-align:left;font-weight:800}
           td{padding:.65mm 1mm;font-size:10pt;line-height:1.05;white-space:nowrap;font-weight:600}
+          th.name,td.name{padding-left:.6mm;padding-right:.6mm}
           td.name{overflow:hidden;text-overflow:ellipsis}
-          th.qty,td.qty{width:14mm;padding-left:.5mm;padding-right:.5mm;text-align:center}
+          th.qty,td.qty{width:13mm;padding-left:.25mm;padding-right:.25mm;text-align:center}
           th.qty{font-size:9pt;font-weight:800}
           td.qty{font-size:11pt;font-weight:700}
           tr.group td{padding:.55mm 1mm;background:#fff;font-size:9pt;font-weight:900;border-top:.5mm solid #000;border-bottom:.5mm solid #000}
           tr:last-child td{border-bottom:0}
-        </style></head><body><main class="highPriorityReceipt"><header><h1>HIGH PRIORITY ITEMS</h1><div class="meta">${selectedOrder==='ALL'?'All Orders':`Order: ${esc(selectedOrder)}`}</div></header><table><thead><tr><th>ITEM NAME</th><th class="qty">QTY</th></tr></thead><tbody>${['SHORT','NEW'].map(type=>{
+        </style></head><body><main class="highPriorityReceipt"><header><h1>HIGH PRIORITY ITEMS</h1><div class="meta">${selectedOrder==='ALL'?'All Orders':`Order: ${esc(selectedOrder)}`}</div></header><table><thead><tr><th class="name">ITEM NAME</th><th class="qty">QTY</th></tr></thead><tbody>${['SHORT','NEW'].map(type=>{
             const group=printable.filter(item=>getEffectiveItemPriority(item)===type);
             if(!group.length) return '';
             return `<tr class="group"><td colspan="2">${type}</td></tr>${group.map(item=>{
                 const name=toSafeString(item.itemName||item.itemCode||'—');
-                const fontSize=name.length>64?'8pt':name.length>48?'8.5pt':'10pt';
+                const fontSize=name.length>64?'7.75pt':name.length>48?'8.25pt':'9.25pt';
                 return `<tr><td class="name" style="font-size:${fontSize}">${esc(name)}</td><td class="qty">${esc(toNumber(item.orderedQty,0))}</td></tr>`;
             }).join('')}`;
         }).join('')}</tbody></table></main></body></html>`);
