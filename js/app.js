@@ -863,6 +863,8 @@ async function resetCurrentWorkspace(){
         AppState.workspace.receivingHistory=[];
         AppState.workspace.selectedOrderNumbers=[];
         AppState.workspace.selectedOrderNumber="";
+        AppEvents.emit("files:updated",{source:"workspace-reset"});
+        AppEvents.emit("receiving:updated",{source:"workspace-reset"});
         resetStatistics?.();
         deleteWorkspaceSnapshot?.();
         stopCloudPolling?.();
