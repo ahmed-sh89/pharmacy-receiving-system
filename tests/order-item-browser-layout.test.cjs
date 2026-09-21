@@ -12,7 +12,8 @@ test("desktop Order Item Browser keeps Row 2 search and priority actions in one 
     assert.match(css,/@media \(min-width:901px\)\{\s*body:not\(\.zebraDevice\) \.pfnOrderBrowserControls/);
     assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserActionRow\{display:flex!important;align-items:end!important;gap:8px!important;min-width:0!important;width:100%!important\}/);
     assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserSearchField\{display:flex!important;flex:1 1 auto!important;min-width:0!important\}/);
-    assert.match(css,/\.pfnBrowserActionRow \.pfnHighPriorityFilter\{height:38px!important;min-height:38px!important;flex:0 0 auto!important/);
+    assert.match(css,/\.pfnBrowserActionRow \.pfnHighPriorityFilter\{height:42px!important;min-height:42px!important;flex:0 0 auto!important;flex-shrink:0!important;padding:0 18px!important;font-size:14px!important/);
+    assert.match(css,/\[data-priority-filter\]\{min-width:148px!important\}/);
     assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch\{[\s\S]*border:2px solid #8fb3d2!important/);
     assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch:focus\{border-color:#1476c9!important/);
 });

@@ -3513,7 +3513,8 @@ body:not(.zebraMode):not(.zebraDevice) #page-dashboard .statisticsGrid .statCard
   }
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch::placeholder{color:#627d96!important;opacity:1!important}
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch:focus{border-color:#1476c9!important;outline:3px solid rgba(20,118,201,.16)!important;outline-offset:0!important;box-shadow:0 0 0 1px #1476c9!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow .pfnHighPriorityFilter{height:38px!important;min-height:38px!important;flex:0 0 auto!important;padding:0 11px!important;font-size:12px!important;white-space:nowrap!important}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow .pfnHighPriorityFilter{height:42px!important;min-height:42px!important;flex:0 0 auto!important;flex-shrink:0!important;padding:0 18px!important;font-size:14px!important;white-space:nowrap!important}
+  body:not(.zebraDevice) .pfnOrderBrowserControls [data-priority-filter]{min-width:148px!important}
   body:not(.zebraDevice) .pfnCleanWorklist{margin-top:0!important}
 
   body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody>tr.pfnMobileItemCard{cursor:pointer!important}
