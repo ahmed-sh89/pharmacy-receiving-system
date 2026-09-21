@@ -8478,24 +8478,25 @@ function renderItemBrowser(body, rows, options={}){
         const receiptDocument=receipt.contentDocument;
         receiptDocument.open();
         receiptDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>High Priority Items</title><style>
-          @page{size:80mm auto;margin:0}
+          @page{margin:0}
           *{box-sizing:border-box}
-          html,body{width:80mm;margin:0;padding:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-          header{margin:0 0 1.5mm;padding:0 0 1mm;border-bottom:.35mm solid #000;text-align:center}
-          h1{margin:0;font-size:14pt;line-height:1.1;font-weight:800}
-          .meta{margin-top:.8mm;font-size:10pt;line-height:1.1;font-weight:700}
+          html,body{margin:0;padding:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+          .highPriorityReceipt{width:80mm;max-width:100%;margin:0;padding:.5mm 1.5mm 1.5mm}
+          header{margin:0 0 1mm;padding:0 0 .8mm;border-bottom:.35mm solid #000;text-align:center}
+          h1{margin:0;font-size:13pt;line-height:1.05;font-weight:800}
+          .meta{margin-top:.55mm;font-size:9pt;line-height:1.05;font-weight:700}
           table{width:100%;border:.35mm solid #000;border-collapse:collapse;table-layout:fixed}
           th,td{border-right:.35mm solid #000;border-bottom:.25mm solid #000;vertical-align:middle;color:#000}
-          th{padding:.8mm 1mm;background:#fff;font-size:10pt;line-height:1;text-align:left;font-weight:800}
-          td{height:5.5mm;padding:.7mm 1mm;font-size:10pt;line-height:1.05;white-space:nowrap;font-weight:600}
+          th:last-child,td:last-child{border-right:0}
+          th{padding:.7mm 1mm;background:#fff;font-size:9pt;line-height:1;text-align:left;font-weight:800}
+          td{padding:.65mm 1mm;font-size:10pt;line-height:1.05;white-space:nowrap;font-weight:600}
           td.name{overflow:hidden;text-overflow:ellipsis}
-          th.qty,td.qty{position:relative;width:14mm;padding-left:.5mm;padding-right:3.5mm;text-align:center;border-right:0}
-          th.qty{font-size:10pt;font-weight:800}
+          th.qty,td.qty{width:14mm;padding-left:.5mm;padding-right:.5mm;text-align:center}
+          th.qty{font-size:9pt;font-weight:800}
           td.qty{font-size:11pt;font-weight:700}
-          th.qty::after,td.qty::after{content:"";position:absolute;top:0;right:1.5mm;bottom:0;border-right:.35mm solid #000}
-          tr.group td{height:5mm;padding:.6mm 1mm;background:#fff;font-size:10pt;font-weight:900;border-top:.5mm solid #000;border-bottom:.5mm solid #000}
+          tr.group td{padding:.55mm 1mm;background:#fff;font-size:9pt;font-weight:900;border-top:.5mm solid #000;border-bottom:.5mm solid #000}
           tr:last-child td{border-bottom:0}
-        </style></head><body><header><h1>HIGH PRIORITY ITEMS</h1><div class="meta">${selectedOrder==='ALL'?'All Orders':`Order: ${esc(selectedOrder)}`}</div></header><table><thead><tr><th>ITEM NAME</th><th class="qty">QTY</th></tr></thead><tbody>${['SHORT','NEW'].map(type=>{
+        </style></head><body><main class="highPriorityReceipt"><header><h1>HIGH PRIORITY ITEMS</h1><div class="meta">${selectedOrder==='ALL'?'All Orders':`Order: ${esc(selectedOrder)}`}</div></header><table><thead><tr><th>ITEM NAME</th><th class="qty">QTY</th></tr></thead><tbody>${['SHORT','NEW'].map(type=>{
             const group=printable.filter(item=>getEffectiveItemPriority(item)===type);
             if(!group.length) return '';
             return `<tr class="group"><td colspan="2">${type}</td></tr>${group.map(item=>{
@@ -8503,7 +8504,7 @@ function renderItemBrowser(body, rows, options={}){
                 const fontSize=name.length>64?'8pt':name.length>48?'8.5pt':'10pt';
                 return `<tr><td class="name" style="font-size:${fontSize}">${esc(name)}</td><td class="qty">${esc(toNumber(item.orderedQty,0))}</td></tr>`;
             }).join('')}`;
-        }).join('')}</tbody></table></body></html>`);
+        }).join('')}</tbody></table></main></body></html>`);
         receiptDocument.close();
 
         const removeReceipt=()=>setTimeout(()=>receipt.remove(),500);
