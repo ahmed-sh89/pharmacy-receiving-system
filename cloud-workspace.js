@@ -188,6 +188,23 @@ function cloudWorkspaceDeviceId(){
     return PharmFlowCloudWorkspace.deviceId;
 }
 
+/* The manifest is the structural authority.  A missing or empty manifest
+   after Reset must clear every active-order projection and notify the same UI
+   listeners used by a normal structural update. */
+function applyAuthoritativeEmptyActiveOrders(source){
+    if(typeof AppState==="undefined") return false;
+
+    AppState.workspace=createEmptyWorkspace();
+    resetStatistics();
+    rebuildStateIndexes();
+    deleteWorkspaceSnapshot?.();
+
+    AppEvents.emit("files:updated",{source});
+    AppEvents.emit("receiving:updated",{source});
+    refreshEntireUI?.();
+    return true;
+}
+
 function renderCloudWorkspaceStatus(state, detail=""){
     document.documentElement.dataset.cloudWorkspaceState=state;
 
@@ -1174,13 +1191,7 @@ async function pullActiveOrderManifest(options={}){
             if(options?.clearIfMissing===true){
                 /* Server-empty is authoritative after reset/sign-in. Never let
                    stale local orders survive and later resurrect themselves. */
-                AppState.workspace=createEmptyWorkspace();
-                resetStatistics();
-                rebuildStateIndexes();
-                deleteWorkspaceSnapshot?.();
-                AppEvents.emit("files:updated",{source:"server-authority-empty"});
-                AppEvents.emit("receiving:updated",{source:"server-authority-empty"});
-                refreshEntireUI?.();
+                applyAuthoritativeEmptyActiveOrders("server-authority-empty");
             }
             return false;
         }
@@ -1197,6 +1208,7 @@ async function pullActiveOrderManifest(options={}){
 
         if(!incomingFiles.length || !incomingData.length){
             PharmFlowCloudWorkspace.activeManifestPresent=false;
+            PharmFlowCloudWorkspace.activeManifestRevision=0;
 
             Logger.warn(
                 "Active Order Manifest returned without active order data",
@@ -1207,6 +1219,10 @@ async function pullActiveOrderManifest(options={}){
                     items:incomingData.length
                 }
             );
+
+            if(options?.clearIfMissing===true){
+                applyAuthoritativeEmptyActiveOrders("server-authority-empty-manifest");
+            }
 
             return false;
         }
@@ -2284,14 +2300,7 @@ async function restoreCloudWorkspaceOnLogin(){
                   the cleanup permanent and prevents future flashes.
                 */
                 PharmFlowCloudWorkspace.applyingRemote=true;
-                clearCurrentWorkspace();
-                startNewWorkspace();
-                deleteWorkspaceSnapshot();
-                saveWorkspaceSnapshot();
-
-                if(typeof refreshAllUI==="function"){
-                    refreshAllUI();
-                }
+                applyAuthoritativeEmptyActiveOrders("startup-authority-empty");
 
                 PharmFlowCloudWorkspace.applyingRemote=false;
             }
@@ -2461,17 +2470,10 @@ async function reconcileCloudWorkspaceAuthority(){
                    from that manifest on PC2/PC3. */
                 PharmFlowCloudWorkspace.applyingRemote=true;
 
-                clearCurrentWorkspace();
-                startNewWorkspace();
-                deleteWorkspaceSnapshot();
-                saveWorkspaceSnapshot();
+                applyAuthoritativeEmptyActiveOrders("reconcile-authority-empty");
 
                 PharmFlowCloudWorkspace
                     .lastAppliedWorkspaceSignature="EMPTY";
-
-                if(typeof refreshEntireUI==="function"){
-                    refreshEntireUI();
-                }
 
                 PharmFlowCloudWorkspace.applyingRemote=false;
             }

@@ -225,7 +225,7 @@
     $('btnAdjustReceiving')?.addEventListener('click',openAdjustReceiving);
     $('btnReceivingReportAction')?.addEventListener('click',()=>{if(typeof window.navigateTo==='function'){window.navigateTo('receiving');return;}document.querySelector('.sidebarItem[data-page="receiving"]')?.click();});
     bindSidebar();
-    if(window.AppEvents?.on){
+    if(typeof AppEvents!=="undefined"&&AppEvents?.on){
       AppEvents.on('files:updated',event=>{if(event?.source==='order-upload-confirmed')refreshOpenManageOrders();});
     }
     document.addEventListener('keydown',event=>{
