@@ -114,28 +114,39 @@ function hhIsImmediateDuplicate(raw){
 }
 
 async function hhProcessReceiving(raw,input){
-    if(!hhReceivingSessionReady()){
-        if(input) input.value="";
-        hhSetVisualState("blocked","SESSION / ORDERS NOT READY");
-        showToast("No synchronized Active Order is available for this pharmacy","warning");
-        return false;
-    }
-    /* Every genuine hardware scan is durably accepted before resolver/network
-       work. Equal GTIN values are not time-debounced. */
-    if(window.PharmFlowReceivingScanQueue?.enqueue){
-        if(input) input.value="";
-        hhSetVisualState("processing","PROCESSING…");
-        return window.PharmFlowReceivingScanQueue.enqueue(raw);
-    }
-
     HandheldRuntime.receivingBusy=true;
     if(input) input.value="";
-    hhSetVisualState("processing","PROCESSING…");
     try{
         const cleaned=typeof cleanScannerInput==="function"?cleanScannerInput(raw):String(raw||"").trim();
-        const parsed=typeof parseGS1Barcode==="function"?parseGS1Barcode(cleaned):null;
+        if(!hhReceivingSessionReady()){
+            hhSetVisualState("blocked","SESSION / ORDERS NOT READY");
+            showToast("No synchronized Active Order is available for this pharmacy","warning");
+            return false;
+        }
+
+        if(!cleaned) return false;
+        hhSetVisualState("processing","PROCESSING…");
+
+        const parsed=typeof parseGS1Barcode==="function"?parseGS1Barcode(cleaned):{raw:cleaned,gtin:""};
+        /* A short numeric code is only a candidate for an existing approved
+           mapping. It is never padded or promoted to a GTIN. The receiving
+           resolver will either find that exact mapping or send the original
+           captured code to Needs Review. */
+        if(!parsed?.gtin && /^\d+$/.test(cleaned)){
+            parsed.gtin=cleaned;
+            parsed.format="HANDHELD_CODE";
+            parsed.capturedCode=true;
+        }
+
+        /* Every genuine hardware scan is durably accepted before resolver/network
+           work. Equal GTIN values are not time-debounced. */
+        if(window.PharmFlowReceivingScanQueue?.enqueue){
+            return await window.PharmFlowReceivingScanQueue.enqueue(cleaned,parsed);
+        }
+
         if(!parsed?.gtin){
-            throw new Error("GTIN could not be extracted from the scanned barcode");
+            if(typeof receiveUnrecognizedHandheldScan!=="function") throw new Error("Needs Review resolver is unavailable");
+            return await receiveUnrecognizedHandheldScan(cleaned);
         }
         if(typeof receiveParsedBarcode!=="function") throw new Error("Receiving resolver is unavailable");
         const result=await receiveParsedBarcode(parsed);

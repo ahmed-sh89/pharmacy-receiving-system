@@ -614,11 +614,14 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
 async function renderUnknownGTINHandheld(parsed,options={}){
     clearHandheldActionCard();
 
-    const gtin=normalizeGTIN(parsed?.gtin||"");
-    if(!gtin){
+    const scannedCode=toSafeString(parsed?.gtin||parsed?.raw||"");
+    if(!scannedCode){
         handleReceivingFailure("Barcode could not be identified");
         return false;
     }
+    const codeLabel=parsed?.capturedCode===true||options.reason==="UNSUPPORTED_BARCODE"
+        ? "SCANNED CODE"
+        : "GTIN";
 
     /* DATA SAFETY: the draft is saved BEFORE the worker sees quantity/photo.
        Therefore a rapid next scan can never discard this GTIN. */
@@ -641,12 +644,12 @@ async function renderUnknownGTINHandheld(parsed,options={}){
     card.id="handheldReceivingReviewCard";
     card.className="handheldReceivingReviewCard urgent";
     card.innerHTML=`
-      <div class="handheldReviewStatus">ITEM NOT RECOGNISED</div>
-      <div class="handheldReviewBody">
-        <div class="handheldUnknownGTIN">
-          <span>GTIN</span>
-          <strong>${escapeHTML(gtin)}</strong>
-          <small>NOT FOUND IN GLOBAL GTIN MASTER</small>
+        <div class="handheldReviewStatus">ITEM NOT RECOGNISED</div>
+        <div class="handheldReviewBody">
+          <div class="handheldUnknownGTIN">
+          <span>${codeLabel}</span>
+          <strong>${escapeHTML(scannedCode)}</strong>
+          <small>${codeLabel==="GTIN"?"NOT FOUND IN GLOBAL GTIN MASTER":"NOT RECOGNISED — SENT TO NEEDS REVIEW"}</small>
         </div>
 
         <button id="btnHandheldReviewPhoto" class="handheldPhotoButton" type="button">
@@ -773,6 +776,33 @@ async function renderUnknownGTINHandheld(parsed,options={}){
 
     refreshNeedsReviewCounters?.();
     return true;
+}
+
+/* A scanner payload that is not a valid GS1/GTIN parse still represents a
+   physical item. Keep its exact captured value for the established Needs
+   Review workflow; do not invent a GTIN or receiving transaction. */
+async function receiveUnrecognizedHandheldScan(raw){
+    const scannedCode=toSafeString(raw);
+    if(!scannedCode){
+        handleReceivingFailure("Barcode could not be identified");
+        return false;
+    }
+    if(!(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())){
+        handleReceivingFailure("Barcode could not be identified");
+        return false;
+    }
+    setScanBoxState?.("action");
+    try{
+        return await renderUnknownGTINHandheld({
+            raw:scannedCode,
+            gtin:scannedCode,
+            capturedCode:true,
+            format:"UNSUPPORTED_CODE"
+        },{reason:"UNSUPPORTED_BARCODE"});
+    }catch(error){
+        handleReceivingFailure(error?.message||"Unable to save scanned code for review");
+        return false;
+    }
 }
 
 async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){

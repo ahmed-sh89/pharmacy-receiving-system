@@ -64,16 +64,19 @@ async function nrV2CreateDraft(parsed,options={}){
         throw new Error("Needs Review cloud queue is unavailable");
     }
 
-    const gtin=normalizeGTIN(parsed?.gtin||"");
-    if(!gtin){
-        throw new Error("GTIN could not be captured");
+    const capturedCode=toSafeString(parsed?.gtin||parsed?.raw||parsed?.original||"");
+    if(!capturedCode){
+        throw new Error("Scanned code could not be captured");
     }
 
     const result=await authRpc("create_pharmflow_needs_review_v2",{
         p_pharmacy_id:pharmacyId,
         p_workflow:options.workflow||"RECEIVING",
-        p_gtin:gtin,
-        p_raw_barcode:toSafeString(parsed?.raw||parsed?.original||parsed?.gtin||""),
+        /* This field is also the existing review identifier for unsupported
+           captured codes. It is not a Global GTIN write and is never padded
+           or transformed into a GTIN. */
+        p_gtin:capturedCode,
+        p_raw_barcode:toSafeString(parsed?.raw||parsed?.original||capturedCode),
         p_session_id:toSafeString(AppState?.session?.id||""),
         p_order_number:options.orderNumber||nrV2CurrentOrderNumber()||null,
         p_order_name:toSafeString(AppState?.workspace?.orderName||""),
