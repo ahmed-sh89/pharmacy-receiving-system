@@ -208,15 +208,6 @@
     let remembered=false;try{remembered=localStorage.getItem('PHARMFLOW_SIDEBAR_COLLAPSED')==='1';}catch(_){}setCollapsed(remembered);
     menu.addEventListener('click',e=>{if(window.innerWidth>900){e.preventDefault();e.stopPropagation();setCollapsed(!document.body.classList.contains('pfnSidebarCollapsed'));}});
     close?.addEventListener('click',e=>{if(window.innerWidth>900){e.preventDefault();e.stopPropagation();setCollapsed(true);}});overlay?.addEventListener('click',()=>{if(window.innerWidth>900)setCollapsed(true);});
-    const finePointer=window.matchMedia?.('(hover:hover) and (pointer:fine)');
-    let collapseTimer=0;
-    const desktopHover=()=>window.innerWidth>900&&Boolean(finePointer?.matches)&&!document.body.classList.contains('zebraDevice');
-    const openForPointer=()=>{if(!desktopHover())return;clearTimeout(collapseTimer);setCollapsed(false);};
-    const closeAfterPointerLeaves=()=>{if(!desktopHover())return;clearTimeout(collapseTimer);collapseTimer=setTimeout(()=>setCollapsed(true),140);};
-    menu.addEventListener('pointerenter',openForPointer);
-    menu.addEventListener('pointerleave',closeAfterPointerLeaves);
-    sidebar.addEventListener('pointerenter',openForPointer);
-    sidebar.addEventListener('pointerleave',closeAfterPointerLeaves);
   }
 
   function bind(){

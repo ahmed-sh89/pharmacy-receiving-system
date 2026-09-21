@@ -115,12 +115,12 @@ test("empty active-order scope removes its control but an active order still ren
 test("fresh startup can parse the complete production ui script",()=>{
     const index=fs.readFileSync("index.html","utf8");
     const source=fs.readFileSync("ui.js","utf8");
-    assert.match(index,/<script src="ui\.js\?v=B21SCOPEFEEDBACK3"/);
+    assert.match(index,/<script src="ui\.js\?v=B21SCOPEFEEDBACK4"/);
     assert.doesNotThrow(()=>new vm.Script(source),"the uncached startup script must be complete JavaScript");
     assert.match(source,/function refreshOrderScopeControl\(\)/);
 });
 
-test("desktop receiving polish keeps toasts above modals and scopes hover UI to fine pointers",()=>{
+test("desktop receiving polish keeps toasts above modals and uses click-only sidebar state",()=>{
     const css=fs.readFileSync("css/pharmflow-next.css","utf8");
     assert.match(css,/--pfn-toast-layer:200000/);
     assert.match(css,/\.toastContainer\{z-index:var\(--pfn-toast-layer\)!important/);
@@ -129,6 +129,7 @@ test("desktop receiving polish keeps toasts above modals and scopes hover UI to 
     assert.match(css,/\.smartScanResults:not\(:empty\)/);
     assert.match(css,/\.smartSearchResult:hover\{/);
     const shell=fs.readFileSync("js/pharmflow-next.js","utf8");
-    assert.match(shell,/window\.matchMedia\?\.\('\(hover:hover\) and \(pointer:fine\)'\)/);
-    assert.match(shell,/setTimeout\(\(\)=>setCollapsed\(true\),140\)/);
+    assert.match(shell,/menu\.addEventListener\('click',e=>\{if\(window\.innerWidth>900\)/);
+    assert.doesNotMatch(shell,/pointerenter.*openForPointer/);
+    assert.doesNotMatch(shell,/pointerleave.*closeAfterPointerLeaves/);
 });

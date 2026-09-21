@@ -8249,6 +8249,17 @@ function savePriorityApplicationState(){
     }
 }
 
+async function persistItemPriorityBatch(batch){
+    const patched=await patchActiveOrderPriorities?.(batch)===true;
+    if(patched) return true;
+
+    /* Production can legitimately be on an older priority-patch RPC while
+       still exposing the current revision-fenced Active Order Manifest save.
+       Do not leave an operational priority only in browser memory: persist
+       the already-updated manifest through that existing authority instead. */
+    return await saveActiveOrderManifest?.({silent:true})===true;
+}
+
 function queueItemPrioritySelection(item,priorityType){
     const itemCode=toSafeString(item?.itemCode||item?.itemNumber||"");
     if(!itemCode) return Promise.resolve(false);
@@ -8282,9 +8293,9 @@ async function flushItemPriorityBatch(){
     itemPriorityBatchPromise=(async()=>{
         let saved=false;
         for(let attempt=1;attempt<=2&&!saved;attempt++){
-            saved=await patchActiveOrderPriorities?.(
+            saved=await persistItemPriorityBatch(
                 batch.map(({itemCode,priorityType})=>({itemCode,priorityType}))
-            )===true;
+            );
             if(!saved) applyPendingItemPrioritySelections();
         }
 

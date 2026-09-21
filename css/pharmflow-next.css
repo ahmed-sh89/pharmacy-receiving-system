@@ -3534,3 +3534,21 @@ body:not(.zebraMode):not(.zebraDevice) #page-dashboard .statisticsGrid .statCard
   body:not(.zebraDevice) .pfnOrderBrowserControls [data-print-priority]{grid-column:1!important;grid-row:3!important}
   body:not(.zebraDevice) .pfnOrderBrowserControls [data-clear-priority]{grid-column:2/span 2!important;grid-row:3!important}
 }
+
+/* Desktop manual receiving: make the selected item and quantity decision clear. */
+@media (min-width:901px){
+  body:not(.zebraDevice) #page-dashboard .smartScanSelected{
+    margin-top:8px!important;padding:10px 12px!important;border:2px solid #87b9e2!important;
+    border-radius:12px!important;background:linear-gradient(135deg,#f4faff,#e8f4ff)!important;
+    box-shadow:0 8px 20px rgba(21,94,157,.12)!important;
+  }
+  body:not(.zebraDevice) #page-dashboard .smartSelectedMain h3{font-size:17px!important;color:#103f6d!important}
+  body:not(.zebraDevice) #page-dashboard .smartSelectedCode{color:#315c82!important;font-weight:750!important}
+  body:not(.zebraDevice) #page-dashboard .smartSelectedStats{border-color:#bfd8ed!important;background:#fff!important}
+  body:not(.zebraDevice) #page-dashboard .smartQuantityRow{grid-template-columns:auto 174px minmax(160px,220px)!important;gap:10px!important;margin-top:8px!important}
+  body:not(.zebraDevice) #page-dashboard .smartQuantityLabel{font-size:12px!important;font-weight:900!important;color:#234e76!important}
+  body:not(.zebraDevice) #page-dashboard .smartQuantityControl{height:46px!important;border:2px solid #76addb!important;border-radius:10px!important;background:#fff!important;box-shadow:0 2px 5px rgba(20,83,135,.10)!important}
+  body:not(.zebraDevice) #page-dashboard .smartQuantityControl .quantityButton{width:50px!important;min-width:50px!important;height:46px!important;font-size:27px!important;font-weight:850!important;color:#0d5faa!important;background:#edf7ff!important}
+  body:not(.zebraDevice) #page-dashboard #smartQuantityInput{width:74px!important;height:46px!important;font-size:23px!important;font-weight:900!important;color:#083f75!important;background:#fff!important;text-align:center!important}
+  body:not(.zebraDevice) #page-dashboard #btnAddSmartQuantity{min-height:46px!important;font-size:14px!important;font-weight:900!important}
+}
