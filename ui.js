@@ -8328,7 +8328,7 @@ function renderItemBrowser(body, rows, options={}){
     body.innerHTML=`
       <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
         ${orderMode?`<div class="pfnBrowserControlRow"><label>Order<select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button><label>Quantity<select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
-        <input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items">
+        <label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>
       </div>
       ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
       <div class="phase263TableWrap pfnCleanWorklist"><table class="quickKpiTable phase263Table"><thead><tr>${orderMode?'<th>Item Code</th><th>Item Name</th><th>Priority</th><th>Group</th><th>Quantity</th><th>Order No.</th>':'<th>Item Code</th><th>Item Name</th><th>Ordered</th>'}${receivedMode?'<th>Received</th>':''}</tr></thead><tbody data-rows></tbody></table></div>`;
@@ -8343,11 +8343,16 @@ function renderItemBrowser(body, rows, options={}){
     const clearPriority=body.querySelector('[data-clear-priority]');
     let priorityOnly=false;
     let visibleRows=[];
+    let selectedRowKey="";
+    const rowKey=item=>`${toSafeString(item?.itemCode)}|${(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean).join(",")}`;
     const rowHtml=item=>{
         const orders=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean).join(', ')||'—';
         const pt=getEffectiveItemPriority(item);
-        if(orderMode)return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
-        return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
+        const key=rowKey(item);
+        const selected=key===selectedRowKey;
+        const rowAttributes=`class="pfnMobileItemCard${selected?' pfnBrowserRowSelected':''}" data-row-key="${esc(key)}" tabindex="0" aria-selected="${selected?'true':'false'}"`;
+        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
         const q=toSafeString(input?.value||'').trim().toLowerCase();
@@ -8394,6 +8399,27 @@ function renderItemBrowser(body, rows, options={}){
             }
         });
     };
+    const selectBrowserRow=row=>{
+        if(!row?.dataset.rowKey)return;
+        selectedRowKey=row.dataset.rowKey;
+        tbody.querySelectorAll('.pfnBrowserRowSelected').forEach(candidate=>{
+            candidate.classList.remove('pfnBrowserRowSelected');
+            candidate.setAttribute('aria-selected','false');
+        });
+        row.classList.add('pfnBrowserRowSelected');
+        row.setAttribute('aria-selected','true');
+    };
+    tbody?.addEventListener('click',event=>{
+        if(event.target.closest('button,a,input,select,summary,label'))return;
+        selectBrowserRow(event.target.closest('tr.pfnMobileItemCard'));
+    });
+    tbody?.addEventListener('keydown',event=>{
+        if((event.key!=="Enter"&&event.key!==" ")||event.target.closest('button,a,input,select,summary,label'))return;
+        const row=event.target.closest('tr.pfnMobileItemCard');
+        if(!row)return;
+        event.preventDefault();
+        selectBrowserRow(row);
+    });
     const rebuildClassification=()=>{
         if(!orderMode||!window.PharmFlowClassificationFilters)return;
         const currentRows=getKpiPanelItems("total");
