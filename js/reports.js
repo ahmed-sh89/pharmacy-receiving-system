@@ -1105,6 +1105,7 @@ function getWorkspaceOrderSourceRows(orderNumber){
 function buildReceivedQuantityByOrder(){
     const totals=new Map();
     const activeOrders=getActiveReceivingOrderNumbers();
+    const explicitForeignReceivedByCode=new Map();
 
     const ensure=(order,itemCode)=>{
         const key=normalizeOrderNumber(order)+"||"+normalizeItemCode(itemCode);
@@ -1118,14 +1119,23 @@ function buildReceivedQuantityByOrder(){
         const code=normalizeItemCode(tx?.itemCode||"");
         if(!code) return;
 
-        let order=normalizeOrderNumber(
+        const explicitOrder=normalizeOrderNumber(
             tx?.orderNumber ||
             tx?.orderId ||
             tx?.selectedOrderNumber ||
             ""
         );
+        let order=explicitOrder;
 
         if(!activeOrders.includes(order)){
+            if(explicitOrder){
+                explicitForeignReceivedByCode.set(
+                    code,
+                    (explicitForeignReceivedByCode.get(code)||0)+toNumber(tx?.quantity,0)
+                );
+                return;
+            }
+
             const item=getItemByCode?.(code);
             const memberships=(item?.orderNumbers||[])
                 .map(normalizeOrderNumber)
@@ -1153,7 +1163,10 @@ function buildReceivedQuantityByOrder(){
         const code=normalizeItemCode(item?.itemCode||"");
         if(!code) return;
 
-        const totalReceived=toNumber(item?.receivedQty,0);
+        const totalReceived=Math.max(
+            0,
+            toNumber(item?.receivedQty,0)-(explicitForeignReceivedByCode.get(code)||0)
+        );
         let attributed=0;
 
         activeOrders.forEach(order=>{
