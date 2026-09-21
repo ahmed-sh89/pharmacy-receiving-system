@@ -12,6 +12,15 @@ const ExcelEngine = {
     maxHeaderScanRows:60
 };
 
+/* Publish one structural UI update only after the active-order manifest has
+   been authoritatively confirmed.  This reuses existing UI events and adds
+   neither polling nor a competing local state source. */
+function publishConfirmedOrderUpload(){
+    AppEvents.emit("files:updated",{source:"order-upload-confirmed"});
+    AppEvents.emit("receiving:updated",{source:"order-upload-confirmed"});
+    refreshEntireUI?.();
+}
+
 
 /* =====================================================
    INITIALIZE
@@ -297,6 +306,8 @@ async function handleOrderFileSelection(event){
                     throw new Error("Order "+orderNumber+" is active and synchronized, but its registry/source commit is pending: "+(lastCommitError?.message||"server error"));
                 }
             }
+
+            publishConfirmedOrderUpload();
 
             showToast(
                 importedFiles +

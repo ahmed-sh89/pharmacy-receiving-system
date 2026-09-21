@@ -3473,4 +3473,17 @@ body:not(.zebraMode):not(.zebraDevice) #page-dashboard .statisticsGrid .statCard
 .pfnActivityEdit{width:min(440px,calc(100vw - 28px));padding:22px;border-radius:14px;background:#fff;box-shadow:0 24px 70px rgba(20,45,70,.3)}
 .pfnActivityEdit h3{margin:0 0 8px}.pfnActivityEdit p{color:#5f7790}.pfnActivityEdit label{display:grid;gap:5px;margin-top:12px;font-size:12px;font-weight:900;color:#38536d}.pfnActivityEdit input,.pfnActivityEdit textarea{box-sizing:border-box;width:100%;border:1px solid #b9ccdc;border-radius:8px;padding:10px;font:inherit}.pfnActivityEdit>div{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.pfnActivityEdit button{min-height:40px;border:0;border-radius:8px;padding:0 14px;font-weight:900}.pfnActivityEdit button[type="submit"]{background:#1769aa;color:#fff}
 .modalOverlay.pfnModalLayer,.quickKpiOverlay.pfnModalLayer,.pfnCenterOverlay.pfnModalLayer{z-index:calc(var(--pfn-modal-base) + (var(--pfn-modal-depth,0) * var(--pfn-modal-step)))!important}
+
+/* Project A UI polish: shared notification layer and desktop-only receiving controls. */
+:root{--pfn-toast-layer:200000}
+.toastContainer{z-index:var(--pfn-toast-layer)!important;pointer-events:none!important}
+.toastContainer .toastMessage{pointer-events:auto}
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+  body:not(.zebraDevice) #barcodeInput{font-size:20px!important;font-weight:800!important}
+  body:not(.zebraDevice) .smartScanResults:not(:empty){margin-top:10px!important;padding:9px!important;border:1px solid #bad0e5!important;border-radius:12px!important;background:#f5faff!important;box-shadow:0 8px 22px rgba(30,76,117,.10)!important}
+  body:not(.zebraDevice) .smartSearchResult{cursor:pointer!important;border:1px solid #d7e5f1!important;border-radius:9px!important;background:#fff!important;transition:background-color .12s ease,border-color .12s ease,box-shadow .12s ease,transform .12s ease!important}
+  body:not(.zebraDevice) .smartSearchResult:hover{background:#e5f2ff!important;border-color:#277fc5!important;box-shadow:0 5px 14px rgba(25,105,170,.18)!important;transform:translateY(-1px)}
+  body:not(.zebraDevice) .smartSearchResult:hover,body:not(.zebraDevice) .smartSearchResult:hover *{color:#123d69!important}
+  body:not(.zebraDevice) .smartSearchResult:focus-visible{outline:3px solid #4d9cdd!important;outline-offset:2px!important}
+}
 @media(max-width:900px){body:not(.zebraMode):not(.zebraDevice) #page-dashboard .statisticsGrid{grid-template-columns:repeat(4,minmax(92px,1fr))!important}}

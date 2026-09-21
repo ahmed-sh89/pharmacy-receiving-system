@@ -111,22 +111,17 @@
     }
   }
 
-  function openOrders(){
-    const page=$('page-files');if(!page||$('pfnOrdersOverlay'))return;
-    PF.ordersAnchor=document.createComment('pfn-orders-anchor');page.parentNode.insertBefore(PF.ordersAnchor,page);
-    const overlay=document.createElement('div');overlay.id='pfnOrdersOverlay';overlay.className='pfnCenterOverlay';
-    overlay.innerHTML='<section class="pfnCenterModal pfnOrdersModal" role="dialog" aria-modal="true"><header class="pfnModalHeader"><div><span>ORDER MANAGEMENT</span><h2>Manage Orders</h2></div><button type="button" data-close>✕</button></header><div class="pfnModalBody"></div></section>';
-    document.body.appendChild(overlay);modalStack.open(overlay);
-    const body=overlay.querySelector('.pfnModalBody');
+  function renderHandheldAssignment(overlay){
+    const page=$('page-files'),body=overlay?.querySelector('.pfnModalBody');if(!page||!body)return;
     const active=typeof getActiveReceivingOrderNumbers==='function'?getActiveReceivingOrderNumbers():[];
     const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
       ? AppState.workspace.handheldOrderNumbers
         .map(order=>String(order||'').trim().toUpperCase())
         .filter(order=>active.includes(order))
       : [];
-    const assignment=document.createElement('section');assignment.className='pfnHandheldAssignment';
+    const assignment=body.querySelector('.pfnHandheldAssignment')||document.createElement('section');assignment.className='pfnHandheldAssignment';
     assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Active Orders are managed here; only checked orders appear on the Handheld.</p></div><button type="button" data-assign-all>Select all</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
-    body.appendChild(assignment);body.appendChild(page);page.classList.add('active','pfnEmbeddedPage');page.hidden=false;
+    if(!assignment.isConnected) body.insertBefore(assignment,page);
     assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
@@ -136,6 +131,22 @@
       event.currentTarget.disabled=false;
       if(saved) assignment.querySelector('[data-assignment-status]').textContent=`${chosen.length} orders assigned`;
     });
+  }
+
+  function refreshOpenManageOrders(){
+    const overlay=$('pfnOrdersOverlay');
+    if(overlay) renderHandheldAssignment(overlay);
+  }
+
+  function openOrders(){
+    const page=$('page-files');if(!page||$('pfnOrdersOverlay'))return;
+    PF.ordersAnchor=document.createComment('pfn-orders-anchor');page.parentNode.insertBefore(PF.ordersAnchor,page);
+    const overlay=document.createElement('div');overlay.id='pfnOrdersOverlay';overlay.className='pfnCenterOverlay';
+    overlay.innerHTML='<section class="pfnCenterModal pfnOrdersModal" role="dialog" aria-modal="true"><header class="pfnModalHeader"><div><span>ORDER MANAGEMENT</span><h2>Manage Orders</h2></div><button type="button" data-close>✕</button></header><div class="pfnModalBody"></div></section>';
+    document.body.appendChild(overlay);modalStack.open(overlay);
+    const body=overlay.querySelector('.pfnModalBody');
+    body.appendChild(page);page.classList.add('active','pfnEmbeddedPage');page.hidden=false;
+    renderHandheldAssignment(overlay);
     overlay.querySelector('[data-close]').onclick=closeOrders;overlay.addEventListener('click',e=>{if(e.target===overlay)closeOrders();});
   }
 
@@ -197,6 +208,15 @@
     let remembered=false;try{remembered=localStorage.getItem('PHARMFLOW_SIDEBAR_COLLAPSED')==='1';}catch(_){}setCollapsed(remembered);
     menu.addEventListener('click',e=>{if(window.innerWidth>900){e.preventDefault();e.stopPropagation();setCollapsed(!document.body.classList.contains('pfnSidebarCollapsed'));}});
     close?.addEventListener('click',e=>{if(window.innerWidth>900){e.preventDefault();e.stopPropagation();setCollapsed(true);}});overlay?.addEventListener('click',()=>{if(window.innerWidth>900)setCollapsed(true);});
+    const finePointer=window.matchMedia?.('(hover:hover) and (pointer:fine)');
+    let collapseTimer=0;
+    const desktopHover=()=>window.innerWidth>900&&Boolean(finePointer?.matches)&&!document.body.classList.contains('zebraDevice');
+    const openForPointer=()=>{if(!desktopHover())return;clearTimeout(collapseTimer);setCollapsed(false);};
+    const closeAfterPointerLeaves=()=>{if(!desktopHover())return;clearTimeout(collapseTimer);collapseTimer=setTimeout(()=>setCollapsed(true),140);};
+    menu.addEventListener('pointerenter',openForPointer);
+    menu.addEventListener('pointerleave',closeAfterPointerLeaves);
+    sidebar.addEventListener('pointerenter',openForPointer);
+    sidebar.addEventListener('pointerleave',closeAfterPointerLeaves);
   }
 
   function bind(){
@@ -205,6 +225,9 @@
     $('btnAdjustReceiving')?.addEventListener('click',openAdjustReceiving);
     $('btnReceivingReportAction')?.addEventListener('click',()=>{if(typeof window.navigateTo==='function'){window.navigateTo('receiving');return;}document.querySelector('.sidebarItem[data-page="receiving"]')?.click();});
     bindSidebar();
+    if(window.AppEvents?.on){
+      AppEvents.on('files:updated',event=>{if(event?.source==='order-upload-confirmed')refreshOpenManageOrders();});
+    }
     document.addEventListener('keydown',event=>{
       if(event.key!=='Escape')return;
       const top=modalStack.top();
