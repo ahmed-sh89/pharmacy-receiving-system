@@ -67,29 +67,44 @@
                 for(const waiting of rows.filter(entry=>entry.state==="awaitingConfirmation")){
                     await discardConfirmedHead(waiting);
                 }
-                const row=(await pending()).find(entry=>entry.state!=="awaitingConfirmation");
+                const row=(await pending()).find(entry=>entry.state==="accepted");
                 if(!row) break;
                 if(!navigator.onLine){window.refreshHandheldWorkspaceStatus?.();break;}
                 try{
                     const clean=typeof cleanScannerInput==="function"?cleanScannerInput(row.raw):String(row.raw||"").trim();
-                    const parsed=typeof parseGS1Barcode==="function"?parseGS1Barcode(clean):null;
-                    if(!parsed?.gtin) throw new Error("GTIN could not be extracted from queued scan");
+                    const parsed=row.parsed||(typeof parseGS1Barcode==="function"?parseGS1Barcode(clean):null);
+                    if(!parsed?.gtin){
+                        if(typeof receiveUnrecognizedHandheldScan!=="function"){
+                            throw new Error("Needs Review resolver is unavailable");
+                        }
+                        const handled=await receiveUnrecognizedHandheldScan(clean);
+                        if(handled!==false) await remove(row.transactionId);
+                        else throw new Error("Unsupported barcode could not be saved to Needs Review");
+                        continue;
+                    }
                     /* Persist the wait state before receiveParsedBarcode can
                        schedule and complete a cloud acknowledgement. */
                     row.state="awaitingConfirmation"; row.lastError=""; row.lastAttemptAt=new Date().toISOString(); await put(row);
                     const result=await receiveParsedBarcode(parsed,{transactionId:row.transactionId});
-                    if(result===false){await remove(row.transactionId);}
+                    if(result===false||!localTransaction(row.transactionId)){await remove(row.transactionId);}
                 }catch(error){
-                    row.lastError=String(error?.message||error);row.lastAttemptAt=new Date().toISOString();await put(row);
-                    Logger?.warn?.("Queued scan awaiting retry",error);break;
+                    row.state="failed";row.lastError=String(error?.message||error);row.lastAttemptAt=new Date().toISOString();await put(row);
+                    Logger?.warn?.("Queued scan failed without blocking later scans",error);continue;
                 }
             }
         })();
-        try{return await worker;}finally{worker=null;}
+        try{return await worker;}finally{
+            worker=null;
+            /* Queue recovery can start during application boot, before a new
+               input event reaches hhProcessReceiving(). Restore the hardware
+               scanner lifecycle here as well, without affecting PC runtime. */
+            window.hhRefreshReadyState?.();
+            window.hhRepairScannerFocus?.("receiving-queue-recovery");
+        }
     }
-    async function enqueue(raw){
+    async function enqueue(raw,parsed=null){
         const current=scope(); if(!current) throw new Error("Receiving workspace is not connected");
-        const row={transactionId:transactionId(),scope:current,sequence:await nextSequence(),raw:String(raw||""),state:"accepted",acceptedAt:new Date().toISOString()};
+        const row={transactionId:transactionId(),scope:current,sequence:await nextSequence(),raw:String(raw||""),parsed:parsed&&typeof parsed==="object"?parsed:null,state:"accepted",acceptedAt:new Date().toISOString()};
         await put(row); void run(); return {accepted:true,transactionId:row.transactionId};
     }
     window.PharmFlowReceivingScanQueue={enqueue,resume:run};
