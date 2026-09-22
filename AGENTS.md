@@ -1,13 +1,15 @@
-# PharmFlow DEV — Project Baseline & Engineering Rules
+# PharmFlow Production — Project A Baseline & Engineering Rules
 
 These instructions apply throughout this repository and to future Codex work here.
 
-## 1. Project track and boundaries
+## 1. Production track and boundaries
 
-- This repository is **Project B (DEV/TEST)**. Project A is the live production system and is outside this repository's scope.
-- Never assume a Project B change is approved for Project A. Production promotion is a separate controlled release step after verification and explicit authorization.
-- Do not modify anything outside this repository.
-- DEV currently uses a dedicated pharmacy tenant (DEV001) in a shared Supabase project, not a separate backend. Preserve the authentication boundary and mutation guards in `js/auth.js` and `js/dev-isolation.js`; preserve Global GTIN read access and DEV mutation restrictions. A DEV checkout does not make shared backend changes safe.
+- This repository is **Project A / Production**. `main` is the Production branch.
+- The latest explicitly approved Production HEAD on `main` is the current Production source of truth. Exact release and baseline commit SHAs belong in `PHARMFLOW_CURRENT_CHECKPOINT` and release/change records.
+- Treat all application code, GitHub Pages deployment, and connected Supabase environment as production-sensitive.
+- Do not modify Supabase data, schema, RLS, RPCs, authentication, or Storage as part of ordinary application work. If any backend change appears necessary, stop and report the exact migration, compatibility impact, existing-data impact, and tenant-isolation impact for Product Owner approval.
+- Receiving is the active Production module. Preserve its transaction semantics, Scan Queue, Active Order Manifest, Device Work Scope, Needs Review attribution, PC ↔ Handheld synchronization, Idle Sleep, and approved reporting boundaries.
+- Future development belongs in a controlled development/release environment. Promote only a verified, feature-scoped release to `main`, with Production regression coverage and explicit Product Owner approval. A Production hotfix must be verified and then back-ported to the development baseline.
 
 ## 2. Architecture baseline and runtime truth
 
@@ -87,14 +89,14 @@ Report files changed, behavior changed, root cause addressed (or not applicable)
 
 - Do not claim runtime verification unless it was actually performed.
 - `package.json` currently provides `dev`, `build`, and `preview`; it defines no automated test script. Build success alone does not verify synchronization or data integrity.
-- For affected operational paths, select relevant manual scenarios: PC/Handheld scans and quantity changes, refresh/reconnect and pending writes, multi-order attribution, unknown GTIN review, finalization/history, account isolation, idle/resume, and network request behavior. Use DEV test data within the authorized scope.
+- For affected operational paths, select relevant manual scenarios: PC/Handheld scans and quantity changes, refresh/reconnect and pending writes, multi-order attribution, unknown GTIN review, finalization/history, account isolation, idle/resume, and network request behavior. Do not use Production pharmacy data for exploratory testing. Use an approved isolated test path or static/build checks unless the Product Owner explicitly authorizes a controlled Production verification.
 - Starting the application can contact the shared Supabase backend and write browser state. Distinguish static inspection, build checks, browser checks, device checks, and deployed SQL verification in the report.
 
 ## 11. Git safety
 
 Do not push automatically merely because code changed. The normal workflow is:
 
-`inspect → modify Project B → test/check → review diff → user approval → commit → push`
+`inspect → implement in controlled development/release path → test → review diff → Product Owner approval → commit → controlled Production promotion`
 
 - Before committing, show a concise change summary and obtain user approval. Editing authorization alone is not commit/push authorization.
 - Never push to a production repository or branch without explicit authorization.
@@ -103,7 +105,7 @@ Do not push automatically merely because code changed. The normal workflow is:
 
 ## 12. Security
 
-Never expose or commit passwords, access tokens, service-role keys, private credentials, or authentication secrets. Do not weaken authentication or workspace isolation to make a bug disappear. Client DEV guards supplement server authorization; they do not replace it.
+Never expose or commit passwords, access tokens, service-role keys, private credentials, or authentication secrets. Do not weaken authentication or workspace isolation to make a bug disappear. Client-side guards supplement, never replace, server-side authentication, RLS, account isolation, and Production authorization.
 
 ## 13. PharmFlow principle
 
