@@ -729,6 +729,11 @@ function getItemByGTIN(gtin){
    ADD RECEIVING TRANSACTION
 ===================================================== */
 
+function normalizeReceivingTransactionIdentifier(value,preserveExact=false){
+    const display=toSafeString(value).trim();
+    return preserveExact ? display : normalizeGTIN(display);
+}
+
 function addReceivingTransaction(
     transaction
 ){
@@ -784,9 +789,13 @@ function addReceivingTransaction(
                 transaction.itemName
             ),
 
+        /* A V2 resolver has already established identifier identity. Keep its
+           display value intact for the receiving ledger/queue; the legacy
+           GTIN-only paths continue to use their established numeric form. */
         gtin:
-            normalizeGTIN(
-                transaction.gtin
+            normalizeReceivingTransactionIdentifier(
+                transaction.gtin,
+                transaction.identifierPreserveExact === true
             ),
 
         quantity:

@@ -132,6 +132,7 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
             serial:parsed.serial,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
+            identifierPreserveExact:masterRecord?.found===true,
             gtinResolution:masterRecord?.source==="PHARMACY_V2" ? {
                 kind:"PHARMACY_LEARNED",
                 mappingId:masterRecord.identifierId,
@@ -1216,7 +1217,11 @@ function receiveOrderItem(options){
                 targetOrder,
 
             gtinResolution:
-                options.gtinResolution||null
+                options.gtinResolution||null,
+
+            identifierPreserveExact:
+                options.identifierPreserveExact === true ||
+                options.gtinResolution?.kind === "PHARMACY_LEARNED"
 
         });
 
@@ -1348,7 +1353,10 @@ function createReceivingTransaction(options){
             options.manual === true,
 
         targetOrder:
-            options.targetOrder || ""
+            options.targetOrder || "",
+
+        identifierPreserveExact:
+            options.identifierPreserveExact === true
 
     });
 

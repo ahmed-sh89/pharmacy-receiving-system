@@ -8609,6 +8609,7 @@ async function nrV2ResolveGroupToOrderItem(group,item){
             manual:false,
             targetOrder:group.order_number||"",
             transactionId,
+            identifierPreserveExact:true,
             gtinResolution:pharmacyMapping ? {
                 kind:"PHARMACY_LEARNED",
                 mappingId:pharmacyMapping.identifierId,

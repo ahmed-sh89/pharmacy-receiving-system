@@ -1,6 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
+const vm=require('node:vm');
 
 const read=file=>fs.readFileSync(file,'utf8');
 
@@ -71,6 +72,39 @@ test('pharmacy-specific identifier resolution is owned by IdentifierService and 
   assert.match(receiving,/masterRecord\?\.source==="PHARMACY_V2"/);
   assert.match(workspace,/resolution\.identifierKey/);
   assert.doesNotMatch(service,/savePharmacyLearnedGTIN/);
+});
+
+test('V2-resolved identifiers retain their exact display value through receiving state and queue upload',()=>{
+  const state=read('js/state.js');
+  const receiving=read('js/receiving.js');
+  const ui=read('ui.js');
+  const workspace=read('cloud-workspace.js');
+  assert.match(state,/function normalizeReceivingTransactionIdentifier\(value,preserveExact=false\)/);
+  const start=state.indexOf('function normalizeReceivingTransactionIdentifier');
+  const end=state.indexOf('\n\nfunction addReceivingTransaction',start);
+  const context={
+    toSafeString:value=>String(value??''),
+    normalizeGTIN:value=>String(value??'').replace(/[^\d]/g,'')
+  };
+  vm.runInNewContext(`${state.slice(start,end)};globalThis.normalizeReceivingTransactionIdentifier=normalizeReceivingTransactionIdentifier;`,context);
+  for(const identifier of ['U0030','S00110','1234A','001234']){
+    assert.equal(context.normalizeReceivingTransactionIdentifier(` ${identifier} `,true),identifier);
+  }
+  assert.equal(context.normalizeReceivingTransactionIdentifier(' 6281234567890 ',false),'6281234567890');
+  assert.match(receiving,/identifierPreserveExact:masterRecord\?\.found===true/);
+  assert.match(receiving,/options\.identifierPreserveExact === true[\s\S]{0,90}options\.gtinResolution\?\.kind === "PHARMACY_LEARNED"/);
+  assert.match(ui,/transactionId,[\s\S]{0,100}identifierPreserveExact:true,[\s\S]{0,260}kind:"PHARMACY_LEARNED"/);
+  assert.match(workspace,/p_gtin:toSafeString\(tx\.gtin\|\|""\)/);
+});
+
+test('learned receipts finalize the exact pending review intent without changing receipt idempotency',()=>{
+  const migration=read('PHASE2C1157_LEARNED_RECEIPT_INTENT_FINALIZATION.sql');
+  assert.match(migration,/create or replace function public\.append_pharmflow_learned_transaction_v3/);
+  assert.match(migration,/on conflict\(pharmacy_id,transaction_id\) do nothing/);
+  assert.match(migration,/for v_intent_id in[\s\S]*transaction_id=v_transaction_id[\s\S]*status='PENDING'/);
+  assert.match(migration,/perform public\.try_finalize_pharmflow_needs_review_resolution_intent_v1\(v_intent_id\)/);
+  assert.match(migration,/exception when others[\s\S]*helper_failure_count=helper_failure_count\+1/);
+  assert.match(migration,/return true/);
 });
 
 test('Handheld History is recognized-scan history only and REVIEW is the single review entry point',()=>{
@@ -158,11 +192,12 @@ test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   ];
   for(const asset of stage2Assets){
     const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_FINAL_CORRECTION1"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_U0030_RECOVERY1"><\\/script>`),`${asset} must use the coherent U0030 recovery asset version`);
   }
-  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_FINAL_CORRECTION1"><\/script>/);
-  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_FINAL_CORRECTION1">/);
-  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_FINAL_CORRECTION1">/);
+  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_U0030_RECOVERY1"><\/script>/);
+  assert.match(index,/<script src="js\/state\.js\?v=RECEIVING_U0030_RECOVERY1"><\/script>/);
+  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_U0030_RECOVERY1">/);
+  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_U0030_RECOVERY1">/);
   assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
   assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
 });
@@ -172,8 +207,8 @@ test('authenticated manifest hydration loads UI globals before the application b
   const ui=read('ui.js');
   const workspace=read('cloud-workspace.js');
   const app=read('js/app.js');
-  assert.ok(index.indexOf('ui.js?v=RECEIVING_FINAL_CORRECTION1') < index.indexOf('cloud-workspace.js?v='));
-  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_FINAL_CORRECTION1'));
+  assert.ok(index.indexOf('ui.js?v=RECEIVING_U0030_RECOVERY1') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_U0030_RECOVERY1'));
   assert.match(ui,/function initializeUI\(/);
   assert.match(ui,/function refreshEntireUI\(/);
   assert.match(workspace,/refreshEntireUI\(\)/);
