@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 76032)
-Total output lines: 9336
-
 "use strict";
 
 /* =====================================================
@@ -4169,7 +4166,2953 @@ function openSearchedItemReview(item){
         );
         removeManualButton.onclick=()=>{
             const current=getItemByCode(modal.dataset.itemCode);
-            if(!cu…16032 tokens truncated…("Unable to create Handheld recovery backup", error);
+            if(!current || current.manual!==true || toNumber(current.receivedQty,0)!==0){
+                showToast("Set the manual item quantity to zero first","warning");
+                return;
+            }
+            showConfirmModal(
+                "Remove Manual Item",
+                "Remove this manually-added item from the current receiving workspace? It will no longer appear in Search or reports.",
+                ()=>{
+                    if(deleteManualItem(current.itemCode)){
+                        closeSearchedItemReview();
+                    }
+                }
+            );
+        };
+    }
+    if(correction) correction.hidden=true;
+    if(activity){activity.hidden=true;activity.innerHTML="";}
+
+    document.getElementById("btnSearchedAdjust").onclick=()=>{
+        if(activity) activity.hidden=true;
+        if(correction) correction.hidden=false;
+        const current=getItemByCode(modal.dataset.itemCode);
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        if(input){input.value=String(toNumber(current?.receivedQty,item.receivedQty));setTimeout(()=>{input.focus();input.select();},20);}
+    };
+
+    document.getElementById("btnCancelSearchedCorrection").onclick=()=>{if(correction) correction.hidden=true;};
+
+    document.getElementById("btnApplySearchedCorrection").onclick=()=>{
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        const total=toNumber(input?.value,-1);
+        if(total<0){showToast("Enter a valid received total","warning");return;}
+        const tx=setItemReceivedQuantity(modal.dataset.itemCode,total);
+        if(!tx) return;
+        const current=getItemByCode(modal.dataset.itemCode);
+        setElementText(document.getElementById("searchedReviewReceived"),toNumber(current?.receivedQty,total));
+        setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(current?.orderedQty,0)-toNumber(current?.receivedQty,total)));
+        if(correction) correction.hidden=true;
+
+        if(removeManualButton){
+            removeManualButton.hidden = !(
+                current?.manual===true &&
+                toNumber(current?.receivedQty,0)===0
+            );
+        }
+
+        showToast("Received quantity corrected. History preserved.","success");
+    };
+
+    document.getElementById("btnSearchedActivity").onclick=()=>{
+        if(correction) correction.hidden=true;
+        if(!activity) return;
+        const rows=(typeof getReceivingActivityRows==="function"?getReceivingActivityRows():[])
+          .filter(row=>normalizeItemCode(row?.itemCode)===normalizeItemCode(modal.dataset.itemCode))
+          .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+        activity.hidden=false;
+        activity.innerHTML=rows.length?`<div class="phase263TableWrap" style="max-height:260px;"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After</th></tr></thead><tbody>${rows.map(row=>{const q=toNumber(row.qtyChange,0);return `<tr><td>${escapeHTML(typeof formatDateTime==="function"?formatDateTime(row.dateTime):toSafeString(row.dateTime))}</td><td>${escapeHTML(toSafeString(row.deviceId||"Unknown"))}</td><td>${escapeHTML(typeof getActivitySourceLabel==="function"?getActivitySourceLabel(row.source):toSafeString(row.source))}</td><td>${q>0?"+":""}${escapeHTML(q)}</td><td><b>${escapeHTML(toNumber(row.totalAfterAction,0))}</b></td></tr>`;}).join("")}</tbody></table></div>`:'<div class="tableEmptyState">No receiving activity for this item.</div>';
+    };
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden","false");
+}
+
+function closeSearchedItemReview(){
+    const modal=document.getElementById("searchedItemReviewModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden","true");
+    focusScannerInput();
+}
+window.openSearchedItemReview=openSearchedItemReview;
+
+
+/* =====================================================
+   MANUAL ITEM
+===================================================== */
+
+function openManualItemModal(){
+
+    closeItemSearchModal();
+
+    const modal =
+        UI.elements.manualItemModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.add(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    if(UI.elements.manualItemCode){
+        UI.elements.manualItemCode.value = "";
+    }
+
+    if(UI.elements.manualItemName){
+        UI.elements.manualItemName.value = "";
+    }
+
+    if(UI.elements.manualItemQuantity){
+        UI.elements.manualItemQuantity.value = "1";
+    }
+
+    setTimeout(()=>{
+
+        UI.elements
+            .manualItemCode
+            ?.focus();
+
+    },50);
+
+}
+
+
+function closeManualItemModal(){
+
+    const modal =
+        UI.elements.manualItemModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.remove(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    focusScannerInput();
+
+}
+
+
+/* =====================================================
+   CONFIRM MODAL
+===================================================== */
+
+function showConfirmModal(
+    title,
+    message,
+    onConfirm
+){
+
+    const modal =
+        UI.elements.confirmModal;
+
+    if(!modal){
+        return;
+    }
+
+    setElementText(
+        UI.elements.confirmTitle,
+        title || "Confirm"
+    );
+
+    setElementText(
+        UI.elements.confirmMessage,
+        message || "Are you sure?"
+    );
+
+    UI.confirmCallback =
+        typeof onConfirm ===
+        "function"
+        ?
+        onConfirm
+        :
+        null;
+
+    modal.classList.add(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+}
+
+
+function closeConfirmModal(){
+
+    const modal =
+        UI.elements.confirmModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.remove(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    UI.confirmCallback =
+        null;
+
+    focusScannerInput();
+
+}
+
+
+async function handleConfirmOK(){
+
+    /* Phase 2C.10.4.3 — confirmation actions that perform Supabase work must
+       be single-flight and awaited. This prevents a long destructive action
+       from being detached from its UI lifecycle and losing its final receipt. */
+    if(UI.confirmInProgress){
+        return;
+    }
+
+    const callback = UI.confirmCallback;
+
+    if(!callback){
+        closeConfirmModal();
+        return;
+    }
+
+    UI.confirmInProgress = true;
+
+    const confirmButton = document.getElementById("btnConfirmOK");
+    if(confirmButton){
+        confirmButton.disabled = true;
+    }
+
+    closeConfirmModal();
+
+    try{
+        await Promise.resolve(callback());
+    }
+    catch(error){
+        Logger.error("Confirmed action failed",error);
+        showToast(
+            error?.message || "Unable to complete the requested action",
+            "error"
+        );
+    }
+    finally{
+        UI.confirmInProgress = false;
+        if(confirmButton){
+            confirmButton.disabled = false;
+        }
+    }
+
+}
+
+
+/* =====================================================
+   TOAST
+===================================================== */
+
+function showToast(
+    message,
+    type = "info",
+    duration =
+        APP_CONFIG
+            .ui
+            .toastDurationMs
+){
+
+    /* Phase 2C.10.4.4 — always resolve the live toast host from the DOM.
+       Long async operations can outlive a cached UI reference after a view
+       refresh. Reset worked because it emits immediately; Historical Delete
+       can finish after several server/UI refreshes. */
+    let container =
+        document.getElementById("toastContainer");
+
+    if(!container || !container.isConnected){
+        container = UI.elements.toastContainer;
+    }
+
+    if(!container || !container.isConnected){
+
+        Logger.info(
+            "Toast:",
+            message
+        );
+
+        return;
+    }
+
+    UI.elements.toastContainer = container;
+
+    const toast =
+        document.createElement(
+            "div"
+        );
+
+    toast.className =
+        "toastMessage";
+
+    if(
+        type === "success" ||
+        type === "warning" ||
+        type === "error"
+    ){
+
+        toast.classList.add(
+            type
+        );
+
+    }
+
+    toast.textContent =
+        toSafeString(
+            message
+        );
+
+    container.appendChild(
+        toast
+    );
+
+    setTimeout(()=>{
+
+        toast.remove();
+
+    },duration);
+
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+function showLoading(
+    message = "Loading..."
+){
+
+    const overlay =
+        UI.elements.loadingOverlay;
+
+    if(!overlay){
+        return;
+    }
+
+    setElementText(
+        UI.elements.loadingText,
+        message
+    );
+
+    overlay.classList.add(
+        "show"
+    );
+
+    AppState.ui.loading =
+        true;
+
+}
+
+
+function hideLoading(){
+
+    const overlay =
+        UI.elements.loadingOverlay;
+
+    if(!overlay){
+        return;
+    }
+
+    overlay.classList.remove(
+        "show"
+    );
+
+    AppState.ui.loading =
+        false;
+
+}
+
+
+/* =====================================================
+   SYSTEM STATUS
+===================================================== */
+
+function setSystemStatus(
+    text,
+    type = "ready"
+){
+
+    const status =
+        UI.elements.systemStatus;
+
+    if(!status){
+        return;
+    }
+
+    status.textContent =
+        toSafeString(
+            text
+        );
+
+    status.className =
+        "systemStatus " +
+        type;
+
+}
+
+
+/* =====================================================
+   SCANNER FOCUS
+===================================================== */
+
+function focusScannerInput(){
+
+    if(
+        !AppState.settings
+            .autofocusScanner
+    ){
+        return;
+    }
+
+    const input =
+        UI.elements.barcodeInput;
+
+    if(!input){
+        return;
+    }
+
+    if(document.querySelector(".modalOverlay.open, .gtinResolutionShell.open")){
+        return;
+    }
+
+    /*
+       Do not steal focus while user is entering the
+       selected search quantity.
+    */
+
+    const active =
+        document.activeElement;
+
+    if(
+        active &&
+        active.id ===
+        "smartQuantityInput"
+    ){
+        return;
+    }
+
+    setTimeout(()=>{
+
+        input.focus();
+
+    },
+    APP_CONFIG
+        .receiving
+        .scannerFocusDelayMs);
+
+}
+
+
+/* =====================================================
+   SCAN BOX STATE
+===================================================== */
+
+function triggerScanFieldFlash(kind="success"){
+
+    const scanBox = UI.elements.scanBox || document.getElementById("scanBox");
+    if(!scanBox){ return; }
+
+    let layer = scanBox.querySelector(":scope > .pfnScanFlashLayer");
+    if(!layer){
+        layer = document.createElement("span");
+        layer.className = "pfnScanFlashLayer";
+        layer.setAttribute("aria-hidden","true");
+        scanBox.appendChild(layer);
+    }
+
+    const flashClass = kind === "error"
+        ? "pfnScanFlashLayerError"
+        : "pfnScanFlashLayerSuccess";
+
+    layer.classList.remove(
+        "pfnScanFlashLayerSuccess",
+        "pfnScanFlashLayerError",
+        "pfnScanFlashLayerActive"
+    );
+
+    /* Restart the transition even for two consecutive scans with the same
+       result.  The layer is a real element above the input/icon backgrounds,
+       so the whole Scan/Search field receives one continuous tint. */
+    void layer.offsetWidth;
+    layer.classList.add(flashClass,"pfnScanFlashLayerActive");
+
+    clearTimeout(scanBox._pfnFullFieldFlashTimer);
+    scanBox._pfnFullFieldFlashTimer=setTimeout(()=>{
+        layer.classList.remove("pfnScanFlashLayerActive");
+    },760);
+}
+
+window.triggerScanFieldFlash=triggerScanFieldFlash;
+
+function setScanBoxState(
+    state = "ready"
+){
+
+    const scanBox =
+        UI.elements.scanBox;
+
+    const badge =
+        UI.elements.scanStatusBadge;
+
+    if(!scanBox){
+        return;
+    }
+
+    scanBox.classList.remove(
+        "success",
+        "error",
+        "flashSuccess",
+        "flashError",
+        "action"
+    );
+
+    if(state === "success"){
+
+        scanBox.classList.add(
+            "success",
+            "flashSuccess"
+        );
+
+        triggerScanFieldFlash("success");
+
+        if(badge){
+
+            badge.className =
+                "scanStatusBadge ready";
+
+            badge.innerHTML = `
+
+                <span class="scanPulse"></span>
+
+                RECEIVED
+
+            `;
+
+        }
+
+        setTimeout(()=>{
+
+            setScanBoxState(
+                "ready"
+            );
+
+        },600);
+
+        return;
+    }
+
+    if(state === "action") {
+        scanBox.classList.add("action");
+        if(badge){
+            badge.className="scanStatusBadge action";
+            badge.innerHTML=`<span class="scanPulse"></span>ACTION REQUIRED`;
+        }
+        return;
+    }
+
+    if(state === "error"){
+
+        scanBox.classList.add(
+            "error",
+            "flashError"
+        );
+
+        triggerScanFieldFlash("error");
+
+        if(badge){
+
+            badge.className =
+                "scanStatusBadge error";
+
+            badge.innerHTML = `
+
+                <span class="scanPulse"></span>
+
+                NOT FOUND
+
+            `;
+
+        }
+
+        setTimeout(()=>{
+
+            setScanBoxState(
+                "ready"
+            );
+
+        },900);
+
+        return;
+    }
+
+    if(badge){
+
+        badge.className =
+            "scanStatusBadge ready";
+
+        badge.innerHTML = `
+
+            <span class="scanPulse"></span>
+
+            READY TO SCAN
+
+        `;
+
+    }
+
+}
+
+
+/* =====================================================
+   LAST SCAN FLASH
+===================================================== */
+
+function flashLastScanCard(
+    success = true
+){
+
+    const card =
+        UI.elements.lastScanCard;
+
+    if(!card){
+        return;
+    }
+
+    card.classList.remove(
+        "scanSuccess",
+        "scanError"
+    );
+
+    void card.offsetWidth;
+
+    card.classList.add(
+        success
+        ?
+        "scanSuccess"
+        :
+        "scanError"
+    );
+
+    /*
+       Keep the successful Last Scan visually green until the
+       next scan replaces it.  An error is temporary because
+       the previous successful item is still the last received item.
+    */
+    if(!success){
+        setTimeout(()=>{
+            card.classList.remove("scanError");
+        },1400);
+    }
+
+}
+
+
+/* =====================================================
+   REPORT SEARCH
+===================================================== */
+
+function renderReportItemSearchResults(results){
+
+    const container =
+        UI.elements.reportItemResults;
+
+    if(!container){
+        return;
+    }
+
+    container.innerHTML =
+        "";
+
+    UI.reportSearchResults =
+        results;
+
+    results.forEach(item=>{
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.type =
+            "button";
+
+        button.className =
+            "dropdownItem";
+
+        button.innerHTML = `
+
+            <strong>
+                ${escapeHTML(
+                    item.itemName
+                )}
+            </strong>
+
+            <br>
+
+            <small>
+                ${escapeHTML(
+                    item.itemCode
+                )}
+            </small>
+
+        `;
+
+        button.addEventListener(
+            "click",
+            function(){
+
+                AppState.ui
+                    .selectedReportItem =
+                    {
+                        itemCode:
+                            item.itemCode,
+
+                        itemName:
+                            item.itemName
+                    };
+
+                if(
+                    UI.elements.reportItemSearch
+                ){
+
+                    UI.elements
+                        .reportItemSearch
+                        .value =
+                        item.itemName +
+                        " — " +
+                        item.itemCode;
+
+                }
+
+                setElementText(
+                    UI.elements.reportSelectedItem,
+                    item.itemName
+                );
+
+                setElementText(
+                    UI.elements.reportSelectedCode,
+                    item.itemCode
+                );
+
+                container.innerHTML =
+                    "";
+
+            }
+        );
+
+        container.appendChild(
+            button
+        );
+
+    });
+
+}
+
+
+function resetItemReportUI(){
+
+    AppState.ui.selectedReportItem =
+        null;
+
+    setElementText(
+        UI.elements.reportSelectedItem,
+        "-"
+    );
+
+    setElementText(
+        UI.elements.reportSelectedCode,
+        "-"
+    );
+
+    setElementText(
+        UI.elements.reportTotalReceived,
+        "0"
+    );
+
+    setElementText(
+        UI.elements.reportOrderCount,
+        "0"
+    );
+
+    if(
+        UI.elements.itemReportTableBody
+    ){
+
+        UI.elements
+            .itemReportTableBody
+            .innerHTML =
+            "";
+
+    }
+
+}
+
+
+/* =====================================================
+   GENERIC TEXT SETTER
+===================================================== */
+
+function setElementText(
+    element,
+    value
+){
+
+    if(!element){
+        return;
+    }
+
+    element.textContent =
+        value === null ||
+        value === undefined ||
+        value === ""
+        ?
+        "-"
+        :
+        String(value);
+
+}
+
+/* =====================================================
+   PROFESSIONAL LAST SCAN LAYOUT
+===================================================== */
+
+function createProfessionalLastScanLayout(){
+
+    const card =
+        UI.elements.lastScanCard;
+
+    if(!card){
+        return;
+    }
+
+    if(
+        document.getElementById(
+            "professionalLastScanLayout"
+        )
+    ){
+        return;
+    }
+
+    /*
+       Hide the old equal-width information grid.
+       It remains in the DOM so older code stays compatible.
+    */
+
+    const legacyGrid =
+        card.querySelector(
+            ".lastScanGrid"
+        );
+
+    if(legacyGrid){
+
+        legacyGrid.classList.add(
+            "legacyLastScanGrid"
+        );
+
+    }
+
+    const layout =
+        document.createElement(
+            "div"
+        );
+
+    layout.id =
+        "professionalLastScanLayout";
+
+    layout.className =
+        "professionalLastScanLayout";
+
+    layout.innerHTML = `
+
+        <div class="lastScanHero">
+
+            <div
+                id="lastScanHeroName"
+                class="lastScanHeroName"
+            >
+                -
+            </div>
+
+            <div class="lastScanMetaRow">
+
+                <div class="lastScanMetaItem">
+
+                    <span>
+                        Item Number
+                    </span>
+
+                    <strong
+                        id="lastScanHeroCode"
+                    >
+                        -
+                    </strong>
+
+                </div>
+
+                <div class="lastScanMetaItem lastScanMetaGTIN">
+
+                    <span>
+                        GTIN
+                    </span>
+
+                    <strong
+                        id="lastScanHeroGTIN"
+                    >
+                        -
+                    </strong>
+
+                </div>
+
+                <div class="lastScanMetaItem lastScanMetaTime">
+
+                    <span>
+                        Last Update
+                    </span>
+
+                    <strong
+                        id="lastScanHeroTime"
+                    >
+                        -
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="lastScanMetrics">
+
+            <div class="lastScanMetric">
+
+                <span>
+                    Ordered
+                </span>
+
+                <strong
+                    id="lastScanHeroOrdered"
+                >
+                    -
+                </strong>
+
+            </div>
+
+            <div class="lastScanMetric lastScanMetricReceived">
+
+                <span>
+                    Received
+                </span>
+
+                <strong
+                    id="lastScanHeroReceived"
+                >
+                    -
+                </strong>
+
+            </div>
+
+            <div class="lastScanMetric lastScanMetricRemaining">
+
+                <span>
+                    Remaining
+                </span>
+
+                <strong
+                    id="lastScanHeroRemaining"
+                >
+                    -
+                </strong>
+
+            </div>
+
+            <div class="lastScanMetric lastScanMetricStatus">
+
+                <span
+                    id="lastScanHeroStatusLabel"
+                >
+                    Status
+                </span>
+
+                <div
+                    id="lastScanHeroStatus"
+                    class="lastScanHeroStatus"
+                >
+                    -
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+    const header =
+        card.querySelector(
+            ".cardHeader"
+        );
+
+    if(header){
+
+        header.insertAdjacentElement(
+            "afterend",
+            layout
+        );
+
+    }
+    else{
+
+        card.prepend(
+            layout
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   REFRESH PROFESSIONAL LAST SCAN
+===================================================== */
+
+function refreshProfessionalLastScan(
+    scan
+){
+
+    const name =
+        document.getElementById(
+            "lastScanHeroName"
+        );
+
+    const code =
+        document.getElementById(
+            "lastScanHeroCode"
+        );
+
+    const gtin =
+        document.getElementById(
+            "lastScanHeroGTIN"
+        );
+
+    const time =
+        document.getElementById(
+            "lastScanHeroTime"
+        );
+
+    const ordered =
+        document.getElementById(
+            "lastScanHeroOrdered"
+        );
+
+    const received =
+        document.getElementById(
+            "lastScanHeroReceived"
+        );
+
+    const remaining =
+        document.getElementById(
+            "lastScanHeroRemaining"
+        );
+
+    const status =
+        document.getElementById(
+            "lastScanHeroStatus"
+        );
+
+    const statusLabel =
+        document.getElementById(
+            "lastScanHeroStatusLabel"
+        );
+
+    if(!scan){
+
+        setElementText(
+            name,
+            "-"
+        );
+
+        setElementText(
+            code,
+            "-"
+        );
+
+        setElementText(
+            gtin,
+            "-"
+        );
+
+        setElementText(
+            time,
+            "-"
+        );
+
+        setElementText(
+            ordered,
+            "-"
+        );
+
+        setElementText(
+            received,
+            "-"
+        );
+
+        setElementText(
+            remaining,
+            "-"
+        );
+
+        if(status){
+
+            status.textContent =
+                "-";
+
+        }
+
+        if(statusLabel){
+
+            statusLabel.textContent =
+                "Status";
+
+        }
+
+        return;
+    }
+
+    setElementText(
+        name,
+        scan.itemName || "-"
+    );
+
+    setElementText(
+        code,
+        scan.itemCode || "-"
+    );
+
+    setElementText(
+        gtin,
+        scan.gtin || "-"
+    );
+
+    setElementText(
+        time,
+        formatDateTime(
+            scan.scanTime
+        )
+    );
+
+    setElementText(
+        ordered,
+        scan.orderedQty ?? "-"
+    );
+
+    setElementText(
+        received,
+        scan.receivedQty ?? "-"
+    );
+
+    setElementText(
+        remaining,
+        scan.remainingQty ?? "-"
+    );
+
+    if(status){
+
+        const orderedQty =
+            toNumber(
+                scan.orderedQty,
+                0
+            );
+
+        const receivedQty =
+            toNumber(
+                scan.receivedQty,
+                0
+            );
+
+        const overQty =
+            Math.max(
+                0,
+                receivedQty - orderedQty
+            );
+
+        const isOver =
+            overQty > 0 ||
+            scan.status ===
+                APP_CONFIG.statuses.over;
+
+        if(isOver){
+
+            if(statusLabel){
+
+                statusLabel.textContent =
+                    "Over Qty";
+
+            }
+
+            status.innerHTML = `
+                <strong class="lastScanOverQuantity">
+                    +${overQty}
+                </strong>
+            `;
+
+        }
+        else{
+
+            if(statusLabel){
+
+                statusLabel.textContent =
+                    "Status";
+
+            }
+
+            status.innerHTML =
+                renderStatusBadge(
+                    scan.status ||
+                    APP_CONFIG.statuses.pending
+                );
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   LAST SCAN QUANTITY CONTROLS
+===================================================== */
+
+function createLastScanQuantityControls(){
+
+  const card =
+      UI.elements.lastScanCard;
+
+  if(!card){
+      return;
+  }
+
+  if(
+      document.getElementById(
+          "lastScanQuantityControls"
+      )
+  ){
+      return;
+  }
+
+  const controls =
+      document.createElement(
+          "div"
+      );
+
+  controls.id =
+      "lastScanQuantityControls";
+
+  controls.className =
+      "lastScanQuantityControls";
+
+  controls.innerHTML = `
+
+      <div class="lastScanQtyTitle">
+
+          BATCH QTY
+
+      </div>
+
+      <div class="handheldScanContext" aria-live="polite">
+          <div>
+              <span>LAST ACTION</span>
+              <strong id="handheldThisScan">+0</strong>
+          </div>
+          <div>
+              <span>ALL DEVICES</span>
+              <strong id="handheldTotalReceived">0</strong>
+          </div>
+      </div>
+
+      <div class="lastScanQtyActions">
+
+          <button
+              type="button"
+              id="btnLastScanMinus"
+              class="lastScanQtyButton"
+          >
+              −
+          </button>
+
+          <button
+              type="button"
+              id="btnLastScanEdit"
+              class="lastScanQtyValue"
+              aria-label="Add Quantity"
+              title="Add Quantity"
+          >
+              0
+          </button>
+
+          <button
+              type="button"
+              id="btnLastScanPlus"
+              class="lastScanQtyButton"
+          >
+              +
+          </button>
+
+      </div>
+
+      <div id="handheldScanSavedAck" class="handheldScanSavedAck">
+          ✓ SCANNED +1 · PACK SAVED
+      </div>
+
+      <div class="lastScanQtyHint">
+
+          Current local batch only. Scanning another item starts a new batch.
+
+      </div>
+
+      <button
+          type="button"
+          id="btnHandheldClearLastScan"
+          class="handheldClearLastScan"
+      >
+          CLEAR SCREEN
+      </button>
+
+  `;
+
+  const isHandheld=
+      typeof isLikelyZebraDevice === "function" &&
+      isLikelyZebraDevice();
+
+  const professionalLayout=
+      document.getElementById(
+          "professionalLastScanLayout"
+      );
+
+  const metrics=
+      professionalLayout?.querySelector(
+          ".lastScanMetrics"
+      );
+
+  /* Keep the Handheld identity, batch quantity and operational totals in one
+     expanding Last Scan surface. Desktop retains its established placement. */
+  if(isHandheld && professionalLayout && metrics){
+      professionalLayout.insertBefore(
+          controls,
+          metrics
+      );
+  }
+  else{
+      card.appendChild(
+          controls
+      );
+  }
+
+
+  document
+      .getElementById(
+          "btnLastScanPlus"
+      )
+      ?.addEventListener(
+          "click",
+          function(){
+
+              const item =
+                  getCurrentLastScanItem();
+
+              if(!item){
+
+                  showToast(
+                      "No last scanned item",
+                      "warning"
+                  );
+
+                  return;
+              }
+
+              increaseItemQuantity(
+                  item.itemCode,
+                  1
+              );
+
+          }
+      );
+
+
+  document
+      .getElementById(
+          "btnLastScanMinus"
+      )
+      ?.addEventListener(
+          "click",
+          function(){
+
+              const item =
+                  getCurrentLastScanItem();
+
+              if(!item){
+
+                  showToast(
+                      "No last scanned item",
+                      "warning"
+                  );
+
+                  return;
+              }
+
+              decreaseItemQuantity(
+                  item.itemCode,
+                  1
+              );
+
+          }
+      );
+
+
+  document
+      .getElementById(
+          "btnLastScanEdit"
+      )
+      ?.addEventListener(
+          "click",
+          function(){
+
+              const item =
+                  getCurrentLastScanItem();
+
+              if(!item){
+
+                  showToast(
+                      "No last scanned item",
+                      "warning"
+                  );
+
+                  return;
+              }
+
+              openQuantityEditPrompt(
+                  item
+              );
+
+          }
+      );
+
+  document
+      .getElementById("btnHandheldClearLastScan")
+      ?.addEventListener("click",function(){
+
+          /* CLEAR is data-safe: it never reverses a transaction or changes
+             Received/history. It does end the worker's visible local batch, so
+             the next scan of the same item correctly starts again at 1. */
+          if(typeof resetCurrentLocalBatch==="function"){
+              resetCurrentLocalBatch();
+          }
+          cancelReceivingAutoClear();
+          AppState.workspace.lastScan=null;
+
+          refreshEntireUI?.();
+          window.hhRefreshReadyState?.();
+
+          try{ document.activeElement?.blur?.(); }catch(_){}
+
+          setTimeout(()=>{
+              focusScannerInput?.();
+              window.hhRepairScannerFocus?.("clear-screen");
+          },40);
+      });
+
+}
+
+
+/* =====================================================
+ GET CURRENT LAST SCAN ITEM
+===================================================== */
+
+function getCurrentLastScanItem(){
+
+  const scan =
+      AppState.workspace.lastScan;
+
+  if(
+      !scan ||
+      !scan.itemCode
+  ){
+      return null;
+  }
+
+  return getItemByCode(
+      scan.itemCode
+  );
+
+}
+
+
+/* =====================================================
+ REFRESH LAST SCAN QUANTITY CONTROL
+===================================================== */
+
+function getPcLegacyCurrentBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    const deviceId=getCurrentDeviceId();
+    if(!code || !deviceId) return 0;
+
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory : [];
+
+    const local=history.map((tx,index)=>({tx,index})).filter(row=>
+        toSafeString(row.tx?.deviceId||"")===deviceId
+    ).sort((a,b)=>{
+        const ta=new Date(a.tx?.dateTime||0).getTime();
+        const tb=new Date(b.tx?.dateTime||0).getTime();
+        return ta===tb ? a.index-b.index : ta-tb;
+    });
+
+    if(!local.length) return 0;
+    if(normalizeItemCode(local[local.length-1]?.tx?.itemCode)!==code) return 0;
+
+    let qty=0;
+    for(let i=local.length-1;i>=0;i--){
+        if(normalizeItemCode(local[i]?.tx?.itemCode)!==code) break;
+        qty+=toNumber(local[i]?.tx?.quantity,0);
+    }
+    return Math.max(0,qty);
+}
+
+function getOperationalCurrentBatchQuantity(itemCode){
+    /*
+       2C.11.4.0
+       Batch Qty is the packs handled by THIS browser/device in the current
+       operational batch. It must update immediately and must not depend on
+       Supabase/history hydration.
+    */
+    if(typeof getLocalRuntimeBatchQuantity==="function"){
+        return getLocalRuntimeBatchQuantity(itemCode);
+    }
+
+    return 0;
+}
+
+function refreshLastScanQuantityControl(){
+
+  const button =
+      document.getElementById(
+          "btnLastScanEdit"
+      );
+
+  const thisScanElement =
+      document.getElementById(
+          "handheldThisScan"
+      );
+
+  const totalReceivedElement =
+      document.getElementById(
+          "handheldTotalReceived"
+      );
+
+  if(!button){
+      return;
+  }
+
+  const item =
+      getCurrentLastScanItem();
+
+  const scan =
+      AppState.workspace.lastScan;
+
+  if(!item){
+
+      button.textContent = "0";
+      if(thisScanElement){ thisScanElement.textContent = "+0"; }
+      if(totalReceivedElement){ totalReceivedElement.textContent = "0"; }
+
+      return;
+  }
+
+  const totalReceived =
+      toNumber(
+          item.receivedQty,
+          0
+      );
+
+  /* 2C.11.1.3 — Handheld primary quantity is the worker's CURRENT LOCAL
+     BATCH on this device. Shared totals remain informational below. */
+  const localBatchQty=getOperationalCurrentBatchQuantity(item.itemCode);
+
+  button.textContent =
+      String(localBatchQty);
+
+  if(totalReceivedElement){
+      totalReceivedElement.textContent =
+          String(totalReceived);
+  }
+
+  if(thisScanElement){
+      const localDelta =
+          scan && scan.itemCode === item.itemCode
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      thisScanElement.textContent =
+          (localDelta > 0 ? "+" : "") +
+          String(localDelta);
+  }
+
+  const savedAck=document.getElementById("handheldScanSavedAck");
+  if(savedAck){
+      const localDelta=
+          scan && normalizeItemCode(scan.itemCode)===normalizeItemCode(item.itemCode)
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      if(localDelta>0){
+          savedAck.textContent=
+              `✓ SCANNED +${localDelta} · ${localDelta===1 ? "PACK" : "PACKS"} SAVED`;
+          savedAck.hidden=false;
+      }else{
+          savedAck.hidden=true;
+      }
+  }
+
+}
+
+
+/* =====================================================
+ DASHBOARD STAT CARD DRILLDOWN
+===================================================== */
+
+function bindDashboardStatDrilldowns(){
+
+  bindStatisticDrilldown(
+      UI.elements.statRemaining,
+      "remaining"
+  );
+
+  bindStatisticDrilldown(
+      UI.elements.statOver,
+      "over"
+  );
+
+}
+
+
+/* =====================================================
+ BIND SINGLE STATISTIC
+===================================================== */
+
+function bindStatisticDrilldown(
+  valueElement,
+  type
+){
+
+  if(!valueElement){
+      return;
+  }
+
+  const card =
+      valueElement.closest(
+          ".statCard"
+      );
+
+  if(!card){
+      return;
+  }
+
+  card.classList.add(
+      "clickableStatCard"
+  );
+
+  card.setAttribute(
+      "role",
+      "button"
+  );
+
+  card.setAttribute(
+      "tabindex",
+      "0"
+  );
+
+
+  card.addEventListener(
+      "click",
+      function(){
+
+          openStatisticItemsModal(
+              type
+          );
+
+      }
+  );
+
+
+  card.addEventListener(
+      "keydown",
+      function(event){
+
+          if(
+              event.key === "Enter" ||
+              event.key === " "
+          ){
+
+              event.preventDefault();
+
+              openStatisticItemsModal(
+                  type
+              );
+
+          }
+
+      }
+  );
+
+}
+
+
+/* =====================================================
+ OPEN STATISTIC CONTENT
+===================================================== */
+
+function openStatisticItemsModal(
+  type
+){
+
+  let items = [];
+
+  let title = "";
+
+
+  if(type === "remaining"){
+
+      title =
+          "Remaining Items";
+
+      items =
+          AppState.workspace
+              .orderData
+              .filter(
+                  item=>
+
+                      toNumber(
+                          item.remainingQty,
+                          0
+                      ) > 0
+              )
+              .sort(
+                  (
+                      a,
+                      b
+                  )=>
+
+                      toNumber(
+                          b.remainingQty,
+                          0
+                      )
+                      -
+                      toNumber(
+                          a.remainingQty,
+                          0
+                      )
+              );
+
+  }
+
+
+  if(type === "over"){
+
+      title =
+          "Over Received Items";
+
+      items =
+          AppState.workspace
+              .orderData
+              .filter(
+                  item=>
+
+                      item.status ===
+                      APP_CONFIG
+                          .statuses
+                          .over
+              )
+              .sort(
+                  (
+                      a,
+                      b
+                  )=>
+
+                      (
+                          toNumber(
+                              b.receivedQty,
+                              0
+                          )
+                          -
+                          toNumber(
+                              b.orderedQty,
+                              0
+                          )
+                      )
+                      -
+                      (
+                          toNumber(
+                              a.receivedQty,
+                              0
+                          )
+                          -
+                          toNumber(
+                              a.orderedQty,
+                              0
+                          )
+                      )
+              );
+
+  }
+
+
+  showStatisticItemsModal(
+      title,
+      items,
+      type
+  );
+
+}
+
+
+/* =====================================================
+ CREATE STATISTIC MODAL
+===================================================== */
+
+function showStatisticItemsModal(
+  title,
+  items,
+  type
+){
+
+  let modal =
+      document.getElementById(
+          "statItemsModal"
+      );
+
+
+  if(!modal){
+
+      modal =
+          document.createElement(
+              "div"
+          );
+
+      modal.id =
+          "statItemsModal";
+
+      modal.className =
+          "statItemsModal";
+
+      modal.innerHTML = `
+
+          <div class="statItemsModalCard">
+
+              <div class="statItemsModalHeader">
+
+                  <div>
+
+                      <span>
+                          ORDER DETAILS
+                      </span>
+
+                      <h2 id="statItemsModalTitle"></h2>
+
+                  </div>
+
+                  <button
+                      type="button"
+                      id="btnCloseStatItems"
+                      class="statItemsClose"
+                  >
+                      ✕
+                  </button>
+
+              </div>
+
+              <div
+                  id="statItemsModalSummary"
+                  class="statItemsModalSummary"
+              ></div>
+
+              <div class="statItemsTableWrap">
+
+                  <table class="dataTable statItemsDataTable">
+
+                      <thead>
+
+                          <tr>
+
+                              <th>Item Number</th>
+                              <th>Item Name</th>
+                              <th>Ordered</th>
+                              <th>Received</th>
+                              <th id="statItemsQtyHeading">Remaining</th>
+                              <th>Status</th>
+
+                          </tr>
+
+                      </thead>
+
+                      <tbody id="statItemsModalBody"></tbody>
+
+                  </table>
+
+              </div>
+
+          </div>
+
+      `;
+
+
+      document.body.appendChild(
+          modal
+      );
+
+
+      document
+          .getElementById(
+              "btnCloseStatItems"
+          )
+          ?.addEventListener(
+              "click",
+              closeStatisticItemsModal
+          );
+
+
+      modal.addEventListener(
+          "click",
+          function(event){
+
+              if(event.target === modal){
+
+                  closeStatisticItemsModal();
+
+              }
+
+          }
+      );
+
+  }
+
+
+  setElementText(
+      document.getElementById(
+          "statItemsModalTitle"
+      ),
+      title
+  );
+
+
+  const qtyHeading =
+      document.getElementById(
+          "statItemsQtyHeading"
+      );
+
+  if(qtyHeading){
+
+      qtyHeading.textContent =
+          type === "over"
+          ?
+          "Over Qty"
+          :
+          "Remaining";
+
+  }
+
+
+  const summary =
+      document.getElementById(
+          "statItemsModalSummary"
+      );
+
+
+  if(summary){
+
+      let totalQuantity = 0;
+
+      if(type === "over"){
+
+          totalQuantity =
+              items.reduce(
+                  (sum,item)=>
+                      sum + Math.max(
+                          0,
+                          toNumber(item.receivedQty,0)
+                          -
+                          toNumber(item.orderedQty,0)
+                      ),
+                  0
+              );
+
+      }
+      else{
+
+          totalQuantity =
+              items.reduce(
+                  (sum,item)=>
+                      sum + Math.max(
+                          0,
+                          toNumber(item.remainingQty,0)
+                      ),
+                  0
+              );
+
+      }
+
+      summary.innerHTML = `
+
+          <div class="statSummaryBlock">
+              <strong>${items.length}</strong>
+              <span>item(s)</span>
+          </div>
+
+          <div class="statSummaryBlock statSummaryQuantity">
+              <strong>${totalQuantity}</strong>
+              <span>${type === "over" ? "total extra units" : "total remaining units"}</span>
+          </div>
+
+      `;
+
+  }
+
+
+  const tbody =
+      document.getElementById(
+          "statItemsModalBody"
+      );
+
+
+  if(tbody){
+
+      tbody.innerHTML =
+          "";
+
+
+      if(items.length === 0){
+
+          tbody.innerHTML = `
+
+              <tr>
+
+                  <td
+                      colspan="6"
+                      class="tableEmptyState"
+                  >
+                      No items found.
+                  </td>
+
+              </tr>
+
+          `;
+
+      }
+      else{
+
+          items.forEach(item=>{
+
+              const row =
+                  document.createElement(
+                      "tr"
+                  );
+
+              const ordered =
+                  toNumber(
+                      item.orderedQty,
+                      0
+                  );
+
+              const received =
+                  toNumber(
+                      item.receivedQty,
+                      0
+                  );
+
+              const overQty =
+                  Math.max(
+                      0,
+                      received - ordered
+                  );
+
+              const quantityCell =
+                  type === "over"
+                  ?
+                  `<strong class="overQtyBadge">+${overQty}</strong>`
+                  :
+                  String(
+                      toNumber(
+                          item.remainingQty,
+                          0
+                      )
+                  );
+
+
+              if(type === "over"){
+
+                  row.classList.add(
+                      "rowOver"
+                  );
+
+              }
+
+
+              row.innerHTML = `
+
+                  <td>${escapeHTML(item.itemCode)}</td>
+
+                  <td>${escapeHTML(item.itemName)}</td>
+
+                  <td>${ordered}</td>
+
+                  <td>${received}</td>
+
+                  <td>${quantityCell}</td>
+
+                  <td>
+                      ${renderStatusBadge(item.status)}
+                  </td>
+
+              `;
+
+
+              tbody.appendChild(
+                  row
+              );
+
+          });
+
+      }
+
+  }
+
+
+  modal.classList.add(
+      "open"
+  );
+
+}
+
+
+/* =====================================================
+ CLOSE STATISTIC MODAL
+===================================================== */
+
+function closeStatisticItemsModal(){
+
+  document
+      .getElementById(
+          "statItemsModal"
+      )
+      ?.classList
+      .remove(
+          "open"
+      );
+
+  focusScannerInput();
+
+}
+
+
+
+/* =====================================================
+   DASHBOARD ORDER STATUS REPORT
+===================================================== */
+
+function createOrderStatusReportButton(){
+
+    if(
+        document.getElementById(
+            "btnOrderStatusReport"
+        )
+    ){
+        return;
+    }
+
+    const searchButton =
+        document.getElementById(
+            "btnQuickSearch"
+        );
+
+    if(!searchButton){
+        return;
+    }
+
+    const button =
+        document.createElement(
+            "button"
+        );
+
+    button.type =
+        "button";
+
+    button.id =
+        "btnOrderStatusReport";
+
+    button.className =
+        (
+            searchButton.className ||
+            ""
+        )
+        +
+        " orderStatusReportButton";
+
+    button.innerHTML =
+        "📋 Receiving Report";
+
+    button.addEventListener(
+        "click",
+        function(){
+
+            openOrderStatusReport(
+                "all"
+            );
+
+        }
+    );
+
+    searchButton.insertAdjacentElement(
+        "afterend",
+        button
+    );
+
+}
+
+
+function getOrderStatusReportRows(filter = "all"){
+
+    const rows =
+        AppState.workspace
+            .orderData
+            .map(item=>{
+
+                const ordered =
+                    toNumber(
+                        item.orderedQty,
+                        0
+                    );
+
+                const received =
+                    toNumber(
+                        item.receivedQty,
+                        0
+                    );
+
+                const difference =
+                    received - ordered;
+
+                let reportStatus =
+                    "complete";
+
+                if(item.manual===true || ordered===0){
+                    reportStatus = received>0 ? "unordered" : "complete";
+                }
+                else if(received===0 && ordered>0){
+                    reportStatus = "not_received";
+                }
+                else if(difference < 0){
+                    reportStatus = "shortage";
+                }
+                else if(difference > 0){
+                    reportStatus = "over";
+                }
+
+                return {
+                    item:item,
+                    ordered:ordered,
+                    received:received,
+                    difference:difference,
+                    reportStatus:reportStatus
+                };
+
+            });
+
+    if(filter === "shortage"){
+
+        return rows
+            .filter(
+                row=>
+                    row.difference < 0
+            )
+            .sort(
+                (a,b)=>
+                    a.difference -
+                    b.difference
+            );
+
+    }
+
+    if(filter === "over"){
+
+        return rows
+            .filter(
+                row=>
+                    row.difference > 0
+            )
+            .sort(
+                (a,b)=>
+                    b.difference -
+                    a.difference
+            );
+
+    }
+
+    if(filter === "complete"){
+
+        return rows
+            .filter(
+                row=>
+                    row.difference === 0
+            );
+
+    }
+
+    return rows;
+
+}
+
+
+function openOrderStatusReport(
+    filter = "all"
+){
+
+    let modal =
+        document.getElementById(
+            "orderStatusReportModal"
+        );
+
+    if(!modal){
+
+        modal =
+            document.createElement(
+                "div"
+            );
+
+        modal.id =
+            "orderStatusReportModal";
+
+        modal.className =
+            "orderStatusReportModal";
+
+        modal.innerHTML = `
+
+            <div class="orderStatusReportCard">
+
+                <div class="orderStatusReportHeader">
+
+                    <div>
+                        <span>LIVE ORDER REPORT</span>
+                        <h2>Receiving Report</h2>
+                        <p>
+                            Live snapshot of the current receiving progress. Available before Finalize.
+                        </p>
+                    </div>
+
+                    <button
+                        id="btnCloseOrderStatusReport"
+                        type="button"
+                        class="statItemsClose"
+                    >
+                        ✕
+                    </button>
+
+                </div>
+
+                <div class="orderStatusReportToolbar">
+
+                    <div class="orderStatusFilters">
+
+                        <button
+                            type="button"
+                            data-report-filter="all"
+                        >
+                            All
+                        </button>
+
+                        <button
+                            type="button"
+                            data-report-filter="shortage"
+                        >
+                            Shortage
+                        </button>
+
+                        <button
+                            type="button"
+                            data-report-filter="over"
+                        >
+                            Over
+                        </button>
+
+                        <button
+                            type="button"
+                            data-report-filter="complete"
+                        >
+                            Complete
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="orderStatusReportSummary"
+                        class="orderStatusReportSummary"
+                    ></div>
+
+                    <div class="liveReceivingReportActions">
+                        <button id="btnPrintLiveReceivingReport" type="button" class="secondaryButton">
+                            Print / Save PDF
+                        </button>
+
+                        <button id="btnEmailLiveReceivingDifferences" type="button" class="primaryButton">
+                            Email Differences
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="orderStatusReportTableWrap">
+
+                    <table class="dataTable orderStatusReportTable">
+
+                        <thead>
+                            <tr>
+                                <th>Item Number</th>
+                                <th>Item Name</th>
+                                <th>Ordered</th>
+                                <th>Received</th>
+                                <th>Difference</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="orderStatusReportBody"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        `;
+
+        document.body.appendChild(
+            modal
+        );
+
+        document
+            .getElementById(
+                "btnCloseOrderStatusReport"
+            )
+            ?.addEventListener(
+                "click",
+                closeOrderStatusReport
+            );
+
+        modal.addEventListener(
+            "click",
+            function(event){
+
+                if(event.target === modal){
+                    closeOrderStatusReport();
+                }
+
+            }
+        );
+
+        modal
+            .querySelectorAll(
+                "[data-report-filter]"
+            )
+            .forEach(button=>{
+
+                button.addEventListener(
+                    "click",
+                    function(){
+
+                        renderOrderStatusReport(
+                            this.dataset.reportFilter
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document.getElementById("btnPrintLiveReceivingReport")
+            ?.addEventListener("click",()=>{
+                if(typeof buildLiveReceivingReport==="function" && typeof printLiveReceivingReport==="function"){
+                    printLiveReceivingReport(buildLiveReceivingReport());
+                }
+            });
+
+        document.getElementById("btnEmailLiveReceivingDifferences")
+            ?.addEventListener("click",()=>{
+                if(
+                    typeof buildLiveReceivingReport!=="function" ||
+                    typeof buildReceivingEmailDifferencesReport!=="function" ||
+                    typeof openFinalizedDiscrepancyEmailPreview!=="function"
+                ){
+                    showToast?.("Email report is unavailable","error");
+                    return;
+                }
+
+                const live=buildLiveReceivingReport();
+                const emailReport=buildReceivingEmailDifferencesReport(live);
+
+                if(!emailReport.rows.length){
+                    showToast?.("All items are Completed. There are no differences to email.","success");
+                    return;
+                }
+
+                openFinalizedDiscrepancyEmailPreview(
+                    emailReport,
+                    {
+                        fromArchive:false,
+                        liveReport:true
+                    }
+                );
+            });
+
+    }
+
+    modal.classList.add(
+        "open"
+    );
+
+    renderOrderStatusReport(
+        filter
+    );
+
+}
+
+
+function renderOrderStatusReport(
+    filter = "all"
+){
+
+    const modal =
+        document.getElementById(
+            "orderStatusReportModal"
+        );
+
+    if(!modal){
+        return;
+    }
+
+    modal.dataset.activeFilter =
+        filter;
+
+    modal
+        .querySelectorAll(
+            "[data-report-filter]"
+        )
+        .forEach(button=>{
+
+            button.classList.toggle(
+                "active",
+                button.dataset.reportFilter ===
+                    filter
+            );
+
+        });
+
+    const allRows =
+        getOrderStatusReportRows(
+            "all"
+        );
+
+    const rows =
+        getOrderStatusReportRows(
+            filter
+        );
+
+    const shortageItems =
+        allRows.filter(
+            row=>
+                row.difference < 0
+        );
+
+    const overItems =
+        allRows.filter(
+            row=>
+                row.difference > 0
+        );
+
+    const totalShortage =
+        shortageItems.reduce(
+            (sum,row)=>
+                sum + Math.abs(
+                    row.difference
+                ),
+            0
+        );
+
+    const totalOver =
+        overItems.reduce(
+            (sum,row)=>
+                sum + row.difference,
+            0
+        );
+
+    const summary =
+        document.getElementById(
+            "orderStatusReportSummary"
+        );
+
+    if(summary){
+
+        summary.innerHTML = `
+
+            <div>
+                <strong>${shortageItems.length}</strong>
+                <span>Shortage Items</span>
+            </div>
+
+            <div class="shortageValue">
+                <strong>-${totalShortage}</strong>
+                <span>Shortage Units</span>
+            </div>
+
+            <div>
+                <strong>${overItems.length}</strong>
+                <span>Over Items</span>
+            </div>
+
+            <div class="overValue">
+                <strong>+${totalOver}</strong>
+                <span>Extra Units</span>
+            </div>
+
+        `;
+
+    }
+
+    const tbody =
+        document.getElementById(
+            "orderStatusReportBody"
+        );
+
+    if(!tbody){
+        return;
+    }
+
+    tbody.innerHTML =
+        "";
+
+    if(rows.length === 0){
+
+        tbody.innerHTML = `
+
+            <tr>
+                <td
+                    colspan="6"
+                    class="tableEmptyState"
+                >
+                    No items found for this filter.
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+    rows.forEach(rowData=>{
+
+        const tr =
+            document.createElement(
+                "tr"
+            );
+
+        if(rowData.reportStatus === "over"){
+            tr.classList.add("rowOver");
+        }
+        else if(["shortage","not_received"].includes(rowData.reportStatus)){
+            tr.classList.add("orderStatusShortageRow");
+        }
+        else if(rowData.reportStatus === "unordered"){
+            tr.classList.add("orderStatusUnorderedRow");
+        }
+        else{
+            tr.classList.add("rowCompleted");
+        }
+
+        let differenceHTML =
+            '<strong class="differenceComplete">0</strong>';
+
+        let statusHTML =
+            '<span class="statusBadge statusCompleted">Complete</span>';
+
+        if(rowData.reportStatus==="not_received"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Not Received</span>`;
+        }
+        else if(rowData.reportStatus==="shortage"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Shortage ${Math.abs(rowData.difference)}</span>`;
+        }
+        else if(rowData.reportStatus==="over"){
+            differenceHTML=`<span class="differenceOver">+${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusOver">Over +${rowData.difference}</span>`;
+        }
+        else if(rowData.reportStatus==="unordered"){
+            differenceHTML=`<span class="differenceOver">+${rowData.received}</span>`;
+            statusHTML=`<span class="statusBadge statusUnordered">Unordered</span>`;
+        }
+
+        tr.innerHTML = `
+
+            <td>${escapeHTML(rowData.item.itemCode)}</td>
+
+            <td>${escapeHTML(rowData.item.itemName)}</td>
+
+            <td>${rowData.ordered}</td>
+
+            <td>${rowData.received}</td>
+
+            <td>${differenceHTML}</td>
+
+            <td>${statusHTML}</td>
+
+        `;
+
+        tbody.appendChild(
+            tr
+        );
+
+    });
+
+}
+
+
+
+function openOrderStatusReportFromSnapshot(report){
+    if(!report || !Array.isArray(report.rows)){
+        showToast?.("Saved report is unavailable","warning");
+        return false;
+    }
+
+    document.getElementById("archivedReceivingReportOverlay")?.remove();
+
+    const esc=v=>typeof escapeHTML==="function"
+        ? escapeHTML(String(v??""))
+        : String(v??"");
+
+    const orders=Array.isArray(report.orders)?report.orders:[];
+    const orderLabel=orders.map(o=>o.orderNumber).filter(Boolean).join(" + ") || report.orderId || "-";
+    const orderDate=orders.map(o=>o.orderDate).filter(Boolean)[0] || "-";
+
+    const overlay=document.createElement("div");
+    overlay.id="archivedReceivingReportOverlay";
+    overlay.className="orderStatusReportModal open";
+
+    overlay.innerHTML=`
+      <div class="orderStatusReportCard archivedReceivingReportCard">
+        <div class="orderStatusReportHeader">
+          <div>
+            <span>SAVED RECEIVING REPORT</span>
+            <h2>Receiving Report</h2>
+            <p>${esc(orderLabel)} · ${esc(orderDate)} · Finalized snapshot</p>
+          </div>
+          <button type="button" class="statItemsClose" data-close>✕</button>
+        </div>
+
+        <div class="archivedReportSummary">
+          <div><span>Total Items</span><strong>${report.counts?.total||report.rows.length}</strong></div>
+          <div><span>Completed</span><strong>${report.counts?.COMPLETED||0}</strong></div>
+          <div><span>Requires Review</span><strong>${report.counts?.requiresReview||0}</strong></div>
+          <div><span>Generated</span><strong>${esc(report.generatedAt ? new Date(report.generatedAt).toLocaleString() : "-")}</strong></div>
+        </div>
+
+        <div class="liveReceivingReportActions archiveLiveReportActions">
+          <button type="button" class="secondaryButton" id="btnPrintArchivedReceivingReport">Print / Save PDF</button>
+          <button type="button" class="primaryButton" id="btnEmailArchivedDifferences">Email Differences</button>
+        </div>
+
+        <div class="orderStatusReportTableWrap">
+          <table class="dataTable orderStatusReportTable">
+            <thead><tr>
+              <th>Item Number</th><th>Item Name</th><th>Ordered</th>
+              <th>Received</th><th>Difference</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${report.rows.map(row=>{
+                  const diff=Number(row["Difference"]||0);
+                  return `<tr>
+                    <td>${esc(row["Item Number"])}</td>
+                    <td>${esc(row["Item Name"])}</td>
+                    <td>${row["Ordered Qty"]}</td>
+                    <td>${row["Received Qty"]}</td>
+                    <td>${diff>0?"+":""}${diff}</td>
+                    <td><span class="statusBadge">${esc(row.Status)}</span></td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(button=>{
+        button.onclick=()=>overlay.remove();
+    });
+
+    document.getElementById("btnPrintArchivedReceivingReport")?.addEventListener("click",()=>{
+        printLiveReceivingReport?.(report);
+    });
+
+    document.getElementById("btnEmailArchivedDifferences")?.addEventListener("click",()=>{
+        const emailReport=buildReceivingEmailDifferencesReport?.(report);
+        if(!emailReport?.rows?.length){
+            showToast?.("All items are Completed. There are no differences to email.","success");
+            return;
+        }
+        openFinalizedDiscrepancyEmailPreview?.(
+            emailReport,
+            {fromArchive:true}
+        );
+    });
+
+    return true;
+}
+
+window.openOrderStatusReportFromSnapshot=openOrderStatusReportFromSnapshot;
+
+
+function refreshOpenOrderStatusReport(){
+
+    const modal =
+        document.getElementById(
+            "orderStatusReportModal"
+        );
+
+    if(
+        !modal ||
+        !modal.classList.contains(
+            "open"
+        )
+    ){
+        return;
+    }
+
+    renderOrderStatusReport(
+        modal.dataset.activeFilter ||
+        "all"
+    );
+
+}
+
+
+function closeOrderStatusReport(){
+
+    document
+        .getElementById(
+            "orderStatusReportModal"
+        )
+        ?.classList
+        .remove(
+            "open"
+        );
+
+    focusScannerInput();
+
+}
+
+
+/* =====================================================
+   ZEBRA TWO-MODE EXPERIENCE
+   - Live Receiving linked to PC cloud session
+   - Expiry Capture (workflow implemented in its dedicated phase)
+===================================================== */
+
+function isLikelyZebraDevice(){
+    const ua = String(navigator.userAgent || "").toLowerCase();
+
+    const enterpriseHandheld =
+        /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
+
+    let explicitHandheld = false;
+    let persistedHandheld = false;
+
+    try{
+        const params = new URLSearchParams(window.location.search || "");
+        explicitHandheld =
+            params.get("handheld") === "1" ||
+            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
+
+        persistedHandheld =
+            localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
+    }catch(_){}
+
+    /*
+       Chrome on some Zebra builds reports a generic Android user-agent.
+       PharmFlow therefore also recognizes the narrow Android enterprise
+       form factor, then remembers this browser as a Handheld.
+    */
+    const android = /android/i.test(ua);
+    const shortestScreenSide = Math.min(
+        Number(window.screen?.width || window.innerWidth || 9999),
+        Number(window.screen?.height || window.innerHeight || 9999)
+    );
+    const handheldFormFactor =
+        android &&
+        shortestScreenSide <= 600 &&
+        Number(navigator.maxTouchPoints || 0) > 0;
+
+    const detected =
+        enterpriseHandheld ||
+        explicitHandheld ||
+        persistedHandheld ||
+        handheldFormFactor;
+
+    if(detected){
+        try{
+            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
+        }catch(_){}
+    }
+
+    return detected;
+}
+
+function backupLegacyZebraWorkspace(reason){
+    try{
+        const hasOrder = Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0;
+        const hasHistory = Array.isArray(AppState?.workspace?.receivingHistory) && AppState.workspace.receivingHistory.length > 0;
+        if(!hasOrder && !hasHistory){ return null; }
+        const key = "PRS_V3_ZEBRA_RECOVERY_" + Date.now();
+        localStorage.setItem(key, JSON.stringify({
+            reason: reason || "legacy-zebra-cleanup",
+            savedAt: nowISO(),
+            snapshot: typeof serializeCurrentWorkspace === "function" ? serializeCurrentWorkspace() : null
+        }));
+        return key;
+    }catch(error){
+        Logger.warn("Unable to create Handheld recovery backup", error);
         return null;
     }
 }

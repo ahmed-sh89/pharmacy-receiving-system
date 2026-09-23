@@ -66,10 +66,36 @@ test('Settings and Needs Review share one V2 Global Master administration render
   assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
 });
 
-test('Stage 2 invalidates the previously published UI script URL',()=>{
+test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
-  assert.match(index,/<script src="ui\.js\?v=RECEIVING_STAGE2_STARTUP_FIX1"><\/script>/);
-  assert.doesNotMatch(index,/<script src="ui\.js\?v=B21SCOPEFEEDBACK7"/);
+  const stage2Assets=[
+    'js/utils.js',
+    'ui.js',
+    'js/identifier-service.js',
+    'js/receiving.js',
+    'js/orders.js',
+    'js/needs-review.js',
+    'js/app.js'
+  ];
+  for(const asset of stage2Assets){
+    const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_STAGE2_ASSET_FIX2"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
+  }
   assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
+  assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
+});
+
+test('authenticated manifest hydration loads UI globals before the application bootstrap',()=>{
+  const index=read('index.html');
+  const ui=read('ui.js');
+  const workspace=read('cloud-workspace.js');
+  const app=read('js/app.js');
+  assert.ok(index.indexOf('ui.js?v=RECEIVING_STAGE2_ASSET_FIX2') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_STAGE2_ASSET_FIX2'));
+  assert.match(ui,/function initializeUI\(/);
+  assert.match(ui,/function refreshEntireUI\(/);
+  assert.match(workspace,/refreshEntireUI\(\)/);
+  assert.match(app,/initializeUI\(\)/);
+  assert.doesNotThrow(()=>new Function(workspace),'the manifest hydration script must parse before authenticated startup');
 });
