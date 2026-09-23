@@ -89,6 +89,37 @@ body.zebraDevice .handheldAssignedOrdersButton{min-height:24px!important;padding
 body.zebraDevice .zebraModesButton{min-height:28px!important;padding:0 9px!important;border:1px solid #bfd2e5!important;border-radius:8px!important;background:#f5f9fd!important;color:var(--pf-navy)!important;font-size:9px!important;font-weight:950!important}
 body.zebraDevice.zebraReceivingActive #btnHandheldTotalScans.handheldRecentButton{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;min-height:25px!important;padding:2px 7px!important;border:1px solid #c4d7e9!important;border-radius:7px!important;background:#f4f8fc!important;color:var(--pf-blue)!important;font-weight:950!important}
 body.zebraDevice .handheldRecentButton span{font-size:7px!important} body.zebraDevice .handheldRecentButton strong{font-size:10px!important}
+body.zebraDevice .handheldNeedsReviewButton{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:25px!important;padding:2px 7px!important;border:1px solid #dfbd72!important;border-radius:7px!important;background:#fff8e8!important;color:#875600!important;font-size:8px!important;font-weight:950!important;letter-spacing:.035em!important}
+
+/* Handheld Needs Review is a compact exception surface, not a second scan
+   screen. The existing review renderer retains the case's original Order and
+   uses the existing durable resolution-intent path. */
+body.zebraDevice .needsReviewOverlay{z-index:1000!important;place-items:stretch!important;padding:5px!important}
+body.zebraDevice .needsReviewPanel{width:100%!important;max-height:calc(100dvh - 10px)!important;border-radius:12px!important}
+body.zebraDevice .needsReviewPanel>header{padding:10px!important;gap:8px!important}
+body.zebraDevice .needsReviewPanel h2{font-size:20px!important}
+body.zebraDevice .needsReviewPanel header p{font-size:10px!important;line-height:1.25!important}
+body.zebraDevice .needsReviewHeaderActions [data-review-history]{display:none!important}
+body.zebraDevice .needsReviewClose{min-height:32px!important;padding:0 10px!important;font-size:10px!important}
+body.zebraDevice .needsReviewList{gap:7px!important;padding:8px!important}
+body.zebraDevice .needsReviewRow{gap:8px!important;padding:9px!important;border-left-width:4px!important}
+body.zebraDevice .pfnReviewGTIN{font-size:16px!important}
+body.zebraDevice .pfnReviewMeta{gap:5px!important;margin-top:7px!important}
+body.zebraDevice .pfnReviewMeta>div{padding:6px!important}
+body.zebraDevice .pfnReviewMeta .important b{font-size:18px!important}
+body.zebraDevice .needsReviewResolve{gap:6px!important}
+body.zebraDevice .needsReviewResolve input{min-height:38px!important;font-size:13px!important}
+body.zebraDevice .needsReviewMatches>button{min-height:44px!important;padding:7px!important}
+body.zebraDevice .needsReviewSelection{padding:8px!important}
+body.zebraDevice .needsReviewSelection>button{min-height:38px!important;margin-top:7px!important}
+body.zebraDevice .needsReviewAdmin{display:none!important}
+body.zebraDevice .pfnReviewPhotoGrid{margin-top:7px!important}
+body.zebraDevice .pfnReviewPhotoGrid button{width:118px!important;font-size:9px!important}
+body.zebraDevice .pfnReviewPhotoGrid img{height:64px!important}
+body.zebraDevice .needsReviewPhotoViewer{z-index:1010!important;padding:12px!important}
+body.zebraDevice .needsReviewPhotoViewer section{max-width:94vw!important;max-height:88dvh!important;gap:8px!important}
+body.zebraDevice .needsReviewPhotoViewer img{max-width:92vw!important;max-height:70dvh!important}
+body.zebraDevice .needsReviewPhotoViewer section button{min-height:36px!important;padding:0 12px!important;font-size:11px!important}
 
 /* Scan item — compact, keyboard-free hardware scanner field. */
 body.zebraDevice.zebraReceivingActive #page-dashboard .scanPanel{flex:0 0 auto!important;margin:0!important;padding:5px!important;border:1px solid #c8dced!important;border-radius:10px!important;background:#eaf5fc!important;overflow:hidden!important;box-shadow:none!important}

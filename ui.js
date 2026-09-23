@@ -7669,6 +7669,7 @@ function ensureHandheldReceivingTools(){
                 </div>
                 <div class="zebraFinalActions">
                     <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton" type="button" aria-label="Open recent scans"><span>HISTORY</span><strong id="handheldTotalScansValue">0</strong></button>
+                    <button id="btnHandheldNeedsReview" class="handheldNeedsReviewButton" type="button" aria-label="Open Needs Review">REVIEW</button>
                     <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
                 </div>
             </div>
@@ -7681,9 +7682,11 @@ function ensureHandheldReceivingTools(){
     document.getElementById("btnZebraModes").onclick=setZebraHomeMode;
     document.getElementById("btnHandheldTotalScans").onclick=openHandheldScansPanel;
     document.getElementById("btnHandheldAssignedOrders").onclick=openHandheldAssignedOrdersPanel;
+    document.getElementById("btnHandheldNeedsReview").onclick=()=>openNeedsReviewPanel("RECEIVING");
 
-    /* History is the only work control. Assignment is read-only here and is
-       managed on the computer, so staff cannot broaden their own scope. */
+    /* Assignment is read-only here and is managed on the computer, so staff
+       cannot broaden their own scope. Needs Review is an exception workflow:
+       it always retains the case's original Order rather than changing scope. */
     document.getElementById("btnHandheldMonitoring")?.remove();
     refreshHandheldWorkspaceStatus();
     refreshHandheldReceivingTools();
@@ -8845,7 +8848,7 @@ setTimeout(()=>{
 },600);
 
 async function openNeedsReviewPanel(workflow="RECEIVING"){
-    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
+    const handheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
     closeNeedsReviewPhotoViewer();
     document.getElementById("needsReviewOverlay")?.remove();
 
@@ -8903,6 +8906,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         if(overlay.dataset.busy==="1"||overlay.dataset.confirming==="1") return;
         closeNeedsReviewPhotoViewer();
         overlay.remove();
+        if(handheld) focusScannerInput?.();
     };
     overlay.querySelectorAll("[data-review-close]").forEach(button=>button.addEventListener("click",closePanel));
     overlay.querySelector("[data-review-history]")?.addEventListener("click",async()=>{
@@ -9000,7 +9004,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         search?.addEventListener("input",drawMatches);
     });
 
-    overlay.querySelector("[data-search=\"0\"]")?.focus();
+    if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
 
     renderV2IdentifierAdministration(overlay,esc);
 

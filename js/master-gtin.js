@@ -846,47 +846,8 @@ function getMasterGTINRecordsByItemCodes(db,itemCodes){
    GTIN directly and then attach it to the current order.
 ===================================================== */
 
-async function getPharmacyLearnedGTINRecord(gtin,{strict=false}={}){
-    const normalized=normalizeGTIN(gtin);
-    if(!normalized || typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){ return null; }
-    try{
-        const rows=await authRpc("resolve_pharmacy_learned_gtin_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized});
-        const row=Array.isArray(rows)?rows[0]:rows;
-        if(!row || !row.item_code){ return null; }
-        return {
-            mappingId:toSafeString(row.mapping_id||row.mappingId),
-            mappingRevision:toSafeString(row.mapping_revision||row.mappingRevision),
-            gtin:normalizeGTIN(row.gtin||normalized),
-            itemCode:normalizeItemCode(row.item_code||row.itemCode),
-            itemName:toSafeString(row.item_name||row.itemName||""),
-            source:"PHARMACY_LEARNED"
-        };
-    }catch(error){
-        Logger.warn("Local learned GTIN lookup failed",error);
-        if(strict) throw error;
-        return null;
-    }
-}
-
-async function savePharmacyLearnedGTIN(gtin,itemCode,itemName){
-    const normalized=normalizeGTIN(gtin), code=normalizeItemCode(itemCode), name=toSafeString(itemName).trim();
-    if(!normalized || !code || !name){ throw new Error("GTIN, Item Code and Item Name are required"); }
-    if(typeof authRpc!=="function" || !AuthState?.context?.pharmacy_id){ throw new Error("Pharmacy context is unavailable"); }
-    await authRpc("learn_pharmacy_gtin",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized,p_item_code:code,p_item_name:name});
-    const learnedRecord=await getPharmacyLearnedGTINRecord(normalized,{strict:true});
-    if(!learnedRecord) throw new Error("Learned GTIN was saved but could not be resolved authoritatively");
-    addMappingRecord({itemCode:code,gtin:normalized,source:"PHARMACY_LEARNED"});
-    /* B11 Clean5: a GTIN may have been negatively cached before Needs Review
-       was resolved. The device that performs the resolution must see the new
-       mapping immediately. */
-    PharmFlowGTINScanCache.learnedMissUntil.delete(normalized);
-    cacheGTINScanRecord(normalized,learnedRecord);
-    return learnedRecord;
-}
-
 const PharmFlowGTINScanCache = {
     records:new Map(),
-    learnedMissUntil:new Map(),
     maxRecords:750
 };
 
@@ -981,13 +942,12 @@ async function getMasterGTINRecordByGTIN(gtin){
        Normal Receiving must not wait for a Supabase RPC on every scan.
 
        1. Session cache.
-       2. Local IndexedDB copy of the authoritative Global Master.
-       3. Only if no Global Master match exists, try pharmacy-learned aliases.
+       2. Local IndexedDB copy of the legacy Global Master required by Expiry.
+
+       Receiving itself uses IdentifierService and V2 server contracts. The
+       retired pharmacy-learned resolver is deliberately not a fallback here.
     */
     const cached=PharmFlowGTINScanCache.records.get(normalized);
-    /* Learned aliases are pharmacy-scoped mutable data. Callers may use this
-       cached result for classification, but receiving revalidates it before
-       mutation. Global Master records remain entirely local and fast. */
     if(cached) return cached;
 
     let globalRecord=null;
@@ -1002,45 +962,11 @@ async function getMasterGTINRecordByGTIN(gtin){
         return globalRecord;
     }
 
-    /*
-       Learned aliases are expected to be the minority path. A short negative
-       cache prevents repeated network waits when an unknown barcode is scanned
-       more than once during the same receiving run.
-    */
-    const isHandheld=(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice());
-    const missUntil=Number(
-        PharmFlowGTINScanCache.learnedMissUntil.get(normalized)||0
-    );
-
-    /* B11 Clean5: do not honor a stale negative learned-GTIN cache on the
-       Handheld. Needs Review can be resolved on the PC at any moment and the
-       very next Handheld scan must use the pharmacy-authoritative mapping.
-       This RPC is only on the Global-Master-miss path, so normal scans remain
-       local/cache fast and Clean14 egress behavior is preserved. */
-    if(!isHandheld && missUntil > Date.now()){
-        return null;
-    }
-
-    const learned=await getPharmacyLearnedGTINRecord(normalized);
-
-    if(learned){
-        cacheGTINScanRecord(normalized,learned);
-        return learned;
-    }
-
-    if(!isHandheld){
-        PharmFlowGTINScanCache.learnedMissUntil.set(
-            normalized,
-            Date.now()+120000
-        );
-    }
-
     return null;
 }
 
 window.clearPharmFlowGTINScanCache=function(){
     PharmFlowGTINScanCache.records.clear();
-    PharmFlowGTINScanCache.learnedMissUntil.clear();
 };
 
 function deleteMasterGTINDatabase(dbName){
@@ -1312,78 +1238,3 @@ async function searchGlobalMasterItems(query, limit = 8){
     });
 }
 window.searchGlobalMasterItems=searchGlobalMasterItems;
-
-/* =====================================================
-   B11 CLEAN 4 — SAFE PHARMACY GTIN CORRECTIONS
-   Corrections are pharmacy-scoped and never mutate System Global Master.
-===================================================== */
-function purgePharmacyLearnedGTINFromWorkspace(gtin){
-    const normalized=normalizeGTIN(gtin);
-    if(!normalized) return;
-    if(Array.isArray(AppState?.workspace?.mappingData)){
-        AppState.workspace.mappingData=AppState.workspace.mappingData.filter(mapping=>
-            !(normalizeGTIN(mapping?.gtin)===normalized && String(mapping?.source||"").toUpperCase()==="PHARMACY_LEARNED")
-        );
-    }
-    PharmFlowGTINScanCache.records.delete(normalized);
-    PharmFlowGTINScanCache.learnedMissUntil.delete(normalized);
-}
-
-function createLearnedGTINLifecycleOperationId(){
-    if(globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-    if(!globalThis.crypto?.getRandomValues) throw new Error("Secure operation ID generation is unavailable");
-    const bytes=new Uint8Array(16);
-    globalThis.crypto.getRandomValues(bytes);
-    bytes[6]=(bytes[6]&15)|64;
-    bytes[8]=(bytes[8]&63)|128;
-    const hex=Array.from(bytes,value=>value.toString(16).padStart(2,"0")).join("");
-    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
-}
-
-async function reconcileLearnedGTINLifecycleReceiving(){
-    /* Lifecycle V3 writes compensating ledger rows on the server. Pull those
-       rows before rendering so item search, per-order KPIs and every client
-       project exactly the same authoritative ledger after the RPC returns. */
-    if(typeof pullCloudWorkspaceTransactions==="function"){
-        await pullCloudWorkspaceTransactions({force:true});
-    }
-    if(typeof rebuildReceivingQuantitiesFromLedger==="function"){
-        rebuildReceivingQuantitiesFromLedger();
-    }
-    recalculateStatistics?.();
-    refreshEntireUI?.();
-}
-
-async function previewPharmacyLearnedGTINLifecycleV3(gtin,action,newItemCode=null){
-    const normalized=normalizeGTIN(gtin), lifecycleAction=toSafeString(action).trim().toUpperCase();
-    const code=newItemCode==null?null:normalizeItemCode(newItemCode);
-    if(!normalized||!["CORRECT","REMOVE"].includes(lifecycleAction)) throw new Error("Valid GTIN and lifecycle action are required");
-    const result=await authRpc("preview_pharmacy_learned_gtin_lifecycle_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_gtin:normalized,p_action:lifecycleAction,p_new_item_code:code});
-    return Array.isArray(result)?result[0]:result;
-}
-
-async function correctPharmacyLearnedGTIN(preview,itemCode,itemName,reason,operationId){
-    const normalized=normalizeGTIN(preview?.gtin), code=normalizeItemCode(itemCode), name=toSafeString(itemName).trim(), why=toSafeString(reason).trim();
-    const mappingId=toSafeString(preview?.mapping?.id), mappingRevision=toSafeString(preview?.mapping?.revision);
-    if(!normalized||!mappingId||!mappingRevision||!code||!name||!why||!operationId) throw new Error("Approved preview, replacement, reason and operation ID are required");
-    if(typeof isPharmacyAdmin==="function" && !isPharmacyAdmin()) throw new Error("Pharmacy ADMIN access is required");
-    const result=await authRpc("correct_pharmacy_learned_gtin_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_operation_id:operationId,p_gtin:normalized,p_expected_mapping_id:mappingId,p_expected_mapping_revision:mappingRevision,p_new_item_code:code,p_new_item_name:name,p_reason:why});
-    purgePharmacyLearnedGTINFromWorkspace(normalized);
-    await reconcileLearnedGTINLifecycleReceiving();
-    return Array.isArray(result)?result[0]:result;
-}
-
-async function removePharmacyLearnedGTIN(preview,reason,operationId){
-    const normalized=normalizeGTIN(preview?.gtin), why=toSafeString(reason).trim();
-    const mappingId=toSafeString(preview?.mapping?.id), mappingRevision=toSafeString(preview?.mapping?.revision);
-    if(!normalized||!mappingId||!mappingRevision||!why||!operationId) throw new Error("Approved preview, reason and operation ID are required");
-    if(typeof isPharmacyAdmin==="function" && !isPharmacyAdmin()) throw new Error("Pharmacy ADMIN access is required");
-    const result=await authRpc("remove_pharmacy_learned_gtin_v3",{p_pharmacy_id:AuthState.context.pharmacy_id,p_operation_id:operationId,p_gtin:normalized,p_expected_mapping_id:mappingId,p_expected_mapping_revision:mappingRevision,p_reason:why});
-    purgePharmacyLearnedGTINFromWorkspace(normalized);
-    await reconcileLearnedGTINLifecycleReceiving();
-    return Array.isArray(result)?result[0]:result;
-}
-window.createLearnedGTINLifecycleOperationId=createLearnedGTINLifecycleOperationId;
-window.previewPharmacyLearnedGTINLifecycleV3=previewPharmacyLearnedGTINLifecycleV3;
-window.correctPharmacyLearnedGTIN=correctPharmacyLearnedGTIN;
-window.removePharmacyLearnedGTIN=removePharmacyLearnedGTIN;

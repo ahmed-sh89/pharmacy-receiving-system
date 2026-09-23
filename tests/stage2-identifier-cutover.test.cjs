@@ -66,6 +66,36 @@ test('Settings and Needs Review share one V2 Global Master administration render
   assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
 });
 
+test('Handheld can reach the compact Needs Review and photo viewer without a second scan path',()=>{
+  const ui=read('ui.js');
+  const nextCss=read('css/pharmflow-next.css');
+  const handheldCss=read('css/receiving-surface.css');
+  assert.match(ui,/id="btnHandheldNeedsReview"/);
+  assert.match(ui,/btnHandheldNeedsReview"\)\.onclick=\(\)=>openNeedsReviewPanel\("RECEIVING"\)/);
+  assert.doesNotMatch(ui,/async function openNeedsReviewPanel\(workflow="RECEIVING"\)\{\s*if\(typeof isLikelyZebraDevice/);
+  assert.doesNotMatch(nextCss,/body\.zebraDevice #needsReviewOverlay\{display:none/);
+  assert.match(handheldCss,/body\.zebraDevice \.needsReviewOverlay/);
+  assert.match(handheldCss,/body\.zebraDevice \.needsReviewPhotoViewer\{z-index:1010/);
+  assert.match(ui,/if\(handheld\) focusScannerInput\?\.\(\)/);
+});
+
+test('loaded legacy Global Master compatibility code has no learned-mapping resolver or writer',()=>{
+  const master=read('js/master-gtin.js');
+  assert.doesNotMatch(master,/resolve_pharmacy_learned_gtin/);
+  assert.doesNotMatch(master,/learn_pharmacy_gtin/);
+  assert.doesNotMatch(master,/correct_pharmacy_learned_gtin/);
+  assert.doesNotMatch(master,/remove_pharmacy_learned_gtin/);
+  assert.match(master,/function getMasterGTINRecordByGTIN\(/,'Expiry retains its read-only legacy Global Master lookup');
+});
+
+test('Settings leads with V2 Global Master administration while preserving import compatibility',()=>{
+  const index=read('index.html');
+  assert.match(index,/<h2>Global Identifier Master<\/h2>/);
+  assert.ok(index.indexOf('id="globalIdentifierMasterAdmin"') < index.indexOf('Global Master import and mapping-file compatibility'));
+  assert.match(index,/Update Global GTIN Import/);
+  assert.match(index,/Mapping-file compatibility/);
+});
+
 test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
@@ -80,8 +110,11 @@ test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   ];
   for(const asset of stage2Assets){
     const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_STAGE2_ASSET_FIX2"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_STAGE2_FINAL1"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
   }
+  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_STAGE2_FINAL1"><\/script>/);
+  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_STAGE2_FINAL1">/);
+  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_STAGE2_FINAL1">/);
   assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
   assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
 });
@@ -91,8 +124,8 @@ test('authenticated manifest hydration loads UI globals before the application b
   const ui=read('ui.js');
   const workspace=read('cloud-workspace.js');
   const app=read('js/app.js');
-  assert.ok(index.indexOf('ui.js?v=RECEIVING_STAGE2_ASSET_FIX2') < index.indexOf('cloud-workspace.js?v='));
-  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_STAGE2_ASSET_FIX2'));
+  assert.ok(index.indexOf('ui.js?v=RECEIVING_STAGE2_FINAL1') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_STAGE2_FINAL1'));
   assert.match(ui,/function initializeUI\(/);
   assert.match(ui,/function refreshEntireUI\(/);
   assert.match(workspace,/refreshEntireUI\(\)/);

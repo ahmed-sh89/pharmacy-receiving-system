@@ -52,8 +52,8 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=B17HANDHELDSCOPE6">
-<link rel="stylesheet" href="css/receiving-surface.css?v=B21SCOPEFEEDBACK1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_STAGE2_FINAL1">
+<link rel="stylesheet" href="css/receiving-surface.css?v=RECEIVING_STAGE2_FINAL1">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
     <style id="pharmflowAuthBootstrapGate">
@@ -2187,75 +2187,18 @@
                 </section>
 
 
-                    <!-- MASTER GTIN DATABASE -->
-
                     <section class="contentCard masterGTINCard">
-
                         <div class="cardHeader">
-
                             <div>
-
                                 <span class="sectionEyebrow">
-                                    BARCODE DATABASE
-                                </span>
-
-                                <h2>
-                                    Global GTIN Database
-                                </h2>
-
-                                <p>
-                                    System-wide GTIN Master. It is stored in Supabase and read-only for pharmacies; only the System Owner can update it.
-                                </p>
-
-                            </div>
-
-                            <button
-                                id="btnUpdateMasterGTIN"
-                                class="primaryButton"
-                                type="button"
-                            >
-                                Update Global GTIN
-                            </button>
-
-                        </div>
-
-                        <input
-                            id="masterGTINFileInput"
-                            type="file"
-                            accept=".xlsx,.xls"
-                            hidden
-                        >
-
-                        <div class="masterGTINStatusGrid">
-
                             <div>
-                                <span>Status</span>
-                                <strong id="masterGTINStatus">Not installed</strong>
+                                <span class="sectionEyebrow">GLOBAL MASTER</span>
+                                <h2>Global Identifier Master</h2>
+                                <p>Search and administer the authoritative identifier mappings independently of an Active Order. Only the System Owner can change mappings.</p>
                             </div>
-
-                            <div>
-                                <span>Global Items</span>
-                                <strong id="masterGTINItemCount">0</strong>
-                            </div>
-
-                            <div>
-                                <span>Current Order Matched</span>
-                                <strong id="masterGTINMatchedCount">0</strong>
-                            </div>
-
-                            <div>
-                                <span>Last Updated</span>
-                                <strong id="masterGTINUpdatedAt">-</strong>
-                            </div>
-
-                        </div>
-
-                        <div id="masterGTINNotice" class="masterGTINNotice">
-                            Update Global GTIN to remove the need to load a Mapping file for every order.
                         </div>
 
                         <section class="needsReviewAdmin" id="globalIdentifierMasterAdmin">
-                            <h3>Global Identifier Master</h3>
                             <p>Manual administration independent of an Active Order. Search an identifier, Item Code, or Item Name.</p>
                             <div class="needsReviewAdminLookup">
                                 <label>Identifier / GTIN<input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code, or Item Name"></label>
@@ -2265,9 +2208,38 @@
                         </section>
 
                         <details class="legacyMappingDetails">
-                            <summary>Optional fallback: Mapping Files</summary>
+                            <summary>Global Master import and mapping-file compatibility</summary>
 
                             <div class="legacyMappingContent">
+                                <p class="settingsDescription">System Owner import tools are retained for the existing Global Master import process. They do not create or edit operational identifier mappings; use the Global Identifier Master above for that.</p>
+
+                                <button
+                                    id="btnUpdateMasterGTIN"
+                                    class="primaryButton"
+                                    type="button"
+                                >
+                                    Update Global GTIN Import
+                                </button>
+
+                                <input
+                                    id="masterGTINFileInput"
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    hidden
+                                >
+
+                                <div class="masterGTINStatusGrid">
+                                    <div><span>Status</span><strong id="masterGTINStatus">Not installed</strong></div>
+                                    <div><span>Global Items</span><strong id="masterGTINItemCount">0</strong></div>
+                                    <div><span>Current Order Matched</span><strong id="masterGTINMatchedCount">0</strong></div>
+                                    <div><span>Last Updated</span><strong id="masterGTINUpdatedAt">-</strong></div>
+                                </div>
+
+                                <div id="masterGTINNotice" class="masterGTINNotice">
+                                    Global Master import status and compatibility tools.
+                                </div>
+
+                                <h3>Mapping-file compatibility</h3>
 
                                 <button
                                     id="btnLoadMappings"
@@ -2290,7 +2262,7 @@
                                     class="fileList"
                                 >
                                     <div class="emptyState">
-                                        No fallback mapping files loaded.
+                                        No compatibility mapping files loaded.
                                     </div>
                                 </div>
 
@@ -2751,22 +2723,22 @@
 
 <script src="js/config.js?v=B10CLEAN15_15"></script>
 
-<script src="js/utils.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="js/utils.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/state.js?v=B17HANDHELDSCOPE1"></script>
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="ui.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 
-<script src="js/master-gtin.js?v=B11RECEIVING4"></script>
-<script src="js/identifier-service.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="js/master-gtin.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/identifier-service.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/scanner.js?v=B13ROOTFIX1"></script>
 
-<script src="js/receiving.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="js/receiving.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/session.js?v=B10CLEAN15_15"></script>
 
@@ -2774,14 +2746,14 @@
 
 <script src="js/supabase.js?v=B10CLEAN15_15"></script>
 
-<script src="js/orders.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="js/orders.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/auth.js?v=B10CLEAN22"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
 
-<script src="js/needs-review.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="js/needs-review.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/expiry.js?v=B10CLEAN15_15"></script>
 
@@ -2790,7 +2762,7 @@
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
 <script src="js/pharmflow-next.js?v=B19ASSIGNMENTSOURCE3"></script>
 
-<script src="js/app.js?v=RECEIVING_STAGE2_ASSET_FIX2"></script>
+<script src="js/app.js?v=RECEIVING_STAGE2_FINAL1"></script>
 
 <script src="js/handheld-runtime.js?v=B22SCANREARM1"></script>
 <script src="js/receiving-release.js?v=B22SCANREARM1"></script>
