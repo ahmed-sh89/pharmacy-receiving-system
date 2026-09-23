@@ -87,71 +87,6 @@ function initializeReceiving(){
    RECEIVE PARSED BARCODE
 ===================================================== */
 
-function resolveCurrentWorkspaceGTIN(gtin){
-    const normalized=normalizeGTIN(gtin);
-    if(!normalized) return null;
-
-    /*
-       Current-session mappings are safe for a normal receive only when their
-       mapped Item Code exists in the CURRENT workspace orderData.
-       MASTER mappings are projected only for current order items; CLOUD
-       mappings are the PC shared-session projection of those current items.
-    */
-    const mapping=(AppState?.workspace?.mappingData||[]).find(record=>
-        normalizeGTIN(record?.gtin||"")===normalized
-    );
-    const indexedCode=normalizeItemCode(
-        AppState?.indexes?.itemByGTIN?.get(normalized)||""
-    );
-
-    if(indexedCode){
-        const item=(AppState?.workspace?.orderData||[]).find(row=>
-            normalizeItemCode(row?.itemCode||"")===indexedCode
-        )||null;
-
-        if(item){
-            return {
-                item,
-                itemCode:indexedCode,
-                source:mapping?.source||"CURRENT_WORKSPACE"
-            };
-        }
-    }
-
-    /* Defensive direct lookup in case index rebuild is one render behind. */
-    if(!mapping) return null;
-
-    const code=normalizeItemCode(mapping.itemCode||"");
-    const item=(AppState?.workspace?.orderData||[]).find(row=>
-        normalizeItemCode(row?.itemCode||"")===code
-    )||null;
-
-    return item
-        ? {
-            item,
-            itemCode:code,
-            source:mapping.source||"CURRENT_WORKSPACE"
-        }
-        : null;
-}
-
-async function revalidateLearnedGTINForReceiving(gtin){
-    const learned=await getPharmacyLearnedGTINRecord(gtin,{strict:true});
-    if(!learned){
-        purgePharmacyLearnedGTINFromWorkspace(gtin);
-        return null;
-    }
-    purgePharmacyLearnedGTINFromWorkspace(gtin);
-    addMappingRecord({itemCode:learned.itemCode,gtin:learned.gtin,source:"PHARMACY_LEARNED"});
-    return learned;
-}
-
-function learnedGTINResolution(record){
-    if(!record||String(record.source||"").toUpperCase()!=="PHARMACY_LEARNED") return null;
-    if(!record.mappingId||!record.mappingRevision) return null;
-    return {kind:"PHARMACY_LEARNED",mappingId:record.mappingId,mappingRevision:record.mappingRevision,normalizedGtin:normalizeGTIN(record.gtin),resolvedItemCode:normalizeItemCode(record.itemCode)};
-}
-
 async function receiveParsedBarcode(parsed,queueOptions={}){
     if(!parsed||!parsed.gtin){
         handleReceivingFailure("Barcode could not be identified");
@@ -163,32 +98,24 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
         return false;
     }
 
-    const gtin=normalizeGTIN(parsed.gtin);
+    const identifierDisplay=toSafeString(parsed.identifierDisplay||parsed.gtin||parsed.raw||parsed.original||"");
+    const gtin=normalizeIdentifier(identifierDisplay);
     if(!gtin){
         handleReceivingFailure("Barcode could not be identified");
         return false;
     }
 
-    /* =========================================================
-       PHASE 2C.10.6.1 — CURRENT SESSION FIRST
+    /* Identity resolution is server-authoritative. Workspace data determines
+       only whether that already-resolved Item Code is in this device scope. */
+    let masterRecord;
+    try{ masterRecord=await IdentifierService.resolve(identifierDisplay); }
+    catch(error){ handleReceivingFailure(error?.message||"Unable to resolve identifier"); return false; }
 
-       The PC session already sends the exact current-order GTIN mappings to
-       the Handheld. A normal scan must therefore resolve from the current
-       workspace immediately instead of waiting for the entire 52k-record
-       Global Master cache on the Handheld.
-       ========================================================= */
-    let current=resolveCurrentWorkspaceGTIN(gtin);
-
-    if(current?.item && String(current.source||"").toUpperCase()==="PHARMACY_LEARNED"){
-        let authoritative;
-        try{ authoritative=await revalidateLearnedGTINForReceiving(gtin); }
-        catch(error){ handleReceivingFailure(error?.message||"Unable to verify learned GTIN mapping"); return false; }
-        if(authoritative){
-            current={...current,item:getReceivingItemByItemCode(authoritative.itemCode),itemCode:authoritative.itemCode,source:authoritative.source,learnedRecord:authoritative};
-        }else{
-            current=null;
-        }
-    }
+    const current=masterRecord?.found ? {
+        item:getReceivingItemByItemCode(masterRecord.itemCode),
+        itemCode:normalizeItemCode(masterRecord.itemCode),
+        source:"GLOBAL_V2"
+    } : null;
 
     if(current?.item){
         if(isKnownItemOutsideHandheldScope(current.item)){
@@ -205,63 +132,11 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
             serial:parsed.serial,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
-            gtinResolution:learnedGTINResolution(current.learnedRecord)
+            gtinResolution:null
         });
     }
 
-    /*
-       Only scans NOT represented in the current session/order mapping need
-       the complete Global Master / pharmacy-learned lookup to distinguish:
-       known-extra vs true unknown.
-    */
-    let masterRecord=null;
-    try{
-        masterRecord=await getMasterGTINRecordByGTIN(gtin);
-    }catch(error){
-        Logger.warn("Global GTIN fallback lookup failed",error);
-    }
-
-    if(String(masterRecord?.source||"").toUpperCase()==="PHARMACY_LEARNED"){
-        try{ masterRecord=await revalidateLearnedGTINForReceiving(gtin); }
-        catch(error){ handleReceivingFailure(error?.message||"Unable to verify learned GTIN mapping"); return false; }
-    }
-
-    if(!masterRecord?.itemCode){
-        return await quickResolveUnrecognizedGTIN(parsed,null);
-    }
-
-    const workspaceItem=(AppState?.workspace?.orderData||[]).find(row=>
-        normalizeItemCode(row?.itemCode||"")===normalizeItemCode(masterRecord.itemCode||"")
-    )||null;
-
-    if(isKnownItemOutsideHandheldScope(workspaceItem)){
-        return showKnownItemOutsideHandheldScope(workspaceItem);
-    }
-
-    const item=getReceivingItemByItemCode(masterRecord.itemCode);
-
-    if(!item){
-        return await quickResolveUnrecognizedGTIN(parsed,masterRecord);
-    }
-
-    addMappingRecord({
-        itemCode:item.itemCode,
-        gtin,
-        source:masterRecord.source||"MASTER"
-    });
-
-    return receiveOrderItem({
-        item,
-        quantity:getValidReceivingQuantity(parsed.quantity),
-        transactionId:queueOptions.transactionId||null,
-        gtin,
-        lot:parsed.lot,
-        expiry:parsed.expiry,
-        serial:parsed.serial,
-        source:APP_CONFIG.transactionSources.scanner,
-        manual:false,
-        gtinResolution:learnedGTINResolution(masterRecord)
-    });
+    return await quickResolveUnrecognizedGTIN({...parsed,gtin:identifierDisplay},masterRecord?.found?{...masterRecord,source:"GLOBAL_V2"}:null);
 }
 
 /* =====================================================
@@ -427,14 +302,6 @@ function prepareManualExtraItem(itemCode,itemName,gtin,targetOrderOverride=""){
     item.orderNumbers=[targetOrder];
     item.orderNumber=targetOrder;
 
-    if(gtin){
-        addMappingRecord({
-            itemCode,
-            gtin,
-            source:"MASTER"
-        });
-    }
-
     return item;
 }
 
@@ -444,7 +311,7 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
     const lastScan=document.getElementById("lastScanCard");
     if(!lastScan) return false;
 
-    const gtin=normalizeGTIN(parsed?.gtin||"");
+    const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||"");
     const code=normalizeItemCode(masterRecord?.itemCode||"");
     const name=toSafeString(masterRecord?.itemName||masterRecord?.name||code);
     const selectedOrders=
@@ -806,16 +673,14 @@ async function receiveUnrecognizedHandheldScan(raw){
 }
 
 async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
-    const gtin=normalizeGTIN(parsed?.gtin||"");
+    const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
     if(!gtin){
         handleReceivingFailure("Barcode could not be identified");
         return false;
     }
 
-    let masterRecord=null;
-    try{
-        masterRecord=await getMasterGTINRecordByGTIN(gtin);
-    }catch(_){}
+    /* The Stage 2 caller supplies the result of the sole V2 resolver. */
+    const masterRecord=knownRecord;
 
     const isHandheld=
         typeof isLikelyZebraDevice==="function" &&
@@ -877,7 +742,7 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
 
 function openQuickGTINResolver(parsed,knownRecord=null){
     return new Promise(resolve=>{
-        const gtin=normalizeGTIN(parsed.gtin);
+        const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
         document.getElementById("quickGTINResolver")?.remove();
 
         const panel=document.createElement("div");
@@ -932,9 +797,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         };
         const receiveMatched=async(item,manual=false)=>{
             try{
-                const learned=await savePharmacyLearnedGTIN(gtin,item.itemCode,item.itemName);
-                addMappingRecord({itemCode:item.itemCode,gtin,source:"PHARMACY_LEARNED"});
-                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual,gtinResolution:learnedGTINResolution(learned)});
+                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual,gtinResolution:null});
                 finish(tx);
             }catch(e){
                 if(typeof setScanBoxState==="function") setScanBoxState("error");
@@ -951,8 +814,20 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         search.oninput=render; render();
         panel.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>finish(false));
         panel.querySelector('[data-review]')?.addEventListener('click',async()=>{
-            try{ await saveReceivingNeedsReview(parsed); if(typeof refreshNeedsReviewCounters==="function")refreshNeedsReviewCounters(); finish(true); }
-            catch(error){ if(typeof setScanBoxState==="function")setScanBoxState("error"); }
+            try{
+                /* Needs Review is persisted first.  The scan panel is never used as
+                   a second, local exception queue. */
+                await nrV2CreateDraft({...parsed,identifierDisplay:gtin},{
+                    workflow:"RECEIVING",
+                    reason:knownCode?"KNOWN_NOT_IN_ORDER":"UNKNOWN_IDENTIFIER"
+                });
+                if(typeof refreshNeedsReviewCounters==="function") await refreshNeedsReviewCounters();
+                finish(true);
+            }catch(error){
+                if(typeof setScanBoxState==="function")setScanBoxState("error");
+                const msg=panel.querySelector('.gtinPanelMessage');
+                if(msg) msg.textContent=error?.message||"Unable to save this identifier for review";
+            }
         });
         panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
             try{
@@ -984,9 +859,11 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             const code=normalizeItemCode(panel.querySelector('[data-code]').value), name=toSafeString(panel.querySelector('[data-name]').value).trim();
             if(!code||!name){ panel.querySelector('.gtinPanelMessage').textContent="Enter Item Code and Item Name"; return; }
             try{
-                const learned=await savePharmacyLearnedGTIN(gtin,code,name);
+                if(!(typeof isSystemOwner==="function"&&isSystemOwner())) throw new Error("Save this scan for review; only the System Owner can add a new Global Item.");
+                if(!globalThis.crypto?.randomUUID) throw new Error("Secure operation IDs are unavailable; reload before creating a Global Item.");
+                await IdentifierService.createItem(globalThis.crypto.randomUUID(),{itemCode:code,itemName:name,identifierDisplay:gtin,reason:"New item from Receiving"});
                 let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true}); item.manual=true;
-                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true,gtinResolution:learnedGTINResolution(learned)});
+                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true,gtinResolution:null});
                 finish(tx);
             }catch(e){ if(typeof setScanBoxState==="function") setScanBoxState("error"); panel.querySelector('.gtinPanelMessage').textContent=e.message||"Unable to add extra"; }
         });
@@ -995,111 +872,6 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         setTimeout(()=>search.focus(),80);
     });
 }
-
-/* =====================================================
-   FIND ITEM BY GTIN
-===================================================== */
-
-function findReceivingItemByGTIN(gtin){
-
-    const normalized =
-        normalizeGTIN(
-            gtin
-        );
-
-    if(!normalized){
-        return null;
-    }
-
-    let item =
-        getItemByGTIN(
-            normalized
-        );
-
-    if(item){
-        return item;
-    }
-
-    const variants =
-        createGTINVariants(
-            normalized
-        );
-
-    for(const variant of variants){
-
-        const itemCode =
-            AppState.indexes
-                .itemByGTIN
-                .get(
-                    variant
-                );
-
-        if(!itemCode){
-            continue;
-        }
-
-        item =
-            getItemByCode(
-                itemCode
-            );
-
-        if(item){
-            return item;
-        }
-
-    }
-
-    return null;
-}
-
-
-/* =====================================================
-   FALLBACK: DIRECT GLOBAL GTIN -> CURRENT ORDER
-   Phase 2B.8
-===================================================== */
-
-async function findReceivingItemByGlobalGTIN(gtin){
-
-    if(typeof getMasterGTINRecordByGTIN !== "function"){
-        return null;
-    }
-
-    try{
-
-        const record = await getMasterGTINRecordByGTIN(gtin);
-
-        if(!record || !record.itemCode){
-            return null;
-        }
-
-        const itemCode = normalizeItemCode(record.itemCode);
-        const item = getItemByCode(itemCode);
-
-        /* The Global GTIN may know the product, but receiving is only
-           allowed when that Item Number actually exists in this order. */
-        if(!item){
-            return null;
-        }
-
-        if(record.category && !item.category){
-            item.category = toSafeString(record.category);
-        }
-
-        addMappingRecord({
-            itemCode:itemCode,
-            gtin:normalizeGTIN(record.gtin || gtin),
-            source:"MASTER"
-        });
-
-        return item;
-
-    }
-    catch(error){
-        Logger.warn("Direct Global GTIN receiving lookup failed",error);
-        return null;
-    }
-}
-
 
 /* =====================================================
    GTIN VARIANTS

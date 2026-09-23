@@ -354,16 +354,17 @@ function getWorkspaceOrderNumbers(){
     return numbers;
 }
 
-function getFinalizeReceivingSummary(){
+function getFinalizeReceivingSummary({allOrders=false}={}){
     const allOrderNumbers=getWorkspaceOrderNumbers();
     const selectedOrders=
         typeof getSelectedReceivingOrderNumbers==="function"
             ? getSelectedReceivingOrderNumbers()
             : [];
-    const orderNumbers=
-        selectedOrders.length===1
+    const orderNumbers=allOrders
+        ? allOrderNumbers
+        : (selectedOrders.length===1
             ? allOrderNumbers.filter(n=>n===selectedOrders[0])
-            : [];
+            : []);
     let report=null;
     if(typeof buildReceivingDiscrepancyReport === "function"){
         report=buildReceivingDiscrepancyReport({visibleOnly:false});
@@ -423,8 +424,8 @@ async function repairMissingOrderRegistryFromWorkspace(orderNumbers){
     return repaired;
 }
 
-async function validateWorkspaceCanFinalize(){
-    const summary=getFinalizeReceivingSummary();
+async function validateWorkspaceCanFinalize(options={}){
+    const summary=getFinalizeReceivingSummary(options);
     if(summary.totalItems<=0){
         throw new Error("No receiving order is loaded");
     }
@@ -480,7 +481,8 @@ async function validateWorkspaceCanFinalize(){
 
 function refreshFinalizeReceivingButton(){
     const button=document.getElementById("btnFinalizeReceiving");
-    if(!button){ return; }
+    const completeAll=document.getElementById("btnCompleteAllReceiving");
+    if(!button&&!completeAll){ return; }
     const hasOrder=!!(AppState.workspace && Array.isArray(AppState.workspace.orderData) && AppState.workspace.orderData.length);
     const active=getWorkspaceOrderNumbers();
     const selectedOrders=
@@ -489,14 +491,21 @@ function refreshFinalizeReceivingButton(){
             : [];
     const needsSpecificOrder=
         active.length>1 && selectedOrders.length!==1;
-    button.disabled=!hasOrder||FinalizeReceivingEngine.busy||needsSpecificOrder;
-    button.title=needsSpecificOrder?"Select one order before Complete Receiving":"";
-    button.textContent=FinalizeReceivingEngine.busy?"Completing…":"✓ Complete Receiving";
+    if(button){
+        button.disabled=!hasOrder||FinalizeReceivingEngine.busy||needsSpecificOrder;
+        button.title=needsSpecificOrder?"Select one order before Complete Receiving":"";
+        button.textContent=FinalizeReceivingEngine.busy?"Completing…":"✓ Complete Receiving";
+    }
+    if(completeAll){
+        completeAll.disabled=!hasOrder||FinalizeReceivingEngine.busy||active.length<2;
+        completeAll.title=active.length<2?"Load more than one active Order to complete all":"";
+        completeAll.textContent=FinalizeReceivingEngine.busy?"Completing…":"Complete All Active Orders";
+    }
 }
 
-function requestFinalizeReceiving(){
+function requestFinalizeReceiving({allOrders=false}={}){
     if(FinalizeReceivingEngine.busy){ return; }
-    validateWorkspaceCanFinalize().then(summary=>{
+    validateWorkspaceCanFinalize({allOrders}).then(summary=>{
         const orders=summary.orderNumbers.join(", ");
         const message=[
             "Complete receiving for: "+orders+".",
@@ -504,8 +513,8 @@ function requestFinalizeReceiving(){
             "Discrepancies: "+summary.discrepancies+" (Shortage "+summary.shortages+", Over "+summary.over+", Manual "+summary.manual+").",
             "The order number, order date, completion time and any discrepancy report will be retained. The active receiving workspace for this order will then be cleared."
         ].join(" ");
-        showConfirmModal("Complete Receiving",message,function(){
-            finalizeCurrentReceiving().catch(()=>{});
+        showConfirmModal(allOrders?"Complete All Active Orders":"Complete Receiving",message,function(){
+            finalizeCurrentReceiving({allOrders}).catch(()=>{});
         });
     }).catch(error=>{
         Logger.warn("Finalize validation failed",error);
@@ -513,13 +522,13 @@ function requestFinalizeReceiving(){
     });
 }
 
-async function finalizeCurrentReceiving(){
+async function finalizeCurrentReceiving({allOrders=false}={}){
     if(FinalizeReceivingEngine.busy){ return false; }
     FinalizeReceivingEngine.busy=true;
     refreshFinalizeReceivingButton();
     showLoading("Completing receiving…");
     try{
-        const summary=await validateWorkspaceCanFinalize();
+        const summary=await validateWorkspaceCanFinalize({allOrders});
 
         const finalizedFullReceivingReport =
             typeof buildLiveReceivingReport==="function"
@@ -565,9 +574,15 @@ async function finalizeCurrentReceiving(){
         if(typeof closeAndArchiveCurrentOrder!=="function"){
             throw new Error("Receiving archive module is unavailable");
         }
-        const archived=await closeAndArchiveCurrentOrder(summary.orderNumbers[0]);
-        if(!archived){
-            throw new Error("Order was marked Received but the local receiving archive could not be completed. Do not scan this order again; refresh and retry archive recovery.");
+        /* Each selected Order remains an independent completion/archive unit.
+           The old first-order-only call left the other finalized Orders in
+           active workspace state.  Archive each order only after its server
+           completion acknowledgement, and stop on the first failed archive. */
+        for(const orderNumber of summary.orderNumbers){
+            const archived=await closeAndArchiveCurrentOrder(orderNumber);
+            if(!archived){
+                throw new Error("Order "+orderNumber+" was marked Received but its receiving archive could not be completed. Do not scan this order again; refresh and retry archive recovery.");
+            }
         }
 
         await refreshOrderLifecycleRegistry();
@@ -982,6 +997,11 @@ function bindFinalizeReceivingUI(){
         button.dataset.bound="1";
         button.addEventListener("click",requestFinalizeReceiving);
     }
+    const completeAll=document.getElementById("btnCompleteAllReceiving");
+    if(completeAll&&completeAll.dataset.bound!=="1"){
+        completeAll.dataset.bound="1";
+        completeAll.addEventListener("click",()=>requestFinalizeReceiving({allOrders:true}));
+    }
     ["workspace:created","workspace:cleared","files:updated","receiving:updated","archive:updated"].forEach(eventName=>{
         try{ AppEvents.on(eventName,refreshFinalizeReceivingButton); }catch(_error){}
     });
@@ -989,6 +1009,7 @@ function bindFinalizeReceivingUI(){
 }
 
 window.requestFinalizeReceiving=requestFinalizeReceiving;
+window.requestFinalizeAllReceiving=()=>requestFinalizeReceiving({allOrders:true});
 window.finalizeCurrentReceiving=finalizeCurrentReceiving;
 window.refreshFinalizeReceivingButton=refreshFinalizeReceivingButton;
 window.bindFinalizeReceivingUI=bindFinalizeReceivingUI;

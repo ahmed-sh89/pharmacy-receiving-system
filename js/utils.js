@@ -63,6 +63,13 @@ function normalizeGTIN(value){
 
 }
 
+/* Identifier identity is not a GTIN validation rule.  Use this for the
+   V2 mapping contract: boundary whitespace is removed and matching is
+   case-insensitive, while letters and leading zeroes are retained. */
+function normalizeIdentifier(value){
+    return toSafeString(value).toUpperCase();
+}
+
 
 function toNumber(value, fallback = 0){
 

@@ -1895,7 +1895,14 @@ setTimeout(enforceOwnerOnlyMasterGTINUI,500);
    PHASE 2C.6.2 — CONSISTENT LIVE DASHBOARD METRICS
 ===================================================== */
 function calculateDashboardMetrics(){
-    const items=Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[];
+    /* KPI entities are order-item rows, never the aggregated Item Code search
+       projection. Search may merge Panadol across Orders; progress must not. */
+    const orderNumbers=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
+    const items=orderNumbers.length&&typeof getPerOrderReceivingRows==="function"
+        ? orderNumbers.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+            orderedQty:row["Ordered Qty"],receivedQty:row["Received Qty"],manual:false
+        })))
+        : (Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[]);
     const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
     let completedItems=0, remainingItems=0, remainingUnits=0, overReceivedItems=0, manualItems=0;
     items.forEach(item=>{

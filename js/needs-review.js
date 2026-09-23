@@ -64,21 +64,26 @@ async function nrV2CreateDraft(parsed,options={}){
         throw new Error("Needs Review cloud queue is unavailable");
     }
 
-    const capturedCode=toSafeString(parsed?.gtin||parsed?.raw||parsed?.original||"");
+    const capturedCode=toSafeString(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
     if(!capturedCode){
         throw new Error("Scanned code could not be captured");
     }
 
-    const result=await authRpc("create_pharmflow_needs_review_v2",{
+    const originalOrder=normalizeOrderNumber(options.orderNumber||nrV2CurrentOrderNumber()||"");
+    /* A Needs Review case is an operational Receiving record.  Visibility
+       scope must never be substituted for attribution: require a real source
+       Order rather than creating an unassignable multi-order draft. */
+    if((options.workflow||"RECEIVING")==="RECEIVING"&&!originalOrder){
+        throw new Error("Select the original active Order before saving this scan for review.");
+    }
+
+    const result=await authRpc("create_pharmflow_needs_review_v3",{
         p_pharmacy_id:pharmacyId,
         p_workflow:options.workflow||"RECEIVING",
-        /* This field is also the existing review identifier for unsupported
-           captured codes. It is not a Global GTIN write and is never padded
-           or transformed into a GTIN. */
-        p_gtin:capturedCode,
+        p_identifier_display:capturedCode,
         p_raw_barcode:toSafeString(parsed?.raw||parsed?.original||capturedCode),
         p_session_id:toSafeString(AppState?.session?.id||""),
-        p_order_number:options.orderNumber||nrV2CurrentOrderNumber()||null,
+        p_order_number:originalOrder,
         p_order_name:toSafeString(AppState?.workspace?.orderName||""),
         p_review_reason:options.reason||"UNKNOWN_GTIN",
         p_master_item_code_hint:options.itemCode||null,
@@ -140,13 +145,16 @@ async function nrV3ListHistory(workflow="RECEIVING",orderNumber=null){
 }
 window.nrV3ListHistory=nrV3ListHistory;
 
-async function nrV2MarkResolved(row,item,resolutionType,transactionId){
-    return authRpc("resolve_pharmflow_needs_review_v2",{
+async function nrV2RequestResolution(row,item,transactionId){
+    if(!globalThis.crypto?.randomUUID){
+        throw new Error("Secure operation IDs are unavailable; reload before resolving this review.");
+    }
+    return authRpc("request_pharmflow_needs_review_resolution_v4",{
+        p_operation_id:globalThis.crypto.randomUUID(),
         p_pharmacy_id:nrV2PharmacyId(),
         p_review_id:row.review_id,
         p_item_code:item?.itemCode||"",
         p_item_name:item?.itemName||"",
-        p_resolution_type:resolutionType,
         p_resolution_transaction_id:transactionId||""
     });
 }
@@ -442,7 +450,7 @@ window.NeedsReviewV2=NeedsReviewV2;
 window.nrV2CreateDraft=nrV2CreateDraft;
 window.nrV2SetQty=nrV2SetQty;
 window.nrV2List=nrV2List;
-window.nrV2MarkResolved=nrV2MarkResolved;
+window.nrV2RequestResolution=nrV2RequestResolution;
 window.nrV2Delete=nrV2Delete;
 window.nrV2UploadPhoto=nrV2UploadPhoto;
 window.nrV2PhotoObjectUrl=nrV2PhotoObjectUrl;
