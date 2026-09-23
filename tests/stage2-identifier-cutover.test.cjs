@@ -56,13 +56,25 @@ test('identifier normalization keeps legitimate non-GTIN identity intact',()=>{
   assert.doesNotMatch(utils,/function normalizeIdentifier\(value\)[\s\S]{0,180}replace\(\/\[\^\\d\]/);
 });
 
-test('Settings and Needs Review share one V2 Global Master administration renderer',()=>{
+test('visible Settings Global Master route exposes the V2 lookup controls before legacy import compatibility',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
-  assert.match(index,/id="globalIdentifierMasterAdmin"/);
-  assert.match(index,/data-admin-identifier/);
+  const settings=index.slice(index.indexOf('id="page-settings"'),index.indexOf('id="page-settings"')+14000);
+  assert.match(settings,/id="globalIdentifierMasterAdmin"/);
+  assert.match(settings,/class="globalIdentifierMasterAdmin"/);
+  assert.match(settings,/data-admin-identifier/);
+  assert.match(settings,/data-admin-item-search/);
+  assert.match(settings,/Find Mapping/);
+  assert.match(settings,/Search Items/);
+  assert.ok(settings.indexOf('id="globalIdentifierMasterAdmin"') < settings.indexOf('Global Master import and mapping-file compatibility'));
   assert.match(ui,/function renderV2IdentifierAdministration\(/);
   assert.match(ui,/renderV2IdentifierAdministration\(settingsMaster\)/);
+  assert.match(ui,/itemLoad\?\.addEventListener\("click",\(\)=>renderItemSearch/);
+  assert.match(ui,/IdentifierService\.searchItems\(value,12\)/);
+  assert.match(ui,/IDENTIFIERS FOR THIS ITEM/);
+  assert.match(ui,/Add New Item &amp; First Identifier/);
+  assert.match(ui,/data-correct/);
+  assert.match(ui,/data-remove/);
   assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
 });
 
@@ -92,6 +104,7 @@ test('Settings leads with V2 Global Master administration while preserving impor
   const index=read('index.html');
   assert.match(index,/<h2>Global Identifier Master<\/h2>/);
   assert.ok(index.indexOf('id="globalIdentifierMasterAdmin"') < index.indexOf('Global Master import and mapping-file compatibility'));
+  assert.doesNotMatch(index,/<span class="sectionEyebrow">\s*<div>/);
   assert.match(index,/Update Global GTIN Import/);
   assert.match(index,/Mapping-file compatibility/);
 });
@@ -110,11 +123,11 @@ test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   ];
   for(const asset of stage2Assets){
     const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_STAGE2_FINAL1"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_STAGE2_SETTINGS_FIX1"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
   }
-  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_STAGE2_FINAL1"><\/script>/);
-  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_STAGE2_FINAL1">/);
-  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_STAGE2_FINAL1">/);
+  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_STAGE2_SETTINGS_FIX1"><\/script>/);
+  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_STAGE2_SETTINGS_FIX1">/);
+  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_STAGE2_SETTINGS_FIX1">/);
   assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
   assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
 });
@@ -124,8 +137,8 @@ test('authenticated manifest hydration loads UI globals before the application b
   const ui=read('ui.js');
   const workspace=read('cloud-workspace.js');
   const app=read('js/app.js');
-  assert.ok(index.indexOf('ui.js?v=RECEIVING_STAGE2_FINAL1') < index.indexOf('cloud-workspace.js?v='));
-  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_STAGE2_FINAL1'));
+  assert.ok(index.indexOf('ui.js?v=RECEIVING_STAGE2_SETTINGS_FIX1') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_STAGE2_SETTINGS_FIX1'));
   assert.match(ui,/function initializeUI\(/);
   assert.match(ui,/function refreshEntireUI\(/);
   assert.match(workspace,/refreshEntireUI\(\)/);

@@ -52,8 +52,8 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_STAGE2_FINAL1">
-<link rel="stylesheet" href="css/receiving-surface.css?v=RECEIVING_STAGE2_FINAL1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_STAGE2_SETTINGS_FIX1">
+<link rel="stylesheet" href="css/receiving-surface.css?v=RECEIVING_STAGE2_SETTINGS_FIX1">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
     <style id="pharmflowAuthBootstrapGate">
@@ -2190,21 +2190,25 @@
                     <section class="contentCard masterGTINCard">
                         <div class="cardHeader">
                             <div>
-                                <span class="sectionEyebrow">
-                            <div>
                                 <span class="sectionEyebrow">GLOBAL MASTER</span>
                                 <h2>Global Identifier Master</h2>
                                 <p>Search and administer the authoritative identifier mappings independently of an Active Order. Only the System Owner can change mappings.</p>
                             </div>
                         </div>
 
-                        <section class="needsReviewAdmin" id="globalIdentifierMasterAdmin">
-                            <p>Manual administration independent of an Active Order. Search an identifier, Item Code, or Item Name.</p>
-                            <div class="needsReviewAdminLookup">
-                                <label>Identifier / GTIN<input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code, or Item Name"></label>
-                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Search</button>
+                        <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Global Identifier Master administration">
+                            <p class="globalIdentifierMasterIntro">Manual administration independent of an Active Order. Look up an Identifier / GTIN, or search the canonical Global Master by Item Code or Item Name.</p>
+                            <div class="globalIdentifierMasterLookupGrid">
+                                <label>Identifier / GTIN
+                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="e.g. S00110, 1234A, or GTIN">
+                                </label>
+                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Find Mapping</button>
+                                <label>Item Code / Item Name
+                                    <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Search canonical Global Items">
+                                </label>
+                                <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search Items</button>
                             </div>
-                            <div id="globalIdentifierMasterResults" data-admin-workspace></div>
+                            <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
                         </section>
 
                         <details class="legacyMappingDetails">
@@ -2723,22 +2727,22 @@
 
 <script src="js/config.js?v=B10CLEAN15_15"></script>
 
-<script src="js/utils.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/utils.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/state.js?v=B17HANDHELDSCOPE1"></script>
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="ui.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 
-<script src="js/master-gtin.js?v=RECEIVING_STAGE2_FINAL1"></script>
-<script src="js/identifier-service.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/master-gtin.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
+<script src="js/identifier-service.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/scanner.js?v=B13ROOTFIX1"></script>
 
-<script src="js/receiving.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/receiving.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/session.js?v=B10CLEAN15_15"></script>
 
@@ -2746,14 +2750,14 @@
 
 <script src="js/supabase.js?v=B10CLEAN15_15"></script>
 
-<script src="js/orders.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/orders.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/auth.js?v=B10CLEAN22"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
 
-<script src="js/needs-review.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/needs-review.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/expiry.js?v=B10CLEAN15_15"></script>
 
@@ -2762,7 +2766,7 @@
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
 <script src="js/pharmflow-next.js?v=B19ASSIGNMENTSOURCE3"></script>
 
-<script src="js/app.js?v=RECEIVING_STAGE2_FINAL1"></script>
+<script src="js/app.js?v=RECEIVING_STAGE2_SETTINGS_FIX1"></script>
 
 <script src="js/handheld-runtime.js?v=B22SCANREARM1"></script>
 <script src="js/receiving-release.js?v=B22SCANREARM1"></script>

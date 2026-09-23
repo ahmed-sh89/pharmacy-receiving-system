@@ -220,6 +220,29 @@ body:not(.zebraMode) .headerInfo strong{
   color:var(--pfn-navy) !important;
 }
 
+/* Settings has its own standalone Global Master surface. It shares the V2
+   administration renderer with Needs Review, but is not a Needs Review panel. */
+.globalIdentifierMasterAdmin{
+  display:grid;
+  gap:14px;
+  padding:16px;
+  border:1px solid #c9ddeb;
+  border-radius:12px;
+  background:#f4f9fd;
+}
+.globalIdentifierMasterIntro{margin:0;color:#486985;font-size:13px}
+.globalIdentifierMasterLookupGrid{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr) auto;
+  gap:10px;
+  align-items:end;
+}
+.globalIdentifierMasterLookupGrid label{display:grid;gap:5px;color:#315675;font-size:12px;font-weight:900}
+.globalIdentifierMasterLookupGrid input{box-sizing:border-box;width:100%;min-height:42px;padding:8px 11px;border:1px solid #b7cde1;border-radius:9px;background:#fff;color:#173e63;font:inherit}
+.globalIdentifierMasterLookupGrid button{min-height:42px;padding:0 14px;border:0;border-radius:8px;background:#1769aa;color:#fff;font-weight:900;white-space:nowrap}
+@media(max-width:900px){.globalIdentifierMasterLookupGrid{grid-template-columns:1fr auto}.globalIdentifierMasterLookupGrid label:nth-of-type(2){grid-column:1}.globalIdentifierMasterLookupGrid button:last-child{grid-column:2}}
+@media(max-width:560px){.globalIdentifierMasterLookupGrid{grid-template-columns:1fr}.globalIdentifierMasterLookupGrid label:nth-of-type(2),.globalIdentifierMasterLookupGrid button:last-child{grid-column:auto}}
+
 /* ---------- SHARED PANELS / INPUTS / TABLES ---------- */
 body:not(.zebraMode) .contentCard,
 body:not(.zebraMode) .panel,

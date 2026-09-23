@@ -8773,73 +8773,87 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const input=overlay.querySelector("[data-admin-identifier]");
     const workspace=overlay.querySelector("[data-admin-workspace]");
     const load=overlay.querySelector("[data-admin-load]");
+    const itemSearch=overlay.querySelector("[data-admin-item-search]");
+    const itemLoad=overlay.querySelector("[data-admin-item-load]");
     if(!input||!workspace||!load) return;
     if(load.dataset.identifierAdminBound==="1") return;
     load.dataset.identifierAdminBound="1";
+    if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
     const owner=typeof isSystemOwner==="function"&&isSystemOwner();
-    let resolved=null;
-    const draw=async()=>{
-        const identifier=toSafeString(input.value);
-        if(!identifier){showToast?.("Enter an identifier","warning");input.focus();return;}
+    let resolved=null, selectedItem=null, pendingIdentifier="";
+    const mutationNotice=owner?"":"<p class=\"needsReviewGlobalNotice\">Read-only: Global mapping changes require System Owner permission.</p>";
+    const reasonField=()=>`<label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label>`;
+    const itemSummary=item=>`<div class="needsReviewMappingCurrent"><span>GLOBAL ITEM</span><strong>${esc(item.item_code||item.itemCode)} → ${esc(item.item_name||item.itemName||"Unnamed item")}</strong></div>`;
+    const listIdentifiers=async itemCode=>{
+        const identifiers=await IdentifierService.listItemIdentifiers(itemCode);
+        return `<div class="needsReviewMappingCompare"><span>IDENTIFIERS FOR THIS ITEM</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)} <small>${esc(row.identifier_key)}</small></strong>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
+    };
+    const bindItemResults=(items,afterSelect)=>{
+        workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
+            selectedItem=items[Number(button.dataset.globalItem)]||null;
+            workspace.querySelectorAll("[data-global-item]").forEach(node=>node.classList.toggle("selected",node===button));
+            if(selectedItem) await afterSelect(selectedItem);
+        }));
+    };
+    const showItem=async(item,{identifier="",mapping=null}={})=>{
+        const itemCode=toSafeString(item?.item_code||item?.itemCode);
+        if(!itemCode) return;
+        selectedItem=item;
+        const identifiers=await listIdentifiers(itemCode);
+        const hasIdentifier=!!identifier;
+        const mappingActions=owner?`
+            <div class="needsReviewMappingActions">
+                ${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}
+                ${reasonField()}
+                <button type="button" data-add>Add Mapping</button>
+                ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
+            </div>`:mutationNotice;
+        workspace.innerHTML=`${itemSummary(item)}${identifiers}${mappingActions}`;
+        if(!owner) return;
+        const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
+        const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
+        const currentIdentifier=()=>toSafeString(identifier||workspace.querySelector("[data-new-identifier]")?.value).trim();
+        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
+        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+    };
+    const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
+        const value=toSafeString(query).trim();
+        if(!value){showToast?.("Enter an Item Code or Item Name","warning");itemSearch?.focus();return;}
+        const items=await IdentifierService.searchItems(value,12);
+        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the canonical Global Item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
+        bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
+    };
+    const renderUnmapped=()=>{
+        workspace.innerHTML=owner?`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the canonical Global Master below, then deliberately add the mapping or create a new Item.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search canonical Global Items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>Add Mapping to Selected Item</button><label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button></div>`:`<div class="needsReviewNoMatches">No Global Master mapping exists for this identifier.</div>${mutationNotice}`;
+        if(!owner) return;
+        let selected=null;
+        const search=workspace.querySelector("[data-global-search]");
+        const results=workspace.querySelector("[data-global-results]");
+        const addExisting=workspace.querySelector("[data-add-existing]");
+        search?.addEventListener("input",async()=>{const query=toSafeString(search.value).trim();selected=null;if(addExisting)addExisting.disabled=true;if(!query){results.innerHTML="";return;}try{const items=await IdentifierService.searchItems(query,12);results.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";results.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selected=items[Number(button.dataset.globalItem)]||null;results.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selected;}));}catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}});
+        const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
+        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name||!reason()){showToast?.("Item Code, Item Name and reason are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
+    };
+    const drawIdentifier=async()=>{
+        pendingIdentifier=toSafeString(input.value).trim();
+        if(!pendingIdentifier){showToast?.("Enter an identifier","warning");input.focus();return;}
         load.disabled=true;
         try{
-            resolved=await IdentifierService.resolve(identifier);
+            resolved=await IdentifierService.resolve(pendingIdentifier);
             if(!resolved?.found){
-                workspace.innerHTML=owner?`<div class="needsReviewNoMatches">No mapping exists. Search the Global Master to add this identifier to an existing Item, or create a new Item deliberately.</div>
-                  <div class="needsReviewMappingActions"><input data-global-search placeholder="Search Item Code or Item Name"><div data-global-results></div><textarea data-reason rows="2" placeholder="Reason (required)"></textarea><button type="button" data-add-existing disabled>Add Mapping to Selected Item</button><input data-new-code placeholder="New Item Code"><input data-new-name placeholder="New Item Name"><button type="button" data-create>Add New Item &amp; First Identifier</button></div>`:`<div class="needsReviewNoMatches">No Global Master mapping exists for this identifier.</div>`;
-                let selectedGlobalItem=null;
-                const globalSearch=workspace.querySelector("[data-global-search]");
-                const globalResults=workspace.querySelector("[data-global-results]");
-                const addExisting=workspace.querySelector("[data-add-existing]");
-                globalSearch?.addEventListener("input",async()=>{
-                    const query=toSafeString(globalSearch.value).trim();
-                    selectedGlobalItem=null;if(addExisting) addExisting.disabled=true;
-                    if(!query){globalResults.innerHTML="";return;}
-                    try{
-                        const items=await IdentifierService.searchItems(query,12);
-                        globalResults.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";
-                        globalResults.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selectedGlobalItem=items[Number(button.dataset.globalItem)]||null;globalResults.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selectedGlobalItem;}));
-                    }catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}
-                });
-                /* Settings accepts Item Code and Item Name directly.  Reuse
-                   the same search control used for an unknown identifier
-                   instead of creating a second administration implementation. */
-                globalSearch.value=identifier;
-                globalSearch.dispatchEvent(new Event("input"));
-                addExisting?.addEventListener("click",async event=>{
-                    const reason=toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-                    if(!selectedGlobalItem||!reason){showToast?.("Select an Item and enter a reason","warning");return;}
-                    event.currentTarget.disabled=true;
-                    try{await IdentifierService.addIdentifier(nrV2OperationId(),identifier,selectedGlobalItem.item_code,reason);await draw();showToast?.("Identifier mapping added","success");}
-                    catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}
-                });
-                workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{
-                    const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();
-                    const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();
-                    const reason=toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-                    if(!code||!name||!reason) throw new Error("Item Code, Item Name and reason are required");
-                    event.currentTarget.disabled=true;
-                    try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:identifier,reason});await draw();showToast?.("Global Item and first identifier created","success");}
-                    catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}
-                });
+                renderUnmapped();
                 return;
             }
-            const identifiers=await IdentifierService.listItemIdentifiers(resolved.itemCode);
-            workspace.innerHTML=`<div class="needsReviewMappingCurrent"><span>CURRENT GLOBAL MAPPING</span><strong>${esc(resolved.identifierDisplay)} → ${esc(resolved.itemCode)} → ${esc(resolved.itemName||"Unnamed item")}</strong></div>
-              <div class="needsReviewMappingCompare">${identifiers.map(row=>`<span>${esc(row.identifier_display)}</span><strong>${esc(row.identifier_key)}</strong>`).join("")}</div>
-              ${owner?`<div class="needsReviewMappingActions"><label>Target Item Code<input data-target-code placeholder="Item Code"></label><label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label><button type="button" data-add>Add Mapping</button><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button></div>`:"<p class=\"needsReviewGlobalNotice\">Global mapping changes require System Owner permission.</p>"}`;
-            if(!owner) return;
-            const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-            const target=()=>toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();
-            const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
-            workspace.querySelector("[data-add]")?.addEventListener("click",async()=>{try{await IdentifierService.addIdentifier(nrV2OperationId(),identifier,target(),requireReason());await draw();showToast?.("Identifier mapping added","success");}catch(error){showToast?.(error?.message||"Unable to add mapping","error");}});
-            workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged."))return;await IdentifierService.correctIdentifier(nrV2OperationId(),resolved.identifierId,resolved.mappingRevision,target(),requireReason());await draw();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
-            workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain."))return;await IdentifierService.removeIdentifier(nrV2OperationId(),resolved.identifierId,resolved.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and all other identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+            await showItem({item_code:resolved.itemCode,item_name:resolved.itemName},{identifier:pendingIdentifier,mapping:resolved});
         }catch(error){workspace.innerHTML="";showToast?.(error?.message||"Unable to load Global Master mapping","error");}
         finally{load.disabled=false;}
     };
-    load.addEventListener("click",draw);
-    input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();draw();}});
+    load.addEventListener("click",drawIdentifier);
+    input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();drawIdentifier();}});
+    itemLoad?.addEventListener("click",()=>renderItemSearch(itemSearch?.value));
+    itemSearch?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();renderItemSearch(itemSearch.value);}});
 }
 
 setTimeout(()=>{
