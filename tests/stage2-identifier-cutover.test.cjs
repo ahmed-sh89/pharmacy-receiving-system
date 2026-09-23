@@ -94,7 +94,8 @@ test('V2-resolved identifiers retain their exact display value through receiving
   assert.match(receiving,/identifierPreserveExact:masterRecord\?\.found===true/);
   assert.match(receiving,/options\.identifierPreserveExact === true[\s\S]{0,90}options\.gtinResolution\?\.kind === "PHARMACY_LEARNED"/);
   assert.match(ui,/transactionId,[\s\S]{0,100}identifierPreserveExact:true,[\s\S]{0,260}kind:"PHARMACY_LEARNED"/);
-  assert.match(workspace,/p_gtin:toSafeString\(tx\.gtin\|\|""\)/);
+  assert.match(workspace,/p_gtin:identifierDisplay/);
+  assert.match(workspace,/resolution\.identifierDisplay \|\|[\s\S]{0,90}resolution\.identifierKey \|\|[\s\S]{0,90}tx\.gtin/);
 });
 
 test('learned receipts finalize the exact pending review intent without changing receipt idempotency',()=>{
@@ -192,12 +193,12 @@ test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   ];
   for(const asset of stage2Assets){
     const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_U0030_RECOVERY1"><\\/script>`),`${asset} must use the coherent U0030 recovery asset version`);
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_U0030_RECOVERY2"><\\/script>`),`${asset} must use the coherent U0030 recovery asset version`);
   }
-  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_U0030_RECOVERY1"><\/script>/);
-  assert.match(index,/<script src="js\/state\.js\?v=RECEIVING_U0030_RECOVERY1"><\/script>/);
-  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_U0030_RECOVERY1">/);
-  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_U0030_RECOVERY1">/);
+  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_U0030_RECOVERY2"><\/script>/);
+  assert.match(index,/<script src="js\/state\.js\?v=RECEIVING_U0030_RECOVERY2"><\/script>/);
+  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_U0030_RECOVERY2">/);
+  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_U0030_RECOVERY2">/);
   assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
   assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
 });
@@ -207,8 +208,8 @@ test('authenticated manifest hydration loads UI globals before the application b
   const ui=read('ui.js');
   const workspace=read('cloud-workspace.js');
   const app=read('js/app.js');
-  assert.ok(index.indexOf('ui.js?v=RECEIVING_U0030_RECOVERY1') < index.indexOf('cloud-workspace.js?v='));
-  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_U0030_RECOVERY1'));
+  assert.ok(index.indexOf('ui.js?v=RECEIVING_U0030_RECOVERY2') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_U0030_RECOVERY2'));
   assert.match(ui,/function initializeUI\(/);
   assert.match(ui,/function refreshEntireUI\(/);
   assert.match(workspace,/refreshEntireUI\(\)/);

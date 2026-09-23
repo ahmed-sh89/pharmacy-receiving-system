@@ -8614,6 +8614,7 @@ async function nrV2ResolveGroupToOrderItem(group,item){
                 kind:"PHARMACY_LEARNED",
                 mappingId:pharmacyMapping.identifierId,
                 mappingRevision:pharmacyMapping.mappingRevision,
+                identifierDisplay:pharmacyMapping.identifierDisplay,
                 identifierKey:pharmacyMapping.identifierKey,
                 resolvedItemCode:pharmacyMapping.itemCode
             } : null

@@ -137,6 +137,7 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
                 kind:"PHARMACY_LEARNED",
                 mappingId:masterRecord.identifierId,
                 mappingRevision:masterRecord.mappingRevision,
+                identifierDisplay:masterRecord.identifierDisplay,
                 identifierKey:masterRecord.identifierKey,
                 resolvedItemCode:masterRecord.itemCode
             } : null

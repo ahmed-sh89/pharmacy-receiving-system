@@ -332,6 +332,18 @@ async function uploadCloudReceivingTransaction(tx,pharmacyId){
     const rpcName=learnedQuantity
         ? "append_pharmflow_learned_transaction_v3"
         : "append_pharmflow_receiving_action_v4";
+    /* Existing durable learned receipts may have been queued before the
+       transaction state retained alphanumeric displays. Their authoritative
+       V2 key remains with the mapping provenance, so use it on retry rather
+       than the legacy digits-only transaction field. */
+    const identifierDisplay=learnedQuantity
+        ? toSafeString(
+            resolution.identifierDisplay ||
+            resolution.identifierKey ||
+            tx.gtin ||
+            ""
+        ).trim()
+        : toSafeString(tx.gtin||"");
     const params={
         p_pharmacy_id:pharmacyId,
         p_transaction_id:tx.transactionId,
@@ -342,7 +354,7 @@ async function uploadCloudReceivingTransaction(tx,pharmacyId){
         ),
         p_item_code:toSafeString(tx.itemCode||""),
         p_item_name:toSafeString(tx.itemName||""),
-        p_gtin:toSafeString(tx.gtin||""),
+        p_gtin:identifierDisplay,
         p_quantity:toNumber(tx.quantity,0),
         p_source:toSafeString(tx.source||"RECEIVING"),
         p_device_id:toSafeString(
