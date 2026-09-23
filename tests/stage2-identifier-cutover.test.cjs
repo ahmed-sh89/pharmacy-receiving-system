@@ -65,3 +65,11 @@ test('Settings and Needs Review share one V2 Global Master administration render
   assert.match(ui,/renderV2IdentifierAdministration\(settingsMaster\)/);
   assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
 });
+
+test('Stage 2 invalidates the previously published UI script URL',()=>{
+  const index=read('index.html');
+  const ui=read('ui.js');
+  assert.match(index,/<script src="ui\.js\?v=RECEIVING_STAGE2_STARTUP_FIX1"><\/script>/);
+  assert.doesNotMatch(index,/<script src="ui\.js\?v=B21SCOPEFEEDBACK7"/);
+  assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
+});

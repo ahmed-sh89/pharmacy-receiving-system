@@ -115,7 +115,7 @@ test("empty active-order scope removes its control but an active order still ren
 test("fresh startup can parse the complete production ui script",()=>{
     const index=fs.readFileSync("index.html","utf8");
     const source=fs.readFileSync("ui.js","utf8");
-    assert.match(index,/<script src="ui\.js\?v=B21SCOPEFEEDBACK7"/);
+    assert.match(index,/<script src="ui\.js\?v=RECEIVING_STAGE2_STARTUP_FIX1"/);
     assert.doesNotThrow(()=>new vm.Script(source),"the uncached startup script must be complete JavaScript");
     assert.match(source,/function refreshOrderScopeControl\(\)/);
 });
