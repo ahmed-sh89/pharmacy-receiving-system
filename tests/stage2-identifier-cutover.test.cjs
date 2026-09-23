@@ -56,6 +56,41 @@ test('identifier normalization keeps legitimate non-GTIN identity intact',()=>{
   assert.doesNotMatch(utils,/function normalizeIdentifier\(value\)[\s\S]{0,180}replace\(\/\[\^\\d\]/);
 });
 
+test('pharmacy-specific identifier resolution is owned by IdentifierService and precedes Global V2',()=>{
+  const service=read('js/identifier-service.js');
+  const receiving=read('js/receiving.js');
+  const workspace=read('cloud-workspace.js');
+  const migration=read('PHASE2C1156_PHARMACY_IDENTIFIER_V2.sql');
+  assert.match(service,/add_pharmflow_pharmacy_identifier_v2/);
+  assert.match(service,/correct_pharmflow_pharmacy_identifier_v2/);
+  assert.match(service,/remove_pharmflow_pharmacy_identifier_v2/);
+  assert.match(migration,/identifier_display text/);
+  assert.match(migration,/identifier_key text/);
+  assert.match(migration,/PHARMACY_V2/);
+  assert.match(migration,/identifier_key = v_key/);
+  assert.match(receiving,/masterRecord\?\.source==="PHARMACY_V2"/);
+  assert.match(workspace,/resolution\.identifierKey/);
+  assert.doesNotMatch(service,/savePharmacyLearnedGTIN/);
+});
+
+test('Handheld History is recognized-scan history only and REVIEW is the single review entry point',()=>{
+  const ui=read('ui.js');
+  const history=ui.slice(ui.indexOf('function openHandheldScansPanel'),ui.indexOf('function setZebraInterfaceMode'));
+  assert.match(ui,/btnHandheldNeedsReview"\)\.onclick=\(\)=>openNeedsReviewPanel\("RECEIVING"\)/);
+  assert.doesNotMatch(history,/NEEDS REVIEW/);
+  assert.doesNotMatch(history,/nrV2List\("RECEIVING"/);
+  assert.match(history,/data-remove-last/);
+});
+
+test('Handheld compact controls and success acknowledgement use the existing Last Scan state',()=>{
+  const ui=read('ui.js');
+  const css=read('css/receiving-surface.css');
+  assert.match(ui,/class="zebraControlGrid"/);
+  assert.match(css,/\.handheldTopControl\{[\s\S]*height:34px/);
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(ui,/handheldScanSavedAck"\)\?\.setAttribute\("hidden",""\)/);
+});
+
 test('visible Settings Global Master route exposes the V2 lookup controls before legacy import compatibility',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
@@ -123,11 +158,11 @@ test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
   ];
   for(const asset of stage2Assets){
     const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_STAGE2_SETTINGS_FIX1"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_FINAL_CORRECTION1"><\\/script>`),`${asset} must use the coherent Stage 2 asset version`);
   }
-  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_STAGE2_SETTINGS_FIX1"><\/script>/);
-  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_STAGE2_SETTINGS_FIX1">/);
-  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_STAGE2_SETTINGS_FIX1">/);
+  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_FINAL_CORRECTION1"><\/script>/);
+  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_FINAL_CORRECTION1">/);
+  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_FINAL_CORRECTION1">/);
   assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
   assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
 });
@@ -137,8 +172,8 @@ test('authenticated manifest hydration loads UI globals before the application b
   const ui=read('ui.js');
   const workspace=read('cloud-workspace.js');
   const app=read('js/app.js');
-  assert.ok(index.indexOf('ui.js?v=RECEIVING_STAGE2_SETTINGS_FIX1') < index.indexOf('cloud-workspace.js?v='));
-  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_STAGE2_SETTINGS_FIX1'));
+  assert.ok(index.indexOf('ui.js?v=RECEIVING_FINAL_CORRECTION1') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_FINAL_CORRECTION1'));
   assert.match(ui,/function initializeUI\(/);
   assert.match(ui,/function refreshEntireUI\(/);
   assert.match(workspace,/refreshEntireUI\(\)/);

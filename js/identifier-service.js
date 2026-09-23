@@ -1,11 +1,15 @@
 "use strict";
 
-/* The sole browser boundary for Global Identifier V2. It deliberately does
-   not read or write legacy master or pharmacy-learned mapping stores. */
+/* The sole browser boundary for identifier resolution and administration.
+   The server resolves the current pharmacy first, then Global V2. Browser
+   code never writes the legacy mapping contracts directly. */
 const IdentifierService={
+    pharmacyId(){
+        return (typeof getCurrentPharmacyId==="function"&&getCurrentPharmacyId())||AuthState?.context?.pharmacy_id||null;
+    },
     async resolve(identifierDisplay){
         const display=toSafeString(identifierDisplay);
-        const pharmacyId=(typeof getCurrentPharmacyId==="function"&&getCurrentPharmacyId())||AuthState?.context?.pharmacy_id||null;
+        const pharmacyId=this.pharmacyId();
         if(!display) throw new Error("Identifier is required");
         if(!pharmacyId||typeof authRpc!=="function") throw new Error("Authoritative identifier service is unavailable");
         const result=await authRpc("resolve_pharmflow_identifier_v2",{p_pharmacy_id:pharmacyId,p_identifier_display:display});
@@ -31,6 +35,21 @@ const IdentifierService={
     },
     async createItem(operationId,item){
         return authRpc("create_pharmflow_global_item_v2",{p_operation_id:operationId,p_item_code:toSafeString(item.itemCode),p_item_name:toSafeString(item.itemName),p_group_name:toSafeString(item.groupName)||null,p_category:toSafeString(item.category)||null,p_sub_category:toSafeString(item.subCategory)||null,p_identifier_display:toSafeString(item.identifierDisplay),p_reason:toSafeString(item.reason)});
+    },
+    async addPharmacyIdentifier(operationId,identifierDisplay,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("add_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),p_item_code:toSafeString(item?.itemCode||item?.item_code),p_item_name:toSafeString(item?.itemName||item?.item_name),p_reason:toSafeString(reason)});
+    },
+    async correctPharmacyIdentifier(operationId,identifierId,revision,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("correct_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_new_item_code:toSafeString(item?.itemCode||item?.item_code),p_new_item_name:toSafeString(item?.itemName||item?.item_name),p_reason:toSafeString(reason)});
+    },
+    async removePharmacyIdentifier(operationId,identifierId,revision,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("remove_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
     }
 };
 window.IdentifierService=IdentifierService;

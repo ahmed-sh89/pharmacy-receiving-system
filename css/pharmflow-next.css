@@ -194,6 +194,15 @@ body:not(.zebraMode) .sidebarLogoutButton{
   color:var(--pfn-navy) !important;
   border-color:#C9DDF0 !important;
 }
+body:not(.zebraDevice) .sidebarFooter{padding:12px!important}
+body:not(.zebraDevice) .accountIdentity{display:grid!important;grid-template-columns:34px minmax(0,1fr) auto!important;align-items:center!important;gap:8px!important;margin:0!important;padding:9px!important;border:1px solid #c9ddef!important;border-radius:10px!important}
+body:not(.zebraDevice) .accountAvatar{width:34px!important;height:34px!important;border-radius:9px!important}
+body:not(.zebraDevice) .accountContextKicker{display:block!important;margin:0 0 2px!important;color:#63809c!important;font-size:8px!important;font-weight:900!important;letter-spacing:.08em!important}
+body:not(.zebraDevice) .accountIdentityText strong{font-size:13px!important;line-height:1.15!important}
+body:not(.zebraDevice) .accountIdentityText small{font-size:10px!important;line-height:1.2!important}
+body:not(.zebraDevice) .accountRoleBadge{font-size:9px!important;white-space:nowrap!important}
+body:not(.zebraDevice) .sidebarLogoutButton{display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:34px!important;margin-top:7px!important;font-size:11px!important;font-weight:850!important}
+body:not(.zebraDevice) .sidebarLogoutButton::before{content:"⇥";font-size:15px!important;line-height:1!important}
 
 /* ---------- HEADER ---------- */
 body:not(.zebraMode) .mainApplication{

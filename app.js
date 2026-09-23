@@ -984,6 +984,7 @@ async function refreshSafeAccountIdentity(){
 
     const pairs=[
         ["accountPharmacyName",pharmacyName],
+        ["accountPharmacyCode",toSafeString(c.pharmacy_code)||"—"],
         ["accountUserName",userName],
         ["accountUserRole",role],
         ["settingsPharmacyName",pharmacyName],

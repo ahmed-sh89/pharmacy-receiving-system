@@ -5748,6 +5748,7 @@ function refreshLastScanQuantityControl(){
       button.textContent = "0";
       if(thisScanElement){ thisScanElement.textContent = "+0"; }
       if(totalReceivedElement){ totalReceivedElement.textContent = "0"; }
+      document.getElementById("handheldScanSavedAck")?.setAttribute("hidden","");
 
       return;
   }
@@ -7663,14 +7664,12 @@ function ensureHandheldReceivingTools(){
     if(!finalHeader){
         header.innerHTML=`
             <div class="zebraFinalHeader">
-                <div class="zebraFinalTitle">
-                    <div id="handheldWorkspaceStatus" class="zebraConnectedDot" aria-live="polite">SYNCING…</div>
-                    <button id="btnHandheldAssignedOrders" class="handheldAssignedOrdersButton" type="button" aria-label="View assigned orders">0 ORDERS</button>
-                </div>
-                <div class="zebraFinalActions">
-                    <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton" type="button" aria-label="Open recent scans"><span>HISTORY</span><strong id="handheldTotalScansValue">0</strong></button>
-                    <button id="btnHandheldNeedsReview" class="handheldNeedsReviewButton" type="button" aria-label="Open Needs Review">REVIEW</button>
-                    <button id="btnZebraModes" class="zebraModesButton" type="button">MODE</button>
+                <div class="zebraControlGrid">
+                    <div id="handheldWorkspaceStatus" class="zebraConnectedDot handheldTopControl" aria-live="polite">SYNCING…</div>
+                    <button id="btnHandheldAssignedOrders" class="handheldAssignedOrdersButton handheldTopControl" type="button" aria-label="View assigned orders">0 ORDERS</button>
+                    <button id="btnZebraModes" class="zebraModesButton handheldTopControl" type="button">MODE</button>
+                    <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton handheldTopControl" type="button" aria-label="Open recent scans"><span>HISTORY</span><strong id="handheldTotalScansValue">0</strong></button>
+                    <button id="btnHandheldNeedsReview" class="handheldNeedsReviewButton handheldTopControl" type="button" aria-label="Open Needs Review">REVIEW</button>
                 </div>
             </div>
         `;
@@ -7727,23 +7726,9 @@ function openHandheldAssignedOrdersPanel(){
     });
 }
 
-function openHandheldReviewPhoto(url,title){
-    document.getElementById("handheldReviewPhotoOverlay")?.remove();
-    const overlay=document.createElement("div");
-    overlay.id="handheldReviewPhotoOverlay";
-    overlay.className="handheldReviewPhotoOverlay";
-    overlay.innerHTML=`<button type="button" data-close aria-label="Close photo"></button><section role="dialog" aria-modal="true" aria-label="Needs Review photo"><header><strong>${typeof escapeHtml==="function"?escapeHtml(title):title}</strong><button type="button" data-close>✕</button></header><img src="${url}" alt="Needs Review evidence photo"></section>`;
-    document.body.appendChild(overlay);
-    overlay.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>overlay.remove());
-}
-
-function openHandheldScansPanel(initialTab="SCANS"){
+function openHandheldScansPanel(){
     document.getElementById("handheldScansOverlay")?.remove();
     try{ document.activeElement?.blur?.(); }catch(_){ }
-
-    const ownDeviceId=typeof ensureDeviceId==="function"
-        ? String(ensureDeviceId()||"")
-        : String(AppState?.session?.deviceId||"");
 
     const esc=value=>typeof escapeHtml==="function"
         ? escapeHtml(String(value??""))
@@ -7761,19 +7746,12 @@ function openHandheldScansPanel(initialTab="SCANS"){
         .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
         .slice(0,3);
 
-    let reviewRows=[];
-    let reviewLoading=true;
-    let reviewError="";
-
     const overlay=document.createElement("div");
     overlay.id="handheldScansOverlay";
     overlay.className="handheldScansOverlay handheldRecentOverlay";
-    overlay.dataset.tab=initialTab==="REVIEW"?"REVIEW":"SCANS";
 
     const render=()=>{
-        const tab=overlay.dataset.tab||"SCANS";
         const recent=scanRows();
-        const showingReview=tab==="REVIEW";
 
         const scanMarkup=recent.length ? recent.map((row,index)=>{
             const qty=Math.max(1,Number(row?.quantity||1)||1);
@@ -7791,60 +7769,25 @@ function openHandheldScansPanel(initialTab="SCANS"){
               </article>`;
         }).join("") : `<div class="handheldScansEmpty">No recent scans on this Handheld.</div>`;
 
-        const reviewMarkup=reviewLoading
-            ? `<div class="handheldScansEmpty">Loading Needs Review…</div>`
-            : reviewError
-                ? `<div class="handheldScansEmpty">${esc(reviewError)}</div>`
-                : reviewRows.length
-                    ? reviewRows.slice(0,3).map((row,index)=>{
-                        const qty=Math.max(1,Number(row?.pending_quantity||1)||1);
-                        const title=row?.master_item_name_hint || row?.item_name || "Item not recognised";
-                        return `
-                          <article class="handheldRecentRow handheldReviewHistoryRow" data-review-row="${esc(row?.review_id||"")}">
-                            <div class="handheldRecentIndex">${index+1}</div>
-                            <div class="handheldRecentInfo">
-                              <strong>${esc(title)}</strong>
-                              <span>GTIN ${esc(row?.gtin||"-")} · ${esc(formatTime(row?.created_at||row?.updated_at))}</span>
-                            </div>
-                            <div class="handheldReviewHistoryQty" aria-label="Needs Review quantity">
-                              <button type="button" data-review-step="-1">−</button>
-                              <strong>${qty}</strong>
-                              <button type="button" data-review-step="1">+</button>
-                            </div>
-                            <div class="handheldReviewActions">
-                              ${row?.photo_path?`<button type="button" class="handheldReviewPhoto" data-review-photo>PHOTO</button>`:""}
-                              <button type="button" class="handheldReviewDelete" data-review-delete>DELETE</button>
-                            </div>
-                          </article>`;
-                    }).join("")
-                    : `<div class="handheldScansEmpty">No pending Needs Review items from this Handheld.</div>`;
-
         overlay.innerHTML=`
           <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
             <header>
               <div>
                 <span>RECEIVING HISTORY</span>
                 <strong>Recent Scans</strong>
-                <small>${showingReview?"Pending items saved by this Handheld":`Last ${recent.length} scan transactions`}</small>
+                <small>Last ${recent.length} scan transactions</small>
               </div>
               <button type="button" data-close aria-label="Close">✕</button>
             </header>
 
-            <div class="handheldRecentTabs">
-              <button type="button" data-tab="SCANS" class="${tab==="SCANS"?"active":""}">SCANS</button>
-              <button type="button" data-tab="REVIEW" class="${tab==="REVIEW"?"active":""}">NEEDS REVIEW ${reviewRows.length?`(${reviewRows.length})`:""}</button>
-            </div>
-
             <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
 
             <div class="handheldRecentList">
-              ${showingReview?reviewMarkup:scanMarkup}
+              ${scanMarkup}
             </div>
 
             <div class="handheldRecentFooter">
-              <span>${showingReview
-                ?"Quantity can be corrected here. Delete removes only the selected pending review item."
-                :"Only the latest scan can be removed. The correction is saved to the shared receiving record."}</span>
+              <span>Only the latest scan can be removed. The correction is saved to the shared receiving record.</span>
               <button type="button" class="handheldPanelDone" data-close>DONE</button>
             </div>
           </section>`;
@@ -7852,11 +7795,6 @@ function openHandheldScansPanel(initialTab="SCANS"){
         overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>{
             overlay.remove();
             setTimeout(()=>window.hhRefreshReadyState?.(),20);
-        });
-
-        overlay.querySelectorAll("[data-tab]").forEach(btn=>btn.onclick=()=>{
-            overlay.dataset.tab=btn.dataset.tab;
-            render();
         });
 
         overlay.querySelector("[data-remove-last]")?.addEventListener("click",()=>{
@@ -7874,72 +7812,11 @@ function openHandheldScansPanel(initialTab="SCANS"){
             }
         });
 
-        overlay.querySelectorAll("[data-review-step]").forEach(btn=>btn.onclick=async()=>{
-            const article=btn.closest("[data-review-row]");
-            const reviewId=article?.dataset.reviewRow;
-            const row=reviewRows.find(item=>String(item?.review_id||"")===String(reviewId||""));
-            if(!row || btn.disabled) return;
-            const next=Math.max(1,(Number(row.pending_quantity||1)||1)+Number(btn.dataset.reviewStep||0));
-            overlay.querySelectorAll("[data-review-step],[data-review-delete]").forEach(el=>el.disabled=true);
-            try{
-                await nrV2SetQty(reviewId,next);
-                row.pending_quantity=next;
-                render();
-            }catch(error){
-                showToast?.(error?.message||"Unable to update review quantity","error");
-                render();
-            }
-        });
-
-        overlay.querySelectorAll("[data-review-delete]").forEach(btn=>btn.onclick=async()=>{
-            const article=btn.closest("[data-review-row]");
-            const reviewId=article?.dataset.reviewRow;
-            const row=reviewRows.find(item=>String(item?.review_id||"")===String(reviewId||""));
-            if(!row || btn.disabled) return;
-            if(!window.confirm("Delete this pending Needs Review item?")) return;
-            overlay.querySelectorAll("[data-review-step],[data-review-delete]").forEach(el=>el.disabled=true);
-            try{
-                await nrV2Delete(reviewId);
-                reviewRows=reviewRows.filter(item=>String(item?.review_id||"")!==String(reviewId));
-                refreshNeedsReviewCounters?.();
-                render();
-            }catch(error){
-                showToast?.(error?.message||"Unable to delete review item","error");
-                render();
-            }
-        });
-
-        overlay.querySelectorAll("[data-review-photo]").forEach(btn=>btn.onclick=async()=>{
-            const article=btn.closest("[data-review-row]");
-            const reviewId=article?.dataset.reviewRow;
-            const row=reviewRows.find(item=>String(item?.review_id||"")===String(reviewId||""));
-            if(!row?.photo_path) return;
-            try{
-                const url=await nrV2PhotoObjectUrl(row.photo_path);
-                if(!url) throw new Error("Photo is unavailable");
-                openHandheldReviewPhoto(url,row?.master_item_name_hint||row?.item_name||"Needs Review photo");
-            }catch(error){
-                showToast?.(error?.message||"Unable to open review photo","warning");
-            }
-        });
     };
 
     document.body.appendChild(overlay);
     render();
 
-    Promise.resolve(typeof nrV2List==="function"?nrV2List("RECEIVING",null):[])
-        .then(rows=>{
-            reviewRows=(Array.isArray(rows)?rows:[]).filter(row=>
-                !ownDeviceId || String(row?.device_id||"")===ownDeviceId
-            );
-            reviewLoading=false;
-            if(document.body.contains(overlay)) render();
-        })
-        .catch(error=>{
-            reviewLoading=false;
-            reviewError=error?.message||"Unable to load Needs Review history.";
-            if(document.body.contains(overlay)) render();
-        });
 }
 
 
@@ -8701,12 +8578,18 @@ function nrV2HasTransactionId(transactionId){
 
 async function nrV2ResolveGroupToOrderItem(group,item){
     const transactionId=nrV2GroupTransactionId(group);
-    /* Mapping is a separate, System Owner-only V2 operation. Resolution
-       itself never writes the retired pharmacy-learned mapping layer. */
-    if(typeof isSystemOwner==="function"&&isSystemOwner()){
+    /* Needs Review learns only in the current pharmacy. Global Master changes
+       remain a deliberate System Owner administration operation elsewhere. */
+    let pharmacyMapping=null;
+    if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()){
         const first=group.rows[0];
         const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
-        if(identifier) await IdentifierService.addIdentifier(nrV2OperationId(),identifier,item.itemCode,"Needs Review resolution");
+        if(identifier){
+            const mappingResult=await IdentifierService.addPharmacyIdentifier(
+                nrV2OperationId(),identifier,item,"Needs Review resolution"
+            );
+            pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
+        }
     }
     const intentResults=[];
     for(const row of group.rows){
@@ -8726,7 +8609,13 @@ async function nrV2ResolveGroupToOrderItem(group,item){
             manual:false,
             targetOrder:group.order_number||"",
             transactionId,
-            gtinResolution:null
+            gtinResolution:pharmacyMapping ? {
+                kind:"PHARMACY_LEARNED",
+                mappingId:pharmacyMapping.identifierId,
+                mappingRevision:pharmacyMapping.mappingRevision,
+                identifierKey:pharmacyMapping.identifierKey,
+                resolvedItemCode:pharmacyMapping.itemCode
+            } : null
         });
         if(!tx) throw new Error("Unable to apply reviewed quantity");
     }
@@ -8779,9 +8668,10 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     if(load.dataset.identifierAdminBound==="1") return;
     load.dataset.identifierAdminBound="1";
     if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
-    const owner=typeof isSystemOwner==="function"&&isSystemOwner();
+    const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
+    const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
     let resolved=null, selectedItem=null, pendingIdentifier="";
-    const mutationNotice=owner?"":"<p class=\"needsReviewGlobalNotice\">Read-only: Global mapping changes require System Owner permission.</p>";
+    const globalNotice=()=>"<p class=\"needsReviewGlobalNotice\">Global Master changes require System Owner permission. Pharmacy mappings affect only the current pharmacy.</p>";
     const reasonField=()=>`<label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label>`;
     const itemSummary=item=>`<div class="needsReviewMappingCurrent"><span>GLOBAL ITEM</span><strong>${esc(item.item_code||item.itemCode)} → ${esc(item.item_name||item.itemName||"Unnamed item")}</strong></div>`;
     const listIdentifiers=async itemCode=>{
@@ -8801,21 +8691,28 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         selectedItem=item;
         const identifiers=await listIdentifiers(itemCode);
         const hasIdentifier=!!identifier;
-        const mappingActions=owner?`
+        const globalOwner=isGlobalOwner();
+        const pharmacyAdmin=isCurrentPharmacyAdmin();
+        const pharmacyMapping=mapping?.mappingScope==="PHARMACY";
+        const canManage=pharmacyMapping ? pharmacyAdmin : globalOwner;
+        const mappingActions=canManage?`
             <div class="needsReviewMappingActions">
                 ${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}
                 ${reasonField()}
-                <button type="button" data-add>Add Mapping</button>
+                <button type="button" data-add>${pharmacyMapping?"Add Pharmacy Mapping":"Add Mapping"}</button>
                 ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
-            </div>`:mutationNotice;
-        workspace.innerHTML=`${itemSummary(item)}${identifiers}${mappingActions}`;
-        if(!owner) return;
+            </div>`:(pharmacyAdmin&&hasIdentifier?`
+            <div class="needsReviewMappingActions"><label>Identifier<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add Pharmacy Mapping</button></div>`:globalNotice());
+        workspace.innerHTML=`${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
+        if(!canManage&&!pharmacyAdmin) return;
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
         const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
         const currentIdentifier=()=>toSafeString(identifier||workspace.querySelector("[data-new-identifier]")?.value).trim();
-        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
-        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+        const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
+        workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
+        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
+        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
     };
     const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
         const value=toSafeString(query).trim();
@@ -8825,15 +8722,16 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
     };
     const renderUnmapped=()=>{
-        workspace.innerHTML=owner?`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the canonical Global Master below, then deliberately add the mapping or create a new Item.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search canonical Global Items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>Add Mapping to Selected Item</button><label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button></div>`:`<div class="needsReviewNoMatches">No Global Master mapping exists for this identifier.</div>${mutationNotice}`;
-        if(!owner) return;
+        const globalOwner=isGlobalOwner(), pharmacyAdmin=isCurrentPharmacyAdmin();
+        if(!globalOwner&&!pharmacyAdmin){workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for this identifier.</div>${globalNotice()}`;return;}
+        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the canonical Global Master, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search canonical Global Items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
         let selected=null;
         const search=workspace.querySelector("[data-global-search]");
         const results=workspace.querySelector("[data-global-results]");
         const addExisting=workspace.querySelector("[data-add-existing]");
         search?.addEventListener("input",async()=>{const query=toSafeString(search.value).trim();selected=null;if(addExisting)addExisting.disabled=true;if(!query){results.innerHTML="";return;}try{const items=await IdentifierService.searchItems(query,12);results.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";results.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selected=items[Number(button.dataset.globalItem)]||null;results.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selected;}));}catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}});
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{if(globalOwner) await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason());else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),pendingIdentifier,selected,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
         workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name||!reason()){showToast?.("Item Code, Item Name and reason are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
     };
     const drawIdentifier=async()=>{

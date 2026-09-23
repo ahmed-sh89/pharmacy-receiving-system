@@ -327,7 +327,7 @@ async function uploadCloudReceivingTransaction(tx,pharmacyId){
         resolution?.kind==="PHARMACY_LEARNED" &&
         toSafeString(resolution.mappingId) &&
         toSafeString(resolution.mappingRevision) &&
-        normalizeGTIN(resolution.normalizedGtin) &&
+        toSafeString(resolution.identifierKey) &&
         normalizeItemCode(resolution.resolvedItemCode);
     const rpcName=learnedQuantity
         ? "append_pharmflow_learned_transaction_v3"

@@ -40,6 +40,17 @@ test("normal → unresolved 3/4-digit → normal accepts every scan and re-arms 
     assert.equal(calls.filter(entry=>entry[0]==="focus").length,3);
 });
 
+test("hardware alphanumeric identifiers stay exact candidates without changing manual search behavior",async()=>{
+    const queued=[];
+    const {context}=runtime({parser:raw=>({raw,gtin:""}),queue:async(raw,parsed)=>{queued.push({raw,parsed});return {accepted:true};}});
+    await context.hhProcessReceiving("U0030",{value:"U0030"});
+    await context.hhProcessReceiving("S00110",{value:"S00110"});
+    await context.hhProcessReceiving("1234A",{value:"1234A"});
+    assert.deepEqual(JSON.parse(JSON.stringify(queued.map(entry=>entry.raw))),["U0030","S00110","1234A"]);
+    assert.deepEqual(JSON.parse(JSON.stringify(queued.map(entry=>entry.parsed.identifierDisplay))),["U0030","S00110","1234A"]);
+    assert.deepEqual(JSON.parse(JSON.stringify(queued.map(entry=>entry.parsed.gtin))),["U0030","S00110","1234A"]);
+});
+
 test("mapped short code stays an exact candidate and unsupported input routes to Needs Review",()=>{
     const source=fs.readFileSync("js/receiving-release.js","utf8");
     const receiving=fs.readFileSync("js/receiving.js","utf8");

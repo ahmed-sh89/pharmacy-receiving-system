@@ -114,7 +114,7 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
     const current=masterRecord?.found ? {
         item:getReceivingItemByItemCode(masterRecord.itemCode),
         itemCode:normalizeItemCode(masterRecord.itemCode),
-        source:"GLOBAL_V2"
+        source:masterRecord.source||"GLOBAL_V2"
     } : null;
 
     if(current?.item){
@@ -126,13 +126,19 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
             item:current.item,
             quantity:getValidReceivingQuantity(parsed.quantity),
             transactionId:queueOptions.transactionId||null,
-            gtin,
+            gtin:identifierDisplay,
             lot:parsed.lot,
             expiry:parsed.expiry,
             serial:parsed.serial,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
-            gtinResolution:null
+            gtinResolution:masterRecord?.source==="PHARMACY_V2" ? {
+                kind:"PHARMACY_LEARNED",
+                mappingId:masterRecord.identifierId,
+                mappingRevision:masterRecord.mappingRevision,
+                identifierKey:masterRecord.identifierKey,
+                resolvedItemCode:masterRecord.itemCode
+            } : null
         });
     }
 

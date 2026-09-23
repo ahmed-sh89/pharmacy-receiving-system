@@ -128,13 +128,13 @@ async function hhProcessReceiving(raw,input){
         hhSetVisualState("processing","PROCESSING…");
 
         const parsed=typeof parseGS1Barcode==="function"?parseGS1Barcode(cleaned):{raw:cleaned,gtin:""};
-        /* A short numeric code is only a candidate for an existing approved
-           mapping. It is never padded or promoted to a GTIN. The receiving
-           resolver will either find that exact mapping or send the original
-           captured code to Needs Review. */
-        if(!parsed?.gtin && /^\d+$/.test(cleaned)){
+        /* A hardware scan is an identifier candidate, not necessarily a
+           numeric GTIN. Preserve its exact captured value for the single
+           resolver/unknown-review path; GS1 parsing remains independent. */
+        if(!parsed?.gtin){
             parsed.gtin=cleaned;
-            parsed.format="HANDHELD_CODE";
+            parsed.identifierDisplay=cleaned;
+            parsed.format="HANDHELD_IDENTIFIER";
             parsed.capturedCode=true;
         }
 
