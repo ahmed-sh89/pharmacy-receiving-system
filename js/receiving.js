@@ -505,7 +505,8 @@ async function renderUnknownGTINHandheld(parsed,options={}){
         reason:options.reason||"UNKNOWN_GTIN",
         itemCode:options.itemCode||"",
         itemName:options.itemName||"",
-        orderNumber:nrV2CurrentOrderNumber?.()||null
+        source:"HANDHELD",
+        orderNumber:nrV2HandheldOrderNumber()
     });
 
     if(!draft?.review_id){

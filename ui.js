@@ -7568,12 +7568,16 @@ function getHandheldDeviceScannerRows(){
         ? ensureDeviceId()
         : AppState?.session?.deviceId;
 
+    const workScope=new Set((typeof nrV2HandheldAssignedOrderNumbers==="function"
+        ? nrV2HandheldAssignedOrderNumbers()
+        : []).map(normalizeOrderNumber));
     return history.filter(tx => {
         const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
         const source = String(tx?.source || "").toUpperCase();
         const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
             || source.includes("SCAN");
-        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+        const order=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderId||tx?.orderNumber||"");
+        return workScope.has(order) && sameDevice && isScan && Number(tx?.quantity || 0) > 0;
     });
 }
 
@@ -8464,13 +8468,27 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+function getPcNeedsReviewOrderScope(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return null;
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    return new Set(selected.map(normalizeOrderNumber).filter(Boolean));
+}
+
+function filterNeedsReviewRowsToPcScope(rows){
+    const scope=getPcNeedsReviewOrderScope();
+    if(scope===null) return rows||[];
+    return (rows||[]).filter(row=>scope.has(normalizeOrderNumber(row?.order_number||"")));
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
         /* Pharmacy-scoped by design. Never hide Handheld drafts because of
            a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
         const rc=document.getElementById("receivingNeedsReviewCount");
 
         const grouped=groupNeedsReviewRows(receiving);
@@ -8586,10 +8604,13 @@ async function nrV2ResolveGroupToOrderItem(group,item){
         const first=group.rows[0];
         const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
         if(identifier){
-            const mappingResult=await IdentifierService.addPharmacyIdentifier(
+            const mappingResult=await IdentifierService.addManagedIdentifier(
                 nrV2OperationId(),identifier,item,"Needs Review resolution"
             );
-            pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
+            const managed=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
+            pharmacyMapping=toSafeString(managed?.scope||managed?.mappingScope).toUpperCase()==="GLOBAL"
+                ? null
+                : managed;
         }
     }
     const intentResults=[];
@@ -8658,6 +8679,17 @@ function nrV2OperationId(){
     return globalThis.crypto.randomUUID();
 }
 
+async function classifyIdentifierAdminQuery(query,service=IdentifierService){
+    const value=toSafeString(query).trim();
+    if(!value) return {kind:"EMPTY",query:""};
+    const resolved=await service.resolve(value);
+    if(resolved?.found) return {kind:"IDENTIFIER",query:value,resolved};
+    const items=await service.searchItems(value,12);
+    return items.length
+        ? {kind:"ITEMS",query:value,items}
+        : {kind:"UNKNOWN_IDENTIFIER",query:value,items:[]};
+}
+
 /* One manual Global Master administration renderer.  It uses the same V2
    service as Receiving and Needs Review; it deliberately has no scanner
    listener or legacy learned-mapping fallback. */
@@ -8674,13 +8706,13 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
-    let resolved=null, selectedItem=null, pendingIdentifier="";
+    let resolved=null, selectedItem=null, pendingIdentifier="", awaitingItemForIdentifier=false;
     const globalNotice=()=>"<p class=\"needsReviewGlobalNotice\">Global Master changes require System Owner permission. Pharmacy mappings affect only the current pharmacy.</p>";
     const reasonField=()=>`<label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label>`;
-    const itemSummary=item=>`<div class="needsReviewMappingCurrent"><span>GLOBAL ITEM</span><strong>${esc(item.item_code||item.itemCode)} → ${esc(item.item_name||item.itemName||"Unnamed item")}</strong></div>`;
+    const itemSummary=item=>`<div class="needsReviewMappingCurrent"><strong>${esc(item.item_name||item.itemName||"Unnamed item")}</strong><span>Item Code ${esc(item.item_code||item.itemCode)}</span></div>`;
     const listIdentifiers=async itemCode=>{
         const identifiers=await IdentifierService.listItemIdentifiers(itemCode);
-        return `<div class="needsReviewMappingCompare"><span>IDENTIFIERS FOR THIS ITEM</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)} <small>${esc(row.identifier_key)}</small></strong>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
+        return `<div class="needsReviewMappingCompare"><span>IDENTIFIERS FOR THIS ITEM</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)}</strong>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
     };
     const bindItemResults=(items,afterSelect)=>{
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
@@ -8698,25 +8730,28 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const globalOwner=isGlobalOwner();
         const pharmacyAdmin=isCurrentPharmacyAdmin();
         const pharmacyMapping=mapping?.mappingScope==="PHARMACY";
-        const canManage=pharmacyMapping ? pharmacyAdmin : globalOwner;
+        const referenceAdmin=pharmacyAdmin ? await IdentifierService.canManageGlobal() : false;
+        const canManage=pharmacyMapping ? pharmacyAdmin : (globalOwner||referenceAdmin);
         const mappingActions=canManage?`
             <div class="needsReviewMappingActions">
                 ${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}
                 ${reasonField()}
-                <button type="button" data-add>${pharmacyMapping?"Add Pharmacy Mapping":"Add Mapping"}</button>
+                <button type="button" data-add>+ Add GTIN</button>
                 ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
-            </div>`:(pharmacyAdmin&&hasIdentifier?`
-            <div class="needsReviewMappingActions"><label>Identifier<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add Pharmacy Mapping</button></div>`:globalNotice());
-        workspace.innerHTML=`<span class="identifierScopeBadge">${pharmacyMapping?"THIS PHARMACY":"GLOBAL"}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
+            </div>`:(pharmacyAdmin?`
+            <div class="needsReviewMappingActions">${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}${reasonField()}<button type="button" data-add-pharmacy>+ Add GTIN</button></div>`:globalNotice());
+        workspace.innerHTML=`${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
         if(!canManage&&!pharmacyAdmin) return;
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
         const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
         const currentIdentifier=()=>toSafeString(identifier||workspace.querySelector("[data-new-identifier]")?.value).trim();
-        const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
+        const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());awaitingItemForIdentifier=false;input.value=value;await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
         workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
-        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
-        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await (referenceAdmin
+            ? IdentifierService.addManagedIdentifier(nrV2OperationId(),value,item,requireReason())
+            : IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason()));awaitingItemForIdentifier=false;input.value=value;await drawIdentifier();showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");if(referenceAdmin) await IdentifierService.correctManagedIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
+        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;if(referenceAdmin) await IdentifierService.removeManagedIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
     };
     const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
         const value=toSafeString(query).trim();
@@ -8726,37 +8761,44 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
     };
     const renderUnmapped=()=>{
-        const globalOwner=isGlobalOwner(), pharmacyAdmin=isCurrentPharmacyAdmin();
-        if(!globalOwner&&!pharmacyAdmin){workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for this identifier.</div>${globalNotice()}`;return;}
-        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the canonical Global Master, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search canonical Global Items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
-        let selected=null;
-        const search=workspace.querySelector("[data-global-search]");
-        const results=workspace.querySelector("[data-global-results]");
-        const addExisting=workspace.querySelector("[data-add-existing]");
-        search?.addEventListener("input",async()=>{const query=toSafeString(search.value).trim();selected=null;if(addExisting)addExisting.disabled=true;if(!query){results.innerHTML="";return;}try{const items=await IdentifierService.searchItems(query,12);results.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";results.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selected=items[Number(button.dataset.globalItem)]||null;results.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selected;}));}catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}});
-        const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{if(globalOwner) await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason());else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),pendingIdentifier,selected,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name||!reason()){showToast?.("Item Code, Item Name and reason are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
+        awaitingItemForIdentifier=true;
+        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Use the same Search Item field to find an existing Item Name or Item Code, then deliberately choose + Add GTIN.</div>`;
+        input.value="";
+        input.placeholder="Search existing Item Name or Item Code";
+        load.textContent="Search Items";
+        input.focus();
     };
     const drawIdentifier=async()=>{
-        pendingIdentifier=toSafeString(input.value).trim();
-        if(!pendingIdentifier){showToast?.("Enter an identifier","warning");input.focus();return;}
+        const query=toSafeString(input.value).trim();
+        if(!query){showToast?.("Enter an Item Name, Item Code, or identifier","warning");input.focus();return;}
         load.disabled=true;
         try{
-            resolved=await IdentifierService.resolve(pendingIdentifier);
-            if(!resolved?.found){
-                renderUnmapped();
+            if(awaitingItemForIdentifier){
+                await renderItemSearch(query,{forUnmappedIdentifier:true});
                 return;
             }
-            await showItem({item_code:resolved.itemCode,item_name:resolved.itemName},{identifier:pendingIdentifier,mapping:resolved});
-        }catch(error){workspace.innerHTML="";showToast?.(error?.message||"Unable to load Global Master mapping","error");}
+            const classification=await classifyIdentifierAdminQuery(query);
+            pendingIdentifier=classification.query;
+            resolved=classification.resolved||null;
+            if(classification.kind==="IDENTIFIER"){
+                await showItem({item_code:resolved.itemCode,item_name:resolved.itemName},{identifier:pendingIdentifier,mapping:resolved});
+                return;
+            }
+            if(classification.kind==="ITEMS"){
+                const items=classification.items;
+                workspace.innerHTML=`<div class="needsReviewNoMatches">Select the canonical Global Item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`;
+                bindItemResults(items,item=>showItem(item));
+                return;
+            }
+            renderUnmapped();
+        }catch(error){workspace.innerHTML="";showToast?.(error?.message||"Unable to search identifier management","error");}
         finally{load.disabled=false;}
     };
     load.addEventListener("click",drawIdentifier);
     input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();drawIdentifier();}});
     itemLoad?.addEventListener("click",()=>renderItemSearch(itemSearch?.value));
     itemSearch?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();renderItemSearch(itemSearch.value);}});
-    clear?.addEventListener("click",()=>{input.value="";if(itemSearch)itemSearch.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";input.focus();});
+    clear?.addEventListener("click",()=>{input.value="";if(itemSearch)itemSearch.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";awaitingItemForIdentifier=false;input.placeholder="Item Name, Item Code, Identifier, GTIN, or Barcode";load.textContent="Search";input.focus();});
 }
 
 setTimeout(()=>{
@@ -8772,7 +8814,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     previousPanel?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{
+        rawRows=await loadNeedsReviewRows(workflow,null);
+        if(!handheld) rawRows=filterNeedsReviewRowsToPcScope(rawRows);
+    }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8791,14 +8836,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
           <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
           <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
-        <details class="needsReviewAdmin"><summary>Global Identifier Master</summary><div class="needsReviewAdminBody">
-          <p>Find a Global Master identifier and review its Item, sibling identifiers, or an explicit mapping change.</p>
-          <div class="needsReviewAdminLookup"><label>Identifier / GTIN<input data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code or GTIN"></label><button type="button" data-admin-load>Find mapping</button></div>
-          <div data-admin-workspace></div>
-        </div></details>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
-            <section class="needsReviewRow" data-i="${index}">
+            <section class="needsReviewRow needsReviewCompactRow" data-i="${index}">
+              <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false">
+                <strong>${esc(group.gtin)}</strong><span>${esc(group.order_number||"—")}</span><b>Qty ${group.total_quantity}</b><span>Pending</span><i aria-hidden="true">›</i>
+              </button>
+              <div class="needsReviewCaseDetail" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
                 <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNISED"}</span>
                 <div class="capturedIdentifier"><span class="pfnReviewLabel">CAPTURED IDENTIFIER</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong><button type="button" data-copy-identifier="${index}">Copy</button></div>
@@ -8810,12 +8854,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
-              <div class="needsReviewResolve">
+              ${handheld?"":`<div class="needsReviewResolve">
                 <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false"></label>
                 <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+              </div>`}
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
@@ -8852,6 +8897,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
+        const detail=overlay.querySelector(`[data-review-case-detail="${index}"]`);
+        const detailButton=overlay.querySelector(`[data-review-detail="${index}"]`);
+        detailButton?.addEventListener("click",()=>{
+            overlay.querySelectorAll("[data-review-case-detail]").forEach(node=>{if(node!==detail)node.hidden=true;});
+            overlay.querySelectorAll("[data-review-detail]").forEach(node=>node.setAttribute("aria-expanded",String(node===detailButton&&detail?.hidden)));
+            if(detail) detail.hidden=!detail.hidden;
+        });
         const search=overlay.querySelector(`[data-search="${index}"]`);
         const matches=overlay.querySelector(`[data-matches="${index}"]`);
         const selection=overlay.querySelector(`[data-selection="${index}"]`);
@@ -8869,7 +8921,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }catch(_){showToast?.("Copy is unavailable; select the identifier and copy it manually.","warning");}
         });
 
-        cancelReview?.addEventListener("click",async()=>{
+        if(!handheld) cancelReview?.addEventListener("click",async()=>{
             if(!window.confirm(`Cancel this Needs Review group for GTIN ${group.gtin}?\n\nThis will not learn the GTIN or change any received quantity.`)) return;
             const reason=toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
             if(!reason){showToast?.("A cancellation reason is required","warning");return;}
@@ -8937,13 +8989,11 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 drawSelection();
             }));
         };
-        search?.addEventListener("input",drawMatches);
+        if(!handheld) search?.addEventListener("input",drawMatches);
         clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
     });
 
     if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
-
-    renderV2IdentifierAdministration(overlay,esc);
 
     overlay.addEventListener("keydown",event=>{
         if(event.key!=="Escape"||overlay.dataset.busy==="1") return;
@@ -8973,7 +9023,7 @@ async function refreshNeedsReviewCountFromCloud({force=false}={}){
     needsReviewCloudWatchBusy=true;
     needsReviewCloudLastReadAt=now;
     try{
-        const count=await nrV2Count("RECEIVING");
+        const count=groupNeedsReviewRows(filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null))).length;
         setElementText(document.getElementById("receivingNeedsReviewCount"),count);
         document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
     }catch(error){

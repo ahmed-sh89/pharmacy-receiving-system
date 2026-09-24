@@ -52,7 +52,7 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_HIERARCHY1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=REVIEW_RECOVERY1">
 <link rel="stylesheet" href="css/receiving-surface.css?v=UI_REVIEW_CLEAN1">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
@@ -2191,22 +2191,18 @@
                     <section class="contentCard masterGTINCard">
                         <div class="cardHeader">
                             <div>
-                                <span class="sectionEyebrow">GLOBAL MASTER</span>
+                                <span class="sectionEyebrow">IDENTIFIER MASTER</span>
                                 <h2>Global Identifier Master</h2>
-                                <p>Find an identifier or search the item catalogue.</p>
+                                <p>Search by Item Name, Item Code, Identifier, GTIN, or Barcode.</p>
                             </div>
                         </div>
 
                         <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Global Identifier Master administration">
                             <div class="globalIdentifierMasterLookupGrid">
-                                <label>Identifier / GTIN
-                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="e.g. S00110, 1234A, or GTIN">
+                                <label>Search Item
+                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="Item Name, Item Code, Identifier, GTIN, or Barcode">
                                 </label>
-                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Find Mapping</button>
-                                <label>Item Code / Item Name
-                                    <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Search canonical Global Items">
-                                </label>
-                                <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search Items</button>
+                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Search</button>
                                 <button id="btnGlobalIdentifierMasterClear" data-admin-clear type="button" class="secondaryButton">Clear</button>
                             </div>
                             <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
@@ -2733,16 +2729,16 @@
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=UI_REVIEW_CLEAN1"></script>
+<script src="ui.js?v=FINAL_GATE1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 
 <script src="js/master-gtin.js?v=RECEIVING_U0030_RECOVERY2"></script>
-<script src="js/identifier-service.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="js/identifier-service.js?v=REVIEW_RECOVERY1"></script>
 
-<script src="js/scanner.js?v=B13ROOTFIX1"></script>
+<script src="js/scanner.js?v=REVIEW_RECOVERY1"></script>
 
-<script src="js/receiving.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="js/receiving.js?v=REVIEW_RECOVERY1"></script>
 
 <script src="js/session.js?v=B10CLEAN15_15"></script>
 
@@ -2757,7 +2753,7 @@
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
 
-<script src="js/needs-review.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="js/needs-review.js?v=FINAL_GATE1"></script>
 
 <script src="js/expiry.js?v=B10CLEAN15_15"></script>
 

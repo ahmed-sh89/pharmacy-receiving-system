@@ -58,6 +58,41 @@ function nrV2CurrentOrderNumber(){
     return orders.length===1 ? orders[0] : "";
 }
 
+function nrV2HandheldAssignedOrderNumbers(){
+    /* Handheld attribution reads only the administrator-owned assignment
+       persisted in the Active Order Manifest. It deliberately does not call
+       getSelectedReceivingOrderNumbers(), whose PC branch reads device-local
+       desktop selection state. */
+    if(AppState?.workspace?.handheldScopeConfigured!==true){
+        throw new Error("Needs Review requires an explicit Handheld Order assignment.");
+    }
+    const active=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers().map(normalizeOrderNumber)
+        : [];
+    const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+        ? [...new Set(AppState.workspace.handheldOrderNumbers
+            .map(normalizeOrderNumber)
+            .filter(order=>order&&active.includes(order)))]
+        : [];
+    return assigned;
+}
+
+function nrV2HandheldOrderNumber(){
+    const assigned=nrV2HandheldAssignedOrderNumbers();
+    if(assigned.length!==1){
+        throw new Error("Needs Review requires exactly one assigned Handheld Order.");
+    }
+    return assigned[0];
+}
+
+function nrV2DraftOriginalOrder(options,handheld){
+    return normalizeOrderNumber(
+        handheld
+            ? nrV2HandheldOrderNumber()
+            : (options.orderNumber||nrV2CurrentOrderNumber()||"")
+    );
+}
+
 async function nrV2CreateDraft(parsed,options={}){
     const pharmacyId=nrV2PharmacyId();
     if(!pharmacyId || typeof authRpc!=="function"){
@@ -69,7 +104,9 @@ async function nrV2CreateDraft(parsed,options={}){
         throw new Error("Scanned code could not be captured");
     }
 
-    const originalOrder=normalizeOrderNumber(options.orderNumber||nrV2CurrentOrderNumber()||"");
+    const handheld=options.source==="HANDHELD" ||
+        (typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice());
+    const originalOrder=nrV2DraftOriginalOrder(options,handheld);
     /* A Needs Review case is an operational Receiving record.  Visibility
        scope must never be substituted for attribution: require a real source
        Order rather than creating an unassignable multi-order draft. */
@@ -88,7 +125,7 @@ async function nrV2CreateDraft(parsed,options={}){
         p_review_reason:options.reason||"UNKNOWN_GTIN",
         p_master_item_code_hint:options.itemCode||null,
         p_master_item_name_hint:options.itemName||null,
-        p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC",
+        p_source:handheld?"HANDHELD":"PC",
         p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():""
     });
 
@@ -459,6 +496,8 @@ window.nrV2ClearReceivingQueue=nrV2ClearReceivingQueue;
 window.nrV2ResolutionTransactionId=nrV2ResolutionTransactionId;
 window.nrV2HasLocalResolutionTransaction=nrV2HasLocalResolutionTransaction;
 window.nrV2CurrentOrderNumber=nrV2CurrentOrderNumber;
+window.nrV2HandheldOrderNumber=nrV2HandheldOrderNumber;
+window.nrV2HandheldAssignedOrderNumbers=nrV2HandheldAssignedOrderNumbers;
 
 
 /* ============================================================

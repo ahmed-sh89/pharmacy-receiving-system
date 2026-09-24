@@ -36,6 +36,27 @@ const IdentifierService={
     async createItem(operationId,item){
         return authRpc("create_pharmflow_global_item_v2",{p_operation_id:operationId,p_item_code:toSafeString(item.itemCode),p_item_name:toSafeString(item.itemName),p_group_name:toSafeString(item.groupName)||null,p_category:toSafeString(item.category)||null,p_sub_category:toSafeString(item.subCategory)||null,p_identifier_display:toSafeString(item.identifierDisplay),p_reason:toSafeString(item.reason)});
     },
+    async canManageGlobal(){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) return false;
+        const result=await authRpc("pharmflow_reference_identifier_admin_v1",{p_pharmacy_id:pharmacyId});
+        return result===true||(Array.isArray(result)&&result[0]===true);
+    },
+    async addManagedIdentifier(operationId,identifierDisplay,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("add_pharmflow_managed_identifier_v1",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),p_item_code:toSafeString(item?.itemCode||item?.item_code),p_item_name:toSafeString(item?.itemName||item?.item_name),p_reason:toSafeString(reason)});
+    },
+    async correctManagedIdentifier(operationId,identifierId,revision,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("correct_pharmflow_managed_identifier_v1",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_new_item_code:toSafeString(item?.itemCode||item?.item_code),p_new_item_name:toSafeString(item?.itemName||item?.item_name),p_reason:toSafeString(reason)});
+    },
+    async removeManagedIdentifier(operationId,identifierId,revision,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("remove_pharmflow_managed_identifier_v1",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
+    },
     async addPharmacyIdentifier(operationId,identifierDisplay,item,reason){
         const pharmacyId=this.pharmacyId();
         if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
