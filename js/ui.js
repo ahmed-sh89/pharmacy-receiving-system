@@ -8478,8 +8478,10 @@ async function refreshNeedsReviewCountFromCloud(){
     if(document.hidden || needsReviewCloudWatchBusy || typeof nrV2Count!=="function") return;
     needsReviewCloudWatchBusy=true;
     try{
-        const rows=await loadScopedNeedsReviewRows("RECEIVING");
-        const count=groupNeedsReviewRows(rows).length;
+        const orders=getNeedsReviewScopeOrderNumbers();
+        const count=typeof nrV2CountScope==="function"
+            ? await nrV2CountScope("RECEIVING",orders)
+            : groupNeedsReviewRows(await loadScopedNeedsReviewRows("RECEIVING")).length;
         setElementText(document.getElementById("receivingNeedsReviewCount"),count);
         document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
     }catch(error){
