@@ -1668,7 +1668,7 @@ function refreshHeader(){
     const dashboardActive = document.getElementById("page-dashboard")?.classList.contains("active");
     if(dashboardActive){
         const pharmacyName = (document.getElementById("accountPharmacyName")?.textContent || "Pharmacy").trim();
-        setElementText(UI.elements.pageTitle, pharmacyName || "Pharmacy");
+        setElementText(UI.elements.pageTitle, "Receiving");
         setElementText(UI.elements.pageSubtitle, "Receiving Dashboard");
     }
 
@@ -1712,10 +1712,10 @@ function refreshHeader(){
             if(pickerLabel){
                 pickerLabel.textContent=
                     allSelected
-                        ? "ALL ACTIVE ORDERS"
+                        ? "All Active Orders"
                         : selectedOrders.length===1
                             ? selectedOrders[0]
-                            : selectedOrders.length+" ORDERS";
+                            : selectedOrders.length+" Orders Selected";
             }
 
             if(pickerMenu){
@@ -1727,7 +1727,7 @@ function refreshHeader(){
                 if(pickerMenu.dataset.signature!==signature){
                     pickerMenu.innerHTML=`
                         <div class="headerOrderPickerTitle">
-                            <strong>Work Orders</strong>
+                            <strong>Orders</strong>
                             <span>Choose one or multiple active orders</span>
                         </div>
 
@@ -8666,6 +8666,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const load=overlay.querySelector("[data-admin-load]");
     const itemSearch=overlay.querySelector("[data-admin-item-search]");
     const itemLoad=overlay.querySelector("[data-admin-item-load]");
+    const clear=overlay.querySelector("[data-admin-clear]");
     if(!input||!workspace||!load) return;
     if(load.dataset.identifierAdminBound==="1") return;
     load.dataset.identifierAdminBound="1";
@@ -8754,6 +8755,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();drawIdentifier();}});
     itemLoad?.addEventListener("click",()=>renderItemSearch(itemSearch?.value));
     itemSearch?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();renderItemSearch(itemSearch.value);}});
+    clear?.addEventListener("click",()=>{input.value="";if(itemSearch)itemSearch.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";input.focus();});
 }
 
 setTimeout(()=>{
@@ -8807,6 +8809,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
               </div>
               <div class="needsReviewResolve">
                 <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false"></label>
+                <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
@@ -8837,12 +8840,15 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const matches=overlay.querySelector(`[data-matches="${index}"]`);
         const selection=overlay.querySelector(`[data-selection="${index}"]`);
         const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
+        const clearReview=overlay.querySelector(`[data-clear-review="${index}"]`);
         let selectedItem=null;
+        let refocusAfterCopy=false;
 
         overlay.querySelector(`[data-copy-identifier="${index}"]`)?.addEventListener("click",async event=>{
             try{
                 await navigator.clipboard?.writeText(group.gtin);
                 showToast?.("Identifier copied","success");
+                refocusAfterCopy=true;
                 search?.focus();
             }catch(_){showToast?.("Copy is unavailable; select the identifier and copy it manually.","warning");}
         });
@@ -8916,6 +8922,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }));
         };
         search?.addEventListener("input",drawMatches);
+        clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
+        const restoreSearchFocus=()=>{if(!refocusAfterCopy||!document.body.contains(overlay)||overlay.dataset.busy==="1")return;refocusAfterCopy=false;search?.focus({preventScroll:true});};
+        window.addEventListener("focus",restoreSearchFocus,{once:true});
+        document.addEventListener("visibilitychange",()=>{if(!document.hidden)restoreSearchFocus();},{once:true});
     });
 
     if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
