@@ -8755,13 +8755,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();drawIdentifier();}});
     itemLoad?.addEventListener("click",()=>renderItemSearch(itemSearch?.value));
     itemSearch?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();renderItemSearch(itemSearch.value);}});
-    clear?.addEventListener("click",()=>{
-        input.value="";
-        if(itemSearch) itemSearch.value="";
-        workspace.innerHTML="";
-        resolved=null;selectedItem=null;pendingIdentifier="";
-        input.focus();
-    });
+    clear?.addEventListener("click",()=>{input.value="";if(itemSearch)itemSearch.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";input.focus();});
 }
 
 setTimeout(()=>{
@@ -8928,20 +8922,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }));
         };
         search?.addEventListener("input",drawMatches);
-        clearReview?.addEventListener("click",()=>{
-            if(search) search.value="";
-            selectedItem=null;
-            matches.innerHTML="";
-            drawSelection();
-            search?.focus();
-        });
-        const restoreSearchFocus=()=>{
-            if(!refocusAfterCopy || !document.body.contains(overlay) || overlay.dataset.busy==="1") return;
-            refocusAfterCopy=false;
-            search?.focus({preventScroll:true});
-        };
+        clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
+        const restoreSearchFocus=()=>{if(!refocusAfterCopy||!document.body.contains(overlay)||overlay.dataset.busy==="1")return;refocusAfterCopy=false;search?.focus({preventScroll:true});};
         window.addEventListener("focus",restoreSearchFocus,{once:true});
-        document.addEventListener("visibilitychange",()=>{if(!document.hidden) restoreSearchFocus();},{once:true});
+        document.addEventListener("visibilitychange",()=>{if(!document.hidden)restoreSearchFocus();},{once:true});
     });
 
     if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
