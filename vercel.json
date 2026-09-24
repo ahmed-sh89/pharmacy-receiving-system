@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build && cp -r js dist/js && cp ui.js cloud-workspace.js dist/ && cp -r assets dist/assets"
+}
