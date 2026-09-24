@@ -41,9 +41,12 @@ body:not(.zebraDevice) .pageHeading {margin:0;min-width:0}
 body:not(.zebraDevice) .pageHeading h1 {margin:0;font-size:26px;line-height:1.2;color:#153b60;letter-spacing:-.5px}
 body:not(.zebraDevice) .pageHeading p {margin:3px 0 0;font-size:13px;color:var(--ui-muted)}
 body:not(.zebraDevice) .topBarRight {display:flex;align-items:center;gap:10px;min-width:0}
-body:not(.zebraDevice) .pfnWorkspaceIdentity {display:grid;gap:1px;padding:3px 14px;border-right:1px solid var(--ui-line)}
+body:not(.zebraDevice) .pfnWorkspaceIdentity {display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid #b7cfe2;border-radius:9px;background:#e3eff9}
 .pfnWorkspaceIdentity span {font-size:10px;letter-spacing:1px;color:var(--ui-muted)}
 .pfnWorkspaceIdentity strong {font-size:17px;color:#184d79}
+body:not(.zebraDevice) .pfnWorkspaceIdentity>span:first-child {display:none}
+body:not(.zebraDevice) #topBarPharmacyName {font-size:14px;font-weight:700;letter-spacing:0;color:#264c6c}
+body.zebraDevice #topBarPharmacyName {display:none}
 body:not(.zebraDevice) .globalMasterHeaderInfo {display:grid;gap:1px;padding:3px 8px;border:0;background:transparent;min-width:0}
 body:not(.zebraDevice) .globalMasterHeaderInfo span {font-size:11px;color:var(--ui-muted)}
 body:not(.zebraDevice) .globalMasterHeaderInfo strong {font-size:12px;color:#246d53}
@@ -59,49 +62,61 @@ body:not(.zebraDevice).pfnSidebarCollapsed .sidebarItem {padding:0;justify-conte
 body:not(.zebraDevice) #page-dashboard {min-height:0}
 body:not(.zebraDevice) #page-dashboard.active {display:grid;gap:16px}
 body:not(.zebraDevice) .statisticsGrid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin:0}
-body:not(.zebraDevice) .statCard {position:relative;min-width:0;min-height:80px;padding:10px 12px;background:#fff;border:1px solid var(--ui-line);border-top:3px solid #5591c4;border-radius:10px;box-shadow:none;cursor:pointer}
+body:not(.zebraDevice) .statCard {position:relative;min-width:0;min-height:80px;padding:10px 12px;background:#e9f2fa;border:1px solid #abc7df;border-top:3px solid #5591c4;border-radius:10px;box-shadow:none;cursor:pointer}
 body:not(.zebraDevice) .statCardLabel {font-size:12px;line-height:1.25;font-weight:700;color:#516a80;white-space:normal}
 body:not(.zebraDevice) .statCard strong {display:block;margin-top:7px;font-size:28px;line-height:1;color:#174671}
-body:not(.zebraDevice) .statSuccess {border-top-color:#32986b;background:#f3faf6}
-body:not(.zebraDevice) .statWarning {border-top-color:#d6a03d;background:#fffcf4}
-body:not(.zebraDevice) .statDanger {border-top-color:#ca6570;background:#fff6f6}
-body:not(.zebraDevice) #page-dashboard .scanPanel {display:flex;flex-direction:column;gap:10px;margin:0;padding:16px;min-height:0;height:auto;background:#fff;border:1px solid var(--ui-line);border-radius:var(--ui-radius);box-shadow:0 3px 12px #173b6010}
+body:not(.zebraDevice) .statSuccess {border-color:#a0ceb6;border-top-color:#32986b;background:#e4f3eb}
+body:not(.zebraDevice) .statWarning {border-color:#dcc38c;border-top-color:#d6a03d;background:#fff3d9}
+body:not(.zebraDevice) .statDanger {border-color:#dba7ae;border-top-color:#ca6570;background:#fbe9ec}
+body:not(.zebraDevice) .statCard::before {content:"▦";position:absolute;right:12px;top:39px;font-size:20px;line-height:1;color:#3475a5;pointer-events:none}
+body:not(.zebraDevice) .statCard[data-kpi="completed"]::before {content:"✓";color:#238057}
+body:not(.zebraDevice) .statCard[data-kpi="remainingItems"]::before {content:"◷";color:#a57620}
+body:not(.zebraDevice) .statCard[data-kpi="remaining"]::before {content:"▤";color:#a57620}
+body:not(.zebraDevice) .statCard[data-kpi="over"]::before {content:"↑";color:#b44859}
+body:not(.zebraDevice) .statCard[data-kpi="manual"]::before {content:"✎"}
+body:not(.zebraDevice) .statCard[data-kpi="scans"]::before {content:"↻"}
+/* Scan/Last Scan presentation restored from 8645f66, before db81d2e/89be9ad.
+   Current runtime markup, action toolbar and receiving behavior remain authoritative. */
+body:not(.zebraDevice) #page-dashboard .scanPanel {display:flex;flex-direction:column;gap:8px;margin:0;padding:8px 14px;min-height:0;height:auto;background:#f9fcff;border:1px solid #bdd7ef;border-radius:14px;box-shadow:none}
 body:not(.zebraDevice) .scanPanelHeader {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
-body:not(.zebraDevice) .scanPanelHeader h2 {font-size:22px;margin:0;color:#183e62}
+body:not(.zebraDevice) .scanPanelHeader h2 {font-size:19px;font-weight:850;margin:0;color:#0b376b}
 body:not(.zebraDevice) .scanPanelHeader .sectionEyebrow {display:none}
 body:not(.zebraDevice) .scanPanelHeader p {font-size:13px;margin:3px 0 0;color:var(--ui-muted)}
 body:not(.zebraDevice) .scanStatusBadge {padding:5px 9px;border:1px solid #c7e4d3;border-radius:6px;background:#eff9f3;color:#26724f;font-size:11px;font-weight:700}
-body:not(.zebraDevice) #scanBox {display:flex;align-items:center;gap:12px;min-height:60px;height:auto;padding:8px 14px;border:2px solid #8db7db;border-radius:10px;background:#fff;box-shadow:none}
+body:not(.zebraDevice) #scanBox {display:flex;align-items:center;gap:12px;min-height:52px;height:auto;padding:4px 14px;border:2px solid #8cb9e6;border-radius:12px;background:#fff;box-shadow:none}
 body:not(.zebraDevice) #scanBox:focus-within {border-color:#237abb;box-shadow:0 0 0 3px #237abb19}
-body:not(.zebraDevice) #barcodeInput {flex:1;min-width:0;width:100%;height:40px;padding:0;border:0;outline:0;background:transparent;font-size:19px;color:#173e61;caret-color:#176bb1;box-shadow:none}
+body:not(.zebraDevice) #barcodeInput {flex:1;min-width:0;width:100%;height:40px;padding:0;border:0;outline:0;background:transparent;font-size:20px;font-weight:800;color:#173e61;caret-color:#176bb1;box-shadow:none}
 body:not(.zebraDevice) .scanIcon {display:grid;place-items:center;width:26px;height:26px;color:#397aaa;font-size:22px}
 body:not(.zebraDevice) .scanBoxIndicator {font-size:11px;letter-spacing:.5px;color:#6e8293}
 body:not(.zebraDevice) #smartScanSearchArea {margin:0;min-height:0}
 body:not(.zebraDevice) #smartScanSearchArea:has(#smartScanResults:empty):has(#smartScanSelected.hidden) {display:none}
-body:not(.zebraDevice) #lastScanCard {display:block;margin:0;padding:10px 14px;min-height:0;height:auto;flex:none;border:1px solid var(--ui-line);border-radius:10px;background:#f8fafc;box-shadow:none}
+body:not(.zebraDevice) #lastScanCard {display:block;margin:0;padding:8px 12px;min-height:0;height:auto;flex:none;border:1px solid #c8dcf0;border-radius:12px;background:#f9fcff;box-shadow:none}
 body:not(.zebraDevice) #lastScanCard .cardHeader {display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;padding:0;border:0}
 body:not(.zebraDevice) #lastScanCard .cardHeader h3 {font-size:16px;margin:0}
 body:not(.zebraDevice) #lastScanCard .sectionEyebrow {display:none}
 body:not(.zebraDevice) #lastScanTime {display:none}
 body:not(.zebraDevice) .legacyLastScanGrid {display:none}
-body:not(.zebraDevice) .professionalLastScanLayout {display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:center}
-body:not(.zebraDevice) .lastScanHeroName {font-size:19px;font-weight:700;line-height:1.3;color:#183f61;margin:0 0 8px;overflow-wrap:anywhere}
-body:not(.zebraDevice) .lastScanMetaRow {display:flex;gap:18px;flex-wrap:wrap}
-body:not(.zebraDevice) .lastScanMetaItem {display:grid;gap:3px;min-width:0}
-body:not(.zebraDevice) .lastScanMetaItem span {font-size:11px;color:#5b7387}
-body:not(.zebraDevice) .lastScanMetaItem strong {font-size:13px;color:#294b66;overflow-wrap:anywhere}
-body:not(.zebraDevice) .lastScanMetrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-body:not(.zebraDevice) .lastScanMetric {text-align:center;padding:9px 6px;border:1px solid #d9e5ee;border-radius:8px;background:#fff;min-width:0}
-body:not(.zebraDevice) .lastScanMetric span {font-size:12px;font-weight:700;color:#537085}
-body:not(.zebraDevice) .lastScanMetric strong {display:block;margin-top:4px;font-size:25px;line-height:1.1;color:#214e75}
-body:not(.zebraDevice) .lastScanMetricReceived {background:#edf8f1;border-color:#cae4d5}
-body:not(.zebraDevice) .lastScanMetricRemaining {background:#fff9ec;border-color:#eeddb4}
-body:not(.zebraDevice) .lastScanMetricStatus {display:none}
+body:not(.zebraDevice) .professionalLastScanLayout {display:block;margin:0}
+body:not(.zebraDevice) .lastScanHero {padding:8px 10px;min-height:48px;border:1px solid #d1e1f0;border-radius:10px;background:#fff}
+body:not(.zebraDevice) .lastScanHeroName {font-size:21px;font-weight:700;line-height:1.28;color:#0b376b;margin:0 0 11px;overflow-wrap:anywhere}
+body:not(.zebraDevice) .lastScanMetaRow {display:grid;grid-template-columns:1fr 1.45fr 1.1fr;gap:8px;margin-top:6px}
+body:not(.zebraDevice) .lastScanMetaItem {display:grid;gap:3px;min-width:0;min-height:36px;padding:6px 9px;border:1px solid #8fb9e5;border-radius:8px;background:#e5f1ff}
+body:not(.zebraDevice) .lastScanMetaGTIN {border-color:#b7a4e4;background:#efe9ff}
+body:not(.zebraDevice) .lastScanMetaTime {border-color:#b7c2ce;background:#eef2f6}
+body:not(.zebraDevice) .lastScanMetaItem span {font-size:13px;font-weight:900;color:#365a7d}
+body:not(.zebraDevice) .lastScanMetaItem strong {font-size:17px;font-weight:900;color:#103f6d;overflow-wrap:anywhere}
+body:not(.zebraDevice) .lastScanMetrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+body:not(.zebraDevice) .lastScanMetric {text-align:center;padding:7px 10px;border:1px solid #8fb9e5;border-radius:9px;background:#e5f1ff;min-width:0;min-height:42px}
+body:not(.zebraDevice) .lastScanMetric span {font-size:13px;font-weight:900;color:#365a7d}
+body:not(.zebraDevice) .lastScanMetric strong {display:block;margin-top:4px;font-size:17px;font-weight:900;line-height:1.1;color:#103f6d}
+body:not(.zebraDevice) .lastScanMetricReceived {background:#e1f5e9;border-color:#99d3af}
+body:not(.zebraDevice) .lastScanMetricRemaining {background:#fff0d5;border-color:#e4b85e}
+body:not(.zebraDevice) .lastScanMetricStatus {display:block;background:#efe9ff;border-color:#b7a4e4}
 body:not(.zebraDevice) #lastScanQuantityControls {display:flex;align-items:center;gap:12px;margin-top:10px;padding:0;border:0;background:transparent}
 body:not(.zebraDevice) .lastScanQtyTitle {font-size:12px;font-weight:700;color:var(--ui-muted)}
 body:not(.zebraDevice) .lastScanQtyActions {display:flex;align-items:center;gap:5px}
-body:not(.zebraDevice) .lastScanQtyButton {width:36px;height:34px;border:1px solid #a9c2d7;border-radius:6px;background:#fff;color:#1c6397;font-size:22px;cursor:pointer}
-body:not(.zebraDevice) .lastScanQtyValue {min-width:54px;height:34px;border:1px solid #9bbbd6;border-radius:6px;background:#fff;color:#174b72;font-size:17px;font-weight:700}
+body:not(.zebraDevice) .lastScanQtyButton {display:inline-flex;align-items:center;justify-content:center;width:42px;height:38px;border:0;border-radius:6px;background:#1476c9;color:#fff;font-size:22px;font-weight:900;cursor:pointer}
+body:not(.zebraDevice) .lastScanQtyValue {min-width:58px;height:38px;border:2px solid #65a5dc;border-radius:6px;background:#e7f4ff;color:#075da7;font-size:20px;font-weight:900}
 body:not(.zebraDevice) .lastScanQtyHint {font-size:11px;color:var(--ui-muted)}
 body:not(.zebraDevice) .pcClearLastScan {display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:5px 12px;border:1px solid #c2d2df;border-radius:6px;background:#fff;color:#405b70;font-size:12px;cursor:pointer}
 body:not(.zebraDevice) #lastScanCard.isEmpty .professionalLastScanLayout,body:not(.zebraDevice) #lastScanCard.isEmpty #lastScanQuantityControls {display:none}
