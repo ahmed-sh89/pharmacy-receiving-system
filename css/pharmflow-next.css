@@ -1657,3 +1657,15 @@ body:not(.zebraDevice) .pfnPharmacyIdentityText strong{font-size:10px!important;
   body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody>tr.pfnBrowserRowSelected td{background:#bfe1fb!important;color:#082f55!important;box-shadow:inset 0 1px 0 #4f98d1,inset 0 -1px 0 #4f98d1!important}
   body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody>tr.pfnBrowserRowSelected td:first-child{box-shadow:inset 4px 0 0 #0875c9,inset 0 1px 0 #4f98d1,inset 0 -1px 0 #4f98d1!important}
   body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody>tr.pfnMobileItemCard:focus-visible td{background:#d4eaff!important;outline:2px solid #1476c9!important;outline-offset:-2px!important}}
+
+/* Targeted Needs Review case rows: compact list first, one case expanded at a time by the operator. */
+.needsReviewRowSummary{display:grid;grid-template-columns:minmax(150px,1.5fr) minmax(140px,1fr) 70px 90px 24px;gap:12px;align-items:center;cursor:pointer;list-style:none;padding:12px 14px}
+.needsReviewRowSummary::-webkit-details-marker{display:none}
+.needsReviewRowSummary span{min-width:0;display:flex;flex-direction:column;gap:2px}
+.needsReviewRowSummary small{font-size:11px;opacity:.68;text-transform:uppercase}
+.needsReviewRowSummary strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.needsReviewRowSummary>b{font-size:22px;transition:transform .15s ease}
+.needsReviewRow[open] .needsReviewRowSummary>b{transform:rotate(90deg)}
+.needsReviewCaseDetail{padding:0 14px 14px}
+.needsReviewViewOnly{padding:10px 0;display:flex;gap:8px;align-items:center}
+@media(max-width:760px){.needsReviewRowSummary{grid-template-columns:minmax(120px,1.5fr) minmax(110px,1fr) 46px 22px}.needsReviewRowSummary span:nth-child(4){display:none}.needsReviewCaseDetail{padding:0 10px 10px}}
