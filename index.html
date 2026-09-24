@@ -14,10 +14,10 @@
 
     <meta
         name="description"
-        content="PharmFlow Pharmacy Operations Platform"
+        content="PharmFlow Pharmacy Operations"
     >
 
-    <title>PharmFlow | Pharmacy Operations Platform</title>
+    <title>PharmFlow | Pharmacy Operations</title>
 
     <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark-blue.svg">
     <link rel="shortcut icon" href="assets/pharmflow-mark-blue.svg">
@@ -52,7 +52,7 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_U0030_RECOVERY2">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_UI_CONSOLIDATED1">
 <link rel="stylesheet" href="css/receiving-surface.css?v=RECEIVING_U0030_RECOVERY2">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
@@ -307,7 +307,7 @@
             <div class="brandText">
 
                 <strong data-brand-name>PharmFlow</strong>
-                <span data-brand-tagline>Pharmacy Operations Platform</span>
+                <span data-brand-tagline>Pharmacy Operations</span>
 
             </div>
 
@@ -332,7 +332,7 @@
             <button class="sidebarItem active" type="button" data-page="dashboard"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
-            <button class="sidebarItem" type="button" disabled aria-disabled="true" title="Coming soon"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M7 3h10v3l-2 3v3l2 3v6H7v-6l2-3V9L7 6z"/></svg></span><span>Near Expiry <small>COMING SOON</small></span></button>
+
             <button class="sidebarItem" type="button" data-page="settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
         </nav>
 
@@ -344,7 +344,7 @@
             <div class="accountIdentity">
                 <div class="accountAvatar">P</div>
                 <div class="accountIdentityText">
-                    <span class="accountContextKicker">CURRENT PHARMACY</span>
+                    <span class="accountContextKicker">PHARMACY</span>
                     <strong id="accountPharmacyName">Pharmacy</strong>
                     <small><span id="accountPharmacyCode">—</span> · <span id="accountUserName">User</span></small>
                 </div>
@@ -419,7 +419,7 @@
                 <div class="pfnPharmacyIdentity" title="Current pharmacy workspace">
                     <span class="pfnPharmacyIdentityIcon" aria-hidden="true">P</span>
                     <span class="pfnPharmacyIdentityText">
-                        <small>Current Pharmacy</small>
+                        <small>Pharmacy</small>
                         <strong id="topBarPharmacyName">Pharmacy</strong>
                     </span>
                     <span id="topBarPharmacyCode" class="pfnPharmacyIdentityCode">—</span>
@@ -679,11 +679,11 @@
                             </button>
 
                             <div class="headerInfo pfnOrderSelector">
-                                <span>Work Orders</span>
+                                <span>ORDERS</span>
                                 <strong id="headerOrderId" class="pfnLegacyOrderId" aria-hidden="true">No Active Order</strong>
                                 <div id="headerOrderPicker" class="headerOrderPicker" hidden>
                                     <button id="headerOrderPickerButton" class="headerOrderPickerButton" type="button" aria-haspopup="true" aria-expanded="false">
-                                        <span id="headerOrderPickerLabel">ALL ACTIVE ORDERS</span>
+                                        <span id="headerOrderPickerLabel">All Active Orders</span>
                                         <span class="headerOrderPickerChevron" aria-hidden="true">⌄</span>
                                     </button>
                                     <div id="headerOrderPickerMenu" class="headerOrderPickerMenu" role="menu" hidden></div>
@@ -2208,6 +2208,7 @@
                                     <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Search canonical Global Items">
                                 </label>
                                 <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search Items</button>
+                                <button id="btnGlobalIdentifierMasterClear" data-admin-clear type="button" class="secondaryButton">Clear</button>
                             </div>
                             <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
                         </section>
@@ -2734,7 +2735,7 @@
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="ui.js?v=RECEIVING_UI_CONSOLIDATED1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 
@@ -2762,7 +2763,7 @@
 
 <script src="js/expiry.js?v=B10CLEAN15_15"></script>
 
-<script src="cloud-workspace.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="cloud-workspace.js?v=RECEIVING_UI_CONSOLIDATED1"></script>
 
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
 <script src="js/pharmflow-next.js?v=B19ASSIGNMENTSOURCE3"></script>

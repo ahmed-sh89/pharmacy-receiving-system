@@ -59,6 +59,12 @@
         if(!active) return;
         const t=ev.target;
         if(t && t.closest && t.closest('#pf-idle-refresh')) return;
+        if(ev.type==='keydown' && ev.key==='Enter' && !ev.repeat){
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            window.location.reload();
+            return;
+        }
         ev.preventDefault();
         ev.stopImmediatePropagation();
     }
