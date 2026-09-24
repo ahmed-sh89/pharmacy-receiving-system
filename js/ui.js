@@ -7889,7 +7889,18 @@ function refreshOpenKpiPanel(){
 }
 
 function getReceivingActivityRows(){
-    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const allHistory=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? [...new Set((getSelectedReceivingOrderNumbers()||[]).map(normalizeOrderNumber).filter(Boolean))]
+        : [];
+    const history=selected.length
+        ? allHistory.filter(tx=>{
+            const order=normalizeOrderNumber(
+                tx?.orderId||tx?.selectedOrderNumber||tx?.orderNumber||tx?.order_number||""
+            );
+            return !!order && selected.includes(order);
+        })
+        : [];
     const totals=new Map();
 
     /* Always calculate totals in true chronological order.
@@ -8056,20 +8067,45 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+/* Needs Review attribution is immutable, but visibility follows the current
+   Receiving Order scope.  Never use the PC's scope as a replacement order. */
+function getNeedsReviewScopeOrderNumbers(){
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const normalized=[...new Set((selected||[]).map(normalizeOrderNumber).filter(Boolean))];
+    if(normalized.length) return normalized;
+
+    const scope=typeof getActiveOrderScope==="function"
+        ? normalizeOrderNumber(getActiveOrderScope())
+        : "";
+    if(scope && scope!=="ALL") return [scope];
+
+    return [];
+}
+
+async function loadScopedNeedsReviewRows(workflow="RECEIVING"){
+    const orders=getNeedsReviewScopeOrderNumbers();
+    if(!orders.length) return [];
+    const batches=await Promise.all(orders.map(order=>loadNeedsReviewRows(workflow,order)));
+    const seen=new Set();
+    return batches.flat().filter(row=>{
+        const id=toSafeString(row?.review_id||"");
+        if(!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
-        /* Pharmacy-scoped by design. Never hide Handheld drafts because of
-           a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=await loadScopedNeedsReviewRows("RECEIVING");
         const rc=document.getElementById("receivingNeedsReviewCount");
-
         const grouped=groupNeedsReviewRows(receiving);
         if(rc) rc.textContent=String(grouped.length);
-
-        document
-            .getElementById("btnReceivingNeedsReview")
+        document.getElementById("btnReceivingNeedsReview")
             ?.classList.toggle("hasItems",grouped.length>0);
     }catch(error){
         console.warn("Needs Review V2 count failed",error);
@@ -8250,6 +8286,7 @@ async function nrV2ResolveGroupToOrderItem(group,item){
             gtin:group.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
+            targetOrder:group.order_number||"",
             transactionId
         });
         if(!tx) throw new Error("Unable to apply reviewed quantity");
@@ -8290,7 +8327,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     document.getElementById("needsReviewOverlay")?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{ rawRows=await loadScopedNeedsReviewRows(workflow); }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8399,7 +8436,8 @@ async function refreshNeedsReviewCountFromCloud(){
     if(document.hidden || needsReviewCloudWatchBusy || typeof nrV2Count!=="function") return;
     needsReviewCloudWatchBusy=true;
     try{
-        const count=await nrV2Count("RECEIVING");
+        const rows=await loadScopedNeedsReviewRows("RECEIVING");
+        const count=groupNeedsReviewRows(rows).length;
         setElementText(document.getElementById("receivingNeedsReviewCount"),count);
         document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
     }catch(error){
