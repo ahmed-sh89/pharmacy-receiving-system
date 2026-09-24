@@ -562,9 +562,9 @@ function ensurePcClearScreenButton(){
         button.className="pcClearLastScan";
         button.textContent="CLEAR SCREEN";
 
-        const metrics=card.querySelector(".lastScanMetrics");
-        if(metrics){
-            metrics.insertAdjacentElement("afterend",button);
+        const heading=card.querySelector(".cardHeader");
+        if(heading){
+            heading.appendChild(button);
         }else{
             card.appendChild(button);
         }
@@ -1664,12 +1664,11 @@ function refreshHeader(){
         setElementText(document.getElementById("topBarPharmacyCode"), pharmacyCode);
     }
 
-    // Approved compact Dashboard identity: show the signed-in pharmacy name.
+    // Pharmacy identity lives in the sidebar; the header identifies the route.
     const dashboardActive = document.getElementById("page-dashboard")?.classList.contains("active");
     if(dashboardActive){
-        const pharmacyName = (document.getElementById("accountPharmacyName")?.textContent || "Pharmacy").trim();
         setElementText(UI.elements.pageTitle, "Receiving");
-        setElementText(UI.elements.pageSubtitle, "Receiving Dashboard");
+        setElementText(UI.elements.pageSubtitle, "Scan, review and reconcile orders");
     }
 
     const hasActiveOrder = !!(
@@ -1678,7 +1677,7 @@ function refreshHeader(){
     );
     const manageOrdersLabel=document.querySelector("#pfnManageOrders span");
     if(manageOrdersLabel){
-        manageOrdersLabel.textContent=hasActiveOrder ? "Manage Orders" : "Upload / Manage Orders";
+        manageOrdersLabel.textContent="Manage Orders";
     }
 
     {
@@ -2077,6 +2076,8 @@ function refreshLastScan(){
 
     const scan =
         AppState.workspace.lastScan;
+
+    UI.elements.lastScanCard?.classList.toggle("isEmpty",!scan);
 
     if(!scan){
 
@@ -7627,7 +7628,7 @@ function refreshHandheldWorkspaceStatus(){
     };
     state.classList.remove("isSyncing","isOffline","isEmpty");
     if(loading){
-        setStatus("SYNCING WORKSPACE…");
+        setStatus("RECONNECTING");
         state.classList.add("isSyncing");
     }else if(!online){
         setStatus("OFFLINE");
@@ -7636,9 +7637,9 @@ function refreshHandheldWorkspaceStatus(){
         setStatus("NOT CONNECTED");
         state.classList.add("isOffline");
     }else if(activeOrders.length>0){
-        setStatus("CONNECTED");
+        setStatus("ONLINE");
     }else{
-        setStatus("CONNECTED");
+        setStatus("ONLINE");
         state.classList.add("isEmpty");
     }
     setAssignedOrders();
@@ -8706,7 +8707,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
             </div>`:(pharmacyAdmin&&hasIdentifier?`
             <div class="needsReviewMappingActions"><label>Identifier<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add Pharmacy Mapping</button></div>`:globalNotice());
-        workspace.innerHTML=`${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
+        workspace.innerHTML=`<span class="identifierScopeBadge">${pharmacyMapping?"THIS PHARMACY":"GLOBAL"}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
         if(!canManage&&!pharmacyAdmin) return;
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
         const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
@@ -8766,7 +8767,9 @@ setTimeout(()=>{
 async function openNeedsReviewPanel(workflow="RECEIVING"){
     const handheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
     closeNeedsReviewPhotoViewer();
-    document.getElementById("needsReviewOverlay")?.remove();
+    const previousPanel=document.getElementById("needsReviewOverlay");
+    previousPanel?.disposeFocus?.();
+    previousPanel?.remove();
 
     let rawRows=[];
     try{ rawRows=await loadNeedsReviewRows(workflow,null); }
@@ -8798,7 +8801,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             <section class="needsReviewRow" data-i="${index}">
               <div class="needsReviewInfo">
                 <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNISED"}</span>
-                <span class="pfnReviewLabel">IDENTIFIER</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong><button type="button" data-copy-identifier="${index}">Copy</button>
+                <div class="capturedIdentifier"><span class="pfnReviewLabel">CAPTURED IDENTIFIER</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong><button type="button" data-copy-identifier="${index}">Copy</button></div>
                 <div class="pfnReviewMeta">
                   <div class="important"><span>Quantity</span><b>${group.total_quantity}</b></div>
                   <div class="important"><span>Entries</span><b>${group.rows.length}</b></div>
@@ -8819,14 +8822,27 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       </section>`;
     document.body.appendChild(overlay);
 
+    const focusLifecycle=new AbortController();
+    let pendingSearchFocus=null;
+    overlay.disposeFocus=()=>{pendingSearchFocus=null;focusLifecycle.abort();};
+    const restoreSearchFocus=()=>{
+        if(document.hidden||!pendingSearchFocus?.isConnected||overlay.dataset.busy==="1")return;
+        pendingSearchFocus.focus({preventScroll:true});
+        pendingSearchFocus=null;
+    };
+    window.addEventListener("focus",restoreSearchFocus,{signal:focusLifecycle.signal});
+    document.addEventListener("visibilitychange",restoreSearchFocus,{signal:focusLifecycle.signal});
+
     const closePanel=()=>{
         if(overlay.dataset.busy==="1"||overlay.dataset.confirming==="1") return;
         closeNeedsReviewPhotoViewer();
+        overlay.disposeFocus();
         overlay.remove();
         if(handheld) focusScannerInput?.();
     };
     overlay.querySelectorAll("[data-review-close]").forEach(button=>button.addEventListener("click",closePanel));
     overlay.querySelector("[data-review-history]")?.addEventListener("click",async()=>{
+        pendingSearchFocus=null;
         const list=overlay.querySelector("[data-review-list]");if(!list)return;
         try{
             const history=await nrV3ListHistory?.(workflow,null)||[];
@@ -8842,13 +8858,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
         const clearReview=overlay.querySelector(`[data-clear-review="${index}"]`);
         let selectedItem=null;
-        let refocusAfterCopy=false;
 
         overlay.querySelector(`[data-copy-identifier="${index}"]`)?.addEventListener("click",async event=>{
             try{
-                await navigator.clipboard?.writeText(group.gtin);
+                if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
+                await navigator.clipboard.writeText(group.gtin);
                 showToast?.("Identifier copied","success");
-                refocusAfterCopy=true;
+                pendingSearchFocus=search;
                 search?.focus();
             }catch(_){showToast?.("Copy is unavailable; select the identifier and copy it manually.","warning");}
         });
@@ -8923,9 +8939,6 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         };
         search?.addEventListener("input",drawMatches);
         clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
-        const restoreSearchFocus=()=>{if(!refocusAfterCopy||!document.body.contains(overlay)||overlay.dataset.busy==="1")return;refocusAfterCopy=false;search?.focus({preventScroll:true});};
-        window.addEventListener("focus",restoreSearchFocus,{once:true});
-        document.addEventListener("visibilitychange",()=>{if(!document.hidden)restoreSearchFocus();},{once:true});
     });
 
     if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
@@ -9034,7 +9047,10 @@ function openCurrentMissingGTINPanel(){
     const overlay=document.createElement("div");overlay.id="currentMissingGTINOverlay";overlay.className="quickKpiOverlay";
     const esc=typeof escapeHTML==="function"?escapeHTML:(v=>String(v??""));
     overlay.innerHTML=`<div class="quickKpiPanel"><div class="quickKpiHeader"><h3>Missing GTIN — Current Workspace</h3><button type="button" class="quickKpiClose" data-close>✕</button></div>${rows.length?`<table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th></tr></thead><tbody>${rows.map(i=>`<tr><td>${esc(i.itemCode)}</td><td><b>${esc(i.itemName)}</b></td><td>${toNumber(i.orderedQty,0)}</td></tr>`).join("")}</tbody></table>`:`<div class="quickKpiEmpty">No missing GTIN items in the current workspace.</div>`}</div>`;
-    document.body.appendChild(overlay);overlay.querySelector('[data-close]').onclick=()=>overlay.remove();overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+    document.body.appendChild(overlay);
+    window.PharmFlowModalStack?.open(overlay);
+    const close=()=>{window.PharmFlowModalStack?.close(overlay);overlay.remove();};
+    overlay.querySelector('[data-close]').onclick=close;overlay.onclick=e=>{if(e.target===overlay)close();};
 }
 
 async function requestRemoveActiveOrderFile(fileId){

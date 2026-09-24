@@ -335,10 +335,10 @@ const APP_CONFIG = Object.freeze({
                 "page-dashboard",
 
             title:
-                "Dashboard",
+                "Receiving",
 
             subtitle:
-                "Receiving overview"
+                "Scan, review and reconcile orders"
 
         },
 
@@ -351,10 +351,10 @@ const APP_CONFIG = Object.freeze({
                 "page-receiving",
 
             title:
-                "Receiving",
+                "Receiving Report",
 
             subtitle:
-                "Current order items"
+                "Current order reconciliation"
 
         },
 
@@ -466,7 +466,7 @@ const APP_CONFIG = Object.freeze({
                 "Settings",
 
             subtitle:
-                "Workspace and data management"
+                "Workspace and administration"
 
         }
 

@@ -1,3 +1,4 @@
+/* Component ownership: desktop shell and Receiving are in pharmflow-next.css. */
 :root {
   --bg: #f5f7fb;
   --surface: #ffffff;
@@ -86,14 +87,12 @@ button:disabled {
 #app {
   min-height: 100vh;
 }
-
-.mainApplication {
+body.zebraDevice .mainApplication{
   min-height: 100vh;
   margin-left: 260px;
   transition: margin-left var(--transition);
 }
-
-.mainContent {
+body.zebraDevice .mainContent{
   padding: 24px;
 }
 
@@ -104,13 +103,7 @@ button:disabled {
 .appPage.active {
   display: block;
 }
-
-
-/* =====================================================
- TOP BAR
-===================================================== */
-
-.topBar {
+body.zebraDevice .topBar{
   position: sticky;
   top: 0;
   z-index: 30;
@@ -130,21 +123,18 @@ button:disabled {
 
   backdrop-filter: blur(12px);
 }
-
-.topBarLeft,
-.topBarRight {
+body.zebraDevice .topBarLeft,
+body.zebraDevice .topBarRight{
   display: flex;
   align-items: center;
   gap: 16px;
 }
-
-.pageHeading h1 {
+body.zebraDevice .pageHeading h1{
   margin: 0;
   font-size: 22px;
   line-height: 1.15;
 }
-
-.pageHeading p {
+body.zebraDevice .pageHeading p{
   margin: 4px 0 0;
   color: var(--text-soft);
   font-size: 13px;
@@ -351,13 +341,7 @@ button:disabled {
 
   margin-top: 18px;
 }
-
-
-/* =====================================================
- SCAN PANEL
-===================================================== */
-
-.scanPanel {
+body.zebraDevice .scanPanel{
   position: relative;
   overflow: hidden;
 
@@ -377,8 +361,7 @@ button:disabled {
   box-shadow:
       0 14px 32px rgba(11, 94, 215, 0.10);
 }
-
-.scanPanel::before {
+body.zebraDevice .scanPanel::before{
   content: "";
 
   position: absolute;
@@ -393,8 +376,7 @@ button:disabled {
   background:
       rgba(11, 94, 215, 0.06);
 }
-
-.scanPanelHeader {
+body.zebraDevice .scanPanelHeader{
   position: relative;
   z-index: 1;
 
@@ -406,18 +388,15 @@ button:disabled {
 
   margin-bottom: 20px;
 }
-
-.scanPanelHeader h2 {
+body.zebraDevice .scanPanelHeader h2{
   margin: 4px 0 5px;
   font-size: 24px;
 }
-
-.scanPanelHeader p {
+body.zebraDevice .scanPanelHeader p{
   margin: 0;
   color: var(--text-soft);
 }
-
-.scanStatusBadge {
+body.zebraDevice .scanStatusBadge{
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -429,13 +408,11 @@ button:disabled {
   font-size: 12px;
   font-weight: 800;
 }
-
-.scanStatusBadge.ready {
+body.zebraDevice .scanStatusBadge.ready{
   background: var(--success-soft);
   color: var(--success);
 }
-
-.scanStatusBadge.error {
+body.zebraDevice .scanStatusBadge.error{
   background: var(--danger-soft);
   color: var(--danger);
 }
@@ -451,8 +428,7 @@ button:disabled {
   box-shadow:
       0 0 0 5px rgba(31, 157, 104, 0.12);
 }
-
-.scanBox {
+body.zebraDevice .scanBox{
   position: relative;
 
   display: flex;
@@ -476,8 +452,7 @@ button:disabled {
       box-shadow var(--transition),
       transform var(--transition);
 }
-
-.scanBox:focus-within {
+body.zebraDevice .scanBox:focus-within{
   border-color: #004cb9;
 
   box-shadow:
@@ -486,22 +461,19 @@ button:disabled {
 
   transform: translateY(-1px);
 }
-
-.scanBox.success {
+body.zebraDevice .scanBox.success{
   border-color: var(--success);
 
   box-shadow:
       0 0 0 6px rgba(31, 157, 104, 0.10);
 }
-
-.scanBox.error {
+body.zebraDevice .scanBox.error{
   border-color: var(--danger);
 
   box-shadow:
       0 0 0 6px rgba(214, 69, 69, 0.10);
 }
-
-.scanBoxIcon {
+body.zebraDevice .scanBoxIcon{
   width: 52px;
   height: 52px;
 
@@ -519,8 +491,7 @@ button:disabled {
   font-size: 28px;
   font-weight: 900;
 }
-
-#barcodeInput {
+body.zebraDevice #barcodeInput{
   width: 100%;
   min-width: 0;
 
@@ -537,13 +508,11 @@ button:disabled {
   font-weight: 700;
   letter-spacing: 0.5px;
 }
-
-#barcodeInput::placeholder {
+body.zebraDevice #barcodeInput::placeholder{
   color: #9ba8bd;
   font-weight: 600;
 }
-
-.scanBoxIndicator {
+body.zebraDevice .scanBoxIndicator{
   flex: 0 0 auto;
 
   margin-right: 8px;
@@ -559,8 +528,7 @@ button:disabled {
   font-weight: 900;
   letter-spacing: 1px;
 }
-
-.scanPanelFooter {
+body.zebraDevice .scanPanelFooter{
   display: flex;
   align-items: center;
 
@@ -571,21 +539,14 @@ button:disabled {
   color: var(--text-soft);
   font-size: 13px;
 }
-
-
-/* =====================================================
- LAST SCAN
-===================================================== */
-
-.lastScanGrid {
+body.zebraDevice .lastScanGrid{
   display: grid;
   grid-template-columns:
       repeat(7, minmax(100px, 1fr));
 
   gap: 12px;
 }
-
-.lastScanField {
+body.zebraDevice .lastScanField{
   padding: 13px;
 
   border: 1px solid var(--border);
@@ -593,8 +554,7 @@ button:disabled {
 
   background: var(--surface-soft);
 }
-
-.lastScanField span {
+body.zebraDevice .lastScanField span{
   display: block;
 
   margin-bottom: 6px;
@@ -603,8 +563,7 @@ button:disabled {
   font-size: 11px;
   text-transform: uppercase;
 }
-
-.lastScanField strong {
+body.zebraDevice .lastScanField strong{
   display: block;
 
   overflow: hidden;
@@ -1302,16 +1261,21 @@ button:disabled {
   --shadow-md:0 18px 44px rgba(13,71,161,.10);
 }
 body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
-.topBar{min-height:72px;border-bottom-color:#e7ebf1;box-shadow:0 1px 0 rgba(13,71,161,.02);}
-.pageHeading h1{font-weight:800;letter-spacing:-.35px;color:#102746;}
+body.zebraDevice .topBar{min-height:72px;border-bottom-color:#e7ebf1;box-shadow:0 1px 0 rgba(13,71,161,.02);}
+body.zebraDevice .pageHeading h1{font-weight:800;letter-spacing:-.35px;color:#102746;}
 .primaryButton{background:linear-gradient(135deg,var(--primary),#1769c2);border-color:var(--primary);box-shadow:0 8px 18px rgba(13,71,161,.14);}
 .primaryButton:hover{background:linear-gradient(135deg,var(--primary-dark),var(--primary));}
 .warningButton{background:var(--accent);border-color:var(--accent);color:#fff;}
-.card,.panel,.statCard{border-color:#e6ebf3;box-shadow:var(--shadow-sm);}
+.card,
+.panel,
+body.zebraDevice .statCard{border-color:#e6ebf3;box-shadow:var(--shadow-sm);}
 .medryvoLogoSvg{display:block;width:100%;height:100%;}
 
 /* PHARMFLOW BRAND SYSTEM — PHASE 2B */
-:root{--primary:#0B5ED7;--primary-dark:#073E9C;--primary-soft:#EAF2FF;--brand-orange:#FF8A00;--brand-orange-soft:#FFF2E2;--brand-navy:#0C1D38;--bg:#F4F7FB;--border:#E1E8F2;--text:#14213A;--text-soft:#65738A}body{background:radial-gradient(circle at 90% 0%,rgba(11,94,215,.055),transparent 28rem),var(--bg)}.topBar{min-height:80px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(13,43,88,.04)}.pageHeading h1{color:var(--brand-navy);letter-spacing:-.02em}.pageHeading p{color:var(--text-soft)}
+:root{--primary:#0B5ED7;--primary-dark:#073E9C;--primary-soft:#EAF2FF;--brand-orange:#FF8A00;--brand-orange-soft:#FFF2E2;--brand-navy:#0C1D38;--bg:#F4F7FB;--border:#E1E8F2;--text:#14213A;--text-soft:#65738A}body{background:radial-gradient(circle at 90% 0%,rgba(11,94,215,.055),transparent 28rem),var(--bg)}
+body.zebraDevice .topBar{min-height:80px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(13,43,88,.04)}
+body.zebraDevice .pageHeading h1{color:var(--brand-navy);letter-spacing:-.02em}
+body.zebraDevice .pageHeading p{color:var(--text-soft)}
 
 /* =====================================================
    PHARMFLOW — WARM PEARL GLOBAL BACKGROUND
@@ -1323,7 +1287,9 @@ body{background:linear-gradient(180deg,#f9fbfe 0%,#f4f7fb 100%);}
   --border:#E7E1D8;
 }
 body{background:#F5F3EF;}
-.mainApplication,.mainContent,.appPage{background-color:#F5F3EF;}
+body.zebraDevice .mainApplication,
+body.zebraDevice .mainContent,
+.appPage{background-color:#F5F3EF;}
 
 
 /* =====================================================
