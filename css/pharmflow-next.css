@@ -2944,6 +2944,38 @@ body:not(.zebraDevice).pfnCleanReceiving .pfnOrderControlGroup .pfnOrderSelector
 body:not(.zebraDevice).pfnCleanReceiving .pfnOrderControlGroup .headerOrderPickerButton{min-width:220px!important;height:42px!important;padding:0 12px!important;border:1px solid #9ebedc!important;border-radius:9px!important;background:#fff!important;font-size:13px!important;font-weight:900!important}
 body:not(.zebraDevice).pfnCleanReceiving .pfnOrderControlGroup .pfnSessionStatus{display:none!important}
 
+/* Report owner: compact hierarchy, readable discrepancy controls. */
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard{max-width:1500px!important;margin:0 auto!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard>.cardHeader{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:18px!important;padding-bottom:10px!important;border-bottom:1px solid #dbe7f2!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard>.cardHeader h2{margin:3px 0 0!important;font-size:24px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .receivingSummaryHeader{display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:16px!important;padding:14px 16px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .pfnReportTitleBlock{text-align:left!important}.pfnReportTitleBlock h3{margin:3px 0!important;font-size:24px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .receivingSummaryActions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .receivingSummaryActions button,body:not(.zebraDevice).pfnCleanReceiving #page-receiving .pfnReportActionMenu>summary{min-height:42px!important;padding:0 14px!important;border-radius:9px!important;font-size:14px!important;font-weight:900!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .pfnReportBack{margin-right:8px!important;border:1px solid #9ebad3!important;background:#fff!important;color:#174f7d!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .pfnReportBack span:first-child{font-size:20px!important;margin-right:4px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .discrepancyGrid{gap:8px!important;padding:10px 16px 14px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .pfnIssueCard{min-height:66px!important;padding:9px 11px!important}.pfnCleanReceiving #page-receiving .pfnIssueCard span{font-size:13px!important;font-weight:850!important}.pfnCleanReceiving #page-receiving .pfnIssueCard strong{font-size:22px!important}
+
+/* Settings owner: constrained administration workspace, clear domain separation. */
+body:not(.zebraDevice).pfnCleanReceiving #page-settings{max-width:1240px!important;margin:0 auto!important;padding-bottom:18px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings>.contentCard{padding:18px 20px!important;margin-bottom:12px!important;border-radius:14px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings .cardHeader h2{font-size:22px!important;margin:3px 0!important}.pfnCleanReceiving #page-settings .sectionEyebrow{font-size:11px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings .accountSettingsGrid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important}.pfnCleanReceiving #page-settings .accountSettingTile{min-height:70px!important;padding:11px 12px!important}.pfnCleanReceiving #page-settings .accountSettingTile span{font-size:11px!important}.pfnCleanReceiving #page-settings .accountSettingTile strong{font-size:15px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings .settingsButtonGrid{display:flex!important;gap:9px!important;flex-wrap:wrap!important}.pfnCleanReceiving #page-settings .settingsButtonGrid button{min-height:42px!important;font-size:14px!important;font-weight:850!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings .masterGTINCard{border-color:#9bcfd3!important;background:#fbffff!important}.pfnCleanReceiving #page-settings .globalIdentifierMasterAdmin{padding:16px!important;border-radius:12px!important}.pfnCleanReceiving #page-settings .globalIdentifierMasterIntro{margin-bottom:13px!important;font-size:14px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings .globalIdentifierMasterLookupGrid{grid-template-columns:minmax(260px,1fr) auto minmax(300px,1.2fr) auto auto!important;align-items:end!important;gap:9px!important}.pfnCleanReceiving #page-settings .globalIdentifierMasterLookupGrid label{font-size:13px!important}.pfnCleanReceiving #page-settings .globalIdentifierMasterLookupGrid input{min-height:44px!important;font-size:15px!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-settings .legacyMappingDetails{margin-top:14px!important}.pfnCleanReceiving #page-settings .dangerZoneCard{margin-top:18px!important;border:1px solid #e6b3b8!important;background:#fffafb!important}
+
+/* Manage Orders modal: dense operational sections instead of an oversized blank canvas. */
+body:not(.zebraDevice) .pfnOrdersModal{width:min(1180px,92vw)!important;height:min(760px,86vh)!important}.pfnOrdersModal .pfnModalHeader{padding:14px 18px!important}.pfnOrdersModal .pfnModalBody{padding:14px 16px!important}
+body:not(.zebraDevice) .pfnOrdersModal .pfnHandheldAssignment{padding:13px 14px!important;margin-bottom:12px!important}.pfnOrdersModal .pfnHandheldAssignment h3{font-size:19px!important}.pfnOrdersModal .pfnHandheldAssignment p{font-size:14px!important}
+body:not(.zebraDevice) .pfnOrdersModal .pfnHandheldOrderGrid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;gap:7px!important;margin:10px 0!important}.pfnOrdersModal .pfnHandheldOrderGrid label{min-height:40px!important;padding:7px 9px!important;font-size:14px!important}
+body:not(.zebraDevice) .pfnOrdersModal #page-files .cardHeader h2{font-size:21px!important}.pfnOrdersModal #page-files .dataTable th{font-size:12px!important}.pfnOrdersModal #page-files .dataTable td{font-size:14px!important;padding:9px 10px!important}
+
+/* Needs Review hierarchy. */
+body:not(.zebraDevice) .needsReviewPanel>header{align-items:center!important}.needsReviewPanel header p{font-size:14px!important;line-height:1.4!important}.needsReviewPanel .needsReviewList{gap:10px!important}.needsReviewPanel .needsReviewRow{padding:14px!important}.needsReviewPanel .needsReviewResolve>label{font-size:13px!important}.needsReviewPanel .needsReviewResolve input{font-size:15px!important}
+
 /* Dense Order Item Browser: preserve font size, remove wasted vertical space. */
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table th{
   padding:7px 12px!important;font-size:12px!important;line-height:1.15!important;
