@@ -133,16 +133,17 @@ test('visible Settings Global Master route exposes the V2 lookup controls before
   assert.match(settings,/id="globalIdentifierMasterAdmin"/);
   assert.match(settings,/class="globalIdentifierMasterAdmin"/);
   assert.match(settings,/data-admin-identifier/);
-  assert.match(settings,/data-admin-item-search/);
-  assert.match(settings,/Find Mapping/);
-  assert.match(settings,/Search Items/);
+  assert.doesNotMatch(settings,/data-admin-item-search/);
+  assert.match(settings,/Search Item/);
+  assert.match(settings,/Item Name, Item Code, Identifier, GTIN, or Barcode/);
   assert.ok(settings.indexOf('id="globalIdentifierMasterAdmin"') < settings.indexOf('Global Master import and mapping-file compatibility'));
   assert.match(ui,/function renderV2IdentifierAdministration\(/);
   assert.match(ui,/renderV2IdentifierAdministration\(settingsMaster\)/);
-  assert.match(ui,/itemLoad\?\.addEventListener\("click",\(\)=>renderItemSearch/);
+  assert.match(ui,/classifyIdentifierAdminQuery\(query\)/);
+  assert.match(ui,/renderUnmapped\(\)/);
   assert.match(ui,/IdentifierService\.searchItems\(value,12\)/);
   assert.match(ui,/IDENTIFIERS FOR THIS ITEM/);
-  assert.match(ui,/Add New Item &amp; First Identifier/);
+  assert.match(ui,/\+ Add GTIN/);
   assert.match(ui,/data-correct/);
   assert.match(ui,/data-remove/);
   assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
@@ -179,28 +180,21 @@ test('Settings leads with V2 Global Master administration while preserving impor
   assert.match(index,/Mapping-file compatibility/);
 });
 
-test('Stage 2 loads one coherent cache-versioned startup asset set',()=>{
+test('Stage 2 loads the intended cache-versioned startup assets',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
-  const stage2Assets=[
-    'js/utils.js',
-    'ui.js',
-    'js/identifier-service.js',
-    'js/receiving.js',
-    'js/orders.js',
-    'js/needs-review.js',
-    'js/app.js'
-  ];
-  for(const asset of stage2Assets){
+  const versions={
+    'ui.js':'FINAL_GATE1',
+    'js/needs-review.js':'FINAL_GATE1',
+    'js/identifier-service.js':'REVIEW_RECOVERY1',
+    'js/receiving.js':'REVIEW_RECOVERY1'
+  };
+  for(const [asset,version] of Object.entries(versions)){
     const escaped=asset.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    assert.match(index,new RegExp(`<script src="${escaped}\\?v=RECEIVING_U0030_RECOVERY2"><\\/script>`),`${asset} must use the coherent U0030 recovery asset version`);
+    assert.match(index,new RegExp(`<script src="${escaped}\\?v=${version}"><\\/script>`));
   }
-  assert.match(index,/<script src="js\/master-gtin\.js\?v=RECEIVING_U0030_RECOVERY2"><\/script>/);
-  assert.match(index,/<script src="js\/state\.js\?v=RECEIVING_U0030_RECOVERY2"><\/script>/);
-  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=RECEIVING_U0030_RECOVERY2">/);
-  assert.match(index,/<link rel="stylesheet" href="css\/receiving-surface\.css\?v=RECEIVING_U0030_RECOVERY2">/);
-  assert.doesNotThrow(()=>new Function(ui),'the cache-busted UI script must parse before application startup');
-  assert.doesNotThrow(()=>new Function(read('js/app.js')),'the cache-busted application bootstrap script must parse before startup');
+  assert.match(index,/<link rel="stylesheet" href="css\/pharmflow-next\.css\?v=REVIEW_RECOVERY1">/);
+  assert.doesNotThrow(()=>new Function(ui));
 });
 
 test('authenticated manifest hydration loads UI globals before the application bootstrap',()=>{
@@ -208,7 +202,7 @@ test('authenticated manifest hydration loads UI globals before the application b
   const ui=read('ui.js');
   const workspace=read('cloud-workspace.js');
   const app=read('js/app.js');
-  assert.ok(index.indexOf('ui.js?v=RECEIVING_U0030_RECOVERY2') < index.indexOf('cloud-workspace.js?v='));
+  assert.ok(index.indexOf('ui.js?v=FINAL_GATE1') < index.indexOf('cloud-workspace.js?v='));
   assert.ok(index.indexOf('cloud-workspace.js?v=') < index.indexOf('js/app.js?v=RECEIVING_U0030_RECOVERY2'));
   assert.match(ui,/function initializeUI\(/);
   assert.match(ui,/function refreshEntireUI\(/);

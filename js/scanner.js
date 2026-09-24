@@ -371,6 +371,17 @@ function shouldTreatAsBarcode(
         return false;
     }
 
+    /* The shared desktop field is search-first for exact active-order Item
+       Codes/Names. Alphanumeric text is not evidence of a physical barcode. */
+    if(!isZebraReceivingInput() && typeof getSearchableItems==="function"){
+        const query=raw.trim().toLowerCase();
+        const orderMatch=getSearchableItems().some(item=>
+            toSafeString(item?.itemCode).trim().toLowerCase()===query ||
+            toSafeString(item?.itemName).trim().toLowerCase()===query
+        );
+        if(orderMatch) return false;
+    }
+
 
     /*
        Strong GS1 / DataMatrix patterns are always Scan.
