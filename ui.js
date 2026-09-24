@@ -7567,13 +7567,21 @@ function getHandheldDeviceScannerRows(){
     const deviceId = typeof ensureDeviceId === "function"
         ? ensureDeviceId()
         : AppState?.session?.deviceId;
+    const assignedOrders = typeof getSelectedReceivingOrderNumbers === "function"
+        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
+        : [];
+    const assignedSet = new Set(assignedOrders);
 
     return history.filter(tx => {
         const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
         const source = String(tx?.source || "").toUpperCase();
         const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
             || source.includes("SCAN");
-        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+        const txOrder=normalizeOrderNumber(
+            tx?.selectedOrderNumber || tx?.orderId || tx?.orderNumber || ""
+        );
+        const inCurrentWorkScope=assignedSet.size>0 && assignedSet.has(txOrder);
+        return sameDevice && isScan && inCurrentWorkScope && Number(tx?.quantity || 0) > 0;
     });
 }
 
@@ -8464,13 +8472,28 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+function filterNeedsReviewRowsToCurrentOrderScope(rows){
+    let selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
+        : [];
+    const handheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
+    if(!selected.length && !handheld && typeof getActiveReceivingOrderNumbers==="function"){
+        selected=getActiveReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean);
+    }
+    if(!selected.length) return [];
+    const allowed=new Set(selected);
+    return (Array.isArray(rows)?rows:[]).filter(row=>
+        allowed.has(normalizeOrderNumber(row?.order_number||""))
+    );
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
         /* Pharmacy-scoped by design. Never hide Handheld drafts because of
            a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=filterNeedsReviewRowsToCurrentOrderScope(await loadNeedsReviewRows("RECEIVING",null));
         const rc=document.getElementById("receivingNeedsReviewCount");
 
         const grouped=groupNeedsReviewRows(receiving);
@@ -8579,14 +8602,14 @@ function nrV2HasTransactionId(transactionId){
 
 async function nrV2ResolveGroupToOrderItem(group,item){
     const transactionId=nrV2GroupTransactionId(group);
-    /* Needs Review learns only in the current pharmacy. Global Master changes
-       remain a deliberate System Owner administration operation elsewhere. */
+    /* Persist the identifier through the server-authoritative pharmacy policy:
+       HHP084 enriches Global Master; other pharmacies learn only in their own scope. */
     let pharmacyMapping=null;
+    const first=group.rows[0];
+    const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin).trim();
     if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()){
-        const first=group.rows[0];
-        const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
         if(identifier){
-            const mappingResult=await IdentifierService.addPharmacyIdentifier(
+            const mappingResult=await IdentifierService.addForCurrentPharmacy(
                 nrV2OperationId(),identifier,item,"Needs Review resolution"
             );
             pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
@@ -8611,12 +8634,12 @@ async function nrV2ResolveGroupToOrderItem(group,item){
             targetOrder:group.order_number||"",
             transactionId,
             identifierPreserveExact:true,
-            gtinResolution:pharmacyMapping ? {
+            gtinResolution:pharmacyMapping?.mappingScope==="PHARMACY" ? {
                 kind:"PHARMACY_LEARNED",
                 mappingId:pharmacyMapping.identifierId,
                 mappingRevision:pharmacyMapping.mappingRevision,
-                identifierDisplay:pharmacyMapping.identifierDisplay,
-                identifierKey:pharmacyMapping.identifierKey,
+                identifierDisplay:identifier,
+                identifierKey:toSafeString(pharmacyMapping.identifierKey||identifier).trim().toUpperCase(),
                 resolvedItemCode:pharmacyMapping.itemCode
             } : null
         });
@@ -8665,22 +8688,24 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const input=overlay.querySelector("[data-admin-identifier]");
     const workspace=overlay.querySelector("[data-admin-workspace]");
     const load=overlay.querySelector("[data-admin-load]");
-    const itemSearch=overlay.querySelector("[data-admin-item-search]");
-    const itemLoad=overlay.querySelector("[data-admin-item-load]");
     const clear=overlay.querySelector("[data-admin-clear]");
     if(!input||!workspace||!load) return;
     if(load.dataset.identifierAdminBound==="1") return;
     load.dataset.identifierAdminBound="1";
-    if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
-    const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
+     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
-    let resolved=null, selectedItem=null, pendingIdentifier="";
-    const globalNotice=()=>"<p class=\"needsReviewGlobalNotice\">Global Master changes require System Owner permission. Pharmacy mappings affect only the current pharmacy.</p>";
+    let resolved=null, selectedItem=null, pendingIdentifier="", cachedAdminScope=null;
+    const adminScope=async()=>{
+        if(cachedAdminScope) return cachedAdminScope;
+        cachedAdminScope=toSafeString(await IdentifierService.adminScope()).replaceAll('"',"");
+        return cachedAdminScope;
+    };
+    const globalNotice=()=>"<p class=\"needsReviewGlobalNotice\">Identifier management follows the current pharmacy's server-authoritative scope.</p>";
     const reasonField=()=>`<label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label>`;
     const itemSummary=item=>`<div class="needsReviewMappingCurrent"><span>GLOBAL ITEM</span><strong>${esc(item.item_code||item.itemCode)} → ${esc(item.item_name||item.itemName||"Unnamed item")}</strong></div>`;
     const listIdentifiers=async itemCode=>{
         const identifiers=await IdentifierService.listItemIdentifiers(itemCode);
-        return `<div class="needsReviewMappingCompare"><span>IDENTIFIERS FOR THIS ITEM</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)} <small>${esc(row.identifier_key)}</small></strong>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
+        return `<div class="needsReviewMappingCompare"><span>GTIN / BARCODE</span>${identifiers.length?identifiers.map(row=>`<button type="button" data-existing-identifier="${esc(row.identifier_display)}">${esc(row.identifier_display)}</button>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
     };
     const bindItemResults=(items,afterSelect)=>{
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
@@ -8697,33 +8722,29 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const hasIdentifier=!!identifier;
         const globalOwner=isGlobalOwner();
         const pharmacyAdmin=isCurrentPharmacyAdmin();
+        const scope=await adminScope();
         const pharmacyMapping=mapping?.mappingScope==="PHARMACY";
-        const canManage=pharmacyMapping ? pharmacyAdmin : globalOwner;
+        const canManage=mapping
+            ? (pharmacyMapping ? pharmacyAdmin : (globalOwner||scope==="GLOBAL"))
+            : pharmacyAdmin;
         const mappingActions=canManage?`
             <div class="needsReviewMappingActions">
-                ${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}
-                ${reasonField()}
-                <button type="button" data-add>${pharmacyMapping?"Add Pharmacy Mapping":"Add Mapping"}</button>
-                ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
-            </div>`:(pharmacyAdmin&&hasIdentifier?`
-            <div class="needsReviewMappingActions"><label>Identifier<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add Pharmacy Mapping</button></div>`:globalNotice());
-        workspace.innerHTML=`<span class="identifierScopeBadge">${pharmacyMapping?"THIS PHARMACY":"GLOBAL"}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
-        if(!canManage&&!pharmacyAdmin) return;
+                ${mapping
+                    ? `<label>GTIN / Barcode<input value="${esc(identifier)}" readonly></label>${reasonField()}<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct GTIN</button><button type="button" class="danger" data-remove>Remove</button>`
+                    : `<label>New GTIN / Barcode<input data-new-identifier placeholder="Enter identifier"></label>${reasonField()}<button type="button" data-add>+ Add GTIN</button>`}
+            </div>`:globalNotice();
+        workspace.innerHTML=`${itemSummary(item)}${identifiers}${mappingActions}`;
+        workspace.querySelectorAll("[data-existing-identifier]").forEach(button=>button.addEventListener("click",()=>{
+            input.value=toSafeString(button.dataset.existingIdentifier);
+            drawIdentifier();
+        }));
+        if(!canManage) return;
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
         const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
         const currentIdentifier=()=>toSafeString(identifier||workspace.querySelector("[data-new-identifier]")?.value).trim();
-        const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
-        workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
-        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter a GTIN / Barcode");event.currentTarget.disabled=true;await IdentifierService.addForCurrentPharmacy(nrV2OperationId(),value,item,requireReason());input.value=value;await drawIdentifier();showToast?.("GTIN added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add GTIN","error");}});
         workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
         workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
-    };
-    const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
-        const value=toSafeString(query).trim();
-        if(!value){showToast?.("Enter an Item Code or Item Name","warning");itemSearch?.focus();return;}
-        const items=await IdentifierService.searchItems(value,12);
-        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the canonical Global Item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
-        bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
     };
     const renderUnmapped=()=>{
         const globalOwner=isGlobalOwner(), pharmacyAdmin=isCurrentPharmacyAdmin();
@@ -8735,28 +8756,35 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const addExisting=workspace.querySelector("[data-add-existing]");
         search?.addEventListener("input",async()=>{const query=toSafeString(search.value).trim();selected=null;if(addExisting)addExisting.disabled=true;if(!query){results.innerHTML="";return;}try{const items=await IdentifierService.searchItems(query,12);results.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";results.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selected=items[Number(button.dataset.globalItem)]||null;results.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selected;}));}catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}});
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{if(globalOwner) await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason());else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),pendingIdentifier,selected,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.addForCurrentPharmacy(nrV2OperationId(),pendingIdentifier,selected,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
         workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name||!reason()){showToast?.("Item Code, Item Name and reason are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
     };
     const drawIdentifier=async()=>{
         pendingIdentifier=toSafeString(input.value).trim();
-        if(!pendingIdentifier){showToast?.("Enter an identifier","warning");input.focus();return;}
+        if(!pendingIdentifier){showToast?.("Enter an Item Name, Item Code, or GTIN / Barcode","warning");input.focus();return;}
         load.disabled=true;
         try{
-            resolved=await IdentifierService.resolve(pendingIdentifier);
-            if(!resolved?.found){
-                renderUnmapped();
+            const [mapping,items]=await Promise.all([
+                IdentifierService.resolve(pendingIdentifier),
+                IdentifierService.searchItems(pendingIdentifier,12)
+            ]);
+            resolved=mapping;
+            if(mapping?.found){
+                await showItem({item_code:mapping.itemCode,item_name:mapping.itemName},{identifier:mapping.identifierDisplay||pendingIdentifier,mapping});
                 return;
             }
-            await showItem({item_code:resolved.itemCode,item_name:resolved.itemName},{identifier:pendingIdentifier,mapping:resolved});
-        }catch(error){workspace.innerHTML="";showToast?.(error?.message||"Unable to load Global Master mapping","error");}
+            if(items.length){
+                workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_name||"Unnamed item")}</strong><small>Item Code ${esc(item.item_code)}</small></span></button>`).join("")}</div>`;
+                bindItemResults(items,item=>showItem(item,{mapping:null}));
+                return;
+            }
+            renderUnmapped();
+        }catch(error){workspace.innerHTML="";showToast?.(error?.message||"Unable to search Identifier Master","error");}
         finally{load.disabled=false;}
     };
     load.addEventListener("click",drawIdentifier);
     input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();drawIdentifier();}});
-    itemLoad?.addEventListener("click",()=>renderItemSearch(itemSearch?.value));
-    itemSearch?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();renderItemSearch(itemSearch.value);}});
-    clear?.addEventListener("click",()=>{input.value="";if(itemSearch)itemSearch.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";input.focus();});
+    clear?.addEventListener("click",()=>{input.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";input.focus();});
 }
 
 setTimeout(()=>{
@@ -8772,7 +8800,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     previousPanel?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{ rawRows=filterNeedsReviewRowsToCurrentOrderScope(await loadNeedsReviewRows(workflow,null)); }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8791,14 +8819,17 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
           <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
           <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
-        <details class="needsReviewAdmin"><summary>Global Identifier Master</summary><div class="needsReviewAdminBody">
-          <p>Find a Global Master identifier and review its Item, sibling identifiers, or an explicit mapping change.</p>
-          <div class="needsReviewAdminLookup"><label>Identifier / GTIN<input data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code or GTIN"></label><button type="button" data-admin-load>Find mapping</button></div>
-          <div data-admin-workspace></div>
-        </div></details>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
-            <section class="needsReviewRow" data-i="${index}">
+            <details class="needsReviewRow" name="needs-review-case" data-i="${index}">
+              <summary class="needsReviewRowSummary">
+                <span><small>Identifier</small><strong>${esc(group.gtin)}</strong></span>
+                <span><small>Original Order</small><strong>${group.order_number?esc(group.order_number):"Unavailable"}</strong></span>
+                <span><small>Qty</small><strong>${group.total_quantity}</strong></span>
+                <span><small>Status</small><strong>PENDING</strong></span>
+                <b aria-hidden="true">›</b>
+              </summary>
+              <div class="needsReviewCaseDetail">
               <div class="needsReviewInfo">
                 <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNISED"}</span>
                 <div class="capturedIdentifier"><span class="pfnReviewLabel">CAPTURED IDENTIFIER</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong><button type="button" data-copy-identifier="${index}">Copy</button></div>
@@ -8810,14 +8841,16 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
+              ${handheld?'<div class="needsReviewViewOnly"><span>VIEW ONLY</span><small>Resolve this case from the PC.</small></div>':`
               <div class="needsReviewResolve">
                 <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false"></label>
                 <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+              </div>`}
               </div>
-            </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
+            </details>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
       </section>`;
     document.body.appendChild(overlay);
@@ -8943,7 +8976,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
 
-    renderV2IdentifierAdministration(overlay,esc);
+    /* Identifier administration lives only in Settings. Needs Review is case-specific. */
 
     overlay.addEventListener("keydown",event=>{
         if(event.key!=="Escape"||overlay.dataset.busy==="1") return;
@@ -8961,6 +8994,7 @@ window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
 let needsReviewCloudWatchTimer=null;
 let needsReviewCloudWatchBusy=false;
 let needsReviewCloudLastReadAt=0;
+let needsReviewCloudLastGlobalCount=null;
 async function refreshNeedsReviewCountFromCloud({force=false}={}){
     if(window.PharmFlowIdleSleep?.active) return;
     if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()) return;
@@ -8974,8 +9008,10 @@ async function refreshNeedsReviewCountFromCloud({force=false}={}){
     needsReviewCloudLastReadAt=now;
     try{
         const count=await nrV2Count("RECEIVING");
-        setElementText(document.getElementById("receivingNeedsReviewCount"),count);
-        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
+        if(force || needsReviewCloudLastGlobalCount===null || count!==needsReviewCloudLastGlobalCount){
+            needsReviewCloudLastGlobalCount=count;
+            await refreshNeedsReviewCounters();
+        }
     }catch(error){
         Logger?.warn?.("Needs Review count sync failed",error);
     }finally{
@@ -9011,7 +9047,7 @@ function refreshOrderScopeControl(){
     const current=getActiveOrderScope();
     if(current!=='ALL' && !orders.includes(current)) window.PharmFlowOrderScope='ALL';
     wrap.innerHTML=`<label>Order View</label><select id="orderScopeSelect"><option value="ALL">All Active Orders</option>${orders.map(o=>`<option value="${escapeHtml(o)}" ${getActiveOrderScope()===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}</select>`;
-    wrap.querySelector('select').onchange=e=>{ window.PharmFlowOrderScope=e.target.value||'ALL'; refreshDashboard(); refreshOpenKpiPanel(); };
+    wrap.querySelector('select').onchange=e=>{ window.PharmFlowOrderScope=e.target.value||'ALL'; refreshDashboard(); refreshOpenKpiPanel(); refreshNeedsReviewCounters?.(); };
 }
 
 AppEvents.on('workspace:saved',()=>setTimeout(refreshOrderScopeControl,0));

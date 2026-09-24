@@ -24,11 +24,19 @@ function nrV2PharmacyId(){
 function nrV2CurrentOrderNumber(){
     const selected =
         typeof getSelectedReceivingOrderNumbers==="function"
-            ? getSelectedReceivingOrderNumbers()
+            ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
             : [];
 
+    /* Handheld attribution is deliberately stricter than PC visibility.
+       A Receiving exception belongs to the explicit Handheld work scope;
+       never fall through to a PC/session selection when that scope is
+       ambiguous. */
+    if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
+        return selected.length===1 ? selected[0] : "";
+    }
+
     if(selected.length===1){
-        return normalizeOrderNumber(selected[0]);
+        return selected[0];
     }
 
     const sessionOrder =
