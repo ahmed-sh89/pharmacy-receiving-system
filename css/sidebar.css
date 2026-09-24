@@ -1,8 +1,6 @@
-/* =====================================================
-   SIDEBAR
-===================================================== */
+/* Component ownership: desktop shell and Receiving are in pharmflow-next.css. */
 
-.sidebar {
+body.zebraDevice .sidebar{
   position: fixed;
   top: 0;
   left: 0;
@@ -34,13 +32,7 @@
       transform 0.24s ease,
       width 0.24s ease;
 }
-
-
-/* =====================================================
- BRAND
-===================================================== */
-
-.sidebarBrand {
+body.zebraDevice .sidebarBrand{
   min-height: 82px;
 
   display: flex;
@@ -53,8 +45,7 @@
   border-bottom:
       1px solid rgba(255, 255, 255, 0.08);
 }
-
-.brandLogo {
+body.zebraDevice .brandLogo{
   width: 44px;
   height: 44px;
 
@@ -78,8 +69,7 @@
 
   font-size: 24px;
 }
-
-.brandText {
+body.zebraDevice .brandText{
   min-width: 0;
 
   display: flex;
@@ -87,8 +77,7 @@
 
   gap: 3px;
 }
-
-.brandText strong {
+body.zebraDevice .brandText strong{
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -96,15 +85,13 @@
   font-size: 14px;
   font-weight: 800;
 }
-
-.brandText span {
+body.zebraDevice .brandText span{
   color:
       rgba(255, 255, 255, 0.58);
 
   font-size: 11px;
 }
-
-.sidebarCloseButton {
+body.zebraDevice .sidebarCloseButton{
   display: none;
 
   margin-left: auto;
@@ -122,13 +109,7 @@
 
   font-size: 15px;
 }
-
-
-/* =====================================================
- NAVIGATION
-===================================================== */
-
-.sidebarNavigation {
+body.zebraDevice .sidebarNavigation{
   flex: 1;
 
   display: flex;
@@ -140,8 +121,7 @@
 
   overflow-y: auto;
 }
-
-.sidebarItem {
+body.zebraDevice .sidebarItem{
   width: 100%;
   min-height: 46px;
 
@@ -170,19 +150,16 @@
       color 0.2s ease,
       transform 0.2s ease;
 }
-
-.sidebarItem:hover {
+body.zebraDevice .sidebarItem:hover{
   background:
       rgba(255, 255, 255, 0.07);
 
   color: #ffffff;
 }
-
-.sidebarItem:active {
+body.zebraDevice .sidebarItem:active{
   transform: scale(0.985);
 }
-
-.sidebarItem.active {
+body.zebraDevice .sidebarItem.active{
   background:
       linear-gradient(
           90deg,
@@ -195,8 +172,7 @@
   box-shadow:
       0 7px 18px rgba(0, 0, 0, 0.12);
 }
-
-.sidebarIcon {
+body.zebraDevice .sidebarIcon{
   width: 24px;
 
   flex: 0 0 auto;
@@ -207,40 +183,25 @@
 
   font-size: 17px;
 }
-
-
-/* =====================================================
- SCROLLBAR
-===================================================== */
-
-.sidebarNavigation::-webkit-scrollbar {
+body.zebraDevice .sidebarNavigation::-webkit-scrollbar{
   width: 5px;
 }
-
-.sidebarNavigation::-webkit-scrollbar-track {
+body.zebraDevice .sidebarNavigation::-webkit-scrollbar-track{
   background: transparent;
 }
-
-.sidebarNavigation::-webkit-scrollbar-thumb {
+body.zebraDevice .sidebarNavigation::-webkit-scrollbar-thumb{
   border-radius: 999px;
 
   background:
       rgba(255, 255, 255, 0.16);
 }
-
-
-/* =====================================================
- FOOTER
-===================================================== */
-
-.sidebarFooter {
+body.zebraDevice .sidebarFooter{
   padding: 14px 16px 18px;
 
   border-top:
       1px solid rgba(255, 255, 255, 0.08);
 }
-
-.autoSaveStatus {
+body.zebraDevice .autoSaveStatus{
   display: flex;
   align-items: center;
 
@@ -253,8 +214,7 @@
   background:
       rgba(255, 255, 255, 0.06);
 }
-
-.autoSaveStatus .statusDot {
+body.zebraDevice .autoSaveStatus .statusDot{
   width: 9px;
   height: 9px;
 
@@ -267,31 +227,22 @@
   box-shadow:
       0 0 0 5px rgba(54, 211, 153, 0.08);
 }
-
-.autoSaveStatus div {
+body.zebraDevice .autoSaveStatus div{
   display: flex;
   flex-direction: column;
 
   gap: 2px;
 }
-
-.autoSaveStatus strong {
+body.zebraDevice .autoSaveStatus strong{
   font-size: 11px;
 }
-
-.autoSaveStatus small {
+body.zebraDevice .autoSaveStatus small{
   color:
       rgba(255, 255, 255, 0.52);
 
   font-size: 10px;
 }
-
-
-/* =====================================================
- OVERLAY
-===================================================== */
-
-.sidebarOverlay {
+body.zebraDevice .sidebarOverlay{
   position: fixed;
   inset: 0;
 
@@ -304,65 +255,44 @@
 
   backdrop-filter: blur(2px);
 }
-
-.sidebarOverlay.show {
+body.zebraDevice .sidebarOverlay.show{
   display: block;
 }
-
-
-/* =====================================================
- DESKTOP COLLAPSED SIDEBAR
-===================================================== */
-
-body.sidebarCollapsed .sidebar {
+body.zebraDevice.sidebarCollapsed .sidebar{
   width: 82px;
 }
-
-body.sidebarCollapsed .mainApplication {
+body.zebraDevice.sidebarCollapsed .mainApplication{
   margin-left: 82px;
 }
-
-body.sidebarCollapsed .brandText,
-body.sidebarCollapsed .sidebarItem > span:not(.sidebarIcon),
-body.sidebarCollapsed .autoSaveStatus div {
+body.zebraDevice.sidebarCollapsed .brandText,
+body.zebraDevice.sidebarCollapsed .sidebarItem > span:not(.sidebarIcon),
+body.zebraDevice.sidebarCollapsed .autoSaveStatus div{
   display: none;
 }
-
-body.sidebarCollapsed .sidebarBrand {
+body.zebraDevice.sidebarCollapsed .sidebarBrand{
   justify-content: center;
 }
-
-body.sidebarCollapsed .sidebarNavigation {
+body.zebraDevice.sidebarCollapsed .sidebarNavigation{
   align-items: center;
 }
-
-body.sidebarCollapsed .sidebarItem {
+body.zebraDevice.sidebarCollapsed .sidebarItem{
   width: 54px;
 
   justify-content: center;
 
   padding: 0;
 }
-
-body.sidebarCollapsed .sidebarIcon {
+body.zebraDevice.sidebarCollapsed .sidebarIcon{
   width: auto;
 }
-
-body.sidebarCollapsed .sidebarFooter {
+body.zebraDevice.sidebarCollapsed .sidebarFooter{
   display: flex;
   justify-content: center;
 }
-
-body.sidebarCollapsed .autoSaveStatus {
+body.zebraDevice.sidebarCollapsed .autoSaveStatus{
   padding: 12px;
 }
-
-
-/* =====================================================
- ACTIVE INDICATOR
-===================================================== */
-
-.sidebarItem.active::before {
+body.zebraDevice .sidebarItem.active::before{
   content: "";
 
   width: 3px;
@@ -376,21 +306,13 @@ body.sidebarCollapsed .autoSaveStatus {
 
   background: #ffffff;
 }
-
-.sidebarItem {
+body.zebraDevice .sidebarItem{
   position: relative;
 }
-
-
-/* =====================================================
- TOOLTIP FOR COLLAPSED MODE
-===================================================== */
-
-body.sidebarCollapsed .sidebarItem {
+body.zebraDevice.sidebarCollapsed .sidebarItem{
   position: relative;
 }
-
-body.sidebarCollapsed .sidebarItem:hover::after {
+body.zebraDevice.sidebarCollapsed .sidebarItem:hover::after{
   content:
       attr(data-title);
 
@@ -416,165 +338,150 @@ body.sidebarCollapsed .sidebarItem:hover::after {
   font-size: 11px;
   white-space: nowrap;
 }
-/* =====================================================
-   MEDRYVO SIDEBAR
-===================================================== */
-.sidebar{
+body.zebraDevice .sidebar{
   background:linear-gradient(180deg,#082d6d 0%,#0D47A1 54%,#0a3c8d 100%);
   box-shadow:8px 0 34px rgba(6,41,92,.13);
 }
-.sidebarBrand{min-height:94px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.10);}
-.brandLogo{width:52px;height:52px;padding:7px;background:#fff;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.16);}
-.brandText strong{font-size:20px;letter-spacing:-.3px;}
-.brandText span{font-size:9px;letter-spacing:.55px;text-transform:uppercase;color:rgba(255,255,255,.66);}
-.sidebarNavigation{gap:7px;padding:18px 12px;}
-.sidebarItem{min-height:48px;border-radius:13px;font-weight:700;color:rgba(255,255,255,.78);}
-.sidebarItem.active{position:relative;background:rgba(255,255,255,.11);box-shadow:none;color:#fff;}
-.sidebarItem.active:before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:4px;border-radius:0 6px 6px 0;background:#FF8A00;}
-.sidebarItem.active .sidebarIcon{color:#FF9D2E;}
-.sidebarFooter{background:rgba(0,0,0,.06);}
-.sidebarLogoutButton{border-color:rgba(255,255,255,.18);}
-
-/* PHARMFLOW SIDEBAR — PHASE 2B */
-.sidebar{width:272px;background:radial-gradient(circle at 10% 0%,rgba(255,138,0,.12),transparent 16rem),linear-gradient(180deg,#0B1C36 0%,#102A50 100%);box-shadow:10px 0 36px rgba(10,31,61,.10)}.mainApplication{margin-left:272px}.sidebarBrand{min-height:88px}.brandLogo{width:46px;height:46px;padding:4px;border-radius:15px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.18)}.brandLogo img{display:block;width:100%;height:100%}.brandText strong{font-size:17px}.sidebarItem{min-height:48px;border-radius:13px}.sidebarItem.active{background:linear-gradient(90deg,#0B5ED7,#176FDE);box-shadow:0 10px 24px rgba(3,45,112,.28)}.sidebarItem.active::after{content:"";width:4px;height:22px;border-radius:4px;background:#FF9A22;margin-left:auto}
-
-/* =====================================================
-   PHARMFLOW — APPROVED LIGHT SIDEBAR VISUAL SYSTEM
-===================================================== */
-.sidebar{
+body.zebraDevice .sidebarBrand{min-height:94px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.10);}
+body.zebraDevice .brandLogo{width:52px;height:52px;padding:7px;background:#fff;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.16);}
+body.zebraDevice .brandText strong{font-size:20px;letter-spacing:-.3px;}
+body.zebraDevice .brandText span{font-size:9px;letter-spacing:.55px;text-transform:uppercase;color:rgba(255,255,255,.66);}
+body.zebraDevice .sidebarNavigation{gap:7px;padding:18px 12px;}
+body.zebraDevice .sidebarItem{min-height:48px;border-radius:13px;font-weight:700;color:rgba(255,255,255,.78);}
+body.zebraDevice .sidebarItem.active{position:relative;background:rgba(255,255,255,.11);box-shadow:none;color:#fff;}
+body.zebraDevice .sidebarItem.active:before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:4px;border-radius:0 6px 6px 0;background:#FF8A00;}
+body.zebraDevice .sidebarItem.active .sidebarIcon{color:#FF9D2E;}
+body.zebraDevice .sidebarFooter{background:rgba(0,0,0,.06);}
+body.zebraDevice .sidebarLogoutButton{border-color:rgba(255,255,255,.18);}
+body.zebraDevice .sidebar{width:272px;background:radial-gradient(circle at 10% 0%,rgba(255,138,0,.12),transparent 16rem),linear-gradient(180deg,#0B1C36 0%,#102A50 100%);box-shadow:10px 0 36px rgba(10,31,61,.10)}
+body.zebraDevice .mainApplication{margin-left:272px}
+body.zebraDevice .sidebarBrand{min-height:88px}
+body.zebraDevice .brandLogo{width:46px;height:46px;padding:4px;border-radius:15px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.18)}
+body.zebraDevice .brandLogo img{display:block;width:100%;height:100%}
+body.zebraDevice .brandText strong{font-size:17px}
+body.zebraDevice .sidebarItem{min-height:48px;border-radius:13px}
+body.zebraDevice .sidebarItem.active{background:linear-gradient(90deg,#0B5ED7,#176FDE);box-shadow:0 10px 24px rgba(3,45,112,.28)}
+body.zebraDevice .sidebarItem.active::after{content:"";width:4px;height:22px;border-radius:4px;background:#FF9A22;margin-left:auto}
+body.zebraDevice .sidebar{
   background:linear-gradient(180deg,#f7faff 0%,#eef4fb 100%) !important;
   color:#17365f !important;
   border-right:1px solid #d9e4f1 !important;
   box-shadow:8px 0 28px rgba(31,72,125,.07) !important;
 }
-.sidebarBrand{border-bottom:1px solid #dce6f2 !important;}
-.brandLogo{background:#fff !important;box-shadow:0 8px 20px rgba(35,82,145,.11) !important;}
-.brandText strong{color:#17365f !important;font-weight:700 !important;}
-.brandText span{color:#70849e !important;font-weight:600 !important;}
-.sidebarCloseButton{background:#e8f0fa !important;color:#31577f !important;}
-.sidebarNavigation::-webkit-scrollbar-thumb{background:#c8d7e8 !important;}
-.sidebarItem{color:#405a78 !important;font-weight:600 !important;}
-.sidebarItem .sidebarIcon{color:#587493 !important;}
-.sidebarItem:hover{background:#e8f1fc !important;color:#174f9d !important;transform:translateX(1px);}
-.sidebarItem:hover .sidebarIcon{color:#2874d3 !important;}
-.sidebarItem.active{
+body.zebraDevice .sidebarBrand{border-bottom:1px solid #dce6f2 !important;}
+body.zebraDevice .brandLogo{background:#fff !important;box-shadow:0 8px 20px rgba(35,82,145,.11) !important;}
+body.zebraDevice .brandText strong{color:#17365f !important;font-weight:700 !important;}
+body.zebraDevice .brandText span{color:#70849e !important;font-weight:600 !important;}
+body.zebraDevice .sidebarCloseButton{background:#e8f0fa !important;color:#31577f !important;}
+body.zebraDevice .sidebarNavigation::-webkit-scrollbar-thumb{background:#c8d7e8 !important;}
+body.zebraDevice .sidebarItem{color:#405a78 !important;font-weight:600 !important;}
+body.zebraDevice .sidebarItem .sidebarIcon{color:#587493 !important;}
+body.zebraDevice .sidebarItem:hover{background:#e8f1fc !important;color:#174f9d !important;transform:translateX(1px);}
+body.zebraDevice .sidebarItem:hover .sidebarIcon{color:#2874d3 !important;}
+body.zebraDevice .sidebarItem.active{
   background:linear-gradient(90deg,#e4efff 0%,#edf5ff 100%) !important;
   color:#0d5fc8 !important;
   box-shadow:inset 3px 0 0 #2f80e7 !important;
 }
-.sidebarItem.active .sidebarIcon{color:#176fda !important;}
-.sidebarItem.active::before,.sidebarItem.active::after{display:none !important;}
-.sidebarFooter{background:rgba(238,244,251,.72) !important;border-top:1px solid #dce6f2 !important;}
-.accountIdentity{background:#fff !important;border:1px solid #dbe6f2 !important;box-shadow:0 5px 16px rgba(34,75,128,.055);}
-.accountAvatar{background:linear-gradient(135deg,#e1edff,#d8e8ff) !important;color:#175fb9 !important;}
-.accountIdentityText strong{color:#203b5d !important;}
-.accountIdentityText small{color:#71839a !important;opacity:1 !important;}
-.accountRoleBadge{background:#e7f0fd !important;color:#2565ad !important;}
-.sidebarLogoutButton{color:#31577f !important;border:1px solid #cddbea !important;background:#fff !important;}
-.sidebarLogoutButton:hover{background:#eaf2fb !important;color:#155fb7 !important;}
-.autoSaveStatus{background:#eaf4ef !important;border:1px solid #d4e9dd !important;}
-.autoSaveStatus strong{color:#315b49 !important;}
-.autoSaveStatus small,.autoSaveStatus span:not(.statusDot){color:#6f887c !important;}
-.autoSaveStatus .statusDot{background:#2fb879 !important;}
-body.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;color:#fff !important;}
-
-/* =====================================================
-   PHARMFLOW — PEARL SIDEBAR REFINEMENT
-   Approved light design: clearer navigation, same layout.
-===================================================== */
-.sidebar{
+body.zebraDevice .sidebarItem.active .sidebarIcon{color:#176fda !important;}
+body.zebraDevice .sidebarItem.active::before,
+body.zebraDevice .sidebarItem.active::after{display:none !important;}
+body.zebraDevice .sidebarFooter{background:rgba(238,244,251,.72) !important;border-top:1px solid #dce6f2 !important;}
+body.zebraDevice .accountIdentity{background:#fff !important;border:1px solid #dbe6f2 !important;box-shadow:0 5px 16px rgba(34,75,128,.055);}
+body.zebraDevice .accountAvatar{background:linear-gradient(135deg,#e1edff,#d8e8ff) !important;color:#175fb9 !important;}
+body.zebraDevice .accountIdentityText strong{color:#203b5d !important;}
+body.zebraDevice .accountIdentityText small{color:#71839a !important;opacity:1 !important;}
+body.zebraDevice .accountRoleBadge{background:#e7f0fd !important;color:#2565ad !important;}
+body.zebraDevice .sidebarLogoutButton{color:#31577f !important;border:1px solid #cddbea !important;background:#fff !important;}
+body.zebraDevice .sidebarLogoutButton:hover{background:#eaf2fb !important;color:#155fb7 !important;}
+body.zebraDevice .autoSaveStatus{background:#eaf4ef !important;border:1px solid #d4e9dd !important;}
+body.zebraDevice .autoSaveStatus strong{color:#315b49 !important;}
+body.zebraDevice .autoSaveStatus small,
+body.zebraDevice .autoSaveStatus span:not(.statusDot){color:#6f887c !important;}
+body.zebraDevice .autoSaveStatus .statusDot{background:#2fb879 !important;}
+body.zebraDevice.sidebarCollapsed .sidebarItem:hover::after{background:#17365f !important;color:#fff !important;}
+body.zebraDevice .sidebar{
   background:linear-gradient(180deg,#F7F8F9 0%,#F1F4F6 100%) !important;
   border-right-color:#DDE3E8 !important;
 }
-.sidebarBrand{border-bottom-color:#E0E5EA !important;}
-.sidebarItem{
+body.zebraDevice .sidebarBrand{border-bottom-color:#E0E5EA !important;}
+body.zebraDevice .sidebarItem{
   font-size:14px !important;
   font-weight:600 !important;
   letter-spacing:-.05px;
 }
-.sidebarItem .sidebarIcon{
+body.zebraDevice .sidebarItem .sidebarIcon{
   width:20px !important;
   height:20px !important;
   font-size:19px !important;
 }
-.sidebarItem:hover{background:#EAF1F8 !important;}
-.sidebarItem.active{
+body.zebraDevice .sidebarItem:hover{background:#EAF1F8 !important;}
+body.zebraDevice .sidebarItem.active{
   background:linear-gradient(90deg,#E7F0FC 0%,#EEF5FC 100%) !important;
 }
-.sidebarFooter{background:rgba(241,244,246,.78) !important;border-top-color:#E0E5EA !important;}
-
-/* =====================================================
-   PHARMFLOW — WARM PEARL SIDEBAR
-===================================================== */
-.sidebar{
+body.zebraDevice .sidebarFooter{background:rgba(241,244,246,.78) !important;border-top-color:#E0E5EA !important;}
+body.zebraDevice .sidebar{
   background:linear-gradient(180deg,#F8F6F2 0%,#F1EEE8 100%) !important;
   border-right-color:#E2DDD4 !important;
 }
-.sidebarBrand{border-bottom-color:#E6E0D7 !important;}
-.sidebarFooter{background:rgba(241,238,232,.82) !important;border-top-color:#E4DED5 !important;}
-.sidebarNavigation::-webkit-scrollbar-thumb{background:#D5CEC4 !important;}
-.sidebarItem:hover{background:#ECE8E1 !important;color:#174F9D !important;}
-.sidebarItem.active{background:linear-gradient(90deg,#E9EEF5 0%,#F1F2F1 100%) !important;}
-.accountIdentity{border-color:#E4DED5 !important;}
-
-
-/* =====================================================
-   PHARMFLOW — LIGHT LATTE SIDEBAR
-===================================================== */
-.sidebar{
+body.zebraDevice .sidebarBrand{border-bottom-color:#E6E0D7 !important;}
+body.zebraDevice .sidebarFooter{background:rgba(241,238,232,.82) !important;border-top-color:#E4DED5 !important;}
+body.zebraDevice .sidebarNavigation::-webkit-scrollbar-thumb{background:#D5CEC4 !important;}
+body.zebraDevice .sidebarItem:hover{background:#ECE8E1 !important;color:#174F9D !important;}
+body.zebraDevice .sidebarItem.active{background:linear-gradient(90deg,#E9EEF5 0%,#F1F2F1 100%) !important;}
+body.zebraDevice .accountIdentity{border-color:#E4DED5 !important;}
+body.zebraDevice .sidebar{
   background:linear-gradient(180deg,#E9DCCF 0%,#E5D5C3 56%,#DFCCB8 100%) !important;
   color:#3E342C !important;
   border-right:1px solid #D2BFAA !important;
   box-shadow:8px 0 28px rgba(76,55,38,.075) !important;
 }
-.sidebarBrand{border-bottom-color:#D6C3AF !important;}
-.brandText strong{color:#3D322A !important;}
-.brandText span{color:#75675B !important;}
-.sidebarItem{
+body.zebraDevice .sidebarBrand{border-bottom-color:#D6C3AF !important;}
+body.zebraDevice .brandText strong{color:#3D322A !important;}
+body.zebraDevice .brandText span{color:#75675B !important;}
+body.zebraDevice .sidebarItem{
   color:#574A40 !important;
   font-size:14px !important;
   font-weight:600 !important;
 }
-.sidebarItem .sidebarIcon{color:#716154 !important;}
-.sidebarItem:hover{
+body.zebraDevice .sidebarItem .sidebarIcon{color:#716154 !important;}
+body.zebraDevice .sidebarItem:hover{
   background:rgba(255,255,255,.38) !important;
   color:#2E5F98 !important;
 }
-.sidebarItem:hover .sidebarIcon{color:#2E6DB4 !important;}
-.sidebarItem.active{
+body.zebraDevice .sidebarItem:hover .sidebarIcon{color:#2E6DB4 !important;}
+body.zebraDevice .sidebarItem.active{
   background:linear-gradient(90deg,#F8F1EA 0%,#F1E6DA 100%) !important;
   color:#245E9E !important;
   box-shadow:inset 3px 0 0 #3D7FC4 !important;
 }
-.sidebarItem.active .sidebarIcon{color:#2B6EB6 !important;}
-.sidebarFooter{
+body.zebraDevice .sidebarItem.active .sidebarIcon{color:#2B6EB6 !important;}
+body.zebraDevice .sidebarFooter{
   background:rgba(235,221,207,.84) !important;
   border-top-color:#D5C2AE !important;
 }
-.sidebarNavigation::-webkit-scrollbar-thumb{background:#C7B29D !important;}
-.accountIdentity{
+body.zebraDevice .sidebarNavigation::-webkit-scrollbar-thumb{background:#C7B29D !important;}
+body.zebraDevice .accountIdentity{
   background:rgba(255,255,255,.64) !important;
   border-color:#D8C5B2 !important;
 }
-.sidebarLogoutButton{
+body.zebraDevice .sidebarLogoutButton{
   background:rgba(255,255,255,.62) !important;
   border-color:#CDB8A3 !important;
   color:#514337 !important;
 }
-.sidebarLogoutButton:hover{background:#F8F1EA !important;}
-
-
-/* PHARMFLOW 2C.8.5 — FINAL SIDEBAR */
-.sidebar{
+body.zebraDevice .sidebarLogoutButton:hover{background:#F8F1EA !important;}
+body.zebraDevice .sidebar{
   background:linear-gradient(180deg,#E8D7C7 0%,#E1CDBA 100%) !important;
   border-right-color:#CBB19A !important;color:#382C25 !important;
 }
-.brandLogo{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;}
-.sidebarItem{color:#493A30 !important;font-size:14px !important;font-weight:750 !important;}
-.sidebarItem .sidebarIcon{color:#6D5545 !important;}
-.sidebarItem:hover{background:rgba(255,249,243,.55) !important;color:#7B422B !important;}
-.sidebarItem.active{
+body.zebraDevice .brandLogo{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;}
+body.zebraDevice .sidebarItem{color:#493A30 !important;font-size:14px !important;font-weight:750 !important;}
+body.zebraDevice .sidebarItem .sidebarIcon{color:#6D5545 !important;}
+body.zebraDevice .sidebarItem:hover{background:rgba(255,249,243,.55) !important;color:#7B422B !important;}
+body.zebraDevice .sidebarItem.active{
   background:#F5E6DA !important;color:#743D27 !important;font-weight:800 !important;
   box-shadow:inset 4px 0 0 #A65F3A !important;
 }
-.sidebarItem.active .sidebarIcon,.sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}
+body.zebraDevice .sidebarItem.active .sidebarIcon,
+body.zebraDevice .sidebarItem:hover .sidebarIcon{color:#A65F3A !important;}

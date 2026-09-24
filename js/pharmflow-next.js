@@ -120,7 +120,7 @@
         .filter(order=>active.includes(order))
       : [];
     const assignment=body.querySelector('.pfnHandheldAssignment')||document.createElement('section');assignment.className='pfnHandheldAssignment';
-    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Active Orders are managed here; only checked orders appear on the Handheld.</p></div><button type="button" data-assign-all>Select all</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
+    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Choose the active orders available on the Handheld.</p></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span>All Orders in Scope: ${active.length} · <span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span></span><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
     if(!assignment.isConnected) body.insertBefore(assignment,page);
     assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
@@ -142,12 +142,12 @@
     const page=$('page-files');if(!page||$('pfnOrdersOverlay'))return;
     PF.ordersAnchor=document.createComment('pfn-orders-anchor');page.parentNode.insertBefore(PF.ordersAnchor,page);
     const overlay=document.createElement('div');overlay.id='pfnOrdersOverlay';overlay.className='pfnCenterOverlay';
-    overlay.innerHTML='<section class="pfnCenterModal pfnOrdersModal" role="dialog" aria-modal="true"><header class="pfnModalHeader"><div><span>ORDER MANAGEMENT</span><h2>Manage Orders</h2></div><button type="button" data-close>✕</button></header><div class="pfnModalBody"></div></section>';
+    overlay.innerHTML='<section class="pfnCenterModal pfnOrdersModal" role="dialog" aria-modal="true" aria-labelledby="manageOrdersTitle"><header class="pfnModalHeader"><div><span>ORDER MANAGEMENT</span><h2 id="manageOrdersTitle">Manage Orders</h2></div><button type="button" data-close aria-label="Close Manage Orders">✕</button></header><div class="pfnModalBody"></div><footer class="pfnOrdersFooter"><span>Order files and device assignment</span><button type="button" data-done>Done</button></footer></section>';
     document.body.appendChild(overlay);modalStack.open(overlay);
     const body=overlay.querySelector('.pfnModalBody');
     body.appendChild(page);page.classList.add('active','pfnEmbeddedPage');page.hidden=false;
     renderHandheldAssignment(overlay);
-    overlay.querySelector('[data-close]').onclick=closeOrders;overlay.addEventListener('click',e=>{if(e.target===overlay)closeOrders();});
+    overlay.querySelector('[data-close]').onclick=closeOrders;overlay.querySelector('[data-done]').onclick=closeOrders;overlay.addEventListener('click',e=>{if(e.target===overlay)closeOrders();});
   }
 
   function closeOrders(){
@@ -206,13 +206,21 @@
     const menu=$('btnMenu'),close=$('btnCloseSidebar'),sidebar=$('sidebar'),overlay=$('sidebarOverlay');if(!menu||!sidebar)return;
     const setCollapsed=collapsed=>{document.body.classList.toggle('pfnSidebarCollapsed',collapsed);menu.setAttribute('aria-expanded',String(!collapsed));try{localStorage.setItem('PHARMFLOW_SIDEBAR_COLLAPSED',collapsed?'1':'0');}catch(_){}};
     let remembered=false;try{remembered=localStorage.getItem('PHARMFLOW_SIDEBAR_COLLAPSED')==='1';}catch(_){}setCollapsed(remembered);
-    menu.addEventListener('click',e=>{if(window.innerWidth>900){e.preventDefault();e.stopPropagation();setCollapsed(!document.body.classList.contains('pfnSidebarCollapsed'));}});
-    close?.addEventListener('click',e=>{if(window.innerWidth>900){e.preventDefault();e.stopPropagation();setCollapsed(true);}});overlay?.addEventListener('click',()=>{if(window.innerWidth>900)setCollapsed(true);});
+    menu.addEventListener('click',e=>{if(window.innerWidth>900&&!document.body.classList.contains('zebraDevice')){e.preventDefault();e.stopPropagation();setCollapsed(!document.body.classList.contains('pfnSidebarCollapsed'));}});
+    close?.addEventListener('click',e=>{if(window.innerWidth>900&&!document.body.classList.contains('zebraDevice')){e.preventDefault();e.stopPropagation();setCollapsed(true);}});overlay?.addEventListener('click',()=>{if(window.innerWidth>900&&!document.body.classList.contains('zebraDevice'))setCollapsed(true);});
   }
 
   function bind(){
+    const renderConnection=()=>{
+      const status=$('sidebarConnection');if(!status)return;
+      status.textContent=navigator.onLine?'ONLINE':'OFFLINE';
+      status.classList.toggle('isOffline',!navigator.onLine);
+    };
+    renderConnection();
+    window.addEventListener('online',renderConnection);
+    window.addEventListener('offline',renderConnection);
     $('pfnManageOrders')?.addEventListener('click',openOrders);
-    $('btnReceivedItems')?.addEventListener('click',()=>window.openDashboardKpiPanel?.('received'));
+    $('btnRecognizedHistory')?.addEventListener('click',()=>window.openDashboardKpiPanel?.('scans'));
     $('btnAdjustReceiving')?.addEventListener('click',openAdjustReceiving);
     $('btnReceivingReportAction')?.addEventListener('click',()=>{if(typeof window.navigateTo==='function'){window.navigateTo('receiving');return;}document.querySelector('.sidebarItem[data-page="receiving"]')?.click();});
     bindSidebar();

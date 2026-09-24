@@ -29,22 +29,22 @@
 
     <link
         rel="stylesheet"
-        href="css/style.css?v=B10CLEAN15_15"
+        href="css/style.css?v=UI_REVIEW_CLEAN1"
     >
 
     <link
         rel="stylesheet"
-        href="css/sidebar.css?v=B10CLEAN15_15"
+        href="css/sidebar.css?v=UI_REVIEW_CLEAN1"
     >
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=B13ROOTFIX1"
+        href="css/dashboard.css?v=UI_REVIEW_CLEAN1"
     >
 
     <link
         rel="stylesheet"
-        href="css/responsive.css?v=B18HANDHELDASSIGN1"
+        href="css/responsive.css?v=UI_REVIEW_CLEAN1"
     >
 
     <link
@@ -52,8 +52,8 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_UI_REBUILD1">
-<link rel="stylesheet" href="css/receiving-surface.css?v=RECEIVING_U0030_RECOVERY2">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=UI_REVIEW_CLEAN1">
+<link rel="stylesheet" href="css/receiving-surface.css?v=UI_REVIEW_CLEAN1">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
     <style id="pharmflowAuthBootstrapGate">
@@ -307,7 +307,7 @@
             <div class="brandText">
 
                 <strong data-brand-name>PharmFlow</strong>
-                <span data-brand-tagline>Pharmacy Operations</span>
+                <span>PHARMACY OPERATIONS</span>
 
             </div>
 
@@ -329,11 +329,11 @@
         <!-- NAVIGATION -->
 
         <nav class="sidebarNavigation">
-            <button class="sidebarItem active" type="button" data-page="dashboard"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Receiving</span></button>
+            <button class="sidebarItem active" type="button" data-page="dashboard" aria-label="Receiving" title="Receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
 
-            <button class="sidebarItem" type="button" data-page="settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
+            <button class="sidebarItem" type="button" data-page="settings" aria-label="Settings" title="Settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
         </nav>
 
 
@@ -347,6 +347,7 @@
                     <span class="accountContextKicker">PHARMACY</span>
                     <strong id="accountPharmacyName">Pharmacy</strong>
                     <small><span id="accountPharmacyCode">—</span></small>
+                    <span id="sidebarConnection" class="sidebarConnection" role="status">ONLINE</span>
                 </div>
                 <span id="accountUserRole" class="accountRoleBadge"></span>
             </div>
@@ -406,8 +407,8 @@
 
                 <div class="pageHeading">
 
-                    <h1 id="pageTitle" class="pharmacyHeaderName">Pharmacy</h1>
-                    <p id="pageSubtitle">Receiving Dashboard</p>
+                    <h1 id="pageTitle">Receiving</h1>
+                    <p id="pageSubtitle">Scan, review and reconcile orders</p>
 
                 </div>
 
@@ -421,7 +422,7 @@
                     <strong id="topBarPharmacyCode">—</strong>
                 </div>
 
-                <div class="headerInfo globalMasterHeaderInfo" title="Global GTIN Master status">
+                <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
                     <span>Global Master</span>
                     <strong id="headerMasterGTINStatus">SYNCING</strong>
                 </div>
@@ -643,7 +644,7 @@
                             autocomplete="off"
                             autocapitalize="off"
                             spellcheck="false"
-                            placeholder=""
+                            placeholder="Barcode, GS1, Item Number or Item Name"
                             aria-label="Scan item"
                         >
 
@@ -662,6 +663,7 @@
                         <div class="pfnReceivingActionGroup" aria-label="Receiving actions">
                             <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
                             <button id="btnReceivedItems" class="pfnAction pfnActionReceived" type="button">Received Items</button>
+                            <button id="btnRecognizedHistory" class="pfnAction" type="button">Recognized History</button>
                             <button id="btnAdjustReceiving" class="pfnAction pfnActionAdjust" type="button">Adjust</button>
                             <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
                         </div>
@@ -674,7 +676,7 @@
                                 <span>Manage Orders</span>
                             </button>
 
-                            <div class="headerInfo pfnOrderSelector">
+                            <div class="pfnOrderSelector">
                                 <span>ORDERS</span>
                                 <strong id="headerOrderId" class="pfnLegacyOrderId" aria-hidden="true">No Active Order</strong>
                                 <div id="headerOrderPicker" class="headerOrderPicker" hidden>
@@ -953,11 +955,11 @@
                     <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
                         <div class="receivingSummaryHeader">
                             <div class="pfnReportTitleBlock">
+                                <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
                                 <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
                                 <div class="pfnReportTitleLine"><h3>Discrepancy Report</h3></div>
                             </div>
                             <div class="receivingSummaryActions">
-                                <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
                                 <details class="pfnReportActionMenu">
                                     <summary><span aria-hidden="true">↗</span> Export / Share</summary>
                                     <div>
@@ -2028,7 +2030,7 @@
                     <div class="accountSettingsGrid">
                         <div class="accountSettingTile"><span>Pharmacy</span><strong id="settingsPharmacyName">-</strong></div>
                         <div class="accountSettingTile"><span>Pharmacy Code</span><strong id="settingsPharmacyCode">-</strong></div>
-                        <div class="accountSettingTile"><span>Signed In User</span><strong id="settingsSignedInUser">-</strong></div>
+                        <div class="accountSettingTile"><span>Signed In Email</span><strong id="settingsSignedInUser">-</strong></div>
                         <div class="accountSettingTile"><span>Role</span><strong id="settingsUserRole">-</strong></div>
                     </div>
                     <div class="accountEditActions">
@@ -2189,12 +2191,11 @@
                             <div>
                                 <span class="sectionEyebrow">GLOBAL MASTER</span>
                                 <h2>Global Identifier Master</h2>
-                                <p>Search and administer the authoritative identifier mappings independently of an Active Order. Only the System Owner can change mappings.</p>
+                                <p>Find an identifier or search the item catalogue.</p>
                             </div>
                         </div>
 
                         <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Global Identifier Master administration">
-                            <p class="globalIdentifierMasterIntro">Manual administration independent of an Active Order. Look up an Identifier / GTIN, or search the canonical Global Master by Item Code or Item Name.</p>
                             <div class="globalIdentifierMasterLookupGrid">
                                 <label>Identifier / GTIN
                                     <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="e.g. S00110, 1234A, or GTIN">
@@ -2281,9 +2282,9 @@
 
                         <div>
 
-                            <span class="sectionEyebrow dangerText">
+                            <span class="sectionEyebrow">
 
-                                DANGER ZONE
+                                WORKSPACE DATA
 
                             </span>
 
@@ -2328,8 +2329,9 @@
                             Reset Current Workspace
 
                         </button>
-
-
+                    </div>
+                    <div class="dangerZone">
+                        <span class="sectionEyebrow dangerText">DANGER ZONE</span>
                         <button
                             id="btnDeleteAllHistory"
                             class="dangerButton"
@@ -2339,8 +2341,6 @@
                             Delete All Historical Data
 
                         </button>
-
-
                     </div>
 
 
@@ -2723,7 +2723,7 @@
      APPLICATION FILES
 =================================================== -->
 
-<script src="js/config.js?v=B10CLEAN15_15"></script>
+<script src="js/config.js?v=UI_REVIEW_CLEAN1"></script>
 
 <script src="js/utils.js?v=RECEIVING_U0030_RECOVERY2"></script>
 
@@ -2731,7 +2731,7 @@
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=RECEIVING_UI_REBUILD1"></script>
+<script src="ui.js?v=UI_REVIEW_CLEAN1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 
@@ -2762,7 +2762,7 @@
 <script src="cloud-workspace.js?v=RECEIVING_UI_REBUILD1"></script>
 
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
-<script src="js/pharmflow-next.js?v=B19ASSIGNMENTSOURCE3"></script>
+<script src="js/pharmflow-next.js?v=UI_REVIEW_CLEAN1"></script>
 
 <script src="js/app.js?v=RECEIVING_U0030_RECOVERY2"></script>
 
