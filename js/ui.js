@@ -8160,7 +8160,7 @@ async function nrV2ResolveToOrderItem(row,item){
             gtin:row.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
-            targetOrder:group.order_number||"",
+            targetOrder:row.order_number||"",
             transactionId
         });
 
@@ -8201,7 +8201,7 @@ async function nrV2ResolveAsUnordered(row,itemCode,itemName,targetOrder=""){
             gtin:row.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:true,
-            targetOrder:targetOrder||group.order_number||"",
+            targetOrder:targetOrder||row.order_number||"",
             transactionId
         });
 
