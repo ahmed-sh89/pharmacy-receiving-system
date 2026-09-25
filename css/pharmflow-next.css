@@ -1749,3 +1749,28 @@ body:not(.zebraDevice) .smartSelectedStats{grid-template-columns:repeat(3,145px)
 body:not(.zebraDevice) .smartSelectedStats>div{min-height:50px;padding:8px 12px;border-width:1.5px;box-shadow:0 2px 6px #163e6410}
 body:not(.zebraDevice) .smartSelectedStats span{font-size:12px;font-weight:800}
 body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900}
+
+/* Receiving Report compact toolbar + search result distinction — 2026-09-25 */
+body:not(.zebraDevice) #page-receiving>.contentCard{padding-top:12px!important}
+body:not(.zebraDevice) #receivingSummaryPanel{margin-top:0!important;padding-top:0!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;margin:0 0 9px!important;padding:0 0 9px!important;border-bottom:1px solid #d5e3ee!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar>button,
+body:not(.zebraDevice) .pfnReceivingReportToolbar>.pfnReportActionMenu>summary,
+body:not(.zebraDevice) .pfnReceivingReportToolbar .pfnUnifiedMultiSelect>summary{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:38px!important;height:38px!important;padding:0 12px!important;border:1px solid #a9c7df!important;border-radius:8px!important;background:#eef6fc!important;color:#164f7d!important;font-size:12px!important;font-weight:800!important;line-height:1!important;white-space:nowrap!important;box-shadow:none!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar>button:hover,
+body:not(.zebraDevice) .pfnReceivingReportToolbar>.pfnReportActionMenu>summary:hover,
+body:not(.zebraDevice) .pfnReceivingReportToolbar .pfnUnifiedMultiSelect>summary:hover{background:#dceefa!important;border-color:#5d9bc9!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar #btnBackToReceivingDashboard{margin-right:auto!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar #btnFinalizeReceiving,
+body:not(.zebraDevice) .pfnReceivingReportToolbar #btnCompleteAllReceiving{background:#e9f4fb!important;color:#124d79!important;border-color:#91b9d7!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar #receivingClassificationFilters{margin:0!important;min-width:150px!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar .pfnUnifiedMultiSelect{margin:0!important}
+body:not(.zebraDevice) #receivingSummaryPanel .receivingSummaryGrid{margin-top:0!important;padding-top:0!important}
+body:not(.zebraDevice) #receivingSummaryPanel .pfnIssueCard{min-height:58px!important;padding:7px 10px!important}
+body:not(.zebraDevice) #receivingSummaryPanel .pfnIssueCard span{font-size:11px!important}
+body:not(.zebraDevice) #receivingSummaryPanel .pfnIssueCard strong{font-size:20px!important}
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+ body:not(.zebraDevice) .smartScanResults:not(:empty){background:#fff3cf!important;border-color:#e3c36a!important}
+ body:not(.zebraDevice) .smartSearchResult{background:#fffaf0!important;border-color:#ead9a8!important}
+ body:not(.zebraDevice) .smartSearchResult:hover{background:#e5f2ff!important;border-color:#277fc5!important}
+}
