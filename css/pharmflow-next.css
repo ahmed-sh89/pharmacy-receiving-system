@@ -1697,3 +1697,27 @@ body:not(.zebraDevice) .smartSearchReviewButton:hover{background:#d8edfd!importa
 body:not(.zebraDevice) .pfnReviewTotals{display:flex;gap:7px;margin-top:7px}
 body:not(.zebraDevice) .pfnReviewTotals span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid #c8dbea;border-radius:999px;background:#f2f8fd;color:#52708a;font-size:11px;font-weight:700}
 body:not(.zebraDevice) .pfnReviewTotals b{font-size:13px;color:#174f7b}
+
+/* Selected item + compact Receiving Progress trial — 2026-09-25 */
+body:not(.zebraDevice) .smartScanSelected{margin-top:8px;padding:13px 15px;border:2px solid #8dbbdc;border-radius:11px;background:#f2f8fd;box-shadow:0 5px 14px #163e6418}
+body:not(.zebraDevice) .smartSelectedMain{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+body:not(.zebraDevice) .smartSelectedMain>div:first-child{min-width:0;flex:1}
+body:not(.zebraDevice) .smartSelectedMain h3{margin:3px 0 4px;font-size:19px;line-height:1.2;font-weight:850;color:#0b4d8c}
+body:not(.zebraDevice) .smartSelectedCode{font-size:12px;color:#57728a}
+body:not(.zebraDevice) .smartQuantityRow{display:grid;grid-template-columns:auto auto auto;justify-content:end;align-items:center;gap:9px;margin:-43px 38px 10px auto;width:max-content;padding:7px 9px;border:1px solid #bdd5e7;border-radius:9px;background:#fff}
+body:not(.zebraDevice) .smartQuantityLabel{font-size:12px;font-weight:800;color:#315b7b}
+body:not(.zebraDevice) .smartQuantityControl{display:flex;align-items:center;gap:5px}
+body:not(.zebraDevice) .smartQuantityControl input{width:62px;height:34px;text-align:center;font-size:17px;font-weight:800}
+body:not(.zebraDevice) .smartQuantityControl .quantityButton{width:34px;height:34px;font-size:18px}
+body:not(.zebraDevice) #btnAddSmartQuantity{width:auto;min-width:112px;min-height:34px;padding:6px 13px;font-size:12px}
+body:not(.zebraDevice) .smartSelectedStats{display:grid;grid-template-columns:repeat(3,minmax(105px,1fr));gap:8px;max-width:430px;margin-top:10px}
+body:not(.zebraDevice) .smartSelectedStats>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #c7dbea;border-radius:8px;background:#fff}
+body:not(.zebraDevice) .smartSelectedStats span{font-size:11px;font-weight:750;color:#607b91}
+body:not(.zebraDevice) .smartSelectedStats strong{font-size:17px;color:#174f7b}
+body:not(.zebraDevice) #page-dashboard>.contentCard{padding:11px 16px}
+body:not(.zebraDevice) #page-dashboard>.contentCard .cardHeader{margin-bottom:6px}
+body:not(.zebraDevice) #page-dashboard>.contentCard h3{font-size:15px}
+body:not(.zebraDevice) .progressTrack{height:11px;background:#dce8f1}
+body:not(.zebraDevice) .progressPercentage{font-size:21px;font-weight:900;color:#176bb1}
+body:not(.zebraDevice) .pfnProgressCompactDetail{justify-content:flex-start;margin-top:6px;font-size:11px;font-weight:700;color:#5a7489}
+body:not(.zebraDevice) .pfnProgressRemainingSource{display:none}
