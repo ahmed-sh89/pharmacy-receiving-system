@@ -8930,7 +8930,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                     const outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
                     if(outcome.pending){
                         button.textContent="Processing…";
-                        showToast?.("Receipt is queued. Waiting for the server to accept this exact transaction.","warning");
+                        /* Processing state lives on the action itself. Do not
+                           emit a second warning toast for the normal durable
+                           queue path; successful completion owns the single
+                           user-facing toast below. */
                         const reviewIds=new Set(group.rows.map(row=>toSafeString(row?.review_id||"")).filter(Boolean));
                         let resolved=false;
                         for(let attempt=0;attempt<6;attempt++){
