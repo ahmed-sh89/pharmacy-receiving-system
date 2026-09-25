@@ -1774,3 +1774,15 @@ body:not(.zebraDevice) #receivingSummaryPanel .pfnIssueCard strong{font-size:20p
  body:not(.zebraDevice) .smartSearchResult{background:#fffaf0!important;border-color:#ead9a8!important}
  body:not(.zebraDevice) .smartSearchResult:hover{background:#e5f2ff!important;border-color:#277fc5!important}
 }
+
+/* Receiving single-row action bar — 2026-09-25 */
+body:not(.zebraDevice) .scanPanelFooter.pfnActionBar{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important}
+body:not(.zebraDevice) .scanPanelFooter .pfnOrderControlGroup{display:flex!important;align-items:center!important;gap:8px!important;flex:1 1 auto!important;min-width:0!important}
+body:not(.zebraDevice) .scanPanelFooter .pfnOrderControlGroup #btnReceivingReportAction{flex:0 0 auto!important;min-height:36px!important;height:36px!important;padding:0 13px!important;white-space:nowrap!important}
+body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight{display:flex!important;align-items:center!important;margin-left:auto!important;flex:0 0 auto!important}
+body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight #btnReceivingNeedsReview{min-height:36px!important;height:36px!important;padding:0 13px!important;white-space:nowrap!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar{min-height:40px!important;height:40px!important;padding:0!important;margin:0 0 7px!important;border-bottom:0!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar #btnBackToReceivingDashboard{margin-right:auto!important}
+body:not(.zebraDevice) .pfnReceivingReportToolbar #btnFinalizeReceiving,
+body:not(.zebraDevice) .pfnReceivingReportToolbar #btnCompleteAllReceiving{min-width:112px!important}
+body:not(.zebraDevice) #receivingSummaryPanel{padding:8px 12px 10px!important}
