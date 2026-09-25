@@ -1272,8 +1272,7 @@ body:not(.zebraDevice) .finalizedEmailSummary{display:grid!important;grid-templa
 body:not(.zebraDevice) .finalizedEmailCompose{display:grid!important;grid-template-columns:.8fr 1.4fr!important;gap:8px!important;padding:0 20px 12px!important}.finalizedEmailCompose label span{font-size:11px!important;font-weight:900!important;color:#5f7d98!important}.finalizedEmailCompose input{min-height:42px!important;border:1px solid #b9d1e7!important;border-radius:9px!important;padding:0 11px!important;font-size:14px!important;color:#173f66!important}
 body:not(.zebraDevice) .finalizedEmailLetter{margin:0 20px 14px!important;border:1px solid #d8e5f2!important;border-radius:12px!important;background:#fff!important;overflow:auto!important;padding:14px!important}.finalizedEmailFooter{border-top:1px solid #dce8f4!important;background:#f8fbff!important;padding:12px 20px!important}.finalizedEmailSavedNote strong{color:#234f76!important}.finalizedEmailSavedNote small{color:#70869c!important}.finalizedEmailActions button{min-height:40px!important;border-radius:9px!important;font-weight:850!important}.finalizedEmailActions .primaryButton{background:#1769aa!important;border-color:#1769aa!important}
 
-/* 10 — Complete Receiving is a deliberate terminal action. */
-body:not(.zebraDevice).pfnCleanReceiving #page-receiving #btnFinalizeReceiving{background:#1769aa!important;border-color:#1769aa!important;color:#fff!important;min-height:42px!important;font-size:14px!important;font-weight:900!important}
+/* Receiving completion actions use the report toolbar visual system; safety behavior remains in JS. */
 
 /* 11 — full-screen perfect-match success state. */
 .pfnReceivingSuccessOverlay{position:fixed;inset:0;z-index:160000;display:flex;align-items:center;justify-content:center;padding:28px;background:linear-gradient(145deg,#eaf9f1 0%,#f7fcff 70%);animation:pfnSuccessIn .22s ease-out}
