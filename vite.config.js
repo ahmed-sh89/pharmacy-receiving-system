@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/pharmacy-receiving-system/',
+  // GitHub Pages Production is hosted below the repository path.
+  // Vercel Test serves the same app at the domain root.
+  base: process.env.VERCEL ? '/' : '/pharmacy-receiving-system/',
 });
