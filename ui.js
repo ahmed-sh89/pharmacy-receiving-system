@@ -8793,7 +8793,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <section class="needsReviewPanel">
         <header>
           <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
-          <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+          <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
@@ -8845,11 +8845,16 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         if(handheld) focusScannerInput?.();
     };
     overlay.querySelectorAll("[data-review-close]").forEach(button=>button.addEventListener("click",closePanel));
-    overlay.querySelector("[data-review-history]")?.addEventListener("click",async()=>{
+    const historyButton=overlay.querySelector("[data-review-history]");
+    const backButton=overlay.querySelector("[data-review-back]");
+    backButton?.addEventListener("click",()=>{ closePanel(); openNeedsReviewPanel(workflow); });
+    historyButton?.addEventListener("click",async()=>{
         pendingSearchFocus=null;
         const list=overlay.querySelector("[data-review-list]");if(!list)return;
         try{
             const history=await nrV3ListHistory?.(workflow,null)||[];
+            if(backButton) backButton.hidden=false;
+            if(historyButton) historyButton.hidden=true;
             list.innerHTML=history.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Status</th><th>Updated</th><th>Identifier</th><th>Order</th><th>Quantity</th><th>Photo</th></tr></thead><tbody>${history.slice().sort((a,b)=>String(b.updated_at||b.created_at||"").localeCompare(String(a.updated_at||a.created_at||""))).map(row=>`<tr><td><b>${esc(row.status||"PENDING")}</b></td><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.updated_at||row.created_at):row.updated_at||row.created_at||"—")}</td><td>${esc(row.identifier_display||row.gtin||"—")}</td><td>${esc(row.order_number||"—")}</td><td>${esc(row.pending_quantity||1)}</td><td>${row.photo_path?"Photo retained":"—"}</td></tr>`).join("")}</tbody></table></div>`:'<div class="needsReviewEmpty">No Needs Review history.</div>';
         }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
     });
