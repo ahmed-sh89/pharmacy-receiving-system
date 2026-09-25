@@ -72,7 +72,8 @@ async function nrV2CreateDraft(parsed,options={}){
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
         ? [...new Set(getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean))]
         : [];
-    const originalOrder=normalizeOrderNumber(options.orderNumber||nrV2CurrentOrderNumber()||"");
+    const explicitOrder=normalizeOrderNumber(options.orderNumber||"");
+    const originalOrder=explicitOrder || (selectedOrders.length===1 ? selectedOrders[0] : "");
     const workScope=[...new Set((options.workScopeOrderNumbers||selectedOrders).map(normalizeOrderNumber).filter(Boolean))];
     if(originalOrder&&!workScope.includes(originalOrder)) workScope.push(originalOrder);
     if((options.workflow||"RECEIVING")==="RECEIVING"&&!workScope.length){
