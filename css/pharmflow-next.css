@@ -1666,3 +1666,21 @@ body:not(.zebraDevice) .pfnPharmacyIdentityText strong{font-size:10px!important;
   body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody>tr.pfnMobileItemCard:focus-visible td{background:#d4eaff!important;outline:2px solid #1476c9!important;outline-offset:-2px!important}}
 
 .pfnReviewHeaderMetrics{display:flex;gap:8px;margin-top:7px}.pfnReviewHeaderMetrics span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid #d3e2ef;border-radius:999px;background:#f5f9fd;color:#526f88;font-size:11px;font-weight:700}.pfnReviewHeaderMetrics b{color:#153f67;font-size:13px}.needsReviewHeaderActions button{display:inline-flex;align-items:center;justify-content:center;gap:6px}.needsReviewHeaderActions .pfnReviewHistoryButton{background:#eef6fd;border-color:#a9c8e2;color:#175d92}.needsReviewHeaderActions .needsReviewClose{background:#fff5f3!important;border:1px solid #e8c2bb!important;color:#9b382b;font-weight:800!important}
+
+/* Receiving visual refinement — one desktop owner, 2026-09-25 */
+body:not(.zebraDevice) .sidebar{background:#dce8f3;border-right-color:#bfd1e1}
+body:not(.zebraDevice) .sidebarBrand,body:not(.zebraDevice) .sidebarFooter{border-color:#bfd1e1}
+body:not(.zebraDevice) .pfnPharmacyNameHero{justify-self:center;display:flex;align-items:center;justify-content:center;min-width:250px;max-width:360px;min-height:38px;padding:7px 20px;border:1px solid #c4d8e8;border-radius:9px;background:#f5f9fd;box-shadow:0 1px 3px #173d6310}
+body:not(.zebraDevice) #topBarPharmacyName{font-size:16px;font-weight:800;color:#153f67;text-align:center}
+body:not(.zebraDevice) .pfnContextBar{gap:7px}
+body:not(.zebraDevice) .pfnContextBar>div,body:not(.zebraDevice) .pfnContextBar>.cloudWorkspaceStatus{height:36px;min-height:36px;padding:0 11px;font-size:12px;border-radius:8px}
+body:not(.zebraDevice) .pfnOrderScopeLabel{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#dcecf9;color:#176bb1;font-size:16px;font-weight:900;letter-spacing:0}
+body:not(.zebraDevice) .headerOrderPickerMenu{padding:8px;gap:0}
+body:not(.zebraDevice) .headerOrderPickerOptions{padding:0 0 7px}
+body:not(.zebraDevice) .headerOrderPickerActions{order:1;margin:0;padding:8px 0 0;border-top:1px solid var(--ui-line);border-bottom:0;gap:7px}
+body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{margin-left:0}
+body:not(.zebraDevice) .smartSearchResult{min-height:58px;padding:9px 12px}
+body:not(.zebraDevice) .smartSearchResultMain strong{font-size:15px;line-height:1.25;font-weight:800}
+body:not(.zebraDevice) .smartSearchResultMain span{font-size:13px;line-height:1.25}
+body:not(.zebraDevice) .smartSearchResultQty span{font-size:15px;font-weight:800}
+body:not(.zebraDevice) .smartSearchResultQty small{font-size:11px;font-weight:700}
