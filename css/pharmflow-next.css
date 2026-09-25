@@ -1684,3 +1684,16 @@ body:not(.zebraDevice) .smartSearchResultMain strong{font-size:15px;line-height:
 body:not(.zebraDevice) .smartSearchResultMain span{font-size:13px;line-height:1.25}
 body:not(.zebraDevice) .smartSearchResultQty span{font-size:15px;font-weight:800}
 body:not(.zebraDevice) .smartSearchResultQty small{font-size:11px;font-weight:700}
+
+/* Receiving focused refinement — 2026-09-25 */
+body:not(.zebraDevice) .pfnPharmacyNameHero{transform:translateX(-28px);min-width:300px;max-width:390px;min-height:44px;padding:9px 24px}
+body:not(.zebraDevice) .smartScanResults:not(:empty){margin-top:7px;padding:7px;background:#e8f2fa;border:1px solid #bfd5e6;border-radius:9px;box-shadow:0 4px 12px #163e6414}
+body:not(.zebraDevice) .smartSearchResultRow{min-height:62px;margin:0 0 6px}
+body:not(.zebraDevice) .smartSearchResultRow:last-child{margin-bottom:0}
+body:not(.zebraDevice) .smartSearchResult{background:#fff;border:1px solid #c8dbea;border-radius:8px;transition:background .15s,border-color .15s,box-shadow .15s}
+body:not(.zebraDevice) .smartSearchResult:hover{background:#dff0ff;border-color:#72acd6;box-shadow:0 2px 7px #174f7b18}
+body:not(.zebraDevice) .smartSearchReviewButton{display:flex;align-items:center;justify-content:center;flex:0 0 132px!important;min-width:132px;margin:0;padding:0 12px!important;border:1px solid #7faed0!important;border-radius:8px!important;background:#edf6fd!important;color:#145d92!important;font-size:12px!important;font-weight:800!important}
+body:not(.zebraDevice) .smartSearchReviewButton:hover{background:#d8edfd!important;border-color:#4f93c5!important}
+body:not(.zebraDevice) .pfnReviewTotals{display:flex;gap:7px;margin-top:7px}
+body:not(.zebraDevice) .pfnReviewTotals span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid #c8dbea;border-radius:999px;background:#f2f8fd;color:#52708a;font-size:11px;font-weight:700}
+body:not(.zebraDevice) .pfnReviewTotals b{font-size:13px;color:#174f7b}
