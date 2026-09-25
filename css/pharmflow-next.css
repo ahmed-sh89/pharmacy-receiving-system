@@ -137,16 +137,6 @@ body:not(.zebraDevice) .pfnManageOrdersButton {display:inline-flex;align-items:c
 body:not(.zebraDevice) .pfnOrderSelector {display:flex;flex-direction:row;align-items:center;gap:12px;padding:0;border:0;background:transparent;min-width:0}
 body:not(.zebraDevice) .pfnOrderSelector>span {font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--ui-muted)}
 body:not(.zebraDevice) .pfnLegacyOrderId {font-size:13px}
-body:not(.zebraDevice) .headerOrderPicker {position:relative;min-width:240px}
-body:not(.zebraDevice) .headerOrderPickerButton {display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:40px;padding:8px 12px;border:1px solid #a2bdd3;border-radius:8px;background:#e7f1fa;color:#214f74;font-size:14px;font-weight:700;cursor:pointer}
-body:not(.zebraDevice) .headerOrderPickerMenu {position:absolute;bottom:calc(100% + 5px);left:0;z-index:200;width:300px;max-height:min(360px,calc(100dvh - 240px));display:flex;flex-direction:column;overflow:hidden;padding:8px;background:#fff;border:1px solid #c1d3e2;border-radius:8px;box-shadow:0 8px 24px #153c6228}
-body:not(.zebraDevice) .headerOrderPickerMenu label {display:flex;align-items:center;gap:8px;min-height:36px;width:100%;font-size:14px}
-body:not(.zebraDevice) .headerOrderPickerActions button {flex:none;width:auto;min-height:32px;padding:5px 10px;border:1px solid #b7ccdf;border-radius:7px;background:#f4f8fc;color:#245477;font-size:12px;font-weight:700}
-body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk {margin-left:auto;background:#176bb1;border-color:#176bb1;color:#fff}
-body:not(.zebraDevice) .headerOrderPickerMenu[hidden] {display:none}
-body:not(.zebraDevice) .headerOrderPickerTitle {flex:none;order:-2}
-body:not(.zebraDevice) .headerOrderPickerActions {display:flex;gap:6px;flex:none;order:-1;padding:6px 0;border-bottom:1px solid var(--ui-line)}
-body:not(.zebraDevice) .headerOrderPickerOptions {min-height:0;overflow-y:auto}
 body:not(.zebraDevice) .pfnSessionStatus {display:none}
 body:not(.zebraDevice) #page-dashboard>.contentCard {margin:0;padding:14px 20px;border:1px solid var(--ui-line);border-radius:10px;background:#fff;box-shadow:none}
 body:not(.zebraDevice) #page-dashboard>.contentCard .cardHeader {margin:0 0 8px;padding:0;border:0}
@@ -1774,21 +1764,25 @@ body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight{display:fl
  body:not(.zebraDevice) .smartSelectedStats span{font-size:10px;font-weight:850;color:#4f6f88;text-transform:uppercase}
  body:not(.zebraDevice) .smartSelectedStats strong{font-size:22px;line-height:1;font-weight:900;color:#123f67}
 
- body:not(.zebraDevice) .pfnSearchQtySplit{display:flex;align-items:center;gap:5px;min-width:154px}
- body:not(.zebraDevice) .pfnSearchQtySplit>span{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:72px;height:30px;padding:0 8px;border:1px solid #d6c488;border-radius:7px;background:#fffdf6;box-sizing:border-box}
- body:not(.zebraDevice) .pfnSearchQtySplit>span:first-child{background:#eef6ff;border-color:#a9c9e5}
- body:not(.zebraDevice) .pfnSearchQtySplit>span:last-child{background:#eef9f2;border-color:#a7d1b5}
+ body:not(.zebraDevice) .pfnSearchQtySplit{display:flex;align-items:center;gap:0;min-width:150px;height:30px;border:1px solid #b9cfe0;border-radius:7px;overflow:hidden;background:#fff}
+ body:not(.zebraDevice) .pfnSearchQtySplit>span{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:74px;height:28px;padding:0 8px;border:0;border-radius:0;box-sizing:border-box}
+ body:not(.zebraDevice) .pfnSearchQtySplit>span:first-child{background:#eef6ff;border-right:1px solid #b9cfe0}
+ body:not(.zebraDevice) .pfnSearchQtySplit>span:last-child{background:#eef9f2}
  body:not(.zebraDevice) .pfnSearchQtySplit small{font-size:9px;line-height:1;color:#607b91;font-weight:850}
  body:not(.zebraDevice) .pfnSearchQtySplit b{margin:0;font-size:15px;line-height:1;color:#124f83}
 
  body:not(.zebraDevice) .headerOrderPicker{position:relative;min-width:190px}
- body:not(.zebraDevice) .headerOrderPickerMenu{position:absolute;top:calc(100% + 5px);bottom:auto;left:0;z-index:200;width:240px;max-height:258px;display:flex;flex-direction:column;overflow:hidden;padding:6px;background:#fff;border:1px solid #c1d3e2;border-radius:8px;box-shadow:0 8px 24px #153c6228}
+ body:not(.zebraDevice) .headerOrderPickerMenu{position:absolute;top:calc(100% + 5px);bottom:auto;left:0;z-index:200;width:286px;max-height:min(300px,calc(100dvh - 190px));display:flex;flex-direction:column;overflow:hidden;padding:7px;background:#fff;border:1px solid #c1d3e2;border-radius:8px;box-shadow:0 8px 24px #153c6228}
  body:not(.zebraDevice) .headerOrderPickerMenu[hidden]{display:none}
  body:not(.zebraDevice) .headerOrderPickerTitle{display:none}
- body:not(.zebraDevice) .headerOrderPickerOptions{max-height:184px;min-height:0;overflow-y:auto}
- body:not(.zebraDevice) .headerOrderPickerActions{display:grid;grid-template-columns:auto auto auto;justify-content:start;align-items:center;gap:6px;flex:none;padding:6px 0 0;margin:0;border-top:1px solid var(--ui-line);border-bottom:0}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckOption{display:flex;align-items:center;gap:9px;min-height:36px;padding:5px 6px;width:100%;box-sizing:border-box;font-size:13px;cursor:pointer}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText{display:block;min-width:0;line-height:1.15}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText strong{display:block;font-size:13px;font-weight:800;color:#174f7b;white-space:nowrap}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText small{display:none}
+ body:not(.zebraDevice) .headerOrderPickerOptions{max-height:218px;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+ body:not(.zebraDevice) .headerOrderPickerActions{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:6px;flex:none;padding:7px 0 0;margin:0;border-top:1px solid var(--ui-line);border-bottom:0}
  body:not(.zebraDevice) .headerOrderPickerActions button{flex:none;width:auto;min-height:32px;padding:5px 10px}
- body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{margin-left:0}
+ body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{margin-left:auto;justify-self:end;background:#176bb1;border-color:#176bb1;color:#fff}
 
  body:not(.zebraDevice) .scanPanelFooter.pfnActionBar{display:flex;align-items:center;gap:8px;margin:0;padding:10px 0 0;border-top:1px solid var(--ui-line);background:transparent;flex-wrap:nowrap}
  body:not(.zebraDevice) .scanPanelFooter .pfnOrderControlGroup{display:flex;align-items:center;gap:8px;flex:0 1 auto;padding:0;border:0}
