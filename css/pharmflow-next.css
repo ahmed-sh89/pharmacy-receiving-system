@@ -1669,3 +1669,64 @@ body.zebraDevice .needsReviewRowSummary{grid-template-columns:minmax(90px,1fr) m
 body.zebraDevice .needsReviewRowSummary span:nth-of-type(2){display:none}
 body.zebraDevice .needsReviewCaseDetail{padding:10px}
 @media(max-width:700px){.needsReviewRowSummary{grid-template-columns:minmax(90px,1fr) minmax(82px,1fr) auto 22px}.needsReviewRowSummary span:nth-of-type(2){display:none}}
+
+
+/* ===== Receiving + Needs Review UX batch — Vercel Test ===== */
+@media (min-width:901px){
+  body:not(.zebraDevice) .sidebar{width:204px;min-width:204px;max-width:204px}
+  body:not(.zebraDevice) .mainApplication{margin-left:204px}
+  body:not(.zebraDevice) .topBar{position:relative;display:grid;grid-template-columns:minmax(260px,1fr) auto minmax(440px,1fr);align-items:center}
+  body:not(.zebraDevice) .topBarLeft{grid-column:1}
+  body:not(.zebraDevice) .pfnContextBar{grid-column:2/4;display:grid;grid-template-columns:minmax(250px,1fr) repeat(3,max-content);align-items:center;gap:8px;width:100%}
+  body:not(.zebraDevice) .pfnPharmacyNameHero{justify-self:center;min-width:250px;padding:0 18px;text-align:center;background:transparent;border:0}
+  body:not(.zebraDevice) .pfnPharmacyNameHero span{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#6d8296}
+  body:not(.zebraDevice) .pfnPharmacyNameHero strong{display:block;font-size:16px;line-height:1.15;color:#123f6d;white-space:nowrap}
+  body:not(.zebraDevice) .pfnStatusTile{box-sizing:border-box;display:grid;align-content:center;min-width:82px;height:48px;padding:5px 10px;border:1px solid #bfd3e5;border-radius:8px;background:#f5f9fd}
+  body:not(.zebraDevice) .pfnStatusTile span{font-size:9px;line-height:1;color:#6a8196}
+  body:not(.zebraDevice) .pfnStatusTile strong{font-size:12px;line-height:1.2;white-space:nowrap}
+  body:not(.zebraDevice) .globalMasterHeaderInfo.pfnStatusTile{background:#eef9f3;border-color:#bcdccb}
+  body:not(.zebraDevice) .systemStatus.pfnStatusTile{display:flex;align-items:center;justify-content:center;min-width:72px;height:48px;padding:5px 10px}
+  body:not(.zebraDevice) .pfnActionBar{display:flex;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--ui-line)}
+  body:not(.zebraDevice) .pfnReceivingActionGroup{display:contents}
+  body:not(.zebraDevice) .pfnOrderControlGroup{display:flex;align-items:center;gap:10px;flex:1;padding:0;border:0}
+  body:not(.zebraDevice) .pfnAction{min-height:38px;padding:7px 13px}
+  body:not(.zebraDevice) .pfnActionIcon{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,.72);font-weight:900}
+  body:not(.zebraDevice) .pfnActionReport{order:10;margin-left:auto;white-space:nowrap}
+  body:not(.zebraDevice) .pfnManageOrdersButton{min-height:38px;padding:7px 12px}
+  body:not(.zebraDevice) .headerOrderPickerButton{min-height:38px}
+  body:not(.zebraDevice) .pfnOrderSelector>span{font-size:10px}
+  body:not(.zebraDevice) .headerOrderPickerMenu{width:320px;padding:10px;border-radius:12px;box-shadow:0 14px 34px rgba(20,59,94,.2)}
+  body:not(.zebraDevice) .headerOrderPickerTitle{padding:4px 4px 8px;color:#153f67;font-weight:800}
+  body:not(.zebraDevice) .headerOrderPickerActions{gap:8px;padding:8px 0 10px}
+  body:not(.zebraDevice) .headerOrderPickerActions button{justify-content:center;min-height:34px;padding:6px 10px;border:1px solid #b7ccdf;border-radius:7px;background:#f4f8fc;color:#245477;font-weight:800;cursor:pointer}
+  body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{background:#176bb1;border-color:#176bb1;color:#fff}
+  body:not(.zebraDevice) .headerOrderCheckText{display:grid;gap:1px}
+  body:not(.zebraDevice) .headerOrderCheckText small{font-size:10px;color:#71869a}
+  body:not(.zebraDevice) .sidebarFooter{gap:9px;padding:13px 12px 11px}
+  body:not(.zebraDevice) .accountContextKicker{display:none}
+  body:not(.zebraDevice) .accountIdentityText small{display:block!important;margin-bottom:2px;font-size:13px;font-weight:900;color:#1d527e}
+  body:not(.zebraDevice) .sidebarConnection{display:inline-flex!important;align-items:center;gap:5px;font-weight:800}
+  body:not(.zebraDevice) .sidebarLogoutButton{min-height:38px;border-color:#afc7da;background:#fff;font-weight:800}
+  body:not(.zebraDevice) .autoSaveStatus{display:flex!important;align-items:center;justify-content:center;gap:6px;color:#39725a}
+  body:not(.zebraDevice) .autoSaveStatus strong{font-size:10px;text-transform:uppercase}
+  body:not(.zebraDevice) .autoSaveStatus small{display:none}
+  body:not(.zebraDevice) .autoSaveStatus strong::after{content:" ON"}
+}
+.pfnReviewHeaderMetrics{display:flex;gap:8px;margin-top:7px}
+.pfnReviewHeaderMetrics span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid #d3e2ef;border-radius:999px;background:#f5f9fd;color:#526f88;font-size:11px;font-weight:700}
+.pfnReviewHeaderMetrics b{color:#153f67;font-size:13px}
+.needsReviewHeaderActions{display:flex;align-items:center;gap:8px}
+.needsReviewHeaderActions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:7px 13px;border:1px solid #b9cee0;border-radius:8px;background:#f5f9fd;color:#20547e;font-weight:800;cursor:pointer}
+.needsReviewHeaderActions .needsReviewClose{background:#fff5f3;border-color:#e8c2bb;color:#9b382b}
+.needsReviewHeaderActions button:hover{filter:brightness(.98)}
+body.zebraDevice .needsReviewPanel{width:min(440px,calc(100vw - 12px));max-height:calc(100dvh - 12px);border-radius:12px}
+body.zebraDevice .needsReviewOverlay{padding:6px}
+body.zebraDevice .needsReviewPanel>header{padding:10px 11px;gap:8px}
+body.zebraDevice .needsReviewPanel h2{font-size:19px;margin:2px 0}
+body.zebraDevice .needsReviewPanel header p{display:none}
+body.zebraDevice .pfnReviewHeaderMetrics{margin-top:4px}
+body.zebraDevice .needsReviewHeaderActions button{min-height:32px;padding:5px 8px;font-size:11px}
+body.zebraDevice .needsReviewList{padding:7px;gap:6px}
+body.zebraDevice .needsReviewCompactRow{border-radius:8px}
+body.zebraDevice .needsReviewRowSummary{grid-template-columns:minmax(105px,1.4fr) minmax(85px,1fr) auto auto 18px!important;gap:6px!important;padding:9px 8px!important}
+body.zebraDevice .needsReviewRowSummary span:nth-of-type(2){display:inline!important}
