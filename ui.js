@@ -883,21 +883,18 @@ function renderSmartScanSearchResults(
             row.appendChild(remove);
         }
 
-        if(toNumber(item.receivedQty,0) > 0){
-            const review=document.createElement("button");
-            review.type="button";
-            review.className="secondaryButton smartSearchReviewButton";
-            review.textContent="Review / Adjust";
-            review.style.flex="0 0 auto";
-            review.style.padding="0 10px";
-            review.addEventListener("click",function(event){
-                event.preventDefault();
-                event.stopPropagation();
-                closeSmartScanSearch(false);
-                openSearchedItemReview(item);
-            });
-            row.appendChild(review);
-        }
+        const review=document.createElement("button");
+        review.type="button";
+        review.className="secondaryButton smartSearchReviewButton";
+        review.textContent="Review / Adjust";
+        review.style.flex="0 0 132px";
+        review.addEventListener("click",function(event){
+            event.preventDefault();
+            event.stopPropagation();
+            closeSmartScanSearch(false);
+            openSearchedItemReview(item);
+        });
+        row.appendChild(review);
 
         fragment.appendChild(row);
 
@@ -8461,13 +8458,24 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+function getPcNeedsReviewOrderScope(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return null;
+    const selected=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+    return new Set(selected.map(normalizeOrderNumber).filter(Boolean));
+}
+function filterNeedsReviewRowsToPcScope(rows){
+    const scope=getPcNeedsReviewOrderScope();
+    if(scope===null) return rows||[];
+    return (rows||[]).filter(row=>scope.has(normalizeOrderNumber(row?.order_number||"")));
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
         /* Pharmacy-scoped by design. Never hide Handheld drafts because of
            a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
         const rc=document.getElementById("receivingNeedsReviewCount");
 
         const grouped=groupNeedsReviewRows(receiving);
@@ -8769,7 +8777,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     previousPanel?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{ rawRows=await loadNeedsReviewRows(workflow,null); if(!handheld) rawRows=filterNeedsReviewRowsToPcScope(rawRows); }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8785,7 +8793,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
           <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
