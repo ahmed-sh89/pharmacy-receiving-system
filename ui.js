@@ -1261,6 +1261,9 @@ function bindUIEvents(){
                         refreshReceivingTable();
                         refreshHealthSummary?.();
                         refreshOpenOrderStatusReport?.();
+                        /* Order scope owns Needs Review visibility too. Refresh it
+                           immediately instead of waiting for the background sync cycle. */
+                        refreshNeedsReviewCounters?.();
                         /* Phase 2C.11.4.4 — Finalize selection-state sync.
                            The header picker updates the receiving order scope, but the
                            Finalize button is maintained by orders.js and is not rebuilt
@@ -1751,16 +1754,16 @@ function refreshHeader(){
                             <button
                                 type="button"
                                 data-order-picker-action="all"
-                            >Select All</button>
+                            ><span aria-hidden="true">✓</span> Select All</button>
                             <button
                                 type="button"
                                 data-order-picker-action="clear"
-                            >Clear</button>
+                            ><span aria-hidden="true">×</span> Clear</button>
                             <button
                                 type="button"
                                 class="headerOrderPickerOk"
                                 data-order-picker-action="ok"
-                            >OK</button>
+                            ><span aria-hidden="true">✓</span> Apply</button>
                         </div>
                     `;
 
@@ -8834,8 +8837,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
-          <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewHeaderMetrics"><span><b>${groups.length}</b> Cases</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Qty</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
+          <div class="needsReviewHeaderActions"><button class="pfnReviewHistoryButton" type="button" data-review-history><span aria-hidden="true">↺</span> History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review"><span aria-hidden="true">×</span> Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
