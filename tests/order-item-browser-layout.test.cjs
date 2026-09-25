@@ -15,6 +15,8 @@ test("desktop Order Item Browser keeps Row 2 search and priority actions in one 
     assert.match(css,/\.pfnOrderBrowserControls \[data-group-filter\]>\.pfnUnifiedMultiSelectMenu\{top:calc\(100% \+ 4px\);bottom:auto;left:0;right:auto;width:210px/);
     assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserActionRow\{display:grid;grid-template-columns:minmax\(0,1fr\) max-content;align-items:center;gap:10px/);
     assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch\{box-sizing:border-box;width:100%;height:42px\}/);
+    assert.match(css,/\.smartSelectedStats>div\{display:flex;flex-direction:column;align-items:center;justify-content:center/);
+    assert.match(css,/\.pfnSearchQtySplit>span\{display:flex;flex-direction:column;align-items:center;justify-content:center/);
 });
 
 test("Order Item Browser row selection is visual-only and does not invoke priority actions",()=>{
