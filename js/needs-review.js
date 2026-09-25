@@ -125,7 +125,7 @@ async function nrV2List(workflow="RECEIVING",orderNumber=null){
     const pharmacyId=nrV2PharmacyId();
     if(!pharmacyId || typeof authRpc!=="function") return [];
 
-    const rows=await authRpc("list_pharmflow_needs_review_v2",{
+    const rows=await authRpc("list_pharmflow_needs_review_v4",{
         p_pharmacy_id:pharmacyId,
         p_workflow:workflow,
         p_order_number:orderNumber||null
