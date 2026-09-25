@@ -1738,13 +1738,6 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
  body:not(.zebraDevice) .smartSearchResult:hover{background:#e5f2ff!important;border-color:#277fc5!important}
 }
 
-/* Receiving action bar authoritative desktop layout */
-body:not(.zebraDevice) .scanPanelFooter.pfnActionBar{display:flex;align-items:center;gap:8px;margin:0;padding:10px 0 0;border-top:1px solid var(--ui-line);background:transparent;flex-wrap:nowrap}
-body:not(.zebraDevice) .scanPanelFooter .pfnOrderControlGroup{display:flex;align-items:center;gap:8px;flex:0 1 auto;padding:0;border:0}
-body:not(.zebraDevice) .scanPanelFooter .pfnManageOrdersButton,body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton,body:not(.zebraDevice) .scanPanelFooter #btnReceivingReportAction,body:not(.zebraDevice) .scanPanelFooter #btnReceivingNeedsReview{box-sizing:border-box;height:40px;min-height:40px;margin:0;padding-top:0;padding-bottom:0;align-items:center}
-body:not(.zebraDevice) .scanPanelFooter #btnReceivingReportAction{background:#edf5fc;color:#21577f;border-color:#a6bfd4}
-body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight{display:flex;align-items:center;margin-left:auto;flex:0 0 auto}
-
 /* Desktop Receiving surfaces — consolidated 2026-09-25 */
 @media (min-width:901px){
  body:not(.zebraDevice) .smartScanSelected{position:relative;margin-top:8px;padding:10px 13px;border:2px solid #8dbbdc;border-radius:11px;background:#f2f8fd;box-shadow:0 4px 12px #163e6414}
@@ -1764,14 +1757,16 @@ body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight{display:fl
  body:not(.zebraDevice) .smartSelectedStats span{font-size:10px;font-weight:850;color:#4f6f88;text-transform:uppercase}
  body:not(.zebraDevice) .smartSelectedStats strong{font-size:22px;line-height:1;font-weight:900;color:#123f67}
 
- body:not(.zebraDevice) .pfnSearchQtySplit{display:flex;align-items:center;gap:0;min-width:150px;height:30px;border:1px solid #b9cfe0;border-radius:7px;overflow:hidden;background:#fff}
- body:not(.zebraDevice) .pfnSearchQtySplit>span{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:74px;height:28px;padding:0 8px;border:0;border-radius:0;box-sizing:border-box}
- body:not(.zebraDevice) .pfnSearchQtySplit>span:first-child{background:#eef6ff;border-right:1px solid #b9cfe0}
- body:not(.zebraDevice) .pfnSearchQtySplit>span:last-child{background:#eef9f2}
- body:not(.zebraDevice) .pfnSearchQtySplit small{font-size:9px;line-height:1;color:#607b91;font-weight:850}
- body:not(.zebraDevice) .pfnSearchQtySplit b{margin:0;font-size:15px;line-height:1;color:#124f83}
+ body:not(.zebraDevice) .pfnSearchQtySplit{display:flex;align-items:center;justify-content:center;min-width:190px;height:30px;padding:0 10px;border:1px solid #b9cfe0;border-radius:7px;background:#f7fbfe;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .pfnSearchQtySplit>span{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 10px;box-sizing:border-box}
+ body:not(.zebraDevice) .pfnSearchQtySplit>span+span{border-left:1px solid #9fb9cc}
+ body:not(.zebraDevice) .pfnSearchQtySplit small{font-size:10px;line-height:1;color:#52728c;font-weight:850}
+ body:not(.zebraDevice) .pfnSearchQtySplit b{margin:0;font-size:14px;line-height:1;color:#124f83;font-weight:900}
 
  body:not(.zebraDevice) .headerOrderPicker{position:relative;min-width:190px}
+ body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:190px;height:40px;min-height:40px;padding:0 12px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font:800 13px/1.2 inherit;letter-spacing:0;cursor:pointer;box-shadow:none}
+ body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton:hover{background:#e4f0fa;border-color:#7faaca;color:#174f7b}
+ body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton:focus-visible{outline:2px solid #277fc5;outline-offset:2px}
  body:not(.zebraDevice) .headerOrderPickerMenu{position:absolute;top:calc(100% + 5px);bottom:auto;left:0;z-index:200;width:286px;max-height:min(300px,calc(100dvh - 190px));display:flex;flex-direction:column;overflow:hidden;padding:7px;background:#fff;border:1px solid #c1d3e2;border-radius:8px;box-shadow:0 8px 24px #153c6228}
  body:not(.zebraDevice) .headerOrderPickerMenu[hidden]{display:none}
  body:not(.zebraDevice) .headerOrderPickerTitle{display:none}
