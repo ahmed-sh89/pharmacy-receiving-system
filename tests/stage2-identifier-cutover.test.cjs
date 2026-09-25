@@ -17,6 +17,15 @@ test('Stage 2 routes receiving identity and Needs Review through V2 contracts',(
   assert.match(service,/create_pharmflow_global_item_v2/);
 });
 
+test('PC unknown-identifier review requires an explicit active Order and uses an allowed review reason',()=>{
+  const receiving=read('js/receiving.js');
+  assert.match(receiving,/data-review-order/);
+  assert.match(receiving,/Select original Order/);
+  assert.match(receiving,/reason:knownCode\?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN"/);
+  assert.doesNotMatch(receiving,/reason:knownCode\?"KNOWN_NOT_IN_ORDER":"UNKNOWN_IDENTIFIER"/);
+  assert.match(receiving,/orderNumber:reviewOrder/);
+});
+
 test('Needs Review persists a durable intent and keeps original order scope',()=>{
   const ui=read('ui.js');
   const reviews=read('js/needs-review.js');
