@@ -130,8 +130,12 @@ async function hhProcessReceiving(raw,input){
         const parsed=typeof parseGS1Barcode==="function"?parseGS1Barcode(cleaned):{raw:cleaned,gtin:""};
         /* A hardware scan is an identifier candidate, not necessarily a
            numeric GTIN. Preserve its exact captured value for the single
-           resolver/unknown-review path; GS1 parsing remains independent. */
-        if(!parsed?.gtin){
+           resolver/unknown-review path. A legacy parser may extract only the
+           numeric fragment from an alphanumeric barcode (for example
+           "BT 122585"); that fragment must never replace identifier identity. */
+        const nonGs1Alphanumeric=/[A-Za-z]/.test(cleaned)
+            && !(typeof looksLikeStrongBarcode==="function"&&looksLikeStrongBarcode(cleaned));
+        if(!parsed?.gtin||nonGs1Alphanumeric){
             parsed.gtin=cleaned;
             parsed.identifierDisplay=cleaned;
             parsed.format="HANDHELD_IDENTIFIER";
