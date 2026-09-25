@@ -1763,48 +1763,6 @@ body:not(.zebraDevice) .scanPanelFooter .pfnManageOrdersButton,body:not(.zebraDe
 body:not(.zebraDevice) .scanPanelFooter #btnReceivingReportAction{background:#edf5fc;color:#21577f;border-color:#a6bfd4}
 body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight{display:flex;align-items:center;margin-left:auto;flex:0 0 auto}
 
-/* 2026-09-25 compact operational surfaces — authoritative desktop refinement */
-@media (min-width:901px){
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis{grid-template-columns:150px 150px 118px!important;gap:9px!important}
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis>div{min-height:50px!important;border-width:1.5px!important}
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis>div:nth-child(1){background:#eaf4ff!important;border-color:#8dbbe1!important}
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis>div:nth-child(2){background:#eaf8ef!important;border-color:#8fc8a2!important}
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis>div:nth-child(3){background:#fff7e6!important;border-color:#e1bd72!important}
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis span{font-size:12px!important;font-weight:850!important}
-  body:not(.zebraDevice) .pfnSelectedQuantityKpis strong{font-size:21px!important;font-weight:900!important}
-
-  body:not(.zebraDevice) .headerOrderPickerMenu{top:calc(100% + 5px)!important;bottom:auto!important;width:300px!important;max-height:260px!important;padding:6px!important}
-  body:not(.zebraDevice) .headerOrderPickerOptions{max-height:184px!important;overflow-y:auto!important}
-  body:not(.zebraDevice) .headerOrderPickerActions{padding:5px 0 0!important;margin:0!important;border-top:1px solid var(--ui-line)!important;border-bottom:0!important}
-  body:not(.zebraDevice) .headerOrderPickerTitle{display:none!important}
-
-  body:not(.zebraDevice) #page-receiving .pfnReceivingReportToolbar #receivingClassificationFilters{min-width:150px!important;width:150px!important;max-width:150px!important}
-  body:not(.zebraDevice) #page-receiving .pfnReceivingReportToolbar [data-class-filter="groups"]>summary{box-sizing:border-box!important;width:150px!important;height:38px!important;min-height:38px!important;background:#edf5fc!important;border:1px solid #a6bfd4!important;color:#21577f!important;border-radius:8px!important;padding:0 10px!important}
-
-  body:not(.zebraDevice) .pageHeading{padding:6px 12px!important;border:1px solid #b8cee0!important;border-radius:9px!important;background:#edf5fc!important;min-width:190px!important}
-  body:not(.zebraDevice) .pageHeading h1{margin:0!important;font-size:19px!important;line-height:1.05!important;color:#123f67!important}
-  body:not(.zebraDevice) .pageHeading p{margin:3px 0 0!important;font-size:10px!important;color:#5b7890!important}
-
-  body:not(.zebraDevice) .quickKpiPanel.phase263Panel{padding:12px!important}
-  body:not(.zebraDevice) .quickKpiHeader{min-height:38px!important;margin:0 0 6px!important}
-  body:not(.zebraDevice) .quickKpiHeader h3{font-size:19px!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls{display:grid!important;grid-template-rows:38px 42px!important;gap:6px!important;margin:0 0 6px!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow{display:grid!important;grid-template-columns:220px 220px 240px!important;align-items:center!important;justify-content:start!important;gap:8px!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>label{display:grid!important;grid-template-columns:62px minmax(0,1fr)!important;align-items:center!important;gap:6px!important;font-size:11px!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow select,
-  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{box-sizing:border-box!important;width:100%!important;height:38px!important;min-height:38px!important;background:#edf5fc!important;border:1px solid #a6bfd4!important;color:#21577f!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{width:220px!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid!important;grid-template-columns:minmax(0,1fr) max-content!important;align-items:center!important;gap:10px!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{display:block!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField>span{display:none!important}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{height:42px!important}
-  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:hover td,
-  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within td{background:#1f67a6!important;color:#fff!important}
-  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:hover td *,
-  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within td *{color:inherit!important}
-  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within td:first-child{box-shadow:inset 4px 0 0 #0d3f6d!important}
-}
-
 /* Desktop Receiving surfaces — consolidated 2026-09-25 */
 @media (min-width:901px){
  body:not(.zebraDevice) .smartScanSelected{position:relative;margin-top:8px;padding:10px 13px;border:2px solid #8dbbdc;border-radius:11px;background:#f2f8fd;box-shadow:0 4px 12px #163e6414}
