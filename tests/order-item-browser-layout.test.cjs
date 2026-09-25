@@ -28,7 +28,7 @@ test("Order Item Browser row selection is visual-only and does not invoke priori
 
     const css=fs.readFileSync("css/pharmflow-next.css","utf8");
     assert.match(css,/\.pfnCleanWorklist \.phase263Table tbody tr:hover td\{background:#d9ebfa!important;color:#123f67!important\}/);
-    assert.match(css,/tr\.pfnBrowserRowSelected td\{background:#1f67a6!important;color:#fff!important\}/);
-    assert.match(css,/tr\.pfnBrowserRowSelected \.pfnPriorityMark\.active\.short\{background:#ff9800!important/);
-    assert.match(css,/tr\.pfnBrowserRowSelected \.pfnPriorityMark\.active\.new\{background:#fff!important;color:#174f7b!important\}/);
+    assert.match(css,/\.pfnCleanWorklist \.phase263Table tbody tr\.pfnBrowserRowSelected td\{background:#1f67a6!important;color:#fff!important\}/);
+    assert.match(css,/\.pfnCleanWorklist \.phase263Table tbody tr\.pfnBrowserRowSelected \.pfnPriorityMark\.active\.short\{background:#ff9800!important/);
+    assert.match(css,/\.pfnCleanWorklist \.phase263Table tbody tr\.pfnBrowserRowSelected \.pfnPriorityMark\.active\.new\{background:#fff!important;color:#174f7b!important\}/);
 });
