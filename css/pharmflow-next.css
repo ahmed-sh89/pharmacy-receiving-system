@@ -1741,3 +1741,11 @@ body:not(.zebraDevice) .pfnProgressCompactDetail #progressCompletedText{font-siz
 body:not(.zebraDevice) .needsReviewHeaderActions [data-review-back]{border-color:#9fc3df;background:#edf6fd;color:#145d92;font-weight:800}
 
 body:not(.zebraDevice) .smartScanSelected{position:relative}
+
+/* Selected item close + KPI clarity — 2026-09-25 */
+body:not(.zebraDevice) #btnCloseSmartSelection{position:absolute;right:10px;top:8px;z-index:4;width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid #c6d8e7;color:#5a7287;font-size:14px}
+body:not(.zebraDevice) .smartQuantityRow{right:52px}
+body:not(.zebraDevice) .smartSelectedStats{grid-template-columns:repeat(3,145px);gap:10px;margin-top:8px}
+body:not(.zebraDevice) .smartSelectedStats>div{min-height:50px;padding:8px 12px;border-width:1.5px;box-shadow:0 2px 6px #163e6410}
+body:not(.zebraDevice) .smartSelectedStats span{font-size:12px;font-weight:800}
+body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900}
