@@ -8929,9 +8929,23 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 try{
                     const outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
                     if(outcome.pending){
-                        button.disabled=false;
-                        showToast?.("Receipt is queued. Needs Review remains pending until the server accepts this exact transaction.","warning");
-                        return;
+                        button.textContent="Processing…";
+                        showToast?.("Receipt is queued. Waiting for the server to accept this exact transaction.","warning");
+                        const reviewIds=new Set(group.rows.map(row=>toSafeString(row?.review_id||"")).filter(Boolean));
+                        let resolved=false;
+                        for(let attempt=0;attempt<6;attempt++){
+                            await new Promise(resolve=>setTimeout(resolve,500));
+                            const pendingRows=await nrV2List(workflow,null);
+                            if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){
+                                resolved=true;
+                                break;
+                            }
+                        }
+                        if(!resolved){
+                            button.textContent="Processing — Close & reopen to refresh";
+                            showToast?.("Receipt is still processing. Do not press Link & Resolve again.","warning");
+                            return;
+                        }
                     }
                     section.remove();
                     await refreshNeedsReviewCounters();
