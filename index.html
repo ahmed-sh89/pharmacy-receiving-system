@@ -52,7 +52,7 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_HIERARCHY1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_CLEAN_LAYOUT1">
 <link rel="stylesheet" href="css/receiving-surface.css?v=UI_REVIEW_CLEAN1">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
@@ -360,7 +360,7 @@
                 <div>
 
                     <strong>
-                        Auto Save
+                        Auto Save On
                     </strong>
 
                     <small>
@@ -415,17 +415,15 @@
             </div>
 
 
-            <div class="topBarRight pfnContextBar">
+            <div class="pharmacyNameField pfnPharmacyNameHero"><span>PHARMACY</span><strong id="topBarPharmacyName"></strong></div>
+
+            <div class="topBarRight pfnContextBar" aria-label="Workspace status">
 
                 <div class="pfnWorkspaceIdentity" aria-label="Pharmacy workspace">
-                    <span>Pharmacy Code</span>
                     <strong id="topBarPharmacyCode">—</strong>
                 </div>
 
-                <div class="pharmacyNameField"><span>Pharmacy Name</span><strong id="topBarPharmacyName"></strong></div>
-
                 <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
-                    <span>Global Master</span>
                     <strong id="headerMasterGTINStatus">SYNCING</strong>
                 </div>
 
@@ -435,6 +433,8 @@
                 >
                     READY
                 </div>
+
+                <span id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</span>
 
             </div>
 
@@ -2733,7 +2733,7 @@
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=UI_REVIEW_CLEAN1"></script>
+<script src="ui.js?v=RECEIVING_CLEAN_LAYOUT1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 

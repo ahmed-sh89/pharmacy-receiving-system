@@ -1662,6 +1662,7 @@ function refreshHeader(){
 
         setElementText(document.getElementById("topBarPharmacyName"), pharmacyName);
         setElementText(document.getElementById("topBarPharmacyCode"), pharmacyCode);
+        setElementText(document.getElementById("accountPharmacyCode"), pharmacyCode);
     }
 
     // Pharmacy identity lives in the sidebar; the header identifies the route.
@@ -1760,7 +1761,7 @@ function refreshHeader(){
                                 type="button"
                                 class="headerOrderPickerOk"
                                 data-order-picker-action="ok"
-                            >OK</button>
+                            >Apply</button>
                         </div>
                     `;
 
@@ -8799,6 +8800,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
+              <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false" aria-controls="needsReviewCase-${index}">
+                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>Order ${esc(group.order_number||"Needs assignment")}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
+              </button>
+              <div class="needsReviewCaseDetail" id="needsReviewCase-${index}" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
                 <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNISED"}</span>
                 <div class="capturedIdentifier"><span class="pfnReviewLabel">CAPTURED IDENTIFIER</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong><button type="button" data-copy-identifier="${index}">Copy</button></div>
@@ -8816,6 +8821,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+              </div>
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
@@ -8852,6 +8858,12 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
+        const detail=section.querySelector("[data-review-case-detail]");
+        const summary=section.querySelector("[data-review-detail]");
+        summary.addEventListener("click",()=>{
+            detail.hidden=!detail.hidden;
+            summary.setAttribute("aria-expanded",String(!detail.hidden));
+        });
         const search=overlay.querySelector(`[data-search="${index}"]`);
         const matches=overlay.querySelector(`[data-matches="${index}"]`);
         const selection=overlay.querySelector(`[data-selection="${index}"]`);
@@ -8941,7 +8953,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
     });
 
-    if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
+    if(!handheld) overlay.querySelector("[data-review-detail=\"0\"]")?.focus();
 
     renderV2IdentifierAdministration(overlay,esc);
 
