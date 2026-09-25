@@ -69,15 +69,17 @@ async function nrV2CreateDraft(parsed,options={}){
         throw new Error("Scanned code could not be captured");
     }
 
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? [...new Set(getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean))]
+        : [];
     const originalOrder=normalizeOrderNumber(options.orderNumber||nrV2CurrentOrderNumber()||"");
-    /* A Needs Review case is an operational Receiving record.  Visibility
-       scope must never be substituted for attribution: require a real source
-       Order rather than creating an unassignable multi-order draft. */
-    if((options.workflow||"RECEIVING")==="RECEIVING"&&!originalOrder){
-        throw new Error("Select the original active Order before saving this scan for review.");
+    const workScope=[...new Set((options.workScopeOrderNumbers||selectedOrders).map(normalizeOrderNumber).filter(Boolean))];
+    if(originalOrder&&!workScope.includes(originalOrder)) workScope.push(originalOrder);
+    if((options.workflow||"RECEIVING")==="RECEIVING"&&!workScope.length){
+        throw new Error("Select a Receiving Order on this device before saving this scan for review.");
     }
 
-    const result=await authRpc("create_pharmflow_needs_review_v3",{
+    const result=await authRpc("create_pharmflow_needs_review_v4",{
         p_pharmacy_id:pharmacyId,
         p_workflow:options.workflow||"RECEIVING",
         p_identifier_display:capturedCode,
@@ -89,7 +91,8 @@ async function nrV2CreateDraft(parsed,options={}){
         p_master_item_code_hint:options.itemCode||null,
         p_master_item_name_hint:options.itemName||null,
         p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC",
-        p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():""
+        p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():"",
+        p_work_scope_order_numbers:workScope
     });
 
     return Array.isArray(result) ? result[0] : result;
@@ -144,6 +147,14 @@ async function nrV3ListHistory(workflow="RECEIVING",orderNumber=null){
     }
 }
 window.nrV3ListHistory=nrV3ListHistory;
+
+
+async function nrV2AssignOrder(reviewId,orderNumber){
+    const pharmacyId=nrV2PharmacyId();
+    return authRpc("assign_pharmflow_needs_review_order_v1",{
+        p_pharmacy_id:pharmacyId,p_review_id:reviewId,p_order_number:normalizeOrderNumber(orderNumber)
+    });
+}
 
 async function nrV2RequestResolution(row,item,transactionId){
     if(!globalThis.crypto?.randomUUID){
@@ -450,6 +461,7 @@ window.NeedsReviewV2=NeedsReviewV2;
 window.nrV2CreateDraft=nrV2CreateDraft;
 window.nrV2SetQty=nrV2SetQty;
 window.nrV2List=nrV2List;
+window.nrV2AssignOrder=nrV2AssignOrder;
 window.nrV2RequestResolution=nrV2RequestResolution;
 window.nrV2Delete=nrV2Delete;
 window.nrV2UploadPhoto=nrV2UploadPhoto;
