@@ -493,13 +493,13 @@ function refreshFinalizeReceivingButton(){
         active.length>1 && selectedOrders.length!==1;
     if(button){
         button.disabled=!hasOrder||FinalizeReceivingEngine.busy||needsSpecificOrder;
-        button.title=needsSpecificOrder?"Select one order before Complete Receiving":"";
-        button.textContent=FinalizeReceivingEngine.busy?"Completing…":"✓ Complete Receiving";
+        button.title=needsSpecificOrder?"Select one order before Receive Order":"";
+        button.textContent=FinalizeReceivingEngine.busy?"Receiving…":"✓ Receive Order";
     }
     if(completeAll){
         completeAll.disabled=!hasOrder||FinalizeReceivingEngine.busy||active.length<2;
         completeAll.title=active.length<2?"Load more than one active Order to complete all":"";
-        completeAll.textContent=FinalizeReceivingEngine.busy?"Completing…":"Complete All Active Orders";
+        completeAll.textContent=FinalizeReceivingEngine.busy?"Receiving…":"Receive All";
     }
 }
 
