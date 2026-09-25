@@ -662,11 +662,6 @@
 
 
                     <div class="scanPanelFooter pfnActionBar">
-                        <div class="pfnReceivingActionGroup" aria-label="Receiving actions">
-                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
-                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
-                        </div>
-
                         <div class="pfnOrderControlGroup" aria-label="Active order controls">
                             <button id="pfnManageOrders" class="pfnManageOrdersButton" type="button">
                                 <svg class="pfnManageOrdersIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -687,10 +682,14 @@
                                 </div>
                             </div>
 
+                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
                             <div class="headerInfo pfnSessionStatus">
                                 <span>Session Status</span>
                                 <strong id="headerSessionId">INACTIVE</strong>
                             </div>
+                        </div>
+                        <div class="pfnReceivingActionGroup pfnReceivingActionGroupRight" aria-label="Receiving review actions">
+                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
                         </div>
                     </div>
 
@@ -913,8 +912,8 @@
                                     <button id="btnEmailReceivingDifferences" type="button">Copy Email</button>
                                 </div>
                             </details>
-                            <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Complete Receiving</button>
-                            <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Complete All Active Orders</button>
+                            <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Receive Order</button>
+                            <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Receive All</button>
                             <div id="receivingClassificationFilters" class="pfrClassificationFilters pfrGroupOnlyFilters" aria-label="Group filter">
                                 <details data-class-filter="groups" class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect">
                                     <summary><span>Group</span><strong id="receivingGroupFilterLabel">All groups</strong></summary>
