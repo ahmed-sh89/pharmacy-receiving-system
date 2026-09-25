@@ -32,6 +32,12 @@ body:not(.zebraDevice) .sidebarLogoutButton {width:100%;min-height:38px;border:1
 body:not(.zebraDevice) .autoSaveStatus {display:flex;justify-content:center;align-items:center;gap:7px;font-size:11px;color:#658174}
 body:not(.zebraDevice) .autoSaveStatus strong {font-size:10px;font-weight:700;text-transform:uppercase}
 body:not(.zebraDevice) .autoSaveStatus small {display:none}
+body:not(.zebraDevice) .sidebarFooter {gap:10px;padding:14px 14px 12px}
+body:not(.zebraDevice) .accountIdentity {padding:9px 10px;border:1px solid #c5d8e8;border-radius:9px;background:#f5f9fd}
+body:not(.zebraDevice) .accountIdentityText {gap:4px}
+body:not(.zebraDevice) .accountIdentityText small {font-size:16px;line-height:1.05;font-weight:900;letter-spacing:.6px;color:#174f7b}
+body:not(.zebraDevice) .sidebarConnection {margin-top:1px;font-size:10px;line-height:1;font-weight:850;letter-spacing:.04em}
+body:not(.zebraDevice) .sidebarConnection::before {width:7px;height:7px}
 body:not(.zebraDevice) .sidebarCloseButton {display:none}
 body:not(.zebraDevice) .mainApplication {margin-left:216px;min-height:100vh;background:var(--ui-bg)}
 body:not(.zebraDevice) .mainContent {padding:16px 24px;max-width:1600px;margin:0 auto}
@@ -1744,11 +1750,14 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
  body:not(.zebraDevice) .smartSelectedStats span{font-size:10px;font-weight:850;color:#4f6f88;text-transform:uppercase}
  body:not(.zebraDevice) .smartSelectedStats strong{font-size:22px;line-height:1;font-weight:900;color:#123f67}
 
- body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit{display:flex;flex-direction:row;align-items:center;justify-content:center;min-width:190px;height:30px;padding:0 10px;border:1px solid #b9cfe0;border-radius:7px;background:#f7fbfe;box-sizing:border-box;white-space:nowrap}
- body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 10px;box-sizing:border-box;white-space:nowrap}
- body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span+span{border-left:1px solid #9fb9cc}
- body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit small{display:inline;font-size:10px;line-height:1;color:#52728c;font-weight:850}
- body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit b{display:inline;margin:0;font-size:14px;line-height:1;color:#124f83;font-weight:900}
+ body:not(.zebraDevice) .smartSearchResultMain strong{font-size:16px;line-height:1.2;font-weight:850;color:#0b4d8c}
+ body:not(.zebraDevice) .smartSearchResultMain span{margin-top:3px;font-size:12px;line-height:1.15;font-weight:750;color:#58748d}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit{display:grid;grid-template-columns:repeat(2,minmax(82px,1fr));align-items:stretch;justify-content:center;gap:7px;min-width:184px;height:auto;padding:0;border:0;background:transparent;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span{display:grid;grid-template-rows:auto auto;align-items:center;justify-items:center;gap:2px;min-height:42px;padding:5px 10px;border:1px solid #a9c7df;border-radius:8px;background:#eef6fd;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span+span{border:1px solid #9dcdb1;background:#edf8f1}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit small{display:block;font-size:9px;line-height:1;color:#52728c;font-weight:900;letter-spacing:.04em}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit b{display:block;margin:0;font-size:18px;line-height:1;color:#124f83;font-weight:950}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span+span b{color:#23704c}
 
  body:not(.zebraDevice) .headerOrderPicker{position:relative;min-width:190px}
  body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:190px;height:40px;min-height:40px;padding:0 12px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font:800 13px/1.2 inherit;letter-spacing:0;cursor:pointer;box-shadow:none}
