@@ -848,9 +848,9 @@ function renderSmartScanSearchResults(
                 <strong>${escapeHTML(item.itemName)}</strong>
                 <span>${escapeHTML(item.itemCode)}</span>
             </div>
-            <div class="smartSearchResultQty">
-                <span>${toNumber(item.receivedQty,0)} / ${toNumber(item.orderedQty,0)}</span>
-                <small>Received</small>
+            <div class="smartSearchResultQty pfnSearchQtySplit">
+                <span><small>ORD</small><b>${toNumber(item.orderedQty,0)}</b></span>
+                <span><small>REC</small><b>${toNumber(item.receivedQty,0)}</b></span>
             </div>`;
 
         button.addEventListener("click",function(){
