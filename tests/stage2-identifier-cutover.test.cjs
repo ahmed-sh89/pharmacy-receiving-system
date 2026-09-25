@@ -244,3 +244,18 @@ test('authenticated manifest hydration loads UI globals before the application b
   assert.match(app,/initializeUI\(\)/);
   assert.doesNotThrow(()=>new Function(workspace),'the manifest hydration script must parse before authenticated startup');
 });
+
+
+test("alphanumeric scanner identifiers preserve exact identity before V2 resolution",()=>{
+  const scanner=read("js/scanner.js");
+  const handheld=read("js/handheld-runtime.js");
+  assert.match(scanner,/\[A-Za-z\]\/\.test\(cleaned\)/);
+  assert.match(scanner,/parsed\.identifierDisplay=cleaned/);
+  assert.match(scanner,/parsed\.gtin=cleaned/);
+  assert.match(handheld,/nonGs1Alphanumeric/);
+  assert.match(handheld,/parsed\.identifierDisplay=cleaned/);
+  assert.match(handheld,/parsed\.gtin=cleaned/);
+  for(const identifier of ["BT 122585","U0030","S00110","1234A"]){
+    assert.ok(/[A-Za-z]/.test(identifier),identifier);
+  }
+});
