@@ -15,17 +15,19 @@ test("desktop Order Item Browser keeps filters aligned and search actions compac
     assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserActionRow\{display:grid;grid-template-columns:minmax\(0,1fr\) max-content/);
 });
 
-test("Receiving search quantities stay inline and order picker keeps PharmFlow styling",()=>{
+test("Receiving search quantities and order picker have one desktop visual owner",()=>{
     const source=fs.readFileSync("ui.js","utf8");
     assert.match(source,/<small>ORDER<\/small><b>\$\{toNumber\(item\.orderedQty,0\)\}<\/b>/);
     assert.match(source,/<small>RECEIVED<\/small><b>\$\{toNumber\(item\.receivedQty,0\)\}<\/b>/);
 
     const css=fs.readFileSync("css/pharmflow-next.css","utf8");
-    assert.match(css,/\.pfnSearchQtySplit\{display:flex;align-items:center;justify-content:center;min-width:190px;height:30px/);
-    assert.match(css,/\.pfnSearchQtySplit>span\+span\{border-left:1px solid #9fb9cc\}/);
-    assert.match(css,/\.scanPanelFooter \.headerOrderPickerButton\{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between/);
-    assert.match(css,/\.headerOrderPickerMenu\{position:absolute;top:calc\(100% \+ 5px\);bottom:auto;left:0;z-index:200;width:286px/);
-    assert.match(css,/\.headerOrderPickerActions\{display:grid;grid-template-columns:auto auto 1fr/);
+    assert.equal((css.match(/\.smartSearchResult \.pfnSearchQtySplit\{/g)||[]).length,1);
+    assert.match(css,/\.smartSearchResult \.pfnSearchQtySplit\{display:flex;flex-direction:row;/);
+    assert.match(css,/\.smartSearchResult \.pfnSearchQtySplit>span\{display:flex;flex-direction:row;/);
+    assert.match(css,/\.smartSearchResult \.pfnSearchQtySplit>span\+span\{border-left:1px solid #9fb9cc\}/);
+    assert.match(css,/\.headerOrderPickerActions button\{appearance:none;-webkit-appearance:none;display:inline-flex;/);
+    assert.match(css,/\.scanPanelFooter \.headerOrderPickerButton\{appearance:none;-webkit-appearance:none;display:flex;/);
+    assert.doesNotMatch(css,/\.headerOrderPickerMenu\{padding:8px;gap:0\}/);
 });
 
 test("Order Item Browser row selection is immediate visual-only and preserves priority states",()=>{
