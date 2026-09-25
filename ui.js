@@ -7067,12 +7067,21 @@ function isLikelyZebraDevice(){
     try{
         const params = new URLSearchParams(window.location.search || "");
         const vercelPreviewHost = /\\.vercel\\.app$/i.test(String(window.location.hostname || ""));
+        const forceDesktop = vercelPreviewHost && params.get("desktop") === "1";
+        if(forceDesktop){
+            localStorage.removeItem("PHARMFLOW_HANDHELD_TEST_MODE");
+            localStorage.removeItem("PHARMFLOW_HANDHELD_DEVICE");
+        }
         explicitHandheld =
-            (vercelPreviewHost && params.get("handheld") === "1") ||
-            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
+            !forceDesktop && (
+                (vercelPreviewHost && params.get("handheld") === "1") ||
+                localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1"
+            );
 
         persistedHandheld =
-            localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
+            !forceDesktop && localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
+
+        if(forceDesktop) return false;
     }catch(_){}
 
     /*
