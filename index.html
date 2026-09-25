@@ -902,59 +902,24 @@
                 <section class="contentCard">
 
 
-                    <div class="cardHeader">
-
-
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                CURRENT ORDER
-
-                            </span>
-
-                            <h2>
-
-                                Receiving Items
-
-                            </h2>
-
-                        </div>
-
-
-                        <div class="headerActions receivingFilterBar">
-
+                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
+                        <div class="receivingSummaryHeader pfnReceivingReportToolbar">
+                            <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
+                            <details class="pfnReportActionMenu">
+                                <summary><span aria-hidden="true">↗</span> Export / Share</summary>
+                                <div>
+                                    <button id="btnExportReceivingSummaryExcel" type="button">Excel</button>
+                                    <button id="btnExportReceivingSummaryPDF" type="button">PDF</button>
+                                    <button id="btnEmailReceivingDifferences" type="button">Copy Email</button>
+                                </div>
+                            </details>
+                            <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Complete Receiving</button>
+                            <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Complete All Active Orders</button>
                             <div id="receivingClassificationFilters" class="pfrClassificationFilters pfrGroupOnlyFilters" aria-label="Group filter">
                                 <details data-class-filter="groups" class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect">
                                     <summary><span>Group</span><strong id="receivingGroupFilterLabel">All groups</strong></summary>
                                     <div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div>
                                 </details>
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
-                        <div class="receivingSummaryHeader">
-                            <div class="pfnReportTitleBlock">
-                                <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
-                                <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
-                                <div class="pfnReportTitleLine"><h3>Discrepancy Report</h3></div>
-                            </div>
-                            <div class="receivingSummaryActions">
-                                <details class="pfnReportActionMenu">
-                                    <summary><span aria-hidden="true">↗</span> Export / Share</summary>
-                                    <div>
-                                        <button id="btnExportReceivingSummaryExcel" type="button">Excel</button>
-                                        <button id="btnExportReceivingSummaryPDF" type="button">PDF</button>
-                                        <button id="btnEmailReceivingDifferences" type="button">Copy Email</button>
-                                    </div>
-                                </details>
-                                <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Complete Receiving</button>
-                                <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Complete All Active Orders</button>
                             </div>
                         </div>
                         <div class="receivingSummaryGrid discrepancyGrid">
