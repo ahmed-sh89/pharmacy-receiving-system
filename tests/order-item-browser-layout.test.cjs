@@ -9,16 +9,12 @@ test("desktop Order Item Browser keeps Row 2 search and priority actions in one 
     assert.match(source,/if\(printPriority\)printPriority\.hidden=!priorityOnly;\s*if\(clearPriority\)clearPriority\.hidden=!priorityOnly;/);
 
     const css=fs.readFileSync("css/pharmflow-next.css","utf8");
-    assert.match(css,/@media \(min-width:901px\)\{\s*body:not\(\.zebraDevice\) \.pfnOrderBrowserControls/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserActionRow\{display:grid;grid-template-columns:minmax\(0,1fr\) max-content;align-items:end;gap:12px;min-width:0\}/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserSearchField\{grid-template-rows:auto 42px\}/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch\{box-sizing:border-box;width:100%;min-width:0;height:42px/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserPriorityActions\{display:flex;align-items:end;gap:8px;min-width:max-content\}/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnHighPriorityFilter\{height:42px;min-height:42px;flex:0 0 auto;padding:0 18px/);
-    assert.match(css,/\[data-priority-filter\]\{min-width:148px\}/);
-    assert.doesNotMatch(css,/\.pfnOrderBrowserControls \.pfnBrowserActionRow\{display:flex!important/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch\{[\s\S]*border:2px solid #8fb3d2/);
-    assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch:focus\{border-color:#1476c9/);
+    assert.match(css,/\/\* Desktop Receiving surfaces — consolidated 2026-09-25 \*\//);
+    assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserControlRow\{position:absolute;top:10px;right:52px;display:grid;grid-template-columns:210px 210px 230px/);
+    assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserControlRow select,body:not\(\.zebraDevice\) \.pfnOrderBrowserControls \[data-group-filter\]>summary\{box-sizing:border-box;width:100%;height:38px;min-height:38px/);
+    assert.match(css,/\.pfnOrderBrowserControls \[data-group-filter\]>\.pfnUnifiedMultiSelectMenu\{top:calc\(100% \+ 4px\);bottom:auto;left:0;right:auto;width:210px/);
+    assert.match(css,/\.pfnOrderBrowserControls \.pfnBrowserActionRow\{display:grid;grid-template-columns:minmax\(0,1fr\) max-content;align-items:center;gap:10px/);
+    assert.match(css,/\.pfnOrderBrowserControls \.pfnWideSearch\{box-sizing:border-box;width:100%;height:42px\}/);
 });
 
 test("Order Item Browser row selection is visual-only and does not invoke priority actions",()=>{
@@ -31,6 +27,8 @@ test("Order Item Browser row selection is visual-only and does not invoke priori
     assert.match(source,/data-mark="NEW"/);
 
     const css=fs.readFileSync("css/pharmflow-next.css","utf8");
-    assert.match(css,/tr\.pfnMobileItemCard:hover td\{background:#d4eaff!important/);
-    assert.match(css,/tr\.pfnBrowserRowSelected td\{background:#bfe1fb!important/);
+    assert.match(css,/\.pfnCleanWorklist \.phase263Table tbody tr:hover td\{background:#d9ebfa!important;color:#123f67!important\}/);
+    assert.match(css,/tr\.pfnBrowserRowSelected td\{background:#1f67a6!important;color:#fff!important\}/);
+    assert.match(css,/tr\.pfnBrowserRowSelected \.pfnPriorityMark\.active\.short\{background:#ff9800!important/);
+    assert.match(css,/tr\.pfnBrowserRowSelected \.pfnPriorityMark\.active\.new\{background:#fff!important;color:#174f7b!important\}/);
 });
