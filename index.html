@@ -52,7 +52,7 @@
         href="css/auth.css?v=B10CLEAN15_15"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_HIERARCHY1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_CLEAN_LAYOUT1">
 <link rel="stylesheet" href="css/receiving-surface.css?v=UI_REVIEW_CLEAN1">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
@@ -360,7 +360,7 @@
                 <div>
 
                     <strong>
-                        Auto Save
+                        Auto Save On
                     </strong>
 
                     <small>
@@ -415,17 +415,15 @@
             </div>
 
 
-            <div class="topBarRight pfnContextBar">
+            <div class="pharmacyNameField pfnPharmacyNameHero"><strong id="topBarPharmacyName"></strong></div>
+
+            <div class="topBarRight pfnContextBar" aria-label="Workspace status">
 
                 <div class="pfnWorkspaceIdentity" aria-label="Pharmacy workspace">
-                    <span>Pharmacy Code</span>
                     <strong id="topBarPharmacyCode">—</strong>
                 </div>
 
-                <div class="pharmacyNameField"><span>Pharmacy Name</span><strong id="topBarPharmacyName"></strong></div>
-
                 <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
-                    <span>Global Master</span>
                     <strong id="headerMasterGTINStatus">SYNCING</strong>
                 </div>
 
@@ -435,6 +433,8 @@
                 >
                     READY
                 </div>
+
+                <span id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</span>
 
             </div>
 
@@ -662,14 +662,6 @@
 
 
                     <div class="scanPanelFooter pfnActionBar">
-                        <div class="pfnReceivingActionGroup" aria-label="Receiving actions">
-                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
-                            <button id="btnReceivedItems" class="pfnAction pfnActionReceived" type="button">Received Items</button>
-                            <button id="btnRecognizedHistory" class="pfnAction" type="button">Recognized History</button>
-                            <button id="btnAdjustReceiving" class="pfnAction pfnActionAdjust" type="button">Adjust</button>
-                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
-                        </div>
-
                         <div class="pfnOrderControlGroup" aria-label="Active order controls">
                             <button id="pfnManageOrders" class="pfnManageOrdersButton" type="button">
                                 <svg class="pfnManageOrdersIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -679,7 +671,7 @@
                             </button>
 
                             <div class="pfnOrderSelector">
-                                <span>ORDERS</span>
+                                <span class="pfnOrderScopeLabel" aria-hidden="true">→</span>
                                 <strong id="headerOrderId" class="pfnLegacyOrderId" aria-hidden="true">No Active Order</strong>
                                 <div id="headerOrderPicker" class="headerOrderPicker" hidden>
                                     <button id="headerOrderPickerButton" class="headerOrderPickerButton" type="button" aria-haspopup="true" aria-expanded="false">
@@ -690,10 +682,14 @@
                                 </div>
                             </div>
 
+                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
                             <div class="headerInfo pfnSessionStatus">
                                 <span>Session Status</span>
                                 <strong id="headerSessionId">INACTIVE</strong>
                             </div>
+                        </div>
+                        <div class="pfnReceivingActionGroup pfnReceivingActionGroupRight" aria-label="Receiving review actions">
+                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
                         </div>
                     </div>
 
@@ -879,23 +875,9 @@
                     </div>
 
 
-                    <div class="progressDetails">
-
-
-                        <span id="progressCompletedText">
-
-                            0 Completed
-
-                        </span>
-
-
-                        <span id="progressRemainingText">
-
-                            0 Remaining
-
-                        </span>
-
-
+                    <div class="progressDetails pfnProgressCompactDetail">
+                        <span id="progressCompletedText">0 / 0 Items Completed</span>
+                        <span id="progressRemainingText" class="pfnProgressRemainingSource" aria-hidden="true">0 Remaining</span>
                     </div>
 
 
@@ -919,65 +901,30 @@
                 <section class="contentCard">
 
 
-                    <div class="cardHeader">
-
-
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                CURRENT ORDER
-
-                            </span>
-
-                            <h2>
-
-                                Receiving Items
-
-                            </h2>
-
-                        </div>
-
-
-                        <div class="headerActions receivingFilterBar">
-
+                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
+                        <div class="receivingSummaryHeader pfnReceivingReportToolbar">
+                            <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
+                            <details class="pfnReportActionMenu">
+                                <summary><span aria-hidden="true">↗</span> Export / Share</summary>
+                                <div>
+                                    <button id="btnExportReceivingSummaryExcel" type="button">Excel</button>
+                                    <button id="btnExportReceivingSummaryPDF" type="button">PDF</button>
+                                    <button id="btnEmailReceivingDifferences" type="button">Copy Email</button>
+                                </div>
+                            </details>
+                            <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Receive Order</button>
+                            <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Receive All</button>
                             <div id="receivingClassificationFilters" class="pfrClassificationFilters pfrGroupOnlyFilters" aria-label="Group filter">
                                 <details data-class-filter="groups" class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect">
                                     <summary><span>Group</span><strong id="receivingGroupFilterLabel">All groups</strong></summary>
                                     <div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div>
                                 </details>
                             </div>
-
-                        </div>
-
-
-                    </div>
-
-
-                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
-                        <div class="receivingSummaryHeader">
-                            <div class="pfnReportTitleBlock">
-                                <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
-                                <span class="sectionEyebrow">RECEIVING RECONCILIATION</span>
-                                <div class="pfnReportTitleLine"><h3>Discrepancy Report</h3></div>
-                            </div>
-                            <div class="receivingSummaryActions">
-                                <details class="pfnReportActionMenu">
-                                    <summary><span aria-hidden="true">↗</span> Export / Share</summary>
-                                    <div>
-                                        <button id="btnExportReceivingSummaryExcel" type="button">Excel</button>
-                                        <button id="btnExportReceivingSummaryPDF" type="button">PDF</button>
-                                        <button id="btnEmailReceivingDifferences" type="button">Copy Email</button>
-                                    </div>
-                                </details>
-                                <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Complete Receiving</button>
-                                <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Complete All Active Orders</button>
-                            </div>
                         </div>
                         <div class="receivingSummaryGrid discrepancyGrid">
-                            <button type="button" class="displayedMetric pfnIssueCard active" data-issue-card="all"><span>All Discrepancies</span><strong id="rsTotalItems">0</strong></button>
-                            <button type="button" class="pfnIssueCard active" data-issue-card="shortage"><span>Shortage Items</span><strong id="rsShort">0</strong></button>
-                            <button type="button" class="pfnIssueCard active" data-issue-card="received"><span>Received Any Quantity</span><strong id="rsReceived">0</strong></button>
+                            <button type="button" class="displayedMetric pfnIssueCard active" data-issue-card="all"><span>All Items</span><strong id="rsTotalItems">0</strong></button>
+                            <button type="button" class="pfnIssueCard active" data-issue-card="shortage"><span>Shortage</span><strong id="rsShort">0</strong></button>
+                            <button type="button" class="pfnIssueCard active" data-issue-card="received"><span>Received</span><strong id="rsReceived">0</strong></button>
                             <button type="button" class="pfnIssueCard active" data-issue-card="over"><span>Over Received</span><strong id="rsOver">0</strong></button>
                             <button type="button" class="pfnIssueCard active" data-issue-card="manual"><span>Manual Extras</span><strong id="rsManual">0</strong></button>
                             <span class="pfnDisplayedItems">Displayed <strong id="rsDisplayedItems">0</strong></span>
@@ -2714,10 +2661,11 @@
 
 <script
     src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+    defer
 ></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
 
 
@@ -2733,7 +2681,7 @@
 
 <script src="js/router.js?v=B10CLEAN15_15"></script>
 
-<script src="ui.js?v=UI_REVIEW_CLEAN1"></script>
+<script src="ui.js?v=RECEIVING_CLEAN_LAYOUT1"></script>
 
 <script src="js/excel.js?v=B10CLEAN15_15"></script>
 

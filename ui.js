@@ -848,9 +848,9 @@ function renderSmartScanSearchResults(
                 <strong>${escapeHTML(item.itemName)}</strong>
                 <span>${escapeHTML(item.itemCode)}</span>
             </div>
-            <div class="smartSearchResultQty">
-                <span>${toNumber(item.receivedQty,0)} / ${toNumber(item.orderedQty,0)}</span>
-                <small>Received</small>
+            <div class="smartSearchResultQty pfnSearchQtySplit">
+                <span><small>ORDER</small><b>${toNumber(item.orderedQty,0)}</b></span>
+                <span><small>RECEIVED</small><b>${toNumber(item.receivedQty,0)}</b></span>
             </div>`;
 
         button.addEventListener("click",function(){
@@ -883,21 +883,18 @@ function renderSmartScanSearchResults(
             row.appendChild(remove);
         }
 
-        if(toNumber(item.receivedQty,0) > 0){
-            const review=document.createElement("button");
-            review.type="button";
-            review.className="secondaryButton smartSearchReviewButton";
-            review.textContent="Review / Adjust";
-            review.style.flex="0 0 auto";
-            review.style.padding="0 10px";
-            review.addEventListener("click",function(event){
-                event.preventDefault();
-                event.stopPropagation();
-                closeSmartScanSearch(false);
-                openSearchedItemReview(item);
-            });
-            row.appendChild(review);
-        }
+        const review=document.createElement("button");
+        review.type="button";
+        review.className="secondaryButton smartSearchReviewButton";
+        review.textContent="Review / Adjust";
+        review.style.flex="0 0 132px";
+        review.addEventListener("click",function(event){
+            event.preventDefault();
+            event.stopPropagation();
+            closeSmartScanSearch(false);
+            openSearchedItemReview(item);
+        });
+        row.appendChild(review);
 
         fragment.appendChild(row);
 
@@ -1261,6 +1258,7 @@ function bindUIEvents(){
                         refreshReceivingTable();
                         refreshHealthSummary?.();
                         refreshOpenOrderStatusReport?.();
+                        refreshNeedsReviewCounters?.();
                         /* Phase 2C.11.4.4 — Finalize selection-state sync.
                            The header picker updates the receiving order scope, but the
                            Finalize button is maintained by orders.js and is not rebuilt
@@ -1662,6 +1660,7 @@ function refreshHeader(){
 
         setElementText(document.getElementById("topBarPharmacyName"), pharmacyName);
         setElementText(document.getElementById("topBarPharmacyCode"), pharmacyCode);
+        setElementText(document.getElementById("accountPharmacyCode"), pharmacyCode);
     }
 
     // Pharmacy identity lives in the sidebar; the header identifies the route.
@@ -1725,11 +1724,6 @@ function refreshHeader(){
 
                 if(pickerMenu.dataset.signature!==signature){
                     pickerMenu.innerHTML=`
-                        <div class="headerOrderPickerTitle">
-                            <strong>Orders</strong>
-                            <span>Choose one or multiple active orders</span>
-                        </div>
-
                         <div class="headerOrderPickerOptions">
                             ${activeOrders.map(order=>`
                                 <label class="headerOrderCheckOption">
@@ -1760,7 +1754,7 @@ function refreshHeader(){
                                 type="button"
                                 class="headerOrderPickerOk"
                                 data-order-picker-action="ok"
-                            >OK</button>
+                            >Apply</button>
                         </div>
                     `;
 
@@ -2054,8 +2048,7 @@ function refreshProgress(){
 
     setElementText(
         UI.elements.progressCompletedText,
-        completed +
-        " Completed"
+        completed + " / " + total + " Items Completed"
     );
 
     setElementText(
@@ -7928,7 +7921,7 @@ function getKpiPanelItems(key){
 
 function kpiTitle(key){
     return ({
-        total:"Order Item Browser",
+        total:"Order Items",
         completed:"Completed Items",
         remaining:"Remaining Items",
         remainingItems:"Remaining Items",
@@ -8216,7 +8209,7 @@ function renderItemBrowser(body, rows, options={}){
     const orderNumbers=Array.from(new Set(rows.flatMap(item=>Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean)));
     body.innerHTML=`
       <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
-        ${orderMode?`<div class="pfnBrowserControlRow"><label>Order<select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label>Quantity<select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
+        ${orderMode?`<div class="pfnBrowserControlRow"><label><span>Order</span><select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
         <div class="pfnBrowserActionRow"><label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>${orderMode?`<div class="pfnBrowserPriorityActions"><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button></div>`:''}</div>
       </div>
       ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
@@ -8464,13 +8457,24 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+function getPcNeedsReviewOrderScope(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return null;
+    const selected=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+    return new Set(selected.map(normalizeOrderNumber).filter(Boolean));
+}
+function filterNeedsReviewRowsToPcScope(rows){
+    const scope=getPcNeedsReviewOrderScope();
+    if(scope===null) return rows||[];
+    return (rows||[]).filter(row=>scope.has(normalizeOrderNumber(row?.order_number||"")));
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
         /* Pharmacy-scoped by design. Never hide Handheld drafts because of
            a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
         const rc=document.getElementById("receivingNeedsReviewCount");
 
         const grouped=groupNeedsReviewRows(receiving);
@@ -8772,7 +8776,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     previousPanel?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{ rawRows=await loadNeedsReviewRows(workflow,null); if(!handheld) rawRows=filterNeedsReviewRowsToPcScope(rawRows); }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8788,17 +8792,16 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
-          <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
+          <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
-        <details class="needsReviewAdmin"><summary>Global Identifier Master</summary><div class="needsReviewAdminBody">
-          <p>Find a Global Master identifier and review its Item, sibling identifiers, or an explicit mapping change.</p>
-          <div class="needsReviewAdminLookup"><label>Identifier / GTIN<input data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code or GTIN"></label><button type="button" data-admin-load>Find mapping</button></div>
-          <div data-admin-workspace></div>
-        </div></details>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
+              <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false" aria-controls="needsReviewCase-${index}">
+                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>Order ${esc(group.order_number||"Needs assignment")}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
+              </button>
+              <div class="needsReviewCaseDetail" id="needsReviewCase-${index}" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
                 <span class="pfnReviewReason">${group.review_reason==="KNOWN_NOT_IN_ORDER"?"KNOWN ITEM · NOT IN ORDER":"ITEM NOT RECOGNISED"}</span>
                 <div class="capturedIdentifier"><span class="pfnReviewLabel">CAPTURED IDENTIFIER</span><strong class="pfnReviewGTIN">${esc(group.gtin)}</strong><button type="button" data-copy-identifier="${index}">Copy</button></div>
@@ -8816,6 +8819,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+              </div>
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
@@ -8841,17 +8845,28 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         if(handheld) focusScannerInput?.();
     };
     overlay.querySelectorAll("[data-review-close]").forEach(button=>button.addEventListener("click",closePanel));
-    overlay.querySelector("[data-review-history]")?.addEventListener("click",async()=>{
+    const historyButton=overlay.querySelector("[data-review-history]");
+    const backButton=overlay.querySelector("[data-review-back]");
+    backButton?.addEventListener("click",()=>{ closePanel(); openNeedsReviewPanel(workflow); });
+    historyButton?.addEventListener("click",async()=>{
         pendingSearchFocus=null;
         const list=overlay.querySelector("[data-review-list]");if(!list)return;
         try{
             const history=await nrV3ListHistory?.(workflow,null)||[];
+            if(backButton) backButton.hidden=false;
+            if(historyButton) historyButton.hidden=true;
             list.innerHTML=history.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Status</th><th>Updated</th><th>Identifier</th><th>Order</th><th>Quantity</th><th>Photo</th></tr></thead><tbody>${history.slice().sort((a,b)=>String(b.updated_at||b.created_at||"").localeCompare(String(a.updated_at||a.created_at||""))).map(row=>`<tr><td><b>${esc(row.status||"PENDING")}</b></td><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.updated_at||row.created_at):row.updated_at||row.created_at||"—")}</td><td>${esc(row.identifier_display||row.gtin||"—")}</td><td>${esc(row.order_number||"—")}</td><td>${esc(row.pending_quantity||1)}</td><td>${row.photo_path?"Photo retained":"—"}</td></tr>`).join("")}</tbody></table></div>`:'<div class="needsReviewEmpty">No Needs Review history.</div>';
         }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
     });
 
     groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
+        const detail=section.querySelector("[data-review-case-detail]");
+        const summary=section.querySelector("[data-review-detail]");
+        summary.addEventListener("click",()=>{
+            detail.hidden=!detail.hidden;
+            summary.setAttribute("aria-expanded",String(!detail.hidden));
+        });
         const search=overlay.querySelector(`[data-search="${index}"]`);
         const matches=overlay.querySelector(`[data-matches="${index}"]`);
         const selection=overlay.querySelector(`[data-selection="${index}"]`);
@@ -8941,9 +8956,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
     });
 
-    if(!handheld) overlay.querySelector("[data-search=\"0\"]")?.focus();
+    if(!handheld) overlay.querySelector("[data-review-detail=\"0\"]")?.focus();
 
-    renderV2IdentifierAdministration(overlay,esc);
 
     overlay.addEventListener("keydown",event=>{
         if(event.key!=="Escape"||overlay.dataset.busy==="1") return;
@@ -8973,9 +8987,8 @@ async function refreshNeedsReviewCountFromCloud({force=false}={}){
     needsReviewCloudWatchBusy=true;
     needsReviewCloudLastReadAt=now;
     try{
-        const count=await nrV2Count("RECEIVING");
-        setElementText(document.getElementById("receivingNeedsReviewCount"),count);
-        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
+        /* Cloud count is pharmacy-wide. PC display must remain selected-order scoped. */
+        await refreshNeedsReviewCounters();
     }catch(error){
         Logger?.warn?.("Needs Review count sync failed",error);
     }finally{
