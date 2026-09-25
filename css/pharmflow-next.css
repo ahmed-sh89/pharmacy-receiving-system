@@ -1730,3 +1730,31 @@ body.zebraDevice .needsReviewList{padding:7px;gap:6px}
 body.zebraDevice .needsReviewCompactRow{border-radius:8px}
 body.zebraDevice .needsReviewRowSummary{grid-template-columns:minmax(105px,1.4fr) minmax(85px,1fr) auto auto 18px!important;gap:6px!important;padding:9px 8px!important}
 body.zebraDevice .needsReviewRowSummary span:nth-of-type(2){display:inline!important}
+
+/* ===== Receiving review correction 2 — compact, production-scale desktop shell ===== */
+@media (min-width:901px){
+ body:not(.zebraDevice) .topBar{height:76px!important;min-height:76px!important;padding:0 18px!important;display:grid!important;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr) minmax(360px,1fr)!important;align-items:center!important}
+ body:not(.zebraDevice) .topBarLeft{grid-column:1!important}
+ body:not(.zebraDevice) .pfnContextBar{grid-column:2/4!important;display:contents!important}
+ body:not(.zebraDevice) .pfnPharmacyNameHero{grid-column:2!important;justify-self:center!important;min-width:0!important;padding:0 12px!important}
+ body:not(.zebraDevice) .pfnPharmacyNameHero strong{font-size:13px!important}
+ body:not(.zebraDevice) .pfnPharmacyNameHero span{font-size:8px!important}
+ body:not(.zebraDevice) .pfnWorkspaceIdentity{grid-column:3!important;justify-self:start!important}
+ body:not(.zebraDevice) .globalMasterHeaderInfo{grid-column:3!important;justify-self:center!important}
+ body:not(.zebraDevice) #systemStatus{grid-column:3!important;justify-self:end!important}
+ body:not(.zebraDevice) .pfnStatusTile,body:not(.zebraDevice) .systemStatus.pfnStatusTile{height:38px!important;min-height:38px!important;min-width:74px!important;padding:4px 9px!important;border-radius:7px!important}
+ body:not(.zebraDevice) .pfnStatusTile span{font-size:8px!important}
+ body:not(.zebraDevice) .pfnStatusTile strong{font-size:10px!important}
+ body:not(.zebraDevice) .systemStatus.pfnStatusTile{font-size:10px!important}
+ body:not(.zebraDevice) .sidebar{width:196px!important;min-width:196px!important;max-width:196px!important}
+ body:not(.zebraDevice) .mainApplication{margin-left:196px!important}
+ body:not(.zebraDevice) .accountIdentity{display:flex!important}
+ body:not(.zebraDevice) .accountIdentityText{display:grid!important;gap:2px!important}
+ body:not(.zebraDevice) .accountIdentityText strong{display:none!important}
+ body:not(.zebraDevice) .accountIdentityText small{display:block!important;font-size:13px!important;font-weight:950!important;color:#174d79!important}
+ body:not(.zebraDevice) .headerOrderPickerMenu{width:286px!important;padding:9px!important}
+ body:not(.zebraDevice) .headerOrderPickerActions{display:flex!important;gap:6px!important}
+ body:not(.zebraDevice) .headerOrderPickerActions button{flex:0 0 auto!important;width:auto!important;min-width:70px!important;min-height:32px!important;padding:5px 9px!important}
+ body:not(.zebraDevice) .needsReviewRowSummary{min-height:44px!important;background:#fff!important}
+ body:not(.zebraDevice) .needsReviewRowSummary strong,body:not(.zebraDevice) .needsReviewRowSummary span,body:not(.zebraDevice) .needsReviewRowSummary b,body:not(.zebraDevice) .needsReviewRowSummary i{position:relative!important;z-index:2!important;color:#173e61!important;opacity:1!important;visibility:visible!important}
+}
