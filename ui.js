@@ -378,7 +378,7 @@ function createSmartScanSearchUI(){
 
             </div>
 
-            <div class="smartSelectedStats">
+            <div class="smartSelectedStats pfnSelectedQuantityKpis">
 
                 <div>
                     <span>Ordered</span>
@@ -7921,7 +7921,7 @@ function getKpiPanelItems(key){
 
 function kpiTitle(key){
     return ({
-        total:"Order Item Browser",
+        total:"Order Items",
         completed:"Completed Items",
         remaining:"Remaining Items",
         remainingItems:"Remaining Items",
