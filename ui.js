@@ -7063,8 +7063,9 @@ function isLikelyZebraDevice(){
 
     try{
         const params = new URLSearchParams(window.location.search || "");
+        const vercelPreviewHost = /\\.vercel\\.app$/i.test(String(window.location.hostname || ""));
         explicitHandheld =
-            params.get("handheld") === "1" ||
+            (vercelPreviewHost && params.get("handheld") === "1") ||
             localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
 
         persistedHandheld =
