@@ -8987,9 +8987,8 @@ async function refreshNeedsReviewCountFromCloud({force=false}={}){
     needsReviewCloudWatchBusy=true;
     needsReviewCloudLastReadAt=now;
     try{
-        const count=await nrV2Count("RECEIVING");
-        setElementText(document.getElementById("receivingNeedsReviewCount"),count);
-        document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
+        /* Cloud count is pharmacy-wide. PC display must remain selected-order scoped. */
+        await refreshNeedsReviewCounters();
     }catch(error){
         Logger?.warn?.("Needs Review count sync failed",error);
     }finally{
