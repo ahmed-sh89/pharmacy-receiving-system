@@ -2048,8 +2048,7 @@ function refreshProgress(){
 
     setElementText(
         UI.elements.progressCompletedText,
-        completed +
-        " Completed"
+        completed + " / " + total + " Items Completed"
     );
 
     setElementText(
