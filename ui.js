@@ -1261,6 +1261,7 @@ function bindUIEvents(){
                         refreshReceivingTable();
                         refreshHealthSummary?.();
                         refreshOpenOrderStatusReport?.();
+                        refreshNeedsReviewCounters?.();
                         /* Phase 2C.11.4.4 — Finalize selection-state sync.
                            The header picker updates the receiving order scope, but the
                            Finalize button is maintained by orders.js and is not rebuilt
@@ -8465,13 +8466,27 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+function getPcNeedsReviewOrderScope(){
+    if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return null;
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    return new Set(selected.map(normalizeOrderNumber).filter(Boolean));
+}
+
+function filterNeedsReviewRowsToPcScope(rows){
+    const scope=getPcNeedsReviewOrderScope();
+    if(scope===null) return rows||[];
+    return (rows||[]).filter(row=>scope.has(normalizeOrderNumber(row?.order_number||""));
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
         /* Pharmacy-scoped by design. Never hide Handheld drafts because of
            a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
         const rc=document.getElementById("receivingNeedsReviewCount");
 
         const grouped=groupNeedsReviewRows(receiving);
@@ -8773,7 +8788,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     previousPanel?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{
+        rawRows=await loadNeedsReviewRows(workflow,null);
+        if(!handheld) rawRows=filterNeedsReviewRowsToPcScope(rawRows);
+    }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8789,14 +8807,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
-          <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewHeaderMetrics"><span><b>${groups.length}</b> Cases</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Qty</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
+          <div class="needsReviewHeaderActions">${handheld?"":`<button class="pfnReviewHistoryButton" type="button" data-review-history><span aria-hidden="true">↺</span> History</button>`}<button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review"><span aria-hidden="true">×</span> Close</button></div>
         </header>
-        <details class="needsReviewAdmin"><summary>Global Identifier Master</summary><div class="needsReviewAdminBody">
+${handheld?"":`        <details class="needsReviewAdmin"><summary>Global Identifier Master</summary><div class="needsReviewAdminBody">
           <p>Find a Global Master identifier and review its Item, sibling identifiers, or an explicit mapping change.</p>
           <div class="needsReviewAdminLookup"><label>Identifier / GTIN<input data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code or GTIN"></label><button type="button" data-admin-load>Find mapping</button></div>
           <div data-admin-workspace></div>
-        </div></details>
+        </div></details>`}
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
@@ -8815,13 +8833,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
-              <div class="needsReviewResolve">
+${handheld?"":`              <div class="needsReviewResolve">
                 <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false"></label>
                 <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
-              </div>
+              </div>`}
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
@@ -8955,7 +8973,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     if(!handheld) overlay.querySelector("[data-review-detail=\"0\"]")?.focus();
 
-    renderV2IdentifierAdministration(overlay,esc);
+    if(!handheld) renderV2IdentifierAdministration(overlay,esc);
 
     overlay.addEventListener("keydown",event=>{
         if(event.key!=="Escape"||overlay.dataset.busy==="1") return;
