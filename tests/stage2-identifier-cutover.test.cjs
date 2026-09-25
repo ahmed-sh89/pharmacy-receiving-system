@@ -29,6 +29,22 @@ test('PC unknown-identifier review requires an explicit active Order and uses an
   assert.match(receiving,/orderNumber:reviewOrder/);
 });
 
+test('Handheld multi-order Needs Review snapshots device scope and defers Order assignment to PC',()=>{
+  const review=read('js/needs-review.js');
+  const ui=read('ui.js');
+  const migration=read('PHASE2C1157_NEEDS_REVIEW_WORK_SCOPE.sql');
+  assert.match(review,/create_pharmflow_needs_review_v4/);
+  assert.match(review,/selectedOrders\.length===1 \? selectedOrders\[0\] : \"\"/);
+  assert.match(review,/p_work_scope_order_numbers:workScope/);
+  assert.match(review,/assign_pharmflow_needs_review_order_v1/);
+  assert.match(ui,/data-assign-order/);
+  assert.match(ui,/Captured Handheld scope/);
+  assert.match(ui,/await nrV2AssignOrder\(row\.review_id,order\)/);
+  assert.match(migration,/work_scope_order_numbers text\[\]/);
+  assert.match(migration,/not\(v_order=any\(coalesce\(v_review\.work_scope_order_numbers/);
+  assert.match(migration,/is_pharmacy_admin\(p_pharmacy_id\)/);
+});
+
 test('Needs Review persists a durable intent and keeps original order scope',()=>{
   const ui=read('ui.js');
   const reviews=read('js/needs-review.js');
