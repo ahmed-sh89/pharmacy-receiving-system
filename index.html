@@ -417,21 +417,21 @@
 
             <div class="topBarRight pfnContextBar">
 
-                <div class="pfnWorkspaceIdentity" aria-label="Pharmacy workspace">
+                <div class="pharmacyNameField pfnPharmacyNameHero"><span>Pharmacy</span><strong id="topBarPharmacyName"></strong></div>
+
+                <div class="pfnWorkspaceIdentity pfnStatusTile pfnCodeTile" aria-label="Pharmacy code">
                     <span>Pharmacy Code</span>
                     <strong id="topBarPharmacyCode">—</strong>
                 </div>
 
-                <div class="pharmacyNameField"><span>Pharmacy Name</span><strong id="topBarPharmacyName"></strong></div>
-
-                <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
+                <div class="globalMasterHeaderInfo pfnStatusTile" title="Global GTIN Master status">
                     <span>Global Master</span>
                     <strong id="headerMasterGTINStatus">SYNCING</strong>
                 </div>
 
                 <div
                     id="systemStatus"
-                    class="systemStatus ready"
+                    class="systemStatus ready pfnStatusTile"
                 >
                     READY
                 </div>
@@ -663,11 +663,8 @@
 
                     <div class="scanPanelFooter pfnActionBar">
                         <div class="pfnReceivingActionGroup" aria-label="Receiving actions">
-                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
-                            <button id="btnReceivedItems" class="pfnAction pfnActionReceived" type="button">Received Items</button>
-                            <button id="btnRecognizedHistory" class="pfnAction" type="button">Recognized History</button>
-                            <button id="btnAdjustReceiving" class="pfnAction pfnActionAdjust" type="button">Adjust</button>
-                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
+                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button"><span class="pfnActionIcon" aria-hidden="true">!</span><span>Needs Review</span><strong id="receivingNeedsReviewCount">0</strong></button>
+                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button"><span class="pfnActionIcon" aria-hidden="true">▤</span><span>Receiving Report</span></button>
                         </div>
 
                         <div class="pfnOrderControlGroup" aria-label="Active order controls">
