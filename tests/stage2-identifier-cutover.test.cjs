@@ -20,6 +20,9 @@ test('Stage 2 routes receiving identity and Needs Review through V2 contracts',(
 test('PC unknown-identifier review requires an explicit active Order and uses an allowed review reason',()=>{
   const receiving=read('js/receiving.js');
   assert.match(receiving,/data-review-order/);
+  assert.match(receiving,/reviewOrderNumbers=\[\.\.\.new Set\(selectedOrders\.map\(normalizeOrderNumber\)\.filter\(Boolean\)\)\]/);
+  assert.doesNotMatch(receiving,/const activeOrderNumbers=/);
+  assert.match(receiving,/Only Orders selected on this device are available/);
   assert.match(receiving,/Select original Order/);
   assert.match(receiving,/reason:knownCode\?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN"/);
   assert.doesNotMatch(receiving,/reason:knownCode\?"KNOWN_NOT_IN_ORDER":"UNKNOWN_IDENTIFIER"/);
