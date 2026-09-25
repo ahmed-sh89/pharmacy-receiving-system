@@ -1727,11 +1727,6 @@ function refreshHeader(){
 
                 if(pickerMenu.dataset.signature!==signature){
                     pickerMenu.innerHTML=`
-                        <div class="headerOrderPickerTitle">
-                            <strong>Orders</strong>
-                            <span>Choose one or multiple active orders</span>
-                        </div>
-
                         <div class="headerOrderPickerOptions">
                             ${activeOrders.map(order=>`
                                 <label class="headerOrderCheckOption">
@@ -8793,11 +8788,6 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
           <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
           <div class="needsReviewHeaderActions"><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
-        <details class="needsReviewAdmin"><summary>Global Identifier Master</summary><div class="needsReviewAdminBody">
-          <p>Find a Global Master identifier and review its Item, sibling identifiers, or an explicit mapping change.</p>
-          <div class="needsReviewAdminLookup"><label>Identifier / GTIN<input data-admin-identifier autocomplete="off" placeholder="Identifier, Item Code or GTIN"></label><button type="button" data-admin-load>Find mapping</button></div>
-          <div data-admin-workspace></div>
-        </div></details>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
@@ -8956,7 +8946,6 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     if(!handheld) overlay.querySelector("[data-review-detail=\"0\"]")?.focus();
 
-    renderV2IdentifierAdministration(overlay,esc);
 
     overlay.addEventListener("keydown",event=>{
         if(event.key!=="Escape"||overlay.dataset.busy==="1") return;
