@@ -1656,23 +1656,10 @@ body:not(.zebraDevice) #topBarPharmacyName{font-size:16px;font-weight:800;color:
 body:not(.zebraDevice) .pfnContextBar{gap:7px}
 body:not(.zebraDevice) .pfnContextBar>div,body:not(.zebraDevice) .pfnContextBar>.cloudWorkspaceStatus{height:36px;min-height:36px;padding:0 11px;font-size:12px;border-radius:8px}
 body:not(.zebraDevice) .pfnOrderScopeLabel{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#dcecf9;color:#176bb1;font-size:16px;font-weight:900;letter-spacing:0}
-body:not(.zebraDevice) .headerOrderPickerMenu{padding:8px;gap:0}
-body:not(.zebraDevice) .headerOrderPickerOptions{padding:0 0 7px}
-body:not(.zebraDevice) .headerOrderPickerActions{order:1;margin:0;padding:8px 0 0;border-top:1px solid var(--ui-line);border-bottom:0;gap:7px}
-body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{margin-left:0}
-body:not(.zebraDevice) .smartSearchResult{min-height:58px;padding:9px 12px}
-body:not(.zebraDevice) .smartSearchResultMain strong{font-size:15px;line-height:1.25;font-weight:800}
-body:not(.zebraDevice) .smartSearchResultMain span{font-size:13px;line-height:1.25}
-body:not(.zebraDevice) .smartSearchResultQty span{font-size:15px;font-weight:800}
-body:not(.zebraDevice) .smartSearchResultQty small{font-size:11px;font-weight:700}
 
 /* Receiving focused refinement — 2026-09-25 */
 body:not(.zebraDevice) .pfnPharmacyNameHero{transform:translateX(-28px);min-width:300px;max-width:390px;min-height:44px;padding:9px 24px}
 body:not(.zebraDevice) .smartScanResults:not(:empty){margin-top:7px;padding:7px;background:#e8f2fa;border:1px solid #bfd5e6;border-radius:9px;box-shadow:0 4px 12px #163e6414}
-body:not(.zebraDevice) .smartSearchResultRow{min-height:62px;margin:0 0 6px}
-body:not(.zebraDevice) .smartSearchResultRow:last-child{margin-bottom:0}
-body:not(.zebraDevice) .smartSearchResult{background:#fff;border:1px solid #c8dbea;border-radius:8px;transition:background .15s,border-color .15s,box-shadow .15s}
-body:not(.zebraDevice) .smartSearchResult:hover{background:#dff0ff;border-color:#72acd6;box-shadow:0 2px 7px #174f7b18}
 body:not(.zebraDevice) .smartSearchReviewButton{display:flex;align-items:center;justify-content:center;flex:0 0 132px!important;min-width:132px;margin:0;padding:0 12px!important;border:1px solid #7faed0!important;border-radius:8px!important;background:#edf6fd!important;color:#145d92!important;font-size:12px!important;font-weight:800!important}
 body:not(.zebraDevice) .smartSearchReviewButton:hover{background:#d8edfd!important;border-color:#4f93c5!important}
 body:not(.zebraDevice) .pfnReviewTotals{display:flex;gap:7px;margin-top:7px}
@@ -1757,11 +1744,11 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
  body:not(.zebraDevice) .smartSelectedStats span{font-size:10px;font-weight:850;color:#4f6f88;text-transform:uppercase}
  body:not(.zebraDevice) .smartSelectedStats strong{font-size:22px;line-height:1;font-weight:900;color:#123f67}
 
- body:not(.zebraDevice) .pfnSearchQtySplit{display:flex;align-items:center;justify-content:center;min-width:190px;height:30px;padding:0 10px;border:1px solid #b9cfe0;border-radius:7px;background:#f7fbfe;box-sizing:border-box;white-space:nowrap}
- body:not(.zebraDevice) .pfnSearchQtySplit>span{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 10px;box-sizing:border-box}
- body:not(.zebraDevice) .pfnSearchQtySplit>span+span{border-left:1px solid #9fb9cc}
- body:not(.zebraDevice) .pfnSearchQtySplit small{font-size:10px;line-height:1;color:#52728c;font-weight:850}
- body:not(.zebraDevice) .pfnSearchQtySplit b{margin:0;font-size:14px;line-height:1;color:#124f83;font-weight:900}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit{display:flex;flex-direction:row;align-items:center;justify-content:center;min-width:190px;height:30px;padding:0 10px;border:1px solid #b9cfe0;border-radius:7px;background:#f7fbfe;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 10px;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span+span{border-left:1px solid #9fb9cc}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit small{display:inline;font-size:10px;line-height:1;color:#52728c;font-weight:850}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit b{display:inline;margin:0;font-size:14px;line-height:1;color:#124f83;font-weight:900}
 
  body:not(.zebraDevice) .headerOrderPicker{position:relative;min-width:190px}
  body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:190px;height:40px;min-height:40px;padding:0 12px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font:800 13px/1.2 inherit;letter-spacing:0;cursor:pointer;box-shadow:none}
@@ -1776,8 +1763,10 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
  body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText small{display:none}
  body:not(.zebraDevice) .headerOrderPickerOptions{max-height:218px;min-height:0;overflow-y:auto;overscroll-behavior:contain}
  body:not(.zebraDevice) .headerOrderPickerActions{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:6px;flex:none;padding:7px 0 0;margin:0;border-top:1px solid var(--ui-line);border-bottom:0}
- body:not(.zebraDevice) .headerOrderPickerActions button{flex:none;width:auto;min-height:32px;padding:5px 10px}
+ body:not(.zebraDevice) .headerOrderPickerActions button{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;flex:none;width:auto;height:32px;min-height:32px;margin:0;padding:0 11px;border:1px solid #a6bfd4;border-radius:7px;background:#edf5fc;color:#21577f;font:800 12px/1 inherit;box-shadow:none;cursor:pointer}
+ body:not(.zebraDevice) .headerOrderPickerActions button:hover{background:#e4f0fa;border-color:#7faaca;color:#174f7b}
  body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{margin-left:auto;justify-self:end;background:#176bb1;border-color:#176bb1;color:#fff}
+ body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk:hover{background:#125d99;border-color:#125d99;color:#fff}
 
  body:not(.zebraDevice) .scanPanelFooter.pfnActionBar{display:flex;align-items:center;gap:8px;margin:0;padding:10px 0 0;border-top:1px solid var(--ui-line);background:transparent;flex-wrap:nowrap}
  body:not(.zebraDevice) .scanPanelFooter .pfnOrderControlGroup{display:flex;align-items:center;gap:8px;flex:0 1 auto;padding:0;border:0}
