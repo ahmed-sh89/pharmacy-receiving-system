@@ -1739,3 +1739,5 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:18px}
 body:not(.zebraDevice) .pfnProgressCompactDetail{font-size:13px;font-weight:800;color:#405f78}
 body:not(.zebraDevice) .pfnProgressCompactDetail #progressCompletedText{font-size:13px;font-weight:850}
 body:not(.zebraDevice) .needsReviewHeaderActions [data-review-back]{border-color:#9fc3df;background:#edf6fd;color:#145d92;font-weight:800}
+
+body:not(.zebraDevice) .smartScanSelected{position:relative}
