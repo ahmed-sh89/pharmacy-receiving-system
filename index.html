@@ -78,15 +78,21 @@
 (function(){
     try{
         var ua=String(navigator.userAgent||"").toLowerCase();
-        var explicit=new URLSearchParams(location.search||"").get("handheld")==="1";
-        var remembered=localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")==="1";
+        var params=new URLSearchParams(location.search||"");
+        var forceDesktop=params.get("desktop")==="1";
+        var explicit=params.get("handheld")==="1";
+        if(forceDesktop){
+            localStorage.removeItem("PHARMFLOW_HANDHELD_TEST_MODE");
+            localStorage.removeItem("PHARMFLOW_HANDHELD_DEVICE");
+        }
+        var remembered=!forceDesktop && localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")==="1";
         var enterprise=/zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
         var shortSide=Math.min(
             Number((screen&&screen.width)||innerWidth||9999),
             Number((screen&&screen.height)||innerHeight||9999)
         );
         var formFactor=/android/i.test(ua) && shortSide<=600 && Number(navigator.maxTouchPoints||0)>0;
-        if(enterprise||explicit||remembered||formFactor){
+        if(!forceDesktop&&(enterprise||explicit||remembered||formFactor)){
             document.body.classList.add("zebraDevice");
             localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
         }
