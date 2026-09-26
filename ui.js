@@ -4457,10 +4457,13 @@ async function handleConfirmOK(){
         confirmButton.disabled = true;
     }
 
-    closeConfirmModal();
+    const confirmModal=UI.elements.confirmModal;
+    confirmModal?.classList.remove("open");
+    confirmModal?.setAttribute("aria-hidden","true");
 
     try{
         await Promise.resolve(callback());
+        UI.confirmCallback=null;
     }
     catch(error){
         Logger.error("Confirmed action failed",error);
@@ -8145,7 +8148,7 @@ function openReceivingActivityEditor(row,allRows){
     const close=()=>{window.PharmFlowModalStack?.close(modal);modal.remove();};
     modal.querySelector("[data-cancel]").onclick=close;
     modal.querySelector("[data-delete-entry]").onclick=async()=>{
-        if(!await pharmFlowConfirm({title:isExtra?"Remove Extra Item?":"Delete Receiving Entry?",message:isExtra?`${item.itemName} · Received ${effective}. This records a correction and preserves Receiving history.`:"This receiving contribution will be cancelled. The item and order will not be deleted.",confirmText:isExtra?"Remove Extra Item":"Delete Entry",tone:"danger"})) return;
+        if(!await pharmFlowConfirm({title:isExtra?"Remove Extra Item?":"Delete Receiving Entry?",message:isExtra?`${item.itemName} · Received ${getActivityEffectiveQuantity(row,allRows)}. This records a correction and preserves Receiving history.`:"This receiving contribution will be cancelled. The item and order will not be deleted.",confirmText:isExtra?"Remove Extra Item":"Delete Entry",tone:"danger"})) return;
         const effective=getActivityEffectiveQuantity(row,allRows);
         if(effective<=0){showToast?.("This entry is already cancelled","warning");return;}
         const tx=applyQuantityAdjustment({item,difference:-effective,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:isExtra?"Extra Item removed":"Receiving activity deleted",correctsTransactionId:row.transactionId});
@@ -8478,6 +8481,15 @@ function renderItemBrowser(body, rows, options={}){
     draw();
 }
 
+async function removeCurrentExtraItem(item){
+ const code=normalizeItemCode(item?.itemCode||""); const order=normalizeOrderNumber(item?.orderNumber||item?.orderId||""); const received=Math.max(0,toNumber(item?.receivedQty,0));
+ if(!code||!order||received<=0){showToast?.("This Extra Item is already cleared","warning");return false;}
+ const confirmed=await pharmFlowConfirm({title:"Remove Extra Item?",message:(item.itemName||code)+" - Received "+received+". This records a correction and preserves Receiving history.",confirmText:"Remove Extra Item",tone:"danger"}); if(!confirmed)return false;
+ const correctionItem={itemCode:code,itemName:toSafeString(item?.itemName||"Extra Item"),orderedQty:0,receivedQty:received,remainingQty:0,status:"EXTRA",manual:true,orderNumbers:[order],orderNumber:order};
+ const tx=applyQuantityAdjustment({item:correctionItem,difference:-received,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:"Extra Item removed"}); if(!tx)return false;
+ refreshDashboard?.();refreshOpenKpiPanel?.();showToast?.("Extra Item removed from Receiving","success");return true;
+}
+
 function renderDashboardKpiPanel(key,body){
     if(!body) return;
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
@@ -8533,7 +8545,10 @@ function renderDashboardKpiPanel(key,body){
     }
     const rows=getKpiPanelItems(key);
     if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
-    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td><td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="Remaining">${esc(toNumber(item.remainingQty,0))}</td><td data-label="Status">${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
+    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th>${key==="manual"?"<th>Action</th>":""}</tr></thead><tbody>${rows.map((item,index)=>`<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td><td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="Remaining">${esc(toNumber(item.remainingQty,0))}</td><td data-label="Status">${esc(item.status||"")}</td>${key==="manual"?`<td data-label="Action"><button type="button" class="dangerButton pfnExtraRemoveButton" data-remove-extra="${index}">Remove Extra Item</button></td>`:""}</tr>`).join("")}</tbody></table></div>`;
+    if(key==="manual"){
+        body.querySelectorAll("[data-remove-extra]").forEach(btn=>btn.onclick=()=>removeCurrentExtraItem(rows[Number(btn.dataset.removeExtra)]));
+    }
 }
 
 /* =====================================================
