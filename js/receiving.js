@@ -878,6 +878,8 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 selection.hidden=true;selection.innerHTML="";
                 search.closest(".gtinResolutionSection")?.classList.remove("hasSelectedItem");
                 search.hidden=false;results.hidden=false;
+                search.removeAttribute("aria-hidden");
+                results.removeAttribute("aria-hidden");
                 return;
             }
             const quantity=getValidReceivingQuantity(parsed?.quantity);
@@ -891,6 +893,8 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             const afterRemaining=Math.max(0,ordered-afterReceived);
             search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
             search.hidden=true;results.hidden=true;
+            search.setAttribute("aria-hidden","true");
+            results.setAttribute("aria-hidden","true");
             selection.hidden=false;
             selection.innerHTML=`<div class="gtinSelectedItem gtinSelectedItemExpanded">
               <div class="gtinSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-change-item>Change Item</button></div>
