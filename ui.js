@@ -8679,14 +8679,16 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     load.dataset.identifierAdminBound="1";
     if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
+    const isReferencePharmacyAdmin=()=>isCurrentPharmacyAdmin()&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
+    const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
     let resolved=null, selectedItem=null, pendingIdentifier="";
-    const globalNotice=()=>"<p class=\"needsReviewGlobalNotice\">Global Master changes require System Owner permission. Pharmacy mappings affect only the current pharmacy.</p>";
-    const reasonField=()=>`<label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label>`;
-    const itemSummary=item=>`<div class="needsReviewMappingCurrent"><span>GLOBAL ITEM</span><strong>${esc(item.item_code||item.itemCode)} → ${esc(item.item_name||item.itemName||"Unnamed item")}</strong></div>`;
+    const globalNotice=()=>`<p class="needsReviewGlobalNotice">${isCurrentPharmacyAdmin()&&!canWriteGlobal()?"Barcode changes here apply only to this pharmacy.":"Global barcode changes are protected by server permission."}</p>`;
+    const reasonField=()=>`<label class="barcodeChangeNote">Change note<textarea data-reason rows="2" placeholder="Short note for the audit record"></textarea></label>`;
+    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><strong>${esc(item.item_code||item.itemCode)}</strong><b>${esc(item.item_name||item.itemName||"Unnamed item")}</b></div>`;
     const listIdentifiers=async itemCode=>{
         const identifiers=await IdentifierService.listItemIdentifiers(itemCode);
-        return `<div class="needsReviewMappingCompare"><span>IDENTIFIERS FOR THIS ITEM</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)} <small>${esc(row.identifier_key)}</small></strong>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
+        return `<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)}</strong>`).join(""):'<strong>No barcodes are linked to this item.</strong>'}</div>`;
     };
     const bindItemResults=(items,afterSelect)=>{
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
@@ -8701,16 +8703,16 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         selectedItem=item;
         const identifiers=await listIdentifiers(itemCode);
         const hasIdentifier=!!identifier;
-        const globalOwner=isGlobalOwner();
+        const globalOwner=canWriteGlobal();
         const pharmacyAdmin=isCurrentPharmacyAdmin();
         const pharmacyMapping=mapping?.mappingScope==="PHARMACY";
         const canManage=pharmacyMapping ? pharmacyAdmin : globalOwner;
         const mappingActions=canManage?`
             <div class="needsReviewMappingActions">
-                ${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}
+                ${hasIdentifier?`<label>Barcode<input value="${esc(identifier)}" readonly></label>`:'<label>New Barcode<input data-new-identifier autocomplete="off" placeholder="Scan or enter barcode"></label>'}
                 ${reasonField()}
-                <button type="button" data-add>${pharmacyMapping?"Add Pharmacy Mapping":"Add Mapping"}</button>
-                ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
+                <button type="button" data-add>Add Barcode</button>
+                ${mapping?`<label>Correct to Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct</button><button type="button" class="danger" data-remove>Remove</button>`:""}
             </div>`:(pharmacyAdmin&&hasIdentifier?`
             <div class="needsReviewMappingActions"><label>Identifier<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add Pharmacy Mapping</button></div>`:globalNotice());
         workspace.innerHTML=`<span class="identifierScopeBadge">${pharmacyMapping?"THIS PHARMACY":"GLOBAL"}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
@@ -8728,13 +8730,13 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const value=toSafeString(query).trim();
         if(!value){showToast?.("Enter an Item Code or Item Name","warning");itemSearch?.focus();return;}
         const items=await IdentifierService.searchItems(value,12);
-        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the canonical Global Item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
+        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
         bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
     };
     const renderUnmapped=()=>{
-        const globalOwner=isGlobalOwner(), pharmacyAdmin=isCurrentPharmacyAdmin();
+        const globalOwner=canWriteGlobal(), pharmacyAdmin=isCurrentPharmacyAdmin();
         if(!globalOwner&&!pharmacyAdmin){workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for this identifier.</div>${globalNotice()}`;return;}
-        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the canonical Global Master, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search canonical Global Items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
+        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the item catalogue, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
         let selected=null;
         const search=workspace.querySelector("[data-global-search]");
         const results=workspace.querySelector("[data-global-results]");
