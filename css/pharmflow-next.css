@@ -1986,3 +1986,7 @@ body:not(.zebraDevice) .pfnActivityTable td:first-child,
 body:not(.zebraDevice) .pfnActivityTable th:first-child{white-space:nowrap!important;word-break:keep-all!important}
 body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:9px!important;letter-spacing:-.15px}
 body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:13.25px;font-weight:700}
+
+/* Activity readability: emphasize Date/Time without wrapping. */
+body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:10px!important;font-weight:700!important;letter-spacing:-.12px}
+body:not(.zebraDevice) .pfnActivityTable th:first-child{font-weight:800!important}
