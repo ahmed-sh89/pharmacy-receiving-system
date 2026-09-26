@@ -8568,32 +8568,10 @@ function ensureNeedsReviewButtons(){
 
 
 function nrV2BuildSearchIndex(workScopeOrderNumbers=[]){
-    const scope=new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean));
-    const seen=new Set();
-    return (AppState?.workspace?.orderData||[]).reduce((rows,item)=>{
-        const code=normalizeItemCode(item?.itemCode||"");
-        if(!code||seen.has(code)) return rows;
-        const memberships=(item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean);
-        if(scope.size&&!memberships.some(order=>scope.has(order))) return rows;
-        seen.add(code);
-        rows.push({
-            item,
-            searchText:toSafeString([item?.itemCode,item?.itemName].filter(Boolean).join(" ")).toLowerCase().replace(/\s+/g," ").trim()
-        });
-        return rows;
-    },[]);
+    return buildReceivingResolverSearchIndex(workScopeOrderNumbers);
 }
 function nrV2FindOrderMatches(query,searchIndex=[]){
-    const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
-    if(!q) return [];
-    const parts=q.split(" ").filter(Boolean),matches=[];
-    for(const entry of searchIndex){
-        if(entry.searchText.includes(q)||parts.every(part=>entry.searchText.includes(part))){
-            matches.push(entry.item);
-            if(matches.length===8) break;
-        }
-    }
-    return matches;
+    return findReceivingResolverMatches(query,searchIndex,8);
 }
 async function nrV2HydratePhoto(img,path){
     if(!img || !path) return;
@@ -8946,6 +8924,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
     });
 
+    const resolverSearchIndexes=new Map();
+    const getResolverSearchIndex=group=>{
+        const scope=nrV2AllocationScope(group);
+        const key=scope.slice().sort().join("|");
+        if(!resolverSearchIndexes.has(key)) resolverSearchIndexes.set(key,nrV2BuildSearchIndex(scope));
+        return resolverSearchIndexes.get(key);
+    };
+
     groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
         const detail=section.querySelector("[data-review-case-detail]");
@@ -8999,7 +8985,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }catch(error){ showToast?.(error?.message||"Unable to open review photo","error"); }
         }));
 
-        const searchIndex=nrV2BuildSearchIndex(nrV2AllocationScope(group));
+        const searchIndex=getResolverSearchIndex(group);
         let searchFrame=0;
         const setResolveMode=active=>{
             section.classList.toggle("hasSelectedReviewItem",active);
@@ -9009,23 +8995,9 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         };
         const drawSelection=()=>{
             if(!selectedItem){selection.hidden=true;selection.innerHTML="";setResolveMode(false);return;}
-            const quantity=group.total_quantity;
-            const scope=nrV2AllocationScope(group);
-            const plan=buildReceivingAutoAllocationPlan(selectedItem,quantity,scope);
-            const orderRows=scope.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(selectedItem.itemCode)));
-            const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
-            const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
-            const afterReceived=received+quantity,delta=afterReceived-ordered;
-            const status=ordered<=0?{label:"EXTRA",value:`+${afterReceived}`,cls:"isExtra"}:delta>0?{label:"OVER",value:`+${delta}`,cls:"isOver"}:delta<0?{label:"REMAINING",value:`-${Math.abs(delta)}`,cls:"isRemaining"}:{label:"COMPLETE",value:"0",cls:"isComplete"};
+            const model=buildReceivingResolverSelectionModel(selectedItem,group.total_quantity,nrV2AllocationScope(group));
             setResolveMode(true);selection.hidden=false;
-            selection.innerHTML=`<div class="needsReviewSelectedCard">
-              <div class="needsReviewSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-change-review-item>Change Item</button></div>
-              <strong class="needsReviewSelectedName">${esc(selectedItem.itemName)}</strong>
-              <small class="needsReviewSelectedCode">Item Code <b>${esc(selectedItem.itemCode)}</b></small>
-              <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div class="${status.cls}"><span>${status.label}</span><b>${status.value}</b></div></div>
-              <div class="gtinAllocationSummary ${status.cls}"><b>After this scan: ${afterReceived} / ${ordered} received · ${status.label} ${status.value}</b><span>${ordered<=0?"Extra Item":`Auto-allocated across ${new Set(plan.map(row=>row.orderNumber)).size} active Order${new Set(plan.map(row=>row.orderNumber)).size===1?"":"s"}`}</span></div>
-              <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${esc(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
-            </div><button type="button" class="gtinPrimaryAction" data-resolve>Link &amp; Receive</button>`;
+            selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+`<button type="button" class="gtinPrimaryAction" data-resolve>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-review-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();if(search){search.value="";search.focus();}});
             selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
                 const button=event.currentTarget;button.disabled=true;overlay.dataset.busy="1";
@@ -9053,7 +9025,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         };
         const drawMatches=()=>{
             const q=toSafeString(search?.value||"").trim();
-            selectedItem=null;drawSelection();
+            if(selectedItem){selectedItem=null;drawSelection();}
             if(!q){matches.innerHTML="";return;}
             const items=nrV2FindOrderMatches(q,searchIndex);
             matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the captured active Orders.</div>`;

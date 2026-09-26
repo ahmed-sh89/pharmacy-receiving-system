@@ -817,6 +817,70 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
     return await openQuickGTINResolver(parsed,masterRecord);
 }
 
+function buildReceivingResolverSearchIndex(workScopeOrderNumbers=[]){
+    const scope=new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean));
+    const seen=new Set();
+    return (AppState?.workspace?.orderData||[]).reduce((rows,item)=>{
+        const code=normalizeItemCode(item?.itemCode||"");
+        if(!code||seen.has(code)) return rows;
+        const memberships=(item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean);
+        if(scope.size&&!memberships.some(order=>scope.has(order))) return rows;
+        seen.add(code);
+        rows.push({
+            item,
+            searchText:toSafeString([item?.itemCode,item?.itemName].filter(Boolean).join(" ")).toLowerCase().replace(/\s+/g," ").trim()
+        });
+        return rows;
+    },[]);
+}
+
+function findReceivingResolverMatches(query,searchIndex=[],limit=8){
+    const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
+    if(!q) return [];
+    const parts=q.split(" ").filter(Boolean),matches=[];
+    for(const entry of searchIndex){
+        if(entry.searchText.includes(q)||parts.every(part=>entry.searchText.includes(part))){
+            matches.push(entry.item);
+            if(matches.length>=limit) break;
+        }
+    }
+    return matches;
+}
+
+function buildReceivingResolverSelectionModel(item,quantity,workScopeOrderNumbers=[]){
+    const qty=getValidReceivingQuantity(quantity);
+    const scope=[...new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+    const plan=buildReceivingAutoAllocationPlan(item,qty,scope);
+    const code=normalizeItemCode(item?.itemCode||"");
+    const orderRows=scope.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(
+        row=>normalizeItemCode(row?.["Item Number"]||"")===code
+    ));
+    const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
+    const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
+    const afterReceived=received+qty;
+    const delta=afterReceived-ordered;
+    const status=ordered<=0
+        ? {label:"EXTRA",value:`+${afterReceived}`,className:"isExtra"}
+        : delta>0
+            ? {label:"OVER",value:`+${delta}`,className:"isOver"}
+            : delta<0
+                ? {label:"REMAINING",value:`-${Math.abs(delta)}`,className:"isRemaining"}
+                : {label:"COMPLETE",value:"0",className:"isComplete"};
+    return {item,quantity:qty,scope,plan,ordered,received,afterReceived,status,totalOrders:new Set(plan.map(row=>row.orderNumber)).size};
+}
+
+function renderReceivingResolverSelectedCard(model,escapeFn=escapeHTML,changeAttribute="data-change-item"){
+    const esc=value=>escapeFn(toSafeString(value));
+    const {item,quantity,plan,ordered,received,afterReceived,status,totalOrders}=model;
+    return `<div class="resolverSelectedCard">
+      <div class="resolverSelectedHeading"><span>SELECTED ITEM</span><button type="button" ${changeAttribute}>Change Item</button></div>
+      <div class="resolverSelectedIdentity"><strong class="resolverSelectedName">${esc(item?.itemName||"Unnamed item")}</strong><small class="resolverSelectedCode">Item Code <b>${esc(item?.itemCode||"")}</b></small></div>
+      <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div class="${status.className}"><span>${status.label}</span><b>${status.value}</b></div></div>
+      <div class="gtinAllocationSummary ${status.className}"><b>After this scan: ${afterReceived} / ${ordered} received · ${status.label} ${status.value}</b><span>${ordered<=0?"Extra Item":`Auto-allocated across ${totalOrders} active Order${totalOrders===1?"":"s"}`}</span></div>
+      <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${esc(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
+    </div>`;
+}
+
 function openQuickGTINResolver(parsed,knownRecord=null){
     return new Promise(resolve=>{
         const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
@@ -856,23 +920,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             setTimeout(()=>focusScannerInput?.(),30);
             resolve(value);
         };
-        const searchableItems=(()=>{
-            const seen=new Set();
-            const selectedSet=new Set(selectedOrders.map(normalizeOrderNumber).filter(Boolean));
-            return (AppState?.workspace?.orderData||[]).reduce((rows,item)=>{
-                const code=normalizeItemCode(item?.itemCode||"");
-                if(!code||seen.has(code))return rows;
-                const memberships=(item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean);
-                if(selectedSet.size&&!memberships.some(order=>selectedSet.has(order)))return rows;
-                seen.add(code);
-                rows.push({
-                    item,
-                    searchText:toSafeString([item?.itemCode,item?.itemName].filter(Boolean).join(" ")).toLowerCase().replace(/\s+/g," ").trim()
-                });
-                return rows;
-            },[]);
-        })();
-        const normalized=value=>toSafeString(value).toLowerCase().replace(/\s+/g," ").trim();
+        const searchableItems=buildReceivingResolverSearchIndex(selectedOrders);
         const drawSelection=()=>{
             if(!selectedItem){
                 selection.hidden=true;selection.innerHTML="";
@@ -882,34 +930,13 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 results.removeAttribute("aria-hidden");
                 return;
             }
-            const quantity=getValidReceivingQuantity(parsed?.quantity);
-            const plan=buildReceivingAutoAllocationPlan(selectedItem,quantity,selectedOrders);
-            const totalOrders=new Set(plan.map(row=>row.orderNumber)).size;
-            const orderRows=selectedOrders.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(selectedItem.itemCode)));
-            const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
-            const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
-            const shortage=Math.max(0,ordered-received);
-            const afterReceived=received+quantity;
-            const afterDelta=afterReceived-ordered;
-            const afterStatus=ordered<=0
-                ? {label:"EXTRA",value:`+${afterReceived}`,className:"isExtra"}
-                : afterDelta>0
-                    ? {label:"OVER",value:`+${afterDelta}`,className:"isOver"}
-                    : afterDelta<0
-                        ? {label:"REMAINING",value:`-${Math.abs(afterDelta)}`,className:"isRemaining"}
-                        : {label:"COMPLETE",value:"0",className:"isComplete"};
+            const model=buildReceivingResolverSelectionModel(selectedItem,parsed?.quantity,selectedOrders);
             search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
             search.hidden=true;results.hidden=true;
             search.setAttribute("aria-hidden","true");
             results.setAttribute("aria-hidden","true");
             selection.hidden=false;
-            selection.innerHTML=`<div class="gtinSelectedItem gtinSelectedItemExpanded">
-              <div class="gtinSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-change-item>Change Item</button></div>
-              <strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small>
-              <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div class="${afterStatus.className}"><span>${afterStatus.label}</span><b>${afterStatus.value}</b></div></div>
-              <div class="gtinAllocationSummary ${afterStatus.className}"><b>After this scan: ${afterReceived} / ${ordered} received · ${afterStatus.label} ${afterStatus.value}</b><span>${ordered<=0?"Extra Item":`Auto-allocated across ${totalOrders} active Order${totalOrders===1?"":"s"}`}</span></div>
-              <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${escapeHTML(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
-            </div><button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
+            selection.innerHTML=renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item")+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
             selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
                 const button=event.currentTarget;button.disabled=true;
@@ -926,17 +953,9 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         let searchFrame=0;
         const render=()=>{
             searchFrame=0;
-            const q=normalized(search.value);
-            selectedItem=null;drawSelection();
+            const q=toSafeString(search.value).trim();
             if(!q){results.innerHTML="";return;}
-            const parts=q.split(" ").filter(Boolean);
-            const items=[];
-            for(const entry of searchableItems){
-                if(entry.searchText.includes(q)||parts.every(part=>entry.searchText.includes(part))){
-                    items.push(entry.item);
-                    if(items.length===8)break;
-                }
-            }
+            const items=findReceivingResolverMatches(q,searchableItems,8);
             results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in this device\'s active Orders.</div>';
             results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.i)]||null;drawSelection();}));
         };
