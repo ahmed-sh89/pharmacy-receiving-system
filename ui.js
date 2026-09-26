@@ -8567,33 +8567,25 @@ function ensureNeedsReviewButtons(){
 }
 
 
-function nrV2FindOrderMatches(query,originalOrderNumber=""){
-    const q=toSafeString(query).trim().toLowerCase();
-    const original=normalizeOrderNumber(originalOrderNumber||"");
-    /* Needs Review resolves against its immutable source Order, never the
-       order presently selected in this browser's Device Work Scope. */
-    const source=original&&typeof getPerOrderReceivingRows==="function"
-        ? getPerOrderReceivingRows(original).map(row=>({
-            itemCode:row["Item Number"]||"",
-            itemName:row["Item Name"]||"",
-            orderedQty:row["Ordered Qty"],
-            receivedQty:row["Received Qty"],
-            remainingQty:row["Remaining Qty"],
-            orderNumber:original,
-            orderNumbers:[original]
-        }))
-        : (typeof getScopedOrderItems==="function"
-            ? getScopedOrderItems()
-            : (AppState?.workspace?.orderData||[]));
-
+function nrV2FindOrderMatches(query,workScopeOrderNumbers=[]){
+    const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
+    const scope=[...new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+    const seen=new Set();
+    const source=(AppState?.workspace?.orderData||[]).filter(item=>{
+        const code=normalizeItemCode(item?.itemCode||"");
+        if(!code||seen.has(code)) return false;
+        if(typeof getReceivingAutoAllocationCandidates==="function"&&!getReceivingAutoAllocationCandidates(item,scope).length) return false;
+        seen.add(code);
+        return true;
+    });
     if(!q) return source.slice(0,20);
-
-    return source.filter(item=>
-        toSafeString(item?.itemCode).toLowerCase().includes(q) ||
-        toSafeString(item?.itemName).toLowerCase().includes(q)
-    ).slice(0,20);
+    const parts=q.split(" ").filter(Boolean);
+    return source.filter(item=>{
+        const code=toSafeString(item?.itemCode).toLowerCase();
+        const name=toSafeString(item?.itemName).toLowerCase().replace(/\s+/g," ");
+        return code.includes(q)||name.includes(q)||parts.every(part=>code.includes(part)||name.includes(part));
+    }).slice(0,20);
 }
-
 async function nrV2HydratePhoto(img,path){
     if(!img || !path) return;
 
@@ -8647,64 +8639,68 @@ function groupNeedsReviewRows(rows){
 
 function nrV2GroupTransactionId(group){
     const safe=value=>toSafeString(value||"").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"").slice(0,42);
-    return `NEEDS_REVIEW_GROUP_${safe(group?.order_number||"ALL")}_${safe(group?.gtin||"UNKNOWN")}`;
+    return `NEEDS_REVIEW_GROUP_${safe(group?.gtin||"UNKNOWN")}`;
 }
 
 function nrV2HasTransactionId(transactionId){
     return (AppState?.workspace?.receivingHistory||[]).some(tx=>toSafeString(tx?.transactionId||"")===transactionId);
 }
 
-async function nrV2ResolveGroupToOrderItem(group,item){
-    const transactionId=nrV2GroupTransactionId(group);
-    /* Reference pharmacy rule:
-       HHP084 learns unresolved identifiers into the Global Master.
-       Every other pharmacy learns only inside its own pharmacy scope.
-       Receiving provenance still uses a pharmacy mapping so the durable
-       learned-receipt queue keeps its existing atomic/idempotent contract. */
-    let pharmacyMapping=null;
-    if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()){
-        const first=group.rows[0];
-        const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
-        if(identifier){
-            const mappingResult=await IdentifierService.learnIdentifier(
-                nrV2OperationId(),identifier,item,"Needs Review resolution"
-            );
-            pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
-        }
-    }
-    const intentResults=[];
-    for(const row of group.rows){
-        const result=await nrV2RequestResolution(row,item,transactionId);
-        const intent=Array.isArray(result)?result[0]:result;
-        if(intent?.status==="BLOCKED"||intent?.blocked){
-            throw new Error(intent?.detail||intent?.message||"The original Order is unavailable; this Needs Review case was not reassigned.");
-        }
-        intentResults.push(intent);
-    }
-    if(!nrV2HasTransactionId(transactionId)){
-        const tx=receiveOrderItem({
-            item,
-            quantity:Math.max(1,Number(group.total_quantity||1)||1),
-            gtin:group.gtin,
-            source:APP_CONFIG.transactionSources.scanner,
-            manual:false,
-            targetOrder:group.order_number||"",
-            transactionId,
-            identifierPreserveExact:true,
-            gtinResolution:pharmacyMapping ? {
-                kind:"PHARMACY_LEARNED",
-                mappingId:pharmacyMapping.identifierId,
-                mappingRevision:pharmacyMapping.mappingRevision,
-                identifierDisplay:pharmacyMapping.identifierDisplay,
-                identifierKey:pharmacyMapping.identifierKey,
-                resolvedItemCode:pharmacyMapping.itemCode
-            } : null
-        });
-        if(!tx) throw new Error("Unable to apply reviewed quantity");
-    }
-    return {pending:intentResults.some(result=>result?.status!=="RESOLVED"),transactionId};
+function nrV2AllocationScope(group){
+    const captured=[...new Set((group?.work_scope_order_numbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+    if(captured.length) return captured;
+    const legacy=normalizeOrderNumber(group?.order_number||"");
+    return legacy?[legacy]:[];
 }
 
+function nrV2AllocationPreview(group,item){
+    const plan=buildReceivingAutoAllocationPlan(item,Math.max(1,Number(group?.total_quantity||1)||1),nrV2AllocationScope(group));
+    return {plan,orderCount:new Set(plan.map(row=>row.orderNumber)).size};
+}
+
+async function nrV2ResolveGroupToOrderItem(group,item){
+    const scope=nrV2AllocationScope(group);
+    if(!scope.length) throw new Error("Captured Receiving work scope is unavailable.");
+    const identifier=toSafeString(group?.rows?.[0]?.identifier_display||group?.rows?.[0]?.gtin||group?.gtin).trim();
+    let pharmacyMapping=null;
+    if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()&&identifier){
+        const mappingResult=await IdentifierService.learnIdentifier(nrV2OperationId(),identifier,item,"Needs Review resolution");
+        pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
+    }
+    const resolution=pharmacyMapping?{
+        kind:"PHARMACY_LEARNED",
+        mappingId:pharmacyMapping.identifierId,
+        mappingRevision:pharmacyMapping.mappingRevision,
+        identifierDisplay:pharmacyMapping.identifierDisplay,
+        identifierKey:pharmacyMapping.identifierKey,
+        resolvedItemCode:pharmacyMapping.itemCode
+    }:null;
+    const remainingState=new Map();
+    for(const order of getReceivingAutoAllocationCandidates(item,scope)){
+        const row=getReceivingOrderRow(item,order);
+        remainingState.set(normalizeOrderNumber(order),Math.max(0,toNumber(row?.["Remaining Qty"],toNumber(row?.["Ordered Qty"],0)-toNumber(row?.["Received Qty"],0))));
+    }
+    const intents=[];
+    for(const row of group.rows){
+        const quantity=Math.max(1,Number(row?.pending_quantity||1)||1);
+        const plan=buildReceivingAutoAllocationPlan(item,quantity,scope,remainingState);
+        const baseId=typeof nrV2ResolutionTransactionId==="function"?nrV2ResolutionTransactionId(row.review_id):`NEEDS_REVIEW_V2:${row.review_id}`;
+        const allocations=plan.map((allocation,index)=>({
+            orderNumber:allocation.orderNumber,
+            quantity:allocation.quantity,
+            transactionId:plan.length===1?baseId:`${baseId}:A${index+1}`
+        }));
+        const requested=await nrV2RequestResolution(row,item,baseId,allocations);
+        const intent=Array.isArray(requested)?requested[0]:requested;
+        if(intent?.status==="BLOCKED"||intent?.blocked) throw new Error(intent?.detail||intent?.message||intent?.code||"Needs Review allocation was blocked.");
+        intents.push(intent);
+        receiveAutoAllocatedItem({
+            item,quantity,plan,transactionId:baseId,gtin:identifier,
+            source:APP_CONFIG.transactionSources.scanner,identifierPreserveExact:true,gtinResolution:resolution
+        });
+    }
+    return {pending:intents.some(result=>result?.status!=="RESOLVED"),transactionId:nrV2GroupTransactionId(group)};
+}
 function nrV2ItemMetrics(item){
     const ordered=toNumber(item?.orderedQty,0);
     const received=toNumber(item?.receivedQty,0);
