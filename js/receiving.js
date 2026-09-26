@@ -1458,7 +1458,7 @@ function updateItemCalculatedFields(item){
         );
 
     /*
-       Manual items retain Manual status.
+       Extra items retain the internal legacy status; UI/business terminology is Extra Item.
     */
 
     if(item.manual === true){
@@ -2383,7 +2383,7 @@ function handleReceivingFailure(message){
 
 
 /* =====================================================
-   MANUAL ITEM
+   EXTRA ITEM
 ===================================================== */
 
 async function saveManualReceivingItem(){
@@ -2410,7 +2410,7 @@ async function saveManualReceivingItem(){
     ){
 
         showToast(
-            "Manual item form is unavailable",
+            "Extra item form is unavailable",
             "error"
         );
 
@@ -2522,7 +2522,7 @@ async function saveManualReceivingItem(){
     }
 
     /*
-       New manual item
+       New extra item
     */
 
     item =
@@ -2548,7 +2548,7 @@ async function saveManualReceivingItem(){
     if(!item){
 
         showToast(
-            "Unable to add manual item",
+            "Unable to add extra item",
             "error"
         );
 
@@ -2575,7 +2575,7 @@ async function saveManualReceivingItem(){
         }
         catch(error){
             Logger.warn(
-                "Master GTIN lookup for manual item failed",
+                "Master GTIN lookup for extra item failed",
                 error
             );
         }
@@ -2598,7 +2598,7 @@ async function saveManualReceivingItem(){
 
             serial:"",
 
-            /* Distinguish first creation of an unordered/manual item
+            /* Distinguish first creation of an unordered extra item
                from later quantity edits in the audit history. */
             source:"MANUAL_ITEM",
 
@@ -2669,7 +2669,7 @@ function receiveItemQuantity(
 
 
 /* =====================================================
-   DELETE MANUAL ITEM
+   DELETE EXTRA ITEM
 
    Only allowed when received quantity is zero.
 ===================================================== */
@@ -2689,7 +2689,7 @@ function deleteManualItem(
     ){
 
         showToast(
-            "Only manual items can be deleted",
+            "Only extra items can be deleted",
             "warning"
         );
 
@@ -2751,7 +2751,7 @@ function deleteManualItem(
     );
 
     /* Persist the structural removal and push it to the shared pharmacy
-       workspace. A zero-quantity manual item must not reappear after reload. */
+       workspace. A zero-quantity extra item must not reappear after reload. */
     if(typeof saveWorkspaceSnapshot === "function"){
         saveWorkspaceSnapshot();
     }
@@ -2761,7 +2761,7 @@ function deleteManualItem(
     }
 
     showToast(
-        "Manual item removed",
+        "Extra item removed",
         "success"
     );
 
