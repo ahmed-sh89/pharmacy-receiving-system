@@ -325,3 +325,18 @@ test("Order Items uses the same per-order ledger totals and normalized search as
   assert.match(browser,/normalizeReceivingSearchText/);
   assert.match(browser,/matchesReceivingSearch/);
 });
+
+
+test("Scan Item search projects quantities from the per-order receiving ledger",()=>{
+  const ui=read("ui.js");
+  const start=ui.indexOf("function getReceivingSearchProjection");
+  const end=ui.indexOf("function handleSmartScanSearchInput",start);
+  const projection=ui.slice(start,end);
+  assert.match(projection,/getSelectedReceivingOrderNumbers/);
+  assert.match(projection,/getPerOrderReceivingRows/);
+  assert.match(projection,/row\["Received Qty"\]/);
+  assert.doesNotMatch(projection,/item\.receivedQty/);
+  const searchStart=ui.indexOf("function handleSmartScanSearchInput");
+  const searchEnd=ui.indexOf("function renderSmartScanSearchResults",searchStart);
+  assert.match(ui.slice(searchStart,searchEnd),/getReceivingSearchProjection\(\)/);
+});
