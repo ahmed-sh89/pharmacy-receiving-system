@@ -888,9 +888,16 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             const orderRows=selectedOrders.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(selectedItem.itemCode)));
             const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
             const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
-            const remaining=Math.max(0,ordered-received);
+            const shortage=Math.max(0,ordered-received);
             const afterReceived=received+quantity;
-            const afterRemaining=Math.max(0,ordered-afterReceived);
+            const afterDelta=afterReceived-ordered;
+            const afterStatus=ordered<=0
+                ? {label:"EXTRA",value:`+${afterReceived}`,className:"isExtra"}
+                : afterDelta>0
+                    ? {label:"OVER",value:`+${afterDelta}`,className:"isOver"}
+                    : afterDelta<0
+                        ? {label:"REMAINING",value:`-${Math.abs(afterDelta)}`,className:"isRemaining"}
+                        : {label:"COMPLETE",value:"0",className:"isComplete"};
             search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
             search.hidden=true;results.hidden=true;
             search.setAttribute("aria-hidden","true");
@@ -899,8 +906,8 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             selection.innerHTML=`<div class="gtinSelectedItem gtinSelectedItemExpanded">
               <div class="gtinSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-change-item>Change Item</button></div>
               <strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small>
-              <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div><span>Remaining</span><b>${remaining}</b></div></div>
-              <div class="gtinAllocationSummary"><b>After this scan: ${afterReceived} / ${ordered} received · ${afterRemaining} remaining</b><span>Auto-allocated across ${totalOrders} active Order${totalOrders===1?"":"s"}</span></div>
+              <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div class="${afterStatus.className}"><span>${afterStatus.label}</span><b>${afterStatus.value}</b></div></div>
+              <div class="gtinAllocationSummary ${afterStatus.className}"><b>After this scan: ${afterReceived} / ${ordered} received · ${afterStatus.label} ${afterStatus.value}</b><span>${ordered<=0?"Extra Item":`Auto-allocated across ${totalOrders} active Order${totalOrders===1?"":"s"}`}</span></div>
               <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${escapeHTML(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
             </div><button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
