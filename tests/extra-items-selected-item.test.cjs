@@ -3,7 +3,7 @@ const fs=require("fs"),assert=require("assert");
 const html=fs.readFileSync("index.html","utf8");
 const ui=fs.readFileSync("ui.js","utf8");
 const reports=fs.readFileSync("js/reports.js","utf8");
-const receiving=fs.readFileSync("js/receiving.js","utf8");\nconst cloud=fs.readFileSync("js/cloud-workspace.js","utf8");\nconst app=fs.readFileSync("js/app.js","utf8");
+const receiving=fs.readFileSync("js/receiving.js","utf8");\nconst cloud=fs.readFileSync("cloud-workspace.js","utf8");\nconst app=fs.readFileSync("js/app.js","utf8");
 assert(html.includes("Extra Items"));
 assert(!html.includes("Manual Extras"));
 assert(reports.includes("Extra Items are reconstructed from durable Receiving transactions"));
@@ -22,8 +22,10 @@ assert(!bootstrapBody.includes("await pullCloudWorkspaceTransactions()"),"manife
 const restoreStart=cloud.indexOf("async function restoreCloudWorkspaceOnLogin");
 const restoreEnd=cloud.indexOf("async function reconcileCloudWorkspaceAuthority",restoreStart);
 const restoreBody=cloud.slice(restoreStart,restoreEnd);
-assert(restoreBody.includes("await pullActiveOrderManifest();"));
+assert(restoreBody.includes("await pullActiveOrderManifestAuthority({clearIfMissing:true});"));
 assert(restoreBody.includes("await pullCloudWorkspaceTransactions();"));
-assert(restoreBody.indexOf("await pullActiveOrderManifest();")<restoreBody.lastIndexOf("await pullCloudWorkspaceTransactions();"),"authoritative ledger pull must follow structural hydration");
+assert(restoreBody.indexOf("await pullActiveOrderManifestAuthority({clearIfMissing:true});")<restoreBody.lastIndexOf("await pullCloudWorkspaceTransactions({force:true});"),"authoritative ledger bootstrap must follow structural hydration");
 assert(app.includes('manual:row.issueKey==="manual"'),"dashboard must preserve durable Extra Item classification");
 console.log("Extra Items and selected-item UX guards: PASS");
+
+assert(cloud.includes("if(!item && (!txOrder || (activeOrders.size && !activeOrders.has(txOrder))))"),"loaded cloud owner must retain durable active-order Extra Items");
