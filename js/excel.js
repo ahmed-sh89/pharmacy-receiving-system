@@ -130,50 +130,69 @@ async function handleOrderFileSelection(event){
         let importedFiles = 0;
         let duplicateFiles = 0;
 
-        for(const file of files){
-
-            /* Multi-file import: read each workbook once. Metadata preflight and
-               row import share the same parsed workbook instead of doing two full
-               FileReader/XLSX passes per file. */
-            const workbook = await readExcelWorkbook(file);
-
-            const orderMeta =
-                typeof inspectOrderWorkbookMetadata === "function"
-                ? inspectOrderWorkbookMetadata(workbook,file)
-                : (typeof inspectOrderFileMetadata === "function"
-                    ? await inspectOrderFileMetadata(file)
-                    : null);
-
-            if(orderMeta?.orderNumber){
-                attemptedOrderNumbers.push(
-                    normalizeOrderNumber(orderMeta.orderNumber)
-                );
+        /* Batch upload is a single structural operation. Parse and validate
+           every selected workbook BEFORE mutating AppState so a bad third/fourth
+           file can never leave the first files partially staged. Workbooks are
+           parsed concurrently to keep 5+ order selection responsive. */
+        const preparedFiles=await Promise.all(files.map(async file=>{
+            validateExcelFile(file);
+            const workbook=await readExcelWorkbook(file);
+            const orderMeta=
+                typeof inspectOrderWorkbookMetadata==="function"
+                    ? inspectOrderWorkbookMetadata(workbook,file)
+                    : (typeof inspectOrderFileMetadata==="function"
+                        ? await inspectOrderFileMetadata(file)
+                        : null);
+            const orderNumber=normalizeOrderNumber(orderMeta?.orderNumber||"");
+            if(!orderNumber){
+                throw new Error("Order Number could not be detected in "+file.name);
             }
+            return {file,workbook,orderMeta,orderNumber};
+        }));
 
-            if(orderMeta && typeof assertOrderNumberCanUpload === "function"){
-                await assertOrderNumberCanUpload(orderMeta.orderNumber);
+        const selectedOrderNumbers=preparedFiles.map(entry=>entry.orderNumber);
+        const duplicateOrderNumbers=selectedOrderNumbers.filter(
+            (orderNumber,index)=>selectedOrderNumbers.indexOf(orderNumber)!==index
+        );
+        if(duplicateOrderNumbers.length){
+            throw new Error(
+                "Duplicate Order Number selected in this batch: "+
+                [...new Set(duplicateOrderNumbers)].join(", ")
+            );
+        }
+
+        /* Lifecycle checks may require explicit operator recovery for an old
+           active/completed order, so keep these deterministic and ordered. No
+           local order rows have been changed yet. */
+        for(const entry of preparedFiles){
+            attemptedOrderNumbers.push(entry.orderNumber);
+            if(typeof assertOrderNumberCanUpload==="function"){
+                await assertOrderNumberCanUpload(entry.orderNumber);
             }
+        }
 
-            const result =
-                await importOrderFile(
-                    file,
-                    orderMeta,
-                    workbook
-                );
+        for(const entry of preparedFiles){
+            const result=await importOrderFile(
+                entry.file,
+                entry.orderMeta,
+                entry.workbook
+            );
 
-            importedRows +=
-                result.importedRows;
+            importedRows+=result.importedRows;
+            skippedRows+=result.skippedRows;
+            if(result.duplicateFile) duplicateFiles++;
+            if(result.success) importedFiles++;
+        }
 
-            skippedRows +=
-                result.skippedRows;
-
-            if(result.duplicateFile){
-                duplicateFiles++;
-            }
-
-            if(result.success){
-                importedFiles++;
-            }
+        /* Every non-duplicate selected file must now exist in the local batch
+           before any manifest write. This turns silent partial imports into a
+           safe rollback instead of presenting an incomplete order set. */
+        const expectedImportedFiles=preparedFiles.length-duplicateFiles;
+        if(importedFiles!==expectedImportedFiles){
+            throw new Error(
+                "Batch import was incomplete ("+importedFiles+" of "+
+                expectedImportedFiles+" new order files staged). No partial batch will be kept."
+            );
         }
 
         rebuildStateIndexes();
@@ -355,6 +374,27 @@ async function handleOrderFileSelection(event){
 
     }
     catch(error){
+
+        /* Any failure before authoritative completion restores the exact
+           workspace that existed before this batch. The snapshot is declared
+           inside try only after server reconciliation, so guard access for
+           very-early validation failures. */
+        try{
+            if(typeof preImportWorkspace!=="undefined" && preImportWorkspace){
+                AppState.workspace=
+                    typeof deepClone==="function"
+                        ? deepClone(preImportWorkspace)
+                        : JSON.parse(JSON.stringify(preImportWorkspace));
+                rebuildStateIndexes();
+                recalculateStatistics();
+                saveWorkspaceSnapshot?.();
+                AppEvents.emit("files:updated",{source:"import-batch-rollback"});
+                AppEvents.emit("receiving:updated",{source:"import-batch-rollback"});
+                refreshEntireUI?.();
+            }
+        }catch(rollbackError){
+            Logger.error("Order batch rollback failed",rollbackError);
+        }
 
         Logger.error(
             "Order import failed",
