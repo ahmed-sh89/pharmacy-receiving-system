@@ -1105,7 +1105,6 @@ function getWorkspaceOrderSourceRows(orderNumber){
 function buildReceivedQuantityByOrder(){
     const totals=new Map();
     const activeOrders=getActiveReceivingOrderNumbers();
-    const explicitForeignReceivedByCode=new Map();
 
     const ensure=(order,itemCode)=>{
         const key=normalizeOrderNumber(order)+"||"+normalizeItemCode(itemCode);
@@ -1113,6 +1112,10 @@ function buildReceivedQuantityByOrder(){
         return key;
     };
 
+    /* The durable receiving ledger/history is authoritative whenever an
+       active Order can be identified. Never layer item.receivedQty back on
+       top of attributed transactions: that aggregate already includes them
+       and caused double-counted Receiving rows. */
     (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
         if(tx?.undone===true) return;
 
@@ -1125,85 +1128,26 @@ function buildReceivedQuantityByOrder(){
             tx?.selectedOrderNumber ||
             ""
         );
-        let order=explicitOrder;
 
-        if(!activeOrders.includes(order)){
-            if(explicitOrder){
-                explicitForeignReceivedByCode.set(
-                    code,
-                    (explicitForeignReceivedByCode.get(code)||0)+toNumber(tx?.quantity,0)
-                );
-                return;
-            }
-
-            const item=getItemByCode?.(code);
-            const memberships=(item?.orderNumbers||[])
-                .map(normalizeOrderNumber)
-                .filter(number=>activeOrders.includes(number));
-
-            if(memberships.length===1){
-                order=memberships[0];
-            }else{
-                order="";
-            }
+        if(explicitOrder){
+            if(!activeOrders.includes(explicitOrder)) return;
+            const key=ensure(explicitOrder,code);
+            totals.set(key,totals.get(key)+toNumber(tx?.quantity,0));
+            return;
         }
 
-        if(order){
-            const key=ensure(order,code);
-            totals.set(
-                key,
-                totals.get(key)+toNumber(tx?.quantity,0)
-            );
-        }
-    });
+        /* Backward compatibility is intentionally narrow: an old transaction
+           without Order attribution may be used only when this item belongs
+           to exactly one active Order. Ambiguous legacy quantities are never
+           guessed or redistributed across Orders. */
+        const item=getItemByCode?.(code);
+        const memberships=[...new Set((item?.orderNumbers||[])
+            .map(normalizeOrderNumber)
+            .filter(number=>activeOrders.includes(number)))];
 
-    /* Legacy/unattributed quantities: distribute deterministically FIFO
-       across active orders using original ordered quantities. */
-    (AppState?.workspace?.orderData||[]).forEach(item=>{
-        const code=normalizeItemCode(item?.itemCode||"");
-        if(!code) return;
-
-        const totalReceived=Math.max(
-            0,
-            toNumber(item?.receivedQty,0)-(explicitForeignReceivedByCode.get(code)||0)
-        );
-        let attributed=0;
-
-        activeOrders.forEach(order=>{
-            attributed += totals.get(ensure(order,code)) || 0;
-        });
-
-        let remainder=Math.max(0,totalReceived-attributed);
-        if(remainder<=0) return;
-
-        const memberships=activeOrders
-            .map(order=>({
-                order,
-                source:getWorkspaceOrderSourceRows(order)
-                    .find(row=>normalizeItemCode(row.itemCode)===code)
-            }))
-            .filter(entry=>entry.source);
-
-        memberships.forEach(entry=>{
-            if(remainder<=0) return;
-
-            const key=ensure(entry.order,code);
-            const already=totals.get(key)||0;
-            const ordered=toNumber(entry.source.orderedQty,0);
-            const capacity=Math.max(0,ordered-already);
-            const allocate=Math.min(remainder,capacity);
-
-            if(allocate>0){
-                totals.set(key,already+allocate);
-                remainder-=allocate;
-            }
-        });
-
-        if(remainder>0 && memberships.length){
-            const target=getSelectedReceivingOrderNumber() || memberships[0].order;
-            const chosen=memberships.find(x=>x.order===target) || memberships[memberships.length-1];
-            const key=ensure(chosen.order,code);
-            totals.set(key,(totals.get(key)||0)+remainder);
+        if(memberships.length===1){
+            const key=ensure(memberships[0],code);
+            totals.set(key,totals.get(key)+toNumber(tx?.quantity,0));
         }
     });
 
