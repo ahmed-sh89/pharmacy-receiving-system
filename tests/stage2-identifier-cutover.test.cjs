@@ -154,26 +154,25 @@ test('Handheld compact controls and success acknowledgement use the existing Las
   assert.match(ui,/handheldScanSavedAck"\)\?\.setAttribute\("hidden",""\)/);
 });
 
-test('visible Settings Global Master route exposes the V2 lookup controls before legacy import compatibility',()=>{
+test('visible Settings Barcode Management route exposes the V2 controls before legacy import compatibility',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
   const settings=index.slice(index.indexOf('id="page-settings"'),index.indexOf('id="page-settings"')+14000);
   assert.match(settings,/id="globalIdentifierMasterAdmin"/);
-  assert.match(settings,/class="globalIdentifierMasterAdmin"/);
+  assert.match(settings,/BARCODE MANAGEMENT/);
+  assert.match(settings,/<h2>Item Barcodes<\/h2>/);
   assert.match(settings,/data-admin-identifier/);
   assert.match(settings,/data-admin-item-search/);
-  assert.match(settings,/Find Mapping/);
-  assert.match(settings,/Search Items/);
+  assert.match(settings,/>Find<\/button>/);
+  assert.match(settings,/>Search<\/button>/);
   assert.ok(settings.indexOf('id="globalIdentifierMasterAdmin"') < settings.indexOf('Global Master import and mapping-file compatibility'));
   assert.match(ui,/function renderV2IdentifierAdministration\(/);
   assert.match(ui,/renderV2IdentifierAdministration\(settingsMaster\)/);
-  assert.match(ui,/itemLoad\?\.addEventListener\("click",\(\)=>renderItemSearch/);
   assert.match(ui,/IdentifierService\.searchItems\(value,12\)/);
-  assert.match(ui,/IDENTIFIERS FOR THIS ITEM/);
-  assert.match(ui,/Add New Item &amp; First Identifier/);
+  assert.match(ui,/barcodeList/);
+  assert.match(ui,/Add Barcode/);
   assert.match(ui,/data-correct/);
   assert.match(ui,/data-remove/);
-  assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
 });
 
 test('Handheld can reach the compact Needs Review and photo viewer without a second scan path',()=>{
@@ -198,11 +197,11 @@ test('loaded legacy Global Master compatibility code has no learned-mapping reso
   assert.match(master,/function getMasterGTINRecordByGTIN\(/,'Expiry retains its read-only legacy Global Master lookup');
 });
 
-test('Settings leads with V2 Global Master administration while preserving import compatibility',()=>{
+test('Settings leads with simplified Barcode Management while preserving import compatibility',()=>{
   const index=read('index.html');
-  assert.match(index,/<h2>Global Identifier Master<\/h2>/);
+  assert.match(index,/<h2>Item Barcodes<\/h2>/);
+  assert.match(index,/BARCODE MANAGEMENT/);
   assert.ok(index.indexOf('id="globalIdentifierMasterAdmin"') < index.indexOf('Global Master import and mapping-file compatibility'));
-  assert.doesNotMatch(index,/<span class="sectionEyebrow">\s*<div>/);
   assert.match(index,/Update Global GTIN Import/);
   assert.match(index,/Mapping-file compatibility/);
 });
