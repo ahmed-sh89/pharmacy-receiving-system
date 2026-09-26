@@ -1928,51 +1928,9 @@ body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:12px;fon
 body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
 body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
 
-/* Receiving Activity: prioritize Item Name while keeping Date on one line. */
-body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:12%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:34%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:6%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:8%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:7%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:4.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:6%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:9.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12%}
-body:not(.zebraDevice) .pfnActivityTable td:first-child,
-body:not(.zebraDevice) .pfnActivityTable th:first-child{white-space:nowrap}
-body:not(.zebraDevice) .pfnActivityTable th:not(:nth-child(2)),
-body:not(.zebraDevice) .pfnActivityTable td:not(:nth-child(2)){padding-left:4px;padding-right:4px;font-size:10px}
-body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:12px}
-
-/* Unknown resolver: one authoritative quantity and selection above results. */
-.pfnUnknownWorkspace [data-find-pane]{display:flex;flex-direction:column}
-.pfnUnknownWorkspace [data-selection]{order:2;margin:10px 0}
-.pfnUnknownWorkspace [data-results]{order:3}
-.pfnUnknownWorkspace .pfnCreateQtyMirror{display:flex;flex-direction:column;gap:7px}
-.pfnUnknownWorkspace .pfnCreateQtyMirror b{font-size:16px;color:#123f69}
-/* Receiving Activity: maximum practical space for item identity. */
-body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:13%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:37%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:5.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:7.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:6.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:4%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:5.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8.5%}
-body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12%}
-body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:9px;white-space:nowrap}
-body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:13px;font-weight:700}
-
-/* Resolver states: visually distinguish unknown master data from known Extra Items. */
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnUnknownWorkspace){border:1px solid #e7b24c;box-shadow:0 24px 60px rgba(43,69,94,.22)}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnUnknownWorkspace) .gtinResolverHeader{background:#fff8e8;border-bottom-color:#efd28f}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnUnknownWorkspace) .gtinResolverBadge{background:#fff3cf;border-color:#dfa62f;color:#8a5900}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnUnknownWorkspace) .gtinReadout{background:#fffaf0;border-color:#edd49b}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnExtraWorkspace){border:1px solid #68a9d8;box-shadow:0 24px 60px rgba(31,83,124,.22)}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnExtraWorkspace) .gtinResolverHeader{background:#eef8ff;border-bottom-color:#a9cfe9}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnExtraWorkspace) .gtinResolverBadge{background:#e5f4ff;border-color:#69a9d5;color:#0d5d91}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnExtraWorkspace) .pfnExtraItemCard{background:#f4faff;border-color:#acd2eb}
-/* Activity table: Date/Time stays one line; compact metadata gives Item maximum width. */
+/* Receiving Activity — canonical desktop layout. Item identity and readable one-line time are primary. */
+body:not(.zebraDevice) .pfnActivityWorklist{overflow-x:hidden}
+body:not(.zebraDevice) .pfnActivityTable{width:100%;table-layout:fixed}
 body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:15%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:38%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:5%}
@@ -1982,16 +1940,35 @@ body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:3.5%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:5%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12.5%}
-body:not(.zebraDevice) .pfnActivityTable td:first-child,
-body:not(.zebraDevice) .pfnActivityTable th:first-child{white-space:nowrap!important;word-break:keep-all!important}
-body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:9px!important;letter-spacing:-.15px}
-body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:13.25px;font-weight:700}
+body:not(.zebraDevice) .pfnActivityTable th{padding:8px 4px;font-size:9px;white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable td{padding:7px 4px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:10.25px;font-weight:750;letter-spacing:-.1px;white-space:nowrap;word-break:keep-all}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:13.25px;font-weight:700;color:#123f69;text-overflow:clip}
+body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
+body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
 
-/* Activity readability: emphasize Date/Time without wrapping. */
-body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:10px!important;font-weight:700!important;letter-spacing:-.12px}
-body:not(.zebraDevice) .pfnActivityTable th:first-child{font-weight:800!important}
+/* Unknown resolver — one quantity owner and a single selected-item state. */
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-find-pane]{display:flex;flex-direction:column}
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-selection]{order:2;margin:10px 0}
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-results]{order:3}
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-results][hidden],
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-search][hidden],
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-selection][hidden],
+body:not(.zebraDevice) .pfnUnknownWorkspace label[for="gtinResolutionSearch"][hidden]{display:none!important}
+body:not(.zebraDevice) .pfnUnknownWorkspace .pfnCreateQtyMirror{display:flex;flex-direction:column;gap:7px}
+body:not(.zebraDevice) .pfnUnknownWorkspace .pfnCreateQtyMirror b{font-size:16px;color:#123f69}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked{width:min(660px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .pfnUnknownWorkspace{padding-top:8px;padding-bottom:8px}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .gtinResolutionResults{display:none!important}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .resolverSelectedCard{margin:0}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .gtinResolutionFooter{padding-top:10px;padding-bottom:10px}
 
-body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:10.25px!important;font-weight:700!important;letter-spacing:-.1px}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnUnknownWorkspace) .gtinResolutionHeader{background:#fff7e5!important}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnUnknownWorkspace) .gtinActionBadge{background:#fff0c2!important;border-color:#dc9d1c!important;color:#805000!important}
-body:not(.zebraDevice) .gtinResolutionPanel:has(.pfnExtraWorkspace) .gtinResolutionHeader{background:#eaf6ff!important}
+/* Resolver state identity — unknown Global item is amber; known-but-not-in-order is blue. */
+body:not(.zebraDevice) .pfnUnknownPanel{border:2px solid #dca32c;box-shadow:0 24px 60px rgba(43,69,94,.22)}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinResolutionHeader{background:#fff7e5;border-bottom-color:#efd28f}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinActionBadge{background:#fff0c2;border-color:#dc9d1c;color:#805000}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinReadout{background:#fffaf0;border-color:#edd49b}
+body:not(.zebraDevice) .pfnKnownExtraPanel{border:2px solid #4d9bd2;box-shadow:0 24px 60px rgba(31,83,124,.22)}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader{background:#eaf6ff;border-bottom-color:#9fc9e6}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{background:#dff2ff;border-color:#5ba2d2;color:#0b5d91}
+body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#f7fbff}

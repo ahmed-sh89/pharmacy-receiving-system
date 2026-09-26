@@ -855,7 +855,7 @@ function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
         document.getElementById("quickGTINResolver")?.remove();
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";panel.className="gtinResolutionShell open";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
-        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
+        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
         document.body.appendChild(panel);let done=false;
         const finish=value=>{if(done)return;done=true;panel.remove();setScanBoxState?.(value?"success":"ready");setTimeout(()=>focusScannerInput?.(),30);resolve(value);};
         panel.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>finish(false));
@@ -951,7 +951,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         panel.setAttribute("aria-label","Resolve unrecognised barcode");
         panel.innerHTML=`
           <button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button>
-          <aside class="gtinResolutionPanel gtinResolutionPanelWide">
+          <aside class="gtinResolutionPanel gtinResolutionPanelWide pfnUnknownPanel">
             <header class="gtinResolutionHeader">
               <div><span class="gtinActionBadge">ITEM NOT RECOGNISED</span><h2>Link this barcode</h2><p>Find the item. PharmFlow will receive it into the correct active Order automatically.</p></div>
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
@@ -1008,6 +1008,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const drawSelection=()=>{
             if(!selectedItem){
                 selection.hidden=true;selection.innerHTML="";
+                panel.querySelector(".gtinResolutionPanel")?.classList.remove("isSelectionLocked");
                 searchLabel.hidden=false;
                 search.hidden=false;results.hidden=false;
                 search.removeAttribute("aria-hidden");
@@ -1015,6 +1016,8 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 return;
             }
             const model=buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders);
+            panel.querySelector(".gtinResolutionPanel")?.classList.add("isSelectionLocked");
+            results.innerHTML="";
             searchLabel.hidden=true;
             search.hidden=true;results.hidden=true;
             search.setAttribute("aria-hidden","true");
