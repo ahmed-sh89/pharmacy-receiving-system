@@ -12,6 +12,7 @@ const UI = {
     elements:{},
 
     confirmCallback:null,
+    confirmResolve:null,
 
     searchResults:[],
 
@@ -1434,7 +1435,7 @@ function bindUIEvents(){
         .getElementById("btnConfirmCancel")
         ?.addEventListener(
             "click",
-            closeConfirmModal
+            cancelPharmFlowConfirm
         );
 
 
@@ -3704,13 +3705,13 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
     }
     const safeOrder=toSafeString(orderNumber).trim();
     if(!safeOrder){showToast("Order Number is unavailable for this archive record","error");return false;}
-    if(!window.confirm("Delete received order "+safeOrder+" and its related receiving data? This does NOT delete the Global GTIN Master or other orders."))return false;
+    if(!await pharmFlowConfirm({title:"Delete Received Order?",message:"Delete "+safeOrder+" and its related Receiving data? This does NOT delete the Global GTIN Master or other orders.",confirmText:"Continue",tone:"danger"}))return false;
     const typed=window.prompt("Type the Order Number exactly to continue:\n\n"+safeOrder,"");
     if(toSafeString(typed).trim().toUpperCase()!==safeOrder.toUpperCase()){
         showToast("Order Number confirmation did not match","warning");
         return false;
     }
-    if(!window.confirm("FINAL CONFIRMATION\n\nPermanently delete "+safeOrder+"?"))return false;
+    if(!await pharmFlowConfirm({title:"Final Confirmation",message:"Permanently delete "+safeOrder+"?",confirmText:"Delete Order",tone:"danger"}))return false;
     showLoading("Deleting "+safeOrder+"...");
     try{
         if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context && AuthState.context.pharmacy_id){
@@ -4420,6 +4421,18 @@ function closeConfirmModal(){
 
 }
 
+
+function pharmFlowConfirm(options={}){
+    const modal=UI.elements.confirmModal||document.getElementById("confirmModal");
+    if(!modal) return Promise.resolve(false);
+    const button=document.getElementById("btnConfirmOK");
+    setElementText(UI.elements.confirmTitle||document.getElementById("confirmTitle"),options.title||"Confirm");
+    setElementText(UI.elements.confirmMessage||document.getElementById("confirmMessage"),options.message||"Are you sure?");
+    if(button){button.textContent=options.confirmText||"Confirm";button.className=(options.tone==="danger"?"dangerButton":"primaryButton");}
+    return new Promise(resolve=>{UI.confirmResolve=resolve;UI.confirmCallback=()=>{const done=UI.confirmResolve;UI.confirmResolve=null;done?.(true);};modal.classList.add("open");modal.setAttribute("aria-hidden","false");});
+}
+window.pharmFlowConfirm=pharmFlowConfirm;
+function cancelPharmFlowConfirm(){const done=UI.confirmResolve;UI.confirmResolve=null;closeConfirmModal();done?.(false);}
 
 async function handleConfirmOK(){
 
@@ -7841,7 +7854,7 @@ function openHandheldScansPanel(){
             const transactionId=overlay.querySelector("[data-remove-last]")?.dataset.removeLast||"";
             const latest=scanRows()[0];
             if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
-            if(!window.confirm(`Remove last scan: ${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))}?`)) return;
+            if(!await pharmFlowConfirm({title:"Remove Last Scan?",message:`${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))} will be cancelled and preserved in Receiving history.`,confirmText:"Remove Scan",tone:"danger"})) return;
             const removed=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
                 : false;
@@ -8131,8 +8144,8 @@ function openReceivingActivityEditor(row,allRows){
     window.PharmFlowModalStack?.open(modal);
     const close=()=>{window.PharmFlowModalStack?.close(modal);modal.remove();};
     modal.querySelector("[data-cancel]").onclick=close;
-    modal.querySelector("[data-delete-entry]").onclick=()=>{
-        if(!window.confirm("Delete this receiving contribution? The item and order will not be deleted.")) return;
+    modal.querySelector("[data-delete-entry]").onclick=async()=>{
+        if(!await pharmFlowConfirm({title:isExtra?"Remove Extra Item?":"Delete Receiving Entry?",message:isExtra?`${item.itemName} · Received ${effective}. This records a correction and preserves Receiving history.`:"This receiving contribution will be cancelled. The item and order will not be deleted.",confirmText:isExtra?"Remove Extra Item":"Delete Entry",tone:"danger"})) return;
         const effective=getActivityEffectiveQuantity(row,allRows);
         if(effective<=0){showToast?.("This entry is already cancelled","warning");return;}
         const tx=applyQuantityAdjustment({item,difference:-effective,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:isExtra?"Extra Item removed":"Receiving activity deleted",correctsTransactionId:row.transactionId});
@@ -8398,7 +8411,7 @@ function renderItemBrowser(body, rows, options={}){
     clearPriority?.addEventListener('click',async()=>{
         const targets=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
         if(!targets.length) return;
-        if(!window.confirm(`Clear High Priority from ${targets.length} visible item(s)?`)) return;
+        if(!await pharmFlowConfirm({title:"Clear High Priority?",message:`Clear High Priority from ${targets.length} visible item(s)?`,confirmText:"Clear Priority",tone:"warning"})) return;
         const top=body.querySelector('.phase263TableWrap')?.scrollTop||0;
         const clearRequest=queueClearVisiblePriorities(targets);
         draw();
@@ -8812,8 +8825,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
         workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
         workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
-        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!await pharmFlowConfirm({title:"Correct Identifier?",message:"Correct only this identifier mapping? Historical Receiving is unchanged.",confirmText:"Correct Identifier",tone:"warning"})) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
+        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!await pharmFlowConfirm({title:"Remove Identifier?",message:"Remove only this identifier mapping? The Item and sibling identifiers remain.",confirmText:"Remove Identifier",tone:"danger"})) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
     };
     const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
         const value=toSafeString(query).trim();
@@ -8987,7 +9000,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         });
 
         cancelReview?.addEventListener("click",async()=>{
-            if(!window.confirm(`Cancel this Needs Review group for GTIN ${group.gtin}?\n\nThis will not learn the GTIN or change any received quantity.`)) return;
+            if(!await pharmFlowConfirm({title:"Cancel Needs Review Group?",message:`GTIN ${group.gtin}. This will not learn the GTIN or change any received quantity.`,confirmText:"Cancel Group",tone:"danger"})) return;
             const reason=toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
             if(!reason){showToast?.("A cancellation reason is required","warning");return;}
             cancelReview.disabled=true; overlay.dataset.busy="1";
