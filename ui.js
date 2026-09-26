@@ -8606,7 +8606,9 @@ function groupNeedsReviewRows(rows){
         const gtin=toSafeString(row?.identifier_display||row?.gtin||"").trim();
         const order=toSafeString(row?.order_number||"").trim();
         const reason=toSafeString(row?.review_reason||"UNKNOWN_GTIN").trim();
-        const key=[gtin,order,reason].join("|");
+        const capturedScope=[...new Set((Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean))].sort();
+        if(order&&!capturedScope.includes(normalizeOrderNumber(order))) capturedScope.push(normalizeOrderNumber(order));
+        const key=[gtin,reason,capturedScope.join("+")].join("|");
         if(!groups.has(key)){
             groups.set(key,{
                 key,
