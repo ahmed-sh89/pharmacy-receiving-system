@@ -1827,3 +1827,17 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
 #page-settings .barcodeChangeNote textarea{width:100%;min-height:54px;padding:8px 10px;border:1px solid #b8cede;border-radius:8px;resize:vertical}
 @media(max-width:1100px){#page-settings .barcodeManagementLookup{grid-template-columns:minmax(220px,1fr) auto}}
 @media(max-width:600px){#page-settings .barcodeManagementLookup{grid-template-columns:1fr}}
+
+/* 2C.11.61 — single-owner Not Recognised / Needs Review resolution UX. */
+body:not(.zebraDevice) .gtinResolutionPanelWide{width:min(900px,94vw)!important}
+body:not(.zebraDevice) .gtinReadout{display:grid!important;grid-template-columns:1fr auto!important;align-items:end!important;column-gap:18px!important}
+body:not(.zebraDevice) .gtinReadout span{grid-column:1/-1!important}
+body:not(.zebraDevice) .gtinReadout small{font-weight:850!important;color:#426987!important}
+.gtinResolutionSelection{margin-top:10px;padding:14px;border:2px solid #2780c5;border-radius:12px;background:#edf7ff}
+.gtinSelectedItem{display:grid;gap:4px}.gtinSelectedItem>span{font-size:10px;font-weight:950;color:#1769aa;letter-spacing:.06em}.gtinSelectedItem>strong{font-size:18px;color:#123f6d}.gtinSelectedItem>small{color:#58748f;font-weight:750}
+.gtinResolutionSelection>.gtinPrimaryAction{width:100%;min-height:46px;margin-top:12px}
+.needsReviewAutoAllocationHint{grid-column:1/-1;color:#56758f;font-weight:750}
+.needsReviewAllocationPreview{display:block;margin-top:8px;color:#1769aa;font-weight:900}
+body:not(.zebraDevice) .needsReviewPanel{width:min(1180px,96vw)}
+body:not(.zebraDevice) .needsReviewResolve input{min-height:48px;font-size:15px}
+body:not(.zebraDevice) .needsReviewMatches>button{min-height:58px;padding:10px 13px}
