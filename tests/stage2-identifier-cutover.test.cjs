@@ -17,6 +17,34 @@ test('Stage 2 routes receiving identity and Needs Review through V2 contracts',(
   assert.match(service,/create_pharmflow_global_item_v2/);
 });
 
+test('PC unknown-identifier review requires an explicit active Order and uses an allowed review reason',()=>{
+  const receiving=read('js/receiving.js');
+  assert.match(receiving,/data-review-order/);
+  assert.match(receiving,/reviewOrderNumbers=\[\.\.\.new Set\(selectedOrders\.map\(normalizeOrderNumber\)\.filter\(Boolean\)\)\]/);
+  assert.doesNotMatch(receiving,/const activeOrderNumbers=/);
+  assert.match(receiving,/Only Orders selected on this device are available/);
+  assert.match(receiving,/Select original Order/);
+  assert.match(receiving,/reason:knownCode\?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN"/);
+  assert.doesNotMatch(receiving,/reason:knownCode\?"KNOWN_NOT_IN_ORDER":"UNKNOWN_IDENTIFIER"/);
+  assert.match(receiving,/orderNumber:reviewOrder/);
+});
+
+test('Handheld multi-order Needs Review snapshots device scope and defers Order assignment to PC',()=>{
+  const review=read('js/needs-review.js');
+  const ui=read('ui.js');
+  const migration=read('PHASE2C1157_NEEDS_REVIEW_WORK_SCOPE.sql');
+  assert.match(review,/create_pharmflow_needs_review_v4/);
+  assert.match(review,/selectedOrders\.length===1 \? selectedOrders\[0\] : \"\"/);
+  assert.match(review,/p_work_scope_order_numbers:workScope/);
+  assert.match(review,/assign_pharmflow_needs_review_order_v1/);
+  assert.match(ui,/data-assign-order/);
+  assert.match(ui,/Captured Handheld scope/);
+  assert.match(ui,/await nrV2AssignOrder\(row\.review_id,order\)/);
+  assert.match(migration,/work_scope_order_numbers text\[\]/);
+  assert.match(migration,/not\(v_order=any\(coalesce\(v_review\.work_scope_order_numbers/);
+  assert.match(migration,/is_pharmacy_admin\(p_pharmacy_id\)/);
+});
+
 test('Needs Review persists a durable intent and keeps original order scope',()=>{
   const ui=read('ui.js');
   const reviews=read('js/needs-review.js');
@@ -215,4 +243,19 @@ test('authenticated manifest hydration loads UI globals before the application b
   assert.match(workspace,/refreshEntireUI\(\)/);
   assert.match(app,/initializeUI\(\)/);
   assert.doesNotThrow(()=>new Function(workspace),'the manifest hydration script must parse before authenticated startup');
+});
+
+
+test("alphanumeric scanner identifiers preserve exact identity before V2 resolution",()=>{
+  const scanner=read("js/scanner.js");
+  const handheld=read("js/handheld-runtime.js");
+  assert.match(scanner,/\[A-Za-z\]\/\.test\(cleaned\)/);
+  assert.match(scanner,/parsed\.identifierDisplay=cleaned/);
+  assert.match(scanner,/parsed\.gtin=cleaned/);
+  assert.match(handheld,/nonGs1Alphanumeric/);
+  assert.match(handheld,/parsed\.identifierDisplay=cleaned/);
+  assert.match(handheld,/parsed\.gtin=cleaned/);
+  for(const identifier of ["BT 122585","U0030","S00110","1234A"]){
+    assert.ok(/[A-Za-z]/.test(identifier),identifier);
+  }
 });

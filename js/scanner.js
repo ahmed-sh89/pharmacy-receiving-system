@@ -716,6 +716,21 @@ async function processScannerValue(rawValue){
                 cleaned
             );
 
+        /* Non-GS1 identifiers are authoritative identifiers in their own
+           right. Do not let a legacy numeric-barcode parser collapse values
+           such as "BT 122585", "U0030", "S00110" or "1234A" to their digit
+           fragments before the V2 identifier service sees them. */
+        if(
+            parsed &&
+            /[A-Za-z]/.test(cleaned) &&
+            !looksLikeStrongBarcode(cleaned)
+        ){
+            parsed.identifierDisplay=cleaned;
+            parsed.gtin=cleaned;
+            parsed.format="IDENTIFIER";
+            parsed.capturedCode=true;
+        }
+
 
         Logger.info(
             "Scanner parsed",

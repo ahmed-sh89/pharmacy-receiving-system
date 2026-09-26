@@ -8465,7 +8465,7 @@ function getPcNeedsReviewOrderScope(){
 function filterNeedsReviewRowsToPcScope(rows){
     const scope=getPcNeedsReviewOrderScope();
     if(scope===null) return rows||[];
-    return (rows||[]).filter(row=>scope.has(normalizeOrderNumber(row?.order_number||"")));
+    return (rows||[]).filter(row=>{const assigned=normalizeOrderNumber(row?.order_number||"");if(assigned)return scope.has(assigned);const captured=(Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean);return captured.some(order=>scope.has(order));});
 }
 
 async function refreshNeedsReviewCounters(){
@@ -8555,7 +8555,8 @@ function groupNeedsReviewRows(rows){
                 total_quantity:0,
                 photos:[],
                 master_item_name_hint:row?.master_item_name_hint||"",
-                master_item_code_hint:row?.master_item_code_hint||""
+                master_item_code_hint:row?.master_item_code_hint||"",
+                work_scope_order_numbers:[...new Set((Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean))]
             });
         }
         const group=groups.get(key);
@@ -8564,6 +8565,7 @@ function groupNeedsReviewRows(rows){
         if(row?.photo_path) group.photos.push(row.photo_path);
         if(!group.master_item_name_hint && row?.master_item_name_hint) group.master_item_name_hint=row.master_item_name_hint;
         if(!group.master_item_code_hint && row?.master_item_code_hint) group.master_item_code_hint=row.master_item_code_hint;
+        (Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean).forEach(order=>{if(!group.work_scope_order_numbers.includes(order))group.work_scope_order_numbers.push(order);});
     });
     return Array.from(groups.values()).map(group=>({
         ...group,
@@ -8814,7 +8816,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
               <div class="needsReviewResolve">
-                <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false"></label>
+                ${group.work_scope_order_numbers.length>1?`<label>${group.order_number?"Change Original Order":"Assign Original Order"}<select data-assign-order="${index}"><option value="">${group.order_number?"Change Order":"Select Order"}</option>${group.work_scope_order_numbers.map(order=>`<option value="${esc(order)}" ${order===group.order_number?"selected":""}>${esc(order)}</option>`).join("")}</select></label><small>Captured Handheld scope: ${group.work_scope_order_numbers.map(esc).join(" + ")}</small>`:""}
+                <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false" ${group.order_number?"":"disabled"}></label>
                 <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
@@ -8873,6 +8876,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
         const clearReview=overlay.querySelector(`[data-clear-review="${index}"]`);
         let selectedItem=null;
+        const assignOrder=overlay.querySelector(`[data-assign-order="${index}"]`);
+        assignOrder?.addEventListener("change",async()=>{const order=normalizeOrderNumber(assignOrder.value||"");if(!order||order===group.order_number)return;const previousOrder=group.order_number;assignOrder.disabled=true;overlay.dataset.busy="1";try{for(const row of group.rows)await nrV2AssignOrder(row.review_id,order);group.order_number=order;group.rows.forEach(row=>row.order_number=order);const orderMeta=section.querySelector(".pfnReviewMeta div:last-child b");if(orderMeta)orderMeta.textContent=order;const summaryOrder=summary.querySelector("span");if(summaryOrder)summaryOrder.textContent=`Order ${order}`;search.disabled=false;const label=assignOrder.closest("label");if(label)label.childNodes[0].textContent="Change Original Order";assignOrder.disabled=false;search.focus();showToast?.(`${previousOrder?"Original Order changed":"Original Order assigned"} — ${order}`,"success");}catch(error){assignOrder.value=previousOrder||"";assignOrder.disabled=false;showToast?.(error?.message||"Unable to assign Original Order","error");}finally{overlay.dataset.busy="";}});
 
         overlay.querySelector(`[data-copy-identifier="${index}"]`)?.addEventListener("click",async event=>{
             try{
@@ -8924,9 +8929,26 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 try{
                     const outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
                     if(outcome.pending){
-                        button.disabled=false;
-                        showToast?.("Receipt is queued. Needs Review remains pending until the server accepts this exact transaction.","warning");
-                        return;
+                        button.textContent="Processing…";
+                        /* Processing state lives on the action itself. Do not
+                           emit a second warning toast for the normal durable
+                           queue path; successful completion owns the single
+                           user-facing toast below. */
+                        const reviewIds=new Set(group.rows.map(row=>toSafeString(row?.review_id||"")).filter(Boolean));
+                        let resolved=false;
+                        for(let attempt=0;attempt<6;attempt++){
+                            await new Promise(resolve=>setTimeout(resolve,500));
+                            const pendingRows=await nrV2List(workflow,null);
+                            if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){
+                                resolved=true;
+                                break;
+                            }
+                        }
+                        if(!resolved){
+                            button.textContent="Processing — Close & reopen to refresh";
+                            showToast?.("Receipt is still processing. Do not press Link & Resolve again.","warning");
+                            return;
+                        }
                     }
                     section.remove();
                     await refreshNeedsReviewCounters();

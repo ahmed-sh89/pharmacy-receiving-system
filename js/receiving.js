@@ -763,7 +763,12 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const knownCode=normalizeItemCode(knownRecord?.itemCode||"");
         const knownName=toSafeString(knownRecord?.itemName||knownRecord?.name||knownCode);
         const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
-        const knownOrderOptions=selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("");
+        /* Needs Review attribution must stay inside this device's Receiving
+           Work Scope. Never expose pharmacy-wide Active Orders here. */
+        const reviewOrderNumbers=[...new Set(selectedOrders.map(normalizeOrderNumber).filter(Boolean))];
+        const reviewDefaultOrder=reviewOrderNumbers.length===1?reviewOrderNumbers[0]:"";
+        const reviewOrderOptions=reviewOrderNumbers.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("");
+        const knownOrderOptions=reviewOrderOptions;
         const knownBlock=knownCode ? `
           <section class="gtinSuggestedMatch">
             <span class="gtinMiniLabel">MASTER MATCH · KNOWN ITEM</span>
@@ -782,6 +787,14 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             </header>
             <div class="gtinReadout"><span>SCANNED GTIN</span><strong>${escapeHTML(gtin)}</strong></div>
             ${knownBlock}
+            <section class="gtinResolutionSection">
+              <label class="gtinResolutionLabel" for="gtinReviewOrder">Original Order</label>
+              <select id="gtinReviewOrder" data-review-order class="gtinResolutionSearch" ${reviewOrderNumbers.length?"":"disabled"}>
+                ${reviewOrderNumbers.length>1?'<option value="">Select original Order</option>':""}
+                ${reviewOrderOptions}
+              </select>
+              ${reviewOrderNumbers.length?'<small class="gtinResolutionHint">Only Orders selected on this device are available.</small>':'<small class="gtinResolutionHint">Select a Receiving Order on this device before saving to Needs Review.</small>'}
+            </section>
             <section class="gtinResolutionSection">
               <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find item in current order</label>
               <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Search item name or item code" autocomplete="off">
@@ -825,9 +838,16 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             try{
                 /* Needs Review is persisted first.  The scan panel is never used as
                    a second, local exception queue. */
+                const reviewOrder=normalizeOrderNumber(
+                    panel.querySelector("[data-review-order]")?.value || reviewDefaultOrder || ""
+                );
+                if(!reviewOrder) throw new Error("Select the original active Order before saving this scan for review.");
                 await nrV2CreateDraft({...parsed,identifierDisplay:gtin},{
                     workflow:"RECEIVING",
-                    reason:knownCode?"KNOWN_NOT_IN_ORDER":"UNKNOWN_IDENTIFIER"
+                    reason:knownCode?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",
+                    itemCode:knownCode||"",
+                    itemName:knownName||"",
+                    orderNumber:reviewOrder
                 });
                 if(typeof refreshNeedsReviewCounters==="function") await refreshNeedsReviewCounters();
                 finish(true);
