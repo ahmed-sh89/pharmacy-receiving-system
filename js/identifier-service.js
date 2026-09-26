@@ -55,13 +55,20 @@ const IdentifierService={
         return toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     },
     async learnIdentifier(operationId,identifierDisplay,item,reason){
-        if(this.isReferencePharmacy()){
-            await this.addIdentifier(operationId,identifierDisplay,item?.itemCode||item?.item_code,reason);
-        }
-        return this.addPharmacyIdentifier(
-            globalThis.crypto?.randomUUID?.()||operationId,
-            identifierDisplay,item,reason
-        );
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        if(!globalThis.crypto?.randomUUID) throw new Error("This browser cannot create a secure operation ID");
+        const result=await authRpc("learn_pharmflow_identifier_v1",{
+            p_global_operation_id:operationId,
+            p_pharmacy_operation_id:globalThis.crypto.randomUUID(),
+            p_pharmacy_id:pharmacyId,
+            p_identifier_display:toSafeString(identifierDisplay),
+            p_item_code:toSafeString(item?.itemCode||item?.item_code),
+            p_item_name:toSafeString(item?.itemName||item?.item_name),
+            p_reason:toSafeString(reason)
+        });
+        const row=Array.isArray(result)?result[0]:result;
+        return row?.pharmacyMapping||row?.pharmacy_mapping||row;
     }
 };
 window.IdentifierService=IdentifierService;
