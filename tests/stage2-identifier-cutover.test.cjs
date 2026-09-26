@@ -259,3 +259,23 @@ test("alphanumeric scanner identifiers preserve exact identity before V2 resolut
     assert.ok(/[A-Za-z]/.test(identifier),identifier);
   }
 });
+
+
+test('Global Identifier writes use the authoritative reference-pharmacy gate',()=>{
+  const migration=read('PHASE2C1159_HHP084_GLOBAL_IDENTIFIER_AUTH.sql');
+  assert.match(migration,/HHP084/);
+  assert.match(migration,/pm\.active is true/);
+  assert.match(migration,/p\.active is true/);
+  assert.match(migration,/p\.status = 'active'/);
+  for(const rpc of [
+    'add_pharmflow_global_identifier_v2',
+    'correct_pharmflow_global_identifier_v2',
+    'remove_pharmflow_global_identifier_v2',
+    'create_pharmflow_global_item_v2'
+  ]){
+    const start=migration.indexOf('function public.'+rpc);
+    assert.notEqual(start,-1,rpc);
+    const body=migration.slice(start,migration.indexOf('end $$;',start)+7);
+    assert.match(body,/pharmflow_is_reference_master_admin_v1\(\)/,rpc);
+  }
+});
