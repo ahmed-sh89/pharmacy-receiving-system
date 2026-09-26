@@ -744,6 +744,39 @@ function bindSmartScanSelectionControls(){
    SMART SEARCH INPUT
 ===================================================== */
 
+function getReceivingSearchProjection(){
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
+        : [];
+    if(typeof getPerOrderReceivingRows!=="function"||!selectedOrders.length){
+        return typeof getSearchableItems==="function" ? getSearchableItems() : [];
+    }
+
+    const byCode=new Map();
+    selectedOrders.forEach(order=>{
+        getPerOrderReceivingRows(order).forEach(row=>{
+            const code=toSafeString(row["Item Number"]||"").trim();
+            if(!code) return;
+            const key=normalizeItemCode(code);
+            const current=byCode.get(key)||{
+                itemCode:code,
+                itemName:toSafeString(row["Item Name"]||""),
+                orderedQty:0,
+                receivedQty:0,
+                remainingQty:0,
+                orderNumbers:[],
+                manual:row.issueKey==="manual"
+            };
+            current.orderedQty+=toNumber(row["Ordered Qty"],0);
+            current.receivedQty+=toNumber(row["Received Qty"],0);
+            current.remainingQty+=Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0));
+            if(!current.orderNumbers.includes(order)) current.orderNumbers.push(order);
+            byCode.set(key,current);
+        });
+    });
+    return [...byCode.values()];
+}
+
 function handleSmartScanSearchInput(
     searchText
 ){
@@ -764,7 +797,7 @@ function handleSmartScanSearchInput(
 
     const results =
         searchItems(
-            getSearchableItems(),
+            getReceivingSearchProjection(),
             query,
             APP_CONFIG
                 .receiving
