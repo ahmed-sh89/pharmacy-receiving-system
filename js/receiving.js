@@ -874,11 +874,32 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         })();
         const normalized=value=>toSafeString(value).toLowerCase().replace(/\s+/g," ").trim();
         const drawSelection=()=>{
-            if(!selectedItem){selection.hidden=true;selection.innerHTML="";return;}
-            const plan=buildReceivingAutoAllocationPlan(selectedItem,getValidReceivingQuantity(parsed?.quantity),selectedOrders);
+            if(!selectedItem){
+                selection.hidden=true;selection.innerHTML="";
+                search.closest(".gtinResolutionSection")?.classList.remove("hasSelectedItem");
+                search.hidden=false;results.hidden=false;
+                return;
+            }
+            const quantity=getValidReceivingQuantity(parsed?.quantity);
+            const plan=buildReceivingAutoAllocationPlan(selectedItem,quantity,selectedOrders);
             const totalOrders=new Set(plan.map(row=>row.orderNumber)).size;
+            const orderRows=selectedOrders.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(selectedItem.itemCode)));
+            const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
+            const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
+            const remaining=Math.max(0,ordered-received);
+            const afterReceived=received+quantity;
+            const afterRemaining=Math.max(0,ordered-afterReceived);
+            search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
+            search.hidden=true;results.hidden=true;
             selection.hidden=false;
-            selection.innerHTML=`<div class="gtinSelectedItem"><span>SELECTED ITEM</span><strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small><small>${getValidReceivingQuantity(parsed?.quantity)} unit${getValidReceivingQuantity(parsed?.quantity)===1?"":"s"} → ${totalOrders} active Order${totalOrders===1?"":"s"}</small></div><button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
+            selection.innerHTML=`<div class="gtinSelectedItem gtinSelectedItemExpanded">
+              <div class="gtinSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-change-item>Change Item</button></div>
+              <strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small>
+              <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div><span>Remaining</span><b>${remaining}</b></div></div>
+              <div class="gtinAllocationSummary"><b>After this scan: ${afterReceived} / ${ordered} received · ${afterRemaining} remaining</b><span>Auto-allocated across ${totalOrders} active Order${totalOrders===1?"":"s"}</span></div>
+              <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${escapeHTML(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
+            </div><button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
+            selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
             selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
                 const button=event.currentTarget;button.disabled=true;
                 try{
@@ -906,7 +927,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 }
             }
             results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in this device\'s active Orders.</div>';
-            results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.i)]||null;results.querySelectorAll("button").forEach(row=>row.classList.toggle("selected",row===button));drawSelection();}));
+            results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.i)]||null;drawSelection();}));
         };
         search.addEventListener("input",()=>{
             if(searchFrame)cancelAnimationFrame(searchFrame);
