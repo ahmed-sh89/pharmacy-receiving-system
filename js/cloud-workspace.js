@@ -1142,15 +1142,14 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
                 PharmFlowCloudWorkspace.hydratedPharmacyId=
                     pharmacyId;
 
-                /* Manifest hydration establishes a fresh authoritative browser
-                   workspace. Rebuild its bounded Receiving ledger once before
-                   resuming delta polling. Runtime cursors must never cause
-                   durable transactions that predate a client fix/reload to be
-                   permanently invisible. */
-                PharmFlowCloudWorkspace.receivingCursorCreatedAt=null;
-                PharmFlowCloudWorkspace.receivingCursorTransactionId=null;
-                PharmFlowCloudWorkspace.receivingBootstrapComplete=false;
-                await pullCloudWorkspaceTransactions();
+                /* Active Order Manifest is structural authority only.
+                   Do NOT hydrate the Receiving ledger here: startup may still
+                   apply the legacy Cloud Workspace snapshot immediately after
+                   this bootstrap. Hydrating transactions before that snapshot
+                   makes durable Extra Items appear briefly and then disappear.
+                   restoreCloudWorkspaceOnLogin() performs the single bounded
+                   authoritative ledger bootstrap after all workspace structure
+                   has settled, then normal delta sync resumes. */
 
                 setCloudWorkspaceStatus(
                     "synced",
