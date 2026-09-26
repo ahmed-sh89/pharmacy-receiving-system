@@ -8585,13 +8585,26 @@ function nrV2HasTransactionId(transactionId){
 
 async function nrV2ResolveGroupToOrderItem(group,item){
     const transactionId=nrV2GroupTransactionId(group);
-    /* Needs Review learns only in the current pharmacy. Global Master changes
-       remain a deliberate System Owner administration operation elsewhere. */
+    /* Reference pharmacy rule:
+       HHP084 learns unresolved identifiers into the Global Master.
+       Every other pharmacy learns only inside its own pharmacy scope.
+       Receiving provenance still uses a pharmacy mapping so the durable
+       learned-receipt queue keeps its existing atomic/idempotent contract. */
     let pharmacyMapping=null;
     if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()){
         const first=group.rows[0];
         const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
         if(identifier){
+            const referencePharmacy=
+                toSafeString(AuthState?.context?.pharmacy_code)
+                    .trim()
+                    .toUpperCase()==="HHP084";
+            if(referencePharmacy){
+                await IdentifierService.addIdentifier(
+                    nrV2OperationId(),identifier,item?.itemCode||item?.item_code,
+                    "Needs Review resolution"
+                );
+            }
             const mappingResult=await IdentifierService.addPharmacyIdentifier(
                 nrV2OperationId(),identifier,item,"Needs Review resolution"
             );
