@@ -7912,7 +7912,26 @@ function getScopedOrderItems(){
 
 function getKpiPanelItems(key){
     const items=getScopedOrderItems();
-    if(key==="total") return items.slice();
+    if(key==="total"){
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+        if(typeof getPerOrderReceivingRows==="function" && selectedOrders.length){
+            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+                orderNumber:order,
+                orderNumbers:[order],
+                itemCode:row["Item Number"],
+                itemName:row["Item Name"],
+                orderedQty:toNumber(row["Ordered Qty"],0),
+                receivedQty:toNumber(row["Received Qty"],0),
+                remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
+                status:row["Issue Type"],
+                manual:row.issueKey==="manual",
+                group_name:row["Group"]||"",
+                category:row["Category"]||"",
+                sub_category:row["Sub Category"]||""
+            })));
+        }
+        return items.slice();
+    }
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
     const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
         orderNumber:order,
@@ -8250,10 +8269,16 @@ function renderItemBrowser(body, rows, options={}){
         return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
-        const q=toSafeString(input?.value||'').trim().toLowerCase();
+        const q=typeof normalizeReceivingSearchText==="function"
+            ? normalizeReceivingSearchText(input?.value||"")
+            : toSafeString(input?.value||"").trim().toLowerCase();
         const currentRows=orderMode?getKpiPanelItems("total"):rows;
         applyPendingItemPrioritySelections();
-        let visible=currentRows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
+        let visible=currentRows.filter(item=>!q||(
+            typeof matchesReceivingSearch==="function"
+                ? matchesReceivingSearch(item,q)
+                : toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q)
+        ));
         const selectedOrder=orderFilter?.value||'ALL';
         if(orderMode&&selectedOrder!=='ALL') visible=visible.filter(item=>(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).includes(selectedOrder));
         if(orderMode&&window.PharmFlowClassificationFilters){
