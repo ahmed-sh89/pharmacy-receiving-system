@@ -8350,7 +8350,7 @@ function renderItemBrowser(body, rows, options={}){
         const key=rowKey(item);
         const selected=key===selectedRowKey;
         const rowAttributes=`class="pfnMobileItemCard${selected?' pfnBrowserRowSelected':''}" data-row-key="${esc(key)}" tabindex="0" aria-selected="${selected?'true':'false'}"`;
-        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number"><span class="pfnItemCodeValue">${esc(item.itemCode)}</span><button type="button" class="pfnCopyItemCode" data-copy-code="${esc(item.itemCode)}" title="Copy item code" aria-label="Copy item code"><span>⧉</span></button></td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
         return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
@@ -8382,6 +8382,11 @@ function renderItemBrowser(body, rows, options={}){
             const colspan=orderMode?6:(receivedMode?4:3);
             tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
         }
+        tbody.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async event=>{
+            event.preventDefault();event.stopPropagation();
+            const code=toSafeString(btn.dataset.copyCode||"").trim();if(!code)return;
+            try{await navigator.clipboard.writeText(code);const icon=btn.querySelector('span');btn.classList.add('copied');if(icon)icon.textContent='✓';setTimeout(()=>{if(!btn.isConnected)return;btn.classList.remove('copied');if(icon)icon.textContent='⧉';},1400);}catch(error){console.warn('Item code copy failed',error);}
+        });
         tbody.querySelectorAll('[data-mark]').forEach(btn=>btn.onclick=async()=>{
             const item=typeof getItemByCode==='function'?getItemByCode(btn.dataset.code):null;if(!item)return;
             const previousType=getEffectiveItemPriority(item);
@@ -8396,13 +8401,14 @@ function renderItemBrowser(body, rows, options={}){
                 mark.classList.toggle('new',active&&nextType==='NEW');
             });
             const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;
-            const saved=await queueItemPrioritySelection(item,nextType);
-            /* Redraw immediately from the same authoritative priority state.
-               This keeps the row, filter and persisted state in agreement on
-               the first click instead of waiting for a later interaction. */
-            draw();
-            const finalWrap=body.querySelector('.phase263TableWrap');
-            if(finalWrap) finalWrap.scrollTop=top;
+            queueItemPrioritySelection(item,nextType);
+            /* The button state above is the immediate UI authority. Persistence is queued
+               independently, so a network/save round-trip never delays the first-click feedback. */
+            if(priorityOnly&& !nextType){
+                draw();
+                const finalWrap=body.querySelector('.phase263TableWrap');
+                if(finalWrap) finalWrap.scrollTop=top;
+            }
         });
     };
     const selectBrowserRow=row=>{
