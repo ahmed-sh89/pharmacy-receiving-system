@@ -1854,3 +1854,21 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
 @media(max-width:1100px){#page-settings .barcodeManagementLookup{grid-template-columns:minmax(220px,1fr) auto}}
 @media(max-width:600px){#page-settings .barcodeManagementLookup{grid-template-columns:1fr}}
 
+
+/* Receiving correction/history — PharmFlow controls, never browser defaults. */
+.gtinResolverQtyLabel{display:flex!important;align-items:center!important;gap:10px!important;margin-top:10px!important;color:#315b7d!important;font-size:11px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.04em!important}
+.gtinResolverQtyInput{width:86px!important;height:38px!important;box-sizing:border-box!important;border:1px solid #9dbbd4!important;border-radius:9px!important;background:#fff!important;color:#123f69!important;padding:0 10px!important;font-size:16px!important;font-weight:900!important;outline:none!important;box-shadow:0 1px 2px rgba(20,61,95,.05)!important}
+.gtinResolverQtyInput:focus{border-color:#397db5!important;box-shadow:0 0 0 3px rgba(57,125,181,.14)!important}
+body:not(.zebraDevice) .pfnActivityToolbar{display:grid!important;grid-template-columns:minmax(320px,1fr) 180px 180px!important;gap:10px!important;align-items:end!important;margin:0 0 12px!important}
+body:not(.zebraDevice) .pfnActivityToolbar label{display:grid!important;gap:5px!important;color:#31536f!important;font-size:10px!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.04em!important}
+body:not(.zebraDevice) .pfnActivityToolbar input,body:not(.zebraDevice) .pfnActivityToolbar select{width:100%!important;height:40px!important;box-sizing:border-box!important;border:1px solid #9fbad5!important;border-radius:9px!important;background:#fff!important;color:#173f67!important;padding:0 11px!important;font-size:13px!important;font-weight:700!important;outline:none!important}
+body:not(.zebraDevice) .pfnActivityToolbar input:focus,body:not(.zebraDevice) .pfnActivityToolbar select:focus{border-color:#397db5!important;box-shadow:0 0 0 3px rgba(57,125,181,.13)!important}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(1){width:12%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(2){width:20%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(3){width:9%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(4){width:12%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(5){width:9%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(6){width:9%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(7){width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(8){width:11%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(9){width:8%}
