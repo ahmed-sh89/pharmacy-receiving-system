@@ -2255,10 +2255,27 @@ function renderReceivingDifference(orderedQty,receivedQty){
    RECEIVING TABLE
 ===================================================== */
 
+function normalizeReceivingSearchText(value){
+    return toSafeString(value||"")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g," ")
+        .trim()
+        .replace(/\s+/g," ");
+}
+
+function matchesReceivingSearch(item,query){
+    const terms=normalizeReceivingSearchText(query).split(" ").filter(Boolean);
+    if(!terms.length) return true;
+    const haystack=normalizeReceivingSearchText(
+        [item?.itemCode,item?.itemName].filter(Boolean).join(" ")
+    );
+    return terms.every(term=>haystack.includes(term));
+}
+
 function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
     const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]);
-    const searchFilter=toSafeString(UI.receivingFilters.search||"").trim().toLowerCase();
+    const searchFilter=normalizeReceivingSearchText(UI.receivingFilters.search||"");
     const active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
     let rows=[];
@@ -2276,18 +2293,14 @@ function refreshReceivingTable(){
         });
     }
     if(window.PharmFlowClassificationFilters) rows=window.PharmFlowClassificationFilters.filter(rows,UI.receivingFilters.classification||{});
-    if(searchFilter) rows=rows.filter(item=>toSafeString(item.itemName||"").toLowerCase().includes(searchFilter)||toSafeString(item.itemCode||"").toLowerCase().includes(searchFilter));
+    if(searchFilter) rows=rows.filter(item=>matchesReceivingSearch(item,searchFilter));
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
     if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>';return;}
     if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>';return;}
     rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
-    if(inline){
-        if(searchFilter&&rows.length){const item=rows[0],order=item.orderNumber||((Array.isArray(item.orderNumbers)&&item.orderNumbers[0])||"—"),cl=window.PharmFlowClassificationFilters?.normalize(item)||{};
-            inline.hidden=false;inline.innerHTML=`<div class="pfnInlineRow"><span>${escapeHTML(order)}</span><b>${escapeHTML(item.itemCode||"")}</b><strong>${escapeHTML(item.itemName||"")}</strong><span>${escapeHTML(cl.group||"—")}</span><span>Ordered <b>${toNumber(item.orderedQty,0)}</b></span><div class="tableQtyControl"><button type="button" class="tableQtyButton" data-inline-minus>−</button><button type="button" class="tableQtyValue" data-inline-edit>${toNumber(item.receivedQty,0)}</button><button type="button" class="tableQtyButton" data-inline-plus>+</button></div><span>Difference ${renderReceivingDifference(item.orderedQty,item.receivedQty)}</span><span>${escapeHTML(item.status||"")}</span></div>`;
-            inline.querySelector('[data-inline-plus]')?.addEventListener('click',()=>increaseItemQuantity(item.itemCode,1));inline.querySelector('[data-inline-minus]')?.addEventListener('click',()=>decreaseItemQuantity(item.itemCode,1));inline.querySelector('[data-inline-edit]')?.addEventListener('click',()=>openQuantityEditPrompt(item));
-        }else{inline.hidden=true;inline.innerHTML="";}
-    }
+    if(inline){ inline.hidden=true; inline.innerHTML=""; }
+
 }
 function refreshReceivingCategoryFilter(){
     const host=document.getElementById("receivingClassificationFilters");if(!host||!window.PharmFlowClassificationFilters)return;
