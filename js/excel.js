@@ -205,11 +205,11 @@ async function handleOrderFileSelection(event){
         /* Every non-duplicate selected file must now exist in the local batch
            before any manifest write. This turns silent partial imports into a
            safe rollback instead of presenting an incomplete order set. */
-        const expectedImportedFiles=preparedFiles.length-duplicateFiles;
+        const expectedImportedFiles=preparedFiles.length;
         if(importedFiles!==expectedImportedFiles){
             throw new Error(
                 "Batch import was incomplete ("+importedFiles+" of "+
-                expectedImportedFiles+" new order files staged). No partial batch will be kept."
+                expectedImportedFiles+" selected order files staged). No partial batch will be kept."
             );
         }
 
@@ -612,18 +612,12 @@ async function importOrderFile(file, preflightMeta = null, preloadedWorkbook = n
         file
     );
 
-    if(
-        isFileAlreadyImported(
-            "order",
-            file
-        )
-    ){
-
-        result.duplicateFile =
-            true;
-
-        return result;
-    }
+    /* Order identity is the validated Order Number, not browser file
+       metadata. handleOrderFileSelection() already rejects duplicate Order
+       Numbers within the selected batch and checks the server lifecycle before
+       any local mutation. A second name/size/lastModified gate here can turn
+       one multi-file selection into a silently partial import, so it must not
+       participate in the authoritative Order path. */
 
     const workbook =
         preloadedWorkbook ||
