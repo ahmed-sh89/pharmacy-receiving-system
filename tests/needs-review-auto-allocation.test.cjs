@@ -1,0 +1,18 @@
+"use strict";
+const fs=require("fs");
+const assert=require("assert");
+const ui=fs.readFileSync("ui.js","utf8");
+const receiving=fs.readFileSync("js/receiving.js","utf8");
+const review=fs.readFileSync("js/needs-review.js","utf8");
+const migration=fs.readFileSync("PHASE2C1161_NEEDS_REVIEW_AUTO_ALLOCATION.sql","utf8");
+assert(!ui.includes("data-assign-order"),"manual Needs Review Order selector must stay removed");
+assert(ui.includes("return findReceivingResolverMatches(query,searchIndex,8)"));
+assert(ui.includes("const searchIndex=getResolverSearchIndex(group)"));
+assert(receiving.includes("function buildReceivingAutoAllocationPlan"));\nassert(receiving.includes("function buildReceivingResolverSearchIndex"));\nassert(receiving.includes("function buildReceivingResolverSelectionModel"));\nassert(receiving.includes("function renderReceivingResolverSelectedCard"));\nassert(ui.includes("renderReceivingResolverSelectedCard(model,esc"));
+assert(receiving.includes("if(left>0)"));
+assert(receiving.includes("allowOverReceiving"));
+assert(receiving.includes("receiveAutoAllocatedItem({item:selectedItem"));
+assert(review.includes("request_pharmflow_needs_review_resolution_v5"));
+assert(migration.includes("p_allocations jsonb"));
+assert(migration.includes("ORDER_OUTSIDE_CAPTURED_WORK_SCOPE"));
+console.log("Needs Review auto allocation static guards: PASS");

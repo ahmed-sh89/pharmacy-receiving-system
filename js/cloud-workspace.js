@@ -1142,7 +1142,14 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
                 PharmFlowCloudWorkspace.hydratedPharmacyId=
                     pharmacyId;
 
-                await pullCloudWorkspaceTransactions();
+                /* Active Order Manifest is structural authority only.
+                   Do NOT hydrate the Receiving ledger here: startup may still
+                   apply the legacy Cloud Workspace snapshot immediately after
+                   this bootstrap. Hydrating transactions before that snapshot
+                   makes durable Extra Items appear briefly and then disappear.
+                   restoreCloudWorkspaceOnLogin() performs the single bounded
+                   authoritative ledger bootstrap after all workspace structure
+                   has settled, then normal delta sync resumes. */
 
                 setCloudWorkspaceStatus(
                     "synced",
@@ -1570,8 +1577,14 @@ function mergeCloudReceivingLedger(rows){
            The Active Order Manifest is sufficient as long as the item exists.
         */
         const item=getItemByCode(tx.itemCode);
+        const txOrder=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||"");
+        const activeOrders=getActiveReceivingOrderSetForCloud();
 
-        if(!item){
+        /* An Extra Item is intentionally absent from the uploaded Order.
+           Keep its durable ledger row when it belongs to an active Order so
+           reports/KPIs can reconstruct it after refresh without inventing a
+           transient workspace item or writing another transaction. */
+        if(!item && (!txOrder || (activeOrders.size && !activeOrders.has(txOrder)))){
             continue;
         }
 

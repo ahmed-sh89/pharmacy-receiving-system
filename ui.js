@@ -897,7 +897,7 @@ function renderSmartScanSearchResults(
             const remove=document.createElement("button");
             remove.type="button";
             remove.className="secondaryButton removeManualSearchButton";
-            remove.textContent="Remove Manual Item";
+            remove.textContent="Remove Extra Item";
             remove.style.flex="0 0 auto";
             remove.addEventListener("click",function(event){
                 event.preventDefault();
@@ -1734,7 +1734,7 @@ function refreshHeader(){
                 : "";
 
         if(hasActiveOrder && activeOrders.length && picker){
-            orderLabel.hidden=true;
+            if(orderLabel) orderLabel.hidden=true;
             picker.hidden=false;
 
             const allSelected=
@@ -1796,7 +1796,7 @@ function refreshHeader(){
             }
         }else{
             if(picker) picker.hidden=true;
-            orderLabel.hidden=false;
+            if(orderLabel) orderLabel.hidden=false;
 
             setElementText(
                 orderLabel,
@@ -2220,7 +2220,7 @@ function refreshReceivingIssueFilterLabel(){
     const label=document.getElementById("receivingIssueFilterLabel");
     if(!label){ return; }
     const set=UI.receivingFilters.issues instanceof Set ? UI.receivingFilters.issues : new Set();
-    const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Manual Extra"};
+    const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Extra Item"};
     const discrepancyKeys=["not_received","partial","over","manual"];
     const allDiscrepancies=discrepancyKeys.every(key=>set.has(key));
     if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All selected"; return; }
@@ -4091,7 +4091,7 @@ function renderGlobalSearchResults(searchText){
             remove.className = "secondaryButton removeManualSearchButton";
             remove.style.marginLeft = "10px";
             remove.style.padding = "7px 10px";
-            remove.textContent = "Remove Manual Item";
+            remove.textContent = "Remove Extra Item";
             remove.addEventListener("click", function(event){
                 event.preventDefault();
                 event.stopPropagation();
@@ -4160,7 +4160,7 @@ function openSearchedItemReview(item){
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
               <button type="button" id="btnSearchedAdjust" class="primaryButton">Adjust Received Qty</button>
               <button type="button" id="btnSearchedActivity" class="secondaryButton">View Activity</button>
-              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Manual Item</button>
+              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Extra Item</button>
             </div>
             <div id="searchedReviewCorrection" hidden>
               <label class="quantityAdjustmentLabel" for="searchedReviewCorrectionInput">Correct total received to</label>
@@ -4207,12 +4207,12 @@ function openSearchedItemReview(item){
         removeManualButton.onclick=()=>{
             const current=getItemByCode(modal.dataset.itemCode);
             if(!current || current.manual!==true || toNumber(current.receivedQty,0)!==0){
-                showToast("Set the manual item quantity to zero first","warning");
+                showToast("Set the extra item quantity to zero first","warning");
                 return;
             }
             showConfirmModal(
-                "Remove Manual Item",
-                "Remove this manually-added item from the current receiving workspace? It will no longer appear in Search or reports.",
+                "Remove Extra Item",
+                "Remove this extra item from the current receiving workspace? It will no longer appear in Search or reports.",
                 ()=>{
                     if(deleteManualItem(current.itemCode)){
                         closeSearchedItemReview();
@@ -7991,7 +7991,7 @@ function kpiTitle(key){
         remaining:"Remaining Items",
         remainingItems:"Remaining Items",
         over:"Over Received",
-        manual:"Manual / Unordered Extras",
+        manual:"Extra Items",
         scans:"Receiving Activity History",
         received:"Received Items — Any Quantity"
     })[key]||"Dashboard Details";
@@ -8095,7 +8095,7 @@ function getGroupedReceivingActivityRows(){
 function getActivitySourceLabel(source){
     const value=toSafeString(source||"").toUpperCase();
     if(value.includes("UNDO")||value.includes("CORRECTION")) return "Correction";
-    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Manual Item";
+    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Extra Item";
     if(value.includes("SCAN")) return "Scanner";
     if(value.includes("SEARCH")) return "Manual Quantity";
     if(value.includes("MANUAL")||value.includes("EDIT")||value.includes("ADJUST")) return "Manual Quantity";
@@ -8467,7 +8467,7 @@ function renderDashboardKpiPanel(key,body){
     if(key==="scans"){
         const allRows=getGroupedReceivingActivityRows();
         if(!allRows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
-        body.innerHTML=`<div class="pfnActivityControls"><label for="pfnActivitySourceFilter">Source</label><select id="pfnActivitySourceFilter"><option value="All">All</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Manual</option><option value="Correction">Correction</option></select></div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Recent Action Qty</th><th>Source</th><th>Order Number</th><th>Action</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
+        body.innerHTML=`<div class="pfnActivityControls"><label for="pfnActivitySourceFilter">Source</label><select id="pfnActivitySourceFilter"><option value="All">All</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Extra Item / Manual Adjustment</option><option value="Correction">Correction</option></select></div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Recent Action Qty</th><th>Source</th><th>Order Number</th><th>Action</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
         const tbody=body.querySelector("[data-activity-rows]");
         const sourceFilter=body.querySelector("#pfnActivitySourceFilter");
         const draw=()=>{
@@ -8567,33 +8567,12 @@ function ensureNeedsReviewButtons(){
 }
 
 
-function nrV2FindOrderMatches(query,originalOrderNumber=""){
-    const q=toSafeString(query).trim().toLowerCase();
-    const original=normalizeOrderNumber(originalOrderNumber||"");
-    /* Needs Review resolves against its immutable source Order, never the
-       order presently selected in this browser's Device Work Scope. */
-    const source=original&&typeof getPerOrderReceivingRows==="function"
-        ? getPerOrderReceivingRows(original).map(row=>({
-            itemCode:row["Item Number"]||"",
-            itemName:row["Item Name"]||"",
-            orderedQty:row["Ordered Qty"],
-            receivedQty:row["Received Qty"],
-            remainingQty:row["Remaining Qty"],
-            orderNumber:original,
-            orderNumbers:[original]
-        }))
-        : (typeof getScopedOrderItems==="function"
-            ? getScopedOrderItems()
-            : (AppState?.workspace?.orderData||[]));
-
-    if(!q) return source.slice(0,20);
-
-    return source.filter(item=>
-        toSafeString(item?.itemCode).toLowerCase().includes(q) ||
-        toSafeString(item?.itemName).toLowerCase().includes(q)
-    ).slice(0,20);
+function nrV2BuildSearchIndex(workScopeOrderNumbers=[]){
+    return buildReceivingResolverSearchIndex(workScopeOrderNumbers);
 }
-
+function nrV2FindOrderMatches(query,searchIndex=[]){
+    return findReceivingResolverMatches(query,searchIndex,8);
+}
 async function nrV2HydratePhoto(img,path){
     if(!img || !path) return;
 
@@ -8614,7 +8593,9 @@ function groupNeedsReviewRows(rows){
         const gtin=toSafeString(row?.identifier_display||row?.gtin||"").trim();
         const order=toSafeString(row?.order_number||"").trim();
         const reason=toSafeString(row?.review_reason||"UNKNOWN_GTIN").trim();
-        const key=[gtin,order,reason].join("|");
+        const capturedScope=[...new Set((Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean))].sort();
+        if(order&&!capturedScope.includes(normalizeOrderNumber(order))) capturedScope.push(normalizeOrderNumber(order));
+        const key=[gtin,reason,capturedScope.join("+")].join("|");
         if(!groups.has(key)){
             groups.set(key,{
                 key,
@@ -8647,64 +8628,68 @@ function groupNeedsReviewRows(rows){
 
 function nrV2GroupTransactionId(group){
     const safe=value=>toSafeString(value||"").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"").slice(0,42);
-    return `NEEDS_REVIEW_GROUP_${safe(group?.order_number||"ALL")}_${safe(group?.gtin||"UNKNOWN")}`;
+    return `NEEDS_REVIEW_GROUP_${safe(group?.gtin||"UNKNOWN")}`;
 }
 
 function nrV2HasTransactionId(transactionId){
     return (AppState?.workspace?.receivingHistory||[]).some(tx=>toSafeString(tx?.transactionId||"")===transactionId);
 }
 
-async function nrV2ResolveGroupToOrderItem(group,item){
-    const transactionId=nrV2GroupTransactionId(group);
-    /* Reference pharmacy rule:
-       HHP084 learns unresolved identifiers into the Global Master.
-       Every other pharmacy learns only inside its own pharmacy scope.
-       Receiving provenance still uses a pharmacy mapping so the durable
-       learned-receipt queue keeps its existing atomic/idempotent contract. */
-    let pharmacyMapping=null;
-    if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()){
-        const first=group.rows[0];
-        const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
-        if(identifier){
-            const mappingResult=await IdentifierService.learnIdentifier(
-                nrV2OperationId(),identifier,item,"Needs Review resolution"
-            );
-            pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
-        }
-    }
-    const intentResults=[];
-    for(const row of group.rows){
-        const result=await nrV2RequestResolution(row,item,transactionId);
-        const intent=Array.isArray(result)?result[0]:result;
-        if(intent?.status==="BLOCKED"||intent?.blocked){
-            throw new Error(intent?.detail||intent?.message||"The original Order is unavailable; this Needs Review case was not reassigned.");
-        }
-        intentResults.push(intent);
-    }
-    if(!nrV2HasTransactionId(transactionId)){
-        const tx=receiveOrderItem({
-            item,
-            quantity:Math.max(1,Number(group.total_quantity||1)||1),
-            gtin:group.gtin,
-            source:APP_CONFIG.transactionSources.scanner,
-            manual:false,
-            targetOrder:group.order_number||"",
-            transactionId,
-            identifierPreserveExact:true,
-            gtinResolution:pharmacyMapping ? {
-                kind:"PHARMACY_LEARNED",
-                mappingId:pharmacyMapping.identifierId,
-                mappingRevision:pharmacyMapping.mappingRevision,
-                identifierDisplay:pharmacyMapping.identifierDisplay,
-                identifierKey:pharmacyMapping.identifierKey,
-                resolvedItemCode:pharmacyMapping.itemCode
-            } : null
-        });
-        if(!tx) throw new Error("Unable to apply reviewed quantity");
-    }
-    return {pending:intentResults.some(result=>result?.status!=="RESOLVED"),transactionId};
+function nrV2AllocationScope(group){
+    const captured=[...new Set((group?.work_scope_order_numbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+    if(captured.length) return captured;
+    const legacy=normalizeOrderNumber(group?.order_number||"");
+    return legacy?[legacy]:[];
 }
 
+function nrV2AllocationPreview(group,item){
+    const plan=buildReceivingAutoAllocationPlan(item,Math.max(1,Number(group?.total_quantity||1)||1),nrV2AllocationScope(group));
+    return {plan,orderCount:new Set(plan.map(row=>row.orderNumber)).size};
+}
+
+async function nrV2ResolveGroupToOrderItem(group,item){
+    const scope=nrV2AllocationScope(group);
+    if(!scope.length) throw new Error("Captured Receiving work scope is unavailable.");
+    const identifier=toSafeString(group?.rows?.[0]?.identifier_display||group?.rows?.[0]?.gtin||group?.gtin).trim();
+    let pharmacyMapping=null;
+    if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()&&identifier){
+        const mappingResult=await IdentifierService.learnIdentifier(nrV2OperationId(),identifier,item,"Needs Review resolution");
+        pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
+    }
+    const resolution=pharmacyMapping?{
+        kind:"PHARMACY_LEARNED",
+        mappingId:pharmacyMapping.identifierId,
+        mappingRevision:pharmacyMapping.mappingRevision,
+        identifierDisplay:pharmacyMapping.identifierDisplay,
+        identifierKey:pharmacyMapping.identifierKey,
+        resolvedItemCode:pharmacyMapping.itemCode
+    }:null;
+    const remainingState=new Map();
+    for(const order of getReceivingAutoAllocationCandidates(item,scope)){
+        const row=getReceivingOrderRow(item,order);
+        remainingState.set(normalizeOrderNumber(order),Math.max(0,toNumber(row?.["Remaining Qty"],toNumber(row?.["Ordered Qty"],0)-toNumber(row?.["Received Qty"],0))));
+    }
+    const intents=[];
+    for(const row of group.rows){
+        const quantity=Math.max(1,Number(row?.pending_quantity||1)||1);
+        const plan=buildReceivingAutoAllocationPlan(item,quantity,scope,remainingState);
+        const baseId=typeof nrV2ResolutionTransactionId==="function"?nrV2ResolutionTransactionId(row.review_id):`NEEDS_REVIEW_V2:${row.review_id}`;
+        const allocations=plan.map((allocation,index)=>({
+            orderNumber:allocation.orderNumber,
+            quantity:allocation.quantity,
+            transactionId:plan.length===1?baseId:`${baseId}:A${index+1}`
+        }));
+        const requested=await nrV2RequestResolution(row,item,baseId,allocations);
+        const intent=Array.isArray(requested)?requested[0]:requested;
+        if(intent?.status==="BLOCKED"||intent?.blocked) throw new Error(intent?.detail||intent?.message||intent?.code||"Needs Review allocation was blocked.");
+        intents.push(intent);
+        receiveAutoAllocatedItem({
+            item,quantity,plan,transactionId:baseId,gtin:identifier,
+            source:APP_CONFIG.transactionSources.scanner,identifierPreserveExact:true,gtinResolution:resolution
+        });
+    }
+    return {pending:intents.some(result=>result?.status!=="RESOLVED"),transactionId:nrV2GroupTransactionId(group)};
+}
 function nrV2ItemMetrics(item){
     const ordered=toNumber(item?.orderedQty,0);
     const received=toNumber(item?.receivedQty,0);
@@ -8871,14 +8856,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Find the item once. PharmFlow will allocate the quantity to the correct active Orders automatically.</p></div>
           <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
               <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false" aria-controls="needsReviewCase-${index}">
-                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>Order ${esc(group.order_number||"Needs assignment")}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
+                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>${group.work_scope_order_numbers.length} Active Order${group.work_scope_order_numbers.length===1?"":"s"}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
               </button>
               <div class="needsReviewCaseDetail" id="needsReviewCase-${index}" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
@@ -8888,14 +8873,15 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                   <div class="important"><span>Quantity</span><b>${group.total_quantity}</b></div>
                   <div class="important"><span>Entries</span><b>${group.rows.length}</b></div>
                   <div><span>Source</span><b>${esc(group.source||"Unknown")}</b></div>
-                  <div><span>Order Number</span><b>${group.order_number?esc(group.order_number):"Needs assignment"}</b></div>
+                  <div><span>Captured Scope</span><b>${esc(group.work_scope_order_numbers.length||1)} Order${group.work_scope_order_numbers.length===1?"":"s"}</b></div>
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
               <div class="needsReviewResolve">
-                ${group.work_scope_order_numbers.length>1?`<label>${group.order_number?"Change Original Order":"Assign Original Order"}<select data-assign-order="${index}"><option value="">${group.order_number?"Change Order":"Select Order"}</option>${group.work_scope_order_numbers.map(order=>`<option value="${esc(order)}" ${order===group.order_number?"selected":""}>${esc(order)}</option>`).join("")}</select></label><small>Captured Handheld scope: ${group.work_scope_order_numbers.map(esc).join(" + ")}</small>`:""}
-                <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false" ${group.order_number?"":"disabled"}></label>
-                <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
+                <div class="needsReviewSearchRow">
+                  <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
+                  <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
+                </div>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
@@ -8939,6 +8925,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
     });
 
+    const resolverSearchIndexes=new Map();
+    const getResolverSearchIndex=group=>{
+        const scope=nrV2AllocationScope(group);
+        const key=scope.slice().sort().join("|");
+        if(!resolverSearchIndexes.has(key)) resolverSearchIndexes.set(key,nrV2BuildSearchIndex(scope));
+        return resolverSearchIndexes.get(key);
+    };
+
     groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
         const detail=section.querySelector("[data-review-case-detail]");
@@ -8953,9 +8947,6 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
         const clearReview=overlay.querySelector(`[data-clear-review="${index}"]`);
         let selectedItem=null;
-        const assignOrder=overlay.querySelector(`[data-assign-order="${index}"]`);
-        assignOrder?.addEventListener("change",async()=>{const order=normalizeOrderNumber(assignOrder.value||"");if(!order||order===group.order_number)return;const previousOrder=group.order_number;assignOrder.disabled=true;overlay.dataset.busy="1";try{for(const row of group.rows)await nrV2AssignOrder(row.review_id,order);group.order_number=order;group.rows.forEach(row=>row.order_number=order);const orderMeta=section.querySelector(".pfnReviewMeta div:last-child b");if(orderMeta)orderMeta.textContent=order;const summaryOrder=summary.querySelector("span");if(summaryOrder)summaryOrder.textContent=`Order ${order}`;search.disabled=false;const label=assignOrder.closest("label");if(label)label.childNodes[0].textContent="Change Original Order";assignOrder.disabled=false;search.focus();showToast?.(`${previousOrder?"Original Order changed":"Original Order assigned"} — ${order}`,"success");}catch(error){assignOrder.value=previousOrder||"";assignOrder.disabled=false;showToast?.(error?.message||"Unable to assign Original Order","error");}finally{overlay.dataset.busy="";}});
-
         overlay.querySelector(`[data-copy-identifier="${index}"]`)?.addEventListener("click",async event=>{
             try{
                 if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
@@ -8995,63 +8986,53 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }catch(error){ showToast?.(error?.message||"Unable to open review photo","error"); }
         }));
 
+        const searchIndex=getResolverSearchIndex(group);
+        let searchFrame=0;
+        const setResolveMode=active=>{
+            section.classList.toggle("hasSelectedReviewItem",active);
+            if(search) search.hidden=active;
+            matches.hidden=active;
+            if(clearReview) clearReview.hidden=active;
+        };
         const drawSelection=()=>{
-            if(!selectedItem){ selection.hidden=true;selection.innerHTML="";return; }
-            selection.hidden=false;
-            selection.innerHTML=`<span class="needsReviewSelectionLabel">SELECTED ITEM</span><div>${nrV2ItemSummary(selectedItem,esc)}</div><button type="button" data-resolve>Link &amp; Resolve</button>`;
+            if(!selectedItem){selection.hidden=true;selection.innerHTML="";setResolveMode(false);return;}
+            const model=buildReceivingResolverSelectionModel(selectedItem,group.total_quantity,nrV2AllocationScope(group));
+            setResolveMode(true);selection.hidden=false;
+            selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+`<button type="button" class="gtinPrimaryAction" data-resolve>Link &amp; Receive</button>`;
+            selection.querySelector("[data-change-review-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();if(search){search.value="";search.focus();}});
             selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
-                const button=event.currentTarget;
-                button.disabled=true;
-                overlay.dataset.busy="1";
+                const button=event.currentTarget;button.disabled=true;overlay.dataset.busy="1";
                 try{
                     const outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
                     if(outcome.pending){
                         button.textContent="Processing…";
-                        /* Processing state lives on the action itself. Do not
-                           emit a second warning toast for the normal durable
-                           queue path; successful completion owns the single
-                           user-facing toast below. */
                         const reviewIds=new Set(group.rows.map(row=>toSafeString(row?.review_id||"")).filter(Boolean));
                         let resolved=false;
                         for(let attempt=0;attempt<6;attempt++){
                             await new Promise(resolve=>setTimeout(resolve,500));
                             const pendingRows=await nrV2List(workflow,null);
-                            if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){
-                                resolved=true;
-                                break;
-                            }
+                            if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){resolved=true;break;}
                         }
-                        if(!resolved){
-                            button.textContent="Processing — Close & reopen to refresh";
-                            showToast?.("Receipt is still processing. Do not press Link & Resolve again.","warning");
-                            return;
-                        }
+                        if(!resolved){button.textContent="Processing — Close & reopen to refresh";showToast?.("Receipt is still processing. Do not press Link & Receive again.","warning");return;}
                     }
-                    section.remove();
-                    await refreshNeedsReviewCounters();
-                    const count=overlay.querySelectorAll(".needsReviewRow").length;
-                    const countNode=overlay.querySelector(".pfnReviewCount");
+                    section.remove();await refreshNeedsReviewCounters();
+                    const count=overlay.querySelectorAll(".needsReviewRow").length,countNode=overlay.querySelector(".pfnReviewCount");
                     if(countNode) countNode.textContent=String(count);
                     if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
-                    showToast?.(`Identifier linked and resolved — ${group.total_quantity} received`,"success");
-                }catch(error){ button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error"); }
-                finally{ overlay.dataset.busy=""; }
+                    showToast?.(`Linked & received — ${group.total_quantity} units`,"success");
+                }catch(error){button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error");}
+                finally{overlay.dataset.busy="";}
             });
         };
         const drawMatches=()=>{
-            selectedItem=null;
-            drawSelection();
             const q=toSafeString(search?.value||"").trim();
+            if(selectedItem){selectedItem=null;drawSelection();}
             if(!q){matches.innerHTML="";return;}
-            const items=nrV2FindOrderMatches(q,group.order_number).slice(0,8);
-            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the current Active Order.</div>`;
-            matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{
-                selectedItem=items[Number(button.dataset.match)]||null;
-                matches.querySelectorAll("button").forEach(result=>result.classList.toggle("selected",result===button));
-                drawSelection();
-            }));
+            const items=nrV2FindOrderMatches(q,searchIndex);
+            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the captured active Orders.</div>`;
+            matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.match)]||null;drawSelection();}));
         };
-        search?.addEventListener("input",drawMatches);
+        search?.addEventListener("input",()=>{if(searchFrame)cancelAnimationFrame(searchFrame);searchFrame=requestAnimationFrame(()=>{searchFrame=0;drawMatches();});});
         clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
     });
 

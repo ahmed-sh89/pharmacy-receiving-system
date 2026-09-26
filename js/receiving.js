@@ -264,6 +264,75 @@ function getReceivingDisplayMetrics(item,orderNumber){
     return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
 }
 
+function getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers=null){
+    const captured=Array.isArray(workScopeOrderNumbers)
+        ? [...new Set(workScopeOrderNumbers.map(normalizeOrderNumber).filter(Boolean))]
+        : getReceivingEligibleOrders(item);
+    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean))];
+    return captured.filter(order=>memberships.includes(order)&&getReceivingOrderRow(item,order));
+}
+
+function buildReceivingAutoAllocationPlan(item,quantity,workScopeOrderNumbers=null,remainingState=null){
+    let left=getValidReceivingQuantity(quantity);
+    const candidates=getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers);
+    if(!candidates.length) throw new Error("Item not found in active Orders.");
+    const plan=[];
+    for(const order of candidates){
+        if(left<=0) break;
+        const row=getReceivingOrderRow(item,order);
+        const key=normalizeOrderNumber(order);
+        const currentRemaining=remainingState?.has(key)
+            ? Math.max(0,toNumber(remainingState.get(key),0))
+            : Math.max(0,toNumber(row?.["Remaining Qty"],toNumber(row?.["Ordered Qty"],0)-toNumber(row?.["Received Qty"],0)));
+        const take=Math.min(left,currentRemaining);
+        if(take>0){
+            plan.push({orderNumber:key,quantity:take});
+            left-=take;
+            remainingState?.set(key,currentRemaining-take);
+        }
+    }
+    if(left>0){
+        if(AppState?.settings?.allowOverReceiving!==true){
+            throw new Error("Quantity exceeds the remaining quantity in active Orders.");
+        }
+        const overflowOrder=normalizeOrderNumber(candidates[candidates.length-1]);
+        const existing=plan.find(row=>row.orderNumber===overflowOrder);
+        if(existing) existing.quantity+=left;
+        else plan.push({orderNumber:overflowOrder,quantity:left});
+        left=0;
+    }
+    return plan;
+}
+
+function receiveAutoAllocatedItem(options){
+    if(!options?.item) throw new Error("Invalid receiving item");
+    const plan=Array.isArray(options.plan)&&options.plan.length
+        ? options.plan
+        : buildReceivingAutoAllocationPlan(options.item,options.quantity,options.workScopeOrderNumbers);
+    const baseId=toSafeString(options.transactionId||createTransactionId());
+    const transactions=[];
+    for(let index=0;index<plan.length;index++){
+        const allocation=plan[index];
+        const tx=receiveOrderItem({
+            item:options.item,
+            quantity:allocation.quantity,
+            gtin:options.gtin||"",
+            lot:options.lot||"",
+            expiry:options.expiry||"",
+            serial:options.serial||"",
+            source:options.source||APP_CONFIG.transactionSources.scanner,
+            manual:options.manual===true,
+            targetOrder:allocation.orderNumber,
+            transactionId:plan.length===1?baseId:`${baseId}:A${index+1}`,
+            identifierPreserveExact:options.identifierPreserveExact===true,
+            gtinResolution:options.gtinResolution||null
+        });
+        if(!tx) throw new Error("Unable to record allocated receiving transaction");
+        transactions.push(tx);
+    }
+    return transactions;
+}
+
 function getManualExtraTargetOrder(){
     const selected=
         typeof getSelectedReceivingOrderNumbers==="function"
@@ -748,155 +817,159 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
     return await openQuickGTINResolver(parsed,masterRecord);
 }
 
+function buildReceivingResolverSearchIndex(workScopeOrderNumbers=[]){
+    const scope=new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean));
+    const seen=new Set();
+    return (AppState?.workspace?.orderData||[]).reduce((rows,item)=>{
+        const code=normalizeItemCode(item?.itemCode||"");
+        if(!code||seen.has(code)) return rows;
+        const memberships=(item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean);
+        if(scope.size&&!memberships.some(order=>scope.has(order))) return rows;
+        seen.add(code);
+        rows.push({
+            item,
+            searchText:toSafeString([item?.itemCode,item?.itemName].filter(Boolean).join(" ")).toLowerCase().replace(/\s+/g," ").trim()
+        });
+        return rows;
+    },[]);
+}
+
+function findReceivingResolverMatches(query,searchIndex=[],limit=8){
+    const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
+    if(!q) return [];
+    const parts=q.split(" ").filter(Boolean),matches=[];
+    for(const entry of searchIndex){
+        if(entry.searchText.includes(q)||parts.every(part=>entry.searchText.includes(part))){
+            matches.push(entry.item);
+            if(matches.length>=limit) break;
+        }
+    }
+    return matches;
+}
+
+function buildReceivingResolverSelectionModel(item,quantity,workScopeOrderNumbers=[]){
+    const qty=getValidReceivingQuantity(quantity);
+    const scope=[...new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+    const plan=buildReceivingAutoAllocationPlan(item,qty,scope);
+    const code=normalizeItemCode(item?.itemCode||"");
+    const orderRows=scope.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(
+        row=>normalizeItemCode(row?.["Item Number"]||"")===code
+    ));
+    const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
+    const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
+    const afterReceived=received+qty;
+    const delta=afterReceived-ordered;
+    const status=ordered<=0
+        ? {label:"EXTRA",value:`+${afterReceived}`,className:"isExtra"}
+        : delta>0
+            ? {label:"OVER",value:`+${delta}`,className:"isOver"}
+            : delta<0
+                ? {label:"REMAINING",value:`-${Math.abs(delta)}`,className:"isRemaining"}
+                : {label:"COMPLETE",value:"0",className:"isComplete"};
+    return {item,quantity:qty,scope,plan,ordered,received,afterReceived,status,totalOrders:new Set(plan.map(row=>row.orderNumber)).size};
+}
+
+function renderReceivingResolverSelectedCard(model,escapeFn=escapeHTML,changeAttribute="data-change-item"){
+    const esc=value=>escapeFn(toSafeString(value));
+    const {item,quantity,plan,ordered,received,afterReceived,status,totalOrders}=model;
+    return `<div class="resolverSelectedCard">
+      <div class="resolverSelectedHeading"><span>SELECTED ITEM</span><button type="button" ${changeAttribute}>Change Item</button></div>
+      <div class="resolverSelectedIdentity"><strong class="resolverSelectedName">${esc(item?.itemName||"Unnamed item")}</strong><small class="resolverSelectedCode">Item Code <b>${esc(item?.itemCode||"")}</b></small></div>
+      <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div class="${status.className}"><span>${status.label}</span><b>${status.value}</b></div></div>
+      <div class="gtinAllocationSummary ${status.className}"><b>After this scan: ${afterReceived} / ${ordered} received · ${status.label} ${status.value}</b><span>${ordered<=0?"Extra Item":`Auto-allocated across ${totalOrders} active Order${totalOrders===1?"":"s"}`}</span></div>
+      <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${esc(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
+    </div>`;
+}
+
 function openQuickGTINResolver(parsed,knownRecord=null){
     return new Promise(resolve=>{
         const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
         document.getElementById("quickGTINResolver")?.remove();
-
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():[];
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";
         panel.className="gtinResolutionShell open";
         panel.setAttribute("role","dialog");
         panel.setAttribute("aria-modal","true");
-        panel.setAttribute("aria-label","GTIN resolution");
-
-        const knownCode=normalizeItemCode(knownRecord?.itemCode||"");
-        const knownName=toSafeString(knownRecord?.itemName||knownRecord?.name||knownCode);
-        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
-        /* Needs Review attribution must stay inside this device's Receiving
-           Work Scope. Never expose pharmacy-wide Active Orders here. */
-        const reviewOrderNumbers=[...new Set(selectedOrders.map(normalizeOrderNumber).filter(Boolean))];
-        const reviewDefaultOrder=reviewOrderNumbers.length===1?reviewOrderNumbers[0]:"";
-        const reviewOrderOptions=reviewOrderNumbers.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("");
-        const knownOrderOptions=reviewOrderOptions;
-        const knownBlock=knownCode ? `
-          <section class="gtinSuggestedMatch">
-            <span class="gtinMiniLabel">MASTER MATCH · KNOWN ITEM</span>
-            <strong>${escapeHTML(knownName)}</strong>
-            <small>Item ${escapeHTML(knownCode)} · GTIN ${escapeHTML(gtin)} · Not in the selected order</small>
-            ${selectedOrders.length>1?`<label class="gtinKnownTarget">Target Order<select data-known-order>${knownOrderOptions}</select></label>`:""}
-            <button type="button" class="gtinPrimaryAction" data-known>ADD &amp; RECEIVE</button>
-          </section>` : "";
-
+        panel.setAttribute("aria-label","Resolve unrecognised barcode");
         panel.innerHTML=`
           <button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button>
-          <aside class="gtinResolutionPanel">
+          <aside class="gtinResolutionPanel gtinResolutionPanelWide">
             <header class="gtinResolutionHeader">
-              <div><span class="gtinActionBadge">ACTION REQUIRED</span><h2>Match this GTIN</h2><p>One quick decision, then scanning resumes automatically.</p></div>
+              <div><span class="gtinActionBadge">ITEM NOT RECOGNISED</span><h2>Link this barcode</h2><p>Find the item. PharmFlow will receive it into the correct active Order automatically.</p></div>
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
             </header>
-            <div class="gtinReadout"><span>SCANNED GTIN</span><strong>${escapeHTML(gtin)}</strong></div>
-            ${knownBlock}
+            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><small>Qty ${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}</small></div>
             <section class="gtinResolutionSection">
-              <label class="gtinResolutionLabel" for="gtinReviewOrder">Original Order</label>
-              <select id="gtinReviewOrder" data-review-order class="gtinResolutionSearch" ${reviewOrderNumbers.length?"":"disabled"}>
-                ${reviewOrderNumbers.length>1?'<option value="">Select original Order</option>':""}
-                ${reviewOrderOptions}
-              </select>
-              ${reviewOrderNumbers.length?'<small class="gtinResolutionHint">Only Orders selected on this device are available.</small>':'<small class="gtinResolutionHint">Select a Receiving Order on this device before saving to Needs Review.</small>'}
-            </section>
-            <section class="gtinResolutionSection">
-              <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find item in current order</label>
-              <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Search item name or item code" autocomplete="off">
+              <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find Item</label>
+              <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Item Code or Item Name" autocomplete="off" spellcheck="false">
               <div data-results class="gtinResolutionResults"></div>
+              <div data-selection class="gtinResolutionSelection" hidden></div>
             </section>
-            ${knownCode ? "" : `<section class="gtinResolutionSection gtinManualExtra"><div><span class="gtinMiniLabel">NOT IN THE ORDER?</span><strong>Add new Extra item</strong></div><div class="gtinExtraGrid"><input data-code placeholder="Item Code" autocomplete="off"><input data-name placeholder="Item Name" autocomplete="off"><button type="button" class="gtinSecondaryAction" data-extra>Add Extra &amp; Receive +1</button></div></section>`}
-            <footer class="gtinResolutionFooter"><span>Resolve now or send this scan to Needs Review.</span><div><button type="button" data-review>Save for Review</button><button type="button" data-close>Cancel</button></div></footer>
+            <div class="gtinPanelMessage" aria-live="polite"></div>
+            <footer class="gtinResolutionFooter"><span>Resolve now, or save it for later.</span><div><button type="button" data-review>Save for Review</button><button type="button" data-close>Cancel</button></div></footer>
           </aside>`;
         document.body.appendChild(panel);
-
-        const results=panel.querySelector('[data-results]');
-        const search=panel.querySelector('[data-search]');
-        let finished=false;
-        const finish=v=>{
-            if(finished) return;
-            finished=true;
-            panel.remove();
-            if(typeof setScanBoxState==="function") setScanBoxState(v?"success":"ready");
-            setTimeout(()=>{ if(typeof focusScannerInput==="function") focusScannerInput(); },30);
-            resolve(v);
+        const results=panel.querySelector("[data-results]");
+        const search=panel.querySelector("[data-search]");
+        const selection=panel.querySelector("[data-selection]");
+        let selectedItem=null,finished=false;
+        const finish=value=>{
+            if(finished)return;finished=true;panel.remove();
+            setScanBoxState?.(value?"success":"ready");
+            setTimeout(()=>focusScannerInput?.(),30);
+            resolve(value);
         };
-        const receiveMatched=async(item,manual=false)=>{
-            try{
-                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual,gtinResolution:null});
-                finish(tx);
-            }catch(e){
-                if(typeof setScanBoxState==="function") setScanBoxState("error");
-                const msg=panel.querySelector('.gtinPanelMessage');
-                if(msg) msg.textContent=e.message||"Unable to save GTIN";
+        const searchableItems=buildReceivingResolverSearchIndex(selectedOrders);
+        const drawSelection=()=>{
+            if(!selectedItem){
+                selection.hidden=true;selection.innerHTML="";
+                search.closest(".gtinResolutionSection")?.classList.remove("hasSelectedItem");
+                search.hidden=false;results.hidden=false;
+                search.removeAttribute("aria-hidden");
+                results.removeAttribute("aria-hidden");
+                return;
             }
+            const model=buildReceivingResolverSelectionModel(selectedItem,parsed?.quantity,selectedOrders);
+            search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
+            search.hidden=true;results.hidden=true;
+            search.setAttribute("aria-hidden","true");
+            results.setAttribute("aria-hidden","true");
+            selection.hidden=false;
+            selection.innerHTML=renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item")+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
+            selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
+            selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
+                const button=event.currentTarget;button.disabled=true;
+                try{
+                    if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin())throw new Error("Pharmacy admin permission is required to link a new barcode.");
+                    const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,selectedItem,"Receiving barcode resolution");
+                    const mapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
+                    const resolution=mapping?{kind:"PHARMACY_LEARNED",mappingId:mapping.identifierId,mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode}:null;
+                    const txs=receiveAutoAllocatedItem({item:selectedItem,quantity:getValidReceivingQuantity(parsed?.quantity),gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
+                    finish(txs[0]||true);
+                }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
+            });
         };
+        let searchFrame=0;
         const render=()=>{
-            const q=toSafeString(search.value).toLowerCase().trim();
-            const items=(AppState.workspace.orderData||[]).filter(i=>!q||toSafeString(i.itemName).toLowerCase().includes(q)||toSafeString(i.itemCode).toLowerCase().includes(q)).slice(0,8);
-            results.innerHTML=items.length?items.map((i,n)=>`<button type="button" class="gtinResult" data-i="${n}"><span><strong>${escapeHTML(i.itemName)}</strong><small>Item ${escapeHTML(i.itemCode)}</small></span><b>Link GTIN &amp; Receive +1</b></button>`).join(''):'<div class="gtinNoResult">No matching order item.</div>';
-            results.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>receiveMatched(items[Number(btn.dataset.i)],false));
+            searchFrame=0;
+            const q=toSafeString(search.value).trim();
+            if(!q){results.innerHTML="";return;}
+            const items=findReceivingResolverMatches(q,searchableItems,8);
+            results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in this device\'s active Orders.</div>';
+            results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.i)]||null;drawSelection();}));
         };
-        search.oninput=render; render();
-        panel.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>finish(false));
-        panel.querySelector('[data-review]')?.addEventListener('click',async()=>{
-            try{
-                /* Needs Review is persisted first.  The scan panel is never used as
-                   a second, local exception queue. */
-                const reviewOrder=normalizeOrderNumber(
-                    panel.querySelector("[data-review-order]")?.value || reviewDefaultOrder || ""
-                );
-                if(!reviewOrder) throw new Error("Select the original active Order before saving this scan for review.");
-                await nrV2CreateDraft({...parsed,identifierDisplay:gtin},{
-                    workflow:"RECEIVING",
-                    reason:knownCode?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",
-                    itemCode:knownCode||"",
-                    itemName:knownName||"",
-                    orderNumber:reviewOrder
-                });
-                if(typeof refreshNeedsReviewCounters==="function") await refreshNeedsReviewCounters();
-                finish(true);
-            }catch(error){
-                if(typeof setScanBoxState==="function")setScanBoxState("error");
-                const msg=panel.querySelector('.gtinPanelMessage');
-                if(msg) msg.textContent=error?.message||"Unable to save this identifier for review";
-            }
+        search.addEventListener("input",()=>{
+            if(searchFrame)cancelAnimationFrame(searchFrame);
+            searchFrame=requestAnimationFrame(render);
         });
-        panel.querySelector('[data-known]')?.addEventListener('click',async()=>{
+        panel.querySelector("[data-review]")?.addEventListener("click",async()=>{
             try{
-                const targetOrder=normalizeOrderNumber(
-                    panel.querySelector("[data-known-order]")?.value || selectedOrders[0] || ""
-                );
-                if(!targetOrder) throw new Error("Select the target Order");
-                const item=prepareManualExtraItem(knownCode,knownName,gtin,targetOrder);
-                const tx=receiveOrderItem({
-                    item,
-                    quantity:getValidReceivingQuantity(parsed.quantity),
-                    transactionId:queueOptions.transactionId||null,
-                    gtin,
-                    lot:parsed.lot,
-                    expiry:parsed.expiry,
-                    serial:parsed.serial,
-                    source:APP_CONFIG.transactionSources.scanner,
-                    manual:true
-                });
-                if(!tx) throw new Error("Unable to add unordered item");
-                finish(tx);
-            }catch(error){
-                if(typeof setScanBoxState==="function") setScanBoxState("error");
-                const msg=panel.querySelector('.gtinPanelMessage');
-                if(msg) msg.textContent=error?.message||"Unable to add item";
-            }
+                await nrV2CreateDraft({...parsed,identifierDisplay:gtin},{workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
+                await refreshNeedsReviewCounters?.();finish(true);
+            }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
         });
-        panel.querySelector('[data-extra]')?.addEventListener('click',async()=>{
-            const code=normalizeItemCode(panel.querySelector('[data-code]').value), name=toSafeString(panel.querySelector('[data-name]').value).trim();
-            if(!code||!name){ panel.querySelector('.gtinPanelMessage').textContent="Enter Item Code and Item Name"; return; }
-            try{
-                if(!(typeof isSystemOwner==="function"&&isSystemOwner())) throw new Error("Save this scan for review; only the System Owner can add a new Global Item.");
-                if(!globalThis.crypto?.randomUUID) throw new Error("Secure operation IDs are unavailable; reload before creating a Global Item.");
-                await IdentifierService.createItem(globalThis.crypto.randomUUID(),{itemCode:code,itemName:name,identifierDisplay:gtin,reason:"New item from Receiving"});
-                let item=upsertOrderItem({itemCode:code,itemName:name,orderedQty:0,receivedQty:0,manual:true}); item.manual=true;
-                const tx=await receiveOrderItem({item,quantity:getValidReceivingQuantity(parsed.quantity),gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,source:APP_CONFIG.transactionSources.scanner,manual:true,gtinResolution:null});
-                finish(tx);
-            }catch(e){ if(typeof setScanBoxState==="function") setScanBoxState("error"); panel.querySelector('.gtinPanelMessage').textContent=e.message||"Unable to add extra"; }
-        });
-        const footer=panel.querySelector('.gtinResolutionFooter');
-        footer.insertAdjacentHTML('beforebegin','<div class="gtinPanelMessage" aria-live="polite"></div>');
+        panel.querySelectorAll("[data-close]").forEach(button=>button.addEventListener("click",()=>finish(false)));
         setTimeout(()=>search.focus(),80);
     });
 }
@@ -1436,7 +1509,7 @@ function updateItemCalculatedFields(item){
         );
 
     /*
-       Manual items retain Manual status.
+       Extra items retain the internal legacy status; UI/business terminology is Extra Item.
     */
 
     if(item.manual === true){
@@ -2361,7 +2434,7 @@ function handleReceivingFailure(message){
 
 
 /* =====================================================
-   MANUAL ITEM
+   EXTRA ITEM
 ===================================================== */
 
 async function saveManualReceivingItem(){
@@ -2388,7 +2461,7 @@ async function saveManualReceivingItem(){
     ){
 
         showToast(
-            "Manual item form is unavailable",
+            "Extra item form is unavailable",
             "error"
         );
 
@@ -2500,7 +2573,7 @@ async function saveManualReceivingItem(){
     }
 
     /*
-       New manual item
+       New extra item
     */
 
     item =
@@ -2526,7 +2599,7 @@ async function saveManualReceivingItem(){
     if(!item){
 
         showToast(
-            "Unable to add manual item",
+            "Unable to add extra item",
             "error"
         );
 
@@ -2553,7 +2626,7 @@ async function saveManualReceivingItem(){
         }
         catch(error){
             Logger.warn(
-                "Master GTIN lookup for manual item failed",
+                "Master GTIN lookup for extra item failed",
                 error
             );
         }
@@ -2576,7 +2649,7 @@ async function saveManualReceivingItem(){
 
             serial:"",
 
-            /* Distinguish first creation of an unordered/manual item
+            /* Distinguish first creation of an unordered extra item
                from later quantity edits in the audit history. */
             source:"MANUAL_ITEM",
 
@@ -2647,7 +2720,7 @@ function receiveItemQuantity(
 
 
 /* =====================================================
-   DELETE MANUAL ITEM
+   DELETE EXTRA ITEM
 
    Only allowed when received quantity is zero.
 ===================================================== */
@@ -2667,7 +2740,7 @@ function deleteManualItem(
     ){
 
         showToast(
-            "Only manual items can be deleted",
+            "Only extra items can be deleted",
             "warning"
         );
 
@@ -2729,7 +2802,7 @@ function deleteManualItem(
     );
 
     /* Persist the structural removal and push it to the shared pharmacy
-       workspace. A zero-quantity manual item must not reappear after reload. */
+       workspace. A zero-quantity extra item must not reappear after reload. */
     if(typeof saveWorkspaceSnapshot === "function"){
         saveWorkspaceSnapshot();
     }
@@ -2739,7 +2812,7 @@ function deleteManualItem(
     }
 
     showToast(
-        "Manual item removed",
+        "Extra item removed",
         "success"
     );
 
