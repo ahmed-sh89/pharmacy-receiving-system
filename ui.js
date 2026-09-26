@@ -7976,7 +7976,13 @@ function getKpiPanelItems(key){
                 manual:row.issueKey==="manual",
                 group_name:row["Group"]||"",
                 category:row["Category"]||"",
-                sub_category:row["Sub Category"]||""
+                sub_category:row["Sub Category"]||"",
+                /* Priority belongs to the authoritative workspace item, not to
+                   the report-row projection. Preserve it when rebuilding the
+                   Order Items browser so persisted SHORT/NEW state survives
+                   redraws and the High Priority filter. */
+                priorityType:toSafeString(getItemByCode?.(row["Item Number"])?.priorityType||""),
+                highPriority:!!getItemByCode?.(row["Item Number"])?.highPriority
             })));
         }
         return items.slice();
@@ -8391,11 +8397,12 @@ function renderItemBrowser(body, rows, options={}){
             });
             const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;
             const saved=await queueItemPrioritySelection(item,nextType);
-            if(!saved||priorityOnly){
-                draw();
-                const finalWrap=body.querySelector('.phase263TableWrap');
-                if(finalWrap) finalWrap.scrollTop=top;
-            }
+            /* Redraw immediately from the same authoritative priority state.
+               This keeps the row, filter and persisted state in agreement on
+               the first click instead of waiting for a later interaction. */
+            draw();
+            const finalWrap=body.querySelector('.phase263TableWrap');
+            if(finalWrap) finalWrap.scrollTop=top;
         });
     };
     const selectBrowserRow=row=>{
