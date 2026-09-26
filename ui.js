@@ -1734,7 +1734,7 @@ function refreshHeader(){
                 : "";
 
         if(hasActiveOrder && activeOrders.length && picker){
-            orderLabel.hidden=true;
+            if(orderLabel) orderLabel.hidden=true;
             picker.hidden=false;
 
             const allSelected=
@@ -1796,7 +1796,7 @@ function refreshHeader(){
             }
         }else{
             if(picker) picker.hidden=true;
-            orderLabel.hidden=false;
+            if(orderLabel) orderLabel.hidden=false;
 
             setElementText(
                 orderLabel,
