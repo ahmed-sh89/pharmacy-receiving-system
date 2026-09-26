@@ -856,15 +856,22 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             setTimeout(()=>focusScannerInput?.(),30);
             resolve(value);
         };
-        const searchableItems=()=>{
+        const searchableItems=(()=>{
             const seen=new Set();
-            return (AppState?.workspace?.orderData||[]).filter(item=>{
+            const selectedSet=new Set(selectedOrders.map(normalizeOrderNumber).filter(Boolean));
+            return (AppState?.workspace?.orderData||[]).reduce((rows,item)=>{
                 const code=normalizeItemCode(item?.itemCode||"");
-                if(!code||seen.has(code))return false;
-                if(!getReceivingAutoAllocationCandidates(item,selectedOrders).length)return false;
-                seen.add(code);return true;
-            });
-        };
+                if(!code||seen.has(code))return rows;
+                const memberships=(item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean);
+                if(selectedSet.size&&!memberships.some(order=>selectedSet.has(order)))return rows;
+                seen.add(code);
+                rows.push({
+                    item,
+                    searchText:toSafeString([item?.itemCode,item?.itemName].filter(Boolean).join(" ")).toLowerCase().replace(/\s+/g," ").trim()
+                });
+                return rows;
+            },[]);
+        })();
         const normalized=value=>toSafeString(value).toLowerCase().replace(/\s+/g," ").trim();
         const drawSelection=()=>{
             if(!selectedItem){selection.hidden=true;selection.innerHTML="";return;}
@@ -884,18 +891,27 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
             });
         };
+        let searchFrame=0;
         const render=()=>{
-            selectedItem=null;drawSelection();
+            searchFrame=0;
             const q=normalized(search.value);
+            selectedItem=null;drawSelection();
             if(!q){results.innerHTML="";return;}
-            const items=searchableItems().filter(item=>{
-                const name=normalized(item?.itemName),code=normalized(item?.itemCode);
-                return name.includes(q)||code.includes(q)||q.split(" ").every(part=>name.includes(part)||code.includes(part));
-            }).slice(0,8);
+            const parts=q.split(" ").filter(Boolean);
+            const items=[];
+            for(const entry of searchableItems){
+                if(entry.searchText.includes(q)||parts.every(part=>entry.searchText.includes(part))){
+                    items.push(entry.item);
+                    if(items.length===8)break;
+                }
+            }
             results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in this device\'s active Orders.</div>';
             results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.i)]||null;results.querySelectorAll("button").forEach(row=>row.classList.toggle("selected",row===button));drawSelection();}));
         };
-        search.addEventListener("input",render);
+        search.addEventListener("input",()=>{
+            if(searchFrame)cancelAnimationFrame(searchFrame);
+            searchFrame=requestAnimationFrame(render);
+        });
         panel.querySelector("[data-review]")?.addEventListener("click",async()=>{
             try{
                 await nrV2CreateDraft({...parsed,identifierDisplay:gtin},{workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
