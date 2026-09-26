@@ -1,0 +1,17 @@
+"use strict";
+const fs=require("fs"),assert=require("assert");
+const html=fs.readFileSync("index.html","utf8");
+const ui=fs.readFileSync("ui.js","utf8");
+const reports=fs.readFileSync("js/reports.js","utf8");
+const receiving=fs.readFileSync("js/receiving.js","utf8");
+assert(html.includes("Extra Items"));
+assert(!html.includes("Manual Extras"));
+assert(reports.includes("Extra Items are reconstructed from durable Receiving transactions"));
+assert(reports.includes('"Issue Type":"Extra Item"'));
+assert(receiving.includes("gtinItemMetrics"));
+assert(receiving.includes("Already Received"));
+assert(receiving.includes("After this scan:"));
+assert(receiving.includes("data-change-item"));
+assert(receiving.includes("search.hidden=true;results.hidden=true"));
+assert(ui.includes('"Extra Items"'));
+console.log("Extra Items and selected-item UX guards: PASS");
