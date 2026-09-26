@@ -1841,3 +1841,21 @@ body:not(.zebraDevice) .gtinReadout small{font-weight:850!important;color:#42698
 body:not(.zebraDevice) .needsReviewPanel{width:min(1180px,96vw)}
 body:not(.zebraDevice) .needsReviewResolve input{min-height:48px;font-size:15px}
 body:not(.zebraDevice) .needsReviewMatches>button{min-height:58px;padding:10px 13px}
+
+/* 2C.11.61b — PC resolver viewport fit: keep the primary action visible while searching. */
+body:not(.zebraDevice) .gtinResolutionPanelWide{width:min(960px,96vw)!important;max-height:min(680px,86vh)!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionHeader{flex:0 0 auto!important;padding:14px 18px 11px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionHeader h2{font-size:21px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionHeader p{font-size:12px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinReadout{flex:0 0 auto!important;margin:10px 18px 0!important;padding:9px 12px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinReadout strong{font-size:17px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionSection{display:grid!important;grid-template-rows:auto auto minmax(0,1fr) auto!important;flex:1 1 auto!important;min-height:0!important;margin:10px 18px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionSearch{min-height:42px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionResults{max-height:210px!important;overflow:auto!important;overscroll-behavior:contain!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResult{min-height:48px!important;padding:8px 10px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionSelection{flex:0 0 auto!important;margin-top:8px!important;padding:10px 12px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinSelectedItem{grid-template-columns:minmax(0,1fr) auto!important;column-gap:14px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinSelectedItem>span{grid-column:1/-1!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinSelectedItem>strong{font-size:15px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinPrimaryAction{min-height:40px!important;margin-top:8px!important}
+body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionFooter{flex:0 0 auto!important;padding:9px 18px!important}
