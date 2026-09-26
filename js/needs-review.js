@@ -157,18 +157,25 @@ async function nrV2AssignOrder(reviewId,orderNumber){
     });
 }
 
-async function nrV2RequestResolution(row,item,transactionId){
+async function nrV2RequestResolution(row,item,transactionId,allocations=null){
     if(!globalThis.crypto?.randomUUID){
         throw new Error("Secure operation IDs are unavailable; reload before resolving this review.");
     }
-    return authRpc("request_pharmflow_needs_review_resolution_v4",{
+    const base={
         p_operation_id:globalThis.crypto.randomUUID(),
         p_pharmacy_id:nrV2PharmacyId(),
         p_review_id:row.review_id,
         p_item_code:item?.itemCode||"",
         p_item_name:item?.itemName||"",
         p_resolution_transaction_id:transactionId||""
-    });
+    };
+    if(Array.isArray(allocations)&&allocations.length){
+        return authRpc("request_pharmflow_needs_review_resolution_v5",{
+            ...base,
+            p_allocations:allocations
+        });
+    }
+    return authRpc("request_pharmflow_needs_review_resolution_v4",base);
 }
 
 async function nrV2Delete(reviewId){
