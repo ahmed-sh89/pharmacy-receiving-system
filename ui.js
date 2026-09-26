@@ -8519,11 +8519,12 @@ function renderDashboardKpiPanel(key,body){
           <label class="pfnActivitySearch"><span>Search Activity</span><input id="pfnActivitySearch" autocomplete="off" spellcheck="false" placeholder="Item Name, Item Code or scan Barcode / GTIN"></label>
           <label><span>Source</span><select id="pfnActivitySourceFilter"><option value="All">All Sources</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Extra Item / Manual</option><option value="Correction">Correction</option></select></label>
           <label><span>Device</span><select id="pfnActivityDeviceFilter"><option value="All">All Devices</option><option value="This">This Device</option>${deviceIds.filter(id=>id!==localDevice).map((id,index)=>`<option value="${esc(id)}">Device ${index+2}</option>`).join("")}</select></label>
-        </div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Activity</th><th>Final Received</th><th>Source</th><th>Device</th><th>Order Number</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
+        </div><div id="pfnActivitySummary" class="pfnActivitySummary" hidden></div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Activity</th><th>Received After Action</th><th>Source</th><th>Device</th><th>Order Number</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
         const tbody=body.querySelector("[data-activity-rows]");
         const sourceFilter=body.querySelector("#pfnActivitySourceFilter");
         const deviceFilter=body.querySelector("#pfnActivityDeviceFilter");
         const searchInput=body.querySelector("#pfnActivitySearch");
+        const summary=body.querySelector("#pfnActivitySummary");
         const draw=()=>{
             const source=sourceFilter.value,device=deviceFilter.value,q=toSafeString(searchInput.value).trim().toUpperCase();
             const rows=allRows.filter(row=>{
@@ -8537,6 +8538,23 @@ function renderDashboardKpiPanel(key,body){
                 }
                 return true;
             });
+            const itemCodes=[...new Set(rows.map(row=>normalizeItemCode(row?.itemCode||"")).filter(Boolean))];
+            if(q&&itemCodes.length===1){
+                const code=itemCodes[0];
+                const scoped=(typeof getScopedOrderItems==="function"?getScopedOrderItems():[]).filter(item=>normalizeItemCode(item?.itemCode||"")===code);
+                const current=scoped.reduce((acc,item)=>({ordered:acc.ordered+toNumber(item?.orderedQty,0),received:acc.received+toNumber(item?.receivedQty,0),remaining:acc.remaining+Math.max(0,toNumber(item?.remainingQty,0)),name:acc.name||toSafeString(item?.itemName||"")}),{ordered:0,received:0,remaining:0,name:""});
+                const extraRows=typeof getKpiPanelItems==="function"?getKpiPanelItems("manual").filter(item=>normalizeItemCode(item?.itemCode||"")===code):[];
+                if(!scoped.length&&extraRows.length){
+                    current.name=toSafeString(extraRows[0]?.itemName||rows[0]?.itemName||"");
+                    current.received=extraRows.reduce((sum,item)=>sum+toNumber(item?.receivedQty,0),0);
+                    current.ordered=0;current.remaining=0;
+                }
+                const status=current.ordered===0&&current.received>0?"Extra Item":current.received>current.ordered?"Over Received":current.remaining>0?"Remaining":"Complete";
+                summary.hidden=false;
+                summary.innerHTML=`<div class="pfnActivitySummaryIdentity"><b>${esc(current.name||rows[0]?.itemName||"Unknown item")}</b><span>${esc(code)}</span></div><div class="pfnActivitySummaryMetrics"><span><small>Ordered</small><b>${esc(current.ordered)}</b></span><span><small>Received</small><b>${esc(current.received)}</b></span><span><small>Remaining</small><b>${esc(current.remaining)}</b></span><span><small>Status</small><b>${esc(status)}</b></span></div>`;
+            }else{
+                summary.hidden=true;summary.innerHTML="";
+            }
             tbody.innerHTML=rows.length?rows.map(row=>{const qv=toNumber(row.qtyChange,0);const correction=toSafeString(row.source).toUpperCase().includes("CORRECTION");return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}</b></td><td>${esc(row.itemCode)}</td><td>${esc(row.gtin||"—")}</td><td class="${qv<0?'phase263Negative':'phase263Positive'}">${correction?'Correction':'Received'} ${qv>0?'+':''}${esc(qv)}</td><td><b>${esc(toNumber(row.finalReceived,0))}</b></td><td>${esc(getReceivingActivitySource(row))}</td><td>${esc(deviceLabel(row))}</td><td>${esc(row.selectedOrderNumber||row.orderId||row.orderNumber||"—")}</td></tr>`;}).join(''):'<tr><td colspan="9" class="tableEmptyState">No matching receiving activity.</td></tr>';
         };
         sourceFilter.addEventListener("change",draw);deviceFilter.addEventListener("change",draw);searchInput.addEventListener("input",draw);
