@@ -8087,6 +8087,16 @@ function getReceivingActivityRows(){
     });
 }
 
+function addReceivingActivityFinalTotals(rows){
+    const totals=new Map();
+    return (rows||[]).slice().sort((a,b)=>(new Date(a?.dateTime||0).getTime()||0)-(new Date(b?.dateTime||0).getTime()||0)).map(row=>{
+        const key=normalizeItemCode(row?.itemCode||"")+"|"+normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+        const finalReceived=Math.max(0,toNumber(totals.get(key),0)+toNumber(row?.qtyChange??row?.quantity,0));
+        totals.set(key,finalReceived);
+        return {...row,finalReceived};
+    });
+}
+
 function getGroupedReceivingActivityRows(){
     const rows=getReceivingActivityRows();
     const chronological=rows.slice().sort((a,b)=>(new Date(a?.dateTime||0).getTime()||0)-(new Date(b?.dateTime||0).getTime()||0));
@@ -8494,7 +8504,7 @@ function renderDashboardKpiPanel(key,body){
     if(!body) return;
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
     if(key==="scans"){
-        const allRows=getGroupedReceivingActivityRows();
+        const allRows=addReceivingActivityFinalTotals(getGroupedReceivingActivityRows());
         if(!allRows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
         const localDevice=toSafeString(typeof ensureDeviceId==="function"?ensureDeviceId():AppState?.session?.deviceId||"");
         const deviceIds=[...new Set(allRows.map(row=>toSafeString(row?.deviceId||"")).filter(Boolean))];
@@ -8509,7 +8519,7 @@ function renderDashboardKpiPanel(key,body){
           <label class="pfnActivitySearch"><span>Search Activity</span><input id="pfnActivitySearch" autocomplete="off" spellcheck="false" placeholder="Item Name, Item Code or scan Barcode / GTIN"></label>
           <label><span>Source</span><select id="pfnActivitySourceFilter"><option value="All">All Sources</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Extra Item / Manual</option><option value="Correction">Correction</option></select></label>
           <label><span>Device</span><select id="pfnActivityDeviceFilter"><option value="All">All Devices</option><option value="This">This Device</option>${deviceIds.filter(id=>id!==localDevice).map((id,index)=>`<option value="${esc(id)}">Device ${index+2}</option>`).join("")}</select></label>
-        </div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Recent Action Qty</th><th>Source</th><th>Device</th><th>Order Number</th><th>Action</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
+        </div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Activity</th><th>Final Received</th><th>Source</th><th>Device</th><th>Order Number</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
         const tbody=body.querySelector("[data-activity-rows]");
         const sourceFilter=body.querySelector("#pfnActivitySourceFilter");
         const deviceFilter=body.querySelector("#pfnActivityDeviceFilter");
@@ -8527,8 +8537,7 @@ function renderDashboardKpiPanel(key,body){
                 }
                 return true;
             });
-            tbody.innerHTML=rows.length?rows.map(row=>{const qv=toNumber(row.qtyChange,0);const correction=toSafeString(row.source).toUpperCase().includes("CORRECTION");const editable=!correction&&qv>0;return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}</b></td><td>${esc(row.itemCode)}</td><td>${esc(row.gtin||"—")}</td><td class="${qv<0?'phase263Negative':'phase263Positive'}">${correction?'Correction':'Received'} ${qv>0?'+':''}${esc(qv)}</td><td>${esc(getReceivingActivitySource(row))}</td><td>${esc(deviceLabel(row))}</td><td>${esc(row.selectedOrderNumber||row.orderId||row.orderNumber||"—")}</td><td>${editable?`<button class="quickUndoButton" data-edit="${esc(row.transactionId)}">Edit</button>`:'—'}</td></tr>`;}).join(''):'<tr><td colspan="9" class="tableEmptyState">No matching receiving activity.</td></tr>';
-            tbody.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>{const row=allRows.find(entry=>toSafeString(entry.transactionId)===btn.dataset.edit);if(row)openReceivingActivityEditor(row,allRows);});
+            tbody.innerHTML=rows.length?rows.map(row=>{const qv=toNumber(row.qtyChange,0);const correction=toSafeString(row.source).toUpperCase().includes("CORRECTION");return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}</b></td><td>${esc(row.itemCode)}</td><td>${esc(row.gtin||"—")}</td><td class="${qv<0?'phase263Negative':'phase263Positive'}">${correction?'Correction':'Received'} ${qv>0?'+':''}${esc(qv)}</td><td><b>${esc(toNumber(row.finalReceived,0))}</b></td><td>${esc(getReceivingActivitySource(row))}</td><td>${esc(deviceLabel(row))}</td><td>${esc(row.selectedOrderNumber||row.orderId||row.orderNumber||"—")}</td></tr>`;}).join(''):'<tr><td colspan="9" class="tableEmptyState">No matching receiving activity.</td></tr>';
         };
         sourceFilter.addEventListener("change",draw);deviceFilter.addEventListener("change",draw);searchInput.addEventListener("input",draw);
         draw();searchInput.focus();
