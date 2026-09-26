@@ -8595,17 +8595,7 @@ async function nrV2ResolveGroupToOrderItem(group,item){
         const first=group.rows[0];
         const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
         if(identifier){
-            const referencePharmacy=
-                toSafeString(AuthState?.context?.pharmacy_code)
-                    .trim()
-                    .toUpperCase()==="HHP084";
-            if(referencePharmacy){
-                await IdentifierService.addIdentifier(
-                    nrV2OperationId(),identifier,item?.itemCode||item?.item_code,
-                    "Needs Review resolution"
-                );
-            }
-            const mappingResult=await IdentifierService.addPharmacyIdentifier(
+            const mappingResult=await IdentifierService.learnIdentifier(
                 nrV2OperationId(),identifier,item,"Needs Review resolution"
             );
             pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
