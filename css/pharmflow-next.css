@@ -1981,3 +1981,9 @@ body:not(.zebraDevice) .pfnKnownExtraPanel{border:2px solid #4d9bd2;box-shadow:0
 body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader{background:#eaf6ff;border-bottom-color:#9fc9e6}
 body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{background:#dff2ff;border-color:#5ba2d2;color:#0b5d91}
 body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#f7fbff}
+
+/* Order Items: compact copy affordance follows row selection contrast. */
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemCode{white-space:nowrap}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:5px;padding:0;border:0;background:transparent;color:inherit;font-size:14px;line-height:1;vertical-align:middle;cursor:pointer;opacity:.78}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode:hover,body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode.copied{opacity:1}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnCopyItemCode{color:#fff!important;opacity:1}
