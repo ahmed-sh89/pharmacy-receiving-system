@@ -8567,24 +8567,33 @@ function ensureNeedsReviewButtons(){
 }
 
 
-function nrV2FindOrderMatches(query,workScopeOrderNumbers=[]){
-    const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
-    const scope=[...new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+function nrV2BuildSearchIndex(workScopeOrderNumbers=[]){
+    const scope=new Set((workScopeOrderNumbers||[]).map(normalizeOrderNumber).filter(Boolean));
     const seen=new Set();
-    const source=(AppState?.workspace?.orderData||[]).filter(item=>{
+    return (AppState?.workspace?.orderData||[]).reduce((rows,item)=>{
         const code=normalizeItemCode(item?.itemCode||"");
-        if(!code||seen.has(code)) return false;
-        if(typeof getReceivingAutoAllocationCandidates==="function"&&!getReceivingAutoAllocationCandidates(item,scope).length) return false;
+        if(!code||seen.has(code)) return rows;
+        const memberships=(item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean);
+        if(scope.size&&!memberships.some(order=>scope.has(order))) return rows;
         seen.add(code);
-        return true;
-    });
-    if(!q) return source.slice(0,20);
-    const parts=q.split(" ").filter(Boolean);
-    return source.filter(item=>{
-        const code=toSafeString(item?.itemCode).toLowerCase();
-        const name=toSafeString(item?.itemName).toLowerCase().replace(/\s+/g," ");
-        return code.includes(q)||name.includes(q)||parts.every(part=>code.includes(part)||name.includes(part));
-    }).slice(0,20);
+        rows.push({
+            item,
+            searchText:toSafeString([item?.itemCode,item?.itemName].filter(Boolean).join(" ")).toLowerCase().replace(/\s+/g," ").trim()
+        });
+        return rows;
+    },[]);
+}
+function nrV2FindOrderMatches(query,searchIndex=[]){
+    const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
+    if(!q) return [];
+    const parts=q.split(" ").filter(Boolean),matches=[];
+    for(const entry of searchIndex){
+        if(entry.searchText.includes(q)||parts.every(part=>entry.searchText.includes(part))){
+            matches.push(entry.item);
+            if(matches.length===8) break;
+        }
+    }
+    return matches;
 }
 async function nrV2HydratePhoto(img,path){
     if(!img || !path) return;
@@ -8990,64 +8999,67 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }catch(error){ showToast?.(error?.message||"Unable to open review photo","error"); }
         }));
 
+        const searchIndex=nrV2BuildSearchIndex(nrV2AllocationScope(group));
+        let searchFrame=0;
+        const setResolveMode=active=>{
+            section.classList.toggle("hasSelectedReviewItem",active);
+            if(search) search.hidden=active;
+            matches.hidden=active;
+            if(clearReview) clearReview.hidden=active;
+        };
         const drawSelection=()=>{
-            if(!selectedItem){ selection.hidden=true;selection.innerHTML="";return; }
-            selection.hidden=false;
-            const preview=nrV2AllocationPreview(group,selectedItem);
-            selection.innerHTML=`<span class="needsReviewSelectionLabel">SELECTED ITEM</span><div>${nrV2ItemSummary(selectedItem,esc)}</div><small class="needsReviewAllocationPreview">${group.total_quantity} unit${group.total_quantity===1?"":"s"} → ${preview.orderCount} active Order${preview.orderCount===1?"":"s"}</small><button type="button" data-resolve>Link &amp; Receive</button>`;
+            if(!selectedItem){selection.hidden=true;selection.innerHTML="";setResolveMode(false);return;}
+            const quantity=group.total_quantity;
+            const scope=nrV2AllocationScope(group);
+            const plan=buildReceivingAutoAllocationPlan(selectedItem,quantity,scope);
+            const orderRows=scope.flatMap(order=>(getPerOrderReceivingRows(order)||[]).filter(row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(selectedItem.itemCode)));
+            const ordered=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Ordered Qty"],0),0);
+            const received=orderRows.reduce((sum,row)=>sum+toNumber(row?.["Received Qty"],0),0);
+            const afterReceived=received+quantity,delta=afterReceived-ordered;
+            const status=ordered<=0?{label:"EXTRA",value:`+${afterReceived}`,cls:"isExtra"}:delta>0?{label:"OVER",value:`+${delta}`,cls:"isOver"}:delta<0?{label:"REMAINING",value:`-${Math.abs(delta)}`,cls:"isRemaining"}:{label:"COMPLETE",value:"0",cls:"isComplete"};
+            setResolveMode(true);selection.hidden=false;
+            selection.innerHTML=`<div class="needsReviewSelectedCard">
+              <div class="needsReviewSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-change-review-item>Change Item</button></div>
+              <strong class="needsReviewSelectedName">${esc(selectedItem.itemName)}</strong>
+              <small class="needsReviewSelectedCode">Item Code <b>${esc(selectedItem.itemCode)}</b></small>
+              <div class="gtinItemMetrics"><div><span>This Scan</span><b>${quantity}</b></div><div><span>Ordered</span><b>${ordered}</b></div><div><span>Already Received</span><b>${received}</b></div><div class="${status.cls}"><span>${status.label}</span><b>${status.value}</b></div></div>
+              <div class="gtinAllocationSummary ${status.cls}"><b>After this scan: ${afterReceived} / ${ordered} received · ${status.label} ${status.value}</b><span>${ordered<=0?"Extra Item":`Auto-allocated across ${new Set(plan.map(row=>row.orderNumber)).size} active Order${new Set(plan.map(row=>row.orderNumber)).size===1?"":"s"}`}</span></div>
+              <details class="gtinAllocationDetails"><summary>View allocation</summary>${plan.map(row=>`<div><span>${esc(row.orderNumber)}</span><b>+${row.quantity}</b></div>`).join("")}</details>
+            </div><button type="button" class="gtinPrimaryAction" data-resolve>Link &amp; Receive</button>`;
+            selection.querySelector("[data-change-review-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();if(search){search.value="";search.focus();}});
             selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
-                const button=event.currentTarget;
-                button.disabled=true;
-                overlay.dataset.busy="1";
+                const button=event.currentTarget;button.disabled=true;overlay.dataset.busy="1";
                 try{
                     const outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
                     if(outcome.pending){
                         button.textContent="Processing…";
-                        /* Processing state lives on the action itself. Do not
-                           emit a second warning toast for the normal durable
-                           queue path; successful completion owns the single
-                           user-facing toast below. */
                         const reviewIds=new Set(group.rows.map(row=>toSafeString(row?.review_id||"")).filter(Boolean));
                         let resolved=false;
                         for(let attempt=0;attempt<6;attempt++){
                             await new Promise(resolve=>setTimeout(resolve,500));
                             const pendingRows=await nrV2List(workflow,null);
-                            if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){
-                                resolved=true;
-                                break;
-                            }
+                            if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){resolved=true;break;}
                         }
-                        if(!resolved){
-                            button.textContent="Processing — Close & reopen to refresh";
-                            showToast?.("Receipt is still processing. Do not press Link & Resolve again.","warning");
-                            return;
-                        }
+                        if(!resolved){button.textContent="Processing — Close & reopen to refresh";showToast?.("Receipt is still processing. Do not press Link & Receive again.","warning");return;}
                     }
-                    section.remove();
-                    await refreshNeedsReviewCounters();
-                    const count=overlay.querySelectorAll(".needsReviewRow").length;
-                    const countNode=overlay.querySelector(".pfnReviewCount");
+                    section.remove();await refreshNeedsReviewCounters();
+                    const count=overlay.querySelectorAll(".needsReviewRow").length,countNode=overlay.querySelector(".pfnReviewCount");
                     if(countNode) countNode.textContent=String(count);
                     if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
                     showToast?.(`Linked & received — ${group.total_quantity} units`,"success");
-                }catch(error){ button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error"); }
-                finally{ overlay.dataset.busy=""; }
+                }catch(error){button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error");}
+                finally{overlay.dataset.busy="";}
             });
         };
         const drawMatches=()=>{
-            selectedItem=null;
-            drawSelection();
             const q=toSafeString(search?.value||"").trim();
+            selectedItem=null;drawSelection();
             if(!q){matches.innerHTML="";return;}
-            const items=nrV2FindOrderMatches(q,nrV2AllocationScope(group)).slice(0,8);
+            const items=nrV2FindOrderMatches(q,searchIndex);
             matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the captured active Orders.</div>`;
-            matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{
-                selectedItem=items[Number(button.dataset.match)]||null;
-                matches.querySelectorAll("button").forEach(result=>result.classList.toggle("selected",result===button));
-                drawSelection();
-            }));
+            matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.match)]||null;drawSelection();}));
         };
-        search?.addEventListener("input",drawMatches);
+        search?.addEventListener("input",()=>{if(searchFrame)cancelAnimationFrame(searchFrame);searchFrame=requestAnimationFrame(()=>{searchFrame=0;drawMatches();});});
         clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
     });
 
