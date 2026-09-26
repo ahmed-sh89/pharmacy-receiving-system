@@ -1882,3 +1882,31 @@ body:not(.zebraDevice) .pfnActivitySummaryMetrics{display:grid;grid-template-col
 body:not(.zebraDevice) .pfnActivitySummaryMetrics>span{display:grid;gap:2px;padding:8px 10px;border:1px solid #c7d9e9;border-radius:9px;background:#fff;text-align:center}
 body:not(.zebraDevice) .pfnActivitySummaryMetrics small{font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#607d96}
 body:not(.zebraDevice) .pfnActivitySummaryMetrics b{font-size:15px;font-weight:900;color:#123f69}
+
+/* Receiving identity workspace — PharmFlow visual language */
+body:not(.zebraDevice) .pfnIdentityPanel{width:min(700px,92vw)!important;overflow:hidden!important}
+body:not(.zebraDevice) .pfnIdentityBody{display:grid;gap:14px;padding:18px 22px}
+body:not(.zebraDevice) .pfnIdentityCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid #c7dced;border-radius:12px;background:#f5faff}
+body:not(.zebraDevice) .pfnIdentityCard>div:first-child{display:grid;gap:3px;min-width:0}
+body:not(.zebraDevice) .pfnIdentityCard small,.pfnCreateMeta small{font-size:9px;font-weight:950;letter-spacing:.08em;color:#69839b}
+body:not(.zebraDevice) .pfnIdentityCard strong{font-size:17px;font-weight:950;color:#123f6d}
+body:not(.zebraDevice) .pfnIdentityCard span{font-size:12px;color:#5b7893}
+body:not(.zebraDevice) .pfnBarcodeChip{display:grid;gap:3px;padding:9px 11px;border:1px solid #d2e1ef;border-radius:9px;background:#fff;white-space:nowrap}
+body:not(.zebraDevice) .pfnExtraFields{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:12px}
+body:not(.zebraDevice) .pfnExtraFields label,.pfnCreateGrid label{display:grid;gap:6px;font-size:11px;font-weight:900;color:#315979}
+body:not(.zebraDevice) .pfnExtraFields select,.pfnExtraFields input,.pfnCreateGrid input,.pfnCreateMeta input,.pfnCreateMeta select{width:100%;height:42px;border:1px solid #b8d0e5;border-radius:9px;background:#fff;padding:0 11px;color:#123f6d;font-size:14px;font-weight:750;outline:none}
+body:not(.zebraDevice) .pfnInfoStrip{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:#fff8e8;border:1px solid #efd59b;color:#72521c;font-size:11px}
+body:not(.zebraDevice) .pfnInfoStrip b{font-size:12px;white-space:nowrap}
+body:not(.zebraDevice) .pfnResolverTabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;padding:4px;border-radius:10px;background:#edf4fa}
+body:not(.zebraDevice) .pfnResolverTabs button{height:38px;border:0;border-radius:8px;background:transparent;color:#55728d;font-size:12px;font-weight:900}
+body:not(.zebraDevice) .pfnResolverTabs button.isActive{background:#fff;color:#1769aa;box-shadow:0 1px 4px rgba(18,63,109,.12)}
+body:not(.zebraDevice) .pfnCreateItemPane{display:grid;gap:13px}
+body:not(.zebraDevice) .pfnCreateItemPane[hidden],body:not(.zebraDevice) [data-find-pane][hidden]{display:none!important}
+body:not(.zebraDevice) .pfnCreateIntro{display:flex;align-items:baseline;gap:9px;padding:0 2px;color:#5d7891;font-size:11px}
+body:not(.zebraDevice) .pfnCreateIntro b{font-size:14px;color:#173f68}
+body:not(.zebraDevice) .pfnCreateGrid{display:grid;grid-template-columns:.8fr 1.6fr;gap:10px}
+body:not(.zebraDevice) .pfnCreateMeta{display:grid;grid-template-columns:1.4fr .6fr 1fr;gap:8px}
+body:not(.zebraDevice) .pfnCreateMeta>span,.pfnCreateMeta>label{display:grid;gap:4px;padding:9px 10px;border:1px solid #d5e3ef;border-radius:9px;background:#f7fbff}
+body:not(.zebraDevice) .pfnCreateMeta b{font-size:13px;color:#123f6d}
+body:not(.zebraDevice) .pfnCreateReceive{justify-self:end;min-width:170px;height:42px;border:0!important;border-radius:9px!important;background:#1769aa!important;color:#fff!important;font-weight:900!important}
+body:not(.zebraDevice) .gtinPrimaryAction{background:#1769aa!important;color:#fff!important;border-color:#1769aa!important}

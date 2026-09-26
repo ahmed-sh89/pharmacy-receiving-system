@@ -855,7 +855,7 @@ function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
         document.getElementById("quickGTINResolver")?.remove();
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";panel.className="gtinResolutionShell open";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
-        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED ITEM · NOT IN ORDER</span><h2>Receive as Extra Item</h2><p>This barcode is already linked in the Global Master. Choose the target active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="resolverSelectedCard"><div class="resolverSelectedIdentity"><strong class="resolverSelectedName">${escapeHTML(name)}</strong><small class="resolverSelectedCode">Item Code <b>${escapeHTML(code)}</b> · GTIN <b>${escapeHTML(gtin)}</b></small></div></div><section class="gtinResolutionSection"><label class="gtinResolutionLabel">Target Order</label><select data-extra-order class="gtinResolutionSearch">${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select><label class="gtinResolverQtyLabel">Quantity <input data-extra-qty class="gtinResolverQtyInput" type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></section><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
+        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
         document.body.appendChild(panel);let done=false;
         const finish=value=>{if(done)return;done=true;panel.remove();setScanBoxState?.(value?"success":"ready");setTimeout(()=>focusScannerInput?.(),30);resolve(value);};
         panel.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>finish(false));
@@ -957,11 +957,20 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
             </header>
             <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
-            <section class="gtinResolutionSection">
-              <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find Item</label>
-              <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Item Code or Item Name" autocomplete="off" spellcheck="false">
-              <div data-results class="gtinResolutionResults"></div>
-              <div data-selection class="gtinResolutionSelection" hidden></div>
+            <section class="gtinResolutionSection pfnUnknownWorkspace">
+              <div class="pfnResolverTabs"><button type="button" class="isActive" data-mode-find>Find Existing Item</button><button type="button" data-mode-create>Create New Item</button></div>
+              <div data-find-pane>
+                <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find Item</label>
+                <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false">
+                <div data-results class="gtinResolutionResults"></div>
+                <div data-selection class="gtinResolutionSelection" hidden></div>
+              </div>
+              <div data-create-pane class="pfnCreateItemPane" hidden>
+                <div class="pfnCreateIntro"><b>New item</b><span>Use this only when the product does not already exist in the master.</span></div>
+                <div class="pfnCreateGrid"><label><span>Item Code</span><input data-new-code autocomplete="off" placeholder="Enter Item Code"></label><label><span>Item Name</span><input data-new-name autocomplete="off" placeholder="Enter Item Name"></label></div>
+                <div class="pfnCreateMeta"><span><small>SCANNED GTIN</small><b>${escapeHTML(gtin)}</b></span><label><small>QUANTITY</small><input data-new-qty type="number" min="1" step="1" value="${escapeHTML(resolverQuantity)}"></label>${selectedOrders.length>1?`<label><small>TARGET ORDER</small><select data-new-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>`:""}</div>
+                <button type="button" class="gtinPrimaryAction pfnCreateReceive" data-create-receive>Create &amp; Receive</button>
+              </div>
             </section>
             <div class="gtinPanelMessage" aria-live="polite"></div>
             <footer class="gtinResolutionFooter"><span>Resolve now, or save it for later.</span><div><button type="button" data-review>Save for Review</button><button type="button" data-close>Cancel</button></div></footer>
@@ -971,6 +980,16 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const search=panel.querySelector("[data-search]");
         const selection=panel.querySelector("[data-selection]");
         const qtyInput=panel.querySelector("[data-resolver-qty]");
+        const findPane=panel.querySelector("[data-find-pane]"),createPane=panel.querySelector("[data-create-pane]");
+        const findTab=panel.querySelector("[data-mode-find]"),createTab=panel.querySelector("[data-mode-create]");
+        const setResolverMode=mode=>{
+            const create=mode==="create";findPane.hidden=create;createPane.hidden=!create;
+            findTab.classList.toggle("isActive",!create);createTab.classList.toggle("isActive",create);
+            panel.querySelector(".gtinPanelMessage").textContent="";
+            setTimeout(()=>panel.querySelector(create?"[data-new-code]":"[data-search]")?.focus(),30);
+        };
+        findTab.addEventListener("click",()=>setResolverMode("find"));
+        createTab.addEventListener("click",()=>setResolverMode("create"));
         const readQuantity=()=>{
             const value=Number(qtyInput?.value);
             if(!Number.isInteger(value)||value<1) throw new Error("Enter a whole quantity of 1 or more.");
@@ -1034,6 +1053,35 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 await nrV2CreateDraft({...parsed,quantity,identifierDisplay:gtin},{workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
                 await refreshNeedsReviewCounters?.();finish(true);
             }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
+        });
+        panel.querySelector("[data-create-receive]")?.addEventListener("click",async event=>{
+            const button=event.currentTarget;button.disabled=true;
+            try{
+                if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin()) throw new Error("Pharmacy admin permission is required to create a new item.");
+                const itemCode=normalizeItemCode(panel.querySelector("[data-new-code]")?.value||"");
+                const itemName=toSafeString(panel.querySelector("[data-new-name]")?.value||"").trim();
+                const quantity=Number(panel.querySelector("[data-new-qty]")?.value||resolverQuantity);
+                if(!itemCode||!itemName) throw new Error("Item Code and Item Name are required.");
+                if(!Number.isInteger(quantity)||quantity<1) throw new Error("Enter a whole quantity of 1 or more.");
+                const item={itemCode,itemName};
+                if(IdentifierService.isReferencePharmacy()){
+                    await IdentifierService.createItem(globalThis.crypto.randomUUID(),{itemCode,itemName,identifierDisplay:gtin,reason:"Receiving new item creation"});
+                }else{
+                    await IdentifierService.addPharmacyIdentifier(globalThis.crypto.randomUUID(),gtin,item,"Receiving new item creation");
+                }
+                const orderItem=getItemByCode?.(itemCode);
+                let tx;
+                if(orderItem){
+                    const txs=receiveAutoAllocatedItem({item:orderItem,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true});
+                    tx=txs?.[0]||true;
+                }else{
+                    const targetOrder=normalizeOrderNumber(panel.querySelector("[data-new-order]")?.value||selectedOrders[0]||"");
+                    if(!targetOrder) throw new Error("Choose an active Order before receiving this Extra Item.");
+                    const extra=prepareManualExtraItem(itemCode,itemName,gtin,targetOrder);
+                    tx=receiveOrderItem({item:extra,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true});
+                }
+                finish(tx||true);
+            }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to create and receive item";}
         });
         panel.querySelectorAll("[data-close]").forEach(button=>button.addEventListener("click",()=>finish(false)));
         setTimeout(()=>search.focus(),80);
