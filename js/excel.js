@@ -103,6 +103,8 @@ async function handleOrderFileSelection(event){
         "Importing order files..."
     );
 
+    let preImportWorkspace=null;
+
     try{
 
         /* Phase 2C.10.4.1 — first synchronize the server generation fence.
@@ -118,7 +120,7 @@ async function handleOrderFileSelection(event){
             await pullActiveOrderManifest({clearIfMissing:true});
         }
 
-        const preImportWorkspace =
+        preImportWorkspace =
             typeof deepClone==="function"
                 ? deepClone(AppState.workspace)
                 : JSON.parse(JSON.stringify(AppState.workspace));
