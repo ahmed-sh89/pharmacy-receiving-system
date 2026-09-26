@@ -309,3 +309,19 @@ test("Receiving report uses attributed ledger totals and normalized search",()=>
   assert.match(ui,/terms\.every\(term=>haystack\.includes\(term\)\)/);
   assert.match(css,/#receivingInlineResult[\s\S]*display:none/);
 });
+
+
+test("Order Items uses the same per-order ledger totals and normalized search as Receiving",()=>{
+  const ui=read("ui.js");
+  const start=ui.indexOf('function getKpiPanelItems');
+  const end=ui.indexOf('function kpiTitle',start);
+  const kpi=ui.slice(start,end);
+  assert.match(kpi,/if\(key==="total"\)/);
+  assert.match(kpi,/getPerOrderReceivingRows/);
+  assert.match(kpi,/receivedQty:toNumber\(row\["Received Qty"\],0\)/);
+  const browserStart=ui.indexOf('function renderItemBrowser');
+  const browserEnd=ui.indexOf('function ',browserStart+30);
+  const browser=ui.slice(browserStart,browserEnd>browserStart?browserEnd:undefined);
+  assert.match(browser,/normalizeReceivingSearchText/);
+  assert.match(browser,/matchesReceivingSearch/);
+});
