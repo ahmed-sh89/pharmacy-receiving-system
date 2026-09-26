@@ -956,7 +956,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <div><span class="gtinActionBadge">ITEM NOT RECOGNISED</span><h2>Link this barcode</h2><p>Find the item. PharmFlow will receive it into the correct active Order automatically.</p></div>
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
             </header>
-            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
+            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong></div>
             <section class="gtinResolutionSection pfnUnknownWorkspace">
               <div class="pfnResolverTabs"><button type="button" class="isActive" data-mode-find>Find Existing Item</button><button type="button" data-mode-create>Create New Item</button></div>
               <div data-find-pane>
@@ -968,7 +968,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <div data-create-pane class="pfnCreateItemPane" hidden>
                 <div class="pfnCreateIntro"><b>New item</b><span>Use this only when the product does not already exist in the master.</span></div>
                 <div class="pfnCreateGrid"><label><span>Item Code</span><input data-new-code autocomplete="off" placeholder="Enter Item Code"></label><label><span>Item Name</span><input data-new-name autocomplete="off" placeholder="Enter Item Name"></label></div>
-                <div class="pfnCreateMeta"><span><small>SCANNED GTIN</small><b>${escapeHTML(gtin)}</b></span><label><small>QUANTITY</small><input data-new-qty type="number" min="1" step="1" value="${escapeHTML(resolverQuantity)}"></label>${selectedOrders.length>1?`<label><small>TARGET ORDER</small><select data-new-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>`:""}</div>
+                <div class="pfnCreateMeta"><span><small>SCANNED GTIN</small><b>${escapeHTML(gtin)}</b></span><label><small>QUANTITY</small><input data-resolver-qty type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}"></label>${selectedOrders.length>1?`<label><small>TARGET ORDER</small><select data-new-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>`:""}</div>
                 <button type="button" class="gtinPrimaryAction pfnCreateReceive" data-create-receive>Create &amp; Receive</button>
               </div>
             </section>
@@ -1060,7 +1060,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin()) throw new Error("Pharmacy admin permission is required to create a new item.");
                 const itemCode=normalizeItemCode(panel.querySelector("[data-new-code]")?.value||"");
                 const itemName=toSafeString(panel.querySelector("[data-new-name]")?.value||"").trim();
-                const quantity=Number(panel.querySelector("[data-new-qty]")?.value||resolverQuantity);
+                const quantity=readQuantity();
                 if(!itemCode||!itemName) throw new Error("Item Code and Item Name are required.");
                 if(!Number.isInteger(quantity)||quantity<1) throw new Error("Enter a whole quantity of 1 or more.");
                 const item={itemCode,itemName};
