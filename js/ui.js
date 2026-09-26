@@ -8647,7 +8647,14 @@ async function requestRemoveActiveOrderFile(fileId){
             }
 
             if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry();
+
+            /* The manifest pull above is now final authority. Reconcile all
+               order-derived caches before rendering the still-open modal. */
+            if(typeof reconcileMasterGTINCurrentOrder==="function"){
+                await reconcileMasterGTINCurrentOrder();
+            }
             if(typeof refreshEntireUI==="function")refreshEntireUI();
+            AppEvents.emit("files:updated",{source:"active-order-remove-confirmed"});
             if(typeof refreshNeedsReviewCounters==="function")await refreshNeedsReviewCounters();
 
             showToast(
