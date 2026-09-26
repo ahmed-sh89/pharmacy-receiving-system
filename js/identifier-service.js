@@ -50,6 +50,18 @@ const IdentifierService={
         const pharmacyId=this.pharmacyId();
         if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
         return authRpc("remove_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
+    },
+    isReferencePharmacy(){
+        return toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
+    },
+    async learnIdentifier(operationId,identifierDisplay,item,reason){
+        if(this.isReferencePharmacy()){
+            await this.addIdentifier(operationId,identifierDisplay,item?.itemCode||item?.item_code,reason);
+        }
+        return this.addPharmacyIdentifier(
+            globalThis.crypto?.randomUUID?.()||operationId,
+            identifierDisplay,item,reason
+        );
     }
 };
 window.IdentifierService=IdentifierService;
