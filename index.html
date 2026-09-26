@@ -2138,22 +2138,22 @@
                     <section class="contentCard masterGTINCard">
                         <div class="cardHeader">
                             <div>
-                                <span class="sectionEyebrow">GLOBAL MASTER</span>
-                                <h2>Global Identifier Master</h2>
-                                <p>Find an identifier or search the item catalogue.</p>
+                                <span class="sectionEyebrow">BARCODE MANAGEMENT</span>
+                                <h2>Item Barcodes</h2>
+                                <p>Scan a barcode or search for an item to view and manage its barcodes.</p>
                             </div>
                         </div>
 
-                        <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Global Identifier Master administration">
-                            <div class="globalIdentifierMasterLookupGrid">
-                                <label>Identifier / GTIN
-                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" placeholder="e.g. S00110, 1234A, or GTIN">
+                        <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Item barcode management">
+                            <div class="globalIdentifierMasterLookupGrid barcodeManagementLookup">
+                                <label>Scan Barcode
+                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode">
                                 </label>
-                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Find Mapping</button>
-                                <label>Item Code / Item Name
-                                    <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Search canonical Global Items">
+                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Find</button>
+                                <label>Find Item
+                                    <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Item Code or Item Name">
                                 </label>
-                                <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search Items</button>
+                                <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search</button>
                                 <button id="btnGlobalIdentifierMasterClear" data-admin-clear type="button" class="secondaryButton">Clear</button>
                             </div>
                             <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
