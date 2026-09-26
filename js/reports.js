@@ -1217,38 +1217,43 @@ function getPerOrderReceivingRows(orderNumber){
         };
     });
 
-    /* Manual extras attributed to the selected order / transaction order. */
-    const manualItems=(AppState?.workspace?.orderData||[])
-        .filter(item=>item?.manual===true && toNumber(item?.receivedQty,0)>0);
-
-    manualItems.forEach(item=>{
-        const txs=(AppState?.workspace?.receivingHistory||[])
-            .filter(tx=>
-                normalizeItemCode(tx?.itemCode||"")===normalizeItemCode(item.itemCode) &&
-                normalizeOrderNumber(tx?.orderId||tx?.orderNumber||"")===normalized &&
-                tx?.undone!==true
-            );
-
-        const received=txs.reduce(
-            (sum,tx)=>sum+toNumber(tx?.quantity,0),
-            0
-        );
-
-        if(received>0){
-            rows.push({
-                orderNumber:normalized,
-                "Item Number":item.itemCode||"",
-                "Item Name":item.itemName||"",
-                "Ordered Qty":0,
-                "Received Qty":received,
-                "Difference":received,
-                "Issue Type":"Manual / Unordered Extra",
-                issueKey:"manual",
-                "Group":getOperationalGroupForReceivingRow(item),
-                "Category":item.category||"",
-                "Sub Category":item.sub_category||item.subCategory||""
-            });
-        }
+    /* Extra Items are reconstructed from durable Receiving transactions.
+       Do not depend on the transient workspace item surviving refresh. */
+    const orderedCodes=new Set(
+        orderRows.map(row=>normalizeItemCode(row?.itemCode||"")).filter(Boolean)
+    );
+    const extrasByCode=new Map();
+    (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
+        if(tx?.undone===true) return;
+        if(normalizeOrderNumber(tx?.orderId||tx?.orderNumber||"")!==normalized) return;
+        const code=normalizeItemCode(tx?.itemCode||"");
+        if(!code || orderedCodes.has(code)) return;
+        const quantity=toNumber(tx?.quantity,0);
+        if(!Number.isFinite(quantity) || quantity===0) return;
+        const current=extrasByCode.get(code)||{
+            itemCode:toSafeString(tx?.itemCode||code),
+            itemName:toSafeString(tx?.itemName||""),
+            received:0
+        };
+        current.received+=quantity;
+        if(!current.itemName) current.itemName=toSafeString(tx?.itemName||"");
+        extrasByCode.set(code,current);
+    });
+    extrasByCode.forEach(extra=>{
+        if(extra.received<=0) return;
+        rows.push({
+            orderNumber:normalized,
+            "Item Number":extra.itemCode,
+            "Item Name":extra.itemName,
+            "Ordered Qty":0,
+            "Received Qty":extra.received,
+            "Difference":extra.received,
+            "Issue Type":"Extra Item",
+            issueKey:"manual",
+            "Group":"",
+            "Category":"",
+            "Sub Category":""
+        });
     });
 
     return rows;
@@ -1444,7 +1449,7 @@ function buildLiveReceivingReport(options={}){
             "Group":item?.group_name||item?.groupName||item?.Group||item?.category||"",
             "Category":item?.category||"",
             "Sub Category":item?.sub_category||item?.subCategory||"",
-            "Manual":item?.manual===true
+            "Extra Item":item?.manual===true
         };
     });
 
@@ -1655,7 +1660,7 @@ function buildReceivingDiscrepancyReportLegacy(options={}){
         let issueType="";
 
         if(issueKey==="manual"){
-            issueType="Manual / Unordered Extra"; manualExtraItems++;
+            issueType="Extra Item"; manualExtraItems++;
         }else if(issueKey==="over"){
             issueType="Over Received"; overItems++;
         }else if(issueKey==="not_received"){
@@ -1684,7 +1689,7 @@ function buildReceivingDiscrepancyReportLegacy(options={}){
         });
     });
 
-    const rank={"Not Received":1,"Partial Shortage":2,"Received":3,"Over Received":4,"Manual / Unordered Extra":5};
+    const rank={"Not Received":1,"Partial Shortage":2,"Received":3,"Over Received":4,"Extra Item":5};
     rows.sort((a,b)=>(rank[a["Issue Type"]]||9)-(rank[b["Issue Type"]]||9)||String(a["Item Name"]).localeCompare(String(b["Item Name"])));
     const orderMetadata=getReceivingOrderMetadata();
     return {
@@ -1730,7 +1735,7 @@ function buildReceivingDiscrepancyReport(options={}){
                 partialShortageItems++;
             }else if(type==="Over Received"){
                 overItems++;
-            }else if(type==="Manual / Unordered Extra"){
+            }else if(type==="Extra Item"){
                 manualExtraItems++;
             }
         });
