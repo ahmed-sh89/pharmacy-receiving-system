@@ -264,6 +264,75 @@ function getReceivingDisplayMetrics(item,orderNumber){
     return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
 }
 
+function getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers=null){
+    const captured=Array.isArray(workScopeOrderNumbers)
+        ? [...new Set(workScopeOrderNumbers.map(normalizeOrderNumber).filter(Boolean))]
+        : getReceivingEligibleOrders(item);
+    const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean))];
+    return captured.filter(order=>memberships.includes(order)&&getReceivingOrderRow(item,order));
+}
+
+function buildReceivingAutoAllocationPlan(item,quantity,workScopeOrderNumbers=null,remainingState=null){
+    let left=getValidReceivingQuantity(quantity);
+    const candidates=getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers);
+    if(!candidates.length) throw new Error("Item not found in active Orders.");
+    const plan=[];
+    for(const order of candidates){
+        if(left<=0) break;
+        const row=getReceivingOrderRow(item,order);
+        const key=normalizeOrderNumber(order);
+        const currentRemaining=remainingState?.has(key)
+            ? Math.max(0,toNumber(remainingState.get(key),0))
+            : Math.max(0,toNumber(row?.["Remaining Qty"],toNumber(row?.["Ordered Qty"],0)-toNumber(row?.["Received Qty"],0)));
+        const take=Math.min(left,currentRemaining);
+        if(take>0){
+            plan.push({orderNumber:key,quantity:take});
+            left-=take;
+            remainingState?.set(key,currentRemaining-take);
+        }
+    }
+    if(left>0){
+        if(AppState?.settings?.allowOverReceiving!==true){
+            throw new Error("Quantity exceeds the remaining quantity in active Orders.");
+        }
+        const overflowOrder=normalizeOrderNumber(candidates[candidates.length-1]);
+        const existing=plan.find(row=>row.orderNumber===overflowOrder);
+        if(existing) existing.quantity+=left;
+        else plan.push({orderNumber:overflowOrder,quantity:left});
+        left=0;
+    }
+    return plan;
+}
+
+function receiveAutoAllocatedItem(options){
+    if(!options?.item) throw new Error("Invalid receiving item");
+    const plan=Array.isArray(options.plan)&&options.plan.length
+        ? options.plan
+        : buildReceivingAutoAllocationPlan(options.item,options.quantity,options.workScopeOrderNumbers);
+    const baseId=toSafeString(options.transactionId||createTransactionId());
+    const transactions=[];
+    for(let index=0;index<plan.length;index++){
+        const allocation=plan[index];
+        const tx=receiveOrderItem({
+            item:options.item,
+            quantity:allocation.quantity,
+            gtin:options.gtin||"",
+            lot:options.lot||"",
+            expiry:options.expiry||"",
+            serial:options.serial||"",
+            source:options.source||APP_CONFIG.transactionSources.scanner,
+            manual:options.manual===true,
+            targetOrder:allocation.orderNumber,
+            transactionId:plan.length===1?baseId:`${baseId}:A${index+1}`,
+            identifierPreserveExact:options.identifierPreserveExact===true,
+            gtinResolution:options.gtinResolution||null
+        });
+        if(!tx) throw new Error("Unable to record allocated receiving transaction");
+        transactions.push(tx);
+    }
+    return transactions;
+}
+
 function getManualExtraTargetOrder(){
     const selected=
         typeof getSelectedReceivingOrderNumbers==="function"
