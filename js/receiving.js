@@ -886,6 +886,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
         document.getElementById("quickGTINResolver")?.remove();
         const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():[];
+        let resolverQuantity=getValidReceivingQuantity(parsed?.quantity);
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";
         panel.className="gtinResolutionShell open";
@@ -899,7 +900,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <div><span class="gtinActionBadge">ITEM NOT RECOGNISED</span><h2>Link this barcode</h2><p>Find the item. PharmFlow will receive it into the correct active Order automatically.</p></div>
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
             </header>
-            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><small>Qty ${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}</small></div>
+            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
             <section class="gtinResolutionSection">
               <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find Item</label>
               <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Item Code or Item Name" autocomplete="off" spellcheck="false">
@@ -913,6 +914,13 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const results=panel.querySelector("[data-results]");
         const search=panel.querySelector("[data-search]");
         const selection=panel.querySelector("[data-selection]");
+        const qtyInput=panel.querySelector("[data-resolver-qty]");
+        const readQuantity=()=>{
+            const value=Number(qtyInput?.value);
+            if(!Number.isInteger(value)||value<1) throw new Error("Enter a whole quantity of 1 or more.");
+            resolverQuantity=value;
+            return value;
+        };
         let selectedItem=null,finished=false;
         const finish=value=>{
             if(finished)return;finished=true;panel.remove();
@@ -930,7 +938,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 results.removeAttribute("aria-hidden");
                 return;
             }
-            const model=buildReceivingResolverSelectionModel(selectedItem,parsed?.quantity,selectedOrders);
+            const model=buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders);
             search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
             search.hidden=true;results.hidden=true;
             search.setAttribute("aria-hidden","true");
@@ -945,7 +953,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                     const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,selectedItem,"Receiving barcode resolution");
                     const mapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
                     const resolution=mapping?{kind:"PHARMACY_LEARNED",mappingId:mapping.identifierId,mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode}:null;
-                    const txs=receiveAutoAllocatedItem({item:selectedItem,quantity:getValidReceivingQuantity(parsed?.quantity),gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
+                    const txs=receiveAutoAllocatedItem({item:selectedItem,quantity:readQuantity(),gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
                     finish(txs[0]||true);
                 }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
             });
@@ -963,9 +971,11 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             if(searchFrame)cancelAnimationFrame(searchFrame);
             searchFrame=requestAnimationFrame(render);
         });
+        qtyInput?.addEventListener("change",()=>{try{readQuantity();if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
         panel.querySelector("[data-review]")?.addEventListener("click",async()=>{
             try{
-                await nrV2CreateDraft({...parsed,identifierDisplay:gtin},{workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
+                const quantity=readQuantity();
+                await nrV2CreateDraft({...parsed,quantity,identifierDisplay:gtin},{workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
                 await refreshNeedsReviewCounters?.();finish(true);
             }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
         });
