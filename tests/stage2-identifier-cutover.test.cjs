@@ -279,3 +279,16 @@ test('Global Identifier writes use the authoritative reference-pharmacy gate',()
     assert.match(body,/pharmflow_is_reference_master_admin_v1\(\)/,rpc);
   }
 });
+
+
+test("reference pharmacy learning is centralized for Receiving and future Expiry reuse",()=>{
+  const service=read("js/identifier-service.js");
+  const ui=read("ui.js");
+  assert.match(service,/isReferencePharmacy\(\)/);
+  assert.match(service,/pharmacy_code[\s\S]*HHP084/);
+  assert.match(service,/async learnIdentifier\(/);
+  assert.match(service,/if\(this\.isReferencePharmacy\(\)\)[\s\S]*this\.addIdentifier/);
+  assert.match(service,/return this\.addPharmacyIdentifier/);
+  assert.match(ui,/IdentifierService\.learnIdentifier\(/);
+  assert.doesNotMatch(ui,/Needs Review learns only in the current pharmacy/);
+});
