@@ -978,7 +978,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         document.body.appendChild(panel);
         const results=panel.querySelector("[data-results]");
         const search=panel.querySelector("[data-search]");
-        const findPaneSection=search?.closest(".gtinResolutionSection");
+        const searchLabel=panel.querySelector('label[for="gtinResolutionSearch"]');
         const selection=panel.querySelector("[data-selection]");
         const qtyInput=panel.querySelector("[data-resolver-qty]");
         const findPane=panel.querySelector("[data-find-pane]"),createPane=panel.querySelector("[data-create-pane]");
@@ -1008,16 +1008,14 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const drawSelection=()=>{
             if(!selectedItem){
                 selection.hidden=true;selection.innerHTML="";
-                findPaneSection?.classList.remove("hasSelectedItem");
-                if(findPaneSection) findPaneSection.hidden=false;
+                searchLabel.hidden=false;
                 search.hidden=false;results.hidden=false;
                 search.removeAttribute("aria-hidden");
                 results.removeAttribute("aria-hidden");
                 return;
             }
             const model=buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders);
-            findPaneSection?.classList.add("hasSelectedItem");
-            if(findPaneSection) findPaneSection.hidden=true;
+            searchLabel.hidden=true;
             search.hidden=true;results.hidden=true;
             search.setAttribute("aria-hidden","true");
             results.setAttribute("aria-hidden","true");
