@@ -1875,3 +1875,17 @@ body:not(.zebraDevice) .gtinAllocationDetails{margin-top:8px;border-top:1px soli
 body:not(.zebraDevice) .gtinAllocationDetails summary{cursor:pointer;color:#1769aa;font-size:12px;font-weight:850}
 body:not(.zebraDevice) .gtinAllocationDetails>div{display:flex;justify-content:space-between;padding:4px 2px;font-size:12px}
 @media(max-width:760px){body:not(.zebraDevice) .gtinItemMetrics{grid-template-columns:repeat(2,1fr)}body:not(.zebraDevice) .gtinAllocationSummary{display:grid}}
+
+/* 2C.11.61d — selected item is a distinct operational state. */
+body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem>.gtinResolutionLabel,
+body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem>.gtinResolutionSearch,
+body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem>.gtinResolutionResults{display:none!important}
+body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem .gtinResolutionSelection{margin-top:0!important}
+body:not(.zebraDevice) .gtinItemMetrics>div{text-align:center!important;align-content:center!important;min-height:72px!important}
+body:not(.zebraDevice) .gtinItemMetrics>div:nth-child(1){background:#e8f3ff!important;border-color:#9fc8ef!important}
+body:not(.zebraDevice) .gtinItemMetrics>div:nth-child(2){background:#edf4ff!important;border-color:#aac8e8!important}
+body:not(.zebraDevice) .gtinItemMetrics>div:nth-child(3){background:#e9f8ef!important;border-color:#9bd3ad!important}
+body:not(.zebraDevice) .gtinItemMetrics>div:nth-child(4){background:#fff3d9!important;border-color:#e8c36c!important}
+body:not(.zebraDevice) .gtinItemMetrics span{display:block!important;text-align:center!important}
+body:not(.zebraDevice) .gtinItemMetrics b{display:block!important;text-align:center!important;font-size:23px!important;line-height:1.1!important;margin-top:4px!important}
+body:not(.zebraDevice) .gtinAllocationSummary{align-items:center!important;min-height:42px!important}
