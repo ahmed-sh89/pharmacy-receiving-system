@@ -58,8 +58,7 @@ function extractDocumentField(matrix,aliases){
     return "";
 }
 
-async function inspectOrderFileMetadata(file){
-    const workbook=await readExcelWorkbook(file);
+function inspectOrderWorkbookMetadata(workbook,file){
     const meta={orderNumber:"",orderDate:"",fromWarehouse:"",toWarehouse:"",fileName:file.name};
     for(const sheetName of workbook.SheetNames){
         const matrix=worksheetToMatrix(workbook.Sheets[sheetName]);
@@ -71,6 +70,11 @@ async function inspectOrderFileMetadata(file){
     }
     if(!meta.orderNumber){throw new Error("Order Number could not be detected in "+file.name);}
     return meta;
+}
+
+async function inspectOrderFileMetadata(file){
+    const workbook=await readExcelWorkbook(file);
+    return inspectOrderWorkbookMetadata(workbook,file);
 }
 
 async function getOrderLifecycleRecord(orderNumber){
@@ -242,6 +246,7 @@ function canGenerateItemTransferReport(orderNumber){
 
 window.initializeOrderLifecycle=initializeOrderLifecycle;
 window.inspectOrderFileMetadata=inspectOrderFileMetadata;
+window.inspectOrderWorkbookMetadata=inspectOrderWorkbookMetadata;
 window.assertOrderNumberCanUpload=assertOrderNumberCanUpload;
 window.registerUploadedOrder=registerUploadedOrder;
 window.markWorkspaceOrdersReceived=markWorkspaceOrdersReceived;
