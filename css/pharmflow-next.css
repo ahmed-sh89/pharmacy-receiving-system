@@ -184,6 +184,15 @@ body:not(.zebraDevice) .progressFooter {display:flex;justify-content:space-betwe
 #page-files .healthGrid span {font-size:12px}
 #page-files .healthGrid strong {font-size:22px}
 #page-files .fileList {margin-top:10px}
+body:not(.zebraDevice) #page-files #orderFilesList{min-height:0!important;max-height:210px!important;padding:8px!important;gap:9px!important}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem{min-height:64px;padding:10px 12px;border:1px solid #c8d9e7;border-radius:9px;background:#fff;gap:16px}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem>div:first-child{min-width:0;display:grid;gap:5px}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem>div:first-child br{display:none}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem strong{font-size:15px;font-weight:750;line-height:1.2;color:#163f65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem>div:first-child small{font-size:12px;font-weight:650;line-height:1.2;color:#607b91;white-space:nowrap}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItemActions{display:flex;align-items:center;gap:12px;flex:none}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItemActions>small{font-size:12px;font-weight:700;color:#5b7489;white-space:nowrap}
+body:not(.zebraDevice) #page-files #orderFilesList .removeActiveOrderButton{min-height:32px;padding:5px 11px;border:1px solid #ef9b9b;border-radius:7px;background:#fff8f8;color:#c73535;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
 
 /* Settings — bounded administration cards, no parallel state or permissions. */
 body:not(.zebraDevice) #page-settings {width:82%;max-width:1200px;margin:0 auto}
