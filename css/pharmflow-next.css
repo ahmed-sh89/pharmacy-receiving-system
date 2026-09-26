@@ -1872,3 +1872,13 @@ body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(6){width
 body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(7){width:10%}
 body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(8){width:11%}
 body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(9){width:8%}
+
+body:not(.zebraDevice) .pfnActivitySummary{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 12px;padding:12px 14px;border:1px solid #b7cee2;border-radius:12px;background:#f6fbff;box-shadow:0 2px 8px rgba(20,61,95,.05)}
+body:not(.zebraDevice) .pfnActivitySummary[hidden]{display:none!important}
+body:not(.zebraDevice) .pfnActivitySummaryIdentity{display:grid;gap:3px;min-width:260px;color:#123f69}
+body:not(.zebraDevice) .pfnActivitySummaryIdentity b{font-size:15px;font-weight:900}
+body:not(.zebraDevice) .pfnActivitySummaryIdentity span{font-size:11px;font-weight:800;color:#52718d}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics{display:grid;grid-template-columns:repeat(4,minmax(92px,1fr));gap:8px;flex:1;max-width:560px}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics>span{display:grid;gap:2px;padding:8px 10px;border:1px solid #c7d9e9;border-radius:9px;background:#fff;text-align:center}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics small{font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#607d96}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics b{font-size:15px;font-weight:900;color:#123f69}

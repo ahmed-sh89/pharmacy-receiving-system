@@ -788,6 +788,36 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
             setScanBoxState?.("action");
             return renderKnownNotInOrderHandheld(parsed,masterRecord);
         }
+
+        /* PC: identity is already authoritative. Do not send a known Global
+           identifier through the unknown/link resolver merely because the
+           Item Code is absent from the selected Orders. */
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+        if(selectedOrders.length!==1){
+            setScanBoxState?.("action");
+            return openKnownNotInOrderPC(parsed,masterRecord,selectedOrders);
+        }
+        try{
+            const item=prepareManualExtraItem(masterRecord.itemCode,masterRecord.itemName||masterRecord.name||masterRecord.itemCode,gtin,selectedOrders[0]);
+            const transaction=receiveOrderItem({
+                item,
+                quantity:getValidReceivingQuantity(parsed?.quantity),
+                gtin,
+                lot:parsed?.lot||"",
+                expiry:parsed?.expiry||"",
+                serial:parsed?.serial||"",
+                source:APP_CONFIG.transactionSources.scanner,
+                manual:true,
+                targetOrder:selectedOrders[0],
+                identifierPreserveExact:true
+            });
+            return transaction||false;
+        }catch(error){
+            handleReceivingFailure(error?.message||"Unable to receive known extra item");
+            return false;
+        }
     }
 
     /*
@@ -815,6 +845,32 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
 
     setScanBoxState?.("action");
     return await openQuickGTINResolver(parsed,masterRecord);
+}
+
+function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
+    return new Promise(resolve=>{
+        const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||"");
+        const code=normalizeItemCode(masterRecord?.itemCode||"");
+        const name=toSafeString(masterRecord?.itemName||masterRecord?.name||code);
+        document.getElementById("quickGTINResolver")?.remove();
+        const panel=document.createElement("div");
+        panel.id="quickGTINResolver";panel.className="gtinResolutionShell open";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
+        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED ITEM · NOT IN ORDER</span><h2>Receive as Extra Item</h2><p>This barcode is already linked in the Global Master. Choose the target active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="resolverSelectedCard"><div class="resolverSelectedIdentity"><strong class="resolverSelectedName">${escapeHTML(name)}</strong><small class="resolverSelectedCode">Item Code <b>${escapeHTML(code)}</b> · GTIN <b>${escapeHTML(gtin)}</b></small></div></div><section class="gtinResolutionSection"><label class="gtinResolutionLabel">Target Order</label><select data-extra-order class="gtinResolutionSearch">${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select><label class="gtinResolverQtyLabel">Quantity <input data-extra-qty class="gtinResolverQtyInput" type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></section><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
+        document.body.appendChild(panel);let done=false;
+        const finish=value=>{if(done)return;done=true;panel.remove();setScanBoxState?.(value?"success":"ready");setTimeout(()=>focusScannerInput?.(),30);resolve(value);};
+        panel.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>finish(false));
+        panel.querySelector("[data-add-extra]").onclick=()=>{
+            try{
+                const targetOrder=normalizeOrderNumber(panel.querySelector("[data-extra-order]").value);
+                const quantity=Number(panel.querySelector("[data-extra-qty]").value);
+                if(!targetOrder||!Number.isInteger(quantity)||quantity<1)throw new Error("Choose an Order and enter a valid quantity.");
+                const item=prepareManualExtraItem(code,name,gtin,targetOrder);
+                const tx=receiveOrderItem({item,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true});
+                if(!tx)throw new Error("Unable to receive extra item");
+                finish(tx);
+            }catch(error){panel.querySelector(".gtinResolutionFooter span").textContent=error?.message||"Unable to receive extra item";}
+        };
+    });
 }
 
 function buildReceivingResolverSearchIndex(workScopeOrderNumbers=[]){
