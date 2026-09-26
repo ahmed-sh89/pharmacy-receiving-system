@@ -1015,9 +1015,9 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             }
             const model=buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders);
             search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
-            search.hidden=false;results.hidden=false;
-            search.removeAttribute("aria-hidden");
-            results.removeAttribute("aria-hidden");
+            search.hidden=true;results.hidden=true;
+            search.setAttribute("aria-hidden","true");
+            results.setAttribute("aria-hidden","true");
             selection.hidden=false;
             selection.innerHTML=renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item")+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});

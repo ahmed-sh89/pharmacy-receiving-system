@@ -1962,3 +1962,27 @@ body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8.5%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12%}
 body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:9px;white-space:nowrap}
 body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:13px;font-weight:700}
+
+/* Resolver states: visually distinguish unknown master data from known Extra Items. */
+body:not(.zebraDevice) .gtinResolverPanel.pfnUnknownWorkspace{border:1px solid #e7b24c;box-shadow:0 24px 60px rgba(43,69,94,.22)}
+body:not(.zebraDevice) .gtinResolverPanel.pfnUnknownWorkspace .gtinResolverHeader{background:#fff8e8;border-bottom-color:#efd28f}
+body:not(.zebraDevice) .gtinResolverPanel.pfnUnknownWorkspace .gtinResolverBadge{background:#fff3cf;border-color:#dfa62f;color:#8a5900}
+body:not(.zebraDevice) .gtinResolverPanel.pfnUnknownWorkspace .gtinReadout{background:#fffaf0;border-color:#edd49b}
+body:not(.zebraDevice) .gtinResolverPanel.pfnExtraWorkspace{border:1px solid #68a9d8;box-shadow:0 24px 60px rgba(31,83,124,.22)}
+body:not(.zebraDevice) .gtinResolverPanel.pfnExtraWorkspace .gtinResolverHeader{background:#eef8ff;border-bottom-color:#a9cfe9}
+body:not(.zebraDevice) .gtinResolverPanel.pfnExtraWorkspace .gtinResolverBadge{background:#e5f4ff;border-color:#69a9d5;color:#0d5d91}
+body:not(.zebraDevice) .gtinResolverPanel.pfnExtraWorkspace .pfnExtraItemCard{background:#f4faff;border-color:#acd2eb}
+/* Activity table: Date/Time stays one line; compact metadata gives Item maximum width. */
+body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:15%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:38%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:7%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:6%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:3.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12.5%}
+body:not(.zebraDevice) .pfnActivityTable td:first-child,
+body:not(.zebraDevice) .pfnActivityTable th:first-child{white-space:nowrap!important;word-break:keep-all!important}
+body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:9px!important;letter-spacing:-.15px}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:13.25px;font-weight:700}
