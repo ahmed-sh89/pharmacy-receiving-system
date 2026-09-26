@@ -293,3 +293,19 @@ test("reference pharmacy learning is centralized for Receiving and future Expiry
   assert.match(ui,/IdentifierService\.learnIdentifier\(/);
   assert.doesNotMatch(ui,/Needs Review learns only in the current pharmacy/);
 });
+
+
+test("Receiving report uses attributed ledger totals and normalized search",()=>{
+  const reports=read("js/reports.js");
+  const ui=read("ui.js");
+  const css=read("css/receiving-surface.css");
+  const start=reports.indexOf("function buildReceivedQuantityByOrder");
+  const end=reports.indexOf("function getOperationalGroupForReceivingRow",start);
+  const aggregation=reports.slice(start,end);
+  assert.match(aggregation,/receivingHistory/);
+  assert.doesNotMatch(aggregation,/item\?\.receivedQty/);
+  assert.doesNotMatch(aggregation,/remainder/);
+  assert.match(ui,/function normalizeReceivingSearchText/);
+  assert.match(ui,/terms\.every\(term=>haystack\.includes\(term\)\)/);
+  assert.match(css,/#receivingInlineResult[\s\S]*display:none/);
+});
