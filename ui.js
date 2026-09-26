@@ -8867,14 +8867,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Copy the captured identifier, find the original Order item, then deliberately Link &amp; Resolve.</p></div>
+          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Find the item once. PharmFlow will allocate the quantity to the correct active Orders automatically.</p></div>
           <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
               <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false" aria-controls="needsReviewCase-${index}">
-                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>Order ${esc(group.order_number||"Needs assignment")}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
+                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>${group.work_scope_order_numbers.length} Active Order${group.work_scope_order_numbers.length===1?"":"s"}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
               </button>
               <div class="needsReviewCaseDetail" id="needsReviewCase-${index}" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
@@ -8884,13 +8884,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                   <div class="important"><span>Quantity</span><b>${group.total_quantity}</b></div>
                   <div class="important"><span>Entries</span><b>${group.rows.length}</b></div>
                   <div><span>Source</span><b>${esc(group.source||"Unknown")}</b></div>
-                  <div><span>Order Number</span><b>${group.order_number?esc(group.order_number):"Needs assignment"}</b></div>
+                  <div><span>Captured Scope</span><b>${esc(group.work_scope_order_numbers.length||1)} Order${group.work_scope_order_numbers.length===1?"":"s"}</b></div>
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
               <div class="needsReviewResolve">
-                ${group.work_scope_order_numbers.length>1?`<label>${group.order_number?"Change Original Order":"Assign Original Order"}<select data-assign-order="${index}"><option value="">${group.order_number?"Change Order":"Select Order"}</option>${group.work_scope_order_numbers.map(order=>`<option value="${esc(order)}" ${order===group.order_number?"selected":""}>${esc(order)}</option>`).join("")}</select></label><small>Captured Handheld scope: ${group.work_scope_order_numbers.map(esc).join(" + ")}</small>`:""}
-                <label>Search Original Order<input type="search" data-search="${index}" placeholder="Paste or type Item Code / Item Name" autocomplete="off" spellcheck="false" ${group.order_number?"":"disabled"}></label>
+                <label>Find Item<input type="search" data-search="${index}" placeholder="Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
+                <small class="needsReviewAutoAllocationHint">Automatic allocation across captured active Orders · no Order selection required.</small>
                 <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
@@ -8949,9 +8949,6 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
         const clearReview=overlay.querySelector(`[data-clear-review="${index}"]`);
         let selectedItem=null;
-        const assignOrder=overlay.querySelector(`[data-assign-order="${index}"]`);
-        assignOrder?.addEventListener("change",async()=>{const order=normalizeOrderNumber(assignOrder.value||"");if(!order||order===group.order_number)return;const previousOrder=group.order_number;assignOrder.disabled=true;overlay.dataset.busy="1";try{for(const row of group.rows)await nrV2AssignOrder(row.review_id,order);group.order_number=order;group.rows.forEach(row=>row.order_number=order);const orderMeta=section.querySelector(".pfnReviewMeta div:last-child b");if(orderMeta)orderMeta.textContent=order;const summaryOrder=summary.querySelector("span");if(summaryOrder)summaryOrder.textContent=`Order ${order}`;search.disabled=false;const label=assignOrder.closest("label");if(label)label.childNodes[0].textContent="Change Original Order";assignOrder.disabled=false;search.focus();showToast?.(`${previousOrder?"Original Order changed":"Original Order assigned"} — ${order}`,"success");}catch(error){assignOrder.value=previousOrder||"";assignOrder.disabled=false;showToast?.(error?.message||"Unable to assign Original Order","error");}finally{overlay.dataset.busy="";}});
-
         overlay.querySelector(`[data-copy-identifier="${index}"]`)?.addEventListener("click",async event=>{
             try{
                 if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
@@ -8994,7 +8991,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const drawSelection=()=>{
             if(!selectedItem){ selection.hidden=true;selection.innerHTML="";return; }
             selection.hidden=false;
-            selection.innerHTML=`<span class="needsReviewSelectionLabel">SELECTED ITEM</span><div>${nrV2ItemSummary(selectedItem,esc)}</div><button type="button" data-resolve>Link &amp; Resolve</button>`;
+            const preview=nrV2AllocationPreview(group,selectedItem);
+            selection.innerHTML=`<span class="needsReviewSelectionLabel">SELECTED ITEM</span><div>${nrV2ItemSummary(selectedItem,esc)}</div><small class="needsReviewAllocationPreview">${group.total_quantity} unit${group.total_quantity===1?"":"s"} → ${preview.orderCount} active Order${preview.orderCount===1?"":"s"}</small><button type="button" data-resolve>Link &amp; Receive</button>`;
             selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
                 const button=event.currentTarget;
                 button.disabled=true;
@@ -9029,7 +9027,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                     const countNode=overlay.querySelector(".pfnReviewCount");
                     if(countNode) countNode.textContent=String(count);
                     if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
-                    showToast?.(`Identifier linked and resolved — ${group.total_quantity} received`,"success");
+                    showToast?.(`Linked & received — ${group.total_quantity} units`,"success");
                 }catch(error){ button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error"); }
                 finally{ overlay.dataset.busy=""; }
             });
@@ -9039,8 +9037,8 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             drawSelection();
             const q=toSafeString(search?.value||"").trim();
             if(!q){matches.innerHTML="";return;}
-            const items=nrV2FindOrderMatches(q,group.order_number).slice(0,8);
-            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the current Active Order.</div>`;
+            const items=nrV2FindOrderMatches(q,nrV2AllocationScope(group)).slice(0,8);
+            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the captured active Orders.</div>`;
             matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{
                 selectedItem=items[Number(button.dataset.match)]||null;
                 matches.querySelectorAll("button").forEach(result=>result.classList.toggle("selected",result===button));
