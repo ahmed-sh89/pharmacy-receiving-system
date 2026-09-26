@@ -1142,6 +1142,14 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
                 PharmFlowCloudWorkspace.hydratedPharmacyId=
                     pharmacyId;
 
+                /* Manifest hydration establishes a fresh authoritative browser
+                   workspace. Rebuild its bounded Receiving ledger once before
+                   resuming delta polling. Runtime cursors must never cause
+                   durable transactions that predate a client fix/reload to be
+                   permanently invisible. */
+                PharmFlowCloudWorkspace.receivingCursorCreatedAt=null;
+                PharmFlowCloudWorkspace.receivingCursorTransactionId=null;
+                PharmFlowCloudWorkspace.receivingBootstrapComplete=false;
                 await pullCloudWorkspaceTransactions();
 
                 setCloudWorkspaceStatus(
