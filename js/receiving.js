@@ -956,7 +956,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <div><span class="gtinActionBadge">ITEM NOT RECOGNISED</span><h2>Link this barcode</h2><p>Find the item. PharmFlow will receive it into the correct active Order automatically.</p></div>
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
             </header>
-            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong></div>
+            <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
             <section class="gtinResolutionSection pfnUnknownWorkspace">
               <div class="pfnResolverTabs"><button type="button" class="isActive" data-mode-find>Find Existing Item</button><button type="button" data-mode-create>Create New Item</button></div>
               <div data-find-pane>
@@ -968,7 +968,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <div data-create-pane class="pfnCreateItemPane" hidden>
                 <div class="pfnCreateIntro"><b>New item</b><span>Use this only when the product does not already exist in the master.</span></div>
                 <div class="pfnCreateGrid"><label><span>Item Code</span><input data-new-code autocomplete="off" placeholder="Enter Item Code"></label><label><span>Item Name</span><input data-new-name autocomplete="off" placeholder="Enter Item Name"></label></div>
-                <div class="pfnCreateMeta"><span><small>SCANNED GTIN</small><b>${escapeHTML(gtin)}</b></span><label><small>QUANTITY</small><input data-resolver-qty type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}"></label>${selectedOrders.length>1?`<label><small>TARGET ORDER</small><select data-new-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>`:""}</div>
+                <div class="pfnCreateMeta"><span><small>SCANNED GTIN</small><b>${escapeHTML(gtin)}</b></span><span class="pfnCreateQtyMirror"><small>QUANTITY</small><b data-create-qty-mirror>${escapeHTML(resolverQuantity)}</b></span>${selectedOrders.length>1?`<label><small>TARGET ORDER</small><select data-new-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>`:""}</div>
                 <button type="button" class="gtinPrimaryAction pfnCreateReceive" data-create-receive>Create &amp; Receive</button>
               </div>
             </section>
@@ -1015,9 +1015,9 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             }
             const model=buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders);
             search.closest(".gtinResolutionSection")?.classList.add("hasSelectedItem");
-            search.hidden=true;results.hidden=true;
-            search.setAttribute("aria-hidden","true");
-            results.setAttribute("aria-hidden","true");
+            search.hidden=false;results.hidden=false;
+            search.removeAttribute("aria-hidden");
+            results.removeAttribute("aria-hidden");
             selection.hidden=false;
             selection.innerHTML=renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item")+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
@@ -1046,7 +1046,8 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             if(searchFrame)cancelAnimationFrame(searchFrame);
             searchFrame=requestAnimationFrame(render);
         });
-        qtyInput?.addEventListener("change",()=>{try{readQuantity();if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
+        qtyInput?.addEventListener("input",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);}catch(_error){}});
+        qtyInput?.addEventListener("change",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
         panel.querySelector("[data-review]")?.addEventListener("click",async()=>{
             try{
                 const quantity=readQuantity();

@@ -1943,3 +1943,22 @@ body:not(.zebraDevice) .pfnActivityTable th:first-child{white-space:nowrap}
 body:not(.zebraDevice) .pfnActivityTable th:not(:nth-child(2)),
 body:not(.zebraDevice) .pfnActivityTable td:not(:nth-child(2)){padding-left:4px;padding-right:4px;font-size:10px}
 body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:12px}
+
+/* Unknown resolver: one authoritative quantity and selection above results. */
+.pfnUnknownWorkspace [data-find-pane]{display:flex;flex-direction:column}
+.pfnUnknownWorkspace [data-selection]{order:2;margin:10px 0}
+.pfnUnknownWorkspace [data-results]{order:3}
+.pfnUnknownWorkspace .pfnCreateQtyMirror{display:flex;flex-direction:column;gap:7px}
+.pfnUnknownWorkspace .pfnCreateQtyMirror b{font-size:16px;color:#123f69}
+/* Receiving Activity: maximum practical space for item identity. */
+body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:13%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:37%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:5.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:7.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:6.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:4%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:5.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12%}
+body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:9px;white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:13px;font-weight:700}
