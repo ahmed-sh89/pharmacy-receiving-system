@@ -132,10 +132,17 @@ async function handleOrderFileSelection(event){
 
         for(const file of files){
 
+            /* Multi-file import: read each workbook once. Metadata preflight and
+               row import share the same parsed workbook instead of doing two full
+               FileReader/XLSX passes per file. */
+            const workbook = await readExcelWorkbook(file);
+
             const orderMeta =
-                typeof inspectOrderFileMetadata === "function"
-                ? await inspectOrderFileMetadata(file)
-                : null;
+                typeof inspectOrderWorkbookMetadata === "function"
+                ? inspectOrderWorkbookMetadata(workbook,file)
+                : (typeof inspectOrderFileMetadata === "function"
+                    ? await inspectOrderFileMetadata(file)
+                    : null);
 
             if(orderMeta?.orderNumber){
                 attemptedOrderNumbers.push(
@@ -150,7 +157,8 @@ async function handleOrderFileSelection(event){
             const result =
                 await importOrderFile(
                     file,
-                    orderMeta
+                    orderMeta,
+                    workbook
                 );
 
             importedRows +=
@@ -527,7 +535,7 @@ async function handleMappingFileSelection(event){
    IMPORT ORDER FILE
 ===================================================== */
 
-async function importOrderFile(file, preflightMeta = null){
+async function importOrderFile(file, preflightMeta = null, preloadedWorkbook = null){
 
     const result = {
         success:false,
@@ -554,6 +562,7 @@ async function importOrderFile(file, preflightMeta = null){
     }
 
     const workbook =
+        preloadedWorkbook ||
         await readExcelWorkbook(
             file
         );
