@@ -1889,3 +1889,13 @@ body:not(.zebraDevice) .gtinItemMetrics>div:nth-child(4){background:#fff3d9!impo
 body:not(.zebraDevice) .gtinItemMetrics span{display:block!important;text-align:center!important}
 body:not(.zebraDevice) .gtinItemMetrics b{display:block!important;text-align:center!important;font-size:23px!important;line-height:1.1!important;margin-top:4px!important}
 body:not(.zebraDevice) .gtinAllocationSummary{align-items:center!important;min-height:42px!important}
+
+/* 2C.11.61e — semantic post-scan status. */
+body:not(.zebraDevice) .gtinItemMetrics>div.isRemaining{background:#fff3d9!important;border-color:#e8c36c!important}
+body:not(.zebraDevice) .gtinItemMetrics>div.isComplete{background:#e9f8ef!important;border-color:#9bd3ad!important}
+body:not(.zebraDevice) .gtinItemMetrics>div.isOver{background:#fff0f1!important;border-color:#e5a1a8!important}
+body:not(.zebraDevice) .gtinItemMetrics>div.isExtra{background:#f1edff!important;border-color:#b9a9e8!important}
+body:not(.zebraDevice) .gtinAllocationSummary.isOver{background:#fff0f1!important;color:#9c303b!important}
+body:not(.zebraDevice) .gtinAllocationSummary.isExtra{background:#f1edff!important;color:#5f4898!important}
+body:not(.zebraDevice) .gtinAllocationSummary.isComplete{background:#e9f8ef!important;color:#286b40!important}
+body:not(.zebraDevice) .gtinAllocationSummary.isRemaining{background:#fff3d9!important;color:#805f12!important}
