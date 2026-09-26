@@ -352,6 +352,12 @@ async function handleOrderFileSelection(event){
                 }
             }
 
+            /* Manifest verification is complete. Reconcile the derived
+               Global Master projection against that final workspace before the
+               open Manage Orders modal is published. */
+            if(typeof reconcileMasterGTINCurrentOrder==="function"){
+                await reconcileMasterGTINCurrentOrder();
+            }
             publishConfirmedOrderUpload();
 
             showToast(
