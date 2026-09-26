@@ -261,3 +261,19 @@ body.zebraDevice .handheldMonitorGrid>div{
 body.zebraDevice .handheldMonitorGrid span{display:block!important;color:#65758a!important;font-size:7px!important;font-weight:900!important}
 body.zebraDevice .handheldMonitorGrid strong{display:block!important;margin-top:3px!important;color:#153d69!important;font-size:20px!important;font-weight:950!important}
 body.zebraDevice .handheldMonitorNote{margin:3px 0 0!important;color:#66788b!important;font-size:8px!important;line-height:1.35!important}
+/* Receiving report search is a single contained control. Results belong in
+   the report table; the retired duplicate inline result bar stays hidden. */
+body:not(.zebraDevice) #page-receiving .pfnReceivingSearchBlock{overflow:visible!important}
+body:not(.zebraDevice) #page-receiving #receivingInlineSearch{
+    display:block!important;
+    max-width:100%!important;
+    margin:0!important;
+    appearance:none!important;
+    -webkit-appearance:none!important;
+}
+body:not(.zebraDevice) #page-receiving #receivingInlineSearch::-webkit-search-cancel-button{
+    cursor:pointer!important;
+}
+body:not(.zebraDevice) #page-receiving #receivingInlineResult{
+    display:none!important;
+}
