@@ -225,7 +225,11 @@
     $('btnReceivingReportAction')?.addEventListener('click',()=>{if(typeof window.navigateTo==='function'){window.navigateTo('receiving');return;}document.querySelector('.sidebarItem[data-page="receiving"]')?.click();});
     bindSidebar();
     if(typeof AppEvents!=="undefined"&&AppEvents?.on){
-      AppEvents.on('files:updated',event=>{if(event?.source==='order-upload-confirmed')refreshOpenManageOrders();});
+      /* Manage Orders can stay open while an Order is uploaded, removed,
+         finalized or rolled back. Always rebuild Handheld Assignment from the
+         current authoritative active-order scope instead of waiting for the
+         modal to be closed and reopened. */
+      AppEvents.on('files:updated',()=>refreshOpenManageOrders());
     }
     document.addEventListener('keydown',event=>{
       if(event.key!=='Escape')return;
