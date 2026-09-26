@@ -286,8 +286,10 @@ test("reference pharmacy learning is centralized for Receiving and future Expiry
   assert.match(service,/isReferencePharmacy\(\)/);
   assert.match(service,/pharmacy_code[\s\S]*HHP084/);
   assert.match(service,/async learnIdentifier\(/);
-  assert.match(service,/if\(this\.isReferencePharmacy\(\)\)[\s\S]*this\.addIdentifier/);
-  assert.match(service,/return this\.addPharmacyIdentifier/);
+  assert.match(service,/learn_pharmflow_identifier_v1/);
+  assert.match(service,/p_global_operation_id:operationId/);
+  assert.match(service,/p_pharmacy_operation_id:globalThis\.crypto\.randomUUID\(\)/);
+  assert.match(service,/return row\?\.pharmacyMapping/);
   assert.match(ui,/IdentifierService\.learnIdentifier\(/);
   assert.doesNotMatch(ui,/Needs Review learns only in the current pharmacy/);
 });
