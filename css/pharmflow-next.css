@@ -1401,7 +1401,36 @@ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within td
 }
 
 /* Receiving Activity keeps every column within the desktop modal. */
-/* Receiving Activity legacy desktop sizing removed; canonical owner is below. */
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table {width:100%;min-width:0;table-layout:fixed}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(1) {width:14%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(2) {width:24%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(3) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(4) {width:14%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(5) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(6) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(7) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(8) {width:8%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th{
+  padding:7px 6px!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;overflow-wrap:anywhere;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table td{
+  padding:6px 6px!important;font-size:13px!important;line-height:1.25!important;height:40px!important;vertical-align:middle!important;white-space:normal!important;overflow-wrap:anywhere;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItem{
+  display:grid!important;grid-template-columns:92px 1px minmax(0,1fr)!important;align-items:center!important;column-gap:10px!important;
+  min-width:280px!important;white-space:nowrap!important;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItemCode{
+  color:#155f9f!important;font-weight:900!important;text-align:left!important;font-variant-numeric:tabular-nums!important;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItemDivider{width:1px!important;height:22px!important;background:#c6d4e1!important}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItemName{
+  min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;color:#123d69!important;font-weight:800!important;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .quickUndoButton{min-height:28px!important;padding:3px 8px!important}
+body:not(.zebraDevice) .pfnActivityControls{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 10px;color:#38536d;font-size:12px;font-weight:900}
+body:not(.zebraDevice) .pfnActivityControls select{height:36px;min-width:140px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;padding:0 30px 0 10px;font:inherit}
+
 @media(max-width:1180px){
   body:not(.zebraDevice).pfnCleanReceiving .pfnPharmacyIdentityIcon{display:none!important}
   body:not(.zebraDevice).pfnCleanReceiving .pfnPharmacyIdentityText strong{font-size:13px!important}
@@ -1882,6 +1911,23 @@ body:not(.zebraDevice) .pfnCreateMeta b{font-size:13px;color:#123f6d}
 body:not(.zebraDevice) .pfnCreateReceive{justify-self:end;min-width:170px;height:42px;border:0!important;border-radius:9px!important;background:#1769aa!important;color:#fff!important;font-weight:900!important}
 body:not(.zebraDevice) .gtinPrimaryAction{background:#1769aa!important;color:#fff!important;border-color:#1769aa!important}
 
+body:not(.zebraDevice) .pfnActivityWorklist{overflow-x:hidden}
+body:not(.zebraDevice) .pfnActivityTable{width:100%;table-layout:fixed}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:10.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:26%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:7.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:10%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:8.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:6%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:7.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:11%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:13%}
+body:not(.zebraDevice) .pfnActivityTable th{padding:8px 6px;font-size:9px;white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable td{padding:7px 6px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:12px;font-weight:700;color:#123f69;text-overflow:clip}
+body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
+body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
+
 /* Receiving Activity — canonical desktop layout. Item identity and readable one-line time are primary. */
 body:not(.zebraDevice) .pfnActivityWorklist{overflow-x:hidden}
 body:not(.zebraDevice) .pfnActivityTable{width:100%;table-layout:fixed}
@@ -1894,10 +1940,10 @@ body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:3.5%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:5%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8%}
 body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12.5%}
-body:not(.zebraDevice) .pfnActivityTable th{padding:8px 4px;font-size:10.5px;font-weight:800;white-space:nowrap}
-body:not(.zebraDevice) .pfnActivityTable td{padding:8px 4px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:11.5px;font-weight:800;letter-spacing:-.1px;white-space:nowrap;word-break:keep-all}
-body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:14px;font-weight:700;color:#123f69;text-overflow:clip}
+body:not(.zebraDevice) .pfnActivityTable th{padding:8px 4px;font-size:9px;white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable td{padding:7px 4px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:10.25px;font-weight:750;letter-spacing:-.1px;white-space:nowrap;word-break:keep-all}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:13.25px;font-weight:700;color:#123f69;text-overflow:clip}
 body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
 body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
 
