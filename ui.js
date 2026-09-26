@@ -897,7 +897,7 @@ function renderSmartScanSearchResults(
             const remove=document.createElement("button");
             remove.type="button";
             remove.className="secondaryButton removeManualSearchButton";
-            remove.textContent="Remove Manual Item";
+            remove.textContent="Remove Extra Item";
             remove.style.flex="0 0 auto";
             remove.addEventListener("click",function(event){
                 event.preventDefault();
@@ -2220,7 +2220,7 @@ function refreshReceivingIssueFilterLabel(){
     const label=document.getElementById("receivingIssueFilterLabel");
     if(!label){ return; }
     const set=UI.receivingFilters.issues instanceof Set ? UI.receivingFilters.issues : new Set();
-    const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Manual Extra"};
+    const names={not_received:"Not Received",partial:"Partial Shortage",received_any:"Received Any Quantity",over:"Over Received",manual:"Extra Item"};
     const discrepancyKeys=["not_received","partial","over","manual"];
     const allDiscrepancies=discrepancyKeys.every(key=>set.has(key));
     if(set.size===5 && allDiscrepancies && set.has("received_any")){ label.textContent="All selected"; return; }
@@ -4091,7 +4091,7 @@ function renderGlobalSearchResults(searchText){
             remove.className = "secondaryButton removeManualSearchButton";
             remove.style.marginLeft = "10px";
             remove.style.padding = "7px 10px";
-            remove.textContent = "Remove Manual Item";
+            remove.textContent = "Remove Extra Item";
             remove.addEventListener("click", function(event){
                 event.preventDefault();
                 event.stopPropagation();
@@ -4160,7 +4160,7 @@ function openSearchedItemReview(item){
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
               <button type="button" id="btnSearchedAdjust" class="primaryButton">Adjust Received Qty</button>
               <button type="button" id="btnSearchedActivity" class="secondaryButton">View Activity</button>
-              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Manual Item</button>
+              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Extra Item</button>
             </div>
             <div id="searchedReviewCorrection" hidden>
               <label class="quantityAdjustmentLabel" for="searchedReviewCorrectionInput">Correct total received to</label>
@@ -4207,12 +4207,12 @@ function openSearchedItemReview(item){
         removeManualButton.onclick=()=>{
             const current=getItemByCode(modal.dataset.itemCode);
             if(!current || current.manual!==true || toNumber(current.receivedQty,0)!==0){
-                showToast("Set the manual item quantity to zero first","warning");
+                showToast("Set the extra item quantity to zero first","warning");
                 return;
             }
             showConfirmModal(
-                "Remove Manual Item",
-                "Remove this manually-added item from the current receiving workspace? It will no longer appear in Search or reports.",
+                "Remove Extra Item",
+                "Remove this extra item from the current receiving workspace? It will no longer appear in Search or reports.",
                 ()=>{
                     if(deleteManualItem(current.itemCode)){
                         closeSearchedItemReview();
@@ -7991,7 +7991,7 @@ function kpiTitle(key){
         remaining:"Remaining Items",
         remainingItems:"Remaining Items",
         over:"Over Received",
-        manual:"Manual / Unordered Extras",
+        manual:"Extra Items",
         scans:"Receiving Activity History",
         received:"Received Items — Any Quantity"
     })[key]||"Dashboard Details";
@@ -8095,7 +8095,7 @@ function getGroupedReceivingActivityRows(){
 function getActivitySourceLabel(source){
     const value=toSafeString(source||"").toUpperCase();
     if(value.includes("UNDO")||value.includes("CORRECTION")) return "Correction";
-    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Manual Item";
+    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Extra Item";
     if(value.includes("SCAN")) return "Scanner";
     if(value.includes("SEARCH")) return "Manual Quantity";
     if(value.includes("MANUAL")||value.includes("EDIT")||value.includes("ADJUST")) return "Manual Quantity";
