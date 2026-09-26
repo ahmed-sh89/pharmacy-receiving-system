@@ -1191,6 +1191,26 @@ function hasMasterGTIN(){
     return MasterGTINEngine.metadata.installed === true;
 }
 
+/* Structural order mutations must also reconcile the derived Master projection.
+   This keeps Data Health tied to the current active-order workspace instead of
+   retaining counts from a removed order until a full browser reload. */
+async function reconcileMasterGTINCurrentOrder(){
+    if(!MasterGTINEngine.metadata.installed){
+        MasterGTINEngine.currentOrder={matchedItems:0,missingItems:0,conflictGTINs:0};
+        AppEvents.emit("masterGTIN:updated",getMasterGTINStatus());
+        return MasterGTINEngine.currentOrder;
+    }
+    if(!Array.isArray(AppState?.workspace?.orderData) || AppState.workspace.orderData.length===0){
+        AppState.workspace.mappingData=(AppState.workspace.mappingData||[]).filter(mapping=>mapping.source!=="MASTER");
+        MasterGTINEngine.currentOrder={matchedItems:0,missingItems:0,conflictGTINs:0};
+        rebuildStateIndexes();
+        AppEvents.emit("masterGTIN:updated",getMasterGTINStatus());
+        return MasterGTINEngine.currentOrder;
+    }
+    return await applyMasterGTINToCurrentOrder({silent:true});
+}
+window.reconcileMasterGTINCurrentOrder=reconcileMasterGTINCurrentOrder;
+
 
 /* =====================================================
    END MASTER GTIN ENGINE
