@@ -1570,8 +1570,14 @@ function mergeCloudReceivingLedger(rows){
            The Active Order Manifest is sufficient as long as the item exists.
         */
         const item=getItemByCode(tx.itemCode);
+        const txOrder=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||"");
+        const activeOrders=getActiveReceivingOrderSetForCloud();
 
-        if(!item){
+        /* An Extra Item is intentionally absent from the uploaded Order.
+           Keep its durable ledger row when it belongs to an active Order so
+           reports/KPIs can reconstruct it after refresh without inventing a
+           transient workspace item or writing another transaction. */
+        if(!item && (!txOrder || (activeOrders.size && !activeOrders.has(txOrder)))){
             continue;
         }
 

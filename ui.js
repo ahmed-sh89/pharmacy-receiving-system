@@ -8878,9 +8878,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
               <div class="needsReviewResolve">
-                <label>Find Item<input type="search" data-search="${index}" placeholder="Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
-                <small class="needsReviewAutoAllocationHint">Automatic allocation across captured active Orders · no Order selection required.</small>
-                <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
+                <div class="needsReviewSearchRow">
+                  <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
+                  <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
+                </div>
                 <div class="needsReviewMatches" data-matches="${index}"></div>
                 <div class="needsReviewSelection" data-selection="${index}" hidden></div>
                 <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
