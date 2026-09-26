@@ -1859,3 +1859,19 @@ body:not(.zebraDevice) .gtinResolutionPanelWide .gtinSelectedItem>span{grid-colu
 body:not(.zebraDevice) .gtinResolutionPanelWide .gtinSelectedItem>strong{font-size:15px!important}
 body:not(.zebraDevice) .gtinResolutionPanelWide .gtinPrimaryAction{min-height:40px!important;margin-top:8px!important}
 body:not(.zebraDevice) .gtinResolutionPanelWide .gtinResolutionFooter{flex:0 0 auto!important;padding:9px 18px!important}
+
+/* 2C.11.61c — selected-item review replaces search results with operational status. */
+body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem{grid-template-rows:auto!important}
+body:not(.zebraDevice) .gtinSelectedItemExpanded{display:block!important}
+body:not(.zebraDevice) .gtinSelectedHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+body:not(.zebraDevice) .gtinSelectedHeading>button{border:0;background:transparent;color:#1769aa;font-weight:850;cursor:pointer;padding:4px 0}
+body:not(.zebraDevice) .gtinItemMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+body:not(.zebraDevice) .gtinItemMetrics>div{padding:9px 10px;border:1px solid #cfe1f1;border-radius:9px;background:#fff;display:grid;gap:2px}
+body:not(.zebraDevice) .gtinItemMetrics span{font-size:10px;font-weight:800;color:#66829a;text-transform:uppercase}
+body:not(.zebraDevice) .gtinItemMetrics b{font-size:18px;color:#123f6d}
+body:not(.zebraDevice) .gtinAllocationSummary{display:flex;justify-content:space-between;gap:12px;margin-top:10px;padding:9px 11px;border-radius:9px;background:#e7f4ff;color:#174f7d}
+body:not(.zebraDevice) .gtinAllocationSummary span{font-size:12px;font-weight:800}
+body:not(.zebraDevice) .gtinAllocationDetails{margin-top:8px;border-top:1px solid #cfe1f1;padding-top:7px}
+body:not(.zebraDevice) .gtinAllocationDetails summary{cursor:pointer;color:#1769aa;font-size:12px;font-weight:850}
+body:not(.zebraDevice) .gtinAllocationDetails>div{display:flex;justify-content:space-between;padding:4px 2px;font-size:12px}
+@media(max-width:760px){body:not(.zebraDevice) .gtinItemMetrics{grid-template-columns:repeat(2,1fr)}body:not(.zebraDevice) .gtinAllocationSummary{display:grid}}
