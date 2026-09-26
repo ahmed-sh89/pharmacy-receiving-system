@@ -7889,7 +7889,18 @@ function refreshOpenKpiPanel(){
 }
 
 function getReceivingActivityRows(){
-    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const allHistory=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? [...new Set((getSelectedReceivingOrderNumbers()||[]).map(normalizeOrderNumber).filter(Boolean))]
+        : [];
+    const history=selected.length
+        ? allHistory.filter(tx=>{
+            const order=normalizeOrderNumber(
+                tx?.orderId||tx?.selectedOrderNumber||tx?.orderNumber||tx?.order_number||""
+            );
+            return !!order && selected.includes(order);
+        })
+        : [];
     const totals=new Map();
 
     /* Always calculate totals in true chronological order.
@@ -8056,20 +8067,45 @@ async function loadNeedsReviewRows(workflow,orderNumber=null){
     return await nrV2List(workflow||"RECEIVING",orderNumber||null);
 }
 
+/* Needs Review attribution is immutable, but visibility follows the current
+   Receiving Order scope.  Never use the PC's scope as a replacement order. */
+function getNeedsReviewScopeOrderNumbers(){
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const normalized=[...new Set((selected||[]).map(normalizeOrderNumber).filter(Boolean))];
+    if(normalized.length) return normalized;
+
+    const scope=typeof getActiveOrderScope==="function"
+        ? normalizeOrderNumber(getActiveOrderScope())
+        : "";
+    if(scope && scope!=="ALL") return [scope];
+
+    return [];
+}
+
+async function loadScopedNeedsReviewRows(workflow="RECEIVING"){
+    const orders=getNeedsReviewScopeOrderNumbers();
+    if(!orders.length) return [];
+    const batches=await Promise.all(orders.map(order=>loadNeedsReviewRows(workflow,order)));
+    const seen=new Set();
+    return batches.flat().filter(row=>{
+        const id=toSafeString(row?.review_id||"");
+        if(!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+}
+
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
 
     try{
-        /* Pharmacy-scoped by design. Never hide Handheld drafts because of
-           a PC-local order/workspace id mismatch. */
-        const receiving=await loadNeedsReviewRows("RECEIVING",null);
+        const receiving=await loadScopedNeedsReviewRows("RECEIVING");
         const rc=document.getElementById("receivingNeedsReviewCount");
-
         const grouped=groupNeedsReviewRows(receiving);
         if(rc) rc.textContent=String(grouped.length);
-
-        document
-            .getElementById("btnReceivingNeedsReview")
+        document.getElementById("btnReceivingNeedsReview")
             ?.classList.toggle("hasItems",grouped.length>0);
     }catch(error){
         console.warn("Needs Review V2 count failed",error);
@@ -8084,14 +8120,16 @@ function ensureNeedsReviewButtons(){
 }
 
 
-function nrV2FindOrderMatches(query){
+function nrV2FindOrderMatches(query,orderNumber=""){
     const q=toSafeString(query).trim().toLowerCase();
-    const source=typeof getSearchableItems==="function"
-        ? getSearchableItems()
-        : (AppState?.workspace?.orderData||[]);
-
+    const originalOrder=normalizeOrderNumber(orderNumber||"");
+    const source=(AppState?.workspace?.orderData||[]).filter(item=>{
+        if(!originalOrder) return true;
+        const memberships=(item?.orderNumbers||[item?.orderNumber])
+            .map(normalizeOrderNumber).filter(Boolean);
+        return memberships.includes(originalOrder);
+    });
     if(!q) return source.slice(0,20);
-
     return source.filter(item=>
         toSafeString(item?.itemCode).toLowerCase().includes(q) ||
         toSafeString(item?.itemName).toLowerCase().includes(q)
@@ -8124,7 +8162,7 @@ async function nrV2ResolveToOrderItem(row,item){
             gtin:row.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
-            targetOrder:group.order_number||"",
+            targetOrder:row.order_number||"",
             transactionId
         });
 
@@ -8165,7 +8203,7 @@ async function nrV2ResolveAsUnordered(row,itemCode,itemName,targetOrder=""){
             gtin:row.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:true,
-            targetOrder:targetOrder||group.order_number||"",
+            targetOrder:targetOrder||row.order_number||"",
             transactionId
         });
 
@@ -8239,26 +8277,67 @@ function nrV2HasTransactionId(transactionId){
     return (AppState?.workspace?.receivingHistory||[]).some(tx=>toSafeString(tx?.transactionId||"")===transactionId);
 }
 
+async function nrV2PersistReviewedIdentifier(group,item){
+    if(!globalThis.crypto?.randomUUID) throw new Error("Secure operation IDs are unavailable; reload and try again.");
+    const identifier=toSafeString(group?.gtin||"").trim();
+    if(!identifier) throw new Error("Captured identifier is unavailable");
+    const operationId=globalThis.crypto.randomUUID();
+    const pharmacyCode=toSafeString(AuthState?.context?.pharmacy_code||"").trim().toUpperCase();
+
+    /* HHP084 is the approved reference pharmacy: its Admin corrections enrich
+       Global V2. Every other pharmacy remains isolated in its own mapping. */
+    if(pharmacyCode==="HHP084"){
+        return await IdentifierService.addIdentifier(
+            operationId,identifier,item.itemCode,"Needs Review link"
+        );
+    }
+    return await IdentifierService.addPharmacyIdentifier(
+        operationId,identifier,item,"Needs Review link"
+    );
+}
+
 async function nrV2ResolveGroupToOrderItem(group,item){
+    const originalOrder=normalizeOrderNumber(group?.order_number||"");
+    if(!originalOrder) throw new Error("The original Order is unavailable; this Needs Review case was not reassigned.");
+
+    const memberships=(item?.orderNumbers||[item?.orderNumber])
+        .map(normalizeOrderNumber).filter(Boolean);
+    if(!memberships.includes(originalOrder)){
+        throw new Error("Select an item from the original Order.");
+    }
+
     const transactionId=nrV2GroupTransactionId(group);
+
+    /* Persist identity first. A successful Link & Resolve must make the next
+       scan resolve immediately; receiving is still protected by transaction
+       idempotency and the durable queue. */
+    await nrV2PersistReviewedIdentifier(group,item);
+
+    for(const row of group.rows){
+        const result=await nrV2RequestResolution(row,item,transactionId);
+        if(result?.success===false && result?.status==="BLOCKED"){
+            if(result?.code==="ORIGINAL_ORDER_UNAVAILABLE"){
+                throw new Error("The original Order is unavailable; this Needs Review case was not reassigned.");
+            }
+            if(result?.code==="ITEM_NOT_IN_ORIGINAL_ORDER"){
+                throw new Error("The selected item is not in the original Order.");
+            }
+            throw new Error("Needs Review resolution is blocked.");
+        }
+    }
+
     if(!nrV2HasTransactionId(transactionId)){
-        await savePharmacyLearnedGTIN(group.gtin,item.itemCode,item.itemName);
-        addMappingRecord({itemCode:item.itemCode,gtin:group.gtin,source:"PHARMACY_LEARNED"});
         const tx=receiveOrderItem({
             item,
             quantity:Math.max(1,Number(group.total_quantity||1)||1),
             gtin:group.gtin,
             source:APP_CONFIG.transactionSources.scanner,
             manual:false,
-            transactionId
+            targetOrder:originalOrder,
+            transactionId,
+            identifierPreserveExact:true
         });
         if(!tx) throw new Error("Unable to apply reviewed quantity");
-    }
-    for(const row of group.rows){
-        await nrV2MarkResolved(row,item,"LINK_ORDER_ITEM",transactionId);
-    }
-    for(const path of group.photos){
-        try{ await nrV2DeletePhoto?.(path); }catch(_){ }
     }
 }
 
@@ -8290,7 +8369,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     document.getElementById("needsReviewOverlay")?.remove();
 
     let rawRows=[];
-    try{ rawRows=await loadNeedsReviewRows(workflow,null); }
+    try{ rawRows=await loadScopedNeedsReviewRows(workflow); }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
     const groups=groupNeedsReviewRows(rawRows);
@@ -8356,7 +8435,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         const drawMatches=()=>{
             const q=toSafeString(search?.value||"").trim();
             if(!q){matches.innerHTML="";return;}
-            const items=nrV2FindOrderMatches(q).slice(0,6);
+            const items=nrV2FindOrderMatches(q,group.order_number).slice(0,6);
             matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}"><span><strong>${esc(item.itemName)}</strong><small>Item ${esc(item.itemCode)}</small></span><b>Resolve &amp; Receive ${group.total_quantity}</b></button>`).join(""):`<div class="needsReviewNoMatches">No matching order item.</div>`;
             matches.querySelectorAll('[data-match]').forEach(button=>button.onclick=async()=>{
                 const item=items[Number(button.dataset.match)]; if(!item)return;
@@ -8399,7 +8478,10 @@ async function refreshNeedsReviewCountFromCloud(){
     if(document.hidden || needsReviewCloudWatchBusy || typeof nrV2Count!=="function") return;
     needsReviewCloudWatchBusy=true;
     try{
-        const count=await nrV2Count("RECEIVING");
+        const orders=getNeedsReviewScopeOrderNumbers();
+        const count=typeof nrV2CountScope==="function"
+            ? await nrV2CountScope("RECEIVING",orders)
+            : groupNeedsReviewRows(await loadScopedNeedsReviewRows("RECEIVING")).length;
         setElementText(document.getElementById("receivingNeedsReviewCount"),count);
         document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",count>0);
     }catch(error){
