@@ -1220,7 +1220,7 @@ function getPerOrderReceivingRows(orderNumber){
     /* Extra Items are reconstructed from durable Receiving transactions.
        Do not depend on the transient workspace item surviving refresh. */
     const orderedCodes=new Set(
-        orderRows.map(row=>normalizeItemCode(row?.itemCode||"")).filter(Boolean)
+        source.map(row=>normalizeItemCode(row?.itemCode||"")).filter(Boolean)
     );
     const extrasByCode=new Map();
     (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
