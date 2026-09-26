@@ -16,9 +16,25 @@ const ExcelEngine = {
    been authoritatively confirmed.  This reuses existing UI events and adds
    neither polling nor a competing local state source. */
 function publishConfirmedOrderUpload(){
-    AppEvents.emit("files:updated",{source:"order-upload-confirmed"});
-    AppEvents.emit("receiving:updated",{source:"order-upload-confirmed"});
+    /* Render the confirmed workspace first. Manage Orders is a live overlay
+       whose Handheld Assignment is derived from the active-order scope; firing
+       its event before the base UI refresh can leave the overlay showing the
+       pre-upload scope until it is reopened. */
     refreshEntireUI?.();
+    AppEvents.emit("receiving:updated",{source:"order-upload-confirmed"});
+    AppEvents.emit("files:updated",{source:"order-upload-confirmed"});
+
+    /* One next-frame confirmation covers DOM work queued by refreshEntireUI
+       without polling. It is intentionally a single UI refresh signal. */
+    const publishFinalScope=()=>AppEvents.emit(
+        "files:updated",
+        {source:"order-upload-confirmed-rendered"}
+    );
+    if(typeof requestAnimationFrame==="function"){
+        requestAnimationFrame(publishFinalScope);
+    }else{
+        setTimeout(publishFinalScope,0);
+    }
 }
 
 
