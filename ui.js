@@ -744,6 +744,39 @@ function bindSmartScanSelectionControls(){
    SMART SEARCH INPUT
 ===================================================== */
 
+function getReceivingSearchProjection(){
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
+        : [];
+    if(typeof getPerOrderReceivingRows!=="function"||!selectedOrders.length){
+        return typeof getSearchableItems==="function" ? getSearchableItems() : [];
+    }
+
+    const byCode=new Map();
+    selectedOrders.forEach(order=>{
+        getPerOrderReceivingRows(order).forEach(row=>{
+            const code=toSafeString(row["Item Number"]||"").trim();
+            if(!code) return;
+            const key=normalizeItemCode(code);
+            const current=byCode.get(key)||{
+                itemCode:code,
+                itemName:toSafeString(row["Item Name"]||""),
+                orderedQty:0,
+                receivedQty:0,
+                remainingQty:0,
+                orderNumbers:[],
+                manual:row.issueKey==="manual"
+            };
+            current.orderedQty+=toNumber(row["Ordered Qty"],0);
+            current.receivedQty+=toNumber(row["Received Qty"],0);
+            current.remainingQty+=Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0));
+            if(!current.orderNumbers.includes(order)) current.orderNumbers.push(order);
+            byCode.set(key,current);
+        });
+    });
+    return [...byCode.values()];
+}
+
 function handleSmartScanSearchInput(
     searchText
 ){
@@ -764,7 +797,7 @@ function handleSmartScanSearchInput(
 
     const results =
         searchItems(
-            getSearchableItems(),
+            getReceivingSearchProjection(),
             query,
             APP_CONFIG
                 .receiving
@@ -2255,10 +2288,27 @@ function renderReceivingDifference(orderedQty,receivedQty){
    RECEIVING TABLE
 ===================================================== */
 
+function normalizeReceivingSearchText(value){
+    return toSafeString(value||"")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g," ")
+        .trim()
+        .replace(/\s+/g," ");
+}
+
+function matchesReceivingSearch(item,query){
+    const terms=normalizeReceivingSearchText(query).split(" ").filter(Boolean);
+    if(!terms.length) return true;
+    const haystack=normalizeReceivingSearchText(
+        [item?.itemCode,item?.itemName].filter(Boolean).join(" ")
+    );
+    return terms.every(term=>haystack.includes(term));
+}
+
 function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
     const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]);
-    const searchFilter=toSafeString(UI.receivingFilters.search||"").trim().toLowerCase();
+    const searchFilter=normalizeReceivingSearchText(UI.receivingFilters.search||"");
     const active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
     let rows=[];
@@ -2276,18 +2326,14 @@ function refreshReceivingTable(){
         });
     }
     if(window.PharmFlowClassificationFilters) rows=window.PharmFlowClassificationFilters.filter(rows,UI.receivingFilters.classification||{});
-    if(searchFilter) rows=rows.filter(item=>toSafeString(item.itemName||"").toLowerCase().includes(searchFilter)||toSafeString(item.itemCode||"").toLowerCase().includes(searchFilter));
+    if(searchFilter) rows=rows.filter(item=>matchesReceivingSearch(item,searchFilter));
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
     if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>';return;}
     if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>';return;}
     rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
-    if(inline){
-        if(searchFilter&&rows.length){const item=rows[0],order=item.orderNumber||((Array.isArray(item.orderNumbers)&&item.orderNumbers[0])||"—"),cl=window.PharmFlowClassificationFilters?.normalize(item)||{};
-            inline.hidden=false;inline.innerHTML=`<div class="pfnInlineRow"><span>${escapeHTML(order)}</span><b>${escapeHTML(item.itemCode||"")}</b><strong>${escapeHTML(item.itemName||"")}</strong><span>${escapeHTML(cl.group||"—")}</span><span>Ordered <b>${toNumber(item.orderedQty,0)}</b></span><div class="tableQtyControl"><button type="button" class="tableQtyButton" data-inline-minus>−</button><button type="button" class="tableQtyValue" data-inline-edit>${toNumber(item.receivedQty,0)}</button><button type="button" class="tableQtyButton" data-inline-plus>+</button></div><span>Difference ${renderReceivingDifference(item.orderedQty,item.receivedQty)}</span><span>${escapeHTML(item.status||"")}</span></div>`;
-            inline.querySelector('[data-inline-plus]')?.addEventListener('click',()=>increaseItemQuantity(item.itemCode,1));inline.querySelector('[data-inline-minus]')?.addEventListener('click',()=>decreaseItemQuantity(item.itemCode,1));inline.querySelector('[data-inline-edit]')?.addEventListener('click',()=>openQuantityEditPrompt(item));
-        }else{inline.hidden=true;inline.innerHTML="";}
-    }
+    if(inline){ inline.hidden=true; inline.innerHTML=""; }
+
 }
 function refreshReceivingCategoryFilter(){
     const host=document.getElementById("receivingClassificationFilters");if(!host||!window.PharmFlowClassificationFilters)return;
@@ -7899,7 +7945,26 @@ function getScopedOrderItems(){
 
 function getKpiPanelItems(key){
     const items=getScopedOrderItems();
-    if(key==="total") return items.slice();
+    if(key==="total"){
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+        if(typeof getPerOrderReceivingRows==="function" && selectedOrders.length){
+            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+                orderNumber:order,
+                orderNumbers:[order],
+                itemCode:row["Item Number"],
+                itemName:row["Item Name"],
+                orderedQty:toNumber(row["Ordered Qty"],0),
+                receivedQty:toNumber(row["Received Qty"],0),
+                remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
+                status:row["Issue Type"],
+                manual:row.issueKey==="manual",
+                group_name:row["Group"]||"",
+                category:row["Category"]||"",
+                sub_category:row["Sub Category"]||""
+            })));
+        }
+        return items.slice();
+    }
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
     const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
         orderNumber:order,
@@ -8237,10 +8302,16 @@ function renderItemBrowser(body, rows, options={}){
         return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
-        const q=toSafeString(input?.value||'').trim().toLowerCase();
+        const q=typeof normalizeReceivingSearchText==="function"
+            ? normalizeReceivingSearchText(input?.value||"")
+            : toSafeString(input?.value||"").trim().toLowerCase();
         const currentRows=orderMode?getKpiPanelItems("total"):rows;
         applyPendingItemPrioritySelections();
-        let visible=currentRows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
+        let visible=currentRows.filter(item=>!q||(
+            typeof matchesReceivingSearch==="function"
+                ? matchesReceivingSearch(item,q)
+                : toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q)
+        ));
         const selectedOrder=orderFilter?.value||'ALL';
         if(orderMode&&selectedOrder!=='ALL') visible=visible.filter(item=>(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).includes(selectedOrder));
         if(orderMode&&window.PharmFlowClassificationFilters){
@@ -8585,14 +8656,17 @@ function nrV2HasTransactionId(transactionId){
 
 async function nrV2ResolveGroupToOrderItem(group,item){
     const transactionId=nrV2GroupTransactionId(group);
-    /* Needs Review learns only in the current pharmacy. Global Master changes
-       remain a deliberate System Owner administration operation elsewhere. */
+    /* Reference pharmacy rule:
+       HHP084 learns unresolved identifiers into the Global Master.
+       Every other pharmacy learns only inside its own pharmacy scope.
+       Receiving provenance still uses a pharmacy mapping so the durable
+       learned-receipt queue keeps its existing atomic/idempotent contract. */
     let pharmacyMapping=null;
     if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()){
         const first=group.rows[0];
         const identifier=toSafeString(first?.identifier_display||first?.gtin||group.gtin);
         if(identifier){
-            const mappingResult=await IdentifierService.addPharmacyIdentifier(
+            const mappingResult=await IdentifierService.learnIdentifier(
                 nrV2OperationId(),identifier,item,"Needs Review resolution"
             );
             pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
@@ -8680,13 +8754,15 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
+    const isReferencePharmacyAdmin=()=>isCurrentPharmacyAdmin()&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
+    const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
     let resolved=null, selectedItem=null, pendingIdentifier="";
-    const globalNotice=()=>"<p class=\"needsReviewGlobalNotice\">Global Master changes require System Owner permission. Pharmacy mappings affect only the current pharmacy.</p>";
-    const reasonField=()=>`<label>Reason<textarea data-reason rows="2" placeholder="Required for mapping changes"></textarea></label>`;
-    const itemSummary=item=>`<div class="needsReviewMappingCurrent"><span>GLOBAL ITEM</span><strong>${esc(item.item_code||item.itemCode)} → ${esc(item.item_name||item.itemName||"Unnamed item")}</strong></div>`;
+    const globalNotice=()=>`<p class="needsReviewGlobalNotice">${isCurrentPharmacyAdmin()&&!canWriteGlobal()?"Barcode changes here apply only to this pharmacy.":"Global barcode changes are protected by server permission."}</p>`;
+    const reasonField=()=>`<label class="barcodeChangeNote">Change note<textarea data-reason rows="2" placeholder="Short note for the audit record"></textarea></label>`;
+    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><strong>${esc(item.item_code||item.itemCode)}</strong><b>${esc(item.item_name||item.itemName||"Unnamed item")}</b></div>`;
     const listIdentifiers=async itemCode=>{
         const identifiers=await IdentifierService.listItemIdentifiers(itemCode);
-        return `<div class="needsReviewMappingCompare"><span>IDENTIFIERS FOR THIS ITEM</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)} <small>${esc(row.identifier_key)}</small></strong>`).join(""):'<strong>No identifiers are mapped to this Item.</strong>'}</div>`;
+        return `<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)}</strong>`).join(""):'<strong>No barcodes are linked to this item.</strong>'}</div>`;
     };
     const bindItemResults=(items,afterSelect)=>{
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
@@ -8701,22 +8777,23 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         selectedItem=item;
         const identifiers=await listIdentifiers(itemCode);
         const hasIdentifier=!!identifier;
-        const globalOwner=isGlobalOwner();
+        const globalOwner=canWriteGlobal();
         const pharmacyAdmin=isCurrentPharmacyAdmin();
         const pharmacyMapping=mapping?.mappingScope==="PHARMACY";
         const canManage=pharmacyMapping ? pharmacyAdmin : globalOwner;
+        const scopeLabel=pharmacyMapping?"THIS PHARMACY":(globalOwner?"GLOBAL":"GLOBAL · READ ONLY");
         const mappingActions=canManage?`
             <div class="needsReviewMappingActions">
-                ${hasIdentifier?`<label>Identifier<input value="${esc(identifier)}" readonly></label>`:'<label>Identifier / GTIN<input data-new-identifier placeholder="Enter identifier to map"></label>'}
+                ${hasIdentifier?`<label>Barcode<input value="${esc(identifier)}" readonly></label>`:'<label>New Barcode<input data-new-identifier autocomplete="off" placeholder="Scan or enter barcode"></label>'}
                 ${reasonField()}
-                <button type="button" data-add>${pharmacyMapping?"Add Pharmacy Mapping":"Add Mapping"}</button>
-                ${mapping?`<label>Target Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct Mapping</button><button type="button" class="danger" data-remove>Remove This Identifier</button>`:""}
+                <button type="button" data-add>Add Barcode</button>
+                ${mapping?`<label>Correct to Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct</button><button type="button" class="danger" data-remove>Remove</button>`:""}
             </div>`:(pharmacyAdmin&&hasIdentifier?`
-            <div class="needsReviewMappingActions"><label>Identifier<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add Pharmacy Mapping</button></div>`:globalNotice());
-        workspace.innerHTML=`<span class="identifierScopeBadge">${pharmacyMapping?"THIS PHARMACY":"GLOBAL"}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">CURRENT PHARMACY mapping — Global Master is unchanged.</p>':''}`;
+            <div class="needsReviewMappingActions"><label>Barcode<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add for This Pharmacy</button></div>`:globalNotice());
+        workspace.innerHTML=`<span class="identifierScopeBadge">${scopeLabel}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">This barcode override belongs only to the current pharmacy.</p>':''}`;
         if(!canManage&&!pharmacyAdmin) return;
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        const requireReason=()=>{const value=reason();if(!value) throw new Error("A reason is required");return value;};
+        const requireReason=()=>reason()||"Settings barcode management";
         const currentIdentifier=()=>toSafeString(identifier||workspace.querySelector("[data-new-identifier]")?.value).trim();
         const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
         workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
@@ -8728,21 +8805,21 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const value=toSafeString(query).trim();
         if(!value){showToast?.("Enter an Item Code or Item Name","warning");itemSearch?.focus();return;}
         const items=await IdentifierService.searchItems(value,12);
-        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the canonical Global Item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
+        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
         bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
     };
     const renderUnmapped=()=>{
-        const globalOwner=isGlobalOwner(), pharmacyAdmin=isCurrentPharmacyAdmin();
+        const globalOwner=canWriteGlobal(), pharmacyAdmin=isCurrentPharmacyAdmin();
         if(!globalOwner&&!pharmacyAdmin){workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for this identifier.</div>${globalNotice()}`;return;}
-        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the canonical Global Master, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search canonical Global Items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
+        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the item catalogue, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
         let selected=null;
         const search=workspace.querySelector("[data-global-search]");
         const results=workspace.querySelector("[data-global-results]");
         const addExisting=workspace.querySelector("[data-add-existing]");
         search?.addEventListener("input",async()=>{const query=toSafeString(search.value).trim();selected=null;if(addExisting)addExisting.disabled=true;if(!query){results.innerHTML="";return;}try{const items=await IdentifierService.searchItems(query,12);results.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";results.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selected=items[Number(button.dataset.globalItem)]||null;results.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selected;}));}catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}});
         const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        addExisting?.addEventListener("click",async event=>{if(!selected||!reason()){showToast?.("Select an Item and enter a reason","warning");return;}event.currentTarget.disabled=true;try{if(globalOwner) await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason());else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),pendingIdentifier,selected,reason());await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name||!reason()){showToast?.("Item Code, Item Name and reason are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
+        addExisting?.addEventListener("click",async event=>{if(!selected){showToast?.("Select an Item","warning");return;}event.currentTarget.disabled=true;try{if(globalOwner) await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason()||"Settings barcode management");else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),pendingIdentifier,selected,reason()||"Settings barcode management");await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
+        workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name){showToast?.("Item Code and Item Name are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()||"Settings barcode management"});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
     };
     const drawIdentifier=async()=>{
         pendingIdentifier=toSafeString(input.value).trim();

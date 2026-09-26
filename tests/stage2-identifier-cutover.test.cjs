@@ -154,26 +154,25 @@ test('Handheld compact controls and success acknowledgement use the existing Las
   assert.match(ui,/handheldScanSavedAck"\)\?\.setAttribute\("hidden",""\)/);
 });
 
-test('visible Settings Global Master route exposes the V2 lookup controls before legacy import compatibility',()=>{
+test('visible Settings Barcode Management route exposes the V2 controls before legacy import compatibility',()=>{
   const index=read('index.html');
   const ui=read('ui.js');
   const settings=index.slice(index.indexOf('id="page-settings"'),index.indexOf('id="page-settings"')+14000);
   assert.match(settings,/id="globalIdentifierMasterAdmin"/);
-  assert.match(settings,/class="globalIdentifierMasterAdmin"/);
+  assert.match(settings,/BARCODE MANAGEMENT/);
+  assert.match(settings,/<h2>Item Barcodes<\/h2>/);
   assert.match(settings,/data-admin-identifier/);
   assert.match(settings,/data-admin-item-search/);
-  assert.match(settings,/Find Mapping/);
-  assert.match(settings,/Search Items/);
+  assert.match(settings,/>Find<\/button>/);
+  assert.match(settings,/>Search<\/button>/);
   assert.ok(settings.indexOf('id="globalIdentifierMasterAdmin"') < settings.indexOf('Global Master import and mapping-file compatibility'));
   assert.match(ui,/function renderV2IdentifierAdministration\(/);
   assert.match(ui,/renderV2IdentifierAdministration\(settingsMaster\)/);
-  assert.match(ui,/itemLoad\?\.addEventListener\("click",\(\)=>renderItemSearch/);
   assert.match(ui,/IdentifierService\.searchItems\(value,12\)/);
-  assert.match(ui,/IDENTIFIERS FOR THIS ITEM/);
-  assert.match(ui,/Add New Item &amp; First Identifier/);
+  assert.match(ui,/barcodeList/);
+  assert.match(ui,/Add Barcode/);
   assert.match(ui,/data-correct/);
   assert.match(ui,/data-remove/);
-  assert.doesNotMatch(ui,/function initializeGlobalIdentifierMaster\(/);
 });
 
 test('Handheld can reach the compact Needs Review and photo viewer without a second scan path',()=>{
@@ -198,11 +197,11 @@ test('loaded legacy Global Master compatibility code has no learned-mapping reso
   assert.match(master,/function getMasterGTINRecordByGTIN\(/,'Expiry retains its read-only legacy Global Master lookup');
 });
 
-test('Settings leads with V2 Global Master administration while preserving import compatibility',()=>{
+test('Settings leads with simplified Barcode Management while preserving import compatibility',()=>{
   const index=read('index.html');
-  assert.match(index,/<h2>Global Identifier Master<\/h2>/);
+  assert.match(index,/<h2>Item Barcodes<\/h2>/);
+  assert.match(index,/BARCODE MANAGEMENT/);
   assert.ok(index.indexOf('id="globalIdentifierMasterAdmin"') < index.indexOf('Global Master import and mapping-file compatibility'));
-  assert.doesNotMatch(index,/<span class="sectionEyebrow">\s*<div>/);
   assert.match(index,/Update Global GTIN Import/);
   assert.match(index,/Mapping-file compatibility/);
 });
@@ -258,4 +257,86 @@ test("alphanumeric scanner identifiers preserve exact identity before V2 resolut
   for(const identifier of ["BT 122585","U0030","S00110","1234A"]){
     assert.ok(/[A-Za-z]/.test(identifier),identifier);
   }
+});
+
+
+test('Global Identifier writes use the authoritative reference-pharmacy gate',()=>{
+  const migration=read('PHASE2C1159_HHP084_GLOBAL_IDENTIFIER_AUTH.sql');
+  assert.match(migration,/HHP084/);
+  assert.match(migration,/pm\.active is true/);
+  assert.match(migration,/p\.active is true/);
+  assert.match(migration,/p\.status = 'active'/);
+  for(const rpc of [
+    'add_pharmflow_global_identifier_v2',
+    'correct_pharmflow_global_identifier_v2',
+    'remove_pharmflow_global_identifier_v2',
+    'create_pharmflow_global_item_v2'
+  ]){
+    const start=migration.indexOf('function public.'+rpc);
+    assert.notEqual(start,-1,rpc);
+    const body=migration.slice(start,migration.indexOf('end $$;',start)+7);
+    assert.match(body,/pharmflow_is_reference_master_admin_v1\(\)/,rpc);
+  }
+});
+
+
+test("reference pharmacy learning is centralized for Receiving and future Expiry reuse",()=>{
+  const service=read("js/identifier-service.js");
+  const ui=read("ui.js");
+  assert.match(service,/isReferencePharmacy\(\)/);
+  assert.match(service,/pharmacy_code[\s\S]*HHP084/);
+  assert.match(service,/async learnIdentifier\(/);
+  assert.match(service,/learn_pharmflow_identifier_v1/);
+  assert.match(service,/p_global_operation_id:operationId/);
+  assert.match(service,/p_pharmacy_operation_id:globalThis\.crypto\.randomUUID\(\)/);
+  assert.match(service,/return row\?\.pharmacyMapping/);
+  assert.match(ui,/IdentifierService\.learnIdentifier\(/);
+  assert.doesNotMatch(ui,/Needs Review learns only in the current pharmacy/);
+});
+
+
+test("Receiving report uses attributed ledger totals and normalized search",()=>{
+  const reports=read("js/reports.js");
+  const ui=read("ui.js");
+  const css=read("css/receiving-surface.css");
+  const start=reports.indexOf("function buildReceivedQuantityByOrder");
+  const end=reports.indexOf("function getOperationalGroupForReceivingRow",start);
+  const aggregation=reports.slice(start,end);
+  assert.match(aggregation,/receivingHistory/);
+  assert.doesNotMatch(aggregation,/item\?\.receivedQty/);
+  assert.doesNotMatch(aggregation,/remainder/);
+  assert.match(ui,/function normalizeReceivingSearchText/);
+  assert.match(ui,/terms\.every\(term=>haystack\.includes\(term\)\)/);
+  assert.match(css,/#receivingInlineResult[\s\S]*display:none/);
+});
+
+
+test("Order Items uses the same per-order ledger totals and normalized search as Receiving",()=>{
+  const ui=read("ui.js");
+  const start=ui.indexOf('function getKpiPanelItems');
+  const end=ui.indexOf('function kpiTitle',start);
+  const kpi=ui.slice(start,end);
+  assert.match(kpi,/if\(key==="total"\)/);
+  assert.match(kpi,/getPerOrderReceivingRows/);
+  assert.match(kpi,/receivedQty:toNumber\(row\["Received Qty"\],0\)/);
+  const browserStart=ui.indexOf('function renderItemBrowser');
+  const browserEnd=ui.indexOf('function ',browserStart+30);
+  const browser=ui.slice(browserStart,browserEnd>browserStart?browserEnd:undefined);
+  assert.match(browser,/normalizeReceivingSearchText/);
+  assert.match(browser,/matchesReceivingSearch/);
+});
+
+
+test("Scan Item search projects quantities from the per-order receiving ledger",()=>{
+  const ui=read("ui.js");
+  const start=ui.indexOf("function getReceivingSearchProjection");
+  const end=ui.indexOf("function handleSmartScanSearchInput",start);
+  const projection=ui.slice(start,end);
+  assert.match(projection,/getSelectedReceivingOrderNumbers/);
+  assert.match(projection,/getPerOrderReceivingRows/);
+  assert.match(projection,/row\["Received Qty"\]/);
+  assert.doesNotMatch(projection,/item\.receivedQty/);
+  const searchStart=ui.indexOf("function handleSmartScanSearchInput");
+  const searchEnd=ui.indexOf("function renderSmartScanSearchResults",searchStart);
+  assert.match(ui.slice(searchStart,searchEnd),/getReceivingSearchProjection\(\)/);
 });
