@@ -7850,7 +7850,7 @@ function openHandheldScansPanel(){
             setTimeout(()=>window.hhRefreshReadyState?.(),20);
         });
 
-        overlay.querySelector("[data-remove-last]")?.addEventListener("click",()=>{
+        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async()=>{
             const transactionId=overlay.querySelector("[data-remove-last]")?.dataset.removeLast||"";
             const latest=scanRows()[0];
             if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
