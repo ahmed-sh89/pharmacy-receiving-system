@@ -8089,11 +8089,27 @@ function getReceivingActivityRows(){
 
 function addReceivingActivityFinalTotals(rows){
     const totals=new Map();
-    return (rows||[]).slice().sort((a,b)=>(new Date(a?.dateTime||0).getTime()||0)-(new Date(b?.dateTime||0).getTime()||0)).map(row=>{
+
+    /* Running totals must be calculated oldest -> newest, but this is a
+       presentation helper for Receiving Activity History. Never leak that
+       calculation order back into the review screen. */
+    const chronological=(rows||[]).slice().sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return ta-tb;
+    });
+
+    const withTotals=chronological.map(row=>{
         const key=normalizeItemCode(row?.itemCode||"")+"|"+normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
         const finalReceived=Math.max(0,toNumber(totals.get(key),0)+toNumber(row?.qtyChange??row?.quantity,0));
         totals.set(key,finalReceived);
         return {...row,finalReceived};
+    });
+
+    return withTotals.sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return tb-ta;
     });
 }
 
