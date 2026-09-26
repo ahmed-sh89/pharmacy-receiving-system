@@ -8679,9 +8679,9 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     load.dataset.identifierAdminBound="1";
     if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
+    const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
     const isReferencePharmacyAdmin=()=>isCurrentPharmacyAdmin()&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
-    const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
     let resolved=null, selectedItem=null, pendingIdentifier="";
     const globalNotice=()=>`<p class="needsReviewGlobalNotice">${isCurrentPharmacyAdmin()&&!canWriteGlobal()?"Barcode changes here apply only to this pharmacy.":"Global barcode changes are protected by server permission."}</p>`;
     const reasonField=()=>`<label class="barcodeChangeNote">Change note<textarea data-reason rows="2" placeholder="Short note for the audit record"></textarea></label>`;
