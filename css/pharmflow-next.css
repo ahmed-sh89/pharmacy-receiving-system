@@ -1927,3 +1927,19 @@ body:not(.zebraDevice) .pfnActivityTable td{padding:7px 6px;font-size:11px;white
 body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:12px;font-weight:700;color:#123f69;text-overflow:clip}
 body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
 body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
+
+/* Receiving Activity: prioritize Item Name while keeping Date on one line. */
+body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:12%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:34%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:6%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:8%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:7%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:4.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:6%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:9.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12%}
+body:not(.zebraDevice) .pfnActivityTable td:first-child,
+body:not(.zebraDevice) .pfnActivityTable th:first-child{white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable th:not(:nth-child(2)),
+body:not(.zebraDevice) .pfnActivityTable td:not(:nth-child(2)){padding-left:4px;padding-right:4px;font-size:10px}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:12px}
