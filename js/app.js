@@ -1900,7 +1900,9 @@ function calculateDashboardMetrics(){
     const orderNumbers=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
     const items=orderNumbers.length&&typeof getPerOrderReceivingRows==="function"
         ? orderNumbers.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
-            orderedQty:row["Ordered Qty"],receivedQty:row["Received Qty"],manual:false
+            orderedQty:row["Ordered Qty"],
+            receivedQty:row["Received Qty"],
+            manual:row.issueKey==="manual"
         })))
         : (Array.isArray(AppState?.workspace?.orderData)?AppState.workspace.orderData:[]);
     const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
