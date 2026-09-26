@@ -148,29 +148,11 @@
     body.appendChild(page);page.classList.add('active','pfnEmbeddedPage');page.hidden=false;
     renderHandheldAssignment(overlay);
 
-    /* Active Order Files is rendered asynchronously after some authoritative
-       upload/remove paths. The assignment panel is a sibling of that page, so
-       its earlier files:updated listener can otherwise capture the old scope.
-       Observe only the open Manage Orders page and rebuild from AppState after
-       its real DOM render. No polling or network work is introduced. */
-    let assignmentRefreshQueued=false;
-    PF.ordersPageObserver?.disconnect?.();
-    PF.ordersPageObserver=new MutationObserver(()=>{
-      if(assignmentRefreshQueued||!overlay.isConnected)return;
-      assignmentRefreshQueued=true;
-      requestAnimationFrame(()=>{
-        assignmentRefreshQueued=false;
-        if(overlay.isConnected)renderHandheldAssignment(overlay);
-      });
-    });
-    PF.ordersPageObserver.observe(page,{childList:true,subtree:true});
-
     overlay.querySelector('[data-close]').onclick=closeOrders;overlay.querySelector('[data-done]').onclick=closeOrders;overlay.addEventListener('click',e=>{if(e.target===overlay)closeOrders();});
   }
 
   function closeOrders(){
     const overlay=$('pfnOrdersOverlay'),page=$('page-files');
-    PF.ordersPageObserver?.disconnect?.();PF.ordersPageObserver=null;
     if(page&&PF.ordersAnchor?.parentNode){page.classList.remove('active','pfnEmbeddedPage');PF.ordersAnchor.parentNode.insertBefore(page,PF.ordersAnchor);PF.ordersAnchor.remove();PF.ordersAnchor=null;}
     modalStack.close(overlay);overlay?.remove();try{focusScannerInput?.();}catch(_){}
   }
