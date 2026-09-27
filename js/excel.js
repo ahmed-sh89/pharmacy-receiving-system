@@ -146,7 +146,6 @@ async function handleOrderFileSelection(event){
         let importedRows = 0;
         let skippedRows = 0;
         let importedFiles = 0;
-        let duplicateFiles = 0;
 
         /* Batch upload is a single structural operation. Parse and validate
            every selected workbook BEFORE mutating AppState so a bad third/fourth
@@ -198,7 +197,6 @@ async function handleOrderFileSelection(event){
 
             importedRows+=result.importedRows;
             skippedRows+=result.skippedRows;
-            if(result.duplicateFile) duplicateFiles++;
             if(result.success) importedFiles++;
         }
 
@@ -369,14 +367,6 @@ async function handleOrderFileSelection(event){
             );
 
         }
-        else if(duplicateFiles > 0){
-
-            showToast(
-                "Selected order file already imported",
-                "warning"
-            );
-
-        }
         else{
 
             showToast(
@@ -391,8 +381,7 @@ async function handleOrderFileSelection(event){
             {
                 importedFiles,
                 importedRows,
-                skippedRows,
-                duplicateFiles
+                skippedRows
             }
         );
 
@@ -603,7 +592,6 @@ async function importOrderFile(file, preflightMeta = null, preloadedWorkbook = n
 
     const result = {
         success:false,
-        duplicateFile:false,
         importedRows:0,
         skippedRows:0
     };
