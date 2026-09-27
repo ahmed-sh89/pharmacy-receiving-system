@@ -8,7 +8,11 @@ const migration=fs.readFileSync("PHASE2C1161_NEEDS_REVIEW_AUTO_ALLOCATION.sql","
 assert(!ui.includes("data-assign-order"),"manual Needs Review Order selector must stay removed");
 assert(ui.includes("return findReceivingResolverMatches(query,searchIndex,8)"));
 assert(ui.includes("const searchIndex=getResolverSearchIndex(group)"));
-assert(receiving.includes("function buildReceivingAutoAllocationPlan"));\nassert(receiving.includes("function buildReceivingResolverSearchIndex"));\nassert(receiving.includes("function buildReceivingResolverSelectionModel"));\nassert(receiving.includes("function renderReceivingResolverSelectedCard"));\nassert(ui.includes("renderReceivingResolverSelectedCard(model,esc"));
+assert(receiving.includes("function buildReceivingAutoAllocationPlan"));
+assert(receiving.includes("function buildReceivingResolverSearchIndex"));
+assert(receiving.includes("function buildReceivingResolverSelectionModel"));
+assert(receiving.includes("function renderReceivingResolverSelectedCard"));
+assert(ui.includes("renderReceivingResolverSelectedCard(model,esc"));
 assert(receiving.includes("if(left>0)"));
 assert(receiving.includes("allowOverReceiving"));
 assert(receiving.includes("receiveAutoAllocatedItem({item:selectedItem"));
