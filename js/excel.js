@@ -143,8 +143,16 @@ async function handleOrderFileSelection(event){
                 );
             }
 
-            if(orderMeta && typeof assertOrderNumberCanUpload === "function"){
-                await assertOrderNumberCanUpload(orderMeta.orderNumber);
+            /* Current Workspace membership is owned by the Active Order
+               Manifest. Historical lifecycle rows must not veto rebuilding a
+               workspace after Reset; duplicate protection for this batch is
+               provided by the staged manifest/file identity below. */
+            const activeOrderNumber=normalizeOrderNumber(orderMeta?.orderNumber||"");
+            const alreadyActive=(AppState.workspace.orderFiles||[]).some(existing=>
+                normalizeOrderNumber(existing?.documentId||existing?.orderNumber||"")===activeOrderNumber
+            );
+            if(activeOrderNumber && alreadyActive){
+                throw new Error("Order "+activeOrderNumber+" is already active in the Current Workspace.");
             }
 
             const result =
