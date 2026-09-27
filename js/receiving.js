@@ -257,11 +257,53 @@ function chooseDeterministicReceivingOrder(item){
 }
 
 function getReceivingDisplayMetrics(item,orderNumber){
-    const row=getReceivingOrderRow(item,orderNumber);
-    if(!row) return null;
-    const ordered=toNumber(row["Ordered Qty"],0);
-    const received=toNumber(row["Received Qty"],0);
-    return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
+    const normalizedOrder=normalizeOrderNumber(orderNumber||"");
+    const code=normalizeItemCode(item?.itemCode||"");
+    if(!normalizedOrder || !code) return null;
+
+    /* Hot scan path: metrics for ONE item must never reconstruct every row in
+       the Order. Read its structural source row directly, then aggregate only
+       matching durable transactions. This keeps exact ledger authority while
+       making scan cost proportional to this item's history, not workspace size. */
+    const source=typeof getWorkspaceOrderSourceRows==="function"
+        ? getWorkspaceOrderSourceRows(normalizedOrder)
+        : [];
+    const sourceRow=source.find(row=>normalizeItemCode(row?.itemCode||"")===code);
+    if(!sourceRow) return null;
+
+    const activeOrders=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    let received=0;
+
+    (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
+        if(tx?.undone===true || normalizeItemCode(tx?.itemCode||"")!==code) return;
+
+        const explicitOrder=normalizeOrderNumber(
+            tx?.orderNumber || tx?.orderId || tx?.selectedOrderNumber || ""
+        );
+        if(explicitOrder){
+            if(explicitOrder===normalizedOrder) received+=toNumber(tx?.quantity,0);
+            return;
+        }
+
+        /* Preserve the same narrow legacy fallback as the report layer:
+           unattributed history is usable only when this item belongs to one
+           active Order, never guessed across multiple Orders. */
+        const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber])
+            .map(normalizeOrderNumber)
+            .filter(order=>activeOrders.includes(order)))];
+        if(memberships.length===1 && memberships[0]===normalizedOrder){
+            received+=toNumber(tx?.quantity,0);
+        }
+    });
+
+    const ordered=toNumber(sourceRow?.orderedQty,0);
+    return {
+        orderedQty:ordered,
+        receivedQty:received,
+        remainingQty:Math.max(0,ordered-received)
+    };
 }
 
 function getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers=null){
