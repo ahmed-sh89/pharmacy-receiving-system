@@ -1552,36 +1552,12 @@ function bindUIStateEvents(){
 
     AppEvents.on(
         "receiving:updated",
-        function(data){
+        function(){
 
-            const source=toSafeString(data?.source||"");
-            const structural=
-                !data ||
-                source==="workspace-reset" ||
-                source==="handheld-local-reset" ||
-                source==="server-authority-empty";
-
-            if(structural){
-                refreshEntireUI();
-            }else{
-                /* Receiving transactions are item-local changes. Do not rebuild
-                   the full workspace DOM (tables/files/archive/master) for one
-                   scan or quantity adjustment. */
-                /* Paint worker feedback first. Expensive aggregate/dashboard
-                   work must never sit between a successful scan and Last Scan. */
-                refreshLastScan();
-                refreshReceivingRow(data);
-                refreshSelectedSmartItem();
-                refreshZebraInterface();
-
-                requestAnimationFrame(()=>{
-                    refreshDashboard();
-                    refreshOpenKpiPanel();
-                });
-                return;
-            }
+            refreshEntireUI();
 
             refreshSelectedSmartItem();
+
             refreshZebraInterface();
 
         }
@@ -1661,6 +1637,8 @@ function refreshEntireUI(){
     refreshHeader();
 
     refreshDashboard();
+
+    refreshProgress();
 
     refreshLastScan();
 
@@ -1880,15 +1858,8 @@ function getSelectedOrderDashboardMetrics(){
     let overReceivedItems=0;
     let manualItems=0;
 
-    const receivedMap=typeof buildReceivedQuantityByOrder==="function"
-        ? buildReceivedQuantityByOrder()
-        : null;
-
     targetOrders.forEach(orderNumber=>{
-        const rows=getPerOrderReceivingRows(
-            orderNumber,
-            receivedMap instanceof Map ? {receivedMap} : {}
-        );
+        const rows=getPerOrderReceivingRows(orderNumber);
 
         rows.forEach(row=>{
             const ordered=toNumber(row["Ordered Qty"],0);
@@ -2031,24 +2002,19 @@ function refreshDashboard(){
     setElementText(UI.elements.statManual,scoped.manualItems);
     setElementText(UI.elements.statScans,scoped.totalScans);
 
-    refreshProgress(selectedMetrics);
+    refreshProgress();
 }
 
 /* =====================================================
    PROGRESS
 ===================================================== */
 
-function refreshProgress(selectedMetricsOverride=null){
+function refreshProgress(){
 
-    /* Dashboard already computed scoped metrics in the same render cycle.
-       Reuse them instead of rebuilding the multi-order receiving model twice. */
     const selectedMetrics=
-        selectedMetricsOverride ||
-        (
-            typeof getSelectedOrderDashboardMetrics==="function"
-                ? getSelectedOrderDashboardMetrics()
-                : null
-        );
+        typeof getSelectedOrderDashboardMetrics==="function"
+            ? getSelectedOrderDashboardMetrics()
+            : null;
 
     const total =
         selectedMetrics
@@ -2255,95 +2221,16 @@ function getVisibleReceivingItemsForExport(){
    RECEIVING TABLE
 ===================================================== */
 
-function refreshReceivingRow(data){
-    const code=normalizeItemCode(data?.itemCode||"");
-    if(!code) return;
-
-    const tbody=UI.elements.receivingTableBody;
-    if(!tbody) return;
-
-    const existing=Array.from(
-        tbody.querySelectorAll("tr[data-item-code]")
-    ).filter(row=>normalizeItemCode(row.dataset.itemCode)===code);
-
-    /* If the current filters/scope do not contain this item, a local quantity
-       change can alter membership (for example Remaining -> Completed). In that
-       case rebuild only the Receiving table, never the whole application UI. */
-    if(!existing.length){
-        refreshReceivingTable();
-        return;
-    }
-
-    const rows=[];
-    const active=typeof getActiveReceivingOrderNumbers==="function"
-        ? getActiveReceivingOrderNumbers()
-        : [];
-    const selected=typeof getSelectedReceivingOrderNumbers==="function"
-        ? getSelectedReceivingOrderNumbers()
-        : active;
-
-    if(typeof getPerOrderReceivingRows==="function" && active.length){
-        const receivedMap=typeof buildReceivedQuantityByOrder==="function"
-            ? buildReceivedQuantityByOrder()
-            : null;
-        (selected.length?selected:active.slice(0,1)).forEach(orderNumber=>{
-            getPerOrderReceivingRows(
-                orderNumber,
-                receivedMap instanceof Map ? {receivedMap} : {}
-            ).forEach(row=>{
-                if(normalizeItemCode(row["Item Number"])!==code) return;
-                rows.push({
-                    orderNumber,
-                    itemCode:row["Item Number"],
-                    itemName:row["Item Name"],
-                    orderedQty:toNumber(row["Ordered Qty"],0),
-                    receivedQty:toNumber(row["Received Qty"],0),
-                    remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
-                    status:row["Issue Type"]==="Received"?"Completed":row["Issue Type"],
-                    category:row["Category"]||"",
-                    manual:row.issueKey==="manual"
-                });
-            });
-        });
-    }
-
-    if(rows.length!==existing.length){
-        refreshReceivingTable();
-        return;
-    }
-
-    existing.forEach((row,index)=>{
-        const item=rows[index];
-        if(!item){ refreshReceivingTable(); return; }
-        const replacement=createReceivingTableRow(item,Number(row.firstElementChild?.textContent||index+1)-1);
-        replacement.dataset.orderNumber=item.orderNumber||"";
-        row.replaceWith(replacement);
-    });
-}
-
 function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
     const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]), categoryFilter=UI.receivingFilters.category||"all", searchFilter=toSafeString(UI.receivingFilters.search||"").trim().toLowerCase();
     const scope=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"ALL", active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[], selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():(scope==="ALL"?active:[scope].filter(Boolean)), allMode=selectedOrders.length>1;
-    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber,receivedMap instanceof Map?{receivedMap}:{}).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(selectedOrders.length && !selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
+    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(selectedOrders.length && !selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
     if(searchFilter){rows=rows.filter(item=>toSafeString(item.itemName||"").toLowerCase().includes(searchFilter)||toSafeString(item.itemCode||"").toLowerCase().includes(searchFilter));}
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
     if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML=`<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>`;return;}if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML=`<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>`;return;}
-    /* Keep the full filtered model for counts/report logic, but bound initial
-       DOM work. Thousands of interactive rows block startup and scanner input. */
-    const RECEIVING_RENDER_LIMIT=200;
-    rows.slice(0,RECEIVING_RENDER_LIMIT).forEach((item,index)=>{
-        const tr=createReceivingTableRow(item,index);
-        tr.dataset.orderNumber=item.orderNumber||"";
-        tbody.appendChild(tr);
-    });
-    if(rows.length>RECEIVING_RENDER_LIMIT){
-        const more=document.createElement("tr");
-        more.className="receivingRenderNotice";
-        more.innerHTML=`<td colspan="10" class="tableEmptyState">Showing first ${RECEIVING_RENDER_LIMIT} of ${rows.length} items. Use Search or filters to narrow the worklist.</td>`;
-        tbody.appendChild(more);
-    }
+    rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
     if(inline){
         if(searchFilter&&rows.length){
             const item=rows[0], order=item.orderNumber||((Array.isArray(item.orderNumbers)&&item.orderNumbers[0])||"—");
@@ -7986,12 +7873,7 @@ function openDashboardKpiPanel(key){
     document.body.appendChild(overlay);
     overlay.querySelector("[data-close]").onclick=closeDashboardKpiPanel;
     overlay.addEventListener("click",event=>{if(event.target===overlay) closeDashboardKpiPanel();});
-
-    /* Let the overlay paint before constructing a large interactive worklist.
-       The click now has immediate visual response instead of appearing frozen. */
-    const body=overlay.querySelector("[data-body]");
-    if(body) body.innerHTML='<div class="tableEmptyState">Loading items…</div>';
-    requestAnimationFrame(()=>renderDashboardKpiPanel(key,body));
+    renderDashboardKpiPanel(key,overlay.querySelector("[data-body]"));
 }
 
 function closeDashboardKpiPanel(){
@@ -8080,8 +7962,6 @@ function renderItemBrowser(body, rows, options={}){
         if(orderMode)return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Category">${esc(item.category||item.Category||'—')}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
         return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
-    const BROWSER_PAGE_SIZE=200;
-    let visibleLimit=BROWSER_PAGE_SIZE;
     const draw=()=>{
         const q=toSafeString(input?.value||'').trim().toLowerCase();
         let visible=rows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
@@ -8098,18 +7978,7 @@ function renderItemBrowser(body, rows, options={}){
             tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
         }else{
             const colspan=orderMode?6:(receivedMode?4:3);
-            const rendered=visible.slice(0,visibleLimit);
-            tbody.innerHTML=rendered.length?rendered.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
-            if(visible.length>rendered.length){
-                const more=document.createElement('tr');
-                more.className='pfnBrowserLoadMore';
-                more.innerHTML=`<td colspan="${colspan}"><button type="button" data-load-more>Show next ${Math.min(BROWSER_PAGE_SIZE,visible.length-rendered.length)} items <span>${rendered.length} / ${visible.length}</span></button></td>`;
-                tbody.appendChild(more);
-                more.querySelector('[data-load-more]')?.addEventListener('click',()=>{
-                    visibleLimit+=BROWSER_PAGE_SIZE;
-                    draw();
-                });
-            }
+            tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
         }
         tbody.querySelectorAll('[data-mark]').forEach(btn=>btn.onclick=()=>{
             const item=typeof getItemByCode==='function'?getItemByCode(btn.dataset.code):null;if(!item)return;
@@ -8118,9 +7987,8 @@ function renderItemBrowser(body, rows, options={}){
             const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;draw();const next=body.querySelector('.phase263TableWrap');if(next)next.scrollTop=top;
         });
     };
-    const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
-    input?.addEventListener('input',resetAndDraw);orderFilter?.addEventListener('change',resetAndDraw);categoryFilter?.addEventListener('change',resetAndDraw);qtySort?.addEventListener('change',resetAndDraw);
-    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);resetAndDraw();});
+    input?.addEventListener('input',draw);orderFilter?.addEventListener('change',draw);categoryFilter?.addEventListener('change',draw);qtySort?.addEventListener('change',draw);
+    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);draw();});
     draw();
 }
 
