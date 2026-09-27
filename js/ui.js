@@ -1567,10 +1567,18 @@ function bindUIStateEvents(){
                 /* Receiving transactions are item-local changes. Do not rebuild
                    the full workspace DOM (tables/files/archive/master) for one
                    scan or quantity adjustment. */
-                refreshDashboard();
+                /* Paint worker feedback first. Expensive aggregate/dashboard
+                   work must never sit between a successful scan and Last Scan. */
                 refreshLastScan();
                 refreshReceivingRow(data);
-                refreshOpenKpiPanel();
+                refreshSelectedSmartItem();
+                refreshZebraInterface();
+
+                requestAnimationFrame(()=>{
+                    refreshDashboard();
+                    refreshOpenKpiPanel();
+                });
+                return;
             }
 
             refreshSelectedSmartItem();
@@ -1653,8 +1661,6 @@ function refreshEntireUI(){
     refreshHeader();
 
     refreshDashboard();
-
-    refreshProgress();
 
     refreshLastScan();
 
@@ -2025,19 +2031,24 @@ function refreshDashboard(){
     setElementText(UI.elements.statManual,scoped.manualItems);
     setElementText(UI.elements.statScans,scoped.totalScans);
 
-    refreshProgress();
+    refreshProgress(selectedMetrics);
 }
 
 /* =====================================================
    PROGRESS
 ===================================================== */
 
-function refreshProgress(){
+function refreshProgress(selectedMetricsOverride=null){
 
+    /* Dashboard already computed scoped metrics in the same render cycle.
+       Reuse them instead of rebuilding the multi-order receiving model twice. */
     const selectedMetrics=
-        typeof getSelectedOrderDashboardMetrics==="function"
-            ? getSelectedOrderDashboardMetrics()
-            : null;
+        selectedMetricsOverride ||
+        (
+            typeof getSelectedOrderDashboardMetrics==="function"
+                ? getSelectedOrderDashboardMetrics()
+                : null
+        );
 
     const total =
         selectedMetrics
