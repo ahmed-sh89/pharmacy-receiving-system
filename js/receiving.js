@@ -795,29 +795,16 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
         const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
             ? getSelectedReceivingOrderNumbers()
             : [];
-        if(selectedOrders.length!==1){
-            setScanBoxState?.("action");
-            return openKnownNotInOrderPC(parsed,masterRecord,selectedOrders);
-        }
-        try{
-            const item=prepareManualExtraItem(masterRecord.itemCode,masterRecord.itemName||masterRecord.name||masterRecord.itemCode,gtin,selectedOrders[0]);
-            const transaction=receiveOrderItem({
-                item,
-                quantity:getValidReceivingQuantity(parsed?.quantity),
-                gtin,
-                lot:parsed?.lot||"",
-                expiry:parsed?.expiry||"",
-                serial:parsed?.serial||"",
-                source:APP_CONFIG.transactionSources.scanner,
-                manual:true,
-                targetOrder:selectedOrders[0],
-                identifierPreserveExact:true
-            });
-            return transaction||false;
-        }catch(error){
-            handleReceivingFailure(error?.message||"Unable to receive known extra item");
-            return false;
-        }
+
+        /*
+           Safety gate: a recognised identifier whose Item Code is absent from
+           the selected active Order(s) is an exception, never an automatic
+           receipt. Even with exactly one selected Order the worker must see
+           the RECOGNISED · NOT IN ORDER confirmation before an Extra receipt
+           can be created. This keeps a scan alone incapable of changing Qty.
+        */
+        setScanBoxState?.("action");
+        return openKnownNotInOrderPC(parsed,masterRecord,selectedOrders);
     }
 
     /*
