@@ -56,7 +56,7 @@ test("confirmed order upload refreshes an open Manage Orders view without pollin
 
     const shell=fs.readFileSync("js/pharmflow-next.js","utf8");
     assert.match(shell,/if\(typeof AppEvents!=="undefined"&&AppEvents\?\.on\)\{/);
-    assert.match(shell,/AppEvents\.on\('files:updated',event=>\{if\(event\?\.source==='order-upload-confirmed'\)refreshOpenManageOrders\(\);\}\)/);
+    assert.match(shell,/AppEvents\.on\('files:updated',\(\)=>refreshOpenManageOrders\(\)\)/);
     assert.doesNotMatch(shell,/bindSidebar\(\);\s*if\(window\.AppEvents\?\.on\)/);
     assert.match(shell,/function refreshOpenManageOrders\(\)/);
     assert.doesNotMatch(shell,/setInterval\([^\n]*order-upload-confirmed/);
