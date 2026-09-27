@@ -1181,6 +1181,12 @@ function getPerOrderReceivingRows(orderNumber, options={}){
         ? options.receivedMap
         : buildReceivedQuantityByOrder();
 
+    const workspaceByCode=options.workspaceByCode instanceof Map
+        ? options.workspaceByCode
+        : new Map((AppState?.workspace?.orderData||[]).map(item=>[
+            normalizeItemCode(item?.itemCode||""),item
+        ]));
+
     const rows=source.map(row=>{
         const code=normalizeItemCode(row.itemCode||"");
         const received=toNumber(
@@ -1216,7 +1222,12 @@ function getPerOrderReceivingRows(orderNumber, options={}){
             "Difference":difference,
             "Issue Type":issueType,
             issueKey,
-            "Group":getOperationalGroupForReceivingRow(row),
+            "Group":toSafeString(
+                row?.group_name||row?.groupName||row?.Group||
+                workspaceByCode.get(code)?.group_name||
+                workspaceByCode.get(code)?.groupName||
+                workspaceByCode.get(code)?.Group||""
+            ).trim(),
             "Category":row.category||"",
             "Sub Category":row.sub_category||row.subCategory||""
         };
