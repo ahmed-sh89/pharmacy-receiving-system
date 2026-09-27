@@ -1982,6 +1982,35 @@ body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader{background:#eaf
 body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{background:#dff2ff;border-color:#5ba2d2;color:#0b5d91}
 body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#f7fbff}
 
+/* Focused UI clarity fix — Settings barcode management + Receiving resolver states. */
+#page-settings .masterGTINCard{border-top-color:#2d78b7}
+#page-settings .globalIdentifierMasterAdmin{padding:16px;border:1px solid #d7e5f1;border-radius:12px;background:#f8fbfe}
+#page-settings .barcodeManagementLookup{padding:14px;border:1px solid #dbe8f3;border-radius:10px;background:#fff}
+#page-settings .barcodeManagementLookup label{font-size:12px;letter-spacing:.01em;color:#315a7b}
+#page-settings .barcodeManagementLookup input{min-height:46px;border-color:#abc4d9;border-radius:9px;font-size:15px}
+#page-settings .barcodeManagementLookup input:focus{outline:none;border-color:#2d78b7;box-shadow:0 0 0 3px rgba(45,120,183,.12)}
+#page-settings .barcodeManagementLookup button{min-height:46px;border-radius:9px}
+#page-settings [data-admin-workspace]:not(:empty){padding:14px;border:1px solid #dbe8f3;border-radius:10px;background:#fff}
+#page-settings .needsReviewMappingActions{grid-template-columns:minmax(220px,1fr) auto auto;gap:10px;padding-top:12px;border-top:1px solid #e3edf5}
+#page-settings .needsReviewMappingActions label{display:grid;gap:6px;color:#315a7b;font-size:12px;font-weight:800}
+#page-settings .needsReviewMappingActions input,#page-settings .needsReviewMappingActions textarea{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #abc4d9;border-radius:9px;background:#fff;padding:9px 11px;color:#173f65;font:inherit}
+#page-settings .needsReviewMappingActions button{min-height:44px;padding:9px 15px;border:1px solid #176bb1;border-radius:9px;background:#176bb1;color:#fff;font-weight:800;cursor:pointer}
+#page-settings .needsReviewMappingActions button.danger{border-color:#a63232;background:#a63232}
+#page-settings .barcodeChangeNote{grid-column:1/-1}
+@media(max-width:760px){#page-settings .needsReviewMappingActions{grid-template-columns:1fr}}
+
+/* Unknown is an error state; known-but-not-in-order is a caution state. */
+body:not(.zebraDevice) .pfnUnknownPanel{border-color:#c94b4b!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinResolutionHeader{background:#fff1f1!important;border-bottom-color:#efb5b5!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinActionBadge{display:block!important;width:fit-content!important;padding:8px 12px!important;border:1px solid #d35b5b!important;border-radius:9px!important;background:#ffe1e1!important;color:#9e2020!important;font-size:15px!important;font-weight:950!important;letter-spacing:.035em!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinResolutionHeader h2{margin-top:9px!important;font-size:18px!important;font-weight:800!important;color:#5e3b3b!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinReadout{background:#fff7f7!important;border-color:#efc5c5!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel{border-color:#c98a27!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader{background:#fff7e8!important;border-bottom-color:#e7c88d!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{display:block!important;width:fit-content!important;padding:8px 12px!important;border:1px solid #cf942e!important;border-radius:9px!important;background:#ffedc5!important;color:#7b4b00!important;font-size:15px!important;font-weight:950!important;letter-spacing:.035em!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader h2{margin-top:9px!important;font-size:18px!important;font-weight:800!important;color:#654b25!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#fffdf8!important}
+
 /* Order Items: compact copy affordance follows row selection contrast. */
 body:not(.zebraDevice) .pfnCleanWorklist .pfnItemCode{white-space:nowrap}
 body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:5px;padding:0;border:0;background:transparent;color:inherit;font-size:14px;line-height:1;vertical-align:middle;cursor:pointer;opacity:.78}
