@@ -7986,7 +7986,12 @@ function openDashboardKpiPanel(key){
     document.body.appendChild(overlay);
     overlay.querySelector("[data-close]").onclick=closeDashboardKpiPanel;
     overlay.addEventListener("click",event=>{if(event.target===overlay) closeDashboardKpiPanel();});
-    renderDashboardKpiPanel(key,overlay.querySelector("[data-body]"));
+
+    /* Let the overlay paint before constructing a large interactive worklist.
+       The click now has immediate visual response instead of appearing frozen. */
+    const body=overlay.querySelector("[data-body]");
+    if(body) body.innerHTML='<div class="tableEmptyState">Loading items…</div>';
+    requestAnimationFrame(()=>renderDashboardKpiPanel(key,body));
 }
 
 function closeDashboardKpiPanel(){
