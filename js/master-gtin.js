@@ -91,24 +91,11 @@ async function initializeMasterGTIN(){
 
         }
 
-        /* Supabase is the source of truth. IndexedDB is only a fast
-           device cache. Pull the system-wide database after auth
-           context is available; if offline, the last local cache remains usable. */
-        if(typeof authRpc === "function" && typeof AuthState !== "undefined" && AuthState.context && AuthState.context.pharmacy_id){
-            try{ await syncGlobalMasterGTINFromCloud(); }
-            catch(error){ Logger.warn("Global GTIN sync unavailable; using local cache",error); }
-        }
-
-        if(
-            MasterGTINEngine.metadata.installed &&
-            AppState.workspace.orderData.length > 0
-        ){
-
-            await applyMasterGTINToCurrentOrder({
-                silent:true
-            });
-
-        }
+        /* Receiving uses the V2 identifier service as its authoritative
+           identity path. Opening this optional module must never download or
+           project the full Global Master (~52k records) onto the hot workspace.
+           Global Master/Expiry/admin workflows call ensureGlobalMasterGTINReady()
+           explicitly when they actually need that cache. */
 
         AppEvents.on(
             "workspace:cleared",
