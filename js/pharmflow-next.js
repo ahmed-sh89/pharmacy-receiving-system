@@ -129,7 +129,7 @@
       event.currentTarget.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
       event.currentTarget.disabled=false;
-      if(saved) assignment.querySelector('[data-assignment-status]').textContent=`${chosen.length} orders assigned`;
+      if(saved) refreshOpenManageOrders();
     });
   }
 
