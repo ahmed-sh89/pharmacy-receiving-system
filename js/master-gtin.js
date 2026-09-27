@@ -809,31 +809,79 @@ function readMasterGTINMetadata(db){
     });
 }
 
-function getMasterGTINRecordsByItemCodes(db,itemCodes){
-    return new Promise((resolve,reject)=>{
-        const codes=Array.from(new Set((itemCodes||[]).map(normalizeItemCode).filter(Boolean)));
-        if(codes.length===0){ resolve([]); return; }
-        const tx=db.transaction(MasterGTINEngine.recordsStore,"readonly");
-        const store=tx.objectStore(MasterGTINEngine.recordsStore);
-        const index=store.index("itemCode");
-        const results=[];
-        let remaining=codes.length;
-        let failed=false;
+async function getMasterGTINRecordsByItemCodes(db,itemCodes){
+    const codes=Array.from(
+        new Set(
+            (itemCodes||[])
+                .map(normalizeItemCode)
+                .filter(Boolean)
+        )
+    );
 
-        codes.forEach(code=>{
-            const request=index.getAll(code);
-            request.onsuccess=()=>{
-                if(Array.isArray(request.result)){ results.push(...request.result); }
-                remaining--;
-                if(remaining===0 && !failed){ resolve(results); }
+    if(codes.length===0){
+        return [];
+    }
+
+    /*
+       A multi-order workspace can contain thousands of distinct Item Codes.
+       Do not enqueue one IndexedDB request per code into one transaction:
+       that unbounded fan-out can stall the browser before the Active Order
+       Manifest is ever saved. Read the same indexed records in bounded
+       transactions instead. This changes only cache access scheduling; Global
+       Master identity and matching semantics remain unchanged.
+    */
+    const batchSize=200;
+    const results=[];
+
+    for(let start=0;start<codes.length;start+=batchSize){
+        const batch=codes.slice(start,start+batchSize);
+        const batchResults=await new Promise((resolve,reject)=>{
+            const tx=db.transaction(MasterGTINEngine.recordsStore,"readonly");
+            const index=tx.objectStore(MasterGTINEngine.recordsStore).index("itemCode");
+            const found=[];
+            let settled=false;
+
+            batch.forEach(code=>{
+                const request=index.getAll(code);
+                request.onsuccess=()=>{
+                    if(Array.isArray(request.result)){
+                        found.push(...request.result);
+                    }
+                };
+                request.onerror=()=>{
+                    if(settled){ return; }
+                    settled=true;
+                    reject(request.error || new Error("Unable to read Master GTIN records"));
+                };
+            });
+
+            tx.oncomplete=()=>{
+                if(settled){ return; }
+                settled=true;
+                resolve(found);
             };
-            request.onerror=()=>{
-                if(failed){ return; }
-                failed=true;
-                reject(request.error);
+            tx.onerror=()=>{
+                if(settled){ return; }
+                settled=true;
+                reject(tx.error || new Error("Unable to read Master GTIN records"));
+            };
+            tx.onabort=()=>{
+                if(settled){ return; }
+                settled=true;
+                reject(tx.error || new Error("Master GTIN read was aborted"));
             };
         });
-    });
+
+        results.push(...batchResults);
+
+        /* Yield between batches so large multi-order imports do not monopolize
+           the UI thread while preserving deterministic ordered processing. */
+        if(start+batchSize<codes.length){
+            await new Promise(resolve=>setTimeout(resolve,0));
+        }
+    }
+
+    return results;
 }
 
 /* =====================================================
