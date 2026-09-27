@@ -120,6 +120,7 @@ async function handleOrderFileSelection(event){
     );
 
     let preImportWorkspace=null;
+    let importError=null;
 
     try{
 
@@ -421,11 +422,7 @@ async function handleOrderFileSelection(event){
             error
         );
 
-        showToast(
-            error.message ||
-            "Unable to import order files",
-            "error"
-        );
+        importError=error;
 
     }
     finally{
@@ -437,6 +434,18 @@ async function handleOrderFileSelection(event){
 
         focusScannerInput();
 
+    }
+
+    /* Loading must never cover the actionable import error. The operation is
+       fully rolled back before this point, so expose the real failure only
+       after the blocking overlay has closed. */
+    if(importError){
+        showToast(
+            importError.message ||
+            "Unable to import order files",
+            "error",
+            12000
+        );
     }
 }
 
