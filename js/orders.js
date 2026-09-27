@@ -192,7 +192,7 @@ async function assertOrderNumberCanUpload(orderNumber){
 
 async function registerUploadedOrder(meta,rowCount){
     if(typeof authRpc!=="function"||!AuthState.context||!AuthState.context.pharmacy_id){return null;}
-    return await authRpc("register_pharmflow_order_upload",{
+    const result=await authRpc("register_pharmflow_order_upload",{
         p_pharmacy_id:AuthState.context.pharmacy_id,
         p_order_number:normalizeOrderNumber(meta.orderNumber),
         p_order_date:meta.orderDate||null,
@@ -201,6 +201,8 @@ async function registerUploadedOrder(meta,rowCount){
         p_source_file:meta.fileName||"",
         p_item_count:Number(rowCount||0)
     });
+    await refreshOrderLifecycleRegistry();
+    return result;
 }
 
 async function markWorkspaceOrdersReceived(orderNumbers){
