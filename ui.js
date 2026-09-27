@@ -1564,14 +1564,22 @@ function bindUIStateEvents(){
 
     AppEvents.on(
         "receiving:updated",
-        function(){
-
-            refreshEntireUI();
-
+        function(data){
+            const itemLocal=!!(data?.itemCode && data?.transactionId);
+            if(!itemLocal){
+                refreshEntireUI();
+                refreshSelectedSmartItem();
+                refreshZebraInterface();
+                return;
+            }
+            refreshLastScan();
+            refreshReceivingRow(data);
             refreshSelectedSmartItem();
-
             refreshZebraInterface();
-
+            requestAnimationFrame(()=>{
+                refreshDashboard();
+                refreshOpenKpiPanel();
+            });
         }
     );
 
@@ -1869,9 +1877,11 @@ function getSelectedOrderDashboardMetrics(){
     let remainingItems=0;
     let overReceivedItems=0;
     let manualItems=0;
+    const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
 
     targetOrders.forEach(orderNumber=>{
-        const rows=getPerOrderReceivingRows(orderNumber);
+        const rows=getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode});
 
         rows.forEach(row=>{
             const ordered=toNumber(row["Ordered Qty"],0);
@@ -2285,6 +2295,32 @@ function renderReceivingDifference(orderedQty,receivedQty){
     return `<span class="pfnDifferenceValue ${tone}">${label}</span>`;
 }
 
+function refreshReceivingRow(data){
+    const code=normalizeItemCode(data?.itemCode||"");
+    const tbody=UI.elements.receivingTableBody;
+    if(!code || !tbody) return;
+    const existing=Array.from(tbody.querySelectorAll("tr[data-item-code]"))
+        .filter(row=>normalizeItemCode(row.dataset.itemCode)===code);
+    if(!existing.length){ refreshReceivingTable(); return; }
+    const active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
+    const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+    const matches=[];
+    (selected.length?selected:active.slice(0,1)).forEach(orderNumber=>{
+        getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}).forEach(row=>{
+            if(normalizeItemCode(row["Item Number"])!==code) return;
+            matches.push({orderNumber,itemCode:row["Item Number"],itemName:row["Item Name"],orderedQty:toNumber(row["Ordered Qty"],0),receivedQty:toNumber(row["Received Qty"],0),remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),status:row["Issue Type"]==="Received"?"Completed":row["Issue Type"],group_name:row["Group"]||"",category:row["Category"]||"",sub_category:row["Sub Category"]||"",manual:row.issueKey==="manual"});
+        });
+    });
+    if(matches.length!==existing.length){ refreshReceivingTable(); return; }
+    existing.forEach((row,index)=>{
+        const replacement=createReceivingTableRow(matches[index],Math.max(0,toNumber(row.firstElementChild?.textContent,index+1)-1));
+        replacement.dataset.orderNumber=matches[index].orderNumber||"";
+        row.replaceWith(replacement);
+    });
+}
+
 /* =====================================================
    RECEIVING TABLE
 ===================================================== */
@@ -2315,7 +2351,9 @@ function refreshReceivingTable(){
     let rows=[];
     if(typeof getPerOrderReceivingRows==="function"&&active.length){
         const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);
-        orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{
+        const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+        const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+        orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}).forEach(r=>{
             const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",match=issues.has(issue)||(issues.has("received_any")&&received>0);
             if(match) rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],group_name:r["Group"]||r.group_name||"",category:r["Category"]||"",sub_category:r["Sub Category"]||r.sub_category||"",manual:r.issueKey==="manual"});
         }));
@@ -7964,7 +8002,9 @@ function getKpiPanelItems(key){
     if(key==="total"){
         const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
         if(typeof getPerOrderReceivingRows==="function" && selectedOrders.length){
-            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+            const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+            const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>({
                 orderNumber:order,
                 orderNumbers:[order],
                 itemCode:row["Item Number"],
@@ -8044,7 +8084,8 @@ function openDashboardKpiPanel(key){
             }
         });
     }else{
-        renderDashboardKpiPanel(key,body);
+        body.innerHTML='<div class="tableEmptyState">Loading items…</div>';
+        requestAnimationFrame(()=>{ if(document.body.contains(overlay)) renderDashboardKpiPanel(key,body); });
     }
 }
 
@@ -8337,6 +8378,8 @@ function renderItemBrowser(body, rows, options={}){
     const qtySort=body.querySelector('[data-qty-sort]');
     const groupFilter=body.querySelector('[data-group-filter]');
     let selectedGroups=[];
+    const BROWSER_PAGE_SIZE=200;
+    let visibleLimit=BROWSER_PAGE_SIZE;
     const priorityFilter=body.querySelector('[data-priority-filter]');
     const printPriority=body.querySelector('[data-print-priority]');
     const clearPriority=body.querySelector('[data-clear-priority]');
@@ -8380,7 +8423,15 @@ function renderItemBrowser(body, rows, options={}){
             tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
         }else{
             const colspan=orderMode?6:(receivedMode?4:3);
-            tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+            const rendered=visible.slice(0,visibleLimit);
+            tbody.innerHTML=rendered.length?rendered.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+            if(rendered.length<visible.length){
+                const more=document.createElement('tr');
+                more.className='pfnBrowserLoadMore';
+                more.innerHTML=`<td colspan="${colspan}"><button type="button" data-load-more>Show next ${Math.min(BROWSER_PAGE_SIZE,visible.length-rendered.length)} items <span>${rendered.length} / ${visible.length}</span></button></td>`;
+                tbody.appendChild(more);
+                more.querySelector('[data-load-more]')?.addEventListener('click',()=>{visibleLimit+=BROWSER_PAGE_SIZE;draw();});
+            }
         }
         tbody.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async event=>{
             event.preventDefault();event.stopPropagation();
@@ -8444,12 +8495,13 @@ function renderItemBrowser(body, rows, options={}){
         const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?selectedGroups[0]:selectedGroups.length+' groups';
     };
     rebuildClassification();
-    input?.addEventListener('input',draw);orderFilter?.addEventListener('change',draw);
+    const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
+    input?.addEventListener('input',resetAndDraw);orderFilter?.addEventListener('change',resetAndDraw);
     groupFilter?.addEventListener('click',event=>{const action=event.target.closest('[data-group-action]')?.dataset.groupAction;if(!action)return;event.preventDefault();const boxes=[...groupFilter.querySelectorAll('input[type="checkbox"]')];if(action==='all')boxes.forEach(box=>box.checked=true);if(action==='clear')boxes.forEach(box=>box.checked=false);if(action==='ok')groupFilter.open=false;selectedGroups=boxes.filter(box=>box.checked).map(box=>box.value);rebuildClassification();draw();});
     groupFilter?.addEventListener('change',event=>{if(!event.target.matches('input[type="checkbox"]'))return;selectedGroups=[...groupFilter.querySelectorAll('input:checked')].map(box=>box.value);rebuildClassification();draw();});
     groupFilter?.addEventListener('toggle',()=>{if(groupFilter.open){orderFilter?.blur();qtySort?.blur();}});
-    qtySort?.addEventListener('change',draw);
-    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;draw();});
+    qtySort?.addEventListener('change',resetAndDraw);
+    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;resetAndDraw();});
     clearPriority?.addEventListener('click',async()=>{
         const targets=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
         if(!targets.length) return;
