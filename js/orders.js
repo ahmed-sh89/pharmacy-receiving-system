@@ -87,30 +87,11 @@ async function assertOrderNumberCanUpload(orderNumber){
 
     const status = String(existing.status || "uploaded").trim().toLowerCase();
 
-    /* B10 Clean 6 — completed-order recovery.
-       A completed order is still protected by default, but an accidental
-       Complete Receiving must not trap the pharmacy permanently. Reopening
-       is an explicit destructive recovery action: remove only this order's
-       finalized/history record, then allow the uploaded source file to start
-       a brand-new Receiving cycle at zero. Global GTIN, other orders and
-       Item Movement remain independent and untouched. */
+    /* Completed orders are historical, not active duplicate locks.
+       Re-uploading the same Order Number starts a fresh Receiving cycle by
+       using the existing server-authoritative complete-order cleanup path.
+       Active/unfinished duplicate protection below remains unchanged. */
     if(["received","finalized","closed"].includes(status)){
-        const reopen = await pharmFlowConfirm({title:"Reopen Completed Order?",message:"Order "+normalized+" was already completed. Reopening starts Receiving again from zero and permanently removes the previous Receiving history for this order. Global GTIN and other orders are not affected.",confirmText:"Reopen Receiving",tone:"danger"});
-
-        if(!reopen){
-            throw new Error(
-                "Order "+normalized+" is already completed. Duplicate upload remains blocked."
-            );
-        }
-
-        const typed = window.prompt(
-            "Type the Order Number exactly to reopen Receiving:\n"+normalized,
-            ""
-        );
-        if(normalizeOrderNumber(typed)!==normalized){
-            throw new Error("Reopen Receiving cancelled. Completed order remains protected.");
-        }
-
         if(typeof authRpc!=="function" || !AuthState.context?.pharmacy_id){
             throw new Error("Pharmacy cloud context is unavailable. Sign in again and retry.");
         }
