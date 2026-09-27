@@ -551,10 +551,30 @@ function saveAfterImportantChange(){
     }
 
 
-    saveApplicationState(
-        false
-    );
+    saveApplicationState(false);
 
+}
+
+
+let pendingReceivingSnapshot=false;
+
+/* Durable receiving queue persistence is synchronous elsewhere. Coalesce the
+   redundant full compatibility snapshot so it cannot block scan feedback. */
+function scheduleReceivingWorkspaceSnapshot(){
+    if(pendingReceivingSnapshot) return;
+    pendingReceivingSnapshot=true;
+    const persist=()=>{
+        pendingReceivingSnapshot=false;
+        saveAfterImportantChange();
+    };
+    if(typeof requestIdleCallback==="function") requestIdleCallback(persist,{timeout:2000});
+    else setTimeout(persist,0);
+}
+
+function flushPendingReceivingWorkspaceSnapshot(){
+    if(!pendingReceivingSnapshot) return;
+    pendingReceivingSnapshot=false;
+    saveAfterImportantChange();
 }
 
 
@@ -567,7 +587,7 @@ function bindApplicationLifecycleEvents(){
     window.addEventListener(
         "beforeunload",
         function(){
-
+            flushPendingReceivingWorkspaceSnapshot();
             saveApplicationState(
                 false
             );
@@ -626,10 +646,9 @@ function bindApplicationLifecycleEvents(){
 
     AppEvents.on(
         "receiving:updated",
-        function(){
-
-            saveAfterImportantChange();
-
+        function(data){
+            if(data?.itemCode && data?.transactionId) scheduleReceivingWorkspaceSnapshot();
+            else saveAfterImportantChange();
         }
     );
 
