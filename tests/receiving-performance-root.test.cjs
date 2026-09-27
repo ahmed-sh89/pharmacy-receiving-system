@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test");
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const index=fs.readFileSync("index.html","utf8");
+const ui=fs.readFileSync("ui.js","utf8");
+const app=fs.readFileSync("js/app.js","utf8");
+const reports=fs.readFileSync("js/reports.js","utf8");
+test("performance correction is applied to active root runtime",()=>{assert.match(index,/<script src="ui\.js\?v=PERF_ROOT1/);assert.match(ui,/function refreshReceivingRow\(data\)/);assert.match(ui,/const BROWSER_PAGE_SIZE=200/);});
+test("scan compatibility snapshot is deferred",()=>{assert.match(app,/function scheduleReceivingWorkspaceSnapshot\(\)/);assert.match(app,/requestIdleCallback\(persist,\{timeout:2000\}\)/);});
+test("report projection accepts shared workspace index",()=>{assert.match(reports,/options\.workspaceByCode instanceof Map/);assert.match(reports,/workspaceByCode\.get\(code\)/);});

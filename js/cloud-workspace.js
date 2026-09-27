@@ -726,6 +726,14 @@ async function saveActiveOrderManifest(options={}){
         PharmFlowCloudWorkspace.lastManifestSaveError=null;
         PharmFlowCloudWorkspace.lastManifestSaveAt=nowISO();
 
+        /* The verified server manifest is structural authority. Apply the
+           read-after-write payload immediately so this tab cannot keep a
+           pre-save order list after a successful structural upload. */
+        applyActiveOrderManifest(
+            verify.manifest,
+            Number(verify.revision||row.revision||0)
+        );
+
         setCloudWorkspaceStatus(
             "synced",
             `${fileCount} Active Order file(s) shared`
@@ -891,6 +899,7 @@ async function pullActiveOrderManifest(options={}){
 
         if(!incomingFiles.length || !incomingData.length){
             PharmFlowCloudWorkspace.activeManifestPresent=false;
+            PharmFlowCloudWorkspace.activeManifestRevision=Number(row.revision||0);
 
             Logger.warn(
                 "Active Order Manifest returned without active order data",
@@ -901,6 +910,20 @@ async function pullActiveOrderManifest(options={}){
                     items:incomingData.length
                 }
             );
+
+            /* Server-empty is authoritative after Reset even when the manifest
+               row itself still exists. Treat an empty manifest exactly like a
+               missing manifest so stale local orderFiles cannot survive and be
+               misclassified as duplicate uploads in the next batch. */
+            if(options?.clearIfMissing===true){
+                AppState.workspace=createEmptyWorkspace();
+                resetStatistics();
+                rebuildStateIndexes();
+                deleteWorkspaceSnapshot?.();
+                AppEvents.emit("files:updated",{source:"server-authority-empty"});
+                AppEvents.emit("receiving:updated",{source:"server-authority-empty"});
+                refreshEntireUI?.();
+            }
 
             return false;
         }
@@ -1142,14 +1165,7 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
                 PharmFlowCloudWorkspace.hydratedPharmacyId=
                     pharmacyId;
 
-                /* Active Order Manifest is structural authority only.
-                   Do NOT hydrate the Receiving ledger here: startup may still
-                   apply the legacy Cloud Workspace snapshot immediately after
-                   this bootstrap. Hydrating transactions before that snapshot
-                   makes durable Extra Items appear briefly and then disappear.
-                   restoreCloudWorkspaceOnLogin() performs the single bounded
-                   authoritative ledger bootstrap after all workspace structure
-                   has settled, then normal delta sync resumes. */
+                await pullCloudWorkspaceTransactions();
 
                 setCloudWorkspaceStatus(
                     "synced",
@@ -1577,14 +1593,8 @@ function mergeCloudReceivingLedger(rows){
            The Active Order Manifest is sufficient as long as the item exists.
         */
         const item=getItemByCode(tx.itemCode);
-        const txOrder=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||"");
-        const activeOrders=getActiveReceivingOrderSetForCloud();
 
-        /* An Extra Item is intentionally absent from the uploaded Order.
-           Keep its durable ledger row when it belongs to an active Order so
-           reports/KPIs can reconstruct it after refresh without inventing a
-           transient workspace item or writing another transaction. */
-        if(!item && (!txOrder || (activeOrders.size && !activeOrders.has(txOrder)))){
+        if(!item){
             continue;
         }
 

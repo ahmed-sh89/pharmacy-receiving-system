@@ -135,7 +135,13 @@
 
   function refreshOpenManageOrders(){
     const overlay=$('pfnOrdersOverlay');
-    if(overlay) renderHandheldAssignment(overlay);
+    if(!overlay)return;
+    /* Active Order Files and Handheld Assignment are two views of the same
+       Current Workspace structure. Render both from the same AppState snapshot
+       in the same update cycle so an open modal cannot show 8 files below and
+       a stale 4-order Handheld scope above. */
+    if(typeof refreshFileLists==='function')refreshFileLists();
+    renderHandheldAssignment(overlay);
   }
 
   function openOrders(){
@@ -225,7 +231,12 @@
     $('btnReceivingReportAction')?.addEventListener('click',()=>{if(typeof window.navigateTo==='function'){window.navigateTo('receiving');return;}document.querySelector('.sidebarItem[data-page="receiving"]')?.click();});
     bindSidebar();
     if(typeof AppEvents!=="undefined"&&AppEvents?.on){
-      AppEvents.on('files:updated',event=>{if(event?.source==='order-upload-confirmed')refreshOpenManageOrders();});
+      /* Manage Orders is a live projection of Current Workspace structure.
+         Re-render the Handheld scope for every structural files update while
+         the modal is open. Restricting this to order-upload-confirmed misses
+         the authoritative active-manifest event emitted by the read-after-write
+         apply, leaving the modal on its pre-save scope until it is reopened. */
+      AppEvents.on('files:updated',()=>refreshOpenManageOrders());
     }
     document.addEventListener('keydown',event=>{
       if(event.key!=='Escape')return;

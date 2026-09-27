@@ -1171,10 +1171,21 @@ function getOperationalGroupForReceivingRow(row){
     ).trim();
 }
 
-function getPerOrderReceivingRows(orderNumber){
+function getPerOrderReceivingRows(orderNumber, options={}){
     const normalized=normalizeOrderNumber(orderNumber);
     const source=getWorkspaceOrderSourceRows(normalized);
-    const receivedMap=buildReceivedQuantityByOrder();
+    /* Large multi-order workspaces must build the durable ledger aggregate once
+       per render/metrics pass, not once per Order. Callers that traverse several
+       Orders pass the same receivedMap through this option. */
+    const receivedMap=options.receivedMap instanceof Map
+        ? options.receivedMap
+        : buildReceivedQuantityByOrder();
+
+    const workspaceByCode=options.workspaceByCode instanceof Map
+        ? options.workspaceByCode
+        : new Map((AppState?.workspace?.orderData||[]).map(item=>[
+            normalizeItemCode(item?.itemCode||""),item
+        ]));
 
     const rows=source.map(row=>{
         const code=normalizeItemCode(row.itemCode||"");
@@ -1211,7 +1222,12 @@ function getPerOrderReceivingRows(orderNumber){
             "Difference":difference,
             "Issue Type":issueType,
             issueKey,
-            "Group":getOperationalGroupForReceivingRow(row),
+            "Group":toSafeString(
+                row?.group_name||row?.groupName||row?.Group||
+                workspaceByCode.get(code)?.group_name||
+                workspaceByCode.get(code)?.groupName||
+                workspaceByCode.get(code)?.Group||""
+            ).trim(),
             "Category":row.category||"",
             "Sub Category":row.sub_category||row.subCategory||""
         };

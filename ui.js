@@ -12,6 +12,7 @@ const UI = {
     elements:{},
 
     confirmCallback:null,
+    confirmResolve:null,
 
     searchResults:[],
 
@@ -1434,7 +1435,7 @@ function bindUIEvents(){
         .getElementById("btnConfirmCancel")
         ?.addEventListener(
             "click",
-            closeConfirmModal
+            cancelPharmFlowConfirm
         );
 
 
@@ -1563,14 +1564,22 @@ function bindUIStateEvents(){
 
     AppEvents.on(
         "receiving:updated",
-        function(){
-
-            refreshEntireUI();
-
+        function(data){
+            const itemLocal=!!(data?.itemCode && data?.transactionId);
+            if(!itemLocal){
+                refreshEntireUI();
+                refreshSelectedSmartItem();
+                refreshZebraInterface();
+                return;
+            }
+            refreshLastScan();
+            refreshReceivingRow(data);
             refreshSelectedSmartItem();
-
             refreshZebraInterface();
-
+            requestAnimationFrame(()=>{
+                refreshDashboard();
+                refreshOpenKpiPanel();
+            });
         }
     );
 
@@ -1868,9 +1877,11 @@ function getSelectedOrderDashboardMetrics(){
     let remainingItems=0;
     let overReceivedItems=0;
     let manualItems=0;
+    const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
 
     targetOrders.forEach(orderNumber=>{
-        const rows=getPerOrderReceivingRows(orderNumber);
+        const rows=getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode});
 
         rows.forEach(row=>{
             const ordered=toNumber(row["Ordered Qty"],0);
@@ -2284,6 +2295,32 @@ function renderReceivingDifference(orderedQty,receivedQty){
     return `<span class="pfnDifferenceValue ${tone}">${label}</span>`;
 }
 
+function refreshReceivingRow(data){
+    const code=normalizeItemCode(data?.itemCode||"");
+    const tbody=UI.elements.receivingTableBody;
+    if(!code || !tbody) return;
+    const existing=Array.from(tbody.querySelectorAll("tr[data-item-code]"))
+        .filter(row=>normalizeItemCode(row.dataset.itemCode)===code);
+    if(!existing.length){ refreshReceivingTable(); return; }
+    const active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
+    const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+    const matches=[];
+    (selected.length?selected:active.slice(0,1)).forEach(orderNumber=>{
+        getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}).forEach(row=>{
+            if(normalizeItemCode(row["Item Number"])!==code) return;
+            matches.push({orderNumber,itemCode:row["Item Number"],itemName:row["Item Name"],orderedQty:toNumber(row["Ordered Qty"],0),receivedQty:toNumber(row["Received Qty"],0),remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),status:row["Issue Type"]==="Received"?"Completed":row["Issue Type"],group_name:row["Group"]||"",category:row["Category"]||"",sub_category:row["Sub Category"]||"",manual:row.issueKey==="manual"});
+        });
+    });
+    if(matches.length!==existing.length){ refreshReceivingTable(); return; }
+    existing.forEach((row,index)=>{
+        const replacement=createReceivingTableRow(matches[index],Math.max(0,toNumber(row.firstElementChild?.textContent,index+1)-1));
+        replacement.dataset.orderNumber=matches[index].orderNumber||"";
+        row.replaceWith(replacement);
+    });
+}
+
 /* =====================================================
    RECEIVING TABLE
 ===================================================== */
@@ -2314,7 +2351,9 @@ function refreshReceivingTable(){
     let rows=[];
     if(typeof getPerOrderReceivingRows==="function"&&active.length){
         const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);
-        orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{
+        const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+        const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+        orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}).forEach(r=>{
             const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",match=issues.has(issue)||(issues.has("received_any")&&received>0);
             if(match) rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],group_name:r["Group"]||r.group_name||"",category:r["Category"]||"",sub_category:r["Sub Category"]||r.sub_category||"",manual:r.issueKey==="manual"});
         }));
@@ -3704,13 +3743,13 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
     }
     const safeOrder=toSafeString(orderNumber).trim();
     if(!safeOrder){showToast("Order Number is unavailable for this archive record","error");return false;}
-    if(!window.confirm("Delete received order "+safeOrder+" and its related receiving data? This does NOT delete the Global GTIN Master or other orders."))return false;
+    if(!await pharmFlowConfirm({title:"Delete Received Order?",message:"Delete "+safeOrder+" and its related Receiving data? This does NOT delete the Global GTIN Master or other orders.",confirmText:"Continue",tone:"danger"}))return false;
     const typed=window.prompt("Type the Order Number exactly to continue:\n\n"+safeOrder,"");
     if(toSafeString(typed).trim().toUpperCase()!==safeOrder.toUpperCase()){
         showToast("Order Number confirmation did not match","warning");
         return false;
     }
-    if(!window.confirm("FINAL CONFIRMATION\n\nPermanently delete "+safeOrder+"?"))return false;
+    if(!await pharmFlowConfirm({title:"Final Confirmation",message:"Permanently delete "+safeOrder+"?",confirmText:"Delete Order",tone:"danger"}))return false;
     showLoading("Deleting "+safeOrder+"...");
     try{
         if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context && AuthState.context.pharmacy_id){
@@ -4421,6 +4460,18 @@ function closeConfirmModal(){
 }
 
 
+function pharmFlowConfirm(options={}){
+    const modal=UI.elements.confirmModal||document.getElementById("confirmModal");
+    if(!modal) return Promise.resolve(false);
+    const button=document.getElementById("btnConfirmOK");
+    setElementText(UI.elements.confirmTitle||document.getElementById("confirmTitle"),options.title||"Confirm");
+    setElementText(UI.elements.confirmMessage||document.getElementById("confirmMessage"),options.message||"Are you sure?");
+    if(button){button.textContent=options.confirmText||"Confirm";button.className=(options.tone==="danger"?"dangerButton":"primaryButton");}
+    return new Promise(resolve=>{UI.confirmResolve=resolve;UI.confirmCallback=()=>{const done=UI.confirmResolve;UI.confirmResolve=null;done?.(true);};modal.classList.add("open");modal.setAttribute("aria-hidden","false");});
+}
+window.pharmFlowConfirm=pharmFlowConfirm;
+function cancelPharmFlowConfirm(){const done=UI.confirmResolve;UI.confirmResolve=null;closeConfirmModal();done?.(false);}
+
 async function handleConfirmOK(){
 
     /* Phase 2C.10.4.3 — confirmation actions that perform Supabase work must
@@ -4444,10 +4495,13 @@ async function handleConfirmOK(){
         confirmButton.disabled = true;
     }
 
-    closeConfirmModal();
+    const confirmModal=UI.elements.confirmModal;
+    confirmModal?.classList.remove("open");
+    confirmModal?.setAttribute("aria-hidden","true");
 
     try{
         await Promise.resolve(callback());
+        UI.confirmCallback=null;
     }
     catch(error){
         Logger.error("Confirmed action failed",error);
@@ -7837,11 +7891,11 @@ function openHandheldScansPanel(){
             setTimeout(()=>window.hhRefreshReadyState?.(),20);
         });
 
-        overlay.querySelector("[data-remove-last]")?.addEventListener("click",()=>{
+        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async()=>{
             const transactionId=overlay.querySelector("[data-remove-last]")?.dataset.removeLast||"";
             const latest=scanRows()[0];
             if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
-            if(!window.confirm(`Remove last scan: ${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))}?`)) return;
+            if(!await pharmFlowConfirm({title:"Remove Last Scan?",message:`${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))} will be cancelled and preserved in Receiving history.`,confirmText:"Remove Scan",tone:"danger"})) return;
             const removed=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
                 : false;
@@ -7948,7 +8002,9 @@ function getKpiPanelItems(key){
     if(key==="total"){
         const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
         if(typeof getPerOrderReceivingRows==="function" && selectedOrders.length){
-            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+            const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+            const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>({
                 orderNumber:order,
                 orderNumbers:[order],
                 itemCode:row["Item Number"],
@@ -7960,7 +8016,13 @@ function getKpiPanelItems(key){
                 manual:row.issueKey==="manual",
                 group_name:row["Group"]||"",
                 category:row["Category"]||"",
-                sub_category:row["Sub Category"]||""
+                sub_category:row["Sub Category"]||"",
+                /* Priority belongs to the authoritative workspace item, not to
+                   the report-row projection. Preserve it when rebuilding the
+                   Order Items browser so persisted SHORT/NEW state survives
+                   redraws and the High Priority filter. */
+                priorityType:toSafeString(getItemByCode?.(row["Item Number"])?.priorityType||""),
+                highPriority:!!getItemByCode?.(row["Item Number"])?.highPriority
             })));
         }
         return items.slice();
@@ -8022,7 +8084,8 @@ function openDashboardKpiPanel(key){
             }
         });
     }else{
-        renderDashboardKpiPanel(key,body);
+        body.innerHTML='<div class="tableEmptyState">Loading items…</div>';
+        requestAnimationFrame(()=>{ if(document.body.contains(overlay)) renderDashboardKpiPanel(key,body); });
     }
 }
 
@@ -8065,6 +8128,32 @@ function getReceivingActivityRows(){
 
     /* Review screen requirement: newest activity is always first. */
     return rows.sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return tb-ta;
+    });
+}
+
+function addReceivingActivityFinalTotals(rows){
+    const totals=new Map();
+
+    /* Running totals must be calculated oldest -> newest, but this is a
+       presentation helper for Receiving Activity History. Never leak that
+       calculation order back into the review screen. */
+    const chronological=(rows||[]).slice().sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return ta-tb;
+    });
+
+    const withTotals=chronological.map(row=>{
+        const key=normalizeItemCode(row?.itemCode||"")+"|"+normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+        const finalReceived=Math.max(0,toNumber(totals.get(key),0)+toNumber(row?.qtyChange??row?.quantity,0));
+        totals.set(key,finalReceived);
+        return {...row,finalReceived};
+    });
+
+    return withTotals.sort((a,b)=>{
         const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
         const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
         return tb-ta;
@@ -8117,23 +8206,27 @@ function getActivityEffectiveQuantity(row,allRows){
 function openReceivingActivityEditor(row,allRows){
     const current=getActivityEffectiveQuantity(row,allRows);
     const order=normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
-    const item=getItemByCode?.(row?.itemCode);
-    if(!item||current<0){showToast?.("This activity cannot be edited","warning");return;}
+    let item=getItemByCode?.(row?.itemCode);
+    const isExtra=!item;
+    if(isExtra){
+        item={itemCode:normalizeItemCode(row?.itemCode||""),itemName:toSafeString(row?.itemName||"Extra Item"),orderedQty:0,receivedQty:Math.max(0,current),remainingQty:0,status:"EXTRA",manual:true,orderNumbers:order?[order]:[],orderNumber:order};
+    }
+    if(!item?.itemCode||current<0){showToast?.("This activity cannot be edited","warning");return;}
     const esc=value=>escapeHTML(toSafeString(value));
     const modal=document.createElement("div");
     modal.className="quickKpiOverlay pfnActivityEditOverlay";
-    modal.innerHTML=`<form class="pfnActivityEdit" aria-label="Edit receiving activity"><h3>Edit Receiving Activity</h3><p><b>${esc(row.itemName||item.itemName)}</b><br>Item ${esc(row.itemCode)} · Order ${esc(order||"Current")}</p><label>Current transaction quantity<input value="${esc(current)}" disabled></label><label>Correct quantity<input data-corrected type="number" min="0" step="1" value="${esc(current)}" required></label><div><button type="button" data-cancel>Cancel</button><button type="button" class="dangerButton" data-delete-entry>Delete Entry</button><button type="submit">Save Correction</button></div></form>`;
+    modal.innerHTML=`<form class="pfnActivityEdit" aria-label="Edit receiving activity"><h3>Edit Receiving Activity</h3><p><b>${esc(row.itemName||item.itemName)}</b><br>Item ${esc(row.itemCode)} · Order ${esc(order||"Current")}</p><label>Current transaction quantity<input value="${esc(current)}" disabled></label><label>Correct quantity<input data-corrected type="number" min="0" step="1" value="${esc(current)}" required></label><div><button type="button" data-cancel>Cancel</button><button type="button" class="dangerButton" data-delete-entry>${isExtra?"Remove Extra Item":"Delete Entry"}</button><button type="submit">Save Correction</button></div></form>`;
     document.body.appendChild(modal);
     window.PharmFlowModalStack?.open(modal);
     const close=()=>{window.PharmFlowModalStack?.close(modal);modal.remove();};
     modal.querySelector("[data-cancel]").onclick=close;
-    modal.querySelector("[data-delete-entry]").onclick=()=>{
-        if(!window.confirm("Delete this receiving contribution? The item and order will not be deleted.")) return;
+    modal.querySelector("[data-delete-entry]").onclick=async()=>{
+        if(!await pharmFlowConfirm({title:isExtra?"Remove Extra Item?":"Delete Receiving Entry?",message:isExtra?`${item.itemName} · Received ${getActivityEffectiveQuantity(row,allRows)}. This records a correction and preserves Receiving history.`:"This receiving contribution will be cancelled. The item and order will not be deleted.",confirmText:isExtra?"Remove Extra Item":"Delete Entry",tone:"danger"})) return;
         const effective=getActivityEffectiveQuantity(row,allRows);
         if(effective<=0){showToast?.("This entry is already cancelled","warning");return;}
-        const tx=applyQuantityAdjustment({item,difference:-effective,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:"Receiving activity deleted",correctsTransactionId:row.transactionId});
+        const tx=applyQuantityAdjustment({item,difference:-effective,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:isExtra?"Extra Item removed":"Receiving activity deleted",correctsTransactionId:row.transactionId});
         if(!tx)return;
-        close();refreshDashboard?.();refreshOpenKpiPanel();showToast?.("Receiving entry cancelled","success");
+        close();refreshDashboard?.();refreshOpenKpiPanel();showToast?.(isExtra?"Extra Item removed from Receiving":"Receiving entry cancelled","success");
     };
     modal.addEventListener("click",event=>{if(event.target===modal) close();});
     modal.querySelector("form").addEventListener("submit",event=>{
@@ -8285,6 +8378,8 @@ function renderItemBrowser(body, rows, options={}){
     const qtySort=body.querySelector('[data-qty-sort]');
     const groupFilter=body.querySelector('[data-group-filter]');
     let selectedGroups=[];
+    const BROWSER_PAGE_SIZE=200;
+    let visibleLimit=BROWSER_PAGE_SIZE;
     const priorityFilter=body.querySelector('[data-priority-filter]');
     const printPriority=body.querySelector('[data-print-priority]');
     const clearPriority=body.querySelector('[data-clear-priority]');
@@ -8298,7 +8393,7 @@ function renderItemBrowser(body, rows, options={}){
         const key=rowKey(item);
         const selected=key===selectedRowKey;
         const rowAttributes=`class="pfnMobileItemCard${selected?' pfnBrowserRowSelected':''}" data-row-key="${esc(key)}" tabindex="0" aria-selected="${selected?'true':'false'}"`;
-        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number"><span class="pfnItemCodeValue">${esc(item.itemCode)}</span><button type="button" class="pfnCopyItemCode" data-copy-code="${esc(item.itemCode)}" title="Copy item code" aria-label="Copy item code"><span>⧉</span></button></td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
         return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
@@ -8328,8 +8423,21 @@ function renderItemBrowser(body, rows, options={}){
             tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
         }else{
             const colspan=orderMode?6:(receivedMode?4:3);
-            tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+            const rendered=visible.slice(0,visibleLimit);
+            tbody.innerHTML=rendered.length?rendered.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+            if(rendered.length<visible.length){
+                const more=document.createElement('tr');
+                more.className='pfnBrowserLoadMore';
+                more.innerHTML=`<td colspan="${colspan}"><button type="button" data-load-more>Show next ${Math.min(BROWSER_PAGE_SIZE,visible.length-rendered.length)} items <span>${rendered.length} / ${visible.length}</span></button></td>`;
+                tbody.appendChild(more);
+                more.querySelector('[data-load-more]')?.addEventListener('click',()=>{visibleLimit+=BROWSER_PAGE_SIZE;draw();});
+            }
         }
+        tbody.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async event=>{
+            event.preventDefault();event.stopPropagation();
+            const code=toSafeString(btn.dataset.copyCode||"").trim();if(!code)return;
+            try{await navigator.clipboard.writeText(code);const icon=btn.querySelector('span');btn.classList.add('copied');if(icon)icon.textContent='✓';setTimeout(()=>{if(!btn.isConnected)return;btn.classList.remove('copied');if(icon)icon.textContent='⧉';},1400);}catch(error){console.warn('Item code copy failed',error);}
+        });
         tbody.querySelectorAll('[data-mark]').forEach(btn=>btn.onclick=async()=>{
             const item=typeof getItemByCode==='function'?getItemByCode(btn.dataset.code):null;if(!item)return;
             const previousType=getEffectiveItemPriority(item);
@@ -8344,8 +8452,10 @@ function renderItemBrowser(body, rows, options={}){
                 mark.classList.toggle('new',active&&nextType==='NEW');
             });
             const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;
-            const saved=await queueItemPrioritySelection(item,nextType);
-            if(!saved||priorityOnly){
+            queueItemPrioritySelection(item,nextType);
+            /* The button state above is the immediate UI authority. Persistence is queued
+               independently, so a network/save round-trip never delays the first-click feedback. */
+            if(priorityOnly&& !nextType){
                 draw();
                 const finalWrap=body.querySelector('.phase263TableWrap');
                 if(finalWrap) finalWrap.scrollTop=top;
@@ -8385,16 +8495,17 @@ function renderItemBrowser(body, rows, options={}){
         const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?selectedGroups[0]:selectedGroups.length+' groups';
     };
     rebuildClassification();
-    input?.addEventListener('input',draw);orderFilter?.addEventListener('change',draw);
+    const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
+    input?.addEventListener('input',resetAndDraw);orderFilter?.addEventListener('change',resetAndDraw);
     groupFilter?.addEventListener('click',event=>{const action=event.target.closest('[data-group-action]')?.dataset.groupAction;if(!action)return;event.preventDefault();const boxes=[...groupFilter.querySelectorAll('input[type="checkbox"]')];if(action==='all')boxes.forEach(box=>box.checked=true);if(action==='clear')boxes.forEach(box=>box.checked=false);if(action==='ok')groupFilter.open=false;selectedGroups=boxes.filter(box=>box.checked).map(box=>box.value);rebuildClassification();draw();});
     groupFilter?.addEventListener('change',event=>{if(!event.target.matches('input[type="checkbox"]'))return;selectedGroups=[...groupFilter.querySelectorAll('input:checked')].map(box=>box.value);rebuildClassification();draw();});
     groupFilter?.addEventListener('toggle',()=>{if(groupFilter.open){orderFilter?.blur();qtySort?.blur();}});
-    qtySort?.addEventListener('change',draw);
-    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;draw();});
+    qtySort?.addEventListener('change',resetAndDraw);
+    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;resetAndDraw();});
     clearPriority?.addEventListener('click',async()=>{
         const targets=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
         if(!targets.length) return;
-        if(!window.confirm(`Clear High Priority from ${targets.length} visible item(s)?`)) return;
+        if(!await pharmFlowConfirm({title:"Clear High Priority?",message:`Clear High Priority from ${targets.length} visible item(s)?`,confirmText:"Clear Priority",tone:"warning"})) return;
         const top=body.querySelector('.phase263TableWrap')?.scrollTop||0;
         const clearRequest=queueClearVisiblePriorities(targets);
         draw();
@@ -8461,23 +8572,74 @@ function renderItemBrowser(body, rows, options={}){
     draw();
 }
 
+async function removeCurrentExtraItem(item){
+ const code=normalizeItemCode(item?.itemCode||""); const order=normalizeOrderNumber(item?.orderNumber||item?.orderId||""); const received=Math.max(0,toNumber(item?.receivedQty,0));
+ if(!code||!order||received<=0){showToast?.("This Extra Item is already cleared","warning");return false;}
+ const confirmed=await pharmFlowConfirm({title:"Remove Extra Item?",message:(item.itemName||code)+" - Received "+received+". This records a correction and preserves Receiving history.",confirmText:"Remove Extra Item",tone:"danger"}); if(!confirmed)return false;
+ const correctionItem={itemCode:code,itemName:toSafeString(item?.itemName||"Extra Item"),orderedQty:0,receivedQty:received,remainingQty:0,status:"EXTRA",manual:true,orderNumbers:[order],orderNumber:order};
+ const tx=applyQuantityAdjustment({item:correctionItem,difference:-received,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:"Extra Item removed"}); if(!tx)return false;
+ refreshDashboard?.();refreshOpenKpiPanel?.();showToast?.("Extra Item removed from Receiving","success");return true;
+}
+
 function renderDashboardKpiPanel(key,body){
     if(!body) return;
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
     if(key==="scans"){
-        const allRows=getGroupedReceivingActivityRows();
+        const allRows=addReceivingActivityFinalTotals(getGroupedReceivingActivityRows());
         if(!allRows.length){body.innerHTML='<div class="tableEmptyState">No receiving activity in the current workspace yet.</div>';return;}
-        body.innerHTML=`<div class="pfnActivityControls"><label for="pfnActivitySourceFilter">Source</label><select id="pfnActivitySourceFilter"><option value="All">All</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Extra Item / Manual Adjustment</option><option value="Correction">Correction</option></select></div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table"><thead><tr><th>Date / Time</th><th>Item Name</th><th>Item Number</th><th>GTIN</th><th>Recent Action Qty</th><th>Source</th><th>Order Number</th><th>Action</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
+        const localDevice=toSafeString(typeof ensureDeviceId==="function"?ensureDeviceId():AppState?.session?.deviceId||"");
+        const deviceIds=[...new Set(allRows.map(row=>toSafeString(row?.deviceId||"")).filter(Boolean))];
+        const deviceLabel=(row)=>{
+            const type=toSafeString(row?.deviceType||"").toUpperCase()==="HANDHELD"?"Handheld":"PC";
+            const id=toSafeString(row?.deviceId||"");
+            if(id&&id===localDevice) return `${type} · This Device`;
+            const ordinal=Math.max(0,deviceIds.indexOf(id))+1;
+            return id?`${type} · Device ${ordinal}`:type;
+        };
+        body.innerHTML=`<div class="pfnActivityToolbar">
+          <label class="pfnActivitySearch"><span>Search Activity</span><input id="pfnActivitySearch" autocomplete="off" spellcheck="false" placeholder="Item Name, Item Code or scan Barcode / GTIN"></label>
+          <label><span>Source</span><select id="pfnActivitySourceFilter"><option value="All">All Sources</option><option value="Handheld">Handheld</option><option value="PC Scan">PC Scan</option><option value="Manual">Extra Item / Manual</option><option value="Correction">Correction</option></select></label>
+          <label><span>Device</span><select id="pfnActivityDeviceFilter"><option value="All">All Devices</option><option value="This">This Device</option>${deviceIds.filter(id=>id!==localDevice).map((id,index)=>`<option value="${esc(id)}">Device ${index+2}</option>`).join("")}</select></label>
+        </div><div id="pfnActivitySummary" class="pfnActivitySummary" hidden></div><div class="phase263TableWrap pfnActivityWorklist"><table class="quickKpiTable phase263Table pfnActivityTable"><colgroup><col class="pfnColDate"><col class="pfnColItem"><col class="pfnColCode"><col class="pfnColGtin"><col class="pfnColAction"><col class="pfnColAfter"><col class="pfnColSource"><col class="pfnColDevice"><col class="pfnColOrder"></colgroup><thead><tr><th>Date</th><th>Item</th><th>Code</th><th>GTIN</th><th>Action</th><th>After</th><th>Source</th><th>Device</th><th>Order</th></tr></thead><tbody data-activity-rows></tbody></table></div>`;
         const tbody=body.querySelector("[data-activity-rows]");
         const sourceFilter=body.querySelector("#pfnActivitySourceFilter");
+        const deviceFilter=body.querySelector("#pfnActivityDeviceFilter");
+        const searchInput=body.querySelector("#pfnActivitySearch");
+        const summary=body.querySelector("#pfnActivitySummary");
         const draw=()=>{
-            const selected=sourceFilter.value;
-            const rows=selected==="All"?allRows:allRows.filter(row=>getReceivingActivitySource(row)===selected);
-            tbody.innerHTML=rows.length?rows.map(row=>{const q=toNumber(row.qtyChange,0);const correction=toSafeString(row.source).toUpperCase().includes("CORRECTION");const editable=!correction&&q>0&&!!getItemByCode?.(row.itemCode);return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td><b>${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}</b></td><td>${esc(row.itemCode)}</td><td>${esc(row.gtin||"—")}</td><td class="${q<0?'phase263Negative':'phase263Positive'}">${correction?'Correction':'Received'} ${q>0?'+':''}${esc(q)}</td><td>${esc(getReceivingActivitySource(row))}</td><td>${esc(row.selectedOrderNumber||row.orderId||row.orderNumber||"—")}</td><td>${editable?`<button class="quickUndoButton" data-edit="${esc(row.transactionId)}">Edit</button>`:'—'}</td></tr>`;}).join(''):'<tr><td colspan="8" class="tableEmptyState">No activity from this source.</td></tr>';
-            tbody.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>{const row=allRows.find(entry=>toSafeString(entry.transactionId)===btn.dataset.edit);if(row)openReceivingActivityEditor(row,allRows);});
+            const source=sourceFilter.value,device=deviceFilter.value,q=toSafeString(searchInput.value).trim().toUpperCase();
+            const rows=allRows.filter(row=>{
+                if(source!=="All"&&getReceivingActivitySource(row)!==source)return false;
+                const rowDevice=toSafeString(row?.deviceId||"");
+                if(device==="This"&&rowDevice!==localDevice)return false;
+                if(device!=="All"&&device!=="This"&&rowDevice!==device)return false;
+                if(q){
+                    const hay=[row.itemName,row.itemCode,row.gtin,row.selectedOrderNumber,row.orderId].map(v=>toSafeString(v).toUpperCase()).join(" ");
+                    if(!hay.includes(q))return false;
+                }
+                return true;
+            });
+            const itemCodes=[...new Set(rows.map(row=>normalizeItemCode(row?.itemCode||"")).filter(Boolean))];
+            if(q&&itemCodes.length===1){
+                const code=itemCodes[0];
+                const scoped=(typeof getScopedOrderItems==="function"?getScopedOrderItems():[]).filter(item=>normalizeItemCode(item?.itemCode||"")===code);
+                const current=scoped.reduce((acc,item)=>({ordered:acc.ordered+toNumber(item?.orderedQty,0),received:acc.received+toNumber(item?.receivedQty,0),remaining:acc.remaining+Math.max(0,toNumber(item?.remainingQty,0)),name:acc.name||toSafeString(item?.itemName||"")}),{ordered:0,received:0,remaining:0,name:""});
+                const extraRows=typeof getKpiPanelItems==="function"?getKpiPanelItems("manual").filter(item=>normalizeItemCode(item?.itemCode||"")===code):[];
+                if(!scoped.length&&extraRows.length){
+                    current.name=toSafeString(extraRows[0]?.itemName||rows[0]?.itemName||"");
+                    current.received=extraRows.reduce((sum,item)=>sum+toNumber(item?.receivedQty,0),0);
+                    current.ordered=0;current.remaining=0;
+                }
+                const status=current.ordered===0&&current.received>0?"Extra Item":current.received>current.ordered?"Over Received":current.remaining>0?"Remaining":"Complete";
+                summary.hidden=false;
+                summary.innerHTML=`<div class="pfnActivitySummaryIdentity"><b>${esc(current.name||rows[0]?.itemName||"Unknown item")}</b><span>${esc(code)}</span></div><div class="pfnActivitySummaryMetrics"><span><small>Ordered</small><b>${esc(current.ordered)}</b></span><span><small>Received</small><b>${esc(current.received)}</b></span><span><small>Remaining</small><b>${esc(current.remaining)}</b></span><span><small>Status</small><b>${esc(status)}</b></span></div>`;
+            }else{
+                summary.hidden=true;summary.innerHTML="";
+            }
+            tbody.innerHTML=rows.length?rows.map(row=>{const qv=toNumber(row.qtyChange,0);const correction=toSafeString(row.source).toUpperCase().includes("CORRECTION");return `<tr><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.dateTime):row.dateTime)}</td><td class="pfnActivityItemName" title="${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}">${esc(row.itemName||getItemByCode?.(row.itemCode)?.itemName||"Unknown item")}</td><td>${esc(row.itemCode)}</td><td>${esc(row.gtin||"—")}</td><td class="${qv<0?'phase263Negative':'phase263Positive'}">${correction?'Correction':'Received'} ${qv>0?'+':''}${esc(qv)}</td><td><b>${esc(toNumber(row.finalReceived,0))}</b></td><td>${esc(getReceivingActivitySource(row))}</td><td>${esc(deviceLabel(row))}</td><td>${esc(row.selectedOrderNumber||row.orderId||row.orderNumber||"—")}</td></tr>`;}).join(''):'<tr><td colspan="9" class="tableEmptyState">No matching receiving activity.</td></tr>';
         };
-        sourceFilter.addEventListener("change",draw);
-        draw();
+        sourceFilter.addEventListener("change",draw);deviceFilter.addEventListener("change",draw);searchInput.addEventListener("input",draw);
+        draw();searchInput.focus();
         return;
     }
     if(key==="received"){
@@ -8491,7 +8653,10 @@ function renderDashboardKpiPanel(key,body){
     }
     const rows=getKpiPanelItems(key);
     if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
-    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th></tr></thead><tbody>${rows.map(item=>`<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td><td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="Remaining">${esc(toNumber(item.remainingQty,0))}</td><td data-label="Status">${esc(item.status||"")}</td></tr>`).join('')}</tbody></table></div>`;
+    body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th>${key==="manual"?"<th>Action</th>":""}</tr></thead><tbody>${rows.map((item,index)=>`<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td><td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="Remaining">${esc(toNumber(item.remainingQty,0))}</td><td data-label="Status">${esc(item.status||"")}</td>${key==="manual"?`<td data-label="Action"><button type="button" class="dangerButton pfnExtraRemoveButton" data-remove-extra="${index}">Remove Extra Item</button></td>`:""}</tr>`).join("")}</tbody></table></div>`;
+    if(key==="manual"){
+        body.querySelectorAll("[data-remove-extra]").forEach(btn=>btn.onclick=()=>removeCurrentExtraItem(rows[Number(btn.dataset.removeExtra)]));
+    }
 }
 
 /* =====================================================
@@ -8783,8 +8948,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await drawIdentifier();showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
         workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
         workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await drawIdentifier();showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!window.confirm("Correct only this identifier mapping? Historical Receiving is unchanged.")) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
-        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!window.confirm("Remove only this identifier mapping? The Item and sibling identifiers remain.")) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!await pharmFlowConfirm({title:"Correct Identifier?",message:"Correct only this identifier mapping? Historical Receiving is unchanged.",confirmText:"Correct Identifier",tone:"warning"})) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
+        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!await pharmFlowConfirm({title:"Remove Identifier?",message:"Remove only this identifier mapping? The Item and sibling identifiers remain.",confirmText:"Remove Identifier",tone:"danger"})) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());const verification=await IdentifierService.resolve(identifier);if(verification?.found&&toSafeString(verification.identifierKey)===toSafeString(mapping.identifierKey)){throw new Error("Identifier removal was not confirmed by the authoritative resolver. Reload and try again.");}workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
     };
     const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
         const value=toSafeString(query).trim();
@@ -8958,7 +9123,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         });
 
         cancelReview?.addEventListener("click",async()=>{
-            if(!window.confirm(`Cancel this Needs Review group for GTIN ${group.gtin}?\n\nThis will not learn the GTIN or change any received quantity.`)) return;
+            if(!await pharmFlowConfirm({title:"Cancel Needs Review Group?",message:`GTIN ${group.gtin}. This will not learn the GTIN or change any received quantity.`,confirmText:"Cancel Group",tone:"danger"})) return;
             const reason=toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
             if(!reason){showToast?.("A cancellation reason is required","warning");return;}
             cancelReview.disabled=true; overlay.dataset.busy="1";

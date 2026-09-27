@@ -87,35 +87,11 @@ async function assertOrderNumberCanUpload(orderNumber){
 
     const status = String(existing.status || "uploaded").trim().toLowerCase();
 
-    /* B10 Clean 6 — completed-order recovery.
-       A completed order is still protected by default, but an accidental
-       Complete Receiving must not trap the pharmacy permanently. Reopening
-       is an explicit destructive recovery action: remove only this order's
-       finalized/history record, then allow the uploaded source file to start
-       a brand-new Receiving cycle at zero. Global GTIN, other orders and
-       Item Movement remain independent and untouched. */
+    /* Completed orders are historical, not active duplicate locks.
+       Re-uploading the same Order Number starts a fresh Receiving cycle by
+       using the existing server-authoritative complete-order cleanup path.
+       Active/unfinished duplicate protection below remains unchanged. */
     if(["received","finalized","closed"].includes(status)){
-        const reopen = window.confirm(
-            "Order "+normalized+" was already completed.\n\n"+
-            "If Complete Receiving was done by mistake, you can reopen this order and start Receiving again from zero.\n\n"+
-            "The previous Receiving history and discrepancy report for THIS order will be permanently removed. Global GTIN and other orders are not affected.\n\n"+
-            "Press OK to Reopen Receiving, or Cancel to keep the completed order protected."
-        );
-
-        if(!reopen){
-            throw new Error(
-                "Order "+normalized+" is already completed. Duplicate upload remains blocked."
-            );
-        }
-
-        const typed = window.prompt(
-            "Type the Order Number exactly to reopen Receiving:\n"+normalized,
-            ""
-        );
-        if(normalizeOrderNumber(typed)!==normalized){
-            throw new Error("Reopen Receiving cancelled. Completed order remains protected.");
-        }
-
         if(typeof authRpc!=="function" || !AuthState.context?.pharmacy_id){
             throw new Error("Pharmacy cloud context is unavailable. Sign in again and retry.");
         }
@@ -160,11 +136,7 @@ async function assertOrderNumberCanUpload(orderNumber){
     );
 
     if(!localNumbers.has(normalized)){
-        const repair = window.confirm(
-            "Order "+normalized+" is registered as an unfinished active order (status: "+(existing.status||"uploaded")+").\n\n"+
-            "This can be a previous workspace that was closed before Finalize, or an order currently open on another PC.\n\n"+
-            "Press OK only if you want to DISCARD the old unfinished order and upload it again from the beginning."
-        );
+        const repair = await pharmFlowConfirm({title:"Discard Unfinished Order?",message:"Order "+normalized+" is registered as an unfinished active order (status: "+(existing.status||"uploaded")+"). It may be open on another PC. Continue only to discard the old registration and upload again.",confirmText:"Discard Order",tone:"danger"});
 
         if(repair){
             const typed = window.prompt(
@@ -261,11 +233,11 @@ async function requestDeleteGlobalGTINMaster(){
     if(!AuthState.context || !AuthState.context.pharmacy_id){
         showToast("Pharmacy ADMIN context is required","error"); return false;
     }
-    const first=window.confirm("GLOBAL GTIN MASTER will be deleted for this pharmacy. Current/Historical Orders will NOT be deleted. Continue?");
+    const first=await pharmFlowConfirm({title:"Delete Global GTIN Master?",message:"GLOBAL GTIN MASTER will be deleted for this pharmacy. Current/Historical Orders will NOT be deleted.",confirmText:"Continue",tone:"danger"});
     if(!first){return false;}
     const phrase=window.prompt('Type DELETE GLOBAL GTIN to continue:');
     if(phrase!=="DELETE GLOBAL GTIN"){showToast("Global GTIN deletion cancelled","warning");return false;}
-    const finalCheck=window.confirm("FINAL CONFIRMATION: delete the complete Global GTIN Master now?");
+    const finalCheck=await pharmFlowConfirm({title:"Final Confirmation",message:"Delete the complete Global GTIN Master now? This cannot be undone.",confirmText:"Delete Global Master",tone:"danger"});
     if(!finalCheck){return false;}
     showLoading("Deleting Global GTIN Master...");
     try{

@@ -2031,8 +2031,13 @@ function mergeCloudReceivingLedger(rows){
            The Active Order Manifest is sufficient as long as the item exists.
         */
         const item=getItemByCode(tx.itemCode);
+        const txOrder=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||"");
+        const activeOrders=getActiveReceivingOrderSetForCloud();
 
-        if(!item){
+        /* Extra Items have no uploaded Order row by definition. Keep their
+           durable transaction when it is explicitly attributed to an active
+           Order; reject unattributed/inactive unknown items. */
+        if(!item && (!txOrder || (activeOrders.size && !activeOrders.has(txOrder)))){
             continue;
         }
 
@@ -2324,7 +2329,14 @@ async function restoreCloudWorkspaceOnLogin(){
             }
 
             await pullActiveOrderManifestAuthority({clearIfMissing:true});
-            await pullCloudWorkspaceTransactions();
+
+            /* Final structural authority is settled. Rebuild the bounded
+               durable Receiving ledger once, then continue with delta sync. */
+            PharmFlowCloudWorkspace.receivingCursorCreatedAt=null;
+            PharmFlowCloudWorkspace.receivingCursorTransactionId=null;
+            PharmFlowCloudWorkspace.receivingBootstrapComplete=false;
+            await pullCloudWorkspaceTransactions({force:true});
+
             await flushCloudWorkspaceQueue();
             setCloudWorkspaceStatus("synced");
             return true;
