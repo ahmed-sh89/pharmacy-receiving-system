@@ -182,20 +182,8 @@ async function startApplication(){
 
         initializeOptionalModules();
 
-        /* Phase 2C.6.4: the System Global GTIN Master is authoritative for every pharmacy.
-           Pull it explicitly after authenticated app context exists so a brand-new browser/pharmacy
-           never depends on a pharmacy-specific local cache. */
-        if(typeof ensureGlobalMasterGTINReady === "function"){
-            /* Receiving identity is V2 server-authoritative and must not wait
-               for the 52k-record legacy Global Master/Expiry cache. The Master
-               module already owns cache freshness; let that work complete in
-               the background and project its data when ready. */
-            Promise.resolve(
-                ensureGlobalMasterGTINReady({forceCloud:true,silent:true})
-            ).catch(error=>{
-                Logger.warn("System Global GTIN background sync unavailable",error);
-            });
-        }
+        /* Global Master is loaded on demand by its own admin/Expiry workflows.
+           Receiving startup stays independent and uses IdentifierService V2. */
 
         await refreshSafeAccountIdentity();
 
