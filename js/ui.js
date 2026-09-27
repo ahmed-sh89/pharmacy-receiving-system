@@ -1874,8 +1874,15 @@ function getSelectedOrderDashboardMetrics(){
     let overReceivedItems=0;
     let manualItems=0;
 
+    const receivedMap=typeof buildReceivedQuantityByOrder==="function"
+        ? buildReceivedQuantityByOrder()
+        : null;
+
     targetOrders.forEach(orderNumber=>{
-        const rows=getPerOrderReceivingRows(orderNumber);
+        const rows=getPerOrderReceivingRows(
+            orderNumber,
+            receivedMap instanceof Map ? {receivedMap} : {}
+        );
 
         rows.forEach(row=>{
             const ordered=toNumber(row["Ordered Qty"],0);
@@ -2265,8 +2272,14 @@ function refreshReceivingRow(data){
         : active;
 
     if(typeof getPerOrderReceivingRows==="function" && active.length){
+        const receivedMap=typeof buildReceivedQuantityByOrder==="function"
+            ? buildReceivedQuantityByOrder()
+            : null;
         (selected.length?selected:active.slice(0,1)).forEach(orderNumber=>{
-            getPerOrderReceivingRows(orderNumber).forEach(row=>{
+            getPerOrderReceivingRows(
+                orderNumber,
+                receivedMap instanceof Map ? {receivedMap} : {}
+            ).forEach(row=>{
                 if(normalizeItemCode(row["Item Number"])!==code) return;
                 rows.push({
                     orderNumber,
@@ -2301,12 +2314,25 @@ function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
     const issues=UI.receivingFilters.issues instanceof Set?UI.receivingFilters.issues:new Set(["not_received","partial","received_any","over","manual"]), categoryFilter=UI.receivingFilters.category||"all", searchFilter=toSafeString(UI.receivingFilters.search||"").trim().toLowerCase();
     const scope=typeof getSelectedReceivingOrderNumber==="function"?getSelectedReceivingOrderNumber():"ALL", active=typeof getActiveReceivingOrderNumbers==="function"?getActiveReceivingOrderNumbers():[], selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():(scope==="ALL"?active:[scope].filter(Boolean)), allMode=selectedOrders.length>1;
-    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(selectedOrders.length && !selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
+    let rows=[];if(typeof getPerOrderReceivingRows==="function"&&active.length){const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber,receivedMap instanceof Map?{receivedMap}:{}).forEach(r=>{const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",cat=toSafeString(r["Category"]||"").trim(),match=issues.has(issue)||(issues.has("received_any")&&received>0);if(match&&(categoryFilter==="all"||cat===categoryFilter))rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],category:r["Category"]||"",manual:r.issueKey==="manual"});}));}else{rows=(AppState.workspace.orderData||[]).filter(item=>{if(selectedOrders.length && !selectedOrders.some(order=>itemBelongsToOrderScope(item,order)))return false;const issue=getReceivingIssueKey(item),received=toNumber(item.receivedQty,0),cat=toSafeString(item.category||"").trim();return (issues.has(issue)||(issues.has("received_any")&&received>0))&&(categoryFilter==="all"||cat===categoryFilter);});}
     if(searchFilter){rows=rows.filter(item=>toSafeString(item.itemName||"").toLowerCase().includes(searchFilter)||toSafeString(item.itemCode||"").toLowerCase().includes(searchFilter));}
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
     if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML=`<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>`;return;}if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML=`<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>`;return;}
-    rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
+    /* Keep the full filtered model for counts/report logic, but bound initial
+       DOM work. Thousands of interactive rows block startup and scanner input. */
+    const RECEIVING_RENDER_LIMIT=200;
+    rows.slice(0,RECEIVING_RENDER_LIMIT).forEach((item,index)=>{
+        const tr=createReceivingTableRow(item,index);
+        tr.dataset.orderNumber=item.orderNumber||"";
+        tbody.appendChild(tr);
+    });
+    if(rows.length>RECEIVING_RENDER_LIMIT){
+        const more=document.createElement("tr");
+        more.className="receivingRenderNotice";
+        more.innerHTML=`<td colspan="10" class="tableEmptyState">Showing first ${RECEIVING_RENDER_LIMIT} of ${rows.length} items. Use Search or filters to narrow the worklist.</td>`;
+        tbody.appendChild(more);
+    }
     if(inline){
         if(searchFilter&&rows.length){
             const item=rows[0], order=item.orderNumber||((Array.isArray(item.orderNumbers)&&item.orderNumbers[0])||"—");
