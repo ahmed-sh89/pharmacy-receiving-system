@@ -152,7 +152,8 @@ async function handleOrderFileSelection(event){
            every selected workbook BEFORE mutating AppState so a bad third/fourth
            file can never leave the first files partially staged. Workbooks are
            parsed concurrently to keep 5+ order selection responsive. */
-        const preparedFiles=await Promise.all(files.map(async file=>{
+        const preparedFiles=[];
+        for(const file of files){
             validateExcelFile(file);
             const workbook=await readExcelWorkbook(file);
             const orderMeta=
@@ -165,8 +166,8 @@ async function handleOrderFileSelection(event){
             if(!orderNumber){
                 throw new Error("Order Number could not be detected in "+file.name);
             }
-            return {file,workbook,orderMeta,orderNumber};
-        }));
+            preparedFiles.push({file,workbook,orderMeta,orderNumber});
+        }
 
         const selectedOrderNumbers=preparedFiles.map(entry=>entry.orderNumber);
         const duplicateOrderNumbers=selectedOrderNumbers.filter(
