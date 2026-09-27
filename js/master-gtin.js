@@ -588,6 +588,19 @@ async function applyMasterGTINToCurrentOrder(
     const orderCodeSet =
         new Set(itemCodes);
 
+    /* Build one source-row index for the active workspace. The old projection
+       searched every source row in every Order once for every Global Master
+       record, which became quadratic as multi-order workspaces grew. */
+    const sourceRowsByCode=new Map();
+    (AppState.workspace.orderFiles||[]).forEach(file=>{
+        (file.sourceRows||[]).forEach(sourceRow=>{
+            const code=normalizeItemCode(sourceRow?.itemCode||"");
+            if(!code) return;
+            if(!sourceRowsByCode.has(code)) sourceRowsByCode.set(code,[]);
+            sourceRowsByCode.get(code).push(sourceRow);
+        });
+    });
+
     const gtinOwners =
         new Map();
 
@@ -651,12 +664,11 @@ async function applyMasterGTINToCurrentOrder(
             if(record.category) orderItem.category=record.category;
             if(record.sub_category) orderItem.sub_category=record.sub_category;
         }
-        (AppState.workspace.orderFiles||[]).forEach(file=>(file.sourceRows||[]).forEach(sourceRow=>{
-            if(normalizeItemCode(sourceRow?.itemCode||"")!==record.itemCode)return;
-            if(record.group_name)sourceRow.group_name=record.group_name;
-            if(record.category)sourceRow.category=record.category;
-            if(record.sub_category)sourceRow.sub_category=record.sub_category;
-        }));
+        (sourceRowsByCode.get(record.itemCode)||[]).forEach(sourceRow=>{
+            if(record.group_name) sourceRow.group_name=record.group_name;
+            if(record.category) sourceRow.category=record.category;
+            if(record.sub_category) sourceRow.sub_category=record.sub_category;
+        });
 
         matchedCodes.add(
             record.itemCode
