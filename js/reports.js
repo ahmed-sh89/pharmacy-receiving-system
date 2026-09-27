@@ -888,25 +888,17 @@ function getReportsDebugSnapshot(){
 ===================================================== */
 
 function getActiveReceivingOrderNumbers(){
+    /* Active Order identity has one structural source: orderFiles from the
+       authoritative Active Order Manifest/current staged batch. Never derive
+       this list from lifecycle registry, selected scope or rendered UI. */
     const files=Array.isArray(AppState?.workspace?.orderFiles)
         ? AppState.workspace.orderFiles
         : [];
-
-    const seen=new Set();
-    const rows=[];
-
-    files.forEach(file=>{
-        const number=normalizeOrderNumber(
-            file?.documentId || file?.orderNumber || ""
-        );
-
-        if(number && !seen.has(number)){
-            seen.add(number);
-            rows.push(number);
-        }
-    });
-
-    return rows;
+    return [...new Set(
+        files
+            .map(file=>normalizeOrderNumber(file?.documentId||file?.orderNumber||""))
+            .filter(Boolean)
+    )];
 }
 
 function getSelectedReceivingOrderNumbers(){
