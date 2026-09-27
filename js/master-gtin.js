@@ -91,11 +91,24 @@ async function initializeMasterGTIN(){
 
         }
 
-        /* Receiving uses the V2 identifier service as its authoritative
-           identity path. Opening this optional module must never download or
-           project the full Global Master (~52k records) onto the hot workspace.
-           Global Master/Expiry/admin workflows call ensureGlobalMasterGTINReady()
-           explicitly when they actually need that cache. */
+        /* Supabase is the source of truth. IndexedDB is only a fast
+           device cache. Pull the system-wide database after auth
+           context is available; if offline, the last local cache remains usable. */
+        if(typeof authRpc === "function" && typeof AuthState !== "undefined" && AuthState.context && AuthState.context.pharmacy_id){
+            try{ await syncGlobalMasterGTINFromCloud(); }
+            catch(error){ Logger.warn("Global GTIN sync unavailable; using local cache",error); }
+        }
+
+        if(
+            MasterGTINEngine.metadata.installed &&
+            AppState.workspace.orderData.length > 0
+        ){
+
+            await applyMasterGTINToCurrentOrder({
+                silent:true
+            });
+
+        }
 
         AppEvents.on(
             "workspace:cleared",
@@ -575,19 +588,6 @@ async function applyMasterGTINToCurrentOrder(
     const orderCodeSet =
         new Set(itemCodes);
 
-    /* Build one source-row index for the active workspace. The old projection
-       searched every source row in every Order once for every Global Master
-       record, which became quadratic as multi-order workspaces grew. */
-    const sourceRowsByCode=new Map();
-    (AppState.workspace.orderFiles||[]).forEach(file=>{
-        (file.sourceRows||[]).forEach(sourceRow=>{
-            const code=normalizeItemCode(sourceRow?.itemCode||"");
-            if(!code) return;
-            if(!sourceRowsByCode.has(code)) sourceRowsByCode.set(code,[]);
-            sourceRowsByCode.get(code).push(sourceRow);
-        });
-    });
-
     const gtinOwners =
         new Map();
 
@@ -651,11 +651,12 @@ async function applyMasterGTINToCurrentOrder(
             if(record.category) orderItem.category=record.category;
             if(record.sub_category) orderItem.sub_category=record.sub_category;
         }
-        (sourceRowsByCode.get(record.itemCode)||[]).forEach(sourceRow=>{
-            if(record.group_name) sourceRow.group_name=record.group_name;
-            if(record.category) sourceRow.category=record.category;
-            if(record.sub_category) sourceRow.sub_category=record.sub_category;
-        });
+        (AppState.workspace.orderFiles||[]).forEach(file=>(file.sourceRows||[]).forEach(sourceRow=>{
+            if(normalizeItemCode(sourceRow?.itemCode||"")!==record.itemCode)return;
+            if(record.group_name)sourceRow.group_name=record.group_name;
+            if(record.category)sourceRow.category=record.category;
+            if(record.sub_category)sourceRow.sub_category=record.sub_category;
+        }));
 
         matchedCodes.add(
             record.itemCode
