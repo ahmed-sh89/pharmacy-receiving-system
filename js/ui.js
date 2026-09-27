@@ -1552,12 +1552,28 @@ function bindUIStateEvents(){
 
     AppEvents.on(
         "receiving:updated",
-        function(){
+        function(data){
 
-            refreshEntireUI();
+            const source=toSafeString(data?.source||"");
+            const structural=
+                !data ||
+                source==="workspace-reset" ||
+                source==="handheld-local-reset" ||
+                source==="server-authority-empty";
+
+            if(structural){
+                refreshEntireUI();
+            }else{
+                /* Receiving transactions are item-local changes. Do not rebuild
+                   the full workspace DOM (tables/files/archive/master) for one
+                   scan or quantity adjustment. */
+                refreshDashboard();
+                refreshLastScan();
+                refreshReceivingRow(data);
+                refreshOpenKpiPanel();
+            }
 
             refreshSelectedSmartItem();
-
             refreshZebraInterface();
 
         }
@@ -2220,6 +2236,66 @@ function getVisibleReceivingItemsForExport(){
 /* =====================================================
    RECEIVING TABLE
 ===================================================== */
+
+function refreshReceivingRow(data){
+    const code=normalizeItemCode(data?.itemCode||"");
+    if(!code) return;
+
+    const tbody=UI.elements.receivingTableBody;
+    if(!tbody) return;
+
+    const existing=Array.from(
+        tbody.querySelectorAll("tr[data-item-code]")
+    ).filter(row=>normalizeItemCode(row.dataset.itemCode)===code);
+
+    /* If the current filters/scope do not contain this item, a local quantity
+       change can alter membership (for example Remaining -> Completed). In that
+       case rebuild only the Receiving table, never the whole application UI. */
+    if(!existing.length){
+        refreshReceivingTable();
+        return;
+    }
+
+    const rows=[];
+    const active=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : active;
+
+    if(typeof getPerOrderReceivingRows==="function" && active.length){
+        (selected.length?selected:active.slice(0,1)).forEach(orderNumber=>{
+            getPerOrderReceivingRows(orderNumber).forEach(row=>{
+                if(normalizeItemCode(row["Item Number"])!==code) return;
+                rows.push({
+                    orderNumber,
+                    itemCode:row["Item Number"],
+                    itemName:row["Item Name"],
+                    orderedQty:toNumber(row["Ordered Qty"],0),
+                    receivedQty:toNumber(row["Received Qty"],0),
+                    remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
+                    status:row["Issue Type"]==="Received"?"Completed":row["Issue Type"],
+                    category:row["Category"]||"",
+                    manual:row.issueKey==="manual"
+                });
+            });
+        });
+    }
+
+    if(rows.length!==existing.length){
+        refreshReceivingTable();
+        return;
+    }
+
+    existing.forEach((row,index)=>{
+        const item=rows[index];
+        if(!item){ refreshReceivingTable(); return; }
+        const replacement=createReceivingTableRow(item,Number(row.firstElementChild?.textContent||index+1)-1);
+        replacement.dataset.orderNumber=item.orderNumber||"";
+        row.replaceWith(replacement);
+    });
+}
 
 function refreshReceivingTable(){
     const tbody=UI.elements.receivingTableBody;if(!tbody)return;refreshReceivingCategoryFilter();tbody.innerHTML="";
