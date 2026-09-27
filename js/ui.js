@@ -8038,6 +8038,8 @@ function renderItemBrowser(body, rows, options={}){
         if(orderMode)return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Category">${esc(item.category||item.Category||'—')}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
         return `<tr class="pfnMobileItemCard"><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
+    const BROWSER_PAGE_SIZE=200;
+    let visibleLimit=BROWSER_PAGE_SIZE;
     const draw=()=>{
         const q=toSafeString(input?.value||'').trim().toLowerCase();
         let visible=rows.filter(item=>!q||toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q));
@@ -8054,7 +8056,18 @@ function renderItemBrowser(body, rows, options={}){
             tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
         }else{
             const colspan=orderMode?6:(receivedMode?4:3);
-            tbody.innerHTML=visible.length?visible.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+            const rendered=visible.slice(0,visibleLimit);
+            tbody.innerHTML=rendered.length?rendered.map(rowHtml).join(''):`<tr><td colspan="${colspan}" class="tableEmptyState">No matching items.</td></tr>`;
+            if(visible.length>rendered.length){
+                const more=document.createElement('tr');
+                more.className='pfnBrowserLoadMore';
+                more.innerHTML=`<td colspan="${colspan}"><button type="button" data-load-more>Show next ${Math.min(BROWSER_PAGE_SIZE,visible.length-rendered.length)} items <span>${rendered.length} / ${visible.length}</span></button></td>`;
+                tbody.appendChild(more);
+                more.querySelector('[data-load-more]')?.addEventListener('click',()=>{
+                    visibleLimit+=BROWSER_PAGE_SIZE;
+                    draw();
+                });
+            }
         }
         tbody.querySelectorAll('[data-mark]').forEach(btn=>btn.onclick=()=>{
             const item=typeof getItemByCode==='function'?getItemByCode(btn.dataset.code):null;if(!item)return;
@@ -8063,8 +8076,9 @@ function renderItemBrowser(body, rows, options={}){
             const wrap=body.querySelector('.phase263TableWrap'),top=wrap?.scrollTop||0;draw();const next=body.querySelector('.phase263TableWrap');if(next)next.scrollTop=top;
         });
     };
-    input?.addEventListener('input',draw);orderFilter?.addEventListener('change',draw);categoryFilter?.addEventListener('change',draw);qtySort?.addEventListener('change',draw);
-    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);draw();});
+    const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
+    input?.addEventListener('input',resetAndDraw);orderFilter?.addEventListener('change',resetAndDraw);categoryFilter?.addEventListener('change',resetAndDraw);qtySort?.addEventListener('change',resetAndDraw);
+    priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);resetAndDraw();});
     draw();
 }
 
