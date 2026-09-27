@@ -135,7 +135,13 @@
 
   function refreshOpenManageOrders(){
     const overlay=$('pfnOrdersOverlay');
-    if(overlay) renderHandheldAssignment(overlay);
+    if(!overlay)return;
+    /* Active Order Files and Handheld Assignment are two views of the same
+       Current Workspace structure. Render both from the same AppState snapshot
+       in the same update cycle so an open modal cannot show 8 files below and
+       a stale 4-order Handheld scope above. */
+    if(typeof refreshFileLists==='function')refreshFileLists();
+    renderHandheldAssignment(overlay);
   }
 
   function openOrders(){
