@@ -726,6 +726,14 @@ async function saveActiveOrderManifest(options={}){
         PharmFlowCloudWorkspace.lastManifestSaveError=null;
         PharmFlowCloudWorkspace.lastManifestSaveAt=nowISO();
 
+        /* The verified server manifest is structural authority. Apply the
+           read-after-write payload immediately so this tab cannot keep a
+           pre-save order list after a successful structural upload. */
+        applyActiveOrderManifest(
+            verify.manifest,
+            Number(verify.revision||row.revision||0)
+        );
+
         setCloudWorkspaceStatus(
             "synced",
             `${fileCount} Active Order file(s) shared`
