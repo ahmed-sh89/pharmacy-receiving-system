@@ -133,3 +133,10 @@ test("desktop receiving polish keeps toasts above modals and uses click-only sid
     assert.doesNotMatch(shell,/pointerenter.*openForPointer/);
     assert.doesNotMatch(shell,/pointerleave.*closeAfterPointerLeaves/);
 });
+
+
+test("saved Handheld assignment immediately rerenders the open Manage Orders scope",()=>{
+    const shell=fs.readFileSync("js/pharmflow-next.js","utf8");
+    assert.match(shell,/const saved=await window\.setHandheldAssignedOrderNumbers\?\.\(chosen\);[\s\S]*?if\(saved\) refreshOpenManageOrders\(\);/);
+    assert.doesNotMatch(shell,/if\(saved\) assignment\.querySelector\('\[data-assignment-status\]'\)/);
+});
