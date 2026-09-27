@@ -2,6 +2,12 @@
 const fs=require("fs"),assert=require("assert");
 const receiving=fs.readFileSync("js/receiving.js","utf8");
 const migration=fs.readFileSync("PHASE2C1164_NEEDS_REVIEW_AUTO_ALLOCATED_CONSTRAINTS.sql","utf8");
+const ui=fs.readFileSync("ui.js","utf8");
+assert(ui.includes('key==="manual"?"<th>Order</th>":""'),
+  "Extra Items must expose target Order so identical item codes on different Orders are not ambiguous");
+assert(ui.includes('data-label="Order"'),
+  "Extra Item rows must display their durable Order ownership");
+
 
 const start=receiving.indexOf("async function quickResolveUnrecognizedGTIN");
 const end=receiving.indexOf("function openKnownNotInOrderPC",start);
