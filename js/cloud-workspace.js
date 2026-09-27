@@ -899,6 +899,7 @@ async function pullActiveOrderManifest(options={}){
 
         if(!incomingFiles.length || !incomingData.length){
             PharmFlowCloudWorkspace.activeManifestPresent=false;
+            PharmFlowCloudWorkspace.activeManifestRevision=Number(row.revision||0);
 
             Logger.warn(
                 "Active Order Manifest returned without active order data",
@@ -909,6 +910,20 @@ async function pullActiveOrderManifest(options={}){
                     items:incomingData.length
                 }
             );
+
+            /* Server-empty is authoritative after Reset even when the manifest
+               row itself still exists. Treat an empty manifest exactly like a
+               missing manifest so stale local orderFiles cannot survive and be
+               misclassified as duplicate uploads in the next batch. */
+            if(options?.clearIfMissing===true){
+                AppState.workspace=createEmptyWorkspace();
+                resetStatistics();
+                rebuildStateIndexes();
+                deleteWorkspaceSnapshot?.();
+                AppEvents.emit("files:updated",{source:"server-authority-empty"});
+                AppEvents.emit("receiving:updated",{source:"server-authority-empty"});
+                refreshEntireUI?.();
+            }
 
             return false;
         }
