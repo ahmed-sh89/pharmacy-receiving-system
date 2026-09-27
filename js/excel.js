@@ -350,6 +350,13 @@ async function handleOrderFileSelection(event){
                 }
             }
 
+            /* Registry is a batch-level projection. Individual order registration
+               deliberately does not reload the complete registry; refresh once
+               after every order/source snapshot has committed. */
+            if(typeof refreshOrderLifecycleRegistry==="function"){
+                await refreshOrderLifecycleRegistry();
+            }
+
             /* Manifest verification is complete. Reconcile the derived
                Global Master projection against that final workspace before the
                open Manage Orders modal is published. */
