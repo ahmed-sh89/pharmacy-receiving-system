@@ -182,8 +182,17 @@ async function startApplication(){
 
         initializeOptionalModules();
 
-        /* Global Master is loaded on demand by its own admin/Expiry workflows.
-           Receiving startup stays independent and uses IdentifierService V2. */
+        /* Phase 2C.6.4: the System Global GTIN Master is authoritative for every pharmacy.
+           Pull it explicitly after authenticated app context exists so a brand-new browser/pharmacy
+           never depends on a pharmacy-specific local cache. */
+        if(typeof ensureGlobalMasterGTINReady === "function"){
+            try{
+                await ensureGlobalMasterGTINReady({forceCloud:true,silent:true});
+            }
+            catch(error){
+                Logger.warn("System Global GTIN sync unavailable during startup",error);
+            }
+        }
 
         await refreshSafeAccountIdentity();
 
