@@ -238,10 +238,45 @@ function getReceivingEligibleOrders(item){
 }
 
 function getReceivingOrderRow(item,orderNumber){
-    if(!item || !orderNumber || typeof getPerOrderReceivingRows!=="function") return null;
-    return getPerOrderReceivingRows(orderNumber).find(
-        row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(item.itemCode||"")
-    )||null;
+    if(!item || !orderNumber) return null;
+    const normalizedOrder=normalizeOrderNumber(orderNumber);
+    const code=normalizeItemCode(item.itemCode||"");
+    if(!normalizedOrder || !code) return null;
+
+    /* Hot-path lookup: allocation needs one item in one Order. Never rebuild
+       the complete Order report (and ledger aggregate) just to answer that. */
+    const source=typeof getWorkspaceOrderSourceRows==="function"
+        ? getWorkspaceOrderSourceRows(normalizedOrder)
+        : [];
+    const sourceRow=source.find(row=>normalizeItemCode(row?.itemCode||"")===code);
+    if(!sourceRow) return null;
+
+    const metrics=getReceivingDisplayMetrics(item,normalizedOrder);
+    if(!metrics) return null;
+    const ordered=toNumber(metrics.orderedQty,0);
+    const received=toNumber(metrics.receivedQty,0);
+    const remaining=Math.max(0,ordered-received);
+    let issueKey="";
+    let issueType="";
+    if(received>ordered){ issueKey="over"; issueType="Over Received"; }
+    else if(ordered>0 && received<=0){ issueKey="not_received"; issueType="Not Received"; }
+    else if(ordered>0 && received<ordered){ issueKey="partial"; issueType="Partial Shortage"; }
+    else if(received>0){ issueKey="received_any"; issueType="Received"; }
+
+    return {
+        orderNumber:normalizedOrder,
+        "Item Number":sourceRow.itemCode||item.itemCode||"",
+        "Item Name":sourceRow.itemName||item.itemName||"",
+        "Ordered Qty":ordered,
+        "Received Qty":received,
+        "Remaining Qty":remaining,
+        "Difference":received-ordered,
+        "Issue Type":issueType,
+        issueKey,
+        "Group":sourceRow.group_name||sourceRow.groupName||"",
+        "Category":sourceRow.category||"",
+        "Sub Category":sourceRow.sub_category||sourceRow.subCategory||""
+    };
 }
 
 function chooseDeterministicReceivingOrder(item){
