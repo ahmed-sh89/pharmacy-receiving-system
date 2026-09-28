@@ -168,13 +168,18 @@
   function refreshOpenManageOrders(){
     const overlay=$('pfnOrdersOverlay');
     if(!overlay)return;
-    /* Active Order Files and Handheld Assignment are two views of the same
-       Current Workspace structure. Render both from the same AppState snapshot
-       in the same update cycle so an open modal cannot show 8 files below and
-       a stale 4-order Handheld scope above. */
-    if(typeof refreshFileLists==='function')refreshFileLists();
+    /* #page-files is physically moved into this modal after UI.elements was
+       cached. Resolve the live list node here instead of relying on the cached
+       reference, then render the confirmed workspace directly into it. */
+    const liveOrderList=overlay.querySelector('#orderFilesList');
+    if(liveOrderList && typeof renderFileList==='function'){
+      renderFileList(liveOrderList,AppState?.workspace?.orderFiles||[],'No order files loaded.');
+    }else if(typeof refreshFileLists==='function'){
+      refreshFileLists();
+    }
     renderHandheldAssignment(overlay);
   }
+  window.refreshOpenManageOrders=refreshOpenManageOrders;
 
   function openOrders(){
     const page=$('page-files');if(!page||$('pfnOrdersOverlay'))return;
