@@ -289,9 +289,11 @@ async function handleOrderFileSelection(event){
                confirmed structure BEFORE slower lifecycle/source bookkeeping.
                This removes the blank 5–10 second visual gap without weakening
                Supabase authority or reporting an unverified Order as active. */
+            /* Manage Orders embeds #page-files. Render its file list
+               directly from the already-confirmed workspace. Do not emit the
+               broad files:updated event here: that event also rebuilds the
+               Handheld assignment form and was the source of the modal race. */
             refreshFileLists?.();
-            refreshEntireUI?.();
-            AppEvents.emit("files:updated",{source:"order-upload-manifest-confirmed"});
             await new Promise(resolve=>requestAnimationFrame(resolve));
 
             /* Commit lifecycle + immutable source snapshots only after the
