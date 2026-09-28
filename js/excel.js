@@ -114,8 +114,20 @@ async function handleOrderFileSelection(event){
 
         /* Merge against latest server-authoritative Active Order Manifest.
            Server-empty is authoritative after Reset. */
-        if(typeof pullActiveOrderManifest==="function"){
-            await pullActiveOrderManifest({clearIfMissing:true});
+        if(typeof pullActiveOrderManifestAuthority==="function"){
+            const authorityReady=await pullActiveOrderManifestAuthority({
+                forceApply:true,
+                clearIfMissing:true
+            });
+            if(!authorityReady && PharmFlowCloudWorkspace?.activeManifestBusy){
+                throw new Error("Active Order synchronization is still in progress. Please retry the upload.");
+            }
+        }else if(typeof pullActiveOrderManifest==="function"){
+            await pullActiveOrderManifest({
+                force:true,
+                forceApply:true,
+                clearIfMissing:true
+            });
         }
 
         const preImportWorkspace =
