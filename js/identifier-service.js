@@ -50,6 +50,9 @@ const IdentifierService={
             p_reason:toSafeString(item.reason)
         });
     },
+    async deleteUnusedItem(operationId,itemCode,reason){
+        return authRpc("delete_unused_pharmflow_global_item_v1",{p_operation_id:operationId,p_item_code:toSafeString(itemCode),p_reason:toSafeString(reason)});
+    },
     async addPharmacyIdentifier(operationId,identifierDisplay,item,reason){
         const pharmacyId=this.pharmacyId();
         if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
