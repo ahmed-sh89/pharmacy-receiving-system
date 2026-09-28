@@ -10,6 +10,11 @@ assert(
   "first UI render must not wait for the full Global GTIN Master sync"
 );
 assert(
+  !cloud.includes("__PHARMFLOW_STARTUP_PERF") &&
+  !cloud.includes("markStartupPerf("),
+  "temporary startup diagnostic instrumentation must not ship"
+);
+assert(
   app.includes('ensureGlobalMasterGTINReady({forceCloud:true,silent:true})'),
   "authoritative Global GTIN Master sync must still run"
 );
