@@ -12,6 +12,24 @@ const ExcelEngine = {
     maxHeaderScanRows:60
 };
 
+function traceOrderUploadRuntime(stage,extra={}){
+    const started=Number(ExcelEngine.orderImportTraceStartedAt||performance.now());
+    const elapsed=Math.round(performance.now()-started);
+    const payload={
+        stage,
+        elapsedMs:elapsed,
+        orderFiles:Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles.length:null,
+        modalOpen:!!document.getElementById("pfnOrdersOverlay"),
+        visibleRows:document.querySelectorAll("#pfnOrdersOverlay #orderFilesList .fileRow").length,
+        loadingVisible:!!document.querySelector(".loadingOverlay:not(.hidden), .loading-overlay:not(.hidden), #loadingOverlay:not(.hidden)"),
+        ...extra
+    };
+    console.info("[PF ORDER TRACE]",payload);
+    window.__PF_ORDER_UPLOAD_TRACE=window.__PF_ORDER_UPLOAD_TRACE||[];
+    window.__PF_ORDER_UPLOAD_TRACE.push({...payload,at:new Date().toISOString()});
+    return payload;
+}
+
 /* Publish one structural UI update only after the active-order manifest has
    been authoritatively confirmed.  This reuses existing UI events and adds
    neither polling nor a competing local state source. */
@@ -98,6 +116,8 @@ async function handleOrderFileSelection(event){
 
     ExcelEngine.orderImportRunning =
         true;
+    ExcelEngine.orderImportTraceStartedAt=performance.now();
+    traceOrderUploadRuntime("import-start",{selectedFiles:files.length});
 
     showLoading(
         "Importing order files..."
@@ -176,6 +196,7 @@ async function handleOrderFileSelection(event){
             }
         }
 
+        traceOrderUploadRuntime("files-parsed",{importedFiles,importedRows});
         rebuildStateIndexes();
 
         if(
@@ -206,6 +227,7 @@ async function handleOrderFileSelection(event){
         window.refreshOpenManageOrders?.();
         refreshFileLists?.();
         await new Promise(resolve=>requestAnimationFrame(resolve));
+        traceOrderUploadRuntime("local-paint");
 
         AppEvents.emit(
             "files:updated",
@@ -295,6 +317,8 @@ async function handleOrderFileSelection(event){
                 }
             }
 
+            traceOrderUploadRuntime("manifest-verified");
+
             /* The Active Order Manifest has now been verified. Paint the
                confirmed structure BEFORE slower lifecycle/source bookkeeping.
                This removes the blank 5–10 second visual gap without weakening
@@ -348,6 +372,7 @@ async function handleOrderFileSelection(event){
             refreshFileLists?.();
             await new Promise(resolve=>requestAnimationFrame(resolve));
 
+            traceOrderUploadRuntime("before-success-toast");
             showToast(
                 importedFiles +
                 " order file(s) uploaded and synchronized — " +
@@ -415,7 +440,9 @@ async function handleOrderFileSelection(event){
             Logger.warn("Order upload final UI paint failed",error);
         }
 
+        traceOrderUploadRuntime("before-hide-loading");
         hideLoading();
+        requestAnimationFrame(()=>traceOrderUploadRuntime("after-hide-loading"));
 
         focusScannerInput();
 
