@@ -203,6 +203,7 @@ async function handleOrderFileSelection(event){
            Paint the embedded Manage Orders file list immediately. Broad
            structural events may continue other synchronization work, but the
            operator must not wait for that work to see the files just parsed. */
+        window.refreshOpenManageOrders?.();
         refreshFileLists?.();
         await new Promise(resolve=>requestAnimationFrame(resolve));
 
@@ -302,6 +303,7 @@ async function handleOrderFileSelection(event){
                directly from the already-confirmed workspace. Do not emit the
                broad files:updated event here: that event also rebuilds the
                Handheld assignment form and was the source of the modal race. */
+            window.refreshOpenManageOrders?.();
             refreshFileLists?.();
             await new Promise(resolve=>requestAnimationFrame(resolve));
 
@@ -342,6 +344,7 @@ async function handleOrderFileSelection(event){
             /* Lifecycle/source bookkeeping is complete as well. The visible
                Order list was already painted at the manifest-confirmed boundary. */
             publishConfirmedOrderUpload();
+            window.refreshOpenManageOrders?.();
             refreshFileLists?.();
             await new Promise(resolve=>requestAnimationFrame(resolve));
 
