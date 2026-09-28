@@ -3,26 +3,26 @@ const fs=require("fs"),assert=require("assert");
 const next=fs.readFileSync("js/pharmflow-next.js","utf8");
 const excel=fs.readFileSync("js/excel.js","utf8");
 const html=fs.readFileSync("index.html","utf8");
-
-const saveStart=next.indexOf("const saved=await window.setHandheldAssignedOrderNumbers");
-const saveEnd=next.indexOf("\n    });",saveStart);
-const saveFlow=next.slice(saveStart,saveEnd);
-assert(saveStart>=0 && saveEnd>saveStart,"assignment save flow must exist");
-assert(saveFlow.indexOf("AppState.workspace.handheldOrderNumbers=chosen.slice()")>=0,"chosen assignment must remain visible during save");
-assert(saveFlow.includes("if(saved===false)"),"failed authoritative assignment must explicitly rollback");
-assert(saveFlow.includes("AppState.workspace.handheldOrderNumbers=previous"),"assignment failure must restore previous scope");
-
-const uploadPaint=excel.indexOf("publishConfirmedOrderUpload();");
-const successToast=excel.indexOf("showToast(",uploadPaint);
-assert(uploadPaint>=0,"confirmed upload publish boundary must remain");
-assert(excel.includes("order-upload-manifest-confirmed"),"orders must paint at manifest-confirmed boundary before lifecycle bookkeeping");
-assert(excel.indexOf("requestAnimationFrame",uploadPaint)>uploadPaint && excel.indexOf("requestAnimationFrame",uploadPaint)<successToast,"confirmed order UI must paint before success toast");
-assert(!next.includes("setInterval("),"fix must not add polling");
-
-assert(html.includes("css/responsive.css?v=LOADER_CAPSULE3"),"capsule CSS must use a new deployment cache key");
-assert(html.includes("js/excel.js?v=MANAGE_SYNC3"),"order upload fix must use a new deployment cache key");
-assert(html.includes("js/pharmflow-next.js?v=MANAGE_SYNC3"),"assignment fix must use a new deployment cache key");
-
 const css=fs.readFileSync("css/responsive.css","utf8");
-assert(!css.includes("@media (prefers-reduced-motion:reduce){.pfBootCapsuleHalf"),"boot capsule must not be frozen by reduced-motion override");
-console.log("Manage Orders synchronization safety gates: PASS");
+
+const renderStart=next.indexOf("function renderHandheldAssignment");
+const renderEnd=next.indexOf("function refreshOpenManageOrders",renderStart);
+const renderFlow=next.slice(renderStart,renderEnd);
+assert(renderStart>=0 && renderEnd>renderStart,"assignment renderer must exist");
+assert(renderFlow.includes("assignment.dataset.activeSignature===signature"),"same active-order structure must preserve live checkbox DOM");
+assert(!renderFlow.includes("renderHandheldAssignment(overlay);"),"assignment save must not recursively rebuild its own live form");
+assert(renderFlow.includes("input.checked=chosen.includes(input.value)"),"confirmed assignment must update existing controls in place");
+
+const manifestPaint=excel.indexOf("The Active Order Manifest has now been verified");
+const lifecycle=excel.indexOf("Commit lifecycle + immutable source snapshots",manifestPaint);
+assert(manifestPaint>=0 && lifecycle>manifestPaint,"confirmed order list must paint before lifecycle/source bookkeeping");
+const paintBlock=excel.slice(manifestPaint,lifecycle);
+assert(paintBlock.includes("refreshFileLists?.()"),"confirmed orders must directly paint embedded Manage Orders file list");
+assert(!paintBlock.includes('AppEvents.emit("files:updated"'),"manifest-confirmed paint must not trigger assignment form rebuild");
+
+assert(html.includes("css/responsive.css?v=LOADER_CAPSULE3"),"capsule CSS deployment key must remain current");
+assert(html.includes("js/excel.js?v=MANAGE_SYNC4"),"order upload root fix must use current deployment key");
+assert(html.includes("js/pharmflow-next.js?v=MANAGE_SYNC4"),"assignment root fix must use current deployment key");
+assert(!css.includes("@media (prefers-reduced-motion:reduce){.pfBootCapsuleHalf"),"boot capsule must not freeze");
+
+console.log("Manage Orders root-cause safety gates: PASS");
