@@ -54,15 +54,15 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 .workspaceBootCard .authBootSpinner{display:block!important;width:42px!important;height:42px!important;margin:0 0 10px!important;border:4px solid rgba(11,111,175,.18)!important;border-top-color:#0b6faf!important;border-radius:50%!important;animation:pfnWorkspaceBootSpin .75s linear infinite!important}
 /* PharmFlow loading identity — lightweight CSS-only capsule.
    Presentation only: no startup, network, Receiving or Supabase behavior. */
-.pfBootCapsule{position:relative;width:58px;height:42px;margin:0 0 10px;overflow:visible}
-.pfBootCapsuleHalf{position:absolute;top:8px;width:29px;height:20px;border:2px solid #0b6faf;box-sizing:border-box}
-.pfBootCapsuleLeft{left:0;border-radius:14px 2px 2px 14px;background:#0b6faf;transform-origin:right center;animation:pfBootCapsuleLeft 1.5s ease-in-out infinite}
-.pfBootCapsuleRight{right:0;border-radius:2px 14px 14px 2px;background:#eef7fd;transform-origin:left center;animation:pfBootCapsuleRight 1.5s ease-in-out infinite}
-.pfBootPellet{position:absolute;top:20px;left:27px;width:5px;height:5px;border-radius:50%;background:#5d7692;opacity:0;animation:pfBootPellet 1.5s ease-in infinite}
+.pfBootCapsule{position:relative;width:74px;height:54px;margin:0 0 10px;overflow:visible}
+.pfBootCapsuleHalf{position:absolute;top:9px;width:37px;height:25px;border:2px solid #0b6faf;box-sizing:border-box}
+.pfBootCapsuleLeft{left:0;border-radius:17px 2px 2px 17px;background:#0b6faf;transform-origin:right center;animation:pfBootCapsuleLeft 1.5s ease-in-out infinite}
+.pfBootCapsuleRight{right:0;border-radius:2px 17px 17px 2px;background:#eef7fd;transform-origin:left center;animation:pfBootCapsuleRight 1.5s ease-in-out infinite}
+.pfBootPellet{position:absolute;top:25px;left:34px;width:6px;height:6px;border-radius:50%;background:#5d7692;opacity:0;animation:pfBootPellet 1.5s ease-in infinite}
 .pfBootPellet2{animation-delay:.08s}.pfBootPellet3{animation-delay:.16s}
-@keyframes pfBootCapsuleLeft{0%,18%,82%,100%{transform:translateX(0) rotate(0)}35%,65%{transform:translateX(-5px) rotate(-8deg)}}
-@keyframes pfBootCapsuleRight{0%,18%,82%,100%{transform:translateX(0) rotate(0)}35%,65%{transform:translateX(5px) rotate(8deg)}}
-@keyframes pfBootPellet{0%,28%{opacity:0;transform:translate(0,0)}38%{opacity:1}68%{opacity:.8;transform:translate(0,16px)}76%,100%{opacity:0;transform:translate(0,18px)}}
+@keyframes pfBootCapsuleLeft{0%,18%,82%,100%{transform:translateX(0) rotate(0)}35%,65%{transform:translateX(-9px) rotate(-10deg)}}
+@keyframes pfBootCapsuleRight{0%,18%,82%,100%{transform:translateX(0) rotate(0)}35%,65%{transform:translateX(9px) rotate(10deg)}}
+@keyframes pfBootPellet{0%,28%{opacity:0;transform:translate(0,0)}38%{opacity:1}68%{opacity:.8;transform:translate(0,21px)}76%,100%{opacity:0;transform:translate(0,24px)}}
 @media (prefers-reduced-motion:reduce){.pfBootCapsuleHalf,.pfBootPellet{animation:none}.pfBootPellet{display:none}}
 
 @keyframes pfnWorkspaceBootSpin{to{transform:rotate(360deg)}}
