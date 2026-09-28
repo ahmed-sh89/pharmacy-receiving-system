@@ -63,7 +63,6 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 @keyframes pfBootCapsuleLeft{0%,18%,82%,100%{transform:translateX(0) rotate(0)}35%,65%{transform:translateX(-9px) rotate(-10deg)}}
 @keyframes pfBootCapsuleRight{0%,18%,82%,100%{transform:translateX(0) rotate(0)}35%,65%{transform:translateX(9px) rotate(10deg)}}
 @keyframes pfBootPellet{0%,28%{opacity:0;transform:translate(0,0)}38%{opacity:1}68%{opacity:.8;transform:translate(0,21px)}76%,100%{opacity:0;transform:translate(0,24px)}}
-@media (prefers-reduced-motion:reduce){.pfBootCapsuleHalf,.pfBootPellet{animation:none}.pfBootPellet{display:none}}
 
 @keyframes pfnWorkspaceBootSpin{to{transform:rotate(360deg)}}
 body.zebraDevice #page-dashboard{overflow:hidden!important}
