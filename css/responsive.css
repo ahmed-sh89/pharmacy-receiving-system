@@ -52,19 +52,25 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 .workspaceBootCard{display:grid;justify-items:center;gap:7px;min-width:280px;padding:30px;border:1px solid #a9cbe5;border-radius:18px;background:#eef7fd;color:#173d63;box-shadow:0 14px 36px rgba(23,61,99,.12)}
 .workspaceBootCard span{font-size:10px;font-weight:900;letter-spacing:.1em;color:#5d7692}.workspaceBootCard strong{font-size:23px}.workspaceBootCard small{font-size:13px;color:#60758b}
 .workspaceBootCard .authBootSpinner{display:block!important;width:42px!important;height:42px!important;margin:0 0 10px!important;border:4px solid rgba(11,111,175,.18)!important;border-top-color:#0b6faf!important;border-radius:50%!important;animation:pfnWorkspaceBootSpin .75s linear infinite!important}
-/* PharmFlow realistic capsule loading identity.
+/* PharmFlow premium semi-realistic 3D capsule loading identity.
    Presentation only: no startup, network, Receiving or Supabase behavior. */
-.pfBootCapsule,.pfRealCapsule{position:relative;width:112px;height:86px;margin:2px auto 12px;overflow:visible;filter:drop-shadow(0 10px 10px rgba(15,35,58,.16))}
-.pfBootCapsuleHalf,.pfRealCapsuleHalf{position:absolute;top:14px;width:55px;height:35px;box-sizing:border-box;border:1px solid rgba(35,53,70,.28);box-shadow:inset 0 5px 8px rgba(255,255,255,.65),inset 0 -8px 10px rgba(20,36,55,.12),0 3px 5px rgba(15,35,58,.16)}
-.pfBootCapsuleHalf::after,.pfRealCapsuleHalf::after{content:"";position:absolute;left:8px;right:8px;top:5px;height:7px;border-radius:50%;background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.72),rgba(255,255,255,.12));filter:blur(.4px)}
-.pfBootCapsuleLeft,.pfRealCapsuleLeft{left:1px;border-radius:22px 4px 4px 22px;background:linear-gradient(155deg,#124d80 0%,#07365f 44%,#041f3a 100%);transform-origin:right center;animation:pfRealCapsuleLeft 1.75s cubic-bezier(.45,0,.2,1) infinite}
-.pfBootCapsuleRight,.pfRealCapsuleRight{right:1px;border-radius:4px 22px 22px 4px;background:linear-gradient(155deg,#e34b4b 0%,#b71f2d 48%,#76101d 100%);transform-origin:left center;animation:pfRealCapsuleRight 1.75s cubic-bezier(.45,0,.2,1) infinite}
-.pfBootPellet,.pfRealPellet{position:absolute;top:37px;left:52px;width:9px;height:9px;border-radius:50%;opacity:0;background:radial-gradient(circle at 34% 28%,#fff 0 8%,#f5b642 18%,#d98516 58%,#9f5410 100%);box-shadow:inset -2px -2px 3px rgba(83,40,4,.25),0 3px 4px rgba(28,36,43,.22);animation:pfRealPellet 1.75s ease-in infinite}
-.pfBootPellet2,.pfRealPellet2{width:8px;height:8px;margin-left:-9px;animation-delay:.09s}
-.pfBootPellet3,.pfRealPellet3{width:10px;height:10px;margin-left:10px;animation-delay:.18s}
-@keyframes pfRealCapsuleLeft{0%,16%,84%,100%{transform:translateX(0) rotate(0)}34%,66%{transform:translateX(-14px) translateY(-2px) rotate(-13deg)}}
-@keyframes pfRealCapsuleRight{0%,16%,84%,100%{transform:translateX(0) rotate(0)}34%,66%{transform:translateX(14px) translateY(1px) rotate(13deg)}}
-@keyframes pfRealPellet{0%,29%{opacity:0;transform:translate(0,0) scale(.8)}39%{opacity:1}70%{opacity:.95;transform:translate(0,31px) scale(1) rotate(90deg)}79%,100%{opacity:0;transform:translate(0,39px) scale(.92) rotate(140deg)}}
+.pfBootCapsule,.pfRealCapsule{position:relative;width:126px;height:96px;margin:0 auto 13px;overflow:visible;perspective:360px;filter:drop-shadow(0 13px 11px rgba(8,25,43,.22))}
+.pfBootCapsule::before,.pfRealCapsule::before{content:"";position:absolute;left:24px;right:24px;top:45px;height:14px;border-radius:50%;background:radial-gradient(ellipse,rgba(8,20,32,.20) 0%,rgba(8,20,32,.07) 48%,transparent 72%);filter:blur(4px);opacity:.55}
+.pfBootCapsuleHalf,.pfRealCapsuleHalf{position:absolute;top:13px;width:62px;height:39px;box-sizing:border-box;border:1px solid rgba(13,27,40,.38);box-shadow:inset 0 6px 8px rgba(255,255,255,.27),inset 0 -10px 13px rgba(3,14,27,.28),inset 0 0 0 1px rgba(255,255,255,.08),0 4px 7px rgba(7,24,40,.20);backface-visibility:hidden}
+.pfBootCapsuleHalf::before,.pfRealCapsuleHalf::before{content:"";position:absolute;top:4px;width:37px;height:9px;border-radius:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.58),rgba(255,255,255,.10));filter:blur(.3px);opacity:.85}
+.pfBootCapsuleHalf::after,.pfRealCapsuleHalf::after{content:"";position:absolute;top:3px;bottom:3px;width:6px;border-radius:3px;background:linear-gradient(90deg,rgba(0,0,0,.24),rgba(255,255,255,.17),rgba(0,0,0,.12));opacity:.72}
+.pfBootCapsuleLeft,.pfRealCapsuleLeft{left:1px;border-radius:25px 5px 5px 25px;background:linear-gradient(165deg,#1a588c 0%,#0b355d 43%,#031b32 100%);transform-origin:right center;animation:pfRealCapsuleLeft 1.85s cubic-bezier(.42,0,.22,1) infinite}
+.pfBootCapsuleLeft::before,.pfRealCapsuleLeft::before{left:13px}.pfBootCapsuleLeft::after,.pfRealCapsuleLeft::after{right:2px}
+.pfBootCapsuleRight,.pfRealCapsuleRight{right:1px;border-radius:5px 25px 25px 5px;background:linear-gradient(165deg,#e65a5d 0%,#a7192a 45%,#64101d 100%);transform-origin:left center;animation:pfRealCapsuleRight 1.85s cubic-bezier(.42,0,.22,1) infinite}
+.pfBootCapsuleRight::before,.pfRealCapsuleRight::before{right:13px}.pfBootCapsuleRight::after,.pfRealCapsuleRight::after{left:2px}
+.pfBootPellet,.pfRealPellet{position:absolute;top:38px;left:58px;width:10px;height:10px;border-radius:52% 48% 55% 45%;opacity:0;background:radial-gradient(circle at 31% 25%,#fff8d5 0 7%,#efc258 17%,#c87914 58%,#7c3b08 100%);box-shadow:inset -2px -3px 3px rgba(75,33,2,.30),inset 1px 1px 2px rgba(255,255,255,.35),0 4px 5px rgba(19,28,36,.27);animation:pfRealPellet 1.85s cubic-bezier(.38,.02,.62,1) infinite}
+.pfBootPellet2,.pfRealPellet2{width:8px;height:9px;margin-left:-12px;border-radius:48% 52% 44% 56%;animation-name:pfRealPelletLeft;animation-delay:.10s}
+.pfBootPellet3,.pfRealPellet3{width:11px;height:9px;margin-left:12px;border-radius:55% 45% 48% 52%;animation-name:pfRealPelletRight;animation-delay:.19s}
+@keyframes pfRealCapsuleLeft{0%,15%,84%,100%{transform:translate3d(0,0,0) rotate(0) rotateY(0)}34%,66%{transform:translate3d(-17px,-4px,4px) rotate(-15deg) rotateY(-9deg)}}
+@keyframes pfRealCapsuleRight{0%,15%,84%,100%{transform:translate3d(0,0,0) rotate(0) rotateY(0)}34%,66%{transform:translate3d(17px,2px,-2px) rotate(12deg) rotateY(8deg)}}
+@keyframes pfRealPellet{0%,28%{opacity:0;transform:translate3d(0,0,0) scale(.76) rotate(0)}39%{opacity:1}70%{opacity:.96;transform:translate3d(1px,35px,0) scale(1) rotate(112deg)}79%,100%{opacity:0;transform:translate3d(3px,44px,0) scale(.9) rotate(168deg)}}
+@keyframes pfRealPelletLeft{0%,30%{opacity:0;transform:translate3d(0,0,0) scale(.75) rotate(0)}41%{opacity:1}72%{opacity:.95;transform:translate3d(-10px,34px,0) scale(1) rotate(-126deg)}81%,100%{opacity:0;transform:translate3d(-14px,43px,0) scale(.88) rotate(-185deg)}}
+@keyframes pfRealPelletRight{0%,31%{opacity:0;transform:translate3d(0,0,0) scale(.75) rotate(0)}42%{opacity:1}73%{opacity:.95;transform:translate3d(11px,36px,0) scale(1) rotate(137deg)}82%,100%{opacity:0;transform:translate3d(16px,45px,0) scale(.9) rotate(205deg)}}
 
 @keyframes pfnWorkspaceBootSpin{to{transform:rotate(360deg)}}
 body.zebraDevice #page-dashboard{overflow:hidden!important}
