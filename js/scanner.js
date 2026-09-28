@@ -423,9 +423,13 @@ function shouldTreatAsBarcode(
 
     if(
         isFastScannerTyping() &&
-        raw.length >= 6
+        raw.length >= 4
     ){
 
+        /* Hardware scanners can legitimately send short authoritative
+           identifiers (for example S0011). Scanner intent is established by
+           measured key cadence, not by identifier length. Keep manual typing
+           on the search path; only fast scanner-like input reaches Receiving. */
         return true;
 
     }
