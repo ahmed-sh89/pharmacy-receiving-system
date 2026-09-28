@@ -141,9 +141,14 @@
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
       if(!chosen.length){showToast?.('Select at least one active order','warning');return;}
-      event.currentTarget.disabled=true;
+      const saveButton=event.currentTarget;
+      saveButton.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
-      event.currentTarget.disabled=false;
+      /* The assignment section may be structurally replaced while the await
+         is in flight. Re-enable the CURRENT live button, not only the detached
+         button that originally fired this handler. */
+      saveButton.disabled=false;
+      assignment.querySelector('[data-save-assignment]')?.removeAttribute('disabled');
       if(saved===false)return;
 
       AppState.workspace.handheldOrderNumbers=chosen.slice();
