@@ -3385,7 +3385,7 @@ function renderFileList(
 
             <div class="fileItemActions">
                 <small>${toInteger(file.rows,0)} rows</small>
-                ${container===UI.elements.orderFilesList ? `<button type="button" class="removeActiveOrderButton" data-remove-order-file="${escapeHTML(file.id||"")}" title="Close this order and remove it from Active Receiving">Close Order</button>` : ""}
+                ${(container===UI.elements.orderFilesList || container.id==="orderFilesList") ? `<button type="button" class="removeActiveOrderButton" data-remove-order-file="${escapeHTML(file.id||"")}" title="Close this order and remove it from Active Receiving">Close Order</button>` : ""}
             </div>
 
         `;
