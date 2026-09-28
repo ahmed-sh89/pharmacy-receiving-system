@@ -315,7 +315,15 @@ async function handleOrderFileSelection(event){
                 }
             }
 
+            /* Keep the success boundary and the visible workspace boundary
+               identical. The upload is already authoritatively verified here;
+               publish and paint that confirmed state before telling the
+               operator the upload succeeded. */
             publishConfirmedOrderUpload();
+            if(typeof refreshOpenManageOrders==="function"){
+                refreshOpenManageOrders();
+            }
+            await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 
             showToast(
                 importedFiles +
