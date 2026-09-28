@@ -199,12 +199,21 @@ async function handleOrderFileSelection(event){
            Without this, PC2 can hydrate an older/empty workspace. */
         saveWorkspaceSnapshot?.();
 
+        /* The imported Orders already exist in the local workspace now.
+           Paint the embedded Manage Orders file list immediately. Broad
+           structural events may continue other synchronization work, but the
+           operator must not wait for that work to see the files just parsed. */
+        refreshFileLists?.();
+        await new Promise(resolve=>requestAnimationFrame(resolve));
+
         AppEvents.emit(
-            "files:updated"
+            "files:updated",
+            {source:"order-import-local"}
         );
 
         AppEvents.emit(
-            "receiving:updated"
+            "receiving:updated",
+            {source:"order-import-local"}
         );
 
         if(importedRows > 0){
