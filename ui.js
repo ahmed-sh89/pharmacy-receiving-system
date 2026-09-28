@@ -3385,7 +3385,7 @@ function renderFileList(
 
             <div class="fileItemActions">
                 <small>${toInteger(file.rows,0)} rows</small>
-                ${container===UI.elements.orderFilesList ? `<button type="button" class="removeActiveOrderButton" data-remove-order-file="${escapeHTML(file.id||"")}" title="Remove this order only">Remove</button>` : ""}
+                ${container===UI.elements.orderFilesList ? `<button type="button" class="removeActiveOrderButton" data-remove-order-file="${escapeHTML(file.id||"")}" title="Close this order and remove it from Active Receiving">Close Order</button>` : ""}
             </div>
 
         `;
@@ -9325,182 +9325,95 @@ async function requestRemoveActiveOrderFile(fileId){
         return;
     }
 
-    /* B10 Clean 8 — REMOVE is a structural, order-scoped operation.
-       Source contribution comes from the active file's embedded sourceRows
-       first. This is the same source used by order/report filtering and avoids
-       relying on a historical/server snapshot that may be absent or delayed. */
-    let sourceRows=[];
-    try{
-        sourceRows=typeof getWorkspaceOrderSourceRows==="function"
-            ? (getWorkspaceOrderSourceRows(orderNumber)||[])
-            : [];
-    }catch(_){ sourceRows=[]; }
-    if(!sourceRows.length){
-        try{
-            sourceRows=typeof getOriginalUploadedOrderSnapshot==="function"
-                ? (await getOriginalUploadedOrderSnapshot(orderNumber)||[])
-                : [];
-        }catch(_){ sourceRows=[]; }
-    }
+    /* Close Order is intentionally NON-DESTRUCTIVE. It removes only the
+       selected Order from the active Receiving structure. Receiving ledger,
+       historical/archive data and Needs Review evidence are preserved. */
+    showConfirmModal(
+        "Close Order",
+        `Close ${orderNumber}?\n\nThis removes the order from Active Receiving and Handheld assignment. Receiving history and historical data are preserved.`,
+        async()=>{
+            try{
+                showLoading("Closing order...");
 
-    const targetMembership=(item)=>{
-        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
-            .map(normalizeOrderNumber)
-            .filter(Boolean);
-        return memberships.includes(orderNumber);
-    };
-
-    /* Transactions created by older builds did not always stamp orderNumber.
-       If an item belongs to exactly one active order, attribution is still
-       deterministic and safe. Shared-item transactions without an explicit
-       order are deliberately NOT guessed. */
-    const activeOrders=files
-        .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
-        .filter(Boolean);
-    const perOrderTransactions=(Array.isArray(AppState?.workspace?.receivingHistory)
-        ? AppState.workspace.receivingHistory
-        : []).filter(tx=>{
-            const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
-            if(explicit)return explicit===orderNumber;
-            const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
-            const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
-                .map(normalizeOrderNumber)
-                .filter(n=>activeOrders.includes(n));
-            return memberships.length===1 && memberships[0]===orderNumber;
-        });
-
-    const receivedUnits=perOrderTransactions.reduce((sum,tx)=>sum+Number(tx?.quantity||0),0);
-    const reviewRows=await loadNeedsReviewRows("RECEIVING",orderNumber).catch(()=>[]);
-    const hasOperationalData=Math.abs(receivedUnits)>0 || reviewRows.length>0;
-    const message=hasOperationalData
-        ? `Remove ${orderNumber}?\n\nThis permanently removes THIS active order from Receiving, including its receiving quantities/scans and unresolved Needs Review cases. Other active orders are not affected.`
-        : `Remove ${orderNumber} from Active Receiving?\n\nOther active orders are not affected.`;
-
-    showConfirmModal("Remove Active Order",message,async()=>{
-        try{
-            showLoading("Removing order...");
-
-            if(typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){
-                throw new Error("Pharmacy cloud context is unavailable. Sign in again before removing the order.");
-            }
-            if(!sourceRows.length){
-                throw new Error("Order source data could not be resolved safely. No data was removed.");
-            }
-
-            /* Server structural authority first. If this fails, local state is
-               untouched and no success message can be shown. */
-            await authRpc("discard_pharmflow_active_order",{
-                p_pharmacy_id:AuthState.context.pharmacy_id,
-                p_order_number:orderNumber,
-                p_confirmation:orderNumber
-            });
-
-            /* Temporary review evidence belongs to this active order only. */
-            for(const row of reviewRows){
-                try{
-                    if(row?.review_id && typeof nrV2Delete==="function")await nrV2Delete(row.review_id);
-                }catch(reviewError){
-                    Logger.warn?.("Temporary review cleanup failed after active-order removal",reviewError);
+                if(typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){
+                    throw new Error("Pharmacy cloud context is unavailable. Sign in again before closing the order.");
                 }
-            }
 
-            /* Remove received contribution first, then ordered contribution. */
-            perOrderTransactions.forEach(tx=>{
-                const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
-                if(!item)return;
-                item.receivedQty=Math.max(0,Number(item.receivedQty||0)-Number(tx?.quantity||0));
-                if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
-            });
+                const remainingFiles=files.filter(f=>f.id!==fileId);
+                const remainingOrders=remainingFiles
+                    .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
+                    .filter(Boolean);
 
-            sourceRows.forEach(row=>{
-                const code=normalizeItemCode(row?.item_code||row?.itemCode||"");
-                const item=typeof getItemByCode==="function"?getItemByCode(code):null;
-                if(!item)return;
-                item.orderedQty=Math.max(0,Number(item.orderedQty||0)-Number(row?.ordered_qty??row?.orderedQty??0));
-                if(Array.isArray(item.orderNumbers)){
-                    item.orderNumbers=item.orderNumbers.filter(n=>normalizeOrderNumber(n)!==orderNumber);
+                /* Remove only this Order's ACTIVE structural membership.
+                   Never subtract/delete Receiving transactions. */
+                AppState.workspace.orderFiles=remainingFiles;
+                AppState.workspace.orderData=(AppState.workspace.orderData||[])
+                    .map(item=>{
+                        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
+                            .map(normalizeOrderNumber)
+                            .filter(Boolean);
+                        if(!memberships.includes(orderNumber)) return item;
+                        const surviving=memberships.filter(n=>n!==orderNumber);
+                        item.orderNumbers=surviving;
+                        if(normalizeOrderNumber(item.orderNumber||"")===orderNumber){
+                            item.orderNumber=surviving[0]||"";
+                        }
+                        return item;
+                    })
+                    .filter(item=>{
+                        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
+                            .map(normalizeOrderNumber).filter(Boolean);
+                        return memberships.length>0 || item.manual===true;
+                    });
+
+                AppState.workspace.selectedOrderNumbers=remainingOrders.slice();
+                AppState.workspace.selectedOrderNumber=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?"ALL":"");
+                AppState.workspace.orderName=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?remainingOrders.join(" + "):"");
+                AppState.workspace.active=remainingOrders.length>0;
+
+                /* Handheld assignment must never retain a closed Order. */
+                if(Array.isArray(AppState.workspace.handheldOrderNumbers)){
+                    AppState.workspace.handheldOrderNumbers=AppState.workspace.handheldOrderNumbers
+                        .map(normalizeOrderNumber)
+                        .filter(n=>n && n!==orderNumber && remainingOrders.includes(n));
                 }
-                if(normalizeOrderNumber(item.orderNumber||"")===orderNumber){
-                    const surviving=(item.orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean);
-                    item.orderNumber=surviving[0]||"";
+
+                if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
+                if(typeof recalculateStatistics==="function")recalculateStatistics();
+                if(typeof saveWorkspaceSnapshot==="function")saveWorkspaceSnapshot();
+
+                if(typeof syncReceivingStructureAfterChange!=="function"){
+                    throw new Error("Structural receiving synchronization is unavailable. Reload and try again.");
                 }
-                if(typeof updateItemCalculatedFields==="function")updateItemCalculatedFields(item);
-            });
-
-            AppState.workspace.receivingHistory=(AppState.workspace.receivingHistory||[])
-                .filter(tx=>!perOrderTransactions.includes(tx));
-            AppState.workspace.orderFiles=files.filter(f=>f.id!==fileId);
-            AppState.workspace.orderData=(AppState.workspace.orderData||[]).filter(item=>
-                !(Number(item.orderedQty||0)<=0 && Number(item.receivedQty||0)<=0 && item.manual!==true)
-            );
-
-            const remaining=AppState.workspace.orderFiles
-                .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
-                .filter(Boolean);
-            AppState.workspace.selectedOrderNumbers=remaining.slice();
-            AppState.workspace.selectedOrderNumber=remaining.length===1?remaining[0]:(remaining.length?"ALL":"");
-            AppState.workspace.orderName=remaining.length===1?remaining[0]:(remaining.length?remaining.join(" + "):"");
-            AppState.workspace.active=remaining.length>0;
-
-            if(typeof ReceivingEngine!=="undefined"){
-                ReceivingEngine.recentScans=(ReceivingEngine.recentScans||[]).filter(tx=>{
-                    const explicit=normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderNumber||tx?.orderId||"");
-                    if(explicit)return explicit!==orderNumber;
-                    const item=typeof getItemByCode==="function"?getItemByCode(normalizeItemCode(tx?.itemCode||"")):null;
-                    return !targetMembership(item);
-                });
-                const last=ReceivingEngine.lastTransaction;
-                const lastOrder=normalizeOrderNumber(last?.selectedOrderNumber||last?.orderNumber||last?.orderId||"");
-                if(lastOrder===orderNumber)ReceivingEngine.lastTransaction=null;
-            }
-
-            if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
-            if(typeof recalculateStatistics==="function")recalculateStatistics();
-
-            /* Local persistence does not announce a separate "Workspace saved"
-               toast. More importantly, REMOVE must update the full cloud
-               workspace even when the last order was removed. Normal autosave
-               intentionally skips empty workspaces and was the root cause of
-               the deleted order being hydrated back into Manage Orders. */
-            if(typeof saveWorkspaceSnapshot==="function")saveWorkspaceSnapshot();
-
-            if(typeof syncReceivingStructureAfterChange!=="function"){
-                throw new Error("Structural receiving synchronization is unavailable. Reload and try again.");
-            }
-            const structureSaved=await syncReceivingStructureAfterChange("Active order removal synchronized");
-            if(structureSaved!==true){
-                throw new Error("The server did not confirm removal from the Active Order Manifest. No success was recorded. Reload before continuing.");
-            }
-
-            /* Re-read the structural authority before success. This prevents a
-               stale Active Order Manifest from silently re-hydrating the order
-               after the green toast. Empty server state is authoritative. */
-            if(typeof pullActiveOrderManifest==="function"){
-                await pullActiveOrderManifest({clearIfMissing:remaining.length===0});
-            }
-            if(typeof verifyActiveOrderManifestMatchesLocal==="function"){
-                const verified=await verifyActiveOrderManifestMatchesLocal();
-                if(verified!==true){
-                    throw new Error("Active Order removal verification failed. Reload before continuing.");
+                const structureSaved=await syncReceivingStructureAfterChange("Order closed");
+                if(structureSaved!==true){
+                    throw new Error("The server did not confirm the closed Active Order state. Reload before continuing.");
                 }
+
+                if(typeof pullActiveOrderManifest==="function"){
+                    await pullActiveOrderManifest({clearIfMissing:remainingOrders.length===0});
+                }
+                if(typeof verifyActiveOrderManifestMatchesLocal==="function"){
+                    const verified=await verifyActiveOrderManifestMatchesLocal();
+                    if(verified!==true){
+                        throw new Error("Close Order verification failed. Reload before continuing.");
+                    }
+                }
+
+                if(typeof refreshEntireUI==="function")refreshEntireUI();
+                showToast(
+                    `${orderNumber} closed. Receiving history preserved.`,
+                    "success",
+                    7000
+                );
+            }catch(error){
+                Logger.error("Close active order failed",error);
+                showToast(error?.message||"Unable to close order","error",10000);
+            }finally{
+                hideLoading();
             }
-
-            if(typeof refreshOrderLifecycleRegistry==="function")await refreshOrderLifecycleRegistry();
-            if(typeof refreshEntireUI==="function")refreshEntireUI();
-            if(typeof refreshNeedsReviewCounters==="function")await refreshNeedsReviewCounters();
-
-            showToast(
-                `${orderNumber} removed successfully. ${remaining.length} active order(s) remain.`,
-                "success",
-                9000
-            );
-        }catch(error){
-            Logger.error("Remove active order failed",error);
-            showToast(error?.message||"Unable to remove order","error",10000);
-        }finally{
-            hideLoading();
         }
-    });
+    );
 }
 
 /* PharmFlow 2C.9 — handheld quantity semantics.
