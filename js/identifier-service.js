@@ -34,7 +34,21 @@ const IdentifierService={
         return authRpc("remove_pharmflow_global_identifier_v2",{p_operation_id:operationId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
     },
     async createItem(operationId,item){
-        return authRpc("create_pharmflow_global_item_v2",{p_operation_id:operationId,p_item_code:toSafeString(item.itemCode),p_item_name:toSafeString(item.itemName),p_group_name:toSafeString(item.groupName)||null,p_category:toSafeString(item.category)||null,p_sub_category:toSafeString(item.subCategory)||null,p_identifier_display:toSafeString(item.identifierDisplay),p_reason:toSafeString(item.reason)});
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        if(!globalThis.crypto?.randomUUID) throw new Error("This browser cannot create a secure operation ID");
+        return authRpc("create_pharmflow_global_item_and_learn_v1",{
+            p_global_operation_id:operationId,
+            p_pharmacy_operation_id:globalThis.crypto.randomUUID(),
+            p_pharmacy_id:pharmacyId,
+            p_item_code:toSafeString(item.itemCode),
+            p_item_name:toSafeString(item.itemName),
+            p_group_name:toSafeString(item.groupName)||null,
+            p_category:toSafeString(item.category)||null,
+            p_sub_category:toSafeString(item.subCategory)||null,
+            p_identifier_display:toSafeString(item.identifierDisplay),
+            p_reason:toSafeString(item.reason)
+        });
     },
     async addPharmacyIdentifier(operationId,identifierDisplay,item,reason){
         const pharmacyId=this.pharmacyId();
