@@ -182,16 +182,17 @@ async function startApplication(){
 
         initializeOptionalModules();
 
-        /* Phase 2C.6.4: the System Global GTIN Master is authoritative for every pharmacy.
-           Pull it explicitly after authenticated app context exists so a brand-new browser/pharmacy
-           never depends on a pharmacy-specific local cache. */
+        /* Phase 2C.6.4: keep the System Global GTIN Master authoritative, but
+           do not block the first Receiving render on a full master download.
+           Receiving workspace authority has already settled above. The master
+           sync continues immediately in the background and keeps its existing
+           error handling/cache semantics. */
         if(typeof ensureGlobalMasterGTINReady === "function"){
-            try{
-                await ensureGlobalMasterGTINReady({forceCloud:true,silent:true});
-            }
-            catch(error){
+            Promise.resolve(
+                ensureGlobalMasterGTINReady({forceCloud:true,silent:true})
+            ).catch(error=>{
                 Logger.warn("System Global GTIN sync unavailable during startup",error);
-            }
+            });
         }
 
         await refreshSafeAccountIdentity();
