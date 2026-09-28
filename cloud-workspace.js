@@ -2264,7 +2264,18 @@ async function restoreCloudWorkspaceOnLogin(){
         AppState.workspace.orderData.length>0;
 
     if(!hadOrdersBeforeBootstrap){
-        await bootstrapActiveOrdersOnEmptyDevice();
+        /*
+          Fast startup: bootstrapActiveOrdersOnEmptyDevice() already loads the
+          authoritative Active Order Manifest and Receiving ledger. Do not
+          immediately repeat both reads in this same restore pass.
+        */
+        const bootstrapped=await bootstrapActiveOrdersOnEmptyDevice();
+        if(
+            bootstrapped===true &&
+            PharmFlowCloudWorkspace.hydratedPharmacyId===pharmacyId
+        ){
+            return true;
+        }
     }
 
     if(PharmFlowCloudWorkspace.hydratedPharmacyId===pharmacyId){
