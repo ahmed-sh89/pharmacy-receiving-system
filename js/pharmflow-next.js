@@ -168,6 +168,7 @@
   function refreshOpenManageOrders(){
     const overlay=$('pfnOrdersOverlay');
     if(!overlay)return;
+    if(typeof traceOrderUploadRuntime==="function")traceOrderUploadRuntime("manage-orders-refresh-enter");
     /* #page-files is physically moved into this modal after UI.elements was
        cached. Resolve the live list node here instead of relying on the cached
        reference, then render the confirmed workspace directly into it. */
@@ -178,6 +179,7 @@
       refreshFileLists();
     }
     renderHandheldAssignment(overlay);
+    if(typeof traceOrderUploadRuntime==="function")traceOrderUploadRuntime("manage-orders-refresh-exit");
   }
   window.refreshOpenManageOrders=refreshOpenManageOrders;
 
