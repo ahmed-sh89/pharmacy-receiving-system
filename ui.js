@@ -4467,7 +4467,17 @@ function pharmFlowConfirm(options={}){
     setElementText(UI.elements.confirmTitle||document.getElementById("confirmTitle"),options.title||"Confirm");
     setElementText(UI.elements.confirmMessage||document.getElementById("confirmMessage"),options.message||"Are you sure?");
     if(button){button.textContent=options.confirmText||"Confirm";button.className=(options.tone==="danger"?"dangerButton":"primaryButton");}
-    return new Promise(resolve=>{UI.confirmResolve=resolve;UI.confirmCallback=()=>{const done=UI.confirmResolve;UI.confirmResolve=null;done?.(true);};modal.classList.add("open");modal.setAttribute("aria-hidden","false");});
+    return new Promise(resolve=>{
+        UI.confirmResolve=resolve;
+        UI.confirmCallback=()=>{
+            const done=UI.confirmResolve;
+            UI.confirmResolve=null;
+            UI.confirmCallback=null;
+            done?.(true);
+        };
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden","false");
+    });
 }
 window.pharmFlowConfirm=pharmFlowConfirm;
 function cancelPharmFlowConfirm(){const done=UI.confirmResolve;UI.confirmResolve=null;closeConfirmModal();done?.(false);}
