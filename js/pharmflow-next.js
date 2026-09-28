@@ -130,9 +130,12 @@
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
       event.currentTarget.disabled=false;
       if(saved){
-        /* The authoritative save updates AppState. Re-render this same open
-           modal from that confirmed state so the operator sees the assignment
-           immediately instead of only after closing/reopening Manage Orders. */
+        /* The save has already been authoritatively confirmed. Apply that
+           confirmed assignment to this tab before repainting; do not wait for
+           a later manifest pull/reopen to make the same server state visible. */
+        AppState.workspace.handheldOrderNumbers=chosen.slice();
+        AppState.workspace.handheldScopeConfigured=true;
+        saveWorkspaceSnapshot?.();
         renderHandheldAssignment(overlay);
       }
     });
