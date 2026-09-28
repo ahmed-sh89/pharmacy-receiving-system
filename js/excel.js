@@ -285,6 +285,15 @@ async function handleOrderFileSelection(event){
                 }
             }
 
+            /* The Active Order Manifest has now been verified. Paint the
+               confirmed structure BEFORE slower lifecycle/source bookkeeping.
+               This removes the blank 5–10 second visual gap without weakening
+               Supabase authority or reporting an unverified Order as active. */
+            refreshFileLists?.();
+            refreshEntireUI?.();
+            AppEvents.emit("files:updated",{source:"order-upload-manifest-confirmed"});
+            await new Promise(resolve=>requestAnimationFrame(resolve));
+
             /* Commit lifecycle + immutable source snapshots only after the
                authoritative manifest exists. Retry transient RPC failures. */
             const activeFiles=Array.isArray(AppState.workspace.orderFiles)
@@ -319,11 +328,11 @@ async function handleOrderFileSelection(event){
                identical. The upload is already authoritatively verified here;
                publish and paint that confirmed state before telling the
                operator the upload succeeded. */
+            /* Lifecycle/source bookkeeping is complete as well. The visible
+               Order list was already painted at the manifest-confirmed boundary. */
             publishConfirmedOrderUpload();
-            if(typeof refreshOpenManageOrders==="function"){
-                refreshOpenManageOrders();
-            }
-            await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+            refreshFileLists?.();
+            await new Promise(resolve=>requestAnimationFrame(resolve));
 
             showToast(
                 importedFiles +
