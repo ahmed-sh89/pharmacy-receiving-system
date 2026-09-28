@@ -114,48 +114,49 @@
   function renderHandheldAssignment(overlay){
     const page=$('page-files'),body=overlay?.querySelector('.pfnModalBody');if(!page||!body)return;
     const active=typeof getActiveReceivingOrderNumbers==='function'?getActiveReceivingOrderNumbers():[];
+    const assignment=body.querySelector('.pfnHandheldAssignment')||document.createElement('section');
+    assignment.className='pfnHandheldAssignment';
+
+    /* Never rebuild the live assignment form while Manage Orders is open.
+       Structural manifest/file events can arrive during upload and assignment
+       saves; replacing innerHTML was destroying the user's checkbox DOM state.
+       Rebuild only when the active-order structure itself changes. */
+    const signature=active.join('|');
+    if(assignment.dataset.activeSignature===signature && assignment.isConnected){
+      const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+        ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
+        : [];
+      const status=assignment.querySelector('[data-assignment-status]');
+      if(status) status.textContent=active.length?`${assigned.length} orders assigned`:'No active orders';
+      return;
+    }
+
     const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
-      ? AppState.workspace.handheldOrderNumbers
-        .map(order=>String(order||'').trim().toUpperCase())
-        .filter(order=>active.includes(order))
+      ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
       : [];
-    const assignment=body.querySelector('.pfnHandheldAssignment')||document.createElement('section');assignment.className='pfnHandheldAssignment';
+    assignment.dataset.activeSignature=signature;
     assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Choose the active orders available on the Handheld.</p></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span>All Orders in Scope: ${active.length} · <span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span></span><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
     if(!assignment.isConnected) body.insertBefore(assignment,page);
     assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
       if(!chosen.length){showToast?.('Select at least one active order','warning');return;}
-      const previous=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
-        ? AppState.workspace.handheldOrderNumbers.slice() : [];
-      const previousConfigured=AppState?.workspace?.handheldScopeConfigured===true;
-
-      /* Keep the operator's chosen scope visible while the authoritative save
-         runs. Manifest events may repaint this open modal during the request;
-         they must see the pending chosen scope, not the previous scope. */
-      AppState.workspace.handheldOrderNumbers=chosen.slice();
-      AppState.workspace.handheldScopeConfigured=true;
-      renderHandheldAssignment(overlay);
-
       event.currentTarget.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
       event.currentTarget.disabled=false;
+      if(saved===false)return;
 
-      if(saved===false){
-        /* Server authority rejected the change: restore the exact prior UI
-           state instead of leaving an optimistic assignment behind. */
-        AppState.workspace.handheldOrderNumbers=previous;
-        AppState.workspace.handheldScopeConfigured=previousConfigured;
-        renderHandheldAssignment(overlay);
-        return;
-      }
-
-      /* The assignment is durable (reopen already proves this path persists).
-         Keep this tab aligned with that confirmed scope immediately. */
       AppState.workspace.handheldOrderNumbers=chosen.slice();
       AppState.workspace.handheldScopeConfigured=true;
       saveWorkspaceSnapshot?.();
-      renderHandheldAssignment(overlay);
+
+      /* Update the existing controls in place. Do not call the renderer here:
+         the live checkboxes are already the exact operator selection. */
+      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{
+        input.checked=chosen.includes(input.value);
+      });
+      const status=assignment.querySelector('[data-assignment-status]');
+      if(status) status.textContent=`${chosen.length} orders assigned`;
     });
   }
 
