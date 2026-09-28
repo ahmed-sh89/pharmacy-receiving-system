@@ -129,7 +129,12 @@
       event.currentTarget.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
       event.currentTarget.disabled=false;
-      if(saved) assignment.querySelector('[data-assignment-status]').textContent=`${chosen.length} orders assigned`;
+      if(saved){
+        /* The authoritative save updates AppState. Re-render this same open
+           modal from that confirmed state so the operator sees the assignment
+           immediately instead of only after closing/reopening Manage Orders. */
+        renderHandheldAssignment(overlay);
+      }
     });
   }
 
