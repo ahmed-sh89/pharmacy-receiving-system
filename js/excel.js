@@ -404,6 +404,17 @@ async function handleOrderFileSelection(event){
         ExcelEngine.orderImportRunning =
             false;
 
+        /* Upload is not visually complete until Manage Orders has painted the
+           same confirmed Order files the operator just uploaded. Keep the
+           loading overlay up through that final UI-ready boundary. */
+        try{
+            window.refreshOpenManageOrders?.();
+            refreshFileLists?.();
+            await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        }catch(error){
+            Logger.warn("Order upload final UI paint failed",error);
+        }
+
         hideLoading();
 
         focusScannerInput();
