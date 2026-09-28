@@ -1036,8 +1036,21 @@ async function saveActiveOrderManifest(options={}){
             );
         }
 
-        PharmFlowCloudWorkspace.activeManifestRevision=
+        const verifiedRevision=
             Number(verify.revision||row.revision||0);
+
+        /* The read-after-write response is the authority for this structural
+           write. Apply that exact verified manifest locally before reporting
+           success, so an older overlapping read cannot leave the browser on
+           pre-upload state until the normal 10s read throttle expires. */
+        if(!applyActiveOrderManifest(verify.manifest,verifiedRevision)){
+            throw new Error(
+                "Verified Active Order Manifest could not be applied locally"
+            );
+        }
+
+        PharmFlowCloudWorkspace.activeManifestRevision=verifiedRevision;
+        PharmFlowCloudWorkspace.lastManifestFullReadAt=Date.now();
 
         PharmFlowCloudWorkspace.activeManifestPresent=true;
         PharmFlowCloudWorkspace.lastManifestSaveError=null;
