@@ -126,18 +126,36 @@
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
       if(!chosen.length){showToast?.('Select at least one active order','warning');return;}
+      const previous=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+        ? AppState.workspace.handheldOrderNumbers.slice() : [];
+      const previousConfigured=AppState?.workspace?.handheldScopeConfigured===true;
+
+      /* Keep the operator's chosen scope visible while the authoritative save
+         runs. Manifest events may repaint this open modal during the request;
+         they must see the pending chosen scope, not the previous scope. */
+      AppState.workspace.handheldOrderNumbers=chosen.slice();
+      AppState.workspace.handheldScopeConfigured=true;
+      renderHandheldAssignment(overlay);
+
       event.currentTarget.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
       event.currentTarget.disabled=false;
-      if(saved){
-        /* The save has already been authoritatively confirmed. Apply that
-           confirmed assignment to this tab before repainting; do not wait for
-           a later manifest pull/reopen to make the same server state visible. */
-        AppState.workspace.handheldOrderNumbers=chosen.slice();
-        AppState.workspace.handheldScopeConfigured=true;
-        saveWorkspaceSnapshot?.();
+
+      if(saved===false){
+        /* Server authority rejected the change: restore the exact prior UI
+           state instead of leaving an optimistic assignment behind. */
+        AppState.workspace.handheldOrderNumbers=previous;
+        AppState.workspace.handheldScopeConfigured=previousConfigured;
         renderHandheldAssignment(overlay);
+        return;
       }
+
+      /* The assignment is durable (reopen already proves this path persists).
+         Keep this tab aligned with that confirmed scope immediately. */
+      AppState.workspace.handheldOrderNumbers=chosen.slice();
+      AppState.workspace.handheldScopeConfigured=true;
+      saveWorkspaceSnapshot?.();
+      renderHandheldAssignment(overlay);
     });
   }
 
