@@ -135,14 +135,12 @@
       ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
       : [];
     assignment.dataset.activeSignature=signature;
-    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Choose the active orders available on the Handheld.</p></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span>All Orders in Scope: ${active.length} · <span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span></span><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
+    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Choose the active orders available on the Handheld.</p></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span>All Orders in Scope: ${active.length} · <span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span></span><button type="button" data-remove-assignment ${assigned.length?'':'disabled'}>Remove from Handheld</button><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
     if(!assignment.isConnected) body.insertBefore(assignment,page);
     assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
-      /* An empty selection is an intentional Handheld work scope. The desktop
-         operator owns assignment authority and may explicitly publish zero
-         orders so the Handheld has no Receiving order available. */
+      if(!chosen.length){showToast?.('Select at least one active order, or use Remove from Handheld','warning');return;}
       const saveButton=event.currentTarget;
       saveButton.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
@@ -164,6 +162,26 @@
       });
       const status=assignment.querySelector('[data-assignment-status]');
       if(status) status.textContent=`${chosen.length} orders assigned`;
+      assignment.querySelector('[data-remove-assignment]')?.removeAttribute('disabled');
+      showToast?.('Handheld assignment saved','success');
+    });
+    assignment.querySelector('[data-remove-assignment]')?.addEventListener('click',async event=>{
+      const removeButton=event.currentTarget;
+      const saveButton=assignment.querySelector('[data-save-assignment]');
+      removeButton.disabled=true;
+      if(saveButton) saveButton.disabled=true;
+      const saved=await window.setHandheldAssignedOrderNumbers?.([]);
+      if(saveButton) saveButton.disabled=false;
+      if(saved!==true){
+        removeButton.disabled=false;
+        showToast?.('Handheld assignment was not changed','error');
+        return;
+      }
+      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{input.checked=false;});
+      const status=assignment.querySelector('[data-assignment-status]');
+      if(status) status.textContent='0 orders assigned';
+      removeButton.disabled=true;
+      showToast?.('All orders removed from Handheld','success');
     });
   }
 
