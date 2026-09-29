@@ -55,23 +55,23 @@
           #pf-idle-sleep-overlay{position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(18,45,76,.66);backdrop-filter:blur(10px) saturate(.82);-webkit-backdrop-filter:blur(10px) saturate(.82);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;pointer-events:auto}
           #pf-idle-sleep-overlay.pf-show{display:flex}
           #pf-idle-sleep-overlay .pf-idle-card{position:relative;overflow:hidden;width:min(500px,calc(100vw - 40px));box-sizing:border-box;text-align:center;color:#0b2d59;border:1px solid rgba(220,239,255,.9);border-radius:28px;padding:190px 34px 30px;background:linear-gradient(160deg,rgba(246,251,255,.91),rgba(222,238,255,.83));box-shadow:0 30px 90px rgba(3,28,58,.38),inset 0 1px 0 rgba(255,255,255,.92)}
-          .pf-idle-medical{position:absolute;left:50%;top:10px;width:272px;height:184px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 18px 22px rgba(7,67,133,.2))}
-          .pf-idle-medical:after{content:"";position:absolute;left:78px;right:78px;bottom:25px;height:23px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,137,255,.55),rgba(0,137,255,.12) 45%,transparent 72%);filter:blur(7px)}
-          .pf-idle-glow{position:absolute;left:88px;right:88px;bottom:32px;height:24px;border:3px solid rgba(58,184,255,.8);border-radius:50%;box-shadow:0 0 16px #4bc0ff,0 0 34px rgba(34,150,255,.65)}
-          .pf-idle-pill{position:absolute;display:block;transform:rotate(58deg);filter:drop-shadow(0 8px 8px rgba(2,48,102,.24))}
-          .pf-idle-pill i,.pf-idle-pill b{position:absolute;top:0;height:100%;box-sizing:border-box;border:1px solid rgba(10,72,139,.18);box-shadow:inset 0 5px 8px rgba(255,255,255,.55),inset 0 -8px 12px rgba(1,42,100,.12)}
-          .pf-idle-pill-main{left:94px;top:28px;width:82px;height:142px;animation:pfIdleFloat 5.2s ease-in-out infinite}
-          .pf-idle-pill-main i{left:0;width:100%;height:50%;border-radius:54px 54px 8px 8px;background:linear-gradient(145deg,#fff 8%,#dce9ff 55%,#c6dcfa)}
-          .pf-idle-pill-main b{left:0;top:50%;width:100%;height:50%;border-radius:8px 8px 54px 54px;background:linear-gradient(145deg,#168cff,#0059d5 58%,#003f9d)}
-          .pf-idle-pill-main:after{content:"";position:absolute;left:13px;top:12px;width:24px;height:105px;border-radius:20px;background:linear-gradient(rgba(255,255,255,.75),rgba(255,255,255,0));filter:blur(2px)}
-          .pf-idle-pill-mini{left:34px;top:92px;width:36px;height:62px;transform:rotate(52deg);animation:pfIdleMini 6s ease-in-out infinite}
-          .pf-idle-pill-mini i{left:0;width:100%;height:50%;border-radius:23px 23px 4px 4px;background:#f7fbff}
-          .pf-idle-pill-mini b{left:0;top:50%;width:100%;height:50%;border-radius:4px 4px 23px 23px;background:linear-gradient(145deg,#3aa9ff,#0865dc)}
-          .pf-idle-tablet{position:absolute;right:31px;top:100px;width:44px;height:44px;border-radius:50%;background:linear-gradient(145deg,#fff,#d8e5f7);box-shadow:inset 0 5px 8px rgba(255,255,255,.8),inset 0 -8px 12px rgba(19,70,126,.12),0 8px 12px rgba(3,48,99,.18);animation:pfIdleTablet 5.6s ease-in-out infinite}
-          .pf-idle-tablet:after{content:"";position:absolute;left:9px;right:9px;top:25px;height:2px;background:#b4c8e2;transform:rotate(-18deg)}
-          .pf-idle-orbit{position:absolute;left:33px;right:33px;top:85px;height:70px;border:1.5px solid rgba(85,194,255,.8);border-radius:50%;transform:rotate(-8deg);box-shadow:0 0 9px rgba(58,174,255,.45);animation:pfIdleOrbit 7s linear infinite}
-          .pf-idle-orbit:after{content:"";position:absolute;right:35px;top:-4px;width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 8px 3px #58c4ff}
-          .pf-idle-orbit-b{transform:rotate(18deg);opacity:.65;animation-duration:9s;animation-direction:reverse}
+          .pf-idle-medical{position:absolute;left:50%;top:22px;width:300px;height:158px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 16px 18px rgba(7,67,133,.18))}
+          .pf-idle-medical:after{content:"";position:absolute;left:64px;right:64px;bottom:12px;height:20px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,120,235,.32),rgba(0,120,235,.08) 48%,transparent 72%);filter:blur(7px)}
+          .pf-idle-glow{position:absolute;left:94px;right:94px;bottom:20px;height:16px;border:2px solid rgba(74,185,255,.45);border-radius:50%;box-shadow:0 0 14px rgba(52,166,255,.38)}
+          .pf-idle-pill{position:absolute;display:block;filter:drop-shadow(0 8px 9px rgba(2,48,102,.20))}
+          .pf-idle-pill i,.pf-idle-pill b{position:absolute;top:0;height:100%;box-sizing:border-box;border:1px solid rgba(10,72,139,.14);box-shadow:inset 0 5px 8px rgba(255,255,255,.52),inset 0 -6px 10px rgba(1,42,100,.10)}
+          .pf-idle-pill-main{left:73px;top:35px;width:154px;height:72px;transform:rotate(-18deg);animation:pfIdleFloat 5.2s ease-in-out infinite}
+          .pf-idle-pill-main i{left:50%;width:50%;border-radius:0 40px 40px 0;background:linear-gradient(145deg,#fff 8%,#e8f1ff 58%,#cadcf3)}
+          .pf-idle-pill-main b{left:0;width:52%;border-radius:40px 3px 3px 40px;background:linear-gradient(145deg,#25a2ff,#086fe7 55%,#0451b8)}
+          .pf-idle-pill-main:after{content:"";position:absolute;left:18px;top:10px;width:108px;height:15px;border-radius:20px;background:linear-gradient(90deg,rgba(255,255,255,.48),rgba(255,255,255,.08));filter:blur(1px)}
+          .pf-idle-pill-mini{left:36px;top:98px;width:70px;height:32px;transform:rotate(28deg);animation:pfIdleMini 6s ease-in-out infinite}
+          .pf-idle-pill-mini i{left:50%;width:50%;border-radius:0 18px 18px 0;background:#f7fbff}
+          .pf-idle-pill-mini b{left:0;width:52%;border-radius:18px 2px 2px 18px;background:linear-gradient(145deg,#46b3ff,#0a6ee0)}
+          .pf-idle-tablet{position:absolute;right:34px;top:93px;width:43px;height:43px;border-radius:50%;background:linear-gradient(145deg,#fff,#d8e5f7);box-shadow:inset 0 5px 8px rgba(255,255,255,.8),inset 0 -8px 12px rgba(19,70,126,.10),0 8px 12px rgba(3,48,99,.14);animation:pfIdleTablet 5.6s ease-in-out infinite}
+          .pf-idle-tablet:after{content:"";position:absolute;left:9px;right:9px;top:22px;height:2px;background:#b4c8e2;transform:rotate(-12deg)}
+          .pf-idle-orbit{position:absolute;left:52px;right:52px;top:70px;height:58px;border:1.5px solid rgba(85,194,255,.46);border-radius:50%;transform:rotate(-8deg);box-shadow:0 0 8px rgba(58,174,255,.22);animation:pfIdleOrbit 8s linear infinite}
+          .pf-idle-orbit:after{content:"";position:absolute;right:31px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 7px 2px #72caff}
+          .pf-idle-orbit-b{transform:rotate(18deg);opacity:.5;animation-duration:10s;animation-direction:reverse}
           .pf-idle-brand{margin:0 0 9px;font-size:39px;line-height:1;font-weight:850;letter-spacing:-1.5px;color:#0a3265}.pf-idle-brand strong{color:#0879ef}
           .pf-idle-divider{width:58px;height:3px;margin:22px auto;border-radius:999px;background:linear-gradient(90deg,transparent,#55b8ff,transparent)}
           #pf-idle-sleep-overlay h1{margin:0 0 18px;font-size:35px;line-height:1.12;font-weight:850;letter-spacing:-.035em;color:#0a2b59}
@@ -82,9 +82,9 @@
           #pf-idle-refresh:active{transform:translateY(1px) scale(.995)}
           #pf-idle-refresh:focus-visible{outline:3px solid rgba(103,198,255,.75);outline-offset:4px}
           .pf-idle-restart{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;font-size:32px;font-weight:900;line-height:1;color:#fff;text-shadow:0 1px 4px rgba(0,47,126,.25);filter:drop-shadow(0 2px 3px rgba(0,50,130,.22))}
-          @keyframes pfIdleFloat{0%,100%{transform:translateY(0) rotate(58deg)}50%{transform:translateY(-8px) rotate(61deg)}}@keyframes pfIdleMini{0%,100%{transform:translateY(0) rotate(52deg)}50%{transform:translateY(5px) rotate(47deg)}}@keyframes pfIdleTablet{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(8deg)}}@keyframes pfIdleOrbit{to{filter:hue-rotate(8deg);transform:rotate(352deg)}}
+          @keyframes pfIdleFloat{0%,100%{transform:translateY(0) rotate(-18deg)}50%{transform:translateY(-7px) rotate(-15deg)}}@keyframes pfIdleMini{0%,100%{transform:translateY(0) rotate(28deg)}50%{transform:translateY(4px) rotate(24deg)}}@keyframes pfIdleTablet{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(8deg)}}@keyframes pfIdleOrbit{to{filter:hue-rotate(8deg);transform:rotate(352deg)}}
           @media (prefers-reduced-motion:reduce){.pf-idle-pill-main,.pf-idle-pill-mini,.pf-idle-tablet,.pf-idle-orbit{animation:none!important}}
-          @media (max-width:600px){#pf-idle-sleep-overlay{padding:16px}#pf-idle-sleep-overlay .pf-idle-card{width:min(430px,calc(100vw - 24px));padding:175px 24px 26px;border-radius:24px}.pf-idle-medical{top:-38px;transform:translateX(-50%) scale(.82);transform-origin:top center}.pf-idle-brand{font-size:33px}#pf-idle-sleep-overlay h1{font-size:29px}#pf-idle-refresh{min-height:60px;font-size:18px;border-radius:18px}}
+          @media (max-width:600px){#pf-idle-sleep-overlay{padding:16px}#pf-idle-sleep-overlay .pf-idle-card{width:min(430px,calc(100vw - 24px));padding:175px 24px 26px;border-radius:24px}.pf-idle-medical{top:14px;transform:translateX(-50%) scale(.82);transform-origin:top center}.pf-idle-brand{font-size:33px}#pf-idle-sleep-overlay h1{font-size:29px}#pf-idle-refresh{min-height:60px;font-size:18px;border-radius:18px}}
         `;
         document.head.appendChild(style);
         document.body.appendChild(el);
