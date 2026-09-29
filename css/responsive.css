@@ -43,37 +43,9 @@ body:not(.zebraDevice) .contentCard{
 .pfrWorkActions{display:flex;justify-content:flex-end;gap:8px;padding-top:12px}
 .pfrChangeOrders{margin-top:5px;border:1px solid currentColor;border-radius:7px;background:transparent;font-size:11px;font-weight:700;padding:5px 8px}
 
-/* One owner for the first authenticated render: operational content never
-   appears with bootstrap counters before the workspace is hydrated. */
-.workspaceBootOverlay{display:none}
+/* Loading identity lives in identity.css. Preserve the Handheld bootstrap gate. */
 body.zebraDevice.authBooting .mainApplication,
 body.zebraDevice.workspaceBooting .mainApplication{visibility:hidden!important}
-body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverlay{position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#e8f3fb 0%,#e2f1fb 52%,#eef7fd 100%)}
-.workspaceBootCard{display:grid;justify-items:center;gap:7px;min-width:280px;padding:28px 30px;border:1px solid rgba(169,203,229,.78);border-radius:18px;background:rgba(235,246,254,.74);color:#173d63;box-shadow:0 14px 36px rgba(23,61,99,.11),inset 0 1px 0 rgba(255,255,255,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.workspaceBootCard span{font-size:10px;font-weight:900;letter-spacing:.1em;color:#5d7692}.workspaceBootCard strong{font-size:23px}.workspaceBootCard small{font-size:13px;color:#60758b}
-.workspaceBootCard .authBootSpinner{display:block!important;width:42px!important;height:42px!important;margin:0 0 10px!important;border:4px solid rgba(11,111,175,.18)!important;border-top-color:#0b6faf!important;border-radius:50%!important;animation:pfnWorkspaceBootSpin .75s linear infinite!important}
-/* PharmFlow loading visual — SINGLE OWNER.
-   Capsule surfaces are image assets; CSS owns motion/layout only. */
-.pfBootCapsule,.pfRealCapsule{position:relative;width:148px;height:96px;margin:0 auto 9px;overflow:visible;perspective:520px}
-.pfBootCapsule::before,.pfRealCapsule::before{content:"";position:absolute;left:28px;right:28px;top:55px;height:15px;border-radius:50%;background:radial-gradient(ellipse,rgba(25,82,132,.22),rgba(25,82,132,.05) 55%,transparent 75%);filter:blur(5px)}
-.pfBootCapsuleHalf,.pfRealCapsuleHalf{position:absolute;top:15px;width:72px;height:38px;background-repeat:no-repeat;background-position:center;background-size:100% 100%;backface-visibility:hidden;will-change:transform}
-.pfBootCapsuleHalf::before,.pfBootCapsuleHalf::after,.pfRealCapsuleHalf::before,.pfRealCapsuleHalf::after{content:none!important}
-.pfBootCapsuleLeft,.pfRealCapsuleLeft{left:3px;background-image:url("../assets/capsule-blue-half.svg");transform-origin:right center;animation:pfRealCapsuleLeft 2.05s cubic-bezier(.42,0,.22,1) infinite}
-.pfBootCapsuleRight,.pfRealCapsuleRight{right:3px;background-image:url("../assets/capsule-pearl-half.svg");transform-origin:left center;animation:pfRealCapsuleRight 2.05s cubic-bezier(.42,0,.22,1) infinite}
-.pfBootPellet,.pfRealPellet{position:absolute;top:44px;left:70px;width:9px;height:9px;border-radius:50%;opacity:0;background:radial-gradient(circle at 28% 22%,#fff 0 8%,#39a7ff 23%,#0871d8 68%,#06498f 100%);box-shadow:inset -2px -2px 3px rgba(8,57,108,.22),0 3px 5px rgba(20,75,126,.24);animation:pfRealPellet 2.05s cubic-bezier(.38,.02,.62,1) infinite}
-.pfBootPellet2,.pfRealPellet2{width:11px;height:7px;margin-left:-14px;border-radius:8px;background:linear-gradient(90deg,#eaf4fc 0 47%,#117bdc 50%);animation-name:pfRealPelletLeft;animation-delay:.08s}
-.pfBootPellet3,.pfRealPellet3{width:8px;height:8px;margin-left:14px;background:radial-gradient(circle at 28% 22%,#fff,#b9d9ee 58%,#668fae);animation-name:pfRealPelletRight;animation-delay:.16s}
-.pfBootPellet4{width:12px;height:7px;margin-left:-3px;background:linear-gradient(90deg,#dbeaf5 0 48%,#075fca 50%);animation-name:pfRealPelletWide;animation-delay:.23s}
-.pfBootPellet5{width:7px;height:7px;margin-left:5px;background:radial-gradient(circle at 28% 22%,#77c9ff,#0876df 60%,#0750a7);animation-name:pfRealPelletFar;animation-delay:.31s}
-@keyframes pfRealCapsuleLeft{0%,14%,85%,100%{transform:translate3d(0,0,0) rotate(0)}34%,67%{transform:translate3d(-17px,-5px,8px) rotate(-11deg)}}
-@keyframes pfRealCapsuleRight{0%,14%,85%,100%{transform:translate3d(0,0,0) rotate(0)}34%,67%{transform:translate3d(17px,2px,-5px) rotate(9deg)}}
-@keyframes pfRealPellet{0%,29%{opacity:0;transform:translate(0,0) scale(.75)}40%{opacity:1}72%{opacity:.96;transform:translate(0,36px) rotate(120deg)}82%,100%{opacity:0;transform:translate(2px,45px) rotate(180deg)}}
-@keyframes pfRealPelletLeft{0%,31%{opacity:0;transform:translate(0,0) scale(.75)}42%{opacity:1}74%{opacity:.96;transform:translate(-13px,35px) rotate(-120deg)}83%,100%{opacity:0;transform:translate(-18px,44px) rotate(-185deg)}}
-@keyframes pfRealPelletRight{0%,32%{opacity:0;transform:translate(0,0) scale(.75)}43%{opacity:1}75%{opacity:.96;transform:translate(13px,37px) rotate(135deg)}84%,100%{opacity:0;transform:translate(19px,46px) rotate(205deg)}}
-@keyframes pfRealPelletWide{0%,33%{opacity:0;transform:translate(0,0) scale(.72)}44%{opacity:1}76%{opacity:.94;transform:translate(-5px,40px) rotate(170deg)}85%,100%{opacity:0;transform:translate(-8px,49px) rotate(230deg)}}
-@keyframes pfRealPelletFar{0%,35%{opacity:0;transform:translate(0,0) scale(.7)}46%{opacity:1}77%{opacity:.92;transform:translate(9px,39px) rotate(-145deg)}86%,100%{opacity:0;transform:translate(13px,48px) rotate(-210deg)}}
-
-@keyframes pfnWorkspaceBootSpin{to{transform:rotate(360deg)}}
 body.zebraDevice #page-dashboard{overflow:hidden!important}
 body.zebraDevice #page-dashboard .pageContent{overflow:hidden!important;padding-bottom:2px!important}
 body.zebraDevice #page-dashboard .scanPanel{margin-bottom:4px!important;padding-bottom:4px!important}

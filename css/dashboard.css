@@ -2941,19 +2941,6 @@ body:not(.zebraDevice) .cardHeader h2,body:not(.zebraDevice) .cardHeader h3{colo
 body:not(.zebraDevice) .dataTable th{padding-top:9px;padding-bottom:9px;}
 body:not(.zebraDevice) .dataTable td{padding-top:9px;padding-bottom:9px;}
 
-/* Login / registration / recovery use the same approved visual language */
-.authGate{background:#f4f7fb;}
-.authShell{border:1px solid #dce5f0;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(16,42,76,.12);}
-.authBrandPanel{background:linear-gradient(150deg,#173a61 0%,#244f7b 100%);}
-.authBrandName{font-weight:700;letter-spacing:-.02em;}
-.authBrandTagline{opacity:.78;}
-.authFormPanel{background:#fff;}
-.authEyebrow{color:var(--pf-blue);}
-.authPrimaryButton{background:var(--pf-blue);border-radius:10px;box-shadow:none;}
-.authPrimaryButton:hover{filter:brightness(.96);}
-.authField input{border-color:#d7e1ed;border-radius:10px;background:#fbfdff;}
-.authField input:focus{border-color:#79a9e8;box-shadow:0 0 0 3px rgba(23,105,224,.10);}
-
 @media (max-width:1280px) and (min-width:769px){
 body.zebraDevice #page-dashboard .statisticsGrid{grid-template-columns:repeat(6,minmax(82px,1fr));}
 body.zebraDevice #page-dashboard .statCard{padding:9px;min-height:72px;}

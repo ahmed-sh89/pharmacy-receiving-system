@@ -32,16 +32,8 @@
         el.setAttribute('aria-modal','true');
         el.setAttribute('aria-labelledby','pf-idle-title');
         el.innerHTML=`<div class="pf-idle-card">
-            <div class="pf-idle-medical" aria-hidden="true">
-                <span class="pf-idle-orbit pf-idle-orbit-a"></span>
-                <span class="pf-idle-orbit pf-idle-orbit-b"></span>
-                <span class="pf-idle-pill pf-idle-pill-main"><i></i><b></b></span>
-                <span class="pf-idle-pill pf-idle-pill-mini"><i></i><b></b></span>
-                <span class="pf-idle-tablet"></span>
-                <span class="pf-idle-glow"></span>
-            </div>
+            <div class="pf-idle-medical" aria-hidden="true"><span class="pf-idle-capsule"></span></div>
             <div class="pf-idle-brand"><span>Pharm</span><strong>Flow</strong></div>
-            <div class="pf-idle-divider" aria-hidden="true"></div>
             <h1 id="pf-idle-title">Session Paused</h1>
             <p><span class="pf-idle-clock" aria-hidden="true"></span>No activity for 10 minutes.</p>
             <button id="pf-idle-refresh" type="button" aria-label="Resume PharmFlow">
@@ -49,40 +41,7 @@
                 <span>Resume PharmFlow</span>
             </button>
         </div>`;
-        const style=document.createElement('style');
-        style.id='pf-idle-sleep-style';
-        style.textContent=`
-          #pf-idle-sleep-overlay{position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(18,45,76,.66);backdrop-filter:blur(10px) saturate(.82);-webkit-backdrop-filter:blur(10px) saturate(.82);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;pointer-events:auto}
-          #pf-idle-sleep-overlay.pf-show{display:flex}
-          #pf-idle-sleep-overlay .pf-idle-card{position:relative;overflow:hidden;width:min(440px,calc(100vw - 40px));box-sizing:border-box;text-align:center;color:#0b2d59;border:1px solid rgba(220,239,255,.9);border-radius:26px;padding:166px 30px 26px;background:linear-gradient(160deg,rgba(246,251,255,.91),rgba(222,238,255,.83));box-shadow:0 30px 90px rgba(3,28,58,.38),inset 0 1px 0 rgba(255,255,255,.92)}
-          /* Session Paused visual — SINGLE OWNER. Shared image surfaces; CSS owns motion/layout only. */
-          .pf-idle-medical{position:absolute;left:50%;top:17px;width:280px;height:140px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 14px 16px rgba(7,67,133,.16))}
-          .pf-idle-medical:after{content:"";position:absolute;left:58px;right:58px;bottom:15px;height:18px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,102,196,.24),rgba(0,102,196,.05) 52%,transparent 74%);filter:blur(7px)}
-          .pf-idle-glow{position:absolute;left:91px;right:91px;bottom:22px;height:14px;border:1.5px solid rgba(74,185,255,.38);border-radius:50%;box-shadow:0 0 12px rgba(52,166,255,.28)}
-          .pf-idle-pill{position:absolute;display:block;background-repeat:no-repeat;background-position:center;background-size:100% 100%;will-change:transform}
-          .pf-idle-pill i,.pf-idle-pill b,.pf-idle-pill:after{display:none!important;content:none!important}
-          .pf-idle-pill-main{left:51px;top:34px;width:178px;height:61px;transform:rotate(-13deg);animation:pfIdleFloat 5.2s ease-in-out infinite;background-image:linear-gradient(90deg,transparent 49.4%,rgba(105,142,174,.34) 49.5%,rgba(255,255,255,.44) 50.5%,transparent 50.6%),url("assets/capsule-blue-half.svg"),url("assets/capsule-pearl-half.svg");background-size:100% 100%,50.7% 100%,50.7% 100%;background-position:center,left center,right center}
-          .pf-idle-pill-mini{left:31px;top:91px;width:66px;height:28px;transform:rotate(27deg);animation:pfIdleMini 6s ease-in-out infinite;background-image:linear-gradient(90deg,transparent 49%,rgba(105,142,174,.28) 50%,transparent 51%),url("assets/capsule-blue-half.svg"),url("assets/capsule-pearl-half.svg");background-size:100% 100%,51% 100%,51% 100%;background-position:center,left center,right center}
-          .pf-idle-tablet{position:absolute;right:30px;top:88px;width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 32% 24%,#fff 0 14%,#edf5fb 36%,#c7d9e8 74%,#9eb7cb 100%);border:1px solid #9eb8cf;box-shadow:inset 0 4px 7px rgba(255,255,255,.8),inset 0 -7px 10px rgba(19,70,126,.10),0 7px 11px rgba(3,48,99,.16);animation:pfIdleTablet 5.6s ease-in-out infinite}
-          .pf-idle-tablet:after{content:"";position:absolute;left:8px;right:8px;top:18px;height:2px;background:#9fb6ca;transform:rotate(-12deg)}
-          .pf-idle-orbit{position:absolute;left:45px;right:45px;top:62px;height:52px;border:1.5px solid rgba(85,194,255,.40);border-radius:50%;transform:rotate(-8deg);box-shadow:0 0 8px rgba(58,174,255,.18);animation:pfIdleOrbit 8s linear infinite}
-          .pf-idle-orbit:after{content:"";position:absolute;right:31px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 7px 2px #72caff}
-          .pf-idle-orbit-b{transform:rotate(18deg);opacity:.45;animation-duration:10s;animation-direction:reverse}
-          .pf-idle-brand{margin:0 0 9px;font-size:39px;line-height:1;font-weight:850;letter-spacing:-1.5px;color:#0a3265}.pf-idle-brand strong{color:#0879ef}
-          .pf-idle-divider{width:58px;height:3px;margin:22px auto;border-radius:999px;background:linear-gradient(90deg,transparent,#55b8ff,transparent)}
-          #pf-idle-sleep-overlay h1{margin:0 0 18px;font-size:35px;line-height:1.12;font-weight:850;letter-spacing:-.035em;color:#0a2b59}
-          #pf-idle-sleep-overlay p{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 30px;font-size:17px;line-height:1.4;font-weight:650;color:#6885aa}
-          .pf-idle-clock{width:20px;height:20px;border:2px solid #6c94c7;border-radius:50%;position:relative;box-sizing:border-box}.pf-idle-clock:before{content:"";position:absolute;width:2px;height:6px;left:7px;top:3px;background:#6c94c7;border-radius:2px}.pf-idle-clock:after{content:"";position:absolute;width:5px;height:2px;left:7px;top:8px;background:#6c94c7;border-radius:2px;transform:rotate(25deg);transform-origin:left center}
-          #pf-idle-refresh{width:100%;min-height:68px;display:flex;align-items:center;justify-content:center;gap:15px;border:1px solid rgba(133,218,255,.95);border-radius:22px;background:linear-gradient(135deg,#158dff 0%,#066bea 48%,#034fc5 100%);color:#fff;font:800 20px/1 Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 25px rgba(0,99,220,.28),0 0 0 4px rgba(63,174,255,.08);transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
-          #pf-idle-refresh:hover{filter:brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 13px 30px rgba(0,99,220,.34),0 0 0 5px rgba(63,174,255,.11)}
-          #pf-idle-refresh:active{transform:translateY(1px) scale(.995)}
-          #pf-idle-refresh:focus-visible{outline:3px solid rgba(103,198,255,.75);outline-offset:4px}
-          .pf-idle-restart{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;font-size:32px;font-weight:900;line-height:1;color:#fff;text-shadow:0 1px 4px rgba(0,47,126,.25);filter:drop-shadow(0 2px 3px rgba(0,50,130,.22))}
-          @keyframes pfIdleFloat{0%,100%{transform:translateY(0) rotate(-14deg)}50%{transform:translateY(-9px) rotate(-10deg)}}@keyframes pfIdleMini{0%,100%{transform:translateY(0) rotate(28deg)}50%{transform:translateY(4px) rotate(24deg)}}@keyframes pfIdleTablet{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(8deg)}}@keyframes pfIdleOrbit{to{filter:hue-rotate(8deg);transform:rotate(352deg)}}
-          @media (prefers-reduced-motion:reduce){.pf-idle-pill-main,.pf-idle-pill-mini,.pf-idle-tablet,.pf-idle-orbit{animation:none!important}}
-          @media (max-width:600px){#pf-idle-sleep-overlay{padding:16px}#pf-idle-sleep-overlay .pf-idle-card{width:min(430px,calc(100vw - 24px));padding:175px 24px 26px;border-radius:24px}.pf-idle-medical{top:14px;transform:translateX(-50%) scale(.82);transform-origin:top center}.pf-idle-brand{font-size:33px}#pf-idle-sleep-overlay h1{font-size:29px}#pf-idle-refresh{min-height:60px;font-size:18px;border-radius:18px}}
-        `;
-        document.head.appendChild(style);
+        // Visuals are owned by css/identity.css; idle behavior stays here.
         document.body.appendChild(el);
         const resume=el.querySelector('#pf-idle-refresh');
         resume.addEventListener('click',()=>window.location.reload(),true);
