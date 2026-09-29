@@ -55,23 +55,19 @@
           #pf-idle-sleep-overlay{position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(18,45,76,.66);backdrop-filter:blur(10px) saturate(.82);-webkit-backdrop-filter:blur(10px) saturate(.82);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;pointer-events:auto}
           #pf-idle-sleep-overlay.pf-show{display:flex}
           #pf-idle-sleep-overlay .pf-idle-card{position:relative;overflow:hidden;width:min(440px,calc(100vw - 40px));box-sizing:border-box;text-align:center;color:#0b2d59;border:1px solid rgba(220,239,255,.9);border-radius:26px;padding:166px 30px 26px;background:linear-gradient(160deg,rgba(246,251,255,.91),rgba(222,238,255,.83));box-shadow:0 30px 90px rgba(3,28,58,.38),inset 0 1px 0 rgba(255,255,255,.92)}
-          .pf-idle-medical{position:absolute;left:50%;top:17px;width:280px;height:140px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 16px 18px rgba(7,67,133,.18))}
-          .pf-idle-medical:after{content:"";position:absolute;left:64px;right:64px;bottom:12px;height:20px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,120,235,.32),rgba(0,120,235,.08) 48%,transparent 72%);filter:blur(7px)}
-          .pf-idle-glow{position:absolute;left:94px;right:94px;bottom:20px;height:16px;border:2px solid rgba(74,185,255,.45);border-radius:50%;box-shadow:0 0 14px rgba(52,166,255,.38)}
-          .pf-idle-pill{position:absolute;display:block;filter:drop-shadow(0 8px 9px rgba(2,48,102,.20))}
-          .pf-idle-pill i,.pf-idle-pill b{position:absolute;top:0;height:100%;box-sizing:border-box;border:1px solid rgba(10,72,139,.14);box-shadow:inset 0 5px 8px rgba(255,255,255,.52),inset 0 -6px 10px rgba(1,42,100,.10)}
-          .pf-idle-pill-main{left:57px;top:34px;width:166px;height:58px;transform:rotate(-18deg);animation:pfIdleFloat 5.2s ease-in-out infinite}
-          .pf-idle-pill-main i{left:50%;width:50%;border-radius:0 31px 31px 0;background:linear-gradient(145deg,#fff 8%,#eef6ff 58%,#cadcf3)}
-          .pf-idle-pill-main b{left:0;width:52%;border-radius:31px 3px 3px 31px;background:linear-gradient(145deg,#39adff,#087be9 55%,#0451b8)}
-          .pf-idle-pill-main:after{content:"";position:absolute;left:20px;top:8px;width:116px;height:12px;border-radius:20px;background:linear-gradient(90deg,rgba(255,255,255,.48),rgba(255,255,255,.08));filter:blur(1px)}
-          .pf-idle-pill-mini{left:31px;top:88px;width:64px;height:27px;transform:rotate(28deg);animation:pfIdleMini 6s ease-in-out infinite}
-          .pf-idle-pill-mini i{left:50%;width:50%;border-radius:0 18px 18px 0;background:#f7fbff}
-          .pf-idle-pill-mini b{left:0;width:52%;border-radius:18px 2px 2px 18px;background:linear-gradient(145deg,#46b3ff,#0a6ee0)}
-          .pf-idle-tablet{position:absolute;right:30px;top:86px;width:38px;height:38px;border-radius:50%;background:linear-gradient(145deg,#fff,#d8e5f7);box-shadow:inset 0 5px 8px rgba(255,255,255,.8),inset 0 -8px 12px rgba(19,70,126,.10),0 8px 12px rgba(3,48,99,.14);animation:pfIdleTablet 5.6s ease-in-out infinite}
-          .pf-idle-tablet:after{content:"";position:absolute;left:8px;right:8px;top:19px;height:2px;background:#b4c8e2;transform:rotate(-12deg)}
-          .pf-idle-orbit{position:absolute;left:45px;right:45px;top:62px;height:52px;border:1.5px solid rgba(85,194,255,.46);border-radius:50%;transform:rotate(-8deg);box-shadow:0 0 8px rgba(58,174,255,.22);animation:pfIdleOrbit 8s linear infinite}
+          /* Session Paused visual — SINGLE OWNER. Shared image surfaces; CSS owns motion/layout only. */
+          .pf-idle-medical{position:absolute;left:50%;top:17px;width:280px;height:140px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 14px 16px rgba(7,67,133,.16))}
+          .pf-idle-medical:after{content:"";position:absolute;left:58px;right:58px;bottom:15px;height:18px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,102,196,.24),rgba(0,102,196,.05) 52%,transparent 74%);filter:blur(7px)}
+          .pf-idle-glow{position:absolute;left:91px;right:91px;bottom:22px;height:14px;border:1.5px solid rgba(74,185,255,.38);border-radius:50%;box-shadow:0 0 12px rgba(52,166,255,.28)}
+          .pf-idle-pill{position:absolute;display:block;background-repeat:no-repeat;background-position:center;background-size:100% 100%;will-change:transform}
+          .pf-idle-pill i,.pf-idle-pill b,.pf-idle-pill:after{display:none!important;content:none!important}
+          .pf-idle-pill-main{left:51px;top:34px;width:178px;height:61px;transform:rotate(-13deg);animation:pfIdleFloat 5.2s ease-in-out infinite;background-image:linear-gradient(90deg,transparent 49.4%,rgba(105,142,174,.34) 49.5%,rgba(255,255,255,.44) 50.5%,transparent 50.6%),url("assets/capsule-blue-half.svg"),url("assets/capsule-pearl-half.svg");background-size:100% 100%,50.7% 100%,50.7% 100%;background-position:center,left center,right center}
+          .pf-idle-pill-mini{left:31px;top:91px;width:66px;height:28px;transform:rotate(27deg);animation:pfIdleMini 6s ease-in-out infinite;background-image:linear-gradient(90deg,transparent 49%,rgba(105,142,174,.28) 50%,transparent 51%),url("assets/capsule-blue-half.svg"),url("assets/capsule-pearl-half.svg");background-size:100% 100%,51% 100%,51% 100%;background-position:center,left center,right center}
+          .pf-idle-tablet{position:absolute;right:30px;top:88px;width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 32% 24%,#fff 0 14%,#edf5fb 36%,#c7d9e8 74%,#9eb7cb 100%);border:1px solid #9eb8cf;box-shadow:inset 0 4px 7px rgba(255,255,255,.8),inset 0 -7px 10px rgba(19,70,126,.10),0 7px 11px rgba(3,48,99,.16);animation:pfIdleTablet 5.6s ease-in-out infinite}
+          .pf-idle-tablet:after{content:"";position:absolute;left:8px;right:8px;top:18px;height:2px;background:#9fb6ca;transform:rotate(-12deg)}
+          .pf-idle-orbit{position:absolute;left:45px;right:45px;top:62px;height:52px;border:1.5px solid rgba(85,194,255,.40);border-radius:50%;transform:rotate(-8deg);box-shadow:0 0 8px rgba(58,174,255,.18);animation:pfIdleOrbit 8s linear infinite}
           .pf-idle-orbit:after{content:"";position:absolute;right:31px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 7px 2px #72caff}
-          .pf-idle-orbit-b{transform:rotate(18deg);opacity:.5;animation-duration:10s;animation-direction:reverse}
+          .pf-idle-orbit-b{transform:rotate(18deg);opacity:.45;animation-duration:10s;animation-direction:reverse}
           .pf-idle-brand{margin:0 0 9px;font-size:39px;line-height:1;font-weight:850;letter-spacing:-1.5px;color:#0a3265}.pf-idle-brand strong{color:#0879ef}
           .pf-idle-divider{width:58px;height:3px;margin:22px auto;border-radius:999px;background:linear-gradient(90deg,transparent,#55b8ff,transparent)}
           #pf-idle-sleep-overlay h1{margin:0 0 18px;font-size:35px;line-height:1.12;font-weight:850;letter-spacing:-.035em;color:#0a2b59}
