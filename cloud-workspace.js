@@ -903,6 +903,46 @@ function serializeActiveOrderManifest(){
 
 window.serializeActiveOrderManifest=serializeActiveOrderManifest;
 
+/* Handheld assignment is authoritative Active Order Manifest state.
+   Keep one persistence path: update the proposed scope locally, persist the
+   complete manifest, and roll back if the verified server write fails. */
+async function setHandheldAssignedOrderNumbers(orderNumbers){
+    const previousOrders=deepClone(
+        AppState?.workspace?.handheldOrderNumbers||[]
+    );
+    const previousConfigured=
+        AppState?.workspace?.handheldScopeConfigured===true;
+
+    const activeOrders=new Set(
+        typeof getActiveReceivingOrderNumbers==="function"
+            ? getActiveReceivingOrderNumbers()
+                .map(order=>String(order||"").trim().toUpperCase())
+                .filter(Boolean)
+            : []
+    );
+    const nextOrders=[...new Set(
+        (Array.isArray(orderNumbers)?orderNumbers:[])
+            .map(order=>String(order||"").trim().toUpperCase())
+            .filter(order=>order && activeOrders.has(order))
+    )];
+
+    AppState.workspace.handheldOrderNumbers=nextOrders;
+    AppState.workspace.handheldScopeConfigured=true;
+
+    const saved=await saveActiveOrderManifest({silent:true});
+    if(saved===true){
+        saveWorkspaceSnapshot?.();
+        return true;
+    }
+
+    AppState.workspace.handheldOrderNumbers=previousOrders;
+    AppState.workspace.handheldScopeConfigured=previousConfigured;
+    saveWorkspaceSnapshot?.();
+    return false;
+}
+
+window.setHandheldAssignedOrderNumbers=setHandheldAssignedOrderNumbers;
+
 async function patchActiveOrderPriorities(changes){
     const pharmacyId=cloudWorkspacePharmacyId();
     const normalized=Array.from(new Map(
