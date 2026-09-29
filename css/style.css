@@ -1315,3 +1315,38 @@ body.zebraDevice .mainContent,
   color: #b91c1c;
 }
 .operationReceipt[hidden] { display: none !important; }
+
+/* Settings / Barcode Management — operational search surface.
+   Intentionally scoped to Settings; Receiving scanner layout is untouched. */
+.barcodeManagementUnifiedLookup{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto auto;
+    gap:12px;
+    align-items:end;
+    width:100%;
+}
+.barcodeManagementUnifiedLookup label{
+    display:grid;
+    gap:7px;
+    min-width:0;
+}
+.barcodeManagementUnifiedLookup [data-admin-search]{
+    width:100%;
+    min-height:52px;
+    padding:12px 16px;
+    font-size:18px;
+}
+.barcodeManagementUnifiedLookup button{
+    min-height:52px;
+}
+.barcodeSearchSuggestions{
+    margin-top:10px;
+}
+@media (max-width:760px){
+    .barcodeManagementUnifiedLookup{
+        grid-template-columns:minmax(0,1fr) auto;
+    }
+    .barcodeManagementUnifiedLookup label{
+        grid-column:1 / -1;
+    }
+}
