@@ -55,19 +55,19 @@
           #pf-idle-sleep-overlay{position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(18,45,76,.66);backdrop-filter:blur(10px) saturate(.82);-webkit-backdrop-filter:blur(10px) saturate(.82);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;pointer-events:auto}
           #pf-idle-sleep-overlay.pf-show{display:flex}
           #pf-idle-sleep-overlay .pf-idle-card{position:relative;overflow:hidden;width:min(500px,calc(100vw - 40px));box-sizing:border-box;text-align:center;color:#0b2d59;border:1px solid rgba(220,239,255,.9);border-radius:28px;padding:190px 34px 30px;background:linear-gradient(160deg,rgba(246,251,255,.91),rgba(222,238,255,.83));box-shadow:0 30px 90px rgba(3,28,58,.38),inset 0 1px 0 rgba(255,255,255,.92)}
-          .pf-idle-medical{position:absolute;left:50%;top:4px;width:260px;height:194px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 18px 22px rgba(7,67,133,.2))}
+          .pf-idle-medical{position:absolute;left:50%;top:10px;width:272px;height:184px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 18px 22px rgba(7,67,133,.2))}
           .pf-idle-medical:after{content:"";position:absolute;left:78px;right:78px;bottom:25px;height:23px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,137,255,.55),rgba(0,137,255,.12) 45%,transparent 72%);filter:blur(7px)}
           .pf-idle-glow{position:absolute;left:88px;right:88px;bottom:32px;height:24px;border:3px solid rgba(58,184,255,.8);border-radius:50%;box-shadow:0 0 16px #4bc0ff,0 0 34px rgba(34,150,255,.65)}
           .pf-idle-pill{position:absolute;display:block;transform:rotate(58deg);filter:drop-shadow(0 8px 8px rgba(2,48,102,.24))}
           .pf-idle-pill i,.pf-idle-pill b{position:absolute;top:0;height:100%;box-sizing:border-box;border:1px solid rgba(10,72,139,.18);box-shadow:inset 0 5px 8px rgba(255,255,255,.55),inset 0 -8px 12px rgba(1,42,100,.12)}
-          .pf-idle-pill-main{left:104px;top:24px;width:98px;height:164px;animation:pfIdleFloat 5.2s ease-in-out infinite}
+          .pf-idle-pill-main{left:94px;top:28px;width:82px;height:142px;animation:pfIdleFloat 5.2s ease-in-out infinite}
           .pf-idle-pill-main i{left:0;width:100%;height:50%;border-radius:54px 54px 8px 8px;background:linear-gradient(145deg,#fff 8%,#dce9ff 55%,#c6dcfa)}
           .pf-idle-pill-main b{left:0;top:50%;width:100%;height:50%;border-radius:8px 8px 54px 54px;background:linear-gradient(145deg,#168cff,#0059d5 58%,#003f9d)}
           .pf-idle-pill-main:after{content:"";position:absolute;left:13px;top:12px;width:24px;height:105px;border-radius:20px;background:linear-gradient(rgba(255,255,255,.75),rgba(255,255,255,0));filter:blur(2px)}
-          .pf-idle-pill-mini{left:42px;top:86px;width:40px;height:68px;transform:rotate(52deg);animation:pfIdleMini 6s ease-in-out infinite}
+          .pf-idle-pill-mini{left:34px;top:92px;width:36px;height:62px;transform:rotate(52deg);animation:pfIdleMini 6s ease-in-out infinite}
           .pf-idle-pill-mini i{left:0;width:100%;height:50%;border-radius:23px 23px 4px 4px;background:#f7fbff}
           .pf-idle-pill-mini b{left:0;top:50%;width:100%;height:50%;border-radius:4px 4px 23px 23px;background:linear-gradient(145deg,#3aa9ff,#0865dc)}
-          .pf-idle-tablet{position:absolute;right:39px;top:100px;width:49px;height:49px;border-radius:50%;background:linear-gradient(145deg,#fff,#d8e5f7);box-shadow:inset 0 5px 8px rgba(255,255,255,.8),inset 0 -8px 12px rgba(19,70,126,.12),0 8px 12px rgba(3,48,99,.18);animation:pfIdleTablet 5.6s ease-in-out infinite}
+          .pf-idle-tablet{position:absolute;right:31px;top:100px;width:44px;height:44px;border-radius:50%;background:linear-gradient(145deg,#fff,#d8e5f7);box-shadow:inset 0 5px 8px rgba(255,255,255,.8),inset 0 -8px 12px rgba(19,70,126,.12),0 8px 12px rgba(3,48,99,.18);animation:pfIdleTablet 5.6s ease-in-out infinite}
           .pf-idle-tablet:after{content:"";position:absolute;left:9px;right:9px;top:25px;height:2px;background:#b4c8e2;transform:rotate(-18deg)}
           .pf-idle-orbit{position:absolute;left:33px;right:33px;top:85px;height:70px;border:1.5px solid rgba(85,194,255,.8);border-radius:50%;transform:rotate(-8deg);box-shadow:0 0 9px rgba(58,174,255,.45);animation:pfIdleOrbit 7s linear infinite}
           .pf-idle-orbit:after{content:"";position:absolute;right:35px;top:-4px;width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 8px 3px #58c4ff}
