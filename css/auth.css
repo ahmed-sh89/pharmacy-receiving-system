@@ -485,7 +485,7 @@ body.authLocked{
 
 /* ---------- shared auth ownership ---------- */
 #authGate.authGate{
-  box-sizing:border-box!important;position:relative!important;isolation:isolate!important;
+  box-sizing:border-box!important;position:fixed!important;inset:0!important;isolation:isolate!important;
   background:var(--pf-identity-background)!important;
 }
 
