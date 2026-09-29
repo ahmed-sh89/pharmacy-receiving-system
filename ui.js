@@ -8988,6 +8988,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             try{
                 if(row.mappingScope==="PHARMACY"){
                     await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
+                }else if(isReferencePharmacyAdmin()){
+                    await IdentifierService.removeSettingsIdentifier(nrV2OperationId(),nrV2OperationId(),row.identifier_display,auditReason("REMOVE_BARCODE"));
                 }else{
                     await IdentifierService.removeIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
                 }
