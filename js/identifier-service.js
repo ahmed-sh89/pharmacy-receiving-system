@@ -60,6 +60,11 @@ const IdentifierService={
         if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
         return authRpc("remove_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
     },
+    async removeSettingsIdentifier(globalOperationId,pharmacyOperationId,identifierDisplay,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("remove_pharmflow_settings_identifier_v1",{p_global_operation_id:globalOperationId,p_pharmacy_operation_id:pharmacyOperationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),p_reason:toSafeString(reason)});
+    },
     isReferencePharmacy(){
         return toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     },
