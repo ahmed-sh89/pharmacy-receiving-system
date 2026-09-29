@@ -677,6 +677,32 @@ async function processScannerValue(rawValue){
     }
 
 
+    /* Handheld work-scope safety gate.
+       An explicitly configured Handheld with zero assigned orders must not
+       enter Receiving at all. This sits before parsing/resolution so known,
+       unknown and Extra Item paths remain unchanged whenever an order exists. */
+    if(
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice() &&
+        AppState?.workspace?.handheldScopeConfigured === true &&
+        (
+            !Array.isArray(AppState?.workspace?.handheldOrderNumbers) ||
+            AppState.workspace.handheldOrderNumbers.length === 0
+        )
+    ){
+        if(input){ input.value = ""; }
+        if(typeof closeHandheldExtraItemPanel === "function"){
+            closeHandheldExtraItemPanel();
+        }
+        if(typeof setScanBoxState === "function"){
+            setScanBoxState("error");
+        }
+        showToast("No orders assigned to this Handheld","warning");
+        focusScannerInput();
+        return false;
+    }
+
+
     ScannerEngine.processing =
         true;
 
