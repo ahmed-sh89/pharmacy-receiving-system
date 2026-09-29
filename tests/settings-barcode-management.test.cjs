@@ -1,0 +1,37 @@
+"use strict";
+const fs=require("fs");
+const assert=require("assert");
+
+const html=fs.readFileSync("index.html","utf8");
+const ui=fs.readFileSync("ui.js","utf8");
+const service=fs.readFileSync("js/identifier-service.js","utf8");
+const readSql=fs.readFileSync("PHASE2C1168_SETTINGS_BARCODE_MANAGEMENT_READ.sql","utf8");
+const removeSql=fs.readFileSync("PHASE2C1169_SETTINGS_IDENTIFIER_REMOVE.sql","utf8");
+
+const start=ui.indexOf("function renderV2IdentifierAdministration");
+const end=ui.indexOf("\nsetTimeout(()=>{",start);
+assert(start>=0&&end>start,"Settings identifier administration renderer is missing");
+const settings=ui.slice(start,end);
+
+assert(html.includes('data-admin-search type="search"'),"Unified Settings search input is missing");
+assert(!html.includes("globalIdentifierMasterItemSearch"),"Legacy second item-search field must be removed");
+assert(settings.includes("IdentifierService.resolve(query)"),"Unified search must resolve exact barcodes");
+assert(settings.includes("IdentifierService.searchItems(query,12)"),"Unified search must search Item Code / Item Name");
+assert(settings.includes("+ Add Barcode"),"Add Barcode action is missing");
+assert(settings.includes("Remove Barcode"),"Remove Barcode action is missing");
+assert(settings.includes("Delete Item"),"Delete Item action is missing");
+assert(!settings.includes("data-correct"),"Correct must not appear in the Settings workflow");
+assert(!settings.includes("data-reason"),"Manual reason input must not appear in the Settings workflow");
+assert(settings.includes('auditReason("ADD_BARCODE")'),"Add must retain automatic audit reason");
+assert(settings.includes('auditReason("REMOVE_BARCODE")'),"Remove must retain automatic audit reason");
+assert(settings.includes('auditReason("DELETE_ITEM")'),"Delete must retain automatic audit reason");
+assert(settings.includes("The item itself will remain."),"Remove must clearly preserve the item");
+assert(service.includes("listPharmflow")===false,"Service naming guard");
+assert(service.includes("listPharmacyItemIdentifiers"),"Pharmacy barcode list service is missing");
+assert(service.includes("removeSettingsIdentifier"),"Coordinated HHP084 remove service is missing");
+assert(service.includes("deleteUnusedItem"),"Safe Delete Item service is missing");
+assert(readSql.includes("is_pharmacy_member(p_pharmacy_id)"),"Pharmacy barcode read RPC must enforce membership");
+assert(readSql.includes("revoke all")&&readSql.includes("to authenticated"),"Read RPC grants are not restricted");
+assert(removeSql.includes("HHP084")&&removeSql.includes("lower(coalesce(pm.role,''))='admin'"),"Coordinated remove must enforce HHP084 ADMIN");
+assert(removeSql.includes("remove_pharmflow_pharmacy_identifier_v2")&&removeSql.includes("remove_pharmflow_global_identifier_v2"),"HHP084 removal must coordinate Pharmacy + Global mappings");
+console.log("PASS settings barcode management regression");
