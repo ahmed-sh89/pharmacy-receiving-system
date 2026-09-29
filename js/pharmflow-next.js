@@ -140,7 +140,9 @@
     assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
-      if(!chosen.length){showToast?.('Select at least one active order','warning');return;}
+      /* An empty selection is an intentional Handheld work scope. The desktop
+         operator owns assignment authority and may explicitly publish zero
+         orders so the Handheld has no Receiving order available. */
       const saveButton=event.currentTarget;
       saveButton.disabled=true;
       const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
