@@ -8906,6 +8906,20 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
     const auditReason=action=>`SETTINGS_${action}`;
     let selectedItem=null;
+    let searchSuggestTimer=null;
+    let searchSuggestToken=0;
+
+    const normalizeSettingsSearch=value=>{
+        const raw=toSafeString(value).trim();
+        if(!raw) return "";
+        if(typeof parseGS1Barcode==="function"){
+            try{
+                const parsed=parseGS1Barcode(raw);
+                if(parsed?.gtin && parsed?.parsed) return toSafeString(parsed.gtin).trim()||raw;
+            }catch(_error){}
+        }
+        return raw;
+    };
 
     const itemCodeOf=item=>toSafeString(item?.item_code||item?.itemCode).trim();
     const itemNameOf=item=>toSafeString(item?.item_name||item?.itemName||"Unnamed item").trim();
@@ -9095,7 +9109,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     };
 
     const runSearch=async()=>{
-        const query=toSafeString(searchInput.value).trim();
+        const query=normalizeSettingsSearch(searchInput.value);
         if(!query){workspace.innerHTML="";searchInput.focus();return;}
         searchButton.disabled=true;
         try{
@@ -9123,8 +9137,39 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         searchButton.insertAdjacentElement("afterend",topAdd);
         topAdd.addEventListener("click",()=>renderNewItemForm(""));
     }
+    const renderSuggestions=items=>{
+        if(!items.length) return;
+        selectedItem=null;
+        workspace.innerHTML=`<div class="needsReviewMatches barcodeSearchSuggestions">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`;
+        workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
+            const item=items[Number(button.dataset.globalItem)]||null;
+            if(!item) return;
+            searchInput.value=item.item_code||"";
+            try{await showItem(item);}catch(error){showToast?.(error?.message||"Unable to load item","error");}
+        }));
+    };
+
+    const queueSuggestions=()=>{
+        clearTimeout(searchSuggestTimer);
+        const typed=toSafeString(searchInput.value).trim();
+        if(!typed){workspace.innerHTML="";selectedItem=null;return;}
+        /* Scanner/GS1 is an exact lookup path, not an autocomplete query. */
+        if(typeof looksLikeStrongBarcode==="function" && looksLikeStrongBarcode(typed)){
+            searchSuggestTimer=setTimeout(runSearch,40);
+            return;
+        }
+        const token=++searchSuggestToken;
+        searchSuggestTimer=setTimeout(async()=>{
+            try{
+                const items=await IdentifierService.searchItems(typed,8);
+                if(token===searchSuggestToken && toSafeString(searchInput.value).trim()===typed) renderSuggestions(items);
+            }catch(_error){}
+        },220);
+    };
+
     searchButton.addEventListener("click",runSearch);
-    searchInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();runSearch();}});
+    searchInput.addEventListener("input",queueSuggestions);
+    searchInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();clearTimeout(searchSuggestTimer);runSearch();}});
     clear?.addEventListener("click",()=>{
         searchInput.value="";
         workspace.innerHTML="";
