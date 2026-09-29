@@ -110,16 +110,23 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   position:absolute;left:calc(50% - 17px);top:40px;width:34px;height:22px;opacity:0;
   background:var(--pf-identity-capsule) center/100% 100% no-repeat;
   filter:drop-shadow(0 3px 2px #12345f40);
-  animation:pfIdentityDrop 4s cubic-bezier(.35,.04,.72,.56) infinite;
-  --pf-drop-x:0px;--pf-drop-turn:100deg;
+  animation:pfIdentityDrop 4.8s cubic-bezier(.32,.08,.7,.58) infinite;
+  animation-delay:var(--pf-drop-delay,0s);
+  --pf-drop-x:0px;--pf-drop-turn:100deg;--pf-drop-delay:.08s;
 }
-.pfBootPellet2,.pfRealPellet2{--pf-drop-x:-35px;--pf-drop-turn:-65deg;animation-delay:.18s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:right}
-.pfBootPellet3,.pfRealPellet3{--pf-drop-x:32px;--pf-drop-turn:155deg;animation-delay:.34s}
-.pfBootPellet4{--pf-drop-x:-15px;--pf-drop-turn:70deg;animation-delay:.48s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:left}
-.pfBootPellet5{--pf-drop-x:16px;--pf-drop-turn:-130deg;animation-delay:.62s}
-@keyframes pfIdentityOpenLeft{0%,15%,88%,100%{transform:translate(0,0)}32%,70%{transform:translate(-25px,-5px) rotate(-5deg)}}
-@keyframes pfIdentityOpenRight{0%,15%,88%,100%{transform:translate(0,0)}32%,70%{transform:translate(25px,0) rotate(5deg)}}
-@keyframes pfIdentityDrop{0%,30%{opacity:0;transform:translate(0,0) rotate(10deg)}34%{opacity:1}62%{opacity:1}72%,100%{opacity:0;transform:translate(var(--pf-drop-x),100px) rotate(var(--pf-drop-turn))}}
+.pfBootPellet2,.pfRealPellet2{--pf-drop-x:-42px;--pf-drop-turn:-75deg;--pf-drop-delay:.42s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:right}
+.pfBootPellet3,.pfRealPellet3{--pf-drop-x:38px;--pf-drop-turn:165deg;--pf-drop-delay:.76s}
+.pfBootPellet4{--pf-drop-x:-22px;--pf-drop-turn:82deg;--pf-drop-delay:1.10s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:left}
+.pfBootPellet5{--pf-drop-x:24px;--pf-drop-turn:-145deg;--pf-drop-delay:1.44s}
+@keyframes pfIdentityOpenLeft{0%,14%,90%,100%{transform:translate(0,0)}28%,76%{transform:translate(-25px,-5px) rotate(-5deg)}}
+@keyframes pfIdentityOpenRight{0%,14%,90%,100%{transform:translate(0,0)}28%,76%{transform:translate(25px,0) rotate(5deg)}}
+@keyframes pfIdentityDrop{
+  0%,27%{opacity:0;transform:translate(0,-3px) rotate(8deg) scale(.9)}
+  31%{opacity:1;transform:translate(calc(var(--pf-drop-x) * .08),5px) rotate(18deg) scale(1)}
+  48%{opacity:1;transform:translate(calc(var(--pf-drop-x) * .45),48px) rotate(calc(var(--pf-drop-turn) * .48)) scale(.98)}
+  62%{opacity:.9;transform:translate(var(--pf-drop-x),102px) rotate(var(--pf-drop-turn)) scale(.94)}
+  66%,100%{opacity:0;transform:translate(var(--pf-drop-x),112px) rotate(var(--pf-drop-turn)) scale(.9)}
+}
 
 /* SESSION PAUSED: one closed capsule; brand dominates the compact title. */
 #pf-idle-sleep-overlay{
@@ -134,13 +141,14 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   border:1px solid #d8e8f5;border-radius:26px;background:var(--pf-identity-background);
   box-shadow:0 28px 80px #061d384d;
 }
-.pf-idle-medical{position:relative;width:100%;height:135px;pointer-events:none;margin-bottom:12px}
+.pf-idle-medical{position:relative;width:100%;height:122px;pointer-events:none;margin-bottom:10px}
 .pf-idle-capsule{
-  position:absolute;left:calc(50% - 124px);top:3px;width:248px;height:112px;
+  position:absolute;left:calc(50% - 108px);top:4px;width:216px;height:98px;
   background:var(--pf-identity-capsule) center/contain no-repeat;
-  filter:drop-shadow(0 12px 8px #12345f26);animation:pfIdentityIdleFloat 5.2s ease-in-out infinite;
+  filter:drop-shadow(0 10px 7px #12345f26);animation:pfIdentityIdleFloat 5.2s ease-in-out infinite;
+  will-change:transform;
 }
-.pf-idle-medical::after{bottom:10px;animation:pfIdentityIdleShadow 5.2s ease-in-out infinite}
+.pf-idle-medical::after{bottom:9px;animation:pfIdentityIdleShadow 5.2s ease-in-out infinite;will-change:transform,opacity}
 .pf-idle-brand{font-size:36px;margin:0 0 18px}
 #pf-idle-title{margin:0 0 10px;font-size:23px;line-height:1.2;font-weight:650;letter-spacing:-.4px;color:var(--pf-identity-navy)}
 .pf-idle-card p{margin:0 0 24px;color:#60758b;font-size:14px;line-height:1.5;font-weight:500}
@@ -154,7 +162,7 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 #pf-idle-refresh:hover{background:#066bce}
 #pf-idle-refresh:focus-visible{outline:3px solid #55acff;outline-offset:4px}
 .pf-idle-restart{font-size:25px;line-height:1}
-@keyframes pfIdentityIdleFloat{0%,100%{transform:translateY(4px) rotate(-10deg)}50%{transform:translateY(-7px) rotate(-7deg)}}
+@keyframes pfIdentityIdleFloat{0%,100%{transform:translateY(3px) rotate(-9deg)}50%{transform:translateY(-8px) rotate(-6deg)}}
 @keyframes pfIdentityIdleShadow{0%,100%{transform:scaleX(1);opacity:.9}50%{transform:scaleX(.86);opacity:.55}}
 @media (max-height:500px){
   .pf-idle-card{padding:12px 22px 18px}
