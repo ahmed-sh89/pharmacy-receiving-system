@@ -627,3 +627,40 @@ body.zebraDevice #authGate #authLoginForm .authMessage{min-height:0!important;ma
     background:rgba(234,243,252,.94)!important;backdrop-filter:blur(8px)!important;
   }
 }
+
+/* =============================================================
+   PHARMFLOW VISUAL IDENTITY — LOGIN
+   One presentation owner for the approved capsule/barcode identity.
+   Authentication structure and behavior are intentionally untouched.
+============================================================= */
+#authGate.authGate{
+  background-color:#eaf4fe!important;
+  background-image:
+    radial-gradient(ellipse at 8% 12%,rgba(255,255,255,.76),transparent 28%),
+    radial-gradient(ellipse at 88% 82%,rgba(174,215,255,.34),transparent 31%),
+    linear-gradient(135deg,rgba(226,242,255,.94),rgba(238,247,255,.97))!important;
+}
+#authGate.authGate:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.34;
+  background:
+    linear-gradient(28deg,transparent 0 12%,rgba(255,255,255,.5) 12.5% 14%,transparent 14.5% 100%),
+    radial-gradient(ellipse at 15% 18%,rgba(38,139,238,.20) 0 3.4%,rgba(255,255,255,.52) 3.6% 7.5%,transparent 7.8%),
+    radial-gradient(ellipse at 78% 15%,rgba(38,139,238,.16) 0 3%,rgba(255,255,255,.46) 3.2% 7%,transparent 7.3%),
+    radial-gradient(ellipse at 91% 68%,rgba(38,139,238,.14) 0 3.2%,rgba(255,255,255,.42) 3.4% 7.3%,transparent 7.6%),
+    radial-gradient(ellipse at 22% 84%,rgba(38,139,238,.13) 0 3.1%,rgba(255,255,255,.40) 3.3% 7%,transparent 7.3%);
+  filter:blur(13px);transform:scale(1.05);
+}
+#authGate .authShell{position:relative;z-index:1;background:rgba(235,245,254,.86)!important;border:1px solid rgba(255,255,255,.72)!important;backdrop-filter:blur(15px) saturate(1.05);-webkit-backdrop-filter:blur(15px) saturate(1.05);}
+#authGate .authBrandName{display:flex!important;align-items:baseline!important;justify-content:center!important;gap:0!important;color:#123f70!important;}
+#authGate .authBrandName span{color:#12345f!important;font:inherit!important;}
+#authGate .authBrandName strong{color:#1680ee!important;font:inherit!important;font-weight:900!important;}
+#authGate .authBrandLogoCard{position:relative!important;overflow:hidden!important;}
+#authGate .authBrandLogoCard:after{
+  content:"";position:absolute;top:0;bottom:0;width:18px;left:-28px;transform:skewX(-18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.78),transparent);
+  animation:pfAuthMarkScan 4.8s ease-in-out infinite;
+}
+#authGate .authBrandLogoCard img{animation:pfAuthMarkFloat 5.2s ease-in-out infinite;}
+@keyframes pfAuthMarkScan{0%,58%{left:-28px;opacity:0}62%{opacity:.8}76%{left:96px;opacity:.55}80%,100%{left:96px;opacity:0}}
+@keyframes pfAuthMarkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){#authGate .authBrandLogoCard:after,#authGate .authBrandLogoCard img{animation:none!important;}}
