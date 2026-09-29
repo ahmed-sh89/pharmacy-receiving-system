@@ -8912,7 +8912,9 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const normalizeSettingsSearch=value=>{
         const raw=toSafeString(value).trim();
         if(!raw) return "";
-        if(typeof parseGS1Barcode==="function"){
+        const isPlainGtin=/^\d{8,14}$/.test(raw);
+        const isStrongGs1=typeof looksLikeStrongBarcode==="function" && looksLikeStrongBarcode(raw);
+        if((isPlainGtin||isStrongGs1) && typeof parseGS1Barcode==="function"){
             try{
                 const parsed=parseGS1Barcode(raw);
                 if(parsed?.gtin && parsed?.parsed) return toSafeString(parsed.gtin).trim()||raw;
@@ -9016,6 +9018,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         }));
 
         workspace.querySelector("[data-delete-item]")?.addEventListener("click",async buttonEvent=>{
+            const deleteButton=buttonEvent.currentTarget;
             const ok=await pharmFlowConfirm({
                 title:"Delete Item?",
                 message:`Delete ${itemNameOf(item)} (${itemCode})? This is allowed only when the item has no operational or historical use.`,
@@ -9023,7 +9026,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 tone:"danger"
             });
             if(!ok) return;
-            buttonEvent.currentTarget.disabled=true;
+            if(!deleteButton) return;
+            deleteButton.disabled=true;
             try{
                 await IdentifierService.deleteUnusedItem(nrV2OperationId(),itemCode,auditReason("DELETE_ITEM"));
                 selectedItem=null;
@@ -9032,7 +9036,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 searchInput.focus();
                 showToast?.("Item deleted","success");
             }catch(error){
-                buttonEvent.currentTarget.disabled=false;
+                deleteButton.disabled=false;
                 const message=String(error?.message||"");
                 showToast?.(/operational\/history/i.test(message)?"This item has operational history and cannot be deleted.":message||"Unable to delete item","error");
             }
@@ -9100,7 +9104,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             renderNoResults(searchInput.value);
             return;
         }
-        workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`;
+        workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</strong><small class="barcodeSuggestionCode">${esc(item.item_code)}</small></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
             const item=items[Number(button.dataset.globalItem)]||null;
             if(!item) return;
@@ -9140,7 +9144,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const renderSuggestions=items=>{
         if(!items.length) return;
         selectedItem=null;
-        workspace.innerHTML=`<div class="needsReviewMatches barcodeSearchSuggestions">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`;
+        workspace.innerHTML=`<div class="needsReviewMatches barcodeSearchSuggestions">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</strong><small class="barcodeSuggestionCode">${esc(item.item_code)}</small></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
             const item=items[Number(button.dataset.globalItem)]||null;
             if(!item) return;
