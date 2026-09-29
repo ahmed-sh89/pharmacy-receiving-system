@@ -214,6 +214,47 @@ function createEmptyWorkspace(){
 
 
 /* =====================================================
+   AUTHORITATIVE HANDHELD WORK SCOPE
+   The Active Order Manifest assignment is the single runtime authority for
+   Handheld Receiving, History and the visible assigned-order count.
+===================================================== */
+
+function getHandheldWorkScopeOrders(){
+    const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+        ? AppState.workspace.handheldOrderNumbers
+        : [];
+
+    const normalize=value=>{
+        const raw=String(value||"").trim();
+        if(!raw) return "";
+        return typeof normalizeOrderNumber==="function"
+            ? normalizeOrderNumber(raw)
+            : raw.toUpperCase().replace(/\s+/g,"");
+    };
+
+    const active=new Set(
+        (typeof getActiveReceivingOrderNumbers==="function"
+            ? getActiveReceivingOrderNumbers()
+            : (AppState?.workspace?.orderFiles||[]).map(file=>
+                file?.documentId||file?.orderNumber||file?.order_number||""
+            )
+        ).map(normalize).filter(Boolean)
+    );
+
+    return [...new Set(
+        assigned.map(normalize).filter(order=>order && active.has(order))
+    )];
+}
+
+function canHandheldReceive(){
+    return getHandheldWorkScopeOrders().length>0;
+}
+
+window.getHandheldWorkScopeOrders=getHandheldWorkScopeOrders;
+window.canHandheldReceive=canHandheldReceive;
+
+
+/* =====================================================
    CREATE EMPTY SESSION
 ===================================================== */
 
