@@ -1350,3 +1350,28 @@ body.zebraDevice .mainContent,
         grid-column:1 / -1;
     }
 }
+
+.barcodeSuggestionIdentity{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    min-width:0;
+    width:100%;
+}
+.barcodeSuggestionName{
+    font-size:15px;
+    font-weight:700;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.barcodeSuggestionCode{
+    flex:0 0 auto;
+    font-size:14px;
+    font-weight:700;
+    opacity:.78;
+}
+@media (max-width:760px){
+    .barcodeSuggestionIdentity{align-items:flex-start;flex-direction:column;gap:3px}
+    .barcodeSuggestionName{white-space:normal}
+}
