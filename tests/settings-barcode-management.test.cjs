@@ -26,6 +26,10 @@ assert(settings.includes("Item Code, Item Name and Barcode are required"),"New I
 assert(settings.includes('auditReason("ADD_ITEM")'),"New Item must retain automatic audit reason");
 assert(!settings.includes("ActiveOrder"),"Settings barcode management must not depend on Active Order state");
 assert(!settings.includes("activeOrder"),"Settings barcode management must not depend on Active Order state");
+assert(settings.includes("parseGS1Barcode"),"Settings scanner input must reuse the Receiving GS1 parser");
+assert(settings.includes("searchInput.addEventListener(\"input\",queueSuggestions)"),"Manual typing must provide item suggestions");
+assert(settings.includes("searchInput.addEventListener(\"keydown\""),"Enter search support is missing");
+assert(!settings.includes("setInterval"),"Barcode Management must not auto-reset on a timer");
 assert(!settings.includes("data-correct"),"Correct must not appear in the Settings workflow");
 assert(!settings.includes("data-reason"),"Manual reason input must not appear in the Settings workflow");
 assert(settings.includes('auditReason("ADD_BARCODE")'),"Add must retain automatic audit reason");
