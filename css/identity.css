@@ -147,10 +147,10 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   background:var(--pf-identity-capsule) center/contain no-repeat;
   filter:drop-shadow(0 8px 6px #12345f26);
   transform-origin:50% 58%;
-  animation:pfIdentityIdleFloat 3.6s ease-in-out infinite;
+  animation:pfIdentityIdleFloat 2.6s ease-in-out infinite;
   will-change:transform;
 }
-.pf-idle-medical::after{bottom:7px;animation:pfIdentityIdleShadow 3.6s ease-in-out infinite;will-change:transform,opacity}
+.pf-idle-medical::after{bottom:7px;animation:pfIdentityIdleShadow 2.6s ease-in-out infinite;will-change:transform,opacity}
 .pf-idle-brand{font-size:36px;margin:0 0 18px}
 #pf-idle-title{margin:0 0 10px;font-size:23px;line-height:1.2;font-weight:650;letter-spacing:-.4px;color:var(--pf-identity-navy)}
 .pf-idle-card p{margin:0 0 24px;color:#60758b;font-size:14px;line-height:1.5;font-weight:500}
