@@ -45,3 +45,9 @@ assert(readSql.includes("revoke all")&&readSql.includes("to authenticated"),"Rea
 assert(removeSql.includes("HHP084")&&removeSql.includes("lower(coalesce(pm.role,''))='admin'"),"Coordinated remove must enforce HHP084 ADMIN");
 assert(removeSql.includes("remove_pharmflow_pharmacy_identifier_v2")&&removeSql.includes("remove_pharmflow_global_identifier_v2"),"HHP084 removal must coordinate Pharmacy + Global mappings");
 console.log("PASS settings barcode management regression");
+
+assert(settings.includes("const deleteButton=buttonEvent.currentTarget"),"Delete Item must preserve the clicked button across async confirmation");
+assert(settings.includes("const isPlainGtin=/^\\d{8,14}$/"),"GTIN parsing must be limited to plain GTIN or strong GS1 input");
+assert(settings.includes("isStrongGs1"),"Strong GS1 detection is required before parser normalization");
+assert(settings.includes("barcodeSuggestionName"),"Suggestion results must prioritize Item Name");
+assert(settings.includes("barcodeSuggestionCode"),"Suggestion results must show Item Code alongside the name");
