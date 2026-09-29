@@ -8892,107 +8892,180 @@ function nrV2OperationId(){
    service as Receiving and Needs Review; it deliberately has no scanner
    listener or legacy learned-mapping fallback. */
 function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeString(value))){
-    const input=overlay.querySelector("[data-admin-identifier]");
+    const searchInput=overlay.querySelector("[data-admin-search]");
+    const searchButton=overlay.querySelector("[data-admin-search-button]");
     const workspace=overlay.querySelector("[data-admin-workspace]");
-    const load=overlay.querySelector("[data-admin-load]");
-    const itemSearch=overlay.querySelector("[data-admin-item-search]");
-    const itemLoad=overlay.querySelector("[data-admin-item-load]");
     const clear=overlay.querySelector("[data-admin-clear]");
-    if(!input||!workspace||!load) return;
-    if(load.dataset.identifierAdminBound==="1") return;
-    load.dataset.identifierAdminBound="1";
-    if(itemLoad) itemLoad.dataset.identifierAdminBound="1";
+    if(!searchInput||!searchButton||!workspace) return;
+    if(searchButton.dataset.identifierAdminBound==="1") return;
+    searchButton.dataset.identifierAdminBound="1";
+
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
     const isReferencePharmacyAdmin=()=>isCurrentPharmacyAdmin()&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
-    let resolved=null, selectedItem=null, pendingIdentifier="";
-    const globalNotice=()=>`<p class="needsReviewGlobalNotice">${isCurrentPharmacyAdmin()&&!canWriteGlobal()?"Barcode changes here apply only to this pharmacy.":"Global barcode changes are protected by server permission."}</p>`;
-    const reasonField=()=>`<label class="barcodeChangeNote">Change note<textarea data-reason rows="2" placeholder="Short note for the audit record"></textarea></label>`;
-    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><strong>${esc(item.item_code||item.itemCode)}</strong><b>${esc(item.item_name||item.itemName||"Unnamed item")}</b></div>`;
-    const listIdentifiers=async itemCode=>{
-        const identifiers=await IdentifierService.listItemIdentifiers(itemCode);
-        return `<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span>${identifiers.length?identifiers.map(row=>`<strong>${esc(row.identifier_display)}</strong>`).join(""):'<strong>No barcodes are linked to this item.</strong>'}</div>`;
+    const auditReason=action=>`SETTINGS_${action}`;
+    let selectedItem=null;
+
+    const itemCodeOf=item=>toSafeString(item?.item_code||item?.itemCode).trim();
+    const itemNameOf=item=>toSafeString(item?.item_name||item?.itemName||"Unnamed item").trim();
+    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><strong>${esc(itemCodeOf(item))}</strong><b>${esc(itemNameOf(item))}</b></div>`;
+
+    const loadBarcodeRows=async item=>{
+        const itemCode=itemCodeOf(item);
+        const globalRows=await IdentifierService.listItemIdentifiers(itemCode);
+        if(canWriteGlobal()) return globalRows.map(row=>({...row,mappingScope:"GLOBAL",removable:true}));
+        const pharmacyRows=await IdentifierService.listPharmacyItemIdentifiers(itemCode);
+        const localKeys=new Set(pharmacyRows.map(row=>toSafeString(row.identifier_key)));
+        return [
+            ...pharmacyRows.map(row=>({...row,mappingScope:"PHARMACY",removable:isCurrentPharmacyAdmin()})),
+            ...globalRows.filter(row=>!localKeys.has(toSafeString(row.identifier_key))).map(row=>({...row,mappingScope:"GLOBAL",removable:false}))
+        ];
     };
-    const bindItemResults=(items,afterSelect)=>{
-        workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
-            selectedItem=items[Number(button.dataset.globalItem)]||null;
-            workspace.querySelectorAll("[data-global-item]").forEach(node=>node.classList.toggle("selected",node===button));
-            if(selectedItem) await afterSelect(selectedItem);
-        }));
+
+    const renderBarcodeList=rows=>{
+        if(!rows.length) return '<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span><strong>No barcodes are linked to this item.</strong></div>';
+        return `<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span>${rows.map((row,index)=>`
+            <div class="barcodeManagementRow">
+                <strong>${esc(row.identifier_display)}</strong>
+                ${row.mappingScope==="PHARMACY"?'<small>THIS PHARMACY</small>':(!canWriteGlobal()?'<small>GLOBAL</small>':'')}
+                ${row.removable?`<button type="button" class="danger" data-remove-barcode="${index}">Remove</button>`:""}
+            </div>`).join("")}</div>`;
     };
-    const showItem=async(item,{identifier="",mapping=null}={})=>{
-        const itemCode=toSafeString(item?.item_code||item?.itemCode);
+
+    const showItem=async item=>{
+        const itemCode=itemCodeOf(item);
         if(!itemCode) return;
         selectedItem=item;
-        const identifiers=await listIdentifiers(itemCode);
-        const hasIdentifier=!!identifier;
-        const globalOwner=canWriteGlobal();
-        const pharmacyAdmin=isCurrentPharmacyAdmin();
-        const pharmacyMapping=mapping?.mappingScope==="PHARMACY";
-        const canManage=pharmacyMapping ? pharmacyAdmin : globalOwner;
-        const scopeLabel=pharmacyMapping?"THIS PHARMACY":(globalOwner?"GLOBAL":"GLOBAL · READ ONLY");
-        const mappingActions=canManage?`
-            <div class="needsReviewMappingActions">
-                ${hasIdentifier?`<label>Barcode<input value="${esc(identifier)}" readonly></label>`:'<label>New Barcode<input data-new-identifier autocomplete="off" placeholder="Scan or enter barcode"></label>'}
-                ${reasonField()}
-                <button type="button" data-add>Add Barcode</button>
-                ${mapping?`<label>Correct to Item Code<input data-target-code value="${esc(itemCode)}" placeholder="Item Code"></label><button type="button" data-correct>Correct</button><button type="button" class="danger" data-remove>Remove</button>`:""}
-            </div>`:(pharmacyAdmin&&hasIdentifier?`
-            <div class="needsReviewMappingActions"><label>Barcode<input value="${esc(identifier)}" readonly></label>${reasonField()}<button type="button" data-add-pharmacy>Add for This Pharmacy</button></div>`:globalNotice());
-        workspace.innerHTML=`<span class="identifierScopeBadge">${scopeLabel}</span>${itemSummary(item)}${identifiers}${mappingActions}${pharmacyMapping?'<p class="needsReviewGlobalNotice">This barcode override belongs only to the current pharmacy.</p>':''}`;
-        if(!canManage&&!pharmacyAdmin) return;
-        const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        const requireReason=()=>reason()||"Settings barcode management";
-        const currentIdentifier=()=>toSafeString(identifier||workspace.querySelector("[data-new-identifier]")?.value).trim();
-        const refreshIdentifier=async value=>{input.value=toSafeString(value).trim();await drawIdentifier();};
-        const addPharmacy=async event=>{try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,requireReason());await refreshIdentifier(value);showToast?.("Pharmacy identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add pharmacy mapping","error");}};
-        workspace.querySelector("[data-add-pharmacy]")?.addEventListener("click",addPharmacy);
-        workspace.querySelector("[data-add]")?.addEventListener("click",async event=>{if(pharmacyMapping) return addPharmacy(event);try{const value=currentIdentifier();if(!value) throw new Error("Enter an identifier to map");event.currentTarget.disabled=true;await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,requireReason());await refreshIdentifier(value);showToast?.("Global identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-correct]")?.addEventListener("click",async()=>{try{const target=toSafeString(workspace.querySelector("[data-target-code]")?.value).trim();if(!target) throw new Error("Enter the target Item Code");if(!await pharmFlowConfirm({title:"Correct Identifier?",message:"Correct only this identifier mapping? Historical Receiving is unchanged.",confirmText:"Correct Identifier",tone:"warning"})) return;if(pharmacyMapping){const candidates=await IdentifierService.searchItems(target,2);const targetItem=candidates.find(row=>toSafeString(row.item_code)===target);if(!targetItem) throw new Error("Select a valid Global Item Code");await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,targetItem,requireReason());}else await IdentifierService.correctIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,target,requireReason());await drawIdentifier();showToast?.("Identifier mapping corrected","success");}catch(error){showToast?.(error?.message||"Unable to correct mapping","error");}});
-        workspace.querySelector("[data-remove]")?.addEventListener("click",async()=>{try{if(!await pharmFlowConfirm({title:"Remove Identifier?",message:"Remove only this identifier mapping? The Item and sibling identifiers remain.",confirmText:"Remove Identifier",tone:"danger"})) return;if(pharmacyMapping) await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());else await IdentifierService.removeIdentifier(nrV2OperationId(),mapping.identifierId,mapping.mappingRevision,requireReason());const verification=await IdentifierService.resolve(identifier);if(verification?.found&&toSafeString(verification.identifierKey)===toSafeString(mapping.identifierKey)){throw new Error("Identifier removal was not confirmed by the authoritative resolver. Reload and try again.");}workspace.innerHTML="<div class=\"needsReviewAdminSuccess\">Identifier mapping removed. The Item and sibling identifiers were preserved.</div>";showToast?.("Identifier mapping removed","success");}catch(error){showToast?.(error?.message||"Unable to remove mapping","error");}});
+        const rows=await loadBarcodeRows(item);
+        const canAdd=canWriteGlobal()||isCurrentPharmacyAdmin();
+        workspace.innerHTML=`
+            ${itemSummary(item)}
+            ${renderBarcodeList(rows)}
+            ${canAdd?`<div class="needsReviewMappingActions barcodeSimpleActions">
+                <label>Add Barcode
+                    <input data-new-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode">
+                </label>
+                <button type="button" data-add-barcode>+ Add Barcode</button>
+            </div>`:""}
+            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><button type="button" class="danger" data-delete-item>Delete Item</button></div>`:""}
+            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="needsReviewGlobalNotice">Barcode changes apply only to this pharmacy. Global barcodes are shown as read only.</p>':""}
+        `;
+
+        workspace.querySelector("[data-add-barcode]")?.addEventListener("click",async event=>{
+            const value=toSafeString(workspace.querySelector("[data-new-identifier]")?.value).trim();
+            if(!value){showToast?.("Enter a barcode","warning");workspace.querySelector("[data-new-identifier]")?.focus();return;}
+            event.currentTarget.disabled=true;
+            try{
+                if(canWriteGlobal()){
+                    await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,auditReason("ADD_BARCODE"));
+                }else{
+                    await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,auditReason("ADD_BARCODE"));
+                }
+                await showItem(item);
+                showToast?.("Barcode added","success");
+            }catch(error){
+                event.currentTarget.disabled=false;
+                showToast?.(error?.message||"Unable to add barcode","error");
+            }
+        });
+
+        workspace.querySelector("[data-new-identifier]")?.addEventListener("keydown",event=>{
+            if(event.key==="Enter"){event.preventDefault();workspace.querySelector("[data-add-barcode]")?.click();}
+        });
+
+        workspace.querySelectorAll("[data-remove-barcode]").forEach(button=>button.addEventListener("click",async()=>{
+            const row=rows[Number(button.dataset.removeBarcode)];
+            if(!row) return;
+            const ok=await pharmFlowConfirm({
+                title:"Remove Barcode?",
+                message:`Remove ${toSafeString(row.identifier_display)} from this item? The item itself will remain.`,
+                confirmText:"Remove Barcode",
+                tone:"danger"
+            });
+            if(!ok) return;
+            button.disabled=true;
+            try{
+                if(row.mappingScope==="PHARMACY"){
+                    await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
+                }else{
+                    await IdentifierService.removeIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
+                }
+                await showItem(item);
+                showToast?.("Barcode removed","success");
+            }catch(error){
+                button.disabled=false;
+                showToast?.(error?.message||"Unable to remove barcode","error");
+            }
+        }));
+
+        workspace.querySelector("[data-delete-item]")?.addEventListener("click",async buttonEvent=>{
+            const ok=await pharmFlowConfirm({
+                title:"Delete Item?",
+                message:`Delete ${itemNameOf(item)} (${itemCode})? This is allowed only when the item has no operational or historical use.`,
+                confirmText:"Delete Item",
+                tone:"danger"
+            });
+            if(!ok) return;
+            buttonEvent.currentTarget.disabled=true;
+            try{
+                await IdentifierService.deleteUnusedItem(nrV2OperationId(),itemCode,auditReason("DELETE_ITEM"));
+                selectedItem=null;
+                workspace.innerHTML='<div class="needsReviewAdminSuccess">Item deleted.</div>';
+                searchInput.value="";
+                searchInput.focus();
+                showToast?.("Item deleted","success");
+            }catch(error){
+                buttonEvent.currentTarget.disabled=false;
+                const message=String(error?.message||"");
+                showToast?.(/operational\/history/i.test(message)?"This item has operational history and cannot be deleted.":message||"Unable to delete item","error");
+            }
+        });
     };
-    const renderItemSearch=async(query,{forUnmappedIdentifier=false}={})=>{
-        const value=toSafeString(query).trim();
-        if(!value){showToast?.("Enter an Item Code or Item Name","warning");itemSearch?.focus();return;}
-        const items=await IdentifierService.searchItems(value,12);
-        workspace.innerHTML=items.length?`<div class="needsReviewNoMatches">Select the item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`:`<div class="needsReviewNoMatches">No Global Item matches that Item Code or Item Name.</div>`;
-        bindItemResults(items,item=>showItem(item,{identifier:forUnmappedIdentifier?pendingIdentifier:"",mapping:null}));
+
+    const renderItemResults=items=>{
+        selectedItem=null;
+        if(!items.length){
+            workspace.innerHTML='<div class="needsReviewNoMatches">No results.</div>';
+            return;
+        }
+        workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`;
+        workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
+            const item=items[Number(button.dataset.globalItem)]||null;
+            if(!item) return;
+            try{await showItem(item);}catch(error){showToast?.(error?.message||"Unable to load item","error");}
+        }));
     };
-    const renderUnmapped=()=>{
-        const globalOwner=canWriteGlobal(), pharmacyAdmin=isCurrentPharmacyAdmin();
-        if(!globalOwner&&!pharmacyAdmin){workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for this identifier.</div>${globalNotice()}`;return;}
-        workspace.innerHTML=`<div class="needsReviewNoMatches">No mapping exists for <b>${esc(pendingIdentifier)}</b>. Search the item catalogue, then deliberately add a ${globalOwner?"Global":"current pharmacy"} mapping.</div><div class="needsReviewMappingActions"><label>Item Code / Item Name<input data-global-search placeholder="Search items"></label>${reasonField()}<div data-global-results></div><button type="button" data-add-existing disabled>${globalOwner?"Add Global Mapping":"Add Pharmacy Mapping"} to Selected Item</button>${globalOwner?'<label>New Item Code<input data-new-code placeholder="New Item Code"></label><label>New Item Name<input data-new-name placeholder="New Item Name"></label><button type="button" data-create>Add New Item &amp; First Identifier</button>':''}</div>`;
-        let selected=null;
-        const search=workspace.querySelector("[data-global-search]");
-        const results=workspace.querySelector("[data-global-results]");
-        const addExisting=workspace.querySelector("[data-add-existing]");
-        search?.addEventListener("input",async()=>{const query=toSafeString(search.value).trim();selected=null;if(addExisting)addExisting.disabled=true;if(!query){results.innerHTML="";return;}try{const items=await IdentifierService.searchItems(query,12);results.innerHTML=items.map((item,index)=>`<button type="button" data-global-item="${index}">${esc(item.item_code)} — ${esc(item.item_name)}</button>`).join("")||"<div class=\"needsReviewNoMatches\">No Global Item found.</div>";results.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",()=>{selected=items[Number(button.dataset.globalItem)]||null;results.querySelectorAll("button").forEach(node=>node.classList.toggle("selected",node===button));if(addExisting)addExisting.disabled=!selected;}));}catch(error){showToast?.(error?.message||"Unable to search Global Master","error");}});
-        const reason=()=>toSafeString(workspace.querySelector("[data-reason]")?.value).trim();
-        addExisting?.addEventListener("click",async event=>{if(!selected){showToast?.("Select an Item","warning");return;}event.currentTarget.disabled=true;try{if(globalOwner) await IdentifierService.addIdentifier(nrV2OperationId(),pendingIdentifier,selected.item_code,reason()||"Settings barcode management");else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),pendingIdentifier,selected,reason()||"Settings barcode management");await drawIdentifier();showToast?.("Identifier mapping added","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add mapping","error");}});
-        workspace.querySelector("[data-create]")?.addEventListener("click",async event=>{const code=toSafeString(workspace.querySelector("[data-new-code]")?.value).trim();const name=toSafeString(workspace.querySelector("[data-new-name]")?.value).trim();if(!code||!name){showToast?.("Item Code and Item Name are required","warning");return;}event.currentTarget.disabled=true;try{await IdentifierService.createItem(nrV2OperationId(),{itemCode:code,itemName:name,identifierDisplay:pendingIdentifier,reason:reason()||"Settings barcode management"});await drawIdentifier();showToast?.("Global Item and first identifier created","success");}catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to create Global Item","error");}});
-    };
-    const drawIdentifier=async()=>{
-        pendingIdentifier=toSafeString(input.value).trim();
-        if(!pendingIdentifier){showToast?.("Enter an identifier","warning");input.focus();return;}
-        load.disabled=true;
+
+    const runSearch=async()=>{
+        const query=toSafeString(searchInput.value).trim();
+        if(!query){workspace.innerHTML="";searchInput.focus();return;}
+        searchButton.disabled=true;
         try{
-            resolved=await IdentifierService.resolve(pendingIdentifier);
-            if(!resolved?.found){
-                renderUnmapped();
+            const resolved=await IdentifierService.resolve(query);
+            if(resolved?.found){
+                await showItem({item_code:resolved.itemCode,item_name:resolved.itemName});
                 return;
             }
-            await showItem({item_code:resolved.itemCode,item_name:resolved.itemName},{identifier:pendingIdentifier,mapping:resolved});
-        }catch(error){workspace.innerHTML="";showToast?.(error?.message||"Unable to load Global Master mapping","error");}
-        finally{load.disabled=false;}
+            const items=await IdentifierService.searchItems(query,12);
+            renderItemResults(items);
+        }catch(error){
+            workspace.innerHTML="";
+            showToast?.(error?.message||"Unable to search items","error");
+        }finally{
+            searchButton.disabled=false;
+        }
     };
-    load.addEventListener("click",drawIdentifier);
-    input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();drawIdentifier();}});
-    itemLoad?.addEventListener("click",()=>renderItemSearch(itemSearch?.value));
-    itemSearch?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();renderItemSearch(itemSearch.value);}});
-    clear?.addEventListener("click",()=>{input.value="";if(itemSearch)itemSearch.value="";workspace.innerHTML="";resolved=null;selectedItem=null;pendingIdentifier="";input.focus();});
-}
 
+    searchButton.addEventListener("click",runSearch);
+    searchInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();runSearch();}});
+    clear?.addEventListener("click",()=>{
+        searchInput.value="";
+        workspace.innerHTML="";
+        selectedItem=null;
+        searchInput.focus();
+    });
+}
 setTimeout(()=>{
     const settingsMaster=document.getElementById("globalIdentifierMasterAdmin");
     if(settingsMaster) renderV2IdentifierAdministration(settingsMaster);
