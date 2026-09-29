@@ -1,0 +1,192 @@
+/* PharmFlow identity owner: login branding, workspace loading, Session Paused.
+   auth.css owns login layout/forms; cloud-workspace.js owns idle behavior.
+   Capsule material comes from a studio image; CSS only places and animates it. */
+:root{
+  --pf-identity-navy:#12345f;
+  --pf-identity-blue:#0879e8;
+  --pf-identity-pearl:#f3f8fc;
+  --pf-identity-background:linear-gradient(135deg,#e6f3fe,#edf6ff 52%,#e9f2ff);
+  --pf-identity-capsule:url("../assets/pharmflow-capsule-studio.png");
+}
+
+/* LOGIN: retain the existing shell and form dimensions. */
+#authGate::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background-image:var(--pf-identity-capsule),var(--pf-identity-capsule),var(--pf-identity-capsule),var(--pf-identity-capsule);
+  background-repeat:no-repeat;
+  background-size:220px 100px,180px 82px,240px 109px,170px 77px;
+  background-position:3% 9%,82% 5%,98% 82%,13% 97%;
+  opacity:.24;filter:blur(3px);
+}
+.authBrandLogoCard{
+  position:relative;display:grid;place-items:center;overflow:hidden;
+  width:132px;height:132px;border-radius:30px;
+  background:rgba(243,248,252,.62);border:1px solid #c4dbed;
+  box-shadow:0 12px 30px #12345f0d;
+}
+.authBrandLogoCard img{
+  display:block;width:112px;height:112px;object-fit:contain;
+  animation:pfIdentityMarkFloat 5.2s ease-in-out infinite;
+}
+.authBrandLogoCard::after{
+  content:"";position:absolute;top:8%;bottom:8%;left:-24%;width:18%;
+  background:linear-gradient(90deg,transparent,#ffffffc9,transparent);
+  transform:skewX(-12deg);pointer-events:none;
+  animation:pfIdentityScan 4.8s ease-in-out infinite;
+}
+.authBrandName,.pf-idle-brand{
+  display:flex;justify-content:center;align-items:baseline;gap:0;
+  color:var(--pf-identity-navy);font-weight:850;letter-spacing:-1.4px;line-height:1.1;
+}
+.authBrandName{font-size:46px;}
+.authBrandName span,.pf-idle-brand span{color:var(--pf-identity-navy);font:inherit;}
+.authBrandName strong,.pf-idle-brand strong{color:var(--pf-identity-blue);font:inherit;}
+.authBrandTagline{margin-top:-3px;color:#547595;font-size:11px;line-height:1.25;font-weight:750;letter-spacing:1.45px;text-align:center;}
+@keyframes pfIdentityMarkFloat{0%,100%{transform:translateY(2px)}50%{transform:translateY(-3px)}}
+@keyframes pfIdentityScan{0%,55%{left:-24%;opacity:0}60%{opacity:1}78%{left:108%;opacity:1}82%,100%{left:108%;opacity:0}}
+@media (max-height:800px) and (min-width:901px){
+  .authBrandLogoCard{width:114px;height:114px;border-radius:26px}
+  .authBrandLogoCard img{width:98px;height:98px}
+  .authBrandName{font-size:40px}
+  .authBrandTagline{margin-top:7px;font-size:9.5px}
+}
+@media (max-width:900px){
+  .authBrandLogoCard{width:60px;height:60px;border-radius:16px}
+  .authBrandLogoCard img{width:52px;height:52px}
+  .authBrandName{font-size:31px}
+  .authBrandTagline{margin:0;font-size:8px}
+}
+@media (max-width:600px){
+  .authBrandLogoCard{width:48px;height:48px;border-radius:14px;flex:none}
+  .authBrandLogoCard img{width:42px;height:42px}
+  .authBrandName{font-size:29px;letter-spacing:-.7px}
+  .authBrandTagline{font-size:7px;line-height:1;letter-spacing:1px}
+}
+@media (max-width:600px) and (max-height:700px){
+  .authBrandLogoCard{width:40px;height:40px;border-radius:12px}
+  .authBrandLogoCard img{width:35px;height:35px}
+  .authBrandName{font-size:25px}
+  .authBrandTagline{font-size:6px}
+}
+body.zebraDevice .authBrandLogoCard{width:46px;height:46px;border-radius:12px}
+body.zebraDevice .authBrandLogoCard img{width:40px;height:40px}
+body.zebraDevice .authBrandName{font-size:24px;letter-spacing:-.45px}
+body.zebraDevice .authBrandTagline{grid-column:2;margin-top:4px;font-size:7px;line-height:1;letter-spacing:.85px}
+@media (max-height:600px){
+  body.zebraDevice .authBrandLogoCard{width:38px;height:38px;border-radius:10px}
+  body.zebraDevice .authBrandLogoCard img{width:33px;height:33px}
+  body.zebraDevice .authBrandName{font-size:21px}
+  body.zebraDevice .authBrandTagline{font-size:6px}
+}
+
+/* LOADING: the existing state classes control visibility; no timing changes. */
+.workspaceBootOverlay{display:none}
+body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverlay{
+  position:fixed;inset:0;z-index:20000;display:grid;place-items:center;
+  padding:20px;background:var(--pf-identity-background);
+}
+.workspaceBootCard{
+  display:grid;justify-items:center;gap:8px;box-sizing:border-box;
+  width:min(360px,100%);padding:22px 20px 24px;border:1px solid #c7deef;
+  border-radius:24px;background:#eaf4fc;color:var(--pf-identity-navy);text-align:center;
+  box-shadow:0 18px 50px #12345f12,inset 0 1px 0 #ffffffb3;
+}
+.workspaceBootCard>span{font-size:10px;font-weight:800;letter-spacing:.14em;color:#58738d}
+.workspaceBootCard>strong{font-size:23px}
+.workspaceBootCard>small{font-size:13px;color:#60758b;line-height:1.5}
+.pfBootCapsule,.pfRealCapsule{position:relative;width:260px;max-width:100%;height:138px;margin:0 auto 0}
+.pfBootCapsule::before,.pfRealCapsule::before,.pf-idle-medical::after{
+  content:"";position:absolute;left:22%;right:22%;bottom:8px;height:13px;
+  border-radius:50%;background:#24598724;filter:blur(8px);
+}
+.pfBootCapsuleHalf,.pfRealCapsuleHalf{
+  position:absolute;top:0;width:116px;height:104px;z-index:2;
+  background-image:var(--pf-identity-capsule);background-repeat:no-repeat;background-size:232px 104px;
+  filter:drop-shadow(0 9px 7px #12345f20);
+}
+.pfBootCapsuleLeft,.pfRealCapsuleLeft{left:calc(50% - 116px);background-position:left;animation:pfIdentityOpenLeft 2.8s ease-in-out infinite}
+.pfBootCapsuleRight,.pfRealCapsuleRight{left:50%;background-position:right;animation:pfIdentityOpenRight 2.8s ease-in-out infinite}
+.pfBootPellet,.pfRealPellet{
+  position:absolute;left:calc(50% - 17px);top:40px;width:34px;height:22px;opacity:0;
+  background:var(--pf-identity-capsule) center/100% 100% no-repeat;
+  filter:drop-shadow(0 3px 2px #12345f40);
+  animation:pfIdentityDrop 2.8s cubic-bezier(.32,.08,.7,.58) infinite;
+  animation-delay:var(--pf-drop-delay,0s);
+  --pf-drop-x:0px;--pf-drop-turn:100deg;--pf-drop-delay:.04s;
+}
+.pfBootPellet2,.pfRealPellet2{--pf-drop-x:-42px;--pf-drop-turn:-75deg;--pf-drop-delay:.20s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:right}
+.pfBootPellet3,.pfRealPellet3{--pf-drop-x:38px;--pf-drop-turn:165deg;--pf-drop-delay:.36s}
+.pfBootPellet4{--pf-drop-x:-22px;--pf-drop-turn:82deg;--pf-drop-delay:.52s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:left}
+.pfBootPellet5{--pf-drop-x:24px;--pf-drop-turn:-145deg;--pf-drop-delay:.68s}
+@keyframes pfIdentityOpenLeft{0%,4%,92%,100%{transform:translate(0,0)}13%,78%{transform:translate(-25px,-5px) rotate(-5deg)}}
+@keyframes pfIdentityOpenRight{0%,4%,92%,100%{transform:translate(0,0)}13%,78%{transform:translate(25px,0) rotate(5deg)}}
+@keyframes pfIdentityDrop{
+  0%,12%{opacity:0;transform:translate(0,-3px) rotate(8deg) scale(.9)}
+  17%{opacity:1;transform:translate(calc(var(--pf-drop-x) * .08),5px) rotate(18deg) scale(1)}
+  39%{opacity:1;transform:translate(calc(var(--pf-drop-x) * .45),48px) rotate(calc(var(--pf-drop-turn) * .48)) scale(.98)}
+  57%{opacity:.9;transform:translate(var(--pf-drop-x),102px) rotate(var(--pf-drop-turn)) scale(.94)}
+  63%,100%{opacity:0;transform:translate(var(--pf-drop-x),112px) rotate(var(--pf-drop-turn)) scale(.9)}
+}
+
+/* SESSION PAUSED: one closed capsule; brand dominates the compact title. */
+#pf-idle-sleep-overlay{
+  position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;
+  box-sizing:border-box;padding:20px;background:#12345fa8;backdrop-filter:blur(10px);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;pointer-events:auto;
+}
+#pf-idle-sleep-overlay.pf-show{display:flex}
+.pf-idle-card{
+  box-sizing:border-box;width:min(390px,100%);max-height:calc(100dvh - 40px);overflow:auto;
+  padding:20px 28px 28px;text-align:center;color:var(--pf-identity-navy);
+  border:1px solid #d8e8f5;border-radius:26px;background:var(--pf-identity-background);
+  box-shadow:0 28px 80px #061d384d;
+}
+.pf-idle-medical{position:relative;width:100%;height:108px;pointer-events:none;margin-bottom:8px}
+.pf-idle-capsule{
+  position:absolute;left:calc(50% - 92px);top:2px;width:184px;height:84px;
+  background:var(--pf-identity-capsule) center/contain no-repeat;
+  filter:drop-shadow(0 8px 6px #12345f26);
+  transform-origin:50% 58%;
+  animation:pfIdentityIdleFloat 2.6s ease-in-out infinite;
+  will-change:transform;
+}
+.pf-idle-medical::after{bottom:7px;animation:pfIdentityIdleShadow 2.6s ease-in-out infinite;will-change:transform,opacity}
+.pf-idle-brand{font-size:36px;margin:0 0 18px}
+#pf-idle-title{margin:0 0 10px;font-size:23px;line-height:1.2;font-weight:650;letter-spacing:-.4px;color:var(--pf-identity-navy)}
+.pf-idle-card p{margin:0 0 24px;color:#60758b;font-size:14px;line-height:1.5;font-weight:500}
+.pf-idle-clock{display:none}
+#pf-idle-refresh{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;
+  padding:12px;border:1px solid #086ad0;border-radius:14px;background:var(--pf-identity-blue);
+  color:#fff;font:700 15px/1.3 Inter,system-ui,sans-serif;cursor:pointer;
+  box-shadow:0 8px 18px #0879e826;transition:background .16s ease;
+}
+#pf-idle-refresh:hover{background:#066bce}
+#pf-idle-refresh:focus-visible{outline:3px solid #55acff;outline-offset:4px}
+.pf-idle-restart{font-size:25px;line-height:1}
+@keyframes pfIdentityIdleFloat{0%,100%{transform:translateY(4px) rotate(-9deg)}50%{transform:translateY(-10px) rotate(-5.5deg)}}
+@keyframes pfIdentityIdleShadow{0%,100%{transform:scaleX(1);opacity:.82}50%{transform:scaleX(.78);opacity:.42}}
+@media (max-height:500px){
+  .pf-idle-card{padding:12px 22px 18px}
+  .pf-idle-medical{height:105px;margin-bottom:4px}
+  .pf-idle-capsule{top:-10px}
+  .pf-idle-brand{font-size:30px;margin-bottom:12px}
+  .pf-idle-card p{margin-bottom:16px}
+}
+/* Reduced-motion keeps PharmFlow state communication visible without
+   disabling it completely. Motion is slower and substantially smaller. */
+@media (prefers-reduced-motion:reduce){
+  .authBrandLogoCard img{animation:pfIdentityMarkFloatReduced 8s ease-in-out infinite}
+  .authBrandLogoCard::after{animation:pfIdentityScanReduced 8s ease-in-out infinite}
+  .pfBootCapsuleLeft,.pfRealCapsuleLeft{animation:pfIdentityOpenLeftReduced 6s ease-in-out infinite}
+  .pfBootCapsuleRight,.pfRealCapsuleRight{animation:pfIdentityOpenRightReduced 6s ease-in-out infinite}
+  .pfBootPellet,.pfRealPellet{animation-duration:6s}
+  .pf-idle-capsule{animation:pfIdentityIdleFloatReduced 8s ease-in-out infinite}
+  .pf-idle-medical::after{animation:pfIdentityIdleShadowReduced 8s ease-in-out infinite}
+}
+@keyframes pfIdentityMarkFloatReduced{0%,100%{transform:translateY(1px)}50%{transform:translateY(-1px)}}
+@keyframes pfIdentityScanReduced{0%,62%{left:-24%;opacity:0}66%{opacity:.72}78%{left:108%;opacity:.72}82%,100%{left:108%;opacity:0}}
+@keyframes pfIdentityOpenLeftReduced{0%,18%,88%,100%{transform:translate(0,0)}36%,68%{transform:translate(-12px,-2px) rotate(-2deg)}}
+@keyframes pfIdentityOpenRightReduced{0%,18%,88%,100%{transform:translate(0,0)}36%,68%{transform:translate(12px,0) rotate(2deg)}}
+@keyframes pfIdentityIdleFloatReduced{0%,100%{transform:translateY(2px) rotate(-9deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
+@keyframes pfIdentityIdleShadowReduced{0%,100%{transform:scaleX(1);opacity:.8}50%{transform:scaleX(.94);opacity:.65}}
