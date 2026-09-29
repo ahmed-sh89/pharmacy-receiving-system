@@ -9025,10 +9025,65 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         });
     };
 
+    const renderNewItemForm=(prefill="")=>{
+        if(!canWriteGlobal()){
+            workspace.innerHTML='<div class="needsReviewNoMatches">No results.</div>';
+            return;
+        }
+        selectedItem=null;
+        workspace.innerHTML=`
+            <div class="needsReviewNoMatches">Add a new item to the Global Master.</div>
+            <div class="needsReviewMappingActions barcodeNewItemForm">
+                <label>Item Code
+                    <input data-new-item-code autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Item Code" value="${esc(prefill)}">
+                </label>
+                <label>Item Name
+                    <input data-new-item-name autocomplete="off" placeholder="Item Name">
+                </label>
+                <label>Barcode
+                    <input data-new-item-barcode autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode">
+                </label>
+                <button type="button" data-create-item>Add Item</button>
+                <button type="button" class="secondaryButton" data-cancel-new-item>Cancel</button>
+            </div>
+        `;
+        workspace.querySelector("[data-cancel-new-item]")?.addEventListener("click",()=>{workspace.innerHTML="";searchInput.focus();});
+        workspace.querySelector("[data-create-item]")?.addEventListener("click",async event=>{
+            const itemCode=toSafeString(workspace.querySelector("[data-new-item-code]")?.value).trim();
+            const itemName=toSafeString(workspace.querySelector("[data-new-item-name]")?.value).trim();
+            const identifierDisplay=toSafeString(workspace.querySelector("[data-new-item-barcode]")?.value).trim();
+            if(!itemCode||!itemName||!identifierDisplay){
+                showToast?.("Item Code, Item Name and Barcode are required","warning");
+                return;
+            }
+            event.currentTarget.disabled=true;
+            try{
+                await IdentifierService.createItem(nrV2OperationId(),{
+                    itemCode,
+                    itemName,
+                    identifierDisplay,
+                    reason:auditReason("ADD_ITEM")
+                });
+                searchInput.value=itemCode;
+                await showItem({item_code:itemCode,item_name:itemName});
+                showToast?.("Item added to Global Master","success");
+            }catch(error){
+                event.currentTarget.disabled=false;
+                showToast?.(error?.message||"Unable to add item","error");
+            }
+        });
+    };
+
+    const renderNoResults=(query="")=>{
+        selectedItem=null;
+        workspace.innerHTML=`<div class="needsReviewNoMatches">No results.</div>${canWriteGlobal()?'<button type="button" data-add-new-item>+ Add New Item</button>':""}`;
+        workspace.querySelector("[data-add-new-item]")?.addEventListener("click",()=>renderNewItemForm(query));
+    };
+
     const renderItemResults=items=>{
         selectedItem=null;
         if(!items.length){
-            workspace.innerHTML='<div class="needsReviewNoMatches">No results.</div>';
+            renderNoResults(searchInput.value);
             return;
         }
         workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span><strong>${esc(item.item_code)}</strong><small>${esc(item.item_name||"Unnamed item")}</small></span></button>`).join("")}</div>`;
@@ -9059,6 +9114,15 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         }
     };
 
+    if(canWriteGlobal()){
+        const topAdd=document.createElement("button");
+        topAdd.type="button";
+        topAdd.className="secondaryButton";
+        topAdd.dataset.addNewItemTop="1";
+        topAdd.textContent="+ Add New Item";
+        searchButton.insertAdjacentElement("afterend",topAdd);
+        topAdd.addEventListener("click",()=>renderNewItemForm(""));
+    }
     searchButton.addEventListener("click",runSearch);
     searchInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();runSearch();}});
     clear?.addEventListener("click",()=>{
