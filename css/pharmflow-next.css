@@ -2032,3 +2032,34 @@ body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Ac
   white-space:nowrap!important;
   font-size:13px!important;
 }
+
+
+/* Handheld assignment: actions stay separate from a growing order grid. */
+body:not(.zebraDevice) .pfnHandheldOrderGrid{
+  max-height:176px;
+  overflow:auto;
+  align-content:start;
+  padding-right:3px;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:9px;
+  padding-top:10px;
+  margin-top:8px;
+  border-top:1px solid #d4e1eb;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions button{
+  min-width:154px;
+  white-space:nowrap;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions [data-remove-assignment]{
+  background:#fff;
+  border-color:#9fb9cf;
+  color:#315f82;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions [data-remove-assignment]:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+}
