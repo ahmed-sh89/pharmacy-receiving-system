@@ -677,23 +677,6 @@ async function processScannerValue(rawValue){
     }
 
 
-    /* Handheld Receiving is permitted only by the shared authoritative
-       Handheld Work Scope. No identifier parsing or Extra/Review path may
-       start when that scope contains zero assigned active orders. */
-    if(
-        typeof isLikelyZebraDevice==="function" &&
-        isLikelyZebraDevice() &&
-        typeof canHandheldReceive==="function" &&
-        !canHandheldReceive()
-    ){
-        if(input){ input.value=""; }
-        closeHandheldExtraItemPanel?.();
-        setScanBoxState?.("error");
-        showToast("No orders assigned to this Handheld","warning");
-        focusScannerInput();
-        return false;
-    }
-
     ScannerEngine.processing =
         true;
 
