@@ -7865,3 +7865,24 @@ body.zebraDevice .zebraConnectedDot.isOffline{background:#fff0f0;color:#a33b3b}
 body.zebraDevice .zebraConnectedDot.isOffline:before{background:#d14b4b}
 body.zebraDevice .zebraConnectedDot.isEmpty{background:#fff7e8;color:#8a641c}
 body.zebraDevice .zebraConnectedDot.isEmpty:before{background:#d69a2d}
+
+/* Handheld history: one natural panel scroll, no nested list scrollbar. */
+body.zebraDevice .handheldRecentPanel{
+  max-height:88dvh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+body.zebraDevice .handheldRecentList{
+  max-height:none!important;
+  overflow:visible!important;
+}
+body.zebraDevice .handheldRecentPanel header{
+  position:sticky!important;
+  top:0!important;
+  z-index:3!important;
+  background:#fff!important;
+}
+body.zebraDevice .handheldRecentRow .handheldUndoItem{
+  min-width:58px!important;
+  white-space:nowrap!important;
+}
