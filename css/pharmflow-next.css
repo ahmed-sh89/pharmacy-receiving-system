@@ -2016,3 +2016,19 @@ body:not(.zebraDevice) .pfnCleanWorklist .pfnItemCode{white-space:nowrap}
 body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:5px;padding:0;border:0;background:transparent;color:inherit;font-size:14px;line-height:1;vertical-align:middle;cursor:pointer;opacity:.78}
 body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode:hover,body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode.copied{opacity:1}
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnCopyItemCode{color:#fff!important;opacity:1}
+
+
+/* Extra Items KPI: keep operational labels/actions on one line. */
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel .pfnExtraRemoveButton{
+  white-space:nowrap!important;
+  font-size:12px!important;
+  line-height:1!important;
+  padding:9px 10px!important;
+  min-width:126px!important;
+}
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Status"],
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Order"],
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Action"]{
+  white-space:nowrap!important;
+  font-size:13px!important;
+}
