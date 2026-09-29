@@ -7484,19 +7484,22 @@ function getFriendlyReceivingDeviceLabel(row,options={}){
 
 
 function getHandheldAssignedOrderScope(){
+    if(AppState?.workspace?.handheldScopeConfigured!==true) return null;
     return new Set(
-        typeof getHandheldWorkScopeOrders==="function"
-            ? getHandheldWorkScopeOrders()
-            : []
+        (Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+            ? AppState.workspace.handheldOrderNumbers
+            : [])
+            .map(order=>String(order||"").trim().toUpperCase())
+            .filter(Boolean)
     );
 }
 
 function receivingRowBelongsToHandheldScope(tx,scope=getHandheldAssignedOrderScope()){
+    /* null means legacy/unconfigured scope; preserve the existing history view.
+       An explicitly configured empty scope means the worker has zero orders. */
+    if(scope===null) return true;
     if(scope.size===0) return false;
-    const raw=String(tx?.orderNumber||tx?.order_number||tx?.selectedOrderNumber||tx?.orderId||"").trim();
-    const order=typeof normalizeOrderNumber==="function"
-        ? normalizeOrderNumber(raw)
-        : raw.toUpperCase().replace(/\s+/g,"");
+    const order=String(tx?.orderNumber||tx?.order_number||"").trim().toUpperCase();
     return !!order && scope.has(order);
 }
 
