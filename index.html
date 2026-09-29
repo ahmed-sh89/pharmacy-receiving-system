@@ -2154,15 +2154,11 @@
                         </div>
 
                         <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Item barcode management">
-                            <div class="globalIdentifierMasterLookupGrid barcodeManagementLookup">
-                                <label>Scan Barcode
-                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode">
-                                </label>
-                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Find</button>
+                            <div class="globalIdentifierMasterLookupGrid barcodeManagementLookup barcodeManagementUnifiedLookup">
                                 <label>Find Item
-                                    <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Item Code or Item Name">
+                                    <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
                                 </label>
-                                <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search</button>
+                                <button id="btnGlobalIdentifierMasterSearch" data-admin-search-button type="button">Search</button>
                                 <button id="btnGlobalIdentifierMasterClear" data-admin-clear type="button" class="secondaryButton">Clear</button>
                             </div>
                             <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
