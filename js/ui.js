@@ -7483,6 +7483,26 @@ function getFriendlyReceivingDeviceLabel(row,options={}){
 }
 
 
+function getHandheldAssignedOrderScope(){
+    if(AppState?.workspace?.handheldScopeConfigured!==true) return null;
+    return new Set(
+        (Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+            ? AppState.workspace.handheldOrderNumbers
+            : [])
+            .map(order=>String(order||"").trim().toUpperCase())
+            .filter(Boolean)
+    );
+}
+
+function receivingRowBelongsToHandheldScope(tx,scope=getHandheldAssignedOrderScope()){
+    /* null means legacy/unconfigured scope; preserve the existing history view.
+       An explicitly configured empty scope means the worker has zero orders. */
+    if(scope===null) return true;
+    if(scope.size===0) return false;
+    const order=String(tx?.orderNumber||tx?.order_number||"").trim().toUpperCase();
+    return !!order && scope.has(order);
+}
+
 function getHandheldDeviceScannerRows(){
     const history = Array.isArray(AppState?.workspace?.receivingHistory)
         ? AppState.workspace.receivingHistory
@@ -7490,13 +7510,15 @@ function getHandheldDeviceScannerRows(){
     const deviceId = typeof ensureDeviceId === "function"
         ? ensureDeviceId()
         : AppState?.session?.deviceId;
+    const scope=getHandheldAssignedOrderScope();
 
     return history.filter(tx => {
         const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
         const source = String(tx?.source || "").toUpperCase();
         const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
             || source.includes("SCAN");
-        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+        return sameDevice && isScan && Number(tx?.quantity || 0) > 0
+            && receivingRowBelongsToHandheldScope(tx,scope);
     });
 }
 
@@ -7504,12 +7526,14 @@ function getAllWorkspaceScannerRows(){
     const history=Array.isArray(AppState?.workspace?.receivingHistory)
         ? AppState.workspace.receivingHistory
         : [];
+    const scope=getHandheldAssignedOrderScope();
 
     return history.filter(tx=>{
         const source=String(tx?.source||"").toUpperCase();
         const isScan=source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase()
             || source.includes("SCAN");
-        return isScan && Number(tx?.quantity||0)>0;
+        return isScan && Number(tx?.quantity||0)>0
+            && receivingRowBelongsToHandheldScope(tx,scope);
     });
 }
 
@@ -7665,7 +7689,7 @@ function openHandheldScansPanel(initialTab="THIS"){
             <div class="handheldRecentList">
               ${recent.length ? recent.map((row,index)=>{
                 const qty=Math.max(1,Number(row?.quantity||1)||1);
-                const canUndo=tab==="THIS" && String(row?.deviceId||"")===ownDeviceId;
+                const canRemove=index===0 && tab==="THIS" && String(row?.deviceId||"")===ownDeviceId;
                 return `
                   <article class="handheldRecentRow">
                     <div class="handheldRecentIndex">${index+1}</div>
@@ -7674,16 +7698,16 @@ function openHandheldScansPanel(initialTab="THIS"){
                       <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))} · ${esc(deviceLabel(row))}</span>
                     </div>
                     <div class="handheldRecentQty">+${qty}</div>
-                    ${canUndo
-                      ? `<button type="button" class="handheldUndoItem" data-undo-item="${esc(row?.transactionId||"")}" aria-label="Undo this scan"><span aria-hidden="true">↶</span> UNDO</button>`
-                      : `<span class="handheldRecentViewOnly">View</span>`}
+                    ${canRemove
+                      ? `<button type="button" class="handheldUndoItem" data-remove-item="${esc(row?.transactionId||"")}" aria-label="Remove latest scan">REMOVE</button>`
+                      : `<span class="handheldRecentViewOnly">Saved</span>`}
                   </article>`;
               }).join("") : `<div class="handheldScansEmpty">No recent scans.</div>`}
             </div>
 
             <div class="handheldRecentFooter">
               <span>${tab==="THIS"
-                ?"Undo is available only for this Handheld and remains in the audit trail."
+                ?"Only the latest scan can be removed. The correction remains in the audit trail."
                 :"All Devices is view-only to prevent accidental corrections to another device."}</span>
               <button type="button" class="handheldPanelDone" data-close>DONE</button>
             </div>
@@ -7699,8 +7723,8 @@ function openHandheldScansPanel(initialTab="THIS"){
             render();
         });
 
-        overlay.querySelectorAll("[data-undo-item]").forEach(btn=>btn.onclick=()=>{
-            const transactionId=btn.getAttribute("data-undo-item");
+        overlay.querySelectorAll("[data-remove-item]").forEach(btn=>btn.onclick=()=>{
+            const transactionId=btn.getAttribute("data-remove-item");
             if(!transactionId || btn.disabled) return;
 
             const row=recent.find(item=>
@@ -7709,7 +7733,7 @@ function openHandheldScansPanel(initialTab="THIS"){
             const qty=Math.max(1,Number(row?.quantity||1)||1);
 
             btn.disabled=true;
-            btn.textContent="UNDOING…";
+            btn.textContent="REMOVING…";
 
             const result=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
@@ -7726,13 +7750,13 @@ function openHandheldScansPanel(initialTab="THIS"){
                 );
                 if(localTx) localTx.undone=true;
 
-                btn.textContent=`UNDONE -${qty}`;
+                btn.textContent=`REMOVED -${qty}`;
                 btn.classList.add("undone");
                 btn.disabled=true;
 
                 const feedback=overlay.querySelector("#handheldRecentFeedback");
                 if(feedback){
-                    feedback.textContent=`${qty} pack${qty===1?"":"s"} undone`;
+                    feedback.textContent=`${qty} pack${qty===1?"":"s"} removed`;
                     feedback.classList.add("show");
                 }
 
@@ -7743,14 +7767,14 @@ function openHandheldScansPanel(initialTab="THIS"){
                         render();
                         const refreshedFeedback=overlay.querySelector("#handheldRecentFeedback");
                         if(refreshedFeedback){
-                            refreshedFeedback.textContent=`${qty} pack${qty===1?"":"s"} undone`;
+                            refreshedFeedback.textContent=`${qty} pack${qty===1?"":"s"} removed`;
                             refreshedFeedback.classList.add("show");
                         }
                     }
                 },250);
             }else{
                 btn.disabled=false;
-                btn.innerHTML='<span aria-hidden="true">↶</span> UNDO';
+                btn.textContent='REMOVE';
             }
         });
     };
