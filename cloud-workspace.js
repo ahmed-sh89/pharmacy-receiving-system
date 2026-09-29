@@ -7,9 +7,7 @@
    are blocked and the UI is locked until a full page Refresh. */
 (function installPharmFlowIdleSleep(){
     if(window.PharmFlowIdleSleep) return;
-    const idleTestRequested=new URLSearchParams(window.location.search).get("pfIdleTest")==="1";
-    const idleTestHost=/^pharmflow-test(?:-|\.)/i.test(window.location.hostname);
-    const IDLE_MS=(idleTestRequested && idleTestHost) ? 1500 : 10*60*1000;
+    const IDLE_MS=10*60*1000;
     let timer=null;
     let lastActivity=Date.now();
     let active=false;
