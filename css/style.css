@@ -1375,3 +1375,131 @@ body.zebraDevice .mainContent,
     .barcodeSuggestionIdentity{align-items:flex-start;flex-direction:column;gap:3px}
     .barcodeSuggestionName{white-space:normal}
 }
+
+
+/* =====================================================
+   SETTINGS — PRELIMINARY INFORMATION ARCHITECTURE
+   Presentation only. Existing permissions/actions remain authoritative.
+===================================================== */
+#page-settings{
+    max-width:1180px;
+    margin:0 auto;
+}
+#page-settings > .contentCard{
+    margin-bottom:14px;
+}
+.settingsLegacyWorkspaceCard,
+.settingsFutureFeature{
+    display:none !important;
+}
+.settingsAccountCompact{
+    padding:14px 16px;
+}
+.settingsAccountCompact .cardHeader{
+    margin-bottom:10px;
+}
+.settingsAccountCompact .accountSettingsGrid{
+    display:grid;
+    grid-template-columns:minmax(180px,1.4fr) minmax(110px,.7fr) minmax(220px,1.4fr) minmax(90px,.55fr);
+    gap:8px;
+}
+.settingsAccountCompact .accountSettingTile{
+    min-height:auto;
+    padding:9px 11px;
+}
+.settingsAccountCompact .accountSettingTile span{
+    font-size:10px;
+}
+.settingsAccountCompact .accountSettingTile strong{
+    font-size:13px;
+}
+.settingsAccountCompact .accountEditActions{
+    margin-top:8px;
+    display:flex;
+    justify-content:flex-end;
+}
+.ownerControlCenter{
+    padding:16px;
+}
+.ownerControlCenter .ownerControlHeader{
+    align-items:center;
+    margin-bottom:10px;
+}
+.ownerControlCenter .ownerControlHeader .settingsDescription{
+    margin-top:3px;
+    max-width:720px;
+}
+.ownerControlCenter .ownerMetricGrid{
+    grid-template-columns:repeat(4,minmax(120px,1fr));
+    gap:8px;
+    margin:8px 0 12px;
+}
+.ownerControlCenter .ownerMetricCard{
+    min-height:auto;
+    padding:10px 12px;
+}
+.ownerControlCenter .ownerMetricCard strong{
+    font-size:20px;
+}
+.ownerControlCenter .ownerControlSection{
+    margin-top:10px;
+    padding:12px;
+}
+.ownerControlCenter .ownerSectionHeader{
+    margin-bottom:6px;
+}
+.ownerControlCenter .ownerPharmacyList{
+    display:grid;
+    gap:6px;
+}
+.ownerControlCenter .ownerPharmacyCard{
+    display:grid;
+    grid-template-columns:minmax(210px,1.2fr) minmax(240px,1.4fr) 100px auto;
+    align-items:center;
+    gap:10px;
+    padding:9px 10px;
+    min-height:auto;
+}
+.ownerControlCenter .ownerPharmacyIdentity,
+.ownerControlCenter .ownerPharmacyAdmin{
+    min-width:0;
+}
+.ownerControlCenter .ownerPharmacyActions{
+    display:flex;
+    gap:6px;
+    justify-content:flex-end;
+}
+.ownerControlCenter .ownerPharmacyActions button{
+    min-height:34px;
+    padding:6px 9px;
+    white-space:nowrap;
+}
+.masterGTINCard{
+    padding:16px;
+}
+.settingsAdvancedTools{
+    margin-top:12px;
+    border-top:1px solid var(--border-color,#dbe6f2);
+    padding-top:8px;
+}
+.settingsAdvancedTools > summary{
+    cursor:pointer;
+    font-size:11px;
+    font-weight:700;
+    opacity:.72;
+}
+.settingsDataSafetyCard{
+    padding:14px 16px;
+}
+.settingsDataSafetyCard .cardHeader{
+    margin-bottom:6px;
+}
+.settingsDataSafetyCard .dangerZone{
+    margin-top:10px;
+}
+@media (max-width:900px){
+    .settingsAccountCompact .accountSettingsGrid{grid-template-columns:1fr 1fr}
+    .ownerControlCenter .ownerMetricGrid{grid-template-columns:1fr 1fr}
+    .ownerControlCenter .ownerPharmacyCard{grid-template-columns:1fr 1fr}
+    .ownerControlCenter .ownerPharmacyActions{justify-content:flex-start}
+}
