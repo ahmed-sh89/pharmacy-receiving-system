@@ -340,3 +340,18 @@ test("Scan Item search projects quantities from the per-order receiving ledger",
   const searchEnd=ui.indexOf("function renderSmartScanSearchResults",searchStart);
   assert.match(ui.slice(searchStart,searchEnd),/getReceivingSearchProjection\(\)/);
 });
+
+
+test("HHP084 Link & Receive auto-creates a missing Global item through the authoritative learning RPC",()=>{
+  const migration=read("PHASE2C1167_RECEIVING_LINK_AUTOCREATE_GLOBAL_ITEM.sql");
+  const receiving=read("js/receiving.js");
+  const service=read("js/identifier-service.js");
+  assert.match(migration,/p\.code='HHP084'/);
+  assert.match(migration,/if v_is_reference then/);
+  assert.match(migration,/from public\.pharmflow_global_items_v2/);
+  assert.match(migration,/create_pharmflow_global_item_and_learn_v1/);
+  assert.match(migration,/'GLOBAL_AND_PHARMACY'/);
+  assert.match(migration,/else[\s\S]*add_pharmflow_pharmacy_identifier_v2/);
+  assert.match(service,/learn_pharmflow_identifier_v1/);
+  assert.match(receiving,/IdentifierService\.learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,selectedItem/);
+});
