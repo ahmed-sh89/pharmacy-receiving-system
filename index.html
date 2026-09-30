@@ -148,7 +148,7 @@
                         <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
                         <button id="btnAuthForgotPassword" class="authSecondaryLink authForgotPassword" type="button">Forgot Password?</button>
                         <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
-                        <button id="btnAuthShowInviteSignup" class="authSecondaryLink" type="button">Activate Pharmacy Admin</button>
+                        
                         <button id="btnAuthShowOwnerSetup" class="authSecondaryLink" type="button" hidden>First system setup — Owner only</button>
                     </div>
 
@@ -156,17 +156,20 @@
                         <span class="authEyebrow">NEW PHARMACY</span>
                         <h2>Request access</h2>
                         <p class="authLead">Create an account and submit your pharmacy for approval. You cannot use operational data until the System Owner approves the request.</p>
-                        <div class="authField"><label>Your Name</label><input id="publicSignupName" type="text" autocomplete="name" placeholder="Pharmacy manager name"></div>
                         <div class="authField"><label>Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
                         <div class="authField">
                             <label>Password</label>
                             <div class="authPasswordWrap">
-                                <input id="publicSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <input id="publicSignupPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter password">
                                 <button id="btnTogglePublicSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
                             </div>
+                            <small class="authFieldHelp">Use at least 8 characters.</small>
                         </div>
-                        <div class="authField"><label>Pharmacy Name</label><input id="publicPharmacyName" type="text" placeholder="Pharmacy name"></div>
-                        <div class="authField"><label>Requested Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="PHARM02"></div>
+                        <div class="authField">
+                            <label>Confirm Password</label>
+                            <input id="publicSignupPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
+                        </div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know for your pharmacy. The System Owner will verify the official code.</small></div>
                         <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
                         <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
                     </div>
@@ -252,9 +255,7 @@
                         <div class="authField"><label>Invitation Code (Staff)</label><input id="pendingInviteToken" type="text" autocomplete="off" placeholder="Invitation code"></div>
                         <button id="btnRedeemInvite" class="authPrimaryButton" type="button">Activate Staff Access</button>
                         <div class="authDivider"><span>OR</span></div>
-                        <div class="authField"><label>Your Name</label><input id="pendingRegistrationApplicantName" type="text" placeholder="Pharmacy manager name"></div>
-                        <div class="authField"><label>Pharmacy Name</label><input id="pendingRegistrationPharmacyName" type="text" placeholder="Pharmacy name"></div>
-                        <div class="authField"><label>Requested Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="PHARM02"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The System Owner will verify the official pharmacy identity.</small></div>
                         <button id="btnSubmitPendingRegistration" class="authPrimaryButton" type="button">Submit Pharmacy for Approval</button>
                     </div>
 
@@ -1981,33 +1982,17 @@
                 class="appPage"
             >
 
-                <section class="contentCard settingsAccountCompact">
-                    <div class="cardHeader">
-                        <div><span class="sectionEyebrow">ACCOUNT</span><h2>Pharmacy & Access</h2></div>
-                    </div>
-                    <div class="accountSettingsGrid">
-                        <div class="accountSettingTile"><span>Pharmacy</span><strong id="settingsPharmacyName">-</strong></div>
-                        <div class="accountSettingTile"><span>Pharmacy Code</span><strong id="settingsPharmacyCode">-</strong></div>
-                        <div class="accountSettingTile"><span>Signed In Email</span><strong id="settingsSignedInUser">-</strong></div>
-                        <div class="accountSettingTile"><span>Role</span><strong id="settingsUserRole">-</strong></div>
-                    </div>
-                    <div class="accountEditActions">
-                        <button id="btnEditAccountProfile" class="secondaryButton" type="button">👤 Edit Account</button>
-                    </div>
-                    <div id="accountEditPanel" class="accountEditPanel hidden" aria-hidden="true">
-                        <div class="accountEditField">
-                            <label for="accountDisplayNameInput">User Name</label>
-                            <input id="accountDisplayNameInput" type="text" maxlength="80" autocomplete="name" placeholder="Your name">
+                <section class="contentCard settingsAccountCompact settingsIdentityBar">
+                    <div class="settingsIdentityMain">
+                        <div>
+                            <span class="sectionEyebrow">ACCOUNT</span>
+                            <h2 id="settingsPharmacyName">-</h2>
+                            <span id="settingsSignedInUser" class="settingsIdentityEmail">-</span>
                         </div>
-                        <div class="accountEditField">
-                            <label for="accountPharmacyNameInput">Pharmacy Name</label>
-                            <input id="accountPharmacyNameInput" type="text" maxlength="120" placeholder="Pharmacy name">
+                        <div class="settingsIdentityBadges">
+                            <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
+                            <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
                         </div>
-                        <div class="accountEditButtons">
-                            <button id="btnSaveAccountProfile" class="primaryButton" type="button">Save Changes</button>
-                            <button id="btnCancelAccountProfile" class="secondaryButton" type="button">Cancel</button>
-                        </div>
-                        <small class="accountSecurityNote">Passwords are never displayed anywhere inside PharmFlow.</small>
                     </div>
                 </section>
 
@@ -2015,7 +2000,7 @@
                     <div class="cardHeader ownerControlHeader">
                         <div>
                             <span class="sectionEyebrow">SYSTEM OWNER</span>
-                            <h2>Owner Control Center</h2>
+                            <h2>Pharmacies & Access</h2>
                             <p class="settingsDescription">
                                 Approve new pharmacies, control access, and manage the single ADMIN account assigned to each pharmacy.
                             </p>
@@ -2046,12 +2031,12 @@
                         <div class="ownerSectionHeader">
                             <div>
                                 <span class="sectionEyebrow">NEW PHARMACIES</span>
-                                <h3>Registration Requests</h3>
+                                <h3>Pending Registration Requests</h3>
                             </div>
                             <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
                         </div>
                         <p class="settingsDescription">
-                            Public registrations remain locked until you approve them. Approval makes the registered account the ADMIN of that pharmacy.
+                            New accounts remain locked until you verify the pharmacy name and official code. Approval makes the registered account the ADMIN.
                         </p>
                         <div id="ownerRegistrationRequests" class="registrationRequestsList">
                             <div class="registrationEmpty">No pharmacy registration requests yet.</div>
@@ -2062,7 +2047,7 @@
                         <div class="ownerSectionHeader">
                             <div>
                                 <span class="sectionEyebrow">PHARMACY ACCESS</span>
-                                <h3>Pharmacies & Admins</h3>
+                                <h3>Current Pharmacies</h3>
                             </div>
                         </div>
                         <p class="settingsDescription">
