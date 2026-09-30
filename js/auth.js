@@ -1954,7 +1954,7 @@ function showAuthPanel(mode, options = {}){
         mode = "login";
     }
 
-    const validMode = ["login","invite","owner","public","recovery"].includes(mode) ? mode : "login";
+    const validMode = ["login","owner","public","recovery"].includes(mode) ? mode : "login";
 
     const login = document.getElementById("authLoginForm");
     const invite = document.getElementById("authInviteSignupForm");
