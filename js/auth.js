@@ -1571,7 +1571,7 @@ function setSettingsIdentityEditMode(editing){
         const codeInput=document.getElementById("settingsIdentityCodeInput");
         const protectedReference=String(AuthState.context?.pharmacy_code||"").trim().toUpperCase()==="HHP084";
         if(codeInput){
-            codeInput.readOnly=protectedReference;
+            codeInput.disabled=protectedReference;
             codeInput.title=protectedReference ? "HHP084 is the protected reference pharmacy code." : "";
         }
         document.getElementById("settingsIdentityNameInput")?.focus();
