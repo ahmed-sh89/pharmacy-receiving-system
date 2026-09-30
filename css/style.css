@@ -1340,6 +1340,7 @@ body.zebraDevice .mainContent,
 .barcodeControlAction strong{font-size:16px}
 .barcodeControlAction small{font-size:12px;font-weight:500;color:#52677c}
 .barcodeControlOverlay{z-index:145}
+.barcodeControlOverlay[hidden]{display:none}
 .barcodeControlPanel{width:min(1080px,96vw);max-height:90vh}
 .barcodeControlToolbar{
     display:grid;
