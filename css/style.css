@@ -1435,65 +1435,105 @@ body.zebraDevice .mainContent,
     margin:8px 0 12px;
 }
 .ownerControlCenter .ownerMetricCard{
-    min-height:auto;
+    min-height:72px;
     padding:10px 12px;
     border-width:1px;
     border-style:solid;
+    border-radius:12px;
+    text-align:left;
+    display:grid;
+    align-content:center;
+    gap:4px;
+    cursor:pointer;
+    transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;
 }
-.ownerControlCenter .ownerMetricCard strong{
-    font-size:20px;
+.ownerControlCenter .ownerMetricCard:hover{
+    transform:translateY(-1px);
+    box-shadow:0 5px 14px rgba(31,63,96,.08);
 }
-.ownerControlCenter .ownerMetricTotal{
-    background:#eef5ff;
-    border-color:#c9ddf7;
+.ownerControlCenter .ownerMetricCard:focus-visible{
+    outline:2px solid #1d6fd1;
+    outline-offset:2px;
 }
+.ownerControlCenter .ownerMetricCard strong{font-size:20px}
+.ownerControlCenter .ownerMetricTotal{background:#eef5ff;border-color:#c9ddf7;color:inherit}
 .ownerControlCenter .ownerMetricTotal strong{color:#1d5f9e}
-.ownerControlCenter .ownerMetricActive{
-    background:#edf8f1;
-    border-color:#c8e8d2;
-}
+.ownerControlCenter .ownerMetricActive{background:#edf8f1;border-color:#c8e8d2;color:inherit}
 .ownerControlCenter .ownerMetricActive strong{color:#217a45}
-.ownerControlCenter .ownerMetricPending{
-    background:#fff5e6;
-    border-color:#f1d49b;
-}
+.ownerControlCenter .ownerMetricPending{background:#fff5e6;border-color:#f1d49b;color:inherit}
 .ownerControlCenter .ownerMetricPending strong{color:#b85c00}
-.ownerControlCenter .ownerMetricAdmins{
-    background:#f4f6f8;
-    border-color:#dbe1e7;
-}
+.ownerControlCenter .ownerMetricAdmins{background:#f4f6f8;border-color:#dbe1e7;color:inherit}
 .ownerControlCenter .ownerMetricAdmins strong{color:#425466}
-.ownerControlCenter .ownerControlSection{
-    margin-top:10px;
-    padding:12px;
+.ownerControlCenter .ownerManagementPanel{
+    margin-top:14px;
+    padding:16px;
+    border:1px solid #d7e4ef;
+    border-radius:14px;
+    background:#fbfdff;
+    box-shadow:0 8px 24px rgba(38,67,94,.06);
 }
-.ownerControlCenter .ownerSectionHeader{
-    margin-bottom:6px;
+.ownerControlCenter .ownerManagementPanelHeader{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:18px;
+    padding-bottom:12px;
+    margin-bottom:12px;
+    border-bottom:1px solid #e3eaf0;
+}
+.ownerControlCenter .ownerManagementPanelHeader h3{
+    margin:3px 0 2px;
+    font-size:1.15rem;
+}
+.ownerControlCenter .ownerManagementPanelTools{
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+}
+.ownerControlCenter .ownerManagementSearch{
+    display:grid;
+    gap:4px;
+    min-width:310px;
+    font-size:.72rem;
+    font-weight:700;
+    color:#52677c;
+}
+.ownerControlCenter .ownerManagementSearch input{
+    min-height:36px;
+    padding:7px 10px;
+    border:1px solid #ccd9e5;
+    border-radius:9px;
+    background:#fff;
+    color:var(--text);
 }
 .ownerControlCenter .ownerPharmacyList{
     display:grid;
-    gap:6px;
+    gap:7px;
+    max-height:520px;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding-right:4px;
 }
 .ownerControlCenter .ownerPharmacyCard{
     display:grid;
-    grid-template-columns:minmax(230px,1.15fr) minmax(220px,1fr) 88px minmax(430px,auto);
+    grid-template-columns:minmax(300px,1.35fr) minmax(220px,1fr) 90px minmax(430px,auto);
     align-items:center;
-    gap:10px;
-    padding:7px 8px;
-    min-height:54px;
+    gap:12px;
+    padding:9px 10px;
+    min-height:58px;
 }
 .ownerControlCenter .ownerPharmacyIdentity{
     display:grid;
-    grid-template-columns:72px minmax(0,1fr);
+    grid-template-columns:76px minmax(0,1fr);
     align-items:center;
-    gap:9px;
+    gap:10px;
     min-width:0;
 }
 .ownerControlCenter .ownerPharmacyCodeBadge{
     display:flex;
     align-items:center;
     justify-content:center;
-    min-width:72px;
+    min-width:76px;
     min-height:30px;
     padding:5px 8px;
     border:1px solid #c9ddf7;
@@ -1538,6 +1578,12 @@ body.zebraDevice .mainContent,
     padding:5px 8px;
     white-space:nowrap;
 }
+.ownerControlCenter .registrationRequestsList{
+    max-height:520px;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding-right:4px;
+}
 .masterGTINCard{
     padding:16px;
 }
@@ -1564,8 +1610,11 @@ body.zebraDevice .mainContent,
 @media (max-width:900px){
     .settingsAccountCompact .accountSettingsGrid{grid-template-columns:1fr 1fr}
     .ownerControlCenter .ownerMetricGrid{grid-template-columns:1fr 1fr}
+    .ownerControlCenter .ownerManagementPanelHeader{align-items:stretch;flex-direction:column}
+    .ownerControlCenter .ownerManagementPanelTools{align-items:stretch}
+    .ownerControlCenter .ownerManagementSearch{min-width:0;flex:1}
     .ownerControlCenter .ownerPharmacyCard{grid-template-columns:1fr 1fr}
-    .ownerControlCenter .ownerPharmacyActions{justify-content:flex-start}
+    .ownerControlCenter .ownerPharmacyActions{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
 }
 
 
@@ -1584,8 +1633,6 @@ body.zebraDevice .mainContent,
 .registrationApprovalFields{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(160px,.7fr);gap:12px;margin-top:14px}
 .registrationApprovalFields label{display:grid;gap:6px;font-size:.78rem;font-weight:700}
 .registrationApprovalFields input{width:100%;min-height:42px;padding:9px 11px;border:1px solid #d7e0e8;border-radius:9px;background:#fff}
-.ownerPharmacyList{max-height:430px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
-.registrationRequestsList{max-height:360px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
 #authPublicSignupForm .authField input,#authLoginForm .authField input,#authForcedPasswordForm .authField input{min-height:46px}
 @media (max-width:760px){
   .settingsIdentityMain{align-items:flex-start;flex-direction:column}
