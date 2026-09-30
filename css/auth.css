@@ -652,6 +652,8 @@ body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font
   body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{height:41px;min-height:41px;margin-top:1px}
 }
 @media (min-width:761px) and (max-height:700px){
+  body:not(.zebraDevice) #authGate .authShell:has(#authPublicSignupForm:not([hidden])){min-height:0;height:min(540px,calc(100vh - 28px))}
+  body:not(.zebraDevice) #authGate .authFormPanel:has(#authPublicSignupForm:not([hidden])){padding-top:18px!important;padding-bottom:18px!important}
   body:not(.zebraDevice) #authGate #authPublicSignupForm h2{font-size:27px}
   body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{font-size:10.5px;margin-bottom:6px}
   body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{margin-bottom:5px}
