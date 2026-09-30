@@ -1076,12 +1076,28 @@ function getWorkspaceOrderSourceRows(orderNumber){
     const file=getWorkspaceOrderFile(orderNumber);
 
     if(file && Array.isArray(file.sourceRows) && file.sourceRows.length){
-        return file.sourceRows.map(row=>({
-            itemCode:normalizeItemCode(row?.itemCode||""),
-            itemName:toSafeString(row?.itemName||""),
-            orderedQty:toNumber(row?.orderedQty,0),
-            category:toSafeString(row?.category||"")
-        }));
+        /* Source rows intentionally preserve the supplier file exactly, so the
+           same Item Code may occur more than once. Receiving/report projections
+           are item-level and must not render each raw source row separately:
+           doing so repeats the same durable received aggregate once per duplicate
+           row and makes a single receipt appear doubled. Consolidate only at this
+           projection boundary; keep sourceRows themselves immutable for audit. */
+        const byCode=new Map();
+        file.sourceRows.forEach(row=>{
+            const code=normalizeItemCode(row?.itemCode||"");
+            if(!code) return;
+            const current=byCode.get(code)||{
+                itemCode:code,
+                itemName:toSafeString(row?.itemName||""),
+                orderedQty:0,
+                category:toSafeString(row?.category||"")
+            };
+            current.orderedQty+=toNumber(row?.orderedQty,0);
+            if(!current.itemName) current.itemName=toSafeString(row?.itemName||"");
+            if(!current.category) current.category=toSafeString(row?.category||"");
+            byCode.set(code,current);
+        });
+        return [...byCode.values()];
     }
 
     /* Compatibility fallback for workspaces uploaded before 2C.10.2.7. */
