@@ -1711,9 +1711,7 @@ body.zebraDevice .mainContent,
 .orderDataCheckGrid>div{display:grid;gap:4px;padding:10px 12px;border:1px solid #d5e2ed;border-radius:9px;background:#fff}
 .orderDataCheckGrid span{font-size:10px;font-weight:700;color:#60758a}
 .orderDataCheckGrid strong{font-size:16px;color:#173b5e}
-.mappingCompatibilityRow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;padding:10px 12px;border:1px solid #d9e4ed;border-radius:9px;background:#fff}
-.mappingCompatibilityRow>div{display:grid;gap:3px}
-.mappingCompatibilityRow small{color:#667b8f}
+
 .settingsDataSafetyCard{
     padding:14px 16px;
 }
