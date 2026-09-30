@@ -1673,29 +1673,51 @@ body.zebraDevice .mainContent,
 .ownerManagementPanel .ownerPharmacyList[hidden],
 .ownerManagementPanel .ownerManagementSearch[hidden]{display:none}
 .masterGTINCard{padding:16px}
-.settingsModuleCard > .cardHeader,
-.settingsModuleCard > .settingsIdentityMain{
-    margin:-16px -16px 14px;
-    padding:13px 16px;
-    border-bottom:1px solid #cfe0ef;
-    border-radius:10px 10px 0 0;
-    background:linear-gradient(90deg,#eaf4ff 0%,#f6faff 72%,#fff 100%);
+.settingsModuleCard{
+    border:1px solid #c9dced;
+    background:#fff;
+    box-shadow:0 3px 12px rgba(32,82,125,.04);
 }
-.settingsIdentityBar.settingsModuleCard > .settingsIdentityMain{
-    margin:-20px -24px 0;
-    padding:15px 24px;
+.settingsModuleTitleChip{
+    display:inline-grid;
+    gap:2px;
+    min-width:250px;
+    margin:0 0 12px;
+    padding:8px 12px;
+    border:1px solid #c8dcf0;
+    border-radius:9px;
+    background:#eef6ff;
 }
-.settingsModuleCard > .cardHeader h2,
-.settingsModuleCard > .settingsIdentityMain h2{color:#123f6d}
-.settingsModuleCard > .cardHeader .sectionEyebrow,
-.settingsModuleCard > .settingsIdentityMain .sectionEyebrow{color:#1d6fd1;font-weight:800;letter-spacing:.055em}
-
-.settingsDataSafetyCard{
-    padding:14px 16px;
+.settingsModuleTitleChip .sectionEyebrow{
+    color:#1d6fd1;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.055em;
 }
-.settingsDataSafetyCard .cardHeader{
-    margin-bottom:6px;
+.settingsModuleTitleChip h2{
+    margin:0;
+    color:#123f6d;
+    font-size:1rem;
+    line-height:1.15;
 }
+.settingsIdentityBar.settingsModuleCard{padding:14px 16px}
+.settingsIdentityMain{
+    display:grid;
+    grid-template-columns:minmax(250px,.7fr) minmax(0,1.3fr);
+    align-items:center;
+    gap:18px;
+}
+.settingsAccountTitleChip{margin:0}
+.settingsAccountDetails{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:18px;
+    min-width:0;
+}
+.settingsIdentityEmail{min-width:0}
+.ownerControlCenter .ownerControlHeader{margin-bottom:12px}
+.settingsDataSafetyCard{padding:14px 16px}
 .settingsDataSafetyCard .dangerZone{
     margin-top:10px;
 }
@@ -1713,9 +1735,8 @@ body.zebraDevice .mainContent,
 /* =====================================================
    SETTINGS IDENTITY + OWNER ACCESS — PHASE2C1170
 ===================================================== */
-.settingsIdentityBar{padding:20px 24px}
-.settingsIdentityMain{display:flex;align-items:center;justify-content:space-between;gap:20px}
-.settingsIdentityMain h2{margin:4px 0 6px;font-size:1.45rem}
+.settingsIdentityBar{padding:14px 16px}
+.settingsIdentityMain h2{margin:0}
 .settingsIdentityEmail{display:block;opacity:.72;overflow-wrap:anywhere}
 .settingsIdentityBadges{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .settingsCodeBadge,.settingsRoleBadge{display:inline-flex;align-items:center;min-height:32px;padding:5px 11px;border-radius:999px;font-size:.78rem;letter-spacing:.04em}
@@ -1727,7 +1748,9 @@ body.zebraDevice .mainContent,
 .registrationApprovalFields input{width:100%;min-height:42px;padding:9px 11px;border:1px solid #d7e0e8;border-radius:9px;background:#fff}
 #authPublicSignupForm .authField input,#authLoginForm .authField input,#authForcedPasswordForm .authField input{min-height:46px}
 @media (max-width:760px){
-  .settingsIdentityMain{align-items:flex-start;flex-direction:column}
+  .settingsIdentityMain{grid-template-columns:1fr;align-items:stretch}
+  .settingsModuleTitleChip{min-width:0;width:100%}
+  .settingsAccountDetails{align-items:flex-start;flex-direction:column;gap:10px}
   .settingsIdentityBadges{justify-content:flex-start}
   .registrationApprovalFields{grid-template-columns:1fr}
 }
