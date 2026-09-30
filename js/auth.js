@@ -38,6 +38,8 @@ const AuthState = {
     registration:null,
     mustChangePassword:false,
     ownerRegistrations:[],
+    ownerManagementView:null,
+    ownerManagementSearch:"",
     ownerPharmacies:[],
     lastContextScope:""
 };
@@ -136,11 +138,21 @@ function bindAuthUI(){
     bindClick("btnLogout", ()=>signOutCurrentUser());
     bindClick("btnPendingLogout", ()=>signOutCurrentUser());
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
-    bindClick("btnRefreshRegistrationRequests", ()=>loadOwnerRegistrationRequests(true));
+    bindClick("btnCloseOwnerManagement", ()=>closeOwnerManagementPanel());
     bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
     bindClick("btnCancelSettingsIdentity", ()=>setSettingsIdentityEditMode(false));
     bindClick("btnSaveSettingsIdentity", ()=>saveSettingsIdentity());
     bindClick("btnRefreshOwnerControl", ()=>loadOwnerControlCenter(true));
+    document.querySelectorAll("[data-owner-view]").forEach(card=>{
+        card.addEventListener("click",()=>openOwnerManagementPanel(card.dataset.ownerView));
+    });
+    const ownerSearch=document.getElementById("ownerManagementSearch");
+    if(ownerSearch){
+        ownerSearch.addEventListener("input",()=>{
+            AuthState.ownerManagementSearch=ownerSearch.value || "";
+            renderOwnerManagementPanel();
+        });
+    }
     bindClick("btnCreateMemberInvite", ()=>createMemberInviteFromSettings());
 
     ["authEmail","authPassword"].forEach(id=>{
@@ -1506,43 +1518,60 @@ function renderOwnerMetrics(){
     setText("ownerMetricAdminsAssigned",String(pharmacies.filter(p=>p.admin_email || p.pending_admin_email).length));
 }
 
+function ownerPharmacyMatchesSearch(p,query){
+    if(!query){ return true; }
+    const haystack=[p.pharmacy_name,p.pharmacy_code,p.admin_email,p.pending_admin_email,p.admin_name]
+        .map(value=>String(value||"").toLowerCase()).join(" ");
+    return haystack.includes(query.toLowerCase());
+}
+
+function getOwnerPharmacyRowsForView(){
+    const view=AuthState.ownerManagementView || "total";
+    const query=String(AuthState.ownerManagementSearch||"").trim();
+    return (AuthState.ownerPharmacies||[]).filter(p=>{
+        const active=p.status==="active" && p.active!==false;
+        if(view==="active" && !active){ return false; }
+        if(view==="admins" && !(p.admin_email || p.pending_admin_email)){ return false; }
+        return ownerPharmacyMatchesSearch(p,query);
+    });
+}
+
 function renderOwnerPharmacies(){
-    const box = document.getElementById("ownerPharmacyList");
+    const box=document.getElementById("ownerPharmacyList");
     if(!box){ return; }
-    const rows = AuthState.ownerPharmacies || [];
+    const rows=getOwnerPharmacyRowsForView();
     if(!rows.length){
-        box.innerHTML = '<div class="registrationEmpty">No pharmacies found.</div>';
+        box.innerHTML='<div class="registrationEmpty">No pharmacies match this view.</div>';
         renderOwnerMetrics();
         return;
     }
 
-    box.innerHTML = rows.map(p=>{
-        const active = p.status === "active" && p.active !== false;
-        const adminLabel = p.admin_email
+    box.innerHTML=rows.map(p=>{
+        const active=p.status==="active" && p.active!==false;
+        const adminLabel=p.admin_email
             ? escapeAuthHtml(p.admin_email)
             : (p.pending_admin_email
-                ? escapeAuthHtml(p.pending_admin_email) + ' <span class="ownerAwaitingTag">Awaiting activation</span>'
+                ? escapeAuthHtml(p.pending_admin_email)+' <span class="ownerAwaitingTag">Awaiting activation</span>'
                 : '<span class="ownerUnassignedTag">No ADMIN assigned</span>');
-        const adminName = p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
+        const adminName=p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
 
         return `<article class="ownerPharmacyCard">
             <div class="ownerPharmacyIdentity">
                 <div class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "-")}</div>
                 <strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
             </div>
-
             <div class="ownerPharmacyAdmin">
                 <span class="ownerFieldLabel">ADMIN</span>
                 <div>${adminLabel}</div>
                 ${adminName}
             </div>
-
             <div class="ownerPharmacyStatus">
                 <span class="registrationStatus ${active ? "approved" : "rejected"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
             </div>
-
             <div class="ownerPharmacyActions">
-                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit Identity</button>\n                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>\n                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset Password</button>` : ""}
+                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit Identity</button>
+                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>
+                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset Password</button>` : ""}
                 <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
             </div>
         </article>`;
@@ -1554,6 +1583,53 @@ function renderOwnerPharmacies(){
     renderOwnerMetrics();
 }
 
+function openOwnerManagementPanel(view){
+    if(!["total","active","pending","admins"].includes(view)){ return; }
+    AuthState.ownerManagementView=view;
+    AuthState.ownerManagementSearch="";
+    const search=document.getElementById("ownerManagementSearch");
+    if(search){ search.value=""; }
+    renderOwnerManagementPanel();
+    document.getElementById("ownerManagementPanel")?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function closeOwnerManagementPanel(){
+    AuthState.ownerManagementView=null;
+    AuthState.ownerManagementSearch="";
+    const panel=document.getElementById("ownerManagementPanel");
+    if(panel){ panel.hidden=true; panel.setAttribute("aria-hidden","true"); }
+}
+
+function renderOwnerManagementPanel(){
+    const panel=document.getElementById("ownerManagementPanel");
+    const pharmacyList=document.getElementById("ownerPharmacyList");
+    const requests=document.getElementById("ownerRegistrationRequests");
+    const searchWrap=document.getElementById("ownerManagementSearchWrap");
+    if(!panel || !pharmacyList || !requests){ return; }
+    const view=AuthState.ownerManagementView;
+    if(!view){
+        panel.hidden=true;
+        panel.setAttribute("aria-hidden","true");
+        return;
+    }
+    const config={
+        total:["PHARMACY ACCESS","All Pharmacies","Manage every pharmacy and its ADMIN access."],
+        active:["PHARMACY ACCESS","Active Pharmacies","Manage pharmacies that currently have active access."],
+        pending:["NEW PHARMACIES","Pending Registration Requests","Review new accounts, confirm the official pharmacy identity, then approve or reject access."],
+        admins:["PHARMACY ACCESS","Admins Assigned","Manage pharmacies with an assigned or pending ADMIN account."]
+    }[view];
+    setText("ownerManagementEyebrow",config[0]);
+    setText("ownerManagementTitle",config[1]);
+    setText("ownerManagementDescription",config[2]);
+    panel.hidden=false;
+    panel.setAttribute("aria-hidden","false");
+    const pending=view==="pending";
+    requests.hidden=!pending;
+    pharmacyList.hidden=pending;
+    if(searchWrap){ searchWrap.hidden=pending; }
+    if(pending){ renderOwnerRegistrationRequests(); }
+    else{ renderOwnerPharmacies(); }
+}
 function setSettingsIdentityEditMode(editing){
     const view=document.getElementById("settingsIdentityView");
     const panel=document.getElementById("settingsIdentityEdit");
@@ -1719,6 +1795,7 @@ async function loadOwnerRegistrationRequests(showMessage=false){
         AuthState.ownerRegistrations = Array.isArray(rows) ? rows : [];
         renderOwnerRegistrationRequests();
         renderOwnerMetrics();
+        if(AuthState.ownerManagementView==="pending"){ renderOwnerManagementPanel(); }
         if(showMessage){ setSettingsAccessMessage("Registration requests refreshed.","success"); }
         return AuthState.ownerRegistrations;
     }
