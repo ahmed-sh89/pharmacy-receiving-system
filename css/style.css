@@ -1522,7 +1522,7 @@ body.zebraDevice .mainContent,
 }
 .ownerManagementPanel .ownerPharmacyCard{
     display:grid;
-    grid-template-columns:minmax(285px,1.35fr) minmax(210px,1fr) 94px minmax(390px,auto);
+    grid-template-columns:minmax(300px,1.45fr) minmax(220px,1fr) minmax(350px,auto);
     align-items:center;
     gap:12px;
     padding:10px 11px;
@@ -1564,13 +1564,33 @@ body.zebraDevice .mainContent,
     text-overflow:ellipsis;
     white-space:nowrap;
 }
-.ownerManagementPanel .ownerPharmacyStatus{display:flex;justify-content:flex-start}
 .ownerManagementPanel .ownerPharmacyActions{
     display:flex;
     flex-wrap:nowrap;
     gap:6px;
     justify-content:flex-end;
     align-items:center;
+}
+.ownerManagementPanel .ownerPharmacyState{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    min-height:28px;
+    padding:4px 8px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.03em;
+    white-space:nowrap;
+}
+.ownerManagementPanel .ownerPharmacyState.active{
+    background:#e7f7ed;
+    color:#19713d;
+}
+.ownerManagementPanel .ownerPharmacyState.suspended{
+    background:#fdebea;
+    color:#b42318;
 }
 .ownerManagementPanel .ownerPharmacyActions button{
     min-height:34px;
