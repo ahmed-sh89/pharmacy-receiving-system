@@ -8945,7 +8945,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const itemCodeOf=item=>toSafeString(item?.item_code||item?.itemCode).trim();
     const itemNameOf=item=>toSafeString(item?.item_name||item?.itemName||"Unnamed item").trim();
-    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><div class="barcodeItemIdentity"><strong>${esc(itemCodeOf(item))}</strong><b>${esc(itemNameOf(item))}</b></div></div>`;
+    const emptyState=()=>'<div class="barcodeControlEmpty"><strong>Ready to search</strong><span>Scan a barcode or enter an item code or item name.</span></div>';
+    const itemSummary=item=>`<section class="barcodeItemCard"><span class="barcodeSectionLabel">SELECTED ITEM</span><div class="barcodeItemIdentity"><strong>${esc(itemCodeOf(item))}</strong><b>${esc(itemNameOf(item))}</b></div></section>`;
 
     const loadBarcodeRows=async item=>{
         const itemCode=itemCodeOf(item);
@@ -8960,13 +8961,13 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     };
 
     const renderBarcodeList=rows=>{
-        if(!rows.length) return '<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span><strong>No barcodes are linked to this item.</strong></div>';
-        return `<div class="needsReviewMappingCompare barcodeList"><span>BARCODES</span>${rows.map((row,index)=>`
+        if(!rows.length) return '<section class="barcodeListCard"><div class="barcodeSectionHeading"><span class="barcodeSectionLabel">BARCODES</span><strong>No barcodes linked</strong></div><div class="barcodeControlEmpty compact"><span>This item currently has no barcode mappings.</span></div></section>';
+        return `<section class="barcodeListCard"><div class="barcodeSectionHeading"><span class="barcodeSectionLabel">BARCODES</span><strong>${rows.length} linked</strong></div><div class="barcodeRows">${rows.map((row,index)=>`
             <div class="barcodeManagementRow">
                 <strong>${esc(row.identifier_display)}</strong>
-                ${row.mappingScope==="PHARMACY"?'<small>THIS PHARMACY</small>':(!canWriteGlobal()?'<small>GLOBAL</small>':'')}
-                ${row.removable?`<button type="button" class="danger" data-remove-barcode="${index}">Remove</button>`:""}
-            </div>`).join("")}</div>`;
+                <span class="barcodeRowMeta">${row.mappingScope==="PHARMACY"?"THIS PHARMACY":(!canWriteGlobal()?"GLOBAL":"GLOBAL MASTER")}</span>
+                ${row.removable?`<button type="button" class="barcodeRemoveButton" data-remove-barcode="${index}">Remove</button>`:""}
+            </div>`).join("")}</div></section>`;
     };
 
     const showItem=async item=>{
@@ -8978,14 +8979,15 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         workspace.innerHTML=`
             ${itemSummary(item)}
             ${renderBarcodeList(rows)}
-            ${canAdd?`<div class="needsReviewMappingActions barcodeSimpleActions">
-                <label>Add Barcode
+            ${canAdd?`<section class="barcodeAddCard">
+                <span class="barcodeSectionLabel">ADD BARCODE</span>
+                <div class="barcodeAddRow">
                     <input data-new-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode">
-                </label>
-                <button type="button" data-add-barcode>+ Add Barcode</button>
-            </div>`:""}
-            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><button type="button" class="danger" data-delete-item>Delete Item</button></div>`:""}
-            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="needsReviewGlobalNotice">Barcode changes apply only to this pharmacy. Global barcodes are shown as read only.</p>':""}
+                    <button type="button" class="primaryButton" data-add-barcode>+ Add Barcode</button>
+                </div>
+            </section>`:""}
+            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><div><span class="barcodeSectionLabel">DANGER ZONE</span><small>Delete only an unused item created by mistake.</small></div><button type="button" class="dangerButton" data-delete-item>Delete Item</button></div>`:""}
+            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">Barcode changes apply only to this pharmacy. Global barcodes are shown as read only.</p>':""}
         `;
 
         workspace.querySelector("[data-add-barcode]")?.addEventListener("click",async event=>{
@@ -9051,7 +9053,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             try{
                 await IdentifierService.deleteUnusedItem(nrV2OperationId(),itemCode,auditReason("DELETE_ITEM"));
                 selectedItem=null;
-                workspace.innerHTML='<div class="needsReviewAdminSuccess">Item deleted.</div>';
+                workspace.innerHTML='<div class="barcodeControlEmpty success"><strong>Item deleted</strong><span>The item was removed successfully.</span></div>';
                 searchInput.value="";
                 searchInput.focus();
                 showToast?.("Item deleted","success");
@@ -9065,13 +9067,13 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const renderNewItemForm=(prefill="")=>{
         if(!canWriteGlobal()){
-            workspace.innerHTML='<div class="needsReviewNoMatches">No results.</div>';
+            workspace.innerHTML='<div class="barcodeControlEmpty"><strong>No results</strong><span>No matching item was found.</span></div>';
             return;
         }
         selectedItem=null;
         workspace.innerHTML=`
-            <div class="needsReviewNoMatches">Add a new item to the Global Master.</div>
-            <div class="needsReviewMappingActions barcodeNewItemForm">
+            <div class="barcodeControlEmpty compact"><strong>Add New Item</strong><span>Create a new Global Master item with its first barcode.</span></div>
+            <div class="barcodeNewItemForm">
                 <label>Item Code
                     <input data-new-item-code autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Item Code" value="${esc(prefill)}">
                 </label>
@@ -9114,7 +9116,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const renderNoResults=(query="")=>{
         selectedItem=null;
-        workspace.innerHTML=`<div class="needsReviewNoMatches">No results.</div>${canWriteGlobal()?'<button type="button" data-add-new-item>+ Add New Item</button>':""}`;
+        workspace.innerHTML=`<div class="barcodeControlEmpty"><strong>No results</strong><span>No matching item was found.</span>${canWriteGlobal()?'<button type="button" class="secondaryButton" data-add-new-item>+ Add New Item</button>':""}</div>`;
         workspace.querySelector("[data-add-new-item]")?.addEventListener("click",()=>renderNewItemForm(query));
     };
 
@@ -9124,7 +9126,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             renderNoResults(searchInput.value);
             return;
         }
-        workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
+        workspace.innerHTML=`<div class="barcodeResultsHeader"><strong>Select an item</strong><span>${items.length} results</span></div><div class="barcodeSearchResults">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
             const item=items[Number(button.dataset.globalItem)]||null;
             if(!item) return;
@@ -9134,7 +9136,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const runSearch=async()=>{
         const query=normalizeSettingsSearch(searchInput.value);
-        if(!query){workspace.innerHTML="";searchInput.focus();return;}
+        if(!query){workspace.innerHTML=emptyState();searchInput.focus();return;}
         searchButton.disabled=true;
         try{
             const resolved=await IdentifierService.resolve(query);
@@ -9145,7 +9147,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             const items=await IdentifierService.searchItems(query,12);
             renderItemResults(items);
         }catch(error){
-            workspace.innerHTML="";
+            workspace.innerHTML=emptyState();
             showToast?.(error?.message||"Unable to search items","error");
         }finally{
             searchButton.disabled=false;
@@ -9155,16 +9157,16 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     if(canWriteGlobal()){
         const topAdd=document.createElement("button");
         topAdd.type="button";
-        topAdd.className="secondaryButton";
+        topAdd.className="secondaryButton barcodeAddNewTop";
         topAdd.dataset.addNewItemTop="1";
         topAdd.textContent="+ Add New Item";
-        searchButton.insertAdjacentElement("afterend",topAdd);
+        searchButton.parentElement?.appendChild(topAdd);
         topAdd.addEventListener("click",()=>renderNewItemForm(""));
     }
     const renderSuggestions=items=>{
         if(!items.length) return;
         selectedItem=null;
-        workspace.innerHTML=`<div class="needsReviewMatches barcodeSearchSuggestions">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
+        workspace.innerHTML=`<div class="barcodeSearchResults">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
             const item=items[Number(button.dataset.globalItem)]||null;
             if(!item) return;
@@ -9176,7 +9178,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const queueSuggestions=()=>{
         clearTimeout(searchSuggestTimer);
         const typed=toSafeString(searchInput.value).trim();
-        if(!typed){workspace.innerHTML="";selectedItem=null;return;}
+        if(!typed){workspace.innerHTML=emptyState();selectedItem=null;return;}
         /* Scanner/GS1 is an exact lookup path, not an autocomplete query. */
         if(typeof looksLikeStrongBarcode==="function" && looksLikeStrongBarcode(typed)){
             searchSuggestTimer=setTimeout(runSearch,40);
@@ -9196,7 +9198,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     searchInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();clearTimeout(searchSuggestTimer);runSearch();}});
     clear?.addEventListener("click",()=>{
         searchInput.value="";
-        workspace.innerHTML="";
+        workspace.innerHTML=emptyState();
         selectedItem=null;
         searchInput.focus();
     });
