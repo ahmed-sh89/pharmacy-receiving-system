@@ -1996,15 +1996,29 @@
                             <h2 id="settingsPharmacyName">-</h2>
                         </div>
                         <div class="settingsAccountDetails">
-                            <span id="settingsSignedInUser" class="settingsIdentityEmail">-</span>
+                            <div class="settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
                             <div class="settingsIdentityActions">
                                 <div class="settingsIdentityBadges">
                                     <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
                                     <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
                                 </div>
+                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button">Change Password</button>
                                 <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
                             </div>
                         </div>
+                    </div>
+                    <div id="settingsPasswordOverlay" class="settingsPasswordOverlay" aria-hidden="true" hidden>
+                        <button class="settingsPasswordScrim" data-settings-password-close aria-label="Close change password"></button>
+                        <section class="settingsPasswordPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPasswordTitle">
+                            <header><div><span class="sectionEyebrow">ACCOUNT SECURITY</span><h2 id="settingsPasswordTitle">Change Password</h2><p>Confirm your current password, then create a new password.</p></div><button class="settingsPasswordClose" data-settings-password-close type="button" aria-label="Close">✕</button></header>
+                            <div class="settingsPasswordFields">
+                                <label>Current Password<input id="settingsCurrentPassword" type="password" autocomplete="current-password"></label>
+                                <label>New Password<input id="settingsNewPassword" type="password" minlength="8" autocomplete="new-password"><small>Use at least 8 characters.</small></label>
+                                <label>Confirm New Password<input id="settingsConfirmPassword" type="password" minlength="8" autocomplete="new-password"></label>
+                            </div>
+                            <div id="settingsPasswordMessage" class="authMessage" role="status" aria-live="polite"></div>
+                            <footer><button class="secondaryButton" data-settings-password-close type="button">Cancel</button><button id="btnSaveSettingsPassword" class="primaryButton" type="button">Update Password</button></footer>
+                        </section>
                     </div>
                     <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
                         <div class="settingsIdentityEditField"><label for="settingsIdentityNameInput">Pharmacy Name</label><input id="settingsIdentityNameInput" type="text" maxlength="120"></div>
