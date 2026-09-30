@@ -1360,60 +1360,31 @@ body.zebraDevice .mainContent,
 .barcodeControlSearchRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
 .barcodeControlSearchRow input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #bfd1e1;border-radius:9px;background:#fff;color:#16324a;font-size:14px;box-shadow:none}
 .barcodeControlSearchRow input:focus{outline:2px solid rgba(29,111,209,.18);border-color:#4f94d5}
-.barcodeControlSearchButton,.barcodeControlClearButton,.barcodeAddNewTop{min-height:44px;padding:8px 16px}
+.barcodeControlSearchButton,.barcodeControlClearButton{min-height:44px;padding:8px 16px}
 .barcodeControlWorkspace{flex:1;min-height:180px;max-height:62vh;overflow-y:auto;overscroll-behavior:contain;padding:16px 22px 20px}
-.barcodeControlEmpty{display:grid;place-items:center;gap:5px;min-height:150px;padding:24px;border:1px dashed #c9d9e7;border-radius:12px;background:#fff;color:#6a7d8f;text-align:center}
-.barcodeControlEmpty strong{color:#294b69;font-size:14px}
-.barcodeControlEmpty.compact{min-height:82px}
-.barcodeControlEmpty.success{border-color:#bfe4cc;background:#f1fbf5}
-.barcodeResultsHeader{display:flex;align-items:center;justify-content:space-between;margin:0 2px 9px;color:#52677c;font-size:13.5px}
-.barcodeResultsHeader strong{color:#294b69}
-.barcodeSearchResults{display:grid;gap:7px}
-.barcodeSearchResults>button{width:100%;padding:11px 12px;border:1px solid #cbdceb;border-radius:10px;background:#fff;color:#173b5e;text-align:left;cursor:pointer}
-.barcodeSearchResults>button:hover,.barcodeSearchResults>button:focus-visible{border-color:#74abe0;background:#f0f7ff;outline:none}
-.barcodeSuggestionIdentity{display:flex;align-items:center;gap:12px;min-width:0;width:100%}
-.barcodeSuggestionCode{flex:0 0 auto;min-width:84px;padding:5px 8px;border:1px solid #c2daf2;border-radius:7px;background:#eaf4ff;color:#145c9e;font-size:13px;font-weight:800;letter-spacing:.02em;text-align:center}
-.barcodeSuggestionName{min-width:0;color:#173b5e;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.barcodeItemCard,.barcodeListCard,.barcodeAddCard{padding:14px 15px;border:1px solid #ccdeed;border-radius:12px;background:#fff}
-.barcodeItemCard{margin-bottom:10px;border-left:4px solid #1d6fd1}
-.barcodeSectionLabel{display:block;margin-bottom:6px;color:#56738e;font-size:10px;font-weight:800;letter-spacing:.055em}
-.barcodeItemIdentity{display:flex;align-items:baseline;gap:12px;min-width:0}
-.barcodeItemIdentity strong{flex:0 0 auto;color:#145c9e;font-size:16px}
-.barcodeItemIdentity b{color:#173b5e;font-size:15px}
-.barcodeListCard{margin-bottom:10px}
-.barcodeSectionHeading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.barcodeSectionHeading .barcodeSectionLabel{margin:0}
-.barcodeSectionHeading strong{color:#56738e;font-size:11px}
-.barcodeRows{display:grid;gap:7px}
-.barcodeManagementRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:42px;padding:8px 10px;border:1px solid #d7e4ef;border-radius:9px;background:#f8fbfe}
-.barcodeManagementRow>strong{color:#173b5e;font-size:13px;overflow-wrap:anywhere}
-.barcodeRowMeta{padding:3px 7px;border-radius:999px;background:#edf3f8;color:#61758a;font-size:9px;font-weight:800;white-space:nowrap}
-.barcodeRemoveButton{min-height:30px;padding:5px 9px;border:1px solid #efc4c0;border-radius:7px;background:#fff6f5;color:#b42318;font-size:11px;font-weight:700;cursor:pointer}
-.barcodeAddCard{margin-bottom:10px}
-.barcodeAddRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-.barcodeAddRow input{width:100%;min-height:42px;padding:8px 11px;border:1px solid #cbd9e6;border-radius:9px;background:#fff}
-.barcodeDeleteItemZone{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #efcbc7;border-left:4px solid #c93c31;border-radius:10px;background:#fff8f7}
-.barcodeDeleteItemZone .barcodeSectionLabel{margin:0 0 2px;color:#a62d25}
-.barcodeDeleteItemZone small{color:#7c5a56}
-.barcodeScopeNotice{margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff7e8;color:#7b5b1e;font-size:11px}
-.barcodeNewItemForm{display:grid;grid-template-columns:1fr 1.4fr 1fr auto auto;align-items:end;gap:8px;margin-top:10px;padding:14px;border:1px solid #ccdeed;border-radius:12px;background:#fff}
-.barcodeNewItemForm label{display:grid;gap:5px;font-size:11px;font-weight:700;color:#52677c}
-.barcodeNewItemForm input{min-height:40px;padding:8px 10px;border:1px solid #cbd9e6;border-radius:8px}
-@media (max-width:760px){
-  .settingsAccountDetails{grid-template-columns:1fr}
-  .settingsIdentityActions{justify-content:flex-start}
-  .settingsDataActionRow{align-items:flex-start;flex-direction:column}
-
-    .barcodeControlOverlay{padding:10px}
-    .barcodeControlActions{grid-template-columns:1fr}
-    .barcodeControlSearchRow{grid-template-columns:1fr 1fr}
-    .barcodeControlSearchRow input{grid-column:1/-1}
-    .barcodeSuggestionIdentity,.barcodeItemIdentity{align-items:flex-start;flex-direction:column;gap:5px}
-    .barcodeSuggestionName{white-space:normal}
-    .barcodeManagementRow{grid-template-columns:1fr auto}
-    .barcodeRowMeta{grid-row:2}
-    .barcodeNewItemForm{grid-template-columns:1fr}
-}
+.barcodeControlWelcome,.barcodeControlEmpty{display:grid;place-items:center;gap:5px;min-height:112px;padding:22px;border:1px dashed #c9d9e7;border-radius:12px;background:#fff;color:#6a7d8f;text-align:center}
+.barcodeControlWelcome strong,.barcodeControlEmpty strong{color:#294b69;font-size:14px}
+.barcodeControlEmpty.compact{min-height:72px}.barcodeControlEmpty.success{border-color:#bfe4cc;background:#f1fbf5}
+.barcodeNewItemAction{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:10px;padding:14px 16px;border:1px solid #cbddec;border-radius:12px;background:#f6faff}
+.barcodeNewItemAction>div,.barcodeNewItemHeader>div{display:grid;gap:3px}.barcodeNewItemAction strong,.barcodeNewItemHeader strong{color:#173b5e;font-size:14px}.barcodeNewItemAction small,.barcodeNewItemHeader small{color:#61758a;font-size:12px}
+.barcodeResultsHeader{display:flex;align-items:center;justify-content:space-between;margin:0 2px 9px;color:#52677c;font-size:13.5px}.barcodeResultsHeader strong{color:#294b69}
+.barcodeSearchResults{display:grid;gap:7px}.barcodeSearchResults>button{width:100%;padding:11px 12px;border:1px solid #cbdceb;border-radius:10px;background:#fff;color:#173b5e;text-align:left;cursor:pointer}.barcodeSearchResults>button:hover,.barcodeSearchResults>button:focus-visible{border-color:#74abe0;background:#f0f7ff;outline:none}
+.barcodeSuggestionIdentity{display:flex;align-items:center;gap:12px;min-width:0;width:100%}.barcodeSuggestionCode{flex:0 0 auto;min-width:84px;padding:5px 8px;border:1px solid #c2daf2;border-radius:7px;background:#eaf4ff;color:#145c9e;font-size:13px;font-weight:800;letter-spacing:.02em;text-align:center}.barcodeSuggestionName{min-width:0;color:#173b5e;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barcodeItemCard,.barcodeListCard,.barcodeAddCard{padding:15px 16px;border:1px solid #ccdeed;border-radius:12px}
+.barcodeItemCard{margin-bottom:11px;border-color:#87b9e9;background:linear-gradient(135deg,#eaf5ff 0%,#f6fbff 100%);box-shadow:0 5px 14px rgba(29,111,209,.08)}
+.barcodeSectionLabel{display:block;margin-bottom:6px;color:#56738e;font-size:10px;font-weight:800;letter-spacing:.055em}.barcodeItemCard .barcodeSectionLabel{color:#1d6fd1}
+.barcodeItemIdentity{display:flex;align-items:baseline;gap:12px;min-width:0}.barcodeItemIdentity strong{flex:0 0 auto;color:#0f5fa8;font-size:17px}.barcodeItemIdentity b{color:#123f6d;font-size:15px}
+.barcodeListCard{margin-bottom:11px;background:#fff}.barcodeSectionHeading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.barcodeSectionHeading .barcodeSectionLabel{margin:0}.barcodeSectionHeading strong{color:#56738e;font-size:11px}
+.barcodeRows{display:grid;gap:7px}.barcodeManagementRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:44px;padding:8px 10px;border:1px solid #d7e4ef;border-radius:9px;background:#f8fbfe}.barcodeManagementRow>strong{color:#173b5e;font-size:13px;overflow-wrap:anywhere}
+.barcodeRowMeta{padding:4px 8px;border-radius:999px;font-size:9px;font-weight:800;white-space:nowrap}.barcodeRowMeta.isGlobal{background:#edf3f8;color:#61758a}.barcodeRowMeta.isLocal{background:#e8f7ee;color:#26734a}
+.barcodeRemoveButton{min-height:32px;padding:5px 10px;border:1px solid #efc4c0;border-radius:8px;background:#fff6f5;color:#b42318;font-size:11px;font-weight:700;cursor:pointer}
+.barcodeAddCard{margin-bottom:11px;border-color:#bdd9f3;background:#f7fbff}.barcodeActionHeading{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}.barcodeActionHeading .barcodeSectionLabel{margin:0}.barcodeActionHeading strong{color:#294b69;font-size:12px}
+.barcodeAddRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.barcodeAddRow input{width:100%;min-height:42px;padding:8px 11px;border:1px solid #cbd9e6;border-radius:9px;background:#fff}
+.barcodeDeleteItemZone{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #efcbc7;border-left:4px solid #c93c31;border-radius:10px;background:#fff8f7}.barcodeDeleteItemZone .barcodeSectionLabel{margin:0 0 2px;color:#a62d25}.barcodeDeleteItemZone small{color:#7c5a56}.barcodeScopeNotice{margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff7e8;color:#7b5b1e;font-size:11px}
+.barcodeNewItemCard{padding:16px;border:1px solid #bdd7ed;border-radius:13px;background:#fff;box-shadow:0 5px 15px rgba(31,80,121,.06)}.barcodeNewItemHeader{padding-bottom:12px;border-bottom:1px solid #e2ebf2}
+.barcodeNewItemForm{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(260px,1.6fr);gap:12px 14px;margin-top:14px}.barcodeNewItemForm label{display:grid;gap:6px;font-size:11px;font-weight:800;color:#52677c}.barcodeNewItemForm input{width:100%;min-height:44px;padding:9px 11px;border:1px solid #cbd9e6;border-radius:9px;background:#fff;font-size:13px}.barcodeNewItemBarcode{grid-column:1/-1}.barcodeNewItemActions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;padding-top:2px}.barcodeNewItemActions button{min-width:108px;min-height:42px}
+.settingsDataActionRow>button{width:148px;min-width:148px;min-height:42px}
+@media (max-width:760px){.settingsAccountDetails{grid-template-columns:1fr}.settingsIdentityActions{justify-content:flex-start}.settingsDataActionRow{align-items:flex-start;flex-direction:column}.settingsDataActionRow>button{width:100%;min-width:0}.barcodeControlOverlay{padding:10px}.barcodeControlActions{grid-template-columns:1fr}.barcodeControlSearchRow{grid-template-columns:1fr 1fr}.barcodeControlSearchRow input{grid-column:1/-1}.barcodeSuggestionIdentity,.barcodeItemIdentity{align-items:flex-start;flex-direction:column;gap:5px}.barcodeSuggestionName{white-space:normal}.barcodeManagementRow{grid-template-columns:1fr auto}.barcodeRowMeta{grid-row:2}.barcodeNewItemAction{align-items:flex-start;flex-direction:column}.barcodeNewItemForm{grid-template-columns:1fr}.barcodeNewItemBarcode,.barcodeNewItemActions{grid-column:auto}.barcodeNewItemActions{justify-content:stretch}.barcodeNewItemActions button{flex:1}}
 /* =====================================================
    SETTINGS — PRELIMINARY INFORMATION ARCHITECTURE
    Presentation only. Existing permissions/actions remain authoritative.
