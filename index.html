@@ -156,8 +156,7 @@
                         <span class="authEyebrow">NEW PHARMACY</span>
                         <h2>Request access</h2>
                         <p class="authLead">Create an account and submit your pharmacy for approval. Operational access remains locked until the request is approved.</p>
-                        <div class="authSignupFields">
-                        <div class="authField authSignupEmailField"><label for="publicSignupEmail">Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+                        <div class="authField"><label for="publicSignupEmail">Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
                         <div class="authField">
                             <label for="publicSignupPassword">Password</label>
                             <div class="authPasswordWrap">
@@ -168,14 +167,16 @@
                         </div>
                         <div class="authField">
                             <label for="publicSignupPasswordConfirm">Confirm Password</label>
-                            <div class="authPasswordWrap"><input id="publicSignupPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password"></div>
+                            <input id="publicSignupPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
                         </div>
-                        <div class="authField authSignupCodeField"><label for="publicPharmacyCode">Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Example: HHP084"><small class="authFieldHelp">Enter your requested pharmacy code. The administrator will verify the final pharmacy details before approval.</small></div>
+                        <div class="authField">
+                            <label for="publicPharmacyCode">Pharmacy Code</label>
+                            <input id="publicPharmacyCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Example: HHP084">
+                            <small class="authFieldHelp">Enter your requested pharmacy code. The administrator will verify the final pharmacy details before approval.</small>
                         </div>
                         <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
                         <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
                     </div>
-
                     <div id="authInviteSignupForm" hidden>
                         <button id="btnAuthShowLoginFromInvite" class="authBackButton" type="button">← Back to Sign In</button>
                         <span class="authEyebrow">PHARMACY ADMIN</span>
