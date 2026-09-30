@@ -738,6 +738,19 @@ body.zebraDevice #authGate #authLoginForm .authMessage{min-height:0!important;ma
 }
 
 /* =============================================================
+   PHARMFLOW SETTINGS — PUBLIC REGISTRATION FORM
+   One visual owner for registration; authentication behavior unchanged.
+============================================================= */
+#authGate #authPublicSignupForm .authSignupFields{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+#authGate #authPublicSignupForm .authSignupEmailField,#authGate #authPublicSignupForm .authSignupCodeField{grid-column:1/-1}
+#authGate #authPublicSignupForm .authField{min-width:0}
+#authGate #authPublicSignupForm .authField input{background:#fff!important}
+#authGate #authPublicSignupForm .authFieldHelp{display:block;margin-top:5px;color:#607b94;font-size:11px;line-height:1.35;opacity:1}
+#authGate #authPublicSignupForm #publicSignupPassword,#authGate #authPublicSignupForm #publicSignupPasswordConfirm{background:#fff!important}
+#authGate #authPublicSignupForm .authPrimaryButton{margin-top:2px}
+#authGate #authPublicSignupForm #btnAuthShowLogin{display:block;width:max-content;min-height:30px;margin:5px auto 0!important;padding:0 8px}
+@media (max-width:760px){#authGate #authPublicSignupForm .authSignupFields{grid-template-columns:1fr;gap:0}#authGate #authPublicSignupForm .authSignupEmailField,#authGate #authPublicSignupForm .authSignupCodeField{grid-column:auto}}
+/* =============================================================
    PHARMFLOW B11 CLEAN 11 — AUTH SUB-SCREEN FIT
    Direct extension of the single auth owner. No auth logic changes.
 ============================================================= */
