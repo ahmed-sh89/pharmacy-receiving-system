@@ -43,3 +43,8 @@ assert(html.includes('id="settingsNewPassword"'),"Change Password must collect n
 assert(html.includes('id="settingsConfirmPassword"'),"Change Password must confirm new password");
 assert(auth.includes('grant_type=password'),"Password flow must support credential re-authentication");
 assert(auth.includes('Current password is incorrect.'),"Self-service password change must report failed current-password verification");
+
+assert(html.includes('class="settingsInfoField settingsAccountEmail"'),"Email must use the shared Account info-field system");
+assert(html.includes("<span>PHARMACY CODE</span>"),"Pharmacy Code must be a labeled Account info field");
+assert(html.includes("<span>ROLE</span>"),"Role must be a labeled Account info field");
+assert(html.includes("settingsDataActionRow"),"Data Management must use aligned action rows");
