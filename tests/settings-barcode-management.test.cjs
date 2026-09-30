@@ -60,6 +60,10 @@ assert(!html.includes('id="masterGTINUpdatedAt"'),"Settings must not duplicate G
 assert(html.includes('class="legacyMappingDetails orderDataRecovery"'),"Compatibility tools must live with Manage Orders");
 assert(html.includes('Order Data Check &amp; Recovery'),"Manage Orders must expose the compact recovery section");
 assert(css.includes(".settingsModuleCard > .cardHeader"),"Settings modules must use the shared visual header band");
+assert(!html.includes('id="btnLoadMappings"'),"Legacy Mapping File action must be removed");
+assert(!html.includes('id="mappingFileInput"'),"Legacy Mapping File input must be removed");
+assert(!html.includes('id="mappingFilesList"'),"Legacy Mapping File list must be removed");
+assert(!html.includes("Order &amp; Mapping Compatibility"),"Legacy Mapping File terminology must be removed from Manage Orders");
 console.log("PASS settings barcode management regression");
 
 assert(settings.includes("const deleteButton=buttonEvent.currentTarget"),"Delete Item must preserve the clicked button across async confirmation");
