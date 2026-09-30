@@ -1316,41 +1316,70 @@ body.zebraDevice .mainContent,
 }
 .operationReceipt[hidden] { display: none !important; }
 
-/* Settings / Barcode Management — operational search surface.
-   Intentionally scoped to Settings; Receiving scanner layout is untouched. */
-.barcodeManagementUnifiedLookup{
+/* Settings / Barcode Control — one modal workflow using the Needs Review visual language. */
+.barcodeControlCard{
+    border-top:4px solid #1d6fd1;
+    background:linear-gradient(180deg,#f8fbff 0%,#fff 100%);
+}
+.barcodeControlHeader{margin-bottom:10px}
+.barcodeControlActions{display:grid;grid-template-columns:minmax(0,420px);gap:10px}
+.barcodeControlAction{
     display:grid;
-    grid-template-columns:minmax(0,1fr) auto auto auto;
-    gap:12px;
+    gap:4px;
+    min-height:92px;
+    padding:15px 17px;
+    border:1px solid #c9ddf7;
+    border-radius:12px;
+    background:#eef5ff;
+    color:#163f67;
+    text-align:left;
+    cursor:pointer;
+}
+.barcodeControlAction:hover{border-color:#8ebbea;box-shadow:0 5px 14px rgba(31,63,96,.08)}
+.barcodeControlAction span{font-size:10px;font-weight:800;letter-spacing:.055em;color:#1d6fd1}
+.barcodeControlAction strong{font-size:16px}
+.barcodeControlAction small{font-size:12px;font-weight:500;color:#52677c}
+.barcodeControlOverlay{z-index:145}
+.barcodeControlPanel{width:min(1080px,96vw);max-height:90vh}
+.barcodeControlToolbar{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
     align-items:end;
+    gap:10px;
+}
+.barcodeControlSearchLabel{display:grid;gap:6px;font-size:12px;font-weight:700;color:#52677c}
+.barcodeControlSearchShell{position:relative;display:block}
+.barcodeControlSearchShell [data-admin-search]{
     width:100%;
+    min-height:48px;
+    padding:10px 42px 10px 14px;
+    border:1px solid #cbd9e6;
+    border-radius:10px;
+    background:#fff;
+    font-size:16px;
 }
-.barcodeManagementUnifiedLookup label{
-    display:grid;
-    gap:7px;
-    min-width:0;
+.barcodeControlClear{
+    position:absolute;
+    top:50%;
+    right:9px;
+    transform:translateY(-50%);
+    width:28px;
+    height:28px;
+    padding:0;
+    border:0;
+    border-radius:50%;
+    background:transparent;
+    color:#56708a;
+    font-size:20px;
+    line-height:1;
 }
-.barcodeManagementUnifiedLookup [data-admin-search]{
-    width:100%;
-    min-height:52px;
-    padding:12px 16px;
-    font-size:18px;
+.barcodeControlWorkspace{
+    max-height:64vh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:12px 2px 2px;
 }
-.barcodeManagementUnifiedLookup button{
-    min-height:52px;
-}
-.barcodeSearchSuggestions{
-    margin-top:10px;
-}
-@media (max-width:760px){
-    .barcodeManagementUnifiedLookup{
-        grid-template-columns:minmax(0,1fr) auto;
-    }
-    .barcodeManagementUnifiedLookup label{
-        grid-column:1 / -1;
-    }
-}
-
+.barcodeSearchSuggestions{margin-top:0}
 .barcodeSuggestionIdentity{
     display:flex;
     align-items:baseline;
@@ -1358,24 +1387,34 @@ body.zebraDevice .mainContent,
     min-width:0;
     width:100%;
 }
+.barcodeSuggestionCode{
+    flex:0 0 auto;
+    min-width:76px;
+    padding:4px 7px;
+    border:1px solid #c9ddf7;
+    border-radius:7px;
+    background:#eef5ff;
+    color:#145c9e;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.02em;
+}
 .barcodeSuggestionName{
-    font-size:15px;
+    min-width:0;
+    font-size:14px;
     font-weight:700;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
 }
-.barcodeSuggestionCode{
-    flex:0 0 auto;
-    font-size:14px;
-    font-weight:700;
-    opacity:.78;
-}
+.barcodeItemIdentity{display:flex;align-items:baseline;gap:12px;min-width:0}
+.barcodeItemIdentity strong{color:#145c9e}
 @media (max-width:760px){
-    .barcodeSuggestionIdentity{align-items:flex-start;flex-direction:column;gap:3px}
+    .barcodeControlActions{grid-template-columns:1fr}
+    .barcodeControlToolbar{grid-template-columns:1fr}
+    .barcodeSuggestionIdentity,.barcodeItemIdentity{align-items:flex-start;flex-direction:column;gap:4px}
     .barcodeSuggestionName{white-space:normal}
 }
-
 
 /* =====================================================
    SETTINGS — PRELIMINARY INFORMATION ARCHITECTURE
