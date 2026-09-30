@@ -1590,14 +1590,14 @@ function openOwnerManagementPanel(view){
     const search=document.getElementById("ownerManagementSearch");
     if(search){ search.value=""; }
     renderOwnerManagementPanel();
-    document.getElementById("ownerManagementPanel")?.scrollIntoView({behavior:"smooth",block:"start"});
+
 }
 
 function closeOwnerManagementPanel(){
     AuthState.ownerManagementView=null;
     AuthState.ownerManagementSearch="";
     const panel=document.getElementById("ownerManagementPanel");
-    if(panel){ panel.hidden=true; panel.setAttribute("aria-hidden","true"); }
+    if(panel){ panel.classList.remove("open"); panel.setAttribute("aria-hidden","true"); }
 }
 
 function renderOwnerManagementPanel(){
@@ -1608,7 +1608,7 @@ function renderOwnerManagementPanel(){
     if(!panel || !pharmacyList || !requests){ return; }
     const view=AuthState.ownerManagementView;
     if(!view){
-        panel.hidden=true;
+        panel.classList.remove("open");
         panel.setAttribute("aria-hidden","true");
         return;
     }
@@ -1621,7 +1621,7 @@ function renderOwnerManagementPanel(){
     setText("ownerManagementEyebrow",config[0]);
     setText("ownerManagementTitle",config[1]);
     setText("ownerManagementDescription",config[2]);
-    panel.hidden=false;
+    panel.classList.add("open");
     panel.setAttribute("aria-hidden","false");
     const pending=view==="pending";
     requests.hidden=!pending;
