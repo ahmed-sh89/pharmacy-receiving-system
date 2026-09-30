@@ -1464,15 +1464,21 @@ body.zebraDevice .mainContent,
 .ownerControlCenter .ownerMetricPending strong{color:#b85c00}
 .ownerControlCenter .ownerMetricAdmins{background:#f4f6f8;border-color:#dbe1e7;color:inherit}
 .ownerControlCenter .ownerMetricAdmins strong{color:#425466}
-.ownerControlCenter .ownerManagementPanel{
-    margin-top:14px;
-    padding:16px;
-    border:1px solid #d7e4ef;
-    border-radius:14px;
-    background:#fbfdff;
-    box-shadow:0 8px 24px rgba(38,67,94,.06);
+.ownerManagementOverlay{
+    z-index:140;
+    padding:28px;
 }
-.ownerControlCenter .ownerManagementPanelHeader{
+.ownerManagementOverlay .ownerManagementPanel{
+    width:min(1120px,96vw);
+    max-height:88vh;
+    overflow:hidden;
+    padding:20px;
+    border:1px solid #d7e4ef;
+    border-radius:16px;
+    background:#fbfdff;
+    box-shadow:0 28px 70px rgba(15,35,55,.22);
+}
+.ownerManagementPanel .ownerManagementPanelHeader{
     display:flex;
     align-items:flex-end;
     justify-content:space-between;
@@ -1481,55 +1487,55 @@ body.zebraDevice .mainContent,
     margin-bottom:12px;
     border-bottom:1px solid #e3eaf0;
 }
-.ownerControlCenter .ownerManagementPanelHeader h3{
+.ownerManagementPanel .ownerManagementPanelHeader h3{
     margin:3px 0 2px;
-    font-size:1.15rem;
+    font-size:1.2rem;
 }
-.ownerControlCenter .ownerManagementPanelTools{
+.ownerManagementPanel .ownerManagementPanelTools{
     display:flex;
     align-items:flex-end;
     gap:8px;
 }
-.ownerControlCenter .ownerManagementSearch{
+.ownerManagementPanel .ownerManagementSearch{
     display:grid;
     gap:4px;
-    min-width:310px;
+    min-width:330px;
     font-size:.72rem;
     font-weight:700;
     color:#52677c;
 }
-.ownerControlCenter .ownerManagementSearch input{
-    min-height:36px;
+.ownerManagementPanel .ownerManagementSearch input{
+    min-height:38px;
     padding:7px 10px;
     border:1px solid #ccd9e5;
     border-radius:9px;
     background:#fff;
     color:var(--text);
 }
-.ownerControlCenter .ownerPharmacyList{
+.ownerManagementPanel .ownerPharmacyList{
     display:grid;
-    gap:7px;
-    max-height:520px;
+    gap:8px;
+    max-height:65vh;
     overflow-y:auto;
     overscroll-behavior:contain;
-    padding-right:4px;
+    padding:2px 4px 2px 0;
 }
-.ownerControlCenter .ownerPharmacyCard{
+.ownerManagementPanel .ownerPharmacyCard{
     display:grid;
-    grid-template-columns:minmax(300px,1.35fr) minmax(220px,1fr) 90px minmax(430px,auto);
+    grid-template-columns:minmax(285px,1.35fr) minmax(210px,1fr) 94px minmax(390px,auto);
     align-items:center;
     gap:12px;
-    padding:9px 10px;
-    min-height:58px;
+    padding:10px 11px;
+    min-height:62px;
 }
-.ownerControlCenter .ownerPharmacyIdentity{
+.ownerManagementPanel .ownerPharmacyIdentity{
     display:grid;
     grid-template-columns:76px minmax(0,1fr);
     align-items:center;
     gap:10px;
     min-width:0;
 }
-.ownerControlCenter .ownerPharmacyCodeBadge{
+.ownerManagementPanel .ownerPharmacyCodeBadge{
     display:flex;
     align-items:center;
     justify-content:center;
@@ -1545,45 +1551,43 @@ body.zebraDevice .mainContent,
     letter-spacing:.02em;
     white-space:nowrap;
 }
-.ownerControlCenter .ownerPharmacyName{
+.ownerManagementPanel .ownerPharmacyName{
     min-width:0;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
+    white-space:normal;
+    line-height:1.25;
 }
-.ownerControlCenter .ownerPharmacyAdmin{
-    min-width:0;
-    overflow:hidden;
-}
-.ownerControlCenter .ownerPharmacyAdmin > div,
-.ownerControlCenter .ownerPharmacyAdmin small{
+.ownerManagementPanel .ownerPharmacyAdmin{min-width:0;overflow:hidden}
+.ownerManagementPanel .ownerPharmacyAdmin > div,
+.ownerManagementPanel .ownerPharmacyAdmin small{
     display:block;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
 }
-.ownerControlCenter .ownerPharmacyStatus{
-    display:flex;
-    justify-content:flex-start;
-}
-.ownerControlCenter .ownerPharmacyActions{
+.ownerManagementPanel .ownerPharmacyStatus{display:flex;justify-content:flex-start}
+.ownerManagementPanel .ownerPharmacyActions{
     display:flex;
     flex-wrap:nowrap;
-    gap:5px;
+    gap:6px;
     justify-content:flex-end;
     align-items:center;
 }
-.ownerControlCenter .ownerPharmacyActions button{
-    min-height:32px;
-    padding:5px 8px;
+.ownerManagementPanel .ownerPharmacyActions button{
+    min-height:34px;
+    padding:6px 9px;
     white-space:nowrap;
 }
-.ownerControlCenter .registrationRequestsList{
-    max-height:520px;
+.ownerManagementPanel .registrationRequestsList{
+    display:grid;
+    gap:8px;
+    max-height:65vh;
     overflow-y:auto;
     overscroll-behavior:contain;
     padding-right:4px;
 }
+.ownerManagementPanel .registrationRequestsList[hidden],
+.ownerManagementPanel .ownerPharmacyList[hidden],
+.ownerManagementPanel .ownerManagementSearch[hidden]{display:none}
 .masterGTINCard{
     padding:16px;
 }
@@ -1610,11 +1614,11 @@ body.zebraDevice .mainContent,
 @media (max-width:900px){
     .settingsAccountCompact .accountSettingsGrid{grid-template-columns:1fr 1fr}
     .ownerControlCenter .ownerMetricGrid{grid-template-columns:1fr 1fr}
-    .ownerControlCenter .ownerManagementPanelHeader{align-items:stretch;flex-direction:column}
-    .ownerControlCenter .ownerManagementPanelTools{align-items:stretch}
-    .ownerControlCenter .ownerManagementSearch{min-width:0;flex:1}
-    .ownerControlCenter .ownerPharmacyCard{grid-template-columns:1fr 1fr}
-    .ownerControlCenter .ownerPharmacyActions{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
+    .ownerManagementPanel .ownerManagementPanelHeader{align-items:stretch;flex-direction:column}
+    .ownerManagementPanel .ownerManagementPanelTools{align-items:stretch}
+    .ownerManagementPanel .ownerManagementSearch{min-width:0;flex:1}
+    .ownerManagementPanel .ownerPharmacyCard{grid-template-columns:1fr 1fr}
+    .ownerManagementPanel .ownerPharmacyActions{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
 }
 
 
