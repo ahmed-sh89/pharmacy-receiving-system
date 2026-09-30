@@ -1756,6 +1756,25 @@ body.zebraDevice .mainContent,
 }
 
 .settingsIdentityActions{display:flex;align-items:center;gap:12px}
+.settingsAccountEmail{display:grid;gap:2px;min-width:220px}
+.settingsAccountEmail>span{font-size:9px;font-weight:800;letter-spacing:.055em;color:#6a8095}
+.settingsAccountEmail .settingsIdentityEmail{font-size:12px;color:#3f5c76;font-weight:600}
+.settingsPasswordAction{min-height:34px;padding:6px 12px;white-space:nowrap}
+.settingsPasswordOverlay{position:fixed;inset:0;z-index:170;display:none;place-items:center;padding:24px}
+.settingsPasswordOverlay.open{display:grid}
+.settingsPasswordOverlay[hidden]{display:none!important}
+.settingsPasswordScrim{position:absolute;inset:0;border:0;background:rgba(17,39,61,.42);cursor:default}
+.settingsPasswordPanel{position:relative;z-index:1;width:min(520px,94vw);padding:0;border:1px solid #cfdeeb;border-radius:15px;background:#fff;box-shadow:0 28px 70px rgba(15,35,55,.24);overflow:hidden}
+.settingsPasswordPanel header{display:flex;justify-content:space-between;gap:18px;padding:18px 20px 14px;border-bottom:1px solid #e1eaf1;background:#f7fbff}
+.settingsPasswordPanel header h2{margin:3px 0 4px;color:#173b5e;font-size:1.2rem}
+.settingsPasswordPanel header p{margin:0;color:#61778b;font-size:12px}
+.settingsPasswordClose{width:32px;height:32px;border:1px solid #d5e0e9;border-radius:8px;background:#fff;color:#52677c;cursor:pointer}
+.settingsPasswordFields{display:grid;gap:12px;padding:18px 20px}
+.settingsPasswordFields label{display:grid;gap:5px;color:#405b73;font-size:11px;font-weight:700}
+.settingsPasswordFields input{width:100%;min-height:42px;padding:8px 10px;border:1px solid #cbd9e6;border-radius:9px;background:#fff}
+.settingsPasswordFields small{font-weight:400;color:#6b7f91}
+.settingsPasswordPanel .authMessage{margin:0 20px}
+.settingsPasswordPanel footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px}
 .settingsIdentityEdit{min-height:34px;padding:6px 13px}
 .settingsIdentityEditPanel{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(180px,.7fr) auto;align-items:end;gap:12px}
 .settingsIdentityEditField{display:grid;gap:6px}
