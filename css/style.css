@@ -1352,7 +1352,7 @@ body.zebraDevice .mainContent,
 .barcodeControlPanel{position:relative;z-index:1;display:flex;flex-direction:column;width:min(1080px,96vw);max-height:90vh;overflow:hidden;border:1px solid #cbdbea;border-radius:16px;background:#f8fbfe;box-shadow:0 28px 72px rgba(11,31,49,.3)}
 .barcodeControlModalHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px 22px 16px;border-bottom:1px solid #dce7f0;background:#fff}
 .barcodeControlModalHeader h2{margin:3px 0 4px;font-size:1.45rem;color:#123f6d}
-.barcodeControlModalHeader p{margin:0;color:#61758a;font-size:12px}
+.barcodeControlModalHeader p{margin:0;color:#61758a;font-size:13.5px}
 .barcodeControlClose{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;padding:0;border:1px solid #d7e1ea;border-radius:10px;background:#fff;color:#445b70;font-size:17px;cursor:pointer}
 .barcodeControlClose:hover{background:#eef4f9;color:#163f67}
 .barcodeControlToolbar{padding:15px 22px;border-bottom:1px solid #dce7f0;background:#f5f9fd}
@@ -1366,7 +1366,7 @@ body.zebraDevice .mainContent,
 .barcodeControlEmpty strong{color:#294b69;font-size:14px}
 .barcodeControlEmpty.compact{min-height:82px}
 .barcodeControlEmpty.success{border-color:#bfe4cc;background:#f1fbf5}
-.barcodeResultsHeader{display:flex;align-items:center;justify-content:space-between;margin:0 2px 9px;color:#52677c;font-size:12px}
+.barcodeResultsHeader{display:flex;align-items:center;justify-content:space-between;margin:0 2px 9px;color:#52677c;font-size:13.5px}
 .barcodeResultsHeader strong{color:#294b69}
 .barcodeSearchResults{display:grid;gap:7px}
 .barcodeSearchResults>button{width:100%;padding:11px 12px;border:1px solid #cbdceb;border-radius:10px;background:#fff;color:#173b5e;text-align:left;cursor:pointer}
@@ -1762,8 +1762,8 @@ body.zebraDevice .mainContent,
 .settingsIdentityActions{display:flex;align-items:center;gap:12px}
 .settingsAccountDetails{display:grid;grid-template-columns:minmax(220px,1.7fr) minmax(120px,.8fr) minmax(90px,.6fr) auto;align-items:stretch;gap:8px;min-width:0}
 .settingsInfoField{display:grid;align-content:center;gap:3px;min-height:46px;padding:7px 10px;border:1px solid #d4e1ec;border-radius:9px;background:#f9fbfd}
-.settingsInfoField>span{font-size:8px;font-weight:800;letter-spacing:.055em;color:#6a8095}
-.settingsInfoField>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#36536d}
+.settingsInfoField>span{font-size:10.5px;font-weight:800;letter-spacing:.045em;color:#60788f}
+.settingsInfoField>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;color:#36536d}
 .settingsIdentityActions{display:flex;align-items:stretch;gap:7px}
 .settingsPasswordAction,.settingsIdentityEdit{min-height:46px;padding:7px 12px;border-radius:9px;white-space:nowrap}
 .settingsPasswordAction{display:flex;align-items:center;gap:6px}
@@ -1772,9 +1772,9 @@ body.zebraDevice .mainContent,
 .settingsDataActions{display:grid;gap:9px}
 .settingsDataActionRow{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 12px;border:1px solid #d8e3ec;border-radius:10px;background:#fbfcfd}
 .settingsDataActionRow>div{display:grid;gap:2px}
-.settingsDataActionRow strong{color:#294b68;font-size:12px}
-.settingsDataActionRow small{color:#687e91;font-size:10px}
-.settingsActionLabel{font-size:8px;font-weight:800;letter-spacing:.055em;color:#5e7890}
+.settingsDataActionRow strong{color:#294b68;font-size:13.5px}
+.settingsDataActionRow small{color:#687e91;font-size:12px;line-height:1.45}
+.settingsActionLabel{font-size:10.5px;font-weight:800;letter-spacing:.045em;color:#5e7890}
 .settingsDataDangerRow{border-color:#f0d2d2;background:#fffafa}
 .settingsDataDangerRow>div strong{color:#8f3030}
 .settingsPasswordOverlay{position:fixed;inset:0;z-index:170;display:none;place-items:center;padding:24px}
@@ -1784,7 +1784,7 @@ body.zebraDevice .mainContent,
 .settingsPasswordPanel{position:relative;z-index:1;width:min(520px,94vw);padding:0;border:1px solid #cfdeeb;border-radius:15px;background:#fff;box-shadow:0 28px 70px rgba(15,35,55,.24);overflow:hidden}
 .settingsPasswordPanel header{display:flex;justify-content:space-between;gap:18px;padding:18px 20px 14px;border-bottom:1px solid #e1eaf1;background:#f7fbff}
 .settingsPasswordPanel header h2{margin:3px 0 4px;color:#173b5e;font-size:1.2rem}
-.settingsPasswordPanel header p{margin:0;color:#61778b;font-size:12px}
+.settingsPasswordPanel header p{margin:0;color:#61778b;font-size:13.5px}
 .settingsPasswordClose{width:32px;height:32px;border:1px solid #d5e0e9;border-radius:8px;background:#fff;color:#52677c;cursor:pointer}
 .settingsPasswordFields{display:grid;gap:12px;padding:18px 20px}
 .settingsPasswordFields label{display:grid;gap:5px;color:#405b73;font-size:11px;font-weight:700}
