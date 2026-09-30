@@ -18,6 +18,10 @@ assert(auth.includes('pharmflow-password-admin'),"Password reset must use truste
 assert(auth.includes('No recovery email will be sent'),"Forgot Password must not send recovery email");
 assert(auth.includes('pharmflow_must_change_password'),"Temporary password must force replacement");
 assert(css.includes('.ownerPharmacyList{max-height:430px;overflow-y:auto'),"Pharmacy list must use internal scroll");
+assert(html.includes('id="btnEditSettingsIdentity"'),"System Owner account card must expose identity Edit");
+assert(auth.includes('setSettingsIdentityEditMode'),"Account edit must use the same card edit mode");
+assert(auth.includes('owner_update_pharmacy_identity_v1'),"Account edit must reuse canonical identity RPC");
+assert(!html.includes('id="accountDisplayNameInput"'),"User Name must remain absent from current Settings UX");
 assert(sql.includes('pharmflow_pharmacy_identity_audit_v1'),"Identity changes must be audited");
 assert(sql.includes('p.id<>p_pharmacy_id'),"Official pharmacy code collision must be blocked");
 assert(!sql.includes('delete from public.pharmacies'),"Identity correction must never delete pharmacy data");
