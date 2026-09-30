@@ -1437,10 +1437,32 @@ body.zebraDevice .mainContent,
 .ownerControlCenter .ownerMetricCard{
     min-height:auto;
     padding:10px 12px;
+    border-width:1px;
+    border-style:solid;
 }
 .ownerControlCenter .ownerMetricCard strong{
     font-size:20px;
 }
+.ownerControlCenter .ownerMetricTotal{
+    background:#eef5ff;
+    border-color:#c9ddf7;
+}
+.ownerControlCenter .ownerMetricTotal strong{color:#1d5f9e}
+.ownerControlCenter .ownerMetricActive{
+    background:#edf8f1;
+    border-color:#c8e8d2;
+}
+.ownerControlCenter .ownerMetricActive strong{color:#217a45}
+.ownerControlCenter .ownerMetricPending{
+    background:#fff5e6;
+    border-color:#f1d49b;
+}
+.ownerControlCenter .ownerMetricPending strong{color:#b85c00}
+.ownerControlCenter .ownerMetricAdmins{
+    background:#f4f6f8;
+    border-color:#dbe1e7;
+}
+.ownerControlCenter .ownerMetricAdmins strong{color:#425466}
 .ownerControlCenter .ownerControlSection{
     margin-top:10px;
     padding:12px;
