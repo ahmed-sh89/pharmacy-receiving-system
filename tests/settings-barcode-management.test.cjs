@@ -60,7 +60,10 @@ assert(!html.includes('id="masterGTINUpdatedAt"'),"Settings must not duplicate G
 assert(!html.includes('Order Data Check &amp; Recovery'),"Redundant recovery panel must not be rendered");
 assert(!html.includes('id="btnUpdateMasterGTIN"'),"Obsolete Global GTIN import recovery action must not be rendered");
 assert(!html.includes('id="masterGTINFileInput"'),"Obsolete Global GTIN import recovery input must not be rendered");
-assert(css.includes(".settingsModuleCard > .cardHeader"),"Settings modules must use the shared visual header band");
+assert(html.includes("settingsModuleTitleChip settingsAccountTitleChip"),"Account must use the compact KPI title chip");
+assert(html.includes("settingsModuleTitleChip barcodeControlHeader"),"Barcode Control must use the shared KPI title chip");
+assert(css.includes(".settingsModuleTitleChip"),"Settings modules must use the shared compact KPI title system");
+assert(!css.includes(".settingsModuleCard > .settingsIdentityMain{"),"Legacy full-width layered account header must stay removed");
 assert(!html.includes('id="btnLoadMappings"'),"Legacy Mapping File action must be removed");
 assert(!html.includes('id="mappingFileInput"'),"Legacy Mapping File input must be removed");
 assert(!html.includes('id="mappingFilesList"'),"Legacy Mapping File list must be removed");
