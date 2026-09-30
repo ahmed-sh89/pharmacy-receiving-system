@@ -8896,6 +8896,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const searchButton=overlay.querySelector("[data-admin-search-button]");
     const workspace=overlay.querySelector("[data-admin-workspace]");
     const clear=overlay.querySelector("[data-admin-clear]");
+    const modal=document.getElementById("barcodeControlOverlay");
+    const openButton=document.getElementById("btnOpenBarcodeControl");
     if(!searchInput||!searchButton||!workspace) return;
     if(searchButton.dataset.identifierAdminBound==="1") return;
     searchButton.dataset.identifierAdminBound="1";
@@ -8908,6 +8910,24 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     let selectedItem=null;
     let searchSuggestTimer=null;
     let searchSuggestToken=0;
+
+    const openControl=()=>{
+        if(!modal) return;
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden","false");
+        requestAnimationFrame(()=>searchInput.focus());
+    };
+    const closeControl=()=>{
+        if(!modal) return;
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden","true");
+        clearTimeout(searchSuggestTimer);
+        searchInput.value="";
+        workspace.innerHTML="";
+        selectedItem=null;
+    };
+    openButton?.addEventListener("click",openControl);
+    modal?.querySelectorAll("[data-barcode-close]").forEach(button=>button.addEventListener("click",closeControl));
 
     const normalizeSettingsSearch=value=>{
         const raw=toSafeString(value).trim();
@@ -8925,7 +8945,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const itemCodeOf=item=>toSafeString(item?.item_code||item?.itemCode).trim();
     const itemNameOf=item=>toSafeString(item?.item_name||item?.itemName||"Unnamed item").trim();
-    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><strong>${esc(itemCodeOf(item))}</strong><b>${esc(itemNameOf(item))}</b></div>`;
+    const itemSummary=item=>`<div class="needsReviewMappingCurrent barcodeItemSummary"><span>ITEM</span><div class="barcodeItemIdentity"><strong>${esc(itemCodeOf(item))}</strong><b>${esc(itemNameOf(item))}</b></div></div>`;
 
     const loadBarcodeRows=async item=>{
         const itemCode=itemCodeOf(item);
@@ -9104,7 +9124,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             renderNoResults(searchInput.value);
             return;
         }
-        workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</strong><small class="barcodeSuggestionCode">${esc(item.item_code)}</small></span></button>`).join("")}</div>`;
+        workspace.innerHTML=`<div class="needsReviewNoMatches">Select an item.</div><div class="needsReviewMatches">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
             const item=items[Number(button.dataset.globalItem)]||null;
             if(!item) return;
@@ -9144,7 +9164,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const renderSuggestions=items=>{
         if(!items.length) return;
         selectedItem=null;
-        workspace.innerHTML=`<div class="needsReviewMatches barcodeSearchSuggestions">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</strong><small class="barcodeSuggestionCode">${esc(item.item_code)}</small></span></button>`).join("")}</div>`;
+        workspace.innerHTML=`<div class="needsReviewMatches barcodeSearchSuggestions">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{
             const item=items[Number(button.dataset.globalItem)]||null;
             if(!item) return;
