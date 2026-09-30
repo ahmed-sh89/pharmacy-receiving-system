@@ -36,3 +36,10 @@ assert(sql.includes('pharmflow_pharmacy_identity_audit_v1'),"Identity changes mu
 assert(sql.includes('p.id<>p_pharmacy_id'),"Official pharmacy code collision must be blocked");
 assert(!sql.includes('delete from public.pharmacies'),"Identity correction must never delete pharmacy data");
 console.log("PASS settings account/access regression");
+
+assert(html.includes('id="btnChangeSettingsPassword"'),"Account Settings must expose Change Password");
+assert(html.includes('id="settingsCurrentPassword"'),"Change Password must require current password");
+assert(html.includes('id="settingsNewPassword"'),"Change Password must collect new password");
+assert(html.includes('id="settingsConfirmPassword"'),"Change Password must confirm new password");
+assert(auth.includes('grant_type=password'),"Password flow must support credential re-authentication");
+assert(auth.includes('Current password is incorrect.'),"Self-service password change must report failed current-password verification");
