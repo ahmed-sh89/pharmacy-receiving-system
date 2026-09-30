@@ -1429,6 +1429,37 @@ body.zebraDevice .mainContent,
     margin-top:3px;
     max-width:720px;
 }
+.ownerControlCenter{
+    position:relative;
+    overflow:hidden;
+    border:1px solid #b9d5ee;
+    border-top:4px solid #1d6fd1;
+    background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);
+    box-shadow:0 8px 24px rgba(32,82,125,.08);
+}
+.ownerControlCenter::before{
+    content:"";
+    position:absolute;
+    top:0;
+    right:0;
+    width:180px;
+    height:100%;
+    pointer-events:none;
+    background:linear-gradient(135deg,transparent 35%,rgba(29,111,209,.035));
+}
+.ownerControlCenter .settingsCardHeader{
+    position:relative;
+    z-index:1;
+}
+.ownerControlCenter .sectionEyebrow{
+    color:#1d6fd1;
+    font-weight:800;
+    letter-spacing:.055em;
+}
+.ownerControlCenter .settingsCardHeader h2{
+    font-size:1.25rem;
+    letter-spacing:-.01em;
+}
 .ownerControlCenter .ownerMetricGrid{
     grid-template-columns:repeat(4,minmax(120px,1fr));
     gap:8px;
