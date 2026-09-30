@@ -145,9 +145,6 @@ function cacheUIElements(){
         orderFilesList:
             document.getElementById("orderFilesList"),
 
-        mappingFilesList:
-            document.getElementById("mappingFilesList"),
-
         masterGTINStatus:
             document.getElementById("masterGTINStatus"),
 
@@ -3305,12 +3302,6 @@ function refreshFileLists(){
         UI.elements.orderFilesList,
         AppState.workspace.orderFiles,
         "No order files loaded."
-    );
-
-    renderFileList(
-        UI.elements.mappingFilesList,
-        AppState.workspace.mappingFiles,
-        "No mapping files loaded."
     );
 
 }
