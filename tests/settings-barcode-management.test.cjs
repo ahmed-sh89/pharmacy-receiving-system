@@ -54,6 +54,12 @@ assert(readSql.includes("is_pharmacy_member(p_pharmacy_id)"),"Pharmacy barcode r
 assert(readSql.includes("revoke all")&&readSql.includes("to authenticated"),"Read RPC grants are not restricted");
 assert(removeSql.includes("HHP084")&&removeSql.includes("lower(coalesce(pm.role,''))='admin'"),"Coordinated remove must enforce HHP084 ADMIN");
 assert(removeSql.includes("remove_pharmflow_pharmacy_identifier_v2")&&removeSql.includes("remove_pharmflow_global_identifier_v2"),"HHP084 removal must coordinate Pharmacy + Global mappings");
+assert(!html.includes('id="masterGTINStatus"'),"Settings must not duplicate Global Master status");
+assert(!html.includes('id="masterGTINItemCount"'),"Settings must not duplicate Global Master item count");
+assert(!html.includes('id="masterGTINUpdatedAt"'),"Settings must not duplicate Global Master last-updated metric");
+assert(html.includes('class="legacyMappingDetails orderDataRecovery"'),"Compatibility tools must live with Manage Orders");
+assert(html.includes('Order Data Check &amp; Recovery'),"Manage Orders must expose the compact recovery section");
+assert(css.includes(".settingsModuleCard > .cardHeader"),"Settings modules must use the shared visual header band");
 console.log("PASS settings barcode management regression");
 
 assert(settings.includes("const deleteButton=buttonEvent.currentTarget"),"Delete Item must preserve the clicked button across async confirmation");
