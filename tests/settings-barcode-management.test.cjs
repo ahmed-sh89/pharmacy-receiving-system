@@ -15,7 +15,10 @@ const settings=ui.slice(start,end);
 
 assert(html.includes('id="btnOpenBarcodeControl"'),"Barcode Control launcher is missing");
 assert(html.includes('id="barcodeControlOverlay"'),"Barcode Control modal is missing");
-assert(html.includes('class="modalOverlay needsReviewOverlay barcodeControlOverlay"'),"Barcode Control must reuse the closed-by-default modal state and Needs Review visual language");
+assert(html.includes('class="needsReviewOverlay barcodeControlOverlay" aria-hidden="true" hidden'),"Barcode Control must be natively hidden at initial DOM render");
+assert(settings.includes("modal.hidden=false"),"Barcode Control open lifecycle must explicitly reveal the modal");
+assert(settings.includes("modal.hidden=true"),"Barcode Control close lifecycle must explicitly hide the modal");
+assert(css.includes(".barcodeControlOverlay[hidden]{display:none}"),"Barcode Control hidden state must override the Needs Review display rule");
 assert(html.includes('data-admin-search type="search"'),"Unified Settings search input is missing");
 assert(!html.includes('class="globalIdentifierMasterLookupGrid barcodeManagementLookup barcodeManagementUnifiedLookup"'),"Legacy inline barcode lookup must be removed");
 assert(!html.includes('id="btnGlobalIdentifierMasterClear"'),"Legacy full-size Clear button must be removed");
