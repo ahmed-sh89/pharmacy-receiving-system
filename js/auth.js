@@ -36,6 +36,7 @@ const AuthState = {
     connectionDegraded:false,
     busy:false,
     registration:null,
+    mustChangePassword:false,
     ownerRegistrations:[],
     ownerPharmacies:[],
     lastContextScope:""
@@ -304,25 +305,7 @@ function setRecoveryMessage(message,type){
 }
 
 async function requestPasswordRecovery(){
-    if(AuthState.busy){ return; }
-    const email = valueOf("authEmail").trim();
-    if(!email){
-        setAuthMessage("Enter your email address first.","error");
-        return;
-    }
-    setAuthBusy(true,"Sending password reset email...");
-    try{
-        // Supabase Auth expects redirect_to on the /recover request URL, not in the JSON body.
-        const redirectTo = MEDRYVO_RECOVERY_REDIRECT;
-        const recoverPath = "/auth/v1/recover?redirect_to=" + encodeURIComponent(redirectTo);
-        await authRequest(recoverPath,{
-            method:"POST",
-            body:JSON.stringify({email})
-        });
-        setAuthMessage("Password reset email sent. Open the newest message and follow the link.","success");
-    }
-    catch(error){ setAuthMessage(error.message || "Unable to send password reset email.","error"); }
-    finally{ setAuthBusy(false); }
+    setAuthMessage("Contact the PharmFlow System Owner to receive a temporary password. No recovery email will be sent.","info");
 }
 
 
@@ -460,6 +443,7 @@ function restoreAuthSession(){
 function persistAuthSession(session){
     AuthState.session = session || null;
     AuthState.user = session && session.user ? session.user : null;
+    AuthState.mustChangePassword = !!(AuthState.user?.app_metadata?.pharmflow_must_change_password);
     AuthState.contextError = null;
 
     if(session){
@@ -1558,7 +1542,7 @@ function renderOwnerPharmacies(){
             </div>
 
             <div class="ownerPharmacyActions">
-                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit Identity</button>\n                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>
+                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit Identity</button>\n                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>\n                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset Password</button>` : ""}
                 <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
             </div>
         </article>`;
@@ -1575,6 +1559,22 @@ async function handleOwnerPharmacyAction(button){
     const pharmacyId = button.dataset.pharmacyId;
     const action = button.dataset.ownerAction;
     if(!pharmacyId){ return; }
+
+    if(action === "reset-password"){
+        const targetUserId=button.dataset.adminUserId;
+        if(!targetUserId){ return; }
+        if(!window.confirm("Create a one-time temporary password for this pharmacy ADMIN?")){ return; }
+        setAuthBusy(true);
+        try{
+            const result=await callPasswordAdmin({action:"reset",target_user_id:targetUserId});
+            const temporaryPassword=String(result.temporary_password||"");
+            window.prompt("Temporary password — copy and send it securely. The ADMIN must replace it at first sign-in:",temporaryPassword);
+            setSettingsAccessMessage("Temporary password created. No email was sent.","success");
+        }catch(error){
+            setSettingsAccessMessage(error.message || "Unable to reset password.","error");
+        }finally{ setAuthBusy(false); }
+        return;
+    }
 
     if(action === "identity"){
         const currentName = button.dataset.pharmacyName || "";
@@ -1774,6 +1774,12 @@ function isPharmacyAdmin(){
 }
 
 function renderAuthState(){
+    if(AuthState.mustChangePassword && AuthState.session){
+        finishAuthBootState();
+        lockApplicationForAuth(true);
+        showForcedPasswordPanel();
+        return;
+    }
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
         finishAuthBootState();
         lockApplicationForAuth(true);
@@ -1883,6 +1889,64 @@ function renderPendingAccessPanel(){
         setText("pendingRegistrationStatus",String(r.request_status || "pending").toUpperCase());
         setText("pendingRegistrationNote",r.review_note || (r.request_status === "pending" ? "Waiting for System Owner approval." : ""));
     }
+}
+
+async function callPasswordAdmin(payload){
+    const response = await fetch(getSupabaseProjectUrl() + "/functions/v1/pharmflow-password-admin",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "apikey":getSupabasePublishableKey(),
+            "Authorization":"Bearer " + getSupabaseAccessToken()
+        },
+        body:JSON.stringify(payload)
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error || "Password operation failed");
+    return data;
+}
+
+function showForcedPasswordPanel(){
+    const formsPanel=document.getElementById("authFormsPanel");
+    const accessPanel=document.getElementById("authAccessPanel");
+    if(formsPanel){ formsPanel.hidden=false; }
+    if(accessPanel){ accessPanel.hidden=true; }
+    ["authLoginForm","authPublicSignupForm","authInviteSignupForm","authOwnerSignupForm","authRecoveryForm"].forEach(id=>{
+        const el=document.getElementById(id); if(el){ el.hidden=true; }
+    });
+    let form=document.getElementById("authForcedPasswordForm");
+    if(!form){
+        const template=document.getElementById("authForcedPasswordTemplate");
+        if(template&&formsPanel){ formsPanel.appendChild(template.content.cloneNode(true)); }
+        form=document.getElementById("authForcedPasswordForm");
+        bindClick("btnAuthForcedPasswordSave",()=>completeTemporaryPassword());
+    }
+    if(form){ form.hidden=false; }
+    setAuthMessage("","");
+}
+
+async function completeTemporaryPassword(){
+    if(AuthState.busy){ return; }
+    const password=valueOf("authForcedPassword");
+    const confirm=valueOf("authForcedPasswordConfirm");
+    if(password.length<8 || password!==confirm){
+        setAuthMessage("Enter matching passwords of at least 8 characters.","error");
+        return;
+    }
+    setAuthBusy(true,"Saving new password...");
+    try{
+        await callPasswordAdmin({action:"complete",new_password:password});
+        AuthState.mustChangePassword=false;
+        if(AuthState.user?.app_metadata){ AuthState.user.app_metadata.pharmflow_must_change_password=false; }
+        if(AuthState.session?.user?.app_metadata){ AuthState.session.user.app_metadata.pharmflow_must_change_password=false; }
+        persistAuthSession(AuthState.session);
+        await loadMyAppContext();
+        renderAuthState();
+        unlockApplicationAfterAuth();
+        setAuthMessage("Password updated successfully.","success");
+    }catch(error){
+        setAuthMessage(error.message || "Unable to update password.","error");
+    }finally{ setAuthBusy(false); }
 }
 
 function showAuthPanel(mode, options = {}){
