@@ -1189,22 +1189,6 @@ function bindCoreApplicationButtons(){
 
             }
         );
-
-
-    document
-        .getElementById(
-            "btnUpdateMasterGTIN"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-                if(typeof isSystemOwner === "function" && !isSystemOwner()){
-                    showToast("System Owner access is required to update the Global Master GTIN","warning");
-                    return;
-                }
-                document.getElementById("masterGTINFileInput")?.click();
-            }
-        );
 document
         .getElementById(
             "btnPrepareZebraWork"
@@ -1522,29 +1506,6 @@ function bindCoreFileInputs(){
                 ){
 
                     handleOrderFileSelection(
-                        event
-                    );
-
-                }
-
-            }
-        );
-
-
-    document
-        .getElementById(
-            "masterGTINFileInput"
-        )
-        ?.addEventListener(
-            "change",
-            function(event){
-
-                if(
-                    typeof handleMasterGTINFileSelection ===
-                    "function"
-                ){
-
-                    handleMasterGTINFileSelection(
                         event
                     );
 
