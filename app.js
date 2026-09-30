@@ -1161,27 +1161,7 @@ function bindCoreApplicationButtons(){
                 document.getElementById("masterGTINFileInput")?.click();
             }
         );
-
-
-    document
-        .getElementById(
-            "btnLoadMappings"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-
-                document
-                    .getElementById(
-                        "mappingFileInput"
-                    )
-                    ?.click();
-
-            }
-        );
-
-
-    document
+document
         .getElementById(
             "btnPrepareZebraWork"
         )
@@ -1528,32 +1508,7 @@ function bindCoreFileInputs(){
 
             }
         );
-
-
-    document
-        .getElementById(
-            "mappingFileInput"
-        )
-        ?.addEventListener(
-            "change",
-            function(event){
-
-                if(
-                    typeof handleMappingFileSelection ===
-                    "function"
-                ){
-
-                    handleMappingFileSelection(
-                        event
-                    );
-
-                }
-
-            }
-        );
-
-
-    document
+document
         .getElementById(
             "zebraWorkFileInput"
         )
