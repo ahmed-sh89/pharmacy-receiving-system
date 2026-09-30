@@ -1503,3 +1503,28 @@ body.zebraDevice .mainContent,
     .ownerControlCenter .ownerPharmacyCard{grid-template-columns:1fr 1fr}
     .ownerControlCenter .ownerPharmacyActions{justify-content:flex-start}
 }
+
+
+/* =====================================================
+   SETTINGS IDENTITY + OWNER ACCESS — PHASE2C1170
+===================================================== */
+.settingsIdentityBar{padding:20px 24px}
+.settingsIdentityMain{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.settingsIdentityMain h2{margin:4px 0 6px;font-size:1.45rem}
+.settingsIdentityEmail{display:block;opacity:.72;overflow-wrap:anywhere}
+.settingsIdentityBadges{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.settingsCodeBadge,.settingsRoleBadge{display:inline-flex;align-items:center;min-height:32px;padding:5px 11px;border-radius:999px;font-size:.78rem;letter-spacing:.04em}
+.settingsCodeBadge{background:#eaf4ff;border:1px solid #bddcff;color:#145c9e}
+.settingsRoleBadge{background:#f3f5f7;border:1px solid #dfe4e8;color:#4a5560}
+.authFieldHelp{display:block;margin-top:6px;line-height:1.35;opacity:.72}
+.registrationApprovalFields{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(160px,.7fr);gap:12px;margin-top:14px}
+.registrationApprovalFields label{display:grid;gap:6px;font-size:.78rem;font-weight:700}
+.registrationApprovalFields input{width:100%;min-height:42px;padding:9px 11px;border:1px solid #d7e0e8;border-radius:9px;background:#fff}
+.ownerPharmacyList{max-height:430px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+.registrationRequestsList{max-height:360px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+#authPublicSignupForm .authField input,#authLoginForm .authField input,#authForcedPasswordForm .authField input{min-height:46px}
+@media (max-width:760px){
+  .settingsIdentityMain{align-items:flex-start;flex-direction:column}
+  .settingsIdentityBadges{justify-content:flex-start}
+  .registrationApprovalFields{grid-template-columns:1fr}
+}
