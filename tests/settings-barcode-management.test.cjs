@@ -57,8 +57,9 @@ assert(removeSql.includes("remove_pharmflow_pharmacy_identifier_v2")&&removeSql.
 assert(!html.includes('id="masterGTINStatus"'),"Settings must not duplicate Global Master status");
 assert(!html.includes('id="masterGTINItemCount"'),"Settings must not duplicate Global Master item count");
 assert(!html.includes('id="masterGTINUpdatedAt"'),"Settings must not duplicate Global Master last-updated metric");
-assert(html.includes('class="legacyMappingDetails orderDataRecovery"'),"Compatibility tools must live with Manage Orders");
-assert(html.includes('Order Data Check &amp; Recovery'),"Manage Orders must expose the compact recovery section");
+assert(!html.includes('Order Data Check &amp; Recovery'),"Redundant recovery panel must not be rendered");
+assert(!html.includes('id="btnUpdateMasterGTIN"'),"Obsolete Global GTIN import recovery action must not be rendered");
+assert(!html.includes('id="masterGTINFileInput"'),"Obsolete Global GTIN import recovery input must not be rendered");
 assert(css.includes(".settingsModuleCard > .cardHeader"),"Settings modules must use the shared visual header band");
 assert(!html.includes('id="btnLoadMappings"'),"Legacy Mapping File action must be removed");
 assert(!html.includes('id="mappingFileInput"'),"Legacy Mapping File input must be removed");
