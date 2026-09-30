@@ -17,7 +17,15 @@ assert(auth.includes('owner_update_pharmacy_identity_v1'),"Owner must be able to
 assert(auth.includes('pharmflow-password-admin'),"Password reset must use trusted server function");
 assert(auth.includes('No recovery email will be sent'),"Forgot Password must not send recovery email");
 assert(auth.includes('pharmflow_must_change_password'),"Temporary password must force replacement");
-assert(css.includes('.ownerPharmacyList{max-height:430px;overflow-y:auto'),"Pharmacy list must use internal scroll");
+assert(html.includes('data-owner-view="total"'),"Total KPI must open a management view");
+assert(html.includes('data-owner-view="active"'),"Active KPI must open a management view");
+assert(html.includes('data-owner-view="pending"'),"Pending KPI must open a management view");
+assert(html.includes('data-owner-view="admins"'),"Admins KPI must open a management view");
+assert(html.includes('id="ownerManagementPanel"'),"Owner management panel must exist");
+assert(auth.includes('function openOwnerManagementPanel(view)'),"KPI management navigation must be implemented");
+assert(auth.includes('function renderOwnerManagementPanel()'),"Owner management panel renderer must exist");
+assert(css.includes('.ownerControlCenter .ownerManagementPanel{'),"Owner management panel must use the PharmFlow component styling");
+assert(css.includes('max-height:520px'),"Management lists must use internal scroll");
 assert(html.includes('id="btnEditSettingsIdentity"'),"System Owner account card must expose identity Edit");
 assert(auth.includes('setSettingsIdentityEditMode'),"Account edit must use the same card edit mode");
 assert(auth.includes('owner_update_pharmacy_identity_v1'),"Account edit must reuse canonical identity RPC");
