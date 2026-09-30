@@ -1535,6 +1535,7 @@ body.zebraDevice .mainContent,
 .settingsIdentityEditField{display:grid;gap:6px}
 .settingsIdentityEditField label{font-size:.78rem;font-weight:700}
 .settingsIdentityEditField input{width:100%;min-height:42px;padding:9px 11px;border:1px solid #d7e0e8;border-radius:9px;background:#fff}
+.settingsIdentityEditField input[readonly]{background:#eef1f4;border-color:#cbd3da;color:#69737d;cursor:not-allowed;box-shadow:none}
 .settingsIdentityEditButtons{display:flex;gap:8px}
 .settingsIdentityEditPanel.hidden{display:none!important}
 @media (max-width:760px){.settingsIdentityActions{width:100%;justify-content:space-between}.settingsIdentityEditPanel{grid-template-columns:1fr}.settingsIdentityEditButtons{justify-content:flex-end}}
