@@ -2026,55 +2026,43 @@
                         <button id="btnRefreshOwnerControl" class="secondaryButton" type="button">Refresh</button>
                     </div>
 
-                    <div class="ownerMetricGrid">
-                        <article class="ownerMetricCard ownerMetricTotal">
+                    <div class="ownerMetricGrid" aria-label="Pharmacy access views">
+                        <button class="ownerMetricCard ownerMetricTotal" type="button" data-owner-view="total">
                             <span>Total Pharmacies</span>
                             <strong id="ownerMetricTotalPharmacies">0</strong>
-                        </article>
-                        <article class="ownerMetricCard ownerMetricActive">
+                        </button>
+                        <button class="ownerMetricCard ownerMetricActive" type="button" data-owner-view="active">
                             <span>Active</span>
                             <strong id="ownerMetricActivePharmacies">0</strong>
-                        </article>
-                        <article class="ownerMetricCard ownerMetricPending">
+                        </button>
+                        <button class="ownerMetricCard ownerMetricPending" type="button" data-owner-view="pending">
                             <span>Pending Requests</span>
                             <strong id="ownerMetricPendingRequests">0</strong>
-                        </article>
-                        <article class="ownerMetricCard ownerMetricAdmins">
+                        </button>
+                        <button class="ownerMetricCard ownerMetricAdmins" type="button" data-owner-view="admins">
                             <span>Admins Assigned</span>
                             <strong id="ownerMetricAdminsAssigned">0</strong>
-                        </article>
+                        </button>
                     </div>
 
-                    <div class="ownerControlSection">
-                        <div class="ownerSectionHeader">
+                    <section id="ownerManagementPanel" class="ownerManagementPanel" hidden aria-hidden="true">
+                        <div class="ownerManagementPanelHeader">
                             <div>
-                                <span class="sectionEyebrow">NEW PHARMACIES</span>
-                                <h3>Pending Registration Requests</h3>
+                                <span id="ownerManagementEyebrow" class="sectionEyebrow">PHARMACY ACCESS</span>
+                                <h3 id="ownerManagementTitle">All Pharmacies</h3>
+                                <p id="ownerManagementDescription" class="settingsDescription"></p>
                             </div>
-                            <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
-                        </div>
-                        <p class="settingsDescription">
-                            New accounts remain locked until you verify the pharmacy name and official code. Approval makes the registered account the ADMIN.
-                        </p>
-                        <div id="ownerRegistrationRequests" class="registrationRequestsList">
-                            <div class="registrationEmpty">No pharmacy registration requests yet.</div>
-                        </div>
-                    </div>
-
-                    <div class="ownerControlSection">
-                        <div class="ownerSectionHeader">
-                            <div>
-                                <span class="sectionEyebrow">PHARMACY ACCESS</span>
-                                <h3>Current Pharmacies</h3>
+                            <div class="ownerManagementPanelTools">
+                                <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
+                                    <span>Search</span>
+                                    <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
+                                </label>
+                                <button id="btnCloseOwnerManagement" class="secondaryButton" type="button">Close</button>
                             </div>
                         </div>
-                        <p class="settingsDescription">
-                            Each pharmacy uses one ADMIN account. You can assign an email before the ADMIN creates an account; PharmFlow links it automatically when that email activates.
-                        </p>
-                        <div id="ownerPharmacyList" class="ownerPharmacyList">
-                            <div class="registrationEmpty">Loading pharmacies...</div>
-                        </div>
-                    </div>
+                        <div id="ownerRegistrationRequests" class="registrationRequestsList" hidden></div>
+                        <div id="ownerPharmacyList" class="ownerPharmacyList" hidden></div>
+                    </section>
 
                     <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
                 </section>
