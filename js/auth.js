@@ -137,6 +137,11 @@ function bindAuthUI(){
     bindClick("btnCompleteOwnerSetup", ()=>completeOwnerSetupFromPendingPanel());
     bindClick("btnLogout", ()=>signOutCurrentUser());
     bindClick("btnPendingLogout", ()=>signOutCurrentUser());
+    bindClick("btnChangeSettingsPassword", ()=>openSettingsPasswordPanel());
+    bindClick("btnSaveSettingsPassword", ()=>changeSettingsPassword());
+    document.querySelectorAll("[data-settings-password-close]").forEach(button=>{
+        button.addEventListener("click",()=>closeSettingsPasswordPanel());
+    });
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
     bindClick("btnCloseOwnerManagement", ()=>closeOwnerManagementPanel());
     bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
@@ -1626,6 +1631,91 @@ function renderOwnerManagementPanel(){
     if(pending){ renderOwnerRegistrationRequests(); }
     else{ renderOwnerPharmacies(); }
 }
+function setSettingsPasswordMessage(message,type){
+    const el=document.getElementById("settingsPasswordMessage");
+    if(!el){ return; }
+    el.textContent=message||"";
+    el.className="authMessage "+(type||"");
+}
+
+function clearSettingsPasswordFields(){
+    ["settingsCurrentPassword","settingsNewPassword","settingsConfirmPassword"].forEach(id=>setInputValue(id,""));
+}
+
+function openSettingsPasswordPanel(){
+    if(!AuthState.session || !AuthState.user?.email){ return; }
+    const overlay=document.getElementById("settingsPasswordOverlay");
+    if(!overlay){ return; }
+    clearSettingsPasswordFields();
+    setSettingsPasswordMessage("","");
+    overlay.hidden=false;
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden","false");
+    document.getElementById("settingsCurrentPassword")?.focus();
+}
+
+function closeSettingsPasswordPanel(){
+    const overlay=document.getElementById("settingsPasswordOverlay");
+    if(!overlay){ return; }
+    overlay.classList.remove("open");
+    overlay.hidden=true;
+    overlay.setAttribute("aria-hidden","true");
+    clearSettingsPasswordFields();
+    setSettingsPasswordMessage("","");
+}
+
+async function changeSettingsPassword(){
+    if(AuthState.busy || !AuthState.session || !AuthState.user?.email){ return; }
+    const currentPassword=valueOf("settingsCurrentPassword");
+    const newPassword=valueOf("settingsNewPassword");
+    const confirmPassword=valueOf("settingsConfirmPassword");
+    if(!currentPassword){
+        setSettingsPasswordMessage("Enter your current password.","error");
+        return;
+    }
+    if(newPassword.length<8 || newPassword!==confirmPassword){
+        setSettingsPasswordMessage("Enter matching new passwords of at least 8 characters.","error");
+        return;
+    }
+    if(newPassword===currentPassword){
+        setSettingsPasswordMessage("Choose a new password different from your current password.","error");
+        return;
+    }
+
+    setAuthBusy(true,"Updating password...");
+    try{
+        // Re-authenticate with the current password first. The returned session
+        // proves knowledge of the current credential and is not persisted unless
+        // verification succeeds.
+        const verifiedSession=await authRequest("/auth/v1/token?grant_type=password",{
+            method:"POST",
+            body:JSON.stringify({email:AuthState.user.email,password:currentPassword})
+        });
+        const verificationToken=verifiedSession?.access_token;
+        if(!verificationToken){ throw new Error("Current password could not be verified."); }
+
+        const updatedUser=await authRequest("/auth/v1/user",{
+            method:"PUT",
+            headers:{"Authorization":"Bearer "+verificationToken},
+            body:JSON.stringify({password:newPassword})
+        });
+
+        // Keep the freshly authenticated session authoritative after password
+        // rotation, updating its user payload when GoTrue returns one.
+        verifiedSession.user=updatedUser?.user || updatedUser || verifiedSession.user;
+        persistAuthSession(verifiedSession);
+        closeSettingsPasswordPanel();
+        showToast("Password updated successfully","success");
+    }catch(error){
+        setSettingsPasswordMessage(
+            /invalid login|invalid credentials/i.test(String(error?.message||""))
+                ? "Current password is incorrect."
+                : (error.message || "Unable to update password."),
+            "error"
+        );
+    }finally{ setAuthBusy(false); }
+}
+
 function setSettingsIdentityEditMode(editing){
     const view=document.getElementById("settingsIdentityView");
     const panel=document.getElementById("settingsIdentityEdit");
