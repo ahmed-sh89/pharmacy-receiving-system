@@ -8913,13 +8913,13 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const openControl=()=>{
         if(!modal) return;
-        modal.classList.add("open");
+        modal.hidden=false;
         modal.setAttribute("aria-hidden","false");
         requestAnimationFrame(()=>searchInput.focus());
     };
     const closeControl=()=>{
         if(!modal) return;
-        modal.classList.remove("open");
+        modal.hidden=true;
         modal.setAttribute("aria-hidden","true");
         clearTimeout(searchSuggestTimer);
         searchInput.value="";
