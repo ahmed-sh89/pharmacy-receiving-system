@@ -1108,6 +1108,31 @@
                         </section>
 
 
+                        <details class="legacyMappingDetails orderDataRecovery">
+                            <summary>Order Data Check &amp; Recovery</summary>
+                            <div class="legacyMappingContent">
+                                <div class="orderDataCheckHeader">
+                                    <div>
+                                        <span class="sectionEyebrow">ORDER DATA CHECK</span>
+                                        <h3>Order &amp; Mapping Compatibility</h3>
+                                        <p>Compatibility tools for exceptional order files. The Global Master is used automatically during normal receiving.</p>
+                                    </div>
+                                    <button id="btnUpdateMasterGTIN" class="secondaryButton" type="button">Update Global GTIN Import</button>
+                                </div>
+                                <input id="masterGTINFileInput" type="file" accept=".xlsx,.xls" hidden>
+                                <div class="orderDataCheckGrid">
+                                    <div><span>Current Order Matched</span><strong id="masterGTINMatchedCount">0</strong></div>
+                                </div>
+                                <div id="masterGTINNotice" class="masterGTINNotice">Order compatibility status.</div>
+                                <div class="mappingCompatibilityRow">
+                                    <div><strong>Mapping File</strong><small>Fallback compatibility only when an exceptional order requires it.</small></div>
+                                    <button id="btnLoadMappings" class="secondaryButton" type="button">+ Add Mapping Files</button>
+                                </div>
+                                <input id="mappingFileInput" type="file" multiple accept=".xlsx,.xls" hidden>
+                                <div id="mappingFilesList" class="fileList"><div class="emptyState">No compatibility mapping files loaded.</div></div>
+                            </div>
+                        </details>
+
                         <input
                             id="orderFileInput"
                             type="file"
@@ -1989,7 +2014,7 @@
                 class="appPage"
             >
 
-                <section class="contentCard settingsAccountCompact settingsIdentityBar">
+                <section class="contentCard settingsAccountCompact settingsIdentityBar settingsModuleCard">
                     <div id="settingsIdentityView" class="settingsIdentityMain">
                         <div>
                             <span class="sectionEyebrow">ACCOUNT</span>
@@ -2014,7 +2039,7 @@
                     </div>
                 </section>
 
-                <section id="ownerManagementCard" class="contentCard ownerControlCenter" hidden>
+                <section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
                     <div class="cardHeader ownerControlHeader">
                         <div>
                             <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
@@ -2134,7 +2159,7 @@
                 </section>
 
 
-                    <section class="contentCard masterGTINCard barcodeControlCard">
+                    <section class="contentCard masterGTINCard barcodeControlCard settingsModuleCard">
                         <div class="cardHeader barcodeControlHeader">
                             <div>
                                 <span class="sectionEyebrow">BARCODE CONTROL</span>
@@ -2182,71 +2207,11 @@
                             </section>
                         </div>
 
-                        <details class="legacyMappingDetails settingsAdvancedTools">
-                            <summary>Global Master import and mapping-file compatibility</summary>
-
-                            <div class="legacyMappingContent">
-                                <p class="settingsDescription">Administrative import tools are retained for the existing Global Master import process. They do not create or edit operational identifier mappings; use the Global Identifier Master above for that.</p>
-
-                                <button
-                                    id="btnUpdateMasterGTIN"
-                                    class="primaryButton"
-                                    type="button"
-                                >
-                                    Update Global GTIN Import
-                                </button>
-
-                                <input
-                                    id="masterGTINFileInput"
-                                    type="file"
-                                    accept=".xlsx,.xls"
-                                    hidden
-                                >
-
-                                <div class="masterGTINStatusGrid">
-                                    <div><span>Status</span><strong id="masterGTINStatus">Not installed</strong></div>
-                                    <div><span>Global Items</span><strong id="masterGTINItemCount">0</strong></div>
-                                    <div><span>Current Order Matched</span><strong id="masterGTINMatchedCount">0</strong></div>
-                                    <div><span>Last Updated</span><strong id="masterGTINUpdatedAt">-</strong></div>
-                                </div>
-
-                                <div id="masterGTINNotice" class="masterGTINNotice">
-                                    Global Master import status and compatibility tools.
-                                </div>
-
-                                <h3>Mapping-file compatibility</h3>
-
-                                <button
-                                    id="btnLoadMappings"
-                                    class="secondaryButton"
-                                    type="button"
-                                >
-                                    + Add Mapping Files
-                                </button>
-
-                                <input
-                                    id="mappingFileInput"
-                                    type="file"
-                                    multiple
-                                    accept=".xlsx,.xls"
-                                    hidden
-                                >
-
-                                <div
-                                    id="mappingFilesList"
-                                    class="fileList"
-                                >
-                                    <div class="emptyState">
-                                        No compatibility mapping files loaded.
-                                    </div>
-                                </div>
-
-                            </div>
-                        </details>
+                        
 
                     </section>
 
-                <section class="contentCard dangerZoneCard settingsDataSafetyCard">
+                <section class="contentCard dangerZoneCard settingsDataSafetyCard settingsModuleCard">
 
 
                     <div class="cardHeader">
