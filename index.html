@@ -2019,9 +2019,7 @@
                         <div>
                             <span class="sectionEyebrow">SYSTEM OWNER</span>
                             <h2>Pharmacies & Access</h2>
-                            <p class="settingsDescription">
-                                Approve new pharmacies, control access, and manage the single ADMIN account assigned to each pharmacy.
-                            </p>
+
                         </div>
                         <button id="btnRefreshOwnerControl" class="secondaryButton" type="button">Refresh</button>
                     </div>
@@ -2045,7 +2043,8 @@
                         </button>
                     </div>
 
-                    <section id="ownerManagementPanel" class="ownerManagementPanel" hidden aria-hidden="true">
+                    <div id="ownerManagementPanel" class="modalOverlay ownerManagementOverlay" aria-hidden="true">
+                        <section class="modalCard ownerManagementPanel" role="dialog" aria-modal="true" aria-labelledby="ownerManagementTitle">
                         <div class="ownerManagementPanelHeader">
                             <div>
                                 <span id="ownerManagementEyebrow" class="sectionEyebrow">PHARMACY ACCESS</span>
@@ -2062,7 +2061,8 @@
                         </div>
                         <div id="ownerRegistrationRequests" class="registrationRequestsList" hidden></div>
                         <div id="ownerPharmacyList" class="ownerPharmacyList" hidden></div>
-                    </section>
+                        </section>
+                    </div>
 
                     <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
                 </section>
