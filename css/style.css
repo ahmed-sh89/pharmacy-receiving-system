@@ -1476,24 +1476,66 @@ body.zebraDevice .mainContent,
 }
 .ownerControlCenter .ownerPharmacyCard{
     display:grid;
-    grid-template-columns:minmax(210px,1.2fr) minmax(240px,1.4fr) 100px auto;
+    grid-template-columns:minmax(230px,1.15fr) minmax(220px,1fr) 88px minmax(430px,auto);
     align-items:center;
     gap:10px;
-    padding:9px 10px;
-    min-height:auto;
+    padding:7px 8px;
+    min-height:54px;
 }
-.ownerControlCenter .ownerPharmacyIdentity,
+.ownerControlCenter .ownerPharmacyIdentity{
+    display:grid;
+    grid-template-columns:72px minmax(0,1fr);
+    align-items:center;
+    gap:9px;
+    min-width:0;
+}
+.ownerControlCenter .ownerPharmacyCodeBadge{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:72px;
+    min-height:30px;
+    padding:5px 8px;
+    border:1px solid #c9ddf7;
+    border-radius:8px;
+    background:#eef5ff;
+    color:#1d5f9e;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.02em;
+    white-space:nowrap;
+}
+.ownerControlCenter .ownerPharmacyName{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
 .ownerControlCenter .ownerPharmacyAdmin{
     min-width:0;
+    overflow:hidden;
+}
+.ownerControlCenter .ownerPharmacyAdmin > div,
+.ownerControlCenter .ownerPharmacyAdmin small{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.ownerControlCenter .ownerPharmacyStatus{
+    display:flex;
+    justify-content:flex-start;
 }
 .ownerControlCenter .ownerPharmacyActions{
     display:flex;
-    gap:6px;
+    flex-wrap:nowrap;
+    gap:5px;
     justify-content:flex-end;
+    align-items:center;
 }
 .ownerControlCenter .ownerPharmacyActions button{
-    min-height:34px;
-    padding:6px 9px;
+    min-height:32px;
+    padding:5px 8px;
     white-space:nowrap;
 }
 .masterGTINCard{
