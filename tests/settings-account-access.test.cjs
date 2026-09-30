@@ -1,0 +1,24 @@
+"use strict";
+const fs=require("fs");
+const assert=require("assert");
+const html=fs.readFileSync("index.html","utf8");
+const auth=fs.readFileSync("js/auth.js","utf8");
+const css=fs.readFileSync("css/style.css","utf8");
+const sql=fs.readFileSync("PHASE2C1170_SETTINGS_PHARMACY_IDENTITY_V2.sql","utf8");
+
+assert(!html.includes('>Activate Pharmacy Admin</button>'),"Public Activate Admin action must be removed");
+assert(!html.includes('id="publicSignupName"'),"Public signup must not request User Name");
+assert(!html.includes('id="publicPharmacyName"'),"Public signup must not request Pharmacy Name");
+assert(html.includes('id="publicPharmacyCode"'),"Public signup must request a proposed Pharmacy Code");
+assert(html.includes('id="publicSignupPasswordConfirm"'),"Public signup must confirm password");
+assert(auth.includes('submit_pharmacy_registration_v2'),"Registration must use V2 request contract");
+assert(auth.includes('owner_review_pharmacy_registration_v2'),"Owner approval must assign official identity");
+assert(auth.includes('owner_update_pharmacy_identity_v1'),"Owner must be able to correct pharmacy identity safely");
+assert(auth.includes('pharmflow-password-admin'),"Password reset must use trusted server function");
+assert(auth.includes('No recovery email will be sent'),"Forgot Password must not send recovery email");
+assert(auth.includes('pharmflow_must_change_password'),"Temporary password must force replacement");
+assert(css.includes('.ownerPharmacyList{max-height:430px;overflow-y:auto'),"Pharmacy list must use internal scroll");
+assert(sql.includes('pharmflow_pharmacy_identity_audit_v1'),"Identity changes must be audited");
+assert(sql.includes('p.id<>p_pharmacy_id'),"Official pharmacy code collision must be blocked");
+assert(!sql.includes('delete from public.pharmacies'),"Identity correction must never delete pharmacy data");
+console.log("PASS settings account/access regression");
