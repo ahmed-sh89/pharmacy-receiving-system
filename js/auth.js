@@ -1565,13 +1565,11 @@ function renderOwnerPharmacies(){
                 <div>${adminLabel}</div>
                 ${adminName}
             </div>
-            <div class="ownerPharmacyStatus">
-                <span class="registrationStatus ${active ? "approved" : "rejected"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
-            </div>
             <div class="ownerPharmacyActions">
-                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit Identity</button>
-                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>
-                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset Password</button>` : ""}
+                <span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
+                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit</button>
+                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
+                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
                 <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
             </div>
         </article>`;
