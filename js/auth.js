@@ -1568,6 +1568,12 @@ function setSettingsIdentityEditMode(editing){
     if(allowed){
         setInputValue("settingsIdentityNameInput",AuthState.context?.pharmacy_name || "");
         setInputValue("settingsIdentityCodeInput",AuthState.context?.pharmacy_code || "");
+        const codeInput=document.getElementById("settingsIdentityCodeInput");
+        const protectedReference=String(AuthState.context?.pharmacy_code||"").trim().toUpperCase()==="HHP084";
+        if(codeInput){
+            codeInput.readOnly=protectedReference;
+            codeInput.title=protectedReference ? "HHP084 is the protected reference pharmacy code." : "";
+        }
         document.getElementById("settingsIdentityNameInput")?.focus();
     }
 }
@@ -1576,6 +1582,10 @@ async function saveSettingsIdentity(){
     if(AuthState.busy || !isSystemOwner() || !AuthState.context?.pharmacy_id){ return; }
     const pharmacyName=valueOf("settingsIdentityNameInput").trim();
     const pharmacyCode=valueOf("settingsIdentityCodeInput").trim();
+    if(String(AuthState.context?.pharmacy_code||"").trim().toUpperCase()==="HHP084" && pharmacyCode.toUpperCase()!=="HHP084"){
+        setSettingsAccessMessage("HHP084 is the protected reference pharmacy code and cannot be changed.","error");
+        return;
+    }
     if(!pharmacyName || pharmacyCode.length<3){
         setSettingsAccessMessage("Pharmacy Name and a valid Pharmacy Code are required.","error");
         return;
