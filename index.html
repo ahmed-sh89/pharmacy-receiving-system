@@ -155,7 +155,7 @@
                     <div id="authPublicSignupForm" hidden>
                         <span class="authEyebrow">NEW PHARMACY</span>
                         <h2>Request access</h2>
-                        <p class="authLead">Create an account and submit your pharmacy for approval. You cannot use operational data until the System Owner approves the request.</p>
+                        <p class="authLead">Create an account and submit your pharmacy for approval. Operational access remains locked until the request is approved.</p>
                         <div class="authField"><label>Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
                         <div class="authField">
                             <label>Password</label>
@@ -169,7 +169,7 @@
                             <label>Confirm Password</label>
                             <input id="publicSignupPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
                         </div>
-                        <div class="authField"><label>Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know for your pharmacy. The System Owner will verify the official code.</small></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the pharmacy code you know. The official pharmacy identity will be verified before approval.</small></div>
                         <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
                         <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
                     </div>
@@ -178,10 +178,10 @@
                         <button id="btnAuthShowLoginFromInvite" class="authBackButton" type="button">← Back to Sign In</button>
                         <span class="authEyebrow">PHARMACY ADMIN</span>
                         <h2>Activate Admin Account</h2>
-                        <p class="authLead">Use the email that the System Owner assigned to your pharmacy.</p>
+                        <p class="authLead">Use the email assigned to your pharmacy.</p>
 
                         <div class="authInfoBox">
-                            No invitation code is required. Your email must already be assigned to a pharmacy by the System Owner.
+                            No invitation code is required. Your email must already be assigned to a pharmacy.
                         </div>
 
                         <div class="authField">
@@ -261,8 +261,8 @@
                     <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
 
                     <div id="pendingStandardAccessBox">
-                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Submit the pharmacy code you know for System Owner approval.</div>
-                        <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The System Owner will verify the official pharmacy identity.</small></div>
+                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Submit the pharmacy code you know for approval.</div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The official pharmacy identity will be verified before approval.</small></div>
                         <button id="btnSubmitPendingRegistration" class="authPrimaryButton" type="button">Submit Pharmacy for Approval</button>
                     </div>
 
@@ -272,7 +272,7 @@
                             <h3 id="pendingRegistrationPharmacy">-</h3>
                             <div class="pendingApprovalMeta"><span>Code</span><strong id="pendingRegistrationCode">-</strong></div>
                             <div class="pendingApprovalMeta"><span>Status</span><strong id="pendingRegistrationStatus">PENDING</strong></div>
-                            <p id="pendingRegistrationNote">Waiting for System Owner approval.</p>
+                            <p id="pendingRegistrationNote">Waiting for approval.</p>
                         </div>
                     </div>
 
@@ -2017,11 +2017,10 @@
                 <section id="ownerManagementCard" class="contentCard ownerControlCenter" hidden>
                     <div class="cardHeader ownerControlHeader">
                         <div>
-                            <span class="sectionEyebrow">SYSTEM OWNER</span>
+                            <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
                             <h2>Pharmacies & Access</h2>
 
                         </div>
-                        <button id="btnRefreshOwnerControl" class="secondaryButton" type="button">Refresh</button>
                     </div>
 
                     <div class="ownerMetricGrid" aria-label="Pharmacy access views">
@@ -2159,7 +2158,7 @@
                             <summary>Global Master import and mapping-file compatibility</summary>
 
                             <div class="legacyMappingContent">
-                                <p class="settingsDescription">System Owner import tools are retained for the existing Global Master import process. They do not create or edit operational identifier mappings; use the Global Identifier Master above for that.</p>
+                                <p class="settingsDescription">Administrative import tools are retained for the existing Global Master import process. They do not create or edit operational identifier mappings; use the Global Identifier Master above for that.</p>
 
                                 <button
                                     id="btnUpdateMasterGTIN"
