@@ -2134,25 +2134,44 @@
                 </section>
 
 
-                    <section class="contentCard masterGTINCard">
-                        <div class="cardHeader">
+                    <section class="contentCard masterGTINCard barcodeControlCard">
+                        <div class="cardHeader barcodeControlHeader">
                             <div>
-                                <span class="sectionEyebrow">BARCODE MANAGEMENT</span>
-                                <h2>Item Barcodes</h2>
-                                <p>Scan a barcode or search for an item to view and manage its barcodes.</p>
+                                <span class="sectionEyebrow">BARCODE CONTROL</span>
+                                <h2>Manage Item Barcodes</h2>
                             </div>
                         </div>
 
-                        <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Item barcode management">
-                            <div class="globalIdentifierMasterLookupGrid barcodeManagementLookup barcodeManagementUnifiedLookup">
-                                <label>Find Item
-                                    <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
-                                </label>
-                                <button id="btnGlobalIdentifierMasterSearch" data-admin-search-button type="button">Search</button>
-                                <button id="btnGlobalIdentifierMasterClear" data-admin-clear type="button" class="secondaryButton">Clear</button>
-                            </div>
-                            <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
-                        </section>
+                        <div class="barcodeControlActions">
+                            <button id="btnOpenBarcodeControl" class="barcodeControlAction" type="button">
+                                <span>ITEM BARCODES</span>
+                                <strong>Find &amp; Manage Item</strong>
+                                <small>Search or scan by barcode, item code or item name</small>
+                            </button>
+                        </div>
+
+                        <div id="barcodeControlOverlay" class="needsReviewOverlay barcodeControlOverlay" aria-hidden="true">
+                            <button class="needsReviewScrim" data-barcode-close aria-label="Close barcode control"></button>
+                            <section id="globalIdentifierMasterAdmin" class="needsReviewPanel needsReviewPanelV2 needsReviewWorkspace barcodeControlPanel" role="dialog" aria-modal="true" aria-labelledby="barcodeControlTitle">
+                                <div class="needsReviewHeader">
+                                    <div>
+                                        <span class="sectionEyebrow">BARCODE CONTROL</span>
+                                        <h2 id="barcodeControlTitle">Find &amp; Manage Item</h2>
+                                    </div>
+                                    <button class="needsReviewClose" data-barcode-close type="button" aria-label="Close">✕</button>
+                                </div>
+                                <div class="pfnNeedsReviewToolbar barcodeControlToolbar">
+                                    <label class="barcodeControlSearchLabel">Find Item
+                                        <span class="barcodeControlSearchShell">
+                                            <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
+                                            <button type="button" data-admin-clear class="barcodeControlClear" aria-label="Clear search" title="Clear search">×</button>
+                                        </span>
+                                    </label>
+                                    <button id="btnGlobalIdentifierMasterSearch" data-admin-search-button type="button">Search</button>
+                                </div>
+                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace aria-live="polite"></div>
+                            </section>
+                        </div>
 
                         <details class="legacyMappingDetails settingsAdvancedTools">
                             <summary>Global Master import and mapping-file compatibility</summary>
