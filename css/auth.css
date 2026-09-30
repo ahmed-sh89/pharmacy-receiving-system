@@ -628,38 +628,61 @@ body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font
   }
 }/* =============================================================
    PHARMFLOW SETTINGS — PUBLIC REGISTRATION FORM
-   Single-column owner. Mirrors the approved Sign In form geometry.
+   Single responsive owner. No scroll; all registration actions fit the shell.
 ============================================================= */
-#authGate #authPublicSignupForm{width:100%;max-width:100%}
+#authGate #authPublicSignupForm{width:100%;max-width:100%;box-sizing:border-box}
 #authGate #authPublicSignupForm[hidden]{display:none!important}
-#authGate #authPublicSignupForm .authField{width:100%;min-width:0;margin-bottom:10px}
-#authGate #authPublicSignupForm .authField label{display:block;margin-bottom:5px}
-#authGate #authPublicSignupForm .authField input{width:100%;height:44px;min-height:44px;box-sizing:border-box;background:#fff}
+#authGate #authPublicSignupForm .authField{width:100%;min-width:0}
+#authGate #authPublicSignupForm .authField input{width:100%;box-sizing:border-box;background:#fff}
 #authGate #authPublicSignupForm .authPasswordWrap{width:100%}
-#authGate #authPublicSignupForm .authPasswordWrap input{width:100%;padding-right:70px}
-#authGate #authPublicSignupForm .authPasswordToggle{right:6px}
-#authGate #authPublicSignupForm .authFieldHelp{display:block;margin-top:5px;color:#607b94;font-size:10.5px;line-height:1.35;opacity:1}
-#authGate #authPublicSignupForm .authPrimaryButton{width:100%;margin-top:2px}
-#authGate #authPublicSignupForm #btnAuthShowLogin{display:block;width:100%;min-height:28px;margin:2px 0 0}
-@media (min-width:761px){
-  body:not(.zebraDevice) #authGate #authPublicSignupForm{align-self:center}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm h2{margin:3px 0 4px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{margin-bottom:9px;line-height:1.3}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{margin-bottom:7px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField label{margin-bottom:4px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField input{height:41px;min-height:41px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authFieldHelp{margin-top:3px;line-height:1.25}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{height:41px;min-height:41px;margin-top:1px}
-}
-@media (min-width:761px) and (max-height:700px){
-  body:not(.zebraDevice) #authGate .authShell:has(#authPublicSignupForm:not([hidden])){min-height:0;height:min(540px,calc(100vh - 28px))}
-  body:not(.zebraDevice) #authGate .authFormPanel:has(#authPublicSignupForm:not([hidden])){padding-top:18px!important;padding-bottom:18px!important}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm h2{font-size:27px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{font-size:10.5px;margin-bottom:6px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{margin-bottom:5px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField input{height:38px;min-height:38px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authFieldHelp{font-size:9px;line-height:1.18}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{height:38px;min-height:38px}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm #btnAuthShowLogin{min-height:25px}
-}
+#authGate #authPublicSignupForm .authFieldHelp{display:block;color:#607b94;opacity:1}
+#authGate #authPublicSignupForm .authPrimaryButton,
+#authGate #authPublicSignupForm #btnAuthShowLogin{width:100%}
 
+@media (min-width:761px){
+  body:not(.zebraDevice) #authGate .authShell:has(#authPublicSignupForm:not([hidden])){
+    height:min(620px,calc(100dvh - 28px))!important;
+    max-height:calc(100dvh - 28px)!important;
+  }
+  body:not(.zebraDevice) #authGate .authFormPanel:has(#authPublicSignupForm:not([hidden])){
+    padding-block:clamp(12px,2.1dvh,24px)!important;
+  }
+  body:not(.zebraDevice) #authGate .authFormPanelInner:has(#authPublicSignupForm:not([hidden])){
+    height:100%!important;max-height:100%!important;overflow:visible!important;
+    display:flex!important;align-items:center!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm{
+    --reg-scale:min(1,calc((100dvh - 56px)/570));
+    display:block;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm h2{
+    margin:4px 0 4px!important;font-size:clamp(25px,4.6dvh,34px)!important;line-height:1!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{
+    margin:0 0 clamp(5px,1.2dvh,10px)!important;font-size:clamp(10px,1.7dvh,13px)!important;line-height:1.28!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{
+    gap:3px!important;margin-bottom:clamp(4px,.9dvh,8px)!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField label{
+    margin:0!important;font-size:clamp(11px,1.8dvh,13px)!important;line-height:1.05!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField input{
+    height:clamp(36px,6.1dvh,46px)!important;min-height:0!important;border-radius:12px!important;
+    padding:0 14px!important;font-size:clamp(12px,1.9dvh,14px)!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPasswordWrap input{padding-right:78px!important}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPasswordToggle{
+    right:6px!important;height:clamp(28px,4.7dvh,34px)!important;min-width:58px!important;font-size:10px!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authFieldHelp{
+    margin-top:2px!important;font-size:clamp(8px,1.35dvh,10px)!important;line-height:1.18!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{
+    height:clamp(36px,6dvh,44px)!important;min-height:0!important;margin-top:1px!important;
+    border-radius:12px!important;font-size:clamp(12px,1.9dvh,14px)!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm #btnAuthShowLogin{
+    min-height:clamp(24px,4dvh,30px)!important;height:auto!important;margin:1px 0 0!important;font-size:11px!important;
+  }
+}
