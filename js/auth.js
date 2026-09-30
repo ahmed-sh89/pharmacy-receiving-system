@@ -142,7 +142,6 @@ function bindAuthUI(){
     bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
     bindClick("btnCancelSettingsIdentity", ()=>setSettingsIdentityEditMode(false));
     bindClick("btnSaveSettingsIdentity", ()=>saveSettingsIdentity());
-    bindClick("btnRefreshOwnerControl", ()=>loadOwnerControlCenter(true));
     document.querySelectorAll("[data-owner-view]").forEach(card=>{
         card.addEventListener("click",()=>openOwnerManagementPanel(card.dataset.ownerView));
     });
@@ -320,7 +319,7 @@ function setRecoveryMessage(message,type){
 }
 
 async function requestPasswordRecovery(){
-    setAuthMessage("Contact the PharmFlow System Owner to receive a temporary password. No recovery email will be sent.","info");
+    setAuthMessage("Contact your PharmFlow Admin to receive a temporary password. No recovery email will be sent.","info");
 }
 
 
@@ -739,7 +738,7 @@ async function submitRegistrationFromPendingPanel(){
         await submitPendingRegistration();
         await loadMyRegistrationStatus();
         renderAuthState();
-        setAuthMessage("Registration submitted. Waiting for System Owner approval.","success");
+        setAuthMessage("Registration submitted. Waiting for approval.","success");
     }catch(error){
         setAuthMessage(error.message || "Unable to submit registration.","error");
     }finally{ setAuthBusy(false); }
@@ -1495,7 +1494,7 @@ async function loadOwnerPharmacies(){
     return AuthState.ownerPharmacies;
 }
 
-async function loadOwnerControlCenter(showMessage=false){
+async function loadOwnerControlCenter(){
     if(!isSystemOwner()){ return; }
     try{
         await Promise.all([
@@ -1503,9 +1502,8 @@ async function loadOwnerControlCenter(showMessage=false){
             loadOwnerPharmacies()
         ]);
         renderOwnerMetrics();
-        if(showMessage){ setSettingsAccessMessage("Owner Control Center refreshed.","success"); }
     }catch(error){
-        if(showMessage){ setSettingsAccessMessage(error.message || "Unable to refresh Owner Control Center.","error"); }
+        setSettingsAccessMessage(error.message || "Unable to load Access Management.","error");
     }
 }
 
@@ -2021,7 +2019,7 @@ function renderPendingAccessPanel(){
         setText("pendingRegistrationPharmacy",r.pharmacy_name || "-");
         setText("pendingRegistrationCode",r.pharmacy_code || "-");
         setText("pendingRegistrationStatus",String(r.request_status || "pending").toUpperCase());
-        setText("pendingRegistrationNote",r.review_note || (r.request_status === "pending" ? "Waiting for System Owner approval." : ""));
+        setText("pendingRegistrationNote",r.review_note || (r.request_status === "pending" ? "Waiting for approval." : ""));
     }
 }
 
