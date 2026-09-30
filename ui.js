@@ -3420,23 +3420,8 @@ function refreshMasterGTINUI(){
         }
 
         setElementText(
-            UI.elements.masterGTINStatus,
-            (navigator.onLine ? "CONNECTED — MASTER UNAVAILABLE" : "OFFLINE")
-        );
-
-        setElementText(
-            UI.elements.masterGTINItemCount,
-            "0"
-        );
-
-        setElementText(
             UI.elements.masterGTINMatchedCount,
             "0"
-        );
-
-        setElementText(
-            UI.elements.masterGTINUpdatedAt,
-            "-"
         );
 
         if(UI.elements.masterGTINNotice){
@@ -3471,31 +3456,11 @@ function refreshMasterGTINUI(){
     }
 
     setElementText(
-        UI.elements.masterGTINStatus,
-        (navigator.onLine ? "CONNECTED — ACTIVE" : "OFFLINE — CACHED")
-    );
-
-    setElementText(
-        UI.elements.masterGTINItemCount,
-        toInteger(
-            status.itemCount,
-            0
-        ).toLocaleString()
-    );
-
-    setElementText(
         UI.elements.masterGTINMatchedCount,
         toInteger(
             status.currentOrder?.matchedItems,
             0
         ).toLocaleString()
-    );
-
-    setElementText(
-        UI.elements.masterGTINUpdatedAt,
-        status.updatedAt
-        ? formatDateTime(status.updatedAt)
-        : "-"
     );
 
     /* Orders page uses the same Global Master status object as Settings
