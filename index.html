@@ -1991,17 +1991,19 @@
 
                 <section class="contentCard settingsAccountCompact settingsIdentityBar settingsModuleCard">
                     <div id="settingsIdentityView" class="settingsIdentityMain">
-                        <div>
+                        <div class="settingsModuleTitleChip settingsAccountTitleChip">
                             <span class="sectionEyebrow">ACCOUNT</span>
                             <h2 id="settingsPharmacyName">-</h2>
-                            <span id="settingsSignedInUser" class="settingsIdentityEmail">-</span>
                         </div>
-                        <div class="settingsIdentityActions">
-                            <div class="settingsIdentityBadges">
-                                <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
-                                <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
+                        <div class="settingsAccountDetails">
+                            <span id="settingsSignedInUser" class="settingsIdentityEmail">-</span>
+                            <div class="settingsIdentityActions">
+                                <div class="settingsIdentityBadges">
+                                    <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
+                                    <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
+                                </div>
+                                <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
                             </div>
-                            <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
                         </div>
                     </div>
                     <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
@@ -2015,12 +2017,9 @@
                 </section>
 
                 <section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
-                    <div class="cardHeader ownerControlHeader">
-                        <div>
-                            <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
-                            <h2>Pharmacies & Access</h2>
-
-                        </div>
+                    <div class="settingsModuleTitleChip ownerControlHeader">
+                        <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
+                        <h2>Pharmacies &amp; Access</h2>
                     </div>
 
                     <div class="ownerMetricGrid" aria-label="Pharmacy access views">
@@ -2135,11 +2134,9 @@
 
 
                     <section class="contentCard masterGTINCard barcodeControlCard settingsModuleCard">
-                        <div class="cardHeader barcodeControlHeader">
-                            <div>
-                                <span class="sectionEyebrow">BARCODE CONTROL</span>
-                                <h2>Manage Item Barcodes</h2>
-                            </div>
+                        <div class="settingsModuleTitleChip barcodeControlHeader">
+                            <span class="sectionEyebrow">BARCODE CONTROL</span>
+                            <h2>Manage Item Barcodes</h2>
                         </div>
 
                         <div class="barcodeControlActions">
@@ -2189,26 +2186,9 @@
                 <section class="contentCard dangerZoneCard settingsDataSafetyCard settingsModuleCard">
 
 
-                    <div class="cardHeader">
-
-
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                WORKSPACE DATA
-
-                            </span>
-
-                            <h2>
-
-                                Data Management
-
-                            </h2>
-
-                        </div>
-
-
+                    <div class="settingsModuleTitleChip">
+                        <span class="sectionEyebrow">WORKSPACE DATA</span>
+                        <h2>Data Management</h2>
                     </div>
 
 
