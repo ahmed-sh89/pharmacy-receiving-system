@@ -1527,11 +1527,8 @@ function renderOwnerPharmacies(){
 
         return `<article class="ownerPharmacyCard">
             <div class="ownerPharmacyIdentity">
-                <div class="ownerPharmacyIcon">${escapeAuthHtml((p.pharmacy_name || "P").slice(0,1).toUpperCase())}</div>
-                <div>
-                    <strong>${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
-                    <span>${escapeAuthHtml(p.pharmacy_code || "-")}</span>
-                </div>
+                <div class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "-")}</div>
+                <strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
             </div>
 
             <div class="ownerPharmacyAdmin">
