@@ -814,7 +814,7 @@ async function signUpInitialOwner(){
     if(AuthState.busy){ return; }
     await loadPublicSetupStatus().catch(()=>{});
     if(AuthState.ownerExists){
-        setAuthMessage("The system owner is already configured. Use an invitation to activate a new account.","error");
+        setAuthMessage("The PharmFlow Administrator is already configured. Use the assigned access path to activate a new account.","error");
         showAuthPanel("login");
         return;
     }
@@ -845,7 +845,7 @@ async function signUpInitialOwner(){
             if(!hasApplicationAccess()){
                 throw new Error("Owner account exists, but pharmacy access was not verified.");
             }
-            setAuthMessage("System Owner and pharmacy created successfully.","success");
+            setAuthMessage("PharmFlow Administrator and pharmacy created successfully.","success");
             unlockApplicationAfterAuth();
         }
         else{
@@ -860,13 +860,13 @@ async function signUpInitialOwner(){
 
             if(likelyExistingAccount){
                 setAuthMessage(
-                    "This email already has an authentication account. System Owner setup is NOT complete yet. Sign in with that account (or reset its password) to finish the saved setup.",
+                    "This email already has an authentication account. Administrator setup is NOT complete yet. Sign in with that account (or reset its password) to finish the saved setup.",
                     "error"
                 );
             }
             else{
                 setAuthMessage(
-                    "Authentication account created. System Owner setup is NOT complete yet. Confirm the email if requested, then sign in with the same password to finish the saved pharmacy setup.",
+                    "Authentication account created. Administrator setup is NOT complete yet. Confirm the email if requested, then sign in with the same password to finish the saved pharmacy setup.",
                     "success"
                 );
             }
@@ -1284,12 +1284,12 @@ async function completePendingOwnerSetup(){
     // Never report Owner setup as successful unless the database confirms
     // the owner role AND the pharmacy membership in the same RPC response.
     if(!row || !row.pharmacy_id || row.system_role !== "owner" || row.member_role !== "admin"){
-        throw new Error("System Owner setup was not completed by the database. No success state was saved.");
+        throw new Error("Administrator setup was not completed by the database. No success state was saved.");
     }
 
     await loadPublicSetupStatus();
     if(!AuthState.ownerExists){
-        throw new Error("System Owner verification failed. Please retry before continuing.");
+        throw new Error("Administrator verification failed. Please retry before continuing.");
     }
 
     localStorage.removeItem(AUTH_PENDING_OWNER_KEY);
