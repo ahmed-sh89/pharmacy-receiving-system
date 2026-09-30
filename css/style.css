@@ -1672,20 +1672,48 @@ body.zebraDevice .mainContent,
 .ownerManagementPanel .registrationRequestsList[hidden],
 .ownerManagementPanel .ownerPharmacyList[hidden],
 .ownerManagementPanel .ownerManagementSearch[hidden]{display:none}
-.masterGTINCard{
-    padding:16px;
+.masterGTINCard{padding:16px}
+.settingsModuleCard > .cardHeader,
+.settingsModuleCard > .settingsIdentityMain{
+    margin:-16px -16px 14px;
+    padding:13px 16px;
+    border-bottom:1px solid #cfe0ef;
+    border-radius:10px 10px 0 0;
+    background:linear-gradient(90deg,#eaf4ff 0%,#f6faff 72%,#fff 100%);
 }
-.settingsAdvancedTools{
-    margin-top:12px;
-    border-top:1px solid var(--border-color,#dbe6f2);
-    padding-top:8px;
+.settingsIdentityBar.settingsModuleCard > .settingsIdentityMain{
+    margin:-20px -24px 0;
+    padding:15px 24px;
 }
-.settingsAdvancedTools > summary{
+.settingsModuleCard > .cardHeader h2,
+.settingsModuleCard > .settingsIdentityMain h2{color:#123f6d}
+.settingsModuleCard > .cardHeader .sectionEyebrow,
+.settingsModuleCard > .settingsIdentityMain .sectionEyebrow{color:#1d6fd1;font-weight:800;letter-spacing:.055em}
+.orderDataRecovery{
+    margin:14px 0 16px;
+    border:1px solid #d6e2ec;
+    border-radius:10px;
+    background:#f8fbfe;
+}
+.orderDataRecovery > summary{
+    padding:10px 12px;
     cursor:pointer;
+    color:#52677c;
     font-size:11px;
-    font-weight:700;
-    opacity:.72;
+    font-weight:800;
 }
+.orderDataRecovery[open] > summary{border-bottom:1px solid #dce6ee}
+.orderDataRecovery .legacyMappingContent{padding:14px}
+.orderDataCheckHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.orderDataCheckHeader h3{margin:3px 0 4px;color:#173b5e}
+.orderDataCheckHeader p{margin:0;color:#60758a;font-size:12px}
+.orderDataCheckGrid{display:grid;grid-template-columns:minmax(180px,260px);gap:8px;margin:12px 0}
+.orderDataCheckGrid>div{display:grid;gap:4px;padding:10px 12px;border:1px solid #d5e2ed;border-radius:9px;background:#fff}
+.orderDataCheckGrid span{font-size:10px;font-weight:700;color:#60758a}
+.orderDataCheckGrid strong{font-size:16px;color:#173b5e}
+.mappingCompatibilityRow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;padding:10px 12px;border:1px solid #d9e4ed;border-radius:9px;background:#fff}
+.mappingCompatibilityRow>div{display:grid;gap:3px}
+.mappingCompatibilityRow small{color:#667b8f}
 .settingsDataSafetyCard{
     padding:14px 16px;
 }
