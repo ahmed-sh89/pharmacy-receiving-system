@@ -1996,13 +1996,11 @@
                             <h2 id="settingsPharmacyName">-</h2>
                         </div>
                         <div class="settingsAccountDetails">
-                            <div class="settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
+                            <div class="settingsInfoField settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
+                            <div class="settingsInfoField"><span>PHARMACY CODE</span><strong id="settingsPharmacyCode">-</strong></div>
+                            <div class="settingsInfoField settingsRoleField"><span>ROLE</span><strong id="settingsUserRole">-</strong></div>
                             <div class="settingsIdentityActions">
-                                <div class="settingsIdentityBadges">
-                                    <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
-                                    <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
-                                </div>
-                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button">Change Password</button>
+                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button"><span aria-hidden="true">🔒</span> Change Password</button>
                                 <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
                             </div>
                         </div>
@@ -2154,7 +2152,7 @@
                         </div>
 
                         <div class="barcodeControlActions">
-                            <button id="btnOpenBarcodeControl" class="barcodeControlAction" type="button">
+                            <button id="btnOpenBarcodeControl" class="barcodeControlAction settingsActionRow" type="button">
                                 <span class="barcodeControlActionIcon" aria-hidden="true">⌕</span>
                                 <span class="barcodeControlActionText">
                                     <small>ITEM BARCODES</small>
@@ -2206,47 +2204,16 @@
                     </div>
 
 
-                    <p class="settingsDescription">
-
-                        Closing the current order does not delete historical
-                        reports. Historical deletion is a separate protected action.
-
-                    </p>
-
-
-                    <div
-                        id="historicalDeleteReceipt"
-                        class="operationReceipt"
-                        role="status"
-                        aria-live="polite"
-                        hidden
-                    ></div>
-
-
-                    <div class="settingsButtonGrid">
-
-
-                        <button
-                            id="btnResetWorkspace"
-                            class="dangerOutlineButton"
-                            type="button"
-                        >
-
-                            Reset Current Workspace
-
-                        </button>
-                    </div>
-                    <div class="dangerZone">
-                        <span class="sectionEyebrow dangerText">DANGER ZONE</span>
-                        <button
-                            id="btnDeleteAllHistory"
-                            class="dangerButton"
-                            type="button"
-                        >
-
-                            Delete All Historical Data
-
-                        </button>
+                    <div id="historicalDeleteReceipt" class="operationReceipt" role="status" aria-live="polite" hidden></div>
+                    <div class="settingsDataActions">
+                        <div class="settingsDataActionRow">
+                            <div><span class="settingsActionLabel">CURRENT WORKSPACE</span><strong>Reset Workspace</strong><small>Clear the current operational workspace without deleting historical reports.</small></div>
+                            <button id="btnResetWorkspace" class="dangerOutlineButton" type="button">Reset Workspace</button>
+                        </div>
+                        <div class="settingsDataActionRow settingsDataDangerRow">
+                            <div><span class="settingsActionLabel dangerText">HISTORICAL DATA</span><strong>Delete Historical Data</strong><small>Permanently delete protected historical records. This action is separate from workspace reset.</small></div>
+                            <button id="btnDeleteAllHistory" class="dangerButton" type="button">Delete Historical Data</button>
+                        </div>
                     </div>
 
 
