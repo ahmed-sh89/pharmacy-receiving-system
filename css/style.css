@@ -1528,3 +1528,13 @@ body.zebraDevice .mainContent,
   .settingsIdentityBadges{justify-content:flex-start}
   .registrationApprovalFields{grid-template-columns:1fr}
 }
+
+.settingsIdentityActions{display:flex;align-items:center;gap:12px}
+.settingsIdentityEdit{min-height:34px;padding:6px 13px}
+.settingsIdentityEditPanel{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(180px,.7fr) auto;align-items:end;gap:12px}
+.settingsIdentityEditField{display:grid;gap:6px}
+.settingsIdentityEditField label{font-size:.78rem;font-weight:700}
+.settingsIdentityEditField input{width:100%;min-height:42px;padding:9px 11px;border:1px solid #d7e0e8;border-radius:9px;background:#fff}
+.settingsIdentityEditButtons{display:flex;gap:8px}
+.settingsIdentityEditPanel.hidden{display:none!important}
+@media (max-width:760px){.settingsIdentityActions{width:100%;justify-content:space-between}.settingsIdentityEditPanel{grid-template-columns:1fr}.settingsIdentityEditButtons{justify-content:flex-end}}
