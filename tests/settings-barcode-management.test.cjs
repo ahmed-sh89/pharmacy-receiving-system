@@ -4,6 +4,7 @@ const assert=require("assert");
 
 const html=fs.readFileSync("index.html","utf8");
 const ui=fs.readFileSync("ui.js","utf8");
+const css=fs.readFileSync("css/style.css","utf8");
 const service=fs.readFileSync("js/identifier-service.js","utf8");
 const readSql=fs.readFileSync("PHASE2C1168_SETTINGS_BARCODE_MANAGEMENT_READ.sql","utf8");
 const removeSql=fs.readFileSync("PHASE2C1169_SETTINGS_IDENTIFIER_REMOVE.sql","utf8");
@@ -15,7 +16,8 @@ const settings=ui.slice(start,end);
 
 assert(html.includes('id="btnOpenBarcodeControl"'),"Barcode Control launcher is missing");
 assert(html.includes('id="barcodeControlOverlay"'),"Barcode Control modal is missing");
-assert(html.includes('class="needsReviewOverlay barcodeControlOverlay" aria-hidden="true" hidden'),"Barcode Control must be natively hidden at initial DOM render");
+assert(html.includes('class="barcodeControlOverlay" aria-hidden="true" hidden'),"Barcode Control must be natively hidden at initial DOM render");
+assert(!html.includes('class="needsReviewOverlay barcodeControlOverlay"'),"Barcode Control must not inherit the Needs Review overlay implementation");
 assert(settings.includes("modal.hidden=false"),"Barcode Control open lifecycle must explicitly reveal the modal");
 assert(settings.includes("modal.hidden=true"),"Barcode Control close lifecycle must explicitly hide the modal");
 assert(css.includes(".barcodeControlOverlay[hidden]{display:none}"),"Barcode Control hidden state must override the Needs Review display rule");
@@ -60,5 +62,9 @@ assert(settings.includes("isStrongGs1"),"Strong GS1 detection is required before
 assert(settings.includes("barcodeSuggestionCode"),"Suggestion results must show Item Code");
 assert(settings.includes("barcodeSuggestionName"),"Suggestion results must show Item Name alongside the code");
 assert(settings.indexOf("barcodeSuggestionCode")<settings.indexOf("barcodeSuggestionName"),"Suggestion identity must render Item Code before Item Name");
-assert(settings.includes('modal.classList.add("open")'),"Barcode Control must open as one modal workflow");
-assert(settings.includes('modal.classList.remove("open")'),"Barcode Control must close and clean its workspace");
+assert(html.includes('class="secondaryButton barcodeControlClearButton"'),"Barcode Control must expose a clear action");
+assert(html.includes('class="primaryButton barcodeControlSearchButton"'),"Barcode Control search must use the PharmFlow button system");
+assert(settings.includes("barcodeSearchResults"),"Search results must use the dedicated Barcode Control result component");
+assert(settings.includes("barcodeItemCard"),"Selected items must use the dedicated Barcode Control item card");
+assert(!settings.includes("needsReviewMappingCurrent"),"Barcode Control must not retain legacy Needs Review item markup");
+assert(!settings.includes("needsReviewMappingCompare"),"Barcode Control must not retain legacy Needs Review barcode-list markup");
