@@ -1689,28 +1689,6 @@ body.zebraDevice .mainContent,
 .settingsModuleCard > .settingsIdentityMain h2{color:#123f6d}
 .settingsModuleCard > .cardHeader .sectionEyebrow,
 .settingsModuleCard > .settingsIdentityMain .sectionEyebrow{color:#1d6fd1;font-weight:800;letter-spacing:.055em}
-.orderDataRecovery{
-    margin:14px 0 16px;
-    border:1px solid #d6e2ec;
-    border-radius:10px;
-    background:#f8fbfe;
-}
-.orderDataRecovery > summary{
-    padding:10px 12px;
-    cursor:pointer;
-    color:#52677c;
-    font-size:11px;
-    font-weight:800;
-}
-.orderDataRecovery[open] > summary{border-bottom:1px solid #dce6ee}
-.orderDataRecovery .legacyMappingContent{padding:14px}
-.orderDataCheckHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-.orderDataCheckHeader h3{margin:3px 0 4px;color:#173b5e}
-.orderDataCheckHeader p{margin:0;color:#60758a;font-size:12px}
-.orderDataCheckGrid{display:grid;grid-template-columns:minmax(180px,260px);gap:8px;margin:12px 0}
-.orderDataCheckGrid>div{display:grid;gap:4px;padding:10px 12px;border:1px solid #d5e2ed;border-radius:9px;background:#fff}
-.orderDataCheckGrid span{font-size:10px;font-weight:700;color:#60758a}
-.orderDataCheckGrid strong{font-size:16px;color:#173b5e}
 
 .settingsDataSafetyCard{
     padding:14px 16px;
