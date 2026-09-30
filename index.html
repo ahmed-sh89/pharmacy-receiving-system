@@ -2144,32 +2144,41 @@
 
                         <div class="barcodeControlActions">
                             <button id="btnOpenBarcodeControl" class="barcodeControlAction" type="button">
-                                <span>ITEM BARCODES</span>
-                                <strong>Find &amp; Manage Item</strong>
-                                <small>Search or scan by barcode, item code or item name</small>
+                                <span class="barcodeControlActionIcon" aria-hidden="true">⌕</span>
+                                <span class="barcodeControlActionText">
+                                    <small>ITEM BARCODES</small>
+                                    <strong>Find &amp; Manage Item</strong>
+                                    <em>Search or scan by barcode, item code or item name</em>
+                                </span>
+                                <span class="barcodeControlActionArrow" aria-hidden="true">›</span>
                             </button>
                         </div>
 
-                        <div id="barcodeControlOverlay" class="needsReviewOverlay barcodeControlOverlay" aria-hidden="true" hidden>
-                            <button class="needsReviewScrim" data-barcode-close aria-label="Close barcode control"></button>
-                            <section id="globalIdentifierMasterAdmin" class="needsReviewPanel needsReviewPanelV2 needsReviewWorkspace barcodeControlPanel" role="dialog" aria-modal="true" aria-labelledby="barcodeControlTitle">
-                                <div class="needsReviewHeader">
+                        <div id="barcodeControlOverlay" class="barcodeControlOverlay" aria-hidden="true" hidden>
+                            <button class="barcodeControlScrim" data-barcode-close aria-label="Close barcode control"></button>
+                            <section id="globalIdentifierMasterAdmin" class="barcodeControlPanel" role="dialog" aria-modal="true" aria-labelledby="barcodeControlTitle">
+                                <header class="barcodeControlModalHeader">
                                     <div>
                                         <span class="sectionEyebrow">BARCODE CONTROL</span>
                                         <h2 id="barcodeControlTitle">Find &amp; Manage Item</h2>
+                                        <p>Search, review and manage an item's barcode mappings.</p>
                                     </div>
-                                    <button class="needsReviewClose" data-barcode-close type="button" aria-label="Close">✕</button>
+                                    <button class="barcodeControlClose" data-barcode-close type="button" aria-label="Close">✕</button>
+                                </header>
+                                <div class="barcodeControlToolbar">
+                                    <label class="barcodeControlSearchLabel" for="globalIdentifierMasterSearch">Find Item</label>
+                                    <div class="barcodeControlSearchRow">
+                                        <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
+                                        <button id="btnGlobalIdentifierMasterSearch" class="primaryButton barcodeControlSearchButton" data-admin-search-button type="button">Search</button>
+                                        <button class="secondaryButton barcodeControlClearButton" data-admin-clear type="button">Clear</button>
+                                    </div>
                                 </div>
-                                <div class="pfnNeedsReviewToolbar barcodeControlToolbar">
-                                    <label class="barcodeControlSearchLabel">Find Item
-                                        <span class="barcodeControlSearchShell">
-                                            <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
-                                            <button type="button" data-admin-clear class="barcodeControlClear" aria-label="Clear search" title="Clear search">×</button>
-                                        </span>
-                                    </label>
-                                    <button id="btnGlobalIdentifierMasterSearch" data-admin-search-button type="button">Search</button>
+                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace aria-live="polite">
+                                    <div class="barcodeControlEmpty">
+                                        <strong>Ready to search</strong>
+                                        <span>Scan a barcode or enter an item code or item name.</span>
+                                    </div>
                                 </div>
-                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace aria-live="polite"></div>
                             </section>
                         </div>
 
