@@ -1990,15 +1990,26 @@
             >
 
                 <section class="contentCard settingsAccountCompact settingsIdentityBar">
-                    <div class="settingsIdentityMain">
+                    <div id="settingsIdentityView" class="settingsIdentityMain">
                         <div>
                             <span class="sectionEyebrow">ACCOUNT</span>
                             <h2 id="settingsPharmacyName">-</h2>
                             <span id="settingsSignedInUser" class="settingsIdentityEmail">-</span>
                         </div>
-                        <div class="settingsIdentityBadges">
-                            <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
-                            <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
+                        <div class="settingsIdentityActions">
+                            <div class="settingsIdentityBadges">
+                                <strong id="settingsPharmacyCode" class="settingsCodeBadge">-</strong>
+                                <strong id="settingsUserRole" class="settingsRoleBadge">-</strong>
+                            </div>
+                            <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
+                        </div>
+                    </div>
+                    <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityNameInput">Pharmacy Name</label><input id="settingsIdentityNameInput" type="text" maxlength="120"></div>
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityCodeInput">Pharmacy Code</label><input id="settingsIdentityCodeInput" type="text" maxlength="24"></div>
+                        <div class="settingsIdentityEditButtons">
+                            <button id="btnSaveSettingsIdentity" class="primaryButton" type="button">Save</button>
+                            <button id="btnCancelSettingsIdentity" class="secondaryButton" type="button">Cancel</button>
                         </div>
                     </div>
                 </section>
