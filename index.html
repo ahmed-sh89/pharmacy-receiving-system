@@ -221,7 +221,17 @@
                         <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
                     </div>
                 </div>
-                <template id="authRecoveryTemplate">
+                                <template id="authForcedPasswordTemplate">
+                    <div id="authForcedPasswordForm">
+                        <span class="authEyebrow">ACCOUNT SECURITY</span>
+                        <h2>Create Your New Password</h2>
+                        <p class="authLead">You signed in with a temporary password. Create your own password before opening PharmFlow.</p>
+                        <div class="authField"><label>New Password</label><input id="authForcedPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter new password"><small class="authFieldHelp">Use at least 8 characters.</small></div>
+                        <div class="authField"><label>Confirm New Password</label><input id="authForcedPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat new password"></div>
+                        <button id="btnAuthForcedPasswordSave" class="authPrimaryButton" type="button">Save New Password</button>
+                    </div>
+                </template>
+<template id="authRecoveryTemplate">
 <div id="authRecoveryForm">
                         <span class="authEyebrow">ACCOUNT SECURITY</span>
                         <h2>Set a New Password</h2>
