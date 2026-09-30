@@ -137,6 +137,9 @@ function bindAuthUI(){
     bindClick("btnPendingLogout", ()=>signOutCurrentUser());
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
     bindClick("btnRefreshRegistrationRequests", ()=>loadOwnerRegistrationRequests(true));
+    bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
+    bindClick("btnCancelSettingsIdentity", ()=>setSettingsIdentityEditMode(false));
+    bindClick("btnSaveSettingsIdentity", ()=>saveSettingsIdentity());
     bindClick("btnRefreshOwnerControl", ()=>loadOwnerControlCenter(true));
     bindClick("btnCreateMemberInvite", ()=>createMemberInviteFromSettings());
 
@@ -1554,6 +1557,51 @@ function renderOwnerPharmacies(){
     renderOwnerMetrics();
 }
 
+function setSettingsIdentityEditMode(editing){
+    const view=document.getElementById("settingsIdentityView");
+    const panel=document.getElementById("settingsIdentityEdit");
+    if(!view || !panel){ return; }
+    const allowed=!!editing && isSystemOwner() && !!AuthState.context?.pharmacy_id;
+    view.classList.toggle("hidden",allowed);
+    panel.classList.toggle("hidden",!allowed);
+    panel.setAttribute("aria-hidden",allowed ? "false" : "true");
+    if(allowed){
+        setInputValue("settingsIdentityNameInput",AuthState.context?.pharmacy_name || "");
+        setInputValue("settingsIdentityCodeInput",AuthState.context?.pharmacy_code || "");
+        document.getElementById("settingsIdentityNameInput")?.focus();
+    }
+}
+
+async function saveSettingsIdentity(){
+    if(AuthState.busy || !isSystemOwner() || !AuthState.context?.pharmacy_id){ return; }
+    const pharmacyName=valueOf("settingsIdentityNameInput").trim();
+    const pharmacyCode=valueOf("settingsIdentityCodeInput").trim();
+    if(!pharmacyName || pharmacyCode.length<3){
+        setSettingsAccessMessage("Pharmacy Name and a valid Pharmacy Code are required.","error");
+        return;
+    }
+    if(pharmacyName===AuthState.context.pharmacy_name && pharmacyCode.toUpperCase()===String(AuthState.context.pharmacy_code||"").toUpperCase()){
+        setSettingsIdentityEditMode(false);
+        return;
+    }
+    if(!window.confirm("Update this pharmacy identity? Existing Orders, Receiving and history remain attached to the same pharmacy.")){ return; }
+    setAuthBusy(true);
+    try{
+        await authRpc("owner_update_pharmacy_identity_v1",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_official_pharmacy_name:pharmacyName,
+            p_official_pharmacy_code:pharmacyCode
+        });
+        await loadMyAppContext();
+        await loadOwnerPharmacies();
+        setSettingsIdentityEditMode(false);
+        renderAuthState();
+        setSettingsAccessMessage("Pharmacy identity updated. Operational history was preserved.","success");
+    }catch(error){
+        setSettingsAccessMessage(error.message || "Unable to update pharmacy identity.","error");
+    }finally{ setAuthBusy(false); }
+}
+
 async function handleOwnerPharmacyAction(button){
     if(!isSystemOwner() || !button){ return; }
     const pharmacyId = button.dataset.pharmacyId;
@@ -1861,6 +1909,10 @@ function renderAuthState(){
     setText("settingsPharmacyCode",account && account.pharmacy_code || "-");
     setText("settingsSignedInUser",account && account.email || "-");
     setText("settingsUserRole",roleText || "-");
+
+    const settingsEditButton = document.getElementById("btnEditSettingsIdentity");
+    if(settingsEditButton){ settingsEditButton.hidden = !isSystemOwner() || !account?.pharmacy_id; }
+    if(!isSystemOwner()){ setSettingsIdentityEditMode(false); }
 
     const ownerCard = document.getElementById("ownerManagementCard");
     if(ownerCard){ ownerCard.hidden = !isSystemOwner(); }
