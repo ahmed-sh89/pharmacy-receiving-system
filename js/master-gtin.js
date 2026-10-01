@@ -559,11 +559,19 @@ async function applyMasterGTINToCurrentOrder(
 
     if(items.length === 0){
 
+        /* Empty active workspace is an authoritative state transition too.
+           Publish it so every mounted view drops the previous order's derived
+           GTIN summary immediately instead of retaining stale matched counts. */
         MasterGTINEngine.currentOrder = {
             matchedItems:0,
             missingItems:0,
             conflictGTINs:0
         };
+
+        AppEvents.emit(
+            "masterGTIN:order-applied",
+            getMasterGTINStatus()
+        );
 
         return MasterGTINEngine.currentOrder;
     }
