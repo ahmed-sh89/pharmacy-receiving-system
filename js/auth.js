@@ -1822,7 +1822,9 @@ async function handleOwnerPharmacyAction(button){
     }
 
     if(action === "admin"){
-        const email = window.prompt("Enter the ADMIN email for this pharmacy:");
+        const pharmacy = (AuthState.ownerPharmacies || []).find(p=>String(p.pharmacy_id) === String(pharmacyId));
+        const currentAdminEmail = pharmacy?.admin_email || pharmacy?.pending_admin_email || "";
+        const email = window.prompt("ADMIN email for this pharmacy:", currentAdminEmail);
         if(email === null){ return; }
         const cleanEmail = String(email).trim().toLowerCase();
         if(!cleanEmail || !cleanEmail.includes("@")){
