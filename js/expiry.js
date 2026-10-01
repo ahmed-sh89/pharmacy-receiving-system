@@ -1237,7 +1237,9 @@ function ensureExpiryWorkerSettingsCard(){
 
     const card = document.createElement("section");
     card.id = "expiryWorkersSettingsCard";
-    card.className = "contentCard expiryWorkersSettingsCard";
+    card.className = "contentCard expiryWorkersSettingsCard settingsFutureFeature";
+    card.hidden = true;
+    card.setAttribute("aria-hidden","true");
     card.innerHTML = `
         <div class="cardHeader">
             <div>

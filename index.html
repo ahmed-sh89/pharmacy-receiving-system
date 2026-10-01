@@ -148,37 +148,43 @@
                         <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
                         <button id="btnAuthForgotPassword" class="authSecondaryLink authForgotPassword" type="button">Forgot Password?</button>
                         <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
-                        <button id="btnAuthShowInviteSignup" class="authSecondaryLink" type="button">Activate Pharmacy Admin</button>
+                        
                         <button id="btnAuthShowOwnerSetup" class="authSecondaryLink" type="button" hidden>First system setup — Owner only</button>
                     </div>
 
                     <div id="authPublicSignupForm" hidden>
                         <span class="authEyebrow">NEW PHARMACY</span>
                         <h2>Request access</h2>
-                        <p class="authLead">Create an account and submit your pharmacy for approval. You cannot use operational data until the System Owner approves the request.</p>
-                        <div class="authField"><label>Your Name</label><input id="publicSignupName" type="text" autocomplete="name" placeholder="Pharmacy manager name"></div>
-                        <div class="authField"><label>Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+                        <p class="authLead">Create your account and submit a pharmacy access request for approval.</p>
+                        <div class="authField"><label for="publicSignupEmail">Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
                         <div class="authField">
-                            <label>Password</label>
+                            <label for="publicSignupPassword">Password</label>
                             <div class="authPasswordWrap">
-                                <input id="publicSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <input id="publicSignupPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter password">
                                 <button id="btnTogglePublicSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
                             </div>
+                            <small class="authFieldHelp">Use at least 8 characters.</small>
                         </div>
-                        <div class="authField"><label>Pharmacy Name</label><input id="publicPharmacyName" type="text" placeholder="Pharmacy name"></div>
-                        <div class="authField"><label>Requested Pharmacy Code</label><input id="publicPharmacyCode" type="text" maxlength="24" placeholder="PHARM02"></div>
+                        <div class="authField">
+                            <label for="publicSignupPasswordConfirm">Confirm Password</label>
+                            <input id="publicSignupPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
+                        </div>
+                        <div class="authField">
+                            <label for="publicPharmacyCode">Pharmacy Code</label>
+                            <input id="publicPharmacyCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Example: RXA271">
+                            <small class="authFieldHelp">Enter your requested pharmacy code. The administrator will verify the final pharmacy details before approval.</small>
+                        </div>
                         <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
                         <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
                     </div>
-
                     <div id="authInviteSignupForm" hidden>
                         <button id="btnAuthShowLoginFromInvite" class="authBackButton" type="button">← Back to Sign In</button>
                         <span class="authEyebrow">PHARMACY ADMIN</span>
                         <h2>Activate Admin Account</h2>
-                        <p class="authLead">Use the email that the System Owner assigned to your pharmacy.</p>
+                        <p class="authLead">Use the email assigned to your pharmacy.</p>
 
                         <div class="authInfoBox">
-                            No invitation code is required. Your email must already be assigned to a pharmacy by the System Owner.
+                            No invitation code is required. Your email must already be assigned to a pharmacy.
                         </div>
 
                         <div class="authField">
@@ -202,7 +208,7 @@
                     <div id="authOwnerSignupForm" hidden>
                         <button id="btnAuthShowLoginFromOwner" class="authBackButton" type="button" aria-label="Back to sign in">← Back to Sign In</button>
                         <span class="authEyebrow">FIRST SETUP</span>
-                        <h2>Create System Owner</h2>
+                        <h2>Create PharmFlow Administrator</h2>
                         <p class="authLead">This option works once only. The Owner can create other pharmacies and their Admin invitations.</p>
                         <div class="authField"><label>Owner Name</label><input id="ownerSignupName" type="text" autocomplete="name" placeholder="Owner name"></div>
                         <div class="authField"><label>Owner Email</label><input id="ownerSignupEmail" type="email" autocomplete="email" placeholder="Owner email"></div>
@@ -218,7 +224,17 @@
                         <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
                     </div>
                 </div>
-                <template id="authRecoveryTemplate">
+                                <template id="authForcedPasswordTemplate">
+                    <div id="authForcedPasswordForm">
+                        <span class="authEyebrow">ACCOUNT SECURITY</span>
+                        <h2>Create Your New Password</h2>
+                        <p class="authLead">You signed in with a temporary password. Create your own password before opening PharmFlow.</p>
+                        <div class="authField"><label>New Password</label><input id="authForcedPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter new password"><small class="authFieldHelp">Use at least 8 characters.</small></div>
+                        <div class="authField"><label>Confirm New Password</label><input id="authForcedPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat new password"></div>
+                        <button id="btnAuthForcedPasswordSave" class="authPrimaryButton" type="button">Save New Password</button>
+                    </div>
+                </template>
+<template id="authRecoveryTemplate">
 <div id="authRecoveryForm">
                         <span class="authEyebrow">ACCOUNT SECURITY</span>
                         <h2>Set a New Password</h2>
@@ -248,13 +264,8 @@
                     <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
 
                     <div id="pendingStandardAccessBox">
-                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Staff can use an invitation code, or a pharmacy manager can submit a new pharmacy request for Owner approval.</div>
-                        <div class="authField"><label>Invitation Code (Staff)</label><input id="pendingInviteToken" type="text" autocomplete="off" placeholder="Invitation code"></div>
-                        <button id="btnRedeemInvite" class="authPrimaryButton" type="button">Activate Staff Access</button>
-                        <div class="authDivider"><span>OR</span></div>
-                        <div class="authField"><label>Your Name</label><input id="pendingRegistrationApplicantName" type="text" placeholder="Pharmacy manager name"></div>
-                        <div class="authField"><label>Pharmacy Name</label><input id="pendingRegistrationPharmacyName" type="text" placeholder="Pharmacy name"></div>
-                        <div class="authField"><label>Requested Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="PHARM02"></div>
+                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Submit the pharmacy code you know for approval.</div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The official pharmacy identity will be verified before approval.</small></div>
                         <button id="btnSubmitPendingRegistration" class="authPrimaryButton" type="button">Submit Pharmacy for Approval</button>
                     </div>
 
@@ -264,15 +275,15 @@
                             <h3 id="pendingRegistrationPharmacy">-</h3>
                             <div class="pendingApprovalMeta"><span>Code</span><strong id="pendingRegistrationCode">-</strong></div>
                             <div class="pendingApprovalMeta"><span>Status</span><strong id="pendingRegistrationStatus">PENDING</strong></div>
-                            <p id="pendingRegistrationNote">Waiting for System Owner approval.</p>
+                            <p id="pendingRegistrationNote">Waiting for approval.</p>
                         </div>
                     </div>
 
                     <div id="pendingOwnerSetupBox" hidden>
-                        <div class="authSetupNote">No System Owner exists yet. Complete the one-time Owner setup.</div>
+                        <div class="authSetupNote">No PharmFlow Administrator exists yet. Complete the one-time administrator setup.</div>
                         <div class="authField"><label>Your Pharmacy Name</label><input id="pendingOwnerPharmacyName" type="text" placeholder="Main pharmacy"></div>
                         <div class="authField"><label>Pharmacy Code</label><input id="pendingOwnerPharmacyCode" type="text" placeholder="PHARM01"></div>
-                        <button id="btnCompleteOwnerSetup" class="authPrimaryButton" type="button">Become System Owner</button>
+                        <button id="btnCompleteOwnerSetup" class="authPrimaryButton" type="button">Create Administrator</button>
                     </div>
 
                     <button id="btnPendingLogout" class="authSecondaryLink" type="button">Sign out</button>
@@ -1981,96 +1992,90 @@
                 class="appPage"
             >
 
-                <section class="contentCard">
-                    <div class="cardHeader">
-                        <div><span class="sectionEyebrow">ACCOUNT</span><h2>Pharmacy & Access</h2></div>
-                    </div>
-                    <div class="accountSettingsGrid">
-                        <div class="accountSettingTile"><span>Pharmacy</span><strong id="settingsPharmacyName">-</strong></div>
-                        <div class="accountSettingTile"><span>Pharmacy Code</span><strong id="settingsPharmacyCode">-</strong></div>
-                        <div class="accountSettingTile"><span>Signed In Email</span><strong id="settingsSignedInUser">-</strong></div>
-                        <div class="accountSettingTile"><span>Role</span><strong id="settingsUserRole">-</strong></div>
-                    </div>
-                    <div class="accountEditActions">
-                        <button id="btnEditAccountProfile" class="secondaryButton" type="button">👤 Edit Account</button>
-                    </div>
-                    <div id="accountEditPanel" class="accountEditPanel hidden" aria-hidden="true">
-                        <div class="accountEditField">
-                            <label for="accountDisplayNameInput">User Name</label>
-                            <input id="accountDisplayNameInput" type="text" maxlength="80" autocomplete="name" placeholder="Your name">
+                <section class="contentCard settingsAccountCompact settingsIdentityBar settingsModuleCard">
+                    <div id="settingsIdentityView" class="settingsIdentityMain">
+                        <div class="settingsModuleTitleChip settingsAccountTitleChip">
+                            <span class="sectionEyebrow">ACCOUNT</span>
+                            <h2 id="settingsPharmacyName">-</h2>
                         </div>
-                        <div class="accountEditField">
-                            <label for="accountPharmacyNameInput">Pharmacy Name</label>
-                            <input id="accountPharmacyNameInput" type="text" maxlength="120" placeholder="Pharmacy name">
+                        <div class="settingsAccountDetails">
+                            <div class="settingsInfoField settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
+                            <div class="settingsInfoField"><span>PHARMACY CODE</span><strong id="settingsPharmacyCode">-</strong></div>
+                            <div class="settingsInfoField settingsRoleField"><span>ROLE</span><strong id="settingsUserRole">-</strong></div>
+                            <div class="settingsIdentityActions">
+                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button"><span aria-hidden="true">🔒</span> Change Password</button>
+                                <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
+                            </div>
                         </div>
-                        <div class="accountEditButtons">
-                            <button id="btnSaveAccountProfile" class="primaryButton" type="button">Save Changes</button>
-                            <button id="btnCancelAccountProfile" class="secondaryButton" type="button">Cancel</button>
+                    </div>
+                    <div id="settingsPasswordOverlay" class="settingsPasswordOverlay" aria-hidden="true" hidden>
+                        <button class="settingsPasswordScrim" data-settings-password-close aria-label="Close change password"></button>
+                        <section class="settingsPasswordPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPasswordTitle">
+                            <header><div><span class="sectionEyebrow">ACCOUNT SECURITY</span><h2 id="settingsPasswordTitle">Change Password</h2><p>Confirm your current password, then create a new password.</p></div><button class="settingsPasswordClose" data-settings-password-close type="button" aria-label="Close">✕</button></header>
+                            <div class="settingsPasswordFields">
+                                <label>Current Password<input id="settingsCurrentPassword" type="password" autocomplete="current-password"></label>
+                                <label>New Password<input id="settingsNewPassword" type="password" minlength="8" autocomplete="new-password"><small>Use at least 8 characters.</small></label>
+                                <label>Confirm New Password<input id="settingsConfirmPassword" type="password" minlength="8" autocomplete="new-password"></label>
+                            </div>
+                            <div id="settingsPasswordMessage" class="authMessage" role="status" aria-live="polite"></div>
+                            <footer><button class="secondaryButton" data-settings-password-close type="button">Cancel</button><button id="btnSaveSettingsPassword" class="primaryButton" type="button">Update Password</button></footer>
+                        </section>
+                    </div>
+                    <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityNameInput">Pharmacy Name</label><input id="settingsIdentityNameInput" type="text" maxlength="120"></div>
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityCodeInput">Pharmacy Code</label><input id="settingsIdentityCodeInput" type="text" maxlength="24"></div>
+                        <div class="settingsIdentityEditButtons">
+                            <button id="btnSaveSettingsIdentity" class="primaryButton" type="button">Save</button>
+                            <button id="btnCancelSettingsIdentity" class="secondaryButton" type="button">Cancel</button>
                         </div>
-                        <small class="accountSecurityNote">Passwords are never displayed anywhere inside PharmFlow.</small>
                     </div>
                 </section>
 
-                <section id="ownerManagementCard" class="contentCard ownerControlCenter" hidden>
-                    <div class="cardHeader ownerControlHeader">
-                        <div>
-                            <span class="sectionEyebrow">SYSTEM OWNER</span>
-                            <h2>Owner Control Center</h2>
-                            <p class="settingsDescription">
-                                Approve new pharmacies, control access, and manage the single ADMIN account assigned to each pharmacy.
-                            </p>
-                        </div>
-                        <button id="btnRefreshOwnerControl" class="secondaryButton" type="button">Refresh</button>
+                <section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
+                    <div class="settingsModuleTitleChip ownerControlHeader">
+                        <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
+                        <h2>Pharmacies &amp; Access</h2>
                     </div>
 
-                    <div class="ownerMetricGrid">
-                        <article class="ownerMetricCard">
+                    <div class="ownerMetricGrid" aria-label="Pharmacy access views">
+                        <button class="ownerMetricCard ownerMetricTotal" type="button" data-owner-view="total">
                             <span>Total Pharmacies</span>
                             <strong id="ownerMetricTotalPharmacies">0</strong>
-                        </article>
-                        <article class="ownerMetricCard">
+                        </button>
+                        <button class="ownerMetricCard ownerMetricActive" type="button" data-owner-view="active">
                             <span>Active</span>
                             <strong id="ownerMetricActivePharmacies">0</strong>
-                        </article>
-                        <article class="ownerMetricCard ownerMetricWarning">
+                        </button>
+                        <button class="ownerMetricCard ownerMetricPending" type="button" data-owner-view="pending">
                             <span>Pending Requests</span>
                             <strong id="ownerMetricPendingRequests">0</strong>
-                        </article>
-                        <article class="ownerMetricCard">
-                            <span>Admins Assigned</span>
-                            <strong id="ownerMetricAdminsAssigned">0</strong>
-                        </article>
+                        </button>
+                        <button class="ownerMetricCard ownerMetricAdmins" type="button" data-owner-view="suspended">
+                            <span>Suspended</span>
+                            <strong id="ownerMetricSuspendedPharmacies">0</strong>
+                        </button>
                     </div>
 
-                    <div class="ownerControlSection">
-                        <div class="ownerSectionHeader">
+                    <div id="ownerManagementPanel" class="modalOverlay ownerManagementOverlay" aria-hidden="true">
+                        <section class="modalCard ownerManagementPanel" role="dialog" aria-modal="true" aria-labelledby="ownerManagementTitle">
+                        <div class="ownerManagementPanelHeader">
                             <div>
-                                <span class="sectionEyebrow">NEW PHARMACIES</span>
-                                <h3>Registration Requests</h3>
+                                <span id="ownerManagementEyebrow" class="sectionEyebrow">PHARMACY ACCESS</span>
+                                <h3 id="ownerManagementTitle">All Pharmacies</h3>
+                                <p id="ownerManagementDescription" class="settingsDescription"></p>
                             </div>
-                            <button id="btnRefreshRegistrationRequests" class="secondaryButton" type="button">Refresh Requests</button>
-                        </div>
-                        <p class="settingsDescription">
-                            Public registrations remain locked until you approve them. Approval makes the registered account the ADMIN of that pharmacy.
-                        </p>
-                        <div id="ownerRegistrationRequests" class="registrationRequestsList">
-                            <div class="registrationEmpty">No pharmacy registration requests yet.</div>
-                        </div>
-                    </div>
-
-                    <div class="ownerControlSection">
-                        <div class="ownerSectionHeader">
-                            <div>
-                                <span class="sectionEyebrow">PHARMACY ACCESS</span>
-                                <h3>Pharmacies & Admins</h3>
+                            <div class="ownerManagementPanelTools">
+                                <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
+                                    <span>Search</span>
+                                    <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
+                                </label>
+                                <button id="btnCloseOwnerManagement" class="secondaryButton" type="button">Close</button>
                             </div>
                         </div>
-                        <p class="settingsDescription">
-                            Each pharmacy uses one ADMIN account. You can assign an email before the ADMIN creates an account; PharmFlow links it automatically when that email activates.
-                        </p>
-                        <div id="ownerPharmacyList" class="ownerPharmacyList">
-                            <div class="registrationEmpty">Loading pharmacies...</div>
-                        </div>
+                        <div id="ownerManagementMessage" class="authMessage ownerControlMessage" role="status" aria-live="polite" aria-atomic="true"></div>
+                        <div id="ownerRegistrationRequests" class="registrationRequestsList" hidden></div>
+                        <div id="ownerPharmacyList" class="ownerPharmacyList" hidden></div>
+                        </section>
                     </div>
 
                     <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
@@ -2085,220 +2090,76 @@
                     </p>
                 </section>
 
-                <section class="contentCard">
 
-
-                    <div class="cardHeader">
-
-
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                WORKSPACE
-
-                            </span>
-
-                            <h2>
-
-                                Current Order
-
-                            </h2>
-
+                    <section class="contentCard masterGTINCard barcodeControlCard settingsModuleCard">
+                        <div class="settingsModuleTitleChip barcodeControlHeader">
+                            <span class="sectionEyebrow">BARCODE CONTROL</span>
+                            <h2>Manage Item Barcodes</h2>
                         </div>
 
-
-                    </div>
-
-
-                    <div class="settingsButtonGrid">
-
-
-                        <button
-                            id="btnSaveNow"
-                            class="secondaryButton"
-                            type="button"
-                        >
-
-                            💾 Save Now
-
-                        </button>
-
-
-                        <button
-                            id="btnExportReports"
-                            class="secondaryButton"
-                            type="button"
-                        >
-
-                            📊 Export Reports
-
-                        </button>
-
-
-
-
-                    </div>
-
-
-                </section>
-
-
-                    <section class="contentCard masterGTINCard">
-                        <div class="cardHeader">
-                            <div>
-                                <span class="sectionEyebrow">BARCODE MANAGEMENT</span>
-                                <h2>Item Barcodes</h2>
-                                <p>Scan a barcode or search for an item to view and manage its barcodes.</p>
-                            </div>
+                        <div class="barcodeControlActions">
+                            <button id="btnOpenBarcodeControl" class="barcodeControlAction settingsActionRow" type="button">
+                                <span class="barcodeControlActionIcon" aria-hidden="true">⌕</span>
+                                <span class="barcodeControlActionText">
+                                    <small>ITEM BARCODES</small>
+                                    <strong>Find &amp; Manage Item</strong>
+                                    <em>Search or scan by barcode, item code or item name</em>
+                                </span>
+                                <span class="barcodeControlActionArrow" aria-hidden="true">›</span>
+                            </button>
                         </div>
 
-                        <section class="globalIdentifierMasterAdmin" id="globalIdentifierMasterAdmin" aria-label="Item barcode management">
-                            <div class="globalIdentifierMasterLookupGrid barcodeManagementLookup">
-                                <label>Scan Barcode
-                                    <input id="globalIdentifierMasterSearch" data-admin-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode">
-                                </label>
-                                <button id="btnGlobalIdentifierMasterSearch" data-admin-load type="button">Find</button>
-                                <label>Find Item
-                                    <input id="globalIdentifierMasterItemSearch" data-admin-item-search autocomplete="off" placeholder="Item Code or Item Name">
-                                </label>
-                                <button id="btnGlobalIdentifierMasterItemSearch" data-admin-item-load type="button">Search</button>
-                                <button id="btnGlobalIdentifierMasterClear" data-admin-clear type="button" class="secondaryButton">Clear</button>
-                            </div>
-                            <div id="globalIdentifierMasterResults" data-admin-workspace aria-live="polite"></div>
-                        </section>
-
-                        <details class="legacyMappingDetails">
-                            <summary>Global Master import and mapping-file compatibility</summary>
-
-                            <div class="legacyMappingContent">
-                                <p class="settingsDescription">System Owner import tools are retained for the existing Global Master import process. They do not create or edit operational identifier mappings; use the Global Identifier Master above for that.</p>
-
-                                <button
-                                    id="btnUpdateMasterGTIN"
-                                    class="primaryButton"
-                                    type="button"
-                                >
-                                    Update Global GTIN Import
-                                </button>
-
-                                <input
-                                    id="masterGTINFileInput"
-                                    type="file"
-                                    accept=".xlsx,.xls"
-                                    hidden
-                                >
-
-                                <div class="masterGTINStatusGrid">
-                                    <div><span>Status</span><strong id="masterGTINStatus">Not installed</strong></div>
-                                    <div><span>Global Items</span><strong id="masterGTINItemCount">0</strong></div>
-                                    <div><span>Current Order Matched</span><strong id="masterGTINMatchedCount">0</strong></div>
-                                    <div><span>Last Updated</span><strong id="masterGTINUpdatedAt">-</strong></div>
-                                </div>
-
-                                <div id="masterGTINNotice" class="masterGTINNotice">
-                                    Global Master import status and compatibility tools.
-                                </div>
-
-                                <h3>Mapping-file compatibility</h3>
-
-                                <button
-                                    id="btnLoadMappings"
-                                    class="secondaryButton"
-                                    type="button"
-                                >
-                                    + Add Mapping Files
-                                </button>
-
-                                <input
-                                    id="mappingFileInput"
-                                    type="file"
-                                    multiple
-                                    accept=".xlsx,.xls"
-                                    hidden
-                                >
-
-                                <div
-                                    id="mappingFilesList"
-                                    class="fileList"
-                                >
-                                    <div class="emptyState">
-                                        No compatibility mapping files loaded.
+                        <div id="barcodeControlOverlay" class="barcodeControlOverlay" aria-hidden="true" hidden>
+                            <button class="barcodeControlScrim" data-barcode-close aria-label="Close barcode control"></button>
+                            <section id="globalIdentifierMasterAdmin" class="barcodeControlPanel" role="dialog" aria-modal="true" aria-labelledby="barcodeControlTitle">
+                                <header class="barcodeControlModalHeader">
+                                    <div>
+                                        <span class="sectionEyebrow">BARCODE CONTROL</span>
+                                        <h2 id="barcodeControlTitle">Find &amp; Manage Item</h2>
+                                        <p>Search, review and manage an item's barcode mappings.</p>
+                                    </div>
+                                    <button class="barcodeControlClose" data-barcode-close type="button" aria-label="Close">✕</button>
+                                </header>
+                                <div class="barcodeControlToolbar">
+                                    <label class="barcodeControlSearchLabel" for="globalIdentifierMasterSearch">Find Item</label>
+                                    <div class="barcodeControlSearchRow">
+                                        <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
+                                        <button id="btnGlobalIdentifierMasterSearch" class="primaryButton barcodeControlSearchButton" data-admin-search-button type="button">Search</button>
+                                        <button class="secondaryButton barcodeControlClearButton" data-admin-clear type="button">Clear</button>
                                     </div>
                                 </div>
+                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace aria-live="polite">
+                                    <div class="barcodeControlEmpty">
+                                        <strong>Ready to search</strong>
+                                        <span>Scan a barcode or enter an item code or item name.</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
 
-                            </div>
-                        </details>
+                        
 
                     </section>
 
-                <section class="contentCard dangerZoneCard">
+                <section class="contentCard dangerZoneCard settingsDataSafetyCard settingsModuleCard">
 
 
-                    <div class="cardHeader">
+                    <div class="settingsModuleTitleChip">
+                        <span class="sectionEyebrow">WORKSPACE DATA</span>
+                        <h2>Data Management</h2>
+                    </div>
 
 
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                WORKSPACE DATA
-
-                            </span>
-
-                            <h2>
-
-                                Data Management
-
-                            </h2>
-
+                    <div id="historicalDeleteReceipt" class="operationReceipt" role="status" aria-live="polite" hidden></div>
+                    <div class="settingsDataActions">
+                        <div class="settingsDataActionRow">
+                            <div><span class="settingsActionLabel">CURRENT WORKSPACE</span><strong>Reset Workspace</strong><small>Clear the current operational workspace without deleting historical reports.</small></div>
+                            <button id="btnResetWorkspace" class="dangerOutlineButton" type="button">Reset Workspace</button>
                         </div>
-
-
-                    </div>
-
-
-                    <p class="settingsDescription">
-
-                        Closing the current order does not delete historical
-                        reports. Historical deletion is a separate protected action.
-
-                    </p>
-
-
-                    <div
-                        id="historicalDeleteReceipt"
-                        class="operationReceipt"
-                        role="status"
-                        aria-live="polite"
-                        hidden
-                    ></div>
-
-
-                    <div class="settingsButtonGrid">
-
-
-                        <button
-                            id="btnResetWorkspace"
-                            class="dangerOutlineButton"
-                            type="button"
-                        >
-
-                            Reset Current Workspace
-
-                        </button>
-                    </div>
-                    <div class="dangerZone">
-                        <span class="sectionEyebrow dangerText">DANGER ZONE</span>
-                        <button
-                            id="btnDeleteAllHistory"
-                            class="dangerButton"
-                            type="button"
-                        >
-
-                            Delete All Historical Data
-
-                        </button>
+                        <div class="settingsDataActionRow settingsDataDangerRow">
+                            <div><span class="settingsActionLabel dangerText">HISTORICAL DATA</span><strong>Delete Historical Data</strong><small>Permanently delete protected historical records. This action is separate from workspace reset.</small></div>
+                            <button id="btnDeleteAllHistory" class="dangerButton" type="button">Delete Historical Data</button>
+                        </div>
                     </div>
 
 

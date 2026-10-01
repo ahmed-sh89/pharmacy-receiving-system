@@ -605,186 +605,6 @@ body:not(.zebraDevice) #authGate .authInfoBox,
 body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font-size:14px!important;line-height:1.5!important;}
 
 /* Compact-height desktop: keep every login action visible without page scroll. */
-@media (min-width:901px) and (max-height:700px){
-  body:not(.zebraDevice) #authGate .authShell{height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;}
-  body:not(.zebraDevice) #authGate .authBrandPanel{padding:24px 36px!important;}
-  body:not(.zebraDevice) #authGate .authFormPanel{padding:16px 54px!important;}
-  body:not(.zebraDevice) #authGate .authEyebrow{font-size:10px!important;}
-  body:not(.zebraDevice) #authGate .authFormPanel h2{margin:4px 0!important;font-size:30px!important;}
-  body:not(.zebraDevice) #authGate .authLead{margin-bottom:9px!important;font-size:12px!important;}
-  body:not(.zebraDevice) #authGate .authField{gap:4px!important;margin-bottom:8px!important;}
-  body:not(.zebraDevice) #authGate .authField label{font-size:12px!important;}
-  body:not(.zebraDevice) #authGate .authField input,
-  body:not(.zebraDevice) #authGate .authField select{height:44px!important;min-height:44px!important;border-radius:12px!important;font-size:14px!important;}
-  body:not(.zebraDevice) #authGate .authPasswordToggle{height:31px!important;min-width:60px!important;font-size:10px!important;}
-  body:not(.zebraDevice) #authGate .authRememberRow{margin-bottom:5px!important;font-size:11px!important;}
-  body:not(.zebraDevice) #authGate .authRememberRow input{width:16px!important;height:16px!important;}
-  body:not(.zebraDevice) #authGate .authPrimaryButton{height:42px!important;min-height:42px!important;font-size:14px!important;}
-  body:not(.zebraDevice) #authGate .authSecondaryLink{min-height:27px!important;margin-top:2px!important;font-size:11px!important;}
-  body:not(.zebraDevice) #authGate .authSignupLink{min-height:36px!important;border-radius:11px!important;font-size:11px!important;}
-}
-
-/* ---------- tablet ---------- */
-@media (max-width:900px) and (min-width:761px){
-  body:not(.zebraDevice) #authGate.authGate{height:100dvh!important;min-height:100dvh!important;padding:12px!important;overflow:hidden!important;}
-  body:not(.zebraDevice) #authGate .authShell{width:min(680px,96vw)!important;height:calc(100dvh - 24px)!important;grid-template-columns:1fr!important;grid-template-rows:130px minmax(0,1fr)!important;}
-  body:not(.zebraDevice) #authGate .authBrandPanel{padding:15px 28px 8px!important;}
-  body:not(.zebraDevice) #authGate .authBrandMinimal{display:flex!important;flex-direction:column!important;gap:5px!important;align-items:center!important;text-align:center!important;}
-  body:not(.zebraDevice) #authGate .authFormPanel{padding:12px 42px 22px!important;}
-}
-
-/* ---------- phone / mobile browser ----------
-   Mobile owns its layout independently from desktop and Handheld. */
-@media (max-width:760px){
-  body:not(.zebraDevice) #authGate.authGate{
-    width:100%!important;max-width:100vw!important;height:100dvh!important;min-height:100dvh!important;
-    padding:8px!important;overflow:hidden!important;align-items:center!important;justify-content:center!important;
-  }
-  body:not(.zebraDevice) #authGate .authShell{
-    width:100%!important;max-width:520px!important;height:calc(100dvh - 16px)!important;max-height:calc(100dvh - 16px)!important;min-height:0!important;
-    display:grid!important;grid-template-columns:1fr!important;grid-template-rows:118px minmax(0,1fr)!important;
-    overflow:hidden!important;border-radius:24px!important;
-  }
-  body:not(.zebraDevice) #authGate .authBrandPanel{
-    min-width:0!important;height:118px!important;padding:12px 18px 5px!important;overflow:hidden!important;
-  }
-  body:not(.zebraDevice) #authGate .authBrandMinimal{
-    width:100%!important;height:100%!important;display:flex!important;flex-direction:column!important;
-    align-items:center!important;justify-content:center!important;gap:5px!important;text-align:center!important;
-  }
-  body:not(.zebraDevice) #authGate .authFormPanel{
-    width:100%!important;min-width:0!important;height:100%!important;min-height:0!important;padding:7px 18px 12px!important;
-    align-items:flex-start!important;overflow:hidden!important;
-  }
-  body:not(.zebraDevice) #authGate .authFormPanelInner{width:100%!important;max-width:none!important;height:100%!important;max-height:100%!important;overflow:hidden!important;}
-  body:not(.zebraDevice) #authGate #authLoginForm{height:100%!important;overflow:hidden!important;}
-  body:not(.zebraDevice) #authGate .authEyebrow{font-size:9px!important;letter-spacing:1.15px!important;}
-  body:not(.zebraDevice) #authGate .authFormPanel h2{margin:3px 0!important;font-size:27px!important;line-height:1!important;}
-  body:not(.zebraDevice) #authGate .authLead{margin:0 0 7px!important;font-size:11px!important;line-height:1.2!important;}
-  body:not(.zebraDevice) #authGate .authField{gap:4px!important;margin-bottom:7px!important;}
-  body:not(.zebraDevice) #authGate .authField label{font-size:11px!important;}
-  body:not(.zebraDevice) #authGate .authField input,
-  body:not(.zebraDevice) #authGate .authField select{height:42px!important;min-height:42px!important;border-radius:12px!important;padding:0 13px!important;font-size:14px!important;}
-  body:not(.zebraDevice) #authGate .authPasswordWrap input{padding-right:68px!important;}
-  body:not(.zebraDevice) #authGate .authPasswordToggle{right:5px!important;height:30px!important;min-width:54px!important;border-radius:8px!important;font-size:9px!important;}
-  body:not(.zebraDevice) #authGate .authRememberRow{gap:7px!important;margin:0 0 5px!important;font-size:10px!important;}
-  body:not(.zebraDevice) #authGate .authRememberRow input{width:16px!important;height:16px!important;}
-  body:not(.zebraDevice) #authGate .authPrimaryButton{height:40px!important;min-height:40px!important;border-radius:11px!important;font-size:13px!important;}
-  body:not(.zebraDevice) #authGate .authSecondaryLink{min-height:27px!important;margin-top:1px!important;font-size:10px!important;}
-  body:not(.zebraDevice) #authGate .authSignupLink{height:35px!important;min-height:35px!important;margin-top:2px!important;border-radius:10px!important;font-size:10px!important;}
-  body:not(.zebraDevice) #authGate .authMessage{margin-top:2px!important;font-size:10px!important;line-height:1.1!important;}
-}
-@media (max-width:760px) and (max-height:690px){
-  body:not(.zebraDevice) #authGate .authShell{grid-template-rows:94px minmax(0,1fr)!important;}
-  body:not(.zebraDevice) #authGate .authBrandPanel{height:94px!important;padding:7px 16px 3px!important;}
-  body:not(.zebraDevice) #authGate .authBrandMinimal{gap:3px!important;}
-  body:not(.zebraDevice) #authGate .authFormPanel{padding:5px 16px 8px!important;}
-  body:not(.zebraDevice) #authGate .authLead{display:none!important;}
-  body:not(.zebraDevice) #authGate .authField{margin-bottom:5px!important;}
-  body:not(.zebraDevice) #authGate .authField input{height:38px!important;min-height:38px!important;}
-  body:not(.zebraDevice) #authGate .authPrimaryButton{height:37px!important;min-height:37px!important;}
-}
-
-/* ---------- Handheld ---------- */
-body.zebraDevice #authGate.authGate{
-  min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;
-  padding:5px!important;align-items:center!important;justify-content:center!important;
-}
-body.zebraDevice #authGate .authShell{
-  width:100%!important;height:calc(100dvh - 10px)!important;min-height:0!important;max-height:none!important;
-  display:grid!important;grid-template-columns:1fr!important;grid-template-rows:72px minmax(0,1fr)!important;
-  overflow:hidden!important;border:0!important;border-radius:16px!important;
-  background:linear-gradient(155deg,#e6f2fc 0%,#eaf3fb 55%,#eceffc 100%)!important;
-  box-shadow:0 8px 24px rgba(62,98,132,.10)!important;
-}
-body.zebraDevice #authGate .authBrandPanel{
-  min-height:0!important;height:72px!important;padding:8px 13px!important;overflow:hidden!important;
-  background:transparent!important;color:var(--pf-auth-ink)!important;border:0!important;
-}
-body.zebraDevice #authGate .authBrandMinimal{
-  height:100%!important;display:grid!important;grid-template-columns:47px minmax(0,1fr)!important;
-  grid-template-rows:auto auto!important;column-gap:10px!important;align-content:center!important;align-items:center!important;
-}
-body.zebraDevice #authGate .authFormPanel{
-  height:100%!important;min-height:0!important;padding:8px 13px 7px!important;align-items:flex-start!important;overflow:hidden!important;
-  background:transparent!important;border:0!important;
-}
-body.zebraDevice #authGate .authFormPanelInner{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;}
-body.zebraDevice #authGate #authLoginForm{height:100%!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow:hidden!important;}
-body.zebraDevice #authGate #authLoginForm .authEyebrow{font-size:9px!important;letter-spacing:1.1px!important;}
-body.zebraDevice #authGate #authLoginForm h2{margin:3px 0 3px!important;font-size:25px!important;line-height:1!important;}
-body.zebraDevice #authGate #authLoginForm .authLead{margin:0 0 7px!important;font-size:10.5px!important;line-height:1.15!important;}
-body.zebraDevice #authGate #authLoginForm .authField{gap:4px!important;margin:0 0 6px!important;}
-body.zebraDevice #authGate #authLoginForm .authField label{font-size:10px!important;line-height:1!important;}
-body.zebraDevice #authGate #authLoginForm .authField input{
-  min-height:40px!important;height:40px!important;padding:0 11px!important;border-radius:10px!important;font-size:13px!important;
-}
-body.zebraDevice #authGate #authLoginForm .authPasswordWrap input{padding-right:61px!important;}
-body.zebraDevice #authGate #authLoginForm .authPasswordToggle{right:5px!important;height:29px!important;min-width:49px!important;border-radius:8px!important;font-size:9px!important;}
-body.zebraDevice #authGate #authLoginForm .authRememberRow{gap:6px!important;min-height:25px!important;margin:0 0 4px!important;font-size:9.5px!important;}
-body.zebraDevice #authGate #authLoginForm .authRememberRow input{width:15px!important;height:15px!important;}
-body.zebraDevice #authGate #authLoginForm .authPrimaryButton{min-height:40px!important;height:40px!important;border-radius:10px!important;font-size:12px!important;box-shadow:none!important;}
-body.zebraDevice #authGate #authLoginForm .authSecondaryLink{min-height:29px!important;height:29px!important;margin:1px 0 0!important;font-size:10px!important;}
-body.zebraDevice #authGate #authLoginForm .authSignupLink{min-height:35px!important;height:35px!important;margin-top:2px!important;border-radius:9px!important;font-size:10px!important;}
-body.zebraDevice #authGate #authLoginForm .authMessage{min-height:0!important;margin:2px 0 0!important;font-size:9px!important;line-height:1.1!important;}
-@media (max-height:560px){
-  body.zebraDevice #authGate .authShell{grid-template-rows:60px minmax(0,1fr)!important;}
-  body.zebraDevice #authGate .authBrandPanel{height:60px!important;padding:5px 11px!important;}
-  body.zebraDevice #authGate .authBrandMinimal{grid-template-columns:39px 1fr!important;column-gap:8px!important;}
-  body.zebraDevice #authGate .authFormPanel{padding:6px 11px 5px!important;}
-  body.zebraDevice #authGate #authLoginForm .authLead{display:none!important;}
-  body.zebraDevice #authGate #authLoginForm .authField input{height:35px!important;min-height:35px!important;}
-  body.zebraDevice #authGate #authLoginForm .authPrimaryButton{height:36px!important;min-height:36px!important;}
-}
-
-/* =============================================================
-   PHARMFLOW B11 CLEAN 11 — AUTH SUB-SCREEN FIT
-   Direct extension of the single auth owner. No auth logic changes.
-============================================================= */
-
-/* Keep Back visible at the top of every secondary auth journey. */
-#authGate .authPublicBackButton{
-  display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;
-  min-height:30px!important;margin:0 0 5px!important;padding:0!important;
-  font-size:12px!important;line-height:1!important;
-}
-
-/* Desktop registration is deliberately compact and two-column so the complete
-   form + actions fit in the same production viewport as Sign In. */
-@media (min-width:901px){
-  body:not(.zebraDevice) #authGate #authPublicSignupForm{
-    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:14px;align-content:center;
-  }
-  body:not(.zebraDevice) #authGate #authPublicSignupForm[hidden]{display:none!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authBackButton,
-  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authEyebrow,
-  body:not(.zebraDevice) #authGate #authPublicSignupForm>h2,
-  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authLead,
-  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authPrimaryButton{
-    grid-column:1/-1!important;
-  }
-  body:not(.zebraDevice) #authGate #authPublicSignupForm>.authField:last-of-type{grid-column:1/-1!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{margin-bottom:8px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{margin-bottom:9px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{margin-top:2px!important;}
-
-  /* Secondary auth screens share the same bounded viewport contract. */
-  body:not(.zebraDevice) #authGate #authInviteSignupForm,
-  body:not(.zebraDevice) #authGate #authOwnerSignupForm,
-  body:not(.zebraDevice) #authGate #authRecoveryForm{
-    max-height:100%!important;overflow:auto!important;overscroll-behavior:contain!important;padding-right:4px!important;
-  }
-}
-
-@media (min-width:901px) and (max-height:700px){
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authBackButton{min-height:23px!important;margin-bottom:1px!important;font-size:10px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm h2{margin:2px 0 3px!important;font-size:27px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{font-size:10px!important;line-height:1.18!important;margin-bottom:5px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{gap:3px!important;margin-bottom:5px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField label{font-size:10px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField input{height:37px!important;min-height:37px!important;font-size:12px!important;border-radius:10px!important;}
-  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{height:37px!important;min-height:37px!important;font-size:11px!important;border-radius:10px!important;}
-}
 
 /* Mobile auth: same approved light identity, one column, no horizontal drift.
    Long secondary journeys scroll inside the form panel rather than moving the
@@ -805,5 +625,64 @@ body.zebraDevice #authGate #authLoginForm .authMessage{min-height:0!important;ma
     position:sticky!important;top:0!important;z-index:2!important;width:max-content!important;
     padding:5px 7px!important;margin:0 0 4px -5px!important;border-radius:8px!important;
     background:rgba(234,243,252,.94)!important;backdrop-filter:blur(8px)!important;
+  }
+}/* =============================================================
+   PHARMFLOW SETTINGS — PUBLIC REGISTRATION FORM
+   Single responsive owner. No scroll; all registration actions fit the shell.
+============================================================= */
+#authGate #authPublicSignupForm{width:100%;max-width:100%;box-sizing:border-box}
+#authGate #authPublicSignupForm[hidden]{display:none!important}
+#authGate #authPublicSignupForm .authField{width:100%;min-width:0}
+#authGate #authPublicSignupForm .authField input{width:100%;box-sizing:border-box;background:#fff}
+#authGate #authPublicSignupForm .authPasswordWrap{width:100%}
+#authGate #authPublicSignupForm .authFieldHelp{display:block;color:#607b94;opacity:1}
+#authGate #authPublicSignupForm .authPrimaryButton,
+#authGate #authPublicSignupForm #btnAuthShowLogin{width:100%}
+
+@media (min-width:761px){
+  body:not(.zebraDevice) #authGate .authShell:has(#authPublicSignupForm:not([hidden])){
+    height:min(620px,calc(100dvh - 28px))!important;
+    max-height:calc(100dvh - 28px)!important;
+  }
+  body:not(.zebraDevice) #authGate .authFormPanel:has(#authPublicSignupForm:not([hidden])){
+    padding-block:clamp(12px,2.1dvh,24px)!important;
+  }
+  body:not(.zebraDevice) #authGate .authFormPanelInner:has(#authPublicSignupForm:not([hidden])){
+    height:100%!important;max-height:100%!important;overflow:visible!important;
+    display:flex!important;align-items:center!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm{
+    --reg-scale:min(1,calc((100dvh - 56px)/570));
+    display:block;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm h2{
+    margin:4px 0 4px!important;font-size:clamp(25px,4.6dvh,34px)!important;line-height:1!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authLead{
+    margin:0 0 clamp(5px,1.2dvh,10px)!important;font-size:clamp(10px,1.7dvh,13px)!important;line-height:1.28!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField{
+    gap:3px!important;margin-bottom:clamp(4px,.9dvh,8px)!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField label{
+    margin:0!important;font-size:clamp(11px,1.8dvh,13px)!important;line-height:1.05!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authField input{
+    height:clamp(36px,6.1dvh,46px)!important;min-height:0!important;border-radius:12px!important;
+    padding:0 14px!important;font-size:clamp(12px,1.9dvh,14px)!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPasswordWrap input{padding-right:78px!important}
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPasswordToggle{
+    right:6px!important;height:clamp(28px,4.7dvh,34px)!important;min-width:58px!important;font-size:10px!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authFieldHelp{
+    margin-top:2px!important;font-size:clamp(8px,1.35dvh,10px)!important;line-height:1.18!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm .authPrimaryButton{
+    height:clamp(36px,6dvh,44px)!important;min-height:0!important;margin-top:1px!important;
+    border-radius:12px!important;font-size:clamp(12px,1.9dvh,14px)!important;
+  }
+  body:not(.zebraDevice) #authGate #authPublicSignupForm #btnAuthShowLogin{
+    min-height:clamp(24px,4dvh,30px)!important;height:auto!important;margin:1px 0 0!important;font-size:11px!important;
   }
 }

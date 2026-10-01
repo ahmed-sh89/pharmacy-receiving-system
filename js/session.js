@@ -22,6 +22,30 @@ const SessionEngine = {
 
 };
 
+/* Data-management receipts belong to the authenticated pharmacy/user scope.
+   Never carry a destructive-operation result into a different account context. */
+function clearDataManagementOperationReceipts(){
+    const historicalReceipt=document.getElementById("historicalDeleteReceipt");
+    if(historicalReceipt){
+        historicalReceipt.textContent="";
+        historicalReceipt.className="operationReceipt";
+        historicalReceipt.hidden=true;
+    }
+
+    const sharedReceipt=document.getElementById("pharmflowOperationReceipt");
+    if(sharedReceipt){
+        sharedReceipt.textContent="";
+        sharedReceipt.className="operationReceipt";
+        sharedReceipt.hidden=true;
+    }
+}
+
+window.addEventListener("auth:context-ready",event=>{
+    if(event?.detail?.changed===true){
+        clearDataManagementOperationReceipts();
+    }
+});
+
 
 /* =====================================================
    INITIALIZE SESSION ENGINE
@@ -1126,7 +1150,7 @@ async function restoreHistoricalArchive(){
 async function deleteAllHistoricalData(){
 
     const phrase=window.prompt(
-        "Type DELETE ALL HISTORICAL DATA to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Global GTIN Master, Returns Archive, and users are not affected.",
+        "Type DELETE to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Global GTIN Master, Returns Archive, and users are not affected.",
         ""
     );
 
@@ -1143,7 +1167,7 @@ async function deleteAllHistoricalData(){
         .replace(/\s+/g," ")
         .toUpperCase();
 
-    if(normalizedConfirmation!=="DELETE ALL HISTORICAL DATA"){
+    if(normalizedConfirmation!=="DELETE"){
         showToast(
             "Historical data was not deleted — confirmation phrase did not match.",
             "warning",

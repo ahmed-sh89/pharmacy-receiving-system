@@ -36,7 +36,10 @@ const AuthState = {
     connectionDegraded:false,
     busy:false,
     registration:null,
+    mustChangePassword:false,
     ownerRegistrations:[],
+    ownerManagementView:null,
+    ownerManagementSearch:"",
     ownerPharmacies:[],
     lastContextScope:""
 };
@@ -107,7 +110,6 @@ function bindAuthUI(){
     bindClick("btnAuthShowLogin", ()=>showAuthPanel("login"));
     bindClick("btnAuthShowLoginFromOwner", ()=>showAuthPanel("login"));
     bindClick("btnAuthShowLoginFromInvite", ()=>showAuthPanel("login"));
-    bindClick("btnAuthShowInviteSignup", ()=>showAuthPanel("invite"));
     bindClick("btnAuthShowPublicSignup", ()=>showAuthPanel("public"));
     bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
     bindClick("btnAuthForgotPassword", ()=>requestPasswordRecovery());
@@ -135,9 +137,26 @@ function bindAuthUI(){
     bindClick("btnCompleteOwnerSetup", ()=>completeOwnerSetupFromPendingPanel());
     bindClick("btnLogout", ()=>signOutCurrentUser());
     bindClick("btnPendingLogout", ()=>signOutCurrentUser());
+    bindClick("btnChangeSettingsPassword", ()=>openSettingsPasswordPanel());
+    bindClick("btnSaveSettingsPassword", ()=>changeSettingsPassword());
+    document.querySelectorAll("[data-settings-password-close]").forEach(button=>{
+        button.addEventListener("click",()=>closeSettingsPasswordPanel());
+    });
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
-    bindClick("btnRefreshRegistrationRequests", ()=>loadOwnerRegistrationRequests(true));
-    bindClick("btnRefreshOwnerControl", ()=>loadOwnerControlCenter(true));
+    bindClick("btnCloseOwnerManagement", ()=>closeOwnerManagementPanel());
+    bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
+    bindClick("btnCancelSettingsIdentity", ()=>setSettingsIdentityEditMode(false));
+    bindClick("btnSaveSettingsIdentity", ()=>saveSettingsIdentity());
+    document.querySelectorAll("[data-owner-view]").forEach(card=>{
+        card.addEventListener("click",()=>openOwnerManagementPanel(card.dataset.ownerView));
+    });
+    const ownerSearch=document.getElementById("ownerManagementSearch");
+    if(ownerSearch){
+        ownerSearch.addEventListener("input",()=>{
+            AuthState.ownerManagementSearch=ownerSearch.value || "";
+            renderOwnerManagementPanel();
+        });
+    }
     bindClick("btnCreateMemberInvite", ()=>createMemberInviteFromSettings());
 
     ["authEmail","authPassword"].forEach(id=>{
@@ -305,25 +324,7 @@ function setRecoveryMessage(message,type){
 }
 
 async function requestPasswordRecovery(){
-    if(AuthState.busy){ return; }
-    const email = valueOf("authEmail").trim();
-    if(!email){
-        setAuthMessage("Enter your email address first.","error");
-        return;
-    }
-    setAuthBusy(true,"Sending password reset email...");
-    try{
-        // Supabase Auth expects redirect_to on the /recover request URL, not in the JSON body.
-        const redirectTo = MEDRYVO_RECOVERY_REDIRECT;
-        const recoverPath = "/auth/v1/recover?redirect_to=" + encodeURIComponent(redirectTo);
-        await authRequest(recoverPath,{
-            method:"POST",
-            body:JSON.stringify({email})
-        });
-        setAuthMessage("Password reset email sent. Open the newest message and follow the link.","success");
-    }
-    catch(error){ setAuthMessage(error.message || "Unable to send password reset email.","error"); }
-    finally{ setAuthBusy(false); }
+    setAuthMessage("Contact your PharmFlow Admin to receive a temporary password. No recovery email will be sent.","info");
 }
 
 
@@ -461,6 +462,7 @@ function restoreAuthSession(){
 function persistAuthSession(session){
     AuthState.session = session || null;
     AuthState.user = session && session.user ? session.user : null;
+    AuthState.mustChangePassword = !!(AuthState.user?.app_metadata?.pharmflow_must_change_password);
     AuthState.contextError = null;
 
     if(session){
@@ -671,6 +673,9 @@ async function signInFromForm(){
         await finishPendingAccessIfPossible();
         await loadMyAppContext();
         renderAuthState();
+        if(AuthState.mustChangePassword){
+            return;
+        }
         if(hasApplicationAccess()){
             setAuthMessage("Signed in successfully.", "success");
             unlockApplicationAfterAuth();
@@ -685,26 +690,20 @@ async function signInFromForm(){
 
 async function signUpPublicPharmacy(){
     if(AuthState.busy){ return; }
-    const name = valueOf("publicSignupName").trim();
     const email = valueOf("publicSignupEmail").trim();
     const password = valueOf("publicSignupPassword");
-    const pharmacyName = valueOf("publicPharmacyName").trim();
+    const confirmPassword = valueOf("publicSignupPasswordConfirm");
     const pharmacyCode = valueOf("publicPharmacyCode").trim();
-    if(!email || password.length < 6 || !pharmacyName || pharmacyCode.length < 3){
-        setAuthMessage("Enter your details, pharmacy name/code, and a password of at least 6 characters.","error");
+    if(!email || password.length < 8 || password !== confirmPassword || pharmacyCode.length < 3){
+        setAuthMessage("Enter a valid email, matching passwords of at least 8 characters, and your pharmacy code.","error");
         return;
     }
-    localStorage.setItem(AUTH_PENDING_REGISTRATION_KEY,JSON.stringify({
-        pharmacyName, pharmacyCode, applicantName:name
-    }));
+    localStorage.setItem(AUTH_PENDING_REGISTRATION_KEY,JSON.stringify({pharmacyCode}));
     setAuthBusy(true,"Creating account...");
     try{
         const result = await authRequest("/auth/v1/signup",{
             method:"POST",
-            body:JSON.stringify({
-                email,password,
-                data:{display_name:name || email.split("@")[0]}
-            })
+            body:JSON.stringify({email,password})
         });
         if(result && result.access_token){
             persistAuthSession(result);
@@ -712,25 +711,22 @@ async function signUpPublicPharmacy(){
             await loadMyAppContext();
             await loadMyRegistrationStatus();
             renderAuthState();
-        }
-        else{
-            setAuthMessage("Account created. Confirm the email if requested, then sign in. Your pharmacy request will be submitted after sign-in.","success");
+        }else{
+            setAuthMessage("Account created. Sign in with the same email and password to finish the pharmacy request.","success");
             showAuthPanel("login");
             setInputValue("authEmail",email);
         }
-    }
-    catch(error){ setAuthMessage(error.message || "Unable to create account.","error"); }
-    finally{ setAuthBusy(false); }
+    }catch(error){
+        setAuthMessage(error.message || "Unable to create account.","error");
+    }finally{ setAuthBusy(false); }
 }
 
 async function submitPendingRegistration(){
     const raw = localStorage.getItem(AUTH_PENDING_REGISTRATION_KEY);
     if(!raw){ return false; }
     const setup = JSON.parse(raw);
-    await authRpc("submit_pharmacy_registration",{
-        p_pharmacy_name:setup.pharmacyName,
-        p_pharmacy_code:setup.pharmacyCode,
-        p_applicant_name:setup.applicantName || null
+    await authRpc("submit_pharmacy_registration_v2",{
+        p_requested_pharmacy_code:setup.pharmacyCode
     });
     localStorage.removeItem(AUTH_PENDING_REGISTRATION_KEY);
     await loadMyRegistrationStatus().catch(()=>{});
@@ -739,23 +735,21 @@ async function submitPendingRegistration(){
 
 async function submitRegistrationFromPendingPanel(){
     if(AuthState.busy){ return; }
-    const pharmacyName = valueOf("pendingRegistrationPharmacyName").trim();
     const pharmacyCode = valueOf("pendingRegistrationPharmacyCode").trim();
-    const applicantName = valueOf("pendingRegistrationApplicantName").trim();
-    if(!pharmacyName || pharmacyCode.length < 3){
-        setAuthMessage("Enter pharmacy name and a pharmacy code of at least 3 characters.","error");
+    if(pharmacyCode.length < 3){
+        setAuthMessage("Enter the pharmacy code you know (at least 3 characters).","error");
         return;
     }
-    localStorage.setItem(AUTH_PENDING_REGISTRATION_KEY,JSON.stringify({pharmacyName,pharmacyCode,applicantName}));
+    localStorage.setItem(AUTH_PENDING_REGISTRATION_KEY,JSON.stringify({pharmacyCode}));
     setAuthBusy(true,"Submitting pharmacy request...");
     try{
         await submitPendingRegistration();
         await loadMyRegistrationStatus();
         renderAuthState();
-        setAuthMessage("Registration submitted. Waiting for System Owner approval.","success");
-    }
-    catch(error){ setAuthMessage(error.message || "Unable to submit registration.","error"); }
-    finally{ setAuthBusy(false); }
+        setAuthMessage("Registration submitted. Waiting for approval.","success");
+    }catch(error){
+        setAuthMessage(error.message || "Unable to submit registration.","error");
+    }finally{ setAuthBusy(false); }
 }
 
 async function loadMyRegistrationStatus(){
@@ -828,7 +822,7 @@ async function signUpInitialOwner(){
     if(AuthState.busy){ return; }
     await loadPublicSetupStatus().catch(()=>{});
     if(AuthState.ownerExists){
-        setAuthMessage("The system owner is already configured. Use an invitation to activate a new account.","error");
+        setAuthMessage("The PharmFlow Administrator is already configured. Use the assigned access path to activate a new account.","error");
         showAuthPanel("login");
         return;
     }
@@ -859,7 +853,7 @@ async function signUpInitialOwner(){
             if(!hasApplicationAccess()){
                 throw new Error("Owner account exists, but pharmacy access was not verified.");
             }
-            setAuthMessage("System Owner and pharmacy created successfully.","success");
+            setAuthMessage("PharmFlow Administrator and pharmacy created successfully.","success");
             unlockApplicationAfterAuth();
         }
         else{
@@ -874,13 +868,13 @@ async function signUpInitialOwner(){
 
             if(likelyExistingAccount){
                 setAuthMessage(
-                    "This email already has an authentication account. System Owner setup is NOT complete yet. Sign in with that account (or reset its password) to finish the saved setup.",
+                    "This email already has an authentication account. Administrator setup is NOT complete yet. Sign in with that account (or reset its password) to finish the saved setup.",
                     "error"
                 );
             }
             else{
                 setAuthMessage(
-                    "Authentication account created. System Owner setup is NOT complete yet. Confirm the email if requested, then sign in with the same password to finish the saved pharmacy setup.",
+                    "Authentication account created. Administrator setup is NOT complete yet. Confirm the email if requested, then sign in with the same password to finish the saved pharmacy setup.",
                     "success"
                 );
             }
@@ -1298,12 +1292,12 @@ async function completePendingOwnerSetup(){
     // Never report Owner setup as successful unless the database confirms
     // the owner role AND the pharmacy membership in the same RPC response.
     if(!row || !row.pharmacy_id || row.system_role !== "owner" || row.member_role !== "admin"){
-        throw new Error("System Owner setup was not completed by the database. No success state was saved.");
+        throw new Error("Administrator setup was not completed by the database. No success state was saved.");
     }
 
     await loadPublicSetupStatus();
     if(!AuthState.ownerExists){
-        throw new Error("System Owner verification failed. Please retry before continuing.");
+        throw new Error("Administrator verification failed. Please retry before continuing.");
     }
 
     localStorage.removeItem(AUTH_PENDING_OWNER_KEY);
@@ -1508,7 +1502,7 @@ async function loadOwnerPharmacies(){
     return AuthState.ownerPharmacies;
 }
 
-async function loadOwnerControlCenter(showMessage=false){
+async function loadOwnerControlCenter(){
     if(!isSystemOwner()){ return; }
     try{
         await Promise.all([
@@ -1516,9 +1510,8 @@ async function loadOwnerControlCenter(showMessage=false){
             loadOwnerPharmacies()
         ]);
         renderOwnerMetrics();
-        if(showMessage){ setSettingsAccessMessage("Owner Control Center refreshed.","success"); }
     }catch(error){
-        if(showMessage){ setSettingsAccessMessage(error.message || "Unable to refresh Owner Control Center.","error"); }
+        setSettingsAccessMessage(error.message || "Unable to load Access Management.","error");
     }
 }
 
@@ -1528,49 +1521,61 @@ function renderOwnerMetrics(){
     setText("ownerMetricTotalPharmacies",String(pharmacies.length));
     setText("ownerMetricActivePharmacies",String(pharmacies.filter(p=>p.status === "active" && p.active !== false).length));
     setText("ownerMetricPendingRequests",String(requests.filter(r=>r.request_status === "pending").length));
-    setText("ownerMetricAdminsAssigned",String(pharmacies.filter(p=>p.admin_email || p.pending_admin_email).length));
+    setText("ownerMetricSuspendedPharmacies",String(pharmacies.filter(p=>!(p.status === "active" && p.active !== false)).length));
+}
+
+function ownerPharmacyMatchesSearch(p,query){
+    if(!query){ return true; }
+    const haystack=[p.pharmacy_name,p.pharmacy_code,p.admin_email,p.pending_admin_email,p.admin_name]
+        .map(value=>String(value||"").toLowerCase()).join(" ");
+    return haystack.includes(query.toLowerCase());
+}
+
+function getOwnerPharmacyRowsForView(){
+    const view=AuthState.ownerManagementView || "total";
+    const query=String(AuthState.ownerManagementSearch||"").trim();
+    return (AuthState.ownerPharmacies||[]).filter(p=>{
+        const active=p.status==="active" && p.active!==false;
+        if(view==="active" && !active){ return false; }
+        if(view==="suspended" && active){ return false; }
+        return ownerPharmacyMatchesSearch(p,query);
+    });
 }
 
 function renderOwnerPharmacies(){
-    const box = document.getElementById("ownerPharmacyList");
+    const box=document.getElementById("ownerPharmacyList");
     if(!box){ return; }
-    const rows = AuthState.ownerPharmacies || [];
+    const rows=getOwnerPharmacyRowsForView();
     if(!rows.length){
-        box.innerHTML = '<div class="registrationEmpty">No pharmacies found.</div>';
+        box.innerHTML='<div class="registrationEmpty">No pharmacies match this view.</div>';
         renderOwnerMetrics();
         return;
     }
 
-    box.innerHTML = rows.map(p=>{
-        const active = p.status === "active" && p.active !== false;
-        const adminLabel = p.admin_email
+    box.innerHTML=rows.map(p=>{
+        const active=p.status==="active" && p.active!==false;
+        const adminLabel=p.admin_email
             ? escapeAuthHtml(p.admin_email)
             : (p.pending_admin_email
-                ? escapeAuthHtml(p.pending_admin_email) + ' <span class="ownerAwaitingTag">Awaiting activation</span>'
+                ? escapeAuthHtml(p.pending_admin_email)+' <span class="ownerAwaitingTag">Awaiting activation</span>'
                 : '<span class="ownerUnassignedTag">No ADMIN assigned</span>');
-        const adminName = p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
+        const adminName=p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
 
         return `<article class="ownerPharmacyCard">
             <div class="ownerPharmacyIdentity">
-                <div class="ownerPharmacyIcon">${escapeAuthHtml((p.pharmacy_name || "P").slice(0,1).toUpperCase())}</div>
-                <div>
-                    <strong>${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
-                    <span>${escapeAuthHtml(p.pharmacy_code || "-")}</span>
-                </div>
+                <div class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "-")}</div>
+                <strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
             </div>
-
             <div class="ownerPharmacyAdmin">
                 <span class="ownerFieldLabel">ADMIN</span>
                 <div>${adminLabel}</div>
                 ${adminName}
             </div>
-
-            <div class="ownerPharmacyStatus">
-                <span class="registrationStatus ${active ? "approved" : "rejected"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
-            </div>
-
             <div class="ownerPharmacyActions">
-                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Set / Change ADMIN</button>
+                <span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
+                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit</button>
+                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
+                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
                 <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
             </div>
         </article>`;
@@ -1582,14 +1587,248 @@ function renderOwnerPharmacies(){
     renderOwnerMetrics();
 }
 
+function openOwnerManagementPanel(view){
+    if(!["total","active","pending","suspended"].includes(view)){ return; }
+    AuthState.ownerManagementView=view;
+    AuthState.ownerManagementSearch="";
+    const search=document.getElementById("ownerManagementSearch");
+    if(search){ search.value=""; }
+    setOwnerManagementMessage("","");
+    renderOwnerManagementPanel();
+
+}
+
+function closeOwnerManagementPanel(){
+    AuthState.ownerManagementView=null;
+    AuthState.ownerManagementSearch="";
+    const panel=document.getElementById("ownerManagementPanel");
+    if(panel){ panel.classList.remove("open"); panel.setAttribute("aria-hidden","true"); }
+}
+
+function renderOwnerManagementPanel(){
+    const panel=document.getElementById("ownerManagementPanel");
+    const pharmacyList=document.getElementById("ownerPharmacyList");
+    const requests=document.getElementById("ownerRegistrationRequests");
+    const searchWrap=document.getElementById("ownerManagementSearchWrap");
+    if(!panel || !pharmacyList || !requests){ return; }
+    const view=AuthState.ownerManagementView;
+    if(!view){
+        panel.classList.remove("open");
+        panel.setAttribute("aria-hidden","true");
+        return;
+    }
+    const config={
+        total:["PHARMACY ACCESS","All Pharmacies","Manage every pharmacy and its ADMIN access."],
+        active:["PHARMACY ACCESS","Active Pharmacies","Manage pharmacies that currently have active access."],
+        pending:["NEW PHARMACIES","Pending Registration Requests","Review new accounts, confirm the official pharmacy identity, then approve or reject access."],
+        suspended:["PHARMACY ACCESS","Suspended Pharmacies","Manage pharmacies whose access is currently suspended."]
+    }[view];
+    setText("ownerManagementEyebrow",config[0]);
+    setText("ownerManagementTitle",config[1]);
+    setText("ownerManagementDescription",config[2]);
+    panel.classList.add("open");
+    panel.setAttribute("aria-hidden","false");
+    const pending=view==="pending";
+    requests.hidden=!pending;
+    pharmacyList.hidden=pending;
+    if(searchWrap){ searchWrap.hidden=pending; }
+    if(pending){ renderOwnerRegistrationRequests(); }
+    else{ renderOwnerPharmacies(); }
+}
+function setSettingsPasswordMessage(message,type){
+    const el=document.getElementById("settingsPasswordMessage");
+    if(!el){ return; }
+    el.textContent=message||"";
+    el.className="authMessage "+(type||"");
+}
+
+function clearSettingsPasswordFields(){
+    ["settingsCurrentPassword","settingsNewPassword","settingsConfirmPassword"].forEach(id=>setInputValue(id,""));
+}
+
+function openSettingsPasswordPanel(){
+    if(!AuthState.session || !AuthState.user?.email){ return; }
+    const overlay=document.getElementById("settingsPasswordOverlay");
+    if(!overlay){ return; }
+    clearSettingsPasswordFields();
+    setSettingsPasswordMessage("","");
+    overlay.hidden=false;
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden","false");
+    document.getElementById("settingsCurrentPassword")?.focus();
+}
+
+function closeSettingsPasswordPanel(){
+    const overlay=document.getElementById("settingsPasswordOverlay");
+    if(!overlay){ return; }
+    overlay.classList.remove("open");
+    overlay.hidden=true;
+    overlay.setAttribute("aria-hidden","true");
+    clearSettingsPasswordFields();
+    setSettingsPasswordMessage("","");
+}
+
+async function changeSettingsPassword(){
+    if(AuthState.busy || !AuthState.session || !AuthState.user?.email){ return; }
+    const currentPassword=valueOf("settingsCurrentPassword");
+    const newPassword=valueOf("settingsNewPassword");
+    const confirmPassword=valueOf("settingsConfirmPassword");
+    if(!currentPassword){
+        setSettingsPasswordMessage("Enter your current password.","error");
+        return;
+    }
+    if(newPassword.length<8 || newPassword!==confirmPassword){
+        setSettingsPasswordMessage("Enter matching new passwords of at least 8 characters.","error");
+        return;
+    }
+    if(newPassword===currentPassword){
+        setSettingsPasswordMessage("Choose a new password different from your current password.","error");
+        return;
+    }
+
+    setAuthBusy(true,"Updating password...");
+    try{
+        // Re-authenticate with the current password first. The returned session
+        // proves knowledge of the current credential and is not persisted unless
+        // verification succeeds.
+        const verifiedSession=await authRequest("/auth/v1/token?grant_type=password",{
+            method:"POST",
+            body:JSON.stringify({email:AuthState.user.email,password:currentPassword})
+        });
+        const verificationToken=verifiedSession?.access_token;
+        if(!verificationToken){ throw new Error("Current password could not be verified."); }
+
+        const updatedUser=await authRequest("/auth/v1/user",{
+            method:"PUT",
+            headers:{"Authorization":"Bearer "+verificationToken},
+            body:JSON.stringify({password:newPassword})
+        });
+
+        // Keep the freshly authenticated session authoritative after password
+        // rotation, updating its user payload when GoTrue returns one.
+        verifiedSession.user=updatedUser?.user || updatedUser || verifiedSession.user;
+        persistAuthSession(verifiedSession);
+        closeSettingsPasswordPanel();
+        showToast("Password updated successfully","success");
+    }catch(error){
+        setSettingsPasswordMessage(
+            /invalid login|invalid credentials/i.test(String(error?.message||""))
+                ? "Current password is incorrect."
+                : (error.message || "Unable to update password."),
+            "error"
+        );
+    }finally{ setAuthBusy(false); }
+}
+
+function setSettingsIdentityEditMode(editing){
+    const view=document.getElementById("settingsIdentityView");
+    const panel=document.getElementById("settingsIdentityEdit");
+    if(!view || !panel){ return; }
+    const allowed=!!editing && isSystemOwner() && !!AuthState.context?.pharmacy_id;
+    view.classList.toggle("hidden",allowed);
+    panel.classList.toggle("hidden",!allowed);
+    panel.setAttribute("aria-hidden",allowed ? "false" : "true");
+    if(allowed){
+        setInputValue("settingsIdentityNameInput",AuthState.context?.pharmacy_name || "");
+        setInputValue("settingsIdentityCodeInput",AuthState.context?.pharmacy_code || "");
+        const codeInput=document.getElementById("settingsIdentityCodeInput");
+        const protectedReference=String(AuthState.context?.pharmacy_code||"").trim().toUpperCase()==="HHP084";
+        if(codeInput){
+            codeInput.disabled=protectedReference;
+            codeInput.title=protectedReference ? "HHP084 is the protected reference pharmacy code." : "";
+        }
+        document.getElementById("settingsIdentityNameInput")?.focus();
+    }
+}
+
+async function saveSettingsIdentity(){
+    if(AuthState.busy || !isSystemOwner() || !AuthState.context?.pharmacy_id){ return; }
+    const pharmacyName=valueOf("settingsIdentityNameInput").trim();
+    const pharmacyCode=valueOf("settingsIdentityCodeInput").trim();
+    if(String(AuthState.context?.pharmacy_code||"").trim().toUpperCase()==="HHP084" && pharmacyCode.toUpperCase()!=="HHP084"){
+        setSettingsAccessMessage("HHP084 is the protected reference pharmacy code and cannot be changed.","error");
+        return;
+    }
+    if(!pharmacyName || pharmacyCode.length<3){
+        setSettingsAccessMessage("Pharmacy Name and a valid Pharmacy Code are required.","error");
+        return;
+    }
+    if(pharmacyName===AuthState.context.pharmacy_name && pharmacyCode.toUpperCase()===String(AuthState.context.pharmacy_code||"").toUpperCase()){
+        setSettingsIdentityEditMode(false);
+        return;
+    }
+    if(!window.confirm("Update this pharmacy identity? Existing Orders, Receiving and history remain attached to the same pharmacy.")){ return; }
+    setAuthBusy(true);
+    try{
+        await authRpc("owner_update_pharmacy_identity_v1",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_official_pharmacy_name:pharmacyName,
+            p_official_pharmacy_code:pharmacyCode
+        });
+        await loadMyAppContext();
+        await loadOwnerPharmacies();
+        setSettingsIdentityEditMode(false);
+        renderAuthState();
+        setSettingsAccessMessage("Pharmacy identity updated. Operational history was preserved.","success");
+    }catch(error){
+        setSettingsAccessMessage(error.message || "Unable to update pharmacy identity.","error");
+    }finally{ setAuthBusy(false); }
+}
+
 async function handleOwnerPharmacyAction(button){
     if(!isSystemOwner() || !button){ return; }
     const pharmacyId = button.dataset.pharmacyId;
     const action = button.dataset.ownerAction;
     if(!pharmacyId){ return; }
 
+    if(action === "reset-password"){
+        const targetUserId=button.dataset.adminUserId;
+        if(!targetUserId){ return; }
+        if(!window.confirm("Create a one-time temporary password for this pharmacy ADMIN?")){ return; }
+        setAuthBusy(true);
+        try{
+            const result=await callPasswordAdmin({action:"reset",target_user_id:targetUserId});
+            const temporaryPassword=String(result.temporary_password||"");
+            window.prompt("Temporary password — copy and send it securely. The ADMIN must replace it at first sign-in:",temporaryPassword);
+            setOwnerManagementMessage("Temporary password created. No email was sent.","success");
+        }catch(error){
+            setOwnerManagementMessage(error.message || "Unable to reset password.","error");
+        }finally{ setAuthBusy(false); }
+        return;
+    }
+
+    if(action === "identity"){
+        const currentName = button.dataset.pharmacyName || "";
+        const currentCode = button.dataset.pharmacyCode || "";
+        const newName = window.prompt("Official Pharmacy Name:", currentName);
+        if(newName === null){ return; }
+        const newCode = window.prompt("Official Pharmacy Code:", currentCode);
+        if(newCode === null){ return; }
+        if(!String(newName).trim() || String(newCode).trim().length < 3){
+            setSettingsAccessMessage("Pharmacy Name and a valid Pharmacy Code are required.","error");
+            return;
+        }
+        if(!window.confirm("Update this pharmacy identity? Existing Orders, Receiving and history remain attached to the same pharmacy.")){ return; }
+        setAuthBusy(true);
+        try{
+            await authRpc("owner_update_pharmacy_identity_v1",{
+                p_pharmacy_id:pharmacyId,
+                p_official_pharmacy_name:String(newName).trim(),
+                p_official_pharmacy_code:String(newCode).trim()
+            });
+            await loadOwnerPharmacies();
+            if(AuthState.context?.pharmacy_id === pharmacyId){ await loadMyAppContext(); renderAuthState(); }
+            setSettingsAccessMessage("Pharmacy identity updated. Operational history was preserved.","success");
+        }catch(error){
+            setSettingsAccessMessage(error.message || "Unable to update pharmacy identity.","error");
+        }finally{ setAuthBusy(false); }
+        return;
+    }
+
     if(action === "admin"){
-        const email = window.prompt("Enter the ADMIN email for this pharmacy:");
+        const pharmacy = (AuthState.ownerPharmacies || []).find(p=>String(p.pharmacy_id) === String(pharmacyId));
+        const currentAdminEmail = pharmacy?.admin_email || pharmacy?.pending_admin_email || "";
+        const email = window.prompt("ADMIN email for this pharmacy:", currentAdminEmail);
         if(email === null){ return; }
         const cleanEmail = String(email).trim().toLowerCase();
         if(!cleanEmail || !cleanEmail.includes("@")){
@@ -1609,7 +1848,7 @@ async function handleOwnerPharmacyAction(button){
             setSettingsAccessMessage(
                 row && row.assignment_status === "active"
                     ? "ADMIN linked successfully."
-                    : "ADMIN email assigned. The user can now choose Activate Pharmacy Admin and create/sign in to the account.",
+                    : "ADMIN email assigned. The account must be created through the approved registration flow.",
                 "success"
             );
         }catch(error){
@@ -1648,6 +1887,7 @@ async function loadOwnerRegistrationRequests(showMessage=false){
         AuthState.ownerRegistrations = Array.isArray(rows) ? rows : [];
         renderOwnerRegistrationRequests();
         renderOwnerMetrics();
+        if(AuthState.ownerManagementView==="pending"){ renderOwnerManagementPanel(); }
         if(showMessage){ setSettingsAccessMessage("Registration requests refreshed.","success"); }
         return AuthState.ownerRegistrations;
     }
@@ -1660,29 +1900,26 @@ async function loadOwnerRegistrationRequests(showMessage=false){
 function renderOwnerRegistrationRequests(){
     const box = document.getElementById("ownerRegistrationRequests");
     if(!box){ return; }
-    const rows = AuthState.ownerRegistrations || [];
+    const rows = (AuthState.ownerRegistrations || []).filter(r=>r.request_status === "pending");
     if(!rows.length){
-        box.innerHTML = '<div class="registrationEmpty">No pharmacy registration requests yet.</div>';
+        box.innerHTML = '<div class="registrationEmpty">No pending registration requests.</div>';
         return;
     }
-    box.innerHTML = rows.map(r=>{
-        const pending = r.request_status === "pending";
-        return `<article class="registrationRequestCard">
-            <div class="registrationRequestTop">
-                <div><strong>${escapeAuthHtml(r.pharmacy_name || "Pharmacy")}</strong><span>${escapeAuthHtml(r.pharmacy_code || "-")}</span></div>
-                <span class="registrationStatus ${escapeAuthHtml(r.request_status || "")}">${escapeAuthHtml((r.request_status || "").toUpperCase())}</span>
-            </div>
-            <div class="registrationMeta">
-                <span>${escapeAuthHtml(r.applicant_name || "Applicant")}</span>
-                <span>${escapeAuthHtml(r.applicant_email || "")}</span>
-                <span>${escapeAuthHtml(formatAuthDate(r.submitted_at))}</span>
-            </div>
-            ${pending ? `<div class="registrationActions">
-                <button type="button" class="secondaryButton" data-reg-action="reject" data-reg-id="${escapeAuthHtml(r.request_id)}">Reject</button>
-                <button type="button" class="primaryButton" data-reg-action="approve" data-reg-id="${escapeAuthHtml(r.request_id)}">Approve Pharmacy</button>
-            </div>` : ''}
-        </article>`;
-    }).join("");
+    box.innerHTML = rows.map(r=>`<article class="registrationRequestCard">
+        <div class="registrationRequestTop">
+            <div><strong>${escapeAuthHtml(r.applicant_email || "New account")}</strong><span>Requested code: ${escapeAuthHtml(r.pharmacy_code || "-")}</span></div>
+            <span class="registrationStatus pending">PENDING</span>
+        </div>
+        <div class="registrationMeta"><span>${escapeAuthHtml(formatAuthDate(r.submitted_at))}</span></div>
+        <div class="registrationApprovalFields">
+            <label>Official Pharmacy Name<input type="text" data-reg-name="${escapeAuthHtml(r.request_id)}" maxlength="120" placeholder="Pharmacy name"></label>
+            <label>Official Pharmacy Code<input type="text" data-reg-code="${escapeAuthHtml(r.request_id)}" maxlength="24" value="${escapeAuthHtml(r.pharmacy_code || "")}"></label>
+        </div>
+        <div class="registrationActions">
+            <button type="button" class="secondaryButton" data-reg-action="reject" data-reg-id="${escapeAuthHtml(r.request_id)}">Reject</button>
+            <button type="button" class="primaryButton" data-reg-action="approve" data-reg-id="${escapeAuthHtml(r.request_id)}">Approve & Activate</button>
+        </div>
+    </article>`).join("");
     box.querySelectorAll("[data-reg-action]").forEach(btn=>{
         btn.addEventListener("click",()=>reviewRegistration(btn.dataset.regId,btn.dataset.regAction));
     });
@@ -1691,22 +1928,29 @@ function renderOwnerRegistrationRequests(){
 async function reviewRegistration(requestId,decision){
     if(!isSystemOwner() || !requestId){ return; }
     const approve = decision === "approve";
-    const promptText = approve
-        ? "Approve this pharmacy and create its ADMIN workspace?"
-        : "Reject this pharmacy registration request?";
-    if(!window.confirm(promptText)){ return; }
+    const nameInput = document.querySelector('[data-reg-name="' + CSS.escape(requestId) + '"]');
+    const codeInput = document.querySelector('[data-reg-code="' + CSS.escape(requestId) + '"]');
+    const officialName = approve ? String(nameInput?.value || "").trim() : null;
+    const officialCode = approve ? String(codeInput?.value || "").trim() : null;
+    if(approve && (!officialName || officialCode.length < 3)){
+        setSettingsAccessMessage("Enter the official Pharmacy Name and Pharmacy Code before approval.","error");
+        return;
+    }
+    if(!window.confirm(approve ? "Approve and activate this pharmacy with the official identity shown?" : "Reject this pharmacy registration request?")){ return; }
     setAuthBusy(true);
     try{
-        await authRpc("owner_review_pharmacy_registration",{
+        await authRpc("owner_review_pharmacy_registration_v2",{
             p_request_id:requestId,
             p_decision:decision,
+            p_official_pharmacy_name:officialName,
+            p_official_pharmacy_code:officialCode,
             p_note:null
         });
         await loadOwnerControlCenter(false);
-        setSettingsAccessMessage(approve ? "Pharmacy approved successfully." : "Registration rejected.","success");
-    }
-    catch(error){ setSettingsAccessMessage(error.message || "Unable to review registration.","error"); }
-    finally{ setAuthBusy(false); }
+        setSettingsAccessMessage(approve ? "Pharmacy approved and activated." : "Registration rejected.","success");
+    }catch(error){
+        setSettingsAccessMessage(error.message || "Unable to review registration.","error");
+    }finally{ setAuthBusy(false); }
 }
 
 function escapeAuthHtml(value){
@@ -1754,6 +1998,12 @@ function isPharmacyAdmin(){
 }
 
 function renderAuthState(){
+    if(AuthState.mustChangePassword && AuthState.session){
+        finishAuthBootState();
+        lockApplicationForAuth(true);
+        showForcedPasswordPanel();
+        return;
+    }
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
         finishAuthBootState();
         lockApplicationForAuth(true);
@@ -1836,6 +2086,10 @@ function renderAuthState(){
     setText("settingsSignedInUser",account && account.email || "-");
     setText("settingsUserRole",roleText || "-");
 
+    const settingsEditButton = document.getElementById("btnEditSettingsIdentity");
+    if(settingsEditButton){ settingsEditButton.hidden = !isSystemOwner() || !account?.pharmacy_id; }
+    if(!isSystemOwner()){ setSettingsIdentityEditMode(false); }
+
     const ownerCard = document.getElementById("ownerManagementCard");
     if(ownerCard){ ownerCard.hidden = !isSystemOwner(); }
     if(isSystemOwner()){ loadOwnerControlCenter(false).catch(()=>{}); }
@@ -1861,8 +2115,66 @@ function renderPendingAccessPanel(){
         setText("pendingRegistrationPharmacy",r.pharmacy_name || "-");
         setText("pendingRegistrationCode",r.pharmacy_code || "-");
         setText("pendingRegistrationStatus",String(r.request_status || "pending").toUpperCase());
-        setText("pendingRegistrationNote",r.review_note || (r.request_status === "pending" ? "Waiting for System Owner approval." : ""));
+        setText("pendingRegistrationNote",r.review_note || (r.request_status === "pending" ? "Waiting for approval." : ""));
     }
+}
+
+async function callPasswordAdmin(payload){
+    const response = await fetch(getSupabaseProjectUrl() + "/functions/v1/pharmflow-password-admin",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "apikey":getSupabasePublishableKey(),
+            "Authorization":"Bearer " + getSupabaseAccessToken()
+        },
+        body:JSON.stringify(payload)
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error || "Password operation failed");
+    return data;
+}
+
+function showForcedPasswordPanel(){
+    const formsPanel=document.getElementById("authFormsPanel");
+    const accessPanel=document.getElementById("authAccessPanel");
+    if(formsPanel){ formsPanel.hidden=false; }
+    if(accessPanel){ accessPanel.hidden=true; }
+    ["authLoginForm","authPublicSignupForm","authInviteSignupForm","authOwnerSignupForm","authRecoveryForm"].forEach(id=>{
+        const el=document.getElementById(id); if(el){ el.hidden=true; }
+    });
+    let form=document.getElementById("authForcedPasswordForm");
+    if(!form){
+        const template=document.getElementById("authForcedPasswordTemplate");
+        if(template&&formsPanel){ formsPanel.appendChild(template.content.cloneNode(true)); }
+        form=document.getElementById("authForcedPasswordForm");
+        bindClick("btnAuthForcedPasswordSave",()=>completeTemporaryPassword());
+    }
+    if(form){ form.hidden=false; }
+    setAuthMessage("","");
+}
+
+async function completeTemporaryPassword(){
+    if(AuthState.busy){ return; }
+    const password=valueOf("authForcedPassword");
+    const confirm=valueOf("authForcedPasswordConfirm");
+    if(password.length<8 || password!==confirm){
+        setAuthMessage("Enter matching passwords of at least 8 characters.","error");
+        return;
+    }
+    setAuthBusy(true,"Saving new password...");
+    try{
+        await callPasswordAdmin({action:"complete",new_password:password});
+        AuthState.mustChangePassword=false;
+        if(AuthState.user?.app_metadata){ AuthState.user.app_metadata.pharmflow_must_change_password=false; }
+        if(AuthState.session?.user?.app_metadata){ AuthState.session.user.app_metadata.pharmflow_must_change_password=false; }
+        persistAuthSession(AuthState.session);
+        await loadMyAppContext();
+        renderAuthState();
+        unlockApplicationAfterAuth();
+        setAuthMessage("Password updated successfully.","success");
+    }catch(error){
+        setAuthMessage(error.message || "Unable to update password.","error");
+    }finally{ setAuthBusy(false); }
 }
 
 function showAuthPanel(mode, options = {}){
@@ -1870,7 +2182,7 @@ function showAuthPanel(mode, options = {}){
         mode = "login";
     }
 
-    const validMode = ["login","invite","owner","public","recovery"].includes(mode) ? mode : "login";
+    const validMode = ["login","owner","public","recovery"].includes(mode) ? mode : "login";
 
     const login = document.getElementById("authLoginForm");
     const invite = document.getElementById("authInviteSignupForm");
@@ -1879,12 +2191,14 @@ function showAuthPanel(mode, options = {}){
     const recovery = validMode === "recovery" && AuthState.recoveryActive
         ? mountRecoveryForm()
         : document.getElementById("authRecoveryForm");
+    const forcedPassword = document.getElementById("authForcedPasswordForm");
 
     if(login){ login.hidden = validMode !== "login"; }
     if(invite){ invite.hidden = validMode !== "invite"; }
     if(owner){ owner.hidden = validMode !== "owner"; }
     if(publicSignup){ publicSignup.hidden = validMode !== "public"; }
     if(recovery){ recovery.hidden = validMode !== "recovery"; }
+    if(forcedPassword){ forcedPassword.hidden = true; }
 
     const panel = document.querySelector(".authFormPanelInner");
     if(panel){ panel.scrollTop = 0; }
@@ -1913,6 +2227,15 @@ function setSettingsAccessMessage(message,type){
     if(!el){ return; }
     el.textContent = message || "";
     el.className = "authMessage " + (type || "");
+}
+
+function setOwnerManagementMessage(message,type){
+    const el=document.getElementById("ownerManagementMessage");
+    if(!el){ return; }
+    el.textContent=message || "";
+    el.className="authMessage ownerControlMessage " + (type || "");
+    el.setAttribute("role",type === "error" ? "alert" : "status");
+    el.setAttribute("aria-live",type === "error" ? "assertive" : "polite");
 }
 
 function valueOf(id){

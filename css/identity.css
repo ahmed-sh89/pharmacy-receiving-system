@@ -95,7 +95,10 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 .workspaceBootCard>strong{font-size:23px}
 .workspaceBootCard>small{font-size:13px;color:#60758b;line-height:1.5}
 .pfBootCapsule,.pfRealCapsule{position:relative;width:260px;max-width:100%;height:138px;margin:0 auto 0}
-.pfBootCapsule::before,.pfRealCapsule::before,.pf-idle-medical::after{
+/* Keep the studio capsule geometry/material intact while using a compact
+   workspace-loading presentation scale. */
+.pfBootCapsule{transform:translateY(-9px) scale(.52);transform-origin:50% 50%;margin:-33px auto -33px}
+.pfBootCapsule::before,.pfRealCapsule::before{
   content:"";position:absolute;left:22%;right:22%;bottom:8px;height:13px;
   border-radius:50%;background:#24598724;filter:blur(8px);
 }
@@ -141,16 +144,24 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   border:1px solid #d8e8f5;border-radius:26px;background:var(--pf-identity-background);
   box-shadow:0 28px 80px #061d384d;
 }
-.pf-idle-medical{position:relative;width:100%;height:108px;pointer-events:none;margin-bottom:8px}
-.pf-idle-capsule{
-  position:absolute;left:calc(50% - 92px);top:2px;width:184px;height:84px;
-  background:var(--pf-identity-capsule) center/contain no-repeat;
-  filter:drop-shadow(0 8px 6px #12345f26);
-  transform-origin:50% 58%;
-  animation:pfIdentityIdleFloat 2.6s ease-in-out infinite;
-  will-change:transform;
+.pf-idle-logo-card{
+  position:relative;display:grid;place-items:center;overflow:hidden;
+  width:78px;height:78px;margin:0 auto 12px;border-radius:20px;
+  background:rgba(243,248,252,.62);border:1px solid #c4dbed;
+  box-shadow:0 10px 24px #12345f12;
 }
-.pf-idle-medical::after{bottom:7px;animation:pfIdentityIdleShadow 2.6s ease-in-out infinite;will-change:transform,opacity}
+.pf-idle-logo-card img{
+  display:block;width:66px;height:66px;object-fit:contain;
+  animation:pfIdentityIdleLogoFloat 3.6s ease-in-out infinite;
+}
+.pf-idle-logo-card::after{
+  content:"";position:absolute;top:8%;bottom:8%;left:-24%;width:18%;
+  background:linear-gradient(90deg,transparent,#ffffffd9,transparent);
+  transform:skewX(-12deg);pointer-events:none;
+  animation:pfIdentityIdleLogoScan 3.8s ease-in-out infinite;
+}
+@keyframes pfIdentityIdleLogoFloat{0%,100%{transform:translateY(3px) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+@keyframes pfIdentityIdleLogoScan{0%,48%{left:-24%;opacity:0}54%{opacity:1}76%{left:108%;opacity:1}82%,100%{left:108%;opacity:0}}
 .pf-idle-brand{font-size:36px;margin:0 0 18px}
 #pf-idle-title{margin:0 0 10px;font-size:23px;line-height:1.2;font-weight:650;letter-spacing:-.4px;color:var(--pf-identity-navy)}
 .pf-idle-card p{margin:0 0 24px;color:#60758b;font-size:14px;line-height:1.5;font-weight:500}
@@ -164,12 +175,10 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 #pf-idle-refresh:hover{background:#066bce}
 #pf-idle-refresh:focus-visible{outline:3px solid #55acff;outline-offset:4px}
 .pf-idle-restart{font-size:25px;line-height:1}
-@keyframes pfIdentityIdleFloat{0%,100%{transform:translateY(4px) rotate(-9deg)}50%{transform:translateY(-10px) rotate(-5.5deg)}}
-@keyframes pfIdentityIdleShadow{0%,100%{transform:scaleX(1);opacity:.82}50%{transform:scaleX(.78);opacity:.42}}
 @media (max-height:500px){
   .pf-idle-card{padding:12px 22px 18px}
-  .pf-idle-medical{height:105px;margin-bottom:4px}
-  .pf-idle-capsule{top:-10px}
+  .pf-idle-logo-card{width:66px;height:66px;margin-bottom:8px;border-radius:18px}
+  .pf-idle-logo-card img{width:56px;height:56px}
   .pf-idle-brand{font-size:30px;margin-bottom:12px}
   .pf-idle-card p{margin-bottom:16px}
 }
@@ -181,12 +190,10 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   .pfBootCapsuleLeft,.pfRealCapsuleLeft{animation:pfIdentityOpenLeftReduced 6s ease-in-out infinite}
   .pfBootCapsuleRight,.pfRealCapsuleRight{animation:pfIdentityOpenRightReduced 6s ease-in-out infinite}
   .pfBootPellet,.pfRealPellet{animation-duration:6s}
-  .pf-idle-capsule{animation:pfIdentityIdleFloatReduced 8s ease-in-out infinite}
-  .pf-idle-medical::after{animation:pfIdentityIdleShadowReduced 8s ease-in-out infinite}
+  .pf-idle-logo-card img{animation:pfIdentityMarkFloatReduced 8s ease-in-out infinite}
+  .pf-idle-logo-card::after{animation:pfIdentityScanReduced 8s ease-in-out infinite}
 }
 @keyframes pfIdentityMarkFloatReduced{0%,100%{transform:translateY(1px)}50%{transform:translateY(-1px)}}
 @keyframes pfIdentityScanReduced{0%,62%{left:-24%;opacity:0}66%{opacity:.72}78%{left:108%;opacity:.72}82%,100%{left:108%;opacity:0}}
 @keyframes pfIdentityOpenLeftReduced{0%,18%,88%,100%{transform:translate(0,0)}36%,68%{transform:translate(-12px,-2px) rotate(-2deg)}}
 @keyframes pfIdentityOpenRightReduced{0%,18%,88%,100%{transform:translate(0,0)}36%,68%{transform:translate(12px,0) rotate(2deg)}}
-@keyframes pfIdentityIdleFloatReduced{0%,100%{transform:translateY(2px) rotate(-9deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
-@keyframes pfIdentityIdleShadowReduced{0%,100%{transform:scaleX(1);opacity:.8}50%{transform:scaleX(.94);opacity:.65}}

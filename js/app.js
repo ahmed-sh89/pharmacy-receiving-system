@@ -1132,18 +1132,7 @@ function bindCoreApplicationButtons(){
     document.getElementById("btnEditAccountProfile")?.addEventListener("click",openAccountEditPanel);
     document.getElementById("btnCancelAccountProfile")?.addEventListener("click",closeAccountEditPanel);
     document.getElementById("btnSaveAccountProfile")?.addEventListener("click",saveAccountProfileChanges);
-
-    document
-        .getElementById(
-            "btnSaveNow"
-        )
-        ?.addEventListener(
-            "click",
-            handleSaveNow
-        );
-
-
-    document
+document
         .getElementById(
             "btnCloseCurrentOrder"
         )
@@ -1189,43 +1178,7 @@ function bindCoreApplicationButtons(){
 
             }
         );
-
-
-    document
-        .getElementById(
-            "btnUpdateMasterGTIN"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-                if(typeof isSystemOwner === "function" && !isSystemOwner()){
-                    showToast("System Owner access is required to update the Global Master GTIN","warning");
-                    return;
-                }
-                document.getElementById("masterGTINFileInput")?.click();
-            }
-        );
-
-
-    document
-        .getElementById(
-            "btnLoadMappings"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-
-                document
-                    .getElementById(
-                        "mappingFileInput"
-                    )
-                    ?.click();
-
-            }
-        );
-
-
-    document
+document
         .getElementById(
             "btnPrepareZebraWork"
         )
@@ -1432,30 +1385,6 @@ function bindCoreApplicationButtons(){
             }
         );
 
-
-    document
-        .getElementById(
-            "btnExportReports"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-
-                if(
-                    typeof exportAllReports ===
-                    "function"
-                ){
-
-                    exportAllReports();
-
-                }
-                else{
-
-                    showToast(
-                        "Reports module is not ready yet",
-                        "warning"
-                    );
-
                 }
 
             }
@@ -1549,55 +1478,7 @@ function bindCoreFileInputs(){
 
             }
         );
-
-
-    document
-        .getElementById(
-            "masterGTINFileInput"
-        )
-        ?.addEventListener(
-            "change",
-            function(event){
-
-                if(
-                    typeof handleMasterGTINFileSelection ===
-                    "function"
-                ){
-
-                    handleMasterGTINFileSelection(
-                        event
-                    );
-
-                }
-
-            }
-        );
-
-
-    document
-        .getElementById(
-            "mappingFileInput"
-        )
-        ?.addEventListener(
-            "change",
-            function(event){
-
-                if(
-                    typeof handleMappingFileSelection ===
-                    "function"
-                ){
-
-                    handleMappingFileSelection(
-                        event
-                    );
-
-                }
-
-            }
-        );
-
-
-    document
+document
         .getElementById(
             "zebraWorkFileInput"
         )
@@ -1900,15 +1781,6 @@ window.addEventListener(
    END APPLICATION CORE
 ===================================================== */
 
-function enforceOwnerOnlyMasterGTINUI(){
- const btn=document.getElementById("btnUpdateMasterGTIN");
- const input=document.getElementById("masterGTINFileInput");
- const owner=(typeof isSystemOwner==="function" && isSystemOwner());
- if(btn){ btn.hidden=!owner; btn.setAttribute("aria-hidden",owner?"false":"true"); }
- if(input){ input.disabled=!owner; }
-}
-window.addEventListener("auth:context-ready",enforceOwnerOnlyMasterGTINUI);
-setTimeout(enforceOwnerOnlyMasterGTINUI,500);
 
 
 /* =====================================================
