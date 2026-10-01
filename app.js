@@ -1145,7 +1145,43 @@ function bindCoreApplicationButtons(){
 
             }
         );
-document
+
+
+    document
+        .getElementById(
+            "btnUpdateMasterGTIN"
+        )
+        ?.addEventListener(
+            "click",
+            function(){
+                if(typeof isSystemOwner === "function" && !isSystemOwner()){
+                    showToast("System Owner access is required to update the Global Master GTIN","warning");
+                    return;
+                }
+                document.getElementById("masterGTINFileInput")?.click();
+            }
+        );
+
+
+    document
+        .getElementById(
+            "btnLoadMappings"
+        )
+        ?.addEventListener(
+            "click",
+            function(){
+
+                document
+                    .getElementById(
+                        "mappingFileInput"
+                    )
+                    ?.click();
+
+            }
+        );
+
+
+    document
         .getElementById(
             "btnPrepareZebraWork"
         )
@@ -1469,7 +1505,55 @@ function bindCoreFileInputs(){
 
             }
         );
-document
+
+
+    document
+        .getElementById(
+            "masterGTINFileInput"
+        )
+        ?.addEventListener(
+            "change",
+            function(event){
+
+                if(
+                    typeof handleMasterGTINFileSelection ===
+                    "function"
+                ){
+
+                    handleMasterGTINFileSelection(
+                        event
+                    );
+
+                }
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "mappingFileInput"
+        )
+        ?.addEventListener(
+            "change",
+            function(event){
+
+                if(
+                    typeof handleMappingFileSelection ===
+                    "function"
+                ){
+
+                    handleMappingFileSelection(
+                        event
+                    );
+
+                }
+
+            }
+        );
+
+
+    document
         .getElementById(
             "zebraWorkFileInput"
         )
@@ -1772,6 +1856,15 @@ window.addEventListener(
    END APPLICATION CORE
 ===================================================== */
 
+function enforceOwnerOnlyMasterGTINUI(){
+ const btn=document.getElementById("btnUpdateMasterGTIN");
+ const input=document.getElementById("masterGTINFileInput");
+ const owner=(typeof isSystemOwner==="function" && isSystemOwner());
+ if(btn){ btn.hidden=!owner; btn.setAttribute("aria-hidden",owner?"false":"true"); }
+ if(input){ input.disabled=!owner; }
+}
+window.addEventListener("auth:context-ready",enforceOwnerOnlyMasterGTINUI);
+setTimeout(enforceOwnerOnlyMasterGTINUI,500);
 
 
 /* =====================================================
