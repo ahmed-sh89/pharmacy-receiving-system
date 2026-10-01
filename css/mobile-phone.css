@@ -140,3 +140,121 @@
   body:not(.zebraDevice) img,body:not(.zebraDevice) svg,body:not(.zebraDevice) canvas{max-width:100%}
   body:not(.zebraDevice) button,body:not(.zebraDevice) input,body:not(.zebraDevice) select,body:not(.zebraDevice) textarea{max-width:100%}
 }
+
+/* PHONE POLISH 3 — screenshot-verified presentation corrections. */
+@media (max-width:768px){
+  /* Brand: reserve a dedicated close-button column so the wordmark can never sit under X. */
+  body:not(.zebraDevice) .sidebarBrand{
+    display:grid!important;grid-template-columns:36px minmax(0,1fr) 44px!important;
+    align-items:center!important;column-gap:9px!important;padding:13px 10px!important;
+  }
+  body:not(.zebraDevice) .sidebarBrand .brandLogo{grid-column:1!important}
+  body:not(.zebraDevice) .sidebarBrand .brandText{
+    grid-column:2!important;max-width:none!important;width:100%!important;overflow:visible!important;
+  }
+  body:not(.zebraDevice) .sidebarBrand .brandText strong{
+    font-size:19px!important;letter-spacing:-.55px!important;white-space:nowrap!important;overflow:visible!important;
+  }
+  body:not(.zebraDevice) .sidebarBrand .brandText span{
+    font-size:6.5px!important;letter-spacing:.25px!important;white-space:nowrap!important;
+  }
+  body:not(.zebraDevice) .sidebarCloseButton{
+    grid-column:3!important;position:static!important;justify-self:end!important;
+    display:grid!important;place-items:center!important;width:42px!important;min-width:42px!important;height:38px!important;margin:0!important;
+  }
+
+  /* Receiving Report: one professional vertical toolbar; no button collisions. */
+  body:not(.zebraDevice) #page-receiving>.contentCard{padding:10px!important}
+  body:not(.zebraDevice) #page-receiving .receivingSummaryPanel{
+    width:100%!important;max-width:100%!important;padding:10px!important;border-radius:14px!important;
+  }
+  body:not(.zebraDevice) #page-receiving .pfnReceivingReportToolbar{
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;align-items:stretch!important;
+  }
+  body:not(.zebraDevice) #page-receiving .pfnReceivingReportToolbar>*{
+    position:relative!important;width:100%!important;max-width:100%!important;min-width:0!important;
+    margin:0!important;transform:none!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #page-receiving .pfnReportBack,
+  body:not(.zebraDevice) #page-receiving .pfnReportActionMenu>summary,
+  body:not(.zebraDevice) #page-receiving .finalizeReceivingButton{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;min-width:0!important;min-height:42px!important;height:auto!important;
+    margin:0!important;padding:8px 9px!important;border-radius:9px!important;font-size:12px!important;
+    font-weight:850!important;line-height:1.15!important;text-align:center!important;white-space:normal!important;
+  }
+  body:not(.zebraDevice) #page-receiving .pfnReportBack{grid-column:1!important}
+  body:not(.zebraDevice) #page-receiving .pfnReportActionMenu{grid-column:2!important}
+  body:not(.zebraDevice) #page-receiving #btnFinalizeReceiving{grid-column:1!important}
+  body:not(.zebraDevice) #page-receiving #btnCompleteAllReceiving{grid-column:2!important}
+  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters{
+    grid-column:1/-1!important;display:block!important;width:100%!important;min-width:0!important;
+  }
+  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .operationalMultiFilter{
+    display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;
+  }
+  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .operationalMultiFilter>summary{
+    display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:center!important;gap:6px!important;
+    width:100%!important;min-width:0!important;min-height:42px!important;padding:8px 10px!important;
+    border:1px solid #c7daee!important;border-radius:9px!important;background:#fff!important;
+    font-size:11px!important;line-height:1.15!important;
+  }
+  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .operationalMultiFilter>summary span{
+    font-size:9px!important;font-weight:900!important;letter-spacing:.06em!important;color:#66819e!important;
+  }
+  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .operationalMultiFilter>summary strong{
+    min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:12px!important;
+  }
+  body:not(.zebraDevice) #page-receiving .receivingSummaryGrid{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;margin-top:9px!important;
+  }
+  body:not(.zebraDevice) #page-receiving .receivingSummaryGrid>*{
+    width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;padding:8px 5px!important;
+  }
+  body:not(.zebraDevice) #page-receiving .pfnIssueCard span{font-size:10px!important;line-height:1.15!important;white-space:normal!important}
+  body:not(.zebraDevice) #page-receiving .pfnIssueCard strong{font-size:22px!important}
+  body:not(.zebraDevice) #page-receiving .pfnDisplayedItems{
+    display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;
+    min-height:54px!important;border:1px solid #d4e2ef!important;border-radius:9px!important;background:#f8fbfe!important;
+    font-size:10px!important;font-weight:850!important;color:#637b92!important;
+  }
+  body:not(.zebraDevice) #page-receiving .pfnDisplayedItems strong{font-size:21px!important;color:#123f6d!important}
+  body:not(.zebraDevice) #page-receiving .pfnReceivingSearchBlock{width:100%!important;max-width:100%!important;margin:10px 0 0!important}
+  body:not(.zebraDevice) #page-receiving #receivingInlineSearch{
+    width:100%!important;max-width:100%!important;min-width:0!important;min-height:42px!important;padding:8px 10px!important;font-size:13px!important;
+  }
+
+  /* Settings account: phone owns a vertical identity card, never a clipped desktop row. */
+  body:not(.zebraDevice) #page-settings{width:100%!important;max-width:100%!important;margin:0!important}
+  body:not(.zebraDevice) #page-settings .settingsAccountCompact,
+  body:not(.zebraDevice) #page-settings .settingsIdentityMain{width:100%!important;max-width:100%!important;min-width:0!important}
+  body:not(.zebraDevice) #page-settings .settingsAccountCompact{padding:10px!important}
+  body:not(.zebraDevice) #page-settings .settingsAccountTitleChip{width:100%!important;max-width:100%!important;min-width:0!important;padding:11px 12px!important}
+  body:not(.zebraDevice) #page-settings .settingsAccountTitleChip h2{
+    max-width:100%!important;font-size:18px!important;line-height:1.2!important;white-space:normal!important;overflow-wrap:anywhere!important;
+  }
+  body:not(.zebraDevice) #page-settings .settingsAccountDetails{
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;margin-top:8px!important;
+  }
+  body:not(.zebraDevice) #page-settings .settingsAccountDetails>*{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important}
+  body:not(.zebraDevice) #page-settings .settingsAccountEmail{grid-column:1/-1!important}
+  body:not(.zebraDevice) #page-settings .settingsInfoField{
+    min-height:66px!important;padding:9px 10px!important;border:1px solid #d3e1ee!important;border-radius:10px!important;background:#f8fbfe!important;
+  }
+  body:not(.zebraDevice) #page-settings .settingsInfoField span{display:block!important;font-size:9px!important;font-weight:900!important;letter-spacing:.05em!important;color:#66819e!important}
+  body:not(.zebraDevice) #page-settings .settingsInfoField strong{
+    display:block!important;max-width:100%!important;margin-top:4px!important;font-size:14px!important;line-height:1.25!important;
+    white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;
+  }
+  body:not(.zebraDevice) #page-settings .settingsIdentityActions{
+    grid-column:1/-1!important;display:grid!important;grid-template-columns:1fr!important;gap:6px!important;
+  }
+  body:not(.zebraDevice) #page-settings .settingsPasswordAction,
+  body:not(.zebraDevice) #page-settings .settingsIdentityEdit{
+    width:100%!important;min-width:0!important;min-height:42px!important;margin:0!important;
+  }
+}
+
