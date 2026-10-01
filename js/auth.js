@@ -2117,7 +2117,7 @@ function renderPendingAccessPanel(){
 }
 
 async function callPasswordAdmin(payload){
-    const response = await fetch(getSupabaseProjectUrl() + "/functions/v1/pharmflow-password-admin",{
+    const response = await fetch(getSupabaseProjectUrl() + "/functions/v1/pharmflow-password-admin-settings-rc",{
         method:"POST",
         headers:{
             "Content-Type":"application/json",
