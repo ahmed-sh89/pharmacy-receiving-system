@@ -135,8 +135,8 @@
       ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
       : [];
     assignment.dataset.activeSignature=signature;
-    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>HANDHELD ASSIGNMENT</span><h3>Assign orders to Handheld</h3><p>Choose the active orders available on the Handheld.</p></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span>All Orders in Scope: ${active.length} · <span data-assignment-status>${active.length?`${assigned.length} orders assigned`:'No active orders'}</span></span><button type="button" data-remove-assignment ${assigned.length?'':'disabled'}>Remove from Handheld</button><button type="button" class="primary" data-save-assignment>Assign to Handheld</button></div>`;
-    if(!assignment.isConnected) body.insertBefore(assignment,page);
+    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Assign to Handheld</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span><span data-assignment-status>${active.length?`${assigned.length} of ${active.length} assigned`:'No active orders'}</span></span><button type="button" data-remove-assignment ${assigned.length?'':'disabled'}>Remove from Handheld</button><button type="button" class="primary pfnAssignHandheldPrimary" data-save-assignment>Assign to Handheld →</button></div>`;
+    if(!assignment.isConnected){ const ordersLayout=page.querySelector('.twoColumnLayout'); if(ordersLayout) ordersLayout.insertAdjacentElement('afterend',assignment); else body.insertBefore(assignment,page); }
     assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
@@ -168,20 +168,37 @@
     assignment.querySelector('[data-remove-assignment]')?.addEventListener('click',async event=>{
       const removeButton=event.currentTarget;
       const saveButton=assignment.querySelector('[data-save-assignment]');
+      const assignedNow=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+        ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
+        : [];
+      const checkedNow=[...assignment.querySelectorAll('input:checked')].map(input=>String(input.value||'').trim().toUpperCase());
+      /* Remove only orders the operator explicitly unchecked from the
+         persisted Handheld assignment. Checked assigned orders stay assigned. */
+      const nextAssigned=assignedNow.filter(order=>checkedNow.includes(order));
+      const removed=assignedNow.filter(order=>!nextAssigned.includes(order));
+      if(!removed.length){
+        showToast?.('Uncheck an assigned order to remove it from Handheld','warning');
+        return;
+      }
       removeButton.disabled=true;
       if(saveButton) saveButton.disabled=true;
-      const saved=await window.setHandheldAssignedOrderNumbers?.([]);
+      const saved=await window.setHandheldAssignedOrderNumbers?.(nextAssigned);
       if(saveButton) saveButton.disabled=false;
       if(saved!==true){
         removeButton.disabled=false;
         showToast?.('Handheld assignment was not changed','error');
         return;
       }
-      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{input.checked=false;});
+      AppState.workspace.handheldOrderNumbers=nextAssigned.slice();
+      AppState.workspace.handheldScopeConfigured=true;
+      saveWorkspaceSnapshot?.();
+      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{
+        input.checked=nextAssigned.includes(String(input.value||'').trim().toUpperCase());
+      });
       const status=assignment.querySelector('[data-assignment-status]');
-      if(status) status.textContent='0 orders assigned';
-      removeButton.disabled=true;
-      showToast?.('All orders removed from Handheld','success');
+      if(status) status.textContent=`${nextAssigned.length} orders assigned`;
+      removeButton.disabled=nextAssigned.length===0;
+      showToast?.(removed.length===1?'Order removed from Handheld':`${removed.length} orders removed from Handheld`,'success');
     });
   }
 
