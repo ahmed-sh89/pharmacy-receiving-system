@@ -1,0 +1,142 @@
+/* PharmFlow normal-phone presentation owner.
+   Loaded after desktop/identity styles by design.
+   Scope excludes Zebra Handheld and all viewports above 768px. */
+@media (max-width:768px){
+  html{max-width:100%;overflow-x:hidden}
+  body:not(.zebraDevice){width:100%;max-width:100%;overflow-x:hidden}
+  body:not(.zebraDevice) *,body:not(.zebraDevice) *::before,body:not(.zebraDevice) *::after{box-sizing:border-box}
+  body:not(.zebraDevice) .mainApplication,
+  body:not(.zebraDevice) .mainContent,
+  body:not(.zebraDevice) .appPage,
+  body:not(.zebraDevice) .pageContent{width:100%;max-width:100%;min-width:0}
+  body:not(.zebraDevice) .mainContent{padding:10px;overflow-x:hidden}
+
+  /* PHONE HEADER */
+  body:not(.zebraDevice) .topBar{
+    display:grid;grid-template-columns:42px minmax(0,1fr);grid-template-areas:"menu pharmacy" "heading heading";
+    width:100%;max-width:100%;min-width:0;min-height:0;padding:7px 10px 8px;gap:6px 8px;overflow:hidden
+  }
+  body:not(.zebraDevice) .topBarLeft{display:contents}
+  body:not(.zebraDevice) #btnMenu{grid-area:menu;width:42px;min-width:42px;height:40px;margin:0}
+  body:not(.zebraDevice) .pageHeading{grid-area:heading;width:100%;min-width:0;text-align:left}
+  body:not(.zebraDevice) .pageHeading h1{font-size:20px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
+  body:not(.zebraDevice) .pageHeading p{font-size:10px;line-height:1.25;white-space:normal;overflow:visible;text-overflow:clip}
+  body:not(.zebraDevice) .pfnPharmacyNameHero,
+  body:not(.zebraDevice) .pharmacyNameField{
+    grid-area:pharmacy;justify-self:stretch;width:100%;min-width:0;max-width:100%;min-height:40px;
+    margin:0;padding:5px 8px;transform:none;overflow:hidden;text-align:center
+  }
+  body:not(.zebraDevice) #topBarPharmacyName{
+    display:block;width:100%;max-width:100%;min-width:0;font-size:12px;line-height:1.15;
+    white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere
+  }
+  body:not(.zebraDevice) .topBarRight,
+  body:not(.zebraDevice) .pfnContextBar{display:none}
+
+  /* SIDEBAR / BRAND */
+  body:not(.zebraDevice) .sidebar{width:min(260px,86vw);min-width:0;max-width:86vw;overflow-x:hidden}
+  body:not(.zebraDevice) .sidebarBrand{width:100%;min-width:0;padding:13px 12px;gap:9px;overflow:hidden}
+  body:not(.zebraDevice) .brandLogo{width:36px;min-width:36px;height:40px}
+  body:not(.zebraDevice) .brandText{display:grid;min-width:0;max-width:calc(100% - 45px);overflow:hidden}
+  body:not(.zebraDevice) .brandText strong{display:block;max-width:100%;font-size:21px;letter-spacing:-.5px;line-height:1.15;white-space:nowrap;overflow:visible}
+  body:not(.zebraDevice) .brandText span{max-width:100%;font-size:7px;letter-spacing:.35px;white-space:normal;overflow-wrap:anywhere}
+  body:not(.zebraDevice) .sidebarNavigation,
+  body:not(.zebraDevice) .sidebarFooter{width:100%;min-width:0}
+
+  /* RECEIVING: never let operational text/actions widen the page. */
+  body:not(.zebraDevice) #page-dashboard .statisticsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  body:not(.zebraDevice) #page-dashboard .statCard,
+  body:not(.zebraDevice) #page-dashboard .scanPanel,
+  body:not(.zebraDevice) #page-dashboard #lastScanCard,
+  body:not(.zebraDevice) #page-dashboard .pfnActionBar,
+  body:not(.zebraDevice) #page-dashboard .pfnOrderControlGroup{width:100%;max-width:100%;min-width:0}
+  body:not(.zebraDevice) #page-dashboard .pfnReceivingActionGroup,
+  body:not(.zebraDevice) #page-dashboard .pfnOrderControlGroup{display:grid;grid-template-columns:1fr;gap:7px}
+  body:not(.zebraDevice) #page-dashboard .pfnAction,
+  body:not(.zebraDevice) #page-dashboard .pfnManageOrdersButton{width:100%;min-width:0;margin:0}
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector{width:100%;min-width:0;flex-wrap:wrap;gap:5px}
+  body:not(.zebraDevice) #page-dashboard .lastScanMetaRow,
+  body:not(.zebraDevice) #page-dashboard .lastScanMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body:not(.zebraDevice) #page-dashboard .lastScanHeroName{font-size:18px;overflow-wrap:anywhere}
+
+  /* MANAGE ORDERS: full phone canvas, one-column operational flow. */
+  body:not(.zebraDevice) .pfnOrdersModal{
+    width:calc(100vw - 12px);max-width:calc(100vw - 12px);height:calc(100dvh - 12px);max-height:calc(100dvh - 12px);
+    margin:6px;overflow:hidden
+  }
+  body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader{padding:10px 12px;gap:8px;min-width:0}
+  body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader>*{min-width:0}
+  body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader h2,
+  body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader h3{font-size:18px;overflow-wrap:anywhere}
+  body:not(.zebraDevice) .pfnOrdersModal .pfnModalBody{
+    display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;gap:9px;
+    width:100%;max-width:100%;min-width:0;padding:10px;overflow-x:hidden;overflow-y:auto
+  }
+  body:not(.zebraDevice) .pfnOrdersModal #page-files,
+  body:not(.zebraDevice) .pfnOrdersModal #page-files .twoColumnLayout,
+  body:not(.zebraDevice) .pfnOrdersModal #page-files .contentCard{width:100%;max-width:100%;min-width:0}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files .contentCard{padding:10px}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files .cardHeader{
+    display:grid;grid-template-columns:minmax(0,1fr);gap:7px;align-items:start
+  }
+  body:not(.zebraDevice) .pfnOrdersModal #page-files .cardHeader>*{min-width:0;max-width:100%}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #btnLoadOrders{width:100%;min-width:0}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files .healthGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #orderFilesList{width:100%;max-width:100%;min-width:0;padding:5px}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #orderFilesList .fileItem{
+    display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%;max-width:100%;min-width:0;padding:9px
+  }
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #orderFilesList .fileItem>div:first-child{width:100%;min-width:0}
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #orderFilesList .fileItem strong,
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #orderFilesList .fileItem small{
+    max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere
+  }
+  body:not(.zebraDevice) .pfnOrdersModal #page-files #orderFilesList .fileItemActions{
+    display:flex;flex-wrap:wrap;justify-content:flex-start;width:100%;min-width:0;gap:7px
+  }
+  body:not(.zebraDevice) .pfnHandheldAssignment{width:100%;max-width:100%;min-width:0;padding:10px}
+  body:not(.zebraDevice) .pfnHandheldAssignmentHeading,
+  body:not(.zebraDevice) .pfnHandheldAssignmentActions{display:grid;grid-template-columns:1fr;gap:7px;align-items:start}
+  body:not(.zebraDevice) .pfnHandheldAssignmentHeading button,
+  body:not(.zebraDevice) .pfnHandheldAssignmentActions button{width:100%;min-width:0}
+  body:not(.zebraDevice) .pfnHandheldOrderGrid{grid-template-columns:1fr;gap:6px}
+  body:not(.zebraDevice) .pfnHandheldOrderGrid label{width:100%;min-width:0;overflow-wrap:anywhere}
+  body:not(.zebraDevice) .pfnOrdersFooter{
+    display:grid;grid-template-columns:1fr;gap:6px;width:100%;min-width:0;padding:8px 10px;font-size:10px
+  }
+  body:not(.zebraDevice) .pfnOrdersFooter button{width:100%;min-width:0}
+
+  /* ORDER ITEMS / FILTERS: all controls fit; only the data grid itself may scroll horizontally. */
+  body:not(.zebraDevice) .quickKpiPanel.phase263Panel{
+    width:calc(100vw - 12px);max-width:calc(100vw - 12px);height:calc(100dvh - 12px);max-height:calc(100dvh - 12px);
+    margin:6px;padding:9px;overflow:hidden
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls,
+  body:not(.zebraDevice) .pfnBrowserControls{display:grid;grid-template-columns:1fr;gap:7px;width:100%;max-width:100%;min-width:0;overflow:visible}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow,
+  body:not(.zebraDevice) .pfnBrowserControlRow{display:grid;grid-template-columns:1fr;gap:6px;width:100%;min-width:0;overflow:visible;padding:0}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>*,
+  body:not(.zebraDevice) .pfnBrowserControlRow>*{width:100%;min-width:0;max-width:100%}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow label,
+  body:not(.zebraDevice) .pfnBrowserControlRow label{display:grid;grid-template-columns:1fr;gap:2px;width:100%;min-width:0;height:auto;font-size:9px}
+  body:not(.zebraDevice) .pfnOrderBrowserControls select,
+  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{width:100%;min-width:0;max-width:100%;height:38px;min-height:38px}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow,
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions{display:grid;grid-template-columns:1fr;gap:6px;width:100%;min-width:0}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter{width:100%;min-width:0;max-width:100%}
+  body:not(.zebraDevice) .phase263TableWrap{width:100%;max-width:100%;min-width:0;overflow:auto;-webkit-overflow-scrolling:touch}
+  body:not(.zebraDevice) .phase263Table{width:max-content;min-width:760px;max-width:none;table-layout:fixed}
+
+  /* RECEIVING REPORT / GENERIC PHONE OVERFLOW GUARDS */
+  body:not(.zebraDevice) #page-receiving .receivingFilterBar{display:grid;grid-template-columns:1fr;gap:6px;width:100%;min-width:0}
+  body:not(.zebraDevice) #page-receiving .receivingFilterBar>*,
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter{width:100%;max-width:100%;min-width:0;margin:0}
+  body:not(.zebraDevice) #page-receiving .dashboardMetrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  body:not(.zebraDevice) #page-receiving .tableContainer,
+  body:not(.zebraDevice) #page-receiving .receivingTableContainer,
+  body:not(.zebraDevice) #page-receiving .itemsTableContainer{width:100%;max-width:100%;min-width:0;overflow:auto;-webkit-overflow-scrolling:touch}
+  body:not(.zebraDevice) #page-receiving .dataTable,
+  body:not(.zebraDevice) #page-receiving .reportTable{width:max-content;min-width:720px;max-width:none}
+  body:not(.zebraDevice) img,body:not(.zebraDevice) svg,body:not(.zebraDevice) canvas{max-width:100%}
+  body:not(.zebraDevice) button,body:not(.zebraDevice) input,body:not(.zebraDevice) select,body:not(.zebraDevice) textarea{max-width:100%}
+}
