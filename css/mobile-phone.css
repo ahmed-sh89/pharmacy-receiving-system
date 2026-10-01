@@ -258,3 +258,77 @@
   }
 }
 
+/* PHONE POLISH 4 — pharmacy access rows + active-order selector. */
+@media (max-width:768px){
+  /* Pharmacy Access modal: turn each generated pharmacy record into a clear stacked card. */
+  body:not(.zebraDevice) .ownerManagementOverlay .ownerManagementPanel{
+    width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;
+    max-height:calc(100dvh - 16px)!important;margin:8px!important;padding:0!important;overflow:hidden!important;
+  }
+  body:not(.zebraDevice) .ownerManagementPanelHeader{
+    display:grid!important;grid-template-columns:1fr!important;gap:10px!important;padding:16px!important;
+  }
+  body:not(.zebraDevice) .ownerManagementPanelTools{
+    display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;align-items:end!important;width:100%!important;min-width:0!important;
+  }
+  body:not(.zebraDevice) .ownerManagementSearch{width:100%!important;min-width:0!important}
+  body:not(.zebraDevice) .ownerManagementSearch input{width:100%!important;min-width:0!important}
+  body:not(.zebraDevice) #ownerPharmacyList,
+  body:not(.zebraDevice) #ownerRegistrationRequests{
+    width:100%!important;max-width:100%!important;min-width:0!important;padding:10px!important;overflow-x:hidden!important;
+  }
+  body:not(.zebraDevice) #ownerPharmacyList>*,
+  body:not(.zebraDevice) #ownerRegistrationRequests>*{
+    display:grid!important;grid-template-columns:1fr!important;gap:9px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;margin:0 0 10px!important;padding:12px!important;
+    border-radius:14px!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #ownerPharmacyList>*>*,
+  body:not(.zebraDevice) #ownerRegistrationRequests>*>*{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important}
+  body:not(.zebraDevice) #ownerPharmacyList strong,
+  body:not(.zebraDevice) #ownerPharmacyList span,
+  body:not(.zebraDevice) #ownerPharmacyList small,
+  body:not(.zebraDevice) #ownerPharmacyList b{
+    max-width:100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important;
+  }
+  body:not(.zebraDevice) #ownerPharmacyList button,
+  body:not(.zebraDevice) #ownerRegistrationRequests button{
+    min-width:0!important;max-width:100%!important;min-height:40px!important;margin:0!important;padding:7px 10px!important;
+  }
+
+  /* The renderer may group identity/actions inside nested wrappers. Normalize those too. */
+  body:not(.zebraDevice) #ownerPharmacyList>*>div{
+    display:grid!important;grid-template-columns:1fr!important;gap:7px!important;align-items:start!important;
+  }
+  body:not(.zebraDevice) #ownerPharmacyList>*>div:has(>button){
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  /* Receiving active-order selector: replace browser-native visual with PharmFlow control styling. */
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector{
+    display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;align-items:center!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;padding:0!important;
+  }
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector>span{
+    display:grid!important;place-items:center!important;width:34px!important;height:34px!important;
+    border-radius:50%!important;background:#e4f1fc!important;color:#28658f!important;font-size:0!important;letter-spacing:0!important;
+  }
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector>span::after{content:"→";font-size:16px!important;font-weight:800!important}
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector select,
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector .compactSelect{
+    appearance:none!important;-webkit-appearance:none!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;
+    margin:0!important;padding:0 40px 0 13px!important;border:1px solid #b8cfe3!important;border-radius:10px!important;
+    background-color:#f4f9fe!important;
+    background-image:linear-gradient(45deg,transparent 50%,#356583 50%),linear-gradient(135deg,#356583 50%,transparent 50%)!important;
+    background-position:calc(100% - 17px) 18px,calc(100% - 12px) 18px!important;
+    background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important;
+    color:#173f66!important;font-size:14px!important;font-weight:850!important;line-height:1!important;
+    box-shadow:0 1px 2px rgba(20,65,100,.04)!important;
+  }
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector select:focus,
+  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector .compactSelect:focus{
+    outline:none!important;border-color:#4b91c5!important;box-shadow:0 0 0 3px rgba(56,135,193,.12)!important;
+  }
+}
+
