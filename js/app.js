@@ -1132,18 +1132,7 @@ function bindCoreApplicationButtons(){
     document.getElementById("btnEditAccountProfile")?.addEventListener("click",openAccountEditPanel);
     document.getElementById("btnCancelAccountProfile")?.addEventListener("click",closeAccountEditPanel);
     document.getElementById("btnSaveAccountProfile")?.addEventListener("click",saveAccountProfileChanges);
-
-    document
-        .getElementById(
-            "btnSaveNow"
-        )
-        ?.addEventListener(
-            "click",
-            handleSaveNow
-        );
-
-
-    document
+document
         .getElementById(
             "btnCloseCurrentOrder"
         )
@@ -1395,30 +1384,6 @@ document
 
             }
         );
-
-
-    document
-        .getElementById(
-            "btnExportReports"
-        )
-        ?.addEventListener(
-            "click",
-            function(){
-
-                if(
-                    typeof exportAllReports ===
-                    "function"
-                ){
-
-                    exportAllReports();
-
-                }
-                else{
-
-                    showToast(
-                        "Reports module is not ready yet",
-                        "warning"
-                    );
 
                 }
 
