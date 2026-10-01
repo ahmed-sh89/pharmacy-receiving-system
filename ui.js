@@ -7274,19 +7274,17 @@ function initializeZebraInterface(){
                 </div>
             </div>
             <div class="zebraModeIntro">
-                <span>WORK MODE</span>
                 <h1>Choose your workspace</h1>
-                <p>Fast access to the tools needed for the current task.</p>
             </div>
             <div class="zebraModeCards">
                 <button id="btnZebraReceivingMode" class="zebraModeCard zebraModeReceiving" type="button">
                     <span class="zebraModeIcon" aria-hidden="true">▥</span>
-                    <div><strong>Receiving</strong><small>Scan and count active orders.</small></div>
+                    <div><strong>Receiving</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
                 <button class="zebraModeCard zebraModeExpiry" type="button" disabled aria-disabled="true" title="Coming soon">
                     <span class="zebraModeIcon" aria-hidden="true">◷</span>
-                    <div><strong>Near Expiry</strong><small>COMING SOON</small></div>
+                    <div><strong>Near Expiry</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
             </div>
