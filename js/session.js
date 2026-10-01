@@ -22,6 +22,30 @@ const SessionEngine = {
 
 };
 
+/* Data-management receipts belong to the authenticated pharmacy/user scope.
+   Never carry a destructive-operation result into a different account context. */
+function clearDataManagementOperationReceipts(){
+    const historicalReceipt=document.getElementById("historicalDeleteReceipt");
+    if(historicalReceipt){
+        historicalReceipt.textContent="";
+        historicalReceipt.className="operationReceipt";
+        historicalReceipt.hidden=true;
+    }
+
+    const sharedReceipt=document.getElementById("pharmflowOperationReceipt");
+    if(sharedReceipt){
+        sharedReceipt.textContent="";
+        sharedReceipt.className="operationReceipt";
+        sharedReceipt.hidden=true;
+    }
+}
+
+window.addEventListener("auth:context-ready",event=>{
+    if(event?.detail?.changed===true){
+        clearDataManagementOperationReceipts();
+    }
+});
+
 
 /* =====================================================
    INITIALIZE SESSION ENGINE
