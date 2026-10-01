@@ -1590,6 +1590,7 @@ function openOwnerManagementPanel(view){
     AuthState.ownerManagementSearch="";
     const search=document.getElementById("ownerManagementSearch");
     if(search){ search.value=""; }
+    setOwnerManagementMessage("","");
     renderOwnerManagementPanel();
 
 }
@@ -1786,9 +1787,9 @@ async function handleOwnerPharmacyAction(button){
             const result=await callPasswordAdmin({action:"reset",target_user_id:targetUserId});
             const temporaryPassword=String(result.temporary_password||"");
             window.prompt("Temporary password — copy and send it securely. The ADMIN must replace it at first sign-in:",temporaryPassword);
-            setSettingsAccessMessage("Temporary password created. No email was sent.","success");
+            setOwnerManagementMessage("Temporary password created. No email was sent.","success");
         }catch(error){
-            setSettingsAccessMessage(error.message || "Unable to reset password.","error");
+            setOwnerManagementMessage(error.message || "Unable to reset password.","error");
         }finally{ setAuthBusy(false); }
         return;
     }
@@ -2221,6 +2222,15 @@ function setSettingsAccessMessage(message,type){
     if(!el){ return; }
     el.textContent = message || "";
     el.className = "authMessage " + (type || "");
+}
+
+function setOwnerManagementMessage(message,type){
+    const el=document.getElementById("ownerManagementMessage");
+    if(!el){ return; }
+    el.textContent=message || "";
+    el.className="authMessage ownerControlMessage " + (type || "");
+    el.setAttribute("role",type === "error" ? "alert" : "status");
+    el.setAttribute("aria-live",type === "error" ? "assertive" : "polite");
 }
 
 function valueOf(id){
