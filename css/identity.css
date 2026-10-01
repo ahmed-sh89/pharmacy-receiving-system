@@ -95,6 +95,9 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 .workspaceBootCard>strong{font-size:23px}
 .workspaceBootCard>small{font-size:13px;color:#60758b;line-height:1.5}
 .pfBootCapsule,.pfRealCapsule{position:relative;width:260px;max-width:100%;height:138px;margin:0 auto 0}
+/* Settings RC visual polish: keep the studio capsule geometry/material intact,
+   but reduce only the workspace-loading presentation scale. */
+.pfBootCapsule{transform:scale(.78);transform-origin:50% 50%;margin:-15px auto -15px}
 .pfBootCapsule::before,.pfRealCapsule::before,.pf-idle-medical::after{
   content:"";position:absolute;left:22%;right:22%;bottom:8px;height:13px;
   border-radius:50%;background:#24598724;filter:blur(8px);
@@ -141,16 +144,16 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   border:1px solid #d8e8f5;border-radius:26px;background:var(--pf-identity-background);
   box-shadow:0 28px 80px #061d384d;
 }
-.pf-idle-medical{position:relative;width:100%;height:108px;pointer-events:none;margin-bottom:8px}
+.pf-idle-medical{position:relative;width:100%;height:90px;pointer-events:none;margin-bottom:8px}
 .pf-idle-capsule{
-  position:absolute;left:calc(50% - 92px);top:2px;width:184px;height:84px;
+  position:absolute;left:calc(50% - 72px);top:10px;width:144px;height:66px;
   background:var(--pf-identity-capsule) center/contain no-repeat;
   filter:drop-shadow(0 8px 6px #12345f26);
   transform-origin:50% 58%;
   animation:pfIdentityIdleFloat 2.6s ease-in-out infinite;
   will-change:transform;
 }
-.pf-idle-medical::after{bottom:7px;animation:pfIdentityIdleShadow 2.6s ease-in-out infinite;will-change:transform,opacity}
+.pf-idle-medical::after{left:28%;right:28%;bottom:7px;animation:pfIdentityIdleShadow 2.6s ease-in-out infinite;will-change:transform,opacity}
 .pf-idle-brand{font-size:36px;margin:0 0 18px}
 #pf-idle-title{margin:0 0 10px;font-size:23px;line-height:1.2;font-weight:650;letter-spacing:-.4px;color:var(--pf-identity-navy)}
 .pf-idle-card p{margin:0 0 24px;color:#60758b;font-size:14px;line-height:1.5;font-weight:500}
@@ -168,8 +171,8 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 @keyframes pfIdentityIdleShadow{0%,100%{transform:scaleX(1);opacity:.82}50%{transform:scaleX(.78);opacity:.42}}
 @media (max-height:500px){
   .pf-idle-card{padding:12px 22px 18px}
-  .pf-idle-medical{height:105px;margin-bottom:4px}
-  .pf-idle-capsule{top:-10px}
+  .pf-idle-medical{height:88px;margin-bottom:4px}
+  .pf-idle-capsule{top:0}
   .pf-idle-brand{font-size:30px;margin-bottom:12px}
   .pf-idle-card p{margin-bottom:16px}
 }
