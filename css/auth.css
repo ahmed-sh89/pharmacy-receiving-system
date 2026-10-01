@@ -607,9 +607,33 @@ body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font
 /* Compact-height desktop: keep every login action visible without page scroll. */
 
 /* Mobile auth: same approved light identity, one column, no horizontal drift.
-   Long secondary journeys scroll inside the form panel rather than moving the
-   whole page sideways or clipping their primary action. */
+   This block is the authoritative phone override for non-Handheld devices.
+   It deliberately follows the desktop owner so desktop and zebraDevice rules
+   remain untouched while phone Safari cannot inherit the desktop two-column
+   minimum widths. */
 @media (max-width:760px){
+  body:not(.zebraDevice) #authGate.authGate{
+    height:100dvh!important;min-height:100dvh!important;
+    overflow-y:auto!important;overflow-x:hidden!important;
+    padding:12px!important;align-items:flex-start!important;
+  }
+  body:not(.zebraDevice) #authGate .authShell{
+    width:100%!important;height:auto!important;min-height:calc(100dvh - 24px)!important;max-height:none!important;
+    display:block!important;grid-template-columns:none!important;
+    overflow:visible!important;border-radius:22px!important;
+  }
+  body:not(.zebraDevice) #authGate .authBrandPanel{
+    width:100%!important;height:auto!important;min-height:180px!important;
+    padding:20px!important;
+  }
+  body:not(.zebraDevice) #authGate .authFormPanel{
+    width:100%!important;height:auto!important;min-width:0!important;max-height:none!important;
+    margin:0!important;padding:20px!important;overflow:visible!important;
+  }
+  body:not(.zebraDevice) #authGate .authFormPanelInner{
+    width:100%!important;max-width:none!important;max-height:none!important;
+    overflow:hidden!important;
+  }
   body:not(.zebraDevice) #authGate .authFormPanelInner{overflow:hidden!important;}
   body:not(.zebraDevice) #authGate #authPublicSignupForm,
   body:not(.zebraDevice) #authGate #authInviteSignupForm,
