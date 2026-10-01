@@ -32,7 +32,7 @@
         el.setAttribute('aria-modal','true');
         el.setAttribute('aria-labelledby','pf-idle-title');
         el.innerHTML=`<div class="pf-idle-card">
-            <div class="pf-idle-medical" aria-hidden="true"><span class="pf-idle-capsule"></span></div>
+            <div class="pf-idle-logo-card" aria-hidden="true"><img src="assets/pharmflow-login-mark.svg" alt=""></div>
             <div class="pf-idle-brand"><span>Pharm</span><strong>Flow</strong></div>
             <h1 id="pf-idle-title">Session Paused</h1>
             <p><span class="pf-idle-clock" aria-hidden="true"></span>No activity for 10 minutes.</p>
