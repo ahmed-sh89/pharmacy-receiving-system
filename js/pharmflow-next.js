@@ -135,9 +135,28 @@
       ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
       : [];
     assignment.dataset.activeSignature=signature;
-    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Assign to Handheld</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span><span data-assignment-status>${active.length?`${assigned.length} of ${active.length} assigned`:'No active orders'}</span></span><button type="button" data-remove-assignment ${assigned.length?'':'disabled'}>Remove from Handheld</button><button type="button" class="primary pfnAssignHandheldPrimary" data-save-assignment>Assign to Handheld →</button></div>`;
+    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Assign to Handheld</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span><span data-assignment-status>${active.length?`${assigned.length} of ${active.length} assigned`:'No active orders'}</span></span><button type="button" data-remove-assignment disabled>Remove from Handheld</button><button type="button" data-save-assignment disabled>Assign to Handheld →</button></div>`;
+    const syncAssignmentActions=()=>{
+      const baseline=new Set(
+        (Array.isArray(AppState?.workspace?.handheldOrderNumbers)?AppState.workspace.handheldOrderNumbers:[])
+          .map(order=>String(order||'').trim().toUpperCase())
+          .filter(order=>active.includes(order))
+      );
+      const checked=new Set(
+        [...assignment.querySelectorAll('input[type="checkbox"]:checked')]
+          .map(input=>String(input.value||'').trim().toUpperCase())
+      );
+      const hasAdds=[...checked].some(order=>!baseline.has(order));
+      const hasRemoves=[...baseline].some(order=>!checked.has(order));
+      const saveButton=assignment.querySelector('[data-save-assignment]');
+      const removeButton=assignment.querySelector('[data-remove-assignment]');
+      if(saveButton){ saveButton.disabled=!hasAdds; saveButton.classList.toggle('primary',hasAdds); }
+      if(removeButton){ removeButton.disabled=!hasRemoves; removeButton.classList.toggle('primary',hasRemoves); }
+    };
+    assignment.addEventListener('change',event=>{if(event.target?.matches('input[type="checkbox"]'))syncAssignmentActions();});
+    syncAssignmentActions();
     if(!assignment.isConnected){ const ordersLayout=page.querySelector('.twoColumnLayout'); if(ordersLayout) ordersLayout.insertAdjacentElement('afterend',assignment); else body.insertBefore(assignment,page); }
-    assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>assignment.querySelectorAll('input').forEach(input=>input.checked=true));
+    assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>{assignment.querySelectorAll('input').forEach(input=>input.checked=true);syncAssignmentActions();});
     assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
       const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
       if(!chosen.length){showToast?.('Select at least one active order, or use Remove from Handheld','warning');return;}
@@ -162,7 +181,7 @@
       });
       const status=assignment.querySelector('[data-assignment-status]');
       if(status) status.textContent=`${chosen.length} orders assigned`;
-      assignment.querySelector('[data-remove-assignment]')?.removeAttribute('disabled');
+      syncAssignmentActions();
       showToast?.('Handheld assignment saved','success');
     });
     assignment.querySelector('[data-remove-assignment]')?.addEventListener('click',async event=>{
@@ -197,7 +216,7 @@
       });
       const status=assignment.querySelector('[data-assignment-status]');
       if(status) status.textContent=`${nextAssigned.length} orders assigned`;
-      removeButton.disabled=nextAssigned.length===0;
+      syncAssignmentActions();
       showToast?.(removed.length===1?'Order removed from Handheld':`${removed.length} orders removed from Handheld`,'success');
     });
   }
