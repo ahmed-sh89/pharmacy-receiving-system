@@ -1396,7 +1396,6 @@ body.zebraDevice .mainContent,
 #page-settings > .contentCard{
     margin-bottom:14px;
 }
-.settingsLegacyWorkspaceCard,
 .settingsFutureFeature{
     display:none !important;
 }
