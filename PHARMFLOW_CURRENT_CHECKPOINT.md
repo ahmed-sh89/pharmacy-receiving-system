@@ -1,60 +1,65 @@
 # PHARMFLOW_CURRENT_CHECKPOINT
 
 **Date:** 2026-10-01  
-**Track:** Settings Release Candidate  
+**Track:** Production — Settings complete  
 **Production branch:** `main`  
-**Development branch:** `feature/settings`  
-**Frozen release branch:** `release/settings-production-2026-10-01`  
-**Production base:** `14579e9b6c78b488a4044b18479d2fc80a731482`
+**Settings release PR:** #22 — squash merged  
+**Settings production release commit:** `35a2588a158a8fc52613cb01f64d19e1f0842278`  
+**Production startup syntax fix:** `73acdfecde3232f5fbb30ae7b54aeafe32e61f7f`  
+**Production asset refresh commit:** `65743f05b34ab467aa99b0a4d33238508c0c4d6b`
 
-## Status
-Settings is **READY FOR RELEASE PREPARATION**, not yet Production/DONE. Product Owner elected to defer remaining non-blocking acceptance tests and proceed to controlled Production release preparation.
+## STATUS
+Settings is **DONE**. The Product Owner verified the final Production smoke test after the startup regression was corrected.
 
-## USER VERIFIED
+## USER VERIFIED / DONE
 - Barcode Control duplicate/cross-item recovery and recognized Receiving behavior.
 - TEST003 Current Workspace reset with pharmacy barcode preservation.
 - Historical delete confirmation using `DELETE`.
 - Pharmacy-context receipt isolation.
-- Pharmacies & Access KPI/search/edit/admin-email prefill behavior previously exercised.
-- System Owner Reset Admin flow through isolated Settings RC function.
-- Forced temporary-password gate; user cannot enter application until password replacement.
-- New password completion, old temporary password rejection, sign-out/sign-in cleanup.
+- Pharmacies & Access KPI/search/edit/admin-email prefill behavior exercised during Settings acceptance.
+- System Owner Reset Admin flow.
+- Forced temporary-password gate and mandatory replacement before application access.
+- New password completion, old temporary-password rejection, sign-out/sign-in cleanup.
 - Normal Change Password validation, wrong-current-password handling, success and re-login.
 - Settings account header.
-- Session Paused PharmFlow logo/card animation accepted.
-- Preparing PharmFlow loading presentation accepted and frozen from further visual changes.
+- Session Paused PharmFlow identity presentation.
+- Preparing PharmFlow loading presentation remains the accepted/frozen design.
+- Production hard-refresh/startup smoke: **PASS**; Receiving opened normally after the syntax correction.
 
-## DEFERRED / NOT RELEASE-BLOCKING BY PRODUCT OWNER
-- Live runtime Reset Admin attempt using a non-System-Owner account. Code/security authority path is reviewed, but this specific live acceptance case is not USER VERIFIED.
-- Any remaining optional Settings acceptance passes not already listed above.
+## DEFERRED / NON-BLOCKING
+- Live Reset Admin attempt using a non-System-Owner account remains deferred by Product Owner. Security/authority code path was reviewed, but this exact runtime acceptance case is not USER VERIFIED.
+- Other optional Settings acceptance passes explicitly deferred by Product Owner.
 
-## RELEASE CLEANUP COMPLETED
-- Removed temporary `?pf-preview=session-paused` visual trigger.
-- Removed obsolete Session Paused capsule animation/keyframes and stale selector ownership.
-- Removed hidden legacy Settings Workspace card and its dead Save Now / Export Reports handlers.
-- Restored unused root `app.js` duplicate to Production content so it is excluded from the Settings release diff.
-- Kept required historical/database migrations; do not collapse already-applied migration history into runtime patches.
-- Vercel build for cleanup HEAD `2640c3672448690ebc587865cf38396e27ff85d8` is READY.
+## SETTINGS RELEASE / CLEANUP
+- Settings was promoted through the frozen release branch and PR #22 using **Squash Merge**.
+- Temporary Session Paused preview hook removed.
+- Obsolete Session Paused capsule paths removed.
+- Hidden legacy Settings Workspace card and dead handlers removed.
+- Production client uses canonical `pharmflow-password-admin`; no runtime client reference to the RC endpoint remains.
+- Canonical password-admin is ACTIVE v2 with JWT verification enabled.
+- RC Edge Function remains temporarily deployed as an inactive-by-client rollback artifact; do not use it for normal runtime. Removal can be performed later when a supported deletion path is available.
+- No destructive production-data migration was performed.
+
+## PRODUCTION REGRESSION + ROOT-CAUSE FIX
+Immediately after release, Production remained on **Preparing PharmFlow**. Browser Console exposed:
+`Uncaught SyntaxError: Unexpected token '}' — app.js:1390`.
+
+Root cause: removal of the legacy Settings workspace handlers left an extra closing-brace block in `js/app.js`, preventing the application bootstrap script from parsing.
+
+Correction:
+1. Removed only the malformed extra closing block in `js/app.js`.
+2. Refreshed the `js/app.js` asset version in `index.html` so GitHub Pages clients receive the corrected bundle.
+3. Product Owner performed the Production refresh and reported **PASS**.
+
+Classification: **deployment/release code regression — JavaScript parse/startup**, not Supabase, Receiving data, Active Order Manifest, or workspace synchronization.
 
 ## DATABASE / SUPABASE
 Shared Supabase project: `zznoshzcyxmtwfbznjyr`.
-Applied migration history includes PHASE2C1168 through PHASE2C1171. The current database definition of `owner_update_pharmacy_identity_v1` already includes the PHASE2C1172 HHP084 protected-code guard, although PHASE2C1172 is not listed in Supabase migration history.
-No destructive data migration is authorized for this release.
-
-## PASSWORD ADMIN RELEASE GATE
-Testing uses isolated Edge Function `pharmflow-password-admin-settings-rc` and the Settings client currently calls that RC endpoint.
-Production canonical `pharmflow-password-admin` is still the older implementation.
-Before merging to `main`:
-1. Deploy the reviewed Settings RC implementation to canonical `pharmflow-password-admin` with JWT verification enabled.
-2. Change the release client endpoint from `pharmflow-password-admin-settings-rc` to `pharmflow-password-admin`.
-3. Verify build/source diff and perform controlled Production smoke verification.
-Do not merge while the release client still depends on the RC-only endpoint.
-
-## RELEASE METHOD
-Do not replay the development patch stack into Production. Use a controlled **squash release** from the cleaned release candidate so Production receives the final approved state as one release commit.
+Applied migration history includes PHASE2C1168 through PHASE2C1171. Current database definition of `owner_update_pharmacy_identity_v1` already contains the PHASE2C1172 HHP084 protected-code guard although PHASE2C1172 is not listed in migration history.
+Do not blindly reapply PHASE2C1172 merely to reconcile migration bookkeeping.
 
 ## CRITICAL NON-REGRESSION
-Do not alter Receiving ledger/transaction semantics, Active Order Manifest, durable queue, authentication tenant isolation, Global GTIN boundaries, multi-PC synchronization, reports/exports, Expiry behavior, or accepted Loading presentation as part of release cleanup.
+Preserve Receiving ledger/transaction semantics, Active Order Manifest, durable queue, authentication/tenant isolation, Global GTIN boundaries, multi-PC synchronization, reports/exports, Expiry behavior, and the accepted Preparing PharmFlow loading presentation.
 
 ## EXACT NEXT ACTION
-Resolve the canonical password-admin Edge Function release gate, switch only the release candidate to the canonical endpoint, verify the final diff/build, then open the Production PR for squash merge.
+Settings is closed. Begin the next approved PharmFlow development phase from current Production `main`. Before new implementation, classify the requested change and protect the non-regression boundaries above.
