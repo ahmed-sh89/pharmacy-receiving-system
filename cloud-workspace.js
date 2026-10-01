@@ -32,7 +32,7 @@
         el.setAttribute('aria-modal','true');
         el.setAttribute('aria-labelledby','pf-idle-title');
         el.innerHTML=`<div class="pf-idle-card">
-            <div class="pf-idle-logo-card" aria-hidden="true"><img src="/assets/pharmflow-login-mark.svg" alt=""></div>
+            <div class="pf-idle-logo-card" aria-hidden="true"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cg fill='%230879e8'%3E%3Crect x='8' y='10' width='4' height='76' rx='1.5'/%3E%3Crect x='16' y='10' width='2' height='76' rx='1'/%3E%3Crect x='22' y='10' width='6' height='76' rx='1.5'/%3E%3Crect x='32' y='10' width='3' height='76' rx='1'/%3E%3Cpath d='M40 10h20c19 0 29 10 29 26S79 62 60 62H50v24H40zm10 10v32h10c12 0 19-5 19-16S72 20 60 20z'/%3E%3C/g%3E%3Cg transform='translate(64 36) rotate(-38)'%3E%3Crect x='-12' y='-5' width='24' height='10' rx='5' fill='%23f4f8fc' stroke='%23a7c5dc'/%3E%3Cpath d='M0-4.5h-7a4.5 4.5 0 0 0 0 9h7z' fill='%230879e8'/%3E%3Cpath d='M0-4.5v9' stroke='%2391b9d9'/%3E%3Cpath d='M-8-2.5h5' stroke='%23d7f1ff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E" alt=""></div>
             <div class="pf-idle-brand"><span>Pharm</span><strong>Flow</strong></div>
             <h1 id="pf-idle-title">Session Paused</h1>
             <p><span class="pf-idle-clock" aria-hidden="true"></span>No activity for 10 minutes.</p>
