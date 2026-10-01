@@ -175,8 +175,6 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 #pf-idle-refresh:hover{background:#066bce}
 #pf-idle-refresh:focus-visible{outline:3px solid #55acff;outline-offset:4px}
 .pf-idle-restart{font-size:25px;line-height:1}
-@keyframes pfIdentityIdleFloat{0%,100%{transform:translateY(4px) rotate(-9deg)}50%{transform:translateY(-10px) rotate(-5.5deg)}}
-@keyframes pfIdentityIdleShadow{0%,100%{transform:scaleX(1);opacity:.82}50%{transform:scaleX(.78);opacity:.42}}
 @media (max-height:500px){
   .pf-idle-card{padding:12px 22px 18px}
   .pf-idle-logo-card{width:66px;height:66px;margin-bottom:8px;border-radius:18px}
@@ -199,5 +197,3 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 @keyframes pfIdentityScanReduced{0%,62%{left:-24%;opacity:0}66%{opacity:.72}78%{left:108%;opacity:.72}82%,100%{left:108%;opacity:0}}
 @keyframes pfIdentityOpenLeftReduced{0%,18%,88%,100%{transform:translate(0,0)}36%,68%{transform:translate(-12px,-2px) rotate(-2deg)}}
 @keyframes pfIdentityOpenRightReduced{0%,18%,88%,100%{transform:translate(0,0)}36%,68%{transform:translate(12px,0) rotate(2deg)}}
-@keyframes pfIdentityIdleFloatReduced{0%,100%{transform:translateY(2px) rotate(-9deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
-@keyframes pfIdentityIdleShadowReduced{0%,100%{transform:scaleX(1);opacity:.8}50%{transform:scaleX(.94);opacity:.65}}
