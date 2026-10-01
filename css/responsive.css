@@ -175,3 +175,144 @@ body.zebraDevice #page-dashboard .statisticsGrid{gap:4px!important;margin-bottom
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfrFilterActions [data-group-action="ok"]{
     background:#0b8fd3!important;border-color:#0b8fd3!important;color:#fff!important
   }}
+
+/* ==========================================================
+   PHONE PRESENTATION OWNER — 2026-10-01
+   Scope: normal phone browsers only. Desktop (>=769px) and
+   Handheld (body.zebraDevice) are intentionally excluded.
+   Presentation only: no operational/business-state changes.
+========================================================== */
+@media (max-width:768px){
+  body:not(.zebraDevice) .mainContent{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    padding:10px!important;box-sizing:border-box!important;overflow-x:hidden!important;
+  }
+
+  /* Header: keep menu, pharmacy identity and page title inside the viewport. */
+  body:not(.zebraDevice) .topBar{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    gap:6px!important;padding:7px 8px!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .topBar>*{min-width:0!important}
+  body:not(.zebraDevice) .pfnPharmacyNameHero{
+    transform:none!important;width:auto!important;min-width:0!important;max-width:100%!important;
+    padding:5px 7px!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #topBarPharmacyName{
+    max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+
+  /* Order Items: phone owns a compact stacked filter area, not the desktop 3-column strip. */
+  body:not(.zebraDevice) .pfnOrderBrowserControls,
+  body:not(.zebraDevice) .pfnBrowserControls{
+    display:grid!important;grid-template-columns:1fr!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;overflow:visible!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow,
+  body:not(.zebraDevice) .pfnBrowserControlRow{
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow:visible!important;padding:0!important;scroll-snap-type:none!important;touch-action:auto!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>*,
+  body:not(.zebraDevice) .pfnBrowserControlRow>*{
+    width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow label,
+  body:not(.zebraDevice) .pfnBrowserControlRow label{
+    display:grid!important;grid-template-columns:1fr!important;gap:3px!important;
+    width:100%!important;min-width:0!important;height:auto!important;font-size:9px!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow select,
+  body:not(.zebraDevice) .pfnBrowserControlRow select{
+    width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;
+    font-size:11px!important;padding:5px 24px 5px 7px!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters,
+  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]{
+    width:100%!important;min-width:0!important;max-width:100%!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{
+    width:100%!important;min-width:0!important;max-width:100%!important;height:38px!important;
+    min-height:38px!important;padding:5px 8px!important;box-sizing:border-box!important;font-size:11px!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:7px!important;width:100%!important;min-width:0!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions{
+    display:grid!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important;
+  }
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter,
+  body:not(.zebraDevice) .pfnHighPriorityFilter{
+    width:100%!important;min-width:0!important;max-width:100%!important;
+  }
+
+  /* Keep every Order Item column available, but contain the wide dataset
+     inside its own scroller instead of widening/clipping the whole page. */
+  body:not(.zebraDevice) .quickKpiPanel.phase263Panel{
+    width:calc(100vw - 12px)!important;max-width:calc(100vw - 12px)!important;
+    height:calc(100dvh - 12px)!important;max-height:calc(100dvh - 12px)!important;
+    margin:0!important;padding:9px!important;box-sizing:border-box!important;overflow:hidden!important;
+  }
+  body:not(.zebraDevice) .phase263TableWrap{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;
+  }
+  body:not(.zebraDevice) .phase263Table{
+    width:max-content!important;min-width:760px!important;max-width:none!important;table-layout:fixed!important;
+  }
+  body:not(.zebraDevice) .phase263Table th:nth-child(1),
+  body:not(.zebraDevice) .phase263Table td:nth-child(1){width:96px!important;min-width:96px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(2),
+  body:not(.zebraDevice) .phase263Table td:nth-child(2){width:210px!important;min-width:210px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(3),
+  body:not(.zebraDevice) .phase263Table td:nth-child(3){width:125px!important;min-width:125px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(4),
+  body:not(.zebraDevice) .phase263Table td:nth-child(4){width:110px!important;min-width:110px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(5),
+  body:not(.zebraDevice) .phase263Table td:nth-child(5){width:78px!important;min-width:78px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(6),
+  body:not(.zebraDevice) .phase263Table td:nth-child(6){width:135px!important;min-width:135px!important}
+
+  /* Receiving Report: phone controls wrap; tables scroll inside their card. */
+  body:not(.zebraDevice) #page-receiving .receivingFilterBar{
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;align-items:stretch!important;
+  }
+  body:not(.zebraDevice) #page-receiving .receivingFilterBar>*{
+    width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #page-receiving .operationalMultiFilter{width:100%!important;min-width:0!important}
+  body:not(.zebraDevice) #page-receiving .receivingSummaryPanel,
+  body:not(.zebraDevice) #page-receiving .dashboardMetrics{
+    width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #page-receiving .dashboardMetrics{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;
+  }
+  body:not(.zebraDevice) #page-receiving .metricCard{min-width:0!important;padding:7px!important}
+  body:not(.zebraDevice) #page-receiving .tableContainer,
+  body:not(.zebraDevice) #page-receiving .receivingTableContainer,
+  body:not(.zebraDevice) #page-receiving .itemsTableContainer{
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #page-receiving .dataTable,
+  body:not(.zebraDevice) #page-receiving .reportTable{
+    width:max-content!important;min-width:720px!important;max-width:none!important;
+  }
+
+  /* Sidebar remains the existing drawer; only constrain it to phone viewport. */
+  body:not(.zebraDevice) .sidebar{
+    width:min(216px,86vw)!important;min-width:0!important;max-width:86vw!important;
+  }
+}
+
+@media (max-width:430px){
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow,
+  body:not(.zebraDevice) .pfnBrowserControlRow,
+  body:not(.zebraDevice) #page-receiving .receivingFilterBar{
+    grid-template-columns:1fr!important;
+  }
+}
+
