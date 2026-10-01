@@ -104,8 +104,16 @@
 
     const activity=()=>api.markActivity();
     ['pointerdown','touchstart','keydown','input'].forEach(type=>document.addEventListener(type,activity,true));
-    document.addEventListener('DOMContentLoaded',()=>{ ensureOverlay(); arm(); },{once:true});
-    if(document.readyState!=='loading'){ ensureOverlay(); arm(); }
+    // SETTINGS RC ONLY — visual preview for Session Paused. Remove before Production promotion.
+    const sessionPausedPreview=new URLSearchParams(window.location.search).get('pf-preview')==='session-paused';
+    function showSessionPausedPreview(){
+        if(!sessionPausedPreview) return;
+        ensureOverlay().classList.add('pf-show');
+        document.documentElement.classList.add('pf-idle-sleep-active');
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{ ensureOverlay(); arm(); showSessionPausedPreview(); },{once:true});
+    if(document.readyState!=='loading'){ ensureOverlay(); arm(); showSessionPausedPreview(); }
     else arm();
 })();
 
