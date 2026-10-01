@@ -1518,7 +1518,7 @@ function renderOwnerMetrics(){
     setText("ownerMetricTotalPharmacies",String(pharmacies.length));
     setText("ownerMetricActivePharmacies",String(pharmacies.filter(p=>p.status === "active" && p.active !== false).length));
     setText("ownerMetricPendingRequests",String(requests.filter(r=>r.request_status === "pending").length));
-    setText("ownerMetricAdminsAssigned",String(pharmacies.filter(p=>p.admin_email || p.pending_admin_email).length));
+    setText("ownerMetricSuspendedPharmacies",String(pharmacies.filter(p=>!(p.status === "active" && p.active !== false)).length));
 }
 
 function ownerPharmacyMatchesSearch(p,query){
@@ -1534,7 +1534,7 @@ function getOwnerPharmacyRowsForView(){
     return (AuthState.ownerPharmacies||[]).filter(p=>{
         const active=p.status==="active" && p.active!==false;
         if(view==="active" && !active){ return false; }
-        if(view==="admins" && !(p.admin_email || p.pending_admin_email)){ return false; }
+        if(view==="suspended" && active){ return false; }
         return ownerPharmacyMatchesSearch(p,query);
     });
 }
@@ -1585,7 +1585,7 @@ function renderOwnerPharmacies(){
 }
 
 function openOwnerManagementPanel(view){
-    if(!["total","active","pending","admins"].includes(view)){ return; }
+    if(!["total","active","pending","suspended"].includes(view)){ return; }
     AuthState.ownerManagementView=view;
     AuthState.ownerManagementSearch="";
     const search=document.getElementById("ownerManagementSearch");
@@ -1617,7 +1617,7 @@ function renderOwnerManagementPanel(){
         total:["PHARMACY ACCESS","All Pharmacies","Manage every pharmacy and its ADMIN access."],
         active:["PHARMACY ACCESS","Active Pharmacies","Manage pharmacies that currently have active access."],
         pending:["NEW PHARMACIES","Pending Registration Requests","Review new accounts, confirm the official pharmacy identity, then approve or reject access."],
-        admins:["PHARMACY ACCESS","Admins Assigned","Manage pharmacies with an assigned or pending ADMIN account."]
+        suspended:["PHARMACY ACCESS","Suspended Pharmacies","Manage pharmacies whose access is currently suspended."]
     }[view];
     setText("ownerManagementEyebrow",config[0]);
     setText("ownerManagementTitle",config[1]);
