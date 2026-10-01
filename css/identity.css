@@ -97,8 +97,7 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 .pfBootCapsule,.pfRealCapsule{position:relative;width:260px;max-width:100%;height:138px;margin:0 auto 0}
 /* Settings RC visual polish: keep the studio capsule geometry/material intact,
    but reduce only the workspace-loading presentation scale. */
-.pfBootCapsule{transform:none;transform-origin:50% 50%;margin:-33px auto -33px;
-  width:135px;height:72px;top:-9px}
+.pfBootCapsule{transform:translateY(-9px) scale(.52);transform-origin:50% 50%;margin:-33px auto -33px}
 .pfBootCapsule::before,.pfRealCapsule::before,.pf-idle-medical::after{
   content:"";position:absolute;left:22%;right:22%;bottom:8px;height:13px;
   border-radius:50%;background:#24598724;filter:blur(8px);
@@ -108,11 +107,6 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   background-image:var(--pf-identity-capsule);background-repeat:no-repeat;background-size:232px 104px;
   filter:drop-shadow(0 9px 7px #12345f20);
 }
-/* Desktop loading uses native-size geometry instead of scaling the whole raster layer.
-   This keeps the studio capsule sharper while preserving the same visual footprint. */
-.pfBootCapsuleHalf{width:60px;height:54px;background-size:121px 54px;filter:drop-shadow(0 5px 4px #12345f20)}
-.pfBootCapsuleLeft{left:calc(50% - 60px)}
-.pfBootCapsuleRight{left:50%}
 .pfBootCapsuleLeft,.pfRealCapsuleLeft{left:calc(50% - 116px);background-position:left;animation:pfIdentityOpenLeft 2.8s ease-in-out infinite}
 .pfBootCapsuleRight,.pfRealCapsuleRight{left:50%;background-position:right;animation:pfIdentityOpenRight 2.8s ease-in-out infinite}
 .pfBootPellet,.pfRealPellet{
@@ -123,7 +117,6 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
   animation-delay:var(--pf-drop-delay,0s);
   --pf-drop-x:0px;--pf-drop-turn:100deg;--pf-drop-delay:.04s;
 }
-.pfBootPellet{transform-origin:50% 50%}
 .pfBootPellet2,.pfRealPellet2{--pf-drop-x:-42px;--pf-drop-turn:-75deg;--pf-drop-delay:.20s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:right}
 .pfBootPellet3,.pfRealPellet3{--pf-drop-x:38px;--pf-drop-turn:165deg;--pf-drop-delay:.36s}
 .pfBootPellet4{--pf-drop-x:-22px;--pf-drop-turn:82deg;--pf-drop-delay:.52s;width:28px;height:28px;background-image:url("../assets/pharmflow-tablets-studio.png");background-size:200% 100%;background-position:left}
