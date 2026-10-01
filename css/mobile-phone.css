@@ -58,6 +58,8 @@
   }
   body:not(.zebraDevice) #page-dashboard .pfnManageOrdersIcon{width:22px!important;height:22px!important;flex-basis:22px!important}
   body:not(.zebraDevice) #page-dashboard .pfnOrderSelector{width:100%;min-width:0;flex-wrap:wrap;gap:5px}
+  body:not(.zebraDevice) #page-dashboard .scanBoxIndicator{display:none!important}
+  body:not(.zebraDevice) #page-dashboard #barcodeInput{padding-right:12px!important}
   body:not(.zebraDevice) #page-dashboard .lastScanMetaRow,
   body:not(.zebraDevice) #page-dashboard .lastScanMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}
   body:not(.zebraDevice) #page-dashboard .lastScanHeroName{font-size:18px;overflow-wrap:anywhere}
