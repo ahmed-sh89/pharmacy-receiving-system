@@ -85,6 +85,7 @@
   }
   body:not(.zebraDevice) .pfnOrdersModal #orderFilesList .removeActiveOrderButton{
     grid-column:2!important;justify-self:start!important;min-width:0!important;margin:0!important
+  }
   body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader>*{min-width:0}
   body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader h2,
   body:not(.zebraDevice) .pfnOrdersModal .pfnModalHeader h3{font-size:18px;overflow-wrap:anywhere}
