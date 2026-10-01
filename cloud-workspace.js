@@ -198,9 +198,18 @@ function applyAuthoritativeEmptyActiveOrders(source){
     rebuildStateIndexes();
     deleteWorkspaceSnapshot?.();
 
+    /* Empty manifest is also the authoritative end of the current-order
+       GTIN projection. Clear that derived cache through its public order
+       application path so mounted Data Health views cannot retain the last
+       order's matched count. */
+    if(typeof applyMasterGTINToCurrentOrder==="function"){
+        void applyMasterGTINToCurrentOrder({silent:true});
+    }
+
     AppEvents.emit("files:updated",{source});
     AppEvents.emit("receiving:updated",{source});
     refreshEntireUI?.();
+    window.refreshOpenManageOrders?.();
     return true;
 }
 
