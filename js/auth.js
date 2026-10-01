@@ -2191,12 +2191,14 @@ function showAuthPanel(mode, options = {}){
     const recovery = validMode === "recovery" && AuthState.recoveryActive
         ? mountRecoveryForm()
         : document.getElementById("authRecoveryForm");
+    const forcedPassword = document.getElementById("authForcedPasswordForm");
 
     if(login){ login.hidden = validMode !== "login"; }
     if(invite){ invite.hidden = validMode !== "invite"; }
     if(owner){ owner.hidden = validMode !== "owner"; }
     if(publicSignup){ publicSignup.hidden = validMode !== "public"; }
     if(recovery){ recovery.hidden = validMode !== "recovery"; }
+    if(forcedPassword){ forcedPassword.hidden = true; }
 
     const panel = document.querySelector(".authFormPanelInner");
     if(panel){ panel.scrollTop = 0; }
