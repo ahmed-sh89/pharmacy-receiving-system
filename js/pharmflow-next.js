@@ -168,20 +168,37 @@
     assignment.querySelector('[data-remove-assignment]')?.addEventListener('click',async event=>{
       const removeButton=event.currentTarget;
       const saveButton=assignment.querySelector('[data-save-assignment]');
+      const assignedNow=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
+        ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
+        : [];
+      const checkedNow=[...assignment.querySelectorAll('input:checked')].map(input=>String(input.value||'').trim().toUpperCase());
+      /* Remove only orders the operator explicitly unchecked from the
+         persisted Handheld assignment. Checked assigned orders stay assigned. */
+      const nextAssigned=assignedNow.filter(order=>checkedNow.includes(order));
+      const removed=assignedNow.filter(order=>!nextAssigned.includes(order));
+      if(!removed.length){
+        showToast?.('Uncheck an assigned order to remove it from Handheld','warning');
+        return;
+      }
       removeButton.disabled=true;
       if(saveButton) saveButton.disabled=true;
-      const saved=await window.setHandheldAssignedOrderNumbers?.([]);
+      const saved=await window.setHandheldAssignedOrderNumbers?.(nextAssigned);
       if(saveButton) saveButton.disabled=false;
       if(saved!==true){
         removeButton.disabled=false;
         showToast?.('Handheld assignment was not changed','error');
         return;
       }
-      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{input.checked=false;});
+      AppState.workspace.handheldOrderNumbers=nextAssigned.slice();
+      AppState.workspace.handheldScopeConfigured=true;
+      saveWorkspaceSnapshot?.();
+      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{
+        input.checked=nextAssigned.includes(String(input.value||'').trim().toUpperCase());
+      });
       const status=assignment.querySelector('[data-assignment-status]');
-      if(status) status.textContent='0 orders assigned';
-      removeButton.disabled=true;
-      showToast?.('All orders removed from Handheld','success');
+      if(status) status.textContent=`${nextAssigned.length} orders assigned`;
+      removeButton.disabled=nextAssigned.length===0;
+      showToast?.(removed.length===1?'Order removed from Handheld':`${removed.length} orders removed from Handheld`,'success');
     });
   }
 
