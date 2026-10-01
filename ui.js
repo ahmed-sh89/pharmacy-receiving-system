@@ -8925,14 +8925,51 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Global mappings remain read only.</p>':""}
         `;
         workspace.querySelector("[data-add-barcode]")?.addEventListener("click",async event=>{
-            const value=toSafeString(workspace.querySelector("[data-new-identifier]")?.value).trim();
-            if(!value){showToast?.("Enter a barcode","warning");workspace.querySelector("[data-new-identifier]")?.focus();return;}
-            event.currentTarget.disabled=true;
+            const button=event.currentTarget;
+            const input=workspace.querySelector("[data-new-identifier]");
+            const value=toSafeString(input?.value).trim();
+            if(!value){showToast?.("Enter a barcode","warning");input?.focus();return;}
+
+            const identifierKey=toSafeString(value).trim().toUpperCase();
+            const existingRow=rows.find(row=>
+                toSafeString(row?.identifier_key||row?.identifier_display).trim().toUpperCase()===identifierKey
+            );
+            if(existingRow){
+                showToast?.("Barcode already linked to this item","warning");
+                input?.focus();
+                return;
+            }
+
+            button.disabled=true;
             try{
+                /* Resolve before writing so Settings can distinguish an
+                   idempotent same-item add from a real cross-item conflict.
+                   The RPC remains the authoritative write guard. */
+                const resolved=await IdentifierService.resolve(value);
+                const resolvedCode=toSafeString(resolved?.itemCode||resolved?.item_code).trim();
+                if(resolved?.found===true && resolvedCode){
+                    if(resolvedCode===itemCode){
+                        showToast?.("Barcode already linked to this item","warning");
+                    }else{
+                        showToast?.(`Barcode is already linked to Item Code ${resolvedCode}`,"error");
+                    }
+                    return;
+                }
+
                 if(canWriteGlobal())await IdentifierService.addIdentifier(nrV2OperationId(),value,itemCode,auditReason("ADD_BARCODE"));
                 else await IdentifierService.addPharmacyIdentifier(nrV2OperationId(),value,item,auditReason("ADD_BARCODE"));
-                await showItem(item);showToast?.("Barcode added","success");
-            }catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add barcode","error");}
+                await showItem(item);
+                showToast?.("Barcode added","success");
+            }catch(error){
+                const message=toSafeString(error?.message||"Unable to add barcode");
+                const conflict=message.match(/already mapped this identifier to Item Code\s+([^\s]+)/i);
+                showToast?.(conflict?`Barcode is already linked to Item Code ${conflict[1]}`:message,"error");
+            }finally{
+                /* showItem() replaces this button after a successful add, so
+                   isConnected protects the new renderer while every failure
+                   path reliably restores the current control. */
+                if(button.isConnected) button.disabled=false;
+            }
         });
         workspace.querySelector("[data-new-identifier]")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();workspace.querySelector("[data-add-barcode]")?.click();}});
         workspace.querySelectorAll("[data-remove-barcode]").forEach(button=>button.addEventListener("click",async()=>{
