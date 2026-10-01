@@ -97,7 +97,7 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 .pfBootCapsule,.pfRealCapsule{position:relative;width:260px;max-width:100%;height:138px;margin:0 auto 0}
 /* Keep the studio capsule geometry/material intact while using a compact
    workspace-loading presentation scale. */
-.pfBootCapsule{transform:translateY(-9px) scale(.52);transform-origin:50% 50%;margin:-33px auto -33px}
+.pfBootCapsule,.pfRealCapsule{transform:translateY(-9px) scale(.52);transform-origin:50% 50%;margin:-33px auto -33px}
 .pfBootCapsule::before,.pfRealCapsule::before{
   content:"";position:absolute;left:22%;right:22%;bottom:8px;height:13px;
   border-radius:50%;background:#24598724;filter:blur(8px);
