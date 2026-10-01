@@ -3545,9 +3545,24 @@ function refreshHealthSummary(){
         orders.length
     );
 
+    /* Data Health is order-scoped. mappingData also contains the cached
+       Global Master projection, so its raw length must never be shown when
+       there are no active order items. Count only mappings owned by the
+       current order item set. */
+    const activeOrderCodes=new Set(
+        (orders||[])
+            .map(item=>normalizeItemCode(item?.itemCode||""))
+            .filter(Boolean)
+    );
+    const matchedOrderCodes=new Set(
+        (mappings||[])
+            .map(mapping=>normalizeItemCode(mapping?.itemCode||""))
+            .filter(code=>code && activeOrderCodes.has(code))
+    );
+
     setElementText(
         UI.elements.healthMappings,
-        mappings.length
+        matchedOrderCodes.size
     );
 
     const missingMappings =
