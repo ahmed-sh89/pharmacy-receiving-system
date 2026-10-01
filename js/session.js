@@ -1126,7 +1126,7 @@ async function restoreHistoricalArchive(){
 async function deleteAllHistoricalData(){
 
     const phrase=window.prompt(
-        "Type DELETE ALL HISTORICAL DATA to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Global GTIN Master, Returns Archive, and users are not affected.",
+        "Type DELETE to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Global GTIN Master, Returns Archive, and users are not affected.",
         ""
     );
 
@@ -1143,7 +1143,7 @@ async function deleteAllHistoricalData(){
         .replace(/\s+/g," ")
         .toUpperCase();
 
-    if(normalizedConfirmation!=="DELETE ALL HISTORICAL DATA"){
+    if(normalizedConfirmation!=="DELETE"){
         showToast(
             "Historical data was not deleted — confirmation phrase did not match.",
             "warning",
