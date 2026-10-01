@@ -309,38 +309,37 @@
 
 /* PHONE POLISH 5 — ONLY Active Orders + Needs Review. Handheld intentionally excluded. */
 @media (max-width:768px){
-  /* Active Orders: make the entire scope control a PharmFlow component. */
+  /* Active Orders: same button language as Manage Orders / Receiving Report. */
   body:not(.zebraDevice) #page-dashboard .pfnOrderSelector{
-    position:relative!important;display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;
-    align-items:center!important;gap:8px!important;width:100%!important;min-width:0!important;margin:0!important;padding:0!important;
+    display:grid!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important;margin:0!important;padding:0!important;
   }
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector>span{
-    display:grid!important;place-items:center!important;width:36px!important;height:36px!important;margin:0!important;
-    border:1px solid #bfd6e9!important;border-radius:10px!important;background:#edf6fd!important;color:#17669f!important;
-    box-shadow:0 1px 2px rgba(19,67,105,.05)!important;
+  body:not(.zebraDevice) #page-dashboard .pfnOrderScopeLabel,
+  body:not(.zebraDevice) #page-dashboard .pfnLegacyOrderId{display:none!important}
+  body:not(.zebraDevice) #page-dashboard .headerOrderPicker{
+    position:relative!important;display:block!important;width:100%!important;min-width:0!important;
   }
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector select,
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector .compactSelect{
-    appearance:none!important;-webkit-appearance:none!important;
-    width:100%!important;min-width:0!important;max-width:100%!important;height:44px!important;min-height:44px!important;
-    padding:0 42px 0 14px!important;margin:0!important;border:1px solid #a9c7df!important;border-radius:10px!important;
-    background:#f5f9fd!important;color:#17476f!important;font-family:inherit!important;font-size:14px!important;font-weight:850!important;
-    box-shadow:0 1px 3px rgba(20,64,100,.07)!important;
+  body:not(.zebraDevice) #page-dashboard .scanPanelFooter .headerOrderPickerButton{
+    display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+    width:100%!important;min-width:0!important;height:auto!important;min-height:44px!important;margin:0!important;padding:8px 14px!important;
+    border:1px solid #a6bfd4!important;border-radius:8px!important;background:#edf5fc!important;color:#21577f!important;
+    font:700 14px/1.2 inherit!important;box-shadow:none!important;
   }
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector::after{
-    content:"⌄"!important;position:absolute!important;right:14px!important;top:50%!important;transform:translateY(-54%)!important;
-    pointer-events:none!important;color:#24658f!important;font-size:18px!important;font-weight:900!important;line-height:1!important;
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerChevron{
+    position:static!important;display:inline-block!important;color:currentColor!important;font-size:16px!important;font-weight:900!important;line-height:1!important;
   }
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector:focus-within select{
-    border-color:#4d94c8!important;box-shadow:0 0 0 3px rgba(58,139,198,.13)!important;
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerMenu{
+    left:0!important;right:0!important;width:100%!important;max-width:100%!important;min-width:0!important;
+    padding:8px!important;border:1px solid #bfd3e5!important;border-radius:10px!important;background:#fff!important;
+    box-shadow:0 12px 30px rgba(16,51,81,.14)!important;
   }
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector [role="listbox"],
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector .pfnOrderScopeMenu{
-    width:100%!important;max-width:100%!important;min-width:0!important;border:1px solid #bfd3e5!important;
-    border-radius:12px!important;background:#fff!important;box-shadow:0 12px 30px rgba(16,51,81,.14)!important;padding:9px!important;
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerMenu .headerOrderCheckOption{
+    width:100%!important;min-width:0!important;min-height:42px!important;padding:7px 6px!important;border-radius:8px!important;
   }
-  body:not(.zebraDevice) #page-dashboard .pfnOrderSelector button{
-    font-family:inherit!important;border-radius:9px!important;
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerActions{
+    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;width:100%!important;padding-top:7px!important;
+  }
+  body:not(.zebraDevice) #page-dashboard .headerOrderPickerActions button{
+    width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;margin:0!important;padding:0 5px!important;
   }
 
   /* Needs Review: compact mobile workspace with one clear visual hierarchy. */
