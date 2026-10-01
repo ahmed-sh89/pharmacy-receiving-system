@@ -673,6 +673,9 @@ async function signInFromForm(){
         await finishPendingAccessIfPossible();
         await loadMyAppContext();
         renderAuthState();
+        if(AuthState.mustChangePassword){
+            return;
+        }
         if(hasApplicationAccess()){
             setAuthMessage("Signed in successfully.", "success");
             unlockApplicationAfterAuth();
