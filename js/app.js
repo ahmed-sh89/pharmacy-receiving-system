@@ -65,17 +65,6 @@ async function bootstrapMedryvo(){
         if(typeof initializeAuth === "function"){
             await initializeAuth();
 
-            /*
-               The auth bootstrap overlay must never depend on protected
-               Supabase/context requests completing. A restored mobile session
-               can be stale or the network can stall; keep the application
-               locked, but reveal the authentication surface before those
-               requests run so iOS/Safari cannot remain behind the splash.
-            */
-            if(typeof finishAuthBootState === "function"){
-                finishAuthBootState();
-            }
-
             if(typeof finishPendingAccessIfPossible === "function" && getSupabaseAccessToken()){
                 await finishPendingAccessIfPossible().catch(()=>{});
             }
@@ -104,11 +93,6 @@ async function bootstrapMedryvo(){
     }
     catch(error){
         console.error("PharmFlow authentication bootstrap failed", error);
-        if(typeof finishAuthBootState === "function"){
-            finishAuthBootState();
-        }else{
-            document.body.classList.remove("authBooting");
-        }
         if(typeof setAuthMessage === "function"){
             setAuthMessage(error.message || "Unable to initialize secure access.", "error");
         }
