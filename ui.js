@@ -9461,7 +9461,18 @@ async function requestRemoveActiveOrderFile(fileId){
                     }
                 }
 
+                /* Rebuild derived order state after the authoritative manifest
+                   confirms the close. This is especially important for the
+                   final 1 -> 0 transition: the Global Master summary otherwise
+                   retains the last order's matched count until a page reload. */
+                if(typeof applyMasterGTINToCurrentOrder==="function"){
+                    await applyMasterGTINToCurrentOrder({silent:true});
+                }
+
                 if(typeof refreshEntireUI==="function")refreshEntireUI();
+                if(typeof window.refreshOpenManageOrders==="function"){
+                    window.refreshOpenManageOrders();
+                }
                 showToast(
                     `${orderNumber} closed. Receiving history preserved.`,
                     "success",
