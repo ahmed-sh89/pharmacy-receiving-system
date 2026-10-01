@@ -1385,11 +1385,6 @@ document
             }
         );
 
-                }
-
-            }
-        );
-
 
     document
         .getElementById(
