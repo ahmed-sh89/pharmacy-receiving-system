@@ -151,7 +151,7 @@
       const saveButton=assignment.querySelector('[data-save-assignment]');
       const removeButton=assignment.querySelector('[data-remove-assignment]');
       if(saveButton){ saveButton.disabled=!hasAdds; saveButton.classList.toggle('primary',hasAdds); }
-      if(removeButton){ removeButton.disabled=!hasRemoves; removeButton.classList.toggle('primary',hasRemoves); }
+      if(removeButton){ removeButton.disabled=!hasRemoves; removeButton.classList.toggle('primary',hasRemoves); removeButton.style.background=hasRemoves?'#0b6edb':''; removeButton.style.color=hasRemoves?'#fff':''; removeButton.style.borderColor=hasRemoves?'#0b6edb':''; }
     };
     assignment.addEventListener('change',event=>{if(event.target?.matches('input[type="checkbox"]'))syncAssignmentActions();});
     syncAssignmentActions();
