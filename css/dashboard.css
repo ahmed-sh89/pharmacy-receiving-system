@@ -2630,26 +2630,25 @@ body.zebraDevice .mainApplication{margin-left:0!important;width:100%!important;m
 body.zebraDevice .mainContent{width:min(100%,680px);margin:0 auto;padding:8px}
 body.zebraDevice .appPage{display:none!important}
 
-body.zebraDevice.zebraHomeActive .zebraHome{display:block}
-.zebraHome{padding:10px 4px 20px}
-.zebraBrandRow{display:flex;align-items:center;gap:11px;padding:8px 6px 16px}
-.zebraBrandRow img{width:42px;height:42px}
-.zebraBrandRow div{display:flex;flex-direction:column;gap:2px}
-.zebraBrandRow strong{font-size:19px;color:#0c1d38}
-.zebraBrandRow span{font-size:11px;font-weight:700;color:#76849a}
-.zebraModeIntro{padding:18px;border:1px solid #dce6f3;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(18,48,86,.06)}
-.zebraModeIntro>span{font-size:9px;font-weight:700;letter-spacing:.12em;color:#6f7f94}
-.zebraModeIntro h1{margin:5px 0 7px;font-size:24px;line-height:1.1;color:#0c1d38}
-.zebraModeIntro p{margin:0;color:#68778d;line-height:1.45;font-size:13px}
-.zebraModeCards{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-.zebraModeCard{width:100%;display:flex;align-items:center;gap:14px;padding:18px;text-align:left;border:1px solid #d8e4f2;border-radius:18px;background:#fff;color:#10213b;box-shadow:0 7px 20px rgba(18,48,86,.05)}
-.zebraModeCard:active{transform:scale(.992)}
-.zebraModeIcon{width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#eaf2ff;color:#0b5ed7;font-size:22px;font-weight:900}
-.zebraModeCard:nth-child(2) .zebraModeIcon{background:#fff1df;color:#dc7200}
-.zebraModeCard div{display:flex;flex-direction:column;gap:4px}
-.zebraModeCard strong{font-size:18px}
-.zebraModeCard small{font-size:11px;line-height:1.35;color:#748298}
-.zebraSignOut{display:block;margin:18px auto 0;border:0;background:transparent;color:#68788f;font-weight:700;padding:10px}
+body.zebraDevice.zebraHomeActive .zebraHome{display:flex;flex-direction:column;min-height:calc(100dvh - 16px)}
+.zebraHome{padding:14px 6px 10px}
+body.zebraDevice .zebraBrandRow{display:flex;justify-content:center;align-items:center;padding:12px 6px 18px;text-align:center}
+body.zebraDevice .zebraBrandLockup{display:flex;flex-direction:column;align-items:center;gap:6px}
+body.zebraDevice .zebraBrandRow img{width:52px;height:52px}
+body.zebraDevice .zebraBrandRow .zebraBrandLockup>div{display:flex;flex-direction:column;align-items:center;gap:1px}
+body.zebraDevice .zebraBrandRow strong{font-size:23px;line-height:1.1;color:#0c1d38}
+body.zebraDevice .zebraBrandRow .zebraBrandLockup>div span{font-size:11px;font-weight:700;color:#76849a}
+body.zebraDevice .zebraModeIntro{padding:8px 10px 14px;text-align:center;background:transparent;border:0;box-shadow:none}
+body.zebraDevice .zebraModeIntro h1{margin:0;font-size:18px;line-height:1.2;color:#31435c}
+body.zebraDevice .zebraModeCards{display:grid;grid-template-columns:1fr;gap:14px;margin:auto 0}
+body.zebraDevice .zebraModeCard{width:100%;min-height:92px;display:flex;align-items:center;gap:16px;padding:18px;text-align:left;border:1px solid #d8e4f2;border-radius:18px;background:#fff;color:#10213b;box-shadow:0 7px 20px rgba(18,48,86,.05)}
+body.zebraDevice .zebraModeCard:active{transform:scale(.992)}
+body.zebraDevice .zebraModeIcon{width:52px;height:52px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#eaf2ff;color:#0b5ed7;font-size:23px;font-weight:900}
+body.zebraDevice .zebraModeCard:nth-child(2) .zebraModeIcon{background:#fff1df;color:#dc7200}
+body.zebraDevice .zebraModeCard div{display:flex;align-items:center}
+body.zebraDevice .zebraModeCard strong{font-size:21px}
+body.zebraDevice .zebraModeCard small{display:none}
+body.zebraDevice .zebraSignOut{display:block;width:100%;margin:18px 0 0;border:1px solid #c9d6e6;border-radius:14px;background:#fff;color:#31435c;font-weight:800;padding:13px}
 
 body.zebraDevice.zebraJoinActive #page-sessions{display:block!important}
 body.zebraDevice.zebraJoinActive #page-sessions>.contentCard:not(.cloudSessionHero),
