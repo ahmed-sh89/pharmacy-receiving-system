@@ -77,3 +77,44 @@
  body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiExtra.active{color:#6f568d!important}
  body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiDiscrepancy.active{color:#965b3d!important}
 }
+
+/* RC KPI rebuild — six equal desktop columns, one shared geometry. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid{
+   display:grid!important;
+   grid-template-columns:repeat(6,minmax(0,1fr))!important;
+   grid-auto-rows:58px!important;
+   gap:7px!important;
+   width:100%!important;
+   margin:0!important;
+   align-items:stretch!important;
+ }
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid>.pfnIssueCard{
+   box-sizing:border-box!important;
+   width:100%!important;
+   min-width:0!important;
+   max-width:none!important;
+   height:58px!important;
+   min-height:58px!important;
+   margin:0!important;
+   padding:7px 10px!important;
+   align-self:stretch!important;
+   overflow:hidden!important;
+ }
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid>.pfnIssueCard span{
+   display:block!important;
+   width:100%!important;
+   max-width:100%!important;
+   overflow:hidden!important;
+   text-overflow:ellipsis!important;
+   white-space:nowrap!important;
+   font-size:11px!important;
+   line-height:1.1!important;
+   letter-spacing:.025em!important;
+ }
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid>.pfnIssueCard strong{
+   margin-top:4px!important;
+   font-size:18px!important;
+   line-height:1!important;
+ }
+}
