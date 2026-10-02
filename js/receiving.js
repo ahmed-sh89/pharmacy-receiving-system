@@ -144,7 +144,11 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
         });
     }
 
-    return await quickResolveUnrecognizedGTIN({...parsed,gtin:identifierDisplay},masterRecord?.found?{...masterRecord,source:"GLOBAL_V2"}:null);
+    return await quickResolveUnrecognizedGTIN(
+        {...parsed,gtin:identifierDisplay},
+        masterRecord?.found?{...masterRecord,source:"GLOBAL_V2"}:null,
+        queueOptions
+    );
 }
 
 /* =====================================================
@@ -574,11 +578,22 @@ async function renderUnknownGTINHandheld(parsed,options={}){
         reason:options.reason||"UNKNOWN_GTIN",
         itemCode:options.itemCode||"",
         itemName:options.itemName||"",
-        orderNumber:nrV2CurrentOrderNumber?.()||null
+        orderNumber:nrV2CurrentOrderNumber?.()||null,
+        operationId:options.operationId||""
     });
 
     if(!draft?.review_id){
         throw new Error("Needs Review draft was not created");
+    }
+
+    /* A durable scan retry must never resurrect a review that the worker
+       already cancelled. The server returns the original operation row. */
+    if(toSafeString(draft?.status||"PENDING").toUpperCase()!=="PENDING"){
+        clearHandheldActionCard();
+        setScanBoxState?.("ready");
+        window.hhRefreshReadyState?.();
+        setTimeout(()=>focusScannerInput?.(),40);
+        return true;
     }
 
     const lastScan=document.getElementById("lastScanCard");
@@ -749,7 +764,7 @@ async function receiveUnrecognizedHandheldScan(raw){
     }
 }
 
-async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
+async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null,queueOptions={}){
     const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
     if(!gtin){
         handleReceivingFailure("Barcode could not be identified");
@@ -819,7 +834,8 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
 
         try{
             return await renderUnknownGTINHandheld(parsed,{
-                reason:"UNKNOWN_GTIN"
+                reason:"UNKNOWN_GTIN",
+                operationId:queueOptions.transactionId||""
             });
         }catch(error){
             handleReceivingFailure(
