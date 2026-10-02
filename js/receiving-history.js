@@ -114,7 +114,8 @@ function pfhEnsureUI(){
     overlay.querySelector("[data-pfh-close]").addEventListener("click",pfhClose);
     overlay.addEventListener("click",e=>{if(e.target===overlay)pfhClose();});
     overlay.querySelectorAll("[data-pfh-mode]").forEach(btn=>btn.addEventListener("click",()=>pfhSetMode(btn.dataset.pfhMode)));
-    overlay.querySelectorAll("[data-pfh-date]").forEach(btn=>btn.addEventListener("click",()=>pfhOpenCalendar(btn.dataset.pfhDate,btn)));\n    overlay.querySelector("#pfhGenerate").addEventListener("click",pfhGenerate);
+    overlay.querySelectorAll("[data-pfh-date]").forEach(btn=>btn.addEventListener("click",()=>pfhOpenCalendar(btn.dataset.pfhDate,btn)));
+    overlay.querySelector("#pfhGenerate").addEventListener("click",pfhGenerate);
     overlay.querySelector("#pfhExcel").addEventListener("click",pfhExportExcel);
     overlay.querySelector("#pfhPdf").addEventListener("click",pfhExportPdf);
 }
