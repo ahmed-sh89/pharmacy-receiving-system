@@ -1,5 +1,13 @@
 "use strict";
 
+/* Handheld identity must exist before Auth Gate renders so the login surface
+   uses the Handheld owner instead of desktop/mobile presentation rules. */
+try{
+    if(typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice()){
+        document.body.classList.add("zebraDevice");
+    }
+}catch(_){}
+
 /* =====================================================
    PHARMACY RECEIVING SYSTEM V3
    PHASE 1 — AUTH + OWNER / ADMIN / STAFF
