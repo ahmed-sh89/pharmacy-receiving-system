@@ -556,6 +556,38 @@ body.authLocked{
 #authGate .authDivider span{background:var(--pf-auth-surface-2)!important;color:#617b94!important;}
 #authGate .authBootSpinner{border-color:rgba(23,105,210,.14)!important;border-top-color:var(--pf-auth-blue)!important;}
 
+/* ---------- Handheld auth owner ---------- */
+html:has(body.zebraDevice.authLocked),
+body.zebraDevice.authLocked{height:100%;overflow:hidden!important;overscroll-behavior:none!important}
+body.zebraDevice #authGate.authGate{
+  width:100vw!important;height:100dvh!important;min-height:100dvh!important;
+  padding:0!important;overflow:hidden!important;align-items:stretch!important;justify-content:stretch!important;
+  background:var(--pf-identity-background)!important;
+}
+body.zebraDevice #authGate .authShell{
+  width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+  display:block!important;overflow:hidden!important;border:0!important;border-radius:0!important;
+  background:var(--pf-auth-surface-2)!important;box-shadow:none!important;
+}
+body.zebraDevice #authGate .authBrandPanel{display:none!important}
+body.zebraDevice #authGate .authFormPanel{
+  width:100%!important;height:100%!important;min-height:0!important;padding:18px 20px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  overflow:hidden!important;background:transparent!important;
+}
+body.zebraDevice #authGate .authFormPanelInner{
+  width:100%!important;max-width:440px!important;max-height:100%!important;overflow:hidden!important;
+}
+body.zebraDevice #authGate .authEyebrow{font-size:10px!important}
+body.zebraDevice #authGate .authFormPanel h2{margin:5px 0!important;font-size:27px!important}
+body.zebraDevice #authGate .authLead{margin:0 0 14px!important;font-size:13px!important;line-height:1.35!important}
+body.zebraDevice #authGate .authField{margin-bottom:10px!important}
+body.zebraDevice #authGate .authField label{margin-bottom:5px!important;font-size:12px!important}
+body.zebraDevice #authGate .authField input{min-height:48px!important;font-size:16px!important}
+body.zebraDevice #authGate .authRememberRow{margin:8px 0 12px!important;font-size:12px!important}
+body.zebraDevice #authGate .authPrimaryButton{min-height:48px!important}
+body.zebraDevice #authGate .authSecondaryLink{margin-top:8px!important;font-size:11px!important}
+
 /* ---------- desktop / PC ---------- */
 body:not(.zebraDevice) #authGate.authGate{
   min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;
