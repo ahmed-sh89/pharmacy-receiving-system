@@ -101,15 +101,15 @@ function pfhEnsureUI(){
     const overlay=document.createElement("div");
     overlay.id="pfhOverlay";overlay.className="pfhOverlay";overlay.hidden=true;
     overlay.innerHTML='<section class="pfhPanel" role="dialog" aria-modal="true" aria-labelledby="pfhTitle">'+
-      '<header class="pfhHeader"><div><span class="sectionEyebrow">RECEIVING HISTORY</span><h2 id="pfhTitle">Historical Receiving Reports</h2><p>Completed workspaces, order-first discrepancies and NEW High Priority items.</p></div><button class="pfhClose" type="button" data-pfh-close aria-label="Close">✕</button></header>'+
+      '<header class="pfhHeader"><div><span class="sectionEyebrow">RECEIVING HISTORY</span><h2 id="pfhTitle">Historical Receiving Reports</h2><p id="pfhDescription">Review completed workspaces and discrepancies grouped by Order Number.</p></div><button class="pfhClose" type="button" data-pfh-close aria-label="Close">✕</button></header>'+
       '<div class="pfhBody"><div class="pfhTabs"><button class="pfhTab active" type="button" data-pfh-mode="receiving">Receiving History</button><button class="pfhTab" type="button" data-pfh-mode="new">New Items History</button></div>'+
-      '<div class="pfhFilters"><label class="pfhField"><span>FROM DATE</span><input id="pfhFrom" type="date"></label><label class="pfhField"><span>TO DATE</span><input id="pfhTo" type="date"></label><button id="pfhGenerate" class="pfhGenerate" type="button">Generate Report</button></div>'+
+      '<div class="pfhFilters"><div class="pfhField"><span>FROM DATE</span><button id="pfhFromButton" class="pfhDateButton" type="button" data-pfh-date="from"><span id="pfhFromDisplay">Select date</span><b aria-hidden="true">▦</b></button></div><div class="pfhField"><span>TO DATE</span><button id="pfhToButton" class="pfhDateButton" type="button" data-pfh-date="to"><span id="pfhToDisplay">Select date</span><b aria-hidden="true">▦</b></button></div><button id="pfhGenerate" class="pfhGenerate" type="button">Generate Report</button></div>'+
       '<div id="pfhSummary" class="pfhSummary"></div><div class="pfhToolbar"><strong id="pfhResultLabel">Select a date range</strong><div class="pfhExports"><button id="pfhExcel" class="pfhExport" type="button">Export Excel</button><button id="pfhPdf" class="pfhExport" type="button">Export PDF</button></div></div><div id="pfhResults"></div></div></section>';
     document.body.appendChild(overlay);
     overlay.querySelector("[data-pfh-close]").addEventListener("click",pfhClose);
     overlay.addEventListener("click",e=>{if(e.target===overlay)pfhClose();});
     overlay.querySelectorAll("[data-pfh-mode]").forEach(btn=>btn.addEventListener("click",()=>pfhSetMode(btn.dataset.pfhMode)));
-    overlay.querySelector("#pfhGenerate").addEventListener("click",pfhGenerate);
+    overlay.querySelectorAll("[data-pfh-date]").forEach(btn=>btn.addEventListener("click",()=>pfhOpenCalendar(btn.dataset.pfhDate,btn)));\n    overlay.querySelector("#pfhGenerate").addEventListener("click",pfhGenerate);
     overlay.querySelector("#pfhExcel").addEventListener("click",pfhExportExcel);
     overlay.querySelector("#pfhPdf").addEventListener("click",pfhExportPdf);
 }
@@ -118,11 +118,38 @@ function pfhDefaultDates(){
     const iso=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
     return {from:iso(first),to:iso(now)};
 }
-function pfhOpen(mode="receiving"){pfhEnsureUI();const d=pfhDefaultDates();PharmFlowReceivingHistory.from=PharmFlowReceivingHistory.from||d.from;PharmFlowReceivingHistory.to=PharmFlowReceivingHistory.to||d.to;document.getElementById("pfhFrom").value=PharmFlowReceivingHistory.from;document.getElementById("pfhTo").value=PharmFlowReceivingHistory.to;document.getElementById("pfhOverlay").hidden=false;pfhSetMode(mode);document.getElementById("pfhFrom").focus();}
+function pfhOpen(mode="receiving"){pfhEnsureUI();const d=pfhDefaultDates();PharmFlowReceivingHistory.from=PharmFlowReceivingHistory.from||d.from;PharmFlowReceivingHistory.to=PharmFlowReceivingHistory.to||d.to;pfhSyncDateButtons();document.getElementById("pfhOverlay").hidden=false;pfhSetMode(mode);document.getElementById("pfhFromButton").focus();}
 function pfhClose(){const x=document.getElementById("pfhOverlay");if(x)x.hidden=true;}
-function pfhSetMode(mode){PharmFlowReceivingHistory.mode=mode==="new"?"new":"receiving";document.querySelectorAll("[data-pfh-mode]").forEach(b=>b.classList.toggle("active",b.dataset.pfhMode===PharmFlowReceivingHistory.mode));document.getElementById("pfhTitle").textContent=PharmFlowReceivingHistory.mode==="new"?"NEW High Priority History":"Historical Receiving Reports";pfhRender();}
+function pfhSetMode(mode){PharmFlowReceivingHistory.mode=mode==="new"?"new":"receiving";document.querySelectorAll("[data-pfh-mode]").forEach(b=>b.classList.toggle("active",b.dataset.pfhMode===PharmFlowReceivingHistory.mode));document.getElementById("pfhTitle").textContent=PharmFlowReceivingHistory.mode==="new"?"NEW High Priority History":"Historical Receiving Reports";const desc=document.getElementById("pfhDescription");if(desc)desc.textContent=PharmFlowReceivingHistory.mode==="new"?"Review only items marked NEW High Priority during completed Receiving workspaces.":"Review completed workspaces and discrepancies grouped by Order Number.";pfhRender();}
+function pfhFormatDate(value){if(!value)return "Select date";const [y,m,d]=String(value).split("-").map(Number);return new Intl.DateTimeFormat(undefined,{day:"2-digit",month:"short",year:"numeric"}).format(new Date(y,m-1,d));}
+function pfhSyncDateButtons(){const a=document.getElementById("pfhFromDisplay"),b=document.getElementById("pfhToDisplay");if(a)a.textContent=pfhFormatDate(PharmFlowReceivingHistory.from);if(b)b.textContent=pfhFormatDate(PharmFlowReceivingHistory.to);}
+function pfhIsoLocal(date){const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");return y+"-"+m+"-"+d;}
+function pfhOpenCalendar(kind,anchor){
+    document.querySelector(".pfhCalendarPopover")?.remove();
+    const current=kind==="from"?PharmFlowReceivingHistory.from:PharmFlowReceivingHistory.to;
+    const selected=current?new Date(current+"T12:00:00"):new Date();
+    const pop=document.createElement("div");pop.className="pfhCalendarPopover";pop.dataset.kind=kind;
+    document.getElementById("pfhOverlay").querySelector(".pfhPanel").appendChild(pop);
+    pfhRenderCalendar(pop,selected.getFullYear(),selected.getMonth(),current);
+    const ar=anchor.getBoundingClientRect(),pr=document.querySelector(".pfhPanel").getBoundingClientRect();
+    pop.style.top=(ar.bottom-pr.top+7)+"px";pop.style.left=Math.max(16,Math.min(ar.left-pr.left,pr.width-326))+"px";
+    setTimeout(()=>document.addEventListener("pointerdown",pfhCalendarOutside,{once:true}),0);
+}
+function pfhCalendarOutside(e){const pop=document.querySelector(".pfhCalendarPopover");if(pop&&!pop.contains(e.target)&&!e.target.closest("[data-pfh-date]"))pop.remove();}
+function pfhRenderCalendar(pop,year,month,selectedIso){
+    const first=new Date(year,month,1),last=new Date(year,month+1,0),start=first.getDay(),today=pfhIsoLocal(new Date());
+    const monthTitle=new Intl.DateTimeFormat(undefined,{month:"long",year:"numeric"}).format(first);
+    const weekdays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    let cells="";
+    for(let i=0;i<start;i++)cells+='<span class="pfhCalBlank"></span>';
+    for(let day=1;day<=last.getDate();day++){const iso=pfhIsoLocal(new Date(year,month,day));cells+='<button type="button" class="pfhCalDay'+(iso===selectedIso?" selected":"")+(iso===today?" today":"")+'" data-date="'+iso+'">'+day+'</button>';}
+    pop.innerHTML='<div class="pfhCalHead"><button type="button" data-cal-nav="-1" aria-label="Previous month">‹</button><strong>'+pfhEsc(monthTitle)+'</strong><button type="button" data-cal-nav="1" aria-label="Next month">›</button></div><div class="pfhCalWeek">'+weekdays.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="pfhCalGrid">'+cells+'</div><div class="pfhCalFoot"><button type="button" data-cal-today>Today</button></div>';
+    pop.querySelectorAll("[data-cal-nav]").forEach(btn=>btn.addEventListener("click",()=>{const d=new Date(year,month+Number(btn.dataset.calNav),1);pfhRenderCalendar(pop,d.getFullYear(),d.getMonth(),selectedIso);}));
+    pop.querySelectorAll("[data-date]").forEach(btn=>btn.addEventListener("click",()=>{if(pop.dataset.kind==="from")PharmFlowReceivingHistory.from=btn.dataset.date;else PharmFlowReceivingHistory.to=btn.dataset.date;pfhSyncDateButtons();pop.remove();}));
+    pop.querySelector("[data-cal-today]").addEventListener("click",()=>{const iso=pfhIsoLocal(new Date());if(pop.dataset.kind==="from")PharmFlowReceivingHistory.from=iso;else PharmFlowReceivingHistory.to=iso;pfhSyncDateButtons();pop.remove();});
+}
 async function pfhGenerate(){
-    const from=document.getElementById("pfhFrom")?.value||"",to=document.getElementById("pfhTo")?.value||"";
+    const from=PharmFlowReceivingHistory.from||"",to=PharmFlowReceivingHistory.to||"";
     if(!from||!to){showToast?.("Select From Date and To Date","warning");return;}
     if(from>to){showToast?.("From Date cannot be after To Date","warning");return;}
     if(!AuthState?.context?.pharmacy_id){showToast?.("Pharmacy context is unavailable","error");return;}
