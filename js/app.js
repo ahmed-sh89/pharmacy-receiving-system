@@ -123,7 +123,9 @@ async function startApplication(){
         try{
             ensureCloudAccountContextIsolation?.();
 
-            if(typeof restoreCloudWorkspaceOnLogin==="function"){
+            if(typeof ensureStartupCloudAuthority==="function"){
+                await ensureStartupCloudAuthority();
+            }else if(typeof restoreCloudWorkspaceOnLogin==="function"){
                 await restoreCloudWorkspaceOnLogin();
             }
 
@@ -160,7 +162,9 @@ async function startApplication(){
            available here. An empty runtime is hydrated from the authoritative
            Active Order Manifest / Cloud Workspace before router/UI startup.
         */
-        if(typeof restoreCloudWorkspaceOnLogin==="function"){
+        if(typeof ensureStartupCloudAuthority==="function"){
+            await ensureStartupCloudAuthority();
+        }else if(typeof restoreCloudWorkspaceOnLogin==="function"){
             await restoreCloudWorkspaceOnLogin();
         }
 
