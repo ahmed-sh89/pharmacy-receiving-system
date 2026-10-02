@@ -56,3 +56,6 @@
    border-radius:8px!important;
  }
 }
+
+/* RC polish 4 — compact professional period KPI. */
+.pfhPeriodMetric{min-width:0}.pfhPeriodDates{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin-top:5px}.pfhPeriodDates>div{min-width:0}.pfhPeriodDates small{display:block;margin-bottom:2px;color:#9a897e;font-size:8px;font-weight:900;letter-spacing:.07em}.pfhPeriodDates strong{display:block!important;margin:0!important;color:#3b312b!important;font-size:11px!important;line-height:1.2!important;white-space:nowrap}.pfhPeriodDates i{color:#9a6246;font-style:normal;font-size:13px;font-weight:800}
