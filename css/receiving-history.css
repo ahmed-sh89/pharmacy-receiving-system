@@ -40,3 +40,19 @@
  body:not(.zebraDevice) #page-receiving .pfnDisplayedItems{border:1px solid #8fb7d7!important;background:#e9f4fc!important;color:#426b8c!important;box-shadow:inset 0 0 0 1px rgba(67,142,205,.08)!important}
  body:not(.zebraDevice) #page-receiving .pfnDisplayedItems strong{color:#123f68!important}
 }
+
+/* RC polish 3 — Displayed KPI shares the exact KPI vertical geometry. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnDisplayedItems{
+   box-sizing:border-box!important;
+   align-self:stretch!important;
+   height:auto!important;
+   min-height:58px!important;
+   margin:0!important;
+   padding:8px 10px!important;
+   display:flex!important;
+   flex-direction:column!important;
+   justify-content:center!important;
+   border-radius:8px!important;
+ }
+}
