@@ -1,6 +1,20 @@
 "use strict";
 /* PharmFlow lightweight Receiving History + NEW High Priority history. */
-const PharmFlowReceivingHistory={mode:"receiving",workspaces:[],details:new Map(),newItems:[],from:"",to:""};
+const PharmFlowReceivingHistory={mode:"receiving",workspaces:[],details:new Map(),newItems:[],from:"",to:"",accountScope:""};
+
+function pfhCurrentAccountScope(){return String(AuthState?.context?.pharmacy_id||"");}
+function pfhResetAccountData(){
+    PharmFlowReceivingHistory.workspaces=[];
+    PharmFlowReceivingHistory.newItems=[];
+    PharmFlowReceivingHistory.details.clear();
+    PharmFlowReceivingHistory.from="";
+    PharmFlowReceivingHistory.to="";
+    PharmFlowReceivingHistory.accountScope=pfhCurrentAccountScope();
+    const host=document.getElementById("pfhResults"),summary=document.getElementById("pfhSummary"),label=document.getElementById("pfhResultLabel");
+    if(host)host.innerHTML=""; if(summary)summary.innerHTML=""; if(label)label.textContent="Select a date range";
+}
+function pfhEnforceAccountScope(){const scope=pfhCurrentAccountScope();if(PharmFlowReceivingHistory.accountScope!==scope)pfhResetAccountData();return scope;}
+window.addEventListener("pharmflow:authenticated-context-ready",pfhResetAccountData);
 
 function pfhEsc(value){return String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function pfhNum(value){const n=Number(value||0);return Number.isFinite(n)?n:0;}
@@ -126,7 +140,7 @@ function pfhDefaultDates(){
     const iso=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
     return {from:iso(first),to:iso(now)};
 }
-function pfhOpen(mode="receiving"){pfhEnsureUI();const d=pfhDefaultDates();PharmFlowReceivingHistory.from=PharmFlowReceivingHistory.from||d.from;PharmFlowReceivingHistory.to=PharmFlowReceivingHistory.to||d.to;pfhSyncDateButtons();document.getElementById("pfhOverlay").hidden=false;pfhSetMode(mode);document.getElementById("pfhFromButton").focus();}
+function pfhOpen(mode="receiving"){pfhEnforceAccountScope();pfhEnsureUI();const d=pfhDefaultDates();PharmFlowReceivingHistory.from=PharmFlowReceivingHistory.from||d.from;PharmFlowReceivingHistory.to=PharmFlowReceivingHistory.to||d.to;pfhSyncDateButtons();document.getElementById("pfhOverlay").hidden=false;pfhSetMode(mode);document.getElementById("pfhFromButton").focus();}
 function pfhClose(){const x=document.getElementById("pfhOverlay");if(x)x.hidden=true;}
 function pfhSetMode(mode){PharmFlowReceivingHistory.mode=mode==="new"?"new":"receiving";document.querySelectorAll("[data-pfh-mode]").forEach(b=>b.classList.toggle("active",b.dataset.pfhMode===PharmFlowReceivingHistory.mode));document.getElementById("pfhTitle").textContent=PharmFlowReceivingHistory.mode==="new"?"NEW High Priority History":"Historical Receiving Reports";const desc=document.getElementById("pfhDescription");if(desc)desc.textContent=PharmFlowReceivingHistory.mode==="new"?"Review only items marked NEW High Priority during completed Receiving workspaces.":"Review completed workspaces and discrepancies grouped by Order Number.";pfhRender();}
 function pfhFormatDate(value){if(!value)return "Select date";const [y,m,d]=String(value).split("-").map(Number);return new Intl.DateTimeFormat(undefined,{day:"2-digit",month:"short",year:"numeric"}).format(new Date(y,m-1,d));}
@@ -157,6 +171,7 @@ function pfhRenderCalendar(pop,year,month,selectedIso){
     pop.querySelector("[data-cal-today]").addEventListener("click",()=>{const iso=pfhIsoLocal(new Date());if(pop.dataset.kind==="from")PharmFlowReceivingHistory.from=iso;else PharmFlowReceivingHistory.to=iso;pfhSyncDateButtons();pop.remove();});
 }
 async function pfhGenerate(){
+    pfhEnforceAccountScope();
     const from=PharmFlowReceivingHistory.from||"",to=PharmFlowReceivingHistory.to||"";
     if(!from||!to){showToast?.("Select From Date and To Date","warning");return;}
     if(from>to){showToast?.("From Date cannot be after To Date","warning");return;}
