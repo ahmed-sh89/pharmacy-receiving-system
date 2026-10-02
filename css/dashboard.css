@@ -7682,10 +7682,15 @@ body.zebraDevice.zebraHomeActive .zebraBrandLockup{
   display:flex!important;flex-direction:column!important;align-items:center!important;gap:5px!important;
 }
 body.zebraDevice.zebraHomeActive .zebraBrandMark{
-  width:54px!important;height:54px!important;display:grid!important;place-items:center!important;
-  border:1px solid #cbdcf2!important;border-radius:14px!important;background:#eaf2ff!important;
-  color:#1557c0!important;font-size:32px!important;font-weight:950!important;line-height:1!important;
+  width:58px!important;height:58px!important;display:grid!important;place-items:center!important;
+  border:1px solid #cbdcf2!important;border-radius:16px!important;background:#eaf2ff!important;
+  line-height:1!important;
 }
+body.zebraDevice.zebraHomeActive .zebraBrandMark svg{width:44px!important;height:44px!important;display:block!important}
+body.zebraDevice.zebraHomeActive .zebraBrandMark .pfMarkP{fill:#0879e8!important}
+body.zebraDevice.zebraHomeActive .zebraBrandMark .pfMarkCapsule{fill:#f4f8fc!important;stroke:#a7c5dc!important;stroke-width:.8!important}
+body.zebraDevice.zebraHomeActive .zebraBrandMark .pfMarkCapsuleBlue{fill:#0879e8!important}
+body.zebraDevice.zebraHomeActive .zebraBrandMark .pfMarkCapsuleSplit{stroke:#91b9d9!important;stroke-width:.8!important}
 body.zebraDevice.zebraHomeActive .zebraBrandLockup>div{
   display:flex!important;flex-direction:column!important;align-items:center!important;gap:2px!important;
 }
