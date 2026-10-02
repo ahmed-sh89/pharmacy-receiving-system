@@ -8945,7 +8945,14 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
            identifiers are malformed or unsupported by the strict parser.
            Only the fixed 14 digits immediately following AI 01 are accepted;
            the remaining payload is never stored as the product identifier. */
-        const gs1Payload=raw.replace(/^\]C1/,"");
+        /* Recover AI (01) from the scanner formats PharmFlow actually
+           receives. cleanScannerInput() is the shared transport normalizer:
+           it removes AIM prefixes (]C1 / ]d2 / ]Q3) and converts visible
+           separator variants such as "~" to GS. Settings must use the same
+           normalized boundary instead of parsing the raw UI string itself. */
+        const gs1Payload=typeof cleanScannerInput==="function"
+            ? cleanScannerInput(raw)
+            : raw.replace(/^\](?:C1|d2|Q3)/i,"").replace(/\\?~+/g,"\x1D");
         const ai01Match=gs1Payload.match(/^01(\d{14})/);
         if(isStrongGs1&&ai01Match) return {raw,query:ai01Match[1],isBarcode:true};
 
