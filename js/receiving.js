@@ -386,7 +386,7 @@ function prepareManualExtraItem(itemCode,itemName,gtin,targetOrderOverride=""){
     return item;
 }
 
-function renderKnownNotInOrderHandheld(parsed,masterRecord){
+function renderKnownNotInOrderHandheld(parsed,masterRecord,queueOptions={}){
     clearHandheldActionCard();
 
     const lastScan=document.getElementById("lastScanCard");
@@ -468,7 +468,8 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
                     reason:"KNOWN_NOT_IN_ORDER",
                     itemCode:code,
                     itemName:name,
-                    orderNumber:null
+                    orderNumber:null,
+                    operationId:queueOptions.transactionId||""
                 });
 
                 if(!draft?.review_id){
@@ -801,7 +802,7 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null,queueOptions
 
         if(isHandheld){
             setScanBoxState?.("action");
-            return renderKnownNotInOrderHandheld(parsed,masterRecord);
+            return renderKnownNotInOrderHandheld(parsed,masterRecord,queueOptions);
         }
 
         /* PC: identity is already authoritative. Do not send a known Global
