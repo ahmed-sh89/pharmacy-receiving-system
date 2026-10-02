@@ -1,0 +1,120 @@
+/* PharmFlow Receiving History — scoped production UI */
+.pfhHistoryButton{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 14px;border:1px solid var(--border-color,#d9cec6);border-radius:10px;background:var(--card-bg,#fff);color:var(--text-primary,#342d28);font:inherit;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(52,45,40,.04)}
+.pfhHistoryButton:hover{border-color:#9a6246;background:#fbf7f4}.pfhHistoryButton:focus-visible{outline:3px solid rgba(154,98,70,.2);outline-offset:2px}
+.pfhOverlay{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:24px;background:rgba(38,31,27,.48);backdrop-filter:blur(3px)}
+.pfhOverlay[hidden]{display:none}.pfhPanel{width:min(1180px,96vw);max-height:92vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #ded3cb;border-radius:18px;box-shadow:0 24px 70px rgba(36,29,25,.22)}
+.pfhHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:22px 24px 16px;border-bottom:1px solid #eee5df}.pfhHeader h2{margin:3px 0 4px;font-size:22px}.pfhHeader p{margin:0;color:#766b63;font-size:13px}
+.pfhClose{width:38px;height:38px;border:1px solid #ded3cb;border-radius:10px;background:#fff;color:#554941;font-size:18px;cursor:pointer}.pfhClose:hover{background:#f8f3ef}
+.pfhBody{overflow:auto;padding:18px 24px 24px}.pfhTabs{display:flex;gap:8px;margin-bottom:16px}.pfhTab{border:1px solid #ddd1c8;border-radius:10px;background:#fff;color:#62564e;padding:9px 14px;font-weight:700;cursor:pointer}.pfhTab.active{background:#9a6246;border-color:#9a6246;color:#fff}
+.pfhFilters{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end;padding:16px;border:1px solid #eadfd8;border-radius:14px;background:#fcfaf8}.pfhField{display:grid;gap:6px}.pfhField span{font-size:11px;font-weight:800;letter-spacing:.06em;color:#806f64}.pfhField input{width:100%;height:40px;border:1px solid #d8cbc2;border-radius:10px;background:#fff;color:#342d28;padding:0 11px;font:inherit}.pfhField input:focus{outline:0;border-color:#9a6246;box-shadow:0 0 0 3px rgba(154,98,70,.12)}
+.pfhGenerate{height:40px;padding:0 18px;border:1px solid #9a6246;border-radius:10px;background:#9a6246;color:#fff;font-weight:800;cursor:pointer}.pfhGenerate:hover{filter:brightness(.96)}
+.pfhSummary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}.pfhMetric{padding:13px 14px;border:1px solid #e7dcd5;border-radius:12px;background:#fff}.pfhMetric span{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;color:#8b7b70}.pfhMetric strong{display:block;margin-top:4px;font-size:22px;color:#3b312b}
+.pfhToolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0}.pfhToolbar strong{font-size:13px}.pfhExports{display:flex;gap:8px}.pfhExport{border:1px solid #d8cbc2;border-radius:9px;background:#fff;color:#4e423a;padding:8px 12px;font-weight:700;cursor:pointer}.pfhExport:hover{background:#f8f3ef;border-color:#b89580}
+.pfhWorkspaceList{display:grid;gap:10px}.pfhWorkspace{border:1px solid #e3d8d1;border-radius:13px;background:#fff;overflow:hidden}.pfhWorkspaceHead{width:100%;display:grid;grid-template-columns:1.2fr .8fr .8fr auto;align-items:center;gap:12px;padding:14px 16px;border:0;background:#fff;color:#3d332d;text-align:left;cursor:pointer;font:inherit}.pfhWorkspaceHead:hover{background:#fcf8f5}.pfhWorkspaceHead strong{font-size:14px}.pfhWorkspaceHead span{font-size:12px;color:#75685f}.pfhChevron{font-size:17px!important;color:#9a6246!important}.pfhWorkspace.open .pfhChevron{transform:rotate(180deg)}
+.pfhWorkspaceDetail{padding:0 16px 16px;background:#fdfbf9}.pfhOrder{padding-top:14px}.pfhOrderHeader{display:flex;justify-content:space-between;gap:12px;padding:9px 11px;background:#f3ece7;border-left:3px solid #9a6246;border-radius:8px}.pfhOrderHeader strong{font-size:13px}.pfhOrderHeader span{font-size:11px;color:#74675e}
+.pfhTableWrap{overflow:auto;margin-top:8px;border:1px solid #eadfd8;border-radius:10px}.pfhTable{width:100%;border-collapse:collapse;min-width:760px}.pfhTable th{background:#f8f3ef;color:#66584f;font-size:10px;letter-spacing:.04em;text-align:left;padding:9px;border-bottom:1px solid #e5dad3}.pfhTable td{padding:9px;font-size:12px;border-bottom:1px solid #eee6e1}.pfhTable tr:last-child td{border-bottom:0}.pfhNum{text-align:center}.pfhIssue{font-weight:800}.pfhIssue.short{color:#a54343}.pfhIssue.over{color:#96651f}.pfhIssue.extra{color:#76528c}.pfhNewBadge{display:inline-flex;padding:3px 7px;border-radius:999px;background:#edf5ef;color:#3f7455;font-size:10px;font-weight:900}
+.pfhEmpty{padding:34px 18px;text-align:center;border:1px dashed #d9ccc3;border-radius:12px;color:#7b6e65;background:#fdfbf9}.pfhLoading{padding:26px;text-align:center;color:#75685f}
+@media(max-width:760px){.pfhOverlay{padding:8px}.pfhPanel{width:100%;max-height:96vh;border-radius:14px}.pfhHeader,.pfhBody{padding-left:14px;padding-right:14px}.pfhFilters{grid-template-columns:1fr 1fr}.pfhGenerate{grid-column:1/-1}.pfhSummary{grid-template-columns:1fr 1fr}.pfhWorkspaceHead{grid-template-columns:1fr auto}.pfhWorkspaceHead span:nth-of-type(2){display:none}.pfhToolbar{align-items:flex-start;flex-direction:column}}
+
+/* RC polish — custom calendar and Receiving toolbar parity */
+.pfhPanel{position:relative}
+.pfhDateButton{box-sizing:border-box;width:100%;height:42px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;border:1px solid #d8cbc2;border-radius:10px;background:#fff;color:#342d28;font:inherit;font-weight:750;cursor:pointer;text-align:left}
+.pfhDateButton:hover,.pfhDateButton:focus-visible{border-color:#9a6246;box-shadow:0 0 0 3px rgba(154,98,70,.11);outline:0}.pfhDateButton b{font-size:17px;color:#9a6246;font-weight:700}
+.pfhCalendarPopover{position:absolute;z-index:13020;width:310px;padding:13px;border:1px solid #ded3cb;border-radius:14px;background:#fff;box-shadow:0 18px 45px rgba(47,37,31,.2)}
+.pfhCalHead{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:10px}.pfhCalHead strong{text-align:center;font-size:14px;color:#3d332d}.pfhCalHead button{width:34px;height:34px;border:1px solid #e0d5ce;border-radius:9px;background:#fff;color:#6a584d;font-size:22px;line-height:1;cursor:pointer}.pfhCalHead button:hover{background:#f7f1ed;border-color:#b99581}
+.pfhCalWeek,.pfhCalGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.pfhCalWeek{margin-bottom:5px}.pfhCalWeek span{padding:4px 0;text-align:center;color:#938277;font-size:9px;font-weight:850;text-transform:uppercase}.pfhCalDay,.pfhCalBlank{height:34px}.pfhCalDay{border:1px solid transparent;border-radius:8px;background:transparent;color:#463a33;font-size:11px;font-weight:700;cursor:pointer}.pfhCalDay:hover{background:#f6efea;border-color:#e4d4ca}.pfhCalDay.today{border-color:#c7aa98}.pfhCalDay.selected{background:#9a6246;border-color:#9a6246;color:#fff}.pfhCalFoot{display:flex;justify-content:flex-end;margin-top:9px;padding-top:9px;border-top:1px solid #eee5df}.pfhCalFoot button{border:0;background:transparent;color:#8b5b42;font-size:11px;font-weight:850;cursor:pointer;padding:4px 6px}
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters{position:relative!important;width:112px!important;min-width:112px!important;max-width:112px!important;overflow:visible!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfnUnifiedMultiSelect{position:relative!important;width:112px!important;min-width:112px!important;max-width:112px!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfnUnifiedMultiSelect>summary{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;width:112px!important;height:38px!important;min-height:38px!important;padding:0 28px 0 12px!important;border:1px solid #a6bfd4!important;border-radius:8px!important;background:#edf5fc!important;color:#21577f!important;list-style:none!important;cursor:pointer!important;position:relative!important;font-size:12px!important;font-weight:800!important;white-space:nowrap!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfnUnifiedMultiSelect>summary::-webkit-details-marker{display:none!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfnUnifiedMultiSelect>summary::after{content:"⌄"!important;position:absolute!important;right:10px!important;top:50%!important;transform:translateY(-50%)!important;color:#21577f!important;font-size:12px!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfnUnifiedMultiSelectMenu{left:auto!important;right:0!important;top:calc(100% + 6px)!important;z-index:13010!important;max-height:min(320px,calc(100vh - 80px))!important;overflow:visible!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfrFilterOptions{max-height:230px!important;overflow-y:auto!important}
+ body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfrFilterActions{position:relative!important;z-index:1!important;background:#fff!important}
+ body:not(.zebraDevice) #page-receiving .pfnReportActionMenu>summary{font-size:12px!important;font-weight:800!important}
+}
+
+/* RC polish 2 — make Displayed a first-class KPI. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .pfnDisplayedItems{border:1px solid #8fb7d7!important;background:#e9f4fc!important;color:#426b8c!important;box-shadow:inset 0 0 0 1px rgba(67,142,205,.08)!important}
+ body:not(.zebraDevice) #page-receiving .pfnDisplayedItems strong{color:#123f68!important}
+}
+
+/* RC polish 3 — Displayed KPI shares the exact KPI vertical geometry. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnDisplayedItems{
+   box-sizing:border-box!important;
+   align-self:stretch!important;
+   height:auto!important;
+   min-height:58px!important;
+   margin:0!important;
+   padding:8px 10px!important;
+   display:flex!important;
+   flex-direction:column!important;
+   justify-content:center!important;
+   border-radius:8px!important;
+ }
+}
+
+/* RC polish 4 — compact professional period KPI. */
+.pfhPeriodMetric{min-width:0}.pfhPeriodDates{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin-top:5px}.pfhPeriodDates>div{min-width:0}.pfhPeriodDates small{display:block;margin-bottom:2px;color:#9a897e;font-size:8px;font-weight:900;letter-spacing:.07em}.pfhPeriodDates strong{display:block!important;margin:0!important;color:#3b312b!important;font-size:11px!important;line-height:1.2!important;white-space:nowrap}.pfhPeriodDates i{color:#9a6246;font-style:normal;font-size:13px;font-weight:800}
+
+/* Receiving Report KPI palette + multi-select state. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnIssueCard{transition:border-color .14s ease,background .14s ease,box-shadow .14s ease,transform .14s ease}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiAll{background:#edf5fc!important;border-color:#a7c8e3!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiShortage{background:#fff1f0!important;border-color:#e9aaa5!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiReceived{background:#eef8f2!important;border-color:#acd4ba!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiOver{background:#fff7e7!important;border-color:#e7c47d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiExtra{background:#f4f0fa!important;border-color:#c8b6df!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiDiscrepancy{background:#fdf1e9!important;border-color:#d8a281!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnIssueCard.active{box-shadow:inset 0 0 0 2px currentColor,0 2px 7px rgba(24,62,95,.09)!important;transform:translateY(-1px)}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiAll.active{color:#235f8d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiShortage.active{color:#a84d48!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiReceived.active{color:#397557!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiOver.active{color:#93631d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiExtra.active{color:#6f568d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiDiscrepancy.active{color:#965b3d!important}
+}
+
+/* RC KPI rebuild — six equal desktop columns, one shared geometry. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid{
+   display:grid!important;
+   grid-template-columns:repeat(6,minmax(0,1fr))!important;
+   grid-auto-rows:58px!important;
+   gap:7px!important;
+   width:100%!important;
+   margin:0!important;
+   align-items:stretch!important;
+ }
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid>.pfnIssueCard{
+   box-sizing:border-box!important;
+   width:100%!important;
+   min-width:0!important;
+   max-width:none!important;
+   height:58px!important;
+   min-height:58px!important;
+   margin:0!important;
+   padding:7px 10px!important;
+   align-self:stretch!important;
+   overflow:hidden!important;
+ }
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid>.pfnIssueCard span{
+   display:block!important;
+   width:100%!important;
+   max-width:100%!important;
+   overflow:hidden!important;
+   text-overflow:ellipsis!important;
+   white-space:nowrap!important;
+   font-size:11px!important;
+   line-height:1.1!important;
+   letter-spacing:.025em!important;
+ }
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid.discrepancyGrid>.pfnIssueCard strong{
+   margin-top:4px!important;
+   font-size:18px!important;
+   line-height:1!important;
+ }
+}

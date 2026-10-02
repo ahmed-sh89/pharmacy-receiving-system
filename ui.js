@@ -2243,19 +2243,29 @@ const RECEIVING_ISSUE_CARD_KEYS={
     shortage:["not_received","partial"],
     received:["received_any"],
     over:["over"],
-    manual:["manual"]
+    manual:["manual"],
+    discrepancy:["not_received","partial","over","manual"]
 };
 
 function refreshReceivingIssueCards(){
     const selected=UI.receivingFilters.issues instanceof Set
         ? UI.receivingFilters.issues
-        : new Set();
+        : new Set(RECEIVING_ISSUE_CARD_KEYS.all);
+    const allKeys=RECEIVING_ISSUE_CARD_KEYS.all;
+    const isAll=selected.size===allKeys.length&&allKeys.every(key=>selected.has(key));
     Object.entries(RECEIVING_ISSUE_CARD_KEYS).forEach(([card,keys])=>{
         const button=document.querySelector(`[data-issue-card="${card}"]`);
         if(!button) return;
-        const active=card==="all"
-            ? keys.every(key=>selected.has(key))
-            : keys.every(key=>selected.has(key));
+        let active=false;
+        if(card==="all") active=isAll;
+        else if(card==="discrepancy"){
+            active=!isAll&&keys.every(key=>selected.has(key));
+        }else{
+            /* Multi-select: a category is lit when its complete predicate is
+               part of the current union. Received intentionally overlaps
+               Partial/Over/Extra through Received Qty > 0. */
+            active=!isAll&&keys.every(key=>selected.has(key));
+        }
         button.classList.toggle("active",active);
         button.setAttribute("aria-pressed",active?"true":"false");
     });
@@ -2264,15 +2274,22 @@ function refreshReceivingIssueCards(){
 function toggleReceivingIssueCard(card){
     const keys=RECEIVING_ISSUE_CARD_KEYS[card];
     if(!keys) return;
-    const current=UI.receivingFilters.issues instanceof Set
-        ? new Set(UI.receivingFilters.issues)
-        : new Set();
-    const isActive=keys.every(key=>current.has(key));
+    const allKeys=RECEIVING_ISSUE_CARD_KEYS.all;
     if(card==="all"){
-        UI.receivingFilters.issues=isActive ? new Set() : new Set(keys);
+        UI.receivingFilters.issues=new Set(allKeys);
+    }else if(card==="discrepancy"){
+        UI.receivingFilters.issues=new Set(keys);
     }else{
-        keys.forEach(key=>isActive ? current.delete(key) : current.add(key));
-        UI.receivingFilters.issues=current;
+        const current=UI.receivingFilters.issues instanceof Set
+            ? new Set(UI.receivingFilters.issues)
+            : new Set(allKeys);
+        const isAll=current.size===allKeys.length&&allKeys.every(key=>current.has(key));
+        if(isAll) current.clear();
+        const fullySelected=keys.every(key=>current.has(key));
+        keys.forEach(key=>fullySelected?current.delete(key):current.add(key));
+        /* Never leave an accidental empty report: a cleared last KPI returns
+           to the full All Items view. */
+        UI.receivingFilters.issues=current.size?current:new Set(allKeys);
     }
     refreshReceivingIssueFilterLabel();
     refreshReceivingIssueCards();
@@ -2361,7 +2378,17 @@ function refreshReceivingTable(){
             return issues.has(issue)||(issues.has("received_any")&&received>0);
         });
     }
-    if(window.PharmFlowClassificationFilters) rows=window.PharmFlowClassificationFilters.filter(rows,UI.receivingFilters.classification||{});
+    if(window.PharmFlowClassificationFilters){
+        const classification=UI.receivingFilters.classification||{};
+        const selectedGroups=Array.isArray(classification.groups)?classification.groups:[];
+        const scopedForChoices=(AppState.workspace.orderData||[]).filter(item=>!selectedOrders.length||selectedOrders.some(order=>itemBelongsToOrderScope(item,order)));
+        const availableGroups=window.PharmFlowClassificationFilters.choices(scopedForChoices,classification)?.groups||[];
+        const allGroupsSelected=!selectedGroups.length ||
+            (availableGroups.length>0 && availableGroups.every(group=>selectedGroups.includes(group)));
+        /* Select All is a true unfiltered view. This deliberately preserves
+           unclassified Extra Items reconstructed from durable transactions. */
+        if(!allGroupsSelected) rows=window.PharmFlowClassificationFilters.filter(rows,classification);
+    }
     if(searchFilter) rows=rows.filter(item=>matchesReceivingSearch(item,searchFilter));
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
@@ -2382,10 +2409,13 @@ function refreshReceivingCategoryFilter(){
     ["groups"].forEach(key=>{
         const details=host.querySelector('[data-class-filter="'+key+'"]'),menu=details?.querySelector(".pfrFilterMenu");if(!menu)return;
         const allowed=new Set(choices[key]);state[key]=(state[key]||[]).filter(v=>allowed.has(v));
+        /* Empty group state means the default unfiltered view. Reflect that
+           truthfully in the selector by checking every available Group. */
+        if(key==="groups" && state[key].length===0 && choices[key].length) state[key]=choices[key].slice();
         const sig=choices[key].join("|")+"::"+state[key].join("|");if(menu.dataset.signature===sig)return;menu.dataset.signature=sig;
         menu.innerHTML=`<div class="pfrFilterOptions">${choices[key].length?choices[key].map(v=>`<label><input type="checkbox" value="${escapeHTML(v)}" ${state[key].includes(v)?"checked":""}><span>${escapeHTML(v)}</span></label>`).join(""):'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
         const groupLabel=details.querySelector("#receivingGroupFilterLabel")||details.querySelector("summary strong");
-        const groupText=!state[key].length||state[key].length===choices[key].length?"All groups":state[key].length===1?state[key][0]:state[key].length+" groups";
+        const groupText=!state[key].length||state[key].length===choices[key].length?"Group":state[key].length===1?state[key][0]:state[key].length+" groups";
         if(groupLabel) groupLabel.textContent=groupText;
     });
     if(host.dataset.bound!=="1"){

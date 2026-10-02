@@ -1266,9 +1266,13 @@ function getPerOrderReceivingRows(orderNumber, options={}){
             "Difference":extra.received,
             "Issue Type":"Extra Item",
             issueKey:"manual",
-            "Group":"",
-            "Category":"",
-            "Sub Category":""
+            "Group":toSafeString(
+                workspaceByCode.get(normalizeItemCode(extra.itemCode))?.group_name||
+                workspaceByCode.get(normalizeItemCode(extra.itemCode))?.groupName||
+                workspaceByCode.get(normalizeItemCode(extra.itemCode))?.Group||""
+            ).trim(),
+            "Category":toSafeString(workspaceByCode.get(normalizeItemCode(extra.itemCode))?.category||"").trim(),
+            "Sub Category":toSafeString(workspaceByCode.get(normalizeItemCode(extra.itemCode))?.sub_category||workspaceByCode.get(normalizeItemCode(extra.itemCode))?.subCategory||"").trim()
         });
     });
 
@@ -1327,7 +1331,24 @@ function buildMultiOrderReceivingReport(options={}){
                 return false;
             }
 
-            if(window.PharmFlowClassificationFilters&&!window.PharmFlowClassificationFilters.filter([row],classification).length) return false;
+            if(visibleOnly && window.PharmFlowClassificationFilters){
+                const selectedGroups=Array.isArray(classification?.groups)?classification.groups:[];
+                const availableGroups=window.PharmFlowClassificationFilters.choices(
+                    (AppState?.workspace?.orderData||[]),classification
+                )?.groups||[];
+                const allGroupsSelected=!selectedGroups.length ||
+                    (availableGroups.length>0 && availableGroups.every(group=>selectedGroups.includes(group)));
+                /* Select All means every operational row, including an Extra
+                   Item that has no classification metadata. */
+                if(!allGroupsSelected && !window.PharmFlowClassificationFilters.filter([row],classification).length) return false;
+            }
+            if(visibleOnly && typeof UI!=="undefined"){
+                const query=toSafeString(UI.receivingFilters?.search||"").trim();
+                if(query && typeof matchesReceivingSearch==="function"){
+                    const candidate={itemCode:row["Item Number"],itemName:row["Item Name"]};
+                    if(!matchesReceivingSearch(candidate,query)) return false;
+                }
+            }
             return true;
         });
 
@@ -1513,6 +1534,7 @@ function buildLiveReceivingReport(options={}){
 
 function buildReceivingEmailDifferencesReport(liveReport=null){
     const live=liveReport || buildLiveReceivingReport();
+    const FINAL_DISCREPANCY_TYPES=new Set(["NOT RECEIVED","PARTIAL SHORTAGE","OVER RECEIVED","EXTRA ITEM","SHORTAGE","UNORDERED"]);
     const toEmailRow=row=>({
         "Item Number":row["Item Number"],
         "Item Name":row["Item Name"],
@@ -1522,6 +1544,9 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
         "Issue Type":row["Issue Type"]||row["Status"],
         "Category":row["Category"]||""
     });
+    const isFinalDiscrepancy=row=>FINAL_DISCREPANCY_TYPES.has(
+        String(row?.["Issue Type"]||row?.Status||"").trim().toUpperCase()
+    );
 
     /* The email must retain per-order boundaries. A live receiving snapshot
        is flat, so derive the canonical grouped report while its workspace is
@@ -1535,7 +1560,7 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
     const orderGroups=Array.isArray(grouped?.orderGroups)
         ? grouped.orderGroups
             .map(group=>{
-                const rows=(group.rows||[]).map(toEmailRow);
+                const rows=(group.rows||[]).filter(isFinalDiscrepancy).map(toEmailRow);
                 return {
                     ...group,
                     summary:{
@@ -1551,7 +1576,7 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
     const rows=orderGroups.length
         ? orderGroups.flatMap(group=>group.rows)
         : (live?.rows||[])
-            .filter(row=>String(row?.Status||"").toUpperCase()!=="COMPLETED")
+            .filter(isFinalDiscrepancy)
             .map(toEmailRow);
 
     return {
@@ -1777,7 +1802,8 @@ function refreshReceivingVerificationSummary(){
         rsShort:all.shortageItems,
         rsReceived:(all.rows||[]).filter(row=>Number(row?.["Received Qty"]||0)>0).length,
         rsOver:all.overItems,
-        rsManual:all.manualExtraItems
+        rsManual:all.manualExtraItems,
+        rsDiscrepancy:(all.rows||[]).filter(row=>["Not Received","Partial Shortage","Over Received","Extra Item"].includes(String(row?.["Issue Type"]||""))).length
     };
     Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
     return visible;
@@ -1818,7 +1844,7 @@ function getReceivingReportFileBase(summary){
 function exportReceivingSummaryExcel(){
     if(typeof XLSX==="undefined"){showToast("Excel library is unavailable","error");return false;}
     const s=buildReceivingDiscrepancyReport({visibleOnly:true});
-    if(!s.rows.length){showToast("No displayed discrepancies to export","warning");return false;}
+    if(!s.rows.length){showToast("No displayed rows to export","warning");return false;}
 
     const aoa=[];
     aoa.push(["Order Number","Order Date","From Warehouse","To Warehouse","Source File"]);
@@ -1832,14 +1858,14 @@ function exportReceivingSummaryExcel(){
     ws["!freeze"]={xSplit:0,ySplit:headerRow};
     ws["!autofilter"]={ref:`A${headerRow}:G${aoa.length}`};
     const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,"Discrepancies");
+    XLSX.utils.book_append_sheet(wb,ws,"Receiving View");
     XLSX.writeFile(wb,getReceivingReportFileBase(s)+".xlsx");
-    showToast("Displayed discrepancy rows exported to Excel","success"); return true;
+    showToast("Displayed rows exported to Excel","success"); return true;
 }
 
 function exportReceivingSummaryPDF(){
     const s=buildReceivingDiscrepancyReport({visibleOnly:true});
-    if(!s.rows.length){showToast("No displayed discrepancies to export","warning");return false;}
+    if(!s.rows.length){showToast("No displayed rows to export","warning");return false;}
     if(!window.jspdf || !window.jspdf.jsPDF){showToast("PDF library is unavailable","error");return false;}
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
@@ -1887,7 +1913,7 @@ function exportReceivingSummaryPDF(){
     function footer(){
         doc.setFont("helvetica","normal");doc.setFontSize(8);
         doc.text(`Page ${pageNo}`,pageW-margin-35,pageH-18);
-        doc.text(`${s.rows.length} displayed discrepancy item(s)`,margin,pageH-18);
+        doc.text(`${s.rows.length} displayed item(s)`,margin,pageH-18);
     }
     header();
     s.rows.forEach((r)=>{
@@ -1907,7 +1933,7 @@ function exportReceivingSummaryPDF(){
     });
     footer();
     doc.save(getReceivingReportFileBase(s)+".pdf");
-    showToast("Displayed discrepancy rows exported to PDF","success"); return true;
+    showToast("Displayed rows exported to PDF","success"); return true;
 }
 
 
