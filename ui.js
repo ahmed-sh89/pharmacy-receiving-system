@@ -2378,7 +2378,17 @@ function refreshReceivingTable(){
             return issues.has(issue)||(issues.has("received_any")&&received>0);
         });
     }
-    if(window.PharmFlowClassificationFilters) rows=window.PharmFlowClassificationFilters.filter(rows,UI.receivingFilters.classification||{});
+    if(window.PharmFlowClassificationFilters){
+        const classification=UI.receivingFilters.classification||{};
+        const selectedGroups=Array.isArray(classification.groups)?classification.groups:[];
+        const scopedForChoices=(AppState.workspace.orderData||[]).filter(item=>!selectedOrders.length||selectedOrders.some(order=>itemBelongsToOrderScope(item,order)));
+        const availableGroups=window.PharmFlowClassificationFilters.choices(scopedForChoices,classification)?.groups||[];
+        const allGroupsSelected=!selectedGroups.length ||
+            (availableGroups.length>0 && availableGroups.every(group=>selectedGroups.includes(group)));
+        /* Select All is a true unfiltered view. This deliberately preserves
+           unclassified Extra Items reconstructed from durable transactions. */
+        if(!allGroupsSelected) rows=window.PharmFlowClassificationFilters.filter(rows,classification);
+    }
     if(searchFilter) rows=rows.filter(item=>matchesReceivingSearch(item,searchFilter));
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
