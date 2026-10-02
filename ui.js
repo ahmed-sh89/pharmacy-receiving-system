@@ -2385,7 +2385,7 @@ function refreshReceivingCategoryFilter(){
         const sig=choices[key].join("|")+"::"+state[key].join("|");if(menu.dataset.signature===sig)return;menu.dataset.signature=sig;
         menu.innerHTML=`<div class="pfrFilterOptions">${choices[key].length?choices[key].map(v=>`<label><input type="checkbox" value="${escapeHTML(v)}" ${state[key].includes(v)?"checked":""}><span>${escapeHTML(v)}</span></label>`).join(""):'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
         const groupLabel=details.querySelector("#receivingGroupFilterLabel")||details.querySelector("summary strong");
-        const groupText=!state[key].length||state[key].length===choices[key].length?"All groups":state[key].length===1?state[key][0]:state[key].length+" groups";
+        const groupText=!state[key].length||state[key].length===choices[key].length?"Group":state[key].length===1?state[key][0]:state[key].length+" groups";
         if(groupLabel) groupLabel.textContent=groupText;
     });
     if(host.dataset.bound!=="1"){
