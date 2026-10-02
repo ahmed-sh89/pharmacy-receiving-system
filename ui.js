@@ -5649,6 +5649,18 @@ function createLastScanQuantityControls(){
                   return;
               }
 
+              if(isHandheld){
+                  /* The authoritative Handheld correction boundary is the
+                     in-memory operational batch used by the quantity display.
+                     Historical device rows include earlier saved batches and
+                     must never authorize another decrement. */
+                  const adjustable=Math.max(0,getOperationalCurrentBatchQuantity(item.itemCode));
+                  if(adjustable<=0){
+                      showToast("Current batch quantity is already zero","warning");
+                      return;
+                  }
+              }
+
               decreaseItemQuantity(
                   item.itemCode,
                   1
@@ -7269,24 +7281,22 @@ function initializeZebraInterface(){
         home.innerHTML = `
             <div class="zebraBrandRow">
                 <div class="zebraBrandLockup">
-                    <span class="zebraBrandMark"><img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true"></span>
+                    <span class="zebraBrandMark" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><g class="pfMarkP"><rect x="7" y="8" width="3" height="48" rx="1.5"/><rect x="12" y="8" width="2.4" height="48" rx="1.2"/><rect x="17" y="8" width="4" height="48" rx="1.5"/><rect x="23" y="8" width="2.5" height="48" rx="1.2"/><path d="M28 8h11.5C50.8 8 57 14.4 57 24.3 57 34.2 50.6 41 39.3 41H34v15h-6V8zm6 7v19h5c7.4 0 11.6-3.4 11.6-9.6C50.6 18.2 46.6 15 39 15h-5z"/></g><g transform="translate(44.8 24.6) rotate(-38) scale(.98)"><rect x="-7.8" y="-3.6" width="15.6" height="7.2" rx="3.6" class="pfMarkCapsule"/><path d="M-7.4-3.15h7.5v6.3h-7.5a3.15 3.15 0 0 1 0-6.3z" class="pfMarkCapsuleBlue"/><path d="M.1-3.15v6.3" class="pfMarkCapsuleSplit"/></g></svg></span>
                     <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
                 </div>
             </div>
             <div class="zebraModeIntro">
-                <span>WORK MODE</span>
                 <h1>Choose your workspace</h1>
-                <p>Fast access to the tools needed for the current task.</p>
             </div>
             <div class="zebraModeCards">
                 <button id="btnZebraReceivingMode" class="zebraModeCard zebraModeReceiving" type="button">
                     <span class="zebraModeIcon" aria-hidden="true">▥</span>
-                    <div><strong>Receiving</strong><small>Scan and count active orders.</small></div>
+                    <div><strong>Receiving</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
                 <button class="zebraModeCard zebraModeExpiry" type="button" disabled aria-disabled="true" title="Coming soon">
                     <span class="zebraModeIcon" aria-hidden="true">◷</span>
-                    <div><strong>Near Expiry</strong><small>COMING SOON</small></div>
+                    <div><strong>Near Expiry</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
             </div>
@@ -7624,21 +7634,62 @@ function getFriendlyReceivingDeviceLabel(row,options={}){
 }
 
 
-function getHandheldDeviceScannerRows(){
-    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+function getHandheldDeviceReceivingRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
         ? AppState.workspace.receivingHistory
         : [];
-    const deviceId = typeof ensureDeviceId === "function"
+    const deviceId=typeof ensureDeviceId==="function"
         ? ensureDeviceId()
         : AppState?.session?.deviceId;
 
-    return history.filter(tx => {
-        const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
-        const source = String(tx?.source || "").toUpperCase();
-        const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
-            || source.includes("SCAN");
-        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+    return history
+        .filter(tx=>{
+            if(deviceId && String(tx?.deviceId||"")!==String(deviceId||"")) return false;
+            const quantity=Number(tx?.quantity||0);
+            return Number.isFinite(quantity) && quantity!==0;
+        })
+        .slice()
+        .sort((a,b)=>String(a?.dateTime||"").localeCompare(String(b?.dateTime||"")));
+}
+
+function getHandheldDeviceScannerRows(){
+    /*
+       Recent Actions is projected from the immutable receiving ledger.
+       Scanner rows remain independently actionable; a SCAN_UNDO cancels the
+       matching scan in this projection without deleting either ledger row.
+    */
+    const ownRows=getHandheldDeviceReceivingRows();
+    const activeScans=[];
+    const scannerSource=String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
+
+    ownRows.forEach(tx=>{
+        const source=String(tx?.source||"").toUpperCase();
+        const quantity=Number(tx?.quantity||0);
+        const isScan=source===scannerSource || (source.includes("SCAN") && source!=="SCAN_UNDO");
+
+        if(isScan && quantity>0){
+            activeScans.push(tx);
+            return;
+        }
+
+        if(source!=="SCAN_UNDO" || quantity>=0) return;
+
+        let remaining=Math.abs(quantity);
+        for(let i=activeScans.length-1;i>=0 && remaining>0;i--){
+            const scan=activeScans[i];
+            if(String(scan?.itemCode||"")!==String(tx?.itemCode||"")) continue;
+            const scanOrder=String(scan?.orderNumber||scan?.order_number||"");
+            const undoOrder=String(tx?.orderNumber||tx?.order_number||"");
+            if(scanOrder && undoOrder && scanOrder!==undoOrder) continue;
+            const scanQty=Math.max(0,Number(scan?.quantity||0));
+            if(remaining>=scanQty){
+                remaining-=scanQty;
+                activeScans.splice(i,1);
+            }
+        }
     });
+
+    return activeScans;
 }
 
 function getAllWorkspaceScannerRows(){
@@ -7798,7 +7849,6 @@ function openHandheldScansPanel(){
     const esc=value=>typeof escapeHtml==="function"
         ? escapeHtml(String(value??""))
         : String(value??"");
-
     const formatTime=value=>{
         try{
             const d=new Date(value);
@@ -7806,53 +7856,57 @@ function openHandheldScansPanel(){
             return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
         }catch(_){ return ""; }
     };
-
-    const scanRows=()=>getHandheldDeviceScannerRows().slice()
+    const actionRows=()=>getHandheldDeviceReceivingRows().slice()
         .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
-        .slice(0,3);
+        .slice(0,20);
+    const activeScans=()=>getHandheldDeviceScannerRows().slice()
+        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")));
 
     const overlay=document.createElement("div");
     overlay.id="handheldScansOverlay";
     overlay.className="handheldScansOverlay handheldRecentOverlay";
 
     const render=()=>{
-        const recent=scanRows();
+        const recent=actionRows();
+        const latestRemovable=activeScans()[0];
+        const latestRemovableId=String(latestRemovable?.transactionId||"");
 
-        const scanMarkup=recent.length ? recent.map((row,index)=>{
-            const qty=Math.max(1,Number(row?.quantity||1)||1);
+        const markup=recent.length ? recent.map((row,index)=>{
+            const qty=Number(row?.quantity||0);
+            const source=String(row?.source||"").toUpperCase();
+            const isUndo=source==="SCAN_UNDO";
+            const isScan=!isUndo && (source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase() || source.includes("SCAN"));
+            const label=isUndo ? "Scan removed" : isScan ? "Scan" : qty<0 ? "Adjustment" : "Quantity";
+            const transactionId=String(row?.transactionId||"");
+            const removable=transactionId && transactionId===latestRemovableId;
             return `
               <article class="handheldRecentRow handheldScanHistoryRow">
                 <div class="handheldRecentIndex">${index+1}</div>
                 <div class="handheldRecentInfo">
                   <strong>${esc(row?.itemName||"Item")}</strong>
-                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))}</span>
+                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))} · ${label}</span>
                 </div>
-                <div class="handheldRecentQty">+${qty}</div>
-                ${index===0
-                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(row?.transactionId||"")}">REMOVE</button>`
+                <div class="handheldRecentQty ${qty<0?"isNegative":""}">${qty>0?"+":""}${qty}</div>
+                ${removable
+                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(transactionId)}">REMOVE</button>`
                     : `<span class="handheldRecentViewOnly">Saved</span>`}
               </article>`;
-        }).join("") : `<div class="handheldScansEmpty">No recent scans on this Handheld.</div>`;
+        }).join("") : `<div class="handheldScansEmpty">No recent receiving actions on this Handheld.</div>`;
 
         overlay.innerHTML=`
-          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
+          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Receiving history">
             <header>
               <div>
                 <span>RECEIVING HISTORY</span>
-                <strong>Recent Scans</strong>
-                <small>Last ${recent.length} scan transactions</small>
+                <strong>Recent Actions</strong>
+                <small>Last ${recent.length} receiving actions on this Handheld</small>
               </div>
               <button type="button" data-close aria-label="Close">✕</button>
             </header>
-
             <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
-
-            <div class="handheldRecentList">
-              ${scanMarkup}
-            </div>
-
+            <div class="handheldRecentList">${markup}</div>
             <div class="handheldRecentFooter">
-              <span>Only the latest scan can be removed. The correction is saved to the shared receiving record.</span>
+              <span>Scans and quantity adjustments are preserved. Only the latest active scan can be removed.</span>
               <button type="button" class="handheldPanelDone" data-close>DONE</button>
             </div>
           </section>`;
@@ -7861,27 +7915,20 @@ function openHandheldScansPanel(){
             overlay.remove();
             setTimeout(()=>window.hhRefreshReadyState?.(),20);
         });
-
-        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async()=>{
-            const transactionId=overlay.querySelector("[data-remove-last]")?.dataset.removeLast||"";
-            const latest=scanRows()[0];
+        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async event=>{
+            const transactionId=event.currentTarget?.dataset.removeLast||"";
+            const latest=activeScans()[0];
             if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
             if(!await pharmFlowConfirm({title:"Remove Last Scan?",message:`${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))} will be cancelled and preserved in Receiving history.`,confirmText:"Remove Scan",tone:"danger"})) return;
             const removed=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
                 : false;
-            if(removed){
-                setTimeout(()=>{
-                    if(document.body.contains(overlay)) render();
-                },0);
-            }
+            if(removed) setTimeout(()=>{ if(document.body.contains(overlay)) render(); },0);
         });
-
     };
 
     document.body.appendChild(overlay);
     render();
-
 }
 
 
@@ -9098,14 +9145,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Find the item once. PharmFlow will allocate the quantity to the correct active Orders automatically.</p></div>
-          <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+          <div><span class="needsReviewKicker">${handheld?"REVIEW QUEUE":"RECEIVING EXCEPTIONS"}</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Units</span></div>${handheld?"":`<p>Find the item once. PharmFlow will allocate the quantity to the correct active Orders automatically.</p>`}</div>
+          <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button>${handheld?"":`<button type="button" data-review-history>History</button>`}<button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
               <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false" aria-controls="needsReviewCase-${index}">
-                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>${group.work_scope_order_numbers.length} Active Order${group.work_scope_order_numbers.length===1?"":"s"}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
+                <strong>${esc(group.gtin||"Identifier unavailable")}</strong>${handheld?"":`<span>${group.work_scope_order_numbers.length} Active Order${group.work_scope_order_numbers.length===1?"":"s"}</span>`}<b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
               </button>
               <div class="needsReviewCaseDetail" id="needsReviewCase-${index}" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
@@ -9119,15 +9166,17 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
-              <div class="needsReviewResolve">
-                <div class="needsReviewSearchRow">
-                  <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
-                  <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
-                </div>
-                <div class="needsReviewMatches" data-matches="${index}"></div>
-                <div class="needsReviewSelection" data-selection="${index}" hidden></div>
-                <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
-              </div>
+              ${handheld
+                ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span><button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button></div>`
+                : `<div class="needsReviewResolve">
+                    <div class="needsReviewSearchRow">
+                      <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
+                      <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
+                    </div>
+                    <div class="needsReviewMatches" data-matches="${index}"></div>
+                    <div class="needsReviewSelection" data-selection="${index}" hidden></div>
+                    <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+                  </div>`}
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
@@ -9201,7 +9250,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
         cancelReview?.addEventListener("click",async()=>{
             if(!await pharmFlowConfirm({title:"Cancel Needs Review Group?",message:`GTIN ${group.gtin}. This will not learn the GTIN or change any received quantity.`,confirmText:"Cancel Group",tone:"danger"})) return;
-            const reason=toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
+            /* Handheld cancellation is an operational wrong-scan cleanup.
+               Do not invoke browser prompt(): Zebra kiosk/focus handling can
+               suppress it and workers should not type free-form reasons.
+               Desktop retains the existing audited reason requirement. */
+            const reason=handheld
+                ? "Wrong Scan — Handheld"
+                : toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
             if(!reason){showToast?.("A cancellation reason is required","warning");return;}
             cancelReview.disabled=true; overlay.dataset.busy="1";
             try{
