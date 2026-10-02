@@ -2382,6 +2382,9 @@ function refreshReceivingCategoryFilter(){
     ["groups"].forEach(key=>{
         const details=host.querySelector('[data-class-filter="'+key+'"]'),menu=details?.querySelector(".pfrFilterMenu");if(!menu)return;
         const allowed=new Set(choices[key]);state[key]=(state[key]||[]).filter(v=>allowed.has(v));
+        /* Empty group state means the default unfiltered view. Reflect that
+           truthfully in the selector by checking every available Group. */
+        if(key==="groups" && state[key].length===0 && choices[key].length) state[key]=choices[key].slice();
         const sig=choices[key].join("|")+"::"+state[key].join("|");if(menu.dataset.signature===sig)return;menu.dataset.signature=sig;
         menu.innerHTML=`<div class="pfrFilterOptions">${choices[key].length?choices[key].map(v=>`<label><input type="checkbox" value="${escapeHTML(v)}" ${state[key].includes(v)?"checked":""}><span>${escapeHTML(v)}</span></label>`).join(""):'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
         const groupLabel=details.querySelector("#receivingGroupFilterLabel")||details.querySelector("summary strong");
