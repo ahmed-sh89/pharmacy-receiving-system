@@ -80,7 +80,11 @@ async function nrV2CreateDraft(parsed,options={}){
         throw new Error("Select a Receiving Order on this device before saving this scan for review.");
     }
 
-    const result=await authRpc("create_pharmflow_needs_review_v4",{
+    const operationId=toSafeString(options.operationId||"").trim();
+    const rpcName=operationId
+        ? "create_pharmflow_needs_review_v5"
+        : "create_pharmflow_needs_review_v4";
+    const payload={
         p_pharmacy_id:pharmacyId,
         p_workflow:options.workflow||"RECEIVING",
         p_identifier_display:capturedCode,
@@ -94,7 +98,10 @@ async function nrV2CreateDraft(parsed,options={}){
         p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC",
         p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():"",
         p_work_scope_order_numbers:workScope
-    });
+    };
+    if(operationId) payload.p_operation_id=operationId;
+
+    const result=await authRpc(rpcName,payload);
 
     return Array.isArray(result) ? result[0] : result;
 }
