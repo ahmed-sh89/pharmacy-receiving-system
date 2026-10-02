@@ -98,6 +98,11 @@ function pfhEnsureUI(){
         share.insertAdjacentElement("afterend",button);
         button.addEventListener("click",()=>pfhOpen("receiving"));
     }
+    const staticHistoryButton=document.getElementById("btnReceivingHistoryReport");
+    if(staticHistoryButton && staticHistoryButton.dataset.pfhBound!=="1"){
+        staticHistoryButton.dataset.pfhBound="1";
+        staticHistoryButton.addEventListener("click",()=>pfhOpen("receiving"));
+    }
     const overlay=document.createElement("div");
     overlay.id="pfhOverlay";overlay.className="pfhOverlay";overlay.hidden=true;
     overlay.innerHTML='<section class="pfhPanel" role="dialog" aria-modal="true" aria-labelledby="pfhTitle">'+
