@@ -6483,7 +6483,7 @@ body.zebraDevice #confirmModal.modalOverlay{
    identifier | quantity | status | chevron. */
 body.zebraDevice #needsReviewOverlay .needsReviewRowSummary{
   grid-template-columns:minmax(0,1fr) max-content max-content 14px!important;
-  column-gap:14px!important;
+  column-gap:20px!important;
 }
 body.zebraDevice #needsReviewOverlay .needsReviewRowSummary>b,
 body.zebraDevice #needsReviewOverlay .needsReviewRowSummary>span,
