@@ -6360,72 +6360,91 @@ body.zebraDevice.zebraReceivingActive .lastScanQtyValue{
 }
 body.zebraDevice.zebraReceivingActive .lastScanQtyValue:before{content:"QTY ";font-size:9px;font-weight:900;color:#718075}
 
-/* Recent scans is a correction drawer, not a full history/archive screen. */
-.handheldRecentOverlay{
+/* ---------- HANDHELD RECENT SCANS — FULL-SCREEN OWNER ---------- */
+body.zebraDevice .handheldRecentOverlay{
     position:fixed!important;
     inset:0!important;
     z-index:2147482500!important;
     display:flex!important;
-    align-items:flex-end!important;
-    justify-content:center!important;
+    align-items:stretch!important;
+    justify-content:stretch!important;
     padding:0!important;
-    background:rgba(22,29,24,.42)!important;
-}
-.handheldRecentPanel{
-    width:100%!important;
-    max-width:560px!important;
-    max-height:76vh!important;
-    margin:0!important;
-    border-radius:18px 18px 0 0!important;
-    background:#fff!important;
-    box-shadow:0 -18px 50px rgba(0,0,0,.18)!important;
+    background:#f5f8fb!important;
     overflow:hidden!important;
 }
-.handheldRecentPanel header{
+body.zebraDevice .handheldRecentPanel{
+    width:100%!important;
+    max-width:none!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    min-height:100dvh!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+    display:grid!important;
+    grid-template-rows:auto auto minmax(0,1fr) auto!important;
+}
+body.zebraDevice .handheldRecentPanel header{
     display:flex!important;
     justify-content:space-between!important;
     align-items:flex-start!important;
-    padding:13px 14px 9px!important;
-    border-bottom:1px solid #edf0ed!important;
+    padding:14px 14px 10px!important;
+    border-bottom:1px solid #dfe7e2!important;
+    background:#f7faf8!important;
 }
-.handheldRecentPanel header div{display:grid!important;gap:1px!important}
-.handheldRecentPanel header span{font-size:8px!important;font-weight:950!important;letter-spacing:.08em!important;color:#6d7d70!important}
-.handheldRecentPanel header strong{font-size:18px!important;color:#1c2d22!important}
-.handheldRecentPanel header small{font-size:9px!important;color:#7f8b82!important}
-.handheldRecentPanel header button{border:0!important;background:#f0f3f1!important;border-radius:9px!important;width:34px!important;height:34px!important;font-size:16px!important}
-.handheldRecentList{padding:8px 10px!important;overflow:auto!important;max-height:56vh!important;display:grid!important;gap:6px!important}
-.handheldRecentRow{
+body.zebraDevice .handheldRecentPanel header div{display:grid!important;gap:2px!important}
+body.zebraDevice .handheldRecentPanel header span{font-size:9px!important;font-weight:950!important;letter-spacing:.08em!important;color:#6d7d70!important}
+body.zebraDevice .handheldRecentPanel header strong{font-size:20px!important;color:#1c2d22!important}
+body.zebraDevice .handheldRecentPanel header small{font-size:10px!important;color:#7f8b82!important}
+body.zebraDevice .handheldRecentPanel header button{
+    border:0!important;background:#eaf0ec!important;border-radius:10px!important;
+    width:40px!important;height:40px!important;font-size:19px!important;
+}
+body.zebraDevice .handheldRecentFeedback{min-height:0!important}
+body.zebraDevice .handheldRecentList{
+    min-height:0!important;
+    max-height:none!important;
+    padding:9px 10px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    display:grid!important;
+    align-content:start!important;
+    gap:7px!important;
+}
+body.zebraDevice .handheldRecentRow{
     display:grid!important;
     grid-template-columns:25px minmax(0,1fr) 38px 54px!important;
     gap:6px!important;
     align-items:center!important;
-    padding:7px!important;
+    padding:8px!important;
     border:1px solid #e5ebe6!important;
     border-radius:10px!important;
     background:#fbfcfb!important;
 }
-.handheldRecentIndex{font-size:9px!important;color:#8a968d!important;text-align:center!important}
-.handheldRecentInfo{min-width:0!important;display:grid!important;gap:2px!important}
-.handheldRecentInfo strong{font-size:12px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-.handheldRecentInfo span{font-size:9px!important;color:#78847a!important}
-.handheldRecentQty{font-size:14px!important;font-weight:950!important;text-align:center!important;color:#1d6e3d!important}
-.handheldRecentRow .handheldUndoItem{
-    min-height:32px!important;
-    padding:4px 6px!important;
-    border-radius:8px!important;
-    font-size:9px!important;
-    font-weight:950!important;
+body.zebraDevice .handheldRecentIndex{font-size:9px!important;color:#8a968d!important;text-align:center!important}
+body.zebraDevice .handheldRecentInfo{min-width:0!important;display:grid!important;gap:2px!important}
+body.zebraDevice .handheldRecentInfo strong{font-size:12px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+body.zebraDevice .handheldRecentInfo span{font-size:9px!important;color:#78847a!important}
+body.zebraDevice .handheldRecentQty{font-size:14px!important;font-weight:950!important;text-align:center!important;color:#1d6e3d!important}
+body.zebraDevice .handheldRecentRow .handheldUndoItem{
+    min-height:32px!important;padding:4px 6px!important;border-radius:8px!important;font-size:9px!important;font-weight:950!important;
 }
-.handheldRecentFooter{
+body.zebraDevice .handheldRecentFooter{
     display:grid!important;
     grid-template-columns:minmax(0,1fr) 86px!important;
     gap:8px!important;
     align-items:center!important;
-    padding:8px 10px 12px!important;
-    border-top:1px solid #edf0ed!important;
+    padding:9px 10px 12px!important;
+    border-top:1px solid #dfe7e2!important;
+    background:#f7faf8!important;
 }
-.handheldRecentFooter span{font-size:8px!important;color:#7a857d!important;line-height:1.25!important}
-.handheldRecentFooter .handheldPanelDone{min-height:36px!important;border-radius:9px!important;font-size:10px!important;font-weight:950!important}
+body.zebraDevice .handheldRecentFooter span{font-size:8px!important;color:#7a857d!important;line-height:1.25!important}
+body.zebraDevice .handheldRecentFooter .handheldPanelDone{min-height:38px!important;border-radius:9px!important;font-size:10px!important;font-weight:950!important}
 
 /* The box immediately below Item Name becomes the primary QTY control.
    Item number remains available as small metadata, not a competing large box. */
