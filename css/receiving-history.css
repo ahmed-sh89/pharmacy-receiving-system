@@ -59,3 +59,21 @@
 
 /* RC polish 4 — compact professional period KPI. */
 .pfhPeriodMetric{min-width:0}.pfhPeriodDates{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin-top:5px}.pfhPeriodDates>div{min-width:0}.pfhPeriodDates small{display:block;margin-bottom:2px;color:#9a897e;font-size:8px;font-weight:900;letter-spacing:.07em}.pfhPeriodDates strong{display:block!important;margin:0!important;color:#3b312b!important;font-size:11px!important;line-height:1.2!important;white-space:nowrap}.pfhPeriodDates i{color:#9a6246;font-style:normal;font-size:13px;font-weight:800}
+
+/* Receiving Report KPI palette + multi-select state. */
+@media(min-width:769px){
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnIssueCard{transition:border-color .14s ease,background .14s ease,box-shadow .14s ease,transform .14s ease}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiAll{background:#edf5fc!important;border-color:#a7c8e3!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiShortage{background:#fff1f0!important;border-color:#e9aaa5!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiReceived{background:#eef8f2!important;border-color:#acd4ba!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiOver{background:#fff7e7!important;border-color:#e7c47d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiExtra{background:#f4f0fa!important;border-color:#c8b6df!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiDiscrepancy{background:#fdf1e9!important;border-color:#d8a281!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnIssueCard.active{box-shadow:inset 0 0 0 2px currentColor,0 2px 7px rgba(24,62,95,.09)!important;transform:translateY(-1px)}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiAll.active{color:#235f8d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiShortage.active{color:#a84d48!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiReceived.active{color:#397557!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiOver.active{color:#93631d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiExtra.active{color:#6f568d!important}
+ body:not(.zebraDevice) #page-receiving .receivingSummaryGrid .pfnKpiDiscrepancy.active{color:#965b3d!important}
+}
