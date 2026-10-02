@@ -2598,6 +2598,20 @@
 <script src="js/receiving-release.js?v=B22SCANREARM1"></script>
 
 
+
+<script>
+/* TEST-ONLY: render phone as Handheld. Never merge to main. */
+(function(){
+  try{
+    var ua=navigator.userAgent||"";
+    var phone=/iPhone|Android.*Mobile/i.test(ua);
+    if(phone){
+      document.body.classList.add("zebraDevice");
+      window.isLikelyZebraDevice=function(){ return true; };
+    }
+  }catch(_){ }
+})();
+</script>
 </body>
 
 </html>
