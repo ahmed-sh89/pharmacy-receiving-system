@@ -3765,19 +3765,18 @@ body.zebraDevice #lastScanCard.scanSuccess #lastItemName,
 body.zebraDevice #lastScanCard.scanSuccess .lastScanHeroName{
   color:#167D45 !important;
 }
-body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyButton{
-  color:#177D46 !important;
-  border-color:#B4DCC2 !important;
-  background:#F5FFF8 !important;
-}
-body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyButton:hover{
-  background:#DFF3E6 !important;
-  border-color:#26975A !important;
+body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyButton,
+body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyButton:hover,
+body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyButton:active,
+body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyButton:focus{
+  color:#82452D !important;
+  border-color:#CEB29B !important;
+  background:#FFF7F0 !important;
 }
 body.zebraDevice #lastScanCard.scanSuccess .lastScanQtyValue{
-  color:#146C3D !important;
-  border-color:#B4DCC2 !important;
-  background:#FBFFFC !important;
+  color:#342920 !important;
+  border-color:#CEB29B !important;
+  background:#FFF9F4 !important;
 }
 body.zebraDevice #lastScanCard.scanError{
   background:linear-gradient(145deg,#FFF9F9 0%,#FDEBEC 100%) !important;
@@ -6431,6 +6430,7 @@ body.zebraDevice .handheldRecentInfo{min-width:0!important;display:grid!importan
 body.zebraDevice .handheldRecentInfo strong{font-size:12px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 body.zebraDevice .handheldRecentInfo span{font-size:9px!important;color:#78847a!important}
 body.zebraDevice .handheldRecentQty{font-size:14px!important;font-weight:950!important;text-align:center!important;color:#1d6e3d!important}
+body.zebraDevice .handheldRecentQty.isNegative{color:#9a4b2f!important}
 body.zebraDevice .handheldRecentRow .handheldUndoItem{
     min-height:32px!important;padding:4px 6px!important;border-radius:8px!important;font-size:9px!important;font-weight:950!important;
 }
