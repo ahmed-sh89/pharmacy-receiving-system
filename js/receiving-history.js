@@ -24,13 +24,15 @@ function buildPharmFlowReceivingHistoryPayload(summary,discrepancyReport){
     const selected=(summary?.orderNumbers||[]).map(pfhNormalizeOrder).filter(Boolean);
     const selectedSet=new Set(selected);
     const discrepancies=[];
+    const FINAL_HISTORY_DISCREPANCY_TYPES=new Set(["NOT RECEIVED","PARTIAL SHORTAGE","OVER RECEIVED","EXTRA ITEM","SHORTAGE","UNORDERED"]);
+    const isHistoryDiscrepancy=row=>FINAL_HISTORY_DISCREPANCY_TYPES.has(String(row?.["Issue Type"]||row?.Status||"").trim().toUpperCase());
     const groups=Array.isArray(discrepancyReport?.orderGroups)?discrepancyReport.orderGroups:[];
     if(groups.length){
         groups.forEach(group=>{
             const order=pfhNormalizeOrder(group?.orderNumber||"");
             if(!selectedSet.has(order))return;
             const meta=pfhOrderMeta(order);
-            (group.rows||[]).forEach(row=>discrepancies.push({
+            (group.rows||[]).filter(isHistoryDiscrepancy).forEach(row=>discrepancies.push({
                 order_number:order,order_name:meta.orderName,order_date:group.orderDate||meta.orderDate||"",
                 item_code:String(row["Item Number"]||""),item_name:String(row["Item Name"]||""),
                 ordered_qty:pfhNum(row["Ordered Qty"]),received_qty:pfhNum(row["Received Qty"]),
@@ -39,7 +41,7 @@ function buildPharmFlowReceivingHistoryPayload(summary,discrepancyReport){
         });
     }else if(selected.length===1){
         const order=selected[0],meta=pfhOrderMeta(order);
-        (discrepancyReport?.rows||[]).forEach(row=>discrepancies.push({
+        (discrepancyReport?.rows||[]).filter(isHistoryDiscrepancy).forEach(row=>discrepancies.push({
             order_number:order,order_name:meta.orderName,order_date:meta.orderDate||"",
             item_code:String(row["Item Number"]||""),item_name:String(row["Item Name"]||""),
             ordered_qty:pfhNum(row["Ordered Qty"]),received_qty:pfhNum(row["Received Qty"]),
