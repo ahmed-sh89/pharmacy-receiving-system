@@ -8926,6 +8926,30 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
     const auditReason=action=>`SETTINGS_${action}`;
     let selectedItem=null,searchSuggestTimer=null,searchSuggestToken=0;
+    /* Settings has two explicit intents:
+       - SCAN: hardware-originated input resolves an exact identifier and may
+         open New Item automatically.
+       - MANUAL: typed/pasted Search never auto-creates.
+       Keep this detector local to Barcode Control so Receiving scanner state
+       is not reused or mutated. */
+    const adminScan={
+        lastKeyAt:0,
+        intervals:[],
+        atomic:false,
+        settleTimer:null
+    };
+    const resetAdminScan=()=>{
+        adminScan.lastKeyAt=0;
+        adminScan.intervals=[];
+        adminScan.atomic=false;
+        clearTimeout(adminScan.settleTimer);
+    };
+    const isFastAdminScan=()=>{
+        if(adminScan.atomic) return true;
+        if(adminScan.intervals.length<3) return false;
+        const recent=adminScan.intervals.slice(-12);
+        return recent.reduce((sum,value)=>sum+value,0)/recent.length<=45;
+    };
 
     const parseSearch=value=>{
         const raw=toSafeString(value).trim();
@@ -9103,18 +9127,25 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         workspace.innerHTML=`<div class="barcodeResultsHeader"><strong>Select an item</strong><span>${items.length} results</span></div><div class="barcodeSearchResults">${items.map((item,index)=>`<button type="button" data-global-item="${index}"><span class="barcodeSuggestionIdentity"><strong class="barcodeSuggestionCode">${esc(item.item_code)}</strong><span class="barcodeSuggestionName">${esc(item.item_name||"Unnamed item")}</span></span></button>`).join("")}</div>`;
         workspace.querySelectorAll("[data-global-item]").forEach(button=>button.addEventListener("click",async()=>{const item=items[Number(button.dataset.globalItem)]||null;if(item)try{await showItem(item);}catch(error){showToast?.(error?.message||"Unable to load item","error");}}));
     };
-    const runSearch=async()=>{
-        const search=parseSearch(searchInput.value);
+    const runSearch=async({intent="MANUAL"}={})=>{
+        const scanned=intent==="SCAN";
+        const rawInput=toSafeString(searchInput.value).trim();
+        const parsed=parseSearch(rawInput);
+        /* For a real scan, every non-GS1 value is an exact identifier.
+           GS1 remains special: parseSearch reduces it to authoritative AI01
+           GTIN. Manual searches keep their existing text-search semantics. */
+        const search=scanned
+            ? {...parsed,query:parsed.isBarcode?parsed.query:rawInput,isBarcode:true}
+            : parsed;
         if(!search.query){renderDefault();searchInput.focus();return;}
         searchButton.disabled=true;
         try{
             const resolved=await IdentifierService.resolve(search.query);
             if(resolved?.found){if(search.isBarcode)searchInput.value=search.query;await showItem({item_code:resolved.itemCode,item_name:resolved.itemName});return;}
 
-            /* A scanned GS1/GTIN that is genuinely unknown is already enough
-               identity to start Global item creation. Do not leave the user on
-               an empty result screen or make them re-enter the extracted GTIN. */
-            if(search.isBarcode&&canWriteGlobal()){
+            /* Auto-create is a SCANNER behavior only. A manual search for the
+               exact same text must remain a normal Find Item operation. */
+            if(scanned&&search.isBarcode&&canWriteGlobal()){
                 searchInput.value=search.query;
                 renderNewItemForm({barcode:search.query});
                 workspace.querySelector("[data-new-item-code]")?.focus();
@@ -9135,14 +9166,54 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const queueSuggestions=()=>{
         clearTimeout(searchSuggestTimer);const typed=toSafeString(searchInput.value).trim();
         if(!typed){renderDefault();return;}
-        if(typeof looksLikeStrongBarcode==="function"&&looksLikeStrongBarcode(typed)){searchSuggestTimer=setTimeout(runSearch,40);return;}
+        /* Never infer Scan intent from barcode shape. GS1/GTIN typed by hand
+           is still a manual search. */
         const token=++searchSuggestToken;
         searchSuggestTimer=setTimeout(async()=>{try{const items=await IdentifierService.searchItems(typed,8);if(token===searchSuggestToken&&toSafeString(searchInput.value).trim()===typed)renderSuggestions(items);}catch(_error){}},220);
     };
-    searchButton.addEventListener("click",runSearch);
-    searchInput.addEventListener("input",queueSuggestions);
-    searchInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();clearTimeout(searchSuggestTimer);runSearch();}});
-    clear?.addEventListener("click",()=>{searchInput.value="";renderDefault();searchInput.focus();});
+    const runDetectedScan=()=>{
+        clearTimeout(searchSuggestTimer);
+        clearTimeout(adminScan.settleTimer);
+        runSearch({intent:"SCAN"}).finally(resetAdminScan);
+    };
+    searchButton.addEventListener("click",()=>{resetAdminScan();runSearch({intent:"MANUAL"});});
+    searchInput.addEventListener("beforeinput",event=>{
+        /* DataWedge-style scanners can insert the complete payload in one
+           insertText event with no usable per-character keydown stream. Paste
+           is deliberately excluded: paste remains manual. */
+        if(event.inputType==="insertText"&&toSafeString(event.data).length>1){
+            adminScan.atomic=true;
+        }
+    });
+    searchInput.addEventListener("input",event=>{
+        queueSuggestions();
+        clearTimeout(adminScan.settleTimer);
+        if(adminScan.atomic){
+            adminScan.settleTimer=setTimeout(runDetectedScan,35);
+        }else if(isFastAdminScan()){
+            /* Keyboard-wedge scanners may be configured without Enter. A
+               short settle window gives GN 001 / T0011 the same scan path. */
+            adminScan.settleTimer=setTimeout(runDetectedScan,80);
+        }
+    });
+    searchInput.addEventListener("paste",()=>resetAdminScan());
+    searchInput.addEventListener("keydown",event=>{
+        const now=performance.now();
+        if(event.key.length===1){
+            if(adminScan.lastKeyAt>0) adminScan.intervals.push(now-adminScan.lastKeyAt);
+            if(adminScan.intervals.length>25) adminScan.intervals.shift();
+            adminScan.lastKeyAt=now;
+            return;
+        }
+        if(event.key==="Enter"){
+            event.preventDefault();
+            clearTimeout(searchSuggestTimer);
+            clearTimeout(adminScan.settleTimer);
+            if(isFastAdminScan()) runDetectedScan();
+            else {resetAdminScan();runSearch({intent:"MANUAL"});}
+        }
+    });
+    clear?.addEventListener("click",()=>{resetAdminScan();searchInput.value="";renderDefault();searchInput.focus();});
 }
 setTimeout(()=>{
     const settingsMaster=document.getElementById("globalIdentifierMasterAdmin");
