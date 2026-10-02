@@ -541,7 +541,13 @@ async function finalizeCurrentReceiving({allOrders=false}={}){
             }
         }
 
-        await markWorkspaceOrdersReceived(summary.orderNumbers);
+        /* Receiving History is the durable, lightweight completion authority.
+           It records only the workspace summary, discrepancy rows and final NEW
+           High Priority rows, then marks all selected Orders received atomically. */
+        if(typeof finalizeReceivingWorkspaceWithHistory!=="function"){
+            throw new Error("Receiving History module is unavailable");
+        }
+        await finalizeReceivingWorkspaceWithHistory(summary,finalizedDiscrepancyReport);
 
         if(typeof closeAndArchiveCurrentOrder!=="function"){
             throw new Error("Receiving archive module is unavailable");
