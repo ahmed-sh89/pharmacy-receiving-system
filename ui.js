@@ -2249,13 +2249,14 @@ const RECEIVING_ISSUE_CARD_KEYS={
 function refreshReceivingIssueCards(){
     const selected=UI.receivingFilters.issues instanceof Set
         ? UI.receivingFilters.issues
-        : new Set();
+        : new Set(RECEIVING_ISSUE_CARD_KEYS.all);
     Object.entries(RECEIVING_ISSUE_CARD_KEYS).forEach(([card,keys])=>{
         const button=document.querySelector(`[data-issue-card="${card}"]`);
         if(!button) return;
-        const active=card==="all"
-            ? keys.every(key=>selected.has(key))
-            : keys.every(key=>selected.has(key));
+        /* KPI cards are quick filters, not cumulative toggles. Exactly one
+           report view is active at a time; Received intentionally overlaps
+           business categories because it means any Received Qty > 0. */
+        const active=selected.size===keys.length && keys.every(key=>selected.has(key));
         button.classList.toggle("active",active);
         button.setAttribute("aria-pressed",active?"true":"false");
     });
@@ -2264,16 +2265,10 @@ function refreshReceivingIssueCards(){
 function toggleReceivingIssueCard(card){
     const keys=RECEIVING_ISSUE_CARD_KEYS[card];
     if(!keys) return;
-    const current=UI.receivingFilters.issues instanceof Set
-        ? new Set(UI.receivingFilters.issues)
-        : new Set();
-    const isActive=keys.every(key=>current.has(key));
-    if(card==="all"){
-        UI.receivingFilters.issues=isActive ? new Set() : new Set(keys);
-    }else{
-        keys.forEach(key=>isActive ? current.delete(key) : current.add(key));
-        UI.receivingFilters.issues=current;
-    }
+    /* Selecting a KPI always selects that complete view. Re-clicking All Items
+       must never clear the report. Received uses received_any, whose row
+       predicate is Received Qty > 0 regardless of Shortage/Over/Extra type. */
+    UI.receivingFilters.issues=new Set(keys);
     refreshReceivingIssueFilterLabel();
     refreshReceivingIssueCards();
     refreshReceivingTable();
