@@ -7807,7 +7807,7 @@ function openHandheldScansPanel(){
 
     const scanRows=()=>getHandheldDeviceScannerRows().slice()
         .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
-        .slice(0,3);
+        .slice(0,20);
 
     const overlay=document.createElement("div");
     overlay.id="handheldScansOverlay";
