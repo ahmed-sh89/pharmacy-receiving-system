@@ -475,6 +475,13 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord,queueOptions={}){
                 if(!draft?.review_id){
                     throw new Error("Unable to save extra item for review");
                 }
+                if(toSafeString(draft?.status||"PENDING").toUpperCase()!=="PENDING"){
+                    clearHandheldActionCard();
+                    setScanBoxState?.("ready");
+                    window.hhRefreshReadyState?.();
+                    setTimeout(()=>focusScannerInput?.(),40);
+                    return true;
+                }
 
                 await nrV2SetQty(draft.review_id,quantity);
                 refreshNeedsReviewCounters?.();
