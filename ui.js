@@ -7269,7 +7269,7 @@ function initializeZebraInterface(){
         home.innerHTML = `
             <div class="zebraBrandRow">
                 <div class="zebraBrandLockup">
-                    <span class="zebraBrandMark"><img src="assets/pharmflow-login-mark.svg" alt="" aria-hidden="true"></span>
+                    <span class="zebraBrandMark" aria-hidden="true">P</span>
                     <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
                 </div>
             </div>
