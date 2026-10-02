@@ -8939,6 +8939,16 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 if(gtin&&parsed?.parsed) return {raw,query:gtin,isBarcode:true};
             }catch(_error){}
         }
+
+        /* Settings must still recover the authoritative AI (01) GTIN when a
+           scanner supplies a valid GS1 DataMatrix whose trailing application
+           identifiers are malformed or unsupported by the strict parser.
+           Only the fixed 14 digits immediately following AI 01 are accepted;
+           the remaining payload is never stored as the product identifier. */
+        const gs1Payload=raw.replace(/^\]C1/,"");
+        const ai01Match=gs1Payload.match(/^01(\d{14})/);
+        if(isStrongGs1&&ai01Match) return {raw,query:ai01Match[1],isBarcode:true};
+
         return {raw,query:raw,isBarcode:false};
     };
     const itemCodeOf=item=>toSafeString(item?.item_code||item?.itemCode).trim();
@@ -9093,6 +9103,17 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         try{
             const resolved=await IdentifierService.resolve(search.query);
             if(resolved?.found){if(search.isBarcode)searchInput.value=search.query;await showItem({item_code:resolved.itemCode,item_name:resolved.itemName});return;}
+
+            /* A scanned GS1/GTIN that is genuinely unknown is already enough
+               identity to start Global item creation. Do not leave the user on
+               an empty result screen or make them re-enter the extracted GTIN. */
+            if(search.isBarcode&&canWriteGlobal()){
+                searchInput.value=search.query;
+                renderNewItemForm({barcode:search.query});
+                workspace.querySelector("[data-new-item-code]")?.focus();
+                return;
+            }
+
             const items=await IdentifierService.searchItems(search.query,12);
             if(!items.length){renderNoResults(search);return;}
             renderItemResults(items);
