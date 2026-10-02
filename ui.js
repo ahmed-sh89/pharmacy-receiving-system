@@ -5649,6 +5649,14 @@ function createLastScanQuantityControls(){
                   return;
               }
 
+              if(isHandheld){
+                  const adjustable=Math.max(0,getCurrentBatchQuantity(item.itemCode));
+                  if(adjustable<=0){
+                      showToast("Current batch quantity is already zero","warning");
+                      return;
+                  }
+              }
+
               decreaseItemQuantity(
                   item.itemCode,
                   1
@@ -9133,14 +9141,14 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
       <button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button>
       <section class="needsReviewPanel">
         <header>
-          <div><span class="needsReviewKicker">RECEIVING EXCEPTIONS</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Total Units</span></div><p>Find the item once. PharmFlow will allocate the quantity to the correct active Orders automatically.</p></div>
-          <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button><button type="button" data-review-history>History</button><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
+          <div><span class="needsReviewKicker">${handheld?"REVIEW QUEUE":"RECEIVING EXCEPTIONS"}</span><h2 id="needsReviewTitle">Needs Review <b class="pfnReviewCount">${groups.length}</b></h2><div class="pfnReviewTotals"><span><b>${groups.length}</b> Items</span><span><b>${groups.reduce((sum,group)=>sum+Math.max(0,Number(group.total_quantity||0)||0),0)}</b> Units</span></div>${handheld?"":`<p>Find the item once. PharmFlow will allocate the quantity to the correct active Orders automatically.</p>`}</div>
+          <div class="needsReviewHeaderActions"><button type="button" data-review-back hidden>← Back</button>${handheld?"":`<button type="button" data-review-history>History</button>`}<button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div>
         </header>
         <div class="needsReviewList" data-review-list>
           ${groups.length?groups.map((group,index)=>`
             <section class="needsReviewRow" data-i="${index}">
               <button type="button" class="needsReviewRowSummary" data-review-detail="${index}" aria-expanded="false" aria-controls="needsReviewCase-${index}">
-                <strong>${esc(group.gtin||"Identifier unavailable")}</strong><span>${group.work_scope_order_numbers.length} Active Order${group.work_scope_order_numbers.length===1?"":"s"}</span><b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
+                <strong>${esc(group.gtin||"Identifier unavailable")}</strong>${handheld?"":`<span>${group.work_scope_order_numbers.length} Active Order${group.work_scope_order_numbers.length===1?"":"s"}</span>`}<b>Qty ${esc(group.total_quantity)}</b><span>Pending</span><i aria-hidden="true">›</i>
               </button>
               <div class="needsReviewCaseDetail" id="needsReviewCase-${index}" data-review-case-detail="${index}" hidden>
               <div class="needsReviewInfo">
@@ -9154,15 +9162,17 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 </div>
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
-              <div class="needsReviewResolve">
-                <div class="needsReviewSearchRow">
-                  <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
-                  <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
-                </div>
-                <div class="needsReviewMatches" data-matches="${index}"></div>
-                <div class="needsReviewSelection" data-selection="${index}" hidden></div>
-                <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
-              </div>
+              ${handheld
+                ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span></div>`
+                : `<div class="needsReviewResolve">
+                    <div class="needsReviewSearchRow">
+                      <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
+                      <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
+                    </div>
+                    <div class="needsReviewMatches" data-matches="${index}"></div>
+                    <div class="needsReviewSelection" data-selection="${index}" hidden></div>
+                    <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+                  </div>`}
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
         </div>
