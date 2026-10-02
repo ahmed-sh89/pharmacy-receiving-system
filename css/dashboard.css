@@ -2640,7 +2640,7 @@ body.zebraDevice .zebraBrandRow strong{font-size:23px;line-height:1.1;color:#0c1
 body.zebraDevice .zebraBrandRow .zebraBrandLockup>div span{font-size:11px;font-weight:700;color:#76849a}
 body.zebraDevice .zebraModeIntro{padding:8px 10px 14px;text-align:center;background:transparent;border:0;box-shadow:none}
 body.zebraDevice .zebraModeIntro h1{margin:0;font-size:18px;line-height:1.2;color:#31435c}
-body.zebraDevice .zebraModeCards{display:grid;grid-template-columns:1fr;gap:14px;margin:auto 0}
+body.zebraDevice .zebraModeCards{display:grid;grid-template-columns:1fr;align-content:center;gap:14px;flex:1;min-height:0;margin:0}
 body.zebraDevice .zebraModeCard{width:100%;min-height:92px;display:flex;align-items:center;gap:16px;padding:18px;text-align:left;border:1px solid #d8e4f2;border-radius:18px;background:#fff;color:#10213b;box-shadow:0 7px 20px rgba(18,48,86,.05)}
 body.zebraDevice .zebraModeCard:active{transform:scale(.992)}
 body.zebraDevice .zebraModeIcon{width:52px;height:52px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#eaf2ff;color:#0b5ed7;font-size:23px;font-weight:900}
@@ -2648,7 +2648,7 @@ body.zebraDevice .zebraModeCard:nth-child(2) .zebraModeIcon{background:#fff1df;c
 body.zebraDevice .zebraModeCard div{display:flex;align-items:center}
 body.zebraDevice .zebraModeCard strong{font-size:21px}
 body.zebraDevice .zebraModeCard small{display:none}
-body.zebraDevice .zebraSignOut{display:block;width:100%;margin:18px 0 0;border:1px solid #c9d6e6;border-radius:14px;background:#fff;color:#31435c;font-weight:800;padding:13px}
+body.zebraDevice .zebraSignOut{display:block;width:100%;margin:18px 0 0;flex:0 0 auto;border:1px solid #c9d6e6;border-radius:14px;background:#fff;color:#31435c;font-weight:800;padding:13px}
 
 body.zebraDevice.zebraJoinActive #page-sessions{display:block!important}
 body.zebraDevice.zebraJoinActive #page-sessions>.contentCard:not(.cloudSessionHero),
