@@ -2600,16 +2600,29 @@
 
 
 <script>
-/* TEST-ONLY: render phone as Handheld. Never merge to main. */
+/* TEST-ONLY: phone becomes Handheld only after authenticated app workspace is visible. Never merge to main. */
 (function(){
-  try{
-    var ua=navigator.userAgent||"";
-    var phone=/iPhone|Android.*Mobile/i.test(ua);
-    if(phone){
-      document.body.classList.add("zebraDevice");
-      window.isLikelyZebraDevice=function(){ return true; };
-    }
-  }catch(_){ }
+  var phone=/iPhone|Android.*Mobile/i.test(navigator.userAgent||"");
+  if(!phone){ return; }
+  var applied=false;
+  function authenticatedWorkspaceVisible(){
+    var auth=document.getElementById("authShell");
+    var app=document.getElementById("appShell") || document.querySelector(".appShell");
+    var authHidden=!auth || auth.hidden || getComputedStyle(auth).display==="none";
+    var appVisible=!!app && !app.hidden && getComputedStyle(app).display!=="none";
+    return authHidden && appVisible;
+  }
+  function apply(){
+    if(applied || !authenticatedWorkspaceVisible()){ return; }
+    applied=true;
+    document.body.classList.add("zebraDevice");
+    window.isLikelyZebraDevice=function(){ return true; };
+    window.dispatchEvent(new Event("resize"));
+  }
+  var observer=new MutationObserver(apply);
+  observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:["class","hidden","style"]});
+  window.addEventListener("load",apply);
+  setTimeout(apply,0);
 })();
 </script>
 </body>
