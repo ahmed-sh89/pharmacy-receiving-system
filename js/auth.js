@@ -83,6 +83,22 @@ async function initializeAuth(){
     }
 
     restoreAuthSession();
+
+    /*
+       STARTUP AUTHORITY GATE — validate a restored session before any
+       authenticated setup/context RPC can use it. A persisted Supabase session
+       keeps its original expires_at; expires_in is only the lifetime issued at
+       creation and must not be treated as a fresh lifetime after reload.
+    */
+    if(AuthState.session && isRestoredAccessTokenStale(AuthState.session)){
+        const refreshed=await refreshAuthToken().catch(()=>false);
+        if(!refreshed || !AuthState.session){
+            finishAuthBootState();
+            renderAuthState();
+            return;
+        }
+    }
+
     await loadPublicSetupStatus().catch(()=>{});
 
     // IMPORTANT:
@@ -529,6 +545,23 @@ function clearRejectedAuthSession(expectedRefreshToken){
             "error"
         );
     });
+    return true;
+}
+
+function isRestoredAccessTokenStale(session){
+    if(!session?.access_token || !session?.refresh_token){ return true; }
+
+    const expiresAt=Number(session.expires_at||0);
+    if(expiresAt>0){
+        /* Refresh before the first protected RPC when the stored JWT is
+           expired or within the same two-minute safety window used by the
+           normal refresh scheduler. */
+        return (expiresAt*1000)-Date.now()<=120000;
+    }
+
+    /* Older stored sessions without an absolute expiry cannot be proven fresh.
+       Validate them through the existing single-flight refresh path rather
+       than allowing an avoidable 401 to become the first startup request. */
     return true;
 }
 
