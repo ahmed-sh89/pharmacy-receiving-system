@@ -7779,7 +7779,7 @@ body.zebraDevice.zebraExpiryActive #btnClearExpiryScreen{
 
 /* ---------- Handheld Mode: compact, clear, no brown ---------- */
 body.zebraDevice.zebraHomeActive #zebraHome{
- display:block!important;min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important;
+ display:flex!important;flex-direction:column!important;min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important;
  padding:7px!important;background:linear-gradient(180deg,#f7faff,#eef5ff)!important;color:var(--pf-navy)!important;
 }
 body.zebraDevice .zebraBrandRow{display:flex!important;align-items:center!important;padding:8px 9px!important;border:1px solid #d9e5f3!important;border-radius:12px!important;background:#fff!important;box-shadow:none!important}
@@ -7792,7 +7792,7 @@ body.zebraDevice .zebraModeIntro{padding:10px 5px 7px!important;border:1px solid
 body.zebraDevice .zebraModeIntro>span{font-size:8px!important;font-weight:900!important;letter-spacing:.12em!important;color:#0f766e!important}
 body.zebraDevice .zebraModeIntro h1{margin:3px 0 0!important;font-size:20px!important;line-height:1.05!important;color:var(--pf-navy)!important}
 body.zebraDevice .zebraModeIntro p{display:none!important}
-body.zebraDevice .zebraModeCards{display:grid!important;gap:8px!important;margin-top:8px!important}
+body.zebraDevice .zebraModeCards{display:grid!important;align-content:center!important;gap:12px!important;flex:1 1 auto!important;min-height:0!important;margin:0!important}
 body.zebraDevice .zebraModeCard{width:100%!important;display:grid!important;grid-template-columns:44px 1fr 18px!important;align-items:center!important;gap:9px!important;min-height:74px!important;padding:9px 11px!important;border-radius:13px!important;text-align:left!important;box-shadow:none!important}
 body.zebraDevice .zebraModeCard .zebraModeIcon{width:42px!important;height:42px!important;display:grid!important;place-items:center!important;border-radius:11px!important;font-size:22px!important}
 body.zebraDevice .zebraModeCard strong{display:block!important;font-size:17px!important;color:var(--pf-navy)!important}
@@ -7804,7 +7804,7 @@ body.zebraDevice .zebraModeReceiving .zebraModeArrow{color:#15803d!important}
 body.zebraDevice .zebraModeExpiry{border:1px solid #cdbdfb!important;background:#f5f1ff!important}
 body.zebraDevice .zebraModeExpiry .zebraModeIcon{background:#e9e0ff!important;color:#7c3aed!important}
 body.zebraDevice .zebraModeExpiry .zebraModeArrow{color:#7c3aed!important}
-body.zebraDevice .zebraSignOut{width:100%!important;min-height:34px!important;margin-top:8px!important;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#f8fafc!important;color:#475569!important;font-weight:850!important}
+body.zebraDevice .zebraSignOut{width:100%!important;min-height:42px!important;margin:10px 0 0!important;flex:0 0 auto!important;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#f8fafc!important;color:#475569!important;font-weight:850!important}
 
 /* Action states replace the ordinary Last Scan card; never stack below it. */
 body.zebraDevice.zebraReceivingActive.handheldActionCardActive #lastScanCard{display:none!important}
