@@ -7676,14 +7676,14 @@ body.zebraDevice.zebraHomeActive #zebraHome{
 body.zebraDevice.zebraHomeActive .zebraBrandRow{
   display:flex!important;justify-content:center!important;align-items:center!important;
   padding:10px!important;border:1px solid #d9e5f3!important;border-radius:14px!important;
-  background:#fff!important;box-shadow:none!important;text-align:center!important;
+  background:#eaf3ff!important;box-shadow:none!important;text-align:center!important;
 }
 body.zebraDevice.zebraHomeActive .zebraBrandLockup{
   display:flex!important;flex-direction:column!important;align-items:center!important;gap:5px!important;
 }
 body.zebraDevice.zebraHomeActive .zebraBrandMark{
   width:58px!important;height:58px!important;display:grid!important;place-items:center!important;
-  border:1px solid #cbdcf2!important;border-radius:16px!important;background:#eaf2ff!important;
+  border:1px solid #b9d2ef!important;border-radius:16px!important;background:#d8e9fb!important;
   line-height:1!important;
 }
 body.zebraDevice.zebraHomeActive .zebraBrandMark svg{width:44px!important;height:44px!important;display:block!important}
