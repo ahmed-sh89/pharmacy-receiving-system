@@ -7701,8 +7701,8 @@ body.zebraDevice.zebraHomeActive .zebraBrandLockup span{
   font-size:10px!important;font-weight:750!important;color:#6b7a90!important;
 }
 body.zebraDevice.zebraHomeActive .zebraModeIntro{
-  padding:10px 8px!important;border:1px solid #d8e5f3!important;border-radius:13px!important;
-  background:#f0fdfa!important;text-align:center!important;box-shadow:none!important;
+  padding:10px 8px!important;border:1px solid #bfd5f3!important;border-radius:13px!important;
+  background:#e8f2ff!important;text-align:center!important;box-shadow:none!important;
 }
 body.zebraDevice.zebraHomeActive .zebraModeIntro h1{
   margin:0!important;font-size:20px!important;line-height:1.1!important;color:var(--pf-navy)!important;
@@ -7733,12 +7733,12 @@ body.zebraDevice.zebraHomeActive .zebraModeReceiving .zebraModeIcon{
 }
 body.zebraDevice.zebraHomeActive .zebraModeReceiving .zebraModeArrow{color:#15803d!important}
 body.zebraDevice.zebraHomeActive .zebraModeExpiry{
-  border:1px solid #cdbdfb!important;background:#f5f1ff!important;
+  border:1px solid #f1c98a!important;background:#fff4df!important;
 }
 body.zebraDevice.zebraHomeActive .zebraModeExpiry .zebraModeIcon{
-  background:#e9e0ff!important;color:#7c3aed!important;
+  background:#ffe7bd!important;color:#b86100!important;
 }
-body.zebraDevice.zebraHomeActive .zebraModeExpiry .zebraModeArrow{color:#7c3aed!important}
+body.zebraDevice.zebraHomeActive .zebraModeExpiry .zebraModeArrow{color:#b86100!important}
 body.zebraDevice.zebraHomeActive .zebraSignOut{
   width:100%!important;min-height:44px!important;margin:0!important;flex:0 0 auto!important;
   border:1px solid #cbd5e1!important;border-radius:11px!important;background:#f8fafc!important;
