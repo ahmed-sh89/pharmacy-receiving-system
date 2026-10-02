@@ -6450,7 +6450,9 @@ body.zebraDevice #needsReviewOverlay .needsReviewRowSummary{
 }
 body.zebraDevice #needsReviewOverlay .needsReviewRowSummary strong{font-size:14px!important;overflow:hidden!important;text-overflow:ellipsis!important}
 body.zebraDevice #needsReviewOverlay .needsReviewRowSummary b,
-body.zebraDevice #needsReviewOverlay .needsReviewRowSummary span{font-size:11px!important}
+body.zebraDevice #needsReviewOverlay .needsReviewRowSummary span{
+  font-size:11px!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;
+}
 body.zebraDevice #needsReviewOverlay .needsReviewCaseDetail{padding:0 10px 10px!important}
 body.zebraDevice #needsReviewOverlay .needsReviewInfo{display:grid!important;gap:8px!important}
 body.zebraDevice #needsReviewOverlay .pfnReviewReason{font-size:9px!important}
