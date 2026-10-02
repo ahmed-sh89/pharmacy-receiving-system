@@ -5650,7 +5650,11 @@ function createLastScanQuantityControls(){
               }
 
               if(isHandheld){
-                  const adjustable=Math.max(0,getCurrentBatchQuantity(item.itemCode));
+                  /* The authoritative Handheld correction boundary is the
+                     in-memory operational batch used by the quantity display.
+                     Historical device rows include earlier saved batches and
+                     must never authorize another decrement. */
+                  const adjustable=Math.max(0,getOperationalCurrentBatchQuantity(item.itemCode));
                   if(adjustable<=0){
                       showToast("Current batch quantity is already zero","warning");
                       return;
@@ -9246,7 +9250,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
         cancelReview?.addEventListener("click",async()=>{
             if(!await pharmFlowConfirm({title:"Cancel Needs Review Group?",message:`GTIN ${group.gtin}. This will not learn the GTIN or change any received quantity.`,confirmText:"Cancel Group",tone:"danger"})) return;
-            const reason=toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
+            /* Handheld cancellation is an operational wrong-scan cleanup.
+               Do not invoke browser prompt(): Zebra kiosk/focus handling can
+               suppress it and workers should not type free-form reasons.
+               Desktop retains the existing audited reason requirement. */
+            const reason=handheld
+                ? "Wrong Scan — Handheld"
+                : toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
             if(!reason){showToast?.("A cancellation reason is required","warning");return;}
             cancelReview.disabled=true; overlay.dataset.busy="1";
             try{
