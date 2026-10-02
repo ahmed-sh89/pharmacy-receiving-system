@@ -1534,6 +1534,7 @@ function buildLiveReceivingReport(options={}){
 
 function buildReceivingEmailDifferencesReport(liveReport=null){
     const live=liveReport || buildLiveReceivingReport();
+    const FINAL_DISCREPANCY_TYPES=new Set(["NOT RECEIVED","PARTIAL SHORTAGE","OVER RECEIVED","EXTRA ITEM","SHORTAGE","UNORDERED"]);
     const toEmailRow=row=>({
         "Item Number":row["Item Number"],
         "Item Name":row["Item Name"],
@@ -1543,6 +1544,9 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
         "Issue Type":row["Issue Type"]||row["Status"],
         "Category":row["Category"]||""
     });
+    const isFinalDiscrepancy=row=>FINAL_DISCREPANCY_TYPES.has(
+        String(row?.["Issue Type"]||row?.Status||"").trim().toUpperCase()
+    );
 
     /* The email must retain per-order boundaries. A live receiving snapshot
        is flat, so derive the canonical grouped report while its workspace is
@@ -1556,7 +1560,7 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
     const orderGroups=Array.isArray(grouped?.orderGroups)
         ? grouped.orderGroups
             .map(group=>{
-                const rows=(group.rows||[]).map(toEmailRow);
+                const rows=(group.rows||[]).filter(isFinalDiscrepancy).map(toEmailRow);
                 return {
                     ...group,
                     summary:{
@@ -1572,7 +1576,7 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
     const rows=orderGroups.length
         ? orderGroups.flatMap(group=>group.rows)
         : (live?.rows||[])
-            .filter(row=>String(row?.Status||"").toUpperCase()!=="COMPLETED")
+            .filter(isFinalDiscrepancy)
             .map(toEmailRow);
 
     return {
