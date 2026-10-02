@@ -9163,7 +9163,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
               ${handheld
-                ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span></div>`
+                ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span><button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button></div>`
                 : `<div class="needsReviewResolve">
                     <div class="needsReviewSearchRow">
                       <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
