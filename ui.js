@@ -2243,20 +2243,29 @@ const RECEIVING_ISSUE_CARD_KEYS={
     shortage:["not_received","partial"],
     received:["received_any"],
     over:["over"],
-    manual:["manual"]
+    manual:["manual"],
+    discrepancy:["not_received","partial","over","manual"]
 };
 
 function refreshReceivingIssueCards(){
     const selected=UI.receivingFilters.issues instanceof Set
         ? UI.receivingFilters.issues
         : new Set(RECEIVING_ISSUE_CARD_KEYS.all);
+    const allKeys=RECEIVING_ISSUE_CARD_KEYS.all;
+    const isAll=selected.size===allKeys.length&&allKeys.every(key=>selected.has(key));
     Object.entries(RECEIVING_ISSUE_CARD_KEYS).forEach(([card,keys])=>{
         const button=document.querySelector(`[data-issue-card="${card}"]`);
         if(!button) return;
-        /* KPI cards are quick filters, not cumulative toggles. Exactly one
-           report view is active at a time; Received intentionally overlaps
-           business categories because it means any Received Qty > 0. */
-        const active=selected.size===keys.length && keys.every(key=>selected.has(key));
+        let active=false;
+        if(card==="all") active=isAll;
+        else if(card==="discrepancy"){
+            active=!isAll&&keys.every(key=>selected.has(key));
+        }else{
+            /* Multi-select: a category is lit when its complete predicate is
+               part of the current union. Received intentionally overlaps
+               Partial/Over/Extra through Received Qty > 0. */
+            active=!isAll&&keys.every(key=>selected.has(key));
+        }
         button.classList.toggle("active",active);
         button.setAttribute("aria-pressed",active?"true":"false");
     });
@@ -2265,10 +2274,23 @@ function refreshReceivingIssueCards(){
 function toggleReceivingIssueCard(card){
     const keys=RECEIVING_ISSUE_CARD_KEYS[card];
     if(!keys) return;
-    /* Selecting a KPI always selects that complete view. Re-clicking All Items
-       must never clear the report. Received uses received_any, whose row
-       predicate is Received Qty > 0 regardless of Shortage/Over/Extra type. */
-    UI.receivingFilters.issues=new Set(keys);
+    const allKeys=RECEIVING_ISSUE_CARD_KEYS.all;
+    if(card==="all"){
+        UI.receivingFilters.issues=new Set(allKeys);
+    }else if(card==="discrepancy"){
+        UI.receivingFilters.issues=new Set(keys);
+    }else{
+        const current=UI.receivingFilters.issues instanceof Set
+            ? new Set(UI.receivingFilters.issues)
+            : new Set(allKeys);
+        const isAll=current.size===allKeys.length&&allKeys.every(key=>current.has(key));
+        if(isAll) current.clear();
+        const fullySelected=keys.every(key=>current.has(key));
+        keys.forEach(key=>fullySelected?current.delete(key):current.add(key));
+        /* Never leave an accidental empty report: a cleared last KPI returns
+           to the full All Items view. */
+        UI.receivingFilters.issues=current.size?current:new Set(allKeys);
+    }
     refreshReceivingIssueFilterLabel();
     refreshReceivingIssueCards();
     refreshReceivingTable();
