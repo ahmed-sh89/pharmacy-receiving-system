@@ -6474,6 +6474,32 @@ body.zebraDevice #needsReviewOverlay .needsReviewHandheldReadOnly .needsReviewCa
   width:100%!important;min-height:42px!important;margin-top:5px!important;border-radius:9px!important;font-size:12px!important;font-weight:800!important;
 }
 
+/* Confirmation must sit above the full-screen Handheld review surface. */
+body.zebraDevice #confirmModal.modalOverlay{
+  z-index:2147483646!important;
+}
+
+/* Handheld review summary has one authoritative horizontal action row:
+   identifier | quantity | status | chevron. */
+body.zebraDevice #needsReviewOverlay .needsReviewRowSummary{
+  grid-template-columns:minmax(0,1fr) max-content max-content 14px!important;
+  column-gap:10px!important;
+}
+body.zebraDevice #needsReviewOverlay .needsReviewRowSummary>b,
+body.zebraDevice #needsReviewOverlay .needsReviewRowSummary>span,
+body.zebraDevice #needsReviewOverlay .needsReviewRowSummary>i{
+  align-self:center!important;
+  justify-self:end!important;
+  line-height:1!important;
+  margin:0!important;
+  padding:0!important;
+}
+body.zebraDevice #needsReviewOverlay .needsReviewRowSummary>i{
+  display:block!important;
+  font-style:normal!important;
+  font-size:18px!important;
+}
+
 body.zebraDevice .handheldRecentRow .handheldUndoItem{
     min-height:32px!important;padding:4px 6px!important;border-radius:8px!important;font-size:9px!important;font-weight:950!important;
 }
