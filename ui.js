@@ -7630,13 +7630,50 @@ function getHandheldDeviceScannerRows(){
         ? ensureDeviceId()
         : AppState?.session?.deviceId;
 
-    return history.filter(tx => {
-        const sameDevice = !deviceId || String(tx?.deviceId || "") === String(deviceId || "");
-        const source = String(tx?.source || "").toUpperCase();
-        const isScan = source === String(APP_CONFIG?.transactionSources?.scanner || "SCANNER").toUpperCase()
-            || source.includes("SCAN");
-        return sameDevice && isScan && Number(tx?.quantity || 0) > 0;
+    /*
+       Recent Scans is an actionable projection, not the immutable audit ledger.
+       Keep the original positive scan + SCAN_UNDO correction in receivingHistory,
+       but remove a fully corrected scan from this Handheld view.
+       Matching is FIFO per item/device/order because SCAN_UNDO intentionally
+       preserves the ledger rather than mutating the original transaction.
+    */
+    const ownRows=history
+        .filter(tx=>!deviceId || String(tx?.deviceId||"")===String(deviceId||""))
+        .slice()
+        .sort((a,b)=>String(a?.dateTime||"").localeCompare(String(b?.dateTime||"")));
+
+    const activeScans=[];
+    const scannerSource=String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
+
+    ownRows.forEach(tx=>{
+        const source=String(tx?.source||"").toUpperCase();
+        const quantity=Number(tx?.quantity||0);
+        const isScan=source===scannerSource || (source.includes("SCAN") && source!=="SCAN_UNDO");
+
+        if(isScan && quantity>0){
+            activeScans.push(tx);
+            return;
+        }
+
+        if(source!=="SCAN_UNDO" || quantity>=0) return;
+
+        let remaining=Math.abs(quantity);
+        for(let i=activeScans.length-1;i>=0 && remaining>0;i--){
+            const scan=activeScans[i];
+            if(String(scan?.itemCode||"")!==String(tx?.itemCode||"")) continue;
+            const scanOrder=String(scan?.orderNumber||scan?.order_number||"");
+            const undoOrder=String(tx?.orderNumber||tx?.order_number||"");
+            if(scanOrder && undoOrder && scanOrder!==undoOrder) continue;
+
+            const scanQty=Math.max(0,Number(scan?.quantity||0));
+            if(remaining>=scanQty){
+                remaining-=scanQty;
+                activeScans.splice(i,1);
+            }
+        }
     });
+
+    return activeScans;
 }
 
 function getAllWorkspaceScannerRows(){
