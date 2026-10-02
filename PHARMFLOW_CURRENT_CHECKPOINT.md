@@ -63,3 +63,13 @@ Preserve Receiving ledger/transaction semantics, Active Order Manifest, durable 
 
 ## EXACT NEXT ACTION
 Settings is closed. Begin the next approved PharmFlow development phase from current Production `main`. Before new implementation, classify the requested change and protect the non-regression boundaries above.
+
+
+## 2026-10-02 — Receiving History Reports RC
+Status: IN DEVELOPMENT → READY FOR PRODUCT OWNER TEST (not Production frontend).
+Baseline: main 6af859c2800c73ce3e5f69cc2d7744dec0bfcf36.
+Branch: feature/receiving-history-reports-20261002.
+Implemented: lightweight workspace completion history; discrepancy-only detail grouped by Order Number; NEW High Priority history only (SHORT excluded); PharmFlow-styled History Report UI; Excel/PDF exports; atomic workspace history + multi-order finalize RPC.
+Supabase: additive migrations receiving_workspace_history_v1 + receiving_history_hardening applied. New tables are RLS protected; authenticated table grants are SELECT-only; writes occur through authenticated admin RPC. Existing Archive remains untouched for compatibility during rollout.
+Non-regression: current email HTML/design unchanged; zero-discrepancy email guard unchanged; existing Archive/Item Transfer retained; Needs Review branch not mixed.
+Next action: Product Owner test on preview: multi-order Receive All with discrepancies + NEW item, zero-discrepancy completion, date-range history grouping, Excel/PDF, and existing email/Item Transfer smoke checks. Do not promote until USER VERIFIED.
