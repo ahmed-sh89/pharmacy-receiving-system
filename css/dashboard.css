@@ -3258,18 +3258,6 @@ body.zebraDevice #quantityAdjustmentInput{
     font-variant-numeric:tabular-nums;
 }
 
-body.zebraDevice .zebraModeIntro p{
-    max-width:34ch;
-}
-
-body.zebraDevice .zebraModeCards{
-    gap:9px;
-}
-
-body.zebraDevice .zebraModeCard{
-    min-height:86px;
-}
-
 body.zebraDevice.zebraJoinActive .cloudJoinCard{
     margin-top:4px!important;
 }
@@ -6244,7 +6232,6 @@ body.zebraDevice .headerOrderPickerActions .headerOrderPickerOk{
 #zebraJoinHeader{
     display:none!important;
 }
-body.zebraDevice.zebraHomeActive #zebraHome{display:block!important}
 body.zebraDevice[data-hh-state="ready"] #scanBox:before{color:#176a39!important}
 body.zebraDevice[data-hh-state="blocked"] #scanBox:before{color:#9a5a08!important}
 
