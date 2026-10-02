@@ -7622,26 +7622,31 @@ function getFriendlyReceivingDeviceLabel(row,options={}){
 }
 
 
-function getHandheldDeviceScannerRows(){
-    const history = Array.isArray(AppState?.workspace?.receivingHistory)
+function getHandheldDeviceReceivingRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
         ? AppState.workspace.receivingHistory
         : [];
-    const deviceId = typeof ensureDeviceId === "function"
+    const deviceId=typeof ensureDeviceId==="function"
         ? ensureDeviceId()
         : AppState?.session?.deviceId;
 
-    /*
-       Recent Scans is an actionable projection, not the immutable audit ledger.
-       Keep the original positive scan + SCAN_UNDO correction in receivingHistory,
-       but remove a fully corrected scan from this Handheld view.
-       Matching is FIFO per item/device/order because SCAN_UNDO intentionally
-       preserves the ledger rather than mutating the original transaction.
-    */
-    const ownRows=history
-        .filter(tx=>!deviceId || String(tx?.deviceId||"")===String(deviceId||""))
+    return history
+        .filter(tx=>{
+            if(deviceId && String(tx?.deviceId||"")!==String(deviceId||"")) return false;
+            const quantity=Number(tx?.quantity||0);
+            return Number.isFinite(quantity) && quantity!==0;
+        })
         .slice()
         .sort((a,b)=>String(a?.dateTime||"").localeCompare(String(b?.dateTime||"")));
+}
 
+function getHandheldDeviceScannerRows(){
+    /*
+       Recent Actions is projected from the immutable receiving ledger.
+       Scanner rows remain independently actionable; a SCAN_UNDO cancels the
+       matching scan in this projection without deleting either ledger row.
+    */
+    const ownRows=getHandheldDeviceReceivingRows();
     const activeScans=[];
     const scannerSource=String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
 
@@ -7664,7 +7669,6 @@ function getHandheldDeviceScannerRows(){
             const scanOrder=String(scan?.orderNumber||scan?.order_number||"");
             const undoOrder=String(tx?.orderNumber||tx?.order_number||"");
             if(scanOrder && undoOrder && scanOrder!==undoOrder) continue;
-
             const scanQty=Math.max(0,Number(scan?.quantity||0));
             if(remaining>=scanQty){
                 remaining-=scanQty;
@@ -7833,7 +7837,6 @@ function openHandheldScansPanel(){
     const esc=value=>typeof escapeHtml==="function"
         ? escapeHtml(String(value??""))
         : String(value??"");
-
     const formatTime=value=>{
         try{
             const d=new Date(value);
@@ -7841,53 +7844,57 @@ function openHandheldScansPanel(){
             return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
         }catch(_){ return ""; }
     };
-
-    const scanRows=()=>getHandheldDeviceScannerRows().slice()
+    const actionRows=()=>getHandheldDeviceReceivingRows().slice()
         .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
         .slice(0,20);
+    const activeScans=()=>getHandheldDeviceScannerRows().slice()
+        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")));
 
     const overlay=document.createElement("div");
     overlay.id="handheldScansOverlay";
     overlay.className="handheldScansOverlay handheldRecentOverlay";
 
     const render=()=>{
-        const recent=scanRows();
+        const recent=actionRows();
+        const latestRemovable=activeScans()[0];
+        const latestRemovableId=String(latestRemovable?.transactionId||"");
 
-        const scanMarkup=recent.length ? recent.map((row,index)=>{
-            const qty=Math.max(1,Number(row?.quantity||1)||1);
+        const markup=recent.length ? recent.map((row,index)=>{
+            const qty=Number(row?.quantity||0);
+            const source=String(row?.source||"").toUpperCase();
+            const isUndo=source==="SCAN_UNDO";
+            const isScan=!isUndo && (source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase() || source.includes("SCAN"));
+            const label=isUndo ? "Scan removed" : isScan ? "Scan" : qty<0 ? "Adjustment" : "Quantity";
+            const transactionId=String(row?.transactionId||"");
+            const removable=transactionId && transactionId===latestRemovableId;
             return `
               <article class="handheldRecentRow handheldScanHistoryRow">
                 <div class="handheldRecentIndex">${index+1}</div>
                 <div class="handheldRecentInfo">
                   <strong>${esc(row?.itemName||"Item")}</strong>
-                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))}</span>
+                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))} · ${label}</span>
                 </div>
-                <div class="handheldRecentQty">+${qty}</div>
-                ${index===0
-                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(row?.transactionId||"")}">REMOVE</button>`
+                <div class="handheldRecentQty ${qty<0?"isNegative":""}">${qty>0?"+":""}${qty}</div>
+                ${removable
+                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(transactionId)}">REMOVE</button>`
                     : `<span class="handheldRecentViewOnly">Saved</span>`}
               </article>`;
-        }).join("") : `<div class="handheldScansEmpty">No recent scans on this Handheld.</div>`;
+        }).join("") : `<div class="handheldScansEmpty">No recent receiving actions on this Handheld.</div>`;
 
         overlay.innerHTML=`
-          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Recent scans">
+          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Receiving history">
             <header>
               <div>
                 <span>RECEIVING HISTORY</span>
-                <strong>Recent Scans</strong>
-                <small>Last ${recent.length} scan transactions</small>
+                <strong>Recent Actions</strong>
+                <small>Last ${recent.length} receiving actions on this Handheld</small>
               </div>
               <button type="button" data-close aria-label="Close">✕</button>
             </header>
-
             <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
-
-            <div class="handheldRecentList">
-              ${scanMarkup}
-            </div>
-
+            <div class="handheldRecentList">${markup}</div>
             <div class="handheldRecentFooter">
-              <span>Only the latest scan can be removed. The correction is saved to the shared receiving record.</span>
+              <span>Scans and quantity adjustments are preserved. Only the latest active scan can be removed.</span>
               <button type="button" class="handheldPanelDone" data-close>DONE</button>
             </div>
           </section>`;
@@ -7896,27 +7903,20 @@ function openHandheldScansPanel(){
             overlay.remove();
             setTimeout(()=>window.hhRefreshReadyState?.(),20);
         });
-
-        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async()=>{
-            const transactionId=overlay.querySelector("[data-remove-last]")?.dataset.removeLast||"";
-            const latest=scanRows()[0];
+        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async event=>{
+            const transactionId=event.currentTarget?.dataset.removeLast||"";
+            const latest=activeScans()[0];
             if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
             if(!await pharmFlowConfirm({title:"Remove Last Scan?",message:`${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))} will be cancelled and preserved in Receiving history.`,confirmText:"Remove Scan",tone:"danger"})) return;
             const removed=typeof undoRecentScannerTransaction==="function"
                 ? undoRecentScannerTransaction(transactionId)
                 : false;
-            if(removed){
-                setTimeout(()=>{
-                    if(document.body.contains(overlay)) render();
-                },0);
-            }
+            if(removed) setTimeout(()=>{ if(document.body.contains(overlay)) render(); },0);
         });
-
     };
 
     document.body.appendChild(overlay);
     render();
-
 }
 
 
