@@ -176,7 +176,7 @@ function pfhRender(){
     if(!summary||!host)return;
     if(PharmFlowReceivingHistory.mode==="new"){
         const rows=PharmFlowReceivingHistory.newItems||[];const orders=new Set(rows.map(r=>r.order_number)).size;const workspaces=new Set(rows.map(r=>r.workspace_history_id)).size;
-        summary.innerHTML=pfhMetrics([["NEW ITEMS",rows.length],["WORKSPACES",workspaces],["ORDERS",orders],["PERIOD",PharmFlowReceivingHistory.from&&PharmFlowReceivingHistory.to?PharmFlowReceivingHistory.from+" → "+PharmFlowReceivingHistory.to:"—"]]);
+        summary.innerHTML=pfhMetrics([["NEW ITEMS",rows.length],["WORKSPACES",workspaces],["ORDERS",orders]])+pfhPeriodMetric(PharmFlowReceivingHistory.from,PharmFlowReceivingHistory.to);
         label.textContent=rows.length+" NEW item record(s)";
         if(!rows.length){host.innerHTML='<div class="pfhEmpty">No NEW High Priority items in the selected period.</div>';return;}
         const grouped=pfhGroup(rows,r=>r.order_number);
@@ -191,6 +191,10 @@ function pfhRender(){
     host.querySelectorAll(".pfhWorkspaceHead").forEach(btn=>btn.addEventListener("click",()=>pfhToggleWorkspace(btn.closest(".pfhWorkspace"))));
 }
 function pfhMetrics(items){return items.map(([k,v])=>'<article class="pfhMetric"><span>'+pfhEsc(k)+'</span><strong>'+pfhEsc(v)+'</strong></article>').join("");}
+function pfhPeriodMetric(from,to){
+    if(!from||!to)return '<article class="pfhMetric pfhPeriodMetric"><span>PERIOD</span><strong>—</strong></article>';
+    return '<article class="pfhMetric pfhPeriodMetric"><span>PERIOD</span><div class="pfhPeriodDates"><div><small>FROM</small><strong>'+pfhEsc(pfhFormatDate(from))+'</strong></div><i aria-hidden="true">→</i><div><small>TO</small><strong>'+pfhEsc(pfhFormatDate(to))+'</strong></div></div></article>';
+}
 function pfhGroup(rows,keyFn){const m=new Map();rows.forEach(r=>{const k=keyFn(r)||"-";if(!m.has(k))m.set(k,[]);m.get(k).push(r);});return m;}
 async function pfhToggleWorkspace(card){
     const id=card?.dataset?.pfhWorkspace;if(!id)return;const detail=card.querySelector(".pfhWorkspaceDetail"),opening=detail.hidden;
