@@ -871,6 +871,20 @@ window.serializeActiveOrderManifest=serializeActiveOrderManifest;
    Keep one persistence path: update the proposed scope locally, persist the
    complete manifest, and roll back if the verified server write fails. */
 async function setHandheldAssignedOrderNumbers(orderNumbers){
+    /* Assignment is a server-authoritative structural write. Refresh the
+       generation/revision fence BEFORE mutating local assignment state.
+       Otherwise prepare/apply can replace the proposed selection with the
+       current server manifest, producing the observed "no toast / KPI 0 /
+       assignment disappears after refresh" failure pattern. */
+    const prepared=
+        typeof prepareActiveOrderManifestWrite==="function"
+            ? await prepareActiveOrderManifestWrite()
+            : false;
+
+    if(prepared!==true){
+        return false;
+    }
+
     const previousOrders=deepClone(
         AppState?.workspace?.handheldOrderNumbers||[]
     );
@@ -899,9 +913,25 @@ async function setHandheldAssignedOrderNumbers(orderNumbers){
         return true;
     }
 
-    AppState.workspace.handheldOrderNumbers=previousOrders;
-    AppState.workspace.handheldScopeConfigured=previousConfigured;
-    saveWorkspaceSnapshot?.();
+    /* saveActiveOrderManifest may already have pulled newer server authority
+       after a stale-write rejection. Do not overwrite that authoritative state
+       with an older browser snapshot. Roll back only when the browser still
+       holds the exact failed proposal. */
+    const currentOrders=[...new Set(
+        (AppState?.workspace?.handheldOrderNumbers||[])
+            .map(order=>String(order||"").trim().toUpperCase())
+            .filter(Boolean)
+    )];
+    const proposalStillLocal=
+        AppState?.workspace?.handheldScopeConfigured===true &&
+        currentOrders.length===nextOrders.length &&
+        currentOrders.every(order=>nextOrders.includes(order));
+
+    if(proposalStillLocal){
+        AppState.workspace.handheldOrderNumbers=previousOrders;
+        AppState.workspace.handheldScopeConfigured=previousConfigured;
+        saveWorkspaceSnapshot?.();
+    }
     return false;
 }
 
