@@ -7569,16 +7569,19 @@ async function refreshUnifiedHandheldWorkspace(options={}){
 async function openUnifiedHandheldReceiving(){
     if(!isLikelyZebraDevice()) return false;
 
-    clearZebraModeClasses();
-    document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
-    try{ window.scrollTo(0,0); }catch(_){ }
-
+    /* Keep the worker on Mode Selection while assignment authority hydrates.
+       Do not expose the Receiving page or its stale/current Order label during
+       the blocking manifest read. */
+    setZebraHomeMode();
+    document.body.dataset.hhWorkspaceLoading="1";
     window.hhRefreshReadyState?.();
+
     const ready=await refreshUnifiedHandheldWorkspace({silent:true,blocking:true});
 
-    setZebraReceivingMode();
-
-    if(!ready){
+    if(ready){
+        setZebraReceivingMode();
+    }else{
+        setZebraHomeMode();
         showToast("No Order is assigned to this Handheld yet","warning");
     }
     return ready;
