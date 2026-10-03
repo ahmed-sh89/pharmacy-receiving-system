@@ -964,6 +964,33 @@ async function pullActiveOrderManifest(options={}){
             ])
         );
 
+        /* Handheld assignment is authoritative manifest state even when the
+           uploaded Order structure itself is unchanged. The old apply gate
+           compared only Order files/data (plus revision), so an assignment-only
+           server update could be fetched successfully yet discarded locally.
+           Compare the worker scope explicitly so PC -> Handheld assignment and
+           removal are applied on the same authoritative manifest read. */
+        const normalizeAssignmentScope=value=>
+            [...new Set(
+                (Array.isArray(value)?value:[])
+                    .map(normalizeOrderNumber)
+                    .filter(Boolean)
+            )].sort();
+
+        const localHandheldScope=JSON.stringify({
+            configured:AppState?.workspace?.handheldScopeConfigured===true,
+            orders:normalizeAssignmentScope(
+                AppState?.workspace?.handheldOrderNumbers
+            )
+        });
+
+        const remoteHandheldScope=JSON.stringify({
+            configured:row.manifest?.handheldScopeConfigured===true,
+            orders:normalizeAssignmentScope(
+                row.manifest?.handheldOrderNumbers
+            )
+        });
+
         const mustApply=
             !localFiles.length ||
             !localData.length ||
@@ -972,7 +999,8 @@ async function pullActiveOrderManifest(options={}){
                     PharmFlowCloudWorkspace
                         .activeManifestRevision||0
                 ) ||
-            localSignature!==remoteSignature;
+            localSignature!==remoteSignature ||
+            localHandheldScope!==remoteHandheldScope;
 
         if(mustApply){
             const applied=applyActiveOrderManifest(
