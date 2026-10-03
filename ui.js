@@ -2364,7 +2364,7 @@ function refreshReceivingTable(){
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():active;
     let rows=[];
     if(typeof getPerOrderReceivingRows==="function"&&active.length){
-        const orders=selectedOrders.length?selectedOrders:[active[0]].filter(Boolean);
+        const orders=(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?selectedOrders:(selectedOrders.length?selectedOrders:[active[0]].filter(Boolean));
         const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
         const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
         orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}).forEach(r=>{
@@ -7541,13 +7541,15 @@ async function refreshUnifiedHandheldWorkspace(options={}){
         refreshZebraInterface();
         window.hhRefreshReadyState?.();
 
-        /* Manifest refresh may legitimately report "unchanged". Readiness is
-           determined from the authoritative hydrated workspace, not from the
-           transport return flag. This prevents the false "No Active Order"
-           warning while Active Orders are already present. */
+        /* Receiving on the Handheld is explicitly assigned from Manage Orders.
+           Pharmacy Active Orders may hydrate for shared identity/history, but
+           they are not worker scope until the PC assignment says so. */
+        const assigned=typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
         return !!(
-            Array.isArray(AppState?.workspace?.orderFiles) &&
-            AppState.workspace.orderFiles.length>0 &&
+            Array.isArray(assigned) &&
+            assigned.length>0 &&
             Array.isArray(AppState?.workspace?.orderData) &&
             AppState.workspace.orderData.length>0
         );
@@ -7577,7 +7579,7 @@ async function openUnifiedHandheldReceiving(){
     setZebraReceivingMode();
 
     if(!ready){
-        showToast("No Active Order is available for this pharmacy yet","warning");
+        showToast("No Order is assigned to this Handheld yet","warning");
     }
     return ready;
 }
