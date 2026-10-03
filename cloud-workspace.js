@@ -1366,6 +1366,28 @@ async function pullActiveOrderManifest(options={}){
             ])
         );
 
+        /* Assignment changes are authority changes too. A manifest can keep
+           identical Order files/data while only its Handheld scope changes. */
+        const normalizeAssignmentScope=value=>
+            [...new Set(
+                (Array.isArray(value)?value:[])
+                    .map(order=>String(order||"").trim().toUpperCase())
+                    .filter(Boolean)
+            )].sort();
+
+        const localHandheldScope=JSON.stringify({
+            configured:AppState?.workspace?.handheldScopeConfigured===true,
+            orders:normalizeAssignmentScope(
+                AppState?.workspace?.handheldOrderNumbers
+            )
+        });
+        const remoteHandheldScope=JSON.stringify({
+            configured:row.manifest?.handheldScopeConfigured===true,
+            orders:normalizeAssignmentScope(
+                row.manifest?.handheldOrderNumbers
+            )
+        });
+
         const mustApply=
             options?.forceApply===true ||
             !localFiles.length ||
@@ -1375,7 +1397,8 @@ async function pullActiveOrderManifest(options={}){
                     PharmFlowCloudWorkspace
                         .activeManifestRevision||0
                 ) ||
-            localSignature!==remoteSignature;
+            localSignature!==remoteSignature ||
+            localHandheldScope!==remoteHandheldScope;
 
         if(mustApply){
             const applied=applyActiveOrderManifest(
