@@ -7360,13 +7360,15 @@ async function refreshUnifiedHandheldWorkspace(options={}){
         refreshZebraInterface();
         window.hhRefreshReadyState?.();
 
-        /* Manifest refresh may legitimately report "unchanged". Readiness is
-           determined from the authoritative hydrated workspace, not from the
-           transport return flag. This prevents the false "No Active Order"
-           warning while Active Orders are already present. */
+        /* Handheld Receiving readiness is assignment authority, not merely the
+           presence of pharmacy Active Orders. Uploading an Order on the PC
+           must never expose it to the Handheld until Manage Orders assigns it. */
+        const assigned=typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
         return !!(
-            Array.isArray(AppState?.workspace?.orderFiles) &&
-            AppState.workspace.orderFiles.length>0 &&
+            Array.isArray(assigned) &&
+            assigned.length>0 &&
             Array.isArray(AppState?.workspace?.orderData) &&
             AppState.workspace.orderData.length>0
         );
@@ -7396,7 +7398,7 @@ async function openUnifiedHandheldReceiving(){
     setZebraReceivingMode();
 
     if(!ready){
-        showToast("No Active Order is available for this pharmacy yet","warning");
+        showToast("No Order is assigned to this Handheld yet","warning");
     }
     return ready;
 }
@@ -7484,7 +7486,9 @@ function getFriendlyReceivingDeviceLabel(row,options={}){
 
 
 function getHandheldAssignedOrderScope(){
-    if(AppState?.workspace?.handheldScopeConfigured!==true) return null;
+    /* Assignment is authoritative on the Handheld. An unconfigured manifest
+       is an empty worker scope, never a compatibility alias for all Orders. */
+    if(AppState?.workspace?.handheldScopeConfigured!==true) return new Set();
     return new Set(
         (Array.isArray(AppState?.workspace?.handheldOrderNumbers)
             ? AppState.workspace.handheldOrderNumbers
@@ -7495,10 +7499,7 @@ function getHandheldAssignedOrderScope(){
 }
 
 function receivingRowBelongsToHandheldScope(tx,scope=getHandheldAssignedOrderScope()){
-    /* null means legacy/unconfigured scope; preserve the existing history view.
-       An explicitly configured empty scope means the worker has zero orders. */
-    if(scope===null) return true;
-    if(scope.size===0) return false;
+    if(!(scope instanceof Set) || scope.size===0) return false;
     const order=String(tx?.orderNumber||tx?.order_number||"").trim().toUpperCase();
     return !!order && scope.has(order);
 }
@@ -7546,7 +7547,9 @@ function refreshHandheldWorkspaceStatus(){
     if(!isLikelyZebraDevice()) return;
     const state=document.getElementById("handheldWorkspaceStatus");
     if(!state) return;
-    const orders=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles.length:0;
+    const orders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers().length
+        : 0;
     const authenticated=!!AuthState?.context?.pharmacy_id;
     const loading=document.body.dataset.hhWorkspaceLoading==="1";
     const online=navigator.onLine!==false;
