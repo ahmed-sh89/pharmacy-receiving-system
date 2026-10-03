@@ -549,14 +549,19 @@ async function finalizeCurrentReceiving({allOrders=false}={}){
         }
         await finalizeReceivingWorkspaceWithHistory(summary,finalizedDiscrepancyReport);
 
-        if(typeof closeAndArchiveCurrentOrder!=="function"){
-            throw new Error("Receiving archive module is unavailable");
-        }
-        /* Each selected Order remains an independent completion/archive unit.
-           The old first-order-only call left the other finalized Orders in
-           active workspace state.  Archive each order only after its server
-           completion acknowledgement, and stop on the first failed archive. */
-        for(const orderNumber of summary.orderNumbers){
+        if(allOrders){
+            if(typeof closeAndArchiveAllCurrentOrders!=="function"){
+                throw new Error("Receive All archive module is unavailable");
+            }
+            const archived=await closeAndArchiveAllCurrentOrders(summary.orderNumbers);
+            if(!archived){
+                throw new Error("Orders were marked Received but the Receive All archive transition could not be completed.");
+            }
+        }else{
+            if(typeof closeAndArchiveCurrentOrder!=="function"){
+                throw new Error("Receiving archive module is unavailable");
+            }
+            const orderNumber=summary.orderNumbers[0];
             const archived=await closeAndArchiveCurrentOrder(orderNumber);
             if(!archived){
                 throw new Error("Order "+orderNumber+" was marked Received but its receiving archive could not be completed. Do not scan this order again; refresh and retry archive recovery.");

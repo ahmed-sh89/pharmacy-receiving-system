@@ -712,6 +712,130 @@ async function dbClearStore(
    ARCHIVE CURRENT ORDER
 ===================================================== */
 
+async function closeAndArchiveAllCurrentOrders(orderNumbers){
+
+    const workspace=AppState.workspace;
+    const targets=[...new Set((Array.isArray(orderNumbers)?orderNumbers:[])
+        .map(number=>normalizeOrderNumber(number))
+        .filter(Boolean))];
+
+    if(!workspace || !targets.length){
+        return false;
+    }
+
+    const activeFiles=Array.isArray(workspace.orderFiles)?workspace.orderFiles:[];
+    const missing=targets.filter(target=>!activeFiles.some(file=>
+        normalizeOrderNumber(file.documentId||file.orderNumber||"")===target
+    ));
+    if(missing.length){
+        throw new Error("Selected order is not present in the current workspace: "+missing.join(", "));
+    }
+
+    if(typeof authRpc!=="function" || !AuthState?.context?.pharmacy_id){
+        throw new Error("Cloud pharmacy context is unavailable. Archive was not cleared.");
+    }
+
+    const closedAt=nowISO();
+    const baseArchiveId=String(workspace.orderId||createOrderId());
+    const discrepancySnapshot=window.__pfFinalizedDiscrepancyReport
+        ? deepClone(window.__pfFinalizedDiscrepancyReport)
+        : null;
+    const discrepancyCount=Number(
+        discrepancySnapshot?.totalDiscrepancies ||
+        discrepancySnapshot?.rows?.length || 0
+    );
+
+    /* Receive All is one structural transition. Persist every independent
+       archive first, with an order-scoped id, before clearing any local or
+       server Current Workspace state. This prevents a partial archive/manifest
+       cascade after the History RPC has atomically marked all Orders received. */
+    for(const targetOrder of targets){
+        const targetFile=activeFiles.find(file=>
+            normalizeOrderNumber(file.documentId||file.orderNumber||"")===targetOrder
+        );
+        const archiveId=baseArchiveId+"::"+targetOrder;
+        const archiveRecord={
+            orderId:archiveId,
+            orderName:targetOrder,
+            orderNumber:targetOrder,
+            createdAt:workspace.createdAt||closedAt,
+            startedAt:workspace.startedAt||workspace.createdAt||closedAt,
+            closedAt,
+            totalItems:0,
+            completedItems:0,
+            remainingItems:0,
+            overReceivedItems:0,
+            manualItems:0,
+            totalTransactions:0,
+            totalReceivedUnits:0,
+            orderFiles:[{
+                documentId:targetOrder,
+                orderNumber:targetOrder,
+                orderDate:targetFile?.orderDate||targetFile?.order_date||targetFile?.documentDate||targetFile?.reportDate||""
+            }],
+            mappingFiles:[],
+            items:[],
+            status:"Received",
+            sessionId:AppState.session.id,
+            deviceId:AppState.session.deviceId,
+            discrepancyReport:discrepancyCount>0?discrepancySnapshot:null,
+            fullReceivingReport:null
+        };
+
+        await authRpc("save_pharmflow_finalized_archive",{
+            p_pharmacy_id:AuthState.context.pharmacy_id,
+            p_archive_id:archiveId,
+            p_order_numbers:[targetOrder],
+            p_closed_at:closedAt,
+            p_archive_payload:archiveRecord
+        });
+        await dbPut(APP_CONFIG.database.stores.orders,archiveRecord);
+    }
+
+    await restoreHistoricalArchive();
+
+    const deviceId=typeof ensureDeviceId==="function"
+        ? ensureDeviceId()
+        : AppState?.session?.deviceId;
+
+    if(typeof clearCurrentWorkspace==="function"){
+        clearCurrentWorkspace();
+    }else{
+        AppState.workspace=createEmptyWorkspace();
+        resetStatistics?.();
+        rebuildStateIndexes?.();
+    }
+    AppState.session=createEmptySession();
+    if(deviceId){ AppState.session.deviceId=deviceId; }
+    ensureDeviceId?.();
+    deleteWorkspaceSnapshot?.();
+    saveWorkspaceSnapshot?.();
+
+    if(typeof clearActiveOrderManifest!=="function" ||
+       await clearActiveOrderManifest()!==true){
+        throw new Error("Orders were archived, but the Active Order cloud manifest could not be cleared.");
+    }
+
+    if(typeof syncCloudWorkspaceAfterFinalize!=="function" ||
+       await syncCloudWorkspaceAfterFinalize("Current Workspace finalized and cleared")!==true){
+        throw new Error("Orders were archived, but the finalized Current Workspace did not synchronize completely.");
+    }
+
+    if(typeof saveApplicationState==="function"){
+        saveApplicationState(false);
+    }else{
+        saveWorkspaceSnapshot?.();
+    }
+
+    refreshEntireUI?.();
+    AppEvents.emit("archive:updated");
+    AppEvents.emit("workspace:cleared");
+    navigateTo("dashboard");
+    return true;
+}
+
+window.closeAndArchiveAllCurrentOrders=closeAndArchiveAllCurrentOrders;
+
 async function closeAndArchiveCurrentOrder(targetOrderNumber){
 
     const workspace =
