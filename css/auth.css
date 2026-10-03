@@ -710,3 +710,66 @@ body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font
     min-height:clamp(24px,4dvh,30px)!important;height:auto!important;margin:1px 0 0!important;font-size:11px!important;
   }
 }
+
+/* Restored production Handheld auth owner: keep sign-in within one viewport. */
+/* ---------- Handheld ---------- */
+body.zebraDevice #authGate.authGate{
+  min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;
+  padding:5px!important;align-items:center!important;justify-content:center!important;
+}
+body.zebraDevice #authGate .authShell{
+  width:100%!important;height:calc(100dvh - 10px)!important;min-height:0!important;max-height:none!important;
+  display:grid!important;grid-template-columns:1fr!important;grid-template-rows:72px minmax(0,1fr)!important;
+  overflow:hidden!important;border:0!important;border-radius:16px!important;
+  background:linear-gradient(155deg,#e6f2fc 0%,#eaf3fb 55%,#eceffc 100%)!important;
+  box-shadow:0 8px 24px rgba(62,98,132,.10)!important;
+}
+body.zebraDevice #authGate .authBrandPanel{
+  min-height:0!important;height:72px!important;padding:8px 13px!important;overflow:hidden!important;
+  background:transparent!important;color:var(--pf-auth-ink)!important;border:0!important;
+}
+body.zebraDevice #authGate .authBrandMinimal{
+  height:100%!important;display:grid!important;grid-template-columns:47px minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;column-gap:10px!important;align-content:center!important;align-items:center!important;
+}
+body.zebraDevice #authGate .authBrandLogoCard{
+  grid-row:1/3!important;width:45px!important;height:45px!important;margin:0!important;border-radius:12px!important;
+}
+body.zebraDevice #authGate .authBrandLogoCard img{width:35px!important;height:35px!important;}
+body.zebraDevice #authGate .authBrandName{font-size:24px!important;line-height:1!important;letter-spacing:-.45px!important;}
+body.zebraDevice #authGate .authBrandTagline{grid-column:2!important;margin-top:4px!important;font-size:7px!important;line-height:1!important;letter-spacing:.85px!important;}
+body.zebraDevice #authGate .authFormPanel{
+  height:100%!important;min-height:0!important;padding:8px 13px 7px!important;align-items:flex-start!important;overflow:hidden!important;
+  background:transparent!important;border:0!important;
+}
+body.zebraDevice #authGate .authFormPanelInner{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;}
+body.zebraDevice #authGate #authLoginForm{height:100%!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow:hidden!important;}
+body.zebraDevice #authGate #authLoginForm .authEyebrow{font-size:9px!important;letter-spacing:1.1px!important;}
+body.zebraDevice #authGate #authLoginForm h2{margin:3px 0 3px!important;font-size:25px!important;line-height:1!important;}
+body.zebraDevice #authGate #authLoginForm .authLead{margin:0 0 7px!important;font-size:10.5px!important;line-height:1.15!important;}
+body.zebraDevice #authGate #authLoginForm .authField{gap:4px!important;margin:0 0 6px!important;}
+body.zebraDevice #authGate #authLoginForm .authField label{font-size:10px!important;line-height:1!important;}
+body.zebraDevice #authGate #authLoginForm .authField input{
+  min-height:40px!important;height:40px!important;padding:0 11px!important;border-radius:10px!important;font-size:13px!important;
+}
+body.zebraDevice #authGate #authLoginForm .authPasswordWrap input{padding-right:61px!important;}
+body.zebraDevice #authGate #authLoginForm .authPasswordToggle{right:5px!important;height:29px!important;min-width:49px!important;border-radius:8px!important;font-size:9px!important;}
+body.zebraDevice #authGate #authLoginForm .authRememberRow{gap:6px!important;min-height:25px!important;margin:0 0 4px!important;font-size:9.5px!important;}
+body.zebraDevice #authGate #authLoginForm .authRememberRow input{width:15px!important;height:15px!important;}
+body.zebraDevice #authGate #authLoginForm .authPrimaryButton{min-height:40px!important;height:40px!important;border-radius:10px!important;font-size:12px!important;box-shadow:none!important;}
+body.zebraDevice #authGate #authLoginForm .authSecondaryLink{min-height:29px!important;height:29px!important;margin:1px 0 0!important;font-size:10px!important;}
+body.zebraDevice #authGate #authLoginForm .authSignupLink{min-height:35px!important;height:35px!important;margin-top:2px!important;border-radius:9px!important;font-size:10px!important;}
+body.zebraDevice #authGate #authLoginForm .authMessage{min-height:0!important;margin:2px 0 0!important;font-size:9px!important;line-height:1.1!important;}
+@media (max-height:560px){
+  body.zebraDevice #authGate .authShell{grid-template-rows:60px minmax(0,1fr)!important;}
+  body.zebraDevice #authGate .authBrandPanel{height:60px!important;padding:5px 11px!important;}
+  body.zebraDevice #authGate .authBrandMinimal{grid-template-columns:39px 1fr!important;column-gap:8px!important;}
+  body.zebraDevice #authGate .authBrandLogoCard{width:38px!important;height:38px!important;border-radius:10px!important;}
+  body.zebraDevice #authGate .authBrandLogoCard img{width:30px!important;height:30px!important;}
+  body.zebraDevice #authGate .authBrandName{font-size:21px!important;}
+  body.zebraDevice #authGate .authBrandTagline{font-size:6px!important;}
+  body.zebraDevice #authGate .authFormPanel{padding:6px 11px 5px!important;}
+  body.zebraDevice #authGate #authLoginForm .authLead{display:none!important;}
+  body.zebraDevice #authGate #authLoginForm .authField input{height:35px!important;min-height:35px!important;}
+  body.zebraDevice #authGate #authLoginForm .authPrimaryButton{height:36px!important;min-height:36px!important;}
+}
