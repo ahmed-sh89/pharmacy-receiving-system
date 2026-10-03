@@ -911,16 +911,17 @@ function getActiveReceivingOrderNumbers(){
 
 function getSelectedReceivingOrderNumbers(){
     const active=getActiveReceivingOrderNumbers();
-    /* The Handheld is a worker surface. Its work scope is assigned by an
-       authorized PC user and saved in the Active Order manifest; it must not
-       read a device-local order preference. Existing workspaces keep their
-       all-active behaviour until an administrator makes the first assignment. */
+    /* The Handheld is a worker surface. Its work scope is explicitly assigned
+       from Manage Orders on an authorized PC and persisted in the Active Order
+       manifest. No assignment means no Handheld Receiving orders. Never fall
+       back to every Active Order: upload/activation alone is not permission to
+       expose an Order to the Handheld. */
     if(typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()){
         const configured=AppState?.workspace?.handheldScopeConfigured===true;
         const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
             ? AppState.workspace.handheldOrderNumbers.map(normalizeOrderNumber).filter(order=>active.includes(order))
             : [];
-        return configured ? [...new Set(assigned)] : active.slice();
+        return configured ? [...new Set(assigned)] : [];
     }
     /* Receiving Release: order selection is a device-local work scope, never
        shared business state.  An empty saved scope means ALL ACTIVE ORDERS. */

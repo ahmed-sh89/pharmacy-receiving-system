@@ -649,6 +649,27 @@ async function processScannerValue(rawValue){
         );
 
 
+    /* Hard authority gate: a Handheld with zero assigned Orders has no
+       Receiving scan authority at all. Stop before identifier resolution,
+       Needs Review, Extra Item, queueing, or quantity mutation. */
+    if(
+        typeof isLikelyZebraDevice === "function" &&
+        isLikelyZebraDevice()
+    ){
+        const assigned =
+            typeof getSelectedReceivingOrderNumbers === "function"
+                ? getSelectedReceivingOrderNumbers()
+                : [];
+
+        if(!Array.isArray(assigned) || assigned.length===0){
+            if(input){ input.value = ""; }
+            clearSmartSearchResults();
+            showToast("No Order is assigned to this Handheld","warning");
+            return false;
+        }
+    }
+
+
     /* Phase 2B.5 hard guard: Zebra Receiving is never allowed to become a
        local-only receiving workflow. After the PC ends a session, the cloud
        watcher clears the session; this guard prevents any later hardware scan

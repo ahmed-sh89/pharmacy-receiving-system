@@ -233,7 +233,12 @@ function getReceivingEligibleOrders(item){
        including per-item order membership. No session snapshot fallback and no
        synthetic order sentinel are allowed in the authoritative path. */
     if(!memberships.length) return [];
-    if(!selected.length) return memberships;
+    if(!selected.length){
+        /* Desktop keeps its historical all-active fallback. The Handheld is a
+           worker surface: zero assigned Orders means zero receiving authority. */
+        const isHandheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+        return isHandheld ? [] : memberships;
+    }
     return memberships.filter(order=>selected.includes(order));
 }
 

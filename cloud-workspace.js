@@ -871,6 +871,20 @@ window.serializeActiveOrderManifest=serializeActiveOrderManifest;
    Keep one persistence path: update the proposed scope locally, persist the
    complete manifest, and roll back if the verified server write fails. */
 async function setHandheldAssignedOrderNumbers(orderNumbers){
+    /* Assignment is a server-authoritative structural write. Refresh the
+       generation/revision fence BEFORE mutating local assignment state.
+       Otherwise prepare/apply can replace the proposed selection with the
+       current server manifest, producing the observed "no toast / KPI 0 /
+       assignment disappears after refresh" failure pattern. */
+    const prepared=
+        typeof prepareActiveOrderManifestWrite==="function"
+            ? await prepareActiveOrderManifestWrite()
+            : false;
+
+    if(prepared!==true){
+        return false;
+    }
+
     const previousOrders=deepClone(
         AppState?.workspace?.handheldOrderNumbers||[]
     );
@@ -899,9 +913,25 @@ async function setHandheldAssignedOrderNumbers(orderNumbers){
         return true;
     }
 
-    AppState.workspace.handheldOrderNumbers=previousOrders;
-    AppState.workspace.handheldScopeConfigured=previousConfigured;
-    saveWorkspaceSnapshot?.();
+    /* saveActiveOrderManifest may already have pulled newer server authority
+       after a stale-write rejection. Do not overwrite that authoritative state
+       with an older browser snapshot. Roll back only when the browser still
+       holds the exact failed proposal. */
+    const currentOrders=[...new Set(
+        (AppState?.workspace?.handheldOrderNumbers||[])
+            .map(order=>String(order||"").trim().toUpperCase())
+            .filter(Boolean)
+    )];
+    const proposalStillLocal=
+        AppState?.workspace?.handheldScopeConfigured===true &&
+        currentOrders.length===nextOrders.length &&
+        currentOrders.every(order=>nextOrders.includes(order));
+
+    if(proposalStillLocal){
+        AppState.workspace.handheldOrderNumbers=previousOrders;
+        AppState.workspace.handheldScopeConfigured=previousConfigured;
+        saveWorkspaceSnapshot?.();
+    }
     return false;
 }
 
@@ -1336,6 +1366,28 @@ async function pullActiveOrderManifest(options={}){
             ])
         );
 
+        /* Assignment changes are authority changes too. A manifest can keep
+           identical Order files/data while only its Handheld scope changes. */
+        const normalizeAssignmentScope=value=>
+            [...new Set(
+                (Array.isArray(value)?value:[])
+                    .map(order=>String(order||"").trim().toUpperCase())
+                    .filter(Boolean)
+            )].sort();
+
+        const localHandheldScope=JSON.stringify({
+            configured:AppState?.workspace?.handheldScopeConfigured===true,
+            orders:normalizeAssignmentScope(
+                AppState?.workspace?.handheldOrderNumbers
+            )
+        });
+        const remoteHandheldScope=JSON.stringify({
+            configured:row.manifest?.handheldScopeConfigured===true,
+            orders:normalizeAssignmentScope(
+                row.manifest?.handheldOrderNumbers
+            )
+        });
+
         const mustApply=
             options?.forceApply===true ||
             !localFiles.length ||
@@ -1345,7 +1397,8 @@ async function pullActiveOrderManifest(options={}){
                     PharmFlowCloudWorkspace
                         .activeManifestRevision||0
                 ) ||
-            localSignature!==remoteSignature;
+            localSignature!==remoteSignature ||
+            localHandheldScope!==remoteHandheldScope;
 
         if(mustApply){
             const applied=applyActiveOrderManifest(
