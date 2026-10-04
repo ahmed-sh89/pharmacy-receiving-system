@@ -270,3 +270,12 @@ test('Expiry session quantity is neutral and capture keeps authoritative state i
  assert.match(core,/const saveResult=await authRpc\("save_pharmacy_expiry_verified_state_v2"/);
  assert.match(core,/state_id:Array\.isArray\(saveResult\)\?saveResult\[0\]\?\.state_id:saveResult\?\.state_id/);
 });
+
+
+test('Expiry Session Activity renders corrected current-state values after Edit',()=>{
+ const ctl=read('js/expiry-desktop-v2.js');
+ assert.match(ctl,/const display=cur\|\|r/);
+ assert.match(ctl,/cur\?cur\.verified_quantity:\(r\.quantity\|\|r\.captured_quantity\|\|0\)/);
+ assert.match(ctl,/sessionRows=\(ExpiryCaptureEngine\.sessionRows\|\|\[\]\)\.map\(c=>String\(c\.state_id/);
+ assert.match(ctl,/batch_no:values\.batch,expiry_month:values\.month,expiry_year:values\.year,quantity:values\.quantity/);
+});
