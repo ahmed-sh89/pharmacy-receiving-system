@@ -105,3 +105,28 @@ test('Expiry desktop keeps page fixed and scrolls only Current Expiry List',()=>
   assert.match(css,/\.expiryCurrentTableWrap\{[\s\S]*?flex:1 1 0!important;[\s\S]*?min-height:0!important;[\s\S]*?overflow-y:auto!important/);
   assert.match(css,/overscroll-behavior:contain!important/);
 });
+
+test('Expiry desktop operations keep operator optional while Handheld remains guarded',()=>{
+  const html=read('index.html');
+  const js=read('js/expiry.js');
+  assert.match(html,/Operator \(optional\)/);
+  assert.match(js,/expiryIsHandheld\(\) && !ExpiryCaptureEngine\.selectedWorkerId/);
+  assert.match(js,/save_pharmacy_expiry_verified_state_v2/);
+});
+
+test('Expiry desktop current list exposes Category filter and edit-delete controls',()=>{
+  const html=read('index.html');
+  const js=read('js/expiry.js');
+  assert.match(html,/id="expiryCategoryFilter"/);
+  assert.match(html,/<th>Product<\/th><th>Category<\/th>/);
+  assert.match(js,/expiryPopulateCategoryFilter/);
+  assert.match(js,/data-expiry-edit/);
+  assert.match(js,/data-expiry-clear/);
+});
+
+test('Expiry desktop hides duplicate Last Scan surface without changing Handheld item card',()=>{
+  const html=read('index.html');
+  const css=read('css/dashboard.css');
+  assert.match(html,/expiryItemCard expiryHandheldItemCard/);
+  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell \.expiryHandheldItemCard\{display:none!important\}/);
+});
