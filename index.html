@@ -1285,11 +1285,8 @@
                 <section class="expiryCaptureCard">
                     <div class="expiryCaptureRow">
                         <div class="expiryWorkerBar">
-                            <div class="expiryWorkerCompactLabel">
-                                <span class="expiryWorkerIcon">👤</span>
-                                <label for="expiryWorkerSelect">OPERATOR</label>
-                            </div>
-                            <select id="expiryWorkerSelect" aria-label="Expiry operator">
+                            <span class="expiryOperatorIcon" aria-hidden="true">👤</span>
+                            <select id="expiryWorkerSelect" aria-label="Operator">
                                 <option value="">Select operator...</option>
                             </select>
                         </div>
@@ -1324,13 +1321,7 @@
                     </div>
 
                     <div class="expiryItemCard">
-                        <div class="expiryLastScanHeading">
-                            <span>LAST SCAN</span>
-                            <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
-                                <span class="expiryCapturedButtonLabel">RECENT</span>
-                                <strong id="expiryCapturedCount">0</strong>
-                            </button>
-                        </div>
+                        <div class="expiryLastScanHeading"><span>LAST SCAN</span></div>
                         <strong id="expiryItemName">—</strong>
                         <div class="expiryItemMeta">
                             <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
@@ -1339,6 +1330,10 @@
                             <div><span>Batch Number</span><strong id="expiryItemBatch">—</strong></div>
                             <div><span>Serial</span><strong id="expiryItemSerial">—</strong></div>
                         </div>
+                        <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
+                            <span class="expiryCapturedButtonLabel">RECENT</span>
+                            <strong id="expiryCapturedCount">0</strong>
+                        </button>
                     </div>
 
                     <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
