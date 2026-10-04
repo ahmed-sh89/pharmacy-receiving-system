@@ -7874,3 +7874,100 @@ body.zebraDevice .zebraConnectedDot.isOffline:before{background:#d14b4b}
 body.zebraDevice .zebraConnectedDot.isEmpty{background:#fff7e8;color:#8a641c}
 body.zebraDevice .zebraConnectedDot.isEmpty:before{background:#d69a2d}
 
+
+
+/* =============================================================
+   EXPIRY STAGE 1 — BUILD 1
+   Desktop operational workspace + Handheld workflow isolation
+============================================================= */
+body:not(.zebraDevice) #zebraExpiryShell{
+    max-width:none!important;
+    width:100%!important;
+    padding:18px 22px 28px!important;
+    box-sizing:border-box!important;
+}
+body:not(.zebraDevice) #zebraExpiryShell .zebraExpiryTop{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:14px!important;
+    margin-bottom:14px!important;
+}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{
+    display:grid!important;
+    grid-template-columns:minmax(210px,.7fr) minmax(300px,1.2fr) minmax(420px,1.8fr)!important;
+    grid-template-areas:
+        "worker scan item"
+        "status scan item"
+        "entry entry item"
+        "save save saved"!important;
+    gap:10px 14px!important;
+    align-items:start!important;
+    width:100%!important;
+    padding:16px!important;
+    box-sizing:border-box!important;
+}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar{grid-area:worker!important;margin:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanStatus{grid-area:status!important;margin:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox{grid-area:scan!important;margin:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryItemCard{grid-area:item!important;margin:0!important;min-height:100%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid{grid-area:entry!important;margin:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton{grid-area:save!important;margin:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryLastSaved{grid-area:saved!important;margin:0!important}
+
+.expiryCurrentWorkspace{
+    margin-top:16px;
+    border:1px solid #dbe5f0;
+    border-radius:16px;
+    background:#fff;
+    overflow:hidden;
+    box-shadow:0 8px 24px rgba(15,39,70,.05);
+}
+.expiryCurrentHeader{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:18px;
+    padding:16px 18px;
+    border-bottom:1px solid #e6edf5;
+    background:#f8fbff;
+}
+.expiryCurrentHeader h2{margin:3px 0 2px;color:#102746;font-size:20px}
+.expiryCurrentHeader h2 strong{
+    display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 7px;
+    border-radius:999px;background:#e8f2ff;color:#1557c0;font-size:13px
+}
+.expiryCurrentHeader p{margin:0;color:#64748b;font-size:12px}
+.expiryCurrentSearch{display:grid;gap:5px;min-width:min(360px,35vw)}
+.expiryCurrentSearch span{font-size:10px;font-weight:900;color:#526276;text-transform:uppercase;letter-spacing:.04em}
+.expiryCurrentSearch input{
+    width:100%;min-height:40px;padding:0 12px;border:1px solid #cbd9e8;border-radius:9px;
+    background:#fff;color:#102746;font-size:13px;box-sizing:border-box
+}
+.expiryCurrentTableWrap{width:100%;overflow:auto}
+.expiryCurrentTable{width:100%;border-collapse:collapse;min-width:1080px}
+.expiryCurrentTable th{
+    padding:10px 12px;background:#f4f8fc;border-bottom:1px solid #dfe8f2;
+    color:#536579;font-size:10px;font-weight:950;text-align:left;white-space:nowrap
+}
+.expiryCurrentTable td{
+    padding:11px 12px;border-bottom:1px solid #edf2f7;color:#334155;
+    font-size:12px;vertical-align:middle
+}
+.expiryCurrentTable tbody tr:hover{background:#f8fbff}
+.expiryCurrentTable td strong{color:#102746;font-size:13px}
+.expiryIdentifierCell{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:750}
+.expiryQtyCell{font-size:15px!important;font-weight:950!important;color:#1557c0!important;text-align:center}
+.expiryStateBadge{
+    display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;
+    background:#ecfdf3;color:#15803d;font-size:9px;font-weight:950
+}
+.expiryCurrentEmpty{padding:28px;text-align:center;color:#7b8796;font-size:13px}
+body.zebraDevice .expiryCurrentWorkspace{display:none!important}
+
+@media (max-width:1100px){
+    body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{
+        grid-template-columns:1fr 1fr!important;
+        grid-template-areas:"worker status" "scan scan" "item item" "entry entry" "save saved"!important;
+    }
+}
