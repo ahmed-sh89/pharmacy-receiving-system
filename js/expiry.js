@@ -1317,47 +1317,44 @@ function bindExpiryCaptureUI(){
     const barcode = document.getElementById("expiryBarcodeInput");
     if(barcode && barcode.dataset.bound !== "1"){
         barcode.dataset.bound = "1";
-        barcode.setAttribute("inputmode","none");
+        barcode.setAttribute("inputmode",expiryIsHandheld()?"none":"text");
         barcode.setAttribute("autocomplete","off");
         barcode.setAttribute("autocapitalize","off");
         barcode.setAttribute("spellcheck","false");
 
         const commitHardwareScan = () => {
             clearTimeout(ExpiryCaptureEngine.scanTimer);
-            ExpiryCaptureEngine.scanTimer = null;
-
-            const value = String(barcode.value || "").trim();
-            if(!value || value === ExpiryCaptureEngine.lastResolvedRaw) return;
-
-            ExpiryCaptureEngine.lastResolvedRaw = value;
-            barcode.value = "";
-
-            Promise.resolve(resolveExpiryScannedValue(value))
-                .finally(() => {
-                    setTimeout(() => {
-                        ExpiryCaptureEngine.lastResolvedRaw = "";
-                    },250);
-                });
+            clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
+            ExpiryCaptureEngine.scanTimer=null;
+            closeExpirySearchResults();
+            const value=String(barcode.value||"").trim();
+            if(!value || value===ExpiryCaptureEngine.lastResolvedRaw) return;
+            ExpiryCaptureEngine.lastResolvedRaw=value;
+            barcode.value="";
+            Promise.resolve(resolveExpiryScannedValue(value)).finally(()=>setTimeout(()=>{ExpiryCaptureEngine.lastResolvedRaw="";},250));
         };
 
-        barcode.addEventListener("keydown", event => {
-            if(event.key === "Enter" || event.key === "Tab"){
-                event.preventDefault();
-                commitHardwareScan();
-            }
+        barcode.addEventListener("keydown",event=>{
+            if(event.key==="Escape"){closeExpirySearchResults();return;}
+            if(event.key==="Enter" || event.key==="Tab"){event.preventDefault();commitHardwareScan();}
         });
 
-        /*
-           Zebra DataWedge/Chrome configurations do not always send Enter.
-           Scanner characters arrive as a fast input burst; commit shortly
-           after the burst stops.
-        */
-        barcode.addEventListener("input", () => {
+        barcode.addEventListener("input",()=>{
             clearTimeout(ExpiryCaptureEngine.scanTimer);
-            ExpiryCaptureEngine.scanTimer = setTimeout(commitHardwareScan,90);
+            clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
+            const value=String(barcode.value||"").trim();
+            if(expiryIsHandheld()){
+                ExpiryCaptureEngine.scanTimer=setTimeout(commitHardwareScan,90);
+                return;
+            }
+            if(value.length<2){closeExpirySearchResults();return;}
+            ExpiryCaptureEngine.desktopSearchTimer=setTimeout(async()=>{
+                try{renderExpirySearchResults(await expirySearchGlobalItems(value));}
+                catch(error){console.warn("Expiry manual search failed",error);closeExpirySearchResults();}
+            },220);
         });
 
-        barcode.addEventListener("change", commitHardwareScan);
+        barcode.addEventListener("change",()=>{if(expiryIsHandheld()) commitHardwareScan();});
     }
 
     const worker = document.getElementById("expiryWorkerSelect");
