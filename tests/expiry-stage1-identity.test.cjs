@@ -76,9 +76,29 @@ test('Expiry is reachable from both Desktop sidebar and Handheld workspace choos
   assert.doesNotMatch(ui,/zebraModeExpiry" type="button" disabled/);
 });
 
-test('Expiry desktop page owns an explicit hidden-by-default isolation contract',()=>{
+
+test('Expiry Management desktop has one canonical two-row operational workspace',()=>{
+  const html=read('index.html');
   const css=read('css/dashboard.css');
-  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\.appPage\{\s*display:none !important;/);
-  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\.appPage\.active\{\s*display:block !important;/);
-  assert.doesNotMatch(css,/EXPIRY STAGE 1 — BUILD 1 \/ DESKTOP SPACE UTILIZATION/);
+  const config=read('js/config.js');
+
+  assert.match(html,/data-page="expiry"[^>]*aria-label="Expiry Management"/);
+  assert.match(html,/<span>Expiry Management<\/span>/);
+  assert.match(config,/title:\s*"Expiry Management"/);
+  assert.match(config,/Capture, verify and manage product expiry/);
+
+  assert.match(html,/class="expiryCaptureRow"/);
+  assert.match(html,/for="expiryWorkerSelect">OPERATOR<\/label>/);
+  assert.match(html,/aria-label="Expiry operator"/);
+  assert.match(html,/placeholder="Scan barcode or search by Item Code \/ Item Name"/);
+  assert.match(html,/<span>LAST SCAN<\/span>/);
+  assert.match(html,/<span>Batch Number<\/span>/);
+  assert.match(html,/<th>Expiry<\/th><th>Qty<\/th><th>Operator<\/th>/);
+  assert.doesNotMatch(html,/expiryDesktopCaptureTitle/);
+
+  assert.match(css,/EXPIRY MANAGEMENT — CANONICAL DESKTOP OWNER/);
+  assert.match(css,/grid-template-areas:"operator scan entry save"/);
+  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\.appPage\{\s*display:none!important;/);
+  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\.appPage\.active\{\s*display:flex!important;/);
+  assert.doesNotMatch(css,/EXPIRY STAGE 1 — BUILD 1\s*\n\s*Desktop operational workspace/);
 });
