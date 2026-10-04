@@ -27,13 +27,13 @@
     if(count)count.textContent=String(visible.length);if(!body)return;
     if(!visible.length){body.innerHTML="";if(empty){empty.hidden=false;empty.innerHTML="<strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span>";}return;}
     if(empty)empty.hidden=true;
-    body.innerHTML=visible.map(r=>{const cur=currentFor(r);const fresh=(Date.now()-expiryCapturedAt(r))<6000;return '<tr class="expiryActivityRow '+(fresh?'expiryRowSavedStrong':'')+'">'+
-      '<td class="expiryGtinCell" title="'+esc(r.identifier_display||r.gtin||"")+'">'+esc(r.identifier_display||r.gtin||"—")+'</td>'+
-      '<td class="expiryCodeCell"><strong>'+esc(r.item_code||"—")+'</strong></td>'+
-      '<td class="expiryProductCell" title="'+esc(r.item_name||"")+'"><strong>'+esc(r.item_name||"")+'</strong></td>'+
-      '<td><span class="expiryCategoryChip">'+esc(r.category||"Uncategorized")+'</span></td>'+
-      '<td>'+esc(r.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(r.expiry_month))+' '+esc(r.expiry_year)+'</td>'+
-      '<td class="expiryQtyCell expiryActivityQty">'+esc(r.quantity||r.captured_quantity||0)+'</td>'+
+    body.innerHTML=visible.map(r=>{const cur=currentFor(r);const display=cur||r;const fresh=(Date.now()-expiryCapturedAt(r))<6000;return '<tr class="expiryActivityRow '+(fresh?'expiryRowSavedStrong':'')+'">'+
+      '<td class="expiryGtinCell" title="'+esc(display.identifier_display||display.gtin||"")+'">'+esc(display.identifier_display||display.gtin||"—")+'</td>'+
+      '<td class="expiryCodeCell"><strong>'+esc(display.item_code||"—")+'</strong></td>'+
+      '<td class="expiryProductCell" title="'+esc(display.item_name||"")+'"><strong>'+esc(display.item_name||"")+'</strong></td>'+
+      '<td><span class="expiryCategoryChip">'+esc(display.category||"Uncategorized")+'</span></td>'+
+      '<td>'+esc(display.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(display.expiry_month))+' '+esc(display.expiry_year)+'</td>'+
+      '<td class="expiryQtyCell expiryActivityQty">'+esc(cur?cur.verified_quantity:(r.quantity||r.captured_quantity||0))+'</td>'+
       '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</td>'+
       '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-expiry-session-edit="'+esc(cur.state_id||"")+'">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-session-delete="'+esc(cur.state_id||"")+'">Delete</button>':'<span class="expiryActivityResolved">Recorded</span>')+'</td></tr>';}).join("");
     body.querySelectorAll("[data-expiry-session-edit]").forEach(b=>b.onclick=()=>{const row=currentFor(visible.find(x=>currentFor(x)?.state_id===b.dataset.expirySessionEdit));if(!row)return;ExpiryCaptureEngine.editingStateId=row.state_id;renderSessionEditor(row);});
@@ -50,7 +50,11 @@
       '<td class="expiryQtyCell"><input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" value="'+(Number(row.verified_quantity)||1)+'"></td><td class="expiryTimeCell">'+esc(expiryFormatVerifiedAt(row.last_verified_at||row.updated_at))+'</td>'+
       '<td class="expiryActionsCell"><button type="button" class="expiryRowAction primary" data-session-save>Save</button><button type="button" class="expiryRowAction" data-session-cancel>Cancel</button></td></tr>';
     body.querySelector("[data-session-cancel]").onclick=()=>{ExpiryCaptureEngine.editingStateId="";renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows||[]);};
-    body.querySelector("[data-session-save]").onclick=async e=>{const tr=e.currentTarget.closest("tr"),values={quantity:Number(tr.querySelector("[data-edit-qty]").value||0),month:Number(tr.querySelector("[data-edit-month]").value||0),year:Number(tr.querySelector("[data-edit-year]").value||0),batch:String(tr.querySelector("[data-edit-batch]").value||"").trim()};if(!Number.isInteger(values.quantity)||values.quantity<=0||values.month<1||values.month>12||values.year<2020||values.year>2200){setExpiryStatus("error","CHECK QUANTITY AND EXPIRY");return;}e.currentTarget.disabled=true;try{await saveExpiryCurrentCorrection(row,values);ExpiryCaptureEngine.editingStateId="";setExpiryStatus("success","UPDATED · TOTAL "+values.quantity);await refreshExpiryCurrentState();}catch(err){console.error("Expiry session correction failed",err);setExpiryStatus("error","UPDATE FAILED");e.currentTarget.disabled=false;}};
+    body.querySelector("[data-session-save]").onclick=async e=>{const tr=e.currentTarget.closest("tr"),values={quantity:Number(tr.querySelector("[data-edit-qty]").value||0),month:Number(tr.querySelector("[data-edit-month]").value||0),year:Number(tr.querySelector("[data-edit-year]").value||0),batch:String(tr.querySelector("[data-edit-batch]").value||"").trim()};if(!Number.isInteger(values.quantity)||values.quantity<=0||values.month<1||values.month>12||values.year<2020||values.year>2200){setExpiryStatus("error","CHECK QUANTITY AND EXPIRY");return;}e.currentTarget.disabled=true;try{
+      await saveExpiryCurrentCorrection(row,values);
+      ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).map(c=>String(c.state_id||"")===String(row.state_id||"")?Object.assign({},c,{batch_no:values.batch,expiry_month:values.month,expiry_year:values.year,quantity:values.quantity,captured_quantity:values.quantity}):c);
+      ExpiryCaptureEngine.editingStateId="";setExpiryStatus("success","UPDATED · TOTAL "+values.quantity);await refreshExpiryCurrentState();
+    }catch(err){console.error("Expiry session correction failed",err);setExpiryStatus("error","UPDATE FAILED");e.currentTarget.disabled=false;}};
   }
   function renderInventory(rows){
     const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);expiryPopulateCategoryFilter(safe);
