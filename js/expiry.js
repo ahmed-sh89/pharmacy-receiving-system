@@ -391,8 +391,11 @@ async function expirySearchGlobalItems(query){
     if(expiryIsHandheld() || typeof authRpc!=="function") return [];
     const q=toSafeString(query).trim();
     if(q.length<2) return [];
-    const rows=await authRpc("search_pharmflow_global_items_v2",{p_query:q,p_limit:8});
-    return Array.isArray(rows)?rows:[];
+    const response=await authRpc("search_pharmflow_global_items_v2",{p_query:q,p_limit:8});
+    const rows=Array.isArray(response)
+        ? response
+        : (Array.isArray(response?.data) ? response.data : []);
+    return rows;
 }
 function closeExpirySearchResults(){
     const box=document.getElementById("expirySearchResults");
