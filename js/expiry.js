@@ -701,7 +701,7 @@ async function saveExpiryCapture(options={}){
         }
 
         const gs1=ExpiryCaptureEngine.scannedGS1 || {};
-        await authRpc("save_pharmacy_expiry_verified_state_v2", {
+        const saveResult=await authRpc("save_pharmacy_expiry_verified_state_v2", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
             p_item_name: item.itemName,
@@ -723,7 +723,8 @@ async function saveExpiryCapture(options={}){
                 item_code:item.itemCode,item_name:item.itemName,identifier_display:item.identifierDisplay || item.gtin,
                 category:item.category || "",quantity:quantity,captured_quantity:quantity,
                 expiry_month:month,expiry_year:year,batch_no:toSafeString(gs1.lot||""),
-                sample_serial:toSafeString(gs1.serial||""),source:expiryCurrentSource()
+                sample_serial:toSafeString(gs1.serial||""),source:expiryCurrentSource(),
+                state_id:Array.isArray(saveResult)?saveResult[0]?.state_id:saveResult?.state_id
             });
         }
 
