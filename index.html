@@ -1269,7 +1269,7 @@
                 class="appPage zebraExpiryShell"
             >
                 <div class="expiryKpiRow" aria-label="Expiry summary">
-                    <article class="expiryKpiCard expiryKpiActive">
+                    <article class="expiryKpiCard expiryKpiActive expiryKpiInteractive" id="expiryKpiInventory" role="button" tabindex="0" aria-label="Open Expiry Inventory">
                         <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
                     </article>
                     <article class="expiryKpiCard expiryKpiUnits">
@@ -1355,7 +1355,7 @@
                             <small id="expiryWorkspaceSubtitle">Live captures from this Expiry session</small>
                         </div>
                         <div class="expiryCurrentTools">
-                            <button id="btnExpiryInventoryView" class="expiryInventoryButton" type="button">View Expiry Inventory</button>
+                            
                             <button id="btnExpirySessionView" class="expiryInventoryButton secondary" type="button" hidden>Back to Session</button>
                             <select id="expiryCategoryFilter" aria-label="Filter by category" hidden><option value="">All Categories</option></select>
                             <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search item, code, GTIN or batch" hidden>
