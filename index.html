@@ -1347,32 +1347,29 @@
                     <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
                 </section>
 
-                <section class="expiryCurrentWorkspace" aria-label="Current expiry state">
+                <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
                     <div class="expiryCurrentHeader">
                         <div class="expiryCurrentTitle">
-                            <span id="expiryWorkspaceTitle">Recent Captures</span>
+                            <span id="expiryWorkspaceTitle">Session Activity</span>
                             <strong id="expiryCurrentStateCount">0</strong>
-                            <div class="expiryWorkspaceTabs" role="tablist" aria-label="Expiry workspace view">
-                                <button id="btnExpiryRecentView" type="button" class="active" data-expiry-view="RECENT">Recent</button>
-                                <button id="btnExpiryCurrentView" type="button" data-expiry-view="CURRENT">Current Expiry</button>
-                            </div>
+                            <small id="expiryWorkspaceSubtitle">Live captures from this Expiry session</small>
                         </div>
                         <div class="expiryCurrentTools">
-                            <select id="expiryCategoryFilter" aria-label="Filter by category">
-                                <option value="">All Categories</option>
-                            </select>
-                            <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search item, code, identifier or batch">
+                            <button id="btnExpiryInventoryView" class="expiryInventoryButton" type="button">View Expiry Inventory</button>
+                            <button id="btnExpirySessionView" class="expiryInventoryButton secondary" type="button" hidden>Back to Session</button>
+                            <select id="expiryCategoryFilter" aria-label="Filter by category" hidden><option value="">All Categories</option></select>
+                            <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search item, code, GTIN or batch" hidden>
                         </div>
                     </div>
                     <div class="expiryCurrentTableWrap">
                         <table class="expiryCurrentTable">
                             <thead><tr>
-                                <th>Item Code</th><th>Product Name</th><th>Category</th><th>Batch</th><th>Expiry</th>
-                                <th>Qty</th><th>Operator</th><th>Actions</th>
+                                <th>GTIN / Barcode</th><th>Item Code</th><th>Product Name</th><th>Category</th><th>Batch</th>
+                                <th>Expiry</th><th id="expiryQuantityHeading">Count</th><th id="expiryTimeHeading">Time</th><th>Action</th>
                             </tr></thead>
                             <tbody id="expiryCurrentStateBody"></tbody>
                         </table>
-                        <div id="expiryCurrentStateEmpty" class="expiryCurrentEmpty">No active verified expiry items yet.</div>
+                        <div id="expiryCurrentStateEmpty" class="expiryCurrentEmpty"><strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span></div>
                     </div>
                 </section>
             </section>
