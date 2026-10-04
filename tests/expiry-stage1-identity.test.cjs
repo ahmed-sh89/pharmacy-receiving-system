@@ -97,3 +97,11 @@ test('Expiry operational workspace is visually dominant and has no legacy WORKER
   assert.match(css,/min-height:64px!important/);
   assert.doesNotMatch(css,/\/\* ---------- Near Expiry desktop ---------- \*\//);
 });
+
+test('Expiry desktop keeps page fixed and scrolls only Current Expiry List',()=>{
+  const css=read('css/dashboard.css');
+  assert.match(css,/#zebraExpiryShell\.appPage\.active\{[\s\S]*?height:calc\(100vh - 76px\)!important;min-height:0!important;[\s\S]*?overflow:hidden!important/);
+  assert.match(css,/\.expiryCurrentWorkspace\{[\s\S]*?flex:1 1 0!important;[\s\S]*?min-height:0!important;[\s\S]*?overflow:hidden!important/);
+  assert.match(css,/\.expiryCurrentTableWrap\{[\s\S]*?flex:1 1 0!important;[\s\S]*?min-height:0!important;[\s\S]*?overflow-y:auto!important/);
+  assert.match(css,/overscroll-behavior:contain!important/);
+});
