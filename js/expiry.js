@@ -16,6 +16,8 @@ const ExpiryCaptureEngine = {
     savedClearTimer: null,
     scanClearTimer: null,
     formDirty: false,
+    currentRows: [],
+    highlightedStateId: "",
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -132,9 +134,26 @@ function selectExpiryWorker(workerId){
 
 function setExpiryStatus(kind, text){
     const box = document.getElementById("expiryScanStatus");
-    if(!box) return;
-    box.className = `expiryScanStatus ${kind || "ready"}`;
-    box.textContent = text || "READY TO SCAN";
+    if(box){
+        box.className = `expiryScanStatus ${kind || "ready"}`;
+        box.textContent = text || "READY TO SCAN";
+    }
+    if(!expiryIsHandheld()){
+        const scan=document.querySelector("#zebraExpiryShell .expiryScanBox");
+        const input=document.getElementById("expiryBarcodeInput");
+        if(scan){
+            scan.dataset.feedback=kind||"ready";
+            clearTimeout(scan._expiryFeedbackTimer);
+            if(kind && kind!=="ready"){
+                scan._expiryFeedbackTimer=setTimeout(()=>{scan.dataset.feedback="ready";},1200);
+            }
+        }
+        if(input && kind && kind!=="ready"){
+            input.dataset.feedbackText=text||"";
+        }else if(input){
+            delete input.dataset.feedbackText;
+        }
+    }
 }
 
 function cancelExpiryScanAutoClear(){
@@ -699,10 +718,8 @@ function expiryPopulateCategoryFilter(rows){
     const select=document.getElementById("expiryCategoryFilter");
     if(!select) return;
     const current=select.value||"";
-    const categories=[...new Set((rows||[]).map(row=>toSafeString(row?.category).trim()).filter(Boolean))]
-        .sort((a,b)=>a.localeCompare(b));
-    select.innerHTML='<option value="">All Categories</option>'+
-        categories.map(category=>`<option value="${expiryEscapeHtml(category)}">${expiryEscapeHtml(category)}</option>`).join("");
+    const categories=[...new Set((rows||[]).map(row=>toSafeString(row?.category).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    select.innerHTML='<option value="">All Categories</option>'+categories.map(category=>`<option value="${expiryEscapeHtml(category)}">${expiryEscapeHtml(category)}</option>`).join("");
     if(categories.includes(current)) select.value=current;
 }
 
@@ -711,8 +728,13 @@ function expiryFilteredCurrentRows(rows){
     return category ? (rows||[]).filter(row=>toSafeString(row?.category).trim()===category) : (rows||[]);
 }
 
+function expiryCurrentRowById(stateId){
+    return ExpiryCaptureEngine.currentRows.find(row=>String(row?.state_id||"")===String(stateId||""))||null;
+}
+
 function renderExpiryCurrentState(rows){
     const safeRows=Array.isArray(rows)?rows:[];
+    ExpiryCaptureEngine.currentRows=safeRows;
     renderExpiryKpis(safeRows);
     expiryPopulateCategoryFilter(safeRows);
     const visibleRows=expiryFilteredCurrentRows(safeRows);
@@ -721,31 +743,53 @@ function renderExpiryCurrentState(rows){
     const count=document.getElementById("expiryCurrentStateCount");
     if(count) count.textContent=String(visibleRows.length);
     if(!body) return;
-
-    if(!visibleRows.length){
-        body.innerHTML="";
-        if(empty) empty.hidden=false;
-        return;
-    }
+    if(!visibleRows.length){body.innerHTML="";if(empty) empty.hidden=false;return;}
     if(empty) empty.hidden=true;
-
     body.innerHTML=visibleRows.map(row=>`
-        <tr data-expiry-state-id="${expiryEscapeHtml(row.state_id||"")}">
-            <td class="expiryProductCell">
-                <strong>${expiryEscapeHtml(row.item_name||"")}</strong>
-                <span>${expiryEscapeHtml(row.item_code||"")} · ${expiryEscapeHtml(row.identifier_display||"")}</span>
-            </td>
-            <td>${expiryEscapeHtml(row.category||"Uncategorized")}</td>
+        <tr data-expiry-state-id="${expiryEscapeHtml(row.state_id||"")}" class="${String(row.state_id||"")===String(ExpiryCaptureEngine.highlightedStateId||"")?"expiryRowUpdated":""}">
+            <td class="expiryProductCell"><strong>${expiryEscapeHtml(row.item_name||"")}</strong><span>${expiryEscapeHtml(row.item_code||"")} · ${expiryEscapeHtml(row.identifier_display||"")}</span></td>
+            <td><span class="expiryCategoryChip">${expiryEscapeHtml(row.category||"Uncategorized")}</span></td>
             <td>${expiryEscapeHtml(row.batch_no||"—")}</td>
             <td>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${expiryEscapeHtml(row.expiry_year)}</td>
             <td class="expiryQtyCell">${expiryEscapeHtml(row.verified_quantity)}</td>
             <td>${expiryEscapeHtml(row.verified_by_name||"Account user")}</td>
-            <td class="expiryActionsCell">
-                <button type="button" class="expiryRowAction" data-expiry-edit="${expiryEscapeHtml(row.state_id||"")}">Edit</button>
-                <button type="button" class="expiryRowAction danger" data-expiry-clear="${expiryEscapeHtml(row.state_id||"")}">Delete</button>
-            </td>
-        </tr>
-    `).join("");
+            <td class="expiryActionsCell"><button type="button" class="expiryRowAction" data-expiry-edit="${expiryEscapeHtml(row.state_id||"")}">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-clear="${expiryEscapeHtml(row.state_id||"")}">Delete</button></td>
+        </tr>`).join("");
+    bindExpiryCurrentRowActions();
+}
+
+async function saveExpiryCurrentCorrection(row,newQuantity){
+    await authRpc("save_pharmacy_expiry_verified_state_v2",{
+        p_pharmacy_id:expiryPharmacyId(),p_item_code:row.item_code,p_item_name:row.item_name,
+        p_identifier_display:row.identifier_display,p_category:row.category||"",p_quantity:newQuantity,
+        p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),p_worker_id:ExpiryCaptureEngine.selectedWorkerId||null,
+        p_batch_no:row.batch_no||"",p_sample_serial:row.sample_serial||"",p_device_id:(typeof ensureDeviceId==="function"?ensureDeviceId():""),
+        p_source:"PC",p_event_type:newQuantity===0?"CLEARED":"RECOUNT"
+    });
+}
+
+function bindExpiryCurrentRowActions(){
+    const body=document.getElementById("expiryCurrentStateBody");
+    if(!body) return;
+    body.querySelectorAll("[data-expiry-edit]").forEach(button=>button.onclick=async()=>{
+        const row=expiryCurrentRowById(button.dataset.expiryEdit); if(!row) return;
+        const entered=window.prompt("Correct total quantity",String(row.verified_quantity??""));
+        if(entered===null) return;
+        const qty=Number(entered);
+        if(!Number.isInteger(qty)||qty<=0){setExpiryStatus("error","ENTER VALID TOTAL QUANTITY");return;}
+        button.disabled=true;
+        try{await saveExpiryCurrentCorrection(row,qty);ExpiryCaptureEngine.highlightedStateId=row.state_id;setExpiryStatus("success",`UPDATED · TOTAL ${qty}`);await refreshExpiryCurrentState();}
+        catch(error){console.error("Expiry correction failed",error);setExpiryStatus("error","UPDATE FAILED");}
+        finally{button.disabled=false;}
+    });
+    body.querySelectorAll("[data-expiry-clear]").forEach(button=>button.onclick=async()=>{
+        const row=expiryCurrentRowById(button.dataset.expiryClear); if(!row) return;
+        if(button.dataset.confirm!=="1"){button.dataset.confirm="1";button.textContent="Confirm";setTimeout(()=>{if(button.isConnected&&button.dataset.confirm==="1"){button.dataset.confirm="";button.textContent="Delete";}},3000);return;}
+        button.disabled=true;
+        try{await saveExpiryCurrentCorrection(row,0);setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");await refreshExpiryCurrentState();}
+        catch(error){console.error("Expiry clear failed",error);setExpiryStatus("error","DELETE FAILED");}
+        finally{button.disabled=false;}
+    });
 }
 
 async function refreshExpiryCurrentState(){
