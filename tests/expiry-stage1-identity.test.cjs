@@ -208,3 +208,11 @@ test('Manual search selection renders Active Item and save feedback is strongly 
  assert.match(css,/tr\.expiryRowSavedStrong/);
  assert.match(css,/outline:3px solid #20a35a!important/);
 });
+
+test('Expiry desktop table remains readable and visually structured',()=>{
+ const css=read('css/dashboard.css');
+ assert.match(css,/\.expiryCurrentTable th\{padding:9px 8px!important;border-right:1px solid #d5e2ef!important;border-bottom:2px solid #9fbad6!important/);
+ assert.match(css,/\.expiryCurrentTable th:nth-child\(1\)\{width:11%!important\}/);
+ assert.match(css,/\.expiryCurrentTable th:nth-child\(2\)\{width:31%!important\}/);
+ assert.match(css,/\.expiryRowAction\{min-width:48px!important;height:30px!important;padding:0 9px!important;font-size:11px!important\}/);
+});
