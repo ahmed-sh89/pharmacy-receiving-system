@@ -7787,6 +7787,13 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryKpiUnits{background:#f3f9ff!impo
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiExpired{border-color:#efc3c9!important;background:#fff5f6!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiExpired strong{color:#b42335!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiUpcoming{border-color:#ead49f!important;background:#fffaf0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryDashboardActions{display:flex!important;justify-content:flex-end!important;margin:-2px 0 7px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryOpenInventoryButton{height:32px!important;padding:0 13px!important;border:1px solid #8fb9e5!important;border-radius:8px!important;background:#fff!important;color:#1769d2!important;font-size:10px!important;font-weight:900!important;cursor:pointer!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryOpenInventoryButton:hover{background:#eef6ff!important;border-color:#5f9ddd!important}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCaptureCard{display:none!important}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryDashboardActions{display:none!important}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentWorkspace{margin-top:0!important}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentHeader{background:#f4f8fc!important;border-bottom:2px solid #b7cee5!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:9px!important;border:1px solid #91b9e3!important;border-radius:11px!important;background:#eaf4ff!important;box-shadow:0 4px 14px rgba(18,55,92,.07)!important;box-sizing:border-box!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureRow{display:grid!important;grid-template-columns:minmax(360px,1fr) 82px 112px 96px 140px 158px!important;grid-template-areas:"scan qty month year save operator" "active active active active active active"!important;gap:7px!important;align-items:stretch!important;width:100%!important;min-width:0!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar{grid-area:operator!important;display:grid!important;grid-template-columns:18px minmax(0,1fr)!important;align-items:center!important;gap:4px!important;width:100%!important;min-width:0!important;height:48px!important;padding:4px 6px!important;border:1px solid #b7cee5!important;border-radius:8px!important;background:#fff!important;box-sizing:border-box!important}
