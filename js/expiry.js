@@ -104,7 +104,7 @@ function renderExpiryWorkerSelects(){
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
         select.innerHTML =
-            `<option value="">Select...</option>` +
+            `<option value="">${expiryIsHandheld() ? "Select..." : "Operator (optional)"}</option>` +
             ExpiryCaptureEngine.workers.map(w =>
                 `<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`
             ).join("");
@@ -341,7 +341,7 @@ async function resolveExpiryScannedValue(rawValue){
 
     if(!cleaned) return false;
 
-    if(!ExpiryCaptureEngine.selectedWorkerId){
+    if(expiryIsHandheld() && !ExpiryCaptureEngine.selectedWorkerId){
         setExpiryStatus("action","SELECT WORKER");
         try{ document.activeElement?.blur?.(); }catch(_){}
         return false;
@@ -527,7 +527,7 @@ async function saveExpiryCapture(){
 
     if(year > 0 && year < 100) year += 2000;
 
-    if(!workerId){
+    if(expiryIsHandheld() && !workerId){
         setExpiryStatus("action","SELECT WORKER");
         return;
     }
@@ -580,7 +580,7 @@ async function saveExpiryCapture(){
         }
 
         const gs1=ExpiryCaptureEngine.scannedGS1 || {};
-        await authRpc("save_pharmacy_expiry_verified_state_v1", {
+        await authRpc("save_pharmacy_expiry_verified_state_v2", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
             p_item_name: item.itemName,
@@ -1332,12 +1332,12 @@ async function activateExpiryCapture(){
     clearExpirySavedConfirmation();
     resetExpiryCaptureForm({focus:false});
 
-    if(ExpiryCaptureEngine.workers.length === 0){
+    if(expiryIsHandheld() && ExpiryCaptureEngine.workers.length === 0){
         setExpiryStatus("action","ADD WORKER IN SETTINGS");
         return;
     }
 
-    if(!ExpiryCaptureEngine.selectedWorkerId){
+    if(expiryIsHandheld() && !ExpiryCaptureEngine.selectedWorkerId){
         setExpiryStatus("action","SELECT WORKER");
         try{ document.activeElement?.blur?.(); }catch(_){}
         try{ window.scrollTo(0,0); }catch(_){}
