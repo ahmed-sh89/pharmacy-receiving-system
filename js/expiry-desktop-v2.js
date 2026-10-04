@@ -6,7 +6,11 @@
   function esc(v){return typeof expiryEscapeHtml==="function"?expiryEscapeHtml(v):String(v??"");}
   function sessionRows(rows){const started=Number(ExpiryCaptureEngine.sessionStartedAt||0);return (rows||[]).filter(r=>expiryCapturedAt(r)>=started).sort((a,b)=>expiryCapturedAt(b)-expiryCapturedAt(a));}
   function timeOnly(v){const d=new Date(v||"");return Number.isFinite(d.getTime())?d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"—";}
-  function currentFor(c){return (ExpiryCaptureEngine.currentRows||[]).find(r=>String(r.item_code||"")===String(c.item_code||"")&&Number(r.expiry_month)===Number(c.expiry_month)&&Number(r.expiry_year)===Number(c.expiry_year)&&String(r.batch_no||"")===String(c.batch_no||""))||null;}
+  function currentFor(c){
+    const rows=ExpiryCaptureEngine.currentRows||[];
+    if(c?.state_id){const exact=rows.find(r=>String(r.state_id||"")===String(c.state_id));if(exact)return exact;}
+    return rows.find(r=>String(r.item_code||"")===String(c.item_code||"")&&Number(r.expiry_month)===Number(c.expiry_month)&&Number(r.expiry_year)===Number(c.expiry_year)&&String(r.batch_no||"")===String(c.batch_no||""))||null;
+  }
   window.updateExpiryWorkspaceMode=function(){
     const inventory=ExpiryCaptureEngine.desktopView==="INVENTORY";
     const set=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e);};
@@ -15,7 +19,7 @@
     set("btnExpirySessionView",e=>e.hidden=!inventory);
     document.getElementById("zebraExpiryShell")?.classList.toggle("expiryInventoryMode",inventory);
     set("expiryCategoryFilter",e=>e.hidden=!inventory);set("expiryCurrentSearch",e=>e.hidden=!inventory);
-    set("expiryQuantityHeading",e=>e.textContent=inventory?"Current Qty":"Count");set("expiryTimeHeading",e=>e.textContent=inventory?"Last Updated":"Time");
+    set("expiryQuantityHeading",e=>e.textContent=inventory?"Current Qty":"Quantity");set("expiryTimeHeading",e=>e.textContent=inventory?"Last Updated":"Time");
   };
   window.renderExpirySessionActivity=function(rows){
     const visible=sessionRows(rows);ExpiryCaptureEngine.sessionRows=visible;
@@ -29,7 +33,7 @@
       '<td class="expiryProductCell" title="'+esc(r.item_name||"")+'"><strong>'+esc(r.item_name||"")+'</strong></td>'+
       '<td><span class="expiryCategoryChip">'+esc(r.category||"Uncategorized")+'</span></td>'+
       '<td>'+esc(r.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(r.expiry_month))+' '+esc(r.expiry_year)+'</td>'+
-      '<td class="expiryQtyCell expiryActivityQty">+'+esc(r.quantity||r.captured_quantity||0)+'</td>'+
+      '<td class="expiryQtyCell expiryActivityQty">'+esc(r.quantity||r.captured_quantity||0)+'</td>'+
       '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</td>'+
       '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-expiry-session-edit="'+esc(cur.state_id||"")+'">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-session-delete="'+esc(cur.state_id||"")+'">Delete</button>':'<span class="expiryActivityResolved">Recorded</span>')+'</td></tr>';}).join("");
     body.querySelectorAll("[data-expiry-session-edit]").forEach(b=>b.onclick=()=>{const row=currentFor(visible.find(x=>currentFor(x)?.state_id===b.dataset.expirySessionEdit));if(!row)return;ExpiryCaptureEngine.editingStateId=row.state_id;renderSessionEditor(row);});
@@ -72,6 +76,9 @@
     if(ExpiryCaptureEngine.desktopView==="SESSION"){renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows||[]);return;}
     renderInventory(safe);
   };
+  window.resetExpiryDesktopSession=function(){
+    ExpiryCaptureEngine.sessionStartedAt=0;ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";
+  };
   window.recordExpirySessionCapture=function(payload){
     if(expiryIsHandheld()||!payload)return;
     const row=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
@@ -97,7 +104,11 @@
   };
   const originalActivate=window.activateExpiryCapture;
   window.activateExpiryCapture=async function(){
-    if(!expiryIsHandheld()){ExpiryCaptureEngine.sessionStartedAt=Date.now();ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";}
+    if(!expiryIsHandheld()){
+      if(!Number(ExpiryCaptureEngine.sessionStartedAt||0))ExpiryCaptureEngine.sessionStartedAt=Date.now();
+      if(!Array.isArray(ExpiryCaptureEngine.sessionRows))ExpiryCaptureEngine.sessionRows=[];
+      ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";
+    }
     updateExpiryWorkspaceMode();return originalActivate();
   };
 })();
