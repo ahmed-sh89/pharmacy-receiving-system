@@ -433,13 +433,14 @@ async function selectExpirySearchResult(index){
         if(!identifier) throw new Error("No identifier mapped");
         ExpiryCaptureEngine.scannedGS1={identifierDisplay:identifier,gtin:identifier};
         ExpiryCaptureEngine.currentItem={itemCode:row.item_code||"",itemName:row.item_name||"",identifierDisplay:identifier,gtin:identifier,category:row.category||row.group_name||"",identifierSource:"GLOBAL_SEARCH"};
+        renderExpiryActiveItem(ExpiryCaptureEngine.currentItem,{});
         const values={expiryItemName:row.item_name||"Unnamed item",expiryItemCode:row.item_code||"—",expiryItemGTIN:identifier,expiryItemCategory:row.category||row.group_name||"Uncategorized"};
         Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
         const qty=document.getElementById("expiryQuantity");if(qty){qty.value="1";qty.readOnly=true;qty.dataset.intentionalEdit="0";}
         setExpiryDateMode("MANUAL");
         document.getElementById("btnSaveExpiryCapture")?.removeAttribute("disabled");
         const input=document.getElementById("expiryBarcodeInput");if(input)input.value="";
-        setExpiryStatus("success","ITEM FOUND · SELECT EXPIRY");
+        setExpiryStatus("success","✓ "+toSafeString(row.item_name||"ITEM FOUND").toUpperCase()+" · SELECT EXPIRY");
     }catch(error){
         console.error("Expiry manual item selection failed",error);
         setExpiryStatus("error","ITEM HAS NO USABLE IDENTIFIER");
@@ -730,7 +731,17 @@ async function saveExpiryCapture(options={}){
         const savedRows=await refreshExpiryCurrentState();
         if(Array.isArray(savedRows)){
             const match=savedRows.find(row=>String(row.item_code||"")===String(item.itemCode||"") && Number(row.expiry_month)===month && Number(row.expiry_year)===year && String(row.batch_no||"")===String(toSafeString(gs1.lot||"")));
-            if(match){ExpiryCaptureEngine.highlightedStateId=match.state_id;renderExpiryCurrentState(savedRows);}
+            if(match){
+                ExpiryCaptureEngine.highlightedStateId=match.state_id;
+                renderExpiryCurrentState(savedRows);
+                const savedRow=document.querySelector('[data-expiry-state-id="'+String(match.state_id).replace(/"/g,'\\\"')+'"]');
+                if(savedRow){
+                    savedRow.classList.remove("expiryRowSavedStrong");
+                    void savedRow.offsetWidth;
+                    savedRow.classList.add("expiryRowSavedStrong");
+                    setTimeout(()=>savedRow.classList.remove("expiryRowSavedStrong"),5000);
+                }
+            }
         }
 
         setTimeout(()=>{
