@@ -580,11 +580,11 @@ async function saveExpiryCapture(){
         }
 
         const gs1=ExpiryCaptureEngine.scannedGS1 || {};
-        await authRpc("save_pharmacy_expiry_capture_smart", {
+        await authRpc("save_pharmacy_expiry_verified_state_v1", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
             p_item_name: item.itemName,
-            p_gtin: item.gtin,
+            p_identifier_display: item.identifierDisplay || item.gtin,
             p_category: item.category || "",
             p_quantity: quantity,
             p_expiry_month: month,
@@ -593,7 +593,8 @@ async function saveExpiryCapture(){
             p_batch_no: toSafeString(gs1.lot||""),
             p_sample_serial: toSafeString(gs1.serial||""),
             p_device_id: deviceId,
-            p_source: (typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice()) ? "HANDHELD" : "PC"
+            p_source: expiryCurrentSource(),
+            p_event_type: "CAPTURE"
         });
 
         const worker = ExpiryCaptureEngine.workers.find(w => w.worker_id === workerId);
@@ -606,6 +607,7 @@ async function saveExpiryCapture(){
 
         setExpiryStatus("success","✓ SAVED — NEXT ITEM");
         refreshExpiryCapturedCount();
+        refreshExpiryCurrentState();
 
         setTimeout(()=>{
             resetExpiryCaptureForm({focus:true});
@@ -635,6 +637,64 @@ function expiryIsHandheld(){
 
 function expiryCurrentSource(){
     return expiryIsHandheld() ? "HANDHELD" : "PC";
+}
+
+async function loadExpiryCurrentState(search=""){
+    const pharmacyId=expiryPharmacyId();
+    if(!pharmacyId || typeof authRpc!=="function") return [];
+    const rows=await authRpc("list_pharmacy_expiry_current_state_v1",{
+        p_pharmacy_id:pharmacyId,
+        p_include_cleared:false,
+        p_search:toSafeString(search)||null
+    });
+    return Array.isArray(rows)?rows:[];
+}
+
+function expiryFormatVerifiedAt(value){
+    const d=new Date(value||"");
+    return Number.isFinite(d.getTime()) ? d.toLocaleString() : "—";
+}
+
+function renderExpiryCurrentState(rows){
+    const body=document.getElementById("expiryCurrentStateBody");
+    const empty=document.getElementById("expiryCurrentStateEmpty");
+    const count=document.getElementById("expiryCurrentStateCount");
+    if(count) count.textContent=String(rows.length);
+    if(!body) return;
+
+    if(!rows.length){
+        body.innerHTML="";
+        if(empty) empty.hidden=false;
+        return;
+    }
+    if(empty) empty.hidden=true;
+
+    body.innerHTML=rows.map(row=>`
+        <tr>
+            <td><strong>${expiryEscapeHtml(row.item_name||"")}</strong></td>
+            <td>${expiryEscapeHtml(row.item_code||"")}</td>
+            <td class="expiryIdentifierCell">${expiryEscapeHtml(row.identifier_display||"")}</td>
+            <td>${expiryEscapeHtml(row.batch_no||"—")}</td>
+            <td>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${expiryEscapeHtml(row.expiry_year)}</td>
+            <td class="expiryQtyCell">${expiryEscapeHtml(row.verified_quantity)}</td>
+            <td>${expiryEscapeHtml(row.verified_by_name||"")}</td>
+            <td>${expiryEscapeHtml(expiryFormatVerifiedAt(row.last_verified_at))}</td>
+            <td><span class="expiryStateBadge">${expiryEscapeHtml(row.status||"ACTIVE")}</span></td>
+        </tr>
+    `).join("");
+}
+
+async function refreshExpiryCurrentState(){
+    if(expiryIsHandheld()) return [];
+    try{
+        const search=document.getElementById("expiryCurrentSearch")?.value||"";
+        const rows=await loadExpiryCurrentState(search);
+        renderExpiryCurrentState(rows);
+        return rows;
+    }catch(error){
+        console.error("Unable to load current expiry state",error);
+        return [];
+    }
 }
 
 function expiryCapturedAt(row){
@@ -1207,6 +1267,16 @@ function bindExpiryCaptureUI(){
         clearButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
     }
 
+    const currentSearch=document.getElementById("expiryCurrentSearch");
+    if(currentSearch && currentSearch.dataset.bound!=="1"){
+        currentSearch.dataset.bound="1";
+        let searchTimer=null;
+        currentSearch.addEventListener("input",()=>{
+            clearTimeout(searchTimer);
+            searchTimer=setTimeout(()=>refreshExpiryCurrentState(),180);
+        });
+    }
+
     const save = document.getElementById("btnSaveExpiryCapture");
     if(save && save.dataset.bound !== "1"){
         save.dataset.bound = "1";
@@ -1223,6 +1293,7 @@ async function activateExpiryCapture(){
     populateExpiryDateDropdowns();
     refreshExpiryCapturedCount();
     await loadExpiryWorkers();
+    await refreshExpiryCurrentState();
     renderExpiryWorkerCompactState();
     clearExpirySavedConfirmation();
     resetExpiryCaptureForm({focus:false});
