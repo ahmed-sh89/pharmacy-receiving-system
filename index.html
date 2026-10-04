@@ -1322,7 +1322,7 @@
                             </div>
 
                             <div>
-                                <span>GTIN</span>
+                                <span>Identifier</span>
                                 <strong id="expiryItemGTIN">—</strong>
                             </div>
 
@@ -1384,6 +1384,30 @@
                         class="expiryLastSaved"
                         aria-live="polite"
                     ></div>
+                </section>
+
+                <section class="expiryCurrentWorkspace" aria-label="Current expiry state">
+                    <div class="expiryCurrentHeader">
+                        <div>
+                            <span class="sectionEyebrow">CURRENT VERIFIED STATE</span>
+                            <h2>Current Expiry List <strong id="expiryCurrentStateCount">0</strong></h2>
+                            <p>Latest physical verification by product, batch and expiry. Cleared items remain in audit history.</p>
+                        </div>
+                        <label class="expiryCurrentSearch">
+                            <span>Search current list</span>
+                            <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Item name, code, identifier or batch">
+                        </label>
+                    </div>
+                    <div class="expiryCurrentTableWrap">
+                        <table class="expiryCurrentTable">
+                            <thead><tr>
+                                <th>Item Name</th><th>Item Code</th><th>Identifier</th><th>Batch</th>
+                                <th>Expiry</th><th>Qty</th><th>Worker</th><th>Last Verified</th><th>Status</th>
+                            </tr></thead>
+                            <tbody id="expiryCurrentStateBody"></tbody>
+                        </table>
+                        <div id="expiryCurrentStateEmpty" class="expiryCurrentEmpty">No active verified expiry items yet.</div>
+                    </div>
                 </section>
             </section>
 
