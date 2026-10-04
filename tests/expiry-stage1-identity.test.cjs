@@ -34,21 +34,20 @@ test('Expiry unknown identifiers preserve exact value for review instead of nume
   assert.match(expiry,/expiryItemGTIN"\)\.textContent=identifierDisplay/);
 });
 
-test('Expiry known-item save writes current verified state and immutable event through Stage 1 RPC',()=>{
+test('Expiry known-item save uses additive V2 current-state RPC',()=>{
   const expiry=read('js/expiry.js');
-  assert.match(expiry,/save_pharmacy_expiry_verified_state_v1/);
+  assert.match(expiry,/save_pharmacy_expiry_verified_state_v2/);
   assert.match(expiry,/p_identifier_display: item\.identifierDisplay \|\| item\.gtin/);
   assert.match(expiry,/p_event_type: "CAPTURE"/);
-  assert.doesNotMatch(expiry,/authRpc\("save_pharmacy_expiry_capture_smart"/);
 });
 
-test('Desktop exposes Current Expiry List while Handheld keeps it out of the shelf workflow',()=>{
+test('Desktop exposes Current Expiry workspace while Handheld keeps it out of shelf workflow',()=>{
   const html=read('index.html');
   const css=read('css/dashboard.css');
   assert.match(html,/id="expiryCurrentStateBody"/);
-  assert.match(html,/Current Expiry List/);
-  assert.match(html,/>Identifier</);
-  assert.match(css,/body\.zebraDevice \.expiryCurrentWorkspace\{display:none!important\}/);
+  assert.match(html,/Current Expiry/);
+  assert.match(html,/<th>Product<\/th><th>Category<\/th>/);
+  assert.match(css,/body\.zebraDevice \.expiryKpiRow,body\.zebraDevice \.expiryCurrentWorkspace\{display:none!important\}/);
 });
 
 test('Expiry Stage 1 schema is additive, tenant scoped and preserves immutable events',()=>{
@@ -121,13 +120,32 @@ test('Expiry desktop hides duplicate Last Scan surface without changing Handheld
   assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell \.expiryHandheldItemCard\{display:none!important\}/);
 });
 
-test('Expiry current-state actions preserve scan-add versus recount-clear semantics',()=>{
+test('Expiry current-state actions preserve scan-add, audited correction and clear semantics',()=>{
   const js=read('js/expiry.js');
-  const sql=read('PHASE2C1177_EXPIRY_DESKTOP_OPERATIONS_V2.sql');
-  assert.match(js,/p_event_type:newQuantity===0\?"CLEARED":"RECOUNT"/);
-  assert.match(js,/save_pharmacy_expiry_verified_state_v2/);
-  assert.match(sql,/v_event_type='CAPTURE'.*coalesce\(v_previous_quantity,0\)\+p_quantity/s);
-  assert.match(sql,/v_event_type='RECOUNT'.*v_new_quantity:=p_quantity/s);
-  assert.match(sql,/v_event_type='CLEARED'/);
-  assert.doesNotMatch(sql,/drop table|truncate/i);
+  const saveSql=read('PHASE2C1177_EXPIRY_DESKTOP_OPERATIONS_V2.sql');
+  const correctionSql=read('PHASE2C1178_EXPIRY_CORRECTION_AUDIT_V1.sql');
+  assert.match(js,/correct_pharmacy_expiry_current_state_v1/);
+  assert.match(js,/p_event_type:"CLEARED"/);
+  assert.match(saveSql,/v_event_type='CAPTURE'.*coalesce\(v_previous_quantity,0\)\+p_quantity/s);
+  assert.match(correctionSql,/previous_batch_no/);
+  assert.match(correctionSql,/previous_expiry_month/);
+  assert.match(correctionSql,/previous_expiry_year/);
+  assert.doesNotMatch(saveSql+correctionSql,/drop table|truncate/i);
+});
+
+test('Expiry desktop Scan Search uses authoritative V2 product and identifier services',()=>{
+  const html=read('index.html');
+  const js=read('js/expiry.js');
+  assert.match(html,/id="expirySearchResults"/);
+  assert.match(js,/search_pharmflow_global_items_v2/);
+  assert.match(js,/list_pharmflow_global_item_identifiers_v2/);
+  assert.match(js,/inputmode",expiryIsHandheld\(\)\?"none":"text"/);
+});
+test('Expiry desktop correction is inline and no browser prompt patch remains',()=>{
+  const js=read('js/expiry.js');
+  assert.match(js,/data-edit-batch/);
+  assert.match(js,/data-edit-month/);
+  assert.match(js,/data-edit-year/);
+  assert.match(js,/data-edit-qty/);
+  assert.doesNotMatch(js,/window\.prompt\(/);
 });
