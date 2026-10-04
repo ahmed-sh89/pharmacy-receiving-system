@@ -13,6 +13,7 @@
     set("expiryWorkspaceTitle",e=>e.textContent=inventory?"Expiry Inventory":"Session Activity");
     set("expiryWorkspaceSubtitle",e=>e.textContent=inventory?"All active verified expiry records":"Live captures from this Expiry session");
     set("btnExpirySessionView",e=>e.hidden=!inventory);
+    document.getElementById("zebraExpiryShell")?.classList.toggle("expiryInventoryMode",inventory);
     set("expiryCategoryFilter",e=>e.hidden=!inventory);set("expiryCurrentSearch",e=>e.hidden=!inventory);
     set("expiryQuantityHeading",e=>e.textContent=inventory?"Current Qty":"Count");set("expiryTimeHeading",e=>e.textContent=inventory?"Last Updated":"Time");
   };
@@ -89,7 +90,7 @@
   const originalBind=window.bindExpiryCaptureUI;
   window.bindExpiryCaptureUI=function(){
     originalBind();
-    const inv=document.getElementById("expiryKpiInventory"),back=document.getElementById("btnExpirySessionView"),clear=document.getElementById("btnClearExpiryActive");
+    const inv=document.getElementById("btnOpenExpiryInventory"),back=document.getElementById("btnExpirySessionView"),clear=document.getElementById("btnClearExpiryActive");
     if(inv&&inv.dataset.v2!=="1"){inv.dataset.v2="1";inv.onclick=()=>{ExpiryCaptureEngine.desktopView="INVENTORY";ExpiryCaptureEngine.editingStateId="";updateExpiryWorkspaceMode();refreshExpiryCurrentState();};}
     if(back&&back.dataset.v2!=="1"){back.dataset.v2="1";back.onclick=()=>{ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";updateExpiryWorkspaceMode();refreshExpiryCurrentState();};}
     if(clear&&clear.dataset.v2!=="1"){clear.dataset.v2="1";clear.onclick=()=>resetExpiryCaptureForm({focus:true});}
