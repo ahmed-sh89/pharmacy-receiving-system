@@ -7796,6 +7796,15 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar label,body:not(.zebraD
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanStatus{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox{grid-area:scan!important;display:flex!important;align-items:center!important;gap:9px!important;width:100%!important;min-width:0!important;height:48px!important;padding:0 12px!important;border:2px solid #4b91dc!important;border-radius:9px!important;background:#fff!important;box-sizing:border-box!important;box-shadow:0 0 0 3px rgba(75,145,220,.08)!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanIcon{flex:0 0 auto!important;color:#1769d2!important;font-size:17px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox{position:relative!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults{position:absolute!important;left:-2px!important;right:-2px!important;top:52px!important;z-index:40!important;max-height:280px!important;overflow-y:auto!important;padding:5px!important;border:1px solid #9fc3e7!important;border-radius:9px!important;background:#fff!important;box-shadow:0 12px 30px rgba(15,55,98,.16)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults[hidden]{display:none!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults button{display:grid!important;width:100%!important;gap:2px!important;padding:8px 10px!important;border:0!important;border-bottom:1px solid #edf2f7!important;background:#fff!important;text-align:left!important;cursor:pointer!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults button:last-child{border-bottom:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults button:hover{background:#eef6ff!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102746!important;font-size:12px!important;font-weight:900!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults span{color:#718196!important;font-size:9px!important}
+
 body:not(.zebraDevice) #zebraExpiryShell #expiryBarcodeInput{flex:1 1 auto!important;width:100%!important;min-width:0!important;height:40px!important;padding:0!important;border:0!important;outline:0!important;background:transparent!important;color:#102746!important;font-size:13px!important;font-weight:650!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid{display:contents!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid label{display:grid!important;grid-template-rows:48px!important;min-width:0!important}
