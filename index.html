@@ -1268,18 +1268,20 @@
                 id="zebraExpiryShell"
                 class="appPage zebraExpiryShell"
             >
-                <div class="zebraExpiryTop">
-                    <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
-                    <div class="expiryPageTitle">
-                        <span>EXPIRY MANAGEMENT</span>
-                        <button id="btnClearExpiryScreenTop" class="expiryClearScreenTop" type="button">CLEAR SCREEN</button>
-                    </div>
-                    <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
-                        <span class="expiryCapturedButtonLabel">RECENT</span>
-                        <strong id="expiryCapturedCount">0</strong>
-                    </button>
+                <div class="expiryKpiRow" aria-label="Expiry summary">
+                    <article class="expiryKpiCard expiryKpiActive">
+                        <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiUnits">
+                        <span>Total Units</span><strong id="expiryKpiTotalUnits">0</strong><small>Verified quantity</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiExpired">
+                        <span>Expired</span><strong id="expiryKpiExpired">0</strong><small>Past expiry month</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiUpcoming">
+                        <span>Upcoming</span><strong id="expiryKpiUpcoming">0</strong><small>Future expiry</small>
+                    </article>
                 </div>
-
                 <section class="expiryCaptureCard">
                     <div class="expiryCaptureRow">
                         <div class="expiryWorkerBar">
@@ -1322,7 +1324,13 @@
                     </div>
 
                     <div class="expiryItemCard">
-                        <span>LAST SCAN</span>
+                        <div class="expiryLastScanHeading">
+                            <span>LAST SCAN</span>
+                            <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
+                                <span class="expiryCapturedButtonLabel">RECENT</span>
+                                <strong id="expiryCapturedCount">0</strong>
+                            </button>
+                        </div>
                         <strong id="expiryItemName">—</strong>
                         <div class="expiryItemMeta">
                             <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
