@@ -21,6 +21,7 @@ const ExpiryCaptureEngine = {
     desktopSearchTimer: null,
     desktopSearchRows: [],
     editingStateId: "",
+    desktopView: "RECENT",
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -817,6 +818,14 @@ function expiryFilteredCurrentRows(rows){
     return category ? (rows||[]).filter(row=>toSafeString(row?.category).trim()===category) : (rows||[]);
 }
 
+function expiryRecentCurrentRows(rows){
+    return [...(rows||[])].sort((a,b)=>{
+        const aTime=Date.parse(a?.last_verified_at||a?.updated_at||a?.created_at||"")||0;
+        const bTime=Date.parse(b?.last_verified_at||b?.updated_at||b?.created_at||"")||0;
+        return bTime-aTime;
+    }).slice(0,10);
+}
+
 function expiryCurrentRowById(stateId){
     return ExpiryCaptureEngine.currentRows.find(row=>String(row?.state_id||"")===String(stateId||""))||null;
 }
@@ -826,7 +835,8 @@ function renderExpiryCurrentState(rows){
     ExpiryCaptureEngine.currentRows=safeRows;
     renderExpiryKpis(safeRows);
     expiryPopulateCategoryFilter(safeRows);
-    const visibleRows=expiryFilteredCurrentRows(safeRows);
+    const filteredRows=expiryFilteredCurrentRows(safeRows);
+    const visibleRows=ExpiryCaptureEngine.desktopView==="RECENT" ? expiryRecentCurrentRows(filteredRows) : filteredRows;
     const body=document.getElementById("expiryCurrentStateBody");
     const empty=document.getElementById("expiryCurrentStateEmpty");
     const count=document.getElementById("expiryCurrentStateCount");
@@ -837,7 +847,8 @@ function renderExpiryCurrentState(rows){
     body.innerHTML=visibleRows.map(row=>{
         const editing=String(row.state_id||"")===String(ExpiryCaptureEngine.editingStateId||"");
         return `<tr data-expiry-state-id="${expiryEscapeHtml(row.state_id||"")}" class="${String(row.state_id||"")===String(ExpiryCaptureEngine.highlightedStateId||"")?"expiryRowUpdated":""} ${editing?"expiryRowEditing":""}">
-            <td class="expiryProductCell"><strong>${expiryEscapeHtml(row.item_name||"")}</strong><span>${expiryEscapeHtml(row.item_code||"")} · ${expiryEscapeHtml(row.identifier_display||"")}</span></td>
+            <td class="expiryCodeCell"><strong>${expiryEscapeHtml(row.item_code||"—")}</strong><span>${expiryEscapeHtml(row.identifier_display||"")}</span></td>
+            <td class="expiryProductCell"><strong>${expiryEscapeHtml(row.item_name||"")}</strong></td>
             <td><span class="expiryCategoryChip">${expiryEscapeHtml(row.category||"Uncategorized")}</span></td>
             <td>${editing?`<input class="expiryInlineInput" data-edit-batch value="${expiryEscapeHtml(row.batch_no||"")}" placeholder="Batch">`:expiryEscapeHtml(row.batch_no||"—")}</td>
             <td>${editing?`<div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="${Number(row.expiry_month)||""}"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="${Number(row.expiry_year)||""}"></div>`:`${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${expiryEscapeHtml(row.expiry_year)}`}</td>
@@ -1481,6 +1492,18 @@ function bindExpiryCaptureUI(){
         clearButton.dataset.bound="1";
         clearButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
     }
+
+    document.querySelectorAll("[data-expiry-view]").forEach(button=>{
+        if(button.dataset.bound==="1") return;
+        button.dataset.bound="1";
+        button.addEventListener("click",()=>{
+            ExpiryCaptureEngine.desktopView=button.dataset.expiryView==="CURRENT"?"CURRENT":"RECENT";
+            document.querySelectorAll("[data-expiry-view]").forEach(b=>b.classList.toggle("active",b===button));
+            const title=document.getElementById("expiryWorkspaceTitle");
+            if(title) title.textContent=ExpiryCaptureEngine.desktopView==="RECENT"?"Recent Captures":"Current Expiry";
+            renderExpiryCurrentState(ExpiryCaptureEngine.currentRows);
+        });
+    });
 
     const categoryFilter=document.getElementById("expiryCategoryFilter");
     if(categoryFilter && categoryFilter.dataset.bound!=="1"){
