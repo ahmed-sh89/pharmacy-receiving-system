@@ -216,3 +216,21 @@ test('Expiry desktop table remains readable and visually structured',()=>{
  assert.match(css,/\.expiryCurrentTable th:nth-child\(2\)\{width:31%!important\}/);
  assert.match(css,/\.expiryRowAction\{min-width:48px!important;height:30px!important;padding:0 9px!important;font-size:11px!important\}/);
 });
+
+
+test('Expiry desktop operator remains optional without trapping scanner focus',()=>{
+  const js=read('js/expiry.js');
+  const sql=read('PHASE2C1177_EXPIRY_DESKTOP_OPERATIONS_V2.sql');
+  assert.match(js,/if\(!expiryIsHandheld\(\) \|\| worker\.value\)[\s\S]*?focusExpiryScanner\(\)/);
+  assert.match(js,/if\(expiryIsHandheld\(\) && !workerId\)/);
+  assert.doesNotMatch(js,/if\(!workerId\)[\s\S]{0,120}SELECT WORKER/);
+  assert.match(sql,/elsif v_source='HANDHELD' then raise exception 'Select an active worker before saving'/);
+  assert.match(sql,/else v_worker_name:='Account user'/);
+});
+
+test('Expiry inline edit exposes both Save and visible Cancel actions',()=>{
+  const controller=read('js/expiry-desktop-v2.js');
+  const css=read('css/dashboard.css');
+  assert.match(controller,/data-session-save>Save<\/button><button type="button" class="expiryRowAction" data-session-cancel>Cancel<\/button>/);
+  assert.match(css,/\[data-session-cancel\][\s\S]*?color:#244c73!important/);
+});
