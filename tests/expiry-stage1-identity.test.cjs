@@ -247,3 +247,11 @@ test('Expiry edit action column has room for Save and Cancel in both desktop vie
  assert.match(css,/th:nth-child\(9\)\{width:12%!important;text-align:right!important\}/);
  assert.match(css,/\.expiryActionsCell\{text-align:right!important;white-space:nowrap!important;min-width:124px!important\}/);
 });
+
+
+test('Expiry Desktop normalizes optional worker UUID to null for Capture and Needs Review',()=>{
+ const js=read('js/expiry.js');
+ assert.match(js,/save_pharmacy_needs_review[\s\S]*?p_worker_id:workerId\|\|null/);
+ assert.match(js,/save_pharmacy_expiry_verified_state_v2[\s\S]*?p_worker_id: workerId \|\| null/);
+ assert.doesNotMatch(js,/p_worker_id:\s*workerId\s*[,}]/);
+});
