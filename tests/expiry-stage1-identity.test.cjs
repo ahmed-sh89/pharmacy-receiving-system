@@ -82,10 +82,11 @@ test('Expiry Management desktop has one canonical two-row operational workspace'
   const css=read('css/dashboard.css');
   const config=read('js/config.js');
 
-  assert.match(html,/data-page="expiry"[^>]*aria-label="Expiry Management"/);
+  assert.match(html,/data-page="expiry"[^>]*aria-label="Expiry"/);
   assert.match(html,/<span>Expiry Management<\/span>/);
   assert.match(config,/title:\s*"Expiry Management"/);
   assert.match(config,/Capture, verify and manage product expiry/);
+  assert.doesNotMatch(html,/Expiry<\\/span><\\/button>\\\\n/);
 
   assert.match(html,/class="expiryCaptureRow"/);
   assert.match(html,/for="expiryWorkerSelect">OPERATOR<\/label>/);
