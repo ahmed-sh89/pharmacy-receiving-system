@@ -1346,6 +1346,23 @@ function bindExpiryCaptureUI(){
             if(event.key==="Enter" || event.key==="Tab"){event.preventDefault();commitHardwareScan();}
         });
 
+        const looksLikeExpiryIdentifier = value => {
+            const raw=String(value||"").trim();
+            if(!raw) return false;
+            if(/[()\u001d]/.test(raw)) return true;
+            return /^\d{8,18}$/.test(raw);
+        };
+
+        barcode.addEventListener("paste",()=>{
+            if(expiryIsHandheld()) return;
+            clearTimeout(ExpiryCaptureEngine.scanTimer);
+            clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
+            setTimeout(()=>{
+                const value=String(barcode.value||"").trim();
+                if(looksLikeExpiryIdentifier(value)) commitHardwareScan();
+            },0);
+        });
+
         barcode.addEventListener("input",()=>{
             clearTimeout(ExpiryCaptureEngine.scanTimer);
             clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
@@ -1355,6 +1372,11 @@ function bindExpiryCaptureUI(){
                 return;
             }
             if(value.length<2){closeExpirySearchResults();return;}
+            if(looksLikeExpiryIdentifier(value)){
+                closeExpirySearchResults();
+                ExpiryCaptureEngine.scanTimer=setTimeout(commitHardwareScan,120);
+                return;
+            }
             ExpiryCaptureEngine.desktopSearchTimer=setTimeout(async()=>{
                 try{renderExpirySearchResults(await expirySearchGlobalItems(value));}
                 catch(error){console.warn("Expiry manual search failed",error);closeExpirySearchResults();}
