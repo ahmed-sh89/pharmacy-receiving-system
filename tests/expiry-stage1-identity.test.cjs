@@ -178,3 +178,14 @@ test('Expiry desktop separates recent operational work from full current state',
  assert.match(js,/last_verified_at\|\|a\?\.updated_at/);
  assert.match(js,/slice\(0,10\)/);
 });
+
+test('Expiry manual search reuses Receiving result hierarchy and authenticated Global V2 contract',()=>{
+ const js=read('js/expiry.js'),css=read('css/dashboard.css'),sql=read('PHASE2C1179_GLOBAL_V2_AUTHENTICATED_SEARCH_FIX.sql');
+ assert.match(js,/class="smartSearchResult expirySearchResult"/);
+ assert.match(js,/Item Code:/);
+ assert.match(js,/expirySearchResultMeta/);
+ assert.match(css,/\.expirySearchResultMain strong/);
+ assert.match(sql,/grant execute on function public\.search_pharmflow_global_items_v2\(text,integer\) to authenticated/i);
+ assert.doesNotMatch(sql,/auth\.uid\(\) is not null/i);
+ assert.doesNotMatch(sql,/drop table|truncate/i);
+});
