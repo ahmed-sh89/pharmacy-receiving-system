@@ -18,6 +18,8 @@ const ExpiryCaptureEngine = {
     formDirty: false,
     currentRows: [],
     highlightedStateId: "",
+    desktopSearchTimer: null,
+    desktopSearchRows: [],
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -148,10 +150,13 @@ function setExpiryStatus(kind, text){
                 scan._expiryFeedbackTimer=setTimeout(()=>{scan.dataset.feedback="ready";},1200);
             }
         }
-        if(input && kind && kind!=="ready"){
-            input.dataset.feedbackText=text||"";
-        }else if(input){
-            delete input.dataset.feedbackText;
+        if(input){
+            const base="Scan barcode or search by Item Code / Item Name";
+            input.placeholder=(kind && kind!=="ready" && text) ? text : base;
+            if(kind && kind!=="ready"){
+                clearTimeout(input._expiryPlaceholderTimer);
+                input._expiryPlaceholderTimer=setTimeout(()=>{if(input.isConnected) input.placeholder=base;},1200);
+            }
         }
     }
 }
@@ -636,9 +641,6 @@ async function saveExpiryCapture(){
     }catch(error){
         console.error("Unable to save expiry capture",error);
         setExpiryStatus("error","SAVE FAILED");
-        if(typeof showToast === "function"){
-            showToast(error?.message || "Unable to save expiry capture","error");
-        }
         if(button) button.disabled = false;
     }finally{
         ExpiryCaptureEngine.busy = false;
