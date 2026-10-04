@@ -57,14 +57,19 @@
     if(ExpiryCaptureEngine.desktopView==="SESSION"){renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows||[]);return;}
     renderInventory(safe);
   };
+  window.recordExpirySessionCapture=function(payload){
+    if(expiryIsHandheld()||!payload)return;
+    const row=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
+    ExpiryCaptureEngine.sessionRows=[row].concat(ExpiryCaptureEngine.sessionRows||[]);
+  };
   window.refreshExpiryCurrentState=async function(){
     if(expiryIsHandheld())return[];
     try{
       const search=ExpiryCaptureEngine.desktopView==="INVENTORY"?(document.getElementById("expiryCurrentSearch")?.value||""):"";
-      const results=await Promise.all([loadExpiryCurrentState(search),loadExpiryCapturedRecords()]);
-      ExpiryCaptureEngine.currentRows=results[0];ExpiryCaptureEngine.sessionRows=sessionRows(results[1]);renderExpiryKpis(results[0]);updateExpiryWorkspaceMode();
-      if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows);else renderInventory(results[0]);
-      return results[0];
+      const rows=await loadExpiryCurrentState(search);
+      ExpiryCaptureEngine.currentRows=rows;renderExpiryKpis(rows);updateExpiryWorkspaceMode();
+      if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows||[]);else renderInventory(rows);
+      return rows;
     }catch(e){console.error("Unable to load expiry workspace",e);return[];}
   };
   const originalBind=window.bindExpiryCaptureUI;
