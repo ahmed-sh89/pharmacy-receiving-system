@@ -20,6 +20,7 @@ const ExpiryCaptureEngine = {
     highlightedStateId: "",
     desktopSearchTimer: null,
     desktopSearchRows: [],
+    editingStateId: "",
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
         return `pharmflow_expiry_worker_${pharmacy}`;
@@ -336,7 +337,7 @@ function resetExpiryCaptureForm(options = {}){
 function focusExpiryScanner(){
     const input = document.getElementById("expiryBarcodeInput");
     if(!input) return;
-    input.setAttribute("inputmode","none");
+    input.setAttribute("inputmode",expiryIsHandheld()?"none":"text");
     input.setAttribute("autocomplete","off");
     try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
 }
