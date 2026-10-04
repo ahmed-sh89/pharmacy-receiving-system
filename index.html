@@ -1350,8 +1350,12 @@
                 <section class="expiryCurrentWorkspace" aria-label="Current expiry state">
                     <div class="expiryCurrentHeader">
                         <div class="expiryCurrentTitle">
-                            <span>Current Expiry</span>
+                            <span id="expiryWorkspaceTitle">Recent Captures</span>
                             <strong id="expiryCurrentStateCount">0</strong>
+                            <div class="expiryWorkspaceTabs" role="tablist" aria-label="Expiry workspace view">
+                                <button id="btnExpiryRecentView" type="button" class="active" data-expiry-view="RECENT">Recent</button>
+                                <button id="btnExpiryCurrentView" type="button" data-expiry-view="CURRENT">Current Expiry</button>
+                            </div>
                         </div>
                         <div class="expiryCurrentTools">
                             <select id="expiryCategoryFilter" aria-label="Filter by category">
@@ -1363,7 +1367,7 @@
                     <div class="expiryCurrentTableWrap">
                         <table class="expiryCurrentTable">
                             <thead><tr>
-                                <th>Product</th><th>Category</th><th>Batch</th><th>Expiry</th>
+                                <th>Item Code</th><th>Product Name</th><th>Category</th><th>Batch</th><th>Expiry</th>
                                 <th>Qty</th><th>Operator</th><th>Actions</th>
                             </tr></thead>
                             <tbody id="expiryCurrentStateBody"></tbody>
