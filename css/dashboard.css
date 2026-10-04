@@ -7774,6 +7774,14 @@ body.zebraDevice .zebraConnectedDot.isEmpty:before{background:#d69a2d}
 
 /* =============================================================
    EXPIRY — CANONICAL DESKTOP OWNER
+
+body:not(.zebraDevice) #zebraExpiryShell{border-top:3px solid #5b4bc4!important;background:linear-gradient(180deg,#f4f2ff 0,#eef6fc 125px,#eef6fc 100%)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryKpiRow{padding-top:8px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryKpiCard{border-top:3px solid #8b7ed8!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryKpiExpired{border-top-color:#dc5c68!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryKpiUpcoming{border-top-color:#d5a233!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{border-color:#a99fe4!important;background:#faf9ff!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentHeader{border-top:2px solid #8b7ed8!important}
    One owner only. Handheld Expiry is independently owned above.
 ============================================================= */
 body:not(.zebraDevice) #zebraExpiryShell.appPage{display:none!important}
