@@ -655,7 +655,48 @@ function expiryFormatVerifiedAt(value){
     return Number.isFinite(d.getTime()) ? d.toLocaleString() : "—";
 }
 
+function expiryCurrentMonthIndex(){
+    const now=new Date();
+    return (now.getFullYear()*12)+now.getMonth();
+}
+
+function expiryRowMonthIndex(row){
+    const year=Number(row?.expiry_year);
+    const month=Number(row?.expiry_month);
+    if(!Number.isInteger(year) || !Number.isInteger(month) || month<1 || month>12) return null;
+    return (year*12)+(month-1);
+}
+
+function renderExpiryKpis(rows){
+    const safeRows=Array.isArray(rows)?rows:[];
+    const currentMonth=expiryCurrentMonthIndex();
+    let totalUnits=0;
+    let expired=0;
+    let upcoming=0;
+
+    safeRows.forEach(row=>{
+        const qty=Number(row?.verified_quantity);
+        if(Number.isFinite(qty) && qty>0) totalUnits+=qty;
+        const expiryIndex=expiryRowMonthIndex(row);
+        if(expiryIndex===null) return;
+        if(expiryIndex<currentMonth) expired+=1;
+        else upcoming+=1;
+    });
+
+    const values={
+        expiryKpiActiveItems:safeRows.length,
+        expiryKpiTotalUnits:totalUnits,
+        expiryKpiExpired:expired,
+        expiryKpiUpcoming:upcoming
+    };
+    Object.entries(values).forEach(([id,value])=>{
+        const el=document.getElementById(id);
+        if(el) el.textContent=String(value);
+    });
+}
+
 function renderExpiryCurrentState(rows){
+    renderExpiryKpis(rows);
     const body=document.getElementById("expiryCurrentStateBody");
     const empty=document.getElementById("expiryCurrentStateEmpty");
     const count=document.getElementById("expiryCurrentStateCount");
