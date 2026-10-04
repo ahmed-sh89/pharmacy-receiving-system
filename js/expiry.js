@@ -686,7 +686,7 @@ async function saveExpiryCapture(options={}){
             await authRpc("save_pharmacy_needs_review",{
                 p_pharmacy_id:pharmacyId,p_workflow:"EXPIRY",p_gtin:item.gtin,p_raw_barcode:item.rawBarcode||item.gtin,
                 p_order_id:null,p_order_name:null,p_pending_quantity:quantity,p_expiry_month:month,p_expiry_year:year,
-                p_worker_id:workerId,p_device_id:deviceId,
+                p_worker_id:workerId||null,p_device_id:deviceId,
                 p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC"
             });
             setExpiryStatus("success","✓ SAVED FOR REVIEW");
@@ -710,7 +710,7 @@ async function saveExpiryCapture(options={}){
             p_quantity: quantity,
             p_expiry_month: month,
             p_expiry_year: year,
-            p_worker_id: workerId,
+            p_worker_id: workerId || null,
             p_batch_no: toSafeString(gs1.lot||""),
             p_sample_serial: toSafeString(gs1.serial||""),
             p_device_id: deviceId,
