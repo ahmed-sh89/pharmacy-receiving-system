@@ -77,29 +77,31 @@ test('Expiry is reachable from both Desktop sidebar and Handheld workspace choos
 });
 
 
-test('Expiry Management desktop has one canonical two-row operational workspace',()=>{
+
+test('Expiry desktop canonical owner uses KPI row and balanced operational rows',()=>{
   const html=read('index.html');
   const css=read('css/dashboard.css');
-  const config=read('js/config.js');
+  const js=read('js/expiry.js');
 
-  assert.match(html,/data-page="expiry"[^>]*aria-label="Expiry"/);
-  assert.match(html,/<span>Expiry Management<\/span>/);
-  assert.match(config,/title:\s*"Expiry Management"/);
-  assert.match(config,/Capture, verify and manage product expiry/);
-  assert.doesNotMatch(html,/Expiry<\\/span><\\/button>\\\\n/);
-
-  assert.match(html,/class="expiryCaptureRow"/);
+  assert.match(html,/class="expiryKpiRow"/);
+  assert.match(html,/id="expiryKpiActiveItems"/);
+  assert.match(html,/id="expiryKpiTotalUnits"/);
+  assert.match(html,/id="expiryKpiExpired"/);
+  assert.match(html,/id="expiryKpiUpcoming"/);
+  assert.doesNotMatch(html,/EXPIRY MANAGEMENT<\/span>/);
   assert.match(html,/for="expiryWorkerSelect">OPERATOR<\/label>/);
-  assert.match(html,/aria-label="Expiry operator"/);
-  assert.match(html,/placeholder="Scan barcode or search by Item Code \/ Item Name"/);
-  assert.match(html,/<span>LAST SCAN<\/span>/);
-  assert.match(html,/<span>Batch Number<\/span>/);
-  assert.match(html,/<th>Expiry<\/th><th>Qty<\/th><th>Operator<\/th>/);
-  assert.doesNotMatch(html,/expiryDesktopCaptureTitle/);
+  assert.match(html,/class="expiryLastScanHeading"/);
+  assert.match(html,/id="btnExpiryCaptured"/);
 
-  assert.match(css,/EXPIRY MANAGEMENT — CANONICAL DESKTOP OWNER/);
-  assert.match(css,/grid-template-areas:"operator scan entry save"/);
-  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\.appPage\{\s*display:none!important;/);
-  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\.appPage\.active\{\s*display:flex!important;/);
-  assert.doesNotMatch(css,/EXPIRY STAGE 1 — BUILD 1\s*\n\s*Desktop operational workspace/);
+  assert.match(css,/EXPIRY — CANONICAL DESKTOP OWNER/);
+  assert.match(css,/grid-template-columns:220px minmax\(360px,1fr\) 86px 122px 110px 150px!important/);
+  assert.match(css,/\.expiryWorkerBar::before,[\s\S]*?content:none!important/);
+  assert.doesNotMatch(css,/EXPIRY MANAGEMENT — CANONICAL DESKTOP OWNER/);
+
+  assert.match(js,/function renderExpiryKpis\(rows\)/);
+  assert.match(js,/expiryKpiActiveItems:safeRows\.length/);
+  assert.match(js,/expiryKpiTotalUnits:totalUnits/);
+  assert.match(js,/expiryKpiExpired:expired/);
+  assert.match(js,/expiryKpiUpcoming:upcoming/);
+  assert.match(js,/renderExpiryKpis\(rows\);/);
 });
