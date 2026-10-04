@@ -7839,14 +7839,20 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable{width:100%!importan
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th{position:sticky!important;top:0!important;z-index:1!important;padding:8px 10px!important;border-bottom:1px solid #dbe7f3!important;background:#eef5fc!important;color:#536579!important;font-size:9px!important;font-weight:950!important;text-align:left!important;white-space:nowrap!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable td{padding:9px 10px!important;border-bottom:1px solid #edf2f7!important;color:#334155!important;font-size:11px!important;vertical-align:middle!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable tbody tr:hover{background:#f6faff!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(1){width:35%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(2){width:14%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(1){width:13%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(2){width:28%!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(3){width:12%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(4){width:11%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(5){width:7%!important;text-align:center!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(6){width:12%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(7){width:9%!important;text-align:right!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryProductCell strong{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102746!important;font-size:13px!important;font-weight:900!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(4){width:10%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(5){width:10%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(6){width:7%!important;text-align:center!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(7){width:10%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(8){width:10%!important;text-align:right!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceTabs{display:flex!important;align-items:center!important;gap:3px!important;margin-left:6px!important;padding:2px!important;border:1px solid #c9dced!important;border-radius:7px!important;background:#eef5fc!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceTabs button{height:25px!important;padding:0 10px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:#5f7389!important;font-size:9px!important;font-weight:900!important;cursor:pointer!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceTabs button.active{background:#fff!important;color:#1557c0!important;box-shadow:0 1px 4px rgba(15,55,98,.10)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCodeCell strong{display:block!important;color:#0f3762!important;font-size:14px!important;font-weight:950!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCodeCell span{display:block!important;margin-top:2px!important;color:#718196!important;font-size:9px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryProductCell strong{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102746!important;font-size:14px!important;font-weight:900!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryProductCell span{display:block!important;margin-top:2px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#718196!important;font-size:9px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryQtyCell{color:#1557c0!important;font-size:14px!important;font-weight:950!important;text-align:center!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryActionsCell{text-align:right!important;white-space:nowrap!important}
