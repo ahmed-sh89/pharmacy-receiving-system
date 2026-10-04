@@ -62,3 +62,16 @@ test('Expiry Stage 1 schema is additive, tenant scoped and preserves immutable e
   assert.doesNotMatch(sql,/drop table/i);
   assert.doesNotMatch(sql,/truncate/i);
 });
+
+test('Expiry is reachable from both Desktop sidebar and Handheld workspace chooser',()=>{
+  const html=read('index.html');
+  const ui=read('ui.js');
+  const config=read('js/config.js');
+  assert.match(html,/data-page="expiry"[^>]*aria-label="Near Expiry"/);
+  assert.match(config,/expiry:\s*\{/);
+  assert.match(config,/elementId:\s*\n\s*"zebraExpiryShell"/);
+  assert.match(ui,/id="btnZebraExpiryMode"/);
+  assert.match(ui,/btnZebraExpiryMode"\)\?\.addEventListener/);
+  assert.match(ui,/setZebraExpiryMode\(\)/);
+  assert.doesNotMatch(ui,/zebraModeExpiry" type="button" disabled/);
+});
