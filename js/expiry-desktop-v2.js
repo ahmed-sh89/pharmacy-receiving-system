@@ -22,7 +22,7 @@
     if(count)count.textContent=String(visible.length);if(!body)return;
     if(!visible.length){body.innerHTML="";if(empty){empty.hidden=false;empty.innerHTML="<strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span>";}return;}
     if(empty)empty.hidden=true;
-    body.innerHTML=visible.map(r=>{const cur=currentFor(r);return '<tr class="expiryActivityRow">'+
+    body.innerHTML=visible.map(r=>{const cur=currentFor(r);const fresh=(Date.now()-expiryCapturedAt(r))<6000;return '<tr class="expiryActivityRow '+(fresh?'expiryRowSavedStrong':'')+'">'+
       '<td class="expiryGtinCell" title="'+esc(r.identifier_display||r.gtin||"")+'">'+esc(r.identifier_display||r.gtin||"—")+'</td>'+
       '<td class="expiryCodeCell"><strong>'+esc(r.item_code||"—")+'</strong></td>'+
       '<td class="expiryProductCell" title="'+esc(r.item_name||"")+'"><strong>'+esc(r.item_name||"")+'</strong></td>'+
