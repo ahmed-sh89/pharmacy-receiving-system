@@ -189,3 +189,8 @@ test('Expiry manual search reuses Receiving result hierarchy and authenticated G
  assert.doesNotMatch(sql,/auth\.uid\(\) is not null/i);
  assert.doesNotMatch(sql,/drop table|truncate/i);
 });
+
+test('Expiry manual search accepts authenticated RPC response envelope',()=>{
+ const js=read('js/expiry.js');
+ assert.match(js,/Array\.isArray\(response\?\.data\) \? response\.data/);
+});
