@@ -399,10 +399,10 @@ const APP_CONFIG = Object.freeze({
                 "zebraExpiryShell",
 
             title:
-                "Near Expiry",
+                "Expiry Management",
 
             subtitle:
-                "Capture and review near-expiry items"
+                "Capture, verify and manage product expiry"
 
         },
 
