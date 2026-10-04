@@ -7828,6 +7828,13 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryActiveIdentity>span{grid-area:la
 body:not(.zebraDevice) #zebraExpiryShell .expiryActiveIdentity>strong{grid-area:name!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102746!important;font-size:13px!important;font-weight:950!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryActiveIdentity>small{grid-area:meta!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#65788d!important;font-size:9px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryActiveGs1{flex:0 1 auto!important;max-width:46%!important;color:#315f8f!important;font-size:9px!important;font-weight:800!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveItem{border-width:2px!important;border-color:#65a8e8!important;background:#f2f9ff!important;box-shadow:0 5px 16px rgba(23,105,210,.12)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveIdentity>strong{font-size:15px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveIdentity>small{font-size:10px!important;font-weight:750!important}
+body:not(.zebraDevice) #zebraExpiryShell tr.expiryRowSavedStrong{position:relative!important;z-index:2!important;outline:3px solid #20a35a!important;outline-offset:-3px!important;background:#dff7e9!important;box-shadow:0 0 0 3px rgba(32,163,90,.14),0 8px 18px rgba(18,108,60,.12)!important;animation:expirySavedPulse .55s ease-out 2!important}
+body:not(.zebraDevice) #zebraExpiryShell tr.expiryRowSavedStrong td{background:#dff7e9!important;font-weight:800!important}
+@keyframes expirySavedPulse{0%{filter:brightness(1)}50%{filter:brightness(.96)}100%{filter:brightness(1)}}
+
 body:not(.zebraDevice) #zebraExpiryShell .expiryHandheldItemCard{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryLastSaved{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentWorkspace{display:flex!important;flex:1 1 0!important;flex-direction:column!important;min-height:0!important;margin-top:8px!important;border:1px solid #bfd6ec!important;border-radius:11px!important;background:#fff!important;overflow:hidden!important;box-shadow:0 3px 12px rgba(18,55,92,.04)!important}
