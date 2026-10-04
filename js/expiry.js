@@ -405,7 +405,16 @@ function renderExpirySearchResults(rows){
     ExpiryCaptureEngine.desktopSearchRows=Array.isArray(rows)?rows:[];
     if(!ExpiryCaptureEngine.desktopSearchRows.length){closeExpirySearchResults();return;}
     box.innerHTML=ExpiryCaptureEngine.desktopSearchRows.map((row,index)=>
-        '<button type="button" data-expiry-search-index="'+index+'"><strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong><span>'+expiryEscapeHtml(row.item_code||"")+' · '+expiryEscapeHtml(row.category||row.group_name||"Uncategorized")+'</span></button>'
+        '<button type="button" class="smartSearchResult expirySearchResult" data-expiry-search-index="'+index+'">'+
+            '<div class="smartSearchResultMain expirySearchResultMain">'+
+                '<strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong>'+
+                '<span>Item Code: <b>'+expiryEscapeHtml(row.item_code||"—")+'</b></span>'+
+            '</div>'+
+            '<div class="expirySearchResultMeta">'+
+                '<strong>'+expiryEscapeHtml(row.item_code||"—")+'</strong>'+
+                '<span>'+expiryEscapeHtml(row.category||row.group_name||"Uncategorized")+'</span>'+
+            '</div>'+
+        '</button>'
     ).join("");
     box.hidden=false;
     box.querySelectorAll("[data-expiry-search-index]").forEach(button=>button.onclick=()=>selectExpirySearchResult(Number(button.dataset.expirySearchIndex)));
