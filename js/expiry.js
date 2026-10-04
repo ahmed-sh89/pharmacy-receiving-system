@@ -1474,7 +1474,10 @@ function bindExpiryCaptureUI(){
         worker.addEventListener("change", () => {
             selectExpiryWorker(worker.value);
 
-            if(worker.value){
+            /* Desktop operator is optional. Always return focus to Scan after
+               changing or clearing it so hardware input never remains trapped
+               in the operator select. Handheld keeps its required-worker guard. */
+            if(!expiryIsHandheld() || worker.value){
                 setTimeout(()=>{
                     focusExpiryScanner();
                     window.hhRepairScannerFocus?.("expiry-worker-change");
