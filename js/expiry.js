@@ -795,50 +795,56 @@ function renderExpiryCurrentState(rows){
     if(!body) return;
     if(!visibleRows.length){body.innerHTML="";if(empty) empty.hidden=false;return;}
     if(empty) empty.hidden=true;
-    body.innerHTML=visibleRows.map(row=>`
-        <tr data-expiry-state-id="${expiryEscapeHtml(row.state_id||"")}" class="${String(row.state_id||"")===String(ExpiryCaptureEngine.highlightedStateId||"")?"expiryRowUpdated":""}">
+    body.innerHTML=visibleRows.map(row=>{
+        const editing=String(row.state_id||"")===String(ExpiryCaptureEngine.editingStateId||"");
+        return `<tr data-expiry-state-id="${expiryEscapeHtml(row.state_id||"")}" class="${String(row.state_id||"")===String(ExpiryCaptureEngine.highlightedStateId||"")?"expiryRowUpdated":""} ${editing?"expiryRowEditing":""}">
             <td class="expiryProductCell"><strong>${expiryEscapeHtml(row.item_name||"")}</strong><span>${expiryEscapeHtml(row.item_code||"")} · ${expiryEscapeHtml(row.identifier_display||"")}</span></td>
             <td><span class="expiryCategoryChip">${expiryEscapeHtml(row.category||"Uncategorized")}</span></td>
-            <td>${expiryEscapeHtml(row.batch_no||"—")}</td>
-            <td>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${expiryEscapeHtml(row.expiry_year)}</td>
-            <td class="expiryQtyCell">${expiryEscapeHtml(row.verified_quantity)}</td>
+            <td>${editing?`<input class="expiryInlineInput" data-edit-batch value="${expiryEscapeHtml(row.batch_no||"")}" placeholder="Batch">`:expiryEscapeHtml(row.batch_no||"—")}</td>
+            <td>${editing?`<div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="${Number(row.expiry_month)||""}"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="${Number(row.expiry_year)||""}"></div>`:`${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${expiryEscapeHtml(row.expiry_year)}`}</td>
+            <td class="expiryQtyCell">${editing?`<input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" value="${Number(row.verified_quantity)||1}">`:expiryEscapeHtml(row.verified_quantity)}</td>
             <td>${expiryEscapeHtml(row.verified_by_name||"Account user")}</td>
-            <td class="expiryActionsCell"><button type="button" class="expiryRowAction" data-expiry-edit="${expiryEscapeHtml(row.state_id||"")}">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-clear="${expiryEscapeHtml(row.state_id||"")}">Delete</button></td>
-        </tr>`).join("");
+            <td class="expiryActionsCell">${editing?
+                `<button type="button" class="expiryRowAction primary" data-expiry-save-edit="${expiryEscapeHtml(row.state_id||"")}">Save</button><button type="button" class="expiryRowAction" data-expiry-cancel-edit>Cancel</button>`:
+                `<button type="button" class="expiryRowAction" data-expiry-edit="${expiryEscapeHtml(row.state_id||"")}">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-clear="${expiryEscapeHtml(row.state_id||"")}">Delete</button>`}</td>
+        </tr>`;
+    }).join("");
     bindExpiryCurrentRowActions();
 }
 
-async function saveExpiryCurrentCorrection(row,newQuantity){
-    await authRpc("save_pharmacy_expiry_verified_state_v2",{
-        p_pharmacy_id:expiryPharmacyId(),p_item_code:row.item_code,p_item_name:row.item_name,
-        p_identifier_display:row.identifier_display,p_category:row.category||"",p_quantity:newQuantity,
-        p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),p_worker_id:ExpiryCaptureEngine.selectedWorkerId||null,
-        p_batch_no:row.batch_no||"",p_sample_serial:row.sample_serial||"",p_device_id:(typeof ensureDeviceId==="function"?ensureDeviceId():""),
-        p_source:"PC",p_event_type:newQuantity===0?"CLEARED":"RECOUNT"
+async function saveExpiryCurrentCorrection(row,values){
+    await authRpc("correct_pharmacy_expiry_current_state_v1",{
+        p_pharmacy_id:expiryPharmacyId(),p_state_id:row.state_id,p_quantity:values.quantity,
+        p_expiry_month:values.month,p_expiry_year:values.year,p_batch_no:values.batch||null,
+        p_worker_id:ExpiryCaptureEngine.selectedWorkerId||null,p_device_id:(typeof ensureDeviceId==="function"?ensureDeviceId():"")
     });
 }
-
+async function clearExpiryCurrentState(row){
+    await authRpc("save_pharmacy_expiry_verified_state_v2",{
+        p_pharmacy_id:expiryPharmacyId(),p_item_code:row.item_code,p_item_name:row.item_name,p_identifier_display:row.identifier_display,
+        p_category:row.category||"",p_quantity:0,p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),
+        p_worker_id:ExpiryCaptureEngine.selectedWorkerId||null,p_batch_no:row.batch_no||"",p_sample_serial:row.sample_serial||"",
+        p_device_id:(typeof ensureDeviceId==="function"?ensureDeviceId():""),p_source:"PC",p_event_type:"CLEARED"
+    });
+}
 function bindExpiryCurrentRowActions(){
-    const body=document.getElementById("expiryCurrentStateBody");
-    if(!body) return;
-    body.querySelectorAll("[data-expiry-edit]").forEach(button=>button.onclick=async()=>{
-        const row=expiryCurrentRowById(button.dataset.expiryEdit); if(!row) return;
-        const entered=window.prompt("Correct total quantity",String(row.verified_quantity??""));
-        if(entered===null) return;
-        const qty=Number(entered);
-        if(!Number.isInteger(qty)||qty<=0){setExpiryStatus("error","ENTER VALID TOTAL QUANTITY");return;}
+    const body=document.getElementById("expiryCurrentStateBody");if(!body)return;
+    body.querySelectorAll("[data-expiry-edit]").forEach(button=>button.onclick=()=>{ExpiryCaptureEngine.editingStateId=button.dataset.expiryEdit;renderExpiryCurrentState(ExpiryCaptureEngine.currentRows);});
+    body.querySelectorAll("[data-expiry-cancel-edit]").forEach(button=>button.onclick=()=>{ExpiryCaptureEngine.editingStateId="";renderExpiryCurrentState(ExpiryCaptureEngine.currentRows);});
+    body.querySelectorAll("[data-expiry-save-edit]").forEach(button=>button.onclick=async()=>{
+        const row=expiryCurrentRowById(button.dataset.expirySaveEdit);if(!row)return;
+        const tr=button.closest("tr");const values={quantity:Number(tr?.querySelector("[data-edit-qty]")?.value||0),month:Number(tr?.querySelector("[data-edit-month]")?.value||0),year:Number(tr?.querySelector("[data-edit-year]")?.value||0),batch:toSafeString(tr?.querySelector("[data-edit-batch]")?.value).trim()};
+        if(!Number.isInteger(values.quantity)||values.quantity<=0||values.month<1||values.month>12||values.year<2020||values.year>2200){setExpiryStatus("error","CHECK QUANTITY AND EXPIRY");return;}
         button.disabled=true;
-        try{await saveExpiryCurrentCorrection(row,qty);ExpiryCaptureEngine.highlightedStateId=row.state_id;setExpiryStatus("success",`UPDATED · TOTAL ${qty}`);await refreshExpiryCurrentState();}
-        catch(error){console.error("Expiry correction failed",error);setExpiryStatus("error","UPDATE FAILED");}
-        finally{button.disabled=false;}
+        try{await saveExpiryCurrentCorrection(row,values);ExpiryCaptureEngine.editingStateId="";ExpiryCaptureEngine.highlightedStateId=row.state_id;setExpiryStatus("success",`UPDATED · TOTAL ${values.quantity}`);await refreshExpiryCurrentState();}
+        catch(error){console.error("Expiry correction failed",error);setExpiryStatus("error",String(error?.message||"UPDATE FAILED").includes("already uses")?"DUPLICATE BATCH / EXPIRY":"UPDATE FAILED");button.disabled=false;}
     });
     body.querySelectorAll("[data-expiry-clear]").forEach(button=>button.onclick=async()=>{
-        const row=expiryCurrentRowById(button.dataset.expiryClear); if(!row) return;
+        const row=expiryCurrentRowById(button.dataset.expiryClear);if(!row)return;
         if(button.dataset.confirm!=="1"){button.dataset.confirm="1";button.textContent="Confirm";setTimeout(()=>{if(button.isConnected&&button.dataset.confirm==="1"){button.dataset.confirm="";button.textContent="Delete";}},3000);return;}
         button.disabled=true;
-        try{await saveExpiryCurrentCorrection(row,0);setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");await refreshExpiryCurrentState();}
-        catch(error){console.error("Expiry clear failed",error);setExpiryStatus("error","DELETE FAILED");}
-        finally{button.disabled=false;}
+        try{await clearExpiryCurrentState(row);setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");await refreshExpiryCurrentState();}
+        catch(error){console.error("Expiry clear failed",error);setExpiryStatus("error","DELETE FAILED");button.disabled=false;}
     });
 }
 
