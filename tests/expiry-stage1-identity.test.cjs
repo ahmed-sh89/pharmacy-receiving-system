@@ -255,3 +255,18 @@ test('Expiry Desktop normalizes optional worker UUID to null for Capture and Nee
  assert.match(js,/save_pharmacy_expiry_verified_state_v2[\s\S]*?p_worker_id: workerId \|\| null/);
  assert.doesNotMatch(js,/p_worker_id:\s*workerId\s*[,}]/);
 });
+
+
+test('Expiry desktop session survives route navigation and resets only on sign out',()=>{
+ const ctl=read('js/expiry-desktop-v2.js'),auth=read('js/auth.js');
+ assert.doesNotMatch(ctl,/activateExpiryCapture=async function\(\)\{[\s\S]{0,220}sessionRows=\[\]/);
+ assert.match(ctl,/resetExpiryDesktopSession=function\(\)/);
+ assert.match(auth,/signOutCurrentUser\(\)[\s\S]{0,180}resetExpiryDesktopSession/);
+});
+test('Expiry session quantity is neutral and capture keeps authoritative state id',()=>{
+ const ctl=read('js/expiry-desktop-v2.js'),core=read('js/expiry.js');
+ assert.match(ctl,/inventory\?"Current Qty":"Quantity"/);
+ assert.doesNotMatch(ctl,/expiryActivityQty">\+'/);
+ assert.match(core,/const saveResult=await authRpc\("save_pharmacy_expiry_verified_state_v2"/);
+ assert.match(core,/state_id:Array\.isArray\(saveResult\)\?saveResult\[0\]\?\.state_id:saveResult\?\.state_id/);
+});
