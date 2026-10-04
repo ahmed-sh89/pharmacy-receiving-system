@@ -80,22 +80,12 @@ test('Expiry is reachable from both Desktop sidebar and Handheld workspace choos
 
 
 
-test('Expiry operational workspace is visually dominant and has no legacy WORKER mutation',()=>{
-  const html=read('index.html');
+test('Expiry desktop has one canonical visual owner with no stacked override layer',()=>{
   const css=read('css/dashboard.css');
-  const js=read('js/expiry.js');
-
-  assert.doesNotMatch(html,/for="expiryWorkerSelect">(?:WORKER|OPERATOR)<\/label>/);
-  assert.match(html,/id="expiryWorkerSelect" aria-label="Operator"/);
-  assert.doesNotMatch(js,/label\.textContent="WORKER"/);
-  assert.match(js,/<option value="">Select\.\.\.<\/option>/);
-
-  assert.match(css,/grid-template-columns:150px minmax\(420px,1fr\) 86px 118px 104px 145px!important/);
-  assert.match(css,/grid-template-areas:"operator scan qty month year save"/);
-  assert.match(css,/\.expiryEntryGrid label>span\{display:none!important\}/);
-  assert.match(css,/grid-template-areas:"heading name code identifier category batch serial recent"/);
-  assert.match(css,/min-height:64px!important/);
-  assert.doesNotMatch(css,/\/\* ---------- Near Expiry desktop ---------- \*\//);
+  assert.equal((css.match(/EXPIRY — CANONICAL DESKTOP OWNER/g)||[]).length,1);
+  assert.doesNotMatch(css,/EXPIRY DESKTOP OPERATIONS — Stage 1 Build 1/);
+  assert.match(css,/grid-template-areas:"scan qty month year save operator"/);
+  assert.match(css,/\.expiryHandheldItemCard\{display:none!important\}/);
 });
 
 test('Expiry desktop keeps page fixed and scrolls only Current Expiry List',()=>{
@@ -129,4 +119,15 @@ test('Expiry desktop hides duplicate Last Scan surface without changing Handheld
   const css=read('css/dashboard.css');
   assert.match(html,/expiryItemCard expiryHandheldItemCard/);
   assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell \.expiryHandheldItemCard\{display:none!important\}/);
+});
+
+test('Expiry current-state actions preserve scan-add versus recount-clear semantics',()=>{
+  const js=read('js/expiry.js');
+  const sql=read('PHASE2C1177_EXPIRY_DESKTOP_OPERATIONS_V2.sql');
+  assert.match(js,/p_event_type:newQuantity===0\?"CLEARED":"RECOUNT"/);
+  assert.match(js,/save_pharmacy_expiry_verified_state_v2/);
+  assert.match(sql,/v_event_type='CAPTURE'.*coalesce\(v_previous_quantity,0\)\+p_quantity/s);
+  assert.match(sql,/v_event_type='RECOUNT'.*v_new_quantity:=p_quantity/s);
+  assert.match(sql,/v_event_type='CLEARED'/);
+  assert.doesNotMatch(sql,/drop table|truncate/i);
 });
