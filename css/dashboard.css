@@ -7780,8 +7780,8 @@ body.zebraDevice .zebraConnectedDot.isEmpty:before{background:#d69a2d}
 body:not(.zebraDevice) #zebraExpiryShell.appPage{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell.appPage.active{
     display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;
-    min-height:calc(100vh - 76px)!important;margin:0!important;padding:10px 14px 14px!important;
-    box-sizing:border-box!important;background:#eef5fc!important
+    height:calc(100vh - 76px)!important;min-height:0!important;margin:0!important;padding:10px 14px 14px!important;
+    overflow:hidden!important;box-sizing:border-box!important;background:#eef5fc!important
 }
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiRow{
     display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;width:100%!important;margin:0 0 7px!important
@@ -7902,7 +7902,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryLastSaved:not(:empty){
 }
 
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentWorkspace{
-    display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:300px!important;margin-top:7px!important;
+    display:flex!important;flex:1 1 0!important;flex-direction:column!important;min-height:0!important;margin-top:7px!important;
     border:1px solid #c8dcf0!important;border-radius:10px!important;background:#fff!important;overflow:hidden!important;
     box-shadow:0 3px 12px rgba(18,55,92,.04)!important
 }
@@ -7922,7 +7922,10 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentSearch input{
     width:100%!important;height:30px!important;min-height:30px!important;padding:0 9px!important;border:1px solid #b7cee5!important;
     border-radius:7px!important;background:#fff!important;color:#163b64!important;font-size:10px!important;box-sizing:border-box!important
 }
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTableWrap{flex:1 1 auto!important;width:100%!important;min-height:250px!important;overflow:auto!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTableWrap{
+    flex:1 1 0!important;width:100%!important;min-height:0!important;overflow-x:auto!important;overflow-y:auto!important;
+    overscroll-behavior:contain!important;scrollbar-gutter:stable!important
+}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable{width:100%!important;min-width:1050px!important;border-collapse:collapse!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th{
     position:sticky!important;top:0!important;z-index:1!important;padding:7px 9px!important;border-bottom:1px solid #dbe7f3!important;
