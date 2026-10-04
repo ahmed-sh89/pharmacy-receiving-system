@@ -356,8 +356,7 @@
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
 
-            <button class="sidebarItem" type="button" data-page="expiry" aria-label="Near Expiry" title="Near Expiry"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Near Expiry</span></button>
-            <button class="sidebarItem" type="button" data-page="settings" aria-label="Settings" title="Settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
+            <button class="sidebarItem" type="button" data-page="expiry" aria-label="Expiry Management" title="Expiry Management"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Expiry Management</span></button>\n            <button class="sidebarItem" type="button" data-page="settings" aria-label="Settings" title="Settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
         </nav>
 
 
@@ -1270,121 +1269,70 @@
             >
                 <div class="zebraExpiryTop">
                     <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
-
                     <div class="expiryPageTitle">
-                        <span>NEAR EXPIRY</span>
-                        <strong class="expiryDesktopCaptureTitle">Capture</strong>
-                        <button
-                            id="btnClearExpiryScreenTop"
-                            class="expiryClearScreenTop"
-                            type="button"
-                        >
-                            CLEAR SCREEN
-                        </button>
+                        <span>EXPIRY MANAGEMENT</span>
+                        <button id="btnClearExpiryScreenTop" class="expiryClearScreenTop" type="button">CLEAR SCREEN</button>
                     </div>
-
                     <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
-                        CAPTURED <strong id="expiryCapturedCount">0</strong>
+                        <span class="expiryCapturedButtonLabel">RECENT</span>
+                        <strong id="expiryCapturedCount">0</strong>
                     </button>
                 </div>
 
                 <section class="expiryCaptureCard">
-                    <div class="expiryWorkerBar">
-                        <div class="expiryWorkerCompactLabel">
-                            <span class="expiryWorkerIcon">👤</span>
-                            <label for="expiryWorkerSelect">WORKER</label>
+                    <div class="expiryCaptureRow">
+                        <div class="expiryWorkerBar">
+                            <div class="expiryWorkerCompactLabel">
+                                <span class="expiryWorkerIcon">👤</span>
+                                <label for="expiryWorkerSelect">OPERATOR</label>
+                            </div>
+                            <select id="expiryWorkerSelect" aria-label="Expiry operator">
+                                <option value="">Select operator...</option>
+                            </select>
                         </div>
-                        <select id="expiryWorkerSelect" aria-label="Expiry worker">
-                            <option value="">Select worker...</option>
-                        </select>
-                    </div>
 
-                    <div id="expiryScanStatus" class="expiryScanStatus ready">READY TO SCAN</div>
+                        <div id="expiryScanStatus" class="expiryScanStatus ready">READY TO SCAN</div>
 
-                    <div class="expiryScanBox">
-                        <span class="expiryScanIcon">▥</span>
-                        <input
-                            id="expiryBarcodeInput"
-                            type="text"
-                            inputmode="none"
-                            autocomplete="off"
-                            placeholder="Scan barcode"
-                        >
+                        <div class="expiryScanBox">
+                            <span class="expiryScanIcon">▥</span>
+                            <input id="expiryBarcodeInput" type="text" inputmode="none" autocomplete="off"
+                                placeholder="Scan barcode or search by Item Code / Item Name">
+                        </div>
+
+                        <div class="expiryEntryGrid">
+                            <label>
+                                <span>Quantity</span>
+                                <input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" placeholder="Qty">
+                            </label>
+                            <label>
+                                <span>Month</span>
+                                <select id="expiryMonth" aria-label="Expiry month"><option value="">Month</option></select>
+                                <small id="expiryMonthName"></small>
+                            </label>
+                            <label>
+                                <span>Year</span>
+                                <select id="expiryYear" aria-label="Expiry year"><option value="">Year</option></select>
+                            </label>
+                        </div>
+
+                        <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>
+                            SAVE &amp; NEXT
+                        </button>
                     </div>
 
                     <div class="expiryItemCard">
-                        <span>LAST ITEM</span>
+                        <span>LAST SCAN</span>
                         <strong id="expiryItemName">—</strong>
-
                         <div class="expiryItemMeta">
-                            <div>
-                                <span>Item Code</span>
-                                <strong id="expiryItemCode">—</strong>
-                            </div>
-
-                            <div>
-                                <span>Identifier</span>
-                                <strong id="expiryItemGTIN">—</strong>
-                            </div>
-
-                            <div>
-                                <span>Category</span>
-                                <strong id="expiryItemCategory">—</strong>
-                            </div>
-                            <div>
-                                <span>Batch</span>
-                                <strong id="expiryItemBatch">—</strong>
-                            </div>
-                            <div>
-                                <span>Serial</span>
-                                <strong id="expiryItemSerial">—</strong>
-                            </div>
+                            <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
+                            <div><span>Identifier</span><strong id="expiryItemGTIN">—</strong></div>
+                            <div><span>Category</span><strong id="expiryItemCategory">—</strong></div>
+                            <div><span>Batch Number</span><strong id="expiryItemBatch">—</strong></div>
+                            <div><span>Serial</span><strong id="expiryItemSerial">—</strong></div>
                         </div>
                     </div>
 
-                    <div class="expiryEntryGrid">
-                        <label>
-                            <span>Quantity</span>
-                            <input
-                                id="expiryQuantity"
-                                type="number"
-                                min="1"
-                                step="1"
-                                inputmode="numeric"
-                                placeholder="Qty"
-                            >
-                        </label>
-
-                        <label>
-                            <span>Month</span>
-                            <select id="expiryMonth" aria-label="Expiry month">
-                                <option value="">Month</option>
-                            </select>
-                            <small id="expiryMonthName"></small>
-                        </label>
-
-                        <label>
-                            <span>Year</span>
-                            <select id="expiryYear" aria-label="Expiry year">
-                                <option value="">Year</option>
-                            </select>
-                        </label>
-                    </div>
-
-                    <button
-                        id="btnSaveExpiryCapture"
-                        class="expirySaveButton"
-                        type="button"
-                        disabled
-                    >
-                        SAVE &amp; NEXT
-                    </button>
-
-                    <div
-                        id="expiryLastSaved"
-                        class="expiryLastSaved"
-                        aria-live="polite"
-                    ></div>
+                    <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
                 </section>
 
                 <section class="expiryCurrentWorkspace" aria-label="Current expiry state">
@@ -1403,7 +1351,7 @@
                         <table class="expiryCurrentTable">
                             <thead><tr>
                                 <th>Item Name</th><th>Item Code</th><th>Identifier</th><th>Batch</th>
-                                <th>Expiry</th><th>Qty</th><th>Worker</th><th>Last Verified</th><th>Status</th>
+                                <th>Expiry</th><th>Qty</th><th>Operator</th><th>Last Verified</th><th>Status</th>
                             </tr></thead>
                             <tbody id="expiryCurrentStateBody"></tbody>
                         </table>
@@ -1411,7 +1359,6 @@
                     </div>
                 </section>
             </section>
-
 
             <!-- ==================================================
                  REPORTS PAGE
