@@ -110,7 +110,7 @@ function renderExpiryWorkerSelects(){
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
         select.innerHTML =
-            `<option value="">${expiryIsHandheld() ? "Select..." : "Operator (optional)"}</option>` +
+            `<option value="">${expiryIsHandheld() ? "Select..." : "Desktop"}</option>` +
             ExpiryCaptureEngine.workers.map(w =>
                 `<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`
             ).join("");
