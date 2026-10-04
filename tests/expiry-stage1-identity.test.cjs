@@ -79,21 +79,21 @@ test('Expiry is reachable from both Desktop sidebar and Handheld workspace choos
 
 
 
-test('Expiry operational workspace has one balanced desktop contract',()=>{
+
+test('Expiry operational workspace is visually dominant and has no legacy WORKER mutation',()=>{
   const html=read('index.html');
   const css=read('css/dashboard.css');
+  const js=read('js/expiry.js');
 
-  assert.match(html,/class="expiryOperatorIcon"/);
   assert.doesNotMatch(html,/for="expiryWorkerSelect">(?:WORKER|OPERATOR)<\/label>/);
   assert.match(html,/id="expiryWorkerSelect" aria-label="Operator"/);
-  assert.match(html,/class="expiryLastScanHeading"><span>LAST SCAN<\/span><\/div>/);
-  assert.match(html,/id="expiryItemName"/);
-  assert.match(html,/id="btnExpiryCaptured"/);
+  assert.doesNotMatch(js,/label\.textContent="WORKER"/);
+  assert.match(js,/<option value="">Select\.\.\.<\/option>/);
 
-  assert.match(css,/grid-template-columns:170px minmax\(380px,1fr\) 82px 118px 104px 145px!important/);
+  assert.match(css,/grid-template-columns:150px minmax\(420px,1fr\) 86px 118px 104px 145px!important/);
   assert.match(css,/grid-template-areas:"operator scan qty month year save"/);
+  assert.match(css,/\.expiryEntryGrid label>span\{display:none!important\}/);
   assert.match(css,/grid-template-areas:"heading name code identifier category batch serial recent"/);
-  assert.match(css,/\.expiryItemMeta\{display:contents!important\}/);
+  assert.match(css,/min-height:64px!important/);
   assert.doesNotMatch(css,/\/\* ---------- Near Expiry desktop ---------- \*\//);
-  assert.doesNotMatch(css,/body:not\(\.zebraDevice\) #zebraExpiryShell\{\s*max-width:980px/);
 });
