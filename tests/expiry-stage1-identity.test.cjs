@@ -149,3 +149,12 @@ test('Expiry desktop correction is inline and no browser prompt patch remains',(
   assert.match(js,/data-edit-qty/);
   assert.doesNotMatch(js,/window\.prompt\(/);
 });
+
+test('Expiry desktop paste routes barcode-like identifiers through scan resolution',()=>{
+  const js=read('js/expiry.js');
+  assert.match(js,/looksLikeExpiryIdentifier/);
+  assert.match(js,/barcode\.addEventListener\("paste"/);
+  assert.match(js,/\^\\d\{8,18\}\$/);
+  assert.match(js,/if\(looksLikeExpiryIdentifier\(value\)\) commitHardwareScan\(\)/);
+  assert.match(js,/desktopSearchTimer=setTimeout/);
+});
