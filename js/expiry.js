@@ -291,11 +291,38 @@ function clearExpiryScreen(options={}){
     },40);
 }
 
+function renderExpiryActiveItem(item,gs1={}){
+    const shell=document.getElementById("expiryActiveItem");
+    if(!shell || expiryIsHandheld()) return;
+    if(!item){shell.hidden=true;return;}
+    const name=document.getElementById("expiryActiveItemName");
+    const identity=document.getElementById("expiryActiveItemIdentity");
+    const detail=document.getElementById("expiryActiveItemGs1");
+    if(name) name.textContent=item.itemName||"Item not recognized";
+    if(identity) identity.textContent=[item.itemCode||"Needs Review",item.identifierDisplay||item.gtin||"",item.category||"Uncategorized"].filter(Boolean).join(" • ");
+    const parts=[];
+    if(gs1?.lot) parts.push("Batch "+gs1.lot);
+    if(gs1?.serial) parts.push("Serial "+gs1.serial);
+    if(gs1?.expiry) parts.push("Expiry "+gs1.expiry);
+    if(detail){detail.textContent=parts.join(" • ");detail.hidden=!parts.length;}
+    shell.hidden=false;
+}
+
+function expiryCaptureHasCompleteAutoData(){
+    if(expiryIsHandheld() || !ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.currentItem.needsReview) return false;
+    const gs1=ExpiryCaptureEngine.scannedGS1||{};
+    const quantity=Number(document.getElementById("expiryQuantity")?.value||0);
+    const month=Number(document.getElementById("expiryMonth")?.value||0);
+    const year=Number(document.getElementById("expiryYear")?.value||0);
+    return quantity===1 && !!toSafeString(gs1.expiry).trim() && month>=1 && month<=12 && year>=2020 && year<=2200;
+}
+
 function resetExpiryCaptureForm(options = {}){
     cancelExpiryScanAutoClear();
     ExpiryCaptureEngine.formDirty=false;
     ExpiryCaptureEngine.currentItem = null;
     ExpiryCaptureEngine.scannedGS1 = null;
+    renderExpiryActiveItem(null);
 
     ["expiryItemName","expiryItemCode","expiryItemGTIN","expiryItemCategory","expiryItemBatch","expiryItemSerial"].forEach(id => {
         const el = document.getElementById(id);
@@ -485,6 +512,7 @@ async function resolveExpiryScannedValue(rawValue){
         document.getElementById("expiryItemCode").textContent="Needs Review";
         document.getElementById("expiryItemGTIN").textContent=identifierDisplay;
         document.getElementById("expiryItemCategory").textContent="Pending";
+        renderExpiryActiveItem(ExpiryCaptureEngine.currentItem,parsed||{});
 
         const batch=toSafeString(parsed?.lot||"").trim();
         const serial=toSafeString(parsed?.serial||"").trim();
@@ -538,6 +566,7 @@ async function resolveExpiryScannedValue(rawValue){
     document.getElementById("expiryItemCode").textContent = ExpiryCaptureEngine.currentItem.itemCode || "—";
     document.getElementById("expiryItemGTIN").textContent = resolvedIdentifier;
     document.getElementById("expiryItemCategory").textContent = ExpiryCaptureEngine.currentItem.category || "Uncategorized";
+    renderExpiryActiveItem(ExpiryCaptureEngine.currentItem,parsed||{});
 
     const batch = toSafeString(parsed?.lot || "").trim();
     const serial = toSafeString(parsed?.serial || "").trim();
@@ -582,11 +611,17 @@ async function resolveExpiryScannedValue(rawValue){
         window.hhRepairScannerFocus?.("expiry-known-resolved");
     },40);
 
+    if(expiryCaptureHasCompleteAutoData()){
+        setExpiryStatus("success","ITEM FOUND · SAVING...");
+        await saveExpiryCapture({auto:true});
+        return true;
+    }
+
     scheduleExpiryScanAutoClear();
     return true;
 }
 
-async function saveExpiryCapture(){
+async function saveExpiryCapture(options={}){
     if(ExpiryCaptureEngine.busy) return;
 
     cancelExpiryScanAutoClear();
@@ -677,9 +712,13 @@ async function saveExpiryCapture(){
                 `<span>Qty ${quantity} • ${expiryEscapeHtml(expiryMonthName(month))} ${year} • ${expiryEscapeHtml(worker?.worker_name || "")}</span>`;
         }
 
-        setExpiryStatus("success","✓ SAVED — NEXT ITEM");
+        setExpiryStatus("success",options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
         refreshExpiryCapturedCount();
-        refreshExpiryCurrentState();
+        const savedRows=await refreshExpiryCurrentState();
+        if(Array.isArray(savedRows)){
+            const match=savedRows.find(row=>String(row.item_code||"")===String(item.itemCode||"") && Number(row.expiry_month)===month && Number(row.expiry_year)===year && String(row.batch_no||"")===String(toSafeString(gs1.lot||"")));
+            if(match){ExpiryCaptureEngine.highlightedStateId=match.state_id;renderExpiryCurrentState(savedRows);}
+        }
 
         setTimeout(()=>{
             resetExpiryCaptureForm({focus:true});
