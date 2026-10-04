@@ -4529,8 +4529,12 @@ body.zebraDevice #expiryBarcodeInput{
 /* =========================================================
    PHARMFLOW 2C.9.4 — EXPIRY CAPTURE UX
 ========================================================= */
-#zebraExpiryShell.appPage.active{
-  display:block;
+/* Expiry owns its desktop page isolation. Do not rely on stylesheet load order. */
+body:not(.zebraDevice) #zebraExpiryShell.appPage{
+  display:none !important;
+}
+body:not(.zebraDevice) #zebraExpiryShell.appPage.active{
+  display:block !important;
   width:100%;
 }
 body:not(.zebraDevice) #zebraExpiryShell{
@@ -4660,10 +4664,6 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar{
 #zebraExpiryShell{
   width:100%;
   min-width:0;
-}
-
-#zebraExpiryShell.appPage.active{
-  display:block !important;
 }
 
 .expiryCaptureCard{
