@@ -168,3 +168,13 @@ test('Expiry desktop shows compact active item and auto-saves complete GS1 only'
  assert.match(js,/currentItem\.needsReview\) return false/);
  assert.match(css,/grid-template-areas:"scan qty month year save operator" "active active active active active active"/);
 });
+
+test('Expiry desktop separates recent operational work from full current state',()=>{
+ const html=read('index.html'),js=read('js/expiry.js');
+ assert.match(html,/data-expiry-view="RECENT"/);
+ assert.match(html,/data-expiry-view="CURRENT"/);
+ assert.match(html,/<th>Item Code<\/th><th>Product Name<\/th><th>Category<\/th>/);
+ assert.match(js,/desktopView: "RECENT"/);
+ assert.match(js,/last_verified_at\|\|a\?\.updated_at/);
+ assert.match(js,/slice\(0,10\)/);
+});
