@@ -358,6 +358,53 @@ function expiryIdentifierFromScan(cleaned, parsed){
     return parsedIdentifier || raw;
 }
 
+async function expirySearchGlobalItems(query){
+    if(expiryIsHandheld() || typeof authRpc!=="function") return [];
+    const q=toSafeString(query).trim();
+    if(q.length<2) return [];
+    const rows=await authRpc("search_pharmflow_global_items_v2",{p_query:q,p_limit:8});
+    return Array.isArray(rows)?rows:[];
+}
+function closeExpirySearchResults(){
+    const box=document.getElementById("expirySearchResults");
+    if(box){box.hidden=true;box.innerHTML="";}
+    ExpiryCaptureEngine.desktopSearchRows=[];
+}
+function renderExpirySearchResults(rows){
+    const box=document.getElementById("expirySearchResults");
+    if(!box) return;
+    ExpiryCaptureEngine.desktopSearchRows=Array.isArray(rows)?rows:[];
+    if(!ExpiryCaptureEngine.desktopSearchRows.length){closeExpirySearchResults();return;}
+    box.innerHTML=ExpiryCaptureEngine.desktopSearchRows.map((row,index)=>
+        '<button type="button" data-expiry-search-index="'+index+'"><strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong><span>'+expiryEscapeHtml(row.item_code||"")+' · '+expiryEscapeHtml(row.category||row.group_name||"Uncategorized")+'</span></button>'
+    ).join("");
+    box.hidden=false;
+    box.querySelectorAll("[data-expiry-search-index]").forEach(button=>button.onclick=()=>selectExpirySearchResult(Number(button.dataset.expirySearchIndex)));
+}
+async function selectExpirySearchResult(index){
+    const row=ExpiryCaptureEngine.desktopSearchRows[index];
+    if(!row) return;
+    closeExpirySearchResults();
+    setExpiryStatus("busy","LOADING ITEM...");
+    try{
+        const identifiers=await authRpc("list_pharmflow_global_item_identifiers_v2",{p_item_code:row.item_code})||[];
+        const identifier=toSafeString(identifiers?.[0]?.identifier_display).trim();
+        if(!identifier) throw new Error("No identifier mapped");
+        ExpiryCaptureEngine.scannedGS1={identifierDisplay:identifier,gtin:identifier};
+        ExpiryCaptureEngine.currentItem={itemCode:row.item_code||"",itemName:row.item_name||"",identifierDisplay:identifier,gtin:identifier,category:row.category||row.group_name||"",identifierSource:"GLOBAL_SEARCH"};
+        const values={expiryItemName:row.item_name||"Unnamed item",expiryItemCode:row.item_code||"—",expiryItemGTIN:identifier,expiryItemCategory:row.category||row.group_name||"Uncategorized"};
+        Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
+        const qty=document.getElementById("expiryQuantity");if(qty){qty.value="1";qty.readOnly=true;qty.dataset.intentionalEdit="0";}
+        setExpiryDateMode("MANUAL");
+        document.getElementById("btnSaveExpiryCapture")?.removeAttribute("disabled");
+        const input=document.getElementById("expiryBarcodeInput");if(input)input.value="";
+        setExpiryStatus("success","ITEM FOUND · SELECT EXPIRY");
+    }catch(error){
+        console.error("Expiry manual item selection failed",error);
+        setExpiryStatus("error","ITEM HAS NO USABLE IDENTIFIER");
+    }
+}
+
 async function resolveExpiryScannedValue(rawValue){
     const cleaned = typeof cleanScannerInput === "function"
         ? cleanScannerInput(rawValue)
