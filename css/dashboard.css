@@ -7802,6 +7802,13 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar select{width:100%!impo
 body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar label,body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerCompactLabel{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanStatus{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox{grid-area:scan!important;display:flex!important;align-items:center!important;gap:9px!important;width:100%!important;min-width:0!important;height:48px!important;padding:0 12px!important;border:2px solid #4b91dc!important;border-radius:9px!important;background:#fff!important;box-sizing:border-box!important;box-shadow:0 0 0 3px rgba(75,145,220,.08)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox{height:54px!important;padding:0 14px!important;border-width:2px!important;border-radius:10px!important;box-shadow:0 0 0 3px rgba(75,145,220,.09),0 4px 12px rgba(18,55,92,.06)!important}
+body:not(.zebraDevice) #zebraExpiryShell #expiryBarcodeInput{height:46px!important;font-size:14px!important;font-weight:700!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanIcon{font-size:19px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureRow{grid-template-columns:minmax(390px,1fr) 82px 112px 96px 140px 158px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar,body:not(.zebraDevice) #zebraExpiryShell #expiryQuantity,body:not(.zebraDevice) #zebraExpiryShell #expiryMonth,body:not(.zebraDevice) #zebraExpiryShell #expiryYear,body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton{height:54px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryButton.secondary{height:34px!important;padding:0 14px!important;border:1px solid #1769d2!important;background:#fff!important;color:#1769d2!important;font-size:11px!important;font-weight:950!important;box-shadow:0 2px 7px rgba(23,105,210,.08)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryButton.secondary:hover{background:#eef6ff!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanIcon{flex:0 0 auto!important;color:#1769d2!important;font-size:17px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox{position:relative!important;overflow:visible!important;z-index:50!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults{position:absolute!important;left:-2px!important;right:-2px!important;top:52px!important;z-index:40!important;max-height:360px!important;overflow-y:auto!important;padding:8px!important;border:1px solid #b9cff2!important;border-radius:12px!important;background:#fff!important;box-shadow:0 14px 32px rgba(15,55,98,.16)!important}
