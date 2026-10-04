@@ -104,7 +104,7 @@ function renderExpiryWorkerSelects(){
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
         select.innerHTML =
-            `<option value="">Select worker...</option>` +
+            `<option value="">Select...</option>` +
             ExpiryCaptureEngine.workers.map(w =>
                 `<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`
             ).join("");
@@ -785,15 +785,8 @@ function filterExpiryCapturedRows(rows,options={}){
 
 function renderExpiryWorkerCompactState(){
     const bar=document.querySelector(".expiryWorkerBar");
-    const label=bar?.querySelector("label");
     const select=document.getElementById("expiryWorkerSelect");
-
     if(!bar || !select) return;
-
-    if(label){
-        label.textContent="WORKER";
-    }
-
     bar.dataset.selected=ExpiryCaptureEngine.selectedWorkerId ? "1" : "0";
 }
 
