@@ -7324,7 +7324,7 @@ function initializeZebraInterface(){
                     <div><strong>Receiving</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
-                <button class="zebraModeCard zebraModeExpiry" type="button" disabled aria-disabled="true" title="Coming soon">
+                <button id="btnZebraExpiryMode" class="zebraModeCard zebraModeExpiry" type="button" aria-label="Open Near Expiry">
                     <span class="zebraModeIcon" aria-hidden="true">◷</span>
                     <div><strong>Near Expiry</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
@@ -7336,6 +7336,9 @@ function initializeZebraInterface(){
 
         document.getElementById("btnZebraReceivingMode")?.addEventListener("click", async function(){
             await openUnifiedHandheldReceiving();
+        });
+        document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
+            setZebraExpiryMode();
         });
         document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
             const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
