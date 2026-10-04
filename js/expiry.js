@@ -718,6 +718,15 @@ async function saveExpiryCapture(options={}){
             p_event_type: "CAPTURE"
         });
 
+        if(typeof window.recordExpirySessionCapture==="function"){
+            window.recordExpirySessionCapture({
+                item_code:item.itemCode,item_name:item.itemName,identifier_display:item.identifierDisplay || item.gtin,
+                category:item.category || "",quantity:quantity,captured_quantity:quantity,
+                expiry_month:month,expiry_year:year,batch_no:toSafeString(gs1.lot||""),
+                sample_serial:toSafeString(gs1.serial||""),source:expiryCurrentSource()
+            });
+        }
+
         const worker = ExpiryCaptureEngine.workers.find(w => w.worker_id === workerId);
         const saved = document.getElementById("expiryLastSaved");
         if(saved){
