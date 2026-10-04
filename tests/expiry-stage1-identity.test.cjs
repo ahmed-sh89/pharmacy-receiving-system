@@ -200,3 +200,11 @@ test('Expiry desktop search dropdown is not clipped by legacy scan-box overflow'
  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell \.expiryScanBox\{position:relative!important;overflow:visible!important;z-index:50!important\}/);
  assert.match(css,/\.expirySearchResults\{position:absolute!important/);
 });
+
+test('Manual search selection renders Active Item and save feedback is strongly visible',()=>{
+ const js=read('js/expiry.js'),css=read('css/dashboard.css');
+ assert.match(js,/renderExpiryActiveItem\(ExpiryCaptureEngine\.currentItem,\{\}\)/);
+ assert.match(js,/expiryRowSavedStrong/);
+ assert.match(css,/tr\.expiryRowSavedStrong/);
+ assert.match(css,/outline:3px solid #20a35a!important/);
+});
