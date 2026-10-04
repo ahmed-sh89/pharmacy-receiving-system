@@ -317,6 +317,23 @@ function focusExpiryScanner(){
     try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
 }
 
+function expiryIdentifierFromScan(cleaned, parsed){
+    const raw=toSafeString(cleaned).trim();
+    const parsedIdentifier=toSafeString(
+        parsed?.identifierDisplay || parsed?.gtin || parsed?.raw || parsed?.original || ""
+    ).trim();
+
+    /* Exact Identifier V2 semantics:
+       - GS1 resolves by its parsed GTIN while preserving Batch/Expiry/Serial.
+       - Plain/alphanumeric identifiers remain byte-for-byte display values
+         after scanner trimming; never collapse them to numeric fragments. */
+    if(/[A-Za-z]/.test(raw) && !(typeof looksLikeStrongBarcode==="function" && looksLikeStrongBarcode(raw))){
+        return raw;
+    }
+
+    return parsedIdentifier || raw;
+}
+
 async function resolveExpiryScannedValue(rawValue){
     const cleaned = typeof cleanScannerInput === "function"
         ? cleanScannerInput(rawValue)
@@ -332,55 +349,61 @@ async function resolveExpiryScannedValue(rawValue){
 
     setExpiryStatus("busy","READING...");
 
-    let parsed = typeof parseGS1Barcode === "function"
+    const parsed = typeof parseGS1Barcode === "function"
         ? parseGS1Barcode(cleaned)
-        : {gtin: cleaned};
+        : {gtin: cleaned,identifierDisplay:cleaned};
 
-    const gtin = String(parsed?.gtin || (typeof extractLikelyGTIN === "function" ? extractLikelyGTIN(cleaned) : "") || "").replace(/\D/g,"");
+    const identifierDisplay=expiryIdentifierFromScan(cleaned,parsed);
     ExpiryCaptureEngine.scannedGS1 = parsed || null;
 
-    if(!gtin){
-        setExpiryStatus("error","GTIN NOT READ");
+    if(!identifierDisplay){
+        setExpiryStatus("error","IDENTIFIER NOT READ");
         setTimeout(()=>setExpiryStatus("ready","READY TO SCAN"),1000);
         return false;
     }
 
     let record = null;
     try{
-        const lookupPromise = typeof getMasterGTINRecordByGTIN === "function"
-            ? getMasterGTINRecordByGTIN(gtin)
-            : Promise.resolve(null);
+        if(typeof IdentifierService==="undefined" || typeof IdentifierService.resolve!=="function"){
+            throw new Error("Authoritative identifier service is unavailable");
+        }
 
         record = await Promise.race([
-            Promise.resolve(lookupPromise),
+            Promise.resolve(IdentifierService.resolve(identifierDisplay)),
             new Promise((_,reject)=>setTimeout(
-                ()=>reject(new Error("GTIN lookup timed out")),
+                ()=>reject(new Error("Identifier lookup timed out")),
                 5000
             ))
         ]);
     }catch(error){
-        console.error("Expiry GTIN lookup failed",error);
+        console.error("Expiry identifier lookup failed",error);
+
+        const input=document.getElementById("expiryBarcodeInput");
+        if(input) input.value="";
 
         if(String(error?.message || "").toLowerCase().includes("timed out")){
             setExpiryStatus("error","LOOKUP TIMEOUT — SCAN AGAIN");
-
-            const input = document.getElementById("expiryBarcodeInput");
-            if(input) input.value = "";
-
-            setTimeout(()=>{
-                setExpiryStatus("ready","READY TO SCAN");
-                focusExpiryScanner();
-            },1200);
-
-            return false;
+        }else{
+            setExpiryStatus("error","LOOKUP FAILED — SCAN AGAIN");
         }
+
+        setTimeout(()=>{
+            setExpiryStatus("ready","READY TO SCAN");
+            focusExpiryScanner();
+        },1200);
+
+        return false;
     }
 
-    if(!record){
+    const found=record?.found===true;
+    const resolvedIdentifier=toSafeString(record?.identifierDisplay||identifierDisplay).trim()||identifierDisplay;
+
+    if(!found){
         ExpiryCaptureEngine.currentItem={
             itemCode:"",
             itemName:"Item not recognized",
-            gtin,
+            identifierDisplay,
+            gtin:identifierDisplay,
             category:"",
             needsReview:true,
             rawBarcode:cleaned
@@ -388,7 +411,7 @@ async function resolveExpiryScannedValue(rawValue){
 
         document.getElementById("expiryItemName").textContent="Item not recognized";
         document.getElementById("expiryItemCode").textContent="Needs Review";
-        document.getElementById("expiryItemGTIN").textContent=gtin;
+        document.getElementById("expiryItemGTIN").textContent=identifierDisplay;
         document.getElementById("expiryItemCategory").textContent="Pending";
 
         const batch=toSafeString(parsed?.lot||"").trim();
@@ -420,7 +443,6 @@ async function resolveExpiryScannedValue(rawValue){
         document.getElementById("btnSaveExpiryCapture").disabled=false;
         setExpiryStatus("action","SAVE FOR REVIEW");
 
-        /* No automatic soft keyboard. Worker taps Qty only if adjustment is needed. */
         try{ document.activeElement?.blur?.(); }catch(_){}
         setTimeout(()=>{
             focusExpiryScanner();
@@ -428,20 +450,21 @@ async function resolveExpiryScannedValue(rawValue){
         },40);
 
         scheduleExpiryScanAutoClear();
-
         return true;
     }
 
     ExpiryCaptureEngine.currentItem = {
         itemCode: record.itemCode || "",
-        itemName: record.itemName || "",
-        gtin,
-        category: record.category || ""
+        itemName: record.itemName || record.name || "",
+        identifierDisplay:resolvedIdentifier,
+        gtin:resolvedIdentifier,
+        category: record.category || "",
+        identifierSource:record.source||""
     };
 
     document.getElementById("expiryItemName").textContent = ExpiryCaptureEngine.currentItem.itemName || "Unnamed item";
     document.getElementById("expiryItemCode").textContent = ExpiryCaptureEngine.currentItem.itemCode || "—";
-    document.getElementById("expiryItemGTIN").textContent = gtin;
+    document.getElementById("expiryItemGTIN").textContent = resolvedIdentifier;
     document.getElementById("expiryItemCategory").textContent = ExpiryCaptureEngine.currentItem.category || "Uncategorized";
 
     const batch = toSafeString(parsed?.lot || "").trim();
@@ -451,18 +474,14 @@ async function resolveExpiryScannedValue(rawValue){
     if(batchEl) batchEl.textContent=batch || "—";
     if(serialEl) serialEl.textContent=serial || "—";
 
-    /* GS1 AI 17 is authoritative for the scanned representative pack.
-       The worker still enters the total quantity for this Batch/Expiry group. */
     const autoExpiry=toSafeString(parsed?.expiry || "");
     const m=autoExpiry.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
     if(m){
         const month=document.getElementById("expiryMonth");
         const year=document.getElementById("expiryYear");
-
         if(month) month.value=String(Number(m[2]));
         if(year) year.value=String(Number(m[1]));
-
         setExpiryDateMode("AUTO");
     }else{
         setExpiryDateMode("MANUAL");
@@ -485,9 +504,6 @@ async function resolveExpiryScannedValue(rawValue){
     const input = document.getElementById("expiryBarcodeInput");
     if(input) input.value = "";
 
-    /* Keep Handheld simple and stable: do not summon the keypad automatically.
-       For full GS1 the worker only taps Qty if total > 1, then Save.
-       For GTIN-only the worker chooses Month + Year from dropdowns. */
     try{ document.activeElement?.blur?.(); }catch(_){}
     setTimeout(()=>{
         focusExpiryScanner();
@@ -495,7 +511,6 @@ async function resolveExpiryScannedValue(rawValue){
     },40);
 
     scheduleExpiryScanAutoClear();
-
     return true;
 }
 
