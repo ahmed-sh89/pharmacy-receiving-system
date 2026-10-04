@@ -234,3 +234,16 @@ test('Expiry inline edit exposes both Save and visible Cancel actions',()=>{
   assert.match(controller,/data-session-save>Save<\/button><button type="button" class="expiryRowAction" data-session-cancel>Cancel<\/button>/);
   assert.match(css,/\[data-session-cancel\][\s\S]*?color:#244c73!important/);
 });
+
+
+test('Expiry Desktop uses explicit Desktop fallback operator while preserving Handheld selection',()=>{
+ const html=read('index.html'),js=read('js/expiry.js');
+ assert.match(html,/<option value="">Desktop<\/option>/);
+ assert.match(js,/expiryIsHandheld\(\) \? "Select\.\.\." : "Desktop"/);
+ assert.match(js,/if\(expiryIsHandheld\(\) && !workerId\)/);
+});
+test('Expiry edit action column has room for Save and Cancel in both desktop views',()=>{
+ const css=read('css/dashboard.css');
+ assert.match(css,/th:nth-child\(9\)\{width:12%!important;text-align:right!important\}/);
+ assert.match(css,/\.expiryActionsCell\{text-align:right!important;white-space:nowrap!important;min-width:124px!important\}/);
+});
