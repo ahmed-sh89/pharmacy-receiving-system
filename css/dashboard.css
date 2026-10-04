@@ -7837,6 +7837,11 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryActionsCell{text-align:right!imp
 body:not(.zebraDevice) #zebraExpiryShell .expiryRowAction{min-width:42px!important;height:27px!important;margin-left:4px!important;padding:0 8px!important;border:1px solid #b8cde3!important;border-radius:6px!important;background:#fff!important;color:#24517e!important;font-size:9px!important;font-weight:900!important;cursor:pointer!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryRowAction:hover{border-color:#7aa7d6!important;background:#eef6ff!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryRowAction.danger{border-color:#edc4c8!important;color:#b42335!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCategoryChip{display:inline-flex!important;align-items:center!important;max-width:100%!important;min-height:23px!important;padding:0 8px!important;border-radius:999px!important;background:#eef5fc!important;color:#315f8f!important;font-size:9px!important;font-weight:850!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable tr.expiryRowUpdated{background:#ecfdf3!important;box-shadow:inset 3px 0 #22a05a!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox[data-feedback="success"]{border-color:#3ba76a!important;background:#f1fbf5!important;box-shadow:0 0 0 3px rgba(59,167,106,.10)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox[data-feedback="error"]{border-color:#d95a66!important;background:#fff5f6!important;box-shadow:0 0 0 3px rgba(217,90,102,.08)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryScanBox[data-feedback="action"]{border-color:#d6a13c!important;background:#fffaf0!important;box-shadow:0 0 0 3px rgba(214,161,60,.08)!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentEmpty{padding:28px!important;text-align:center!important;color:#7b8796!important;font-size:11px!important}
 body.zebraDevice .expiryKpiRow,body.zebraDevice .expiryCurrentWorkspace{display:none!important}
 @media (min-width:769px) and (max-width:1180px){body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureRow{grid-template-columns:minmax(260px,1fr) 70px 96px 88px 120px 140px!important}}
