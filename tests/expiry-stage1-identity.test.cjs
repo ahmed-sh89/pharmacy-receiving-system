@@ -33,3 +33,32 @@ test('Expiry unknown identifiers preserve exact value for review instead of nume
   assert.match(expiry,/rawBarcode:cleaned/);
   assert.match(expiry,/expiryItemGTIN"\)\.textContent=identifierDisplay/);
 });
+
+test('Expiry known-item save writes current verified state and immutable event through Stage 1 RPC',()=>{
+  const expiry=read('js/expiry.js');
+  assert.match(expiry,/save_pharmacy_expiry_verified_state_v1/);
+  assert.match(expiry,/p_identifier_display: item\.identifierDisplay \|\| item\.gtin/);
+  assert.match(expiry,/p_event_type: "CAPTURE"/);
+  assert.doesNotMatch(expiry,/authRpc\("save_pharmacy_expiry_capture_smart"/);
+});
+
+test('Desktop exposes Current Expiry List while Handheld keeps it out of the shelf workflow',()=>{
+  const html=read('index.html');
+  const css=read('css/dashboard.css');
+  assert.match(html,/id="expiryCurrentStateBody"/);
+  assert.match(html,/Current Expiry List/);
+  assert.match(html,/>Identifier</);
+  assert.match(css,/body\.zebraDevice \.expiryCurrentWorkspace\{display:none!important\}/);
+});
+
+test('Expiry Stage 1 schema is additive, tenant scoped and preserves immutable events',()=>{
+  const sql=read('PHASE2C1176_EXPIRY_STAGE1_CURRENT_STATE.sql');
+  assert.match(sql,/create table if not exists public\.pharmflow_expiry_current_state_v1/);
+  assert.match(sql,/create table if not exists public\.pharmflow_expiry_events_v1/);
+  assert.match(sql,/enable row level security/);
+  assert.match(sql,/is_pharmacy_member\(pharmacy_id\)/);
+  assert.match(sql,/save_pharmacy_expiry_verified_state_v1/);
+  assert.match(sql,/event_type in \('CAPTURE','RECOUNT','CLEARED'\)/);
+  assert.doesNotMatch(sql,/drop table/i);
+  assert.doesNotMatch(sql,/truncate/i);
+});
