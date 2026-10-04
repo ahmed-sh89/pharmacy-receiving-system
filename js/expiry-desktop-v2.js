@@ -12,7 +12,7 @@
     const set=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e);};
     set("expiryWorkspaceTitle",e=>e.textContent=inventory?"Expiry Inventory":"Session Activity");
     set("expiryWorkspaceSubtitle",e=>e.textContent=inventory?"All active verified expiry records":"Live captures from this Expiry session");
-    set("btnExpiryInventoryView",e=>e.hidden=inventory);set("btnExpirySessionView",e=>e.hidden=!inventory);
+    set("btnExpirySessionView",e=>e.hidden=!inventory);
     set("expiryCategoryFilter",e=>e.hidden=!inventory);set("expiryCurrentSearch",e=>e.hidden=!inventory);
     set("expiryQuantityHeading",e=>e.textContent=inventory?"Current Qty":"Count");set("expiryTimeHeading",e=>e.textContent=inventory?"Last Updated":"Time");
   };
@@ -30,9 +30,23 @@
       '<td>'+esc(r.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(r.expiry_month))+' '+esc(r.expiry_year)+'</td>'+
       '<td class="expiryQtyCell expiryActivityQty">+'+esc(r.quantity||r.captured_quantity||0)+'</td>'+
       '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</td>'+
-      '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-expiry-manage="'+esc(cur.state_id||"")+'">Manage</button>':'<span class="expiryActivityResolved">Recorded</span>')+'</td></tr>';}).join("");
-    body.querySelectorAll("[data-expiry-manage]").forEach(b=>b.onclick=()=>{ExpiryCaptureEngine.desktopView="INVENTORY";ExpiryCaptureEngine.editingStateId=b.dataset.expiryManage;updateExpiryWorkspaceMode();renderInventory(ExpiryCaptureEngine.currentRows);});
+      '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-expiry-session-edit="'+esc(cur.state_id||"")+'">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-session-delete="'+esc(cur.state_id||"")+'">Delete</button>':'<span class="expiryActivityResolved">Recorded</span>')+'</td></tr>';}).join("");
+    body.querySelectorAll("[data-expiry-session-edit]").forEach(b=>b.onclick=()=>{const row=currentFor(visible.find(x=>currentFor(x)?.state_id===b.dataset.expirySessionEdit));if(!row)return;ExpiryCaptureEngine.editingStateId=row.state_id;renderSessionEditor(row);});
+    body.querySelectorAll("[data-expiry-session-delete]").forEach(b=>b.onclick=async()=>{const row=expiryCurrentRowById(b.dataset.expirySessionDelete);if(!row)return;if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected&&b.dataset.confirm==="1"){b.dataset.confirm="";b.textContent="Delete";}},3000);return;}b.disabled=true;try{await clearExpiryCurrentState(row);ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).filter(x=>currentFor(x)?.state_id!==row.state_id);setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");await refreshExpiryCurrentState();}catch(e){console.error("Expiry session delete failed",e);setExpiryStatus("error","DELETE FAILED");b.disabled=false;}});
   };
+  function renderSessionEditor(row){
+    const body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty");
+    if(empty)empty.hidden=true;if(!body)return;
+    body.innerHTML='<tr class="expiryRowEditing" data-expiry-state-id="'+esc(row.state_id||"")+'">'+
+      '<td class="expiryGtinCell">'+esc(row.identifier_display||"—")+'</td><td class="expiryCodeCell"><strong>'+esc(row.item_code||"—")+'</strong></td>'+
+      '<td class="expiryProductCell"><strong>'+esc(row.item_name||"")+'</strong></td><td><span class="expiryCategoryChip">'+esc(row.category||"Uncategorized")+'</span></td>'+
+      '<td><input class="expiryInlineInput" data-edit-batch value="'+esc(row.batch_no||"")+'" placeholder="Batch"></td>'+
+      '<td><div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="'+(Number(row.expiry_month)||"")+'"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="'+(Number(row.expiry_year)||"")+'"></div></td>'+
+      '<td class="expiryQtyCell"><input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" value="'+(Number(row.verified_quantity)||1)+'"></td><td class="expiryTimeCell">'+esc(expiryFormatVerifiedAt(row.last_verified_at||row.updated_at))+'</td>'+
+      '<td class="expiryActionsCell"><button type="button" class="expiryRowAction primary" data-session-save>Save</button><button type="button" class="expiryRowAction" data-session-cancel>Cancel</button></td></tr>';
+    body.querySelector("[data-session-cancel]").onclick=()=>{ExpiryCaptureEngine.editingStateId="";renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows||[]);};
+    body.querySelector("[data-session-save]").onclick=async e=>{const tr=e.currentTarget.closest("tr"),values={quantity:Number(tr.querySelector("[data-edit-qty]").value||0),month:Number(tr.querySelector("[data-edit-month]").value||0),year:Number(tr.querySelector("[data-edit-year]").value||0),batch:String(tr.querySelector("[data-edit-batch]").value||"").trim()};if(!Number.isInteger(values.quantity)||values.quantity<=0||values.month<1||values.month>12||values.year<2020||values.year>2200){setExpiryStatus("error","CHECK QUANTITY AND EXPIRY");return;}e.currentTarget.disabled=true;try{await saveExpiryCurrentCorrection(row,values);ExpiryCaptureEngine.editingStateId="";setExpiryStatus("success","UPDATED · TOTAL "+values.quantity);await refreshExpiryCurrentState();}catch(err){console.error("Expiry session correction failed",err);setExpiryStatus("error","UPDATE FAILED");e.currentTarget.disabled=false;}};
+  }
   function renderInventory(rows){
     const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);expiryPopulateCategoryFilter(safe);
     const visible=expiryFilteredCurrentRows(safe),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expiryCurrentStateCount");
@@ -75,7 +89,7 @@
   const originalBind=window.bindExpiryCaptureUI;
   window.bindExpiryCaptureUI=function(){
     originalBind();
-    const inv=document.getElementById("btnExpiryInventoryView"),back=document.getElementById("btnExpirySessionView"),clear=document.getElementById("btnClearExpiryActive");
+    const inv=document.getElementById("expiryKpiInventory"),back=document.getElementById("btnExpirySessionView"),clear=document.getElementById("btnClearExpiryActive");
     if(inv&&inv.dataset.v2!=="1"){inv.dataset.v2="1";inv.onclick=()=>{ExpiryCaptureEngine.desktopView="INVENTORY";ExpiryCaptureEngine.editingStateId="";updateExpiryWorkspaceMode();refreshExpiryCurrentState();};}
     if(back&&back.dataset.v2!=="1"){back.dataset.v2="1";back.onclick=()=>{ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";updateExpiryWorkspaceMode();refreshExpiryCurrentState();};}
     if(clear&&clear.dataset.v2!=="1"){clear.dataset.v2="1";clear.onclick=()=>resetExpiryCaptureForm({focus:true});}
