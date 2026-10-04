@@ -75,3 +75,14 @@ test('Expiry is reachable from both Desktop sidebar and Handheld workspace choos
   assert.match(ui,/setZebraExpiryMode\(\)/);
   assert.doesNotMatch(ui,/zebraModeExpiry" type="button" disabled/);
 });
+
+test('Expiry desktop refinement maximizes workspace without changing Handheld layout',()=>{
+  const css=read('css/dashboard.css');
+  assert.match(css,/EXPIRY STAGE 1 — BUILD 1 \/ DESKTOP SPACE UTILIZATION/);
+  assert.match(css,/@media \(min-width:1101px\)/);
+  assert.match(css,/grid-template-columns:150px minmax\(250px,.9fr\) minmax\(420px,1.45fr\) minmax\(330px,1.05fr\)/);
+  assert.match(css,/\.expiryCurrentWorkspace\{[\s\S]*?flex:1 1 auto!important/);
+  assert.match(css,/\.expiryCurrentTableWrap\{[\s\S]*?max-height:calc\(100vh - 365px\)!important/);
+  assert.match(css,/\.expiryCapturedPanel\{[\s\S]*?width:min\(560px,44vw\)!important/);
+  assert.match(css,/\.expirySaveButton\{[\s\S]*?background:#1769c2!important/);
+});
