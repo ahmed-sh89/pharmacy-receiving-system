@@ -1269,7 +1269,7 @@
                 class="appPage zebraExpiryShell"
             >
                 <div class="expiryKpiRow" aria-label="Expiry summary">
-                    <article class="expiryKpiCard expiryKpiActive expiryKpiInteractive" id="expiryKpiInventory" role="button" tabindex="0" aria-label="Open Expiry Inventory">
+                    <article class="expiryKpiCard expiryKpiActive">
                         <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
                     </article>
                     <article class="expiryKpiCard expiryKpiUnits">
@@ -1282,7 +1282,7 @@
                         <span>Upcoming</span><strong id="expiryKpiUpcoming">0</strong><small>Future expiry</small>
                     </article>
                 </div>
-                <section class="expiryCaptureCard">
+                <div class="expiryDashboardActions"><button id="btnOpenExpiryInventory" class="expiryOpenInventoryButton" type="button">View Expiry Inventory</button></div>\n                <section class="expiryCaptureCard">
                     <div class="expiryCaptureRow">
                         <div class="expiryWorkerBar" title="Operator is optional on Desktop">
                             <span class="expiryOperatorIcon" aria-hidden="true">👤</span>
@@ -1356,7 +1356,7 @@
                         </div>
                         <div class="expiryCurrentTools">
                             
-                            <button id="btnExpirySessionView" class="expiryInventoryButton secondary" type="button" hidden>Back to Session</button>
+                            <button id="btnExpirySessionView" class="expiryInventoryButton secondary" type="button" hidden>← Back to Expiry</button>
                             <select id="expiryCategoryFilter" aria-label="Filter by category" hidden><option value="">All Categories</option></select>
                             <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search item, code, GTIN or batch" hidden>
                         </div>
