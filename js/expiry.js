@@ -695,32 +695,55 @@ function renderExpiryKpis(rows){
     });
 }
 
+function expiryPopulateCategoryFilter(rows){
+    const select=document.getElementById("expiryCategoryFilter");
+    if(!select) return;
+    const current=select.value||"";
+    const categories=[...new Set((rows||[]).map(row=>toSafeString(row?.category).trim()).filter(Boolean))]
+        .sort((a,b)=>a.localeCompare(b));
+    select.innerHTML='<option value="">All Categories</option>'+
+        categories.map(category=>`<option value="${expiryEscapeHtml(category)}">${expiryEscapeHtml(category)}</option>`).join("");
+    if(categories.includes(current)) select.value=current;
+}
+
+function expiryFilteredCurrentRows(rows){
+    const category=toSafeString(document.getElementById("expiryCategoryFilter")?.value).trim();
+    return category ? (rows||[]).filter(row=>toSafeString(row?.category).trim()===category) : (rows||[]);
+}
+
 function renderExpiryCurrentState(rows){
-    renderExpiryKpis(rows);
+    const safeRows=Array.isArray(rows)?rows:[];
+    renderExpiryKpis(safeRows);
+    expiryPopulateCategoryFilter(safeRows);
+    const visibleRows=expiryFilteredCurrentRows(safeRows);
     const body=document.getElementById("expiryCurrentStateBody");
     const empty=document.getElementById("expiryCurrentStateEmpty");
     const count=document.getElementById("expiryCurrentStateCount");
-    if(count) count.textContent=String(rows.length);
+    if(count) count.textContent=String(visibleRows.length);
     if(!body) return;
 
-    if(!rows.length){
+    if(!visibleRows.length){
         body.innerHTML="";
         if(empty) empty.hidden=false;
         return;
     }
     if(empty) empty.hidden=true;
 
-    body.innerHTML=rows.map(row=>`
-        <tr>
-            <td><strong>${expiryEscapeHtml(row.item_name||"")}</strong></td>
-            <td>${expiryEscapeHtml(row.item_code||"")}</td>
-            <td class="expiryIdentifierCell">${expiryEscapeHtml(row.identifier_display||"")}</td>
+    body.innerHTML=visibleRows.map(row=>`
+        <tr data-expiry-state-id="${expiryEscapeHtml(row.state_id||"")}">
+            <td class="expiryProductCell">
+                <strong>${expiryEscapeHtml(row.item_name||"")}</strong>
+                <span>${expiryEscapeHtml(row.item_code||"")} · ${expiryEscapeHtml(row.identifier_display||"")}</span>
+            </td>
+            <td>${expiryEscapeHtml(row.category||"Uncategorized")}</td>
             <td>${expiryEscapeHtml(row.batch_no||"—")}</td>
             <td>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${expiryEscapeHtml(row.expiry_year)}</td>
             <td class="expiryQtyCell">${expiryEscapeHtml(row.verified_quantity)}</td>
-            <td>${expiryEscapeHtml(row.verified_by_name||"")}</td>
-            <td>${expiryEscapeHtml(expiryFormatVerifiedAt(row.last_verified_at))}</td>
-            <td><span class="expiryStateBadge">${expiryEscapeHtml(row.status||"ACTIVE")}</span></td>
+            <td>${expiryEscapeHtml(row.verified_by_name||"Account user")}</td>
+            <td class="expiryActionsCell">
+                <button type="button" class="expiryRowAction" data-expiry-edit="${expiryEscapeHtml(row.state_id||"")}">Edit</button>
+                <button type="button" class="expiryRowAction danger" data-expiry-clear="${expiryEscapeHtml(row.state_id||"")}">Delete</button>
+            </td>
         </tr>
     `).join("");
 }
@@ -1299,6 +1322,12 @@ function bindExpiryCaptureUI(){
     if(clearButton && clearButton.dataset.bound!=="1"){
         clearButton.dataset.bound="1";
         clearButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
+    }
+
+    const categoryFilter=document.getElementById("expiryCategoryFilter");
+    if(categoryFilter && categoryFilter.dataset.bound!=="1"){
+        categoryFilter.dataset.bound="1";
+        categoryFilter.addEventListener("change",()=>refreshExpiryCurrentState());
     }
 
     const currentSearch=document.getElementById("expiryCurrentSearch");
