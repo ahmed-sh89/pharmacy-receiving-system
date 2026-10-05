@@ -7946,3 +7946,49 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentEmpty span{font-size:11px
 
 body.zebraDevice .expiryKpiRow,body.zebraDevice .expiryCurrentWorkspace{display:none!important}
 @media (min-width:769px) and (max-width:1180px){body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureRow{grid-template-columns:minmax(260px,1fr) 70px 96px 88px 120px 140px!important}}
+
+
+/* =========================================================
+   EXPIRY DESKTOP POLISH — unified hierarchy + full product name
+   Scope: desktop Expiry only. Handheld and other modules unchanged.
+   ========================================================= */
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(1){width:9%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(2){width:7%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(3){width:37%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(4){width:6%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(5){width:5%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(6){width:6%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(7){width:5%!important;text-align:center!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(8){width:5%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(9){width:6%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(10){width:14%!important;text-align:right!important}
+
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable td{height:auto!important;min-height:40px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryProductCell{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryProductCell strong{
+  display:block!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  font-size:13px!important;
+  line-height:1.18!important;
+  font-weight:800!important;
+}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCategoryChip{padding:0 6px!important;font-size:9px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryOperatorCell{font-size:11px!important;font-weight:700!important}
+
+/* Keep controls visually consistent; data emphasis belongs to Qty/Expiry, not random buttons. */
+body:not(.zebraDevice) #zebraExpiryShell button,
+body:not(.zebraDevice) #zebraExpiryShell .expiryRowAction,
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryButton,
+body:not(.zebraDevice) #zebraExpiryShell .expiryOpenInventoryButton,
+body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton,
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveClear{
+  font-weight:700!important;
+}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkerBar select,
+body:not(.zebraDevice) #zebraExpiryShell #expiryMonth,
+body:not(.zebraDevice) #zebraExpiryShell #expiryYear{font-weight:700!important}
+body:not(.zebraDevice) #zebraExpiryShell #expiryQuantity,
+body:not(.zebraDevice) #zebraExpiryShell .expiryQtyCell{font-weight:900!important}
