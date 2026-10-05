@@ -1585,7 +1585,7 @@ function bindExpiryCaptureUI(){
         clearTopButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
     }
 
-    const clearButton=document.getElementById("btnClearExpiryScreen");
+    const clearButton=document.getElementById("btnClearExpiryActive");
     if(clearButton && clearButton.dataset.bound!=="1"){
         clearButton.dataset.bound="1";
         clearButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
