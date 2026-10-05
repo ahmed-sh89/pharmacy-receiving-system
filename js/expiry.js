@@ -679,8 +679,8 @@ async function resolveExpiryScannedValue(rawValue){
     if(m){
         const month=document.getElementById("expiryMonth");
         const year=document.getElementById("expiryYear");
-        if(month) month.value=String(Number(m[2]));
-        if(year) year.value=String(Number(m[1]));
+        if(month) setExpiryControlValue(month,String(Number(m[2])),true);
+        if(year) setExpiryControlValue(year,String(Number(m[1])),true);
         setExpiryDateMode("AUTO");
     }else{
         setExpiryDateMode("MANUAL");
@@ -1481,6 +1481,7 @@ function bindExpiryCaptureUI(){
             closeExpirySearchResults();
             const value=String(barcode.value||"").trim();
             if(!value || value===ExpiryCaptureEngine.lastResolvedRaw) return;
+            closeExpirySearchResults();
             ExpiryCaptureEngine.lastResolvedRaw=value;
             barcode.value="";
             Promise.resolve(resolveExpiryScannedValue(value)).finally(()=>setTimeout(()=>{ExpiryCaptureEngine.lastResolvedRaw="";},250));
@@ -1498,14 +1499,15 @@ function bindExpiryCaptureUI(){
             return /^\d{8,18}$/.test(raw);
         };
 
+        /* Desktop paste is intentionally NOT committed on the paste event.
+           Paste + Enter follows the exact same authoritative scan path as a
+           hardware Enter suffix. This prevents the paste timer and Enter from
+           racing each other and leaving a stale "Item not found" search panel. */
         barcode.addEventListener("paste",()=>{
             if(expiryIsHandheld()) return;
             clearTimeout(ExpiryCaptureEngine.scanTimer);
             clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
-            setTimeout(()=>{
-                const value=String(barcode.value||"").trim();
-                if(looksLikeExpiryIdentifier(value)) commitHardwareScan();
-            },0);
+            closeExpirySearchResults();
         });
 
         barcode.addEventListener("input",()=>{
