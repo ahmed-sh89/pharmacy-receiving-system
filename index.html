@@ -1287,9 +1287,10 @@
                     <div class="expiryCaptureRow">
                         <div class="expiryWorkerBar" title="Operator is optional on Desktop">
                             <span class="expiryOperatorIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.5 19c.7-3.6 3-5.5 6.5-5.5s5.8 1.9 6.5 5.5"></path></svg></span>
-                            <select id="expiryWorkerSelect" aria-label="Operator">
-                                <option value="">Desktop</option>
-                            </select>
+                            <div id="expiryWorkerSelect" class="expiryCustomSelect" data-expiry-select="worker" data-value="" tabindex="0" role="combobox" aria-label="Operator" aria-expanded="false">
+                                <button type="button" class="expiryCustomSelectButton" tabindex="-1"><span class="expiryCustomSelectValue">Desktop</span><span class="expiryCustomChevron" aria-hidden="true">⌄</span></button>
+                                <div class="expiryCustomMenu" role="listbox" hidden></div>
+                            </div>
                         </div>
 
                         <div class="expiryScanBox">
@@ -1314,11 +1315,17 @@
                                 <input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" placeholder="Qty">
                             </label>
                             <label class="expiryField">
-                                <select id="expiryMonth" aria-label="Expiry month"><option value="">Month</option></select>
+                                <div id="expiryMonth" class="expiryCustomSelect" data-expiry-select="month" data-value="" tabindex="0" role="combobox" aria-label="Expiry month" aria-expanded="false">
+                                    <button type="button" class="expiryCustomSelectButton" tabindex="-1"><span class="expiryCustomSelectValue">Month</span><span class="expiryCustomChevron" aria-hidden="true">⌄</span></button>
+                                    <div class="expiryCustomMenu" role="listbox" hidden></div>
+                                </div>
                                 <small id="expiryMonthName"></small>
                             </label>
                             <label class="expiryField">
-                                <select id="expiryYear" aria-label="Expiry year"><option value="">Year</option></select>
+                                <div id="expiryYear" class="expiryCustomSelect" data-expiry-select="year" data-value="" tabindex="0" role="combobox" aria-label="Expiry year" aria-expanded="false">
+                                    <button type="button" class="expiryCustomSelectButton" tabindex="-1"><span class="expiryCustomSelectValue">Year</span><span class="expiryCustomChevron" aria-hidden="true">⌄</span></button>
+                                    <div class="expiryCustomMenu" role="listbox" hidden></div>
+                                </div>
                             </label>
                         </div>
 
