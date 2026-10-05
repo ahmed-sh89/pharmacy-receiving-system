@@ -909,6 +909,7 @@ async function clearExpiryCurrentState(row){
         p_worker_id:ExpiryCaptureEngine.selectedWorkerId||null,p_batch_no:row.batch_no||"",p_sample_serial:row.sample_serial||"",
         p_device_id:(typeof ensureDeviceId==="function"?ensureDeviceId():""),p_source:"PC",p_event_type:"CLEARED"
     });
+    if(typeof window.markExpirySessionStateDeleted==="function")window.markExpirySessionStateDeleted(row.state_id);
 }
 function bindExpiryCurrentRowActions(){
     const body=document.getElementById("expiryCurrentStateBody");if(!body)return;
