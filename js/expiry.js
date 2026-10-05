@@ -59,7 +59,7 @@ function expiryControlValue(el){
 }
 function expirySelectPlaceholder(el){
     const type=el?.dataset?.expirySelect;
-    return type==="month" ? "Month" : type==="year" ? "Year" : "Desktop";
+    return type==="month" ? "Month" : type==="year" ? "Year" : type==="category" ? "All Categories" : "Desktop";
 }
 function setExpiryControlValue(el,value,emit=false){
     if(!el) return;
@@ -921,14 +921,20 @@ function renderExpiryKpis(rows){
 function expiryPopulateCategoryFilter(rows){
     const select=document.getElementById("expiryCategoryFilter");
     if(!select) return;
-    const current=select.value||"";
+    const current=expiryControlValue(select);
     const categories=[...new Set((rows||[]).map(row=>toSafeString(row?.category).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-    select.innerHTML='<option value="">All Categories</option>'+categories.map(category=>`<option value="${expiryEscapeHtml(category)}">${expiryEscapeHtml(category)}</option>`).join("");
-    if(categories.includes(current)) select.value=current;
+    if(select.dataset?.expirySelect){
+        buildExpirySelectOptions(select,[{value:"",label:"All Categories"},...categories.map(category=>({value:category,label:category}))]);
+        setExpiryControlValue(select,categories.includes(current)?current:"");
+        initExpirySelects();
+    }else{
+        select.innerHTML='<option value="">All Categories</option>'+categories.map(category=>`<option value="${expiryEscapeHtml(category)}">${expiryEscapeHtml(category)}</option>`).join("");
+        if(categories.includes(current)) select.value=current;
+    }
 }
 
 function expiryFilteredCurrentRows(rows){
-    const category=toSafeString(document.getElementById("expiryCategoryFilter")?.value).trim();
+    const category=toSafeString(expiryControlValue(document.getElementById("expiryCategoryFilter"))).trim();
     return category ? (rows||[]).filter(row=>toSafeString(row?.category).trim()===category) : (rows||[]);
 }
 
