@@ -391,7 +391,7 @@ async function expirySearchGlobalItems(query){
     if(expiryIsHandheld() || typeof authRpc!=="function") return [];
     const q=toSafeString(query).trim();
     if(q.length<2) return [];
-    const response=await authRpc("search_pharmflow_global_items_v2",{p_query:q,p_limit:8});
+    const response=await authRpc("search_pharmflow_global_items_v3",{p_query:q,p_limit:8});
     const rows=Array.isArray(response)
         ? response
         : (Array.isArray(response?.data) ? response.data : []);
@@ -411,7 +411,7 @@ function renderExpirySearchResults(rows){
         '<button type="button" class="smartSearchResult expirySearchResult" data-expiry-search-index="'+index+'">'+
             '<div class="smartSearchResultMain expirySearchResultMain">'+
                 '<strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong>'+
-                '<span>Item Code: <b>'+expiryEscapeHtml(row.item_code||"—")+'</b></span>'+
+                '<span>GTIN: <b>'+expiryEscapeHtml(row.identifier_display||"—")+'</b></span>'+
             '</div>'+
             '<div class="expirySearchResultMeta">'+
                 '<strong>'+expiryEscapeHtml(row.item_code||"—")+'</strong>'+
@@ -724,7 +724,8 @@ async function saveExpiryCapture(options={}){
                 category:item.category || "",quantity:quantity,captured_quantity:quantity,
                 expiry_month:month,expiry_year:year,batch_no:toSafeString(gs1.lot||""),
                 sample_serial:toSafeString(gs1.serial||""),source:expiryCurrentSource(),
-                state_id:Array.isArray(saveResult)?saveResult[0]?.state_id:saveResult?.state_id
+                state_id:Array.isArray(saveResult)?saveResult[0]?.state_id:saveResult?.state_id,
+                operator_name:(Array.isArray(saveResult)?saveResult[0]?.verified_by_name:saveResult?.verified_by_name) || (ExpiryCaptureEngine.workers.find(w=>w.worker_id===workerId)?.worker_name) || "Desktop"
             });
         }
 
