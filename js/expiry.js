@@ -407,18 +407,19 @@ function renderExpirySearchResults(rows){
     if(!box) return;
     ExpiryCaptureEngine.desktopSearchRows=Array.isArray(rows)?rows:[];
     if(!ExpiryCaptureEngine.desktopSearchRows.length){closeExpirySearchResults();return;}
-    box.innerHTML=ExpiryCaptureEngine.desktopSearchRows.map((row,index)=>
-        '<button type="button" class="smartSearchResult expirySearchResult" data-expiry-search-index="'+index+'">'+
+    box.innerHTML=ExpiryCaptureEngine.desktopSearchRows.map((row,index)=>{
+        const identifier=toSafeString(row.identifier_display).trim();
+        return '<button type="button" class="smartSearchResult expirySearchResult" data-expiry-search-index="'+index+'">'+
             '<div class="smartSearchResultMain expirySearchResultMain">'+
                 '<strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong>'+
-                '<span>GTIN: <b>'+expiryEscapeHtml(row.identifier_display||"—")+'</b></span>'+
+                (identifier?'<span>GTIN / Barcode: <b>'+expiryEscapeHtml(identifier)+'</b></span>':'')+
             '</div>'+
             '<div class="expirySearchResultMeta">'+
                 '<strong>'+expiryEscapeHtml(row.item_code||"—")+'</strong>'+
                 '<span>'+expiryEscapeHtml(row.category||row.group_name||"Uncategorized")+'</span>'+
             '</div>'+
-        '</button>'
-    ).join("");
+        '</button>';
+    }).join("");
     box.hidden=false;
     box.querySelectorAll("[data-expiry-search-index]").forEach(button=>button.onclick=()=>selectExpirySearchResult(Number(button.dataset.expirySearchIndex)));
 }
