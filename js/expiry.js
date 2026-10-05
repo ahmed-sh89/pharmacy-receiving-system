@@ -53,26 +53,71 @@ function expiryEscapeHtml(value){
         .replace(/'/g,"&#039;");
 }
 
+function expiryControlValue(el){
+    return el?.dataset?.expirySelect ? String(el.dataset.value || "") : String(el?.value || "");
+}
+function setExpiryControlValue(el,value,emit=false){
+    if(!el) return;
+    const v=String(value ?? "");
+    if(el.dataset?.expirySelect){
+        el.dataset.value=v;
+        const option=[...el.querySelectorAll(".expiryCustomOption")].find(o=>String(o.dataset.value||"")===v);
+        const label=el.querySelector(".expiryCustomSelectValue");
+        if(label) label.textContent=option?.textContent || (el.dataset.expirySelect==="month"?"Month":el.dataset.expirySelect==="year"?"Year":"Desktop");
+        el.querySelectorAll(".expiryCustomOption").forEach(o=>o.classList.toggle("selected",String(o.dataset.value||"")===v));
+    }else el.value=v;
+    if(emit) el.dispatchEvent(new Event("change",{bubbles:true}));
+}
+function buildExpiryCustomOptions(el,options){
+    if(!el?.dataset?.expirySelect) return;
+    const menu=el.querySelector(".expiryCustomMenu");
+    if(!menu) return;
+    menu.innerHTML=options.map(o=>`<button type="button" class="expiryCustomOption" role="option" data-value="${expiryEscapeHtml(o.value)}">${expiryEscapeHtml(o.label)}</button>`).join("");
+    menu.querySelectorAll(".expiryCustomOption").forEach(btn=>btn.addEventListener("click",e=>{
+        e.stopPropagation(); setExpiryControlValue(el,btn.dataset.value,true); closeExpiryCustomSelect(el);
+    }));
+    setExpiryControlValue(el,el.dataset.value||"");
+}
+function closeExpiryCustomSelect(el){
+    if(!el?.dataset?.expirySelect)return;
+    el.classList.remove("open"); el.setAttribute("aria-expanded","false");
+    const menu=el.querySelector(".expiryCustomMenu"); if(menu) menu.hidden=true;
+}
+function toggleExpiryCustomSelect(el){
+    if(!el?.dataset?.expirySelect)return;
+    document.querySelectorAll("#zebraExpiryShell .expiryCustomSelect.open").forEach(x=>{if(x!==el)closeExpiryCustomSelect(x)});
+    const open=!el.classList.contains("open"); el.classList.toggle("open",open); el.setAttribute("aria-expanded",String(open));
+    const menu=el.querySelector(".expiryCustomMenu"); if(menu) menu.hidden=!open;
+}
+function initExpiryCustomSelects(){
+    document.querySelectorAll("#zebraExpiryShell .expiryCustomSelect").forEach(el=>{
+        if(el.dataset.bound)return; el.dataset.bound="1";
+        el.querySelector(".expiryCustomSelectButton")?.addEventListener("click",e=>{e.stopPropagation();toggleExpiryCustomSelect(el)});
+        el.addEventListener("keydown",e=>{
+            if(e.key==="Enter"||e.key===" "||e.key==="ArrowDown"){e.preventDefault();toggleExpiryCustomSelect(el)}
+            if(e.key==="Escape")closeExpiryCustomSelect(el);
+        });
+    });
+    if(!document.documentElement.dataset.expirySelectDismiss){
+        document.documentElement.dataset.expirySelectDismiss="1";
+        document.addEventListener("click",()=>document.querySelectorAll("#zebraExpiryShell .expiryCustomSelect.open").forEach(closeExpiryCustomSelect));
+    }
+}
 function populateExpiryDateDropdowns(){
     const month = document.getElementById("expiryMonth");
     const year = document.getElementById("expiryYear");
-    if(month && month.tagName === "SELECT"){
-        const selected = month.value;
-        month.innerHTML = `<option value="">Month</option>` +
-            Array.from({length:12},(_,i)=>{
-                const n=i+1;
-                return `<option value="${n}">${n} · ${expiryMonthShortName(n)}</option>`;
-            }).join("");
-        if(selected) month.value=selected;
+    if(month?.dataset?.expirySelect){
+        buildExpiryCustomOptions(month,[{value:"",label:"Month"},...Array.from({length:12},(_,i)=>({value:String(i+1),label:`${i+1} · ${expiryMonthShortName(i+1)}`}))]);
+    }else if(month && month.tagName === "SELECT"){
+        const selected=month.value; month.innerHTML=`<option value="">Month</option>`+Array.from({length:12},(_,i)=>{const n=i+1;return `<option value="${n}">${n} · ${expiryMonthShortName(n)}</option>`}).join(""); if(selected)month.value=selected;
     }
-    if(year && year.tagName === "SELECT"){
-        const selected = year.value;
-        const current = new Date().getFullYear();
-        year.innerHTML = `<option value="">Year</option>` +
-            Array.from({length:11},(_,i)=>current+i)
-                .map(y=>`<option value="${y}">${y}</option>`).join("");
-        if(selected) year.value=selected;
+    const current=new Date().getFullYear();
+    if(year?.dataset?.expirySelect){
+        buildExpiryCustomOptions(year,[{value:"",label:"Year"},...Array.from({length:11},(_,i)=>({value:String(current+i),label:String(current+i)}))]);
+    }else if(year && year.tagName === "SELECT"){
+        const selected=year.value; year.innerHTML=`<option value="">Year</option>`+Array.from({length:11},(_,i)=>current+i).map(y=>`<option value="${y}">${y}</option>`).join(""); if(selected)year.value=selected;
     }
+    initExpiryCustomSelects();
 }
 
 async function loadExpiryWorkers(){
@@ -109,12 +154,13 @@ function renderExpiryWorkerSelects(){
 
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
-        select.innerHTML =
-            `<option value="">${expiryIsHandheld() ? "Select..." : "Desktop"}</option>` +
-            ExpiryCaptureEngine.workers.map(w =>
-                `<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`
-            ).join("");
-        select.value = current;
+        if(select.dataset?.expirySelect){
+            buildExpiryCustomOptions(select,[{value:"",label:expiryIsHandheld()?"Select...":"Desktop"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
+            setExpiryControlValue(select,current);
+        }else{
+            select.innerHTML=`<option value="">${expiryIsHandheld() ? "Select..." : "Desktop"}</option>`+ExpiryCaptureEngine.workers.map(w=>`<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`).join("");
+            select.value=current;
+        }
     });
 
     const label = document.getElementById("expiryActiveWorkerName");
@@ -313,8 +359,8 @@ function expiryCaptureHasCompleteAutoData(){
     if(expiryIsHandheld() || !ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.currentItem.needsReview) return false;
     const gs1=ExpiryCaptureEngine.scannedGS1||{};
     const quantity=Number(document.getElementById("expiryQuantity")?.value||0);
-    const month=Number(document.getElementById("expiryMonth")?.value||0);
-    const year=Number(document.getElementById("expiryYear")?.value||0);
+    const month=Number(expiryControlValue(document.getElementById("expiryMonth"))||0);
+    const year=Number(expiryControlValue(document.getElementById("expiryYear"))||0);
     return quantity===1 && !!toSafeString(gs1.expiry).trim() && month>=1 && month<=12 && year>=2020 && year<=2200;
 }
 
@@ -548,8 +594,8 @@ async function resolveExpiryScannedValue(rawValue){
         const autoMatch=autoExpiry.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
         if(autoMatch){
-            document.getElementById("expiryMonth").value=String(Number(autoMatch[2]));
-            document.getElementById("expiryYear").value=String(Number(autoMatch[1]));
+            setExpiryControlValue(document.getElementById("expiryMonth"),String(Number(autoMatch[2])),true);
+            setExpiryControlValue(document.getElementById("expiryYear"),String(Number(autoMatch[1])),true);
             setExpiryDateMode("AUTO");
         }else{
             setExpiryDateMode("MANUAL");
@@ -644,8 +690,8 @@ async function saveExpiryCapture(options={}){
     const item = ExpiryCaptureEngine.currentItem;
     const workerId = ExpiryCaptureEngine.selectedWorkerId;
     const quantity = Number(document.getElementById("expiryQuantity")?.value || 0);
-    const month = Number(document.getElementById("expiryMonth")?.value || 0);
-    let year = Number(document.getElementById("expiryYear")?.value || 0);
+    const month = Number(expiryControlValue(document.getElementById("expiryMonth")) || 0);
+    let year = Number(expiryControlValue(document.getElementById("expiryYear")) || 0);
 
     if(year > 0 && year < 100) year += 2000;
 
@@ -1397,7 +1443,7 @@ function bindExpiryCaptureUI(){
         monthSelect.addEventListener("change",()=>{
             markExpiryFormDirty();
             const label=document.getElementById("expiryMonthName");
-            if(label) label.textContent=expiryMonthName(monthSelect.value);
+            if(label) label.textContent=expiryMonthName(expiryControlValue(monthSelect));
         });
     }
 
