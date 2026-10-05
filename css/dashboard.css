@@ -7826,14 +7826,14 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults .expirySearchResul
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults .expirySearchResult:last-child{margin-bottom:0!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResults .expirySearchResult:hover{border-color:#b9cff2!important;background:#f7faff!important;box-shadow:0 6px 16px rgba(11,94,215,.08)!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain{display:flex!important;flex:1 1 auto!important;min-width:0!important;flex-direction:column!important;gap:4px!important}
-body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102746!important;font-size:15px!important;line-height:1.25!important;font-weight:900!important}
+body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102746!important;font-size:14px!important;line-height:1.25!important;font-weight:900!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain span{color:#65788d!important;font-size:11px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain b{color:#1769d2!important;font-weight:900!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMeta{display:flex!important;flex:0 0 145px!important;min-width:0!important;flex-direction:column!important;align-items:flex-end!important;gap:3px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMeta strong{color:#1769d2!important;font-size:14px!important;font-weight:950!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMeta span{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;padding:3px 7px!important;border-radius:999px!important;background:#eef5fc!important;color:#315f8f!important;font-size:9px!important;font-weight:850!important}
 
-body:not(.zebraDevice) #zebraExpiryShell #expiryBarcodeInput{flex:1 1 auto!important;width:100%!important;min-width:0!important;height:40px!important;padding:0!important;border:0!important;outline:0!important;background:transparent!important;color:#102746!important;font-size:13px!important;font-weight:650!important}
+body:not(.zebraDevice) #zebraExpiryShell #expiryBarcodeInput{flex:1 1 auto!important;width:100%!important;min-width:0!important;height:40px!important;padding:0!important;border:0!important;outline:0!important;background:transparent!important;color:#102746!important;font-size:15px!important;font-weight:700!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid{display:contents!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid label{display:grid!important;grid-template-rows:48px!important;min-width:0!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid label:nth-child(1){grid-area:qty!important}
@@ -7915,15 +7915,16 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryButton{height:34px!impo
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryButton.secondary{border-color:#b7cee5!important;background:#fff!important;color:#24517e!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th{height:36px!important;padding:0 7px!important;border-right:1px solid #cfdeec!important;border-bottom:2px solid #9eb9d5!important;background:#e6f0f9!important;color:#183b61!important;font-size:11px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable td{height:40px!important;padding:0 7px!important;border-right:1px solid #edf2f7!important;border-bottom:1px solid #dce7f1!important;color:#263f59!important;font-size:12px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(1){width:12%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(2){width:9%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(3){width:27%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(4){width:9%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(5){width:8%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(6){width:8%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(7){width:7%!important;text-align:center!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(8){width:8%!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(9){width:12%!important;text-align:right!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(1){width:9%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(2){width:7%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(3){width:31%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(4){width:8%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(5){width:7%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(6){width:7%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(7){width:6%!important;text-align:center!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(8){width:6%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(9){width:8%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(10){width:11%!important;text-align:right!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryGtinCell{font-variant-numeric:tabular-nums!important;color:#36536f!important;font-size:11px!important;font-weight:750!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCodeCell strong{font-size:13px!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryProductCell strong{font-size:14px!important;line-height:1!important}
