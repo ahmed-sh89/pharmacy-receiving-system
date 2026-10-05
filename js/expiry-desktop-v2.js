@@ -35,9 +35,9 @@
       '<td>'+esc(display.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(display.expiry_month))+' '+esc(display.expiry_year)+'</td>'+
       '<td class="expiryQtyCell expiryActivityQty">'+esc(cur?cur.verified_quantity:(r.quantity||r.captured_quantity||0))+'</td>'+
       '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</td>'+
-      '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-expiry-session-edit="'+esc(cur.state_id||"")+'">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-session-delete="'+esc(cur.state_id||"")+'">Delete</button>':'<span class="expiryActivityResolved">Recorded</span>')+'</td></tr>';}).join("");
+      '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-expiry-session-edit="'+esc(cur.state_id||"")+'">Edit</button><button type="button" class="expiryRowAction danger" data-expiry-session-delete="'+esc(cur.state_id||"")+'">Delete</button>':(r.deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<span class="expiryActivityResolved">Recorded</span>'))+'</td></tr>';}).join("");
     body.querySelectorAll("[data-expiry-session-edit]").forEach(b=>b.onclick=()=>{const row=currentFor(visible.find(x=>currentFor(x)?.state_id===b.dataset.expirySessionEdit));if(!row)return;ExpiryCaptureEngine.editingStateId=row.state_id;renderSessionEditor(row);});
-    body.querySelectorAll("[data-expiry-session-delete]").forEach(b=>b.onclick=async()=>{const row=expiryCurrentRowById(b.dataset.expirySessionDelete);if(!row)return;if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected&&b.dataset.confirm==="1"){b.dataset.confirm="";b.textContent="Delete";}},3000);return;}b.disabled=true;try{await clearExpiryCurrentState(row);ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).filter(x=>currentFor(x)?.state_id!==row.state_id);setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");await refreshExpiryCurrentState();}catch(e){console.error("Expiry session delete failed",e);setExpiryStatus("error","DELETE FAILED");b.disabled=false;}});
+    body.querySelectorAll("[data-expiry-session-delete]").forEach(b=>b.onclick=async()=>{const row=expiryCurrentRowById(b.dataset.expirySessionDelete);if(!row)return;if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Confirm";setTimeout(()=>{if(b.isConnected&&b.dataset.confirm==="1"){b.dataset.confirm="";b.textContent="Delete";}},3000);return;}b.disabled=true;try{await clearExpiryCurrentState(row);setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");await refreshExpiryCurrentState();}catch(e){console.error("Expiry session delete failed",e);setExpiryStatus("error","DELETE FAILED");b.disabled=false;}});
   };
   function renderSessionEditor(row){
     const body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty");
@@ -79,6 +79,9 @@
     const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);expiryPopulateCategoryFilter(safe);
     if(ExpiryCaptureEngine.desktopView==="SESSION"){renderExpirySessionActivity(ExpiryCaptureEngine.sessionRows||[]);return;}
     renderInventory(safe);
+  };
+  window.markExpirySessionStateDeleted=function(stateId){
+    ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).map(row=>String(row.state_id||"")===String(stateId||"")?Object.assign({},row,{deleted:true}):row);
   };
   window.resetExpiryDesktopSession=function(){
     ExpiryCaptureEngine.sessionStartedAt=0;ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";
