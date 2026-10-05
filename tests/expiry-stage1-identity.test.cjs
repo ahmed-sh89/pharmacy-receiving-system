@@ -279,3 +279,11 @@ test('Expiry Session Activity renders corrected current-state values after Edit'
  assert.match(ctl,/sessionRows=\(ExpiryCaptureEngine\.sessionRows\|\|\[\]\)\.map\(c=>String\(c\.state_id/);
  assert.match(ctl,/batch_no:values\.batch,expiry_month:values\.month,expiry_year:values\.year,quantity:values\.quantity/);
 });
+
+test('Expiry cleared current state remains in Session Activity as Deleted',()=>{
+ const ctl=read('js/expiry-desktop-v2.js'),core=read('js/expiry.js');
+ assert.match(ctl,/markExpirySessionStateDeleted=function\(stateId\)/);
+ assert.match(ctl,/r\.deleted\?'<span class="expiryActivityDeleted">Deleted<\/span>'/);
+ assert.doesNotMatch(ctl,/sessionRows=.*\.filter\(x=>currentFor\(x\)\?\.state_id!==row\.state_id\)/);
+ assert.match(core,/markExpirySessionStateDeleted\(row\.state_id\)/);
+});
