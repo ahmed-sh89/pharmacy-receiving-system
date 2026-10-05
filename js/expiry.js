@@ -421,12 +421,12 @@ function resetExpiryCaptureForm(options = {}){
         qty.dataset.intentionalEdit="0";
     }
     if(month){
-        month.value = "";
-        month.disabled=false;
+        setExpirySelectDisabled(month,false);
+        setExpiryControlValue(month,"",true);
     }
     if(year){
-        year.value = "";
-        year.disabled=false;
+        setExpirySelectDisabled(year,false);
+        setExpiryControlValue(year,"",true);
     }
     if(monthName) monthName.textContent = "";
 
@@ -485,7 +485,11 @@ function renderExpirySearchResults(rows){
     const box=document.getElementById("expirySearchResults");
     if(!box) return;
     ExpiryCaptureEngine.desktopSearchRows=Array.isArray(rows)?rows:[];
-    if(!ExpiryCaptureEngine.desktopSearchRows.length){closeExpirySearchResults();return;}
+    if(!ExpiryCaptureEngine.desktopSearchRows.length){
+        box.innerHTML='<div class="expirySearchEmpty"><strong>Item not found</strong><span>No matching item was found.</span></div>';
+        box.hidden=false;
+        return;
+    }
     box.innerHTML=ExpiryCaptureEngine.desktopSearchRows.map((row,index)=>{
         const identifier=toSafeString(row.identifier_display).trim();
         return '<button type="button" class="smartSearchResult expirySearchResult" data-expiry-search-index="'+index+'">'+
@@ -918,38 +922,8 @@ function renderExpiryKpis(rows){
     });
 }
 
-function expiryPopulateCategoryFilter(rows){
-    const select=document.getElementById("expiryCategoryFilter");
-    if(!select) return;
-    const current=expiryControlValue(select);
-    const categories=[...new Set((rows||[]).map(row=>toSafeString(row?.category).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-    if(select.dataset?.expirySelect){
-        buildExpirySelectOptions(select,[{value:"",label:"All Categories"},...categories.map(category=>({value:category,label:category}))]);
-        setExpiryControlValue(select,categories.includes(current)?current:"");
-        initExpirySelects();
-    }else{
-        select.innerHTML='<option value="">All Categories</option>'+categories.map(category=>`<option value="${expiryEscapeHtml(category)}">${expiryEscapeHtml(category)}</option>`).join("");
-        if(categories.includes(current)) select.value=current;
-    }
-}
-
-function expiryFilteredCurrentRows(rows){
-    const category=toSafeString(expiryControlValue(document.getElementById("expiryCategoryFilter"))).trim();
-    return category ? (rows||[]).filter(row=>toSafeString(row?.category).trim()===category) : (rows||[]);
-}
-
-function expiryRecentCurrentRows(rows){
-    return [...(rows||[])].sort((a,b)=>{
-        const aTime=Date.parse(a?.last_verified_at||a?.updated_at||a?.created_at||"")||0;
-        const bTime=Date.parse(b?.last_verified_at||b?.updated_at||b?.created_at||"")||0;
-        return bTime-aTime;
-    }).slice(0,10);
-}
-
-function expiryCurrentRowById(stateId){
-    return ExpiryCaptureEngine.currentRows.find(row=>String(row?.state_id||"")===String(stateId||""))||null;
-}
-
+function expiryPopulateCategoryFilter(rows){ return rows||[]; }
+function expiryFilteredCurrentRows(rows){ return rows||[]; }
 function renderExpiryCurrentState(rows){
     const safeRows=Array.isArray(rows)?rows:[];
     ExpiryCaptureEngine.currentRows=safeRows;
@@ -1628,12 +1602,6 @@ function bindExpiryCaptureUI(){
             renderExpiryCurrentState(ExpiryCaptureEngine.currentRows);
         });
     });
-
-    const categoryFilter=document.getElementById("expiryCategoryFilter");
-    if(categoryFilter && categoryFilter.dataset.bound!=="1"){
-        categoryFilter.dataset.bound="1";
-        categoryFilter.addEventListener("change",()=>refreshExpiryCurrentState());
-    }
 
     const currentSearch=document.getElementById("expiryCurrentSearch");
     if(currentSearch && currentSearch.dataset.bound!=="1"){
