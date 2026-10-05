@@ -90,8 +90,24 @@
   };
   window.recordExpirySessionCapture=function(payload){
     if(expiryIsHandheld()||!payload)return;
-    const row=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
-    ExpiryCaptureEngine.sessionRows=[row].concat(ExpiryCaptureEngine.sessionRows||[]);
+    const now=new Date().toISOString();
+    const key=row=>[
+      String(row?.state_id||""),
+      String(row?.item_code||""),
+      String(row?.identifier_display||row?.gtin||""),
+      String(row?.batch_no||""),
+      Number(row?.expiry_month||0),
+      Number(row?.expiry_year||0)
+    ].join("|");
+    const incoming=Object.assign({},payload,{captured_at:now,capture_id:"session-"+Date.now()});
+    const incomingKey=key(incoming);
+    const existing=(ExpiryCaptureEngine.sessionRows||[]).find(row=>key(row)===incomingKey);
+    if(existing){
+      Object.assign(existing,incoming,{capture_id:existing.capture_id||incoming.capture_id,deleted:false});
+      ExpiryCaptureEngine.sessionRows=[existing].concat((ExpiryCaptureEngine.sessionRows||[]).filter(row=>row!==existing));
+      return;
+    }
+    ExpiryCaptureEngine.sessionRows=[incoming].concat(ExpiryCaptureEngine.sessionRows||[]);
   };
   window.refreshExpiryCurrentState=async function(){
     if(expiryIsHandheld())return[];
