@@ -102,12 +102,12 @@
     const set=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e);};
     set("expiryWorkspaceTitle",e=>e.textContent=inv?"Expiry Inventory":"Session Activity");
     set("expiryWorkspaceSubtitle",e=>e.textContent=inv?"All active verified expiry records":"Live captures from this Expiry session");
-    set("btnExpirySessionView",e=>e.hidden=!inv);
-    set("btnOpenExpiryInventory",e=>e.hidden=inv);
-    set("btnClearExpirySession",e=>e.hidden=inv);
-    set("expiryCurrentSearch",e=>e.hidden=!inv);
-    set("btnClearExpiryFilters",e=>e.hidden=!inv);
-    set("btnExportExpiryInventory",e=>e.hidden=!inv);
+    set("btnExpirySessionView",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
+    set("btnOpenExpiryInventory",e=>{e.hidden=inv;e.style.display=inv?"none":"";});
+    set("btnClearExpirySession",e=>{e.hidden=inv;e.style.display=inv?"none":"";});
+    set("expiryCurrentSearch",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
+    set("btnClearExpiryFilters",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
+    set("btnExportExpiryInventory",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
     set("expiryQuantityHeading",e=>e.textContent=inv?"Current Qty":"Quantity");
     set("expiryTimeHeading",e=>{const text=e.childNodes[0];if(text)text.nodeValue=inv?"Last Updated ":"Time ";});
     shell?.classList.toggle("expiryInventoryMode",inv);
@@ -198,14 +198,22 @@
   function exportCurrentInventory(){
     const rows=inventoryFiltered(ExpiryCaptureEngine.currentRows||[]);
     if(!rows.length){setExpiryStatus("action","NO INVENTORY ROWS TO EXPORT");return;}
-    const headers=["Last Updated","GTIN / Barcode","Item Code","Product Name","Category","Batch","Expiry","Quantity","Operator"];
-    const quote=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
-    const lines=[headers.map(quote).join(",")].concat(rows.map(r=>[
-      expiryFormatVerifiedAt(updatedAt(r)),r.identifier_display||"",r.item_code||"",r.item_name||"",r.category||"Uncategorized",r.batch_no||"",
-      expiryMonthShortName(r.expiry_month)+" "+r.expiry_year,r.verified_quantity,operatorName(r)
-    ].map(quote).join(",")));
-    const blob=new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="PharmFlow_Expiry_Inventory_"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),0);
+    if(typeof XLSX==="undefined"){setExpiryStatus("error","XLSX EXPORT UNAVAILABLE");return;}
+    const data=rows.map(r=>({
+      "Last Updated":expiryFormatVerifiedAt(updatedAt(r)),
+      "GTIN / Barcode":r.identifier_display||"",
+      "Item Code":r.item_code||"",
+      "Product Name":r.item_name||"",
+      "Category":r.category||"Uncategorized",
+      "Batch":r.batch_no||"",
+      "Expiry":expiryMonthShortName(r.expiry_month)+" "+r.expiry_year,
+      "Quantity":Number(r.verified_quantity)||0,
+      "Operator":operatorName(r)
+    }));
+    const ws=XLSX.utils.json_to_sheet(data);
+    ws["!cols"]=[{wch:22},{wch:19},{wch:13},{wch:42},{wch:18},{wch:16},{wch:13},{wch:10},{wch:18}];
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Expiry Inventory");
+    XLSX.writeFile(wb,"PharmFlow_Expiry_Inventory_"+new Date().toISOString().slice(0,10)+".xlsx");
   }
 
   window.markExpirySessionStateDeleted=function(stateId){ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).map(r=>String(r.state_id||"")===String(stateId||"")?Object.assign({},r,{deleted:true}):r);};
