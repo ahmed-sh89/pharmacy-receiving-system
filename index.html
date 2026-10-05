@@ -1369,12 +1369,14 @@
                             <button id="btnOpenExpiryInventory" class="expiryInventoryButton expiryInventoryPrimaryButton" type="button">View Expiry Inventory</button>
                             <button id="btnExpirySessionView" class="expiryInventoryButton secondary expiryBackButton" type="button" hidden>← Back to Expiry</button>
                             <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search by product name, item code, GTIN / barcode or batch" hidden>
+                            <button id="btnClearExpiryFilters" class="expiryInventoryButton expiryClearFiltersButton" type="button" hidden>Clear Filters</button>
+                            <button id="btnExportExpiryInventory" class="expiryInventoryButton expiryExportButton" type="button" hidden>Export</button>
                         </div>
                     </div>
                     <div class="expiryCurrentTableWrap">
                         <table class="expiryCurrentTable">
                             <thead><tr>
-                                <th id="expiryTimeHeading">Time</th><th>GTIN / Barcode</th><th>Item Code</th><th>Product Name</th>
+                                <th id="expiryTimeHeading" class="expiryFilterHeading" data-expiry-filter-heading="lastUpdated">Time <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="lastUpdated" aria-label="Filter Last Updated">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th><th>GTIN / Barcode</th><th>Item Code</th><th>Product Name</th>
                                 <th class="expiryFilterHeading" data-expiry-filter-heading="category">Category <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="category" aria-label="Filter Category">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
                                 <th>Batch</th>
                                 <th class="expiryFilterHeading" data-expiry-filter-heading="expiry">Expiry <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="expiry" aria-label="Filter Expiry">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
