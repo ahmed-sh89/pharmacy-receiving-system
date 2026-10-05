@@ -54,70 +54,104 @@ function expiryEscapeHtml(value){
 }
 
 function expiryControlValue(el){
-    return el?.dataset?.expirySelect ? String(el.dataset.value || "") : String(el?.value || "");
+    if(!el) return "";
+    return el.dataset?.expirySelect ? String(el.dataset.value || "") : String(el.value || "");
+}
+function expirySelectPlaceholder(el){
+    const type=el?.dataset?.expirySelect;
+    return type==="month" ? "Month" : type==="year" ? "Year" : "Desktop";
 }
 function setExpiryControlValue(el,value,emit=false){
     if(!el) return;
     const v=String(value ?? "");
-    if(el.dataset?.expirySelect){
-        el.dataset.value=v;
-        const option=[...el.querySelectorAll(".expiryCustomOption")].find(o=>String(o.dataset.value||"")===v);
-        const label=el.querySelector(".expiryCustomSelectValue");
-        if(label) label.textContent=option?.textContent || (el.dataset.expirySelect==="month"?"Month":el.dataset.expirySelect==="year"?"Year":"Desktop");
-        el.querySelectorAll(".expiryCustomOption").forEach(o=>o.classList.toggle("selected",String(o.dataset.value||"")===v));
-    }else el.value=v;
+    if(!el.dataset?.expirySelect){ el.value=v; if(emit) el.dispatchEvent(new Event("change",{bubbles:true})); return; }
+    el.dataset.value=v;
+    const options=[...el.querySelectorAll(".pfSelectOption")];
+    const selected=options.find(o=>String(o.dataset.value||"")===v);
+    const label=el.querySelector(".pfSelectValue");
+    if(label) label.textContent=selected?.dataset.label || selected?.textContent || expirySelectPlaceholder(el);
+    options.forEach(o=>{
+        const on=String(o.dataset.value||"")===v;
+        o.classList.toggle("is-selected",on);
+        o.setAttribute("aria-selected",String(on));
+    });
     if(emit) el.dispatchEvent(new Event("change",{bubbles:true}));
 }
-function buildExpiryCustomOptions(el,options){
+function closeExpirySelect(el,restoreFocus=false){
     if(!el?.dataset?.expirySelect) return;
-    const menu=el.querySelector(".expiryCustomMenu");
+    el.classList.remove("is-open");
+    el.setAttribute("aria-expanded","false");
+    const menu=el.querySelector(".pfSelectMenu");
+    if(menu) menu.hidden=true;
+    if(restoreFocus) el.focus();
+}
+function closeAllExpirySelects(except=null){
+    document.querySelectorAll("#zebraExpiryShell .pfSelect.is-open").forEach(el=>{if(el!==except) closeExpirySelect(el);});
+}
+function openExpirySelect(el){
+    if(!el?.dataset?.expirySelect || el.dataset.disabled==="true") return;
+    closeAllExpirySelects(el);
+    el.classList.add("is-open");
+    el.setAttribute("aria-expanded","true");
+    const menu=el.querySelector(".pfSelectMenu");
+    if(menu) menu.hidden=false;
+    const selected=menu?.querySelector(".pfSelectOption.is-selected") || menu?.querySelector(".pfSelectOption:not([data-value=''])");
+    selected?.scrollIntoView?.({block:"nearest"});
+}
+function toggleExpirySelect(el){
+    if(el?.classList.contains("is-open")) closeExpirySelect(el,true); else openExpirySelect(el);
+}
+function buildExpirySelectOptions(el,options){
+    if(!el?.dataset?.expirySelect) return;
+    const menu=el.querySelector(".pfSelectMenu");
     if(!menu) return;
-    menu.innerHTML=options.map(o=>`<button type="button" class="expiryCustomOption" role="option" data-value="${expiryEscapeHtml(o.value)}">${expiryEscapeHtml(o.label)}</button>`).join("");
-    menu.querySelectorAll(".expiryCustomOption").forEach(btn=>btn.addEventListener("click",e=>{
-        e.stopPropagation(); setExpiryControlValue(el,btn.dataset.value,true); closeExpiryCustomSelect(el);
+    const current=expiryControlValue(el);
+    menu.innerHTML=options.map(o=>`<button type="button" class="pfSelectOption" role="option" aria-selected="false" data-value="${expiryEscapeHtml(o.value)}" data-label="${expiryEscapeHtml(o.label)}"><span>${expiryEscapeHtml(o.label)}</span><span class="pfSelectCheck" aria-hidden="true">✓</span></button>`).join("");
+    menu.querySelectorAll(".pfSelectOption").forEach(btn=>btn.addEventListener("click",e=>{
+        e.stopPropagation();
+        setExpiryControlValue(el,btn.dataset.value,true);
+        closeExpirySelect(el,true);
     }));
-    setExpiryControlValue(el,el.dataset.value||"");
+    setExpiryControlValue(el,current);
 }
-function closeExpiryCustomSelect(el){
-    if(!el?.dataset?.expirySelect)return;
-    el.classList.remove("open"); el.setAttribute("aria-expanded","false");
-    const menu=el.querySelector(".expiryCustomMenu"); if(menu) menu.hidden=true;
+function setExpirySelectDisabled(el,disabled){
+    if(!el?.dataset?.expirySelect){ if(el) el.disabled=!!disabled; return; }
+    el.dataset.disabled=disabled?"true":"false";
+    el.setAttribute("aria-disabled",String(!!disabled));
+    el.tabIndex=disabled?-1:0;
+    el.querySelector(".pfSelectTrigger")?.toggleAttribute("disabled",!!disabled);
+    if(disabled) closeExpirySelect(el);
 }
-function toggleExpiryCustomSelect(el){
-    if(!el?.dataset?.expirySelect)return;
-    document.querySelectorAll("#zebraExpiryShell .expiryCustomSelect.open").forEach(x=>{if(x!==el)closeExpiryCustomSelect(x)});
-    const open=!el.classList.contains("open"); el.classList.toggle("open",open); el.setAttribute("aria-expanded",String(open));
-    const menu=el.querySelector(".expiryCustomMenu"); if(menu) menu.hidden=!open;
-}
-function initExpiryCustomSelects(){
-    document.querySelectorAll("#zebraExpiryShell .expiryCustomSelect").forEach(el=>{
-        if(el.dataset.bound)return; el.dataset.bound="1";
-        el.querySelector(".expiryCustomSelectButton")?.addEventListener("click",e=>{e.stopPropagation();toggleExpiryCustomSelect(el)});
+function initExpirySelects(){
+    document.querySelectorAll("#zebraExpiryShell .pfSelect").forEach(el=>{
+        if(el.dataset.bound==="1") return;
+        el.dataset.bound="1";
+        el.querySelector(".pfSelectTrigger")?.addEventListener("click",e=>{e.stopPropagation();toggleExpirySelect(el);});
         el.addEventListener("keydown",e=>{
-            if(e.key==="Enter"||e.key===" "||e.key==="ArrowDown"){e.preventDefault();toggleExpiryCustomSelect(el)}
-            if(e.key==="Escape")closeExpiryCustomSelect(el);
+            if(e.key==="Enter"||e.key===" "||e.key==="ArrowDown"){e.preventDefault();openExpirySelect(el);}
+            else if(e.key==="Escape"){e.preventDefault();closeExpirySelect(el,true);}
         });
     });
-    if(!document.documentElement.dataset.expirySelectDismiss){
-        document.documentElement.dataset.expirySelectDismiss="1";
-        document.addEventListener("click",()=>document.querySelectorAll("#zebraExpiryShell .expiryCustomSelect.open").forEach(closeExpiryCustomSelect));
+    if(document.documentElement.dataset.expirySelectDismiss!=="2"){
+        document.documentElement.dataset.expirySelectDismiss="2";
+        document.addEventListener("click",()=>closeAllExpirySelects());
     }
 }
 function populateExpiryDateDropdowns(){
     const month = document.getElementById("expiryMonth");
     const year = document.getElementById("expiryYear");
     if(month?.dataset?.expirySelect){
-        buildExpiryCustomOptions(month,[{value:"",label:"Month"},...Array.from({length:12},(_,i)=>({value:String(i+1),label:`${i+1} · ${expiryMonthShortName(i+1)}`}))]);
+        buildExpirySelectOptions(month,[{value:"",label:"Month"},...Array.from({length:12},(_,i)=>({value:String(i+1),label:`${i+1} · ${expiryMonthShortName(i+1)}`}))]);
     }else if(month && month.tagName === "SELECT"){
         const selected=month.value; month.innerHTML=`<option value="">Month</option>`+Array.from({length:12},(_,i)=>{const n=i+1;return `<option value="${n}">${n} · ${expiryMonthShortName(n)}</option>`}).join(""); if(selected)month.value=selected;
     }
     const current=new Date().getFullYear();
     if(year?.dataset?.expirySelect){
-        buildExpiryCustomOptions(year,[{value:"",label:"Year"},...Array.from({length:11},(_,i)=>({value:String(current+i),label:String(current+i)}))]);
+        buildExpirySelectOptions(year,[{value:"",label:"Year"},...Array.from({length:11},(_,i)=>({value:String(current+i),label:String(current+i)}))]);
     }else if(year && year.tagName === "SELECT"){
         const selected=year.value; year.innerHTML=`<option value="">Year</option>`+Array.from({length:11},(_,i)=>current+i).map(y=>`<option value="${y}">${y}</option>`).join(""); if(selected)year.value=selected;
     }
-    initExpiryCustomSelects();
+    initExpirySelects();
 }
 
 async function loadExpiryWorkers(){
@@ -155,7 +189,7 @@ function renderExpiryWorkerSelects(){
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
         if(select.dataset?.expirySelect){
-            buildExpiryCustomOptions(select,[{value:"",label:expiryIsHandheld()?"Select...":"Desktop"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
+            buildExpirySelectOptions(select,[{value:"",label:expiryIsHandheld()?"Select...":"Desktop"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
             setExpiryControlValue(select,current);
         }else{
             select.innerHTML=`<option value="">${expiryIsHandheld() ? "Select..." : "Desktop"}</option>`+ExpiryCaptureEngine.workers.map(w=>`<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`).join("");
@@ -259,19 +293,19 @@ function setExpiryDateMode(mode){
     ExpiryCaptureEngine.dateSource=mode==="AUTO" ? "AUTO" : "MANUAL";
 
     if(mode==="AUTO"){
-        if(month) month.disabled=true;
-        if(year) year.disabled=true;
+        setExpirySelectDisabled(month,true);
+        setExpirySelectDisabled(year,true);
         if(label){
-            const selected=Number(month?.value||0);
+            const selected=Number(expiryControlValue(month)||0);
             label.textContent=selected
                 ? `${expiryMonthName(selected)} · AUTO READ ✓`
                 : "AUTO READ ✓";
         }
     }else{
-        if(month) month.disabled=false;
-        if(year) year.disabled=false;
+        setExpirySelectDisabled(month,false);
+        setExpirySelectDisabled(year,false);
         if(label){
-            const selected=Number(month?.value||0);
+            const selected=Number(expiryControlValue(month)||0);
             label.textContent=selected ? expiryMonthName(selected) : "";
         }
     }
@@ -342,16 +376,14 @@ function renderExpiryActiveItem(item,gs1={}){
     const shell=document.getElementById("expiryActiveItem");
     if(!shell || expiryIsHandheld()) return;
     if(!item){shell.hidden=true;return;}
-    const name=document.getElementById("expiryActiveItemName");
-    const identity=document.getElementById("expiryActiveItemIdentity");
-    const detail=document.getElementById("expiryActiveItemGs1");
-    if(name) name.textContent=item.itemName||"Item not recognized";
-    if(identity) identity.textContent=[item.itemCode||"Needs Review",item.identifierDisplay||item.gtin||"",item.category||"Uncategorized"].filter(Boolean).join(" • ");
-    const parts=[];
-    if(gs1?.lot) parts.push("Batch "+gs1.lot);
-    if(gs1?.serial) parts.push("Serial "+gs1.serial);
-    if(gs1?.expiry) parts.push("Expiry "+gs1.expiry);
-    if(detail){detail.textContent=parts.join(" • ");detail.hidden=!parts.length;}
+    const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||"—";};
+    set("expiryActiveItemName",item.itemName||"Item not recognized");
+    set("expiryActiveItemCode",item.itemCode||"Needs Review");
+    set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");
+    set("expiryActiveItemCategory",item.category||"Uncategorized");
+    set("expiryActiveBatch",gs1?.lot||"—");
+    set("expiryActiveSerial",gs1?.serial||"—");
+    set("expiryActiveExpiry",gs1?.expiry||"—");
     shell.hidden=false;
 }
 
