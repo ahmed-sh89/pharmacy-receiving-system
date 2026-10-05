@@ -281,6 +281,7 @@ function expiryWorkerIsEditing(){
 
     return !!(
         ["INPUT","SELECT","TEXTAREA"].includes(String(active.tagName||"").toUpperCase()) ||
+        active.closest?.(".pfSelect") ||
         active.isContentEditable
     );
 }
