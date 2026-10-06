@@ -15,6 +15,9 @@
   function dateLabel(k){const d=new Date(k+"T12:00:00");return Number.isFinite(d.getTime())?d.toLocaleDateString([],{year:"numeric",month:"short",day:"numeric"}):k;}
   function updatedAt(r){return r?.last_verified_at||r?.updated_at||r?.captured_at||r?.created_at||"";}
   function sessionRows(){return Array.isArray(ExpiryCaptureEngine.sessionRows)?ExpiryCaptureEngine.sessionRows:[];}
+  function sessionKey(r){
+    return [String(r?.item_code||""),String(r?.identifier_display||r?.gtin||""),String(r?.batch_no||""),Number(r?.expiry_month)||0,Number(r?.expiry_year)||0].join("|");
+  }
   function currentFor(c){
     const rows=ExpiryCaptureEngine.currentRows||[];
     if(!c) return null;
@@ -126,21 +129,17 @@
       : '<button type="button" class="expiryRowAction danger" data-delete-start="'+esc(id)+'" data-delete-scope="'+scope+'">Delete</button>';
   }
   function sessionRowHtml(r){
-    const cur=currentFor(r);
-    const deleted=!!r.deleted || !cur;
-    const d=deleted?r:cur;
-    const fresh=(Date.now()-Date.parse(r.captured_at||""))<6000;
-    const id=String(r.state_id||"");
+    const cur=currentFor(r),deleted=!!r.deleted||!cur,d=cur||r,fresh=(Date.now()-Date.parse(r.captured_at||""))<6000,id=String(cur?.state_id||r.state_id||"");
     return '<tr class="expiryActivityRow '+(fresh?'expiryRowSavedStrong ':'')+(deleted?'expiryActivityDeletedRow':'')+'">'+
       '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</td>'+
-      '<td class="expiryGtinCell" title="'+esc(r.identifier_display||r.gtin||"")+'">'+esc(r.identifier_display||r.gtin||"—")+'</td>'+
-      '<td class="expiryCodeCell"><strong>'+esc(r.item_code||"—")+'</strong></td>'+
-      '<td class="expiryProductCell" title="'+esc(r.item_name||"")+'"><strong>'+esc(r.item_name||"")+'</strong></td>'+
-      '<td><span class="expiryCategoryChip">'+esc(r.category||"Uncategorized")+'</span></td>'+
-      '<td>'+esc(r.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(r.expiry_month))+' '+esc(r.expiry_year)+'</td>'+
-      '<td class="expiryQtyCell expiryActivityQty">'+esc(Number(r.captured_quantity??r.quantity)||0)+'</td>'+
-      '<td class="expiryOperatorCell">'+esc(r.operator_name||"Desktop")+'</td>'+
-      '<td class="expiryActionsCell">'+(deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<button type="button" class="expiryRowAction" data-session-edit="'+esc(id)+'">Edit Current</button>'+deleteActions("session",id))+'</td></tr>';
+      '<td class="expiryGtinCell" title="'+esc(d.identifier_display||d.gtin||"")+'">'+esc(d.identifier_display||d.gtin||"—")+'</td>'+
+      '<td class="expiryCodeCell"><strong>'+esc(d.item_code||"—")+'</strong></td>'+
+      '<td class="expiryProductCell" title="'+esc(d.item_name||"")+'"><strong>'+esc(d.item_name||"")+'</strong></td>'+
+      '<td><span class="expiryCategoryChip">'+esc(d.category||"Uncategorized")+'</span></td>'+
+      '<td>'+esc(d.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(d.expiry_month))+' '+esc(d.expiry_year)+'</td>'+
+      '<td class="expiryQtyCell expiryActivityQty">'+esc(deleted?(Number(r.quantity)||0):(Number(cur.verified_quantity)||0))+'</td>'+
+      '<td class="expiryOperatorCell">'+esc(cur?.verified_by_name||r.operator_name||"Desktop")+'</td>'+
+      '<td class="expiryActionsCell">'+(deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<button type="button" class="expiryRowAction" data-session-edit="'+esc(id)+'">Edit</button>'+deleteActions("session",id))+'</td></tr>';
   }
   window.renderExpirySessionActivity=function(){
     const visible=sessionRows(),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expiryCurrentStateCount");
@@ -172,7 +171,7 @@
   function renderSessionEditor(capture,row){
     const body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty");
     if(empty)empty.hidden=true;if(!body||!capture||!row)return;
-    body.innerHTML='<tr class="expiryRowEditing"><td class="expiryTimeCell">'+esc(timeOnly(capture.captured_at))+'</td><td class="expiryGtinCell">'+esc(capture.identifier_display||"—")+'</td><td class="expiryCodeCell"><strong>'+esc(capture.item_code||"—")+'</strong></td><td class="expiryProductCell"><strong>'+esc(capture.item_name||"")+'</strong></td><td><span class="expiryCategoryChip">'+esc(capture.category||"Uncategorized")+'</span></td><td><input class="expiryInlineInput" data-edit-batch value="'+esc(row.batch_no||"")+'"></td><td><div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="'+(Number(row.expiry_month)||"")+'"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="'+(Number(row.expiry_year)||"")+'"></div></td><td><input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" step="1" value="'+(Number(row.verified_quantity)||1)+'"></td><td class="expiryOperatorCell">'+esc(row.verified_by_name||capture.operator_name||"Desktop")+'</td><td class="expiryActionsCell"><div class="expiryEditValidation" hidden></div><button type="button" class="expiryRowAction primary" data-session-save>Save Current</button><button type="button" class="expiryRowAction" data-session-cancel>Cancel</button></td></tr>';
+    body.innerHTML='<tr class="expiryRowEditing"><td class="expiryTimeCell">'+esc(timeOnly(capture.captured_at))+'</td><td class="expiryGtinCell">'+esc(capture.identifier_display||"—")+'</td><td class="expiryCodeCell"><strong>'+esc(capture.item_code||"—")+'</strong></td><td class="expiryProductCell"><strong>'+esc(capture.item_name||"")+'</strong></td><td><span class="expiryCategoryChip">'+esc(capture.category||"Uncategorized")+'</span></td><td><input class="expiryInlineInput" data-edit-batch value="'+esc(row.batch_no||"")+'"></td><td><div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="'+(Number(row.expiry_month)||"")+'"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="'+(Number(row.expiry_year)||"")+'"></div></td><td><input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" step="1" value="'+(Number(row.verified_quantity)||1)+'"></td><td class="expiryOperatorCell">'+esc(row.verified_by_name||capture.operator_name||"Desktop")+'</td><td class="expiryActionsCell"><div class="expiryEditValidation" hidden></div><button type="button" class="expiryRowAction primary" data-session-save>Save</button><button type="button" class="expiryRowAction" data-session-cancel>Cancel</button></td></tr>';
     body.querySelector("[data-session-cancel]").onclick=()=>renderExpirySessionActivity();
     body.querySelector("[data-session-save]").onclick=async e=>{
       const tr=e.currentTarget.closest("tr"),v=readEditValues(tr),validation=validateEdit(v);
