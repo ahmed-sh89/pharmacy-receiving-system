@@ -130,7 +130,7 @@
       '<td class="expiryProductCell" title="'+esc(d.item_name||"")+'"><strong>'+esc(d.item_name||"")+'</strong></td>'+
       '<td><span class="expiryCategoryChip">'+esc(d.category||"Uncategorized")+'</span></td>'+
       '<td>'+esc(d.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(d.expiry_month))+' '+esc(d.expiry_year)+'</td>'+
-      '<td class="expiryQtyCell expiryActivityQty">'+esc(cur?cur.verified_quantity:(r.quantity||r.captured_quantity||0))+'</td>'+
+      '<td class="expiryQtyCell expiryActivityQty">'+esc(r.captured_quantity??r.quantity??0)+'</td>'+
       '<td class="expiryOperatorCell">'+esc(cur?.verified_by_name||r.operator_name||"Desktop")+'</td>'+
       '<td class="expiryActionsCell">'+(cur?'<button type="button" class="expiryRowAction" data-session-edit="'+esc(id)+'">Edit</button>'+deleteActions("session",id):(r.deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<span class="expiryActivityResolved">Recorded</span>'))+'</td></tr>';
   }
@@ -141,11 +141,23 @@
     if(empty)empty.hidden=true;body.innerHTML=visible.map(sessionRowHtml).join("");bindDesktopRowActions();
   };
 
+  function validateEdit(v){
+    if(!Number.isInteger(v.quantity)||v.quantity<=0)return "Quantity must be a whole number greater than 0.";
+    if(!Number.isInteger(v.month)||v.month<1||v.month>12)return "Expiry month must be between 1 and 12.";
+    if(!Number.isInteger(v.year)||v.year<2020||v.year>2200)return "Expiry year must be between 2020 and 2200.";
+    return "";
+  }
+  function showEditValidation(tr,message){
+    tr?.querySelectorAll(".expiryInlineInput").forEach(el=>el.classList.remove("is-invalid"));
+    const box=tr?.querySelector(".expiryEditValidation");
+    if(box){box.textContent=message||"";box.hidden=!message;}
+    setExpiryStatus(message?"error":"ready",message||"READY TO SCAN");
+  }
   function renderSessionEditor(row){
     const body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty");if(empty)empty.hidden=true;if(!body)return;
-    body.innerHTML='<tr class="expiryRowEditing"><td class="expiryTimeCell">—</td><td class="expiryGtinCell">'+esc(row.identifier_display||"—")+'</td><td class="expiryCodeCell"><strong>'+esc(row.item_code||"—")+'</strong></td><td class="expiryProductCell"><strong>'+esc(row.item_name||"")+'</strong></td><td><span class="expiryCategoryChip">'+esc(row.category||"Uncategorized")+'</span></td><td><input class="expiryInlineInput" data-edit-batch value="'+esc(row.batch_no||"")+'"></td><td><div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="'+(Number(row.expiry_month)||"")+'"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="'+(Number(row.expiry_year)||"")+'"></div></td><td><input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" value="'+(Number(row.verified_quantity)||1)+'"></td><td class="expiryOperatorCell">'+esc(row.verified_by_name||"Desktop")+'</td><td class="expiryActionsCell"><button type="button" class="expiryRowAction primary" data-session-save>Save</button><button type="button" class="expiryRowAction" data-session-cancel>Cancel</button></td></tr>';
+    body.innerHTML='<tr class="expiryRowEditing"><td class="expiryTimeCell">—</td><td class="expiryGtinCell">'+esc(row.identifier_display||"—")+'</td><td class="expiryCodeCell"><strong>'+esc(row.item_code||"—")+'</strong></td><td class="expiryProductCell"><strong>'+esc(row.item_name||"")+'</strong></td><td><span class="expiryCategoryChip">'+esc(row.category||"Uncategorized")+'</span></td><td><input class="expiryInlineInput" data-edit-batch value="'+esc(row.batch_no||"")+'"></td><td><div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="'+(Number(row.expiry_month)||"")+'"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="'+(Number(row.expiry_year)||"")+'"></div></td><td><input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" value="'+(Number(row.verified_quantity)||1)+'"></td><td class="expiryOperatorCell">'+esc(row.verified_by_name||"Desktop")+'</td><td class="expiryActionsCell"><div class="expiryEditValidation" hidden></div><button type="button" class="expiryRowAction primary" data-session-save>Save</button><button type="button" class="expiryRowAction" data-session-cancel>Cancel</button></td></tr>';
     body.querySelector("[data-session-cancel]").onclick=()=>renderExpirySessionActivity();
-    body.querySelector("[data-session-save]").onclick=async e=>{const tr=e.currentTarget.closest("tr"),v={quantity:Number(tr.querySelector("[data-edit-qty]").value||0),month:Number(tr.querySelector("[data-edit-month]").value||0),year:Number(tr.querySelector("[data-edit-year]").value||0),batch:String(tr.querySelector("[data-edit-batch]").value||"").trim()};if(!Number.isInteger(v.quantity)||v.quantity<=0||v.month<1||v.month>12||v.year<2020||v.year>2200){setExpiryStatus("error","CHECK QUANTITY AND EXPIRY");return;}e.currentTarget.disabled=true;try{await saveExpiryCurrentCorrection(row,v);setExpiryStatus("success","UPDATED · TOTAL "+v.quantity);await refreshExpiryCurrentState();}catch(err){setExpiryStatus("error","UPDATE FAILED");e.currentTarget.disabled=false;}};
+    body.querySelector("[data-session-save]").onclick=async e=>{const tr=e.currentTarget.closest("tr"),v={quantity:Number(tr.querySelector("[data-edit-qty]").value||0),month:Number(tr.querySelector("[data-edit-month]").value||0),year:Number(tr.querySelector("[data-edit-year]").value||0),batch:String(tr.querySelector("[data-edit-batch]").value||"").trim()};const validation=validateEdit(v);if(validation){showEditValidation(tr,validation);return;}showEditValidation(tr,"");e.currentTarget.disabled=true;try{await saveExpiryCurrentCorrection(row,v);setExpiryStatus("success","UPDATED · TOTAL "+v.quantity);await refreshExpiryCurrentState();}catch(err){setExpiryStatus("error","UPDATE FAILED");e.currentTarget.disabled=false;}};
   }
 
   function inventoryRowHtml(r){
@@ -157,7 +169,7 @@
       '<td>'+(editing?'<input class="expiryInlineInput" data-edit-batch value="'+esc(r.batch_no||"")+'">':esc(r.batch_no||"—"))+'</td>'+
       '<td>'+(editing?'<div class="expiryInlineDate"><input class="expiryInlineInput" data-edit-month type="number" min="1" max="12" value="'+(Number(r.expiry_month)||"")+'"><input class="expiryInlineInput" data-edit-year type="number" min="2020" max="2200" value="'+(Number(r.expiry_year)||"")+'"></div>':esc(expiryMonthShortName(r.expiry_month))+' '+esc(r.expiry_year))+'</td>'+
       '<td class="expiryQtyCell">'+(editing?'<input class="expiryInlineInput expiryInlineQty" data-edit-qty type="number" min="1" value="'+(Number(r.verified_quantity)||1)+'">':esc(r.verified_quantity))+'</td>'+
-      '<td class="expiryOperatorCell">'+esc(operatorName(r))+'</td><td class="expiryActionsCell">'+(editing?'<button type="button" class="expiryRowAction primary" data-inventory-save="'+esc(rowId(r))+'">Save</button><button type="button" class="expiryRowAction" data-inventory-cancel>Cancel</button>':'<button type="button" class="expiryRowAction" data-inventory-edit="'+esc(rowId(r))+'">Edit</button>'+deleteActions("inventory",rowId(r)))+'</td></tr>';
+      '<td class="expiryOperatorCell">'+esc(operatorName(r))+'</td><td class="expiryActionsCell">'+(editing?'<div class="expiryEditValidation" hidden></div>'+'<button type="button" class="expiryRowAction primary" data-inventory-save="'+esc(rowId(r))+'">Save</button><button type="button" class="expiryRowAction" data-inventory-cancel>Cancel</button>':'<button type="button" class="expiryRowAction" data-inventory-edit="'+esc(rowId(r))+'">Edit</button>'+deleteActions("inventory",rowId(r)))+'</td></tr>';
   }
   function renderInventory(rows){
     const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);
@@ -184,13 +196,13 @@
     body.querySelectorAll("[data-delete-start]").forEach(b=>b.onclick=()=>{pendingDelete={scope:b.dataset.deleteScope,id:b.dataset.deleteStart};ExpiryCaptureEngine.desktopView==="INVENTORY"?renderInventory(ExpiryCaptureEngine.currentRows||[]):renderExpirySessionActivity();});
     body.querySelectorAll("[data-delete-cancel]").forEach(b=>b.onclick=()=>{pendingDelete=null;ExpiryCaptureEngine.desktopView==="INVENTORY"?renderInventory(ExpiryCaptureEngine.currentRows||[]):renderExpirySessionActivity();});
     body.querySelectorAll("[data-delete-confirm]").forEach(b=>b.onclick=()=>confirmDelete(b.dataset.deleteScope,b.dataset.deleteConfirm,b));
-    body.querySelectorAll("[data-session-edit]").forEach(b=>b.onclick=()=>{const row=expiryCurrentRowById(b.dataset.sessionEdit);if(row)renderSessionEditor(row);});
+    body.querySelectorAll("[data-session-edit]").forEach(b=>b.onclick=()=>{const capture=sessionRows().find(r=>String(r.state_id||"")===String(b.dataset.sessionEdit||""));const row=currentFor(capture);if(row)renderSessionEditor(row);});
     body.querySelectorAll("[data-inventory-edit]").forEach(b=>b.onclick=()=>{pendingDelete=null;ExpiryCaptureEngine.editingStateId=b.dataset.inventoryEdit;renderInventory(ExpiryCaptureEngine.currentRows||[]);});
     body.querySelectorAll("[data-inventory-cancel]").forEach(b=>b.onclick=()=>{ExpiryCaptureEngine.editingStateId="";renderInventory(ExpiryCaptureEngine.currentRows||[]);});
     body.querySelectorAll("[data-inventory-save]").forEach(b=>b.onclick=async()=>{
       const row=expiryCurrentRowById(b.dataset.inventorySave);if(!row)return;
       const tr=b.closest("tr"),v={quantity:Number(tr.querySelector("[data-edit-qty]")?.value||0),month:Number(tr.querySelector("[data-edit-month]")?.value||0),year:Number(tr.querySelector("[data-edit-year]")?.value||0),batch:String(tr.querySelector("[data-edit-batch]")?.value||"").trim()};
-      if(!Number.isInteger(v.quantity)||v.quantity<=0||v.month<1||v.month>12||v.year<2020||v.year>2200){setExpiryStatus("error","CHECK QUANTITY AND EXPIRY");return;}
+      const validation=validateEdit(v);if(validation){showEditValidation(tr,validation);return;}showEditValidation(tr,"");
       b.disabled=true;try{await saveExpiryCurrentCorrection(row,v);ExpiryCaptureEngine.editingStateId="";setExpiryStatus("success","UPDATED · TOTAL "+v.quantity);await refreshExpiryCurrentState();}catch(e){setExpiryStatus("error","UPDATE FAILED");b.disabled=false;}
     });
   }
