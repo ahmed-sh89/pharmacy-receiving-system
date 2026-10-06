@@ -20,6 +20,7 @@ const ExpiryCaptureEngine = {
     highlightedStateId: "",
     desktopSearchTimer: null,
     desktopSearchRows: [],
+    desktopSearchGeneration: 0,
     editingStateId: "",
     desktopView: "RECENT",
     storageKey(){
@@ -476,7 +477,8 @@ async function expirySearchGlobalItems(query){
         : (Array.isArray(response?.data) ? response.data : []);
     return rows;
 }
-function closeExpirySearchResults(){
+function closeExpirySearchResults(invalidate=false){
+    if(invalidate) ExpiryCaptureEngine.desktopSearchGeneration++;
     const box=document.getElementById("expirySearchResults");
     if(box){box.hidden=true;box.innerHTML="";}
     ExpiryCaptureEngine.desktopSearchRows=[];
@@ -1478,7 +1480,7 @@ function bindExpiryCaptureUI(){
             clearTimeout(ExpiryCaptureEngine.scanTimer);
             clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
             ExpiryCaptureEngine.scanTimer=null;
-            closeExpirySearchResults();
+            closeExpirySearchResults(true);
             const value=String(barcode.value||"").trim();
             if(!value || value===ExpiryCaptureEngine.lastResolvedRaw) return;
             closeExpirySearchResults();
@@ -1507,7 +1509,7 @@ function bindExpiryCaptureUI(){
             if(expiryIsHandheld()) return;
             clearTimeout(ExpiryCaptureEngine.scanTimer);
             clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
-            closeExpirySearchResults();
+            closeExpirySearchResults(true);
         });
 
         barcode.addEventListener("input",()=>{
@@ -1524,9 +1526,15 @@ function bindExpiryCaptureUI(){
                 ExpiryCaptureEngine.scanTimer=setTimeout(commitHardwareScan,120);
                 return;
             }
+            const generation=++ExpiryCaptureEngine.desktopSearchGeneration;
             ExpiryCaptureEngine.desktopSearchTimer=setTimeout(async()=>{
-                try{renderExpirySearchResults(await expirySearchGlobalItems(value));}
-                catch(error){console.warn("Expiry manual search failed",error);closeExpirySearchResults();}
+                try{
+                    const rows=await expirySearchGlobalItems(value);
+                    if(generation!==ExpiryCaptureEngine.desktopSearchGeneration) return;
+                    if(String(barcode.value||"").trim()!==value) return;
+                    renderExpirySearchResults(rows);
+                }
+                catch(error){console.warn("Expiry manual search failed",error);if(generation===ExpiryCaptureEngine.desktopSearchGeneration)closeExpirySearchResults();}
             },220);
         });
 
