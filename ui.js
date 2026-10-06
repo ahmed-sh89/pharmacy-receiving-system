@@ -8429,7 +8429,7 @@ function renderItemBrowser(body, rows, options={}){
     const orderNumbers=Array.from(new Set(rows.flatMap(item=>Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean)));
     body.innerHTML=`
       <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
-        ${orderMode?`<div class="pfnBrowserControlRow"><label><span>Order</span><select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
+        ${orderMode?`<div class="pfnBrowserControlRow"><label><span>Order</span><details data-order-filter class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>All Orders</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="ALL" class="active">All Orders</button>${orderNumbers.map(o=>`<button type="button" data-value="${esc(o)}">${esc(o)}</button>`).join('')}</div></div></details></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><details data-qty-sort class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>Highest → Lowest</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="desc" class="active">Highest → Lowest</button><button type="button" data-value="asc">Lowest → Highest</button><button type="button" data-value="default">Default / Order Sequence</button></div></div></details></label></div>`:''}
         <div class="pfnBrowserActionRow"><label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>${orderMode?`<div class="pfnBrowserPriorityActions"><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button></div>`:''}</div>
       </div>
       ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
@@ -8469,14 +8469,14 @@ function renderItemBrowser(body, rows, options={}){
                 ? matchesReceivingSearch(item,q)
                 : toSafeString(item.itemName).toLowerCase().includes(q)||toSafeString(item.itemCode).toLowerCase().includes(q)
         ));
-        const selectedOrder=orderFilter?.value||'ALL';
+        const selectedOrder=orderFilter?.dataset.value||'ALL';
         if(orderMode&&selectedOrder!=='ALL') visible=visible.filter(item=>(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).includes(selectedOrder));
         if(orderMode&&window.PharmFlowClassificationFilters){
             const selection={groups:selectedGroups,categories:[],subCategories:[]};
             visible=window.PharmFlowClassificationFilters.filter(visible,selection);
         }
         if(orderMode&&priorityOnly) visible=visible.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
-        const sort=qtySort?.value||'desc';
+        const sort=qtySort?.dataset.value||'desc';
         if(sort==='desc') visible=visible.slice().sort((a,b)=>toNumber(b.orderedQty,0)-toNumber(a.orderedQty,0));
         if(sort==='asc') visible=visible.slice().sort((a,b)=>toNumber(a.orderedQty,0)-toNumber(b.orderedQty,0));
         visibleRows=visible;
@@ -8562,11 +8562,23 @@ function renderItemBrowser(body, rows, options={}){
     };
     rebuildClassification();
     const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
-    input?.addEventListener('input',resetAndDraw);orderFilter?.addEventListener('change',resetAndDraw);
+    input?.addEventListener('input',resetAndDraw);
+    const bindSingleFilter=(details,defaultValue)=>{
+        if(!details)return;
+        details.dataset.value=defaultValue;
+        details.addEventListener('click',event=>{
+            const option=event.target.closest('button[data-value]');if(!option)return;
+            event.preventDefault();
+            details.dataset.value=option.dataset.value||defaultValue;
+            details.querySelectorAll('button[data-value]').forEach(button=>button.classList.toggle('active',button===option));
+            const label=details.querySelector('summary strong');if(label)label.textContent=option.textContent.trim();
+            details.open=false;resetAndDraw();
+        });
+    };
+    bindSingleFilter(orderFilter,'ALL');bindSingleFilter(qtySort,'desc');
     groupFilter?.addEventListener('click',event=>{const action=event.target.closest('[data-group-action]')?.dataset.groupAction;if(!action)return;event.preventDefault();const boxes=[...groupFilter.querySelectorAll('input[type="checkbox"]')];if(action==='all')boxes.forEach(box=>box.checked=true);if(action==='clear')boxes.forEach(box=>box.checked=false);if(action==='ok')groupFilter.open=false;selectedGroups=boxes.filter(box=>box.checked).map(box=>box.value);rebuildClassification();draw();});
     groupFilter?.addEventListener('change',event=>{if(!event.target.matches('input[type="checkbox"]'))return;selectedGroups=[...groupFilter.querySelectorAll('input:checked')].map(box=>box.value);rebuildClassification();draw();});
-    groupFilter?.addEventListener('toggle',()=>{if(groupFilter.open){orderFilter?.blur();qtySort?.blur();}});
-    qtySort?.addEventListener('change',resetAndDraw);
+    groupFilter?.addEventListener('toggle',()=>{if(groupFilter.open){if(orderFilter)orderFilter.open=false;if(qtySort)qtySort.open=false;}});
     priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;resetAndDraw();});
     clearPriority?.addEventListener('click',async()=>{
         const targets=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
@@ -8588,7 +8600,7 @@ function renderItemBrowser(body, rows, options={}){
         const printable=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
         if(!printable.length) return;
 
-        const selectedOrder=orderFilter?.value||'ALL';
+        const selectedOrder=orderFilter?.dataset.value||'ALL';
         const receipt=document.createElement('iframe');
         receipt.setAttribute('aria-hidden','true');
         receipt.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
