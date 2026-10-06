@@ -20,7 +20,8 @@
             lastActivity=Date.now();
             arm();
         },
-        enter: enterIdleSleep
+        enter: enterIdleSleep,
+        resume: resumeIdleSleep
     };
 
     function ensureOverlay(){
@@ -44,7 +45,7 @@
         // Visuals are owned by css/identity.css; idle behavior stays here.
         document.body.appendChild(el);
         const resume=el.querySelector('#pf-idle-refresh');
-        resume.addEventListener('click',()=>window.location.reload(),true);
+        resume.addEventListener('click',()=>resumeIdleSleep(),true);
         return el;
     }
 
@@ -55,7 +56,7 @@
         if(ev.type==='keydown' && ev.key==='Enter' && !ev.repeat){
             ev.preventDefault();
             ev.stopImmediatePropagation();
-            window.location.reload();
+            resumeIdleSleep();
             return;
         }
         ev.preventDefault();
@@ -70,6 +71,31 @@
         clearTimeout(timer);
         const remain=Math.max(0,IDLE_MS-(Date.now()-lastActivity));
         timer=setTimeout(enterIdleSleep,remain);
+    }
+
+    function resumeIdleSleep(){
+        if(!active) return;
+        active=false;
+        lastActivity=Date.now();
+        ensureOverlay().classList.remove('pf-show');
+        document.documentElement.classList.remove('pf-idle-sleep-active');
+        arm();
+
+        /* Resume the already-authenticated runtime immediately. The previous
+           implementation reloaded the whole document, which repeated auth,
+           workspace authority and archive hydration. Background authority
+           reconciliation remains server-first but no longer blocks the UI. */
+        try{
+            if(typeof reconcileRestoredWorkspaceWithCloud==='function'){
+                Promise.resolve(reconcileRestoredWorkspaceWithCloud({reason:'idle-resume',silent:true}))
+                    .then(result=>{ if(result?.cleared && typeof refreshEntireUI==='function') refreshEntireUI(); })
+                    .catch(()=>{});
+            }
+            if(typeof refreshExpiryCurrentState==='function' && document.getElementById('zebraExpiryShell')?.classList.contains('active')){
+                Promise.resolve(refreshExpiryCurrentState()).catch(()=>{});
+            }
+            setTimeout(()=>{ try{ focusScannerInput?.(); focusExpiryScanner?.(); }catch(_){} },0);
+        }catch(_){}
     }
 
     async function enterIdleSleep(){
