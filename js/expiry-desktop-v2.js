@@ -31,6 +31,12 @@
   function expiryLabel(key){const [m,y]=String(key).split("|");return (typeof expiryMonthShortName==="function"?expiryMonthShortName(Number(m)):m)+" "+y;}
   function operatorName(r){return String(r?.verified_by_name||r?.operator_name||"Desktop");}
   function rowId(r){return String(r?.state_id||"");}
+  function currentRowById(id){return (ExpiryCaptureEngine.currentRows||[]).find(r=>rowId(r)===String(id||""))||null;}
+  function syncSessionAfterCorrection(stateId,v){
+    ExpiryCaptureEngine.sessionRows=sessionRows().map(r=>String(r.state_id||"")===String(stateId||"")
+      ?Object.assign({},r,{batch_no:v.batch||"",expiry_month:v.month,expiry_year:v.year,quantity:v.quantity,captured_quantity:v.quantity})
+      :r);
+  }
 
   function inventoryFiltered(rows){
     let out=(rows||[]).filter(r=>
@@ -177,7 +183,7 @@
       const tr=e.currentTarget.closest("tr"),v=readEditValues(tr),validation=validateEdit(v);
       if(validation){showEditValidation(tr,validation);return;}
       e.currentTarget.disabled=true;
-      try{await saveExpiryCurrentCorrection(row,v);setExpiryStatus("success","CURRENT STATE UPDATED");await refreshExpiryCurrentState();}
+      try{await saveExpiryCurrentCorrection(row,v);syncSessionAfterCorrection(row.state_id,v);setExpiryStatus("success","CURRENT STATE UPDATED");await refreshExpiryCurrentState();}
       catch(err){console.error("Expiry correction failed",err);showEditValidation(tr,"Unable to save this correction.");e.currentTarget.disabled=false;}
     };
   }
@@ -202,7 +208,7 @@
   }
 
   async function confirmDelete(scope,id,button){
-    const row=expiryCurrentRowById(id);if(!row)return;
+    const row=currentRowById(id);if(!row)return;
     button.disabled=true;
     try{
       await clearExpiryCurrentState(row);
@@ -222,10 +228,10 @@
     body.querySelectorAll("[data-inventory-edit]").forEach(b=>b.onclick=()=>{pendingDelete=null;ExpiryCaptureEngine.editingStateId=b.dataset.inventoryEdit;renderInventory(ExpiryCaptureEngine.currentRows||[]);});
     body.querySelectorAll("[data-inventory-cancel]").forEach(b=>b.onclick=()=>{ExpiryCaptureEngine.editingStateId="";renderInventory(ExpiryCaptureEngine.currentRows||[]);});
     body.querySelectorAll("[data-inventory-save]").forEach(b=>b.onclick=async()=>{
-      const row=expiryCurrentRowById(b.dataset.inventorySave);if(!row)return;
+      const row=currentRowById(b.dataset.inventorySave);if(!row)return;
       const tr=b.closest("tr"),v=readEditValues(tr);
       const validation=validateEdit(v);if(validation){showEditValidation(tr,validation);return;}showEditValidation(tr,"");
-      b.disabled=true;try{await saveExpiryCurrentCorrection(row,v);ExpiryCaptureEngine.editingStateId="";setExpiryStatus("success","UPDATED · TOTAL "+v.quantity);await refreshExpiryCurrentState();}catch(e){setExpiryStatus("error","UPDATE FAILED");b.disabled=false;}
+      b.disabled=true;try{await saveExpiryCurrentCorrection(row,v);syncSessionAfterCorrection(row.state_id,v);ExpiryCaptureEngine.editingStateId="";setExpiryStatus("success","UPDATED · TOTAL "+v.quantity);await refreshExpiryCurrentState();}catch(e){setExpiryStatus("error","UPDATE FAILED");b.disabled=false;}
     });
   }
 
@@ -255,7 +261,9 @@
   window.recordExpirySessionCapture=function(payload){
     if(expiryIsHandheld()||!payload)return;
     const incoming=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
-    const rows=sessionRows().slice(),key=sessionKey(incoming),index=rows.findIndex(r=>!r.deleted&&sessionKey(r)===key);
+    const rows=sessionRows().slice(),key=sessionKey(incoming),index=rows.findIndex(r=>!r.deleted&&(
+      (incoming.state_id&&String(r.state_id||"")===String(incoming.state_id)) || sessionKey(r)===key
+    ));
     if(index>=0){
       const previous=rows[index];
       const merged=Object.assign({},previous,incoming,{
