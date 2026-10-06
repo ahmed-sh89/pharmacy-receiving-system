@@ -8148,3 +8148,26 @@ body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryTimeCell{fon
 
 /* RC2: hidden workspace actions must stay hidden despite custom button display. */
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTools [hidden]{display:none!important}
+
+/* Expiry RC3 — root-cause desktop usability corrections. */
+body:not(.zebraDevice) #zebraExpiryShell .pfSelectOption{grid-template-columns:minmax(0,1fr) 18px!important}
+body:not(.zebraDevice) #zebraExpiryShell #expiryMonth .pfSelectOption>span:first-child,
+body:not(.zebraDevice) #zebraExpiryShell #expiryYear .pfSelectOption>span:first-child{overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important}
+body:not(.zebraDevice) #zebraExpiryShell #expiryMonth .pfSelectMenu,
+body:not(.zebraDevice) #zebraExpiryShell #expiryYear .pfSelectMenu{min-width:100%!important;width:max-content!important;max-width:180px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveItem{grid-template-columns:140px minmax(360px,1fr) minmax(330px,auto) 76px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveProduct,
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveFacts,
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveClear{align-self:center!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveFacts{align-items:stretch!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveFact{height:44px!important;min-height:44px!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:center!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActionsCell{min-width:150px!important;padding-left:4px!important;padding-right:8px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryRowAction{min-width:58px!important;margin-left:7px!important;font-size:12px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryRowAction.confirm{min-width:68px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInlineDate{grid-template-columns:minmax(52px,.8fr) minmax(72px,1.2fr)!important;gap:7px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInlineInput[type="number"]{font-size:13px!important;padding-right:2px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInlineInput.is-invalid{border-color:#c93f4e!important;box-shadow:0 0 0 2px rgba(201,63,78,.12)!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryEditValidation{max-width:145px;margin:0 0 5px auto;color:#b22f3d;font-size:10px;font-weight:700;line-height:1.25;white-space:normal}
+body:not(.zebraDevice) #zebraExpiryShell .expiryBackIcon{width:24px!important;height:24px!important;border-radius:0!important;background:transparent!important;color:#5636aa!important;font-size:0!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryBackIcon:before{content:"";display:block;width:9px;height:9px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:4px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryBackIcon:after{content:"";display:block;width:14px;height:2px;background:currentColor;transform:translate(5px,-6px)}
