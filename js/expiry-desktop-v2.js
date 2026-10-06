@@ -130,9 +130,11 @@
 
   function deleteActions(scope,id){
     const active=pendingDelete&&pendingDelete.scope===scope&&String(pendingDelete.id)===String(id);
-    return active
-      ? '<button type="button" class="expiryRowAction" data-delete-cancel>Cancel</button><button type="button" class="expiryRowAction danger confirm" data-delete-confirm="'+esc(id)+'" data-delete-scope="'+scope+'">Confirm</button>'
-      : '<button type="button" class="expiryRowAction danger" data-delete-start="'+esc(id)+'" data-delete-scope="'+scope+'">Delete</button>';
+    return '<span class="expiryDeleteSlot '+(active?'is-confirming':'')+'">'+
+      (active
+        ? '<button type="button" class="expiryRowAction danger confirm" data-delete-confirm="'+esc(id)+'" data-delete-scope="'+scope+'">Confirm</button><button type="button" class="expiryRowAction" data-delete-cancel>Cancel</button>'
+        : '<button type="button" class="expiryRowAction danger" data-delete-start="'+esc(id)+'" data-delete-scope="'+scope+'">Delete</button>')+
+      '</span>';
   }
   function sessionRowHtml(r){
     const cur=currentFor(r),deleted=!!r.deleted||!cur,d=cur||r,fresh=(Date.now()-Date.parse(r.captured_at||""))<6000,id=String(cur?.state_id||r.state_id||"");
