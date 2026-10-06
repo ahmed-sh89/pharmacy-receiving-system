@@ -377,8 +377,15 @@ function clearExpiryScreen(options={}){
 function renderExpiryActiveItem(item,gs1={}){
     const shell=document.getElementById("expiryActiveItem");
     if(!shell || expiryIsHandheld()) return;
-    if(!item){shell.hidden=true;return;}
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||"—";};
+    shell.hidden=false;
+    shell.classList.toggle("is-empty",!item);
+    if(!item){
+        set("expiryActiveItemName","No active item");
+        set("expiryActiveItemCode","—");set("expiryActiveItemGTIN","—");set("expiryActiveItemCategory","—");
+        set("expiryActiveBatch","—");set("expiryActiveSerial","—");set("expiryActiveExpiry","—");
+        return;
+    }
     set("expiryActiveItemName",item.itemName||"Item not recognized");
     set("expiryActiveItemCode",item.itemCode||"Needs Review");
     set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");
