@@ -8236,3 +8236,20 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryActionsCell .expiryRowAction{min
  body:not(.zebraDevice) #zebraExpiryShell .expiryActiveHeading,
  body:not(.zebraDevice) #zebraExpiryShell .expiryActiveDatum{padding:5px!important}
 }
+
+/* Expiry R40 — product-first Active Item proportions + complete delete confirmation */
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveItem{
+ grid-template-columns:minmax(300px,2.4fr) minmax(92px,.72fr) minmax(132px,1fr) minmax(100px,.76fr) minmax(100px,.76fr) minmax(100px,.76fr) minmax(112px,.84fr) 62px!important
+}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActiveHeading strong{font-size:13px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(4){width:27%!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable th:nth-child(10){width:15%!important;text-align:right!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryActionsCell{overflow:visible!important;white-space:nowrap!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryDeleteSlot{display:inline-flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;vertical-align:middle!important;white-space:nowrap!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryDeleteSlot .expiryRowAction{margin-left:0!important;min-width:50px!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryDeleteSlot.is-confirming .expiryRowAction{min-width:54px!important;padding-left:5px!important;padding-right:5px!important}
+@media (min-width:769px) and (max-width:1180px){
+ body:not(.zebraDevice) #zebraExpiryShell .expiryActiveItem{
+  grid-template-columns:minmax(240px,2.2fr) minmax(78px,.7fr) minmax(112px,1fr) minmax(84px,.72fr) minmax(84px,.72fr) minmax(84px,.72fr) minmax(94px,.8fr) 56px!important
+ }
+}
