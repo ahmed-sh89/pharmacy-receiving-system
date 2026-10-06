@@ -256,6 +256,7 @@ function markExpiryFormDirty(){
 
 function scheduleExpiryScanAutoClear(){
     cancelExpiryScanAutoClear();
+    if(!expiryIsHandheld()) return; // Desktop retains unsaved data until Save or Clear.
     ExpiryCaptureEngine.formDirty=false;
 
     ExpiryCaptureEngine.scanClearTimer=setTimeout(()=>{
@@ -295,8 +296,8 @@ function setExpiryDateMode(mode){
     ExpiryCaptureEngine.dateSource=mode==="AUTO" ? "AUTO" : "MANUAL";
 
     if(mode==="AUTO"){
-        setExpirySelectDisabled(month,true);
-        setExpirySelectDisabled(year,true);
+        setExpirySelectDisabled(month,expiryIsHandheld());
+        setExpirySelectDisabled(year,expiryIsHandheld());
         if(label){
             const selected=Number(expiryControlValue(month)||0);
             label.textContent=selected
@@ -381,28 +382,18 @@ function renderExpiryActiveItem(item,gs1={}){
     shell.hidden=false;
     shell.classList.toggle("is-empty",!item);
     if(!item){
-        set("expiryActiveItemName","No active item");
+        set("expiryActiveItemName","Ready for next item");
         set("expiryActiveItemCode","—");set("expiryActiveItemGTIN","—");set("expiryActiveItemCategory","—");
-        set("expiryActiveBatch","—");set("expiryActiveSerial","—");set("expiryActiveExpiry","—");
         return;
     }
     set("expiryActiveItemName",item.itemName||"Item not recognized");
     set("expiryActiveItemCode",item.itemCode||"Needs Review");
     set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");
     set("expiryActiveItemCategory",item.category||"Uncategorized");
-    set("expiryActiveBatch",gs1?.lot||"—");
-    set("expiryActiveSerial",gs1?.serial||"—");
-    set("expiryActiveExpiry",gs1?.expiry||"—");
+    const batch=document.getElementById("expiryBatchInput"),serial=document.getElementById("expirySerialInput");
+    if(batch)batch.value=gs1?.lot||"";
+    if(serial)serial.value=gs1?.serial||"";
     shell.hidden=false;
-}
-
-function expiryCaptureHasCompleteAutoData(){
-    if(expiryIsHandheld() || !ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.currentItem.needsReview) return false;
-    const gs1=ExpiryCaptureEngine.scannedGS1||{};
-    const quantity=Number(document.getElementById("expiryQuantity")?.value||0);
-    const month=Number(expiryControlValue(document.getElementById("expiryMonth"))||0);
-    const year=Number(expiryControlValue(document.getElementById("expiryYear"))||0);
-    return quantity===1 && !!toSafeString(gs1.expiry).trim() && month>=1 && month<=12 && year>=2020 && year<=2200;
 }
 
 function resetExpiryCaptureForm(options = {}){
@@ -411,6 +402,7 @@ function resetExpiryCaptureForm(options = {}){
     ExpiryCaptureEngine.currentItem = null;
     ExpiryCaptureEngine.scannedGS1 = null;
     renderExpiryActiveItem(null);
+    ["expiryBatchInput","expirySerialInput"].forEach(id=>{const field=document.getElementById(id);if(field)field.value="";});
 
     ["expiryItemName","expiryItemCode","expiryItemGTIN","expiryItemCategory","expiryItemBatch","expiryItemSerial"].forEach(id => {
         const el = document.getElementById(id);
@@ -425,7 +417,7 @@ function resetExpiryCaptureForm(options = {}){
     if(qty){
         qty.value = "";
         qty.disabled=false;
-        qty.readOnly=true;
+        qty.readOnly=expiryIsHandheld();
         qty.dataset.intentionalEdit="0";
     }
     if(month){
@@ -529,7 +521,7 @@ async function selectExpirySearchResult(index){
         renderExpiryActiveItem(ExpiryCaptureEngine.currentItem,{});
         const values={expiryItemName:row.item_name||"Unnamed item",expiryItemCode:row.item_code||"—",expiryItemGTIN:identifier,expiryItemCategory:row.category||row.group_name||"Uncategorized"};
         Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
-        const qty=document.getElementById("expiryQuantity");if(qty){qty.value="1";qty.readOnly=true;qty.dataset.intentionalEdit="0";}
+        const qty=document.getElementById("expiryQuantity");if(qty){qty.value="1";qty.readOnly=expiryIsHandheld();qty.dataset.intentionalEdit="0";}
         setExpiryDateMode("MANUAL");
         document.getElementById("btnSaveExpiryCapture")?.removeAttribute("disabled");
         const input=document.getElementById("expiryBarcodeInput");if(input)input.value="";
@@ -632,7 +624,7 @@ async function resolveExpiryScannedValue(rawValue){
         if(qty){
             qty.value="1";
             qty.disabled=false;
-            qty.readOnly=true;
+            qty.readOnly=expiryIsHandheld();
             qty.dataset.intentionalEdit="0";
         }
 
@@ -698,7 +690,7 @@ async function resolveExpiryScannedValue(rawValue){
     const qty = document.getElementById("expiryQuantity");
     if(qty){
         qty.value = "1";
-        qty.readOnly=true;
+        qty.readOnly=expiryIsHandheld();
         qty.dataset.intentionalEdit="0";
     }
 
@@ -717,12 +709,6 @@ async function resolveExpiryScannedValue(rawValue){
         focusExpiryScanner();
         window.hhRepairScannerFocus?.("expiry-known-resolved");
     },40);
-
-    if(expiryCaptureHasCompleteAutoData()){
-        setExpiryStatus("success","ITEM FOUND · SAVING...");
-        await saveExpiryCapture({auto:true});
-        return true;
-    }
 
     scheduleExpiryScanAutoClear();
     return true;
@@ -793,7 +779,10 @@ async function saveExpiryCapture(options={}){
             return;
         }
 
-        const gs1=ExpiryCaptureEngine.scannedGS1 || {};
+        const gs1=expiryIsHandheld() ? (ExpiryCaptureEngine.scannedGS1 || {}) : {
+            lot:document.getElementById("expiryBatchInput")?.value.trim() || "",
+            serial:document.getElementById("expirySerialInput")?.value.trim() || ""
+        };
         const saveResult=await authRpc("save_pharmacy_expiry_verified_state_v2", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
@@ -1366,6 +1355,28 @@ function bindExpiryCaptureUI(){
         });
     }
 
+    if(!expiryIsHandheld()){
+        ["expiryBatchInput","expirySerialInput","expiryQuantity"].forEach(id=>{
+            const field=document.getElementById(id);
+            if(field && field.dataset.reviewBound!=="1"){
+                field.dataset.reviewBound="1";
+                field.addEventListener("input",markExpiryFormDirty);
+            }
+        });
+        [["btnExpiryQtyMinus",-1],["btnExpiryQtyPlus",1]].forEach(([id,delta])=>{
+            const button=document.getElementById(id);
+            if(button && button.dataset.bound!=="1"){
+                button.dataset.bound="1";
+                button.addEventListener("click",()=>{
+                    if(!ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.busy) return;
+                    const quantity=document.getElementById("expiryQuantity");
+                    quantity.value=String(Math.max(1,(Number(quantity.value)||1)+delta));
+                    markExpiryFormDirty();
+                });
+            }
+        });
+    }
+
     const qtyInput = document.getElementById("expiryQuantity");
     if(qtyInput && qtyInput.dataset.intentBound!=="1"){
         qtyInput.dataset.intentBound="1";
@@ -1396,7 +1407,7 @@ function bindExpiryCaptureUI(){
                 event.preventDefault();
 
                 qtyInput.blur();
-                qtyInput.readOnly=true;
+                qtyInput.readOnly=expiryIsHandheld();
                 qtyInput.dataset.intentionalEdit="0";
 
                 try{ document.activeElement?.blur?.(); }catch(_){}

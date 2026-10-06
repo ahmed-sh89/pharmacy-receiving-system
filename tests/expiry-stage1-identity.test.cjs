@@ -159,14 +159,13 @@ test('Expiry desktop paste routes barcode-like identifiers through scan resoluti
   assert.match(js,/desktopSearchTimer=setTimeout/);
 });
 
-test('Expiry desktop shows compact active item and auto-saves complete GS1 only',()=>{
- const html=read('index.html'),js=read('js/expiry.js'),css=read('css/dashboard.css');
+test('Expiry desktop retains complete GS1 for explicit review and Save',()=>{
+ const html=read('index.html'),js=read('js/expiry.js');
  assert.match(html,/id="expiryActiveItem"/);
+ assert.match(html,/id="expiryBatchInput"/);
+ assert.match(html,/id="expirySerialInput"/);
  assert.match(js,/renderExpiryActiveItem\(ExpiryCaptureEngine\.currentItem,parsed\|\|\{\}\)/);
- assert.match(js,/expiryCaptureHasCompleteAutoData/);
- assert.match(js,/await saveExpiryCapture\(\{auto:true\}\)/);
- assert.match(js,/currentItem\.needsReview\) return false/);
- assert.match(css,/grid-template-areas:"scan qty month year save operator" "active active active active active active"/);
+ assert.doesNotMatch(js,/expiryCaptureHasCompleteAutoData|saveExpiryCapture\(\{auto:true\}\)/);
 });
 
 test('Expiry desktop separates recent operational work from full current state',()=>{
