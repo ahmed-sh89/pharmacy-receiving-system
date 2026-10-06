@@ -252,7 +252,21 @@
 
   window.markExpirySessionStateDeleted=function(stateId){ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).map(r=>String(r.state_id||"")===String(stateId||"")?Object.assign({},r,{deleted:true}):r);};
   window.resetExpiryDesktopSession=function(){ExpiryCaptureEngine.sessionStartedAt=0;ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";pendingDelete=null;Object.values(FILTERS).forEach(s=>s.clear());lastUpdatedSort="NONE";};
-  window.recordExpirySessionCapture=function(payload){if(expiryIsHandheld()||!payload)return;const incoming=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});ExpiryCaptureEngine.sessionRows=[incoming].concat(ExpiryCaptureEngine.sessionRows||[]);renderExpirySessionActivity();};
+  window.recordExpirySessionCapture=function(payload){
+    if(expiryIsHandheld()||!payload)return;
+    const incoming=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
+    const rows=sessionRows().slice(),key=sessionKey(incoming),index=rows.findIndex(r=>!r.deleted&&sessionKey(r)===key);
+    if(index>=0){
+      const previous=rows[index];
+      const merged=Object.assign({},previous,incoming,{
+        quantity:(Number(previous.quantity)||0)+(Number(incoming.quantity)||0),
+        captured_quantity:(Number(previous.captured_quantity)||0)+(Number(incoming.captured_quantity)||0)
+      });
+      rows.splice(index,1);rows.unshift(merged);
+    }else rows.unshift(incoming);
+    ExpiryCaptureEngine.sessionRows=rows;
+    renderExpirySessionActivity();
+  };
   window.renderExpiryCurrentState=function(rows){const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity();else renderInventory(safe);};
   window.refreshExpiryCurrentState=async function(){if(expiryIsHandheld())return[];try{const search=ExpiryCaptureEngine.desktopView==="INVENTORY"?(document.getElementById("expiryCurrentSearch")?.value||""):"";const rows=await loadExpiryCurrentState(search);ExpiryCaptureEngine.currentRows=rows;renderExpiryKpis(rows);updateMode();if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity();else renderInventory(rows);return rows;}catch(e){console.error("Unable to load expiry workspace",e);return[];}};
 
