@@ -2368,8 +2368,17 @@ function refreshReceivingTable(){
         const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
         const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
         orders.forEach(orderNumber=>getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}).forEach(r=>{
-            const received=toNumber(r["Received Qty"],0),issue=r.issueKey||"",match=issues.has(issue)||(issues.has("received_any")&&received>0);
-            if(match) rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:toNumber(r["Ordered Qty"],0),receivedQty:received,remainingQty:Math.max(0,toNumber(r["Ordered Qty"],0)-received),status:r["Issue Type"]==="Received"?"Completed":r["Issue Type"],group_name:r["Group"]||r.group_name||"",category:r["Category"]||"",sub_category:r["Sub Category"]||r.sub_category||"",manual:r.issueKey==="manual"});
+            const received=toNumber(r["Received Qty"],0),ordered=toNumber(r["Ordered Qty"],0);
+            /* Derive the live issue from authoritative quantities instead of
+               trusting a cached presentation key. This keeps Discrepancy and
+               Over Received consistent even when a row projection is stale. */
+            const issue=r.issueKey==="manual"?"manual":
+                received>ordered?"over":
+                ordered>0&&received<=0?"not_received":
+                ordered>0&&received<ordered?"partial":
+                received>0?"received_any":"";
+            const match=issues.has(issue)||(issues.has("received_any")&&received>0);
+            if(match) rows.push({orderNumber,itemCode:r["Item Number"],itemName:r["Item Name"],orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received),status:issue==="over"?"Over Received":issue==="not_received"?"Not Received":issue==="partial"?"Partial Shortage":issue==="manual"?"Extra Item":"Completed",group_name:r["Group"]||r.group_name||"",category:r["Category"]||"",sub_category:r["Sub Category"]||r.sub_category||"",manual:issue==="manual"});
         }));
     }else{
         rows=(AppState.workspace.orderData||[]).filter(item=>{
