@@ -8553,6 +8553,10 @@ function renderItemBrowser(body, rows, options={}){
         const menu=groupFilter?.querySelector('.pfrFilterMenu');
         if(!menu)return;
         const allowed=new Set(choices.groups);selectedGroups=selectedGroups.filter(value=>allowed.has(value));
+        /* Order Items uses the same multi-select contract as Receiving:
+           opening at "All groups" means every available Group is explicitly
+           selected, never an arbitrary subset inherited from a prior render. */
+        if(selectedGroups.length===0 && choices.groups.length) selectedGroups=choices.groups.slice();
         menu.innerHTML=`<div class="pfrFilterOptions">${choices.groups.map(value=>`<label><input type="checkbox" value="${esc(value)}" ${selectedGroups.includes(value)?"checked":""}><span>${esc(value)}</span></label>`).join('')||'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
         const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?selectedGroups[0]:selectedGroups.length+' groups';
     };
