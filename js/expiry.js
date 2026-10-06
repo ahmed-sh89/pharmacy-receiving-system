@@ -295,8 +295,9 @@ function setExpiryDateMode(mode){
     ExpiryCaptureEngine.dateSource=mode==="AUTO" ? "AUTO" : "MANUAL";
 
     if(mode==="AUTO"){
-        setExpirySelectDisabled(month,true);
-        setExpirySelectDisabled(year,true);
+        const lockAutoDate=expiryIsHandheld();
+        setExpirySelectDisabled(month,lockAutoDate);
+        setExpirySelectDisabled(year,lockAutoDate);
         if(label){
             const selected=Number(expiryControlValue(month)||0);
             label.textContent=selected
@@ -375,25 +376,13 @@ function clearExpiryScreen(options={}){
 }
 
 function renderExpiryActiveItem(item,gs1={}){
-    const shell=document.getElementById("expiryActiveItem");
-    if(!shell || expiryIsHandheld()) return;
+    const shell=document.getElementById("expiryActiveItem");if(!shell||expiryIsHandheld())return;
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||"—";};
-    shell.hidden=false;
+    const batch=document.getElementById("expiryBatchInput"),serial=document.getElementById("expirySerialInput");
     shell.classList.toggle("is-empty",!item);
-    if(!item){
-        set("expiryActiveItemName","No active item");
-        set("expiryActiveItemCode","—");set("expiryActiveItemGTIN","—");set("expiryActiveItemCategory","—");
-        set("expiryActiveBatch","—");set("expiryActiveSerial","—");set("expiryActiveExpiry","—");
-        return;
-    }
-    set("expiryActiveItemName",item.itemName||"Item not recognized");
-    set("expiryActiveItemCode",item.itemCode||"Needs Review");
-    set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");
-    set("expiryActiveItemCategory",item.category||"Uncategorized");
-    set("expiryActiveBatch",gs1?.lot||"—");
-    set("expiryActiveSerial",gs1?.serial||"—");
-    set("expiryActiveExpiry",gs1?.expiry||"—");
-    shell.hidden=false;
+    if(!item){set("expiryActiveItemName","Ready for next item");set("expiryActiveItemCode","—");set("expiryActiveItemGTIN","—");set("expiryActiveItemCategory","—");if(batch){batch.value="";batch.disabled=true;}if(serial){serial.value="";serial.disabled=true;}return;}
+    set("expiryActiveItemName",item.itemName||"Item not recognized");set("expiryActiveItemCode",item.itemCode||"Needs Review");set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");set("expiryActiveItemCategory",item.category||"Uncategorized");
+    if(batch){batch.value=toSafeString(gs1?.lot||"").trim();batch.disabled=false;}if(serial){serial.value=toSafeString(gs1?.serial||"").trim();serial.disabled=false;}
 }
 
 function expiryCaptureHasCompleteAutoData(){
@@ -417,6 +406,7 @@ function resetExpiryCaptureForm(options = {}){
         if(el) el.textContent = "—";
     });
 
+    const batchInput=document.getElementById("expiryBatchInput"),serialInput=document.getElementById("expirySerialInput");if(batchInput){batchInput.value="";batchInput.disabled=true;}if(serialInput){serialInput.value="";serialInput.disabled=true;}
     const qty = document.getElementById("expiryQuantity");
     const month = document.getElementById("expiryMonth");
     const year = document.getElementById("expiryYear");
@@ -718,11 +708,7 @@ async function resolveExpiryScannedValue(rawValue){
         window.hhRepairScannerFocus?.("expiry-known-resolved");
     },40);
 
-    if(expiryCaptureHasCompleteAutoData()){
-        setExpiryStatus("success","ITEM FOUND · SAVING...");
-        await saveExpiryCapture({auto:true});
-        return true;
-    }
+    if(expiryCaptureHasCompleteAutoData()) setExpiryStatus("action","ITEM READY · REVIEW & SAVE");
 
     scheduleExpiryScanAutoClear();
     return true;
@@ -794,6 +780,8 @@ async function saveExpiryCapture(options={}){
         }
 
         const gs1=ExpiryCaptureEngine.scannedGS1 || {};
+        const reviewedBatch=expiryIsHandheld()?toSafeString(gs1.lot||"").trim():toSafeString(document.getElementById("expiryBatchInput")?.value||"").trim();
+        const reviewedSerial=expiryIsHandheld()?toSafeString(gs1.serial||"").trim():toSafeString(document.getElementById("expirySerialInput")?.value||"").trim();
         const saveResult=await authRpc("save_pharmacy_expiry_verified_state_v2", {
             p_pharmacy_id: pharmacyId,
             p_item_code: item.itemCode,
@@ -804,8 +792,8 @@ async function saveExpiryCapture(options={}){
             p_expiry_month: month,
             p_expiry_year: year,
             p_worker_id: workerId || null,
-            p_batch_no: toSafeString(gs1.lot||""),
-            p_sample_serial: toSafeString(gs1.serial||""),
+            p_batch_no: reviewedBatch,
+            p_sample_serial: reviewedSerial,
             p_device_id: deviceId,
             p_source: expiryCurrentSource(),
             p_event_type: "CAPTURE"
@@ -815,8 +803,8 @@ async function saveExpiryCapture(options={}){
             window.recordExpirySessionCapture({
                 item_code:item.itemCode,item_name:item.itemName,identifier_display:item.identifierDisplay || item.gtin,
                 category:item.category || "",quantity:quantity,captured_quantity:quantity,
-                expiry_month:month,expiry_year:year,batch_no:toSafeString(gs1.lot||""),
-                sample_serial:toSafeString(gs1.serial||""),source:expiryCurrentSource(),
+                expiry_month:month,expiry_year:year,batch_no:reviewedBatch,
+                sample_serial:reviewedSerial,source:expiryCurrentSource(),
                 state_id:Array.isArray(saveResult)?saveResult[0]?.state_id:saveResult?.state_id,
                 operator_name:(Array.isArray(saveResult)?saveResult[0]?.verified_by_name:saveResult?.verified_by_name) || (ExpiryCaptureEngine.workers.find(w=>w.worker_id===workerId)?.worker_name) || "Desktop"
             });
@@ -834,7 +822,7 @@ async function saveExpiryCapture(options={}){
         refreshExpiryCapturedCount();
         const savedRows=await refreshExpiryCurrentState();
         if(Array.isArray(savedRows)){
-            const match=savedRows.find(row=>String(row.item_code||"")===String(item.itemCode||"") && Number(row.expiry_month)===month && Number(row.expiry_year)===year && String(row.batch_no||"")===String(toSafeString(gs1.lot||"")));
+            const match=savedRows.find(row=>String(row.item_code||"")===String(item.itemCode||"") && Number(row.expiry_month)===month && Number(row.expiry_year)===year && String(row.batch_no||"")===String(reviewedBatch));
             if(match){
                 ExpiryCaptureEngine.highlightedStateId=match.state_id;
                 renderExpiryCurrentState(savedRows);
@@ -1366,6 +1354,9 @@ function bindExpiryCaptureUI(){
         });
     }
 
+    [document.getElementById("expiryBatchInput"),document.getElementById("expirySerialInput")].forEach(el=>{if(!el||el.dataset.reviewBound==="1")return;el.dataset.reviewBound="1";el.addEventListener("input",markExpiryFormDirty);});
+    const adjustQty=delta=>{const qty=document.getElementById("expiryQuantity");if(!qty||!ExpiryCaptureEngine.currentItem)return;qty.value=String(Math.max(1,(Number(qty.value)||1)+delta));qty.readOnly=false;qty.dataset.intentionalEdit="1";markExpiryFormDirty();};
+    const minus=document.getElementById("btnExpiryQtyMinus"),plus=document.getElementById("btnExpiryQtyPlus");if(minus&&minus.dataset.bound!=="1"){minus.dataset.bound="1";minus.addEventListener("click",()=>adjustQty(-1));}if(plus&&plus.dataset.bound!=="1"){plus.dataset.bound="1";plus.addEventListener("click",()=>adjustQty(1));}
     const qtyInput = document.getElementById("expiryQuantity");
     if(qtyInput && qtyInput.dataset.intentBound!=="1"){
         qtyInput.dataset.intentBound="1";
