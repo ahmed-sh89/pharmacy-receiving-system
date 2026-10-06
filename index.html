@@ -39,7 +39,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=EXPIRY_R29_R38_2"
+        href="css/dashboard.css?v=EXPIRY_R39_ROOT"
     >
 
     <link
@@ -1319,21 +1319,17 @@
                             </div>
                         </div>
 
-                        <div id="expiryActiveItem" class="expiryActiveItem" hidden aria-live="polite">
-                            <div class="expiryActiveBadge"><span class="expiryActiveBadgeMark" aria-hidden="true">✓</span><span>ACTIVE ITEM</span></div>
-                            <div class="expiryActiveProduct">
-                                <strong id="expiryActiveItemName">—</strong>
-                                <div class="expiryActiveMeta">
-                                    <span>Item Code <b id="expiryActiveItemCode">—</b></span>
-                                    <span>GTIN <b id="expiryActiveItemGTIN">—</b></span>
-                                    <span>Category <b id="expiryActiveItemCategory">—</b></span>
-                                </div>
+                        <div id="expiryActiveItem" class="expiryActiveItem is-empty" aria-live="polite">
+                            <div class="expiryActiveHeading">
+                                <span class="expiryActiveBadgeMark" aria-hidden="true">✓</span>
+                                <div><span>ACTIVE ITEM</span><strong id="expiryActiveItemName">No active item</strong></div>
                             </div>
-                            <div class="expiryActiveFacts">
-                                <div class="expiryActiveFact"><span>Batch</span><strong id="expiryActiveBatch">—</strong></div>
-                                <div class="expiryActiveFact"><span>Serial No.</span><strong id="expiryActiveSerial">—</strong></div>
-                                <div class="expiryActiveFact"><span>Expiry Date</span><strong id="expiryActiveExpiry">—</strong></div>
-                            </div>
+                            <div class="expiryActiveDatum"><span>Item Code</span><strong id="expiryActiveItemCode">—</strong></div>
+                            <div class="expiryActiveDatum"><span>GTIN</span><strong id="expiryActiveItemGTIN">—</strong></div>
+                            <div class="expiryActiveDatum"><span>Category</span><strong id="expiryActiveItemCategory">—</strong></div>
+                            <div class="expiryActiveDatum"><span>Batch</span><strong id="expiryActiveBatch">—</strong></div>
+                            <div class="expiryActiveDatum"><span>Serial No.</span><strong id="expiryActiveSerial">—</strong></div>
+                            <div class="expiryActiveDatum"><span>Expiry Date</span><strong id="expiryActiveExpiry">—</strong></div>
                             <button id="btnClearExpiryActive" class="expiryActiveClear" type="button">Clear</button>
                         </div>
                     </div>
@@ -2592,7 +2588,7 @@
 <script src="js/needs-review.js?v=NR_AUTO_ALLOC1"></script>
 
 <script src="js/expiry.js?v=EXPIRY_R29_R38"></script>
-<script src="js/expiry-desktop-v2.js?v=EXPIRY_R29_R38"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_R39_ROOT"></script>
 
 <script src="cloud-workspace.js?v=IDLE_RESUME2"></script>
 
