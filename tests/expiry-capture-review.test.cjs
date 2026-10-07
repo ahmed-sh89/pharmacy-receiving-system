@@ -46,6 +46,41 @@ test('Handheld retains worker guard, GS1 date locking and original GS1 payload',
  assert.equal(h.e('expiryQuantity').readOnly,true);assert.equal(h.e('expiryMonth').dataset.disabled,'true');h.e('expiryBatchInput').value='DESKTOP-ONLY';await h.c.saveExpiryCapture();assert.equal(h.calls[0].payload.p_batch_no,'GS1-BATCH');assert.equal(h.calls[0].payload.p_sample_serial,'GS1-SERIAL');assert.equal(h.calls[0].payload.p_worker_id,'worker1');
 });
 test('Critical capture IDs occur once and Session Activity markup is preserved',()=>{
- const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryQuantity','expiryMonth','expiryYear','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnClearExpirySession','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);
+ const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryQuantity','expiryMonth','expiryYear','expiryBatchInput','expirySerialInput','btnExpiryQtyMinus','btnExpiryQtyPlus','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnClearExpirySession','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);
  const css=fs.readFileSync('css/dashboard.css','utf8');assert.doesNotMatch(css,/grid-area:(scan|qty|month|year|save|operator|active)!important/);
+});
+
+test('Compact rows have explicit siblings and no anonymous grid text',()=>{
+ const html=fs.readFileSync('index.html','utf8');
+ const capture=html.slice(html.indexOf('<section class="expiryCaptureCard">'),html.indexOf('<div class="expiryItemCard expiryHandheldItemCard">'));
+ assert.doesNotMatch(capture,/\\n/);
+ const root={children:[]},stack=[root],nodes=[];
+ for(const token of capture.matchAll(/<!--[^]*?-->|<\/?[a-z][^>]*>|[^<]+/gi)){
+  const text=token[0];if(text.startsWith('<!--'))continue;
+  if(text.startsWith('</')){const tag=text.match(/^<\/([\w-]+)/)[1];assert.equal(stack.pop().tag,tag,'balanced capture DOM');}
+  else if(text.startsWith('<')){const tag=text.match(/^<([\w-]+)/)[1],id=text.match(/\bid="([^"]+)"/)?.[1],classes=text.match(/\bclass="([^"]+)"/)?.[1]?.split(' ')||[];
+   const node={tag,id,classes,parent:stack.at(-1),children:[]};node.parent.children.push(node);nodes.push(node);if(!['input','br','img'].includes(tag))stack.push(node);
+  }else if(text.trim()){stack.at(-1).children.push({text:text.trim()});}
+ }
+ const byClass=c=>nodes.find(n=>n.classes.includes(c)),byId=id=>nodes.find(n=>n.id===id);
+ assert.deepEqual(byClass('expiryCaptureRow').children.filter(n=>n.classes?.some(c=>['expiryCapturePrimary','expiryActiveItem','expiryEntryGrid','expiryCaptureActions'].includes(c))).map(n=>n.classes[0]),['expiryCapturePrimary','expiryActiveItem','expiryEntryGrid','expiryCaptureActions']);
+ assert.equal(byId('btnSaveExpiryCapture').parent,byClass('expiryCaptureActions'));
+ assert.ok(capture.indexOf('class="expiryEntryGrid"')<capture.indexOf('id="btnSaveExpiryCapture"'),'Handheld DOM keeps Save after inputs');
+ assert.equal(byId('expiryActiveItem').parent,byClass('expiryCaptureRow'));
+ assert.equal(byId('btnClearExpiryActive').parent,byClass('expiryOperatorActions'));
+ assert.equal(byClass('expiryEntryGrid').parent,byClass('expiryCaptureRow'));
+ assert.equal(byClass('expiryCaptureRow').children.some(n=>n.text),false);
+});
+
+test('Capture has one canonical desktop owner and transparent handheld wrappers',()=>{
+ const css=fs.readFileSync('css/dashboard.css','utf8'),theme=fs.readFileSync('css/pharmflow-next.css','utf8');
+ const owner=css.indexOf('/* Expiry Desktop Capture — canonical');
+ assert.equal(css.slice(0,owner).includes('body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureRow'),false);
+ assert.equal((css.match(/\.expiryCaptureRow\{display:/g)||[]).length,1);
+ assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell \.expiryCaptureActions\{display:contents\}/);
+ assert.match(css,/\.expirySaveButton\{grid-column:2;grid-row:2;/);
+ assert.doesNotMatch(theme,/body:not\(\.zebraMode\) \.expiryCaptureCard/);
+ assert.match(css,/\.expiryScanBox:focus-within\{border-color:[^;]+;box-shadow:none\}/);
+ assert.match(css,/#expiryBarcodeInput:focus\{padding:0;border:0;outline:none;box-shadow:none\}/);
+ assert.match(css,/body\.zebraDevice #zebraExpiryShell \.expiryCaptureActions\{display:contents\}/);
 });

@@ -1292,6 +1292,7 @@
                             <div id="expirySearchResults" class="expirySearchResults" hidden></div>
                         </div>
 
+                        <div class="expiryOperatorActions">
                         <div class="expiryWorkerControl" title="Operator is optional on Desktop">
                             <div id="expiryWorkerSelect" class="pfSelect pfSelectOperator" data-expiry-select="worker" data-value="" tabindex="0" role="combobox" aria-label="Operator" aria-expanded="false">
                                 <button type="button" class="pfSelectTrigger" tabindex="-1">
@@ -1301,6 +1302,8 @@
                                 </button>
                                 <div class="pfSelectMenu" role="listbox" hidden></div>
                             </div>
+                        </div>
+                        <button id="btnClearExpiryActive" class="expiryActiveClear" type="button">Clear</button>
                         </div>
 
                       </div>
@@ -1332,7 +1335,6 @@
                       </div>
                       <small id="expiryMonthName" hidden></small>
                       <div class="expiryCaptureActions">
-                        <button id="btnClearExpiryActive" class="expiryActiveClear" type="button">Clear</button>
                         <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
                       </div>
                     </div>
@@ -1359,14 +1361,16 @@
                 <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
                     <div class="expiryCurrentHeader">
                         <div class="expiryCurrentTitle">
-                            <span id="expiryWorkspaceTitle">Session Activity</span>
+                            <div class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
+                                <button id="btnExpirySessionView" type="button" role="tab" aria-selected="true" aria-controls="expiryCurrentStateBody">Session Activity</button>
+                                <button id="btnOpenExpiryInventory" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody">Expiry Inventory</button>
+                            </div>
+                            <span id="expiryWorkspaceTitle" class="expiryVisuallyHidden">Session Activity</span>
                             <strong id="expiryCurrentStateCount">0</strong>
                             <small id="expiryWorkspaceSubtitle">Live captures from this Expiry session</small>
                         </div>
                         <div class="expiryCurrentTools">
                             <button id="btnClearExpirySession" class="expiryInventoryButton expirySessionClearButton" type="button">Clear Session</button>
-                            <button id="btnOpenExpiryInventory" class="expiryInventoryButton expiryInventoryPrimaryButton" type="button">View Expiry Inventory</button>
-                            <button id="btnExpirySessionView" class="expiryInventoryButton secondary expiryBackButton" type="button" hidden><span class="expiryBackIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 12H5"></path><path d="m11 18-6-6 6-6"></path></svg></span><span>Back to Expiry</span></button>
                             <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search by product name, item code, GTIN / barcode or batch" hidden>
                             <button id="btnClearExpiryFilters" class="expiryInventoryButton expiryClearFiltersButton" type="button" hidden>Clear Filters</button>
                             <button id="btnExportExpiryInventory" class="expiryInventoryButton expiryExportButton" type="button" hidden>Export</button>

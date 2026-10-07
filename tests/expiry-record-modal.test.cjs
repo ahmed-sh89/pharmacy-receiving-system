@@ -1,0 +1,32 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('js/expiry-desktop-v2.js','utf8');
+function harness(){
+ const calls=[],nodes=new Map();let dialog;let handheld=false;let fail=false;let release;
+ const fields={'[data-edit-batch]':{value:' corrected '},'[data-edit-month]':{value:'3'},'[data-edit-year]':{value:'2028'},'[data-edit-qty]':{value:'9'}};
+ Object.values(fields).forEach(f=>f.focus=()=>{});
+ const cancel={focus(){}},form={},feedback={hidden:true};
+ const buttons=[cancel,{disabled:false}];
+ const body={innerHTML:'unchanged row',querySelectorAll:()=>[]};nodes.set('expiryCurrentStateBody',body);
+ const row={state_id:'s1',item_code:'ITEM1',item_name:'Product',identifier_display:'01234',category:'Medicine',batch_no:'old',sample_serial:'serial',expiry_month:2,expiry_year:2027,verified_quantity:4};
+ const engine={currentRows:[row],sessionRows:[{...row,quantity:4}],desktopView:'SESSION'};
+ const c={window:null,console:{error(){}},ExpiryCaptureEngine:engine,expiryIsHandheld:()=>handheld,expiryEscapeHtml:v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x])),expiryMonthShortName:m=>'Month'+m,expiryFormatVerifiedAt:()=>'',renderExpiryKpis(){},setExpiryStatus(){},loadExpiryCurrentState:async()=>engine.currentRows,setTimeout(){},document:{body:{appendChild(){}},getElementById:id=>nodes.get(id),querySelectorAll:()=>[],createElement(){
+  const listeners={};dialog={innerHTML:'',open:false,setAttribute(){},classList:{toggle(){}},addEventListener:(name,fn)=>listeners[name]=fn,showModal(){this.open=true;},close(){this.open=false;listeners.close?.();},querySelector:s=>s==='form'?form:s==='[data-record-cancel]'?cancel:s==='.expiryRecordValidation'?feedback:fields[s],querySelectorAll:()=>[...buttons,...Object.values(fields)],listeners};return dialog;
+ }},saveExpiryCurrentCorrection:async(r,v)=>{calls.push({kind:'edit',row:r,v});if(fail)throw Error('mock failure');if(release)await release;},clearExpiryCurrentState:async r=>{calls.push({kind:'delete',row:r});if(fail)throw Error('mock failure');},bindExpiryCaptureUI(){},activateExpiryCapture(){}};c.window=c;
+ vm.createContext(c);vm.runInContext(source.replace('  const originalBind=','  window.testOpen=openRecordDialog;\n  const originalBind='),c);
+ return {c,row,engine,calls,body,fields,form,cancel,feedback,get dialog(){return dialog;},setHandheld:v=>handheld=v,setFail:v=>fail=v,setWait:v=>release=v};
+}
+for(const scope of ['session','inventory']){
+ test(scope+' Edit opens same modal without rerendering table; Cancel does not mutate',()=>{const h=harness();h.c.testOpen(scope,'s1','edit',{focus(){}});assert.equal(h.body.innerHTML,'unchanged row');assert.equal(h.dialog.open,true);assert.match(h.dialog.innerHTML,/Edit Expiry Record/);assert.match(h.dialog.innerHTML,/Serial Number<input[^>]+readonly/);h.cancel.onclick();assert.equal(h.dialog.open,false);assert.equal(h.calls.length,0);});
+ test(scope+' Save uses existing correction flow, updates session and closes',async()=>{const h=harness();h.c.testOpen(scope,'s1','edit',{focus(){}});await h.form.onsubmit({preventDefault(){}});assert.equal(h.calls.length,1);assert.equal(h.calls[0].row,h.row);assert.deepEqual(JSON.parse(JSON.stringify(h.calls[0].v)),{quantity:9,month:3,year:2028,batch:'corrected'});assert.equal(h.engine.sessionRows[0].quantity,9);assert.equal(h.dialog.open,false);});
+ test(scope+' Delete confirmation leaves row unchanged; Cancel is mutation-free; confirmation uses existing clear',async()=>{const h=harness();h.c.testOpen(scope,'s1','delete',{focus(){}});assert.equal(h.body.innerHTML,'unchanged row');assert.match(h.dialog.innerHTML,/Delete Expiry Record/);h.cancel.onclick();assert.equal(h.calls.length,0);h.c.testOpen(scope,'s1','delete',{focus(){}});await h.form.onsubmit({preventDefault(){}});assert.equal(h.calls[0].kind,'delete');assert.equal(h.calls[0].row,h.row);assert.equal(h.dialog.open,false);});
+}
+test('Validation and failed action retain dialog and values',async()=>{const h=harness();h.c.testOpen('inventory','s1','edit',{focus(){}});h.fields['[data-edit-qty]'].value='0';await h.form.onsubmit({preventDefault(){}});assert.equal(h.calls.length,0);assert.equal(h.feedback.hidden,false);h.fields['[data-edit-qty]'].value='9';h.setFail(true);await h.form.onsubmit({preventDefault(){}});assert.equal(h.dialog.open,true);assert.equal(h.fields['[data-edit-batch]'].value,' corrected ');assert.equal(h.cancel.disabled,false);});
+test('Busy dialog prevents repeated submissions and Escape/cancel',async()=>{const h=harness();let resolve;h.setWait(new Promise(r=>resolve=r));h.c.testOpen('session','s1','edit',{focus(){}});const first=h.form.onsubmit({preventDefault(){}});await h.form.onsubmit({preventDefault(){}});h.cancel.onclick();let prevented=false;h.dialog.listeners.cancel({preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(h.dialog.open,true);assert.equal(h.calls.length,1);resolve();await first;assert.equal(h.dialog.open,false);});
+test('Handheld never opens desktop record modal; no obsolete inline ownership or ellipsis',()=>{const h=harness();h.setHandheld(true);h.c.testOpen('session','s1','edit',{focus(){}});assert.equal(h.dialog,undefined);assert.doesNotMatch(source,/expiryInline|data-delete-confirm|data-session-save|data-inventory-save|expiryDeleteSlot|pendingDelete/);assert.equal((source.match(/createElement\("dialog"\)/g)||[]).length,1);assert.doesNotMatch(source,/\.\.\.<\/button>|…<\/button>/);});
+test('Existing delete path retains zero-quantity CLEARED semantics and marks session Deleted',async()=>{
+ const h=harness(),core=fs.readFileSync('js/expiry.js','utf8');const payloads=[];
+ h.c.authRpc=async(name,payload)=>payloads.push({name,payload});h.c.expiryPharmacyId=()=>'test-only';h.c.ensureDeviceId=()=>'device1';
+ const start=core.indexOf('async function clearExpiryCurrentState(row){'),end=core.indexOf('// Desktop workspace actions',start);
+ vm.runInContext(core.slice(start,end),h.c);await h.c.clearExpiryCurrentState(h.row);
+ assert.equal(payloads.length,1);assert.equal(payloads[0].name,'save_pharmacy_expiry_verified_state_v2');assert.equal(payloads[0].payload.p_quantity,0);assert.equal(payloads[0].payload.p_event_type,'CLEARED');assert.equal(payloads[0].payload.p_sample_serial,'serial');assert.equal(h.engine.sessionRows[0].deleted,true);
+});
