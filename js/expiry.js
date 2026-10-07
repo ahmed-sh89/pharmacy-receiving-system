@@ -244,6 +244,39 @@ function setExpiryStatus(kind, text){
     }
 }
 
+// Desktop validation presentation only; acceptance conditions remain in saveExpiryCapture.
+function showExpiryCaptureValidation(invalidIds,message){
+    if(expiryIsHandheld()) return;
+    ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
+        const field=document.getElementById(id);
+        if(!field) return;
+        const invalid=invalidIds.includes(id);
+        field.classList.toggle("expiryFieldError",invalid);
+        if(invalid){field.setAttribute("aria-invalid","true");field.setAttribute("aria-describedby","expiryCaptureValidation");}
+        else{field.removeAttribute("aria-invalid");field.removeAttribute("aria-describedby");}
+    });
+    const feedback=document.getElementById("expiryCaptureValidation");
+    if(feedback){feedback.textContent=message||"";feedback.hidden=!message;}
+    if(message) setExpiryStatus("error",message);
+}
+function clearCorrectedExpiryValidation(){
+    if(expiryIsHandheld()) return;
+    const remaining=[];
+    ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
+        const field=document.getElementById(id);
+        if(!field?.classList.contains("expiryFieldError")) return;
+        let value=Number(expiryControlValue(field)||0);
+        if(id==="expiryYear" && value>0 && value<100) value+=2000;
+        const invalid=id==="expiryMonth"?(value<1||value>12):id==="expiryYear"?(value<2020||value>2200):(!Number.isInteger(value)||value<=0);
+        if(invalid) remaining.push(id);
+    });
+    const feedback=document.getElementById("expiryCaptureValidation");
+    if(!feedback || feedback.hidden) return;
+    const message=remaining.includes("expiryQuantity")?"Enter quantity":remaining.length===2?"Enter expiry month and year":remaining.includes("expiryMonth")?"Enter expiry month":remaining.includes("expiryYear")?"Enter expiry year":"";
+    showExpiryCaptureValidation(remaining,message);
+    if(!message) setExpiryStatus("ready","READY TO SCAN");
+}
+
 function cancelExpiryScanAutoClear(){
     clearTimeout(ExpiryCaptureEngine.scanClearTimer);
     ExpiryCaptureEngine.scanClearTimer=null;
@@ -399,6 +432,7 @@ function renderExpiryActiveItem(item,gs1={}){
 function resetExpiryCaptureForm(options = {}){
     cancelExpiryScanAutoClear();
     ExpiryCaptureEngine.formDirty=false;
+    showExpiryCaptureValidation([],"");
     ExpiryCaptureEngine.currentItem = null;
     ExpiryCaptureEngine.scannedGS1 = null;
     renderExpiryActiveItem(null);
@@ -737,21 +771,27 @@ async function saveExpiryCapture(options={}){
         return;
     }
     if(!Number.isInteger(quantity) || quantity <= 0){
-        setExpiryStatus("action","ENTER QUANTITY");
+        if(!expiryIsHandheld()) showExpiryCaptureValidation(["expiryQuantity"],"Enter quantity");
+        else setExpiryStatus("action","ENTER QUANTITY");
         document.getElementById("expiryQuantity")?.focus();
         return;
     }
     if(month < 1 || month > 12){
-        setExpiryStatus("action","SELECT MONTH");
+        if(!expiryIsHandheld()){
+            const invalidYear=year < 2020 || year > 2200;
+            showExpiryCaptureValidation(invalidYear?["expiryMonth","expiryYear"]:["expiryMonth"],invalidYear?"Enter expiry month and year":"Enter expiry month");
+        }else setExpiryStatus("action","SELECT MONTH");
         document.getElementById("expiryMonth")?.focus();
         return;
     }
     if(year < 2020 || year > 2200){
-        setExpiryStatus("action","SELECT YEAR");
+        if(!expiryIsHandheld()) showExpiryCaptureValidation(["expiryYear"],"Enter expiry year");
+        else setExpiryStatus("action","SELECT YEAR");
         document.getElementById("expiryYear")?.focus();
         return;
     }
 
+    showExpiryCaptureValidation([],"");
     ExpiryCaptureEngine.busy = true;
     const button = document.getElementById("btnSaveExpiryCapture");
     if(button) button.disabled = true;
@@ -1356,6 +1396,14 @@ function bindExpiryCaptureUI(){
     }
 
     if(!expiryIsHandheld()){
+        ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
+            const field=document.getElementById(id);
+            if(field && field.dataset.validationBound!=="1"){
+                field.dataset.validationBound="1";
+                field.addEventListener("input",clearCorrectedExpiryValidation);
+                field.addEventListener("change",clearCorrectedExpiryValidation);
+            }
+        });
         ["expiryBatchInput","expirySerialInput","expiryQuantity"].forEach(id=>{
             const field=document.getElementById(id);
             if(field && field.dataset.reviewBound!=="1"){
@@ -1372,6 +1420,7 @@ function bindExpiryCaptureUI(){
                     const quantity=document.getElementById("expiryQuantity");
                     quantity.value=String(Math.max(1,(Number(quantity.value)||1)+delta));
                     markExpiryFormDirty();
+                    clearCorrectedExpiryValidation();
                 });
             }
         });

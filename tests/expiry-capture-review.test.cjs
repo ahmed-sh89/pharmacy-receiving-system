@@ -9,7 +9,7 @@ function harness(handheld=false){
   const classes=new Set(),listeners={};
   const el={id,value:'',textContent:'',innerHTML:'',dataset:{},style:{setProperty(){}},hidden:false,disabled:false,readOnly:false,isConnected:true,tagName:'INPUT',listeners,
    classList:{add(...xs){xs.forEach(x=>classes.add(x));},remove(...xs){xs.forEach(x=>classes.delete(x));},contains:x=>classes.has(x),toggle(x,on){if(on)classes.add(x);else classes.delete(x);}},
-   setAttribute(k,v){if(k==='disabled')this.disabled=true;else this[k]=v;},removeAttribute(k){if(k==='disabled')this.disabled=false;},toggleAttribute(k,v){this[k]=v;},
+   setAttribute(k,v){if(k==='disabled')this.disabled=true;else this[k]=v;},removeAttribute(k){if(k==='disabled')this.disabled=false;else delete this[k];},toggleAttribute(k,v){this[k]=v;},
    addEventListener(k,fn){(listeners[k]??=[]).push(fn);},dispatchEvent(e){for(const fn of listeners[e.type]||[])fn(e);},focus(){document.activeElement=this;},blur(){document.activeElement=null;},select(){},querySelectorAll(){return [];},querySelector(){return null;},closest(){return null;}
   };return el;
  }
@@ -46,7 +46,7 @@ test('Handheld retains worker guard, GS1 date locking and original GS1 payload',
  assert.equal(h.e('expiryQuantity').readOnly,true);assert.equal(h.e('expiryMonth').dataset.disabled,'true');h.e('expiryBatchInput').value='DESKTOP-ONLY';await h.c.saveExpiryCapture();assert.equal(h.calls[0].payload.p_batch_no,'GS1-BATCH');assert.equal(h.calls[0].payload.p_sample_serial,'GS1-SERIAL');assert.equal(h.calls[0].payload.p_worker_id,'worker1');
 });
 test('Critical capture IDs occur once and Session Activity markup is preserved',()=>{
- const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryQuantity','expiryMonth','expiryYear','expiryBatchInput','expirySerialInput','btnExpiryQtyMinus','btnExpiryQtyPlus','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnClearExpirySession','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);
+ const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryCaptureValidation','expiryQuantity','expiryMonth','expiryYear','expiryBatchInput','expirySerialInput','btnExpiryQtyMinus','btnExpiryQtyPlus','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnClearExpirySession','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);
  const css=fs.readFileSync('css/dashboard.css','utf8');assert.doesNotMatch(css,/grid-area:(scan|qty|month|year|save|operator|active)!important/);
 });
 
@@ -83,4 +83,27 @@ test('Capture has one canonical desktop owner and transparent handheld wrappers'
  assert.match(css,/\.expiryScanBox:focus-within\{border-color:[^;]+;box-shadow:none\}/);
  assert.match(css,/#expiryBarcodeInput:focus\{padding:0;border:0;outline:none;box-shadow:none\}/);
  assert.match(css,/body\.zebraDevice #zebraExpiryShell \.expiryCaptureActions\{display:contents\}/);
+});
+
+for(const [name,month,year,message,missing] of [
+ ['Month','','2028','Enter expiry month',['expiryMonth']],
+ ['Year','3','','Enter expiry year',['expiryYear']],
+ ['Month + Year','','','Enter expiry month and year',['expiryMonth','expiryYear']]
+])test('Missing '+name+' has visible red feedback and field errors without saving',async()=>{
+ const h=harness();h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),month);h.c.setExpiryControlValue(h.e('expiryYear'),year);
+ await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryCaptureValidation').hidden,false);assert.equal(h.e('expiryCaptureValidation').textContent,message);
+ for(const id of ['expiryMonth','expiryYear'])assert.equal(h.e(id).classList.contains('expiryFieldError'),missing.includes(id));
+ for(const id of missing)assert.equal(h.e(id)['aria-invalid'],'true');
+});
+test('Correcting date selections clears each error and concise feedback through real change handlers',async()=>{
+ const h=harness();h.c.bindExpiryCaptureUI();h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='1';await h.c.saveExpiryCapture();
+ h.c.setExpiryControlValue(h.e('expiryMonth'),'3',true);assert.equal(h.e('expiryMonth').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryYear').classList.contains('expiryFieldError'),true);assert.equal(h.e('expiryCaptureValidation').textContent,'Enter expiry year');
+ h.c.setExpiryControlValue(h.e('expiryYear'),'2028',true);assert.equal(h.e('expiryYear').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryCaptureValidation').hidden,true);assert.equal(h.e('expiryYear')['aria-invalid'],undefined);assert.equal(h.calls.length,0);
+});
+test('Existing invalid quantity rule is exposed and +/- correction clears error',async()=>{
+ const h=harness();h.c.bindExpiryCaptureUI();h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='0';await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryCaptureValidation').textContent,'Enter quantity');assert.equal(h.e('expiryQuantity').classList.contains('expiryFieldError'),true);
+ h.e('btnExpiryQtyPlus').dispatchEvent(new h.c.Event('click'));assert.equal(h.e('expiryQuantity').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryCaptureValidation').hidden,true);
+});
+test('New validation presentation remains Desktop-only',async()=>{
+ const h=harness(true);h.c.engine.selectedWorkerId='worker';h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='1';await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryMonth').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryCaptureValidation').textContent,'');
 });
