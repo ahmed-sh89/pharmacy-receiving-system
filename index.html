@@ -1318,7 +1318,7 @@
                       </div>
                       <div class="expiryEntryGrid">
                         <label class="expiryReviewField expiryQtyField"><span class="expiryControlLabel expiryDesktopOnly">Quantity</span><div class="expiryQuantityControl"><button id="btnExpiryQtyMinus" class="expiryDesktopOnly" type="button" aria-label="Decrease quantity">−</button><input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" aria-label="Quantity" placeholder="Qty"><button id="btnExpiryQtyPlus" class="expiryDesktopOnly" type="button" aria-label="Increase quantity">+</button></div></label>
-                        <label class="expiryReviewField expiryDesktopOnly"><span class="expiryControlLabel">Batch Number</span><input id="expiryBatchInput" type="text" autocomplete="off" placeholder="Enter batch"></label>
+                        <label class="expiryReviewField expiryBatchField"><span class="expiryControlLabel">Batch Number</span><input id="expiryBatchInput" type="text" autocomplete="off" placeholder="Enter batch"></label>
                         <label class="expiryReviewField expiryDesktopOnly"><span class="expiryControlLabel">Serial Number</span><input id="expirySerialInput" type="text" autocomplete="off" placeholder="Enter serial"></label>
                         <div class="expiryReviewField"><span class="expiryControlLabel expiryDesktopOnly">Expiry Month</span>
                             <div id="expiryMonth" class="pfSelect" data-expiry-select="month" data-value="" tabindex="0" role="combobox" aria-label="Expiry month" aria-expanded="false">
@@ -1335,6 +1335,15 @@
 
                       </div>
                       <small id="expiryMonthName" hidden></small>
+                      <div id="expiryRecoverableDrafts" hidden></div>
+                      <section id="expiryEvidence" class="expiryEvidence" hidden aria-label="Capture photos">
+                        <div id="expiryEvidencePreviews"></div>
+                        <button id="btnExpiryPhoto" type="button">PRODUCT PHOTO</button>
+                        <button id="btnExpiryRetakeProduct" type="button" hidden>Retake product</button>
+                        <button id="btnExpiryRetakeExpiry" type="button" hidden>Retake expiry</button>
+                        <input id="expiryCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+                        <span id="expiryEvidenceMessage" role="status"></span>
+                      </section>
                       <div class="expiryCaptureActions">
                         <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
                       </div>
@@ -2595,8 +2604,10 @@
 
 <script src="js/needs-review.js?v=NR_AUTO_ALLOC1"></script>
 
-<script src="js/expiry-capture-store.js?v=EXPIRY_DATA_GUARD"></script>
-<script src="js/expiry.js?v=EXPIRY_DATA_GUARD"></script>
+<script src="js/expiry-operation.js?v=EXPIRY_OPERATION_V3"></script>
+<script src="js/expiry-evidence.js?v=EXPIRY_OPERATION_V3"></script>
+<script src="js/expiry-capture-store.js?v=EXPIRY_OPERATION_V3"></script>
+<script src="js/expiry.js?v=EXPIRY_OPERATION_V3"></script>
 <script src="js/expiry-desktop-v2.js?v=EXPIRY_CAPTURE_WORKSPACE"></script>
 
 <script src="cloud-workspace.js?v=IDLE_RESUME2"></script>

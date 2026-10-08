@@ -132,3 +132,17 @@ test('Native PostgreSQL independent-connection duplicate and same-item concurren
   assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_events_v1 where state_id=$1',[results[0].rows[0].r.state_id])).n,1);
  }finally{for(const c of clients)await c.end();}
 });
+test('Client adapter executes actual operation SQL, two media rows and authorized review read',async()=>{
+ const vm=require('node:vm'),context={Blob,structuredClone};vm.createContext(context);vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+'\nthis.api=ExpiryOperation;',context);
+ await identity();const operation={id:uuid(),pharmacyId:PA},p=capture('S00110','UNKNOWN');let saves=0;
+ const rpc=async(name,args)=>{
+  if(name==='reserve_pharmflow_expiry_capture_v1')return (await db.query('select public.reserve_pharmflow_expiry_capture_v1($1,$2) r',[args.p_pharmacy_id,args.p_operation_id])).rows[0].r;
+  if(name==='save_pharmflow_expiry_capture_v3'){saves++;return save(args.p_capture,args.p_operation_id,args.p_pharmacy_id);}
+  if(name==='get_pharmflow_expiry_review_v1')return (await db.query('select public.get_pharmflow_expiry_review_v1($1,$2) r',[args.p_pharmacy_id,args.p_review_id])).rows[0].r;
+  throw new Error('Unexpected RPC '+name);
+ };
+ const input={rpc,upload:async(path,file)=>db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',path,UA,JSON.stringify({mimetype:file.type,size:file.size})]),persist:async()=>{},scope:UA+'/'+PA,currentScope:()=>UA+'/'+PA,operation,payload:p,photos:{product:new Blob(['product'],{type:'image/jpeg'}),expiry:new Blob(['expiry'],{type:'image/png'})},uuid};
+ const first=await context.api.save(input),second=await context.api.save(input);assert.equal(first.review_id,second.review_id);assert.equal(saves,2);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_needs_review_v2 where operation_id=$1',[operation.id])).n,1);
+ await identity(UB);await assert.rejects(context.api.readReview(PA,first.review_id,rpc),/Pharmacy access/);await identity();
+});

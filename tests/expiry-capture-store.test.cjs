@@ -31,3 +31,17 @@ test('A request success followed by transaction abort is rejected, never called 
 test('A missing or mismatched authenticated scope cannot write',async()=>{
  const h=store();assert.throws(()=>h.store.put('u/p',{scope:'u/other'}));assert.throws(()=>h.store.get(''));
 });
+test('Explicit orphan recovery keeps operation, both photos and scoped source until acknowledged removal',async()=>{
+ const h=store(),scope='u/p',operation={id:'stable',pharmacyId:'p'};
+ await h.store.put(scope,{scope,status:'UNCERTAIN',operation,item:{identifierDisplay:'U0030'},photos:{product:new Blob(['p']),expiry:new Blob(['e'])}});
+ const other=store(h.indexedDB);assert.equal(await other.store.get(scope),undefined);
+ const entries=await other.store.list(scope);assert.equal(entries.length,1);assert.equal((await other.store.list('other/p')).length,0);
+ await other.store.recover(scope,entries[0].key);const recovered=await other.store.get(scope);assert.equal(recovered.operation.id,'stable');assert.equal(await recovered.photos.expiry.text(),'e');
+ await other.store.put(scope,{...recovered,status:'ACKNOWLEDGED'});assert.equal((await h.store.get(scope)).status,'ACKNOWLEDGED');
+ await other.store.remove(scope);assert.equal(await h.store.get(scope),undefined);assert.equal(await other.store.get(scope),undefined);
+});
+test('Orphan recovery cannot replace an existing current draft or cross tenants',async()=>{
+ const h=store(),scope='u/p';await h.store.put(scope,{scope,status:'DRAFT',item:{identifierDisplay:'FIRST'}});const other=store(h.indexedDB);const key=(await other.store.list(scope))[0].key;
+ await other.store.put(scope,{scope,status:'DRAFT',item:{identifierDisplay:'CURRENT'}});await assert.rejects(other.store.recover(scope,key));assert.equal((await other.store.get(scope)).item.identifierDisplay,'CURRENT');
+ assert.throws(()=>other.store.recover('other/p',key),/scope/);
+});

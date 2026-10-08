@@ -14,6 +14,7 @@ const ExpiryCaptureEngine = {
     saveUncertain: false,
     draftScope: "",
     reviewPhotos: {product:null, expiry:null},
+    operation:null,
     scanTimer: null,
     lastResolvedRaw: "",
     scannedGS1: null,
@@ -30,7 +31,8 @@ const ExpiryCaptureEngine = {
     desktopView: "RECENT",
     storageKey(){
         const pharmacy = (typeof AuthState !== "undefined" && AuthState.context?.pharmacy_id) || "none";
-        return `pharmflow_expiry_worker_${pharmacy}`;
+        const user=(typeof AuthState!=="undefined" && AuthState.user?.id)||"none";
+        return `pharmflow_expiry_worker_${user}_${pharmacy}`;
     }
 };
 
@@ -171,8 +173,9 @@ async function loadExpiryWorkers(){
     ExpiryCaptureEngine.workers = Array.isArray(rows) ? rows : [];
 
     let saved = "";
-    try{ saved = localStorage.getItem(ExpiryCaptureEngine.storageKey()) || ""; }catch(_){}
+    try{ saved = (expiryIsHandheld()?sessionStorage:localStorage).getItem(ExpiryCaptureEngine.storageKey()) || ""; }catch(_){}
 
+    if(ExpiryCaptureEngine.currentItem && ExpiryCaptureEngine.selectedWorkerId){renderExpiryWorkerSelects();return ExpiryCaptureEngine.workers;}
     if(saved && ExpiryCaptureEngine.workers.some(w => w.worker_id === saved)){
         ExpiryCaptureEngine.selectedWorkerId = saved;
     }else if(ExpiryCaptureEngine.workers.length === 1){
@@ -215,9 +218,9 @@ function selectExpiryWorker(workerId){
     ExpiryCaptureEngine.selectedWorkerId = String(workerId || "");
     try{
         if(ExpiryCaptureEngine.selectedWorkerId){
-            localStorage.setItem(ExpiryCaptureEngine.storageKey(), ExpiryCaptureEngine.selectedWorkerId);
+            (expiryIsHandheld()?sessionStorage:localStorage).setItem(ExpiryCaptureEngine.storageKey(), ExpiryCaptureEngine.selectedWorkerId);
         }else{
-            localStorage.removeItem(ExpiryCaptureEngine.storageKey());
+            (expiryIsHandheld()?sessionStorage:localStorage).removeItem(ExpiryCaptureEngine.storageKey());
         }
     }catch(_){}
     renderExpiryWorkerSelects();
@@ -298,6 +301,7 @@ function markExpiryFormDirty(){
 function scheduleExpiryScanAutoClear(){
     // An unsaved capture is never an idle-screen decoration.
     cancelExpiryScanAutoClear();
+    renderExpiryEvidence();
     persistExpiryDraft().catch(error=>{
         console.error("Expiry draft persistence failed",error);
         setExpiryStatus("error","DRAFT NOT STORED — KEEP THIS SCREEN OPEN");
@@ -310,7 +314,10 @@ function expiryDraftScope(){
     return user && pharmacy ? `${user}/${pharmacy}` : "";
 }
 function expiryDraftSnapshot(status="DRAFT"){
-    return {
+    if(ExpiryCaptureEngine.currentItem && !ExpiryCaptureEngine.operation && !ExpiryCaptureEngine.saveUncertain){
+        ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId:expiryPharmacyId()};
+    }
+    return {sourceKey:ExpiryCaptureEngine.draftSourceKey||null,
         scope:expiryDraftScope(),status,item:ExpiryCaptureEngine.currentItem,
         gs1:ExpiryCaptureEngine.scannedGS1,workerId:ExpiryCaptureEngine.selectedWorkerId,
         quantity:document.getElementById("expiryQuantity")?.value||"",
@@ -318,7 +325,7 @@ function expiryDraftSnapshot(status="DRAFT"){
         year:expiryControlValue(document.getElementById("expiryYear")),
         batch:document.getElementById("expiryBatchInput")?.value||"",
         serial:document.getElementById("expirySerialInput")?.value||"",
-        photos:ExpiryCaptureEngine.reviewPhotos,dateSource:ExpiryCaptureEngine.dateSource
+        operation:ExpiryCaptureEngine.operation,photos:ExpiryCaptureEngine.reviewPhotos,dateSource:ExpiryCaptureEngine.dateSource
     };
 }
 async function persistExpiryDraft(status){
@@ -326,12 +333,16 @@ async function persistExpiryDraft(status){
     const scope=expiryDraftScope();
     if(!scope || (ExpiryCaptureEngine.draftScope && scope!==ExpiryCaptureEngine.draftScope)) throw new Error("Capture account changed");
     if(typeof ExpiryDraftStore==="undefined") throw new Error("Durable draft store unavailable");
-    await ExpiryDraftStore.put(scope,expiryDraftSnapshot(status||(ExpiryCaptureEngine.saveUncertain?"UNCERTAIN":"DRAFT")));
+    const snapshot=expiryDraftSnapshot(status||(ExpiryCaptureEngine.saveUncertain?"UNCERTAIN":"DRAFT"));
+    await claimExpiryOperation(snapshot.operation?.id);
+    await ExpiryDraftStore.put(scope,snapshot);
     ExpiryCaptureEngine.draftScope=scope;
 }
 async function setExpiryEvidencePhoto(role,file){
     if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.saveUncertain) throw new Error("Capture is not editable");
-    if(!["product","expiry"].includes(role) || !(file instanceof Blob) || !["image/jpeg","image/png","image/webp"].includes(file.type) || file.size>5*1024*1024) throw new Error("Invalid review photo");
+    if(!["product","expiry"].includes(role) || !(file instanceof Blob) || !["image/jpeg","image/png","image/webp"].includes(file.type) || !file.size || file.size>5*1024*1024) throw new Error("Invalid review photo");
+    if(ExpiryCaptureEngine.operation?.payload)throw new Error("Submitted evidence is locked");
+    if(ExpiryCaptureEngine.operation?.uploaded)delete ExpiryCaptureEngine.operation.uploaded[role];
     ExpiryCaptureEngine.reviewPhotos[role]=file;
     markExpiryFormDirty();
     await persistExpiryDraft();
@@ -342,11 +353,15 @@ async function restoreExpiryDraft(){
     if(!scope) return false;
     const draft=await ExpiryDraftStore.get(scope);
     if(scope!==expiryDraftScope() || !draft?.item || draft.scope!==scope) return false;
+    await claimExpiryOperation(draft.operation?.id);
+    if(scope!==expiryDraftScope())throw new Error("Capture account changed");
     ExpiryCaptureEngine.draftScope=scope;
     ExpiryCaptureEngine.currentItem=draft.item;
     ExpiryCaptureEngine.scannedGS1=draft.gs1;
     ExpiryCaptureEngine.selectedWorkerId=draft.workerId;
     ExpiryCaptureEngine.reviewPhotos=draft.photos||{product:null,expiry:null};
+    ExpiryCaptureEngine.operation=draft.operation||null;
+    ExpiryCaptureEngine.draftSourceKey=draft.sourceKey||null;
     ExpiryCaptureEngine.saveUncertain=["SENDING","UNCERTAIN","ACKNOWLEDGED"].includes(draft.status);
     for(const [id,value] of Object.entries({expiryQuantity:draft.quantity,expiryBatchInput:draft.batch,expirySerialInput:draft.serial})){
         const el=document.getElementById(id);if(el)el.value=value||"";
@@ -357,12 +372,13 @@ async function restoreExpiryDraft(){
     for(const [id,value] of Object.entries({expiryItemName:draft.item.itemName,expiryItemCode:draft.item.itemCode||"Needs Review",expiryItemGTIN:draft.item.identifierDisplay,expiryItemCategory:draft.item.category||"Pending",expiryItemBatch:draft.batch||draft.gs1?.lot,expiryItemSerial:draft.serial||draft.gs1?.serial})){
         const el=document.getElementById(id);if(el)el.textContent=value||"—";
     }
-    const button=document.getElementById("btnSaveExpiryCapture");if(button)button.disabled=ExpiryCaptureEngine.saveUncertain;
+    const button=document.getElementById("btnSaveExpiryCapture");if(button){button.disabled=ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation;button.textContent=ExpiryCaptureEngine.saveUncertain && ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
+    renderExpiryEvidence();
     if(ExpiryCaptureEngine.saveUncertain){
         ["expiryQuantity","expiryBatchInput","expirySerialInput"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
         ["expiryMonth","expiryYear","expiryWorkerSelect"].forEach(id=>setExpirySelectDisabled(document.getElementById(id),true));
     }
-    setExpiryStatus("action",ExpiryCaptureEngine.saveUncertain?"SAVE RESULT REQUIRES RECONCILIATION — DO NOT RESEND":"UNSAVED CAPTURE RESTORED");
+    setExpiryStatus("action",ExpiryCaptureEngine.saveUncertain?(ExpiryCaptureEngine.operation?"CHECK / RETRY SAME OPERATION — DRAFT RETAINED":"LEGACY SAVE REQUIRES RECONCILIATION — DO NOT RESEND"):"UNSAVED CAPTURE RESTORED");
     return true;
 }
 
@@ -498,6 +514,11 @@ function resetExpiryCaptureForm(options = {}){
     ExpiryCaptureEngine.currentItem = null;
     ExpiryCaptureEngine.scannedGS1 = null;
     ExpiryCaptureEngine.reviewPhotos={product:null,expiry:null};
+    releaseExpiryOperation();
+    ExpiryCaptureEngine.operation=null;
+    ExpiryCaptureEngine.draftSourceKey=null;
+    renderExpiryEvidence();
+    const saveButton=document.getElementById("btnSaveExpiryCapture");if(saveButton)saveButton.textContent="SAVE & NEXT";
     ExpiryCaptureEngine.draftScope="";
     renderExpiryActiveItem(null);
     ["expiryBatchInput","expirySerialInput"].forEach(id=>{const field=document.getElementById(id);if(field)field.value="";});
@@ -606,7 +627,7 @@ function renderExpirySearchResults(rows){
     box.querySelectorAll("[data-expiry-search-index]").forEach(button=>button.onclick=()=>selectExpirySearchResult(Number(button.dataset.expirySearchIndex)));
 }
 async function selectExpirySearchResult(index){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain) return;
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation)) return;
     const row=ExpiryCaptureEngine.desktopSearchRows[index];
     if(!row) return;
     closeExpirySearchResults();
@@ -661,7 +682,15 @@ async function resolveExpiryScannedValue(rawValue){
         setExpiryStatus("error","SCAN PARSE FAILED — SCAN AGAIN");return false;
     }
 
-    const identifierDisplay=expiryIdentifierFromScan(cleaned,parsed);
+    let identifierDisplay=expiryIdentifierFromScan(cleaned,parsed);
+    if(typeof ExpiryOperation!=="undefined"){
+        try{
+            const facts=ExpiryOperation.scanFacts(rawValue);
+            parsed={...parsed,identifierDisplay:facts.identifier,gtin:facts.identifier,lot:facts['10']||"",serial:facts['21']||""};
+            if(facts['17'])parsed.expiry=`20${facts['17'].slice(0,2)}-${facts['17'].slice(2,4)}-${facts['17'].slice(4,6)}`;
+        }catch(error){ExpiryCaptureEngine.resolving=false;setExpiryStatus("error",error.message);return false;}
+    }
+    identifierDisplay=parsed?.identifierDisplay||identifierDisplay;
     ExpiryCaptureEngine.scannedGS1 = parsed || null;
 
     if(!identifierDisplay){
@@ -708,7 +737,7 @@ async function resolveExpiryScannedValue(rawValue){
     ExpiryCaptureEngine.resolving=false;
     if(lookupScope!==expiryDraftScope()) return false;
     const found=record?.found===true;
-    const resolvedIdentifier=toSafeString(record?.identifierDisplay||identifierDisplay).trim()||identifierDisplay;
+    const resolvedIdentifier=identifierDisplay;
 
     if(!found){
         ExpiryCaptureEngine.currentItem={
@@ -830,7 +859,7 @@ async function resolveExpiryScannedValue(rawValue){
 }
 
 async function saveExpiryCapture(options={}){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain) return;
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation)) return;
 
     cancelExpiryScanAutoClear();
 
@@ -876,6 +905,7 @@ async function saveExpiryCapture(options={}){
     ExpiryCaptureEngine.busy = true;
     const button = document.getElementById("btnSaveExpiryCapture");
     if(button) button.disabled = true;
+    renderExpiryEvidence();
     setExpiryStatus("busy","SAVING...");
     const captureControls=["expiryQuantity","expiryBatchInput","expirySerialInput"].map(id=>document.getElementById(id)).filter(Boolean);
     const controlStates=captureControls.map(el=>[el,el.disabled]);
@@ -892,46 +922,29 @@ async function saveExpiryCapture(options={}){
 
         if(!pharmacyId || (ExpiryCaptureEngine.draftScope && ExpiryCaptureEngine.draftScope!==expiryDraftScope())) throw new Error("Capture account changed");
         await persistExpiryDraft();
-        if(item.needsReview){
-            // Deployed legacy review RPC strips letters and cannot retain two
-            // photographs or batch. Fail closed until an Expiry-only contract exists.
-            setExpiryStatus("action","REVIEW SAVE BLOCKED — DRAFT RETAINED; BACKEND UPDATE REQUIRED");
-            if(button)button.disabled=false;
-            return;
+        const facts=ExpiryOperation.scanFacts(item.rawBarcode ?? item.identifierDisplay);
+        const gs1={lot:facts['10'] || document.getElementById("expiryBatchInput")?.value.trim() || "",serial:facts['21'] || document.getElementById("expirySerialInput")?.value.trim() || ""};
+        if(item.needsReview && (!ExpiryCaptureEngine.reviewPhotos.product || !ExpiryCaptureEngine.reviewPhotos.expiry))throw new Error("PRODUCT AND EXPIRY PHOTOS REQUIRED");
+        if(!ExpiryCaptureEngine.operation){
+            ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId};
+            await persistExpiryDraft();
         }
-
-        const gs1=expiryIsHandheld() ? {...(ExpiryCaptureEngine.scannedGS1 || {}),lot:ExpiryCaptureEngine.scannedGS1?.lot || document.getElementById("expiryBatchInput")?.value.trim() || ""} : {
-            lot:document.getElementById("expiryBatchInput")?.value.trim() || "",
-            serial:document.getElementById("expirySerialInput")?.value.trim() || ""
-        };
-        await persistExpiryDraft("SENDING");
-        if(saveScope!==expiryDraftScope()) throw new Error("Capture account changed");
+        const payload={kind:item.needsReview?"UNKNOWN":"KNOWN",identifier_display:facts.identifier,
+            raw_scan:item.rawBarcode ?? item.identifierDisplay,scan_format:facts.format,
+            quantity,expiry_month:month,expiry_year:year,worker_id:workerId||null,
+            batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
+            item_code:item.itemCode,item_name:item.itemName,category:item.category||""};
+        const saveResult=await ExpiryOperation.save({rpc:authRpc,upload:ExpiryOperation.upload,
+            persist:persistExpiryDraft,scope:saveScope,currentScope:expiryDraftScope,
+            operation:ExpiryCaptureEngine.operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID()});
         submitted=true;
-        const saveResult=await authRpc("save_pharmacy_expiry_verified_state_v2", {
-            p_pharmacy_id: pharmacyId,
-            p_item_code: item.itemCode,
-            p_item_name: item.itemName,
-            p_identifier_display: item.identifierDisplay || item.gtin,
-            p_category: item.category || "",
-            p_quantity: quantity,
-            p_expiry_month: month,
-            p_expiry_year: year,
-            p_worker_id: workerId || null,
-            p_batch_no: toSafeString(gs1.lot||""),
-            p_sample_serial: toSafeString(gs1.serial||""),
-            p_device_id: deviceId,
-            p_source: expiryCurrentSource(),
-            p_event_type: "CAPTURE"
-        });
 
-        const acknowledgement=Array.isArray(saveResult)?saveResult[0]:saveResult;
-        if(!acknowledgement?.state_id || !acknowledgement?.event_id) throw new Error("Missing durable save acknowledgement");
         acknowledged=true;
         if(saveScope!==expiryDraftScope()) return;
         await persistExpiryDraft("ACKNOWLEDGED");
         if(expiryIsHandheld()) await ExpiryDraftStore.remove(saveScope);
 
-        if(typeof window.recordExpirySessionCapture==="function"){
+        if(!item.needsReview && typeof window.recordExpirySessionCapture==="function"){
             window.recordExpirySessionCapture({
                 item_code:item.itemCode,item_name:item.itemName,identifier_display:item.identifierDisplay || item.gtin,
                 category:item.category || "",quantity:quantity,captured_quantity:quantity,
@@ -950,6 +963,7 @@ async function saveExpiryCapture(options={}){
                 `<span>Qty ${quantity} • ${expiryEscapeHtml(expiryMonthName(month))} ${year} • ${expiryEscapeHtml(worker?.worker_name || "")}</span>`;
         }
 
+        ExpiryCaptureEngine.saveUncertain=false;
         resetExpiryCaptureForm({focus:true});
         setExpiryStatus("success",options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
         scheduleExpirySavedAutoClear();
@@ -978,17 +992,20 @@ async function saveExpiryCapture(options={}){
 
     }catch(error){
         console.error("Unable to save expiry capture",error);
-        if(submitted){
+        if(submitted || error.uncertain || ExpiryCaptureEngine.operation?.payload){
             ExpiryCaptureEngine.saveUncertain=true;
+            captureControls.forEach(el=>el.disabled=true);
+            selects.forEach(el=>setExpirySelectDisabled(el,true));
             try{await persistExpiryDraft(acknowledged?"ACKNOWLEDGED":"UNCERTAIN");}catch(_){}
-            setExpiryStatus("error",acknowledged?"SAVED — LOCAL CLEANUP FAILED; DO NOT RESEND":"SAVE RESULT UNKNOWN — DO NOT RESEND; CAPTURE RETAINED");
-            if(button)button.disabled=true;
+            setExpiryStatus("error",acknowledged?"SAVED — LOCAL CLEANUP FAILED; DO NOT RESEND":"SAVE RESULT UNKNOWN — CHECK / RETRY SAME OPERATION; DRAFT RETAINED");
+            if(button){button.disabled=!ExpiryCaptureEngine.operation;button.textContent=ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
         }else{
-            setExpiryStatus("error","SAVE BLOCKED — CAPTURE RETAINED");
+            setExpiryStatus("error",String(error.message||"SAVE BLOCKED")+" — DRAFT RETAINED");
             if(button)button.disabled=false;
         }
     }finally{
         ExpiryCaptureEngine.busy = false;
+        renderExpiryEvidence();
         if(!ExpiryCaptureEngine.saveUncertain){
             controlStates.forEach(([el,disabled])=>el.disabled=ExpiryCaptureEngine.currentItem?disabled:false);
             selectStates.forEach(([el,disabled])=>setExpirySelectDisabled(el,ExpiryCaptureEngine.currentItem?disabled:false));
@@ -1536,7 +1553,7 @@ function bindExpiryCaptureUI(){
         qtyInput.dataset.intentBound="1";
 
         const unlockQuantity=()=>{
-            if(!ExpiryCaptureEngine.currentItem) return;
+            if(!ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.saveUncertain) return;
 
             markExpiryFormDirty();
             qtyInput.readOnly=false;
@@ -1602,11 +1619,11 @@ function bindExpiryCaptureUI(){
             clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
             ExpiryCaptureEngine.scanTimer=null;
             closeExpirySearchResults(true);
-            const value=String(barcode.value||"").trim();
+            const value=String(barcode.value||"");
             if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || (expiryIsHandheld() && (!ExpiryCaptureEngine.draftReady || ExpiryCaptureEngine.currentItem))){
                 setExpiryStatus("action","FINISH CURRENT CAPTURE — SCAN AGAIN AFTER SAVE");return;
             }
-            if(!value || value===ExpiryCaptureEngine.lastResolvedRaw) return;
+            if(!value.trim() || value===ExpiryCaptureEngine.lastResolvedRaw) return;
             closeExpirySearchResults();
             ExpiryCaptureEngine.lastResolvedRaw=value;
             barcode.value="";
@@ -1639,7 +1656,7 @@ function bindExpiryCaptureUI(){
         barcode.addEventListener("input",()=>{
             clearTimeout(ExpiryCaptureEngine.scanTimer);
             clearTimeout(ExpiryCaptureEngine.desktopSearchTimer);
-            const value=String(barcode.value||"").trim();
+            const value=String(barcode.value||"");
             if(expiryIsHandheld()){
                 ExpiryCaptureEngine.scanTimer=setTimeout(commitHardwareScan,90);
                 return;
@@ -1769,6 +1786,7 @@ function bindExpiryCaptureUI(){
 
 async function activateExpiryCapture(){
     bindExpiryCaptureUI();
+    bindExpiryEvidence();
     populateExpiryDateDropdowns();
     if(expiryIsHandheld()){
         if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving)return;
@@ -1787,6 +1805,7 @@ async function activateExpiryCapture(){
         try{await loadExpiryWorkers();}catch(error){setExpiryStatus("action",restored?"CAPTURE RETAINED — WORKER LOOKUP OFFLINE":"WORKER LOOKUP FAILED — DO NOT SCAN");return;}
         renderExpiryWorkerCompactState();
         if(restored)return;
+        await renderExpiryRecoverableDrafts();
         if(ExpiryCaptureEngine.workers.length===0){setExpiryStatus("action","ADD WORKER IN SETTINGS");return;}
         if(!ExpiryCaptureEngine.selectedWorkerId){setExpiryStatus("action","SELECT WORKER");return;}
     }else{

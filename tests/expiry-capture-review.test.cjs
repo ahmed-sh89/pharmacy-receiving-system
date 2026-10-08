@@ -3,21 +3,21 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 function harness(handheld=false){
- const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnExpiryQty[^" ]+|btnClearExpiryActive)"/g)].map(m=>m[1]);
+ const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnExpiryQty[^" ]+|btnClearExpiryActive|btnExpiryPhoto|btnExpiryRetakeProduct|btnExpiryRetakeExpiry)"/g)].map(m=>m[1]);
  const timers=new Map(),calls=[],elements=new Map();let timer=0;
  function element(id){
   const classes=new Set(),listeners={};
   const el={id,value:'',textContent:'',innerHTML:'',dataset:{},style:{setProperty(){}},hidden:false,disabled:false,readOnly:false,isConnected:true,tagName:'INPUT',listeners,
    classList:{add(...xs){xs.forEach(x=>classes.add(x));},remove(...xs){xs.forEach(x=>classes.delete(x));},contains:x=>classes.has(x),toggle(x,on){if(on)classes.add(x);else classes.delete(x);}},
    setAttribute(k,v){if(k==='disabled')this.disabled=true;else this[k]=v;},removeAttribute(k){if(k==='disabled')this.disabled=false;else delete this[k];},toggleAttribute(k,v){this[k]=v;},
-   addEventListener(k,fn){(listeners[k]??=[]).push(fn);},dispatchEvent(e){for(const fn of listeners[e.type]||[])fn(e);},focus(){document.activeElement=this;},blur(){document.activeElement=null;},select(){},querySelectorAll(){return [];},querySelector(){return null;},closest(){return null;}
+   addEventListener(k,fn){(listeners[k]??=[]).push(fn);},dispatchEvent(e){for(const fn of listeners[e.type]||[])fn(e);},focus(){document.activeElement=this;},blur(){document.activeElement=null;},select(){},replaceChildren(){this.children=[];},appendChild(x){(this.children??=[]).push(x);},click(){this.dispatchEvent({type:'click'});},querySelectorAll(){return [];},querySelector(){return null;},closest(){return null;}
   };return el;
  }
  ids.forEach(id=>elements.set(id,element(id)));
  ['expiryMonth','expiryYear','expiryWorkerSelect'].forEach(id=>{const e=elements.get(id);e.dataset.expirySelect=id==='expiryMonth'?'month':id==='expiryYear'?'year':'worker';e.tagName='DIV';});
- const document={activeElement:null,body:element('body'),documentElement:element('html'),addEventListener(){},getElementById:id=>elements.get(id)||null,querySelector:()=>null,querySelectorAll:()=>[]};
- const c={document,console,Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{user:{id:'user1'},context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{calls.push({name,payload});return name==='save_pharmacy_expiry_verified_state_v2'?{state_id:'state1',event_id:'event1'}:[];},window:null};c.window=c;vm.createContext(c);
- vm.runInContext(fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;',c);
+ const document={createElement:tag=>element(tag),activeElement:null,body:element('body'),documentElement:element('html'),addEventListener(){},getElementById:id=>elements.get(id)||null,querySelector:()=>null,querySelectorAll:()=>[]};
+ const c={document,console,structuredClone,crypto:require('node:crypto').webcrypto,Blob,URL,AbortController,sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},ensureDeviceId:()=> 'synthetic-device',Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{user:{id:'user1'},context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{calls.push({name,payload});return name==='reserve_pharmflow_expiry_capture_v1'?{operation_id:payload.p_operation_id,status:'RESERVED'}:name==='save_pharmflow_expiry_capture_v3'?{operation_id:payload.p_operation_id,state_id:'state1',event_id:'event1'}:[];},window:null};c.window=c;vm.createContext(c);
+ vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+fs.readFileSync('js/expiry-evidence.js','utf8')+fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;',c);
  const drafts=new Map();c.ExpiryDraftStore={put:async(scope,draft)=>drafts.set(scope,structuredClone(draft)),get:async scope=>drafts.get(scope),remove:async scope=>drafts.delete(scope)};c.Blob=Blob;
  c.engine.draftReady=true;
  c.refreshExpiryCapturedCount=()=>{};c.refreshExpiryCurrentState=async()=>[];c.renderExpiryCurrentState=()=>{};
@@ -26,26 +26,26 @@ function harness(handheld=false){
 test('Desktop complete GS1 stays unsaved and all review controls remain editable',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');
  assert.equal(h.calls.length,0);assert.equal(h.e('expiryActiveItemName').textContent,'Test Product');
- assert.equal(h.e('expiryBatchInput').value,'GS1-BATCH');assert.equal(h.e('expirySerialInput').value,'GS1-SERIAL');
+ assert.equal(h.e('expiryBatchInput').value,'GS1-BATCH');assert.equal(h.e('expirySerialInput').value,'');
  assert.equal(h.e('expiryMonth').dataset.value,'8');assert.equal(h.e('expiryYear').dataset.value,'2027');assert.equal(h.e('expiryQuantity').value,'1');
  assert.equal(h.e('expiryQuantity').readOnly,false);assert.equal(h.e('expiryMonth').dataset.disabled,'false');assert.equal(h.e('expiryYear').dataset.disabled,'false');
  assert.equal([...h.timers.values()].some(t=>t.ms===30000),false);
 });
 test('Save uses edited Batch, Serial, Date, Quantity, exact identifier and null Desktop operator',async()=>{
- const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');h.e('expiryBatchInput').value=' EDITED-BATCH ';h.e('expirySerialInput').value=' EDITED-SERIAL ';h.e('expiryQuantity').value='7';h.c.setExpiryControlValue(h.e('expiryMonth'),'9');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
+ const h=harness();h.c.parseGS1Barcode=raw=>({identifierDisplay:raw});await h.c.resolveExpiryScannedValue('04065272072977');h.e('expiryBatchInput').value=' EDITED-BATCH ';h.e('expirySerialInput').value=' EDITED-SERIAL ';h.e('expiryQuantity').value='7';h.c.setExpiryControlValue(h.e('expiryMonth'),'9');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
  const session=[];h.c.recordExpirySessionCapture=p=>session.push(p);await h.c.saveExpiryCapture();
- assert.equal(h.calls.length,1);const p=h.calls[0].payload;
- assert.equal(p.p_batch_no,'EDITED-BATCH');assert.equal(p.p_sample_serial,'EDITED-SERIAL');assert.equal(p.p_quantity,7);assert.equal(p.p_expiry_month,9);assert.equal(p.p_expiry_year,2028);assert.equal(p.p_identifier_display,'04065272072977');assert.equal(p.p_worker_id,null);assert.equal(p.p_event_type,'CAPTURE');
+ assert.equal(h.calls.length,2);const p=h.calls[1].payload.p_capture;
+ assert.equal(p.batch_no,'EDITED-BATCH');assert.equal(p.sample_serial,'EDITED-SERIAL');assert.equal(p.quantity,7);assert.equal(p.expiry_month,9);assert.equal(p.expiry_year,2028);assert.equal(p.identifier_display,'04065272072977');assert.equal(p.worker_id,null);assert.equal(p.kind,'KNOWN');
  assert.equal(session[0].batch_no,'EDITED-BATCH');h.flush(500);h.flush(40);
  assert.equal(h.c.engine.currentItem,null);assert.equal(h.e('expiryBatchInput').value,'');assert.equal(h.e('expirySerialInput').value,'');assert.equal(h.e('expiryMonth').dataset.value,'');assert.equal(h.e('expiryYear').dataset.value,'');assert.equal(h.c.document.activeElement.id,'expiryBarcodeInput');
 });
 test('Ambiguous save retains review fields and blocks unsafe retry',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');h.e('expiryBatchInput').value='KEEP';h.c.authRpc=async()=>{throw new Error('isolated failure');};h.c.console={error(){}};
- await h.c.saveExpiryCapture();h.flush(500);assert.equal(h.e('expiryBatchInput').value,'KEEP');assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.e('btnSaveExpiryCapture').disabled,true);assert.equal(h.c.engine.saveUncertain,true);
+ await h.c.saveExpiryCapture();h.flush(500);assert.equal(h.e('expiryBatchInput').value,'KEEP');assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.e('btnSaveExpiryCapture').disabled,false);assert.equal(h.c.engine.saveUncertain,false);
 });
 test('Handheld retains worker guard, GS1 date locking and original GS1 payload',async()=>{
  const h=harness(true);assert.equal(await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH'),false);h.c.engine.selectedWorkerId='worker1';await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');
- assert.equal(h.e('expiryQuantity').readOnly,true);assert.equal(h.e('expiryMonth').dataset.disabled,'true');h.e('expiryBatchInput').value='DESKTOP-ONLY';await h.c.saveExpiryCapture();assert.equal(h.calls[0].payload.p_batch_no,'GS1-BATCH');assert.equal(h.calls[0].payload.p_sample_serial,'GS1-SERIAL');assert.equal(h.calls[0].payload.p_worker_id,'worker1');
+ assert.equal(h.e('expiryQuantity').readOnly,true);assert.equal(h.e('expiryMonth').dataset.disabled,'true');h.e('expiryBatchInput').value='DESKTOP-ONLY';await h.c.saveExpiryCapture();assert.equal(h.calls[1].payload.p_capture.batch_no,'GS1-BATCH');assert.equal(h.calls[1].payload.p_capture.sample_serial,null);assert.equal(h.calls[1].payload.p_capture.worker_id,'worker1');
 });
 test('Critical capture IDs occur once and Session Activity markup is preserved',()=>{
  const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryCaptureValidation','expiryQuantity','expiryMonth','expiryYear','expiryBatchInput','expirySerialInput','btnExpiryQtyMinus','btnExpiryQtyPlus','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnClearExpirySession','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);

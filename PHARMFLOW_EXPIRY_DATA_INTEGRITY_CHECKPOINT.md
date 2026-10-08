@@ -69,3 +69,58 @@ legacy uncertain saves and verify Storage API binary lifecycle before any
 controlled application on the existing shared backend. Current a26869b8 client
 cannot be paired with this migration alone. See the proposal README for limits.
 Status remains BLOCKED / NOT READY FOR USER TEST / NOT DONE.
+
+## Handheld integration — 2026-10-08 (supersedes earlier client blockers)
+
+Starting local commit: b62fa7b475da9eefbfb4908990a89599a6776a77.
+Branch: feature/expiry-stage1-visual-gate only. Proposal SQL remains unchanged,
+review-only and NOT deployed to shared Supabase.
+
+Implemented:
+- Compact Handheld fields and custom dropdowns, optional manual batch, worker
+  retained per authenticated user/pharmacy browser session. Replaced conflicting
+  Handheld field-height rules with one owner; Desktop styling remains frozen.
+- One camera input: product → expiry → both previews → individual retakes.
+  Existing canonical photo preparation is reused without changing Receiving.
+- Exact raw scan and ordinary identifiers; GS1 GTIN/lot/serial/date retained.
+  No barcode numeric coercion. Save uses scan-derived identity rather than a
+  master alias display. GS1 evidence must agree with the backend validator.
+- Stable operation UUID persisted with the local draft before RPC submission.
+  Reserve, immutable two-photo upload, operation-aware finalization and strict
+  acknowledgement. Unknown saves additionally read the authorized review contract
+  and verify every submitted field/photo reference before local clearing.
+- Explicit same-operation retries after ambiguous replies. COMMITTED operations
+  are checked by replaying the frozen identical payload (backend idempotency),
+  without new quantity increments or review cases. No legacy capture fallback.
+- IndexedDB recovery on reload plus explicit previous-tab draft recovery, scoped
+  to user/pharmacy. Cross-tab recovery requires Web Locks; unsupported browsers
+  fail closed. Frozen payloads and both Blobs survive recovery. Legacy uncertain
+  drafts without operation IDs remain blocked pending external reconciliation.
+- Upload failures retain both photos and successful role references; retakes use
+  fresh object IDs, never upsert. Cleanup is left to the proposed authorized
+  resolved-review lifecycle; no shared Storage deletion was performed.
+
+Verification:
+- Focused client/camera/draft/Receiving suite: 99 PASS, 0 FAIL.
+- SQL + static suite: 20 PASS, 0 FAIL, 1 SKIP. PostgreSQL 18.3 / PGlite 0.5.8,
+  synthetic dependencies, includes client adapter → actual proposal SQL → two
+  Storage metadata rows → authorized complete review read → idempotent replay.
+- Build PASS; git diff --check PASS. Mock camera/DOM and fake IndexedDB tests are
+  automated logic evidence, not a real Zebra browser or camera verification.
+
+NOT RUN / remaining gates:
+- Native multi-connection PostgreSQL concurrency (existing provisioning blocker).
+- Real Supabase Storage HTTP/binary upload, immutable-object guards and authorized
+  cleanup. SQL tests insert synthetic metadata only; no Storage service was used.
+- Actual Zebra 360×640 rendering, custom dropdown placement, Web Locks support,
+  photo preparation/acquisition, keyboard/focus and durable browser storage.
+- Shared-backend compatibility/cloud persistence: migration is NOT deployed.
+  Missing/incompatible contracts preserve the local draft and block saving.
+- Reconcile all pre-cutover uncertain legacy writes before controlled migration.
+  Apply only after the migration/security and Storage gates are approved, paired
+  with this client. Then verify Handheld end-to-end with Product Owner approval.
+
+Local drafts are safety copies, not a guarantee against device loss, browser-data
+clearing or storage eviction. No push, deployment, Production change or shared
+Supabase SQL/data/permission change. Status: IMPLEMENTED LOCALLY / CLOUD AND
+DEVICE VERIFICATION BLOCKED / NOT DONE / NOT READY FOR USER TEST.
