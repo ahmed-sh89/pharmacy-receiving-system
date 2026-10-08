@@ -198,17 +198,17 @@ function renderExpiryWorkerSelects(){
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
         if(select.dataset?.expirySelect){
-            buildExpirySelectOptions(select,[{value:"",label:expiryIsHandheld()?"Select...":"Desktop"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
+            buildExpirySelectOptions(select,[{value:"",label:expiryIsHandheld()?"Select operator":"Desktop"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
             setExpiryControlValue(select,current);
         }else{
-            select.innerHTML=`<option value="">${expiryIsHandheld() ? "Select..." : "Desktop"}</option>`+ExpiryCaptureEngine.workers.map(w=>`<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`).join("");
+            select.innerHTML=`<option value="">${expiryIsHandheld() ? "Select operator" : "Desktop"}</option>`+ExpiryCaptureEngine.workers.map(w=>`<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`).join("");
             select.value=current;
         }
     });
 
     const label = document.getElementById("expiryActiveWorkerName");
     const selected = ExpiryCaptureEngine.workers.find(w => w.worker_id === ExpiryCaptureEngine.selectedWorkerId);
-    if(label) label.textContent = selected ? selected.worker_name : "Select worker";
+    if(label) label.textContent = selected ? selected.worker_name : expiryIsHandheld()?"Select operator":"Select worker";
 
     renderExpiryWorkerCompactState?.();
 }
@@ -229,8 +229,19 @@ function selectExpiryWorker(workerId){
 function setExpiryStatus(kind, text){
     const box = document.getElementById("expiryScanStatus");
     if(box){
-        box.className = `expiryScanStatus ${kind || "ready"}`;
-        box.textContent = text || "READY TO SCAN";
+        const displayKind=expiryIsHandheld() && text==="SAVE FOR REVIEW" ? "error" : kind;
+        box.className = `expiryScanStatus ${displayKind || "ready"}`;
+        const handheldLabels={
+            "FINISH CURRENT CAPTURE — SCAN AGAIN AFTER SAVE":"Save current item first",
+            "SELECT WORKER":"Select operator", "READY TO SCAN":"Ready to scan",
+            "ITEM FOUND · DATE AUTO READ":"Recognized · date read",
+            "ITEM FOUND · SELECT EXPIRY":"Recognized · select expiry",
+            "SAVE FOR REVIEW":"Unrecognized · add photos",
+            "WAIT FOR DRAFT RECOVERY":"Restoring draft",
+            "CAPTURE RETAINED — WORKER LOOKUP OFFLINE":"Draft kept · operator offline",
+            "WORKER LOOKUP FAILED — DO NOT SCAN":"Operator unavailable"
+        };
+        box.textContent = (expiryIsHandheld() && handheldLabels[text]) || text || "READY TO SCAN";
     }
     if(!expiryIsHandheld()){
         const scan=document.querySelector("#zebraExpiryShell .expiryScanBox");
@@ -783,6 +794,9 @@ async function resolveExpiryScannedValue(rawValue){
         }
 
         document.getElementById("btnSaveExpiryCapture").disabled=false;
+        // The capture retains its exact raw scan; the input is transport only.
+        const input=document.getElementById("expiryBarcodeInput");
+        if(input) input.value="";
         setExpiryStatus("action","SAVE FOR REVIEW");
 
         try{ document.activeElement?.blur?.(); }catch(_){}
@@ -1208,7 +1222,7 @@ async function refreshExpiryCapturedCount(){
 
             /* Avoid mutating anonymous text nodes around the counter. That
                produced duplicate visible CAPTURED labels on some builds. */
-            btn.innerHTML=`
+            if(!expiryIsHandheld()) btn.innerHTML=`
                 <span class="expiryCapturedButtonLabel">${label}</span>
                 <strong id="expiryCapturedCount">${operational.length}</strong>
             `;
@@ -1611,6 +1625,7 @@ function bindExpiryCaptureUI(){
     if(barcode && barcode.dataset.bound !== "1"){
         barcode.dataset.bound = "1";
         barcode.setAttribute("inputmode",expiryIsHandheld()?"none":"text");
+        if(expiryIsHandheld()) barcode.placeholder="Scan Barcode";
         barcode.setAttribute("autocomplete","off");
         barcode.setAttribute("autocapitalize","off");
         barcode.setAttribute("spellcheck","false");

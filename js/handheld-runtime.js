@@ -202,7 +202,17 @@ function hhCaptureInput(event){
     event.stopPropagation();
 
     if(receiving) hhProcessReceiving(raw,target);
-    else hhProcessExpiry(raw,target);
+    else {
+        // Expiry alone waits for the input burst to settle. TC26 profiles may
+        // emit one insertion or one event per character; neither needs Enter.
+        clearTimeout(HandheldRuntime.expiryInputTimer);
+        HandheldRuntime.expiryInputTimer=setTimeout(()=>{
+            HandheldRuntime.expiryInputTimer=null;
+            if(hhMode()==="EXPIRY" && target.isConnected && target.value){
+                hhProcessExpiry(String(target.value),target);
+            }
+        },90);
+    }
 }
 
 function hhCaptureKey(event){
