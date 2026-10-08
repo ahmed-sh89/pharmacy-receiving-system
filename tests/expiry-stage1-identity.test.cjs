@@ -30,7 +30,7 @@ test('Expiry keeps GS1 operational evidence separate from product identity',()=>
 test('Expiry unknown identifiers preserve exact value for review instead of numeric collapse',()=>{
   const expiry=read('js/expiry.js');
   assert.match(expiry,/identifierDisplay,/);
-  assert.match(expiry,/rawBarcode:cleaned/);
+  assert.match(expiry,/rawBarcode:String\(rawValue\?\?""\)/);
   assert.match(expiry,/expiryItemGTIN"\)\.textContent=identifierDisplay/);
 });
 
@@ -220,7 +220,7 @@ test('Expiry desktop table remains readable and visually structured',()=>{
 test('Expiry desktop operator remains optional without trapping scanner focus',()=>{
   const js=read('js/expiry.js');
   const sql=read('PHASE2C1177_EXPIRY_DESKTOP_OPERATIONS_V2.sql');
-  assert.match(js,/if\(!expiryIsHandheld\(\) \|\| worker\.value\)[\s\S]*?focusExpiryScanner\(\)/);
+  assert.match(js,/if\(!expiryIsHandheld\(\) \|\| expiryControlValue\(worker\)\)[\s\S]*?focusExpiryScanner\(\)/);
   assert.match(js,/if\(expiryIsHandheld\(\) && !workerId\)/);
   assert.doesNotMatch(js,/if\(!workerId\)[\s\S]{0,120}SELECT WORKER/);
   assert.match(sql,/elsif v_source='HANDHELD' then raise exception 'Select an active worker before saving'/);
@@ -248,9 +248,9 @@ test('Expiry edit action column has room for Save and Cancel in both desktop vie
 });
 
 
-test('Expiry Desktop normalizes optional worker UUID to null for Capture and Needs Review',()=>{
+test('Expiry normalizes optional capture worker UUID and blocks unsafe legacy review writes',()=>{
  const js=read('js/expiry.js');
- assert.match(js,/save_pharmacy_needs_review[\s\S]*?p_worker_id:workerId\|\|null/);
+ assert.doesNotMatch(js,/authRpc\("save_pharmacy_needs_review"/);
  assert.match(js,/save_pharmacy_expiry_verified_state_v2[\s\S]*?p_worker_id: workerId \|\| null/);
  assert.doesNotMatch(js,/p_worker_id:\s*workerId\s*[,}]/);
 });

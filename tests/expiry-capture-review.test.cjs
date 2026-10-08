@@ -16,10 +16,12 @@ function harness(handheld=false){
  ids.forEach(id=>elements.set(id,element(id)));
  ['expiryMonth','expiryYear','expiryWorkerSelect'].forEach(id=>{const e=elements.get(id);e.dataset.expirySelect=id==='expiryMonth'?'month':id==='expiryYear'?'year':'worker';e.tagName='DIV';});
  const document={activeElement:null,body:element('body'),documentElement:element('html'),addEventListener(){},getElementById:id=>elements.get(id)||null,querySelector:()=>null,querySelectorAll:()=>[]};
- const c={document,console,Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{calls.push({name,payload});return name==='save_pharmacy_expiry_verified_state_v2'?{state_id:'state1'}:[];},window:null};c.window=c;vm.createContext(c);
+ const c={document,console,Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{user:{id:'user1'},context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{calls.push({name,payload});return name==='save_pharmacy_expiry_verified_state_v2'?{state_id:'state1',event_id:'event1'}:[];},window:null};c.window=c;vm.createContext(c);
  vm.runInContext(fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;',c);
+ const drafts=new Map();c.ExpiryDraftStore={put:async(scope,draft)=>drafts.set(scope,structuredClone(draft)),get:async scope=>drafts.get(scope),remove:async scope=>drafts.delete(scope)};c.Blob=Blob;
+ c.engine.draftReady=true;
  c.refreshExpiryCapturedCount=()=>{};c.refreshExpiryCurrentState=async()=>[];c.renderExpiryCurrentState=()=>{};
- return {c,e:id=>elements.get(id),calls,timers,flush(ms){for(const [id,t] of [...timers])if(t.ms===ms){timers.delete(id);t.fn();}}};
+ return {c,drafts,e:id=>elements.get(id),calls,timers,flush(ms){for(const [id,t] of [...timers])if(t.ms===ms){timers.delete(id);t.fn();}}};
 }
 test('Desktop complete GS1 stays unsaved and all review controls remain editable',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');
@@ -37,9 +39,9 @@ test('Save uses edited Batch, Serial, Date, Quantity, exact identifier and null 
  assert.equal(session[0].batch_no,'EDITED-BATCH');h.flush(500);h.flush(40);
  assert.equal(h.c.engine.currentItem,null);assert.equal(h.e('expiryBatchInput').value,'');assert.equal(h.e('expirySerialInput').value,'');assert.equal(h.e('expiryMonth').dataset.value,'');assert.equal(h.e('expiryYear').dataset.value,'');assert.equal(h.c.document.activeElement.id,'expiryBarcodeInput');
 });
-test('Failed save retains review fields for a retry',async()=>{
+test('Ambiguous save retains review fields and blocks unsafe retry',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');h.e('expiryBatchInput').value='KEEP';h.c.authRpc=async()=>{throw new Error('isolated failure');};h.c.console={error(){}};
- await h.c.saveExpiryCapture();h.flush(500);assert.equal(h.e('expiryBatchInput').value,'KEEP');assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.e('btnSaveExpiryCapture').disabled,false);
+ await h.c.saveExpiryCapture();h.flush(500);assert.equal(h.e('expiryBatchInput').value,'KEEP');assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.e('btnSaveExpiryCapture').disabled,true);assert.equal(h.c.engine.saveUncertain,true);
 });
 test('Handheld retains worker guard, GS1 date locking and original GS1 payload',async()=>{
  const h=harness(true);assert.equal(await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH'),false);h.c.engine.selectedWorkerId='worker1';await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');
@@ -107,3 +109,5 @@ test('Existing invalid quantity rule is exposed and +/- correction clears error'
 test('New validation presentation remains Desktop-only',async()=>{
  const h=harness(true);h.c.engine.selectedWorkerId='worker';h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='1';await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryMonth').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryCaptureValidation').textContent,'');
 });
+
+module.exports={harness};
