@@ -1533,20 +1533,21 @@ function bindExpiryCaptureUI(){
                 field.addEventListener("input",markExpiryFormDirty);
             }
         });
-        [["btnExpiryQtyMinus",-1],["btnExpiryQtyPlus",1]].forEach(([id,delta])=>{
-            const button=document.getElementById(id);
-            if(button && button.dataset.bound!=="1"){
-                button.dataset.bound="1";
-                button.addEventListener("click",()=>{
-                    if(!ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.busy) return;
-                    const quantity=document.getElementById("expiryQuantity");
-                    quantity.value=String(Math.max(1,(Number(quantity.value)||1)+delta));
-                    markExpiryFormDirty();
-                    clearCorrectedExpiryValidation();
-                });
-            }
-        });
     }
+
+    [["btnExpiryQtyMinus",-1],["btnExpiryQtyPlus",1]].forEach(([id,delta])=>{
+        const button=document.getElementById(id);
+        if(button && button.dataset.bound!=="1"){
+            button.dataset.bound="1";
+            button.addEventListener("click",()=>{
+                if(!ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.busy) return;
+                const quantity=document.getElementById("expiryQuantity");
+                quantity.value=String(Math.max(1,(Number(quantity.value)||1)+delta));
+                markExpiryFormDirty();
+                clearCorrectedExpiryValidation();
+            });
+        }
+    });
 
     const qtyInput = document.getElementById("expiryQuantity");
     if(qtyInput && qtyInput.dataset.intentBound!=="1"){
