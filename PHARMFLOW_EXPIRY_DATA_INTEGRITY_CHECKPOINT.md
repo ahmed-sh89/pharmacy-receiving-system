@@ -49,7 +49,23 @@ operation identity. No server writes, migrations, policies or permissions change
   database-executed. It requires isolated SQL tests, client adoption, review reads,
   media lifecycle, reconciliation and rollout validation before approval.
 
-Next: review the separate Expiry-only contract proposal; verify it in an isolated
-database before applying anything. Then connect the camera/evidence workflow and
-operation-aware retry, verify durable cloud records and pharmacy isolation, and
-only afterward prepare a Product Owner test candidate. No Production promotion.
+## Latest backend proposal — 2026-10-08
+
+Corrected review-only migration and focused SQL tests are now in
+`proposals/expiry-backend/` and `tests/expiry-backend/`. Existing Expiry capture
+entry points gain explicit operation-aware guards; Receiving bodies and
+correction/clear behavior remain preserved. New storage guards, complete-field
+validation, authorized read/reconciliation and resolved-photo cleanup are prepared.
+No migration was applied to shared Supabase; no frontend UI or runtime changed.
+
+Local SQL engine: PostgreSQL 18.3 / PGlite 0.5.8, synthetic dependencies only.
+16 SQL tests and 3 static checks passed. Native multi-connection PostgreSQL
+integration/concurrency remains NOT RUN; provisioning failed on container UID/GID
+restrictions. Existing focused client regressions: 54 passed. Build passed.
+
+Next: run prepared native tests when a disposable Work PostgreSQL instance is
+available, integrate the client with new operation/evidence contracts, reconcile
+legacy uncertain saves and verify Storage API binary lifecycle before any
+controlled application on the existing shared backend. Current a26869b8 client
+cannot be paired with this migration alone. See the proposal README for limits.
+Status remains BLOCKED / NOT READY FOR USER TEST / NOT DONE.
