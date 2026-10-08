@@ -1,0 +1,28 @@
+[
+  {
+    "test": "Actual Storage upload/read/protection/finalization/cleanup",
+    "result": "FAIL",
+    "seconds": 196.81,
+    "error": "('admin resolve', 403, {'code': '42501', 'details': None, 'hint': 'Grant the required privileges to the current role with: GRANT SELECT, UPDATE ON public.pharmflow_needs_review_v2 TO authenticated;', 'message': 'permission denied for table pharmflow_needs_review_v2'})"
+  },
+  {
+    "test": "GS1 exact fields and both actual photos",
+    "result": "PASS",
+    "seconds": 48.99,
+    "evidence": {
+      "operation_id": "5830ca01-a26a-40b2-9353-cb056b6cbf98",
+      "review_id": "88b07c29-a46b-49e7-8bcd-5bcc2809d8a8",
+      "GTIN_lot_serial_day00_exact": true
+    }
+  },
+  {
+    "test": "Receiving V3 and existing Storage paths after guard correction",
+    "result": "PASS",
+    "seconds": 54.32,
+    "evidence": {
+      "Receiving_V3_review_id": "82c7e66c-2419-431c-8ee6-70cfbf233b8c",
+      "identifier_preserved": true,
+      "legacy_media_upload_replace_cleanup_unchanged": true
+    }
+  }
+]

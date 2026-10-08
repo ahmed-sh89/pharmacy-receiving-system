@@ -37,7 +37,7 @@ end $$;
 -- deleted by ordinary members. Cleanup is authorized only after RESOLVED.
 create function pharmflow_expiry_private.guard_photo() returns trigger
 language plpgsql security definer set search_path=pg_catalog,public,pg_temp as $$
-declare v_path text;v_op pharmflow_expiry_private.operations%rowtype;v_photo pharmflow_expiry_private.photos%rowtype;v_p uuid;v_id uuid;v_role text;
+declare v_path text;v_op pharmflow_expiry_private.operations%rowtype;v_photo pharmflow_expiry_private.photos%rowtype;v_p uuid;v_id uuid;v_role text;v_actor uuid;v_member boolean;v_prior_sub text;
 begin
  if tg_op='UPDATE' then
   if (old.bucket_id='pharmflow-needs-review' and split_part(old.name,'/',2)='expiry-v1') or
@@ -49,11 +49,26 @@ begin
  if v_path !~ '^[0-9a-f-]{36}/expiry-v1/[0-9a-f-]{36}/(product|expiry)/[0-9a-f-]{36}\.(jpg|png|webp)$' then raise exception 'Invalid Expiry photo path';end if;
  v_p:=split_part(v_path,'/',1)::uuid;v_id:=split_part(v_path,'/',3)::uuid;v_role:=split_part(v_path,'/',4);
  select * into v_op from pharmflow_expiry_private.operations where pharmacy_id=v_p and operation_id=v_id for update;
- if not found or auth.uid() is null or public.is_pharmacy_member(v_p) is not true then raise exception 'Photo scope denied';end if;
+ if not found then raise exception 'Photo scope denied';end if;
+ v_actor:=auth.uid();
+ -- Storage finalizes an upload using its service-role transaction, retaining
+ -- the uploader in owner_id. Only that trusted DB service may recover the actor.
+ if tg_op='INSERT' and v_actor is null and session_user='supabase_storage_admin' and current_setting('role',true)='service_role' then
+  v_actor:=coalesce(new.owner_id,new.owner::text)::uuid;
+  v_prior_sub:=current_setting('request.jwt.claim.sub',true);
+  perform set_config('request.jwt.claim.sub',v_actor::text,true);
+  v_member:=public.is_pharmacy_member(v_p);
+  perform set_config('request.jwt.claim.sub',coalesce(v_prior_sub,''),true);
+ else v_member:=public.is_pharmacy_member(v_p);end if;
+ if v_actor is null or v_member is not true then raise exception 'Photo scope denied';end if;
  if tg_op='INSERT' then
-  if v_op.status<>'RESERVED' or v_op.created_by<>auth.uid() or coalesce(new.owner_id,new.owner::text) is distinct from auth.uid()::text then raise exception 'Photo upload denied';end if;
+  if v_op.status<>'RESERVED' or v_op.created_by<>v_actor or coalesce(new.owner_id,new.owner::text) is distinct from v_actor::text then raise exception 'Photo upload denied';end if;
+  -- Storage performs a rolled-back permission INSERT before binary metadata exists.
+  -- Only its actual DB service connection may probe; incomplete objects never
+  -- enter the evidence registry and therefore can never finalize a capture.
+  if session_user='supabase_storage_admin' and (new.metadata->>'mimetype' is null or new.metadata->>'size' is null) then return new;end if;
   if new.metadata->>'mimetype' is null or new.metadata->>'mimetype' not in ('image/jpeg','image/png','image/webp') or coalesce((new.metadata->>'size')::bigint,0) not between 1 and 5242880 then raise exception 'Invalid photo type or size';end if;
-  insert into pharmflow_expiry_private.photos(path,pharmacy_id,operation_id,role,created_by) values(v_path,v_p,v_id,v_role,auth.uid());return new;
+  insert into pharmflow_expiry_private.photos(path,pharmacy_id,operation_id,role,created_by) values(v_path,v_p,v_id,v_role,v_actor);return new;
  end if;
  select * into v_photo from pharmflow_expiry_private.photos where path=v_path;
  if v_op.status='RESERVED' and v_photo.created_by=auth.uid() then

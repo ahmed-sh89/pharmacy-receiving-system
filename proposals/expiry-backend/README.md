@@ -1,6 +1,9 @@
 # Expiry backend blocker resolution — review package
 
 Status: corrected proposal; shared-backend application NOT APPROVED / NOT APPLIED.
+The user-authorized isolated `pharmflow-staging` project has now executed this
+proposal with synthetic fixtures. Production remains read-only and unapplied.
+See `STAGING-SAFETY-GATE.md` for executed evidence and the release decision.
 Starting development commit: a26869b8fd4450d22c5d6774eba9d5d5ee46a51b.
 Branch only: feature/expiry-stage1-visual-gate.
 
@@ -12,7 +15,8 @@ Branch only: feature/expiry-stage1-visual-gate.
   six deployed legacy signatures, including both Needs Review overloads.
 - `tests/expiry-backend/build-proposal.py`: builds the single review migration
   `20261008004855_expiry_capture_integrity_final.sql` deterministically.
-- Tests include synthetic dependencies and actual SQL execution, not cloud writes.
+- Tests include synthetic dependencies and actual SQL execution; the separate
+  staging runner performs authorized synthetic writes only on its pinned project.
 
 The earlier standalone SQL proposal is superseded. Do not apply both proposals.
 The corrected migration contains additive private tables/contracts plus explicit

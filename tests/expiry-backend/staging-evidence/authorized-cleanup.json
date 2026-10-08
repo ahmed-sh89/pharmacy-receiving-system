@@ -1,0 +1,14 @@
+[
+  {
+    "test": "Actual authorized resolution and two-photo binary cleanup",
+    "result": "PASS",
+    "seconds": 52.88,
+    "evidence": {
+      "operation_id": "37715dfa-5647-49f1-8055-91cdf53d5b90",
+      "review_id": "b3c37f56-294f-4e04-ad0d-af6fc427a2d8",
+      "existing_authorized_resolution_rpc": true,
+      "both_binaries_deleted": true,
+      "audit_retained": true
+    }
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "test": "Actual anonymous and cross-pharmacy Storage protection",
+    "result": "PASS",
+    "seconds": 33.79,
+    "evidence": {
+      "anonymous_read_denied": true,
+      "cross_pharmacy_replace_delete_denied": true,
+      "original_binary_unchanged": true
+    }
+  }
+]

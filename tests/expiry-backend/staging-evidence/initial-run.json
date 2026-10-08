@@ -1,0 +1,152 @@
+[
+  {
+    "test": "Exact known scan identities",
+    "result": "PASS",
+    "seconds": 41.14,
+    "evidence": [
+      {
+        "identifier": "U0030",
+        "operation_id": "d5622797-0468-4750-b53f-024b2cddc5fe",
+        "acknowledged": true
+      },
+      {
+        "identifier": "S00110",
+        "operation_id": "6dd9f828-141c-40eb-b66e-574e07040a27",
+        "acknowledged": true
+      },
+      {
+        "identifier": "1234A",
+        "operation_id": "69cb6092-f622-4292-a241-1b830c4596f7",
+        "acknowledged": true
+      },
+      {
+        "identifier": "001234",
+        "operation_id": "e6e8db24-b661-4d6c-81b4-3ef0f4d1319c",
+        "acknowledged": true
+      },
+      {
+        "identifier": "04065272072977",
+        "operation_id": "7ad7d69b-583a-4aa4-8440-dc7e5985d2a4",
+        "acknowledged": true
+      }
+    ]
+  },
+  {
+    "test": "Native independent-connection duplicate operation",
+    "result": "PASS",
+    "seconds": 17.74,
+    "evidence": {
+      "backend_pids": [
+        15873,
+        15880
+      ],
+      "overlap": true,
+      "quantity": 3,
+      "operation_ids": [
+        "b5427167-c346-4f20-beb4-a7b932487cc8",
+        "b5427167-c346-4f20-beb4-a7b932487cc8"
+      ]
+    }
+  },
+  {
+    "test": "Native independent-connection additive saves",
+    "result": "PASS",
+    "seconds": 19.08,
+    "evidence": {
+      "backend_pids": [
+        15873,
+        15880
+      ],
+      "overlap": true,
+      "quantity": 6,
+      "operation_ids": [
+        "4752c01d-fa4f-4247-b29b-14ab5f1aac0f",
+        "648715df-7f18-44af-aee8-f08e4ac38a52"
+      ]
+    }
+  },
+  {
+    "test": "Lost-response reconciliation and payload/owner conflict",
+    "result": "PASS",
+    "seconds": 47.37,
+    "evidence": {
+      "operation_id": "e38a4729-4153-45b4-ac92-d49597834add",
+      "same_ack": true,
+      "changed_payload_denied": true,
+      "other_owner_denied": true
+    }
+  },
+  {
+    "test": "Transaction rollback after successful internal save",
+    "result": "PASS",
+    "seconds": 23.3,
+    "evidence": {
+      "operation_id": "019731f7-0c7d-4ecc-bbbd-ad5ff3586497",
+      "rolled_back_operation_and_quantity": true
+    }
+  },
+  {
+    "test": "Actual RLS, workers, HHP084 membership and System Owner",
+    "result": "PASS",
+    "seconds": 70.73,
+    "evidence": {
+      "cross_pharmacy_denied": true,
+      "outsider_denied": true,
+      "anonymous_denied": true,
+      "wrong_worker_denied": true,
+      "System_Owner_authorized": [
+        {
+          "pharmacy": "11111111-1111-4111-8111-111111111111",
+          "operation_id": "f3f9a63a-e727-4057-9395-239b77865dcc",
+          "ack": true
+        },
+        {
+          "pharmacy": "22222222-2222-4222-8222-222222222222",
+          "operation_id": "ad67e62c-27c2-42c8-94c0-0e8a175df30b",
+          "ack": true
+        }
+      ],
+      "HHP084_member_capture": true
+    }
+  },
+  {
+    "test": "Complete required data and missing photos",
+    "result": "PASS",
+    "seconds": 116.61,
+    "evidence": {
+      "missing_complete_fields_denied": true,
+      "missing_photos_denied": true
+    }
+  },
+  {
+    "test": "Actual Storage upload/read/protection/finalization/cleanup",
+    "result": "FAIL",
+    "seconds": 9.67,
+    "error": "('upload', 'product', 500, {'statusCode': '500', 'error': 'DatabaseError', 'message': 'database error, code: P0001', 'code': 'DatabaseError'})"
+  },
+  {
+    "test": "GS1 exact fields and both actual photos",
+    "result": "FAIL",
+    "seconds": 13.74,
+    "error": "('upload', 'product', 500, {'statusCode': '500', 'error': 'DatabaseError', 'message': 'database error, code: P0001', 'code': 'DatabaseError'})"
+  },
+  {
+    "test": "Legacy/new capture compatibility",
+    "result": "PASS",
+    "seconds": 55.45,
+    "evidence": {
+      "all_old_Expiry_paths_denied": true,
+      "new_path_ack": true
+    }
+  },
+  {
+    "test": "Receiving V3 and existing Storage paths",
+    "result": "PASS",
+    "seconds": 56.29,
+    "evidence": {
+      "Receiving_V3_review_id": "ccf3a81d-d7a9-44a3-8d94-7113736483d9",
+      "identifier_preserved": true,
+      "legacy_media_upload_replace_cleanup_unchanged": true
+    }
+  }
+]

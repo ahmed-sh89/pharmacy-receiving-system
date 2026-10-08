@@ -1,0 +1,50 @@
+[
+  {
+    "test": "Native overlapping duplicate writes while transaction holds operation lock",
+    "result": "PASS",
+    "seconds": 10.85,
+    "evidence": [
+      {
+        "ack": {
+          "event_id": "9ac0e48a-9708-4090-babe-56e2379fdb3a",
+          "state_id": "0c0c8360-d510-4951-a352-e00a8ba892b8",
+          "operation_id": "2938041c-d87b-4fd7-9f18-093e2f2f70c7"
+        },
+        "started": "2026-10-08T10:44:23.422595+00:00",
+        "finished": "2026-10-08T10:44:26.451926+00:00",
+        "backend_pid": 17382,
+        "write_started": "2026-10-08T10:44:24.424408+00:00",
+        "write_finished": "2026-10-08T10:44:25.450583+00:00"
+      },
+      {
+        "ack": {
+          "event_id": "9ac0e48a-9708-4090-babe-56e2379fdb3a",
+          "state_id": "0c0c8360-d510-4951-a352-e00a8ba892b8",
+          "operation_id": "2938041c-d87b-4fd7-9f18-093e2f2f70c7"
+        },
+        "started": "2026-10-08T10:44:23.422594+00:00",
+        "finished": "2026-10-08T10:44:25.446465+00:00",
+        "backend_pid": 17383,
+        "write_started": "2026-10-08T10:44:24.424408+00:00",
+        "write_finished": "2026-10-08T10:44:24.445144+00:00"
+      }
+    ]
+  },
+  {
+    "test": "Native additive saves while transaction holds per-item lock",
+    "result": "PASS",
+    "seconds": 19.07,
+    "evidence": {
+      "backend_pids": [
+        17382,
+        17383
+      ],
+      "overlap": true,
+      "quantity": 6,
+      "operation_ids": [
+        "6b36a8a9-6a24-4d5d-aa04-5d809c13679c",
+        "60ea969a-a79f-471d-8695-9ef25f26a023"
+      ]
+    }
+  }
+]
