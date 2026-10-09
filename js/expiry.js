@@ -215,7 +215,8 @@ function renderExpiryWorkerSelects(){
 }
 
 function selectExpiryWorker(workerId){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.saveUncertain)return;
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.pendingDraft || ExpiryCaptureEngine.operation?.payload){renderExpiryWorkerSelects();return;}
+    if(expiryIsHandheld() && ExpiryCaptureEngine.selectedWorkerId)expiryHandheldSession();
     ExpiryCaptureEngine.selectedWorkerId = String(workerId || "");
     try{
         if(ExpiryCaptureEngine.selectedWorkerId){
@@ -225,6 +226,7 @@ function selectExpiryWorker(workerId){
         }
     }catch(_){}
     renderExpiryWorkerSelects();
+    if(expiryIsHandheld() && ExpiryCaptureEngine.currentItem)markExpiryFormDirty();
 }
 
 function setExpiryStatus(kind, text){
@@ -334,33 +336,44 @@ function expiryDeviceId(){
 function expiryHandheldSession(){
     const scope=expiryDraftScope(),deviceId=expiryDeviceId(),workerId=ExpiryCaptureEngine.selectedWorkerId;
     if(!scope || !workerId)throw new Error("Operator and pharmacy required");
-    const key=`pharmflow_expiry_recent_${scope}/${deviceId}/${workerId}`;
+    const key=`pharmflow_expiry_recent_${scope}/${deviceId}`;
     let session;
     try{session=JSON.parse(sessionStorage.getItem(key)||"null");}catch(_){throw new Error("Session history metadata unreadable");}
-    if(!session){session={id:crypto.randomUUID(),scope,deviceId,workerId,operations:[]};sessionStorage.setItem(key,JSON.stringify(session));}
-    if(session.scope!==scope || session.deviceId!==deviceId || session.workerId!==workerId || !Array.isArray(session.operations))throw new Error("Session history scope mismatch");
+    if(!session){
+        const prior=JSON.parse(sessionStorage.getItem(`${key}/${workerId}`)||"null");
+        session={id:prior?.id||crypto.randomUUID(),scope,deviceId,operations:prior?.operations||[],operators:{}};
+        for(const id of session.operations)session.operators[id]=workerId;
+        sessionStorage.setItem(key,JSON.stringify(session));
+    }
+    if(session.scope!==scope || session.deviceId!==deviceId || !Array.isArray(session.operations) || !session.operators)throw new Error("Session history scope mismatch");
     return {key,session};
 }
 function rememberExpiryReceipt(receipt){
     const {key,session}=expiryHandheldSession();
-    if(receipt.pharmacy_id!==expiryPharmacyId() || receipt.created_by!==AuthState.user?.id || receipt.device_id!==session.deviceId || receipt.worker_id!==session.workerId)throw new Error("Capture receipt scope mismatch");
+    if(receipt.pharmacy_id!==expiryPharmacyId() || receipt.created_by!==AuthState.user?.id || receipt.device_id!==session.deviceId || receipt.worker_id!==ExpiryCaptureEngine.selectedWorkerId)throw new Error("Capture receipt scope mismatch");
     session.operations=[receipt.operation_id,...session.operations.filter(id=>id!==receipt.operation_id)].slice(0,15);
+    session.operators[receipt.operation_id]=receipt.worker_id;
+    session.operators=Object.fromEntries(session.operations.map(id=>[id,session.operators[id]]));
     sessionStorage.setItem(key,JSON.stringify(session));
 }
 async function loadExpirySessionReceipts(){
     if(!ExpiryCaptureEngine.selectedWorkerId)return [];
     const {key,session}=expiryHandheldSession(),scope=expiryDraftScope();
     if(!session.operations.length)return [];
-    const rows=await authRpc("list_pharmflow_expiry_capture_receipts_v1",{
-        p_pharmacy_id:expiryPharmacyId(),p_device_id:session.deviceId,p_worker_id:session.workerId,p_operation_ids:session.operations
-    });
+    const workers=[...new Set(session.operations.map(id=>session.operators[id]))];
+    const groups=await Promise.all(workers.map(worker=>authRpc("list_pharmflow_expiry_capture_receipts_v1",{
+        p_pharmacy_id:expiryPharmacyId(),p_device_id:session.deviceId,p_worker_id:worker,
+        p_operation_ids:session.operations.filter(id=>session.operators[id]===worker)
+    })));
+    if(groups.some(rows=>!Array.isArray(rows)))throw new Error("Session receipt unavailable");
+    const rows=groups.flat();
     if(scope!==expiryDraftScope() || key!==expiryHandheldSession().key)throw new Error("Capture account changed");
-    if(!Array.isArray(rows) || rows.length!==session.operations.length || new Set(rows.map(row=>row.operation_id)).size!==rows.length || rows.some(row=>!session.operations.includes(row.operation_id) || row.pharmacy_id!==expiryPharmacyId() || row.created_by!==AuthState.user?.id || row.device_id!==session.deviceId || row.worker_id!==session.workerId))throw new Error("Session receipt scope mismatch");
-    return rows.slice(0,15);
+    if(rows.length!==session.operations.length || new Set(rows.map(row=>row.operation_id)).size!==rows.length || rows.some(row=>!session.operations.includes(row.operation_id) || row.pharmacy_id!==expiryPharmacyId() || row.created_by!==AuthState.user?.id || row.device_id!==session.deviceId || row.worker_id!==session.operators[row.operation_id]))throw new Error("Session receipt scope mismatch");
+    return rows.sort((a,b)=>String(b.captured_at).localeCompare(String(a.captured_at))||String(b.operation_id).localeCompare(String(a.operation_id))).slice(0,15);
 }
 function clearExpirySessionHistory(){
     const {key,session}=expiryHandheldSession();
-    session.operations=[];sessionStorage.setItem(key,JSON.stringify(session));
+    session.operations=[];session.operators={};sessionStorage.setItem(key,JSON.stringify(session));
 }
 async function openExpiryRecentScans(){
     document.getElementById("expiryCapturedOverlay")?.remove();
@@ -370,11 +383,14 @@ async function openExpiryRecentScans(){
     const overlay=document.createElement("div");overlay.id="expiryCapturedOverlay";overlay.className="expiryCapturedOverlay";
     overlay.innerHTML=`<section class="expiryCapturedPanel expiryRecentScans" role="dialog" aria-modal="true" aria-label="Recent Scans">
       <header><div><span>CURRENT SESSION · LATEST 15</span><strong>Recent Scans</strong></div><button type="button" data-close aria-label="Close recent scans">✕</button></header>
-      <div class="expiryCapturedList">${error?`<div role="alert" class="expiryCapturedEmpty">${error}</div>`:rows.length?rows.map(row=>`<article class="expiryCapturedRow" data-operation="${expiryEscapeHtml(row.operation_id)}" data-state="${expiryEscapeHtml(row.acknowledgement?.state_id||"")}" data-review="${expiryEscapeHtml(row.acknowledgement?.review_id||"")}">
-       <div class="expiryCapturedMain"><strong>${expiryEscapeHtml(row.item_name||"Unrecognized item")}</strong>
-       <span>${expiryEscapeHtml(row.identifier_display)}${row.item_code?" · "+expiryEscapeHtml(row.item_code):""}</span>
-       <span>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${Number(row.expiry_year)} · Qty ${Number(row.quantity)}</span></div>
-       <span class="expiryHistoryViewOnly">${row.kind==="UNKNOWN"?(row.status==="RESOLVED"?"Resolved":row.status==="DELETED"?"Deleted":"Needs Review"):"Saved"}</span></article>`).join(""):`<div class="expiryCapturedEmpty">No saved scans in this session.</div>`}</div>
+      <div class="expiryCapturedList">${error?`<div role="alert" class="expiryCapturedEmpty">${error}</div>`:rows.length?rows.map(row=>`<details class="expiryCapturedRow" data-operation="${expiryEscapeHtml(row.operation_id)}" data-state="${expiryEscapeHtml(row.acknowledgement?.state_id||"")}" data-review="${expiryEscapeHtml(row.acknowledgement?.review_id||"")}">
+       <summary><div class="expiryCapturedMain"><strong>${expiryEscapeHtml(row.item_name||"Unrecognized item")}</strong>
+       <span>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${Number(row.expiry_year)} · Qty ${Number(row.quantity)}</span>
+       <small>Operator: ${expiryEscapeHtml(row.operator_name||"Attribution unavailable")}</small></div>
+       <span class="expiryHistoryViewOnly">${expiryEscapeHtml(row.kind==="UNKNOWN"?row.status||"Needs Review":"Saved")}</span></summary>
+       <div class="expiryRecentDetails"><span>Identifier: ${expiryEscapeHtml(row.identifier_display)}</span><span>Item code: ${expiryEscapeHtml(row.item_code||"—")}</span>
+       ${row.batch_no?`<span>Batch: ${expiryEscapeHtml(row.batch_no)}</span>`:""}<span>Expiry: ${String(row.expiry_month).padStart(2,"0")}/${Number(row.expiry_year)}</span>
+       <span>Quantity: ${Number(row.quantity)}</span><span>Operator: ${expiryEscapeHtml(row.operator_name||"Attribution unavailable")}</span><span>Status: ${expiryEscapeHtml(row.status||"Saved")}</span></div></details>`).join(""):`<div class="expiryCapturedEmpty">No saved scans in this session.</div>`}</div>
       <button type="button" class="expiryRecentClear" data-clear ${!rows.length?'disabled':''}>Clear History</button>
       <small class="expiryRecentNote">Clears this list only. Saved inventory and review records remain.</small></section>`;
     overlay.querySelector("[data-close]")?.addEventListener("click",()=>{overlay.remove();focusExpiryScanner();});
@@ -437,7 +453,7 @@ async function restoreExpiryDraft(){
     ExpiryCaptureEngine.selectedWorkerId=draft.workerId;
     sessionStorage.setItem(ExpiryCaptureEngine.storageKey(),draft.workerId);
     const {key,session}=expiryHandheldSession();
-    if(draft.sessionId && draft.sessionId!==session.id){session.id=draft.sessionId;session.operations=[];sessionStorage.setItem(key,JSON.stringify(session));}
+    if(draft.sessionId && draft.sessionId!==session.id){session.id=draft.sessionId;session.operations=[];session.operators={};sessionStorage.setItem(key,JSON.stringify(session));}
     ExpiryCaptureEngine.pendingDraft=null;
     const recovery=document.getElementById("expiryRecoverableDrafts");if(recovery){recovery.replaceChildren();recovery.hidden=true;}
     ExpiryCaptureEngine.draftReady=true;
@@ -531,6 +547,45 @@ function scheduleExpirySavedAutoClear(){
             savedOnly:true
         });
     },30000);
+}
+
+async function clearExpiryHandheldCapture(){
+    const engine=ExpiryCaptureEngine;
+    if(engine.busy || engine.resolving || engine.saveUncertain || engine.operation?.payload || (engine.pendingDraft && !expiryDraftDiscardable(engine.pendingDraft.draft))){setExpiryStatus("action","Save pending — check or retry first");return false;}
+    if(!expiryDraftScope() || !engine.draftReady && !engine.pendingDraft)return false;
+    const draft=engine.pendingDraft?.draft || (engine.currentItem?expiryDraftSnapshot():null);
+    if(draft && (draft.scope!==expiryDraftScope() || !expiryDraftDiscardable(draft))){setExpiryStatus("action","Draft requires reconciliation");return false;}
+    if(draft && !window.confirm("Discard the current unsaved capture?"))return false;
+    const scope=expiryDraftScope();
+    engine.busy=true;
+    try{
+        if(draft){
+            await claimExpiryOperation(draft.operation?.id);
+            const stored=await ExpiryDraftStore.get(scope);
+            if(scope!==expiryDraftScope())throw new Error("Capture account changed");
+            if(stored && (!expiryDraftDiscardable(stored) || stored.operation?.id!==draft.operation?.id))throw new Error("Draft changed");
+            await ExpiryDraftStore.remove(scope);
+        }
+        clearTimeout(engine.scanTimer);engine.lastResolvedRaw="";
+        if(typeof HandheldRuntime!=="undefined")clearTimeout(HandheldRuntime.expiryInputTimer);
+        const input=document.getElementById("expiryBarcodeInput");if(input)input.value="";
+        resetExpiryCaptureForm({focus:true});clearExpirySavedConfirmation();engine.draftReady=true;
+        return true;
+    }catch(_){setExpiryStatus("error","Clear blocked — draft retained");return false;}
+    finally{engine.busy=false;}
+}
+async function leaveExpiryHandheld(){
+    const engine=ExpiryCaptureEngine;
+    if(engine.busy || engine.resolving || engine.saveUncertain || engine.operation?.payload || (engine.pendingDraft && !expiryDraftDiscardable(engine.pendingDraft.draft))){setExpiryStatus("action","Save pending — check or retry first");return false;}
+    if(engine.currentItem){
+        if(!window.confirm("Keep this unsaved capture and return to workspaces?"))return false;
+        engine.busy=true;
+        try{const scope=expiryDraftScope();await persistExpiryDraft();if(scope!==expiryDraftScope())throw new Error("Capture account changed");resetExpiryCaptureForm({focus:false});engine.draftReady=false;}
+        catch(_){setExpiryStatus("error","Draft not stored — stay on this screen");return false;}
+        finally{engine.busy=false;}
+    }
+    if(typeof setZebraHomeMode==="function")setZebraHomeMode();
+    return true;
 }
 
 function clearExpiryScreen(options={}){
@@ -1051,7 +1106,7 @@ async function saveExpiryCapture(options={}){
 
         const worker = ExpiryCaptureEngine.workers.find(w => w.worker_id === workerId);
         const saved = document.getElementById("expiryLastSaved");
-        if(saved){
+        if(saved && !expiryIsHandheld()){
             saved.innerHTML =
                 `<strong>${expiryEscapeHtml(item.itemName)}</strong>` +
                 `<span>Qty ${quantity} • ${expiryEscapeHtml(expiryMonthName(month))} ${year} • ${expiryEscapeHtml(worker?.worker_name || "")}</span>`;
@@ -1059,7 +1114,7 @@ async function saveExpiryCapture(options={}){
 
         ExpiryCaptureEngine.saveUncertain=false;
         resetExpiryCaptureForm({focus:true});
-        setExpiryStatus("success",options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
+        setExpiryStatus("success",expiryIsHandheld()?"Saved · Ready to Scan":options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
         scheduleExpirySavedAutoClear();
         // Commit has succeeded. Projection refresh must never become a write failure.
         try{
@@ -1603,10 +1658,8 @@ function bindExpiryCaptureUI(){
     if(modesButton && modesButton.dataset.bound !== "1"){
         modesButton.dataset.bound = "1";
         modesButton.addEventListener("click",()=>{
-            if(typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice()){
-                if(typeof setZebraHomeMode === "function"){
-                    setZebraHomeMode();
-                }
+            if(expiryIsHandheld()){
+                leaveExpiryHandheld();
             }else if(typeof navigateTo === "function"){
                 navigateTo("dashboard");
             }
@@ -1837,7 +1890,7 @@ function bindExpiryCaptureUI(){
     const clearButton=document.getElementById("btnClearExpiryActive");
     if(clearButton && clearButton.dataset.bound!=="1"){
         clearButton.dataset.bound="1";
-        clearButton.addEventListener("click",()=>clearExpiryScreen({clearSaved:true}));
+        clearButton.addEventListener("click",()=>expiryIsHandheld()?clearExpiryHandheldCapture():clearExpiryScreen({clearSaved:true}));
     }
 
     document.querySelectorAll("[data-expiry-view]").forEach(button=>{
@@ -1877,9 +1930,6 @@ function bindExpiryCaptureUI(){
         save.addEventListener("click", saveExpiryCapture);
     }
 
-    document.getElementById("btnExpiryBackToModes")?.addEventListener("click", () => {
-        if(typeof setZebraHomeMode === "function") setZebraHomeMode();
-    });
 }
 
 async function activateExpiryCapture(){

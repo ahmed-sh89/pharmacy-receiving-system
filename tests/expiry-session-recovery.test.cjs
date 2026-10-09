@@ -6,7 +6,7 @@ async function reload(h){h.c.resetExpiryCaptureForm();h.c.loadExpiryWorkers=asyn
 function choice(h,label){const row=h.e('expiryRecoverableDrafts').children?.[0];assert.ok(row);return row.children.find(el=>el.textContent===label);}
 async function click(el){el.click();await new Promise(setImmediate);}
 test('Save requires an authoritative receipt before success, retains the receipt ID across reload, and reads server facts',async()=>{
- const h=await scanned();await h.c.saveExpiryCapture();assert.equal(h.c.engine.currentItem,null);assert.match(h.e('expiryScanStatus').textContent,/SAVED/);
+ const h=await scanned();await h.c.saveExpiryCapture();assert.equal(h.c.engine.currentItem,null);assert.match(h.e('expiryScanStatus').textContent,/Saved · Ready to Scan/);
  const rows=await h.c.loadExpirySessionReceipts();assert.equal(rows.length,1);assert.equal(rows[0].quantity,1);assert.equal(rows[0].raw_scan,raw);
  const metadata=JSON.parse([...h.session.entries()].find(([k])=>k.startsWith('pharmflow_expiry_recent_'))[1]);assert.equal(metadata.operations.length,1);assert.equal(metadata.quantity,undefined);assert.equal(metadata.item_name,undefined);
  await reload(h);assert.equal(h.c.engine.currentItem,null);assert.equal(h.c.engine.draftReady,true);assert.equal((await h.c.loadExpirySessionReceipts()).length,1);
@@ -44,7 +44,7 @@ test('History keeps the latest 15 unique receipt references and isolates user, p
  for(let i=0;i<17;i++)h.c.rememberExpiryReceipt({operation_id:'op-'+i,pharmacy_id:'isolated-test',created_by:'user1',worker_id:'worker1',device_id:'synthetic-device'});
  h.c.rememberExpiryReceipt({operation_id:'op-16',pharmacy_id:'isolated-test',created_by:'user1',worker_id:'worker1',device_id:'synthetic-device'});
  assert.deepEqual(Array.from(h.c.expiryHandheldSession().session.operations),Array.from({length:15},(_,i)=>'op-'+(16-i)));
- for(const field of ['user','pharmacy','operator','device']){
+ for(const field of ['user','pharmacy','device']){
   const original={user:h.c.AuthState.user.id,pharmacy:h.c.AuthState.context.pharmacy_id,operator:h.c.engine.selectedWorkerId,device:h.c.ensureDeviceId};
   if(field==='user')h.c.AuthState.user.id='other';if(field==='pharmacy')h.c.AuthState.context.pharmacy_id='other';if(field==='operator')h.c.engine.selectedWorkerId='other';if(field==='device')h.c.ensureDeviceId=()=> 'other-device';
   assert.equal((await h.c.loadExpirySessionReceipts()).length,0);
