@@ -11,6 +11,7 @@ const ExpiryCaptureEngine = {
     busy: false,
     resolving: false,
     draftReady: false,
+    pendingDraft: null,
     saveUncertain: false,
     draftScope: "",
     reviewPhotos: {product:null, expiry:null},
@@ -324,11 +325,72 @@ function expiryDraftScope(){
     const pharmacy=expiryPharmacyId();
     return user && pharmacy ? `${user}/${pharmacy}` : "";
 }
+// Session storage contains receipt IDs only; capture facts always come from the server.
+function expiryDeviceId(){
+    const id=typeof ensureDeviceId==="function" ? String(ensureDeviceId()||"") : "";
+    if(!id)throw new Error("Handheld device identity unavailable");
+    return id;
+}
+function expiryHandheldSession(){
+    const scope=expiryDraftScope(),deviceId=expiryDeviceId(),workerId=ExpiryCaptureEngine.selectedWorkerId;
+    if(!scope || !workerId)throw new Error("Operator and pharmacy required");
+    const key=`pharmflow_expiry_recent_${scope}/${deviceId}/${workerId}`;
+    let session;
+    try{session=JSON.parse(sessionStorage.getItem(key)||"null");}catch(_){throw new Error("Session history metadata unreadable");}
+    if(!session){session={id:crypto.randomUUID(),scope,deviceId,workerId,operations:[]};sessionStorage.setItem(key,JSON.stringify(session));}
+    if(session.scope!==scope || session.deviceId!==deviceId || session.workerId!==workerId || !Array.isArray(session.operations))throw new Error("Session history scope mismatch");
+    return {key,session};
+}
+function rememberExpiryReceipt(receipt){
+    const {key,session}=expiryHandheldSession();
+    if(receipt.pharmacy_id!==expiryPharmacyId() || receipt.created_by!==AuthState.user?.id || receipt.device_id!==session.deviceId || receipt.worker_id!==session.workerId)throw new Error("Capture receipt scope mismatch");
+    session.operations=[receipt.operation_id,...session.operations.filter(id=>id!==receipt.operation_id)].slice(0,15);
+    sessionStorage.setItem(key,JSON.stringify(session));
+}
+async function loadExpirySessionReceipts(){
+    if(!ExpiryCaptureEngine.selectedWorkerId)return [];
+    const {key,session}=expiryHandheldSession(),scope=expiryDraftScope();
+    if(!session.operations.length)return [];
+    const rows=await authRpc("list_pharmflow_expiry_capture_receipts_v1",{
+        p_pharmacy_id:expiryPharmacyId(),p_device_id:session.deviceId,p_worker_id:session.workerId,p_operation_ids:session.operations
+    });
+    if(scope!==expiryDraftScope() || key!==expiryHandheldSession().key)throw new Error("Capture account changed");
+    if(!Array.isArray(rows) || rows.length!==session.operations.length || new Set(rows.map(row=>row.operation_id)).size!==rows.length || rows.some(row=>!session.operations.includes(row.operation_id) || row.pharmacy_id!==expiryPharmacyId() || row.created_by!==AuthState.user?.id || row.device_id!==session.deviceId || row.worker_id!==session.workerId))throw new Error("Session receipt scope mismatch");
+    return rows.slice(0,15);
+}
+function clearExpirySessionHistory(){
+    const {key,session}=expiryHandheldSession();
+    session.operations=[];sessionStorage.setItem(key,JSON.stringify(session));
+}
+async function openExpiryRecentScans(){
+    document.getElementById("expiryCapturedOverlay")?.remove();
+    const scope=expiryDraftScope();let rows=[],error="";
+    try{rows=await loadExpirySessionReceipts();}catch(_){error="Recent scans unavailable. Saved records are retained.";}
+    if(scope!==expiryDraftScope())return;
+    const overlay=document.createElement("div");overlay.id="expiryCapturedOverlay";overlay.className="expiryCapturedOverlay";
+    overlay.innerHTML=`<section class="expiryCapturedPanel expiryRecentScans" role="dialog" aria-modal="true" aria-label="Recent Scans">
+      <header><div><span>CURRENT SESSION · LATEST 15</span><strong>Recent Scans</strong></div><button type="button" data-close aria-label="Close recent scans">✕</button></header>
+      <div class="expiryCapturedList">${error?`<div role="alert" class="expiryCapturedEmpty">${error}</div>`:rows.length?rows.map(row=>`<article class="expiryCapturedRow" data-operation="${expiryEscapeHtml(row.operation_id)}" data-state="${expiryEscapeHtml(row.acknowledgement?.state_id||"")}" data-review="${expiryEscapeHtml(row.acknowledgement?.review_id||"")}">
+       <div class="expiryCapturedMain"><strong>${expiryEscapeHtml(row.item_name||"Unrecognized item")}</strong>
+       <span>${expiryEscapeHtml(row.identifier_display)}${row.item_code?" · "+expiryEscapeHtml(row.item_code):""}</span>
+       <span>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${Number(row.expiry_year)} · Qty ${Number(row.quantity)}</span></div>
+       <span class="expiryHistoryViewOnly">${row.kind==="UNKNOWN"?(row.status==="RESOLVED"?"Resolved":row.status==="DELETED"?"Deleted":"Needs Review"):"Saved"}</span></article>`).join(""):`<div class="expiryCapturedEmpty">No saved scans in this session.</div>`}</div>
+      <button type="button" class="expiryRecentClear" data-clear ${!rows.length?'disabled':''}>Clear History</button>
+      <small class="expiryRecentNote">Clears this list only. Saved inventory and review records remain.</small></section>`;
+    overlay.querySelector("[data-close]")?.addEventListener("click",()=>{overlay.remove();focusExpiryScanner();});
+    overlay.querySelector("[data-clear]")?.addEventListener("click",()=>{
+        if(scope!==expiryDraftScope())return;
+        try{clearExpirySessionHistory();overlay.remove();openExpiryRecentScans();}catch(_){setExpiryStatus("error","History scope could not be reset");}
+    });
+    document.body.appendChild(overlay);
+}
+
 function expiryDraftSnapshot(status="DRAFT"){
     if(ExpiryCaptureEngine.currentItem && !ExpiryCaptureEngine.operation && !ExpiryCaptureEngine.saveUncertain){
         ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId:expiryPharmacyId()};
     }
-    return {sourceKey:ExpiryCaptureEngine.draftSourceKey||null,
+    const session=expiryIsHandheld()?expiryHandheldSession().session:null;
+    return {deviceId:session?.deviceId||null,sessionId:session?.id||null,sourceKey:ExpiryCaptureEngine.draftSourceKey||null,
         scope:expiryDraftScope(),status,item:ExpiryCaptureEngine.currentItem,
         gs1:ExpiryCaptureEngine.scannedGS1,workerId:ExpiryCaptureEngine.selectedWorkerId,
         quantity:document.getElementById("expiryQuantity")?.value||"",
@@ -364,16 +426,26 @@ async function restoreExpiryDraft(){
     if(!scope) return false;
     const draft=await ExpiryDraftStore.get(scope);
     if(scope!==expiryDraftScope() || !draft?.item || draft.scope!==scope) return false;
+    const device=draft.deviceId||draft.operation?.payload?.device_id;
+    if(device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
+    if(ExpiryCaptureEngine.workers.length && !ExpiryCaptureEngine.workers.some(w=>w.worker_id===draft.workerId))throw new Error("Draft operator unavailable");
     await claimExpiryOperation(draft.operation?.id);
     if(scope!==expiryDraftScope())throw new Error("Capture account changed");
     ExpiryCaptureEngine.draftScope=scope;
     ExpiryCaptureEngine.currentItem=draft.item;
     ExpiryCaptureEngine.scannedGS1=draft.gs1;
     ExpiryCaptureEngine.selectedWorkerId=draft.workerId;
+    sessionStorage.setItem(ExpiryCaptureEngine.storageKey(),draft.workerId);
+    const {key,session}=expiryHandheldSession();
+    if(draft.sessionId && draft.sessionId!==session.id){session.id=draft.sessionId;session.operations=[];sessionStorage.setItem(key,JSON.stringify(session));}
+    ExpiryCaptureEngine.pendingDraft=null;
+    const recovery=document.getElementById("expiryRecoverableDrafts");if(recovery){recovery.replaceChildren();recovery.hidden=true;}
+    ExpiryCaptureEngine.draftReady=true;
+    renderExpiryWorkerSelects();
     ExpiryCaptureEngine.reviewPhotos=draft.photos||{product:null,expiry:null};
     ExpiryCaptureEngine.operation=draft.operation||null;
     ExpiryCaptureEngine.draftSourceKey=draft.sourceKey||null;
-    ExpiryCaptureEngine.saveUncertain=["SENDING","UNCERTAIN","ACKNOWLEDGED"].includes(draft.status);
+    ExpiryCaptureEngine.saveUncertain=!!draft.operation?.payload || ["SENDING","UNCERTAIN","ACKNOWLEDGED"].includes(draft.status);
     for(const [id,value] of Object.entries({expiryQuantity:draft.quantity,expiryBatchInput:draft.batch,expirySerialInput:draft.serial})){
         const el=document.getElementById(id);if(el)el.value=value||"";
     }
@@ -383,7 +455,7 @@ async function restoreExpiryDraft(){
     for(const [id,value] of Object.entries({expiryItemName:draft.item.itemName,expiryItemCode:draft.item.itemCode||"Needs Review",expiryItemGTIN:draft.item.identifierDisplay,expiryItemCategory:draft.item.category||"Pending",expiryItemBatch:draft.batch||draft.gs1?.lot,expiryItemSerial:draft.serial||draft.gs1?.serial})){
         const el=document.getElementById(id);if(el)el.textContent=value||"—";
     }
-    const button=document.getElementById("btnSaveExpiryCapture");if(button){button.disabled=ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation;button.textContent=ExpiryCaptureEngine.saveUncertain && ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
+    const button=document.getElementById("btnSaveExpiryCapture");if(button){button.disabled=ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload;button.textContent=ExpiryCaptureEngine.saveUncertain && ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
     renderExpiryEvidence();
     if(ExpiryCaptureEngine.saveUncertain){
         ["expiryQuantity","expiryBatchInput","expirySerialInput"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
@@ -523,6 +595,8 @@ function resetExpiryCaptureForm(options = {}){
     ExpiryCaptureEngine.formDirty=false;
     showExpiryCaptureValidation([],"");
     ExpiryCaptureEngine.currentItem = null;
+    ExpiryCaptureEngine.pendingDraft=null;
+    const recovery=document.getElementById("expiryRecoverableDrafts");if(recovery){recovery.replaceChildren();recovery.hidden=true;}
     ExpiryCaptureEngine.scannedGS1 = null;
     ExpiryCaptureEngine.reviewPhotos={product:null,expiry:null};
     releaseExpiryOperation();
@@ -638,7 +712,7 @@ function renderExpirySearchResults(rows){
     box.querySelectorAll("[data-expiry-search-index]").forEach(button=>button.onclick=()=>selectExpirySearchResult(Number(button.dataset.expirySearchIndex)));
 }
 async function selectExpirySearchResult(index){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation)) return;
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload)) return;
     const row=ExpiryCaptureEngine.desktopSearchRows[index];
     if(!row) return;
     closeExpirySearchResults();
@@ -873,7 +947,7 @@ async function resolveExpiryScannedValue(rawValue){
 }
 
 async function saveExpiryCapture(options={}){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation)) return;
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload)) return;
 
     cancelExpiryScanAutoClear();
 
@@ -953,12 +1027,18 @@ async function saveExpiryCapture(options={}){
             operation:ExpiryCaptureEngine.operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID()});
         submitted=true;
 
+        if(expiryIsHandheld()){
+            const receipt=await ExpiryOperation.readReceipt(ExpiryCaptureEngine.operation,authRpc);
+            if(!receipt)throw new Error("Committed receipt unavailable — capture retained");
+            if(saveScope!==expiryDraftScope())throw new Error("Capture account changed");
+            rememberExpiryReceipt(receipt);
+        }
         acknowledged=true;
         if(saveScope!==expiryDraftScope()) return;
         await persistExpiryDraft("ACKNOWLEDGED");
         if(expiryIsHandheld()) await ExpiryDraftStore.remove(saveScope);
 
-        if(!item.needsReview && typeof window.recordExpirySessionCapture==="function"){
+        if(!expiryIsHandheld() && !item.needsReview && typeof window.recordExpirySessionCapture==="function"){
             window.recordExpirySessionCapture({
                 item_code:item.itemCode,item_name:item.itemName,identifier_display:item.identifierDisplay || item.gtin,
                 category:item.category || "",quantity:quantity,captured_quantity:quantity,
@@ -1203,6 +1283,7 @@ async function loadExpiryCapturedRecords(){
 }
 
 async function refreshExpiryCapturedCount(){
+    if(expiryIsHandheld())return []; // Handheld has no counter; its panel reads committed session receipts.
     try{
         const rows = await loadExpiryCapturedRecords();
         const btn = document.getElementById("btnExpiryCaptured");
@@ -1229,7 +1310,7 @@ async function refreshExpiryCapturedCount(){
 
             btn.setAttribute(
                 "aria-label",
-                "Recent expiry captures"
+                expiryIsHandheld()?"Recent scans":"Recent expiry captures"
             );
         }
 
@@ -1269,6 +1350,7 @@ async function deleteAllExpiryHistoryProtected(){
 
 
 async function openExpiryCapturedPanel(){
+    if(expiryIsHandheld())return openExpiryRecentScans();
     document.getElementById("expiryCapturedOverlay")?.remove();
 
     let allRows=[];
@@ -1812,16 +1894,15 @@ async function activateExpiryCapture(){
         ExpiryCaptureEngine.draftReady=false;
         ExpiryCaptureEngine.saveUncertain=false;
         resetExpiryCaptureForm({focus:false});
-        let restored=false;
+        try{await loadExpiryWorkers();}catch(error){setExpiryStatus("error","Operator unavailable — draft retained");return;}
+        renderExpiryWorkerCompactState();
         try{
             if(!expiryDraftScope())throw new Error("Authenticated scope required");
-            restored=await restoreExpiryDraft();
+            const pending=await prepareExpiryDraftRecovery();
+            if(pending)return;
             ExpiryCaptureEngine.draftReady=true;
-        }catch(error){setExpiryStatus("error","DRAFT RECOVERY FAILED — DO NOT SCAN");return;}
-        try{await loadExpiryWorkers();}catch(error){setExpiryStatus("action",restored?"CAPTURE RETAINED — WORKER LOOKUP OFFLINE":"WORKER LOOKUP FAILED — DO NOT SCAN");return;}
-        renderExpiryWorkerCompactState();
-        if(restored)return;
-        await renderExpiryRecoverableDrafts();
+            await renderExpiryRecoverableDrafts();
+        }catch(error){setExpiryStatus("error","Draft check failed — do not scan");return;}
         if(ExpiryCaptureEngine.workers.length===0){setExpiryStatus("action","ADD WORKER IN SETTINGS");return;}
         if(!ExpiryCaptureEngine.selectedWorkerId){setExpiryStatus("action","SELECT WORKER");return;}
     }else{

@@ -7432,8 +7432,11 @@ body.zebraDevice #zebraExpiryShell #expiryEvidenceMessage:empty{display:none}
 body.zebraDevice #zebraExpiryShell #btnSaveExpiryCapture{grid-row:6;width:100%;height:50px;min-height:50px!important;margin:0!important;padding:0 10px;border:0;border-radius:10px;background:#0b5ed7;color:#fff;font-size:16px!important;font-weight:750;box-shadow:none}
 body.zebraDevice #zebraExpiryShell #btnSaveExpiryCapture:disabled{background:#e2e9f2;color:#77879d;cursor:default}
 body.zebraDevice #zebraExpiryShell .expiryLastSaved{margin:0;padding:6px 0;color:#167347;font-size:12px;background:none;border:0}
-body.zebraDevice #zebraExpiryShell #expiryRecoverableDrafts{grid-row:7}
-body.zebraDevice #zebraExpiryShell #expiryRecoverableDrafts button{width:100%;min-height:44px;border:1px solid #d8cbea;border-radius:9px;background:#f3effb;color:#5f439c}
+body.zebraDevice #zebraExpiryShell #expiryRecoverableDrafts{grid-row:3}
+body.zebraDevice #zebraExpiryShell .expiryDraftRecovery{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:9px;border:1px solid #d8cbea;border-radius:9px;background:#f3effb;color:#5f439c}
+body.zebraDevice #zebraExpiryShell .expiryDraftRecovery strong,body.zebraDevice #zebraExpiryShell .expiryDraftRecovery span{grid-column:1/-1;font-size:13px;overflow-wrap:anywhere}
+body.zebraDevice #zebraExpiryShell .expiryDraftRecovery button{min-height:44px;border:1px solid #d8cbea;border-radius:8px;background:#fff;color:#5f439c;font-weight:700}
+body.zebraDevice #zebraExpiryShell .expiryDraftRecovery button:disabled{opacity:.5}
 
 body.zebraDevice #zebraExpiryShell .expiryScanStatus.action{background:#f3effb;border-color:#d8cbea;color:#5f439c}
 
@@ -7446,9 +7449,6 @@ body.zebraDevice .expiryCapturedPanel header span{font-size:10px;font-weight:750
 body.zebraDevice .expiryCapturedPanel header strong{font-size:21px;color:#243b55}
 body.zebraDevice .expiryCapturedPanel header small{font-size:11px;color:#61748d}
 body.zebraDevice .expiryCapturedPanel header button{width:44px;height:44px;border:1px solid #cad6e5;border-radius:9px;background:#fff;color:#243b55}
-body.zebraDevice .expiryHistorySourceTabs,body.zebraDevice .expiryHistoryRangeTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:6px 0}
-body.zebraDevice .expiryHistorySourceTabs button,body.zebraDevice .expiryHistoryRangeTabs button{min-height:44px;padding:5px;border:1px solid #cad6e5;border-radius:8px;background:#fff;color:#50647e;font-size:10px;font-weight:750;white-space:normal}
-body.zebraDevice .expiryHistorySourceTabs button.active,body.zebraDevice .expiryHistoryRangeTabs button.active{background:#eef4ff;border-color:#0b5ed7;color:#0b5ed7}
 body.zebraDevice .expiryCapturedList{display:grid;gap:7px;margin-top:10px}
 body.zebraDevice .expiryCapturedRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px;border:1px solid #dbe3ed;border-radius:10px;background:#fff}
 body.zebraDevice .expiryCapturedMain{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -7456,4 +7456,10 @@ body.zebraDevice .expiryCapturedMain strong{font-size:15px;line-height:1.3;overf
 body.zebraDevice .expiryCapturedMain span{font-size:13px;color:#50647e}
 body.zebraDevice .expiryCapturedMain small,body.zebraDevice .expiryHistoryViewOnly,body.zebraDevice .expiryHistoryLimitNote{font-size:11px;color:#61748d;overflow-wrap:anywhere}
 body.zebraDevice .expiryCapturedEmpty{padding:20px;text-align:center;color:#61748d}
-body.zebraDevice .expiryCapturedDone{width:100%;min-height:44px;margin-top:10px;border:0;border-radius:9px;background:#0b5ed7;color:#fff;font-size:14px;font-weight:750}
+
+body.zebraDevice .expiryRecentScans .expiryCapturedMain span{overflow-wrap:anywhere}
+body.zebraDevice .expiryRecentScans .expiryCapturedEmpty{padding:12px}
+body.zebraDevice .expiryRecentClear{min-height:44px;margin-top:10px;padding:0 12px;border:1px solid #cad6e5;border-radius:9px;background:#fff;color:#0b5ed7;font-size:12px;font-weight:700}
+body.zebraDevice .expiryRecentClear:disabled{opacity:.5}
+body.zebraDevice .expiryRecentNote{display:block;margin-top:6px;font-size:11px;line-height:1.4;color:#61748d}
+body.zebraDevice #zebraExpiryShell:has(#expiryRecoverableDrafts:not([hidden])) .expiryHandheldItemCard{display:none}

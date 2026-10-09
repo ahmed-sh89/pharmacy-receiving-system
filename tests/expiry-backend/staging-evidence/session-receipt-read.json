@@ -1,0 +1,34 @@
+{
+  "project": "tovkcakucyagvbzvlnks",
+  "baselineCommit": "007073d0d5d2cd49eeda71c42bdf33e70f583e1f",
+  "existingCapture": {
+    "operationId": "f416ecf1-671b-45e1-b6be-1782593ff915",
+    "stateId": "9e65e51b-ee54-4449-9a58-e01245ef20e9",
+    "eventId": "c5b842cb-b576-4e38-a548-87047caa8555",
+    "identifier": "04065272072977",
+    "expiryMonth": 10,
+    "expiryYear": 2026,
+    "quantityBefore": 1,
+    "quantityAfter": 1,
+    "legacyCaptureRows": 0,
+    "committedTC26OperationsBefore": 1,
+    "committedTC26OperationsAfter": 1
+  },
+  "appliedStagingMigration": "expiry_handheld_receipt_read",
+  "newTestCaptures": 0,
+  "postgresReadTests": {
+    "execution": "Real staging PostgreSQL, READ ONLY transactions, authenticated role with synthetic request claims; every transaction rolled back. Not a browser login test.",
+    "receiptAndInventory": "PASS",
+    "duplicateReceiptIds": "PASS",
+    "deviceAndOperatorScope": "PASS",
+    "crossPharmacyDenial": "PASS",
+    "accountIsolation": "PASS",
+    "anonymousDenialAndPrivateTableProtection": "PASS",
+    "emptySessionScope": "PASS",
+    "existingUnknownReceiptBothPhotoReferences": "PASS"
+  },
+  "automatedTests": {"focusedPassed":144,"focusedFailed":0,"legacyPassed":9,"legacyFailed":24,"legacyFailureNamesMatchBaseline":true},
+  "build": "PASS",
+  "desktopReceivingCSSDeclarations": "UNCHANGED",
+  "authenticatedTC26BrowserAcceptance": "BLOCKED: no authenticated test session available; no credentials reset or accounts modified."
+}

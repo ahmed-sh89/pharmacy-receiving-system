@@ -30,14 +30,14 @@ test('Scope switch cannot hydrate or submit another account/pharmacy draft',asyn
  h.c.AuthState.context.pharmacy_id='isolated-test';h.c.AuthState.user.id='other-user';assert.equal(await h.c.restoreExpiryDraft(),false);
 });
 test('Duplicate Save and scan during write produce one write; no delayed reset erases next scan',async()=>{
- const h=await scanned(),d=deferred();let writes=0;h.c.authRpc=async(name,p)=>{if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};writes++;const r=await d.promise;return {...r,operation_id:p.p_operation_id};};
+ const h=await scanned(),d=deferred();let writes=0;h.c.authRpc=async(name,p)=>{if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};if(name==='list_pharmflow_expiry_capture_receipts_v1')return [{...h.c.engine.operation.payload,operation_id:h.c.engine.operation.id,pharmacy_id:'isolated-test',created_by:'user1',acknowledgement:{state_id:'state1',event_id:'event1',operation_id:h.c.engine.operation.id}}];writes++;const r=await d.promise;return {...r,operation_id:p.p_operation_id};};
  const save=h.c.saveExpiryCapture();await new Promise(setImmediate);await h.c.saveExpiryCapture();assert.equal(await h.c.resolveExpiryScannedValue('U0030'),false);assert.equal(writes,1);
  d.resolve({state_id:'state1',event_id:'event1'});await save;assert.equal(h.c.engine.currentItem,null);assert.equal(h.drafts.size,0);
  await h.c.resolveExpiryScannedValue(raw);h.flush(500);assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');
 });
 test('Post-commit refresh failure cannot invite a duplicate write',async()=>{
  const h=await scanned();h.c.console={error(){},warn(){}};h.c.refreshExpiryCurrentState=async()=>{throw new Error('display offline');};await h.c.saveExpiryCapture();
- assert.equal(h.calls.length,2);assert.equal(h.c.engine.currentItem,null);assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.drafts.size,0);
+ assert.equal(h.calls.length,3);assert.equal(h.c.engine.currentItem,null);assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.drafts.size,0);
 });
 test('Lost acknowledgement is durably locked through recovery, with no automatic replay',async()=>{
  const h=await scanned();h.c.console={error(){}};let writes=0;h.c.authRpc=async(name,p)=>{if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};writes++;throw new Error('network reply lost');};await h.c.saveExpiryCapture();
@@ -55,10 +55,10 @@ test('Dropdown binding and worker selection binding coexist in the real initiali
  h.c.initExpirySelects();h.c.bindExpiryCaptureUI();h.c.setExpiryControlValue(worker,'worker1',true);
  assert.equal(worker.dataset.selectBound,'1');assert.equal(worker.dataset.workerBound,'1');assert.equal(h.c.engine.selectedWorkerId,'worker1');
 });
-test('Recovery finishes before hardware scans are accepted; offline worker lookup does not erase draft',async()=>{
+test('Offline worker lookup retains the draft without automatically hydrating the capture',async()=>{
  const h=await scanned();await h.c.persistExpiryDraft();h.c.resetExpiryCaptureForm();h.c.engine.draftReady=false;
  assert.equal(await h.c.resolveExpiryScannedValue('U0030'),false);h.c.loadExpiryWorkers=async()=>{throw new Error('offline');};await h.c.activateExpiryCapture();
- assert.equal(h.c.engine.currentItem.identifierDisplay,'04065272072977');assert.equal(h.e('expiryMonth').dataset.value,'8');assert.equal(h.c.engine.draftReady,true);
+ assert.equal(h.c.engine.currentItem,null);assert.equal(h.drafts.get('user1/isolated-test').item.identifierDisplay,'04065272072977');assert.equal(h.c.engine.draftReady,false);
 });
 test('Known standard identifiers remain exact at the save boundary and optional manual batch survives',async()=>{
  for(const id of ['U0030','S00110','1234A','001234','04065272072977']){

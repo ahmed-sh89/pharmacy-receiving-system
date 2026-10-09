@@ -42,8 +42,8 @@ test('Confirmed synthetic GS1 preserves exact GTIN, batch, serial and raw scan w
 });
 test('Recent history is independent of the product card, with a single accessible icon and no visible counter',()=>{
  const html=fs.readFileSync('index.html','utf8');const header=html.slice(html.indexOf('<header class="expiryHandheldHeader'),html.indexOf('<div class="expiryKpiRow'));
- assert.match(header,/id="btnExpiryCaptured"[^>]*aria-label="Recent expiry captures"/);assert.match(header,/id="expiryCapturedCount" hidden/);
+ assert.match(header,/id="btnExpiryCaptured"[^>]*aria-label="Recent scans"/);assert.match(header,/id="expiryCapturedCount" hidden/);
  assert.equal(html.split('id="btnExpiryCaptured"').length-1,1);
- const css=fs.readFileSync('css/dashboard.css','utf8');assert.match(css,/body\.zebraDevice \.expiryCapturedDone[^}]*background:#0b5ed7/);
+ const css=fs.readFileSync('css/dashboard.css','utf8');assert.match(css,/body\.zebraDevice \.expiryRecentClear[^}]*color:#0b5ed7/);
  assert.match(css,/is-selected:not\(\[data-value=""\]\) \.pfSelectCheck/);
 });

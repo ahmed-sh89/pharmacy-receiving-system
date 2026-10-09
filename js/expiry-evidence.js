@@ -45,22 +45,69 @@ function bindExpiryEvidence(){
     });
 }
 
+function expiryDraftDiscardable(draft){
+    return draft.status==="DRAFT" && !!draft.operation?.id && !draft.operation?.payload && !Object.keys(draft.operation?.uploaded||{}).length;
+}
+async function prepareExpiryDraftRecovery(){
+    const scope=expiryDraftScope(),draft=await ExpiryDraftStore.get(scope);
+    if(scope!==expiryDraftScope())throw new Error("Capture account changed");
+    if(!draft?.item || draft.scope!==scope)return false;
+    const device=draft.deviceId||draft.operation?.payload?.device_id;
+    if(device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
+    // An acknowledged or uncertain write is checked read-only, never replayed.
+    if(draft.operation?.payload){
+        const receipt=await ExpiryOperation.readReceipt(draft.operation,authRpc);
+        if(scope!==expiryDraftScope())throw new Error("Capture account changed");
+        if(receipt){
+            const previous=ExpiryCaptureEngine.selectedWorkerId;
+            try{ExpiryCaptureEngine.selectedWorkerId=draft.workerId;rememberExpiryReceipt(receipt);}
+            finally{ExpiryCaptureEngine.selectedWorkerId=previous;}
+            await ExpiryDraftStore.remove(scope);
+            return false;
+        }
+    }
+    ExpiryCaptureEngine.pendingDraft={scope,draft};
+    ExpiryCaptureEngine.draftReady=false;
+    await renderExpiryRecoverableDrafts();
+    setExpiryStatus("action","Unsaved Capture · Resume or Discard");
+    return true;
+}
 async function renderExpiryRecoverableDrafts(){
-    const panel=document.getElementById('expiryRecoverableDrafts');if(!panel || !ExpiryDraftStore.list)return;
+    const panel=document.getElementById('expiryRecoverableDrafts');if(!panel)return;
     panel.replaceChildren();panel.hidden=true;
-    const scope=expiryDraftScope(),entries=await ExpiryDraftStore.list(scope);
+    const scope=expiryDraftScope();
+    let entries=ExpiryCaptureEngine.pendingDraft?[{key:null,draft:ExpiryCaptureEngine.pendingDraft.draft}]:(ExpiryDraftStore.list?await ExpiryDraftStore.list(scope):[]);
     if(scope!==expiryDraftScope() || ExpiryCaptureEngine.currentItem)return;
+    entries=entries.filter(({draft})=>draft.scope===scope && (!draft.deviceId || draft.deviceId===expiryDeviceId()));
     for(const {key,draft} of entries){
-        const button=document.createElement('button');button.type='button';
-        button.textContent=`Recover ${draft.item.identifierDisplay} • ${draft.status}`;
-        button.addEventListener('click',async()=>{
+        const row=document.createElement('div');row.className='expiryDraftRecovery';
+        const label=document.createElement('strong');label.textContent='Unsaved Capture';row.appendChild(label);
+        const detail=document.createElement('span');detail.textContent=draft.item.identifierDisplay+(expiryDraftDiscardable(draft)?'':' · Save status requires checking');row.appendChild(detail);
+        const action=async discard=>{
             if(scope!==expiryDraftScope() || ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.busy)return;
-            if(typeof navigator==='undefined' || !navigator.locks){setExpiryStatus('error','CROSS-TAB RECOVERY REQUIRES WEB LOCKS — DRAFT RETAINED');return;}
+            if(discard && !expiryDraftDiscardable(draft))return;
+            if(key && (typeof navigator==='undefined' || !navigator.locks)){setExpiryStatus('error','Cross-tab recovery unavailable — draft retained');return;}
             ExpiryCaptureEngine.busy=true;
-            try{await claimExpiryOperation(draft.operation?.id);await ExpiryDraftStore.recover(scope,key);await restoreExpiryDraft();panel.hidden=true;}
-            catch(error){setExpiryStatus('error','DRAFT RECOVERY FAILED — CAPTURE RETAINED');}
+            try{
+                await claimExpiryOperation(draft.operation?.id);
+                if(key)await ExpiryDraftStore.recover(scope,key);
+                if(discard){
+                    const latest=await ExpiryDraftStore.get(scope);
+                    if(!latest || latest.operation?.id!==draft.operation?.id || !expiryDraftDiscardable(latest))throw new Error('Draft changed');
+                    await ExpiryDraftStore.remove(scope);releaseExpiryOperation();
+                    ExpiryCaptureEngine.pendingDraft=null;ExpiryCaptureEngine.draftReady=true;
+                    panel.replaceChildren();panel.hidden=true;setExpiryStatus('ready','READY TO SCAN');
+                }else{
+                    if(!await prepareExpiryDraftRecovery()){ExpiryCaptureEngine.pendingDraft=null;ExpiryCaptureEngine.draftReady=true;panel.replaceChildren();panel.hidden=true;}
+                    else await restoreExpiryDraft();
+                }
+                focusExpiryScanner();
+            }catch(error){setExpiryStatus('error','Draft recovery blocked — capture retained');}
             finally{ExpiryCaptureEngine.busy=false;renderExpiryEvidence();}
-        });panel.appendChild(button);panel.hidden=false;
+        };
+        const resume=document.createElement('button');resume.type='button';resume.textContent='Resume';resume.addEventListener('click',()=>action(false));row.appendChild(resume);
+        const discard=document.createElement('button');discard.type='button';discard.textContent='Discard';discard.disabled=!expiryDraftDiscardable(draft);discard.addEventListener('click',()=>action(true));row.appendChild(discard);
+        panel.appendChild(row);panel.hidden=false;
     }
 }
 

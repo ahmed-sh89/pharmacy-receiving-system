@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 function harness(handheld=false){
  const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnExpiryQty[^" ]+|btnClearExpiryActive|btnExpiryPhoto|btnExpiryRetakeProduct|btnExpiryRetakeExpiry)"/g)].map(m=>m[1]);
- const timers=new Map(),calls=[],elements=new Map();let timer=0;
+ const timers=new Map(),calls=[],elements=new Map(),session=new Map(),receipts=new Map();let timer=0;
  function element(id){
   const classes=new Set(),listeners={};
   const el={id,value:'',textContent:'',innerHTML:'',dataset:{},style:{setProperty(){}},hidden:false,disabled:false,readOnly:false,isConnected:true,tagName:'INPUT',listeners,
@@ -16,12 +16,21 @@ function harness(handheld=false){
  ids.forEach(id=>elements.set(id,element(id)));
  ['expiryMonth','expiryYear','expiryWorkerSelect'].forEach(id=>{const e=elements.get(id);e.dataset.expirySelect=id==='expiryMonth'?'month':id==='expiryYear'?'year':'worker';e.tagName='DIV';});
  const document={createElement:tag=>element(tag),activeElement:null,body:element('body'),documentElement:element('html'),addEventListener(){},getElementById:id=>elements.get(id)||null,querySelector:()=>null,querySelectorAll:()=>[]};
- const c={document,console,structuredClone,crypto:require('node:crypto').webcrypto,Blob,URL,AbortController,sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},ensureDeviceId:()=> 'synthetic-device',Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{user:{id:'user1'},context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{calls.push({name,payload});return name==='reserve_pharmflow_expiry_capture_v1'?{operation_id:payload.p_operation_id,status:'RESERVED'}:name==='save_pharmflow_expiry_capture_v3'?{operation_id:payload.p_operation_id,state_id:'state1',event_id:'event1'}:[];},window:null};c.window=c;vm.createContext(c);
+ const c={document,console,structuredClone,crypto:require('node:crypto').webcrypto,Blob,URL,AbortController,sessionStorage:{getItem:key=>session.get(key)||null,setItem:(key,value)=>session.set(key,value),removeItem:key=>session.delete(key)},ensureDeviceId:()=> 'synthetic-device',Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{user:{id:'user1'},context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{
+   calls.push({name,payload});
+   if(name==='reserve_pharmflow_expiry_capture_v1')return {operation_id:payload.p_operation_id,status:'RESERVED'};
+   if(name==='save_pharmflow_expiry_capture_v3'){
+    const ack={operation_id:payload.p_operation_id,state_id:'state1',event_id:'event1'};
+    receipts.set(payload.p_operation_id,{...structuredClone(payload.p_capture),operation_id:payload.p_operation_id,pharmacy_id:payload.p_pharmacy_id,created_by:c.AuthState.user.id,acknowledgement:ack,captured_at:new Date().toISOString(),status:'SAVED'});return ack;
+   }
+   if(name==='list_pharmflow_expiry_capture_receipts_v1')return payload.p_operation_ids.map(id=>receipts.get(id)).filter(Boolean);
+   return [];
+  },window:null};c.window=c;vm.createContext(c);
  vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+fs.readFileSync('js/expiry-evidence.js','utf8')+fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;',c);
  const drafts=new Map();c.ExpiryDraftStore={put:async(scope,draft)=>drafts.set(scope,structuredClone(draft)),get:async scope=>drafts.get(scope),remove:async scope=>drafts.delete(scope)};c.Blob=Blob;
  c.engine.draftReady=true;
  c.refreshExpiryCapturedCount=()=>{};c.refreshExpiryCurrentState=async()=>[];c.renderExpiryCurrentState=()=>{};
- return {c,drafts,e:id=>elements.get(id),calls,timers,flush(ms){for(const [id,t] of [...timers])if(t.ms===ms){timers.delete(id);t.fn();}}};
+ return {c,drafts,session,receipts,e:id=>elements.get(id),calls,timers,flush(ms){for(const [id,t] of [...timers])if(t.ms===ms){timers.delete(id);t.fn();}}};
 }
 test('Desktop complete GS1 stays unsaved and all review controls remain editable',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');
