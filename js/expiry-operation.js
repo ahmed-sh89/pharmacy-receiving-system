@@ -7,8 +7,13 @@ const ExpiryOperation = (() => {
         return row;
     }
     function scanFacts(raw){
-        let s=String(raw??'').trim().replace(/^\][A-Za-z][0-9]/,'');
-        const gs1=(/^\](?:C1|d2)/.test(String(raw??'')) && /^01/.test(s)) || /^\(01\)/.test(s) || /^01\d{14}(?:17|10|21|\x1d)/.test(s);
+        const framed=String(raw??'').trim();
+        let s=framed.replace(/^\][A-Za-z][0-9]/,'');
+        // AI order is not fixed. Variable-first scans require an actual GS;
+        // never search inside a lot/serial for the characters of another AI.
+        const gs1=/^\](?:C1|d2|Q3)/i.test(framed) || /^\((?:01|17|10|21)\)/.test(s) ||
+            /^01\d{14}(?:$|17|10|21|\x1d)/.test(s) || /^17\d{6}(?:01|10|21|\x1d)/.test(s) ||
+            /^(?:10|21)[^\x1d]{1,20}\x1d(?:01|17|10|21)/.test(s);
         if(!gs1)return {format:'PLAIN',identifier:s};
         const facts={format:'GS1'};
         while(s){
@@ -25,6 +30,10 @@ const ExpiryOperation = (() => {
                 value=s.slice(0,end);s=s.slice(end);
             }
             if(facts[ai]!==undefined || (ai==='01'?!/^\d{14}$/.test(value):ai==='17'?!/^\d{6}$/.test(value):value.length<1 || value.length>20))throw new Error('Invalid GS1 scan');
+            if(ai==='17'){
+                const year=2000+Number(value.slice(0,2)),month=Number(value.slice(2,4)),day=Number(value.slice(4,6));
+                if(month<1 || month>12 || day>new Date(Date.UTC(year,month,0)).getUTCDate())throw new Error('Invalid GS1 expiry');
+            }
             facts[ai]=value;
         }
         if(!facts['01'])throw new Error('GS1 GTIN required');

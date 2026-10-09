@@ -633,7 +633,15 @@ function clearExpiryScreen(options={}){
 
 function renderExpiryActiveItem(item,gs1={}){
     const shell=document.getElementById("expiryActiveItem");
-    if(!shell || expiryIsHandheld()) return;
+    if(expiryIsHandheld()){
+        if(item && gs1.format==="GS1"){
+            const batch=document.getElementById("expiryBatchInput"),serial=document.getElementById("expirySerialInput");
+            if(batch)batch.value=gs1.lot||"";
+            if(serial)serial.value=gs1.serial||"";
+        }
+        return;
+    }
+    if(!shell) return;
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||"—";};
     shell.hidden=false;
     shell.classList.toggle("is-empty",!item);
@@ -833,8 +841,9 @@ async function resolveExpiryScannedValue(rawValue){
     if(typeof ExpiryOperation!=="undefined"){
         try{
             const facts=ExpiryOperation.scanFacts(rawValue);
-            parsed={...parsed,identifierDisplay:facts.identifier,gtin:facts.identifier,lot:facts['10']||"",serial:facts['21']||""};
-            if(facts['17'])parsed.expiry=`20${facts['17'].slice(0,2)}-${facts['17'].slice(2,4)}-${facts['17'].slice(4,6)}`;
+            parsed={...parsed,format:facts.format,identifierDisplay:facts.identifier,gtin:facts.identifier,
+                lot:facts['10']||"",serial:facts['21']||"",
+                expiry:facts['17']?`20${facts['17'].slice(0,2)}-${facts['17'].slice(2,4)}-${facts['17'].slice(4,6)}`:""};
         }catch(error){ExpiryCaptureEngine.resolving=false;setExpiryStatus("error",error.message);return false;}
     }
     identifierDisplay=parsed?.identifierDisplay||identifierDisplay;
