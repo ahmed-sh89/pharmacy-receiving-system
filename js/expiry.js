@@ -216,6 +216,12 @@ function renderExpiryWorkerSelects(){
 
 function selectExpiryWorker(workerId){
     if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.pendingDraft || ExpiryCaptureEngine.operation?.payload){renderExpiryWorkerSelects();return;}
+    if(expiryIsHandheld() && String(workerId||"")!==ExpiryCaptureEngine.selectedWorkerId &&
+       (ExpiryCaptureEngine.currentItem || String(document.getElementById("expiryBarcodeInput")?.value||"").trim())){
+        renderExpiryWorkerSelects();
+        setExpiryStatus("action","Save or clear capture before changing Operator");
+        return;
+    }
     if(expiryIsHandheld() && ExpiryCaptureEngine.selectedWorkerId)expiryHandheldSession();
     ExpiryCaptureEngine.selectedWorkerId = String(workerId || "");
     try{
@@ -387,7 +393,8 @@ async function openExpiryRecentScans(){
        <summary><div class="expiryCapturedMain"><strong>${expiryEscapeHtml(row.item_name||"Unrecognized item")}</strong>
        <span>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${Number(row.expiry_year)} · Qty ${Number(row.quantity)}</span>
        <small>Operator: ${expiryEscapeHtml(row.operator_name||"Attribution unavailable")}</small></div>
-       <span class="expiryHistoryViewOnly">${expiryEscapeHtml(row.kind==="UNKNOWN"?row.status||"Needs Review":"Saved")}</span></summary>
+       ${row.kind==="UNKNOWN"?`<span class="expiryHistoryViewOnly">${expiryEscapeHtml(row.status||"Needs Review")}</span>`:""}
+       <span class="expiryRecentChevron" aria-hidden="true">⌄</span></summary>
        <div class="expiryRecentDetails"><span>Identifier: ${expiryEscapeHtml(row.identifier_display)}</span><span>Item code: ${expiryEscapeHtml(row.item_code||"—")}</span>
        ${row.batch_no?`<span>Batch: ${expiryEscapeHtml(row.batch_no)}</span>`:""}<span>Expiry: ${String(row.expiry_month).padStart(2,"0")}/${Number(row.expiry_year)}</span>
        <span>Quantity: ${Number(row.quantity)}</span><span>Operator: ${expiryEscapeHtml(row.operator_name||"Attribution unavailable")}</span><span>Status: ${expiryEscapeHtml(row.status||"Saved")}</span></div></details>`).join(""):`<div class="expiryCapturedEmpty">No saved scans in this session.</div>`}</div>
