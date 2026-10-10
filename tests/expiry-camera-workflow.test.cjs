@@ -1,21 +1,19 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {harness}=require('./expiry-capture-review.test.cjs');
-function camera(){const h=harness(true);h.c.engine.selectedWorkerId='worker1';h.c.engine.currentItem={identifierDisplay:'U0030',rawBarcode:'U0030',needsReview:true};h.c.bindExpiryEvidence();h.c.renderExpiryEvidence();return h;}
+function camera(){const h=harness(true);h.c.ExpiryReviewBackend={ready:true};h.c.engine.selectedWorkerId='worker1';h.c.engine.currentItem={identifierDisplay:'U0030',rawBarcode:'U0030',needsReview:true};h.c.bindExpiryEvidence();h.c.renderExpiryEvidence();return h;}
 async function take(h,file){h.e('expiryCameraInput').files=[file];for(const fn of h.e('expiryCameraInput').listeners.change)await fn();}
-test('One camera proceeds product → expiry → review, cancellation preserves draft, retake changes one role',async()=>{
- const h=camera(),product=new Blob(['p1'],{type:'image/jpeg'}),expiry=new Blob(['e1'],{type:'image/jpeg'});
- assert.equal(h.e('btnExpiryPhoto').textContent,'PRODUCT PHOTO');h.e('btnExpiryPhoto').click();await take(h,product);assert.equal(h.e('btnExpiryPhoto').textContent,'EXPIRY PHOTO');
- h.e('btnExpiryPhoto').click();await take(h,expiry);assert.equal(h.e('btnExpiryPhoto').hidden,true);assert.equal(h.e('expiryEvidencePreviews').children.length,2);
- await take(h,undefined);assert.equal(await h.c.engine.reviewPhotos.expiry.text(),'e1');
- h.e('btnExpiryRetakeProduct').click();await take(h,new Blob(['p2'],{type:'image/jpeg'}));assert.equal(await h.c.engine.reviewPhotos.product.text(),'p2');assert.equal(await h.c.engine.reviewPhotos.expiry.text(),'e1');assert.equal(h.c.document.activeElement.id,'expiryBarcodeInput');
+test('One Take Photo creates one evidence image and one Submit for Review action',async()=>{
+ const h=camera(),evidence=new Blob(['evidence'],{type:'image/jpeg'});
+ h.e('btnExpiryPhoto').click();await take(h,evidence);assert.equal(h.e('btnExpiryPhoto').hidden,true);assert.equal(h.e('expiryEvidencePreviews').children.length,1);
+ assert.equal(await h.c.engine.reviewPhotos.evidence.text(),'evidence');assert.equal(h.e('btnSaveExpiryCapture').textContent,'SUBMIT FOR REVIEW');
+ assert.equal(h.e('btnExpiryRetakeProduct'),undefined);assert.equal(h.e('btnExpiryRetakeExpiry'),undefined);
 });
-test('Submitted photos cannot be retaken; draft recovery restores two previews and selected worker',async()=>{
- const h=camera();h.e('btnExpiryPhoto').click();await take(h,new Blob(['p'],{type:'image/jpeg'}));h.e('btnExpiryPhoto').click();await take(h,new Blob(['e'],{type:'image/jpeg'}));await h.c.persistExpiryDraft('UNCERTAIN');
- h.c.resetExpiryCaptureForm();await h.c.restoreExpiryDraft();assert.equal(h.c.engine.selectedWorkerId,'worker1');assert.equal(h.e('expiryEvidencePreviews').children.length,2);assert.equal(h.e('btnExpiryRetakeProduct').disabled,true);
- await assert.rejects(h.c.setExpiryEvidencePhoto('expiry',new Blob(['changed'],{type:'image/jpeg'})),/editable/);
+test('Draft recovery restores one evidence preview and exact bytes',async()=>{
+ const h=camera();h.e('btnExpiryPhoto').click();await take(h,new Blob(['persisted evidence'],{type:'image/jpeg'}));await h.c.persistExpiryDraft('DRAFT');
+ h.c.resetExpiryCaptureForm();await h.c.restoreExpiryDraft();assert.equal(h.c.engine.selectedWorkerId,'worker1');assert.equal(h.e('expiryEvidencePreviews').children.length,1);assert.equal(await h.c.engine.reviewPhotos.evidence.text(),'persisted evidence');
 });
-test('Invalid camera photo never erases the existing role',async()=>{
- const h=camera();h.e('btnExpiryPhoto').click();await take(h,new Blob(['p'],{type:'image/jpeg'}));h.e('btnExpiryRetakeProduct').click();await take(h,new Blob(['bad'],{type:'text/plain'}));assert.equal(await h.c.engine.reviewPhotos.product.text(),'p');
+test('Invalid camera photo does not create or replace evidence',async()=>{
+ const h=camera();h.e('btnExpiryPhoto').click();await take(h,new Blob(['bad'],{type:'text/plain'}));assert.equal(h.c.engine.reviewPhotos.evidence,null);
 });
 test('Operation Web Lock rejects another tab until the first releases ownership',async()=>{
  const held=new Set(),locks={request:async(id,opts,callback)=>{

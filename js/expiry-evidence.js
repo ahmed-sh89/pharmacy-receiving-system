@@ -1,5 +1,4 @@
-/* One camera input, product → expiry → review/retake. Handheld only. */
-let expiryCameraRole='product';
+/* One camera input and one evidence image for each Expiry review case. */
 let expiryPreviewURLs=[];
 function renderExpiryEvidence(){
     const panel=document.getElementById('expiryEvidence');if(!panel)return;
@@ -8,38 +7,31 @@ function renderExpiryEvidence(){
     expiryPreviewURLs.forEach(url=>URL.revokeObjectURL(url));expiryPreviewURLs=[];
     const previews=document.getElementById('expiryEvidencePreviews');if(previews)previews.replaceChildren();
     if(panel.hidden)return;
-    for(const role of ['product','expiry']){
-        const photo=engine.reviewPhotos[role];
-        if(photo && previews){
-            const img=document.createElement('img');const url=URL.createObjectURL(photo);expiryPreviewURLs.push(url);
-            img.src=url;img.alt=role==='product'?'Product photo':'Expiry photo';previews.appendChild(img);
-        }
-        const retake=document.getElementById(role==='product'?'btnExpiryRetakeProduct':'btnExpiryRetakeExpiry');
-        if(retake){retake.hidden=!photo;retake.disabled=engine.busy || engine.saveUncertain;}
-    }
+    const photo=engine.reviewPhotos.evidence||engine.reviewPhotos.product;
+    if(photo && previews){const img=document.createElement('img');const url=URL.createObjectURL(photo);expiryPreviewURLs.push(url);img.src=url;img.alt='Needs Review evidence photo';previews.appendChild(img);}
     const next=document.getElementById('btnExpiryPhoto');
-    if(next){next.hidden=!!engine.reviewPhotos.product && !!engine.reviewPhotos.expiry;next.disabled=engine.busy || engine.saveUncertain;next.textContent=engine.reviewPhotos.product?'EXPIRY PHOTO':'PRODUCT PHOTO';}
-    const message=document.getElementById('expiryEvidenceMessage');if(message)message.textContent=next?.hidden?'Review both photos, then Save & Next':'Take product photo, then expiry photo';
+    const ready=typeof ExpiryReviewBackend!=='undefined'&&ExpiryReviewBackend.ready;
+    if(next){next.hidden=!!photo;next.disabled=engine.busy||engine.saveUncertain||!ready;}
+    const message=document.getElementById('expiryEvidenceMessage');if(message)message.textContent=!ready?'Needs Review submission is unavailable until the Staging review migration is applied and verified.':photo?'Evidence photo added. Submit for Review when the required fields are complete.':'Take one photo showing useful product or expiry evidence.';
+    const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent='SUBMIT FOR REVIEW';save.disabled=engine.busy||engine.saveUncertain||!ready;}
 }
 function bindExpiryEvidence(){
     const input=document.getElementById('expiryCameraInput');if(!input || input.dataset.bound==='1')return;
     input.dataset.bound='1';
-    const open=role=>{
-        if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain)return;
-        expiryCameraRole=role;input.value='';input.click();
+    const open=()=>{
+        if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || !ExpiryReviewBackend.ready)return;
+        input.value='';input.click();
     };
-    document.getElementById('btnExpiryPhoto')?.addEventListener('click',()=>open(ExpiryCaptureEngine.reviewPhotos.product?'expiry':'product'));
-    document.getElementById('btnExpiryRetakeProduct')?.addEventListener('click',()=>open('product'));
-    document.getElementById('btnExpiryRetakeExpiry')?.addEventListener('click',()=>open('expiry'));
+    document.getElementById('btnExpiryPhoto')?.addEventListener('click',open);
     input.addEventListener('change',async()=>{
-        let file=input.files?.[0];if(!file)return;const role=expiryCameraRole;
+        let file=input.files?.[0];if(!file)return;
         if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain)return;
         ExpiryCaptureEngine.resolving=true;
         try{
             if(typeof nrV2PreparePhoto==="function")file=await nrV2PreparePhoto(file);
-            await setExpiryEvidencePhoto(role,file);
+            await setExpiryEvidencePhoto('evidence',file);
             renderExpiryEvidence();
-            setExpiryStatus('action',ExpiryCaptureEngine.reviewPhotos.product && ExpiryCaptureEngine.reviewPhotos.expiry?'REVIEW PHOTOS — SAVE & NEXT':'TAKE EXPIRY PHOTO');
+            setExpiryStatus('action','EVIDENCE READY — SUBMIT FOR REVIEW');
         }catch(error){setExpiryStatus('error',String(error.message)+' — CAPTURE RETAINED');}
         finally{ExpiryCaptureEngine.resolving=false;input.value='';focusExpiryScanner();}
     });
@@ -53,9 +45,9 @@ async function prepareExpiryDraftRecovery(){
     if(scope!==expiryDraftScope())throw new Error("Capture account changed");
     if(!draft?.item || draft.scope!==scope)return false;
     const device=draft.deviceId||draft.operation?.payload?.device_id;
-    if(device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
+    if(expiryIsHandheld() && device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
     // An acknowledged or uncertain write is checked read-only, never replayed.
-    if(draft.operation?.payload){
+    if(expiryIsHandheld() && draft.operation?.payload){
         const receipt=await ExpiryOperation.readReceipt(draft.operation,authRpc);
         if(scope!==expiryDraftScope())throw new Error("Capture account changed");
         if(receipt){
@@ -78,7 +70,7 @@ async function renderExpiryRecoverableDrafts(){
     const scope=expiryDraftScope();
     let entries=ExpiryCaptureEngine.pendingDraft?[{key:null,draft:ExpiryCaptureEngine.pendingDraft.draft}]:(ExpiryDraftStore.list?await ExpiryDraftStore.list(scope):[]);
     if(scope!==expiryDraftScope() || ExpiryCaptureEngine.currentItem)return;
-    entries=entries.filter(({draft})=>draft.scope===scope && (!draft.deviceId || draft.deviceId===expiryDeviceId()));
+    entries=entries.filter(({draft})=>draft.scope===scope && (!expiryIsHandheld() || !draft.deviceId || draft.deviceId===expiryDeviceId()));
     for(const {key,draft} of entries){
         const row=document.createElement('div');row.className='expiryDraftRecovery';
         const label=document.createElement('strong');label.textContent='Unsaved Capture';row.appendChild(label);

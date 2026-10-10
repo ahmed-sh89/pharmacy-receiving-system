@@ -25,8 +25,8 @@ function harness(handheld=false){
    }
    if(name==='list_pharmflow_expiry_capture_receipts_v1')return payload.p_operation_ids.map(id=>receipts.get(id)).filter(Boolean);
    return [];
-  },window:null};c.window=c;vm.createContext(c);
- vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+fs.readFileSync('js/expiry-evidence.js','utf8')+fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;',c);
+  },window:null};c.window=c;c.ExpiryReviewBackend={ready:true,refresh:async()=>true};vm.createContext(c);
+ vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+fs.readFileSync('js/expiry-evidence.js','utf8')+fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;this.expiryOperation=ExpiryOperation;',c);
  const drafts=new Map();c.ExpiryDraftStore={put:async(scope,draft)=>drafts.set(scope,structuredClone(draft)),get:async scope=>drafts.get(scope),remove:async scope=>drafts.delete(scope)};c.Blob=Blob;
  c.engine.draftReady=true;
  c.refreshExpiryCapturedCount=()=>{};c.refreshExpiryCurrentState=async()=>[];c.renderExpiryCurrentState=()=>{};
@@ -51,6 +51,24 @@ test('Save uses edited Batch, Serial, Date, Quantity, exact identifier and null 
 test('Ambiguous save retains review fields and blocks unsafe retry',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');h.e('expiryBatchInput').value='KEEP';h.c.authRpc=async()=>{throw new Error('isolated failure');};h.c.console={error(){}};
  await h.c.saveExpiryCapture();h.flush(500);assert.equal(h.e('expiryBatchInput').value,'KEEP');assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.e('btnSaveExpiryCapture').disabled,false);assert.equal(h.c.engine.saveUncertain,false);
+});
+test('Concurrent Save clicks submit once and expose saving then confirmed saved states',async()=>{
+ const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030',rawBarcode:'U0030',category:'Medicine'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
+ let release;const gate=new Promise(resolve=>release=resolve),rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3')await gate;return rpc(name,payload);};
+ const first=h.c.saveExpiryCapture();assert.match(h.e('expiryDesktopStatus').textContent,/SAVING/);await h.c.saveExpiryCapture();assert.equal(h.calls.filter(x=>x.name==='save_pharmflow_expiry_capture_v3').length,0);release();await first;
+ assert.equal(h.calls.filter(x=>x.name==='save_pharmflow_expiry_capture_v3').length,1);assert.match(h.e('expiryDesktopStatus').textContent,/SAVED/);
+});
+test('Definitive rejection retains capture and reuses the same operation ID for corrected retry',async()=>{
+ const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030',rawBarcode:'U0030',category:'Medicine'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
+ const ids=[],rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3'){ids.push(payload.p_operation_id);const e=new Error('Invalid capture');e.httpStatus=422;e.serverRejected=true;throw e;}return rpc(name,payload);};
+ await h.c.saveExpiryCapture();const stableId=h.c.engine.operation.id;assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.c.engine.operation.payload,null);assert.match(h.e('expiryDesktopStatus').textContent,/SERVER REJECTED/);
+ h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3')ids.push(payload.p_operation_id);return rpc(name,payload);};
+ await h.c.saveExpiryCapture();assert.deepEqual(ids,[stableId,stableId]);assert.equal(h.c.engine.currentItem,null);
+});
+test('Clear and scan report blocked action while uncertain save keeps the same operation',async()=>{
+ const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030'};h.c.engine.saveUncertain=true;h.c.engine.operation={id:'stable-operation',payload:{kind:'KNOWN'}};h.e('expiryBarcodeInput').value='next-item';
+ assert.equal(await h.c.clearExpiryScreen(),false);assert.match(h.e('expiryDesktopStatus').textContent,/CLEAR BLOCKED/);
+ assert.equal(await h.c.resolveExpiryScannedValue('next-item'),false);assert.match(h.e('expiryDesktopStatus').textContent,/SCAN BLOCKED/);assert.equal(h.e('expiryBarcodeInput').value,'');assert.equal(h.c.engine.operation.id,'stable-operation');assert.equal(h.calls.length,0);
 });
 test('Handheld retains worker guard, GS1 date locking and original GS1 payload',async()=>{
  const h=harness(true);assert.equal(await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH'),false);h.c.engine.selectedWorkerId='worker1';await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');

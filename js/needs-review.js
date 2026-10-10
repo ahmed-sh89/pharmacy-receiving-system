@@ -11,6 +11,95 @@ const NeedsReviewV2 = {
     photoUrls:new Map()
 };
 
+/* Expiry review has its own server-owned contract. The Receiving queue keeps
+   its existing RPCs and is intentionally not reused for Expiry writes. */
+const ExpiryReviewBackend = {
+    ready:false,
+    pendingCount:null,
+    version:'EXPIRY_NEEDS_REVIEW_20261010_V2',
+    async refresh(){
+        const pharmacyId=nrV2PharmacyId();
+        this.ready=false;this.pendingCount=null;
+        const button=document.getElementById('btnExpiryNeedsReview');
+        if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}
+        if(!pharmacyId||typeof authRpc!=='function'){if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();return false;}
+        try{
+            const contract=await authRpc('get_pharmflow_expiry_review_contract_v1',{p_pharmacy_id:pharmacyId});
+            const marker=Array.isArray(contract)?contract[0]?.contract_version:contract?.contract_version;
+            if(marker!==this.version)throw new Error('Expiry review migration is not verified');
+            const count=await authRpc('count_pharmflow_expiry_reviews_v1',{p_pharmacy_id:pharmacyId});
+            const row=Array.isArray(count)?count[0]:count;
+            const value=Number(row?.pending_count??row);
+            if(!Number.isInteger(value)||value<0)throw new Error('Invalid Expiry review count');
+            this.pendingCount=value;this.ready=true;
+            const badge=document.getElementById('expiryNeedsReviewCount');
+            if(badge){badge.textContent=String(value);badge.hidden=value===0;}
+            if(button){button.disabled=false;button.setAttribute('aria-disabled','false');button.title='Open pharmacy Expiry cases pending item review';}
+            if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();
+            return true;
+        }catch(_error){
+            if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();
+            return false;
+        }
+    },
+    async list(){
+        if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until the approved Staging migration is applied and verified');
+        const all=[];let offset=0;
+        for(;;){
+            const rows=await authRpc('list_pharmflow_expiry_reviews_v1',{p_pharmacy_id:nrV2PharmacyId(),p_status:'PENDING',p_limit:250,p_offset:offset});
+            if(!Array.isArray(rows))throw new Error('Expiry review reader returned an invalid response');
+            all.push(...rows);if(rows.length<250)return all;offset+=rows.length;
+        }
+    },
+    async refreshAfterTerminal(decrement){
+        const previous=this.pendingCount;
+        const refreshed=await this.refresh();
+        if(!refreshed&&decrement&&Number.isInteger(previous)){
+            this.pendingCount=Math.max(0,previous-1);
+            const badge=document.getElementById('expiryNeedsReviewCount');
+            if(badge){badge.textContent=String(this.pendingCount);badge.hidden=this.pendingCount===0;}
+        }
+        return refreshed;
+    },
+    async resolve(reviewId,item,reason='Authorized Expiry review resolution'){
+        if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until the approved Staging migration is applied and verified');
+        if(!globalThis.crypto?.randomUUID)throw new Error('Secure resolution operation IDs are unavailable');
+        const result=await authRpc('resolve_pharmflow_expiry_review_v1',{
+            p_pharmacy_id:nrV2PharmacyId(),p_review_id:reviewId,p_operation_id:globalThis.crypto.randomUUID(),
+            p_item_code:item?.itemCode||'',p_reason:reason
+        });
+        const row=Array.isArray(result)?result[0]:result;
+        if(!row?.success||row.review_id!==reviewId||row.item_code!==item?.itemCode)throw new Error('Expiry resolution was not acknowledged');
+        await this.refreshAfterTerminal(!row.already_resolved);
+        return row;
+    },
+    async delete(reviewId){
+        if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until its Staging contract is verified');
+        let result;
+        try{result=await authRpc('delete_pharmflow_expiry_review_v1',{p_pharmacy_id:nrV2PharmacyId(),p_review_id:reviewId});}
+        catch(error){
+            const message=String(error?.message||'').toLowerCase();
+            if(error?.httpStatus===404||message.includes('could not find the function')||message.includes('schema cache'))throw new Error('Case deletion is unavailable until the separately approved Staging migration is applied');
+            throw error;
+        }
+        const row=Array.isArray(result)?result[0]:result;
+        if(!row?.success||row.review_id!==reviewId||row.status!=='DELETED')throw new Error('Expiry review deletion was not acknowledged');
+        await this.refreshAfterTerminal(!row.already_deleted);
+        return row;
+    }
+};
+window.ExpiryReviewBackend=ExpiryReviewBackend;
+function nrV2ReleasePhotoObjectUrl(photoPath){
+    const cached=NeedsReviewV2.photoUrls.get(photoPath);
+    if(cached){try{URL.revokeObjectURL(cached);}catch(_){}NeedsReviewV2.photoUrls.delete(photoPath);}
+}
+window.nrV2ReleasePhotoObjectUrl=nrV2ReleasePhotoObjectUrl;
+if(typeof AppEvents!=="undefined"&&AppEvents?.on){
+    AppEvents.on('auth:context',()=>setTimeout(()=>ExpiryReviewBackend.refresh(),0));
+    AppEvents.on('route:changed',payload=>{if(payload?.routeName==='expiry')setTimeout(()=>ExpiryReviewBackend.refresh(),0);});
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>ExpiryReviewBackend.refresh(),0));
+
 function nrV2PharmacyId(){
     return (
         (typeof getCurrentPharmacyId==="function" && getCurrentPharmacyId()) ||

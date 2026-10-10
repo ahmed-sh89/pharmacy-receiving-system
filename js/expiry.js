@@ -14,7 +14,7 @@ const ExpiryCaptureEngine = {
     pendingDraft: null,
     saveUncertain: false,
     draftScope: "",
-    reviewPhotos: {product:null, expiry:null},
+    reviewPhotos: {evidence:null, product:null, expiry:null},
     operation:null,
     scanTimer: null,
     lastResolvedRaw: "",
@@ -236,6 +236,12 @@ function selectExpiryWorker(workerId){
 }
 
 function setExpiryStatus(kind, text){
+    const desktopBox=document.getElementById("expiryDesktopStatus");
+    if(desktopBox){
+        desktopBox.className=`expiryDesktopStatus ${kind||"ready"}`;
+        desktopBox.textContent=text||"READY TO SCAN";
+        desktopBox.hidden=!text;
+    }
     const box = document.getElementById("expiryScanStatus");
     if(box){
         const displayKind=expiryIsHandheld() && text==="SAVE FOR REVIEW" ? "error" : kind;
@@ -425,7 +431,7 @@ function expiryDraftSnapshot(status="DRAFT"){
     };
 }
 async function persistExpiryDraft(status){
-    if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem) return;
+    if(!ExpiryCaptureEngine.currentItem) return;
     const scope=expiryDraftScope();
     if(!scope || (ExpiryCaptureEngine.draftScope && scope!==ExpiryCaptureEngine.draftScope)) throw new Error("Capture account changed");
     if(typeof ExpiryDraftStore==="undefined") throw new Error("Durable draft store unavailable");
@@ -436,21 +442,22 @@ async function persistExpiryDraft(status){
 }
 async function setExpiryEvidencePhoto(role,file){
     if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.saveUncertain) throw new Error("Capture is not editable");
-    if(!["product","expiry"].includes(role) || !(file instanceof Blob) || !["image/jpeg","image/png","image/webp"].includes(file.type) || !file.size || file.size>5*1024*1024) throw new Error("Invalid review photo");
+    if(typeof ExpiryReviewBackend==="undefined"||!ExpiryReviewBackend.ready) throw new Error("Needs Review submission is unavailable until the Staging backend migration is applied and verified");
+    if(role!=="evidence" || !(file instanceof Blob) || !["image/jpeg","image/png","image/webp"].includes(file.type) || !file.size || file.size>5*1024*1024) throw new Error("Invalid review photo");
     if(ExpiryCaptureEngine.operation?.payload)throw new Error("Submitted evidence is locked");
-    if(ExpiryCaptureEngine.operation?.uploaded)delete ExpiryCaptureEngine.operation.uploaded[role];
+    if(ExpiryCaptureEngine.operation?.uploaded)delete ExpiryCaptureEngine.operation.uploaded.evidence;
     ExpiryCaptureEngine.reviewPhotos[role]=file;
     markExpiryFormDirty();
     await persistExpiryDraft();
 }
 async function restoreExpiryDraft(){
-    if(!expiryIsHandheld() || typeof ExpiryDraftStore==="undefined") return false;
+    if(typeof ExpiryDraftStore==="undefined") return false;
     const scope=expiryDraftScope();
     if(!scope) return false;
     const draft=await ExpiryDraftStore.get(scope);
     if(scope!==expiryDraftScope() || !draft?.item || draft.scope!==scope) return false;
     const device=draft.deviceId||draft.operation?.payload?.device_id;
-    if(device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
+    if(expiryIsHandheld() && device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
     if(ExpiryCaptureEngine.workers.length && !ExpiryCaptureEngine.workers.some(w=>w.worker_id===draft.workerId))throw new Error("Draft operator unavailable");
     await claimExpiryOperation(draft.operation?.id);
     if(scope!==expiryDraftScope())throw new Error("Capture account changed");
@@ -458,12 +465,15 @@ async function restoreExpiryDraft(){
     ExpiryCaptureEngine.currentItem=draft.item;
     ExpiryCaptureEngine.scannedGS1=draft.gs1;
     ExpiryCaptureEngine.selectedWorkerId=draft.workerId;
-    sessionStorage.setItem(ExpiryCaptureEngine.storageKey(),draft.workerId);
-    const {key,session}=expiryHandheldSession();
-    if(draft.sessionId && draft.sessionId!==session.id){session.id=draft.sessionId;session.operations=[];session.operators={};sessionStorage.setItem(key,JSON.stringify(session));}
+    if(expiryIsHandheld()){
+        sessionStorage.setItem(ExpiryCaptureEngine.storageKey(),draft.workerId);
+        const {key,session}=expiryHandheldSession();
+        if(draft.sessionId && draft.sessionId!==session.id){session.id=draft.sessionId;session.operations=[];session.operators={};sessionStorage.setItem(key,JSON.stringify(session));}
+    }
     ExpiryCaptureEngine.pendingDraft=null;
     const recovery=document.getElementById("expiryRecoverableDrafts");if(recovery){recovery.replaceChildren();recovery.hidden=true;}
     ExpiryCaptureEngine.draftReady=true;
+    renderExpiryActiveItem(draft.item,draft.gs1||{});
     renderExpiryWorkerSelects();
     ExpiryCaptureEngine.reviewPhotos=draft.photos||{product:null,expiry:null};
     ExpiryCaptureEngine.operation=draft.operation||null;
@@ -484,7 +494,7 @@ async function restoreExpiryDraft(){
         ["expiryQuantity","expiryBatchInput","expirySerialInput"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
         ["expiryMonth","expiryYear","expiryWorkerSelect"].forEach(id=>setExpirySelectDisabled(document.getElementById(id),true));
     }
-    setExpiryStatus("action",ExpiryCaptureEngine.saveUncertain?(ExpiryCaptureEngine.operation?"CHECK / RETRY SAME OPERATION — DRAFT RETAINED":"LEGACY SAVE REQUIRES RECONCILIATION — DO NOT RESEND"):"UNSAVED CAPTURE RESTORED");
+    setExpiryStatus(ExpiryCaptureEngine.saveUncertain?"error":"action",ExpiryCaptureEngine.saveUncertain?(ExpiryCaptureEngine.operation?"RESULT UNCERTAIN — CHECK / RETRY SAME OPERATION; DO NOT RESCAN":"RESULT UNCERTAIN — DO NOT RESEND"):"UNSAVED CAPTURE RESTORED");
     return true;
 }
 
@@ -595,10 +605,14 @@ async function leaveExpiryHandheld(){
     return true;
 }
 
-function clearExpiryScreen(options={}){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain){setExpiryStatus("action","CAPTURE LOCKED — WAIT OR RECONCILE SAVE");return;}
+async function clearExpiryScreen(options={}){
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.operation?.payload){setExpiryStatus("error","CLEAR BLOCKED — SAVE IS PENDING OR UNCERTAIN; CHECK / RETRY THE SAME OPERATION FIRST");return false;}
     if(expiryIsHandheld() && options.savedOnly!==true && ExpiryCaptureEngine.currentItem){
-        setExpiryStatus("action","UNSAVED CAPTURE — SAVE BEFORE CLEAR");return;
+        setExpiryStatus("error","CLEAR BLOCKED — SAVE OR RESUME THIS UNSAVED CAPTURE FIRST");return false;
+    }
+    if(options.savedOnly!==true && ExpiryCaptureEngine.currentItem){
+        try{await ExpiryDraftStore.remove(expiryDraftScope());}
+        catch(_){setExpiryStatus("error","CLEAR BLOCKED — COULD NOT SAFELY REMOVE THE SAVED LOCAL DRAFT");return false;}
     }
     try{ document.activeElement?.blur?.(); }catch(_){}
 
@@ -629,16 +643,19 @@ function clearExpiryScreen(options={}){
         focusExpiryScanner();
         window.hhRepairScannerFocus?.("expiry-clear-screen");
     },40);
+    return true;
 }
 
 function renderExpiryActiveItem(item,gs1={}){
     const shell=document.getElementById("expiryActiveItem");
+    const batchInput=document.getElementById("expiryBatchInput"),serialInput=document.getElementById("expirySerialInput");
+    const serialField=serialInput?.closest(".expirySerialField");
+    const batchFromGS1=gs1.batchFromGS1??(gs1.format==="GS1"&&!!gs1.lot);
+    const serialFromGS1=gs1.serialFromGS1??(gs1.format==="GS1"&&!!gs1.serial);
+    if(batchInput){batchInput.readOnly=expiryIsHandheld() && !!(item && batchFromGS1);batchInput.value=item?(gs1.lot||""):"";}
+    if(serialInput){serialInput.readOnly=expiryIsHandheld() && !!(item && serialFromGS1);serialInput.value=item?(gs1.serial||""):"";}
+    if(serialField)serialField.hidden=expiryIsHandheld() && !(item && serialFromGS1);
     if(expiryIsHandheld()){
-        if(item && gs1.format==="GS1"){
-            const batch=document.getElementById("expiryBatchInput"),serial=document.getElementById("expirySerialInput");
-            if(batch)batch.value=gs1.lot||"";
-            if(serial)serial.value=gs1.serial||"";
-        }
         return;
     }
     if(!shell) return;
@@ -654,9 +671,6 @@ function renderExpiryActiveItem(item,gs1={}){
     set("expiryActiveItemCode",item.itemCode||"Needs Review");
     set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");
     set("expiryActiveItemCategory",item.category||"Uncategorized");
-    const batch=document.getElementById("expiryBatchInput"),serial=document.getElementById("expirySerialInput");
-    if(batch)batch.value=gs1?.lot||"";
-    if(serial)serial.value=gs1?.serial||"";
     shell.hidden=false;
 }
 
@@ -668,7 +682,7 @@ function resetExpiryCaptureForm(options = {}){
     ExpiryCaptureEngine.pendingDraft=null;
     const recovery=document.getElementById("expiryRecoverableDrafts");if(recovery){recovery.replaceChildren();recovery.hidden=true;}
     ExpiryCaptureEngine.scannedGS1 = null;
-    ExpiryCaptureEngine.reviewPhotos={product:null,expiry:null};
+    ExpiryCaptureEngine.reviewPhotos={evidence:null,product:null,expiry:null};
     releaseExpiryOperation();
     ExpiryCaptureEngine.operation=null;
     ExpiryCaptureEngine.draftSourceKey=null;
@@ -740,6 +754,13 @@ function expiryIdentifierFromScan(cleaned, parsed){
     return parsedIdentifier || raw;
 }
 
+function expiryLooksLikeHardwareScan(value){
+    const raw=toSafeString(value).trim();
+    const normalized=typeof cleanScannerInput==="function"?cleanScannerInput(raw):raw;
+    if(!normalized)return false;
+    return /[()\x1d]/.test(normalized) || /^\d{8,18}$/.test(normalized);
+}
+
 async function expirySearchGlobalItems(query){
     if(expiryIsHandheld() || typeof authRpc!=="function") return [];
     const q=toSafeString(query).trim();
@@ -808,6 +829,11 @@ async function selectExpirySearchResult(index){
 }
 
 async function resolveExpiryScannedValue(rawValue){
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.operation?.payload){
+        setExpiryStatus("error","SCAN BLOCKED — A SAVE IS PENDING OR UNCERTAIN; CHECK / RETRY THE SAME OPERATION FIRST");
+        const input=document.getElementById("expiryBarcodeInput");if(input)input.value="";
+        return false;
+    }
     const cleaned = typeof cleanScannerInput === "function"
         ? cleanScannerInput(rawValue)
         : String(rawValue || "").trim();
@@ -830,21 +856,24 @@ async function resolveExpiryScannedValue(rawValue){
     setExpiryStatus("busy","READING...");
 
     let parsed;
-    try{
-        parsed=typeof parseGS1Barcode==="function" ? parseGS1Barcode(cleaned) : {gtin:cleaned,identifierDisplay:cleaned};
-    }catch(error){
-        ExpiryCaptureEngine.resolving=false;
-        setExpiryStatus("error","SCAN PARSE FAILED — SCAN AGAIN");return false;
-    }
-
-    let identifierDisplay=expiryIdentifierFromScan(cleaned,parsed);
+    let identifierDisplay;
     if(typeof ExpiryOperation!=="undefined"){
         try{
             const facts=ExpiryOperation.scanFacts(rawValue);
             parsed={...parsed,format:facts.format,identifierDisplay:facts.identifier,gtin:facts.identifier,
                 lot:facts['10']||"",serial:facts['21']||"",
+                batchFromGS1:!!facts['10'],serialFromGS1:!!facts['21'],
                 expiry:facts['17']?`20${facts['17'].slice(0,2)}-${facts['17'].slice(2,4)}-${facts['17'].slice(4,6)}`:""};
+            identifierDisplay=facts.identifier;
         }catch(error){ExpiryCaptureEngine.resolving=false;setExpiryStatus("error",error.message);return false;}
+    }else{
+        try{
+            parsed=typeof parseGS1Barcode==="function" ? parseGS1Barcode(cleaned) : {gtin:cleaned,identifierDisplay:cleaned};
+        }catch(error){
+            ExpiryCaptureEngine.resolving=false;
+            setExpiryStatus("error","SCAN PARSE FAILED — SCAN AGAIN");return false;
+        }
+        identifierDisplay=expiryIdentifierFromScan(cleaned,parsed);
     }
     identifierDisplay=parsed?.identifierDisplay||identifierDisplay;
     ExpiryCaptureEngine.scannedGS1 = parsed || null;
@@ -1018,7 +1047,8 @@ async function resolveExpiryScannedValue(rawValue){
 }
 
 async function saveExpiryCapture(options={}){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload)) return;
+    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving){setExpiryStatus("busy","SAVE IN PROGRESS — WAIT FOR THE RESULT");return;}
+    if(ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload){setExpiryStatus("error","RESULT UNCERTAIN — NO SAFE RETRY PAYLOAD; CONTACT SUPPORT BEFORE RESCANNING");return;}
 
     cancelExpiryScanAutoClear();
 
@@ -1038,6 +1068,10 @@ async function saveExpiryCapture(options={}){
         setExpiryStatus("action","SCAN ITEM FIRST");
         focusExpiryScanner();
         return;
+    }
+    if(item.needsReview && (typeof ExpiryReviewBackend==="undefined" || !ExpiryReviewBackend.ready)){
+        const ready=typeof ExpiryReviewBackend!=="undefined"&&await ExpiryReviewBackend.refresh();
+        if(!ready){setExpiryStatus("error","NEEDS REVIEW SUBMISSION UNAVAILABLE — STAGING BACKEND MIGRATION REQUIRED");renderExpiryEvidence();return;}
     }
     if(!Number.isInteger(quantity) || quantity <= 0){
         if(!expiryIsHandheld()) showExpiryCaptureValidation(["expiryQuantity"],"Enter quantity");
@@ -1083,13 +1117,16 @@ async function saveExpiryCapture(options={}){
         await persistExpiryDraft();
         const facts=ExpiryOperation.scanFacts(item.rawBarcode ?? item.identifierDisplay);
         const gs1={lot:facts['10'] || document.getElementById("expiryBatchInput")?.value.trim() || "",serial:facts['21'] || document.getElementById("expirySerialInput")?.value.trim() || ""};
-        if(item.needsReview && (!ExpiryCaptureEngine.reviewPhotos.product || !ExpiryCaptureEngine.reviewPhotos.expiry))throw new Error("PRODUCT AND EXPIRY PHOTOS REQUIRED");
+        if(item.needsReview && !(ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product))throw new Error("TAKE ONE REVIEW PHOTO");
         if(!ExpiryCaptureEngine.operation){
             ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId};
             await persistExpiryDraft();
         }
         const payload={kind:item.needsReview?"UNKNOWN":"KNOWN",identifier_display:facts.identifier,
-            raw_scan:item.rawBarcode ?? item.identifierDisplay,scan_format:facts.format,
+            // Persist the canonical FNC1/GS frame used by both parsers. Keep
+            // scanner transport aliases and AIM prefixes out of the backend
+            // payload so its strict GS1 validator sees the same framing.
+            raw_scan:typeof cleanScannerInput==="function"?cleanScannerInput(item.rawBarcode ?? item.identifierDisplay):(item.rawBarcode ?? item.identifierDisplay),scan_format:facts.format,
             quantity,expiry_month:month,expiry_year:year,worker_id:workerId||null,
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||""};
@@ -1107,7 +1144,7 @@ async function saveExpiryCapture(options={}){
         acknowledged=true;
         if(saveScope!==expiryDraftScope()) return;
         await persistExpiryDraft("ACKNOWLEDGED");
-        if(expiryIsHandheld()) await ExpiryDraftStore.remove(saveScope);
+        await ExpiryDraftStore.remove(saveScope);
 
         if(!expiryIsHandheld() && !item.needsReview && typeof window.recordExpirySessionCapture==="function"){
             window.recordExpirySessionCapture({
@@ -1130,10 +1167,11 @@ async function saveExpiryCapture(options={}){
 
         ExpiryCaptureEngine.saveUncertain=false;
         resetExpiryCaptureForm({focus:true});
-        setExpiryStatus("success",expiryIsHandheld()?"Saved · Ready to Scan":options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
+        setExpiryStatus("success",expiryIsHandheld()?(item.needsReview?"Submitted for Review · Ready to Scan":"Saved · Ready to Scan"):options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
         scheduleExpirySavedAutoClear();
         // Commit has succeeded. Projection refresh must never become a write failure.
         try{
+        if(item.needsReview&&typeof ExpiryReviewBackend!=="undefined")await ExpiryReviewBackend.refresh();
         refreshExpiryCapturedCount();
         const savedRows=await refreshExpiryCurrentState();
         if(Array.isArray(savedRows)){
@@ -1157,15 +1195,26 @@ async function saveExpiryCapture(options={}){
 
     }catch(error){
         console.error("Unable to save expiry capture",error);
-        if(submitted || error.uncertain || ExpiryCaptureEngine.operation?.payload){
+        const uncertain=submitted || error?.expiryOutcome==="uncertain" || error?.uncertain===true;
+        if(error?.expiryOutcome==="rejected" && ExpiryCaptureEngine.operation?.payload){
+            const rejectedPayload=ExpiryCaptureEngine.operation.payload;
+            ExpiryCaptureEngine.operation.payload=null;
+            ExpiryCaptureEngine.saveUncertain=false;
+            try{await persistExpiryDraft("DRAFT");}
+            catch(_){ExpiryCaptureEngine.operation.payload=rejectedPayload;ExpiryCaptureEngine.saveUncertain=true;}
+            captureControls.forEach(el=>el.disabled=false);
+            selects.forEach(el=>setExpirySelectDisabled(el,false));
+            setExpiryStatus("error",ExpiryCaptureEngine.saveUncertain?"SERVER REJECTED; LOCAL DRAFT UPDATE FAILED — CHECK / RETRY THE SAME OPERATION":"SERVER REJECTED — CAPTURE RETAINED; CORRECT THE FIELDS AND RETRY WITH THE SAME OPERATION");
+            if(button){button.disabled=false;button.textContent=ExpiryCaptureEngine.saveUncertain?"CHECK / RETRY SAVE":"SAVE & NEXT";}
+        }else if(uncertain){
             ExpiryCaptureEngine.saveUncertain=true;
             captureControls.forEach(el=>el.disabled=true);
             selects.forEach(el=>setExpirySelectDisabled(el,true));
             try{await persistExpiryDraft(acknowledged?"ACKNOWLEDGED":"UNCERTAIN");}catch(_){}
-            setExpiryStatus("error",acknowledged?"SAVED — LOCAL CLEANUP FAILED; DO NOT RESEND":"SAVE RESULT UNKNOWN — CHECK / RETRY SAME OPERATION; DRAFT RETAINED");
+            setExpiryStatus("error",acknowledged?"SAVED — LOCAL CLEANUP FAILED; CHECK / RETRY THE SAME OPERATION TO RECONCILE":"RESULT UNCERTAIN — CHECK / RETRY THE SAME OPERATION; DO NOT RESCAN");
             if(button){button.disabled=!ExpiryCaptureEngine.operation;button.textContent=ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
         }else{
-            setExpiryStatus("error",String(error.message||"SAVE BLOCKED")+" — DRAFT RETAINED");
+            setExpiryStatus("error",(error?.expiryOutcome==="rejected"?"SAVE REJECTED — ":"SAVE FAILED BEFORE SUBMISSION — ")+String(error.message||"SAVE BLOCKED")+" — SAME CAPTURE RETAINED");
             if(button)button.disabled=false;
         }
     }finally{
@@ -1788,7 +1837,7 @@ function bindExpiryCaptureUI(){
             closeExpirySearchResults(true);
             const value=String(barcode.value||"");
             if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || (expiryIsHandheld() && (!ExpiryCaptureEngine.draftReady || ExpiryCaptureEngine.currentItem))){
-                setExpiryStatus("action","FINISH CURRENT CAPTURE — SCAN AGAIN AFTER SAVE");return;
+                setExpiryStatus("error",ExpiryCaptureEngine.saveUncertain||ExpiryCaptureEngine.operation?.payload?"SCAN BLOCKED — CHECK / RETRY THE SAME SAVE OPERATION FIRST":"SCAN BLOCKED — FINISH THE CURRENT CAPTURE FIRST");barcode.value="";return;
             }
             if(!value.trim() || value===ExpiryCaptureEngine.lastResolvedRaw) return;
             closeExpirySearchResults();
@@ -1801,13 +1850,6 @@ function bindExpiryCaptureUI(){
             if(event.key==="Escape"){closeExpirySearchResults();return;}
             if(event.key==="Enter" || event.key==="Tab"){event.preventDefault();commitHardwareScan();}
         });
-
-        const looksLikeExpiryIdentifier = value => {
-            const raw=String(value||"").trim();
-            if(!raw) return false;
-            if(/[()\u001d]/.test(raw)) return true;
-            return /^\d{8,18}$/.test(raw);
-        };
 
         /* Desktop paste is intentionally NOT committed on the paste event.
            Paste + Enter follows the exact same authoritative scan path as a
@@ -1829,7 +1871,7 @@ function bindExpiryCaptureUI(){
                 return;
             }
             if(value.length<2){closeExpirySearchResults();return;}
-            if(looksLikeExpiryIdentifier(value)){
+            if(expiryLooksLikeHardwareScan(value)){
                 closeExpirySearchResults();
                 ExpiryCaptureEngine.scanTimer=setTimeout(commitHardwareScan,120);
                 return;
@@ -1976,13 +2018,32 @@ async function activateExpiryCapture(){
         await loadExpiryWorkers();
         await refreshExpiryCurrentState();
         renderExpiryWorkerCompactState();
+        if(ExpiryCaptureEngine.currentItem&&ExpiryCaptureEngine.draftScope===expiryDraftScope()){
+            setExpiryStatus(ExpiryCaptureEngine.saveUncertain?"error":"action",ExpiryCaptureEngine.saveUncertain?"RESULT UNCERTAIN — CHECK / RETRY THE SAME OPERATION":"UNSAVED CAPTURE RETAINED");return;
+        }
         clearExpirySavedConfirmation();
         resetExpiryCaptureForm({focus:false});
+        try{
+            if(!expiryDraftScope())throw new Error("Authenticated scope required");
+            if(await prepareExpiryDraftRecovery())return;
+            ExpiryCaptureEngine.draftReady=true;
+            await renderExpiryRecoverableDrafts();
+        }catch(_){setExpiryStatus("error","DRAFT RECOVERY BLOCKED — RETAINED CAPTURE MUST BE CHECKED BEFORE SCANNING");return;}
     }
     setExpiryStatus("ready","READY TO SCAN");
     try{window.scrollTo(0,0);}catch(_){}
     focusExpiryScanner();
 }
+
+window.guardExpiryNavigation=function(){
+    if(ExpiryCaptureEngine.busy||ExpiryCaptureEngine.resolving||ExpiryCaptureEngine.saveUncertain||ExpiryCaptureEngine.operation?.payload){
+        setExpiryStatus("error","NAVIGATION BLOCKED — CHECK / RETRY THE SAME SAVE OPERATION FIRST");return false;
+    }
+    return true;
+};
+window.addEventListener?.("beforeunload",event=>{
+    if(ExpiryCaptureEngine.busy||ExpiryCaptureEngine.saveUncertain||ExpiryCaptureEngine.operation?.payload){event.preventDefault();event.returnValue="";}
+});
 
 /* ---------------- Worker management in Settings ---------------- */
 

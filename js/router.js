@@ -130,6 +130,8 @@ function navigateTo(
             routeName
         ];
 
+    if(AppRouter.currentRoute==="expiry" && routeName!=="expiry" && typeof window.guardExpiryNavigation==="function" && !window.guardExpiryNavigation()) return false;
+
 
     hideAllPages();
 

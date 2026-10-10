@@ -14,15 +14,16 @@ test('Overlapping lookups cannot publish competing captures; parser exception re
  const h=harness(true);h.c.engine.selectedWorkerId='worker1';const d=deferred();h.c.IdentifierService.resolve=()=>d.promise;
  const first=h.c.resolveExpiryScannedValue(raw);assert.equal(await h.c.resolveExpiryScannedValue('U0030'),false);
  d.resolve({found:true,itemCode:'ONE',identifierDisplay:'04065272072977'});await first;assert.equal(h.c.engine.currentItem.itemCode,'ONE');
- h.c.resetExpiryCaptureForm();h.c.parseGS1Barcode=()=>{throw new Error('bad parser');};assert.equal(await h.c.resolveExpiryScannedValue(raw),false);assert.equal(h.c.engine.resolving,false);
+ h.c.resetExpiryCaptureForm();h.c.expiryOperation.scanFacts=()=>{throw new Error('bad parser');};assert.equal(await h.c.resolveExpiryScannedValue(raw),false);assert.equal(h.c.engine.resolving,false);
 });
-for(const identifier of ['U0030','S00110','1234A','001234','04065272072977'])test('Unknown '+identifier+' retains exact identifier/raw/date/quantity/batch and both photo blobs; no legacy write',async()=>{
- const h=harness(true);h.c.engine.selectedWorkerId='worker1';h.c.IdentifierService.resolve=async()=>({found:false});h.c.parseGS1Barcode=raw=>({identifierDisplay:raw});h.e('expiryBatchInput').value='LOT-KEEP';h.c.authRpc=async(name,payload)=>{h.calls.push({name,payload});throw new Error('backend not deployed');};
+for(const identifier of ['U0030','S00110','1234A','001234','04065272072977'])test('Unknown '+identifier+' retains exact identifier/raw/date/quantity/batch and one evidence photo; no legacy write',async()=>{
+ const h=harness(true);h.c.engine.selectedWorkerId='worker1';h.c.IdentifierService.resolve=async()=>({found:false});h.c.parseGS1Barcode=raw=>({identifierDisplay:raw});h.c.authRpc=async(name,payload)=>{h.calls.push({name,payload});throw new Error('backend not deployed');};
  await h.c.resolveExpiryScannedValue(identifier);h.e('expiryQuantity').value='7';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
- const product=new Blob(['product'],{type:'image/jpeg'}),expiry=new Blob(['expiry'],{type:'image/png'});
- await h.c.setExpiryEvidencePhoto('product',product);await h.c.setExpiryEvidencePhoto('expiry',expiry);await h.c.saveExpiryCapture();
- assert.equal(h.calls.length,1);assert.equal(h.calls[0].name,'reserve_pharmflow_expiry_capture_v1');const draft=h.drafts.get('user1/isolated-test');assert.equal(draft.item.identifierDisplay,identifier);assert.equal(draft.item.rawBarcode,identifier);assert.equal(draft.quantity,'7');assert.equal(draft.month,'8');assert.equal(draft.year,'2028');assert.equal(draft.batch,'LOT-KEEP');assert.equal(await draft.photos.product.text(),'product');assert.equal(await draft.photos.expiry.text(),'expiry');
- h.c.resetExpiryCaptureForm();assert.equal(await h.c.restoreExpiryDraft(),true);assert.equal(h.e('expiryQuantity').value,'7');assert.equal(await h.c.engine.reviewPhotos.expiry.text(),'expiry');
+ h.e('expiryBatchInput').value='LOT-KEEP';
+ const evidence=new Blob(['product or expiry evidence'],{type:'image/jpeg'});
+ await h.c.setExpiryEvidencePhoto('evidence',evidence);await h.c.saveExpiryCapture();
+ assert.equal(h.calls.length,1);assert.equal(h.calls[0].name,'reserve_pharmflow_expiry_capture_v1');const draft=h.drafts.get('user1/isolated-test');assert.equal(draft.item.identifierDisplay,identifier);assert.equal(draft.item.rawBarcode,identifier);assert.equal(draft.quantity,'7');assert.equal(draft.month,'8');assert.equal(draft.year,'2028');assert.equal(draft.batch,'LOT-KEEP');assert.equal(await draft.photos.evidence.text(),'product or expiry evidence');
+ h.c.resetExpiryCaptureForm();assert.equal(await h.c.restoreExpiryDraft(),true);assert.equal(h.e('expiryQuantity').value,'7');assert.equal(await h.c.engine.reviewPhotos.evidence.text(),'product or expiry evidence');
 });
 test('Scope switch cannot hydrate or submit another account/pharmacy draft',async()=>{
  const h=await scanned();await h.c.persistExpiryDraft();h.c.AuthState.context.pharmacy_id='other';

@@ -166,8 +166,8 @@ async function hhProcessReceiving(raw,input){
 }
 
 async function hhProcessExpiry(raw,input){
-    if(HandheldRuntime.expiryBusy) return false;
-    if(hhIsImmediateDuplicate(raw)) return false;
+    if(HandheldRuntime.expiryBusy){if(input)input.value="";setExpiryStatus?.("busy","SCAN BLOCKED — EXPIRY SCAN IS STILL PROCESSING");return false;}
+    if(hhIsImmediateDuplicate(raw)){if(input)input.value="";setExpiryStatus?.("action","DUPLICATE SCAN IGNORED — WAIT FOR THE CURRENT RESULT");return false;}
     HandheldRuntime.expiryBusy=true;
     if(input) input.value="";
     hhSetVisualState("processing","PROCESSING…");

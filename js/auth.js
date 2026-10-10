@@ -578,46 +578,54 @@ async function authRequest(path, options = {}){
         "Content-Type":"application/json",
         ...(options.headers || {})
     };
-    let abortTimer=null;
     let controller=null;
     let requestOptions={...options,headers};
 
     if(typeof AbortController!=="undefined" && !options.signal){
         controller=new AbortController();
         requestOptions={...requestOptions,signal:controller.signal};
-        abortTimer=setTimeout(()=>controller.abort(),AUTH_REQUEST_TIMEOUT_MS);
     }
 
     let response;
     let timeoutTimer=null;
+    let text="";
     try{
+        const timeout=new Promise((_,reject)=>{
+            timeoutTimer=setTimeout(()=>{
+                try{controller?.abort();}catch(_){}
+                reject(new Error("PharmFlow connection timed out. Please try again."));
+            },AUTH_REQUEST_TIMEOUT_MS);
+        });
         response=await Promise.race([
             fetch(getSupabaseProjectUrl() + path,requestOptions),
-            new Promise((_,reject)=>{
-                timeoutTimer=setTimeout(
-                    ()=>reject(new Error("PharmFlow connection timed out. Please try again.")),
-                    AUTH_REQUEST_TIMEOUT_MS
-                );
-            })
+            timeout
         ]);
+        // Keep the same deadline while reading the response body. A fetch may
+        // resolve headers and then stall indefinitely while the body streams.
+        text=await Promise.race([response.text(),timeout]);
     }catch(error){
         if(error?.name==="AbortError"){
             throw new Error("PharmFlow connection timed out. Please try again.");
         }
         throw error;
     }finally{
-        if(abortTimer){ clearTimeout(abortTimer); }
         if(timeoutTimer){ clearTimeout(timeoutTimer); }
     }
-    const text = await response.text();
     let data = null;
     try{ data = text ? JSON.parse(text) : null; }
     catch(_){ data = text; }
     if(!response.ok){
-        throw new Error(
+        const error = new Error(
             (data && (data.msg || data.message || data.error_description || data.error || data.hint)) ||
             ("Authentication request failed (" + response.status + ")")
         );
+        // Keep the fact that an HTTP response arrived so idempotent Expiry
+        // writes can distinguish a definitive PostgREST rejection from a
+        // network failure whose commit result is unknown. Do not retain or
+        // log the response body here.
+        error.httpStatus=response.status;
+        error.serverRejected=true;
+        throw error;
     }
     return data;
 }

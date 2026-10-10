@@ -9259,6 +9259,7 @@ setTimeout(()=>{
 },600);
 
 async function openNeedsReviewPanel(workflow="RECEIVING"){
+    if(String(workflow).toUpperCase()==="EXPIRY") return openExpiryNeedsReviewPanel();
     const handheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
     closeNeedsReviewPhotoViewer();
     const previousPanel=document.getElementById("needsReviewOverlay");
@@ -9478,6 +9479,103 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         if(document.getElementById("needsReviewPhotoViewer")){closeNeedsReviewPhotoViewer();event.stopPropagation();return;}
         closePanel();
     });
+}
+
+/* Expiry case list reuses Receiving's established overlay, row, photo viewer,
+   and selection presentation. Its data and write contract stay Expiry-specific. */
+function expiryGlobalMasterSummary(item,esc){
+    const name=item?.itemName||item?.item_name||'Unnamed Global Master item';
+    const code=item?.itemCode||item?.item_code||'—';
+    const raw=item?.identifiers||item?.identifierValues||item?.identifier_values||[];
+    const ids=(Array.isArray(raw)?raw.map(x=>typeof x==='string'?x:(x?.identifierDisplay||x?.identifier_display||x?.value||x?.gtin)):[])
+        .concat([item?.identifierDisplay,item?.identifier_display,item?.gtin].filter(Boolean));
+    const identifiers=[...new Set(ids.map(x=>toSafeString(x).trim()).filter(Boolean))];
+    return `<span class="expiryGlobalMasterIdentity"><strong>${esc(name)}</strong><span>Item Code <b>${esc(code)}</b></span>${identifiers.length?`<span>Identifiers ${esc(identifiers.join(' · '))}</span>`:''}</span>`;
+}
+
+async function openExpiryNeedsReviewPanel(){
+    closeNeedsReviewPhotoViewer();
+    const previous=document.getElementById('needsReviewOverlay');previous?.disposeFocus?.();previous?.remove();
+    let rows;
+    try{rows=await ExpiryReviewBackend.list();}
+    catch(error){showToast?.(error?.message||'Unable to load Expiry Needs Review','error');return;}
+    const esc=value=>escapeHTML(toSafeString(value));
+    const pharmacyAdmin=typeof isPharmacyAdmin==='function'&&isPharmacyAdmin();
+    const globalWriter=(typeof isSystemOwner==='function'&&isSystemOwner())||(pharmacyAdmin&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==='HHP084');
+    const canResolve=pharmacyAdmin&&globalWriter;
+    const overlay=document.createElement('div');overlay.id='needsReviewOverlay';overlay.className='needsReviewOverlay';
+    overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','needsReviewTitle');
+    overlay.innerHTML=`<button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button><section class="needsReviewPanel expiryNeedsReviewPanel">
+      <header><div><span class="needsReviewKicker">EXPIRY</span><h2 id="needsReviewTitle">Pending review <b class="pfnReviewCount">${rows.length}</b></h2></div>
+      <div class="needsReviewHeaderActions"><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div></header>
+      <div class="needsReviewList" data-review-list>${rows.length?rows.map((row,index)=>`<section class="needsReviewRow" data-expiry-review-id="${esc(row.review_id)}"><div class="expiryReviewCaseHeading"><button class="needsReviewRowSummary" type="button" data-expiry-detail="${index}" aria-expanded="false"><strong>${esc(row.identifier_display||row.gtin||'Identifier unavailable')}</strong><i aria-hidden="true">›</i></button><button type="button" class="expiryCopyBarcode" data-copy-barcode="${index}">Copy Barcode</button></div><div class="needsReviewCaseDetail" data-expiry-case="${index}" hidden><div class="needsReviewInfo"><span>Batch <b>${esc(row.batch_no||'—')}</b></span>${row.sample_serial?`<span>Serial <b>${esc(row.sample_serial)}</b></span>`:''}<span>Expiry <b>${row.expiry_month?String(row.expiry_month).padStart(2,'0'):'—'}/${esc(row.expiry_year||'—')}</b></span><span>Quantity <b>${esc(row.quantity||row.pending_quantity||1)}</b></span></div>
+<div class="pfnReviewPhotoGrid">${row.evidence_photo_path?`<button type="button" data-expiry-photo-open="${index}" aria-label="Open evidence photo"><img data-expiry-photo="${index}" alt="Expiry Needs Review evidence" hidden><span data-expiry-photo-state="${index}">Open details to load evidence photo</span></button>`:'<span>No evidence photo available</span>'}</div>
+        ${row.status==='PENDING'?(canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Global Master item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:'<div class="needsReviewHandheldReadOnly"><strong>Resolution access required</strong><span>Only approved Global Master writers can change item mappings.</span></div>'):''}
+        <div class="expiryReviewCaseActions"><button type="button" data-review-delete="${index}">Delete</button></div>
+      </div></section>`).join(''):'<div class="needsReviewEmpty">Nothing needs review.</div>'}</div></section>`;
+    document.body.appendChild(overlay);
+    const setTabState=open=>{
+        const reviewTab=document.getElementById('btnExpiryNeedsReview'),activity=document.getElementById('btnExpirySessionView'),inventory=document.getElementById('btnOpenExpiryInventory');
+        if(reviewTab)reviewTab.setAttribute('aria-selected',String(open));
+        if(activity)activity.setAttribute('aria-selected',String(!open&&ExpiryCaptureEngine.desktopView!=='INVENTORY'));
+        if(inventory)inventory.setAttribute('aria-selected',String(!open&&ExpiryCaptureEngine.desktopView==='INVENTORY'));
+    };
+    setTabState(true);
+    const close=()=>{overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus();};
+    overlay.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
+    let expanded=null;
+    rows.forEach((row,index)=>{
+        const section=overlay.querySelector(`[data-expiry-review-id="${CSS.escape(row.review_id)}"]`),detail=section?.querySelector(`[data-expiry-case="${index}"]`);
+        let photoLoading=false,photoLoaded=false;
+        const loadEvidencePhoto=async()=>{
+            if(!row.evidence_photo_path||photoLoading||photoLoaded)return;
+            photoLoading=true;
+            const img=overlay.querySelector(`[data-expiry-photo="${index}"]`),state=overlay.querySelector(`[data-expiry-photo-state="${index}"]`);
+            state.hidden=false;state.textContent='Loading evidence photo…';state.classList.remove('is-error');
+            try{const url=await nrV2PhotoObjectUrl(row.evidence_photo_path);if(!url)throw new Error('Private evidence photo could not be loaded');img.src=url;img.hidden=false;state.hidden=true;photoLoaded=true;}
+            catch(_){state.textContent='Evidence photo unavailable. Check access or retry.';state.classList.add('is-error');}
+            finally{photoLoading=false;}
+        };
+        section?.querySelector(`[data-expiry-detail="${index}"]`)?.addEventListener('click',event=>{const open=detail.hidden;if(expanded!==null&&expanded!==index){const prev=overlay.querySelector(`[data-expiry-case="${expanded}"]`);if(prev)prev.hidden=true;overlay.querySelector(`[data-expiry-detail="${expanded}"]`)?.setAttribute('aria-expanded','false');}detail.hidden=!open;event.currentTarget.setAttribute('aria-expanded',String(open));expanded=open?index:null;if(open)loadEvidencePhoto();});
+        if(row.evidence_photo_path){
+            overlay.querySelector(`[data-expiry-photo-open="${index}"]`)?.addEventListener('click',async()=>{const img=overlay.querySelector(`[data-expiry-photo="${index}"]`);if(img?.src&& !img.hidden)openNeedsReviewPhotoViewer(img.src);else showToast?.('Evidence photo is not available','error');});
+        }
+        section?.querySelector(`[data-copy-barcode="${index}"]`)?.addEventListener('click',async()=>{
+            try{await navigator.clipboard.writeText(toSafeString(row.raw_barcode||row.identifier_display||row.gtin));showToast?.('Barcode copied','success');}
+            catch(_){showToast?.('Unable to copy barcode','error');}
+        });
+        section?.querySelector(`[data-review-delete="${index}"]`)?.addEventListener('click',async event=>{
+            if(!window.confirm('Delete this pending Expiry review case?'))return;
+            const button=event.currentTarget;button.disabled=true;
+            try{await ExpiryReviewBackend.delete(row.review_id);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry review case deleted; evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
+            catch(error){button.disabled=false;showToast?.(error?.message||'Unable to delete Expiry review case','error');}
+        });
+        section?.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
+        if(!canResolve)return;
+        const input=section?.querySelector(`[data-master-search="${index}"]`),matches=section?.querySelector(`[data-master-matches="${index}"]`),selection=section?.querySelector(`[data-master-selection="${index}"]`);
+        let timer=0,request=0,selected=null;
+        input?.addEventListener('input',()=>{
+            clearTimeout(timer);const query=input.value.trim();selected=null;selection.hidden=true;selection.replaceChildren();
+            if(!query){matches.replaceChildren();return;}
+            const token=++request;timer=setTimeout(async()=>{
+                try{
+                    const items=await IdentifierService.searchItems(query,8);if(token!==request||input.value.trim()!==query)return;
+                    matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-global-match="${itemIndex}">${expiryGlobalMasterSummary(item,esc)}</button>`).join(''):'<div class="needsReviewNoMatches">No Global Master item found.</div>';
+                    matches.querySelectorAll('[data-global-match]').forEach(button=>button.addEventListener('click',()=>{
+                        selected=items[Number(button.dataset.globalMatch)]||null;if(!selected)return;selection.hidden=false;
+                        selection.innerHTML=`<div>${expiryGlobalMasterSummary(selected,esc)}</div><button type="button" data-global-confirm>Confirm Resolution</button>`;
+                        selection.querySelector('[data-global-confirm]').addEventListener('click',async event=>{
+                            const confirm=event.currentTarget;confirm.disabled=true;overlay.dataset.busy='1';
+                            try{await ExpiryReviewBackend.resolve(row.review_id,selected);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry case resolved and identifier mapping audited; evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
+                            catch(error){confirm.disabled=false;showToast?.(error?.message||'Unable to resolve Expiry case','error');}
+                            finally{overlay.dataset.busy='';}
+                        });
+                    }));
+                }catch(error){if(token===request)matches.textContent=error?.message||'Global Master search is unavailable.';}
+            },220);
+        });
+    });
+    overlay.querySelector('[data-expiry-detail="0"]')?.focus();
 }
 
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;

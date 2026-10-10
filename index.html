@@ -39,7 +39,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=EXPIRY_CAPTURE_WORKSPACE"
+        href="css/dashboard.css?v=EXPIRY_COORDINATED1"
     >
 
     <link
@@ -52,7 +52,7 @@
         href="css/auth.css?v=HANDHELD_ASSIGN_AUTH2"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=SIDEBAR_BRAND_BALANCE1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=EXPIRY_REVIEW_FINAL1">
 <link rel="stylesheet" href="css/receiving-surface.css?v=UI_REVIEW_CLEAN1">
 <link rel="stylesheet" href="css/identity.css?v=IDLE_RESUME2">
 <link rel="stylesheet" href="css/mobile-phone.css?v=PHONE_FINAL5">
@@ -1295,6 +1295,7 @@
                         <div class="expiryScanBox">
                             <span class="expiryScanIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M7 12h10M8 9v6M11 9v6M14 9v6M17 9v6"></path></svg></span>
                             <input id="expiryBarcodeInput" type="text" inputmode="none" autocomplete="off" placeholder="Scan barcode or search by Item Code / Item Name">
+                            <button id="expiryScannerDiagnosticToggle" type="button" class="expiryScannerDiagnosticToggle" hidden>Capture scanner metadata</button>
                             <span id="expiryCaptureValidation" class="expiryCaptureValidation expiryDesktopOnly" role="alert" hidden></span>
                             <div id="expirySearchResults" class="expirySearchResults" hidden></div>
                         </div>
@@ -1325,7 +1326,7 @@
                       <div class="expiryEntryGrid">
                         <label class="expiryReviewField expiryQtyField"><span class="expiryControlLabel expiryDesktopOnly">Quantity</span><div class="expiryQuantityControl"><button id="btnExpiryQtyMinus" class="expiryDesktopOnly" type="button" aria-label="Decrease quantity">−</button><input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" aria-label="Quantity" placeholder="Qty"><button id="btnExpiryQtyPlus" class="expiryDesktopOnly" type="button" aria-label="Increase quantity">+</button></div></label>
                         <label class="expiryReviewField expiryBatchField"><span class="expiryControlLabel">Batch Number</span><input id="expiryBatchInput" type="text" autocomplete="off" placeholder="Enter batch"></label>
-                        <label class="expiryReviewField expiryDesktopOnly"><span class="expiryControlLabel">Serial Number</span><input id="expirySerialInput" type="text" autocomplete="off" placeholder="Enter serial"></label>
+                        <label class="expiryReviewField expirySerialField"><span class="expiryControlLabel">Serial Number</span><input id="expirySerialInput" type="text" autocomplete="off" placeholder="Enter serial"></label>
                         <div class="expiryReviewField"><span class="expiryControlLabel expiryDesktopOnly">Expiry Month</span>
                             <div id="expiryMonth" class="pfSelect" data-expiry-select="month" data-value="" tabindex="0" role="combobox" aria-label="Expiry month" aria-expanded="false">
                                 <button type="button" class="pfSelectTrigger" tabindex="-1"><span class="pfSelectValue">Month</span><svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg></button>
@@ -1342,16 +1343,15 @@
                       </div>
                       <small id="expiryMonthName" hidden></small>
                       <div id="expiryRecoverableDrafts" hidden></div>
-                      <section id="expiryEvidence" class="expiryEvidence" hidden aria-label="Capture photos">
+                      <section id="expiryEvidence" class="expiryEvidence" hidden aria-label="Needs Review evidence">
                         <div id="expiryEvidencePreviews"></div>
-                        <button id="btnExpiryPhoto" type="button">PRODUCT PHOTO</button>
-                        <button id="btnExpiryRetakeProduct" type="button" hidden>Retake product</button>
-                        <button id="btnExpiryRetakeExpiry" type="button" hidden>Retake expiry</button>
+                        <button id="btnExpiryPhoto" type="button">TAKE PHOTO</button>
                         <input id="expiryCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
                         <span id="expiryEvidenceMessage" role="status"></span>
                       </section>
                       <div class="expiryCaptureActions">
                         <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
+                        <div id="expiryDesktopStatus" class="expiryDesktopStatus" role="status" aria-live="assertive" hidden></div>
                       </div>
                     </div>
 
@@ -1372,13 +1372,14 @@
                 </section>
 
                 <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
+                    <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
+                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Session Activity</button>
+                        <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
+                        <button id="btnExpiryNeedsReview" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 18 17H2L10 3Zm0 5v4m0 2.5v.1"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button>
+                    </nav>
                     <div class="expiryCurrentHeader">
                         <div class="expiryCurrentTitle">
-                            <div class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
-                                <button id="btnExpirySessionView" type="button" role="tab" aria-selected="true" aria-controls="expiryCurrentStateBody">Session Activity</button>
-                                <button id="btnOpenExpiryInventory" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody">Expiry Inventory</button>
-                            </div>
-                            <span id="expiryWorkspaceTitle" class="expiryVisuallyHidden">Session Activity</span>
+                            <span id="expiryWorkspaceTitle">Session Activity</span>
                             <strong id="expiryCurrentStateCount">0</strong>
                             <small id="expiryWorkspaceSubtitle" hidden></small>
                         </div>
@@ -2579,9 +2580,9 @@
 
 <script src="js/state.js?v=WORK_SCOPE1"></script>
 
-<script src="js/router.js?v=B10CLEAN15_15"></script>
+<script src="js/router.js?v=EXPIRY_COORDINATED1"></script>
 
-<script src="ui.js?v=HANDHELD_ASSIGN_AUTH3"></script>
+<script src="ui.js?v=EXPIRY_REVIEW_FINAL1"></script>
 
 <script src="js/excel.js?v=SETTINGS_PROD1"></script>
 
@@ -2600,18 +2601,19 @@
 
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
-<script src="js/auth.js?v=STARTUP_GATE1"></script>
+<script src="js/auth.js?v=EXPIRY_COORDINATED1"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
 
-<script src="js/needs-review.js?v=NR_AUTO_ALLOC1"></script>
+<script src="js/needs-review.js?v=EXPIRY_REVIEW_FINAL1"></script>
 
-<script src="js/expiry-operation.js?v=EXPIRY_OPERATION_V3"></script>
-<script src="js/expiry-evidence.js?v=EXPIRY_OPERATION_V3"></script>
+<script src="js/expiry-operation.js?v=EXPIRY_COORDINATED1"></script>
+<script src="js/expiry-evidence.js?v=EXPIRY_COORDINATED1"></script>
 <script src="js/expiry-capture-store.js?v=EXPIRY_OPERATION_V3"></script>
-<script src="js/expiry.js?v=EXPIRY_OPERATION_V3"></script>
-<script src="js/expiry-desktop-v2.js?v=EXPIRY_CAPTURE_WORKSPACE"></script>
+<script src="js/expiry.js?v=EXPIRY_COORDINATED1"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_COORDINATED1"></script>
+<script src="js/expiry-scanner-diagnostic.js?v=EXPIRY_DIAGNOSTIC1"></script>
 
 <script src="cloud-workspace.js?v=IDLE_RESUME2"></script>
 
@@ -2620,7 +2622,7 @@
 
 <script src="js/app.js?v=STARTUP_GATE1"></script>
 
-<script src="js/handheld-runtime.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="js/handheld-runtime.js?v=EXPIRY_COORDINATED1"></script>
 <script src="js/receiving-release.js?v=B22SCANREARM1"></script>
 <script src="js/receiving-history.js?v=HISTORY7"></script>
 

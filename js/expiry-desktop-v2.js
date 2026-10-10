@@ -12,6 +12,7 @@
   let dialogBusy=false;
   let dialogReturnFocus=null;
   let viewportBound=false;
+  let reviewCountBound=false;
 
   function esc(v){return typeof expiryEscapeHtml==="function"?expiryEscapeHtml(v):String(v??"");}
   function timeOnly(v){const d=new Date(v||"");return Number.isFinite(d.getTime())?d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"—";}
@@ -106,6 +107,11 @@
     shell.style.setProperty("--expiry-viewport-height",Math.max(420,window.innerHeight-top)+"px");
     document.body.classList.add("expiryDesktopActive");
   }
+  async function refreshExpiryNeedsReviewCount(){
+    const badge=document.getElementById("expiryNeedsReviewCount");
+    if(!badge || typeof ExpiryReviewBackend==="undefined")return;
+    await ExpiryReviewBackend.refresh();
+  }
   function bindViewport(){
     if(viewportBound)return;viewportBound=true;
     window.addEventListener("resize",syncViewport,{passive:true});
@@ -122,8 +128,8 @@
     const set=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e);};
     set("expiryWorkspaceTitle",e=>e.textContent=inv?"Expiry Inventory":"Session Activity");
     set("expiryWorkspaceSubtitle",e=>{e.textContent=inv?"All active verified expiry records":"";e.hidden=!inv;});
-    set("btnExpirySessionView",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(!inv));});
-    set("btnOpenExpiryInventory",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(inv));});
+    set("btnExpirySessionView",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(!inv));e.tabIndex=inv?-1:0;});
+    set("btnOpenExpiryInventory",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(inv));e.tabIndex=inv?0:-1;});
     set("btnClearExpirySession",e=>{e.hidden=inv;e.style.display=inv?"none":"";});
     set("expiryCurrentSearch",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
     set("btnClearExpiryFilters",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
@@ -296,12 +302,14 @@
   const originalBind=window.bindExpiryCaptureUI;
   window.bindExpiryCaptureUI=function(){
     originalBind();bindViewport();
-    const inv=document.getElementById("btnOpenExpiryInventory"),back=document.getElementById("btnExpirySessionView"),clearSession=document.getElementById("btnClearExpirySession"),search=document.getElementById("expiryCurrentSearch"),clearFilters=document.getElementById("btnClearExpiryFilters"),exportBtn=document.getElementById("btnExportExpiryInventory");
+    if(!reviewCountBound){reviewCountBound=true;window.addEventListener("focus",refreshExpiryNeedsReviewCount);}
+    const inv=document.getElementById("btnOpenExpiryInventory"),back=document.getElementById("btnExpirySessionView"),review=document.getElementById("btnExpiryNeedsReview"),clearSession=document.getElementById("btnClearExpirySession"),search=document.getElementById("expiryCurrentSearch"),clearFilters=document.getElementById("btnClearExpiryFilters"),exportBtn=document.getElementById("btnExportExpiryInventory");
     if(inv&&inv.dataset.v4!=="1"){inv.dataset.v4="1";inv.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.desktopView="INVENTORY";updateMode();refreshExpiryCurrentState();};}
     if(back&&back.dataset.v4!=="1"){back.dataset.v4="1";back.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.desktopView="SESSION";updateMode();refreshExpiryCurrentState();};}
-    [back,inv].forEach(button=>{if(button)button.onkeydown=e=>{
+    if(review&&review.dataset.v4!=="1"){review.dataset.v4="1";review.onclick=()=>openNeedsReviewPanel("EXPIRY");}
+    [inv,back,review].forEach(button=>{if(button)button.onkeydown=e=>{
       if(expiryIsHandheld()||!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;
-      e.preventDefault();const next=e.key==="Home"?back:e.key==="End"?inv:button===back?inv:back;next.focus();next.click();
+      e.preventDefault();const enabled=[back,inv,review].filter(x=>x&&!x.disabled),current=enabled.indexOf(button);const next=e.key==="Home"?enabled[0]:e.key==="End"?enabled.at(-1):enabled[(current+(e.key==="ArrowRight"?1:-1)+enabled.length)%enabled.length];next?.focus();next?.click();
     };});
     if(clearSession&&clearSession.dataset.v4!=="1"){clearSession.dataset.v4="1";clearSession.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.sessionRows=[];renderExpirySessionActivity();setExpiryStatus("success","SESSION ACTIVITY CLEARED");};}
     if(clearFilters&&clearFilters.dataset.v4!=="1"){clearFilters.dataset.v4="1";clearFilters.onclick=clearAllFilters;}
@@ -314,6 +322,6 @@
   const originalActivate=window.activateExpiryCapture;
   window.activateExpiryCapture=async function(){
     if(!expiryIsHandheld()){if(!Array.isArray(ExpiryCaptureEngine.sessionRows))ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";closeRecordDialog();}
-    updateMode();const result=await originalActivate();setTimeout(syncViewport,0);return result;
+    updateMode();const result=await originalActivate();setTimeout(syncViewport,0);refreshExpiryNeedsReviewCount();return result;
   };
 })();

@@ -11,8 +11,27 @@ async function photos(p,op=uuid()){
  for(const role of ['product','expiry']){const path=`${PA}/expiry-v1/${op}/${role}/${uuid()}.jpg`;await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',path,UA,JSON.stringify({mimetype:'image/jpeg',size:500})]);p[role+'_photo_path']=path;}
  return op;
 }
+async function singlePhoto(p,op=uuid()){
+ await db.query('select public.reserve_pharmflow_expiry_capture_v1($1,$2)',[PA,op]);
+ const path=`${PA}/expiry-v1/${op}/product/${uuid()}.jpg`;
+ await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',path,UA,JSON.stringify({mimetype:'image/jpeg',size:500})]);
+ p.product_photo_path=path;return op;
+}
 async function value(sql,args=[]){return (await db.query(sql,args)).rows[0];}
 async function denied(fn,pattern){await assert.rejects(fn,pattern);}
+async function processQueuedReviewPhotos(reviewId,expectedCount){
+ await identity(UA,'postgres');
+ await db.query("update pharmflow_expiry_private.photo_cleanup_jobs set next_attempt_at=now()+interval '1 day' where review_id<>$1 and state='PENDING'",[reviewId]);
+ await identity(UA,'service_role');
+ const claimed=await db.query('select * from pharmflow_expiry_private.claim_photo_cleanup_jobs(4)');
+ const jobs=claimed.rows.filter(row=>row.review_id===reviewId);
+ assert.equal(jobs.length,expectedCount);
+ for(const job of jobs){
+  await db.query('delete from storage.objects where bucket_id=$1 and name=$2',['pharmflow-needs-review',job.object_path]);
+  assert.equal((await value('select pharmflow_expiry_private.complete_photo_cleanup_job($1,$2,$3) r',[job.job_id,job.object_path,job.claim_token])).r,true);
+ }
+ return jobs;
+}
 test.before(async()=>{
  const localUrl=process.env.PHARMFLOW_LOCAL_PG_URL;
  if(localUrl){
@@ -27,8 +46,31 @@ test.before(async()=>{
  const schema=fs.readFileSync('PHASE2C1176_EXPIRY_STAGE1_CURRENT_STATE.sql','utf8');await db.exec(schema.slice(0,schema.indexOf('create or replace function public.save_pharmacy_expiry_verified_state_v1')));
  const defs=JSON.parse(fs.readFileSync('tests/expiry-backend/deployed-save-contracts.json','utf8'));
  for(const d of defs){await db.exec(d.definition+';');const types=d.arguments.split(', ').map(a=>a.slice(a.indexOf(' ')+1)).join(',');await db.exec(`revoke all on function public.${d.proname}(${types}) from public,anon;grant execute on function public.${d.proname}(${types}) to authenticated;`);}
- await db.exec(`insert into public.pharmacies values('${PA}'),('${PB}');insert into auth.users values('${UA}'),('${UB}'),('${AD}'),('${SO}');insert into public.test_members values('${UA}','${PA}',false),('${UB}','${PB}',false),('${AD}','${PA}',true);insert into public.pharmflow_expiry_workers_v1 values('${W}','${PA}','Synthetic HHP084 worker',true);`);
- await db.exec(fs.readFileSync(migration,'utf8'));await identity();
+ await db.exec(`alter table public.pharmacies add column code text,add column active boolean default true,add column status text default 'active';
+ alter table public.pharmflow_needs_review_v2 add column resolved_at timestamptz,add column resolution_transaction_id text,add column updated_at timestamptz default now();
+ create table public.pharmacy_members(pharmacy_id uuid,user_id uuid,active boolean,role text);
+ create function public.is_system_owner() returns boolean language sql stable security definer set search_path=public,pg_temp as $$select auth.uid()='${SO}'::uuid$$;
+ create table public.pharmflow_global_items_v2(item_code text primary key,item_name text not null,group_name text,category text,sub_category text,created_at timestamptz default now(),created_by uuid,updated_at timestamptz default now(),updated_by uuid);
+ create table public.pharmflow_global_item_identifiers_v2(id uuid primary key default gen_random_uuid(),item_code text not null references public.pharmflow_global_items_v2(item_code) on delete restrict,identifier_display text not null,identifier_key text not null unique,mapping_revision bigint not null default 1,created_at timestamptz default now(),created_by uuid,updated_at timestamptz default now(),updated_by uuid);
+ create table public.pharmflow_identifier_mapping_audit_v1(id uuid primary key default gen_random_uuid(),operation_id uuid not null unique,action text not null,identifier_id uuid references public.pharmflow_global_item_identifiers_v2(id) on delete set null,identifier_display text not null,identifier_key text not null,old_item_code text,new_item_code text,reason text not null,performed_by uuid not null references auth.users(id),performed_at timestamptz not null default now());
+ create or replace function public.pharmflow_is_reference_master_admin_v1() returns boolean language sql stable security definer set search_path=public,pg_temp as $$select auth.uid() is not null and (public.is_system_owner() or exists(select 1 from public.pharmacy_members pm join public.pharmacies p on p.id=pm.pharmacy_id where pm.user_id=auth.uid() and pm.active is true and lower(coalesce(pm.role,''))='admin' and p.active is true and p.status='active' and upper(btrim(coalesce(p.code,'')))='HHP084'))$$;
+ insert into public.pharmacies(id,code,active,status) values('${PA}','HHP084',true,'active'),('${PB}','BETA001',true,'active');
+ insert into auth.users values('${UA}'),('${UB}'),('${AD}'),('${SO}');
+ insert into public.test_members values('${UA}','${PA}',false),('${UB}','${PB}',false),('${AD}','${PA}',true);
+ insert into public.pharmacy_members values('${PA}','${AD}',true,'admin');
+ insert into public.pharmflow_expiry_workers_v1 values('${W}','${PA}','Synthetic HHP084 worker',true);
+ insert into public.pharmflow_global_items_v2(item_code,item_name) values('TARGET-ITEM','Synthetic Global Item'),('OTHER-ITEM','Other Global Item');`);
+ await db.exec(fs.readFileSync(migration,'utf8'));
+ await db.exec(fs.readFileSync('proposals/staging/20261010_expiry_needs_review_single_photo_and_resolution.sql','utf8'));
+ let cleanupMigration=fs.readFileSync('proposals/staging/20261010_expiry_needs_review_member_delete.sql','utf8');
+ // PGlite has no pg_cron/pg_net or Supabase Vault. Keep all queue/RPC/trigger
+ // SQL in the fixture, omitting only the hosted-provider preflight and schedule.
+ cleanupMigration=cleanupMigration
+  .replace(/  if not exists\(select 1 from pg_extension where extname='pg_cron'[\s\S]*?  end if;\n/,'')
+  .replace(/  if \(select count\(\*\) from vault\.decrypted_secrets[\s\S]*?  end if;\n/,'');
+ cleanupMigration=cleanupMigration.slice(0,cleanupMigration.indexOf('-- Durable retry schedule.'))+'\ncommit;';
+ await db.exec(cleanupMigration);
+ await identity();
  console.log('LOCAL SQL ENGINE:',(await value('select version() as version')).version);
 });
 test.after(async()=>{if(db)await db.close()});
@@ -41,7 +83,181 @@ test('SQL raw GS1, batch, serial, month-end day00 and both photos survive author
  const read=(await db.query('select public.get_pharmflow_expiry_review_v1($1,$2) as r',[PA,r.review_id])).rows[0].r;
  for(const field of Object.keys(p))assert.deepEqual(read[field],p[field],field);assert.equal(read.worker_name,'Synthetic HHP084 worker');assert.equal(read.status,'PENDING');assert.equal(read.pharmacy_id,PA);assert.equal(read.identifier_key,'04065272072977');assert.deepEqual(await save(p,op),r);
  await identity(UB);await denied(()=>db.query('select public.get_pharmflow_expiry_review_v1($1,$2)',[PA,r.review_id]),/Pharmacy access/);
+ await denied(()=>db.query('select public.list_pharmflow_expiry_reviews_v1($1,$2,$3,$4)',[PA,'ALL',250,0]),/Pharmacy access/);
+ await denied(()=>db.query('select public.count_pharmflow_expiry_reviews_v1($1)',[PA]),/Pharmacy access/);
+ assert.equal((await db.query('select * from storage.objects where bucket_id=$1 and name=$2',['pharmflow-needs-review',p.product_photo_path])).rows.length,0);
  await identity();assert.equal((await db.query('select public.get_pharmflow_expiry_review_v1($1,$2) as r',[PA,uuid()])).rows[0].r,null);
+ assert.equal((await db.query('select * from storage.objects where bucket_id=$1 and name=$2',['pharmflow-needs-review',p.product_photo_path])).rows.length,1);
+});
+test('SQL accepts one evidence photo and preserves legacy two-photo rows through the new reader',async()=>{
+ await identity();const p=capture('ONE-PHOTO','UNKNOWN'),op=await singlePhoto(p),ack=await save(p,op);
+ const row=(await value('select public.get_pharmflow_expiry_review_v1($1,$2) as r',[PA,ack.review_id])).r;
+ assert.equal(row.evidence_photo_path,p.product_photo_path);assert.equal(row.expiry_photo_path,null);assert.equal(row.status,'PENDING');
+ const legacy=capture('LEGACY-PAIR','UNKNOWN'),legacyOp=await photos(legacy),legacyAck=await save(legacy,legacyOp);
+ const legacyRow=(await value('select public.get_pharmflow_expiry_review_v1($1,$2) as r',[PA,legacyAck.review_id])).r;
+ assert.equal(legacyRow.product_photo_path,legacy.product_photo_path);assert.equal(legacyRow.expiry_photo_path,legacy.expiry_photo_path);assert.equal(legacyRow.evidence_photo_path,legacy.product_photo_path);
+ await identity(UA,'postgres');assert.equal((await value('select count(*)::int n from public.pharmflow_needs_review_v2 where workflow=\'EXPIRY\' and status=\'PENDING\'')).n>=2,true);
+});
+test('SQL review tombstone is pharmacy-scoped, idempotent, and leaves evidence and protected domains unchanged',async()=>{
+ await identity();const p=capture('DELETE-CASE','UNKNOWN'),op=await singlePhoto(p),ack=await save(p,op);
+ await identity(UA,'postgres');
+ await identity(UA,'service_role');
+ const photoCountBefore=(await value("select count(*)::int n from storage.objects where bucket_id='pharmflow-needs-review'")).n;
+ await identity(UA,'postgres');
+ const inventoryBefore=(await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n;
+ const eventsBefore=(await value('select count(*)::int n from public.pharmflow_expiry_events_v1')).n;
+ const masterBefore=(await value('select count(*)::int n from public.pharmflow_global_item_identifiers_v2')).n;
+ const receivingBefore=(await value('select count(*)::int n from public.test_receiving_ledger')).n;
+ await identity();
+ const first=(await value('select public.delete_pharmflow_expiry_review_v1($1,$2) r',[PA,ack.review_id])).r;
+ assert.deepEqual(first,{success:true,review_id:ack.review_id,status:'DELETED',already_deleted:false,photo_cleanup_queued:true});
+ const retry=(await value('select public.delete_pharmflow_expiry_review_v1($1,$2) r',[PA,ack.review_id])).r;
+ assert.deepEqual(retry,{success:true,review_id:ack.review_id,status:'DELETED',already_deleted:true});
+ const row=(await value('select status,deleted_by,deleted_at,workflow,pharmacy_id from public.pharmflow_needs_review_v2 where id=$1',[ack.review_id]));
+ assert.equal(row.status,'DELETED');assert.equal(row.deleted_by,UA);assert.ok(row.deleted_at);assert.equal(row.workflow,'EXPIRY');assert.equal(row.pharmacy_id,PA);
+ await identity(UA,'service_role');assert.equal((await value("select count(*)::int n from pharmflow_expiry_private.photo_cleanup_jobs where review_id=$1 and state='PENDING'",[ack.review_id])).n,1);
+ await identity(UA,'service_role');assert.equal((await value('select count(*)::int n from storage.objects where bucket_id=$1 and name=$2',['pharmflow-needs-review',p.product_photo_path])).n,1);
+ await identity(UB);await denied(()=>db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PA,ack.review_id]),/Pharmacy access/);
+ await identity();await denied(()=>db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PB,ack.review_id]),/Pharmacy access/);
+ await identity(UA,'postgres');const receivingId=uuid();await db.query("insert into public.pharmflow_needs_review_v2(id,pharmacy_id,workflow,gtin,identifier_display,identifier_key,pending_quantity,created_by) values($1,$2,'RECEIVING','REC001','REC001','REC001',1,$3)",[receivingId,PA,UA]);
+ await identity();await denied(()=>db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PA,receivingId]),/not found/);
+ assert.equal((await value("select count(*)::int n from public.pharmflow_needs_review_v2 where id=$1 and status='PENDING'",[ack.review_id])).n,0);
+ await identity(UA,'postgres');
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_events_v1')).n,eventsBefore);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_global_item_identifiers_v2')).n,masterBefore);
+ assert.equal((await value('select count(*)::int n from public.test_receiving_ledger')).n,receivingBefore);
+ await identity(UA,'service_role');assert.equal((await value("select count(*)::int n from storage.objects where bucket_id='pharmflow-needs-review'")).n,photoCountBefore);
+});
+test('SQL photo cleanup is durable, server-owned, retryable, idempotent, and exact-path scoped',async()=>{
+ await identity();const p=capture('CLEANUP-RETRY','UNKNOWN'),op=await singlePhoto(p),ack=await save(p,op);
+ const deleted=(await value('select public.delete_pharmflow_expiry_review_v1($1,$2) r',[PA,ack.review_id])).r;assert.equal(deleted.success,true);
+ await identity(UA);await denied(()=>db.query('select * from pharmflow_expiry_private.claim_photo_cleanup_jobs(10)'),/permission denied|worker role required/i);
+ await identity(UA,'service_role');let jobs=await db.query('select * from pharmflow_expiry_private.claim_photo_cleanup_jobs(10)');
+ assert.ok(jobs.rows.length<=4,'claims are batch bounded');
+ let job=jobs.rows.find(row=>row.object_path===p.product_photo_path);assert.ok(job,'exact evidence path is claimed');
+ const parallelClaim=await db.query('select * from pharmflow_expiry_private.claim_photo_cleanup_jobs(4)');
+ assert.equal(parallelClaim.rows.some(row=>row.job_id===job.job_id),false,'an active lease prevents another worker claim of the same job');
+ const tokenA=job.claim_token;
+ await db.query('select pharmflow_expiry_private.fail_photo_cleanup_job($1,$2,$3)',[job.job_id,tokenA,'storage_503']);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[p.product_photo_path])).n,1);
+ const health=await value("select count(*)::int outstanding,max(attempts)::int attempts,count(*) filter(where last_error_code is not null)::int failures,min(created_at) oldest from pharmflow_expiry_private.photo_cleanup_jobs where review_id=$1 and state<>'DONE'",[ack.review_id]);
+ assert.deepEqual(health,{outstanding:1,attempts:1,failures:1,oldest:health.oldest});
+ assert.ok(health.oldest,'queue health exposes oldest outstanding job age anchor');
+ await identity(UA,'postgres');await db.query("update pharmflow_expiry_private.photo_cleanup_jobs set next_attempt_at=now()-interval '1 second' where job_id=$1",[job.job_id]);
+ await identity(UA,'service_role');jobs=await db.query('select * from pharmflow_expiry_private.claim_photo_cleanup_jobs(10)');assert.equal(jobs.rows.length,1);job=jobs.rows[0];
+ assert.notEqual(job.claim_token,tokenA,'reclaim issues a fresh fencing token');
+ assert.equal((await value('select pharmflow_expiry_private.complete_photo_cleanup_job($1,$2,$3) r',[job.job_id,job.object_path,tokenA])).r,false,'expired worker cannot complete reclaimed work');
+ assert.equal((await value('select pharmflow_expiry_private.fail_photo_cleanup_job($1,$2,$3) r',[job.job_id,tokenA,'stale_worker'])).r,false,'expired worker cannot change reclaimed retry state');
+ assert.equal((await value('select claim_token from pharmflow_expiry_private.photo_cleanup_jobs where job_id=$1',[job.job_id])).claim_token,job.claim_token);
+ await db.query('delete from storage.objects where bucket_id=$1 and name=$2',['pharmflow-needs-review',job.object_path]);
+ // Lost completion response: expire the lease, reclaim, and make Storage's 404 path a success.
+ await identity(UA,'postgres');await db.query("update pharmflow_expiry_private.photo_cleanup_jobs set claim_until=now()-interval '1 second' where job_id=$1",[job.job_id]);
+ await identity(UA,'service_role');jobs=await db.query('select * from pharmflow_expiry_private.claim_photo_cleanup_jobs(10)');job=jobs.rows.find(row=>row.job_id===job.job_id);assert.ok(job);
+ await db.query('delete from storage.objects where bucket_id=$1 and name=$2',['pharmflow-needs-review',job.object_path]);
+ const complete=(await value('select pharmflow_expiry_private.complete_photo_cleanup_job($1,$2,$3) r',[job.job_id,job.object_path,job.claim_token])).r;assert.equal(complete,true);
+ assert.equal((await value("select state from pharmflow_expiry_private.photo_cleanup_jobs where job_id=$1",[job.job_id])).state,'DONE');
+ await identity();assert.equal((await value('select public.get_pharmflow_expiry_review_v1($1,$2) r',[PA,ack.review_id])).r.evidence_photo_deleted,true);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[p.product_photo_path])).n,0);
+ await identity(UA,'service_role');
+ assert.equal((await value('select pharmflow_expiry_private.complete_photo_cleanup_job($1,$2,$3) r',[job.job_id,job.object_path,job.claim_token])).r,false);
+});
+
+test('SQL terminal transition queues every registered operation photo, but not pending, foreign-pharmacy, or unrelated photos',async()=>{
+ await identity();
+ const p=capture('RETAKE-COVERAGE','UNKNOWN'),op=uuid(),otherOp=uuid(),foreignOp=uuid();
+ await db.query('select public.reserve_pharmflow_expiry_capture_v1($1,$2)',[PA,op]);
+ const paths=[];
+ for(const role of ['product','expiry','product','expiry']){
+  const path=PA+'/expiry-v1/'+op+'/'+role+'/'+uuid()+'.jpg';paths.push(path);
+  await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',path,UA,JSON.stringify({mimetype:'image/jpeg',size:500})]);
+ }
+ p.product_photo_path=paths[0];p.expiry_photo_path=paths[1];
+ const unrelatedPath=PA+'/expiry-v1/'+otherOp+'/product/'+uuid()+'.jpg';
+ await db.query('select public.reserve_pharmflow_expiry_capture_v1($1,$2)',[PA,otherOp]);
+ await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',unrelatedPath,UA,JSON.stringify({mimetype:'image/jpeg',size:500})]);
+ await identity(UB);
+ const foreignPath=PB+'/expiry-v1/'+foreignOp+'/product/'+uuid()+'.jpg';
+ await db.query('select public.reserve_pharmflow_expiry_capture_v1($1,$2)',[PB,foreignOp]);
+ await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',foreignPath,UB,JSON.stringify({mimetype:'image/jpeg',size:500})]);
+ await identity();const ack=await save(p,op);
+ await identity(UA,'service_role');
+ assert.equal((await value('select count(*)::int n from pharmflow_expiry_private.photo_cleanup_jobs where operation_id=$1',[op])).n,0,'pending evidence stays unqueued');
+ await identity();await db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PA,ack.review_id]);
+ await identity(UA,'service_role');
+ const queued=await db.query('select pharmacy_id,operation_id,object_path from pharmflow_expiry_private.photo_cleanup_jobs where review_id=$1',[ack.review_id]);
+ assert.equal(queued.rows.length,4,'selected evidence and all retakes are queued');
+ assert.deepEqual(new Set(queued.rows.map(row=>row.object_path)),new Set(paths));
+ assert.ok(queued.rows.every(row=>row.pharmacy_id===PA&&row.operation_id===op));
+ assert.equal(queued.rows.some(row=>row.object_path===unrelatedPath||row.object_path===foreignPath),false);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=any($1::text[])',[paths])).n,4,'terminal transition queues but does not synchronously remove photos');
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[unrelatedPath])).n,1);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[foreignPath])).n,1);
+ await processQueuedReviewPhotos(ack.review_id,4);
+ assert.equal((await value('select count(*)::int n from pharmflow_expiry_private.photo_cleanup_jobs where review_id=$1 and state<>\'DONE\'',[ack.review_id])).n,0);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=any($1::text[])',[paths])).n,0);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[unrelatedPath])).n,1);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[foreignPath])).n,1);
+});
+test('SQL review list/count stay pharmacy scoped and resolution audits mapping idempotently without inventory writes',async()=>{
+ await identity();const p=capture('RESOLVE-ONCE','UNKNOWN'),op=await singlePhoto(p);
+ const retakePath=PA+'/expiry-v1/'+op+'/product/'+uuid()+'.jpg';
+ await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',retakePath,UA,JSON.stringify({mimetype:'image/jpeg',size:500})]);
+ const ack=await save(p,op);
+ const inventoryBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n);
+ const listed=await db.query('select public.list_pharmflow_expiry_reviews_v1($1,$2,$3,$4) as r',[PA,'PENDING',250,0]);assert.ok(listed.rows.some(row=>row.r.review_id===ack.review_id));
+ assert.ok(Number((await value('select public.count_pharmflow_expiry_reviews_v1($1) as n',[PA])).n)>=1);
+ await identity(UB);await denied(()=>db.query('select public.count_pharmflow_expiry_reviews_v1($1)',[PA]),/Pharmacy access/);
+ await identity(UA);await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','test']),/administrator permission/);
+ await identity(AD);const resolutionOp=uuid();const first=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) as r',[PA,ack.review_id,resolutionOp,'TARGET-ITEM','Expiry case review'])).r;
+ assert.equal(first.success,true);assert.equal(first.item_code,'TARGET-ITEM');
+ const retry=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) as r',[PA,ack.review_id,resolutionOp,'TARGET-ITEM','Expiry case review'])).r;
+ assert.equal(retry.already_resolved,true);assert.equal(retry.operation_id,resolutionOp);
+ await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','different operation']),/another operation id/i);
+ await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,resolutionOp,'OTHER-ITEM','same op different item']),/another item code/i);
+ await identity(UA,'postgres');assert.equal((await value('select count(*)::int n from public.pharmflow_needs_review_v2 where id=$1 and status=\'RESOLVED\' and resolved_item_code=\'TARGET-ITEM\'',[ack.review_id])).n,1);
+ await identity(UA);await denied(()=>db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PA,ack.review_id]),/Only pending Expiry review/);
+ await identity(UA,'service_role');
+ const resolveJobs=await db.query("select object_path from pharmflow_expiry_private.photo_cleanup_jobs where review_id=$1 and state='PENDING'",[ack.review_id]);
+ assert.deepEqual(new Set(resolveJobs.rows.map(row=>row.object_path)),new Set([p.product_photo_path,retakePath]));
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[p.product_photo_path])).n,1);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[retakePath])).n,1);
+ await identity(UA,'postgres');
+ assert.equal((await value('select count(*)::int n from public.pharmflow_identifier_mapping_audit_v1 where identifier_key=\'RESOLVE-ONCE\' and new_item_code=\'TARGET-ITEM\'')).n,1);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
+ await processQueuedReviewPhotos(ack.review_id,2);
+ assert.equal((await value('select count(*)::int n from storage.objects where name=any($1::text[])',[[p.product_photo_path,retakePath]])).n,0);
+});
+
+test('SQL Global Master add preserves exact same-operation audit retries and rejects operation-ID reuse',async()=>{
+ await identity(AD);const operation=uuid();
+ const first=(await value("select public.add_pharmflow_global_identifier_v2($1,'AUDIT-ONCE','TARGET-ITEM','review reason') as r",[operation])).r;
+ assert.equal(first.success,true);assert.equal(first.itemCode,'TARGET-ITEM');
+ const retry=(await value("select public.add_pharmflow_global_identifier_v2($1,'AUDIT-ONCE','TARGET-ITEM','review reason') as r",[operation])).r;
+ assert.equal(retry.success,true);assert.equal(retry.identifierId,first.identifierId);
+ await denied(()=>db.query("select public.add_pharmflow_global_identifier_v2($1,'AUDIT-OTHER','TARGET-ITEM','different mapping')",[operation]),/different identifier mapping operation/i);
+ await denied(()=>db.query("select public.add_pharmflow_global_identifier_v2($1,'AUDIT-ONCE','TARGET-ITEM','different reason')",[operation]),/different identifier mapping operation/i);
+ await identity(UA,'postgres');assert.equal((await value('select count(*)::int n from public.pharmflow_identifier_mapping_audit_v1 where operation_id=$1',[operation])).n,1);
+ assert.equal((await value("select count(*)::int n from public.pharmflow_global_item_identifiers_v2 where identifier_key in ('AUDIT-ONCE','AUDIT-OTHER')")).n,1);
+});
+
+test('SQL historical resolved cases without a recorded resolution operation fail closed',async()=>{
+ await identity();const p=capture('LEGACY-RESOLVED','UNKNOWN'),op=await singlePhoto(p),ack=await save(p,op);
+ await identity(AD,'postgres');await db.query("update public.pharmflow_needs_review_v2 set status='RESOLVED',resolved_by=$1,resolved_item_code='TARGET-ITEM',resolved_item_name='Synthetic Global Item',resolved_at=now() where id=$2",[AD,ack.review_id]);
+ await identity(AD);
+ const inventoryBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n);
+ await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','legacy retry']),/another operation id/i);
+ await identity(UA,'postgres');assert.equal((await value('select resolution_transaction_id from public.pharmflow_needs_review_v2 where id=$1',[ack.review_id])).resolution_transaction_id,null);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
+});
+test('SQL mapping conflict leaves review pending and adds no audit or inventory record',async()=>{
+ await identity(UA,'postgres');await db.query("insert into public.pharmflow_global_item_identifiers_v2(item_code,identifier_display,identifier_key) values('OTHER-ITEM','CONFLICT','CONFLICT')");
+ await identity();const p=capture('CONFLICT','UNKNOWN'),op=await singlePhoto(p),ack=await save(p,op);
+ const inventoryBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n);
+ await identity(AD);await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','conflict test']),/already mapped to another item code/i);
+ await identity(UA,'postgres');assert.equal((await value('select status from public.pharmflow_needs_review_v2 where id=$1',[ack.review_id])).status,'PENDING');
+ assert.equal((await value("select count(*)::int n from public.pharmflow_identifier_mapping_audit_v1 where identifier_key='CONFLICT'")).n,0);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
 });
 test('SQL required fields, raw identity mismatch and bad dates reject atomically',async()=>{
  await identity();for(const change of [{raw_scan:null},{identifier_display:'0030'},{device_id:''},{quantity:0},{quantity:1.5},{expiry_month:13},{expiry_month:null},{worker_id:null},{batch_no:7},{sample_serial:7}]){const p={...capture(),...change};await denied(()=>save(p),/required|match|Invalid|invalid|Worker|integer|Integer/);}
@@ -62,7 +278,7 @@ test('SQL photo replacement/rename/deletion is blocked before resolution, includ
  await identity(UB);const objects=await db.query('select * from storage.objects where name=$1',[p.product_photo_path]);assert.equal(objects.rows.length,0);
 });
 test('SQL safe retake deletes only uploader staging object; missing/type-invalid/wrong-role photos reject',async()=>{
- await identity();const p=capture('RETAKE1','UNKNOWN'),op=await photos(p);await db.query('delete from storage.objects where name=$1',[p.product_photo_path]);await denied(()=>save(p,op),/Both uploaded/);
+ await identity();const p=capture('RETAKE1','UNKNOWN'),op=await photos(p);await db.query('delete from storage.objects where name=$1',[p.product_photo_path]);await denied(()=>save(p,op),/Uploaded role-correct evidence photo required/);
  const path=`${PA}/expiry-v1/${op}/product/${uuid()}.jpg`;
  await denied(()=>db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',path,UA,JSON.stringify({size:100})]),/type or size/);
  await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',path,UA,JSON.stringify({size:100,mimetype:'image/jpeg'})]);p.product_photo_path=path;const reversed={...p,product_photo_path:p.expiry_photo_path,expiry_photo_path:p.product_photo_path};await denied(()=>save(reversed,op),/role-correct/);await save(p,op);
