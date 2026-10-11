@@ -1,12 +1,16 @@
 /* Opt-in, bounded scanner transport diagnostics. Payload characters are never retained. */
 (function(){
   if(typeof window==="undefined"||typeof document==="undefined")return;
-  const enabled=new URLSearchParams(location.search).get("expiryScannerDiagnostics")==="1"&&
+  // Visible Staging control; recording still starts only on explicit click.
+  const enabled=/^pharmflow-test(?:-|\.)/.test(String(location.hostname||"")) &&
     /tovkcakucyagvbzvlnks/i.test(String(typeof getSupabaseProjectUrl==="function"?getSupabaseProjectUrl():document.documentElement.dataset.supabaseUrl||""));
   if(!enabled)return;
   const button=document.getElementById("expiryScannerDiagnosticToggle"),input=document.getElementById("expiryBarcodeInput");
   if(!button||!input)return;
   button.hidden=false;
+  button.textContent="Diagnose one scan";
+  button.title="Staging only: capture one scan's sanitized structure in memory, then copy it. No barcode values are recorded.";
+
   const MAX=64,WINDOW_MS=10000;
   let active=false,started=0,timer=0,events=[];
   function summarize(type,event){
@@ -28,7 +32,7 @@
   }
   button.addEventListener("click",async()=>{
     if(button.dataset.mode==="copy"){
-      try{await navigator.clipboard.writeText(JSON.stringify({version:2,durationMs:Math.round(performance.now()-started),events}));}catch(_){}button.dataset.mode="start";button.textContent="Capture scanner metadata";return;
+      try{await navigator.clipboard.writeText(JSON.stringify({version:2,durationMs:Math.round(performance.now()-started),events}));}catch(_){button.textContent="Copy failed — retry";return;}active=false;clearTimeout(timer);events=[];button.dataset.mode="start";button.textContent="Diagnose one scan";return;
     }
     events=[];started=performance.now();active=true;button.dataset.mode="copy";button.textContent="Capturing metadata…";
     capture("start",null);clearTimeout(timer);timer=setTimeout(finish,WINDOW_MS);

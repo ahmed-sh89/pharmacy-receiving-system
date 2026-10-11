@@ -1,14 +1,18 @@
-/* Login presentation only: do not initialize the protected Handheld workspace. */
+/* Handheld presentation viewport. No auth/session or workspace initialization. */
 (function(){
-  const gate=document.getElementById("authGate");
-  if(!gate || typeof isLikelyZebraDevice!=="function" || !isLikelyZebraDevice())return;
-  gate.classList.add("handheldAuth");
+  if(typeof isLikelyZebraDevice!=="function" || !isLikelyZebraDevice())return;
+  const root=document.documentElement,gate=document.getElementById("authGate");
+  root.classList.add("handheldViewport");
+  gate?.classList.add("handheldAuth");
   function resize(){
-    // Android's keyboard can shrink the visible viewport without changing dvh.
-    const height=window.visualViewport?.height || window.innerHeight;
-    if(Number.isFinite(height) && height>0)gate.style.setProperty("--auth-visible-height",height+"px");
+    const visible=window.visualViewport;
+    const height=visible?.height || window.innerHeight;
+    const top=visible?.offsetTop || 0;
+    if(Number.isFinite(height) && height>0)root.style.setProperty("--handheld-visible-height",height+"px");
+    if(Number.isFinite(top) && top>=0)root.style.setProperty("--handheld-visible-top",top+"px");
   }
   resize();
   window.addEventListener("resize",resize);
   window.visualViewport?.addEventListener("resize",resize);
+  window.visualViewport?.addEventListener("scroll",resize);
 })();

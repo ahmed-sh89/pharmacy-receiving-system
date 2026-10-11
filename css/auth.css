@@ -714,11 +714,11 @@ body:not(.zebraDevice) #authGate .authSetupNote{padding:13px 15px!important;font
 /* Handheld login presentation is selected before protected app initialization. */
 /* ---------- Handheld ---------- */
 body #authGate.authGate.handheldAuth.authGate{
-  min-height:0!important;height:var(--auth-visible-height,100dvh)!important;box-sizing:border-box!important;overflow-y:auto!important;
+  min-height:0!important;height:var(--handheld-visible-height,100dvh)!important;box-sizing:border-box!important;overflow-y:auto!important;
   padding:5px!important;align-items:flex-start!important;justify-content:center!important;
 }
 body #authGate.authGate.handheldAuth .authShell{
-  width:100%!important;height:auto!important;min-height:calc(var(--auth-visible-height,100dvh) - 10px)!important;max-height:none!important;
+  width:100%!important;height:auto!important;min-height:calc(var(--handheld-visible-height,100dvh) - 10px)!important;max-height:none!important;
   display:grid!important;grid-template-columns:1fr!important;grid-template-rows:72px auto!important;
   overflow:visible!important;border:0!important;border-radius:16px!important;
   background:linear-gradient(155deg,#e6f2fc 0%,#eaf3fb 55%,#eceffc 100%)!important;
