@@ -5,7 +5,8 @@
 - Same-pharmacy auth-context refresh no longer disables a previously verified Needs Review tab during transient network failures. RPC authorization remains server-enforced.
 - Keyboard tab movement and closing Needs Review avoid focus-driven scroll changes.
 - Confirmed current Excel export uses the same server-side search results and local filters as the Inventory table. No approved Expiry PDF/report format was found in the source records; no substitute format was added.
-- This local candidate is not yet deployed. Existing Preview is still `e95583ed48313866d0bf271b5aecdc3b2e2f2812`; cleanup scheduler remains paused. HHP084 authenticated Staging context was positively matched to the synthetic pharmacy ID; no existing HHP case was changed.
+- Deployed candidate code commit `10af4f27c48d323d51dd6f4b819fca3416c855fd` to Staging Preview `dpl_8fXEzLivCJi9MrniMykmRaMLUpe8` (READY, Preview). HHP084 authenticated Staging membership was positively matched to synthetic pharmacy `11111111-1111-4111-8111-111111111111`.
+- Updated Preview reached ONLINE / READY / SYNCED; Needs Review stayed enabled after 30 seconds idle. Existing private test image loaded and opened, but the stored fixture is a solid red placeholder rather than a representative camera photo. No HHP review case or Storage object changed; scheduler remains paused.
 - Focused Expiry tests pass. Full suite remains 31 passed / 10 known baseline failures.
 
 ## 2026-10-11 — Staging connectivity recovery and Expiry local resolution
