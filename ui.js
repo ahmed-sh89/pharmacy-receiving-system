@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 86753)
-Total output lines: 9830
-
 "use strict";
 
 /* =====================================================
@@ -3460,7 +3457,4980 @@ function refreshMasterGTINUI(){
         const ordersMasterStatus=document.getElementById("ordersMasterStatus");
         const ordersMasterCount=document.getElementById("ordersMasterItemCount");
         const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
-        const ordersMasterCard=document.get…36753 tokens truncated…onst tbody=body.querySelector('[data-rows]');
+        const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
+
+        if(ordersMasterStatus){
+            ordersMasterStatus.textContent=navigator.onLine ? "UNAVAILABLE" : "OFFLINE";
+        }
+        if(ordersMasterCount) ordersMasterCount.textContent="0";
+        if(ordersMasterUpdated) ordersMasterUpdated.textContent="-";
+        if(ordersMasterCard){
+            ordersMasterCard.classList.remove("isActive","isSyncing");
+        }
+
+        return;
+    }
+
+    if(headerMaster){
+        const count=toInteger(status.itemCount,0);
+        headerMaster.textContent=navigator.onLine ? "ACTIVE · "+count.toLocaleString() : "CACHED · "+count.toLocaleString();
+        headerMaster.title="Global GTIN Master — "+count.toLocaleString()+" items";
+    }
+
+    setElementText(
+        UI.elements.masterGTINMatchedCount,
+        toInteger(
+            status.currentOrder?.matchedItems,
+            0
+        ).toLocaleString()
+    );
+
+    /* Orders page uses the same Global Master status object as Settings
+       and the header. It is a database status card, not a local file. */
+    {
+        const ordersMasterStatus=document.getElementById("ordersMasterStatus");
+        const ordersMasterCount=document.getElementById("ordersMasterItemCount");
+        const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
+        const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
+        const count=toInteger(status.itemCount,0);
+
+        if(ordersMasterStatus){
+            ordersMasterStatus.textContent=navigator.onLine ? "ACTIVE" : "CACHED";
+        }
+        if(ordersMasterCount){
+            ordersMasterCount.textContent=count.toLocaleString();
+        }
+        if(ordersMasterUpdated){
+            ordersMasterUpdated.textContent=status.updatedAt
+                ? formatDateTime(status.updatedAt)
+                : "-";
+        }
+        if(ordersMasterCard){
+            ordersMasterCard.classList.remove("isSyncing");
+            ordersMasterCard.classList.add("isActive");
+        }
+    }
+
+    if(UI.elements.masterGTINNotice){
+
+        const conflicts =
+            toInteger(
+                status.currentOrder?.conflictGTINs,
+                0
+            );
+
+        const missing =
+            toInteger(
+                status.currentOrder?.missingItems,
+                0
+            );
+
+        if(conflicts > 0){
+
+            UI.elements.masterGTINNotice.textContent =
+                conflicts +
+                " GTIN conflict(s) found in the current order. Those ambiguous barcodes are blocked; use Item Number/Name search or fallback Mapping for them.";
+
+            UI.elements.masterGTINNotice.className =
+                "masterGTINNotice warning";
+
+        }
+        else if(missing > 0){
+
+            UI.elements.masterGTINNotice.textContent =
+                missing +
+                " order item(s) have no usable Master GTIN. They can still be received by Item Number/Name or manual entry.";
+
+            UI.elements.masterGTINNotice.className =
+                "masterGTINNotice warning";
+
+        }
+        else{
+
+            UI.elements.masterGTINNotice.textContent =
+                "System Global GTIN is active for the current order. Mapping file is not required.";
+
+            UI.elements.masterGTINNotice.className =
+                "masterGTINNotice success";
+
+        }
+
+    }
+}
+
+
+/* =====================================================
+   HEALTH
+===================================================== */
+
+function refreshHealthSummary(){
+
+    const orders =
+        AppState.workspace.orderData;
+
+    const mappings =
+        AppState.workspace.mappingData;
+
+    setElementText(
+        UI.elements.healthOrderItems,
+        orders.length
+    );
+
+    /* Data Health is order-scoped. mappingData also contains the cached
+       Global Master projection, so its raw length must never be shown when
+       there are no active order items. Count only mappings owned by the
+       current order item set. */
+    const activeOrderCodes=new Set(
+        (orders||[])
+            .map(item=>normalizeItemCode(item?.itemCode||""))
+            .filter(Boolean)
+    );
+    const matchedOrderCodes=new Set(
+        (mappings||[])
+            .map(mapping=>normalizeItemCode(mapping?.itemCode||""))
+            .filter(code=>code && activeOrderCodes.has(code))
+    );
+
+    setElementText(
+        UI.elements.healthMappings,
+        matchedOrderCodes.size
+    );
+
+    const missingMappings =
+        typeof getItemsWithoutMapping ===
+        "function"
+        ?
+        getItemsWithoutMapping()
+        :
+        [];
+
+    setElementText(
+        UI.elements.healthMissingBarcode,
+        missingMappings.length
+    );
+
+    const duplicateGTINs =
+        typeof getDuplicateGTINs ===
+        "function"
+        ?
+        getDuplicateGTINs()
+        :
+        [];
+
+    setElementText(
+        UI.elements.healthDuplicateGTIN,
+        duplicateGTINs.length
+    );
+
+}
+
+
+/* =====================================================
+   SESSION UI
+===================================================== */
+
+function refreshSessionUI(){
+
+    const session =
+        AppState.session;
+
+    const hasActiveOrder=!!(
+        AppState.workspace?.active===true &&
+        (AppState.workspace?.orderData?.length || AppState.workspace?.orderFiles?.length)
+    );
+
+    setElementText(
+        UI.elements.sessionPageId,
+        !hasActiveOrder
+            ? "INACTIVE"
+            : (session.cloud === true ? "CONNECTED" : "LOCAL")
+    );
+
+    setElementText(
+        UI.elements.sessionDeviceId,
+        session.deviceId || "-"
+    );
+
+    setElementText(
+        UI.elements.sessionQueueCount,
+        Array.isArray(
+            session.pendingQueue
+        )
+        ?
+        session.pendingQueue.length
+        :
+        0
+    );
+
+    setElementText(
+        UI.elements.sessionLastSave,
+        session.lastSave
+        ?
+        formatDateTime(
+            session.lastSave
+        )
+        :
+        "-"
+    );
+
+    refreshHeader();
+
+    refreshZebraInterface();
+
+}
+
+
+/* =====================================================
+   ARCHIVE
+===================================================== */
+
+function refreshArchiveUI(){
+
+    const orders =
+        AppState.archive.orders
+        ||
+        [];
+
+    const transactions =
+        AppState.archive.transactions
+        ||
+        [];
+
+    setElementText(
+        UI.elements.archiveOrderCount,
+        orders.length
+    );
+
+    setElementText(
+        UI.elements.archiveTransactionCount,
+        transactions.length
+    );
+
+    renderArchiveTable(
+        orders
+    );
+
+}
+
+
+function getArchiveOrderNumbers(order){
+    const values=[];
+    const seen=new Set();
+    const files=Array.isArray(order && order.orderFiles)?order.orderFiles:[];
+    files.forEach(file=>{
+        const raw=toSafeString(file && (file.documentId||file.orderNumber||file.order_number)).trim();
+        const value=typeof normalizeOrderNumber==="function"?normalizeOrderNumber(raw):raw.toUpperCase().replace(/\s+/g,"");
+        if(value && !seen.has(value)){seen.add(value);values.push(value);}
+    });
+    if(!values.length && order && order.orderNumber){
+        const raw=toSafeString(order.orderNumber).trim();
+        if(raw)values.push(raw);
+    }
+    return values;
+}
+
+function getArchiveOrderDate(order){
+    const files=Array.isArray(order && order.orderFiles)?order.orderFiles:[];
+    for(const file of files){
+        const value=file && (file.orderDate||file.order_date||file.documentDate||file.reportDate);
+        if(value){return formatDate(value);}
+    }
+    return "-";
+}
+
+async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
+    if(typeof isPharmacyAdmin==="function" && !isPharmacyAdmin()){
+        showToast("Admin permission is required to delete a received order","warning");
+        return false;
+    }
+    const safeOrder=toSafeString(orderNumber).trim();
+    if(!safeOrder){showToast("Order Number is unavailable for this archive record","error");return false;}
+    if(!await pharmFlowConfirm({title:"Delete Received Order?",message:"Delete "+safeOrder+" and its related Receiving data? This does NOT delete the Global GTIN Master or other orders.",confirmText:"Continue",tone:"danger"}))return false;
+    const typed=window.prompt("Type the Order Number exactly to continue:\n\n"+safeOrder,"");
+    if(toSafeString(typed).trim().toUpperCase()!==safeOrder.toUpperCase()){
+        showToast("Order Number confirmation did not match","warning");
+        return false;
+    }
+    if(!await pharmFlowConfirm({title:"Final Confirmation",message:"Permanently delete "+safeOrder+"?",confirmText:"Delete Order",tone:"danger"}))return false;
+    showLoading("Deleting "+safeOrder+"...");
+    try{
+        if(typeof authRpc==="function" && typeof AuthState!=="undefined" && AuthState.context && AuthState.context.pharmacy_id){
+            try{
+                await authRpc("delete_pharmflow_order_complete",{
+                    p_pharmacy_id:AuthState.context.pharmacy_id,
+                    p_order_number:safeOrder,
+                    p_confirmation:safeOrder
+                });
+            }catch(error){
+                Logger.warn("Cloud order delete RPC unavailable or failed",error);
+                throw new Error("Cloud order deletion failed. No local archive data was removed. "+(error.message||""));
+            }
+        }
+        if(typeof deleteArchivedOrderLocalData!=="function")throw new Error("Local archive delete helper is unavailable");
+        await deleteArchivedOrderLocalData(internalOrderId);
+
+        /* Cloud is authoritative: reload Archive and lifecycle after deletion,
+           then verify before ever showing a success toast. */
+        if(typeof restoreHistoricalArchive==="function"){
+            await restoreHistoricalArchive();
+        }
+        if(typeof refreshOrderLifecycleRegistry==="function"){
+            await refreshOrderLifecycleRegistry();
+        }
+        if(typeof refreshItemTransferOrderOptions==="function"){
+            refreshItemTransferOrderOptions();
+        }
+
+        if(
+            typeof ReportsEngine!=="undefined" &&
+            ReportsEngine.itemTransfer &&
+            typeof normalizeOrderNumber==="function" &&
+            normalizeOrderNumber(ReportsEngine.itemTransfer.orderNumber)===normalizeOrderNumber(safeOrder)
+        ){
+            ReportsEngine.itemTransfer={orderNumber:"",orderMeta:null,rows:[]};
+            if(typeof renderItemTransferReport==="function")renderItemTransferReport();
+        }
+
+        const stillInArchive=(AppState.archive.orders||[]).some(order=>
+            getArchiveOrderNumbers(order).some(number=>
+                normalizeOrderNumber(number)===normalizeOrderNumber(safeOrder)
+            )
+        );
+
+        const stillInRegistry=(
+            typeof OrderLifecycleEngine!=="undefined" &&
+            Array.isArray(OrderLifecycleEngine.records)
+        ) ? OrderLifecycleEngine.records.some(row=>
+            normalizeOrderNumber(row.order_number)===normalizeOrderNumber(safeOrder)
+        ) : false;
+
+        if(stillInArchive || stillInRegistry){
+            throw new Error("Deletion was not confirmed by the cloud. The order remains protected.");
+        }
+
+        showToast("Order "+safeOrder+" permanently deleted","success");
+        return true;
+    }catch(error){
+        Logger.error("Delete archived order failed",error);
+        showToast(error.message||"Unable to delete order","error");
+        return false;
+    }finally{hideLoading();}
+}
+window.requestDeleteArchivedOrder=requestDeleteArchivedOrder;
+
+
+function openArchivedDiscrepancyReport(internalOrderId){
+    const order=(AppState.archive.orders||[]).find(
+        row=>String(row?.orderId||"")===String(internalOrderId||"")
+    );
+
+    if(!order){
+        showToast("Archived order could not be found","error");
+        return false;
+    }
+
+    const fullReport=order.fullReceivingReport;
+    const emailReport=order.discrepancyReport;
+
+    if(fullReport && Array.isArray(fullReport.rows)){
+        if(typeof openOrderStatusReportFromSnapshot==="function"){
+            openOrderStatusReportFromSnapshot(
+                JSON.parse(JSON.stringify(fullReport))
+            );
+            return true;
+        }
+
+        if(typeof printLiveReceivingReport==="function"){
+            printLiveReceivingReport(
+                JSON.parse(JSON.stringify(fullReport))
+            );
+            return true;
+        }
+    }
+
+    /* Compatibility for reports finalized by 2C.10.2.2. */
+    if(emailReport && Array.isArray(emailReport.rows)){
+        openFinalizedDiscrepancyEmailPreview?.(
+            JSON.parse(JSON.stringify(emailReport)),
+            {fromArchive:true}
+        );
+        return true;
+    }
+
+    showToast(
+        "No saved report is available for this older archive record",
+        "warning"
+    );
+    return false;
+}
+
+window.openArchivedDiscrepancyReport=openArchivedDiscrepancyReport;
+
+
+function renderArchiveTable(orders){
+    const tbody=UI.elements.archiveTableBody;
+    if(!tbody){return;}
+    tbody.innerHTML="";
+    if(!orders || orders.length===0){
+        tbody.innerHTML=`<tr><td colspan="7" class="tableEmptyState">No archived orders yet.</td></tr>`;
+        return;
+    }
+    orders.forEach(order=>{
+        const numbers=getArchiveOrderNumbers(order);
+        const displayNumber=numbers.length?numbers.join(", "):"Unavailable";
+        const row=document.createElement("tr");
+        row.innerHTML=`
+            <td><strong>${escapeHTML(displayNumber)}</strong></td>
+            <td>${escapeHTML(getArchiveOrderDate(order))}</td>
+            <td>${escapeHTML(formatDate(order.closedAt||order.createdAt))}</td>
+            <td>${toInteger(order.totalItems,0)}</td>
+            <td>${toNumber(order.totalReceivedUnits,0)}</td>
+            <td><span class="archiveStatus completed">${escapeHTML(order.status||"Received")}</span></td>
+            <td>
+              <div class="archiveRowActions">
+                ${order.discrepancyReport && Array.isArray(order.discrepancyReport.rows)
+                    ? `<button type="button" class="archiveViewReportButton" data-view-archive-report="${escapeHTML(order.orderId)}">View Report</button>`
+                    : `<span class="archiveActionNote">No saved report</span>`}
+                ${numbers.length===1
+                    ? `<button type="button" class="archiveDeleteOrderButton" data-delete-archive-order="${escapeHTML(order.orderId)}" data-order-number="${escapeHTML(numbers[0])}">Delete Order</button>`
+                    : `<span class="archiveActionNote">${numbers.length>1?"Batch record":"Order number unavailable"}</span>`}
+              </div>
+            </td>`;
+        tbody.appendChild(row);
+    });
+    tbody.querySelectorAll("[data-view-archive-report]").forEach(button=>{
+        button.addEventListener(
+            "click",
+            ()=>openArchivedDiscrepancyReport(button.dataset.viewArchiveReport)
+        );
+    });
+
+    tbody.querySelectorAll("[data-delete-archive-order]").forEach(button=>{
+        button.addEventListener("click",()=>requestDeleteArchivedOrder(button.dataset.deleteArchiveOrder,button.dataset.orderNumber));
+    });
+}
+
+
+
+/* =====================================================
+   OLD SEARCH MODAL
+===================================================== */
+
+function openItemSearchModal(
+    defaultText = ""
+){
+
+    const modal =
+        UI.elements.searchModal;
+
+    const input =
+        UI.elements.globalSearchInput;
+
+    if(
+        !modal ||
+        !input
+    ){
+        return;
+    }
+
+    modal.classList.add(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    input.value =
+        defaultText;
+
+    renderGlobalSearchResults(
+        defaultText
+    );
+
+    setTimeout(()=>{
+
+        input.focus();
+
+        input.select();
+
+    },50);
+
+}
+
+
+function closeItemSearchModal(){
+
+    const modal =
+        UI.elements.searchModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.remove(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    if(
+        UI.elements.globalSearchInput
+    ){
+
+        UI.elements
+            .globalSearchInput
+            .value =
+            "";
+
+    }
+
+    if(
+        UI.elements.globalSearchResults
+    ){
+
+        UI.elements
+            .globalSearchResults
+            .innerHTML =
+            "";
+
+    }
+
+    focusScannerInput();
+
+}
+
+
+function handleGlobalSearchInput(event){
+
+    renderGlobalSearchResults(
+        event.target.value
+    );
+
+}
+
+
+function renderGlobalSearchResults(searchText){
+
+    const container =
+        UI.elements.globalSearchResults;
+
+    if(!container){
+        return;
+    }
+
+    container.innerHTML =
+        "";
+
+    const query =
+        normalizeText(
+            searchText
+        );
+
+    if(!query){
+        return;
+    }
+
+    const results =
+        searchItems(
+            getSearchableItems(),
+            query,
+            APP_CONFIG
+                .receiving
+                .searchResultLimit
+        );
+
+    if(results.length === 0){
+
+        container.innerHTML = `
+
+            <div class="emptyState">
+                No matching item found.
+            </div>
+
+        `;
+
+        return;
+    }
+
+    results.forEach(item=>{
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.type =
+            "button";
+
+        button.className =
+            "searchResultItem";
+
+        button.innerHTML = `
+
+            <div class="searchResultMain">
+
+                <strong>
+                    ${escapeHTML(
+                        item.itemName
+                    )}
+                </strong>
+
+                <span>
+                    ${escapeHTML(
+                        item.itemCode
+                    )}
+                </span>
+
+            </div>
+
+            <div class="searchResultMeta">
+
+                ${toNumber(
+                    item.receivedQty,
+                    0
+                )}
+
+                /
+
+                ${toNumber(
+                    item.orderedQty,
+                    0
+                )}
+
+            </div>
+
+        `;
+
+        button.addEventListener(
+            "click",
+            function(event){
+
+                if(event.target?.closest?.("[data-review-item]")){
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openSearchedItemReview(item);
+                    return;
+                }
+
+                selectSmartScanItem(
+                    item
+                );
+
+                closeItemSearchModal();
+
+            }
+        );
+
+        if(item.manual===true && toNumber(item.receivedQty,0)===0){
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "secondaryButton removeManualSearchButton";
+            remove.style.marginLeft = "10px";
+            remove.style.padding = "7px 10px";
+            remove.textContent = "Remove Extra Item";
+            remove.addEventListener("click", function(event){
+                event.preventDefault();
+                event.stopPropagation();
+
+                if(typeof deleteManualItem==="function" && deleteManualItem(item.itemCode)){
+                    renderGlobalSearchResults(
+                        UI.elements.globalSearchInput?.value || ""
+                    );
+                }
+            });
+            button.appendChild(remove);
+        }
+
+        if(toNumber(item.receivedQty,0) > 0){
+            const review = document.createElement("button");
+            review.type = "button";
+            review.className = "secondaryButton";
+            review.setAttribute("data-review-item", item.itemCode);
+            review.style.marginLeft = "10px";
+            review.style.padding = "7px 10px";
+            review.textContent = "Review / Adjust";
+            review.addEventListener("click", function(event){
+                event.preventDefault();
+                event.stopPropagation();
+                openSearchedItemReview(item);
+            });
+            button.appendChild(review);
+        }
+
+        container.appendChild(
+            button
+        );
+
+    });
+
+}
+
+
+/* =====================================================
+   PHASE 2C.7.5 - SEARCHED ITEM REVIEW / CORRECTION
+===================================================== */
+function openSearchedItemReview(item){
+    if(!item) return;
+
+    closeItemSearchModal();
+
+    let modal=document.getElementById("searchedItemReviewModal");
+    if(!modal){
+        modal=document.createElement("div");
+        modal.id="searchedItemReviewModal";
+        modal.className="quantityAdjustmentModal";
+        modal.innerHTML=`
+          <div class="quantityAdjustmentCard" style="max-width:680px;">
+            <div class="quantityAdjustmentHeader">
+              <div><span class="sectionEyebrow">ITEM REVIEW</span><h3 id="searchedReviewName">-</h3></div>
+              <button type="button" id="btnCloseSearchedReview" class="iconButton" aria-label="Close">✕</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;">
+              <div class="quantityCurrentTotal"><span>Ordered</span><strong id="searchedReviewOrdered">0</strong></div>
+              <div class="quantityCurrentTotal"><span>Received — All Devices</span><strong id="searchedReviewReceived">0</strong></div>
+              <div class="quantityCurrentTotal"><span>Remaining</span><strong id="searchedReviewRemaining">0</strong></div>
+            </div>
+            <div class="quantityCurrentTotal" style="margin-bottom:10px;">
+              <span>Last Update</span><strong id="searchedReviewLastUpdate">-</strong>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button type="button" id="btnSearchedAdjust" class="primaryButton">Adjust Received Qty</button>
+              <button type="button" id="btnSearchedActivity" class="secondaryButton">View Activity</button>
+              <button type="button" id="btnSearchedRemoveManual" class="dangerButton" hidden>Remove Extra Item</button>
+            </div>
+            <div id="searchedReviewCorrection" hidden>
+              <label class="quantityAdjustmentLabel" for="searchedReviewCorrectionInput">Correct total received to</label>
+              <input id="searchedReviewCorrectionInput" class="quantityAdjustmentInput" type="number" min="0" step="1" inputmode="numeric">
+              <p class="quantityAdjustmentHelp">This changes the shared total for this item. PharmFlow records only the difference as a correction, so the audit history remains intact.</p>
+              <div class="quantityAdjustmentActions">
+                <button type="button" id="btnApplySearchedCorrection" class="primaryButton">Apply Correction</button>
+                <button type="button" id="btnCancelSearchedCorrection" class="secondaryButton">Cancel</button>
+              </div>
+            </div>
+            <div id="searchedReviewActivity" hidden style="margin-top:10px;"></div>
+          </div>`;
+        document.body.appendChild(modal);
+        document.getElementById("btnCloseSearchedReview")?.addEventListener("click",closeSearchedItemReview);
+        modal.addEventListener("click",e=>{if(e.target===modal)closeSearchedItemReview();});
+        modal.addEventListener("keydown",e=>{
+            if(e.key==="Escape"){e.preventDefault();closeSearchedItemReview();return;}
+            if(e.key==="Enter" && !document.getElementById("searchedReviewCorrection")?.hidden){
+                e.preventDefault(); document.getElementById("btnApplySearchedCorrection")?.click();
+            }
+        });
+    }
+
+    modal.dataset.itemCode=item.itemCode;
+    setElementText(document.getElementById("searchedReviewName"),item.itemName||item.itemCode);
+    setElementText(document.getElementById("searchedReviewOrdered"),toNumber(item.orderedQty,0));
+    setElementText(document.getElementById("searchedReviewReceived"),toNumber(item.receivedQty,0));
+    setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(item.orderedQty,0)-toNumber(item.receivedQty,0)));
+
+    const history=(Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[])
+      .filter(tx=>normalizeItemCode(tx?.itemCode)===normalizeItemCode(item.itemCode))
+      .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+    const last=history[0];
+    setElementText(document.getElementById("searchedReviewLastUpdate"),last?.dateTime?(typeof formatDateTime==="function"?formatDateTime(last.dateTime):last.dateTime):"No activity yet");
+
+    const correction=document.getElementById("searchedReviewCorrection");
+    const activity=document.getElementById("searchedReviewActivity");
+    const removeManualButton=document.getElementById("btnSearchedRemoveManual");
+    if(removeManualButton){
+        removeManualButton.hidden = !(
+            item.manual===true &&
+            toNumber(item.receivedQty,0)===0
+        );
+        removeManualButton.onclick=()=>{
+            const current=getItemByCode(modal.dataset.itemCode);
+            if(!current || current.manual!==true || toNumber(current.receivedQty,0)!==0){
+                showToast("Set the extra item quantity to zero first","warning");
+                return;
+            }
+            showConfirmModal(
+                "Remove Extra Item",
+                "Remove this extra item from the current receiving workspace? It will no longer appear in Search or reports.",
+                ()=>{
+                    if(deleteManualItem(current.itemCode)){
+                        closeSearchedItemReview();
+                    }
+                }
+            );
+        };
+    }
+    if(correction) correction.hidden=true;
+    if(activity){activity.hidden=true;activity.innerHTML="";}
+
+    document.getElementById("btnSearchedAdjust").onclick=()=>{
+        if(activity) activity.hidden=true;
+        if(correction) correction.hidden=false;
+        const current=getItemByCode(modal.dataset.itemCode);
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        if(input){input.value=String(toNumber(current?.receivedQty,item.receivedQty));setTimeout(()=>{input.focus();input.select();},20);}
+    };
+
+    document.getElementById("btnCancelSearchedCorrection").onclick=()=>{if(correction) correction.hidden=true;};
+
+    document.getElementById("btnApplySearchedCorrection").onclick=()=>{
+        const input=document.getElementById("searchedReviewCorrectionInput");
+        const total=toNumber(input?.value,-1);
+        if(total<0){showToast("Enter a valid received total","warning");return;}
+        const tx=setItemReceivedQuantity(modal.dataset.itemCode,total);
+        if(!tx) return;
+        const current=getItemByCode(modal.dataset.itemCode);
+        setElementText(document.getElementById("searchedReviewReceived"),toNumber(current?.receivedQty,total));
+        setElementText(document.getElementById("searchedReviewRemaining"),Math.max(0,toNumber(current?.orderedQty,0)-toNumber(current?.receivedQty,total)));
+        if(correction) correction.hidden=true;
+
+        if(removeManualButton){
+            removeManualButton.hidden = !(
+                current?.manual===true &&
+                toNumber(current?.receivedQty,0)===0
+            );
+        }
+
+        showToast("Received quantity corrected. History preserved.","success");
+    };
+
+    document.getElementById("btnSearchedActivity").onclick=()=>{
+        if(correction) correction.hidden=true;
+        if(!activity) return;
+        const rows=(typeof getReceivingActivityRows==="function"?getReceivingActivityRows():[])
+          .filter(row=>normalizeItemCode(row?.itemCode)===normalizeItemCode(modal.dataset.itemCode))
+          .sort((a,b)=>new Date(b?.dateTime||0)-new Date(a?.dateTime||0));
+        activity.hidden=false;
+        activity.innerHTML=rows.length?`<div class="phase263TableWrap" style="max-height:260px;"><table class="quickKpiTable phase263Table"><thead><tr><th>Time</th><th>Device</th><th>Source</th><th>Qty Change</th><th>Total After</th></tr></thead><tbody>${rows.map(row=>{const q=toNumber(row.qtyChange,0);return `<tr><td>${escapeHTML(typeof formatDateTime==="function"?formatDateTime(row.dateTime):toSafeString(row.dateTime))}</td><td>${escapeHTML(toSafeString(row.deviceId||"Unknown"))}</td><td>${escapeHTML(typeof getActivitySourceLabel==="function"?getActivitySourceLabel(row.source):toSafeString(row.source))}</td><td>${q>0?"+":""}${escapeHTML(q)}</td><td><b>${escapeHTML(toNumber(row.totalAfterAction,0))}</b></td></tr>`;}).join("")}</tbody></table></div>`:'<div class="tableEmptyState">No receiving activity for this item.</div>';
+    };
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden","false");
+}
+
+function closeSearchedItemReview(){
+    const modal=document.getElementById("searchedItemReviewModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden","true");
+    focusScannerInput();
+}
+window.openSearchedItemReview=openSearchedItemReview;
+
+
+/* =====================================================
+   MANUAL ITEM
+===================================================== */
+
+function openManualItemModal(){
+
+    closeItemSearchModal();
+
+    const modal =
+        UI.elements.manualItemModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.add(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    if(UI.elements.manualItemCode){
+        UI.elements.manualItemCode.value = "";
+    }
+
+    if(UI.elements.manualItemName){
+        UI.elements.manualItemName.value = "";
+    }
+
+    if(UI.elements.manualItemQuantity){
+        UI.elements.manualItemQuantity.value = "1";
+    }
+
+    setTimeout(()=>{
+
+        UI.elements
+            .manualItemCode
+            ?.focus();
+
+    },50);
+
+}
+
+
+function closeManualItemModal(){
+
+    const modal =
+        UI.elements.manualItemModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.remove(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    focusScannerInput();
+
+}
+
+
+/* =====================================================
+   CONFIRM MODAL
+===================================================== */
+
+function showConfirmModal(
+    title,
+    message,
+    onConfirm
+){
+
+    const modal =
+        UI.elements.confirmModal;
+
+    if(!modal){
+        return;
+    }
+
+    setElementText(
+        UI.elements.confirmTitle,
+        title || "Confirm"
+    );
+
+    setElementText(
+        UI.elements.confirmMessage,
+        message || "Are you sure?"
+    );
+
+    UI.confirmCallback =
+        typeof onConfirm ===
+        "function"
+        ?
+        onConfirm
+        :
+        null;
+
+    modal.classList.add(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+}
+
+
+function closeConfirmModal(){
+
+    const modal =
+        UI.elements.confirmModal;
+
+    if(!modal){
+        return;
+    }
+
+    modal.classList.remove(
+        "open"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    UI.confirmCallback =
+        null;
+
+    focusScannerInput();
+
+}
+
+
+function pharmFlowConfirm(options={}){
+    const modal=UI.elements.confirmModal||document.getElementById("confirmModal");
+    if(!modal) return Promise.resolve(false);
+    const button=document.getElementById("btnConfirmOK");
+    setElementText(UI.elements.confirmTitle||document.getElementById("confirmTitle"),options.title||"Confirm");
+    setElementText(UI.elements.confirmMessage||document.getElementById("confirmMessage"),options.message||"Are you sure?");
+    if(button){button.textContent=options.confirmText||"Confirm";button.className=(options.tone==="danger"?"dangerButton":"primaryButton");}
+    return new Promise(resolve=>{UI.confirmResolve=resolve;UI.confirmCallback=()=>{const done=UI.confirmResolve;UI.confirmResolve=null;done?.(true);};modal.classList.add("open");modal.setAttribute("aria-hidden","false");});
+}
+window.pharmFlowConfirm=pharmFlowConfirm;
+function cancelPharmFlowConfirm(){const done=UI.confirmResolve;UI.confirmResolve=null;closeConfirmModal();done?.(false);}
+
+async function handleConfirmOK(){
+
+    /* Phase 2C.10.4.3 — confirmation actions that perform Supabase work must
+       be single-flight and awaited. This prevents a long destructive action
+       from being detached from its UI lifecycle and losing its final receipt. */
+    if(UI.confirmInProgress){
+        return;
+    }
+
+    const callback = UI.confirmCallback;
+
+    if(!callback){
+        closeConfirmModal();
+        return;
+    }
+
+    UI.confirmInProgress = true;
+
+    const confirmButton = document.getElementById("btnConfirmOK");
+    if(confirmButton){
+        confirmButton.disabled = true;
+    }
+
+    const confirmModal=UI.elements.confirmModal;
+    confirmModal?.classList.remove("open");
+    confirmModal?.setAttribute("aria-hidden","true");
+
+    try{
+        await Promise.resolve(callback());
+        UI.confirmCallback=null;
+    }
+    catch(error){
+        Logger.error("Confirmed action failed",error);
+        showToast(
+            error?.message || "Unable to complete the requested action",
+            "error"
+        );
+    }
+    finally{
+        UI.confirmInProgress = false;
+        if(confirmButton){
+            confirmButton.disabled = false;
+        }
+    }
+
+}
+
+
+/* =====================================================
+   TOAST
+===================================================== */
+
+function showToast(
+    message,
+    type = "info",
+    duration =
+        APP_CONFIG
+            .ui
+            .toastDurationMs
+){
+
+    /* Phase 2C.10.4.4 — always resolve the live toast host from the DOM.
+       Long async operations can outlive a cached UI reference after a view
+       refresh. Reset worked because it emits immediately; Historical Delete
+       can finish after several server/UI refreshes. */
+    let container =
+        document.getElementById("toastContainer");
+
+    if(!container || !container.isConnected){
+        container = UI.elements.toastContainer;
+    }
+
+    if(!container || !container.isConnected){
+
+        Logger.info(
+            "Toast:",
+            message
+        );
+
+        return;
+    }
+
+    UI.elements.toastContainer = container;
+
+    const toast =
+        document.createElement(
+            "div"
+        );
+
+    toast.className =
+        "toastMessage";
+
+    if(
+        type === "success" ||
+        type === "warning" ||
+        type === "error"
+    ){
+
+        toast.classList.add(
+            type
+        );
+
+    }
+
+    toast.textContent =
+        toSafeString(
+            message
+        );
+
+    container.appendChild(
+        toast
+    );
+
+    setTimeout(()=>{
+
+        toast.remove();
+
+    },duration);
+
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+function showLoading(
+    message = "Loading..."
+){
+
+    const overlay =
+        UI.elements.loadingOverlay;
+
+    if(!overlay){
+        return;
+    }
+
+    setElementText(
+        UI.elements.loadingText,
+        message
+    );
+
+    overlay.classList.add(
+        "show"
+    );
+
+    AppState.ui.loading =
+        true;
+
+}
+
+
+function hideLoading(){
+
+    const overlay =
+        UI.elements.loadingOverlay;
+
+    if(!overlay){
+        return;
+    }
+
+    overlay.classList.remove(
+        "show"
+    );
+
+    AppState.ui.loading =
+        false;
+
+}
+
+
+/* =====================================================
+   SYSTEM STATUS
+===================================================== */
+
+function setSystemStatus(
+    text,
+    type = "ready"
+){
+
+    const status =
+        UI.elements.systemStatus;
+
+    if(!status){
+        return;
+    }
+
+    status.textContent =
+        toSafeString(
+            text
+        );
+
+    status.className =
+        "systemStatus " +
+        type;
+
+}
+
+
+/* =====================================================
+   SCANNER FOCUS
+===================================================== */
+
+function focusScannerInput(){
+
+    if(
+        !AppState.settings
+            .autofocusScanner
+    ){
+        return;
+    }
+
+    const input =
+        UI.elements.barcodeInput;
+
+    if(!input){
+        return;
+    }
+
+    if(document.querySelector(".modalOverlay.open, .gtinResolutionShell.open")){
+        return;
+    }
+
+    /*
+       Do not steal focus while user is entering the
+       selected search quantity.
+    */
+
+    const active =
+        document.activeElement;
+
+    if(
+        active &&
+        active.id ===
+        "smartQuantityInput"
+    ){
+        return;
+    }
+
+    setTimeout(()=>{
+
+        input.focus();
+
+    },
+    APP_CONFIG
+        .receiving
+        .scannerFocusDelayMs);
+
+}
+
+
+/* =====================================================
+   SCAN BOX STATE
+===================================================== */
+
+function triggerScanFieldFlash(kind="success"){
+
+    const scanBox = UI.elements.scanBox || document.getElementById("scanBox");
+    if(!scanBox){ return; }
+
+    let layer = scanBox.querySelector(":scope > .pfnScanFlashLayer");
+    if(!layer){
+        layer = document.createElement("span");
+        layer.className = "pfnScanFlashLayer";
+        layer.setAttribute("aria-hidden","true");
+        scanBox.appendChild(layer);
+    }
+
+    const flashClass = kind === "error"
+        ? "pfnScanFlashLayerError"
+        : "pfnScanFlashLayerSuccess";
+
+    layer.classList.remove(
+        "pfnScanFlashLayerSuccess",
+        "pfnScanFlashLayerError",
+        "pfnScanFlashLayerActive"
+    );
+
+    /* Restart the transition even for two consecutive scans with the same
+       result.  The layer is a real element above the input/icon backgrounds,
+       so the whole Scan/Search field receives one continuous tint. */
+    void layer.offsetWidth;
+    layer.classList.add(flashClass,"pfnScanFlashLayerActive");
+
+    clearTimeout(scanBox._pfnFullFieldFlashTimer);
+    scanBox._pfnFullFieldFlashTimer=setTimeout(()=>{
+        layer.classList.remove("pfnScanFlashLayerActive");
+    },760);
+}
+
+window.triggerScanFieldFlash=triggerScanFieldFlash;
+
+function setScanBoxState(
+    state = "ready"
+){
+
+    const scanBox =
+        UI.elements.scanBox;
+
+    const badge =
+        UI.elements.scanStatusBadge;
+
+    if(!scanBox){
+        return;
+    }
+
+    scanBox.classList.remove(
+        "success",
+        "error",
+        "flashSuccess",
+        "flashError",
+        "action"
+    );
+
+    if(state === "success"){
+
+        scanBox.classList.add(
+            "success",
+            "flashSuccess"
+        );
+
+        triggerScanFieldFlash("success");
+
+        if(badge){
+
+            badge.className =
+                "scanStatusBadge ready";
+
+            badge.innerHTML = `
+
+                <span class="scanPulse"></span>
+
+                RECEIVED
+
+            `;
+
+        }
+
+        setTimeout(()=>{
+
+            setScanBoxState(
+                "ready"
+            );
+
+        },600);
+
+        return;
+    }
+
+    if(state === "action") {
+        scanBox.classList.add("action");
+        if(badge){
+            badge.className="scanStatusBadge action";
+            badge.innerHTML=`<span class="scanPulse"></span>ACTION REQUIRED`;
+        }
+        return;
+    }
+
+    if(state === "error"){
+
+        scanBox.classList.add(
+            "error",
+            "flashError"
+        );
+
+        triggerScanFieldFlash("error");
+
+        if(badge){
+
+            badge.className =
+                "scanStatusBadge error";
+
+            badge.innerHTML = `
+
+                <span class="scanPulse"></span>
+
+                NOT FOUND
+
+            `;
+
+        }
+
+        setTimeout(()=>{
+
+            setScanBoxState(
+                "ready"
+            );
+
+        },900);
+
+        return;
+    }
+
+    if(badge){
+
+        badge.className =
+            "scanStatusBadge ready";
+
+        badge.innerHTML = `
+
+            <span class="scanPulse"></span>
+
+            READY TO SCAN
+
+        `;
+
+    }
+
+}
+
+
+/* =====================================================
+   LAST SCAN FLASH
+===================================================== */
+
+function flashLastScanCard(
+    success = true
+){
+
+    const card =
+        UI.elements.lastScanCard;
+
+    if(!card){
+        return;
+    }
+
+    card.classList.remove(
+        "scanSuccess",
+        "scanError"
+    );
+
+    void card.offsetWidth;
+
+    card.classList.add(
+        success
+        ?
+        "scanSuccess"
+        :
+        "scanError"
+    );
+
+    /*
+       Keep the successful Last Scan visually green until the
+       next scan replaces it.  An error is temporary because
+       the previous successful item is still the last received item.
+    */
+    if(!success){
+        setTimeout(()=>{
+            card.classList.remove("scanError");
+        },1400);
+    }
+
+}
+
+
+/* =====================================================
+   REPORT SEARCH
+===================================================== */
+
+function renderReportItemSearchResults(results){
+
+    const container =
+        UI.elements.reportItemResults;
+
+    if(!container){
+        return;
+    }
+
+    container.innerHTML =
+        "";
+
+    UI.reportSearchResults =
+        results;
+
+    results.forEach(item=>{
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.type =
+            "button";
+
+        button.className =
+            "dropdownItem";
+
+        button.innerHTML = `
+
+            <strong>
+                ${escapeHTML(
+                    item.itemName
+                )}
+            </strong>
+
+            <br>
+
+            <small>
+                ${escapeHTML(
+                    item.itemCode
+                )}
+            </small>
+
+        `;
+
+        button.addEventListener(
+            "click",
+            function(){
+
+                AppState.ui
+                    .selectedReportItem =
+                    {
+                        itemCode:
+                            item.itemCode,
+
+                        itemName:
+                            item.itemName
+                    };
+
+                if(
+                    UI.elements.reportItemSearch
+                ){
+
+                    UI.elements
+                        .reportItemSearch
+                        .value =
+                        item.itemName +
+                        " — " +
+                        item.itemCode;
+
+                }
+
+                setElementText(
+                    UI.elements.reportSelectedItem,
+                    item.itemName
+                );
+
+                setElementText(
+                    UI.elements.reportSelectedCode,
+                    item.itemCode
+                );
+
+                container.innerHTML =
+                    "";
+
+            }
+        );
+
+        container.appendChild(
+            button
+        );
+
+    });
+
+}
+
+
+function resetItemReportUI(){
+
+    AppState.ui.selectedReportItem =
+        null;
+
+    setElementText(
+        UI.elements.reportSelectedItem,
+        "-"
+    );
+
+    setElementText(
+        UI.elements.reportSelectedCode,
+        "-"
+    );
+
+    setElementText(
+        UI.elements.reportTotalReceived,
+        "0"
+    );
+
+    setElementText(
+        UI.elements.reportOrderCount,
+        "0"
+    );
+
+    if(
+        UI.elements.itemReportTableBody
+    ){
+
+        UI.elements
+            .itemReportTableBody
+            .innerHTML =
+            "";
+
+    }
+
+}
+
+
+/* =====================================================
+   GENERIC TEXT SETTER
+===================================================== */
+
+function setElementText(
+    element,
+    value
+){
+
+    if(!element){
+        return;
+    }
+
+    element.textContent =
+        value === null ||
+        value === undefined ||
+        value === ""
+        ?
+        "-"
+        :
+        String(value);
+
+}
+
+/* =====================================================
+   PROFESSIONAL LAST SCAN LAYOUT
+===================================================== */
+
+function createProfessionalLastScanLayout(){
+
+    const card =
+        UI.elements.lastScanCard;
+
+    if(!card){
+        return;
+    }
+
+    if(
+        document.getElementById(
+            "professionalLastScanLayout"
+        )
+    ){
+        return;
+    }
+
+    /*
+       Hide the old equal-width information grid.
+       It remains in the DOM so older code stays compatible.
+    */
+
+    const legacyGrid =
+        card.querySelector(
+            ".lastScanGrid"
+        );
+
+    if(legacyGrid){
+
+        legacyGrid.classList.add(
+            "legacyLastScanGrid"
+        );
+
+    }
+
+    const layout =
+        document.createElement(
+            "div"
+        );
+
+    layout.id =
+        "professionalLastScanLayout";
+
+    layout.className =
+        "professionalLastScanLayout";
+
+    layout.innerHTML = `
+
+        <div class="lastScanHero">
+
+            <div
+                id="lastScanHeroName"
+                class="lastScanHeroName"
+            >
+                -
+            </div>
+
+            <div class="lastScanMetaRow">
+
+                <div class="lastScanMetaItem">
+
+                    <span>
+                        Item Number
+                    </span>
+
+                    <strong
+                        id="lastScanHeroCode"
+                    >
+                        -
+                    </strong>
+
+                </div>
+
+                <div class="lastScanMetaItem lastScanMetaGTIN">
+
+                    <span>
+                        GTIN
+                    </span>
+
+                    <strong
+                        id="lastScanHeroGTIN"
+                    >
+                        -
+                    </strong>
+
+                </div>
+
+                <div class="lastScanMetaItem lastScanMetaTime">
+
+                    <span>
+                        Last Update
+                    </span>
+
+                    <strong
+                        id="lastScanHeroTime"
+                    >
+                        -
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="lastScanMetrics">
+
+            <div class="lastScanMetric">
+
+                <span>
+                    Ordered
+                </span>
+
+                <strong
+                    id="lastScanHeroOrdered"
+                >
+                    -
+                </strong>
+
+            </div>
+
+            <div class="lastScanMetric lastScanMetricReceived">
+
+                <span>
+                    Received
+                </span>
+
+                <strong
+                    id="lastScanHeroReceived"
+                >
+                    -
+                </strong>
+
+            </div>
+
+            <div class="lastScanMetric lastScanMetricRemaining">
+
+                <span>
+                    Remaining
+                </span>
+
+                <strong
+                    id="lastScanHeroRemaining"
+                >
+                    -
+                </strong>
+
+            </div>
+
+            <div class="lastScanMetric lastScanMetricStatus">
+
+                <span
+                    id="lastScanHeroStatusLabel"
+                >
+                    Status
+                </span>
+
+                <div
+                    id="lastScanHeroStatus"
+                    class="lastScanHeroStatus"
+                >
+                    -
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+    const header =
+        card.querySelector(
+            ".cardHeader"
+        );
+
+    if(header){
+
+        header.insertAdjacentElement(
+            "afterend",
+            layout
+        );
+
+    }
+    else{
+
+        card.prepend(
+            layout
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   REFRESH PROFESSIONAL LAST SCAN
+===================================================== */
+
+function refreshProfessionalLastScan(
+    scan
+){
+
+    const name =
+        document.getElementById(
+            "lastScanHeroName"
+        );
+
+    const code =
+        document.getElementById(
+            "lastScanHeroCode"
+        );
+
+    const gtin =
+        document.getElementById(
+            "lastScanHeroGTIN"
+        );
+
+    const time =
+        document.getElementById(
+            "lastScanHeroTime"
+        );
+
+    const ordered =
+        document.getElementById(
+            "lastScanHeroOrdered"
+        );
+
+    const received =
+        document.getElementById(
+            "lastScanHeroReceived"
+        );
+
+    const remaining =
+        document.getElementById(
+            "lastScanHeroRemaining"
+        );
+
+    const status =
+        document.getElementById(
+            "lastScanHeroStatus"
+        );
+
+    const statusLabel =
+        document.getElementById(
+            "lastScanHeroStatusLabel"
+        );
+
+    if(!scan){
+
+        setElementText(
+            name,
+            "-"
+        );
+
+        setElementText(
+            code,
+            "-"
+        );
+
+        setElementText(
+            gtin,
+            "-"
+        );
+
+        setElementText(
+            time,
+            "-"
+        );
+
+        setElementText(
+            ordered,
+            "-"
+        );
+
+        setElementText(
+            received,
+            "-"
+        );
+
+        setElementText(
+            remaining,
+            "-"
+        );
+
+        if(status){
+
+            status.textContent =
+                "-";
+
+        }
+
+        if(statusLabel){
+
+            statusLabel.textContent =
+                "Status";
+
+        }
+
+        return;
+    }
+
+    setElementText(
+        name,
+        scan.itemName || "-"
+    );
+
+    setElementText(
+        code,
+        scan.itemCode || "-"
+    );
+
+    setElementText(
+        gtin,
+        scan.gtin || "-"
+    );
+
+    setElementText(
+        time,
+        formatDateTime(
+            scan.scanTime
+        )
+    );
+
+    setElementText(
+        ordered,
+        scan.orderedQty ?? "-"
+    );
+
+    setElementText(
+        received,
+        scan.receivedQty ?? "-"
+    );
+
+    setElementText(
+        remaining,
+        scan.remainingQty ?? "-"
+    );
+
+    if(status){
+
+        const orderedQty =
+            toNumber(
+                scan.orderedQty,
+                0
+            );
+
+        const receivedQty =
+            toNumber(
+                scan.receivedQty,
+                0
+            );
+
+        const overQty =
+            Math.max(
+                0,
+                receivedQty - orderedQty
+            );
+
+        const isOver =
+            overQty > 0 ||
+            scan.status ===
+                APP_CONFIG.statuses.over;
+
+        if(isOver){
+
+            if(statusLabel){
+
+                statusLabel.textContent =
+                    "Over Qty";
+
+            }
+
+            status.innerHTML = `
+                <strong class="lastScanOverQuantity">
+                    +${overQty}
+                </strong>
+            `;
+
+        }
+        else{
+
+            if(statusLabel){
+
+                statusLabel.textContent =
+                    "Status";
+
+            }
+
+            status.innerHTML =
+                renderStatusBadge(
+                    scan.status ||
+                    APP_CONFIG.statuses.pending
+                );
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   LAST SCAN QUANTITY CONTROLS
+===================================================== */
+
+function createLastScanQuantityControls(){
+
+  const card =
+      UI.elements.lastScanCard;
+
+  if(!card){
+      return;
+  }
+
+  if(
+      document.getElementById(
+          "lastScanQuantityControls"
+      )
+  ){
+      return;
+  }
+
+  const controls =
+      document.createElement(
+          "div"
+      );
+
+  controls.id =
+      "lastScanQuantityControls";
+
+  controls.className =
+      "lastScanQuantityControls";
+
+  controls.innerHTML = `
+
+      <div class="lastScanQtyTitle">
+
+          BATCH QTY
+
+      </div>
+
+      <div class="handheldScanContext" aria-live="polite">
+          <div>
+              <span>LAST ACTION</span>
+              <strong id="handheldThisScan">+0</strong>
+          </div>
+          <div>
+              <span>ALL DEVICES</span>
+              <strong id="handheldTotalReceived">0</strong>
+          </div>
+      </div>
+
+      <div class="lastScanQtyActions">
+
+          <button
+              type="button"
+              id="btnLastScanMinus"
+              class="lastScanQtyButton"
+          >
+              −
+          </button>
+
+          <button
+              type="button"
+              id="btnLastScanEdit"
+              class="lastScanQtyValue"
+              aria-label="Add Quantity"
+              title="Add Quantity"
+          >
+              0
+          </button>
+
+          <button
+              type="button"
+              id="btnLastScanPlus"
+              class="lastScanQtyButton"
+          >
+              +
+          </button>
+
+      </div>
+
+      <div id="handheldScanSavedAck" class="handheldScanSavedAck">
+          ✓ SCANNED +1 · PACK SAVED
+      </div>
+
+      <div class="lastScanQtyHint">
+
+          Current local batch only. Scanning another item starts a new batch.
+
+      </div>
+
+      <button
+          type="button"
+          id="btnHandheldClearLastScan"
+          class="handheldClearLastScan"
+      >
+          CLEAR SCREEN
+      </button>
+
+  `;
+
+  const isHandheld=
+      typeof isLikelyZebraDevice === "function" &&
+      isLikelyZebraDevice();
+
+  const professionalLayout=
+      document.getElementById(
+          "professionalLastScanLayout"
+      );
+
+  const metrics=
+      professionalLayout?.querySelector(
+          ".lastScanMetrics"
+      );
+
+  /* Keep the Handheld identity, batch quantity and operational totals in one
+     expanding Last Scan surface. Desktop retains its established placement. */
+  if(isHandheld && professionalLayout && metrics){
+      professionalLayout.insertBefore(
+          controls,
+          metrics
+      );
+  }
+  else{
+      card.appendChild(
+          controls
+      );
+  }
+
+
+  document
+      .getElementById(
+          "btnLastScanPlus"
+      )
+      ?.addEventListener(
+          "click",
+          function(){
+
+              const item =
+                  getCurrentLastScanItem();
+
+              if(!item){
+
+                  showToast(
+                      "No last scanned item",
+                      "warning"
+                  );
+
+                  return;
+              }
+
+              increaseItemQuantity(
+                  item.itemCode,
+                  1
+              );
+
+          }
+      );
+
+
+  document
+      .getElementById(
+          "btnLastScanMinus"
+      )
+      ?.addEventListener(
+          "click",
+          function(){
+
+              const item =
+                  getCurrentLastScanItem();
+
+              if(!item){
+
+                  showToast(
+                      "No last scanned item",
+                      "warning"
+                  );
+
+                  return;
+              }
+
+              if(isHandheld){
+                  /* The authoritative Handheld correction boundary is the
+                     in-memory operational batch used by the quantity display.
+                     Historical device rows include earlier saved batches and
+                     must never authorize another decrement. */
+                  const adjustable=Math.max(0,getOperationalCurrentBatchQuantity(item.itemCode));
+                  if(adjustable<=0){
+                      showToast("Current batch quantity is already zero","warning");
+                      return;
+                  }
+              }
+
+              decreaseItemQuantity(
+                  item.itemCode,
+                  1
+              );
+
+          }
+      );
+
+
+  document
+      .getElementById(
+          "btnLastScanEdit"
+      )
+      ?.addEventListener(
+          "click",
+          function(){
+
+              const item =
+                  getCurrentLastScanItem();
+
+              if(!item){
+
+                  showToast(
+                      "No last scanned item",
+                      "warning"
+                  );
+
+                  return;
+              }
+
+              openQuantityEditPrompt(
+                  item
+              );
+
+          }
+      );
+
+  document
+      .getElementById("btnHandheldClearLastScan")
+      ?.addEventListener("click",function(){
+
+          /* CLEAR is data-safe: it never reverses a transaction or changes
+             Received/history. It does end the worker's visible local batch, so
+             the next scan of the same item correctly starts again at 1. */
+          if(typeof resetCurrentLocalBatch==="function"){
+              resetCurrentLocalBatch();
+          }
+          cancelReceivingAutoClear();
+          AppState.workspace.lastScan=null;
+
+          refreshEntireUI?.();
+          window.hhRefreshReadyState?.();
+
+          try{ document.activeElement?.blur?.(); }catch(_){}
+
+          setTimeout(()=>{
+              focusScannerInput?.();
+              window.hhRepairScannerFocus?.("clear-screen");
+          },40);
+      });
+
+}
+
+
+/* =====================================================
+ GET CURRENT LAST SCAN ITEM
+===================================================== */
+
+function getCurrentLastScanItem(){
+
+  const scan =
+      AppState.workspace.lastScan;
+
+  if(
+      !scan ||
+      !scan.itemCode
+  ){
+      return null;
+  }
+
+  return getItemByCode(
+      scan.itemCode
+  );
+
+}
+
+
+/* =====================================================
+ REFRESH LAST SCAN QUANTITY CONTROL
+===================================================== */
+
+function getPcLegacyCurrentBatchQuantity(itemCode){
+    const code=normalizeItemCode(itemCode);
+    const deviceId=getCurrentDeviceId();
+    if(!code || !deviceId) return 0;
+
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory : [];
+
+    const local=history.map((tx,index)=>({tx,index})).filter(row=>
+        toSafeString(row.tx?.deviceId||"")===deviceId
+    ).sort((a,b)=>{
+        const ta=new Date(a.tx?.dateTime||0).getTime();
+        const tb=new Date(b.tx?.dateTime||0).getTime();
+        return ta===tb ? a.index-b.index : ta-tb;
+    });
+
+    if(!local.length) return 0;
+    if(normalizeItemCode(local[local.length-1]?.tx?.itemCode)!==code) return 0;
+
+    let qty=0;
+    for(let i=local.length-1;i>=0;i--){
+        if(normalizeItemCode(local[i]?.tx?.itemCode)!==code) break;
+        qty+=toNumber(local[i]?.tx?.quantity,0);
+    }
+    return Math.max(0,qty);
+}
+
+function getOperationalCurrentBatchQuantity(itemCode){
+    /*
+       2C.11.4.0
+       Batch Qty is the packs handled by THIS browser/device in the current
+       operational batch. It must update immediately and must not depend on
+       Supabase/history hydration.
+    */
+    if(typeof getLocalRuntimeBatchQuantity==="function"){
+        return getLocalRuntimeBatchQuantity(itemCode);
+    }
+
+    return 0;
+}
+
+function refreshLastScanQuantityControl(){
+
+  const button =
+      document.getElementById(
+          "btnLastScanEdit"
+      );
+
+  const thisScanElement =
+      document.getElementById(
+          "handheldThisScan"
+      );
+
+  const totalReceivedElement =
+      document.getElementById(
+          "handheldTotalReceived"
+      );
+
+  if(!button){
+      return;
+  }
+
+  const item =
+      getCurrentLastScanItem();
+
+  const scan =
+      AppState.workspace.lastScan;
+
+  if(!item){
+
+      button.textContent = "0";
+      if(thisScanElement){ thisScanElement.textContent = "+0"; }
+      if(totalReceivedElement){ totalReceivedElement.textContent = "0"; }
+      document.getElementById("handheldScanSavedAck")?.setAttribute("hidden","");
+
+      return;
+  }
+
+  const totalReceived =
+      toNumber(
+          item.receivedQty,
+          0
+      );
+
+  /* 2C.11.1.3 — Handheld primary quantity is the worker's CURRENT LOCAL
+     BATCH on this device. Shared totals remain informational below. */
+  const localBatchQty=getOperationalCurrentBatchQuantity(item.itemCode);
+
+  button.textContent =
+      String(localBatchQty);
+
+  if(totalReceivedElement){
+      totalReceivedElement.textContent =
+          String(totalReceived);
+  }
+
+  if(thisScanElement){
+      const localDelta =
+          scan && scan.itemCode === item.itemCode
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      thisScanElement.textContent =
+          (localDelta > 0 ? "+" : "") +
+          String(localDelta);
+  }
+
+  const savedAck=document.getElementById("handheldScanSavedAck");
+  if(savedAck){
+      const localDelta=
+          scan && normalizeItemCode(scan.itemCode)===normalizeItemCode(item.itemCode)
+              ? toNumber(scan.quantity,0)
+              : 0;
+
+      if(localDelta>0){
+          savedAck.textContent=
+              `✓ SCANNED +${localDelta} · ${localDelta===1 ? "PACK" : "PACKS"} SAVED`;
+          savedAck.hidden=false;
+      }else{
+          savedAck.hidden=true;
+      }
+  }
+
+}
+
+
+/* =====================================================
+ DASHBOARD STAT CARD DRILLDOWN
+===================================================== */
+
+function bindDashboardStatDrilldowns(){
+
+  bindStatisticDrilldown(
+      UI.elements.statRemaining,
+      "remaining"
+  );
+
+  bindStatisticDrilldown(
+      UI.elements.statOver,
+      "over"
+  );
+
+}
+
+
+/* =====================================================
+ BIND SINGLE STATISTIC
+===================================================== */
+
+function bindStatisticDrilldown(
+  valueElement,
+  type
+){
+
+  if(!valueElement){
+      return;
+  }
+
+  const card =
+      valueElement.closest(
+          ".statCard"
+      );
+
+  if(!card){
+      return;
+  }
+
+  card.classList.add(
+      "clickableStatCard"
+  );
+
+  card.setAttribute(
+      "role",
+      "button"
+  );
+
+  card.setAttribute(
+      "tabindex",
+      "0"
+  );
+
+
+  card.addEventListener(
+      "click",
+      function(){
+
+          openStatisticItemsModal(
+              type
+          );
+
+      }
+  );
+
+
+  card.addEventListener(
+      "keydown",
+      function(event){
+
+          if(
+              event.key === "Enter" ||
+              event.key === " "
+          ){
+
+              event.preventDefault();
+
+              openStatisticItemsModal(
+                  type
+              );
+
+          }
+
+      }
+  );
+
+}
+
+
+/* =====================================================
+ OPEN STATISTIC CONTENT
+===================================================== */
+
+function openStatisticItemsModal(
+  type
+){
+
+  let items = [];
+
+  let title = "";
+
+
+  if(type === "remaining"){
+
+      title =
+          "Remaining Items";
+
+      items =
+          AppState.workspace
+              .orderData
+              .filter(
+                  item=>
+
+                      toNumber(
+                          item.remainingQty,
+                          0
+                      ) > 0
+              )
+              .sort(
+                  (
+                      a,
+                      b
+                  )=>
+
+                      toNumber(
+                          b.remainingQty,
+                          0
+                      )
+                      -
+                      toNumber(
+                          a.remainingQty,
+                          0
+                      )
+              );
+
+  }
+
+
+  if(type === "over"){
+
+      title =
+          "Over Received Items";
+
+      items =
+          AppState.workspace
+              .orderData
+              .filter(
+                  item=>
+
+                      item.status ===
+                      APP_CONFIG
+                          .statuses
+                          .over
+              )
+              .sort(
+                  (
+                      a,
+                      b
+                  )=>
+
+                      (
+                          toNumber(
+                              b.receivedQty,
+                              0
+                          )
+                          -
+                          toNumber(
+                              b.orderedQty,
+                              0
+                          )
+                      )
+                      -
+                      (
+                          toNumber(
+                              a.receivedQty,
+                              0
+                          )
+                          -
+                          toNumber(
+                              a.orderedQty,
+                              0
+                          )
+                      )
+              );
+
+  }
+
+
+  showStatisticItemsModal(
+      title,
+      items,
+      type
+  );
+
+}
+
+
+/* =====================================================
+ CREATE STATISTIC MODAL
+===================================================== */
+
+function showStatisticItemsModal(
+  title,
+  items,
+  type
+){
+
+  let modal =
+      document.getElementById(
+          "statItemsModal"
+      );
+
+
+  if(!modal){
+
+      modal =
+          document.createElement(
+              "div"
+          );
+
+      modal.id =
+          "statItemsModal";
+
+      modal.className =
+          "statItemsModal";
+
+      modal.innerHTML = `
+
+          <div class="statItemsModalCard">
+
+              <div class="statItemsModalHeader">
+
+                  <div>
+
+                      <span>
+                          ORDER DETAILS
+                      </span>
+
+                      <h2 id="statItemsModalTitle"></h2>
+
+                  </div>
+
+                  <button
+                      type="button"
+                      id="btnCloseStatItems"
+                      class="statItemsClose"
+                  >
+                      ✕
+                  </button>
+
+              </div>
+
+              <div
+                  id="statItemsModalSummary"
+                  class="statItemsModalSummary"
+              ></div>
+
+              <div class="statItemsTableWrap">
+
+                  <table class="dataTable statItemsDataTable">
+
+                      <thead>
+
+                          <tr>
+
+                              <th>Item Number</th>
+                              <th>Item Name</th>
+                              <th>Ordered</th>
+                              <th>Received</th>
+                              <th id="statItemsQtyHeading">Remaining</th>
+                              <th>Status</th>
+
+                          </tr>
+
+                      </thead>
+
+                      <tbody id="statItemsModalBody"></tbody>
+
+                  </table>
+
+              </div>
+
+          </div>
+
+      `;
+
+
+      document.body.appendChild(
+          modal
+      );
+
+
+      document
+          .getElementById(
+              "btnCloseStatItems"
+          )
+          ?.addEventListener(
+              "click",
+              closeStatisticItemsModal
+          );
+
+
+      modal.addEventListener(
+          "click",
+          function(event){
+
+              if(event.target === modal){
+
+                  closeStatisticItemsModal();
+
+              }
+
+          }
+      );
+
+  }
+
+
+  setElementText(
+      document.getElementById(
+          "statItemsModalTitle"
+      ),
+      title
+  );
+
+
+  const qtyHeading =
+      document.getElementById(
+          "statItemsQtyHeading"
+      );
+
+  if(qtyHeading){
+
+      qtyHeading.textContent =
+          type === "over"
+          ?
+          "Over Qty"
+          :
+          "Remaining";
+
+  }
+
+
+  const summary =
+      document.getElementById(
+          "statItemsModalSummary"
+      );
+
+
+  if(summary){
+
+      let totalQuantity = 0;
+
+      if(type === "over"){
+
+          totalQuantity =
+              items.reduce(
+                  (sum,item)=>
+                      sum + Math.max(
+                          0,
+                          toNumber(item.receivedQty,0)
+                          -
+                          toNumber(item.orderedQty,0)
+                      ),
+                  0
+              );
+
+      }
+      else{
+
+          totalQuantity =
+              items.reduce(
+                  (sum,item)=>
+                      sum + Math.max(
+                          0,
+                          toNumber(item.remainingQty,0)
+                      ),
+                  0
+              );
+
+      }
+
+      summary.innerHTML = `
+
+          <div class="statSummaryBlock">
+              <strong>${items.length}</strong>
+              <span>item(s)</span>
+          </div>
+
+          <div class="statSummaryBlock statSummaryQuantity">
+              <strong>${totalQuantity}</strong>
+              <span>${type === "over" ? "total extra units" : "total remaining units"}</span>
+          </div>
+
+      `;
+
+  }
+
+
+  const tbody =
+      document.getElementById(
+          "statItemsModalBody"
+      );
+
+
+  if(tbody){
+
+      tbody.innerHTML =
+          "";
+
+
+      if(items.length === 0){
+
+          tbody.innerHTML = `
+
+              <tr>
+
+                  <td
+                      colspan="6"
+                      class="tableEmptyState"
+                  >
+                      No items found.
+                  </td>
+
+              </tr>
+
+          `;
+
+      }
+      else{
+
+          items.forEach(item=>{
+
+              const row =
+                  document.createElement(
+                      "tr"
+                  );
+
+              const ordered =
+                  toNumber(
+                      item.orderedQty,
+                      0
+                  );
+
+              const received =
+                  toNumber(
+                      item.receivedQty,
+                      0
+                  );
+
+              const overQty =
+                  Math.max(
+                      0,
+                      received - ordered
+                  );
+
+              const quantityCell =
+                  type === "over"
+                  ?
+                  `<strong class="overQtyBadge">+${overQty}</strong>`
+                  :
+                  String(
+                      toNumber(
+                          item.remainingQty,
+                          0
+                      )
+                  );
+
+
+              if(type === "over"){
+
+                  row.classList.add(
+                      "rowOver"
+                  );
+
+              }
+
+
+              row.innerHTML = `
+
+                  <td>${escapeHTML(item.itemCode)}</td>
+
+                  <td>${escapeHTML(item.itemName)}</td>
+
+                  <td>${ordered}</td>
+
+                  <td>${received}</td>
+
+                  <td>${quantityCell}</td>
+
+                  <td>
+                      ${renderStatusBadge(item.status)}
+                  </td>
+
+              `;
+
+
+              tbody.appendChild(
+                  row
+              );
+
+          });
+
+      }
+
+  }
+
+
+  modal.classList.add(
+      "open"
+  );
+
+}
+
+
+/* =====================================================
+ CLOSE STATISTIC MODAL
+===================================================== */
+
+function closeStatisticItemsModal(){
+
+  document
+      .getElementById(
+          "statItemsModal"
+      )
+      ?.classList
+      .remove(
+          "open"
+      );
+
+  focusScannerInput();
+
+}
+
+
+
+/* =====================================================
+   DASHBOARD ORDER STATUS REPORT
+===================================================== */
+
+function createOrderStatusReportButton(){
+
+    if(
+        document.getElementById(
+            "btnOrderStatusReport"
+        )
+    ){
+        return;
+    }
+
+    const searchButton =
+        document.getElementById(
+            "btnQuickSearch"
+        );
+
+    if(!searchButton){
+        return;
+    }
+
+    const button =
+        document.createElement(
+            "button"
+        );
+
+    button.type =
+        "button";
+
+    button.id =
+        "btnOrderStatusReport";
+
+    button.className =
+        (
+            searchButton.className ||
+            ""
+        )
+        +
+        " orderStatusReportButton";
+
+    button.innerHTML =
+        "📋 Receiving Report";
+
+    button.addEventListener(
+        "click",
+        function(){
+
+            openOrderStatusReport(
+                "all"
+            );
+
+        }
+    );
+
+    searchButton.insertAdjacentElement(
+        "afterend",
+        button
+    );
+
+}
+
+
+function getOrderStatusReportRows(filter = "all"){
+
+    const rows =
+        AppState.workspace
+            .orderData
+            .map(item=>{
+
+                const ordered =
+                    toNumber(
+                        item.orderedQty,
+                        0
+                    );
+
+                const received =
+                    toNumber(
+                        item.receivedQty,
+                        0
+                    );
+
+                const difference =
+                    received - ordered;
+
+                let reportStatus =
+                    "complete";
+
+                if(item.manual===true || ordered===0){
+                    reportStatus = received>0 ? "unordered" : "complete";
+                }
+                else if(received===0 && ordered>0){
+                    reportStatus = "not_received";
+                }
+                else if(difference < 0){
+                    reportStatus = "shortage";
+                }
+                else if(difference > 0){
+                    reportStatus = "over";
+                }
+
+                return {
+                    item:item,
+                    ordered:ordered,
+                    received:received,
+                    difference:difference,
+                    reportStatus:reportStatus
+                };
+
+            });
+
+    if(filter === "shortage"){
+
+        return rows
+            .filter(
+                row=>
+                    row.difference < 0
+            )
+            .sort(
+                (a,b)=>
+                    a.difference -
+                    b.difference
+            );
+
+    }
+
+    if(filter === "over"){
+
+        return rows
+            .filter(
+                row=>
+                    row.difference > 0
+            )
+            .sort(
+                (a,b)=>
+                    b.difference -
+                    a.difference
+            );
+
+    }
+
+    if(filter === "complete"){
+
+        return rows
+            .filter(
+                row=>
+                    row.difference === 0
+            );
+
+    }
+
+    return rows;
+
+}
+
+
+function openOrderStatusReport(
+    filter = "all"
+){
+
+    let modal =
+        document.getElementById(
+            "orderStatusReportModal"
+        );
+
+    if(!modal){
+
+        modal =
+            document.createElement(
+                "div"
+            );
+
+        modal.id =
+            "orderStatusReportModal";
+
+        modal.className =
+            "orderStatusReportModal";
+
+        modal.innerHTML = `
+
+            <div class="orderStatusReportCard">
+
+                <div class="orderStatusReportHeader">
+
+                    <div>
+                        <span>LIVE ORDER REPORT</span>
+                        <h2>Receiving Report</h2>
+                        <p>
+                            Live snapshot of the current receiving progress. Available before Finalize.
+                        </p>
+                    </div>
+
+                    <button
+                        id="btnCloseOrderStatusReport"
+                        type="button"
+                        class="statItemsClose"
+                    >
+                        ✕
+                    </button>
+
+                </div>
+
+                <div class="orderStatusReportToolbar">
+
+                    <div class="orderStatusFilters">
+
+                        <button
+                            type="button"
+                            data-report-filter="all"
+                        >
+                            All
+                        </button>
+
+                        <button
+                            type="button"
+                            data-report-filter="shortage"
+                        >
+                            Shortage
+                        </button>
+
+                        <button
+                            type="button"
+                            data-report-filter="over"
+                        >
+                            Over
+                        </button>
+
+                        <button
+                            type="button"
+                            data-report-filter="complete"
+                        >
+                            Complete
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="orderStatusReportSummary"
+                        class="orderStatusReportSummary"
+                    ></div>
+
+                    <div class="liveReceivingReportActions">
+                        <button id="btnPrintLiveReceivingReport" type="button" class="secondaryButton">
+                            Print / Save PDF
+                        </button>
+
+                        <button id="btnEmailLiveReceivingDifferences" type="button" class="primaryButton">
+                            Email Differences
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="orderStatusReportTableWrap">
+
+                    <table class="dataTable orderStatusReportTable">
+
+                        <thead>
+                            <tr>
+                                <th>Item Number</th>
+                                <th>Item Name</th>
+                                <th>Ordered</th>
+                                <th>Received</th>
+                                <th>Difference</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="orderStatusReportBody"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        `;
+
+        document.body.appendChild(
+            modal
+        );
+
+        document
+            .getElementById(
+                "btnCloseOrderStatusReport"
+            )
+            ?.addEventListener(
+                "click",
+                closeOrderStatusReport
+            );
+
+        modal.addEventListener(
+            "click",
+            function(event){
+
+                if(event.target === modal){
+                    closeOrderStatusReport();
+                }
+
+            }
+        );
+
+        modal
+            .querySelectorAll(
+                "[data-report-filter]"
+            )
+            .forEach(button=>{
+
+                button.addEventListener(
+                    "click",
+                    function(){
+
+                        renderOrderStatusReport(
+                            this.dataset.reportFilter
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document.getElementById("btnPrintLiveReceivingReport")
+            ?.addEventListener("click",()=>{
+                if(typeof buildLiveReceivingReport==="function" && typeof printLiveReceivingReport==="function"){
+                    printLiveReceivingReport(buildLiveReceivingReport());
+                }
+            });
+
+        document.getElementById("btnEmailLiveReceivingDifferences")
+            ?.addEventListener("click",()=>{
+                if(
+                    typeof buildLiveReceivingReport!=="function" ||
+                    typeof buildReceivingEmailDifferencesReport!=="function" ||
+                    typeof openFinalizedDiscrepancyEmailPreview!=="function"
+                ){
+                    showToast?.("Email report is unavailable","error");
+                    return;
+                }
+
+                const live=buildLiveReceivingReport();
+                const emailReport=buildReceivingEmailDifferencesReport(live);
+
+                if(!emailReport.rows.length){
+                    showToast?.("All items are Completed. There are no differences to email.","success");
+                    return;
+                }
+
+                openFinalizedDiscrepancyEmailPreview(
+                    emailReport,
+                    {
+                        fromArchive:false,
+                        liveReport:true
+                    }
+                );
+            });
+
+    }
+
+    modal.classList.add(
+        "open"
+    );
+
+    renderOrderStatusReport(
+        filter
+    );
+
+}
+
+
+function renderOrderStatusReport(
+    filter = "all"
+){
+
+    const modal =
+        document.getElementById(
+            "orderStatusReportModal"
+        );
+
+    if(!modal){
+        return;
+    }
+
+    modal.dataset.activeFilter =
+        filter;
+
+    modal
+        .querySelectorAll(
+            "[data-report-filter]"
+        )
+        .forEach(button=>{
+
+            button.classList.toggle(
+                "active",
+                button.dataset.reportFilter ===
+                    filter
+            );
+
+        });
+
+    const allRows =
+        getOrderStatusReportRows(
+            "all"
+        );
+
+    const rows =
+        getOrderStatusReportRows(
+            filter
+        );
+
+    const shortageItems =
+        allRows.filter(
+            row=>
+                row.difference < 0
+        );
+
+    const overItems =
+        allRows.filter(
+            row=>
+                row.difference > 0
+        );
+
+    const totalShortage =
+        shortageItems.reduce(
+            (sum,row)=>
+                sum + Math.abs(
+                    row.difference
+                ),
+            0
+        );
+
+    const totalOver =
+        overItems.reduce(
+            (sum,row)=>
+                sum + row.difference,
+            0
+        );
+
+    const summary =
+        document.getElementById(
+            "orderStatusReportSummary"
+        );
+
+    if(summary){
+
+        summary.innerHTML = `
+
+            <div>
+                <strong>${shortageItems.length}</strong>
+                <span>Shortage Items</span>
+            </div>
+
+            <div class="shortageValue">
+                <strong>-${totalShortage}</strong>
+                <span>Shortage Units</span>
+            </div>
+
+            <div>
+                <strong>${overItems.length}</strong>
+                <span>Over Items</span>
+            </div>
+
+            <div class="overValue">
+                <strong>+${totalOver}</strong>
+                <span>Extra Units</span>
+            </div>
+
+        `;
+
+    }
+
+    const tbody =
+        document.getElementById(
+            "orderStatusReportBody"
+        );
+
+    if(!tbody){
+        return;
+    }
+
+    tbody.innerHTML =
+        "";
+
+    if(rows.length === 0){
+
+        tbody.innerHTML = `
+
+            <tr>
+                <td
+                    colspan="6"
+                    class="tableEmptyState"
+                >
+                    No items found for this filter.
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+    rows.forEach(rowData=>{
+
+        const tr =
+            document.createElement(
+                "tr"
+            );
+
+        if(rowData.reportStatus === "over"){
+            tr.classList.add("rowOver");
+        }
+        else if(["shortage","not_received"].includes(rowData.reportStatus)){
+            tr.classList.add("orderStatusShortageRow");
+        }
+        else if(rowData.reportStatus === "unordered"){
+            tr.classList.add("orderStatusUnorderedRow");
+        }
+        else{
+            tr.classList.add("rowCompleted");
+        }
+
+        let differenceHTML =
+            '<strong class="differenceComplete">0</strong>';
+
+        let statusHTML =
+            '<span class="statusBadge statusCompleted">Complete</span>';
+
+        if(rowData.reportStatus==="not_received"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Not Received</span>`;
+        }
+        else if(rowData.reportStatus==="shortage"){
+            differenceHTML=`<span class="differenceShortage">${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusShortage">Shortage ${Math.abs(rowData.difference)}</span>`;
+        }
+        else if(rowData.reportStatus==="over"){
+            differenceHTML=`<span class="differenceOver">+${rowData.difference}</span>`;
+            statusHTML=`<span class="statusBadge statusOver">Over +${rowData.difference}</span>`;
+        }
+        else if(rowData.reportStatus==="unordered"){
+            differenceHTML=`<span class="differenceOver">+${rowData.received}</span>`;
+            statusHTML=`<span class="statusBadge statusUnordered">Unordered</span>`;
+        }
+
+        tr.innerHTML = `
+
+            <td>${escapeHTML(rowData.item.itemCode)}</td>
+
+            <td>${escapeHTML(rowData.item.itemName)}</td>
+
+            <td>${rowData.ordered}</td>
+
+            <td>${rowData.received}</td>
+
+            <td>${differenceHTML}</td>
+
+            <td>${statusHTML}</td>
+
+        `;
+
+        tbody.appendChild(
+            tr
+        );
+
+    });
+
+}
+
+
+
+function openOrderStatusReportFromSnapshot(report){
+    if(!report || !Array.isArray(report.rows)){
+        showToast?.("Saved report is unavailable","warning");
+        return false;
+    }
+
+    document.getElementById("archivedReceivingReportOverlay")?.remove();
+
+    const esc=v=>typeof escapeHTML==="function"
+        ? escapeHTML(String(v??""))
+        : String(v??"");
+
+    const orders=Array.isArray(report.orders)?report.orders:[];
+    const orderLabel=orders.map(o=>o.orderNumber).filter(Boolean).join(" + ") || report.orderId || "-";
+    const orderDate=orders.map(o=>o.orderDate).filter(Boolean)[0] || "-";
+
+    const overlay=document.createElement("div");
+    overlay.id="archivedReceivingReportOverlay";
+    overlay.className="orderStatusReportModal open";
+
+    overlay.innerHTML=`
+      <div class="orderStatusReportCard archivedReceivingReportCard">
+        <div class="orderStatusReportHeader">
+          <div>
+            <span>SAVED RECEIVING REPORT</span>
+            <h2>Receiving Report</h2>
+            <p>${esc(orderLabel)} · ${esc(orderDate)} · Finalized snapshot</p>
+          </div>
+          <button type="button" class="statItemsClose" data-close>✕</button>
+        </div>
+
+        <div class="archivedReportSummary">
+          <div><span>Total Items</span><strong>${report.counts?.total||report.rows.length}</strong></div>
+          <div><span>Completed</span><strong>${report.counts?.COMPLETED||0}</strong></div>
+          <div><span>Requires Review</span><strong>${report.counts?.requiresReview||0}</strong></div>
+          <div><span>Generated</span><strong>${esc(report.generatedAt ? new Date(report.generatedAt).toLocaleString() : "-")}</strong></div>
+        </div>
+
+        <div class="liveReceivingReportActions archiveLiveReportActions">
+          <button type="button" class="secondaryButton" id="btnPrintArchivedReceivingReport">Print / Save PDF</button>
+          <button type="button" class="primaryButton" id="btnEmailArchivedDifferences">Email Differences</button>
+        </div>
+
+        <div class="orderStatusReportTableWrap">
+          <table class="dataTable orderStatusReportTable">
+            <thead><tr>
+              <th>Item Number</th><th>Item Name</th><th>Ordered</th>
+              <th>Received</th><th>Difference</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${report.rows.map(row=>{
+                  const diff=Number(row["Difference"]||0);
+                  return `<tr>
+                    <td>${esc(row["Item Number"])}</td>
+                    <td>${esc(row["Item Name"])}</td>
+                    <td>${row["Ordered Qty"]}</td>
+                    <td>${row["Received Qty"]}</td>
+                    <td>${diff>0?"+":""}${diff}</td>
+                    <td><span class="statusBadge">${esc(row.Status)}</span></td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll("[data-close]").forEach(button=>{
+        button.onclick=()=>overlay.remove();
+    });
+
+    document.getElementById("btnPrintArchivedReceivingReport")?.addEventListener("click",()=>{
+        printLiveReceivingReport?.(report);
+    });
+
+    document.getElementById("btnEmailArchivedDifferences")?.addEventListener("click",()=>{
+        const emailReport=buildReceivingEmailDifferencesReport?.(report);
+        if(!emailReport?.rows?.length){
+            showToast?.("All items are Completed. There are no differences to email.","success");
+            return;
+        }
+        openFinalizedDiscrepancyEmailPreview?.(
+            emailReport,
+            {fromArchive:true}
+        );
+    });
+
+    return true;
+}
+
+window.openOrderStatusReportFromSnapshot=openOrderStatusReportFromSnapshot;
+
+
+function refreshOpenOrderStatusReport(){
+
+    const modal =
+        document.getElementById(
+            "orderStatusReportModal"
+        );
+
+    if(
+        !modal ||
+        !modal.classList.contains(
+            "open"
+        )
+    ){
+        return;
+    }
+
+    renderOrderStatusReport(
+        modal.dataset.activeFilter ||
+        "all"
+    );
+
+}
+
+
+function closeOrderStatusReport(){
+
+    document
+        .getElementById(
+            "orderStatusReportModal"
+        )
+        ?.classList
+        .remove(
+            "open"
+        );
+
+    focusScannerInput();
+
+}
+
+
+/* =====================================================
+   ZEBRA TWO-MODE EXPERIENCE
+   - Live Receiving linked to PC cloud session
+   - Expiry Capture (workflow implemented in its dedicated phase)
+===================================================== */
+
+function isLikelyZebraDevice(){
+    const ua = String(navigator.userAgent || "").toLowerCase();
+
+    const enterpriseHandheld =
+        /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
+
+    let explicitHandheld = false;
+    let persistedHandheld = false;
+
+    try{
+        const params = new URLSearchParams(window.location.search || "");
+        explicitHandheld =
+            params.get("handheld") === "1" ||
+            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
+
+        persistedHandheld =
+            localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
+    }catch(_){}
+
+    /*
+       Chrome on some Zebra builds reports a generic Android user-agent.
+       PharmFlow therefore also recognizes the narrow Android enterprise
+       form factor, then remembers this browser as a Handheld.
+    */
+    const android = /android/i.test(ua);
+    const shortestScreenSide = Math.min(
+        Number(window.screen?.width || window.innerWidth || 9999),
+        Number(window.screen?.height || window.innerHeight || 9999)
+    );
+    const handheldFormFactor =
+        android &&
+        shortestScreenSide <= 600 &&
+        Number(navigator.maxTouchPoints || 0) > 0;
+
+    const detected =
+        enterpriseHandheld ||
+        explicitHandheld ||
+        persistedHandheld ||
+        handheldFormFactor;
+
+    if(detected){
+        try{
+            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
+        }catch(_){}
+    }
+
+    return detected;
+}
+
+function backupLegacyZebraWorkspace(reason){
+    try{
+        const hasOrder = Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length > 0;
+        const hasHistory = Array.isArray(AppState?.workspace?.receivingHistory) && AppState.workspace.receivingHistory.length > 0;
+        if(!hasOrder && !hasHistory){ return null; }
+        const key = "PRS_V3_ZEBRA_RECOVERY_" + Date.now();
+        localStorage.setItem(key, JSON.stringify({
+            reason: reason || "legacy-zebra-cleanup",
+            savedAt: nowISO(),
+            snapshot: typeof serializeCurrentWorkspace === "function" ? serializeCurrentWorkspace() : null
+        }));
+        return key;
+    }catch(error){
+        Logger.warn("Unable to create Handheld recovery backup", error);
+        return null;
+    }
+}
+
+function resetZebraWorkingState(reason, options = {}){
+    const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
+    if(pending > 0 && options.force !== true){
+        Logger.warn("Handheld cleanup postponed because unsynced transactions remain", pending);
+        return false;
+    }
+
+    backupLegacyZebraWorkspace(reason);
+    if(typeof stopCloudPolling === "function"){ stopCloudPolling(); }
+    if(typeof clearCurrentWorkspace === "function"){ clearCurrentWorkspace(); }
+    /* Zebra idle state must have NO order at all. startNewWorkspace() creates
+       a fresh order id, so it is intentionally not used here. */
+    AppState.workspace = typeof createEmptyWorkspace === "function"
+        ? createEmptyWorkspace()
+        : {orderId:null,orderName:"",active:false,orderFiles:[],mappingFiles:[],orderData:[],mappingData:[],receivingHistory:[],lastScan:null};
+    if(typeof resetStatistics === "function"){ resetStatistics(); }
+    if(typeof rebuildStateIndexes === "function"){ rebuildStateIndexes(); }
+    if(typeof deleteWorkspaceSnapshot === "function"){ deleteWorkspaceSnapshot(); }
+
+    AppState.session = {
+        ...createEmptySession(),
+        id:createSessionId(),
+        deviceId:ensureDeviceId(),
+        role:"ZEBRA_IDLE",
+        cloud:false,
+        createdAt:nowISO(),
+        pendingQueue:[]
+    };
+
+    if(typeof saveWorkspaceSnapshot === "function"){ saveWorkspaceSnapshot(); }
+    AppEvents.emit("session:updated");
+    /* Handheld detach/idle cleanup is device-local. It must never masquerade
+       as a pharmacy-wide Current Workspace reset. */
+    AppEvents.emit("receiving:updated",{source:"handheld-local-reset"});
+    return true;
+}
+
+function initializeZebraInterface(){
+    if(!isLikelyZebraDevice()){
+        document.body.classList.remove(
+            "zebraDevice",
+            "zebraHomeActive",
+            "zebraJoinActive",
+            "zebraReceivingActive",
+            "zebraExpiryActive",
+            "zebraMode"
+        );
+        return;
+    }
+
+    document.body.classList.add("zebraDevice");
+
+    /* Keep the Zebra hardware scanner focused without summoning the Android
+       soft keyboard. Manual search inputs remain normal text inputs. */
+    const barcodeInput = document.getElementById("barcodeInput");
+    if(barcodeInput){
+        barcodeInput.setAttribute("inputmode","none");
+        barcodeInput.setAttribute("autocomplete","off");
+    }
+
+    /* =========================================================
+       PHASE 2C.11.0 — UNIFIED PHARMACY WORKSPACE
+       The Handheld is now a first-class client of the authenticated pharmacy
+       workspace. It MUST NOT clear a valid Active Order merely because there is
+       no legacy Create/Join cloud session. Active Order Manifest + receiving
+       ledger are the same server authorities already used by PC2/PC3.
+       ========================================================= */
+    AppState.session = {
+        ...createEmptySession(),
+        id:null,
+        secret:null,
+        deviceId:ensureDeviceId(),
+        role:"HANDHELD_WORKSPACE",
+        cloud:false,
+        createdAt:nowISO(),
+        pendingQueue:[]
+    };
+    AppEvents.emit("session:updated",{source:"unified-pharmacy-workspace"});
+
+    if(!document.getElementById("zebraHome")){
+        const home = document.createElement("section");
+        home.id = "zebraHome";
+        home.className = "zebraHome";
+        home.innerHTML = `
+            <div class="zebraBrandRow">
+                <div class="zebraBrandLockup">
+                    <span class="zebraBrandMark" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><g class="pfMarkP"><rect x="7" y="8" width="3" height="48" rx="1.5"/><rect x="12" y="8" width="2.4" height="48" rx="1.2"/><rect x="17" y="8" width="4" height="48" rx="1.5"/><rect x="23" y="8" width="2.5" height="48" rx="1.2"/><path d="M28 8h11.5C50.8 8 57 14.4 57 24.3 57 34.2 50.6 41 39.3 41H34v15h-6V8zm6 7v19h5c7.4 0 11.6-3.4 11.6-9.6C50.6 18.2 46.6 15 39 15h-5z"/></g><g transform="translate(44.8 24.6) rotate(-38) scale(.98)"><rect x="-7.8" y="-3.6" width="15.6" height="7.2" rx="3.6" class="pfMarkCapsule"/><path d="M-7.4-3.15h7.5v6.3h-7.5a3.15 3.15 0 0 1 0-6.3z" class="pfMarkCapsuleBlue"/><path d="M.1-3.15v6.3" class="pfMarkCapsuleSplit"/></g></svg></span>
+                    <div><strong>PharmFlow</strong><span>Handheld Workspace</span></div>
+                </div>
+            </div>
+            <div class="zebraModeIntro">
+                <h1>Choose your workspace</h1>
+            </div>
+            <div class="zebraModeCards">
+                <button id="btnZebraReceivingMode" class="zebraModeCard zebraModeReceiving" type="button">
+                    <span class="zebraModeIcon" aria-hidden="true">▥</span>
+                    <div><strong>Receiving</strong></div>
+                    <span class="zebraModeArrow" aria-hidden="true">›</span>
+                </button>
+                <button id="btnZebraExpiryMode" class="zebraModeCard zebraModeExpiry" type="button" aria-label="Open Near Expiry">
+                    <span class="zebraModeIcon" aria-hidden="true">◷</span>
+                    <div><strong>Near Expiry</strong></div>
+                    <span class="zebraModeArrow" aria-hidden="true">›</span>
+                </button>
+            </div>
+            <button id="btnZebraSignOut" class="zebraSignOut" type="button">Sign Out</button>
+        `;
+        document.querySelector(".mainContent")?.prepend(home);
+
+        document.getElementById("btnZebraReceivingMode")?.addEventListener("click", async function(){
+            await openUnifiedHandheldReceiving();
+        });
+        document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
+            setZebraExpiryMode();
+        });
+        document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
+            const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
+            if(pending > 0){
+                showToast("Sync pending Handheld work before signing out","warning");
+                return;
+            }
+            /* Unified Workspace has no user-created Handheld session to detach. */
+            document.getElementById("btnLogout")?.click();
+        });
+    }
+
+
+    if(!document.getElementById("zebraJoinHeader")){
+        const hero = document.querySelector("#page-sessions .cloudSessionHero");
+        if(hero){
+            const joinHeader = document.createElement("div");
+            joinHeader.id = "zebraJoinHeader";
+            joinHeader.className = "zebraJoinHeader";
+            joinHeader.innerHTML = `
+                <button id="btnZebraJoinBack" type="button">‹ Modes</button>
+                <div><span>RECEIVING</span><strong>Join PC Session</strong></div>
+            `;
+            hero.prepend(joinHeader);
+            document.getElementById("btnZebraJoinBack")?.addEventListener("click", setZebraHomeMode);
+        }
+    }
+
+    if(!document.getElementById("zebraQuickHeader")){
+        const page = document.getElementById("page-dashboard");
+        if(page){
+            const header = document.createElement("section");
+            header.id = "zebraQuickHeader";
+            header.className = "zebraQuickHeader";
+            header.innerHTML = `
+                <div class="zebraQuickHeaderMain">
+                    <div>
+                        <span class="zebraModeEyebrow">LIVE RECEIVING</span>
+                        <strong id="zebraQuickOrder">No active order</strong>
+                    </div>
+                    <button id="btnZebraModes" class="zebraModesButton" type="button">Modes</button>
+                </div>
+            `;
+            page.insertBefore(header,page.firstChild);
+            document.getElementById("btnZebraModes")?.addEventListener("click", setZebraHomeMode);
+        }
+    }
+
+    /* Near Expiry is now a permanent appPage in index.html.
+       PC and Zebra share the exact same capture markup and data logic. */
+
+    /* Unified Workspace starts at Modes. Receiving pulls the authoritative
+       Active Order Manifest directly; no Join Code / QR / session validation. */
+    setZebraHomeMode();
+    setTimeout(()=>refreshUnifiedHandheldWorkspace({silent:true}),120);
+}
+
+/* ============================================================
+   B11 — HANDHELD WORKER PERMISSION BOUNDARY
+   Handheld workers receive operational scan/history controls only.
+   Desktop administrative controls are disabled at the DOM boundary,
+   not merely covered by visual CSS.
+============================================================ */
+function setHandheldWorkerSurface(active){
+    if(!isLikelyZebraDevice()) return;
+
+    const selectors=[
+        "#page-dashboard .scanPanelFooter.pfnActionBar",
+        "#pfnManageOrders",
+        "#btnReceivingNeedsReview",
+        "#btnAdjustReceiving",
+        "#btnReceivingReportAction",
+        ".pfnOrderControlGroup",
+        ".pfnSessionStatus"
+    ];
+
+    selectors.forEach(selector=>{
+        document.querySelectorAll(selector).forEach(el=>{
+            if(active){
+                el.dataset.handheldWorkerHidden="1";
+                el.hidden=true;
+                el.setAttribute("aria-hidden","true");
+                try{ el.inert=true; }catch(_){}
+            }else if(el.dataset.handheldWorkerHidden==="1"){
+                el.hidden=false;
+                el.removeAttribute("aria-hidden");
+                try{ el.inert=false; }catch(_){}
+                delete el.dataset.handheldWorkerHidden;
+            }
+        });
+    });
+}
+window.setHandheldWorkerSurface=setHandheldWorkerSurface;
+
+function clearZebraModeClasses(){
+    document.body.classList.remove("zebraHomeActive","zebraJoinActive","zebraReceivingActive","zebraExpiryActive","zebraMode");
+}
+function setZebraHomeMode(){
+    if(!isLikelyZebraDevice()){ return; }
+    setHandheldWorkerSurface(false);
+
+    /*
+       Strict mode isolation:
+       before showing Home, deactivate every app page and every operational
+       Zebra surface so no previous Receiving / Join / Expiry markup can remain
+       visible underneath Mode Selection.
+    */
+    clearZebraModeClasses();
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    [
+        "zebraExpiryShell",
+        "zebraJoinPanel",
+        "page-dashboard",
+        "page-receiving",
+        "page-files",
+        "page-reports",
+        "page-sessions",
+        "page-archive",
+        "page-returnsArchive",
+        "page-settings"
+    ].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el){
+            el.classList.remove("active");
+        }
+    });
+
+    document.body.classList.add("zebraDevice","zebraHomeActive");
+
+    try{ document.activeElement?.blur?.(); }catch(_){}
+
+    [
+        "authEmail",
+        "authPassword",
+        "barcodeInput",
+        "cloudSessionCodeInput",
+        "expiryBarcodeInput",
+        "searchInput",
+        "smartScanSearchInput"
+    ].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && typeof el.blur === "function"){
+            try{ el.blur(); }catch(_){}
+        }
+    });
+
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
+}
+function setZebraJoinMode(){
+    if(!isLikelyZebraDevice()){ return; }
+
+    clearZebraModeClasses();
+    document.body.classList.add("zebraDevice","zebraJoinActive");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    document.getElementById("zebraExpiryShell")?.classList.remove("active");
+    document.getElementById("page-dashboard")?.classList.remove("active");
+
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
+
+    const code = document.getElementById("cloudSessionCodeInput");
+    if(code){
+        code.setAttribute("inputmode","numeric");
+        code.setAttribute("autocomplete","off");
+    }
+}
+async function refreshUnifiedHandheldWorkspace(options={}){
+    if(!isLikelyZebraDevice()) return false;
+    if(typeof AuthState==="undefined" || !AuthState?.context?.pharmacy_id) return false;
+    if(typeof pullActiveOrderManifest!=="function") return false;
+
+    /* Background reconciliation must never replace the worker surface. The
+       shared cloud scheduler already owns normal syncing; this indicator is
+       reserved for the initial route entry before the scan panel is shown. */
+    const blocking=options?.blocking===true;
+    if(blocking){
+        document.body.dataset.hhWorkspaceLoading="1";
+        window.hhRefreshReadyState?.();
+    }
+    try{
+        await pullActiveOrderManifest({clearIfMissing:true});
+        if(typeof pullCloudWorkspaceTransactions==="function"){
+            await pullCloudWorkspaceTransactions();
+        }
+        rebuildStateIndexes?.();
+        recalculateStatistics?.();
+        refreshZebraInterface();
+        window.hhRefreshReadyState?.();
+
+        /* Receiving on the Handheld is explicitly assigned from Manage Orders.
+           Pharmacy Active Orders may hydrate for shared identity/history, but
+           they are not worker scope until the PC assignment says so. */
+        const assigned=typeof getSelectedReceivingOrderNumbers==="function"
+            ? getSelectedReceivingOrderNumbers()
+            : [];
+        return !!(
+            Array.isArray(assigned) &&
+            assigned.length>0 &&
+            Array.isArray(AppState?.workspace?.orderData) &&
+            AppState.workspace.orderData.length>0
+        );
+    }catch(error){
+        Logger?.warn?.("Unified Handheld workspace refresh failed",error);
+        if(options?.silent!==true){
+            showToast(error?.message||"Unable to load pharmacy Active Orders","error");
+        }
+        return false;
+    }finally{
+        if(blocking) delete document.body.dataset.hhWorkspaceLoading;
+        window.hhRefreshReadyState?.();
+        refreshHandheldWorkspaceStatus?.();
+    }
+}
+
+async function openUnifiedHandheldReceiving(){
+    if(!isLikelyZebraDevice()) return false;
+
+    /* Keep the worker on Mode Selection while assignment authority hydrates.
+       Do not expose the Receiving page or its stale/current Order label during
+       the blocking manifest read. */
+    setZebraHomeMode();
+    document.body.dataset.hhWorkspaceLoading="1";
+    window.hhRefreshReadyState?.();
+
+    const ready=await refreshUnifiedHandheldWorkspace({silent:true,blocking:true});
+
+    if(ready){
+        setZebraReceivingMode();
+    }else{
+        setZebraHomeMode();
+        showToast("No Order is assigned to this Handheld yet","warning");
+    }
+    return ready;
+}
+
+window.refreshUnifiedHandheldWorkspace=refreshUnifiedHandheldWorkspace;
+window.openUnifiedHandheldReceiving=openUnifiedHandheldReceiving;
+
+function setZebraReceivingMode(){
+    if(!isLikelyZebraDevice()){ return; }
+    clearZebraModeClasses();
+    setHandheldWorkerSurface(true);
+    document.body.classList.add("zebraDevice","zebraReceivingActive","zebraMode");
+    try{ window.scrollTo(0,0); }catch(_){}
+    refreshZebraInterface();
+    if(typeof ensureHandheldReceivingTools === "function"){
+        ensureHandheldReceivingTools();
+    }
+    setTimeout(()=>focusScannerInput(),80);
+}
+function setZebraExpiryMode(){
+    if(!isLikelyZebraDevice()){ return; }
+
+    setHandheldWorkerSurface(false);
+    clearZebraModeClasses();
+    document.body.classList.add("zebraDevice","zebraExpiryActive");
+
+    document.querySelectorAll(".appPage").forEach(page=>{
+        page.classList.remove("active");
+    });
+
+    document.getElementById("zebraJoinPanel")?.classList.remove("active");
+    document.getElementById("page-dashboard")?.classList.remove("active");
+    document.getElementById("page-receiving")?.classList.remove("active");
+
+    const expiryPage = document.getElementById("zebraExpiryShell");
+    expiryPage?.classList.add("active");
+
+    try{ document.activeElement?.blur?.(); }catch(_){}
+    try{
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0,0);
+    }catch(_){}
+
+    if(typeof activateExpiryCapture === "function"){
+        setTimeout(()=>activateExpiryCapture(),40);
+    }
+}
+
+
+function getFriendlyReceivingDeviceLabel(row,options={}){
+    const ownDeviceId=toSafeString(
+        options.ownDeviceId ||
+        (typeof ensureDeviceId==="function" ? ensureDeviceId() : AppState?.session?.deviceId) ||
+        ""
+    );
+
+    const rowDeviceId=toSafeString(row?.deviceId||"");
+    const type=toSafeString(row?.deviceType||"").toUpperCase();
+
+    if(type==="HANDHELD"){
+        return "Handheld";
+    }
+
+    if(type==="PC"){
+        return rowDeviceId && rowDeviceId===ownDeviceId
+            ? "This PC"
+            : "PC";
+    }
+
+    /* Legacy transactions may predate deviceType. Never expose UUIDs.
+       We can still identify the current browser safely. */
+    if(rowDeviceId && rowDeviceId===ownDeviceId){
+        try{
+            return typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice()
+                ? "Handheld"
+                : "This PC";
+        }catch(_){
+            return "This Device";
+        }
+    }
+
+    return "Other Device";
+}
+
+
+function getHandheldDeviceReceivingRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+    const deviceId=typeof ensureDeviceId==="function"
+        ? ensureDeviceId()
+        : AppState?.session?.deviceId;
+
+    return history
+        .filter(tx=>{
+            if(deviceId && String(tx?.deviceId||"")!==String(deviceId||"")) return false;
+            const quantity=Number(tx?.quantity||0);
+            return Number.isFinite(quantity) && quantity!==0;
+        })
+        .slice()
+        .sort((a,b)=>String(a?.dateTime||"").localeCompare(String(b?.dateTime||"")));
+}
+
+function getHandheldDeviceScannerRows(){
+    /*
+       Recent Actions is projected from the immutable receiving ledger.
+       Scanner rows remain independently actionable; a SCAN_UNDO cancels the
+       matching scan in this projection without deleting either ledger row.
+    */
+    const ownRows=getHandheldDeviceReceivingRows();
+    const activeScans=[];
+    const scannerSource=String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase();
+
+    ownRows.forEach(tx=>{
+        const source=String(tx?.source||"").toUpperCase();
+        const quantity=Number(tx?.quantity||0);
+        const isScan=source===scannerSource || (source.includes("SCAN") && source!=="SCAN_UNDO");
+
+        if(isScan && quantity>0){
+            activeScans.push(tx);
+            return;
+        }
+
+        if(source!=="SCAN_UNDO" || quantity>=0) return;
+
+        let remaining=Math.abs(quantity);
+        for(let i=activeScans.length-1;i>=0 && remaining>0;i--){
+            const scan=activeScans[i];
+            if(String(scan?.itemCode||"")!==String(tx?.itemCode||"")) continue;
+            const scanOrder=String(scan?.orderNumber||scan?.order_number||"");
+            const undoOrder=String(tx?.orderNumber||tx?.order_number||"");
+            if(scanOrder && undoOrder && scanOrder!==undoOrder) continue;
+            const scanQty=Math.max(0,Number(scan?.quantity||0));
+            if(remaining>=scanQty){
+                remaining-=scanQty;
+                activeScans.splice(i,1);
+            }
+        }
+    });
+
+    return activeScans;
+}
+
+function getAllWorkspaceScannerRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)
+        ? AppState.workspace.receivingHistory
+        : [];
+
+    return history.filter(tx=>{
+        const source=String(tx?.source||"").toUpperCase();
+        const isScan=source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase()
+            || source.includes("SCAN");
+        return isScan && Number(tx?.quantity||0)>0;
+    });
+}
+
+function getHandheldTotalScans(){
+    return getHandheldDeviceScannerRows().length;
+}
+
+
+function refreshHandheldWorkspaceStatus(){
+    if(!isLikelyZebraDevice()) return;
+    const state=document.getElementById("handheldWorkspaceStatus");
+    if(!state) return;
+    const activeOrders=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : activeOrders;
+    const authenticated=!!AuthState?.context?.pharmacy_id;
+    const loading=document.body.dataset.hhWorkspaceLoading==="1";
+    const online=navigator.onLine!==false;
+
+    const assignedButton=document.getElementById("btnHandheldAssignedOrders");
+    const setStatus=connection=>{
+        state.replaceChildren();
+        const connectionEl=document.createElement("span");
+        connectionEl.className="handheldConnectionState";
+        connectionEl.textContent=connection;
+        state.appendChild(connectionEl);
+    };
+    const setAssignedOrders=()=>{
+        if(!assignedButton) return;
+        const count=selectedOrders.length;
+        assignedButton.disabled=count===0;
+        assignedButton.textContent=count===1 ? "1 ORDER" : `${count} ORDERS`;
+        assignedButton.title=count
+            ? "View orders assigned from the computer"
+            : "No orders assigned from the computer";
+    };
+    state.classList.remove("isSyncing","isOffline","isEmpty");
+    if(loading){
+        setStatus("RECONNECTING");
+        state.classList.add("isSyncing");
+    }else if(!online){
+        setStatus("OFFLINE");
+        state.classList.add("isOffline");
+    }else if(!authenticated){
+        setStatus("NOT CONNECTED");
+        state.classList.add("isOffline");
+    }else if(activeOrders.length>0){
+        setStatus("ONLINE");
+    }else{
+        setStatus("ONLINE");
+        state.classList.add("isEmpty");
+    }
+    setAssignedOrders();
+}
+window.refreshHandheldWorkspaceStatus=refreshHandheldWorkspaceStatus;
+
+function ensureHandheldReceivingTools(){
+    if(!isLikelyZebraDevice()) return;
+
+    const page = document.getElementById("page-dashboard");
+    if(!page) return;
+
+    let header = document.getElementById("zebraQuickHeader");
+
+    if(!header){
+        header=document.createElement("section");
+        header.id="zebraQuickHeader";
+        header.className="zebraQuickHeader";
+        page.insertBefore(header,page.firstChild);
+    }
+
+    let finalHeader=header.querySelector(".zebraFinalHeader");
+    if(!finalHeader){
+        header.innerHTML=`
+            <div class="zebraFinalHeader">
+                <div class="zebraControlGrid">
+                    <div id="handheldWorkspaceStatus" class="zebraConnectedDot handheldTopControl" aria-live="polite">SYNCING…</div>
+                    <button id="btnHandheldAssignedOrders" class="handheldAssignedOrdersButton handheldTopControl" type="button" aria-label="View assigned orders">0 ORDERS</button>
+                    <button id="btnZebraModes" class="zebraModesButton handheldTopControl" type="button">MODE</button>
+                    <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton handheldTopControl" type="button" aria-label="Open recent scans"><span>HISTORY</span><strong id="handheldTotalScansValue">0</strong></button>
+                    <button id="btnHandheldNeedsReview" class="handheldNeedsReviewButton handheldTopControl" type="button" aria-label="Open Needs Review">REVIEW</button>
+                </div>
+            </div>
+        `;
+        finalHeader=header.querySelector(".zebraFinalHeader");
+    }else{
+        refreshHandheldWorkspaceStatus();
+    }
+
+    document.getElementById("btnZebraModes").onclick=setZebraHomeMode;
+    document.getElementById("btnHandheldTotalScans").onclick=openHandheldScansPanel;
+    document.getElementById("btnHandheldAssignedOrders").onclick=openHandheldAssignedOrdersPanel;
+    document.getElementById("btnHandheldNeedsReview").onclick=()=>openNeedsReviewPanel("RECEIVING");
+
+    /* Assignment is read-only here and is managed on the computer, so staff
+       cannot broaden their own scope. Needs Review is an exception workflow:
+       it always retains the case's original Order rather than changing scope. */
+    document.getElementById("btnHandheldMonitoring")?.remove();
+    refreshHandheldWorkspaceStatus();
+    refreshHandheldReceivingTools();
+}
+
+function refreshHandheldReceivingTools(){
+    const value = document.getElementById("handheldTotalScansValue");
+    if(value) value.textContent = String(getHandheldTotalScans());
+}
+
+function openHandheldAssignedOrdersPanel(){
+    document.getElementById("handheldAssignedOrdersOverlay")?.remove();
+    const active=typeof getActiveReceivingOrderNumbers==="function"
+        ? getActiveReceivingOrderNumbers()
+        : [];
+    const assigned=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    const esc=value=>typeof escapeHtml==="function"
+        ? escapeHtml(String(value??""))
+        : String(value??"");
+    const rows=assigned.length
+        ? assigned.map((order,index)=>`<article class="handheldAssignedOrderRow"><span>${index+1}</span><strong>${esc(order)}</strong></article>`).join("")
+        : `<div class="handheldScansEmpty">No orders have been assigned from the computer.</div>`;
+    const overlay=document.createElement("div");
+    overlay.id="handheldAssignedOrdersOverlay";
+    overlay.className="handheldScansOverlay handheldRecentOverlay handheldAssignedOrdersOverlay";
+    overlay.innerHTML=`
+      <section class="handheldScansPanel handheldRecentPanel handheldAssignedOrdersPanel" role="dialog" aria-modal="true" aria-label="Assigned orders">
+        <header><div><span>COMPUTER ASSIGNMENT</span><strong>Assigned Orders</strong><small>${assigned.length} of ${active.length} active order${active.length===1?"":"s"} available on this Handheld</small></div><button type="button" data-close aria-label="Close">✕</button></header>
+        <div class="handheldRecentList handheldAssignedOrdersList">${rows}</div>
+        <div class="handheldRecentFooter"><span>Order access is controlled from Manage Orders on the computer.</span><button type="button" class="handheldPanelDone" data-close>DONE</button></div>
+      </section>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>{
+        overlay.remove();
+        setTimeout(()=>window.hhRefreshReadyState?.(),20);
+    });
+}
+
+function openHandheldScansPanel(){
+    document.getElementById("handheldScansOverlay")?.remove();
+    try{ document.activeElement?.blur?.(); }catch(_){ }
+
+    const esc=value=>typeof escapeHtml==="function"
+        ? escapeHtml(String(value??""))
+        : String(value??"");
+    const formatTime=value=>{
+        try{
+            const d=new Date(value);
+            if(!Number.isFinite(d.getTime())) return "";
+            return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+        }catch(_){ return ""; }
+    };
+    const actionRows=()=>getHandheldDeviceReceivingRows().slice()
+        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
+        .slice(0,20);
+    const activeScans=()=>getHandheldDeviceScannerRows().slice()
+        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")));
+
+    const overlay=document.createElement("div");
+    overlay.id="handheldScansOverlay";
+    overlay.className="handheldScansOverlay handheldRecentOverlay";
+
+    const render=()=>{
+        const recent=actionRows();
+        const latestRemovable=activeScans()[0];
+        const latestRemovableId=String(latestRemovable?.transactionId||"");
+
+        const markup=recent.length ? recent.map((row,index)=>{
+            const qty=Number(row?.quantity||0);
+            const source=String(row?.source||"").toUpperCase();
+            const isUndo=source==="SCAN_UNDO";
+            const isScan=!isUndo && (source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase() || source.includes("SCAN"));
+            const label=isUndo ? "Scan removed" : isScan ? "Scan" : qty<0 ? "Adjustment" : "Quantity";
+            const transactionId=String(row?.transactionId||"");
+            const removable=transactionId && transactionId===latestRemovableId;
+            return `
+              <article class="handheldRecentRow handheldScanHistoryRow">
+                <div class="handheldRecentIndex">${index+1}</div>
+                <div class="handheldRecentInfo">
+                  <strong>${esc(row?.itemName||"Item")}</strong>
+                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))} · ${label}</span>
+                </div>
+                <div class="handheldRecentQty ${qty<0?"isNegative":""}">${qty>0?"+":""}${qty}</div>
+                ${removable
+                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(transactionId)}">REMOVE</button>`
+                    : `<span class="handheldRecentViewOnly">Saved</span>`}
+              </article>`;
+        }).join("") : `<div class="handheldScansEmpty">No recent receiving actions on this Handheld.</div>`;
+
+        overlay.innerHTML=`
+          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Receiving history">
+            <header>
+              <div>
+                <span>RECEIVING HISTORY</span>
+                <strong>Recent Actions</strong>
+                <small>Last ${recent.length} receiving actions on this Handheld</small>
+              </div>
+              <button type="button" data-close aria-label="Close">✕</button>
+            </header>
+            <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
+            <div class="handheldRecentList">${markup}</div>
+            <div class="handheldRecentFooter">
+              <span>Scans and quantity adjustments are preserved. Only the latest active scan can be removed.</span>
+              <button type="button" class="handheldPanelDone" data-close>DONE</button>
+            </div>
+          </section>`;
+
+        overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>{
+            overlay.remove();
+            setTimeout(()=>window.hhRefreshReadyState?.(),20);
+        });
+        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async event=>{
+            const transactionId=event.currentTarget?.dataset.removeLast||"";
+            const latest=activeScans()[0];
+            if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
+            if(!await pharmFlowConfirm({title:"Remove Last Scan?",message:`${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))} will be cancelled and preserved in Receiving history.`,confirmText:"Remove Scan",tone:"danger"})) return;
+            const removed=typeof undoRecentScannerTransaction==="function"
+                ? undoRecentScannerTransaction(transactionId)
+                : false;
+            if(removed) setTimeout(()=>{ if(document.body.contains(overlay)) render(); },0);
+        });
+    };
+
+    document.body.appendChild(overlay);
+    render();
+}
+
+
+if(typeof AppEvents !== "undefined" && AppEvents?.on){
+    AppEvents.on("receiving:updated", () => {
+        if(typeof refreshHandheldReceivingTools === "function"){
+            setTimeout(refreshHandheldReceivingTools,0);
+        }
+    });
+}
+
+function setZebraInterfaceMode(enabled){
+    initializeZebraInterface();
+    if(enabled === true){ setZebraReceivingMode(); }
+    else{ setZebraHomeMode(); }
+}
+function refreshZebraInterface(){
+    if(!isLikelyZebraDevice()){ return; }
+
+    setElementText(
+        document.getElementById("zebraQuickOrder"),
+        AppState.workspace.orderName || AppState.workspace.orderId || "Active order"
+    );
+}
+
+
+
+/* =====================================================
+   PHASE 2C.6 FINAL - CLICKABLE KPI CONTENT
+===================================================== */
+let activeKpiKey=null;
+let kpiPriorityOnly=false;
+
+function setupDashboardKpiInteractivity(){
+    if(document.documentElement.dataset.kpiCaptureBound==="1") return;
+    document.documentElement.dataset.kpiCaptureBound="1";
+    document.addEventListener("click",event=>{
+        const card=event.target.closest?.(".dashboardKpiCard[data-kpi]");
+        if(!card) return;
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
+        openDashboardKpiPanel(card.dataset.kpi);
+    },true);
+    document.addEventListener("keydown",event=>{
+        const card=event.target.closest?.(".dashboardKpiCard[data-kpi]");
+        if(card && (event.key==="Enter"||event.key===" ")){event.preventDefault();openDashboardKpiPanel(card.dataset.kpi);}
+    },true);
+    const missing=document.querySelector('[data-health-metric="missing"]');
+    if(missing && missing.dataset.bound!=="1"){
+        missing.dataset.bound="1";
+        missing.addEventListener("click",openCurrentMissingGTINPanel);
+        missing.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCurrentMissingGTINPanel();}});
+    }
+}
+
+function getActiveOrderScope(){
+    const selected=
+        typeof getSelectedReceivingOrderNumber==="function"
+            ? getSelectedReceivingOrderNumber()
+            : "";
+
+    return toSafeString(
+        selected ||
+        window.PharmFlowOrderScope ||
+        "ALL"
+    );
+}
+
+function itemBelongsToOrderScope(item, scope=getActiveOrderScope()){
+    if(!scope || scope==="ALL") return true;
+    const list=Array.isArray(item?.orderNumbers)?item.orderNumbers:[];
+    if(list.length) return list.map(normalizeOrderNumber).includes(normalizeOrderNumber(scope));
+    /* Legacy workspaces created before 2C.7 have no per-item membership.
+       Keep them visible rather than hiding valid stock. */
+    return true;
+}
+
+function getScopedOrderItems(){
+    const items=Array.isArray(AppState.workspace?.orderData)?AppState.workspace.orderData:[];
+    const selected=typeof getSelectedReceivingOrderNumbers==="function"
+        ? getSelectedReceivingOrderNumbers()
+        : [];
+    return selected.length
+        ? items.filter(item=>selected.some(order=>itemBelongsToOrderScope(item,order)))
+        : items;
+}
+
+function getKpiPanelItems(key){
+    const items=getScopedOrderItems();
+    if(key==="total"){
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+        if(typeof getPerOrderReceivingRows==="function" && selectedOrders.length){
+            const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+            const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>({
+                orderNumber:order,
+                orderNumbers:[order],
+                itemCode:row["Item Number"],
+                itemName:row["Item Name"],
+                orderedQty:toNumber(row["Ordered Qty"],0),
+                receivedQty:toNumber(row["Received Qty"],0),
+                remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
+                status:row["Issue Type"],
+                manual:row.issueKey==="manual",
+                group_name:row["Group"]||"",
+                category:row["Category"]||"",
+                sub_category:row["Sub Category"]||"",
+                /* Priority belongs to the authoritative workspace item, not to
+                   the report-row projection. Preserve it when rebuilding the
+                   Order Items browser so persisted SHORT/NEW state survives
+                   redraws and the High Priority filter. */
+                priorityType:toSafeString(getItemByCode?.(row["Item Number"])?.priorityType||""),
+                highPriority:!!getItemByCode?.(row["Item Number"])?.highPriority
+            })));
+        }
+        return items.slice();
+    }
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+    const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+        orderNumber:order,
+        itemCode:row["Item Number"], itemName:row["Item Name"],
+        orderedQty:toNumber(row["Ordered Qty"],0), receivedQty:toNumber(row["Received Qty"],0),
+        remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
+        status:row["Issue Type"], manual:row.issueKey==="manual"
+    }))) : [];
+    const scoped=perOrderRows.length ? perOrderRows : items;
+    if(key==="completed") return scoped.filter(i=>{
+        const o=toNumber(i.orderedQty,0),r=toNumber(i.receivedQty,0);
+        return o>0 && r===o;
+    });
+    if(key==="remaining"||key==="remainingItems") return scoped.filter(i=>toNumber(i.remainingQty,0)>0);
+    if(key==="over") return scoped.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
+    if(key==="manual") return scoped.filter(i=>i.manual===true);
+    return [];
+}
+
+function kpiTitle(key){
+    return ({
+        total:"Order Items",
+        completed:"Completed Items",
+        remaining:"Remaining Items",
+        remainingItems:"Remaining Items",
+        over:"Over Received",
+        manual:"Extra Items",
+        scans:"Receiving Activity History",
+        received:"Received Items — Any Quantity"
+    })[key]||"Dashboard Details";
+}
+
+function openDashboardKpiPanel(key){
+    activeKpiKey=key;
+    document.getElementById("dashboardKpiOverlay")?.remove();
+    const overlay=document.createElement("div");
+    overlay.id="dashboardKpiOverlay";
+    overlay.className="quickKpiOverlay";
+    overlay.innerHTML=`<div class="quickKpiPanel phase263Panel"><div class="quickKpiHeader"><h3>${kpiTitle(key)}</h3><button type="button" class="quickKpiClose" data-close>✕</button></div><div data-body></div></div>`;
+    document.body.appendChild(overlay);
+    window.PharmFlowModalStack?.open(overlay);
+    overlay.querySelector("[data-close]").onclick=closeDashboardKpiPanel;
+    overlay.addEventListener("click",event=>{if(event.target===overlay) closeDashboardKpiPanel();});
+    const body=overlay.querySelector("[data-body]");
+    const cloudReady=
+        window.PharmFlowCloudWorkspace?.startupAuthorityReady!==false;
+    if(
+        key==="total" && !cloudReady &&
+        typeof ensureStartupCloudAuthority==="function"
+    ){
+        body.innerHTML='<div class="tableEmptyState">Loading current order items…</div>';
+        Promise.resolve(ensureStartupCloudAuthority()).finally(()=>{
+            if(document.body.contains(overlay)){
+                renderDashboardKpiPanel(key,body);
+            }
+        });
+    }else{
+        body.innerHTML='<div class="tableEmptyState">Loading items…</div>';
+        requestAnimationFrame(()=>{ if(document.body.contains(overlay)) renderDashboardKpiPanel(key,body); });
+    }
+}
+
+function closeDashboardKpiPanel(){
+    const overlay=document.getElementById("dashboardKpiOverlay");
+    window.PharmFlowModalStack?.close(overlay);
+    overlay?.remove();
+    activeKpiKey=null;
+    focusScannerInput?.();
+}
+
+function refreshOpenKpiPanel(){
+    if(!activeKpiKey) return;
+    const body=document.querySelector("#dashboardKpiOverlay [data-body]");
+    if(body) renderDashboardKpiPanel(activeKpiKey,body);
+}
+
+function getReceivingActivityRows(){
+    const history=Array.isArray(AppState?.workspace?.receivingHistory)?AppState.workspace.receivingHistory:[];
+    const totals=new Map();
+    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber) : [];
+    const scopedHistory=history.filter(tx=>!selectedOrders.length||selectedOrders.includes(normalizeOrderNumber(tx?.selectedOrderNumber||tx?.orderId||tx?.orderNumber||"")));
+
+    /* Always calculate totals in true chronological order.
+       The stored history may be newest-first or oldest-first depending on
+       the source/device, so array position must never decide the result. */
+    const chronological=scopedHistory.slice().sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return ta-tb;
+    });
+
+    const rows=chronological.map(tx=>{
+        const code=toSafeString(tx?.itemCode||"");
+        const change=toNumber(tx?.quantity,0);
+        const total=Math.max(0,toNumber(totals.get(code),0)+change);
+        totals.set(code,total);
+        return {...tx,qtyChange:change,totalAfterAction:total};
+    });
+
+    /* Review screen requirement: newest activity is always first. */
+    return rows.sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return tb-ta;
+    });
+}
+
+function addReceivingActivityFinalTotals(rows){
+    const totals=new Map();
+
+    /* Running totals must be calculated oldest -> newest, but this is a
+       presentation helper for Receiving Activity History. Never leak that
+       calculation order back into the review screen. */
+    const chronological=(rows||[]).slice().sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return ta-tb;
+    });
+
+    const withTotals=chronological.map(row=>{
+        const key=normalizeItemCode(row?.itemCode||"")+"|"+normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+        const finalReceived=Math.max(0,toNumber(totals.get(key),0)+toNumber(row?.qtyChange??row?.quantity,0));
+        totals.set(key,finalReceived);
+        return {...row,finalReceived};
+    });
+
+    return withTotals.sort((a,b)=>{
+        const ta=new Date(a?.dateTime||a?.date||a?.timestamp||0).getTime()||0;
+        const tb=new Date(b?.dateTime||b?.date||b?.timestamp||0).getTime()||0;
+        return tb-ta;
+    });
+}
+
+function getGroupedReceivingActivityRows(){
+    const rows=getReceivingActivityRows();
+    const chronological=rows.slice().sort((a,b)=>(new Date(a?.dateTime||0).getTime()||0)-(new Date(b?.dateTime||0).getTime()||0));
+    const grouped=[];
+    for(const row of chronological){
+        const source=toSafeString(row?.source||"").toUpperCase();
+        const isScanner=source.includes("SCAN")&&!source.includes("CORRECTION");
+        const order=normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+        const previous=grouped[grouped.length-1];
+        if(isScanner&&previous?.__scannerGroup===true&&normalizeItemCode(previous.itemCode)===normalizeItemCode(row.itemCode)&&normalizeOrderNumber(previous.selectedOrderNumber||previous.orderId||"")===order&&toSafeString(previous.deviceId||"")===toSafeString(row.deviceId||"")){
+            previous.quantity=toNumber(previous.quantity,0)+toNumber(row.quantity,0);
+            previous.qtyChange=previous.quantity;
+            previous.transactionIds.push(row.transactionId);
+            previous.dateTime=row.dateTime||previous.dateTime;
+        }else{
+            grouped.push({...row,__scannerGroup:isScanner,transactionIds:[row.transactionId],quantity:toNumber(row.quantity,0),qtyChange:toNumber(row.quantity,0)});
+        }
+    }
+    return grouped.sort((a,b)=>(new Date(b?.dateTime||0).getTime()||0)-(new Date(a?.dateTime||0).getTime()||0));
+}
+
+function getActivitySourceLabel(source){
+    const value=toSafeString(source||"").toUpperCase();
+    if(value.includes("UNDO")||value.includes("CORRECTION")) return "Correction";
+    if(value.includes("MANUAL_ITEM")||value.includes("MANUAL_EXTRA")||value.includes("EXTRA_ITEM")) return "Extra Item";
+    if(value.includes("SCAN")) return "Scanner";
+    if(value.includes("SEARCH")) return "Manual Quantity";
+    if(value.includes("MANUAL")||value.includes("EDIT")||value.includes("ADJUST")) return "Manual Quantity";
+    return source||"Receiving";
+}
+
+function getReceivingActivitySource(row){
+    const source=toSafeString(row?.source||"").toUpperCase();
+    if(source.includes("UNDO")||source.includes("CORRECTION")) return "Correction";
+    if(source.includes("MANUAL")||source.includes("SEARCH")||source.includes("EDIT")||source.includes("ADJUST")) return "Manual";
+    if(source.includes("SCAN")) return toSafeString(row?.deviceType||"").toUpperCase()==="HANDHELD" ? "Handheld" : "PC Scan";
+    return toSafeString(row?.deviceType||"").toUpperCase()==="HANDHELD" ? "Handheld" : "Receiving";
+}
+
+function getActivityEffectiveQuantity(row,allRows){
+    return toNumber(row?.quantity,0)+(allRows||[]).filter(tx=>toSafeString(tx?.correctsTransactionId||"")===toSafeString(row?.transactionId||"")).reduce((sum,tx)=>sum+toNumber(tx?.quantity,0),0);
+}
+
+function openReceivingActivityEditor(row,allRows){
+    const current=getActivityEffectiveQuantity(row,allRows);
+    const order=normalizeOrderNumber(row?.selectedOrderNumber||row?.orderId||row?.orderNumber||"");
+    let item=getItemByCode?.(row?.itemCode);
+    const isExtra=!item;
+    if(isExtra){
+        item={itemCode:normalizeItemCode(row?.itemCode||""),itemName:toSafeString(row?.itemName||"Extra Item"),orderedQty:0,receivedQty:Math.max(0,current),remainingQty:0,status:"EXTRA",manual:true,orderNumbers:order?[order]:[],orderNumber:order};
+    }
+    if(!item?.itemCode||current<0){showToast?.("This activity cannot be edited","warning");return;}
+    const esc=value=>escapeHTML(toSafeString(value));
+    const modal=document.createElement("div");
+    modal.className="quickKpiOverlay pfnActivityEditOverlay";
+    modal.innerHTML=`<form class="pfnActivityEdit" aria-label="Edit receiving activity"><h3>Edit Receiving Activity</h3><p><b>${esc(row.itemName||item.itemName)}</b><br>Item ${esc(row.itemCode)} · Order ${esc(order||"Current")}</p><label>Current transaction quantity<input value="${esc(current)}" disabled></label><label>Correct quantity<input data-corrected type="number" min="0" step="1" value="${esc(current)}" required></label><div><button type="button" data-cancel>Cancel</button><button type="button" class="dangerButton" data-delete-entry>${isExtra?"Remove Extra Item":"Delete Entry"}</button><button type="submit">Save Correction</button></div></form>`;
+    document.body.appendChild(modal);
+    window.PharmFlowModalStack?.open(modal);
+    const close=()=>{window.PharmFlowModalStack?.close(modal);modal.remove();};
+    modal.querySelector("[data-cancel]").onclick=close;
+    modal.querySelector("[data-delete-entry]").onclick=async()=>{
+        if(!await pharmFlowConfirm({title:isExtra?"Remove Extra Item?":"Delete Receiving Entry?",message:isExtra?`${item.itemName} · Received ${getActivityEffectiveQuantity(row,allRows)}. This records a correction and preserves Receiving history.`:"This receiving contribution will be cancelled. The item and order will not be deleted.",confirmText:isExtra?"Remove Extra Item":"Delete Entry",tone:"danger"})) return;
+        const effective=getActivityEffectiveQuantity(row,allRows);
+        if(effective<=0){showToast?.("This entry is already cancelled","warning");return;}
+        const tx=applyQuantityAdjustment({item,difference:-effective,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:isExtra?"Extra Item removed":"Receiving activity deleted",correctsTransactionId:row.transactionId});
+        if(!tx)return;
+        close();refreshDashboard?.();refreshOpenKpiPanel();showToast?.(isExtra?"Extra Item removed from Receiving":"Receiving entry cancelled","success");
+    };
+    modal.addEventListener("click",event=>{if(event.target===modal) close();});
+    modal.querySelector("form").addEventListener("submit",event=>{
+        event.preventDefault();
+        const corrected=Number(modal.querySelector("[data-corrected]").value);
+        if(!Number.isInteger(corrected)||corrected<0){showToast?.("Enter a whole quantity of zero or more","warning");return;}
+        const difference=corrected-current;
+        if(difference===0){showToast?.("The corrected quantity is unchanged","warning");return;}
+        const tx=applyQuantityAdjustment({item,difference,targetOrder:order,source:"RECEIVING_CORRECTION",correctionReason:"Receiving activity edit",correctsTransactionId:row.transactionId});
+        if(!tx) return;
+        close(); refreshDashboard?.(); refreshOpenKpiPanel();
+        showToast?.(`${item.itemName} correction recorded (${difference>0?"+":""}${difference})`,"success");
+    });
+    modal.querySelector("[data-corrected]").focus();
+}
+
+const itemPriorityPendingSelections=new Map();
+let itemPriorityBatchTimer=null;
+let itemPriorityBatchPromise=null;
+let itemPriorityBatchVersion=0;
+let itemPriorityRetryCount=0;
+
+function applyPendingItemPrioritySelections(){
+    itemPriorityPendingSelections.forEach((entry,itemCode)=>{
+        const current=getItemByCode?.(itemCode);
+        if(current){
+            current.priorityType=entry.priorityType;
+            current.highPriority=!!entry.priorityType;
+        }
+    });
+}
+window.applyPendingItemPrioritySelections=applyPendingItemPrioritySelections;
+
+function getEffectiveItemPriority(item){
+    const itemCode=toSafeString(item?.itemCode||item?.itemNumber||"");
+    return itemPriorityPendingSelections.has(itemCode)
+        ? itemPriorityPendingSelections.get(itemCode).priorityType
+        : toSafeString(item?.priorityType||"");
+}
+
+function savePriorityApplicationState(){
+    const nextUi=window.PharmFlowNext;
+    const previousSuppression=nextUi?.suppressPriorityToast===true;
+    try{
+        if(nextUi) nextUi.suppressPriorityToast=true;
+        saveApplicationState?.(false);
+    }finally{
+        if(nextUi) nextUi.suppressPriorityToast=previousSuppression;
+    }
+}
+
+async function persistItemPriorityBatch(batch){
+    const patched=await patchActiveOrderPriorities?.(batch)===true;
+    if(patched) return true;
+
+    /* Production can legitimately be on an older priority-patch RPC while
+       still exposing the current revision-fenced Active Order Manifest save.
+       Do not leave an operational priority only in browser memory: persist
+       the already-updated manifest through that existing authority instead. */
+    return await saveActiveOrderManifest?.({silent:true})===true;
+}
+
+function queueItemPrioritySelection(item,priorityType){
+    const itemCode=toSafeString(item?.itemCode||item?.itemNumber||"");
+    if(!itemCode) return Promise.resolve(false);
+
+    const nextType=toSafeString(priorityType||"");
+    const version=++itemPriorityBatchVersion;
+    itemPriorityPendingSelections.set(itemCode,{priorityType:nextType,version});
+    item.priorityType=nextType;
+    item.highPriority=!!nextType;
+    applyPendingItemPrioritySelections();
+    itemPriorityRetryCount=0;
+
+    clearTimeout(itemPriorityBatchTimer);
+    itemPriorityBatchTimer=setTimeout(flushItemPriorityBatch,220);
+    return Promise.resolve(true);
+}
+
+async function flushItemPriorityBatch(){
+    if(itemPriorityBatchPromise) return itemPriorityBatchPromise;
+
+    const batch=Array.from(itemPriorityPendingSelections.entries()).map(
+        ([itemCode,entry])=>({itemCode,...entry})
+    );
+    if(!batch.length) return true;
+
+    /* Persist the complete optimistic batch once. Saving the whole workspace
+       on every rapid click made older pharmacy PCs appear unresponsive. */
+    applyPendingItemPrioritySelections();
+    savePriorityApplicationState();
+
+    itemPriorityBatchPromise=(async()=>{
+        let saved=false;
+        for(let attempt=1;attempt<=2&&!saved;attempt++){
+            saved=await persistItemPriorityBatch(
+                batch.map(({itemCode,priorityType})=>({itemCode,priorityType}))
+            );
+            if(!saved) applyPendingItemPrioritySelections();
+        }
+
+        if(saved){
+            itemPriorityRetryCount=0;
+            batch.forEach(entry=>{
+                const pending=itemPriorityPendingSelections.get(entry.itemCode);
+                if(pending?.version===entry.version){
+                    itemPriorityPendingSelections.delete(entry.itemCode);
+                }
+            });
+            savePriorityApplicationState();
+        }
+
+        applyPendingItemPrioritySelections();
+        return saved;
+    })().finally(()=>{
+        itemPriorityBatchPromise=null;
+        if(itemPriorityPendingSelections.size&&itemPriorityRetryCount<2){
+            itemPriorityRetryCount+=1;
+            clearTimeout(itemPriorityBatchTimer);
+            itemPriorityBatchTimer=setTimeout(flushItemPriorityBatch,2000);
+        }
+    });
+
+    return itemPriorityBatchPromise;
+}
+
+function queueClearVisiblePriorities(items){
+    items.forEach(item=>queueItemPrioritySelection(item,""));
+    clearTimeout(itemPriorityBatchTimer);
+    itemPriorityBatchTimer=setTimeout(flushItemPriorityBatch,0);
+    return Promise.resolve(true);
+}
+
+function renderItemBrowser(body, rows, options={}){
+    const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+    const orderMode=options.showPriority===true;
+    const receivedMode=options.receivedMode===true;
+    const orderNumbers=Array.from(new Set(rows.flatMap(item=>Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean)));
+    body.innerHTML=`
+      <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
+        ${orderMode?`<div class="pfnBrowserControlRow"><label><span>Order</span><select data-order-filter><option value="ALL">All Orders</option>${orderNumbers.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><select data-qty-sort><option value="desc" selected>Highest → Lowest</option><option value="asc">Lowest → Highest</option><option value="default">Default / Order Sequence</option></select></label></div>`:''}
+        <div class="pfnBrowserActionRow"><label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>${orderMode?`<div class="pfnBrowserPriorityActions"><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button></div>`:''}</div>
+      </div>
+      ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
+      <div class="phase263TableWrap pfnCleanWorklist"><table class="quickKpiTable phase263Table"><thead><tr>${orderMode?'<th>Item Code</th><th>Item Name</th><th>Priority</th><th>Group</th><th>Quantity</th><th>Order No.</th>':'<th>Item Code</th><th>Item Name</th><th>Ordered</th>'}${receivedMode?'<th>Received</th>':''}</tr></thead><tbody data-rows></tbody></table></div>`;
+    const input=body.querySelector('.phase263Search');
+    const tbody=body.querySelector('[data-rows]');
     const orderFilter=body.querySelector('[data-order-filter]');
     const qtySort=body.querySelector('[data-qty-sort]');
     const groupFilter=body.querySelector('[data-group-filter]');
