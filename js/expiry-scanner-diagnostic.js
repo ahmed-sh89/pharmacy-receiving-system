@@ -32,7 +32,7 @@
     let code=frame?.[1]||null;
     if(!framed)for(const width of [2,3,4]){const candidate=remainder.slice(0,width);if(registeredAI(candidate)){code=candidate;break;}}
     if(!registeredAI(code))code=null;
-    const classification=code?(["01","17","10","21"].includes(code)?"SUPPORTED_AI":"OTHER_STANDARD_AI"):
+    const classification=code?(["01","11","17","10","21"].includes(code)?"SUPPORTED_AI":"OTHER_STANDARD_AI"):
       /^\][A-Za-z][0-9]/.test(remainder)?"AIM_PREFIX":remainder.length<2?"INCOMPLETE_AI":
       /^\d{2}/.test(remainder)?"NUMERIC_UNCLASSIFIED":"NON_AI_PREFIX";
     return {classification,code,candidateOnly:true,offset,framed,remainingLength:remainder.length,
@@ -79,9 +79,9 @@
   },true));
   function parserDetail(detail){
     if(!detail || !["AI","FIELD","DATE","REQUIRED"].includes(detail.stage) ||
-      !["UNSUPPORTED_AI_OR_FRAME","UNSUPPORTED_AI","DUPLICATE_AI","FIXED_LENGTH","FIXED_NON_DIGIT","VARIABLE_LENGTH","INVALID_EXPIRY","GTIN_MISSING"].includes(detail.reason))return undefined;
+      !["UNSUPPORTED_AI_OR_FRAME","UNSUPPORTED_AI","DUPLICATE_AI","FIXED_LENGTH","FIXED_NON_DIGIT","VARIABLE_LENGTH","INVALID_EXPIRY","INVALID_PRODUCTION_DATE","PRODUCTION_DAY_REQUIRED","GTIN_MISSING","EXPIRY_MISSING"].includes(detail.reason))return undefined;
     const number=value=>Number.isSafeInteger(value)&&value>=0?value:null;
-    const ai=value=>["01","17","10","21"].includes(value)?value:null;
+    const ai=value=>["01","11","17","10","21"].includes(value)?value:null;
     const boundary=value=>["FIXED","GS","END","AI_FRAME"].includes(value)?value:null;
     return {stage:detail.stage,reason:detail.reason,offset:number(detail.offset),ai:ai(detail.ai),
       ...(detail.stage==="AI"?{nextAI:safeNextAI(detail.nextAI)}:{}),

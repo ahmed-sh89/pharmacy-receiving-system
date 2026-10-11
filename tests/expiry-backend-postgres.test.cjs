@@ -374,3 +374,38 @@ test('Client adapter executes actual operation SQL, two media rows and authorize
  assert.equal((await value('select count(*)::int n from public.pharmflow_needs_review_v2 where operation_id=$1',[operation.id])).n,1);
  await identity(UB);await assert.rejects(context.api.readReview(PA,first.review_id,rpc),/Pharmacy access/);await identity();
 });
+
+test('OFFLINE ONLY: coordinated AI11 private-helper proposal preserves raw scan, permissions and save idempotency',async()=>{
+ const vm=require('node:vm'),context={Blob,structuredClone};vm.createContext(context);vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+'\nthis.api=ExpiryOperation;',context);
+ const raw='010012345678901210000ABC\x1d112512311730053121000123ABC4567',facts=context.api.scanFacts(raw);
+ const p={...capture(facts.identifier),raw_scan:raw,scan_format:'GS1',batch_no:facts['10'],sample_serial:facts['21'],expiry_month:5,expiry_year:2030};
+ await identity();await denied(()=>save(p),/Unsupported GS1 AI/);
+ await identity(UA,'postgres');
+ const original=(await value("select pg_get_functiondef('pharmflow_expiry_private.scan_facts(text,text)'::regprocedure) definition")).definition;
+ const publicBefore=(await value("select pg_get_functiondef('public.save_pharmflow_expiry_capture_v3(uuid,uuid,jsonb)'::regprocedure) definition")).definition;
+ const permissions=await value("select proacl::text acl from pg_proc where oid='pharmflow_expiry_private.scan_facts(text,text)'::regprocedure");
+ try{
+  await db.exec(fs.readFileSync('supabase/migrations/20261011200941_expiry_private_ai11_validated_production_date.sql','utf8'));
+  assert.deepEqual(await value("select proacl::text acl from pg_proc where oid='pharmflow_expiry_private.scan_facts(text,text)'::regprocedure"),permissions);
+  assert.equal((await value("select pg_get_functiondef('public.save_pharmflow_expiry_capture_v3(uuid,uuid,jsonb)'::regprocedure) definition")).definition,publicBefore);
+  for(const id of ['E0029-L','U0030','S00110','1234A','1234','001234','04065272072977']){
+   assert.equal((await value('select pharmflow_expiry_private.scan_facts($1,$2) facts',[id,'PLAIN'])).facts.identifier,id);
+  }
+  const fields={'01':'00123456789012','10':'000ABC','11':'251231','17':'300531','21':'000123ABC4567'};
+  function orders(xs){return xs.length?xs.flatMap((x,i)=>orders(xs.filter((_,j)=>i!==j)).map(rest=>[x,...rest])):[[]];}
+  for(const order of orders(Object.keys(fields))){
+   const scan=order.map((ai,i)=>ai+fields[ai]+(['10','21'].includes(ai)&&i<order.length-1?'\x1d':'')).join('');
+   const expected=context.api.scanFacts(scan),actual=(await value('select pharmflow_expiry_private.scan_facts($1,$2) facts',[scan,'GS1'])).facts;
+   for(const ai of Object.keys(fields))assert.equal(actual[ai],expected[ai]);
+  }
+  const server=(await value('select pharmflow_expiry_private.scan_facts($1,$2) facts',[raw,'GS1'])).facts;
+  for(const ai of ['01','10','11','17','21'])assert.equal(server[ai],facts[ai]);
+  for(const bad of [raw.replace('251231','250229'),raw.replace('251231','251200'),raw.replace('17300531',''),raw.replace('\x1d','')])await denied(()=>db.query('select pharmflow_expiry_private.scan_facts($1,$2)',[bad,'GS1']),/production date|expiry AI 17|Invalid GS1|Unsupported GS1/);
+  await identity();const operation={id:uuid(),pharmacyId:PA},rpc=async(name,args)=>name==='reserve_pharmflow_expiry_capture_v1'?(await value('select public.reserve_pharmflow_expiry_capture_v1($1,$2) r',[args.p_pharmacy_id,args.p_operation_id])).r:save(args.p_capture,args.p_operation_id,args.p_pharmacy_id);
+  const input={rpc,persist:async()=>{},scope:UA+'/'+PA,currentScope:()=>UA+'/'+PA,operation,payload:p};
+  const first=await context.api.save(input),second=await context.api.save(input);assert.deepEqual(first,second);
+  await identity(UA,'postgres');const op=await value('select payload from pharmflow_expiry_private.operations where operation_id=$1',[operation.id]);assert.equal(op.payload.raw_scan,raw);
+  const row=await value('select * from public.pharmflow_expiry_current_state_v1 where id=$1',[first.state_id]);assert.equal(row.expiry_month,5);assert.equal(row.expiry_year,2030);assert.equal(row.verified_quantity,3);assert.equal(row.batch_no,'000ABC');assert.equal(row.sample_serial,'000123ABC4567');assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_events_v1 where state_id=$1',[first.state_id])).n,1);
+  await identity(UB);await denied(()=>save(p,uuid(),PA),/Pharmacy access/);
+ }finally{await identity(UA,'postgres');await db.exec(original+';');await identity();}
+});

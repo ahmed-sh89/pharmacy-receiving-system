@@ -50,10 +50,10 @@ function diagnosticRuntime(){
 
 test('Version 2 TC26 envelope is reproduced without pretending synthetic content is Dompy',async()=>{
  const h=diagnosticRuntime();await h.button.click();
- // Both possibilities fit EVERY reported observation: an additional AI 11,
+ // Both possibilities fit EVERY reported observation: an additional unsupported AI 91,
  // or a numeric non-AI prefix. Neither is evidence of the physical content.
  const prefix='010012345678901210ABCDEF\x1d';
- const examples=[['11'+'290101'+'17290131'+'21'+'X'.repeat(13),'OTHER_STANDARD_AI','11'],['05'+'X'.repeat(29),'NUMERIC_UNCLASSIFIED',null]];
+ const examples=[['91'+'X'.repeat(29),'OTHER_STANDARD_AI','91'],['05'+'X'.repeat(29),'NUMERIC_UNCLASSIFIED',null]];
  for(const [tail,classification,code] of examples){const scan=prefix+tail;assert.equal(scan.length,56);assert.equal(scan.indexOf('\x1d'),24);assert.equal(scan.split('\x1d').length-1,1);
   assert.throws(()=>h.c.adapter.scanFacts(scan,true),e=>{const d=e.expiryScanDiagnostic;
    assert.equal(d.reason,'UNSUPPORTED_AI');assert.equal(d.stage,'AI');assert.equal(d.offset,25);assert.equal(d.normalizedLength,56);
@@ -66,9 +66,9 @@ test('Version 2 TC26 envelope is reproduced without pretending synthetic content
 });
 
 for(const [suffix,classification,code,framed] of [
- ['11PRIVATE','OTHER_STANDARD_AI','11',false],['91PRIVATE','OTHER_STANDARD_AI','91',false],
+ ['11PRIVATE','SUPPORTED_AI','11',false],['91PRIVATE','OTHER_STANDARD_AI','91',false],
  ['240PRIVATE','OTHER_STANDARD_AI','240',false],['3103PRIVATE','OTHER_STANDARD_AI','3103',false],
- ['(11)PRIVATE','OTHER_STANDARD_AI','11',true],['17PRIVATE','SUPPORTED_AI','17',false],
+ ['(11)PRIVATE','SUPPORTED_AI','11',true],['17PRIVATE','SUPPORTED_AI','17',false],
  [']d2PRIVATE','AIM_PREFIX',null,false],['05PRIVATE','NUMERIC_UNCLASSIFIED',null,false],
  ['\u200bPRIVATE','NON_AI_PREFIX',null,false],['\x00PRIVATE','NON_AI_PREFIX',null,false],
  [' PRIVATE','NON_AI_PREFIX',null,false],['1','INCOMPLETE_AI',null,false]
