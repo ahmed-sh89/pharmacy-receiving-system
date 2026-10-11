@@ -28,7 +28,7 @@
   }
   button.addEventListener("click",async()=>{
     if(button.dataset.mode==="copy"){
-      try{await navigator.clipboard.writeText(JSON.stringify({version:1,durationMs:Math.round(performance.now()-started),events}));}catch(_){}button.dataset.mode="start";button.textContent="Capture scanner metadata";return;
+      try{await navigator.clipboard.writeText(JSON.stringify({version:2,durationMs:Math.round(performance.now()-started),events}));}catch(_){}button.dataset.mode="start";button.textContent="Capture scanner metadata";return;
     }
     events=[];started=performance.now();active=true;button.dataset.mode="copy";button.textContent="Capturing metadata…";
     capture("start",null);clearTimeout(timer);timer=setTimeout(finish,WINDOW_MS);
@@ -38,10 +38,21 @@
   ["beforeinput","input","keydown","paste"].forEach(type=>document.addEventListener(type,event=>{
     if(event.target===input)capture(type,event);
   },true));
-  window.expiryRecordScannerOutcome=category=>{
+  function parserDetail(detail){
+    if(!detail || !["AI","FIELD","DATE","REQUIRED"].includes(detail.stage) ||
+      !["UNSUPPORTED_AI_OR_FRAME","UNSUPPORTED_AI","DUPLICATE_AI","FIXED_LENGTH","FIXED_NON_DIGIT","VARIABLE_LENGTH","INVALID_EXPIRY","GTIN_MISSING"].includes(detail.reason))return undefined;
+    const number=value=>Number.isSafeInteger(value)&&value>=0?value:null;
+    const ai=value=>["01","17","10","21"].includes(value)?value:null;
+    const boundary=value=>["FIXED","GS","END","AI_FRAME"].includes(value)?value:null;
+    return {stage:detail.stage,reason:detail.reason,offset:number(detail.offset),ai:ai(detail.ai),
+      valueLength:number(detail.valueLength),boundary:boundary(detail.boundary),normalizedLength:number(detail.normalizedLength),
+      gsCount:number(detail.gsCount),gsOffsets:Array.isArray(detail.gsOffsets)?detail.gsOffsets.slice(0,16).map(number):[],
+      fields:Array.isArray(detail.fields)?detail.fields.slice(0,16).map(field=>({ai:ai(field.ai),offset:number(field.offset),length:number(field.length),boundary:boundary(field.boundary)})):[]};
+  }
+  window.expiryRecordScannerOutcome=(category,detail)=>{
     if(!active)return;
     if(!["GS1_ACCEPTED","IDENTIFIER_ACCEPTED","GS1_REJECTED"].includes(category))return;
     if(events.length>=MAX)events.shift();
-    events.push({t:Math.round(performance.now()-started),type:"parser",category});
+    events.push({t:Math.round(performance.now()-started),type:"parser",category,...(category==="GS1_REJECTED"?{failure:parserDetail(detail)}:{})});
   };
 })();

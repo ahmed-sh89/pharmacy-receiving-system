@@ -12,7 +12,7 @@ const ExpiryOperation = (() => {
         if(row?.operation_id!==operationId || (kind==='UNKNOWN' ? !row.review_id || !(row.product_photo_path||row.evidence_photo_path) : !row.state_id || !row.event_id)) throw new Error('Missing durable operation acknowledgement');
         return row;
     }
-    function scanFacts(raw){
+    function scanFacts(raw, diagnostic=false){
         const source=String(raw??'').trim();
         // Resolve and persist the same scanner-normalized separator that the
         // shared GS1 parser accepts (ASCII GS, scanner aliases, and AIM prefix).
@@ -25,27 +25,43 @@ const ExpiryOperation = (() => {
             /^(?:10|21)[^\x1d]{1,20}\x1d(?:01|17|10|21)/.test(s);
         if(!gs1)return {format:'PLAIN',identifier:s};
         const facts={format:'GS1'};
+        const normalized=s,fields=[];
+        const reject=(message,stage,reason,offset,ai=null,valueLength=null,boundary=null)=>{
+            const error=new Error(message);
+            if(diagnostic){
+                const gsOffsets=[];for(let i=0;i<normalized.length;i++)if(normalized.charCodeAt(i)===29)gsOffsets.push(i);
+                error.expiryScanDiagnostic={stage,reason,offset,ai,valueLength,boundary,
+                    normalizedLength:normalized.length,gsCount:gsOffsets.length,gsOffsets:gsOffsets.slice(0,16),fields:fields.slice(0,16)};
+            }
+            throw error;
+        };
         while(s){
             if(s[0]==='\x1d'){s=s.slice(1);continue;}
-            let ai,value;
+            const offset=normalized.length-s.length;
+            let ai,value,boundary;
             if(s[0]==='('){
-                const m=s.match(/^\((01|17|10|21)\)([^()]*)/);if(!m)throw new Error('Unsupported GS1 scan');
-                [,ai,value]=m;s=s.slice(m[0].length);
+                const m=s.match(/^\((01|17|10|21)\)([^()]*)/);if(!m)reject('Unsupported GS1 scan','AI','UNSUPPORTED_AI_OR_FRAME',offset);
+                [,ai,value]=m;s=s.slice(m[0].length);boundary=s?'AI_FRAME':'END';
             }else{
                 ai=s.slice(0,2);s=s.slice(2);
                 const n=ai==='01'?14:ai==='17'?6:null;
-                if(!['01','17','10','21'].includes(ai))throw new Error('Unsupported GS1 scan');
+                if(!['01','17','10','21'].includes(ai))reject('Unsupported GS1 scan','AI','UNSUPPORTED_AI',offset);
                 const end=n??(s.indexOf('\x1d')<0?s.length:s.indexOf('\x1d'));
-                value=s.slice(0,end);s=s.slice(end);
+                value=s.slice(0,end);s=s.slice(end);boundary=n!==null?'FIXED':s[0]==='\x1d'?'GS':'END';
             }
-            if(facts[ai]!==undefined || (ai==='01'?!/^\d{14}$/.test(value):ai==='17'?!/^\d{6}$/.test(value):value.length<1 || value.length>20))throw new Error('Invalid GS1 scan');
+            if(diagnostic)fields.push({ai,offset,length:value.length,boundary});
+            if(facts[ai]!==undefined)reject('Invalid GS1 scan','FIELD','DUPLICATE_AI',offset,ai,value.length,boundary);
+            const fixedLength=ai==='01'?14:ai==='17'?6:null;
+            if(fixedLength!==null && value.length!==fixedLength)reject('Invalid GS1 scan','FIELD','FIXED_LENGTH',offset,ai,value.length,boundary);
+            if(fixedLength!==null && !/^\d+$/.test(value))reject('Invalid GS1 scan','FIELD','FIXED_NON_DIGIT',offset,ai,value.length,boundary);
+            if(fixedLength===null && (value.length<1 || value.length>20))reject('Invalid GS1 scan','FIELD','VARIABLE_LENGTH',offset,ai,value.length,boundary);
             if(ai==='17'){
                 const year=2000+Number(value.slice(0,2)),month=Number(value.slice(2,4)),day=Number(value.slice(4,6));
-                if(month<1 || month>12 || day>new Date(Date.UTC(year,month,0)).getUTCDate())throw new Error('Invalid GS1 expiry');
+                if(month<1 || month>12 || day>new Date(Date.UTC(year,month,0)).getUTCDate())reject('Invalid GS1 expiry','DATE','INVALID_EXPIRY',offset,ai,value.length,boundary);
             }
             facts[ai]=value;
         }
-        if(!facts['01'])throw new Error('GS1 GTIN required');
+        if(!facts['01'])reject('GS1 GTIN required','REQUIRED','GTIN_MISSING',normalized.length);
         facts.identifier=facts['01'];return facts;
     }
     async function save({rpc,upload,persist,scope,currentScope,operation,payload,photos,uuid}){

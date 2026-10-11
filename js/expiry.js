@@ -859,14 +859,14 @@ async function resolveExpiryScannedValue(rawValue){
     let identifierDisplay;
     if(typeof ExpiryOperation!=="undefined"){
         try{
-            const facts=ExpiryOperation.scanFacts(rawValue);
+            const facts=ExpiryOperation.scanFacts(rawValue,typeof window.expiryRecordScannerOutcome==="function");
             if(typeof window.expiryRecordScannerOutcome==="function")window.expiryRecordScannerOutcome(facts.format==="GS1"?"GS1_ACCEPTED":"IDENTIFIER_ACCEPTED");
             parsed={...parsed,format:facts.format,identifierDisplay:facts.identifier,gtin:facts.identifier,
                 lot:facts['10']||"",serial:facts['21']||"",
                 batchFromGS1:!!facts['10'],serialFromGS1:!!facts['21'],
                 expiry:facts['17']?`20${facts['17'].slice(0,2)}-${facts['17'].slice(2,4)}-${facts['17'].slice(4,6)}`:""};
             identifierDisplay=facts.identifier;
-        }catch(error){if(typeof window.expiryRecordScannerOutcome==="function")window.expiryRecordScannerOutcome("GS1_REJECTED");ExpiryCaptureEngine.resolving=false;setExpiryStatus("error",error.message);return false;}
+        }catch(error){if(typeof window.expiryRecordScannerOutcome==="function")window.expiryRecordScannerOutcome("GS1_REJECTED",error.expiryScanDiagnostic);ExpiryCaptureEngine.resolving=false;setExpiryStatus("error",error.message);return false;}
     }else{
         try{
             parsed=typeof parseGS1Barcode==="function" ? parseGS1Barcode(cleaned) : {gtin:cleaned,identifierDisplay:cleaned};
