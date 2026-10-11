@@ -9501,9 +9501,9 @@ async function openExpiryNeedsReviewPanel(){
     try{rows=await ExpiryReviewBackend.list();}
     catch(error){showToast?.(error?.message||'Unable to load Expiry Needs Review','error');return;}
     const esc=value=>escapeHTML(toSafeString(value));
-    const pharmacyAdmin=typeof isPharmacyAdmin==='function'&&isPharmacyAdmin();
-    const globalWriter=(typeof isSystemOwner==='function'&&isSystemOwner())||(pharmacyAdmin&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==='HHP084');
-    const canResolve=pharmacyAdmin&&globalWriter;
+    // Resolve writes only a pharmacy-local identifier mapping. The RPC checks
+    // active pharmacy membership; Global Master remains read-only in this UI.
+    const canResolve=!!(typeof getCurrentPharmacyId==='function'&&getCurrentPharmacyId())||!!AuthState?.context?.pharmacy_id;
     const overlay=document.createElement('div');overlay.id='needsReviewOverlay';overlay.className='needsReviewOverlay';
     overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','needsReviewTitle');
     overlay.innerHTML=`<button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button><section class="needsReviewPanel expiryNeedsReviewPanel">
@@ -9511,7 +9511,7 @@ async function openExpiryNeedsReviewPanel(){
       <div class="needsReviewHeaderActions"><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div></header>
       <div class="needsReviewList" data-review-list>${rows.length?rows.map((row,index)=>`<section class="needsReviewRow" data-expiry-review-id="${esc(row.review_id)}"><div class="expiryReviewCaseHeading"><button class="needsReviewRowSummary" type="button" data-expiry-detail="${index}" aria-expanded="false"><strong>${esc(row.identifier_display||row.gtin||'Identifier unavailable')}</strong><i aria-hidden="true">›</i></button><button type="button" class="expiryCopyBarcode" data-copy-barcode="${index}">Copy Barcode</button></div><div class="needsReviewCaseDetail" data-expiry-case="${index}" hidden><div class="needsReviewInfo"><span>Batch <b>${esc(row.batch_no||'—')}</b></span>${row.sample_serial?`<span>Serial <b>${esc(row.sample_serial)}</b></span>`:''}<span>Expiry <b>${row.expiry_month?String(row.expiry_month).padStart(2,'0'):'—'}/${esc(row.expiry_year||'—')}</b></span><span>Quantity <b>${esc(row.quantity||row.pending_quantity||1)}</b></span></div>
 <div class="pfnReviewPhotoGrid">${row.evidence_photo_path?`<button type="button" data-expiry-photo-open="${index}" aria-label="Open evidence photo"><img data-expiry-photo="${index}" alt="Expiry Needs Review evidence" hidden><span data-expiry-photo-state="${index}">Open details to load evidence photo</span></button>`:'<span>No evidence photo available</span>'}</div>
-        ${row.status==='PENDING'?(canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Global Master item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:'<div class="needsReviewHandheldReadOnly"><strong>Resolution access required</strong><span>Only approved Global Master writers can change item mappings.</span></div>'):''}
+        ${row.status==='PENDING'&&canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Select Item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search Global Master by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:''}
         <div class="expiryReviewCaseActions"><button type="button" data-review-delete="${index}">Delete</button></div>
       </div></section>`).join(''):'<div class="needsReviewEmpty">Nothing needs review.</div>'}</div></section>`;
     document.body.appendChild(overlay);
@@ -9567,7 +9567,7 @@ async function openExpiryNeedsReviewPanel(){
                         selection.innerHTML=`<div>${expiryGlobalMasterSummary(selected,esc)}</div><button type="button" data-global-confirm>Confirm Resolution</button>`;
                         selection.querySelector('[data-global-confirm]').addEventListener('click',async event=>{
                             const confirm=event.currentTarget;confirm.disabled=true;overlay.dataset.busy='1';
-                            try{await ExpiryReviewBackend.resolve(row.review_id,selected);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry case resolved and identifier mapping audited; evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
+                            try{await ExpiryReviewBackend.resolve(row.review_id,selected);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry case resolved to this pharmacy and evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
                             catch(error){confirm.disabled=false;showToast?.(error?.message||'Unable to resolve Expiry case','error');}
                             finally{overlay.dataset.busy='';}
                         });

@@ -1,0 +1,93 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+
+const root=path.resolve(__dirname,'..');
+const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+
+function backendHarness(rpc){
+  const button={disabled:true,title:'',attrs:{},setAttribute(k,v){this.attrs[k]=v;}};
+  const pharmacy={id:'pharmacy-a'};
+  const window={addEventListener(){}};
+  const context={
+    window,document:{getElementById:id=>id==='btnExpiryNeedsReview'?button:null,addEventListener(){}},
+    AuthState:{context:{pharmacy_id:pharmacy.id}},getCurrentPharmacyId:()=>pharmacy.id,
+    authRpc:rpc,crypto:{randomUUID:(()=>{let i=0;return()=>`stable-operation-${++i}`;})()},
+    setTimeout(fn){fn();},URL,console,Map,Number,Array,String,Error,Promise,globalThis:null
+  };
+  context.globalThis=context;
+  vm.runInNewContext(read('js/needs-review.js'),context,{filename:'js/needs-review.js'});
+  return {backend:window.ExpiryReviewBackend,button,context,pharmacy};
+}
+
+test('Needs Review refresh is single-flight and transient failure preserves the verified tab',async()=>{
+  let resolveContract,failNext=false,calls=0;
+  const rpc=(name)=>{
+    calls++;
+    if(name==='get_pharmflow_expiry_review_contract_v1'){
+      if(failNext){failNext=false;return Promise.reject(new Error('temporary network failure'));}
+      return new Promise(resolve=>{resolveContract=()=>resolve({contract_version:'EXPIRY_NEEDS_REVIEW_20261010_V2'});});
+    }
+    if(name==='count_pharmflow_expiry_reviews_v1')return Promise.resolve(3);
+    throw new Error('unexpected RPC '+name);
+  };
+  const {backend,button}=backendHarness(rpc);
+  const a=backend.refresh(),b=backend.refresh();
+  assert.equal(calls,1,'overlapping refreshes share one request');
+  resolveContract();
+  assert.deepEqual(await Promise.all([a,b]),[true,true]);
+  assert.equal(backend.ready,true);assert.equal(backend.pendingCount,3);assert.equal(button.disabled,false);
+  failNext=true;assert.equal(await backend.refresh(),false);
+  assert.equal(backend.ready,true);assert.equal(backend.pendingCount,3);assert.equal(button.disabled,false);
+  backend.invalidate();assert.equal(backend.ready,false);assert.equal(button.disabled,true);
+});
+
+test('uncertain Resolve retry reuses the same operation ID and item payload',async()=>{
+  let first=true;const calls=[];
+  const rpc=async(name,args)=>{
+    calls.push([name,args]);
+    if(name==='resolve_pharmflow_expiry_review_v1'){
+      if(first){first=false;throw new Error('lost response');}
+      return {success:true,review_id:'review-1',item_code:'ITEM-1',operation_id:args.p_operation_id,already_resolved:false};
+    }
+    if(name==='get_pharmflow_expiry_review_contract_v1')return {contract_version:'EXPIRY_NEEDS_REVIEW_20261010_V2'};
+    if(name==='count_pharmflow_expiry_reviews_v1')return 0;
+    throw new Error('unexpected RPC '+name);
+  };
+  const {backend}=backendHarness(rpc);backend.ready=true;backend.pharmacyId='pharmacy-a';backend.pendingCount=1;
+  await assert.rejects(()=>backend.resolve('review-1',{itemCode:'ITEM-1'}),/lost response/);
+  const firstArgs=calls.find(x=>x[0]==='resolve_pharmflow_expiry_review_v1')[1];
+  const ack=await backend.resolve('review-1',{itemCode:'ITEM-1'});
+  const attempts=calls.filter(x=>x[0]==='resolve_pharmflow_expiry_review_v1');
+  assert.equal(attempts.length,2);assert.equal(attempts[0][1].p_operation_id,attempts[1][1].p_operation_id);
+  assert.deepEqual(attempts[0][1],attempts[1][1]);assert.equal(ack.success,true);assert.equal(backend.resolutionOperations.size,0);
+});
+
+test('Expiry tab changes render cached view immediately and avoid focus restoration scroll',()=>{
+  const source=read('js/expiry-desktop-v2.js');
+  assert.match(source,/function closeRecordDialog\(restoreFocus=true\)/);
+  assert.match(source,/dialogReturnFocus\?\.focus\(\{preventScroll:true\}\)/);
+  assert.match(source,/closeRecordDialog\(false\);[\s\S]{0,180}ExpiryCaptureEngine\.desktopView=view;[\s\S]{0,180}if\(view==="SESSION"\)renderExpirySessionActivity\(\);[\s\S]{0,100}else \{renderInventory\(ExpiryCaptureEngine\.currentRows\|\|\[\]\);refreshExpiryCurrentState\(\);\}/);
+});
+
+test('Expiry export uses the visible filtered inventory rows and includes pharmacy identity',()=>{
+  const source=read('js/expiry-desktop-v2.js');
+  const fn=source.slice(source.indexOf('function exportCurrentInventory'),source.indexOf('window.markExpirySessionStateDeleted'));
+  assert.match(fn,/const rows=inventoryFiltered\(ExpiryCaptureEngine\.currentRows\|\|\[\]\)/);
+  assert.match(fn,/const pharmacy=\[context\.pharmacy_code,context\.pharmacy_name\|\|context\.pharmacyName\]/);
+  assert.match(fn,/"Pharmacy":pharmacy/);
+  for(const field of ['"GTIN / Barcode"','"Item Code"','"Product Name"','"Batch"','"Expiry"','"Quantity"'])assert.ok(fn.includes(field),field);
+});
+
+test('Resolve UI remains pharmacy-local and Storage evidence stays authenticated/private',()=>{
+  const ui=read('ui.js'),backend=read('js/needs-review.js');
+  const panel=ui.slice(ui.indexOf('async function openExpiryNeedsReviewPanel'),ui.indexOf('window.refreshNeedsReviewCounters'));
+  assert.match(panel,/pharmacy-local identifier mapping/);
+  assert.match(panel,/Search Global Master by Item Code or name/);
+  assert.doesNotMatch(panel,/Only approved Global Master writers can change item mappings/);
+  assert.match(backend,/async function nrV2PhotoObjectUrl/);
+  assert.match(backend,/\/storage\/v1\/object\/authenticated\//);
+  assert.doesNotMatch(backend,/storage\.from\([^)]*\)\.makePublic|service_role/i);
+});

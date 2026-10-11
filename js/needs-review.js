@@ -16,14 +16,35 @@ const NeedsReviewV2 = {
 const ExpiryReviewBackend = {
     ready:false,
     pendingCount:null,
+    refreshPromise:null,
+    refreshPharmacyId:null,
+    pharmacyId:null,
+    refreshGeneration:0,
+    resolutionOperations:new Map(),
     version:'EXPIRY_NEEDS_REVIEW_20261010_V2',
-    async refresh(){
-        const pharmacyId=nrV2PharmacyId();
-        this.ready=false;this.pendingCount=null;
+    invalidate(){
+        this.refreshGeneration++;
+        this.ready=false;
+        this.pendingCount=null;
+        this.refreshPromise=null;
+        this.refreshPharmacyId=null;
+        this.pharmacyId=null;
         const button=document.getElementById('btnExpiryNeedsReview');
         if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}
-        if(!pharmacyId||typeof authRpc!=='function'){if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();return false;}
-        try{
+    },
+    async refresh(){
+        const pharmacyId=nrV2PharmacyId();
+        if(this.refreshPromise&&this.refreshPharmacyId===pharmacyId)return this.refreshPromise;
+        if(this.refreshPromise&&this.refreshPharmacyId!==pharmacyId)this.invalidate();
+        if(this.ready&&this.pharmacyId&&this.pharmacyId!==pharmacyId)this.invalidate();
+        const button=document.getElementById('btnExpiryNeedsReview');
+        const wasReady=this.ready;
+        const generation=this.refreshGeneration;
+        if(!pharmacyId||typeof authRpc!=='function'){
+            if(!wasReady&&button){button.disabled=true;button.setAttribute('aria-disabled','true');}
+            if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();return false;
+        }
+        const request=(async()=>{try{
             const contract=await authRpc('get_pharmflow_expiry_review_contract_v1',{p_pharmacy_id:pharmacyId});
             const marker=Array.isArray(contract)?contract[0]?.contract_version:contract?.contract_version;
             if(marker!==this.version)throw new Error('Expiry review migration is not verified');
@@ -31,16 +52,24 @@ const ExpiryReviewBackend = {
             const row=Array.isArray(count)?count[0]:count;
             const value=Number(row?.pending_count??row);
             if(!Number.isInteger(value)||value<0)throw new Error('Invalid Expiry review count');
-            this.pendingCount=value;this.ready=true;
+            if(generation!==this.refreshGeneration||pharmacyId!==nrV2PharmacyId())return false;
+            this.pendingCount=value;this.ready=true;this.pharmacyId=pharmacyId;
             const badge=document.getElementById('expiryNeedsReviewCount');
             if(badge){badge.textContent=String(value);badge.hidden=value===0;}
             if(button){button.disabled=false;button.setAttribute('aria-disabled','false');button.title='Open pharmacy Expiry cases pending item review';}
             if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();
             return true;
         }catch(_error){
+            if(generation!==this.refreshGeneration)return false;
+            // A transient refresh failure must not revoke a previously verified
+            // session or strand the tab in a disabled state.
+            if(!wasReady){this.ready=false;this.pendingCount=null;if(button){button.disabled=true;button.setAttribute('aria-disabled','true');}}
             if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();
             return false;
-        }
+        }})();
+        this.refreshPromise=request;
+        this.refreshPharmacyId=pharmacyId;
+        try{return await request;}finally{if(this.refreshPromise===request)this.refreshPromise=null;}
     },
     async list(){
         if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until the approved Staging migration is applied and verified');
@@ -64,12 +93,23 @@ const ExpiryReviewBackend = {
     async resolve(reviewId,item,reason='Authorized Expiry review resolution'){
         if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until the approved Staging migration is applied and verified');
         if(!globalThis.crypto?.randomUUID)throw new Error('Secure resolution operation IDs are unavailable');
-        const result=await authRpc('resolve_pharmflow_expiry_review_v1',{
-            p_pharmacy_id:nrV2PharmacyId(),p_review_id:reviewId,p_operation_id:globalThis.crypto.randomUUID(),
-            p_item_code:item?.itemCode||'',p_reason:reason
-        });
+        const pharmacyId=nrV2PharmacyId(),itemCode=item?.itemCode||'',key=pharmacyId+':'+reviewId;
+        let operation=this.resolutionOperations.get(key);
+        if(operation&&operation.itemCode!==itemCode)throw new Error('Retry the same selected item to safely confirm the previous resolution result.');
+        if(!operation){operation={operationId:globalThis.crypto.randomUUID(),itemCode};this.resolutionOperations.set(key,operation);}
+        let result;
+        try{result=await authRpc('resolve_pharmflow_expiry_review_v1',{
+            p_pharmacy_id:pharmacyId,p_review_id:reviewId,p_operation_id:operation.operationId,
+            p_item_code:itemCode,p_reason:reason
+        });}catch(error){
+            // A definitive client/input rejection did not commit. Allow a new
+            // selection; network/5xx failures retain the operation for retry.
+            if(Number(error?.httpStatus)>=400&&Number(error?.httpStatus)<500)this.resolutionOperations.delete(key);
+            throw error;
+        }
         const row=Array.isArray(result)?result[0]:result;
-        if(!row?.success||row.review_id!==reviewId||row.item_code!==item?.itemCode)throw new Error('Expiry resolution was not acknowledged');
+        if(!row?.success||row.review_id!==reviewId||row.item_code!==itemCode)throw new Error('Expiry resolution was not acknowledged');
+        this.resolutionOperations.delete(key);
         await this.refreshAfterTerminal(!row.already_resolved);
         return row;
     },
@@ -95,7 +135,7 @@ function nrV2ReleasePhotoObjectUrl(photoPath){
 }
 window.nrV2ReleasePhotoObjectUrl=nrV2ReleasePhotoObjectUrl;
 if(typeof AppEvents!=="undefined"&&AppEvents?.on){
-    AppEvents.on('auth:context',()=>setTimeout(()=>ExpiryReviewBackend.refresh(),0));
+    AppEvents.on('auth:context',()=>{ExpiryReviewBackend.invalidate();setTimeout(()=>ExpiryReviewBackend.refresh(),0);});
     AppEvents.on('route:changed',payload=>{if(payload?.routeName==='expiry')setTimeout(()=>ExpiryReviewBackend.refresh(),0);});
 }
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>ExpiryReviewBackend.refresh(),0));

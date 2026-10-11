@@ -179,8 +179,10 @@
     if(!Number.isInteger(v.year)||v.year<2020||v.year>2200)return "Expiry year must be between 2020 and 2200.";
     return "";
   }
-  function closeRecordDialog(){
+  function closeRecordDialog(restoreFocus=true){
     if(dialogBusy)return;
+    if(!recordDialog?.open)return;
+    if(!restoreFocus)dialogReturnFocus=null;
     recordDialog?.close();
   }
   function ensureRecordDialog(){
@@ -190,7 +192,7 @@
     recordDialog.setAttribute("aria-labelledby","expiryRecordDialogTitle");
     document.body.appendChild(recordDialog);
     recordDialog.addEventListener("cancel",e=>{if(dialogBusy)e.preventDefault();});
-    recordDialog.addEventListener("close",()=>{recordDialog.innerHTML="";dialogReturnFocus?.focus();dialogReturnFocus=null;});
+    recordDialog.addEventListener("close",()=>{recordDialog.innerHTML="";dialogReturnFocus?.focus({preventScroll:true});dialogReturnFocus=null;});
     return recordDialog;
   }
   function identityHtml(row){
@@ -260,7 +262,10 @@
     const rows=inventoryFiltered(ExpiryCaptureEngine.currentRows||[]);
     if(!rows.length){setExpiryStatus("action","NO INVENTORY ROWS TO EXPORT");return;}
     if(typeof XLSX==="undefined"){setExpiryStatus("error","XLSX EXPORT UNAVAILABLE");return;}
+    const context=AuthState?.context||{};
+    const pharmacy=[context.pharmacy_code,context.pharmacy_name||context.pharmacyName].filter(Boolean).join(" · ")||context.pharmacy_id||context.pharmacyId||"";
     const data=rows.map(r=>({
+      "Pharmacy":pharmacy,
       "Last Updated":expiryFormatVerifiedAt(updatedAt(r)),
       "GTIN / Barcode":r.identifier_display||"",
       "Item Code":r.item_code||"",
@@ -272,7 +277,7 @@
       "Operator":operatorName(r)
     }));
     const ws=XLSX.utils.json_to_sheet(data);
-    ws["!cols"]=[{wch:22},{wch:19},{wch:13},{wch:42},{wch:18},{wch:16},{wch:13},{wch:10},{wch:18}];
+    ws["!cols"]=[{wch:28},{wch:22},{wch:19},{wch:13},{wch:42},{wch:18},{wch:16},{wch:13},{wch:10},{wch:18}];
     const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Expiry Inventory");
     XLSX.writeFile(wb,"PharmFlow_Expiry_Inventory_"+new Date().toISOString().slice(0,10)+".xlsx");
   }
@@ -304,8 +309,15 @@
     originalBind();bindViewport();
     if(!reviewCountBound){reviewCountBound=true;window.addEventListener("focus",refreshExpiryNeedsReviewCount);}
     const inv=document.getElementById("btnOpenExpiryInventory"),back=document.getElementById("btnExpirySessionView"),review=document.getElementById("btnExpiryNeedsReview"),clearSession=document.getElementById("btnClearExpirySession"),search=document.getElementById("expiryCurrentSearch"),clearFilters=document.getElementById("btnClearExpiryFilters"),exportBtn=document.getElementById("btnExportExpiryInventory");
-    if(inv&&inv.dataset.v4!=="1"){inv.dataset.v4="1";inv.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.desktopView="INVENTORY";updateMode();refreshExpiryCurrentState();};}
-    if(back&&back.dataset.v4!=="1"){back.dataset.v4="1";back.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.desktopView="SESSION";updateMode();refreshExpiryCurrentState();};}
+    const selectView=view=>{
+      closeRecordDialog(false);
+      ExpiryCaptureEngine.desktopView=view;
+      updateMode();
+      if(view==="SESSION")renderExpirySessionActivity();
+      else {renderInventory(ExpiryCaptureEngine.currentRows||[]);refreshExpiryCurrentState();}
+    };
+    if(inv&&inv.dataset.v4!=="1"){inv.dataset.v4="1";inv.onclick=()=>selectView("INVENTORY");}
+    if(back&&back.dataset.v4!=="1"){back.dataset.v4="1";back.onclick=()=>selectView("SESSION");}
     if(review&&review.dataset.v4!=="1"){review.dataset.v4="1";review.onclick=()=>openNeedsReviewPanel("EXPIRY");}
     [inv,back,review].forEach(button=>{if(button)button.onkeydown=e=>{
       if(expiryIsHandheld()||!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;

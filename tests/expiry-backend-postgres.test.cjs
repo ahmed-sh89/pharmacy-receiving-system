@@ -52,6 +52,7 @@ test.before(async()=>{
  create function public.is_system_owner() returns boolean language sql stable security definer set search_path=public,pg_temp as $$select auth.uid()='${SO}'::uuid$$;
  create table public.pharmflow_global_items_v2(item_code text primary key,item_name text not null,group_name text,category text,sub_category text,created_at timestamptz default now(),created_by uuid,updated_at timestamptz default now(),updated_by uuid);
  create table public.pharmflow_global_item_identifiers_v2(id uuid primary key default gen_random_uuid(),item_code text not null references public.pharmflow_global_items_v2(item_code) on delete restrict,identifier_display text not null,identifier_key text not null unique,mapping_revision bigint not null default 1,created_at timestamptz default now(),created_by uuid,updated_at timestamptz default now(),updated_by uuid);
+ create table public.pharmflow_pharmacy_gtin_v1(id uuid primary key default gen_random_uuid(),pharmacy_id uuid not null references public.pharmacies(id),gtin text not null,item_code text not null,item_name text not null default '',source text not null default 'LEARNED',created_by uuid,created_at timestamptz not null default now(),updated_by uuid,updated_at timestamptz not null default now(),mapping_revision bigint not null default 1,identifier_display text not null,identifier_key text not null);alter table public.pharmflow_pharmacy_gtin_v1 enable row level security;
  create table public.pharmflow_identifier_mapping_audit_v1(id uuid primary key default gen_random_uuid(),operation_id uuid not null unique,action text not null,identifier_id uuid references public.pharmflow_global_item_identifiers_v2(id) on delete set null,identifier_display text not null,identifier_key text not null,old_item_code text,new_item_code text,reason text not null,performed_by uuid not null references auth.users(id),performed_at timestamptz not null default now());
  create or replace function public.pharmflow_is_reference_master_admin_v1() returns boolean language sql stable security definer set search_path=public,pg_temp as $$select auth.uid() is not null and (public.is_system_owner() or exists(select 1 from public.pharmacy_members pm join public.pharmacies p on p.id=pm.pharmacy_id where pm.user_id=auth.uid() and pm.active is true and lower(coalesce(pm.role,''))='admin' and p.active is true and p.status='active' and upper(btrim(coalesce(p.code,'')))='HHP084'))$$;
  insert into public.pharmacies(id,code,active,status) values('${PA}','HHP084',true,'active'),('${PB}','BETA001',true,'active');
@@ -70,6 +71,7 @@ test.before(async()=>{
   .replace(/  if \(select count\(\*\) from vault\.decrypted_secrets[\s\S]*?  end if;\n/,'');
  cleanupMigration=cleanupMigration.slice(0,cleanupMigration.indexOf('-- Durable retry schedule.'))+'\ncommit;';
  await db.exec(cleanupMigration);
+ await db.exec(fs.readFileSync('proposals/staging/PHASE2C1184_EXPIRY_REVIEW_LOCAL_RESOLUTION.sql','utf8'));
  await identity();
  console.log('LOCAL SQL ENGINE:',(await value('select version() as version')).version);
 });
@@ -199,23 +201,32 @@ test('SQL terminal transition queues every registered operation photo, but not p
  assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[unrelatedPath])).n,1);
  assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[foreignPath])).n,1);
 });
-test('SQL review list/count stay pharmacy scoped and resolution audits mapping idempotently without inventory writes',async()=>{
+test('SQL ordinary member resolution maps pharmacy-locally and atomically commits inventory, event, audit, and cleanup',async()=>{
  await identity();const p=capture('RESOLVE-ONCE','UNKNOWN'),op=await singlePhoto(p);
  const retakePath=PA+'/expiry-v1/'+op+'/product/'+uuid()+'.jpg';
  await db.query('insert into storage.objects(bucket_id,name,owner_id,metadata) values($1,$2,$3,$4::jsonb)',['pharmflow-needs-review',retakePath,UA,JSON.stringify({mimetype:'image/jpeg',size:500})]);
  const ack=await save(p,op);
  const inventoryBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n);
+ const eventsBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_events_v1')).n);
+ await identity(UA,'postgres');const globalMappingsBefore=Number((await value('select count(*)::int n from public.pharmflow_global_item_identifiers_v2')).n);await identity();
  const listed=await db.query('select public.list_pharmflow_expiry_reviews_v1($1,$2,$3,$4) as r',[PA,'PENDING',250,0]);assert.ok(listed.rows.some(row=>row.r.review_id===ack.review_id));
  assert.ok(Number((await value('select public.count_pharmflow_expiry_reviews_v1($1) as n',[PA])).n)>=1);
  await identity(UB);await denied(()=>db.query('select public.count_pharmflow_expiry_reviews_v1($1)',[PA]),/Pharmacy access/);
- await identity(UA);await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','test']),/administrator permission/);
- await identity(AD);const resolutionOp=uuid();const first=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) as r',[PA,ack.review_id,resolutionOp,'TARGET-ITEM','Expiry case review'])).r;
+ await identity(UB);await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','test']),/Pharmacy access/);
+ await identity(UA);const resolutionOp=uuid();const first=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) as r',[PA,ack.review_id,resolutionOp,'TARGET-ITEM',''])).r;
  assert.equal(first.success,true);assert.equal(first.item_code,'TARGET-ITEM');
- const retry=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) as r',[PA,ack.review_id,resolutionOp,'TARGET-ITEM','Expiry case review'])).r;
+ assert.equal(first.scope,'PHARMACY');assert.ok(first.state_id&&first.event_id);
+ const retry=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) as r',[PA,ack.review_id,resolutionOp,'TARGET-ITEM',''])).r;
  assert.equal(retry.already_resolved,true);assert.equal(retry.operation_id,resolutionOp);
- await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','different operation']),/another operation id/i);
- await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,resolutionOp,'OTHER-ITEM','same op different item']),/another item code/i);
+ assert.equal(retry.state_id,first.state_id);assert.equal(retry.event_id,first.event_id);
+ await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','']),/another operation or item/i);
+ await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,resolutionOp,'OTHER-ITEM','']),/another operation or item/i);
  await identity(UA,'postgres');assert.equal((await value('select count(*)::int n from public.pharmflow_needs_review_v2 where id=$1 and status=\'RESOLVED\' and resolved_item_code=\'TARGET-ITEM\'',[ack.review_id])).n,1);
+ const state=await value('select * from public.pharmflow_expiry_current_state_v1 where id=$1',[first.state_id]);
+ assert.equal(state.pharmacy_id,PA);assert.equal(state.item_code,'TARGET-ITEM');assert.equal(state.identifier_display,'RESOLVE-ONCE');assert.equal(state.batch_no,null);assert.equal(state.expiry_month,8);assert.equal(state.expiry_year,2028);assert.equal(state.verified_quantity,3);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_events_v1 where id=$1 and event_type=\'CAPTURE\'',[first.event_id])).n,1);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_pharmacy_gtin_v1 where pharmacy_id=$1 and identifier_key=\'RESOLVE-ONCE\' and item_code=\'TARGET-ITEM\'',[PA])).n,1);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_review_resolution_audit_v1 where review_id=$1 and operation_id=$2 and performed_by=$3',[ack.review_id,resolutionOp,UA])).n,1);
  await identity(UA);await denied(()=>db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PA,ack.review_id]),/Only pending Expiry review/);
  await identity(UA,'service_role');
  const resolveJobs=await db.query("select object_path from pharmflow_expiry_private.photo_cleanup_jobs where review_id=$1 and state='PENDING'",[ack.review_id]);
@@ -223,8 +234,9 @@ test('SQL review list/count stay pharmacy scoped and resolution audits mapping i
  assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[p.product_photo_path])).n,1);
  assert.equal((await value('select count(*)::int n from storage.objects where name=$1',[retakePath])).n,1);
  await identity(UA,'postgres');
- assert.equal((await value('select count(*)::int n from public.pharmflow_identifier_mapping_audit_v1 where identifier_key=\'RESOLVE-ONCE\' and new_item_code=\'TARGET-ITEM\'')).n,1);
- assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_global_item_identifiers_v2')).n,globalMappingsBefore,'Global Master mapping set is unchanged');
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore+1);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_events_v1')).n,eventsBefore+1);
  await processQueuedReviewPhotos(ack.review_id,2);
  assert.equal((await value('select count(*)::int n from storage.objects where name=any($1::text[])',[[p.product_photo_path,retakePath]])).n,0);
 });
@@ -246,17 +258,17 @@ test('SQL historical resolved cases without a recorded resolution operation fail
  await identity(AD,'postgres');await db.query("update public.pharmflow_needs_review_v2 set status='RESOLVED',resolved_by=$1,resolved_item_code='TARGET-ITEM',resolved_item_name='Synthetic Global Item',resolved_at=now() where id=$2",[AD,ack.review_id]);
  await identity(AD);
  const inventoryBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n);
- await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','legacy retry']),/another operation id/i);
+ await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','legacy retry']),/another operation or item/i);
  await identity(UA,'postgres');assert.equal((await value('select resolution_transaction_id from public.pharmflow_needs_review_v2 where id=$1',[ack.review_id])).resolution_transaction_id,null);
  assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
 });
-test('SQL mapping conflict leaves review pending and adds no audit or inventory record',async()=>{
- await identity(UA,'postgres');await db.query("insert into public.pharmflow_global_item_identifiers_v2(item_code,identifier_display,identifier_key) values('OTHER-ITEM','CONFLICT','CONFLICT')");
+test('SQL conflicting pharmacy-local mapping leaves review pending and adds no audit or inventory record',async()=>{
+ await identity(UA,'postgres');await db.query("insert into public.pharmflow_pharmacy_gtin_v1(pharmacy_id,gtin,identifier_display,identifier_key,item_code,item_name,source) values($1,'CONFLICT','CONFLICT','CONFLICT','OTHER-ITEM','Other item','TEST')",[PA]);
  await identity();const p=capture('CONFLICT','UNKNOWN'),op=await singlePhoto(p),ack=await save(p,op);
  const inventoryBefore=Number((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n);
- await identity(AD);await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','conflict test']),/already mapped to another item code/i);
+ await identity(UA);await denied(()=>db.query('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5)',[PA,ack.review_id,uuid(),'TARGET-ITEM','']),/already mapped to another item in this pharmacy/i);
  await identity(UA,'postgres');assert.equal((await value('select status from public.pharmflow_needs_review_v2 where id=$1',[ack.review_id])).status,'PENDING');
- assert.equal((await value("select count(*)::int n from public.pharmflow_identifier_mapping_audit_v1 where identifier_key='CONFLICT'")).n,0);
+ assert.equal((await value("select count(*)::int n from public.pharmflow_expiry_review_resolution_audit_v1 where identifier_key='CONFLICT'")).n,0);
  assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,inventoryBefore);
 });
 test('SQL required fields, raw identity mismatch and bad dates reject atomically',async()=>{

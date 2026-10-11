@@ -5,6 +5,7 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 const migration=read('proposals/staging/20261010_expiry_needs_review_single_photo_and_resolution.sql');
+const localResolutionMigration=read('proposals/staging/PHASE2C1184_EXPIRY_REVIEW_LOCAL_RESOLUTION.sql');
 const deleteMigration=read('proposals/staging/20261010_expiry_needs_review_member_delete.sql');
 const cleanupWorker=read('supabase/functions/pharmflow-expiry-photo-cleanup/index.ts');
 const cleanupCore=read('supabase/functions/pharmflow-expiry-photo-cleanup/cleanup-core.js');
@@ -35,38 +36,27 @@ test('case listing, count and read are authenticated pharmacy scoped SECURITY DE
  assert.match(migration,/from public,anon/i);
 });
 
-test('mapping uses approved PHASE2C1159 add RPC and resolution has no inventory write path',()=>{
+test('ordinary pharmacy resolution uses local identifier scope and commits inventory plus event atomically',()=>{
  const source=read('PHASE2C1159_HHP084_GLOBAL_IDENTIFIER_AUTH.sql');
  const approved=source.match(/create or replace function public\.add_pharmflow_global_identifier_v2\([\s\S]*?\nend \$\$;/i)?.[0];
- const proposed=migration.match(/create or replace function public\.add_pharmflow_global_identifier_v2\([\s\S]*?\nend \$\$;/i)?.[0];
- assert.ok(approved&&proposed);
- const expected=approved
-  .replace(' v_mapping public.pharmflow_global_item_identifiers_v2%rowtype;',' v_mapping public.pharmflow_global_item_identifiers_v2%rowtype;\n v_audit public.pharmflow_identifier_mapping_audit_v1%rowtype;')
-  .replace(' on conflict(operation_id) do nothing;\n return jsonb_build_object',` on conflict(operation_id) do nothing;
- -- PHASE2C1159's signature, authorization, normalized key, mapping write and
- -- audit schema stay canonical. This guard closes its DO NOTHING false-success
- -- case and still permits an exact same-operation retry only.
- select * into v_audit from public.pharmflow_identifier_mapping_audit_v1 where operation_id=p_operation_id for update;
- if not found or v_audit.action is distinct from 'ADD' or v_audit.identifier_id is distinct from v_mapping.id
-    or v_audit.identifier_display is distinct from v_mapping.identifier_display or v_audit.identifier_key is distinct from v_mapping.identifier_key
-    or v_audit.old_item_code is not null or v_audit.new_item_code is distinct from v_mapping.item_code
-    or v_audit.reason is distinct from v_reason or v_audit.performed_by is distinct from auth.uid() then
-   raise exception 'Operation ID was already used for a different identifier mapping operation';
- end if;
- return jsonb_build_object`);
- assert.equal(proposed,expected,'PHASE2C1159 body may differ only by the post-insert audit-operation conflict guard');
- assert.match(approved,/on conflict\(operation_id\) do nothing/i); // authoritative-source defect, intentionally guarded after the same audit insert
- const resolve=migration.match(/create or replace function public\.resolve_pharmflow_expiry_review_v1\([\s\S]*?\nend \$\$;/i)?.[0];
- assert.match(resolve,/public\.pharmflow_is_reference_master_admin_v1\(\)/);
- assert.match(resolve,/public\.is_pharmacy_admin\(p_pharmacy_id\)/);
- assert.match(resolve,/public\.add_pharmflow_global_identifier_v2\(/);
- assert.match(resolve,/identifier is already mapped to another item code/i);
+ assert.ok(approved);
+ assert.match(approved,/public\.pharmflow_is_reference_master_admin_v1\(\)/i);
+ const resolve=localResolutionMigration.match(/create or replace function public\.resolve_pharmflow_expiry_review_v1\([\s\S]*?\nend;\n\$\$;/i)?.[0];
+ assert.match(resolve,/public\.is_pharmacy_member\(p_pharmacy_id\)/);
+ assert.match(resolve,/pharmflow_pharmacy_gtin_v1/);
+ assert.match(resolve,/pharmflow_expiry_private\.save_known_core\(/);
+ assert.match(resolve,/expiry_review_resolution_audit_v1/);
+ assert.doesNotMatch(resolve,/pharmflow_is_reference_master_admin_v1|is_pharmacy_admin\(p_pharmacy_id\)|add_pharmflow_global_identifier_v2/);
+ assert.match(resolve,/identifier is already mapped to another item in this pharmacy/i);
  assert.match(resolve,/status='RESOLVED'/);
  assert.match(resolve,/resolution_transaction_id is distinct from p_operation_id::text/i);
- assert.doesNotMatch(resolve,/save_known_core|pharmflow_expiry_current_state_v1|pharmflow_expiry_events_v1/);
+ assert.match(resolve,/event_id/);
+ assert.match(resolve,/photo_cleanup_queued/);
+ assert.match(deleteMigration,/enqueue_review_photo_cleanup/i);
+ assert.match(localResolutionMigration,/create unique index if not exists pharmflow_pharmacy_gtin_v1_pharmacy_identifier_key_key/i);
 });
 
-test('review reads and Storage photo visibility remain member-scoped while resolution requires admin and reference-master authority',()=>{
+test('review reads and Storage photo visibility remain pharmacy-member scoped and Global Master write authority stays unchanged',()=>{
  const preflight=migration.slice(0,migration.indexOf('end $$;'));
  assert.match(preflight,/review read policy must remain authenticated and pharmacy-member scoped/i);
  assert.match(preflight,/private photo reads must remain authenticated, bucket-specific, and pharmacy-member scoped/i);
@@ -74,8 +64,10 @@ test('review reads and Storage photo visibility remain member-scoped while resol
   const body=migration.match(new RegExp(`function public\\.${name}\\([\\s\\S]*?\\nend \\$\\$;`,'i'))?.[0];
   assert.ok(body,name);assert.match(body,/auth\.uid\(\) is null/i);assert.match(body,/is_pharmacy_member\(p_pharmacy_id\)/i);
  }
- const resolve=migration.match(/function public\.resolve_pharmflow_expiry_review_v1\([\s\S]*?\nend \$\$;/i)?.[0];
- assert.match(resolve,/is_pharmacy_admin\(p_pharmacy_id\)/i);assert.match(resolve,/pharmflow_is_reference_master_admin_v1\(\)/i);
+ const resolve=localResolutionMigration.match(/function public\.resolve_pharmflow_expiry_review_v1\([\s\S]*?\nend;\n\$\$;/i)?.[0];
+ assert.match(resolve,/is_pharmacy_member\(p_pharmacy_id\)/i);assert.doesNotMatch(resolve,/pharmflow_is_reference_master_admin_v1\(\)/i);
+ assert.match(client,/this\.resolutionOperations\.get\(key\)/);
+ assert.match(ui,/pharmacy-local identifier mapping/i);
  assert.doesNotMatch(migration,/create\s+policy|drop\s+policy/i);
 });
 
@@ -111,8 +103,8 @@ test('pending-only operational review UI keeps the authorized Global Master and 
  assert.match(client,/refreshAfterTerminal/);assert.match(client,/expiryNeedsReviewCount/);
  assert.match(ui,/data-review-delete/);assert.match(ui,/window\.confirm\('Delete this pending Expiry review case/);
  assert.match(ui,/expiryGlobalMasterSummary/);const panel=ui.slice(ui.indexOf('async function openExpiryNeedsReviewPanel'),ui.indexOf('window.refreshNeedsReviewCounters'));
- assert.doesNotMatch(panel,/nrV2ItemSummary/);assert.match(panel,/Only approved Global Master writers/);
- assert.doesNotMatch(panel,/History|Resolved|Deleted/);assert.match(panel,/Pending review/);
+ assert.doesNotMatch(panel,/nrV2ItemSummary|Only approved Global Master writers/);assert.match(panel,/Search Global Master by Item Code or name/);assert.match(panel,/pharmacy-local identifier mapping/);
+ assert.doesNotMatch(panel,/History|Resolved|Deleted/);assert.match(panel,/Pending review/);assert.match(panel,/Search Global Master/);
  assert.match(ui,/expanded!==null&&expanded!==index/);assert.match(ui,/Private evidence photo could not be loaded/);
  assert.match(panel,/if\(open\)loadEvidencePhoto\(\)/);assert.match(panel,/Open details to load evidence photo/);
  assert.match(deleteMigration,/add column deleted_by uuid references auth\.users/i);assert.match(deleteMigration,/add column deleted_at timestamptz/i);
