@@ -321,7 +321,7 @@
     if(review&&review.dataset.v4!=="1"){review.dataset.v4="1";review.onclick=()=>openNeedsReviewPanel("EXPIRY");}
     [inv,back,review].forEach(button=>{if(button)button.onkeydown=e=>{
       if(expiryIsHandheld()||!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;
-      e.preventDefault();const enabled=[back,inv,review].filter(x=>x&&!x.disabled),current=enabled.indexOf(button);const next=e.key==="Home"?enabled[0]:e.key==="End"?enabled.at(-1):enabled[(current+(e.key==="ArrowRight"?1:-1)+enabled.length)%enabled.length];next?.focus();next?.click();
+      e.preventDefault();const enabled=[back,inv,review].filter(x=>x&&!x.disabled),current=enabled.indexOf(button);const next=e.key==="Home"?enabled[0]:e.key==="End"?enabled.at(-1):enabled[(current+(e.key==="ArrowRight"?1:-1)+enabled.length)%enabled.length];next?.focus({preventScroll:true});next?.click();
     };});
     if(clearSession&&clearSession.dataset.v4!=="1"){clearSession.dataset.v4="1";clearSession.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.sessionRows=[];renderExpirySessionActivity();setExpiryStatus("success","SESSION ACTIVITY CLEARED");};}
     if(clearFilters&&clearFilters.dataset.v4!=="1"){clearFilters.dataset.v4="1";clearFilters.onclick=clearAllFilters;}

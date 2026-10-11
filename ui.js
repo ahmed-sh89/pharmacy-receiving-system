@@ -9510,7 +9510,7 @@ async function openExpiryNeedsReviewPanel(){
       <header><div><span class="needsReviewKicker">EXPIRY</span><h2 id="needsReviewTitle">Pending review <b class="pfnReviewCount">${rows.length}</b></h2></div>
       <div class="needsReviewHeaderActions"><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div></header>
       <div class="needsReviewList" data-review-list>${rows.length?rows.map((row,index)=>`<section class="needsReviewRow" data-expiry-review-id="${esc(row.review_id)}"><div class="expiryReviewCaseHeading"><button class="needsReviewRowSummary" type="button" data-expiry-detail="${index}" aria-expanded="false"><strong>${esc(row.identifier_display||row.gtin||'Identifier unavailable')}</strong><i aria-hidden="true">›</i></button><button type="button" class="expiryCopyBarcode" data-copy-barcode="${index}">Copy Barcode</button></div><div class="needsReviewCaseDetail" data-expiry-case="${index}" hidden><div class="needsReviewInfo"><span>Batch <b>${esc(row.batch_no||'—')}</b></span>${row.sample_serial?`<span>Serial <b>${esc(row.sample_serial)}</b></span>`:''}<span>Expiry <b>${row.expiry_month?String(row.expiry_month).padStart(2,'0'):'—'}/${esc(row.expiry_year||'—')}</b></span><span>Quantity <b>${esc(row.quantity||row.pending_quantity||1)}</b></span></div>
-<div class="pfnReviewPhotoGrid">${row.evidence_photo_path?`<button type="button" data-expiry-photo-open="${index}" aria-label="Open evidence photo"><img data-expiry-photo="${index}" alt="Expiry Needs Review evidence" hidden><span data-expiry-photo-state="${index}">Open details to load evidence photo</span></button>`:'<span>No evidence photo available</span>'}</div>
+<div class="pfnReviewPhotoGrid">${row.evidence_photo_path?`<div class="expiryReviewPhoto"><button type="button" data-expiry-photo-open="${index}" aria-label="Open evidence photo"><img data-expiry-photo="${index}" alt="Expiry Needs Review evidence" hidden><span data-expiry-photo-state="${index}">Open details to load evidence photo</span></button><button type="button" data-expiry-photo-retry="${index}" hidden>Retry photo</button></div>`:'<span>No evidence photo available</span>'}</div>
         ${row.status==='PENDING'&&canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Select Item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search Global Master by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:''}
         <div class="expiryReviewCaseActions"><button type="button" data-review-delete="${index}">Delete</button></div>
       </div></section>`).join(''):'<div class="needsReviewEmpty">Nothing needs review.</div>'}</div></section>`;
@@ -9522,7 +9522,7 @@ async function openExpiryNeedsReviewPanel(){
         if(inventory)inventory.setAttribute('aria-selected',String(!open&&ExpiryCaptureEngine.desktopView==='INVENTORY'));
     };
     setTabState(true);
-    const close=()=>{overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus();};
+    const close=()=>{overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus({preventScroll:true});};
     overlay.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
     let expanded=null;
     rows.forEach((row,index)=>{
@@ -9532,14 +9532,21 @@ async function openExpiryNeedsReviewPanel(){
             if(!row.evidence_photo_path||photoLoading||photoLoaded)return;
             photoLoading=true;
             const img=overlay.querySelector(`[data-expiry-photo="${index}"]`),state=overlay.querySelector(`[data-expiry-photo-state="${index}"]`);
-            state.hidden=false;state.textContent='Loading evidence photo…';state.classList.remove('is-error');
-            try{const url=await nrV2PhotoObjectUrl(row.evidence_photo_path);if(!url)throw new Error('Private evidence photo could not be loaded');img.src=url;img.hidden=false;state.hidden=true;photoLoaded=true;}
-            catch(_){state.textContent='Evidence photo unavailable. Check access or retry.';state.classList.add('is-error');}
+            const retry=overlay.querySelector(`[data-expiry-photo-retry="${index}"]`);
+            state.hidden=false;state.textContent='Loading evidence photo…';state.classList.remove('is-error');retry.hidden=true;img.hidden=true;
+            try{
+                const url=await nrV2PhotoObjectUrl(row.evidence_photo_path);
+                if(!url)throw new Error('Private evidence photo could not be loaded');
+                await nrV2WaitForEvidenceImage(img,url);
+                img.hidden=false;state.hidden=true;photoLoaded=true;
+            }
+            catch(_){nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);img.removeAttribute('src');state.textContent='Evidence photo unavailable. Retry or check pharmacy access.';state.classList.add('is-error');retry.hidden=false;}
             finally{photoLoading=false;}
         };
         section?.querySelector(`[data-expiry-detail="${index}"]`)?.addEventListener('click',event=>{const open=detail.hidden;if(expanded!==null&&expanded!==index){const prev=overlay.querySelector(`[data-expiry-case="${expanded}"]`);if(prev)prev.hidden=true;overlay.querySelector(`[data-expiry-detail="${expanded}"]`)?.setAttribute('aria-expanded','false');}detail.hidden=!open;event.currentTarget.setAttribute('aria-expanded',String(open));expanded=open?index:null;if(open)loadEvidencePhoto();});
         if(row.evidence_photo_path){
             overlay.querySelector(`[data-expiry-photo-open="${index}"]`)?.addEventListener('click',async()=>{const img=overlay.querySelector(`[data-expiry-photo="${index}"]`);if(img?.src&& !img.hidden)openNeedsReviewPhotoViewer(img.src);else showToast?.('Evidence photo is not available','error');});
+            overlay.querySelector(`[data-expiry-photo-retry="${index}"]`)?.addEventListener('click',loadEvidencePhoto);
         }
         section?.querySelector(`[data-copy-barcode="${index}"]`)?.addEventListener('click',async()=>{
             try{await navigator.clipboard.writeText(toSafeString(row.raw_barcode||row.identifier_display||row.gtin));showToast?.('Barcode copied','success');}

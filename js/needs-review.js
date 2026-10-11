@@ -134,8 +134,30 @@ function nrV2ReleasePhotoObjectUrl(photoPath){
     if(cached){try{URL.revokeObjectURL(cached);}catch(_){}NeedsReviewV2.photoUrls.delete(photoPath);}
 }
 window.nrV2ReleasePhotoObjectUrl=nrV2ReleasePhotoObjectUrl;
+function nrV2WaitForEvidenceImage(image,url,timeoutMs=10000){
+    return new Promise((resolve,reject)=>{
+        let settled=false;
+        const finish=error=>{
+            if(settled)return;settled=true;clearTimeout(timer);image.onload=null;image.onerror=null;
+            error?reject(error):resolve(image);
+        };
+        const timer=setTimeout(()=>finish(new Error('Evidence photo rendering timed out')),timeoutMs);
+        image.onload=()=>image.naturalWidth>0&&image.naturalHeight>0?finish():finish(new Error('Evidence photo could not be decoded'));
+        image.onerror=()=>finish(new Error('Evidence photo could not be decoded'));
+        image.src=url;
+        if(image.complete&&image.naturalWidth>0&&image.naturalHeight>0)finish();
+    });
+}
+window.nrV2WaitForEvidenceImage=nrV2WaitForEvidenceImage;
 if(typeof AppEvents!=="undefined"&&AppEvents?.on){
-    AppEvents.on('auth:context',()=>{ExpiryReviewBackend.invalidate();setTimeout(()=>ExpiryReviewBackend.refresh(),0);});
+    AppEvents.on('auth:context',()=>{
+        // Auth context can be re-emitted during ordinary same-pharmacy sync.
+        // Keep the last verified tab usable while refreshing; every list/write
+        // RPC still authenticates and checks membership on the server.
+        const pharmacyId=nrV2PharmacyId();
+        if(!pharmacyId||(ExpiryReviewBackend.pharmacyId&&ExpiryReviewBackend.pharmacyId!==pharmacyId))ExpiryReviewBackend.invalidate();
+        setTimeout(()=>ExpiryReviewBackend.refresh(),0);
+    });
     AppEvents.on('route:changed',payload=>{if(payload?.routeName==='expiry')setTimeout(()=>ExpiryReviewBackend.refresh(),0);});
 }
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>ExpiryReviewBackend.refresh(),0));
@@ -532,16 +554,21 @@ async function nrV2PhotoObjectUrl(photoPath){
         "/"+
         photoPath.split("/").map(encodeURIComponent).join("/");
 
-    const response=await fetch(url,{
-        headers:{
-            "apikey":getSupabasePublishableKey(),
-            "Authorization":"Bearer "+token
-        }
-    });
-
-    if(!response.ok) return null;
-
-    const blob=await response.blob();
+    const controller=typeof AbortController!=='undefined'?new AbortController():null;
+    const timeout=setTimeout(()=>controller?.abort(),15000);
+    let response,blob;
+    try{
+        response=await fetch(url,{
+            headers:{"apikey":getSupabasePublishableKey(),"Authorization":"Bearer "+token},
+            signal:controller?.signal
+        });
+        if(!response.ok)throw new Error(response.status===404?'Evidence photo is no longer available':'Private evidence photo could not be loaded');
+        blob=await response.blob();
+    }catch(error){
+        if(error?.name==='AbortError')throw new Error('Evidence photo request timed out');
+        throw error;
+    }finally{clearTimeout(timeout);}
+    if(!blob.size)throw new Error('Evidence photo is empty');
     const objectUrl=URL.createObjectURL(blob);
     NeedsReviewV2.photoUrls.set(photoPath,objectUrl);
     return objectUrl;
