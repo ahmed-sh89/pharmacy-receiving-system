@@ -339,7 +339,7 @@ function expiryDraftScope(){
     const pharmacy=expiryPharmacyId();
     return user && pharmacy ? `${user}/${pharmacy}` : "";
 }
-// Session storage contains receipt IDs only; capture facts always come from the server.
+// Browser storage contains only a scoped session identity. Captures and permissions are server-owned.
 function expiryDeviceId(){
     const id=typeof ensureDeviceId==="function" ? String(ensureDeviceId()||"") : "";
     if(!id)throw new Error("Handheld device identity unavailable");
@@ -347,72 +347,30 @@ function expiryDeviceId(){
 }
 function expiryHandheldSession(){
     const scope=expiryDraftScope(),deviceId=expiryDeviceId(),workerId=ExpiryCaptureEngine.selectedWorkerId;
-    if(!scope || !workerId)throw new Error("Operator and pharmacy required");
-    const key=`pharmflow_expiry_recent_${scope}/${deviceId}`;
+    if(!scope)throw new Error("Account and pharmacy required");
+    const key=`pharmflow_expiry_active_v1_${scope}/${deviceId}`;
     let session;
     try{session=JSON.parse(sessionStorage.getItem(key)||"null");}catch(_){throw new Error("Session history metadata unreadable");}
-    if(!session){
-        const prior=JSON.parse(sessionStorage.getItem(`${key}/${workerId}`)||"null");
-        session={id:prior?.id||crypto.randomUUID(),scope,deviceId,operations:prior?.operations||[],operators:{}};
-        for(const id of session.operations)session.operators[id]=workerId;
+    if(!session || session.closed){
+        session={id:crypto.randomUUID(),scope,deviceId,serverOpened:false};
         sessionStorage.setItem(key,JSON.stringify(session));
     }
-    if(session.scope!==scope || session.deviceId!==deviceId || !Array.isArray(session.operations) || !session.operators)throw new Error("Session history scope mismatch");
+    if(session.scope!==scope || session.deviceId!==deviceId)throw new Error("Session history scope mismatch");
     return {key,session};
 }
 function rememberExpiryReceipt(receipt){
     const {key,session}=expiryHandheldSession();
     if(receipt.pharmacy_id!==expiryPharmacyId() || receipt.created_by!==AuthState.user?.id || receipt.device_id!==session.deviceId || receipt.worker_id!==ExpiryCaptureEngine.selectedWorkerId)throw new Error("Capture receipt scope mismatch");
-    session.operations=[receipt.operation_id,...session.operations.filter(id=>id!==receipt.operation_id)].slice(0,15);
-    session.operators[receipt.operation_id]=receipt.worker_id;
-    session.operators=Object.fromEntries(session.operations.map(id=>[id,session.operators[id]]));
-    sessionStorage.setItem(key,JSON.stringify(session));
+    // A recovered receipt cannot grant membership in the current active session.
 }
 async function loadExpirySessionReceipts(){
-    if(!ExpiryCaptureEngine.selectedWorkerId)return [];
-    const {key,session}=expiryHandheldSession(),scope=expiryDraftScope();
-    if(!session.operations.length)return [];
-    const workers=[...new Set(session.operations.map(id=>session.operators[id]))];
-    const groups=await Promise.all(workers.map(worker=>authRpc("list_pharmflow_expiry_capture_receipts_v1",{
-        p_pharmacy_id:expiryPharmacyId(),p_device_id:session.deviceId,p_worker_id:worker,
-        p_operation_ids:session.operations.filter(id=>session.operators[id]===worker)
-    })));
-    if(groups.some(rows=>!Array.isArray(rows)))throw new Error("Session receipt unavailable");
-    const rows=groups.flat();
-    if(scope!==expiryDraftScope() || key!==expiryHandheldSession().key)throw new Error("Capture account changed");
-    if(rows.length!==session.operations.length || new Set(rows.map(row=>row.operation_id)).size!==rows.length || rows.some(row=>!session.operations.includes(row.operation_id) || row.pharmacy_id!==expiryPharmacyId() || row.created_by!==AuthState.user?.id || row.device_id!==session.deviceId || row.worker_id!==session.operators[row.operation_id]))throw new Error("Session receipt scope mismatch");
-    return rows.sort((a,b)=>String(b.captured_at).localeCompare(String(a.captured_at))||String(b.operation_id).localeCompare(String(a.operation_id))).slice(0,15);
+    const scope=expiryDraftScope(),{session}=expiryHandheldSession();
+    if(!session.serverOpened)return [];
+    const rows=await authRpc("list_pharmflow_expiry_session_v1",{p_pharmacy_id:expiryPharmacyId(),p_session_id:session.id});
+    if(scope!==expiryDraftScope() || !Array.isArray(rows) || rows.some(row=>row.pharmacy_id!==expiryPharmacyId() || row.created_by!==AuthState.user?.id))throw new Error("Session receipt scope mismatch");
+    return rows;
 }
-function clearExpirySessionHistory(){
-    const {key,session}=expiryHandheldSession();
-    session.operations=[];session.operators={};sessionStorage.setItem(key,JSON.stringify(session));
-}
-async function openExpiryRecentScans(){
-    document.getElementById("expiryCapturedOverlay")?.remove();
-    const scope=expiryDraftScope();let rows=[],error="";
-    try{rows=await loadExpirySessionReceipts();}catch(_){error="Recent scans unavailable. Saved records are retained.";}
-    if(scope!==expiryDraftScope())return;
-    const overlay=document.createElement("div");overlay.id="expiryCapturedOverlay";overlay.className="expiryCapturedOverlay";
-    overlay.innerHTML=`<section class="expiryCapturedPanel expiryRecentScans" role="dialog" aria-modal="true" aria-label="Recent Scans">
-      <header><div><span>CURRENT SESSION · LATEST 15</span><strong>Recent Scans</strong></div><button type="button" data-close aria-label="Close recent scans">✕</button></header>
-      <div class="expiryCapturedList">${error?`<div role="alert" class="expiryCapturedEmpty">${error}</div>`:rows.length?rows.map(row=>`<details class="expiryCapturedRow" data-operation="${expiryEscapeHtml(row.operation_id)}" data-state="${expiryEscapeHtml(row.acknowledgement?.state_id||"")}" data-review="${expiryEscapeHtml(row.acknowledgement?.review_id||"")}">
-       <summary><div class="expiryCapturedMain"><strong>${expiryEscapeHtml(row.item_name||"Unrecognized item")}</strong>
-       <span>${expiryEscapeHtml(expiryMonthShortName(row.expiry_month))} ${Number(row.expiry_year)} · Qty ${Number(row.quantity)}</span>
-       <small>Operator: ${expiryEscapeHtml(row.operator_name||"Attribution unavailable")}</small></div>
-       ${row.kind==="UNKNOWN"?`<span class="expiryHistoryViewOnly">${expiryEscapeHtml(row.status||"Needs Review")}</span>`:""}
-       <span class="expiryRecentChevron" aria-hidden="true">⌄</span></summary>
-       <div class="expiryRecentDetails"><span>Identifier: ${expiryEscapeHtml(row.identifier_display)}</span><span>Item code: ${expiryEscapeHtml(row.item_code||"—")}</span>
-       ${row.batch_no?`<span>Batch: ${expiryEscapeHtml(row.batch_no)}</span>`:""}<span>Expiry: ${String(row.expiry_month).padStart(2,"0")}/${Number(row.expiry_year)}</span>
-       <span>Quantity: ${Number(row.quantity)}</span><span>Operator: ${expiryEscapeHtml(row.operator_name||"Attribution unavailable")}</span><span>Status: ${expiryEscapeHtml(row.status||"Saved")}</span></div></details>`).join(""):`<div class="expiryCapturedEmpty">No saved scans in this session.</div>`}</div>
-      <button type="button" class="expiryRecentClear" data-clear ${!rows.length?'disabled':''}>Clear History</button>
-      <small class="expiryRecentNote">Clears this list only. Saved inventory and review records remain.</small></section>`;
-    overlay.querySelector("[data-close]")?.addEventListener("click",()=>{overlay.remove();focusExpiryScanner();});
-    overlay.querySelector("[data-clear]")?.addEventListener("click",()=>{
-        if(scope!==expiryDraftScope())return;
-        try{clearExpirySessionHistory();overlay.remove();openExpiryRecentScans();}catch(_){setExpiryStatus("error","History scope could not be reset");}
-    });
-    document.body.appendChild(overlay);
-}
+async function openExpiryRecentScans(){return openExpiryHandheldHistory();}
 
 function expiryDraftSnapshot(status="DRAFT"){
     if(ExpiryCaptureEngine.currentItem && !ExpiryCaptureEngine.operation && !ExpiryCaptureEngine.saveUncertain){
@@ -468,7 +426,7 @@ async function restoreExpiryDraft(){
     if(expiryIsHandheld()){
         sessionStorage.setItem(ExpiryCaptureEngine.storageKey(),draft.workerId);
         const {key,session}=expiryHandheldSession();
-        if(draft.sessionId && draft.sessionId!==session.id){session.id=draft.sessionId;session.operations=[];session.operators={};sessionStorage.setItem(key,JSON.stringify(session));}
+        // Never replace the active server session with a recovered historical identity.
     }
     ExpiryCaptureEngine.pendingDraft=null;
     const recovery=document.getElementById("expiryRecoverableDrafts");if(recovery){recovery.replaceChildren();recovery.hidden=true;}
@@ -601,6 +559,7 @@ async function leaveExpiryHandheld(){
         catch(_){setExpiryStatus("error","Draft not stored — stay on this screen");return false;}
         finally{engine.busy=false;}
     }
+    try{await closeExpiryActiveSession();}catch(error){setExpiryStatus("error","Session closure failed — retry Back");return false;}
     if(typeof setZebraHomeMode==="function")setZebraHomeMode();
     return true;
 }
@@ -1048,6 +1007,8 @@ async function resolveExpiryScannedValue(rawValue){
 }
 
 async function saveExpiryCapture(options={}){
+    const saveClock=()=>typeof performance!=="undefined"?performance.now():Date.now();
+    const handlerStarted=saveClock();
     if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving){setExpiryStatus("busy","SAVE IN PROGRESS — WAIT FOR THE RESULT");return;}
     if(ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload){setExpiryStatus("error","RESULT UNCERTAIN — NO SAFE RETRY PAYLOAD; CONTACT SUPPORT BEFORE RESCANNING");return;}
 
@@ -1071,8 +1032,9 @@ async function saveExpiryCapture(options={}){
         return;
     }
     if(item.needsReview && (typeof ExpiryReviewBackend==="undefined" || !ExpiryReviewBackend.ready)){
-        const ready=typeof ExpiryReviewBackend!=="undefined"&&await ExpiryReviewBackend.refresh();
-        if(!ready){setExpiryStatus("error","NEEDS REVIEW SUBMISSION UNAVAILABLE — STAGING BACKEND MIGRATION REQUIRED");renderExpiryEvidence();return;}
+        setExpiryStatus("action","Checking review availability — retry when ready");
+        if(typeof ExpiryReviewBackend!=="undefined")void ExpiryReviewBackend.refresh();
+        return;
     }
     if(!Number.isInteger(quantity) || quantity <= 0){
         if(!expiryIsHandheld()) showExpiryCaptureValidation(["expiryQuantity"],"Enter quantity");
@@ -1101,6 +1063,9 @@ async function saveExpiryCapture(options={}){
     if(button) button.disabled = true;
     renderExpiryEvidence();
     setExpiryStatus("busy","SAVING...");
+    if(button)button.textContent="SAVING…";
+    const saveStarted=handlerStarted;const timings={validationMs:saveClock()-handlerStarted,handlerToFeedbackMs:saveClock()-handlerStarted,rpcMs:0,photoMs:0,localPersistenceMs:0,ackTransitionMs:0};
+    const measuredPersist=async status=>{const start=saveClock();try{return await persistExpiryDraft(status);}finally{timings.localPersistenceMs+=saveClock()-start;}};
     const captureControls=["expiryQuantity","expiryBatchInput","expirySerialInput"].map(id=>document.getElementById(id)).filter(Boolean);
     const controlStates=captureControls.map(el=>[el,el.disabled]);
     captureControls.forEach(el=>el.disabled=true);
@@ -1115,13 +1080,15 @@ async function saveExpiryCapture(options={}){
         const deviceId = (typeof ensureDeviceId === "function") ? ensureDeviceId() : "";
 
         if(!pharmacyId || (ExpiryCaptureEngine.draftScope && ExpiryCaptureEngine.draftScope!==expiryDraftScope())) throw new Error("Capture account changed");
-        await persistExpiryDraft();
+        await measuredPersist();
+        const factsStarted=saveClock();
         const facts=ExpiryOperation.scanFacts(item.rawBarcode ?? item.identifierDisplay);
+        timings.validationMs+=saveClock()-factsStarted;
         const gs1={lot:facts['10'] || document.getElementById("expiryBatchInput")?.value.trim() || "",serial:facts['21'] || document.getElementById("expirySerialInput")?.value.trim() || ""};
         if(item.needsReview && !(ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product))throw new Error("TAKE ONE REVIEW PHOTO");
         if(!ExpiryCaptureEngine.operation){
             ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId};
-            await persistExpiryDraft();
+            await measuredPersist();
         }
         const payload={kind:item.needsReview?"UNKNOWN":"KNOWN",identifier_display:facts.identifier,
             // Persist the canonical FNC1/GS frame used by both parsers. Keep
@@ -1131,20 +1098,25 @@ async function saveExpiryCapture(options={}){
             quantity,expiry_month:month,expiry_year:year,worker_id:workerId||null,
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||""};
-        const saveResult=await ExpiryOperation.save({rpc:authRpc,upload:ExpiryOperation.upload,
-            persist:persistExpiryDraft,scope:saveScope,currentScope:expiryDraftScope,
-            operation:ExpiryCaptureEngine.operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID()});
+        const operation=ExpiryCaptureEngine.operation;
+        if(expiryIsHandheld() && !operation.sessionId){const start=saveClock();operation.sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;await measuredPersist();}
+        const measuredRpc=async(name,args)=>{const start=saveClock();try{
+            if(expiryIsHandheld() && name==="save_pharmflow_expiry_capture_v3")return await authRpc("save_pharmflow_expiry_session_capture_v1",{...args,p_session_id:operation.sessionId});
+            return await authRpc(name,args);
+        }finally{timings.rpcMs+=saveClock()-start;}};
+        const measuredUpload=async(path,file)=>{const start=saveClock();try{return await ExpiryOperation.upload(path,file);}finally{timings.photoMs+=saveClock()-start;}};
+        const saveResult=await ExpiryOperation.save({rpc:measuredRpc,upload:measuredUpload,
+            persist:measuredPersist,scope:saveScope,currentScope:expiryDraftScope,
+            operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID(),
+            directKnown:expiryIsHandheld() && payload.kind==="KNOWN"});
         submitted=true;
+        const acknowledgementStarted=saveClock();
 
-        if(expiryIsHandheld()){
-            const receipt=await ExpiryOperation.readReceipt(ExpiryCaptureEngine.operation,authRpc);
-            if(!receipt)throw new Error("Committed receipt unavailable — capture retained");
-            if(saveScope!==expiryDraftScope())throw new Error("Capture account changed");
-            rememberExpiryReceipt(receipt);
-        }
+        // Authoritative save acknowledgement is sufficient. History reads server receipts on demand.
+        if(saveScope!==expiryDraftScope())throw new Error("Capture account changed");
         acknowledged=true;
         if(saveScope!==expiryDraftScope()) return;
-        await persistExpiryDraft("ACKNOWLEDGED");
+        await measuredPersist("ACKNOWLEDGED");
         await ExpiryDraftStore.remove(saveScope);
 
         if(!expiryIsHandheld() && !item.needsReview && typeof window.recordExpirySessionCapture==="function"){
@@ -1170,6 +1142,10 @@ async function saveExpiryCapture(options={}){
         resetExpiryCaptureForm({focus:true});
         setExpiryStatus("success",expiryIsHandheld()?(item.needsReview?"Submitted for Review · Ready to Scan":"Saved · Ready to Scan"):options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
         scheduleExpirySavedAutoClear();
+        timings.ackTransitionMs=saveClock()-acknowledgementStarted;
+        ExpiryCaptureEngine.lastSaveTiming={...timings,totalMs:saveClock()-saveStarted,kind:item.needsReview?"UNKNOWN":"KNOWN"};
+        // Handheld projections are read on History; never block scanner readiness on them.
+        if(expiryIsHandheld())return;
         // Commit has succeeded. Projection refresh must never become a write failure.
         try{
         if(item.needsReview&&typeof ExpiryReviewBackend!=="undefined")await ExpiryReviewBackend.refresh();
@@ -1201,7 +1177,7 @@ async function saveExpiryCapture(options={}){
             const rejectedPayload=ExpiryCaptureEngine.operation.payload;
             ExpiryCaptureEngine.operation.payload=null;
             ExpiryCaptureEngine.saveUncertain=false;
-            try{await persistExpiryDraft("DRAFT");}
+            try{await measuredPersist("DRAFT");}
             catch(_){ExpiryCaptureEngine.operation.payload=rejectedPayload;ExpiryCaptureEngine.saveUncertain=true;}
             captureControls.forEach(el=>el.disabled=false);
             selects.forEach(el=>setExpirySelectDisabled(el,false));
@@ -1211,7 +1187,7 @@ async function saveExpiryCapture(options={}){
             ExpiryCaptureEngine.saveUncertain=true;
             captureControls.forEach(el=>el.disabled=true);
             selects.forEach(el=>setExpirySelectDisabled(el,true));
-            try{await persistExpiryDraft(acknowledged?"ACKNOWLEDGED":"UNCERTAIN");}catch(_){}
+            try{await measuredPersist(acknowledged?"ACKNOWLEDGED":"UNCERTAIN");}catch(_){}
             setExpiryStatus("error",acknowledged?"SAVED — LOCAL CLEANUP FAILED; CHECK / RETRY THE SAME OPERATION TO RECONCILE":"RESULT UNCERTAIN — CHECK / RETRY THE SAME OPERATION; DO NOT RESCAN");
             if(button){button.disabled=!ExpiryCaptureEngine.operation;button.textContent=ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
         }else{
@@ -2036,9 +2012,13 @@ async function activateExpiryCapture(){
     focusExpiryScanner();
 }
 
-window.guardExpiryNavigation=function(){
+window.guardExpiryNavigation=function(routeName,options){
     if(ExpiryCaptureEngine.busy||ExpiryCaptureEngine.resolving||ExpiryCaptureEngine.saveUncertain||ExpiryCaptureEngine.operation?.payload){
         setExpiryStatus("error","NAVIGATION BLOCKED — CHECK / RETRY THE SAME SAVE OPERATION FIRST");return false;
+    }
+    if(expiryIsHandheld() && routeName && !ExpiryCaptureEngine.navigationApproved){
+        void leaveExpiryHandheld().then(left=>{if(left){ExpiryCaptureEngine.navigationApproved=true;try{navigateTo(routeName,options);}finally{ExpiryCaptureEngine.navigationApproved=false;}}});
+        return false;
     }
     return true;
 };

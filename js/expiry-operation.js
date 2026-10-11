@@ -75,7 +75,7 @@ const ExpiryOperation = (() => {
         if(facts['11'] && !facts['17'])reject('GS1 expiry AI 17 required with production date','REQUIRED','EXPIRY_MISSING',normalized.length,'17');
         facts.identifier=facts['01'];return facts;
     }
-    async function save({rpc,upload,persist,scope,currentScope,operation,payload,photos,uuid}){
+    async function save({rpc,upload,persist,scope,currentScope,operation,payload,photos,uuid,directKnown=false}){
         const guard=()=>{if(scope!==currentScope())throw new Error('Capture account changed');};
         guard();
         const params={p_pharmacy_id:operation.pharmacyId,p_operation_id:operation.id};
@@ -90,7 +90,7 @@ const ExpiryOperation = (() => {
             return ack;
         };
         let reserved;
-        try{reserved=unwrap(await rpc('reserve_pharmflow_expiry_capture_v1',params));}
+        try{reserved=directKnown && payload.kind==='KNOWN'?{operation_id:operation.id,status:'RESERVED'}:unwrap(await rpc('reserve_pharmflow_expiry_capture_v1',params));}
         catch(error){
             // Reservation cannot write inventory. Reusing this operation ID
             // is safe even if its response was lost.

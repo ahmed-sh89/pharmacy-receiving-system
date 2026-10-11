@@ -22,7 +22,7 @@ for(const identifier of ['U0030','S00110','1234A','001234','04065272072977'])tes
  h.e('expiryBatchInput').value='LOT-KEEP';
  const evidence=new Blob(['product or expiry evidence'],{type:'image/jpeg'});
  await h.c.setExpiryEvidencePhoto('evidence',evidence);await h.c.saveExpiryCapture();
- assert.equal(h.calls.length,1);assert.equal(h.calls[0].name,'reserve_pharmflow_expiry_capture_v1');const draft=h.drafts.get('user1/isolated-test');assert.equal(draft.item.identifierDisplay,identifier);assert.equal(draft.item.rawBarcode,identifier);assert.equal(draft.quantity,'7');assert.equal(draft.month,'8');assert.equal(draft.year,'2028');assert.equal(draft.batch,'LOT-KEEP');assert.equal(await draft.photos.evidence.text(),'product or expiry evidence');
+ assert.equal(h.calls.length,1);assert.equal(h.calls[0].name,'open_pharmflow_expiry_session_v1');const draft=h.drafts.get('user1/isolated-test');assert.equal(draft.item.identifierDisplay,identifier);assert.equal(draft.item.rawBarcode,identifier);assert.equal(draft.quantity,'7');assert.equal(draft.month,'8');assert.equal(draft.year,'2028');assert.equal(draft.batch,'LOT-KEEP');assert.equal(await draft.photos.evidence.text(),'product or expiry evidence');
  h.c.resetExpiryCaptureForm();assert.equal(await h.c.restoreExpiryDraft(),true);assert.equal(h.e('expiryQuantity').value,'7');assert.equal(await h.c.engine.reviewPhotos.evidence.text(),'product or expiry evidence');
 });
 test('Scope switch cannot hydrate or submit another account/pharmacy draft',async()=>{
@@ -31,22 +31,22 @@ test('Scope switch cannot hydrate or submit another account/pharmacy draft',asyn
  h.c.AuthState.context.pharmacy_id='isolated-test';h.c.AuthState.user.id='other-user';assert.equal(await h.c.restoreExpiryDraft(),false);
 });
 test('Duplicate Save and scan during write produce one write; no delayed reset erases next scan',async()=>{
- const h=await scanned(),d=deferred();let writes=0;h.c.authRpc=async(name,p)=>{if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};if(name==='list_pharmflow_expiry_capture_receipts_v1')return [{...h.c.engine.operation.payload,operation_id:h.c.engine.operation.id,pharmacy_id:'isolated-test',created_by:'user1',acknowledgement:{state_id:'state1',event_id:'event1',operation_id:h.c.engine.operation.id}}];writes++;const r=await d.promise;return {...r,operation_id:p.p_operation_id};};
+ const h=await scanned(),d=deferred();let writes=0;h.c.authRpc=async(name,p)=>{if(name==='open_pharmflow_expiry_session_v1')return {session_id:p.p_session_id,status:'OPEN'};if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};if(name==='list_pharmflow_expiry_capture_receipts_v1')return [{...h.c.engine.operation.payload,operation_id:h.c.engine.operation.id,pharmacy_id:'isolated-test',created_by:'user1',acknowledgement:{state_id:'state1',event_id:'event1',operation_id:h.c.engine.operation.id}}];writes++;const r=await d.promise;return {...r,operation_id:p.p_operation_id};};
  const save=h.c.saveExpiryCapture();await new Promise(setImmediate);await h.c.saveExpiryCapture();assert.equal(await h.c.resolveExpiryScannedValue('U0030'),false);assert.equal(writes,1);
  d.resolve({state_id:'state1',event_id:'event1'});await save;assert.equal(h.c.engine.currentItem,null);assert.equal(h.drafts.size,0);
  await h.c.resolveExpiryScannedValue(raw);h.flush(500);assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');
 });
 test('Post-commit refresh failure cannot invite a duplicate write',async()=>{
  const h=await scanned();h.c.console={error(){},warn(){}};h.c.refreshExpiryCurrentState=async()=>{throw new Error('display offline');};await h.c.saveExpiryCapture();
- assert.equal(h.calls.length,3);assert.equal(h.c.engine.currentItem,null);assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.drafts.size,0);
+ assert.equal(h.calls.length,2);assert.equal(h.c.engine.currentItem,null);assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.drafts.size,0);
 });
 test('Lost acknowledgement is durably locked through recovery, with no automatic replay',async()=>{
- const h=await scanned();h.c.console={error(){}};let writes=0;h.c.authRpc=async(name,p)=>{if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};writes++;throw new Error('network reply lost');};await h.c.saveExpiryCapture();
+ const h=await scanned();h.c.console={error(){}};let writes=0;h.c.authRpc=async(name,p)=>{if(name==='open_pharmflow_expiry_session_v1')return {session_id:p.p_session_id,status:'OPEN'};if(name.startsWith('reserve_'))return {operation_id:p.p_operation_id,status:'RESERVED'};writes++;throw new Error('network reply lost');};await h.c.saveExpiryCapture();
  assert.equal(writes,1);assert.equal(h.drafts.get('user1/isolated-test').status,'UNCERTAIN');h.c.resetExpiryCaptureForm();await h.c.restoreExpiryDraft();assert.equal(writes,1);assert.equal(h.c.engine.saveUncertain,true);
 });
 test('Storage failure prevents submission; empty server reply is not success',async()=>{
  const h=await scanned();h.c.console={error(){}};h.c.ExpiryDraftStore.put=async()=>{throw new Error('quota');};await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');
- const h2=await scanned();h2.c.console={error(){}};h2.c.authRpc=async(name,p)=>name.startsWith('reserve_')?{operation_id:p.p_operation_id,status:'RESERVED'}:[];await h2.c.saveExpiryCapture();assert.equal(h2.c.engine.saveUncertain,true);assert.equal(h2.c.engine.currentItem.itemCode,'ITEM1');
+ const h2=await scanned();h2.c.console={error(){}};h2.c.authRpc=async(name,p)=>name==='open_pharmflow_expiry_session_v1'?{session_id:p.p_session_id,status:'OPEN'}:name.startsWith('reserve_')?{operation_id:p.p_operation_id,status:'RESERVED'}:[];await h2.c.saveExpiryCapture();assert.equal(h2.c.engine.saveUncertain,true);assert.equal(h2.c.engine.currentItem.itemCode,'ITEM1');
 });
 test('Custom worker selection uses canonical dataset value and persists worker once selected',()=>{
  const h=harness(true);h.c.bindExpiryCaptureUI();h.c.setExpiryControlValue(h.e('expiryWorkerSelect'),'worker1',true);assert.equal(h.c.engine.selectedWorkerId,'worker1');

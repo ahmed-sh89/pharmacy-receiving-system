@@ -1394,6 +1394,7 @@ function normalizeInviteToken(value){
 }
 
 async function signOutCurrentUser(){
+    if(typeof window.prepareExpirySignOut==="function" && await window.prepareExpirySignOut()===false)return false;
     if(typeof window.resetExpiryDesktopSession==="function")window.resetExpiryDesktopSession();
     clearRecoveryArtifacts();
     resetResponsiveSidebarAfterAuth();

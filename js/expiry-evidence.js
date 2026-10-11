@@ -8,11 +8,11 @@ function renderExpiryEvidence(){
     const previews=document.getElementById('expiryEvidencePreviews');if(previews)previews.replaceChildren();
     if(panel.hidden)return;
     const photo=engine.reviewPhotos.evidence||engine.reviewPhotos.product;
-    if(photo && previews){const img=document.createElement('img');const url=URL.createObjectURL(photo);expiryPreviewURLs.push(url);img.src=url;img.alt='Needs Review evidence photo';previews.appendChild(img);}
+    // Photo values stay in the durable draft; previews belong in saved case details only.
     const next=document.getElementById('btnExpiryPhoto');
     const ready=typeof ExpiryReviewBackend!=='undefined'&&ExpiryReviewBackend.ready;
-    if(next){next.hidden=!!photo;next.disabled=engine.busy||engine.saveUncertain||!ready;}
-    const message=document.getElementById('expiryEvidenceMessage');if(message)message.textContent=!ready?'Needs Review submission is unavailable until the Staging review migration is applied and verified.':photo?'Evidence photo added. Submit for Review when the required fields are complete.':'Take one photo showing useful product or expiry evidence.';
+    if(next){next.hidden=false;next.textContent=photo?"RETAKE PHOTO":"TAKE PHOTO";next.disabled=engine.busy||engine.saveUncertain||!ready;}
+    const message=document.getElementById('expiryEvidenceMessage');if(message)message.textContent=!ready?'Needs Review submission is unavailable until the Staging review migration is applied and verified.':photo?'Photo ready':'One photo required';
     const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent='SUBMIT FOR REVIEW';save.disabled=engine.busy||engine.saveUncertain||!ready;}
 }
 function bindExpiryEvidence(){

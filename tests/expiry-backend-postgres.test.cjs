@@ -76,6 +76,44 @@ test.before(async()=>{
  console.log('LOCAL SQL ENGINE:',(await value('select version() as version')).version);
 });
 test.after(async()=>{if(db)await db.close()});
+test('Session earlier replacement, single reversal, stale revision, closure and isolation',async()=>{
+ await identity(UA,'postgres');
+ const before=await value("select md5(string_agg(row_to_json(o)::text,'' order by operation_id)) h from pharmflow_expiry_private.operations o");
+ await db.exec(fs.readFileSync('proposals/staging/expiry_active_session_v1.sql','utf8'));
+ assert.deepEqual(await value("select md5(string_agg(row_to_json(o)::text,'' order by operation_id)) h from pharmflow_expiry_private.operations o"),before);
+ await identity();const session=uuid(),op=uuid(),other=uuid(),p=capture('SESSION-EARLY'),p2=capture('SESSION-LATER');
+ const open=()=>db.query('select public.open_pharmflow_expiry_session_v1($1,$2,$3)',[PA,session,p.device_id]);await open();await open();
+ const sessionSave=(payload,id)=>db.query('select public.save_pharmflow_expiry_session_capture_v1($1,$2,$3,$4::jsonb) r',[PA,session,id,JSON.stringify(payload)]);
+ const r=(await sessionSave(p,op)).rows[0].r;await sessionSave(p2,other);assert.deepEqual((await sessionSave(p,op)).rows[0].r,r);
+ const correction=uuid();const adjust=(req,rev,qty,operation=op)=>db.query('select public.correct_pharmflow_expiry_session_v1($1,$2,$3,$4,$5,$6) r',[PA,session,operation,req,rev,qty]);
+ const edited=(await adjust(correction,0,2)).rows[0].r;assert.equal(edited.quantity,2);assert.deepEqual((await adjust(correction,0,2)).rows[0].r,edited);
+ await denied(()=>adjust(correction,0,4),/payload conflict/);await denied(()=>adjust(uuid(),0,7),/Stale revision/);
+ await identity(UA,'postgres');assert.equal((await value('select verified_quantity q from public.pharmflow_expiry_current_state_v1 where id=$1',[r.state_id])).q,2);
+ await identity();await adjust(uuid(),1,0);
+ const listed=(await value('select public.list_pharmflow_expiry_session_v1($1,$2) r',[PA,session])).r;assert.equal(listed.find(x=>x.operation_id===op).quantity,0);assert.equal(listed.find(x=>x.operation_id===other).quantity,3);
+ await identity(UB);await denied(()=>adjust(uuid(),0,1,other),/Pharmacy access/);await denied(()=>open(),/Pharmacy access/);
+ await identity();await db.query('select public.close_pharmflow_expiry_session_v1($1,$2)',[PA,session]);await denied(()=>open(),/Session closed/);await denied(()=>adjust(uuid(),0,1,other),/Session closed/);await denied(()=>sessionSave(capture('CLOSED'),uuid()),/Session closed/);
+ assert.deepEqual((await sessionSave(p,op)).rows[0].r,r);
+ const closed=(await value('select public.list_pharmflow_expiry_session_v1($1,$2) r',[PA,session])).r;assert.equal(closed.every(x=>!x.editable),true);
+});
+test('Session pending review corrections preserve evidence and resolution uses replacement quantity',async()=>{
+ await identity();const session=uuid(),p=capture('SESSION-REVIEW','UNKNOWN');p.batch_no='SESSION-ISOLATED';const op=await singlePhoto(p);
+ await db.query('select public.open_pharmflow_expiry_session_v1($1,$2,$3)',[PA,session,p.device_id]);
+ const ack=(await value('select public.save_pharmflow_expiry_session_capture_v1($1,$2,$3,$4::jsonb) r',[PA,session,op,JSON.stringify(p)])).r;
+ const adjust=(qty,rev=0)=>db.query('select public.correct_pharmflow_expiry_session_v1($1,$2,$3,$4,$5,$6) r',[PA,session,op,uuid(),rev,qty]);
+ await adjust(2);
+ const evidence=(await value('select public.get_pharmflow_expiry_review_v1($1,$2) r',[PA,ack.review_id])).r;assert.equal(evidence.quantity,3);assert.equal(evidence.product_photo_path,p.product_photo_path);
+ const list=await db.query('select public.list_pharmflow_expiry_reviews_v1($1,$2,$3,$4) r',[PA,'ALL',250,0]);const row=list.rows.find(x=>x.r.review_id===ack.review_id).r;assert.equal(row.quantity,2);assert.equal(row.original_quantity,3);
+ await identity(AD);await denied(()=>adjust(1,1),/scope mismatch/);await identity();
+ const resolved=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) r',[PA,ack.review_id,uuid(),'TARGET-ITEM','Session quantity test'])).r;
+ await identity(UA,'postgres');const event=await value('select previous_quantity,verified_quantity from public.pharmflow_expiry_events_v1 where id=$1',[resolved.event_id]);assert.equal(event.verified_quantity-Number(event.previous_quantity||0),2);
+ await identity();await denied(()=>adjust(4,1),/Only pending/);
+ const deletedPayload=capture('SESSION-REVIEW-DELETE','UNKNOWN'),deleteOp=await singlePhoto(deletedPayload);
+ const deleteAck=(await value('select public.save_pharmflow_expiry_session_capture_v1($1,$2,$3,$4::jsonb) r',[PA,session,deleteOp,JSON.stringify(deletedPayload)])).r;
+ const request=uuid(),args=[PA,session,deleteOp,request,0,0];const sql='select public.correct_pharmflow_expiry_session_v1($1,$2,$3,$4,$5,$6) r';const deleted=(await value(sql,args)).r;assert.deepEqual((await value(sql,args)).r,deleted);
+ assert.equal((await value('select public.get_pharmflow_expiry_review_v1($1,$2) r',[PA,deleteAck.review_id])).r.status,'DELETED');
+ await identity(UA,'postgres');assert.equal((await value('select payload from pharmflow_expiry_private.operations where pharmacy_id=$1 and operation_id=$2',[PA,deleteOp])).payload.quantity,3);
+});
 for(const id of ['U0030','S00110','1234A','001234','04065272072977'])test('SQL exact identity and additive acknowledgement: '+id,async()=>{
  await identity();const p=capture(id),op=uuid(),r=await save(p,op);assert.ok(r.state_id&&r.event_id);assert.deepEqual(await save(p,op),r);
  await identity(UA,'postgres');const row=await value('select * from public.pharmflow_expiry_current_state_v1 where id=$1',[r.state_id]);assert.equal(row.identifier_display,id);assert.equal(row.verified_quantity,3);assert.equal((await value('select count(*)::int as n from public.pharmflow_expiry_events_v1 where state_id=$1',[r.state_id])).n,1);

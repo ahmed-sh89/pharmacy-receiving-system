@@ -7,7 +7,7 @@
   if(!enabled)return;
   const button=document.getElementById("expiryScannerDiagnosticToggle"),input=document.getElementById("expiryBarcodeInput");
   if(!button||!input)return;
-  button.hidden=false;
+  button.hidden=true;
   button.textContent="Diagnose one scan";
   button.title="Staging only: capture one scan's sanitized structure in memory, then copy it. No barcode values are recorded.";
 
