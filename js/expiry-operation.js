@@ -31,6 +31,8 @@ const ExpiryOperation = (() => {
             if(diagnostic){
                 const gsOffsets=[];for(let i=0;i<normalized.length;i++)if(normalized.charCodeAt(i)===29)gsOffsets.push(i);
                 error.expiryScanDiagnostic={stage,reason,offset,ai,valueLength,boundary,
+                    ...(stage==='AI' && typeof window!=='undefined' && typeof window.expiryDescribeScannerAI==='function'?
+                        {nextAI:window.expiryDescribeScannerAI(normalized.slice(offset),offset)}:{}),
                     normalizedLength:normalized.length,gsCount:gsOffsets.length,gsOffsets:gsOffsets.slice(0,16),fields:fields.slice(0,16)};
             }
             throw error;
