@@ -479,3 +479,25 @@ test('FINAL GATE: signed login session, optional evidence, ten authoritative rec
  const next=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[next,UA]);await identity();await jwt(next);assert.notEqual((await open()).session_id,session.session_id);await denied(()=>adjust(second,0,replacement),/scope mismatch/);
  await identity(UA,'postgres');await db.query('delete from auth.sessions where id=$1',[next]);await identity();await denied(()=>open(),/expired or revoked/);
 });
+
+test('FINAL THREE: History excludes deleted before ten, refills newest-first, retains audit and signed scope',async()=>{
+ await identity(UA,'postgres');
+ const snapshot=()=>value("select md5(coalesce(string_agg(to_jsonb(o)::text,'' order by operation_id),'')) h,count(*)::int n from pharmflow_expiry_private.operations o");
+ const before=await snapshot(),security=await value("select proacl::text acl,proowner,prosecdef,proconfig from pg_proc where oid='public.list_pharmflow_expiry_session_v2(uuid,uuid)'::regprocedure");
+ await db.exec(fs.readFileSync('proposals/staging/expiry_history_active_only.sql','utf8'));
+ assert.deepEqual(await snapshot(),before);assert.deepEqual(await value("select proacl::text acl,proowner,prosecdef,proconfig from pg_proc where oid='public.list_pharmflow_expiry_session_v2(uuid,uuid)'::regprocedure"),security);
+ const sid=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[sid,UA]);await identity();const jwt=async(id=sid)=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:id,exp:Math.floor(Date.now()/1000)+3600})]);await jwt();
+ const session=(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'synthetic-device'])).r;
+ const save2=async(p,id=uuid())=>({id,ack:(await value('select public.save_pharmflow_expiry_session_capture_v2($1,$2,$3,$4::jsonb) r',[PA,session.session_id,id,JSON.stringify(p)])).r});
+ const list=async()=>(await value('select public.list_pharmflow_expiry_session_v2($1,$2) r',[PA,session.session_id])).r;
+ const ids=[];for(let i=0;i<15;i++)ids.push((await save2(capture('ACTIVE-'+i))).id);
+ const top=await list();assert.equal(top.length,10);for(let i=1;i<top.length;i++)assert.ok(top[i-1].captured_at>=top[i].captured_at);
+ await identity(UA,'postgres');const all=(await db.query('select o.operation_id from pharmflow_expiry_private.operations o join public.pharmflow_expiry_events_v1 e on e.id=(o.result->>\'event_id\')::uuid where o.operation_id=any($1::uuid[]) order by e.occurred_at desc,o.operation_id desc',[ids])).rows.map(r=>r.operation_id);assert.deepEqual(top.map(r=>r.operation_id),all.slice(0,10));
+ const original=await value('select payload,result from pharmflow_expiry_private.operations where operation_id=$1',[top[0].operation_id]);await identity();
+ const correction={quantity:0,batch_no:null,expiry_month:8,expiry_year:2028};await db.query('select public.correct_pharmflow_expiry_session_v2($1,$2,$3,$4,0,$5::jsonb)',[PA,session.session_id,top[0].operation_id,uuid(),JSON.stringify(correction)]);
+ const after=await list();assert.deepEqual(after.map(r=>r.operation_id),all.slice(1,11));assert.ok(after.every(r=>r.quantity>0&&r.status!=='DELETED'));
+ await identity(UA,'postgres');assert.deepEqual(await value('select payload,result from pharmflow_expiry_private.operations where operation_id=$1',[top[0].operation_id]),original);assert.equal((await value('select count(*)::int n from pharmflow_expiry_private.session_adjustments_v1 where operation_id=$1',[top[0].operation_id])).n,1);assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_events_v1 where id=$1',[original.result.event_id])).n,1);await identity();
+ const unknown=await save2(capture('EXTERNAL-DELETION','UNKNOWN'));await db.query('select public.delete_pharmflow_expiry_review_v1($1,$2)',[PA,unknown.ack.review_id]);assert.ok(!(await list()).some(r=>r.operation_id===unknown.id));
+ const bsid=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[bsid,UB]);await identity(UB);await jwt(bsid);await denied(()=>list(),/Pharmacy|scope mismatch/);await identity();await jwt();await denied(()=>db.query('select public.list_pharmflow_expiry_session_v2($1,$2)',[PB,session.session_id]),/Pharmacy|scope mismatch/);
+ const other=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[other,UA]);await identity();await jwt(other);await denied(()=>list(),/scope mismatch/);await jwt();await db.query('select public.close_pharmflow_expiry_auth_session_v1()');await denied(()=>list(),/Session closed/);
+});

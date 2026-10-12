@@ -7498,7 +7498,7 @@ body.zebraDevice #zebraExpiryShell:has(#expiryRecoverableDrafts:not([hidden])) .
 
 /* Canonical handheld session controls; document viewport ownership unchanged. */
 body.zebraDevice #zebraExpiryShell #btnExpiryBackToModes{display:flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;font-size:14px;min-width:72px;font-weight:750}
-body.zebraDevice #zebraExpiryShell #btnExpiryBackToModes span[aria-hidden]{font-size:24px;line-height:1}
+body.zebraDevice #zebraExpiryShell #btnExpiryBackToModes svg{width:24px;height:24px;flex:none;display:block}
 body.zebraDevice .expiryRecentDetails button,body.zebraDevice .expirySessionEditor button{min-height:44px;border:1px solid #cad6e5;border-radius:9px;background:white;color:#0b5ed7;font-weight:700}
 body.zebraDevice .expirySessionEditor{display:grid;gap:8px;padding:12px;background:#fff;border-radius:12px}
 body.zebraDevice .expirySessionEditor input{min-height:44px;font-size:20px;width:100%;box-sizing:border-box}
