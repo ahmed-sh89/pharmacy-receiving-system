@@ -26,7 +26,7 @@ test('Active Session Edit Quantity preserves selected earlier operation and dura
   }return rpc(name,p);
  };
  await h.c.openExpiryHandheldHistory();const overlay=h.c.document.body.children.at(-1),list=overlay.querySelector('.expiryCapturedList');
- list.children[0].children[1].children.find(button=>button.textContent==='Edit').onclick();const editor=list.children[0];editor.children[1].children[1].value='2';
+ list.children[0].children[1].children.at(-1).children.find(button=>button.textContent==='Edit').onclick();const editor=overlay.children.at(-1).children[0];editor.children[1].children[1].value='2';
  await editor.onsubmit({preventDefault(){}});assert.equal(attempts,1);assert.ok([...h.session.keys()].some(k=>k.startsWith('pharmflow_expiry_correction_')));
  await editor.onsubmit({preventDefault(){}});assert.equal(attempts,2);assert.equal(rows[0].quantity,2);assert.equal(rows[1].quantity,3);
  assert.equal([...h.session.keys()].some(k=>k.startsWith('pharmflow_expiry_correction_')),false);
@@ -78,4 +78,35 @@ test('Representative warm adapter benchmark: known, unknown without photo, unkno
 });
 test('Ten-minute sleep owner is unchanged and the new session owner adds no heartbeat or operational timeout',()=>{
  const session=fs.readFileSync('js/expiry-active-session.js','utf8'),sleep=fs.readFileSync('cloud-workspace.js','utf8');assert.match(sleep,/IDLE_MS=10\*60\*1000/);assert.match(session,/pf-idle-sleep-active/);assert.doesNotMatch(session,/setInterval|setTimeout|heartbeat/);
+});
+
+test('History polish uses red active review, structured fields and omits empty optional values',async()=>{
+ const h=harness(true),rpc=h.c.authRpc;
+ h.c.authRpc=async(name,p)=>name==='list_pharmflow_expiry_session_v2'?[{operation_id:'unknown',kind:'UNKNOWN',identifier_display:'E0029-L',quantity:2,expiry_month:8,expiry_year:2028,status:'PENDING',editable:true,revision:0,identification_note:'Long identification note',sample_serial:null}]:rpc(name,p);
+ await h.c.openExpiryHandheldHistory();const overlay=h.c.document.body.children.at(-1),row=overlay.querySelector('.expiryCapturedList').children[0],summary=row.children[0],body=row.children[1];
+ assert.match(row.className,/expiryHistoryNeedsReview/);assert.equal(summary.children[0].children[0].textContent,'Item Not Recognized');assert.match(summary.children[1].className,/review/);
+ const fields=body.children.filter(n=>n.className==='expiryHistoryField');assert.deepEqual(fields.map(n=>n.children[0].textContent),['Identifier','Expiry','Quantity','Status','Note']);assert.ok(fields.every(n=>n.children[1].className==='expiryHistoryValue'));
+});
+test('History Edit modal keeps rows stable, restores focus and traps keyboard navigation',async()=>{
+ const h=harness(true),rpc=h.c.authRpc;h.c.authRpc=async(name,p)=>name==='list_pharmflow_expiry_session_v2'?[{operation_id:'op',kind:'KNOWN',item_name:'Specific operation',quantity:2,expiry_month:8,expiry_year:2028,status:'SAVED',editable:true,revision:0}]:rpc(name,p);
+ await h.c.openExpiryHandheldHistory();const overlay=h.c.document.body.children.at(-1),list=overlay.querySelector('.expiryCapturedList'),row=list.children[0],trigger=row.children[1].children.at(-1).children[0];trigger.onclick();const modal=overlay.children.at(-1),form=modal.children[0],buttons=form.children.at(-2);assert.equal(list.children.length,1);assert.equal(list.children[0],row);assert.match(modal.className,/expiryHistoryActionOverlay/);assert.equal(form.role,'dialog');assert.equal(form['aria-modal'],'true');
+ assert.equal(form.children[1].children[1].inputMode,'numeric');assert.equal(form.children[3].children[1].inputMode,'numeric');assert.equal(h.c.document.activeElement,form.children[1].children[1]);
+ let prevented=false;buttons.children[1].focus();form.listeners.keydown[0]({key:'Tab',preventDefault(){prevented=true;}});assert.ok(prevented);assert.equal(h.c.document.activeElement,form.children[1].children[1]);
+ form.listeners.keydown[0]({key:'Escape',preventDefault(){}});assert.equal(modal.isConnected,false);assert.equal(h.c.document.activeElement,trigger);assert.equal(list.children[0],row);
+});
+test('Delete modal names exact operation, blocks repeated submit and retains row on rejection',async()=>{
+ const h=harness(true),rpc=h.c.authRpc;let submissions=0,release;const gate=new Promise(r=>release=r);
+ h.c.authRpc=async(name,p)=>{if(name==='list_pharmflow_expiry_session_v2')return [{operation_id:'exact-op',kind:'UNKNOWN',identifier_display:'U0030',quantity:3,expiry_month:8,expiry_year:2028,status:'PENDING',editable:true,revision:0}];if(name==='correct_pharmflow_expiry_session_v2'){submissions++;assert.equal(p.p_operation_id,'exact-op');assert.equal(p.p_correction.quantity,0);await gate;throw new Error('Server unavailable');}return rpc(name,p);};
+ await h.c.openExpiryHandheldHistory();const overlay=h.c.document.body.children.at(-1),list=overlay.querySelector('.expiryCapturedList'),row=list.children[0];row.children[1].children.at(-1).children[1].onclick();const modal=overlay.children.at(-1),form=modal.children[0],buttons=form.children.at(-2);assert.match(form.children[0].textContent,/U0030/);assert.equal(buttons.children[0].textContent,'Cancel');assert.equal(buttons.children[1].textContent,'Delete Operation');assert.equal(h.c.document.activeElement,buttons.children[0]);const saving=form.onsubmit({preventDefault(){}});await form.onsubmit({preventDefault(){}});assert.equal(submissions,1);assert.equal(list.children[0],row);release();await saving;assert.equal(list.children[0],row);assert.match(form.children.at(-1).textContent,/Server unavailable/);assert.equal(modal.isConnected,true);
+});
+test('History selected row and modal styles are canonical, viewport bounded and have no animation',()=>{
+ const css=fs.readFileSync('css/dashboard.css','utf8');assert.match(css,/details\[open\]\{background:#edf4fc;border-color:#6396cf/);assert.match(css,/expiryHistoryStatus\.review\{background:#fce9e9;color:#8f2020/);assert.match(css,/expiryHistoryField\{display:grid;grid-template-columns:82px minmax\(0,1fr\)/);assert.match(css,/expiryHistoryActionOverlay\{[^}]*height:var\(--handheld-visible-height,100dvh\)/);assert.match(css,/expiryHistoryDialog\{[^}]*overflow-y:auto/);assert.doesNotMatch(css.match(/body\.zebraDevice \.expiryRecentChevron\{[^}]*\}/)[0],/transition|animation/);
+});
+test('FIX6 blocker is explicit: existing authoritative RPC limits ten before excluding deleted; no backend change',()=>{
+ const sql=fs.readFileSync('supabase/migrations/20261012002022_expiry_final_handheld_signed_session_optional_evidence.sql','utf8');const query=sql.slice(sql.indexOf('create function public.list_pharmflow_expiry_session_v2'),sql.indexOf('create function public.correct_pharmflow_expiry_session_v2'));assert.match(query,/where c.session_id=p_session_id order by[^]*limit 10/);assert.doesNotMatch(query,/where c.session_id=p_session_id and c.quantity>0/);
+});
+
+test('Active Needs Review colors meet WCAG AA text contrast on collapsed and selected backgrounds',()=>{
+ function lum(hex){const channels=hex.match(/[a-f0-9]{2}/gi).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;}
+ for(const [fg,bg] of [['a32222','ffffff'],['a32222','edf4fc'],['8f2020','fce9e9']]){const a=lum(fg),b=lum(bg);assert.ok((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5);}
 });
