@@ -120,13 +120,19 @@ async function startApplication(){
            Re-authentication in the same tab must also be server-first.
            Never render the previous/stale runtime before cloud authority.
         */
+        let authorityReady=false;
         try{
             ensureCloudAccountContextIsolation?.();
 
             if(typeof ensureStartupCloudAuthority==="function"){
-                await ensureStartupCloudAuthority();
+                authorityReady=await ensureStartupCloudAuthority()===true;
             }else if(typeof restoreCloudWorkspaceOnLogin==="function"){
-                await restoreCloudWorkspaceOnLogin();
+                authorityReady=await restoreCloudWorkspaceOnLogin()===true;
+            }
+
+            if(!authorityReady){
+                showWorkspaceStartupAuthorityFailure();
+                return;
             }
 
             if(typeof restoreHistoricalArchive==="function"){
@@ -135,7 +141,9 @@ async function startApplication(){
 
             refreshEntireUI?.();
         }finally{
-            document.body.classList.remove("workspaceBooting");
+            if(authorityReady){
+                document.body.classList.remove("workspaceBooting");
+            }
         }
         return;
     }
@@ -163,9 +171,21 @@ async function startApplication(){
            Active Order Manifest / Cloud Workspace before router/UI startup.
         */
         if(typeof ensureStartupCloudAuthority==="function"){
-            await ensureStartupCloudAuthority();
+            if(await ensureStartupCloudAuthority()!==true){
+                const error=new Error("Receiving authority is not ready");
+                error.code="PHARMFLOW_STARTUP_AUTHORITY_NOT_READY";
+                throw error;
+            }
         }else if(typeof restoreCloudWorkspaceOnLogin==="function"){
-            await restoreCloudWorkspaceOnLogin();
+            if(await restoreCloudWorkspaceOnLogin()!==true){
+                const error=new Error("Receiving authority is not ready");
+                error.code="PHARMFLOW_STARTUP_AUTHORITY_NOT_READY";
+                throw error;
+            }
+        }else{
+            const error=new Error("Receiving authority is unavailable");
+            error.code="PHARMFLOW_STARTUP_AUTHORITY_NOT_READY";
+            throw error;
         }
 
         /* Legacy compatibility guard, after authoritative hydration only. */
@@ -233,6 +253,11 @@ async function startApplication(){
     }
     catch(error){
 
+        if(error?.code==="PHARMFLOW_STARTUP_AUTHORITY_NOT_READY"){
+            showWorkspaceStartupAuthorityFailure();
+            return;
+        }
+
         document.body.classList.remove("workspaceBooting");
 
         handleFatalStartupError(
@@ -241,6 +266,36 @@ async function startApplication(){
 
     }
 
+}
+
+function showWorkspaceStartupAuthorityFailure(){
+    document.body.classList.add("workspaceBooting");
+    const overlay=document.getElementById("workspaceBootOverlay");
+    const card=overlay?.querySelector(".workspaceBootCard");
+    if(!card) return;
+
+    const title=card.querySelector("strong");
+    const detail=card.querySelector("small");
+    if(title) title.textContent="Receiving data is not ready";
+    if(detail) detail.textContent="PharmFlow could not confirm the complete receiving snapshot. Dashboard totals and scanning are paused to protect accuracy.";
+
+    let retry=card.querySelector("#workspaceBootRetry");
+    if(!retry){
+        retry=document.createElement("button");
+        retry.id="workspaceBootRetry";
+        retry.type="button";
+        retry.className="workspaceBootRetry";
+        retry.textContent="Retry synchronization";
+        retry.addEventListener("click",()=>{
+            retry.disabled=true;
+            retry.textContent="Retrying…";
+            window.location.reload();
+        });
+        card.appendChild(retry);
+    }
+    retry.hidden=false;
+    retry.disabled=false;
+    retry.textContent="Retry synchronization";
 }
 
 

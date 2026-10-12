@@ -20,9 +20,9 @@ const bootstrapStart=cloud.indexOf("async function bootstrapActiveOrdersOnEmptyD
 const bootstrapEnd=cloud.indexOf("window.bootstrapActiveOrdersOnEmptyDevice",bootstrapStart);
 assert(bootstrapStart>=0 && bootstrapEnd>bootstrapStart);
 const bootstrapBody=cloud.slice(bootstrapStart,bootstrapEnd);
-assert(bootstrapBody.includes("await pullActiveOrderManifest();"));
+assert(bootstrapBody.includes("await pullActiveOrderManifest({force:true,clearIfMissing:true});"));
 assert(bootstrapBody.includes("await pullCloudWorkspaceTransactions();"));
-assert(bootstrapBody.indexOf("await pullActiveOrderManifest();")<bootstrapBody.indexOf("await pullCloudWorkspaceTransactions();"),"manifest bootstrap must hydrate structure before its durable ledger");
+assert(bootstrapBody.indexOf("await pullActiveOrderManifest({force:true,clearIfMissing:true});")<bootstrapBody.indexOf("await pullCloudWorkspaceTransactions();"),"manifest bootstrap must hydrate structure before its durable ledger");
 const restoreStart=cloud.indexOf("async function restoreCloudWorkspaceOnLogin");
 const restoreEnd=cloud.indexOf("async function reconcileCloudWorkspaceAuthority",restoreStart);
 const restoreBody=cloud.slice(restoreStart,restoreEnd);

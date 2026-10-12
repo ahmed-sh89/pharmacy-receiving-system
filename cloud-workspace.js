@@ -168,7 +168,12 @@ const PharmFlowCloudWorkspace = {
     activeManifestRevision:0,
     activeManifestPresent:false,
     activeManifestBusy:false,
+    activeManifestReadSerial:0,
+    manifestBootstrapPromise:null,
     receivingSyncBusy:false,
+    receivingSyncPromise:null,
+    lastReceivingSnapshotComplete:false,
+    lastTransactionReadSucceeded:false,
     receivingSyncTimer:null,
     receivingFlushPromise:null,
     lastReceivingSyncAt:null,
@@ -604,9 +609,16 @@ function resetRuntimeForAuthenticatedContextChange(newScope){
         PharmFlowCloudWorkspace.lastAppliedWorkspaceSignature="";
         PharmFlowCloudWorkspace.activeManifestRevision=0;
         PharmFlowCloudWorkspace.activeManifestPresent=false;
+        PharmFlowCloudWorkspace.activeManifestReadSerial=0;
+        PharmFlowCloudWorkspace.lastManifestPullAt=null;
+        PharmFlowCloudWorkspace.lastManifestPullError=null;
         PharmFlowCloudWorkspace.receivingCursorCreatedAt=null;
         PharmFlowCloudWorkspace.receivingCursorTransactionId=null;
         PharmFlowCloudWorkspace.receivingBootstrapComplete=false;
+        PharmFlowCloudWorkspace.manifestBootstrapPromise=null;
+        PharmFlowCloudWorkspace.receivingSyncPromise=null;
+        PharmFlowCloudWorkspace.lastReceivingSnapshotComplete=false;
+        PharmFlowCloudWorkspace.lastTransactionReadSucceeded=false;
         PharmFlowCloudWorkspace.manifestMetaBusy=false;
         PharmFlowCloudWorkspace.generation=null;
         PharmFlowCloudWorkspace.lastGenerationReadAt=0;
@@ -1305,6 +1317,7 @@ async function pullActiveOrderManifest(options={}){
             "get_pharmflow_active_order_manifest_v3",
             {p_pharmacy_id:pharmacyId}
         );
+        PharmFlowCloudWorkspace.activeManifestReadSerial++;
 
         const row=Array.isArray(result)?result[0]:result;
 
@@ -1616,6 +1629,9 @@ window.repairMissingActiveOrderManifestFromLocal=
 
 
 async function bootstrapActiveOrdersOnEmptyDevice(){
+    if(PharmFlowCloudWorkspace.manifestBootstrapPromise){
+        return PharmFlowCloudWorkspace.manifestBootstrapPromise;
+    }
     if(PharmFlowCloudWorkspace.manifestBootstrapBusy){
         return false;
     }
@@ -1641,10 +1657,22 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
     }
 
     PharmFlowCloudWorkspace.manifestBootstrapBusy=true;
-
-    try{
+    const bootstrapPromise=(async()=>{
+      try{
         for(let attempt=1;attempt<=4;attempt++){
-            await pullActiveOrderManifest();
+            const previousReadSerial=PharmFlowCloudWorkspace.activeManifestReadSerial;
+            await pullActiveOrderManifest({force:true,clearIfMissing:true});
+
+            if(PharmFlowCloudWorkspace.lastManifestPullError){
+                return false;
+            }
+
+            if(isAuthoritativeEmptyActiveOrderManifest(previousReadSerial)){
+                PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+                PharmFlowCloudWorkspace.lastReceivingSnapshotComplete=true;
+                PharmFlowCloudWorkspace.lastTransactionReadSucceeded=true;
+                return true;
+            }
 
             const loaded=
                 Array.isArray(AppState?.workspace?.orderFiles) &&
@@ -1653,10 +1681,12 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
                 AppState.workspace.orderData.length;
 
             if(loaded){
-                PharmFlowCloudWorkspace.hydratedPharmacyId=
-                    pharmacyId;
+                const ledgerReady=await pullCloudWorkspaceTransactions();
+                if(ledgerReady!==true){
+                    return false;
+                }
 
-                await pullCloudWorkspaceTransactions();
+                PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
 
                 setCloudWorkspaceStatus(
                     "synced",
@@ -1682,14 +1712,31 @@ async function bootstrapActiveOrdersOnEmptyDevice(){
         }
 
         return false;
-    }
-    finally{
+      }
+      finally{
         PharmFlowCloudWorkspace.manifestBootstrapBusy=false;
-    }
+        if(PharmFlowCloudWorkspace.manifestBootstrapPromise===bootstrapPromise){
+            PharmFlowCloudWorkspace.manifestBootstrapPromise=null;
+        }
+      }
+    })();
+    PharmFlowCloudWorkspace.manifestBootstrapPromise=bootstrapPromise;
+    return bootstrapPromise;
 }
 
 window.bootstrapActiveOrdersOnEmptyDevice=
     bootstrapActiveOrdersOnEmptyDevice;
+
+function isAuthoritativeEmptyActiveOrderManifest(previousReadSerial=0){
+    return !!(
+        PharmFlowCloudWorkspace.activeManifestReadSerial>previousReadSerial &&
+        PharmFlowCloudWorkspace.lastManifestPullAt &&
+        !PharmFlowCloudWorkspace.lastManifestPullError &&
+        PharmFlowCloudWorkspace.activeManifestPresent!==true &&
+        !(Array.isArray(AppState?.workspace?.orderData) && AppState.workspace.orderData.length) &&
+        !(Array.isArray(AppState?.workspace?.orderFiles) && AppState.workspace.orderFiles.length)
+    );
+}
 
 
 async function forceCloudWorkspaceSnapshot(reason="manual"){
@@ -2219,19 +2266,28 @@ async function pullCloudWorkspaceTransactions(options={}){
     const pharmacyId=cloudWorkspacePharmacyId();
     const now=Date.now();
 
+    /* A second startup/resume caller must join the authoritative read already
+       in flight. The previous throttle check ran first and returned success
+       merely because that request had started, even though it had not yielded
+       a complete ledger snapshot yet. */
+    if(PharmFlowCloudWorkspace.receivingSyncBusy){
+        return PharmFlowCloudWorkspace.receivingSyncPromise
+            ? await PharmFlowCloudWorkspace.receivingSyncPromise
+            : false;
+    }
+
     if(
         options?.force!==true &&
         PharmFlowCloudWorkspace.lastTransactionReadAt>0 &&
         now-PharmFlowCloudWorkspace.lastTransactionReadAt<2500
     ){
-        return true;
+        return PharmFlowCloudWorkspace.lastTransactionReadSucceeded===true;
     }
 
     if(
         !navigator.onLine ||
         !pharmacyId ||
         typeof authRpc!=="function" ||
-        PharmFlowCloudWorkspace.receivingSyncBusy ||
         PharmFlowCloudWorkspace.contextSwitching
     ){
         return false;
@@ -2239,8 +2295,10 @@ async function pullCloudWorkspaceTransactions(options={}){
 
     PharmFlowCloudWorkspace.receivingSyncBusy=true;
     PharmFlowCloudWorkspace.lastTransactionReadAt=now;
+    PharmFlowCloudWorkspace.lastTransactionReadSucceeded=false;
 
-    try{
+    const syncPromise=(async()=>{
+      try{
         if(
             !Array.isArray(AppState?.workspace?.orderData) ||
             !AppState.workspace.orderData.length
@@ -2257,15 +2315,14 @@ async function pullCloudWorkspaceTransactions(options={}){
             return false;
         }
 
-        /* B10 Clean 14: the first read after login is a bounded bootstrap.
-           Every later poll asks only for rows AFTER the server-created cursor.
-           This preserves deterministic ledger authority without repeatedly
-           downloading up to 5,000 historical transactions every second. */
+        /* B10 Clean14: fetch 500-row pages until the server confirms the end
+           of the snapshot. Later polls ask only for rows after this cursor,
+           avoiding repeated full-ledger downloads. */
         const pageLimit=500;
         let changedAny=false;
-        let pages=0;
+        let snapshotComplete=false;
 
-        while(pages<10){
+        while(true){
             const rows=await authRpc(
                 "list_pharmflow_cloud_transactions_delta_v3",
                 {
@@ -2283,6 +2340,7 @@ async function pullCloudWorkspaceTransactions(options={}){
             const batch=Array.isArray(rows)?rows:[];
             if(!batch.length){
                 PharmFlowCloudWorkspace.receivingBootstrapComplete=true;
+                snapshotComplete=true;
                 break;
             }
 
@@ -2297,9 +2355,10 @@ async function pullCloudWorkspaceTransactions(options={}){
             PharmFlowCloudWorkspace.receivingCursorTransactionId=
                 last?.transaction_id || PharmFlowCloudWorkspace.receivingCursorTransactionId;
             PharmFlowCloudWorkspace.receivingBootstrapComplete=true;
-            pages+=1;
-
-            if(batch.length<pageLimit) break;
+            if(batch.length<pageLimit){
+                snapshotComplete=true;
+                break;
+            }
         }
 
         if(changedAny){
@@ -2322,18 +2381,28 @@ async function pullCloudWorkspaceTransactions(options={}){
 
         PharmFlowCloudWorkspace.lastReceivingSyncAt=nowISO();
         PharmFlowCloudWorkspace.lastReceivingSyncError=null;
+        PharmFlowCloudWorkspace.lastReceivingSnapshotComplete=snapshotComplete;
+        PharmFlowCloudWorkspace.lastTransactionReadSucceeded=snapshotComplete;
         return true;
-    }
-    catch(error){
+      }
+      catch(error){
         Logger.warn("Receiving delta pull failed",error);
         PharmFlowCloudWorkspace.lastReceivingSyncError=error?.message || String(error);
         setCloudWorkspaceStatus("offline","Receiving sync unavailable");
+        PharmFlowCloudWorkspace.lastReceivingSnapshotComplete=false;
+        PharmFlowCloudWorkspace.lastTransactionReadSucceeded=false;
         return false;
-    }
-    finally{
+      }
+      finally{
         PharmFlowCloudWorkspace.applyingRemote=false;
         PharmFlowCloudWorkspace.receivingSyncBusy=false;
-    }
+        if(PharmFlowCloudWorkspace.receivingSyncPromise===syncPromise){
+            PharmFlowCloudWorkspace.receivingSyncPromise=null;
+        }
+      }
+    })();
+    PharmFlowCloudWorkspace.receivingSyncPromise=syncPromise;
+    return await syncPromise;
 }
 
 async function pollActiveOrderManifestMeta(){
@@ -2388,6 +2457,27 @@ async function restoreCloudWorkspaceOnLogin(){
     if(!navigator.onLine || !pharmacyId || typeof authRpc!=="function") return false;
     if(typeof AppState==="undefined" || !AppState.workspace) return false;
 
+    if(PharmFlowCloudWorkspace.manifestBootstrapPromise){
+        const bootstrapped=await PharmFlowCloudWorkspace.manifestBootstrapPromise;
+        if(
+            bootstrapped===true &&
+            PharmFlowCloudWorkspace.hydratedPharmacyId===pharmacyId
+        ){
+            return true;
+        }
+        if(
+            PharmFlowCloudWorkspace.lastManifestPullError ||
+            (
+                PharmFlowCloudWorkspace.activeManifestPresent===true &&
+                Array.isArray(AppState.workspace.orderData) &&
+                AppState.workspace.orderData.length &&
+                PharmFlowCloudWorkspace.lastTransactionReadSucceeded!==true
+            )
+        ){
+            return false;
+        }
+    }
+
     /*
       PC2/PC3 bootstrap rule:
       Active Order Manifest is the FIRST authority for uploaded Orders.
@@ -2410,12 +2500,26 @@ async function restoreCloudWorkspaceOnLogin(){
         ){
             return true;
         }
+        if(
+            PharmFlowCloudWorkspace.lastManifestPullError ||
+            (
+                PharmFlowCloudWorkspace.activeManifestPresent===true &&
+                Array.isArray(AppState.workspace.orderData) &&
+                AppState.workspace.orderData.length &&
+                PharmFlowCloudWorkspace.lastTransactionReadSucceeded!==true
+            )
+        ){
+            return false;
+        }
     }
 
     if(PharmFlowCloudWorkspace.hydratedPharmacyId===pharmacyId){
-        await pullActiveOrderManifestAuthority({clearIfMissing:true});
-        await pullCloudWorkspaceTransactions();
-        return true;
+        const previousReadSerial=PharmFlowCloudWorkspace.activeManifestReadSerial;
+        const manifestReady=await pullActiveOrderManifestAuthority({clearIfMissing:true});
+        const authoritativeEmpty=isAuthoritativeEmptyActiveOrderManifest(previousReadSerial);
+        if(!manifestReady && !authoritativeEmpty) return false;
+        if(authoritativeEmpty) return true;
+        return await pullCloudWorkspaceTransactions();
     }
     if(PharmFlowCloudWorkspace.hydrationPromise) return PharmFlowCloudWorkspace.hydrationPromise;
 
@@ -2454,9 +2558,6 @@ async function restoreCloudWorkspaceOnLogin(){
                 PharmFlowCloudWorkspace.applyingRemote=false;
             }
 
-            /* Mark hydrated BEFORE bootstrap-saving the original PC local order. */
-            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
-
             if(
                 !cloudHasOrder &&
                 !PharmFlowCloudWorkspace.activeManifestPresent
@@ -2473,16 +2574,36 @@ async function restoreCloudWorkspaceOnLogin(){
                 PharmFlowCloudWorkspace.applyingRemote=false;
             }
 
-            await pullActiveOrderManifestAuthority({clearIfMissing:true});
+            const previousReadSerial=PharmFlowCloudWorkspace.activeManifestReadSerial;
+            const manifestReady=await pullActiveOrderManifestAuthority({clearIfMissing:true});
+            const authoritativeEmpty=isAuthoritativeEmptyActiveOrderManifest(previousReadSerial);
+            if(!manifestReady && !authoritativeEmpty){
+                PharmFlowCloudWorkspace.hydratedPharmacyId=null;
+                return false;
+            }
+
+            if(authoritativeEmpty){
+                PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
+                PharmFlowCloudWorkspace.lastReceivingSnapshotComplete=true;
+                PharmFlowCloudWorkspace.lastTransactionReadSucceeded=true;
+                await flushCloudWorkspaceQueue();
+                setCloudWorkspaceStatus("synced");
+                return true;
+            }
 
             /* Final structural authority is settled. Rebuild the bounded
                durable Receiving ledger once, then continue with delta sync. */
             PharmFlowCloudWorkspace.receivingCursorCreatedAt=null;
             PharmFlowCloudWorkspace.receivingCursorTransactionId=null;
             PharmFlowCloudWorkspace.receivingBootstrapComplete=false;
-            await pullCloudWorkspaceTransactions({force:true});
+            const ledgerReady=await pullCloudWorkspaceTransactions({force:true});
+            if(ledgerReady!==true){
+                PharmFlowCloudWorkspace.hydratedPharmacyId=null;
+                return false;
+            }
 
             await flushCloudWorkspaceQueue();
+            PharmFlowCloudWorkspace.hydratedPharmacyId=pharmacyId;
             setCloudWorkspaceStatus("synced");
             return true;
         }catch(error){

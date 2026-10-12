@@ -37,13 +37,14 @@ test("the deployed entry reveals authoritative Receiving without waiting for Glo
         APP_CONFIG:{appName:"PharmFlow",version:"test"},
         Logger:{info:()=>{},warn:()=>{}},
         setInitialSystemStatus:()=>{},initializeState:()=>events.push("state"),
-        ensureStartupCloudAuthority:async()=>events.push("authority"),
+        ensureStartupCloudAuthority:async()=>{events.push("authority");return true;},
         startRouter:()=>events.push("router"),initializeUI:()=>events.push("ui"),
         initializeOptionalModules:()=>events.push("modules"),
         ensureGlobalMasterGTINReady:()=>{events.push("master-start");return masterPromise;},
         refreshSafeAccountIdentity:async()=>events.push("identity"),startAutosaveEngine:()=>{},
         bindApplicationLifecycleEvents:()=>{},refreshEntireUI:()=>events.push("render"),
         focusScannerInput:()=>events.push("scanner-ready"),setSystemStatus:()=>events.push("ready"),
+        showWorkspaceStartupAuthorityFailure:()=>events.push("authority-failed"),
         handleFatalStartupError:error=>{throw error;},Promise
     };
     vm.runInNewContext(start,sandbox);
@@ -58,6 +59,29 @@ test("the deployed entry reveals authoritative Receiving without waiting for Glo
     assert.ok(events.indexOf("class-workspaceBooting")>events.indexOf("scanner-ready") && events.indexOf("class-workspaceBooting")<events.indexOf("ready"),"workspace loading surface closes between scanner readiness and READY status");
     assert.ok(events.includes("version-check"),"version detection starts only after app ready");
     finishMaster(true);
+});
+
+test("incomplete server authority keeps KPI and scanner behind the retry surface",async()=>{
+    const events=[];
+    const start=extractFunction(app,"async function startApplication()");
+    const sandbox={
+        document:{body:{classList:{add:value=>events.push("class+"+value),remove:value=>events.push("class-"+value)}}},
+        window:{},PharmacyApp:{initialized:false,modules:{}},APP_CONFIG:{appName:"PharmFlow",version:"test"},
+        Logger:{info:()=>{},warn:()=>{}},setInitialSystemStatus:()=>{},initializeState:()=>{},
+        ensureStartupCloudAuthority:async()=>false,
+        startRouter:()=>events.push("router"),initializeUI:()=>events.push("ui"),
+        initializeOptionalModules:()=>{},ensureGlobalMasterGTINReady:()=>Promise.resolve(),
+        refreshSafeAccountIdentity:async()=>{},startAutosaveEngine:()=>{},bindApplicationLifecycleEvents:()=>{},
+        refreshEntireUI:()=>events.push("render"),focusScannerInput:()=>events.push("scanner-ready"),
+        setSystemStatus:()=>{},showWorkspaceStartupAuthorityFailure:()=>events.push("retry-surface"),
+        handleFatalStartupError:error=>{throw error;},Promise
+    };
+    vm.runInNewContext(start,sandbox);
+    await sandbox.startApplication();
+    assert.ok(events.includes("retry-surface"));
+    assert.ok(events.includes("class+workspaceBooting"));
+    assert.ok(!events.some(value=>["router","ui","render","scanner-ready"].includes(value)),"incomplete authority must not initialize dashboard or scanner");
+    assert.ok(!events.includes("class-workspaceBooting"),"loading cover remains in place until authority succeeds");
 });
 
 test("Pages stamps the same commit into the document and lightweight version endpoint",()=>{
