@@ -273,7 +273,9 @@ function hhFocusActiveScanner(force=false){
 }
 
 async function hhRefreshWorkspaceAuthority(){
-    if(!hhIsDevice() || !navigator.onLine) return false;
+    // Shared cloud startup/sync and durable retries retain their own owners.
+    // This extra wake refresh serves the Receiving scanner surface only.
+    if(!hhIsDevice() || hhMode()!=="RECEIVING" || !navigator.onLine || window.PharmFlowIdleSleep?.active) return false;
     if(typeof refreshUnifiedHandheldWorkspace!=="function") return false;
     if(HandheldRuntime.terminationBusy) return false;
     HandheldRuntime.terminationBusy=true;
