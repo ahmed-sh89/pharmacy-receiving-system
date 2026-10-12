@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 function harness(handheld=false){
- const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnExpiryQty[^" ]+|btnClearExpiryActive|btnExpiryPhoto|btnExpiryRetakeProduct|btnExpiryRetakeExpiry)"/g)].map(m=>m[1]);
+ const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnExpiryQty[^" ]+|btnClearExpiryActive|btnExpiryPhoto|btnExpiryNote|btnExpiryRetakeProduct|btnExpiryRetakeExpiry)"/g)].map(m=>m[1]);
  const timers=new Map(),calls=[],elements=new Map(),session=new Map(),receipts=new Map();let timer=0;
  function element(id){
   const classes=new Set(),listeners={};
@@ -17,17 +17,17 @@ function harness(handheld=false){
  }
  ids.forEach(id=>elements.set(id,element(id)));
  ['expiryMonth','expiryYear','expiryWorkerSelect'].forEach(id=>{const e=elements.get(id);e.dataset.expirySelect=id==='expiryMonth'?'month':id==='expiryYear'?'year':'worker';e.tagName='DIV';});
- const document={createElement:tag=>element(tag),activeElement:null,body:element('body'),documentElement:element('html'),addEventListener(){},getElementById:id=>elements.get(id)||null,querySelector:()=>null,querySelectorAll:()=>[]};
+ const document={createElement:tag=>{const el=element(tag);el.tagName=tag.toUpperCase();return el;},activeElement:null,body:element('body'),documentElement:element('html'),addEventListener(){},getElementById:id=>elements.get(id)||null,querySelector:()=>null,querySelectorAll:()=>[]};
  const c={document,console,structuredClone,crypto:require('node:crypto').webcrypto,Blob,URL,AbortController,sessionStorage:{getItem:key=>session.get(key)||null,setItem:(key,value)=>session.set(key,value),removeItem:key=>session.delete(key)},ensureDeviceId:()=> 'synthetic-device',Event:class{constructor(type){this.type=type;}},setTimeout(fn,ms){const id=++timer;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),localStorage:{getItem:()=>null,setItem(){},removeItem(){}},isLikelyZebraDevice:()=>handheld,toSafeString:v=>String(v??''),looksLikeStrongBarcode:raw=>raw.startsWith('(01)'),AuthState:{user:{id:'user1'},context:{pharmacy_id:'isolated-test'}},parseGS1Barcode:()=>({gtin:'04065272072977',identifierDisplay:'04065272072977',lot:'GS1-BATCH',serial:'GS1-SERIAL',expiry:'2027-08-31'}),IdentifierService:{resolve:async id=>({found:true,itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:id,category:'Medicine'})},authRpc:async(name,payload)=>{
    calls.push({name,payload});
-   if(name==='open_pharmflow_expiry_session_v1')return {session_id:payload.p_session_id,status:'OPEN'};
-   if(name==='close_pharmflow_expiry_session_v1')return {session_id:payload.p_session_id,status:'CLOSED'};
+   if(name==='get_pharmflow_expiry_auth_session_v1')return {session_id:'signed-session',auth_session_id:'signed-auth',status:'OPEN'};
+   if(name==='close_pharmflow_expiry_auth_session_v1')return {auth_session_id:'signed-auth',status:'CLOSED'};
    if(name==='reserve_pharmflow_expiry_capture_v1')return {operation_id:payload.p_operation_id,status:'RESERVED'};
-   if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v1'].includes(name)){
-    const ack={operation_id:payload.p_operation_id,state_id:'state1',event_id:'event1'};
+   if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(name)){
+    const ack={operation_id:payload.p_operation_id,...(payload.p_capture.kind==='UNKNOWN'?{review_id:'review1',product_photo_path:payload.p_capture.product_photo_path||null}:{state_id:'state1',event_id:'event1'}),...(name.endsWith('_v2')?{pharmacy_id:payload.p_pharmacy_id,confirmed_capture:structuredClone(payload.p_capture)}:{})};
     receipts.set(payload.p_operation_id,{...structuredClone(payload.p_capture),operation_id:payload.p_operation_id,pharmacy_id:payload.p_pharmacy_id,created_by:c.AuthState.user.id,acknowledgement:ack,captured_at:new Date().toISOString(),status:'SAVED',session_id:payload.p_session_id,editable:true,revision:0});return ack;
    }
-   if(name==='list_pharmflow_expiry_session_v1')return [...receipts.values()].filter(r=>r.session_id===payload.p_session_id).sort((a,b)=>String(b.captured_at).localeCompare(String(a.captured_at)));
+   if(name==='list_pharmflow_expiry_session_v2')return [...receipts.values()].filter(r=>r.session_id===payload.p_session_id).sort((a,b)=>String(b.captured_at).localeCompare(String(a.captured_at))).slice(0,10);
    if(name==='list_pharmflow_expiry_capture_receipts_v1')return payload.p_operation_ids.map(id=>receipts.get(id)).filter(Boolean);
    return [];
   },window:null};c.window=c;c.ExpiryReviewBackend={ready:true,refresh:async()=>true};vm.createContext(c);
@@ -60,12 +60,12 @@ test('Ambiguous save retains review fields and blocks unsafe retry',async()=>{
 test('Concurrent Save clicks submit once and expose saving then confirmed saved states',async()=>{
  const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030',rawBarcode:'U0030',category:'Medicine'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
  let release;const gate=new Promise(resolve=>release=resolve),rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3')await gate;return rpc(name,payload);};
- const first=h.c.saveExpiryCapture();assert.match(h.e('expiryDesktopStatus').textContent,/SAVING/);await h.c.saveExpiryCapture();assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v1'].includes(x.name)).length,0);release();await first;
- assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v1'].includes(x.name)).length,1);assert.match(h.e('expiryDesktopStatus').textContent,/SAVED/);
+ const first=h.c.saveExpiryCapture();assert.match(h.e('expiryDesktopStatus').textContent,/SAVING/);await h.c.saveExpiryCapture();assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(x.name)).length,0);release();await first;
+ assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(x.name)).length,1);assert.match(h.e('expiryDesktopStatus').textContent,/SAVED/);
 });
 test('Definitive rejection retains capture and reuses the same operation ID for corrected retry',async()=>{
  const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030',rawBarcode:'U0030',category:'Medicine'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
- const ids=[],rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v1'].includes(name)){ids.push(payload.p_operation_id);const e=new Error('Invalid capture');e.httpStatus=422;e.serverRejected=true;throw e;}return rpc(name,payload);};
+ const ids=[],rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(name)){ids.push(payload.p_operation_id);const e=new Error('Invalid capture');e.httpStatus=422;e.serverRejected=true;throw e;}return rpc(name,payload);};
  await h.c.saveExpiryCapture();const stableId=h.c.engine.operation.id;assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.c.engine.operation.payload,null);assert.match(h.e('expiryDesktopStatus').textContent,/SERVER REJECTED/);
  h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3')ids.push(payload.p_operation_id);return rpc(name,payload);};
  await h.c.saveExpiryCapture();assert.deepEqual(ids,[stableId,stableId]);assert.equal(h.c.engine.currentItem,null);

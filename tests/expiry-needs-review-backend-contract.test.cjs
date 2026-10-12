@@ -80,13 +80,13 @@ test('preflight checks constraint structure and live photo references without ex
  assert.doesNotMatch(preflight,/pg_get_constraintdef\(oid\)\s*=/i);
 });
 
-test('submission waits for verified migration contract and uses one Take Photo control',()=>{
+test('submission waits for verified migration contract with optional Note and Photo',()=>{
  assert.match(client,/get_pharmflow_expiry_review_contract_v1/);
  assert.match(client,/count_pharmflow_expiry_reviews_v1/);
  assert.match(client,/list_pharmflow_expiry_reviews_v1/);
  assert.match(client,/resolve_pharmflow_expiry_review_v1/);
- assert.match(evidence,/!ready\?'Needs Review submission is unavailable/);
- assert.match(evidence,/SUBMIT FOR REVIEW/);
+ assert.match(evidence,/save\.disabled=.*!ready/);
+ assert.match(evidence,/SAVE & NEXT/);
  assert.equal((markup.match(/id="btnExpiryPhoto"/g)||[]).length,1);
  assert.doesNotMatch(markup,/btnExpiryRetake(Product|Expiry)/);
  assert.match(ui,/IdentifierService\.searchItems\(query,8\)/);

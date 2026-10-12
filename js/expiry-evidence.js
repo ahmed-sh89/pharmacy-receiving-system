@@ -11,18 +11,22 @@ function renderExpiryEvidence(){
     // Photo values stay in the durable draft; previews belong in saved case details only.
     const next=document.getElementById('btnExpiryPhoto');
     const ready=typeof ExpiryReviewBackend!=='undefined'&&ExpiryReviewBackend.ready;
-    if(next){next.hidden=false;next.textContent=photo?"RETAKE PHOTO":"TAKE PHOTO";next.disabled=engine.busy||engine.saveUncertain||!ready;}
-    const message=document.getElementById('expiryEvidenceMessage');if(message)message.textContent=!ready?'Needs Review submission is unavailable until the Staging review migration is applied and verified.':photo?'Photo ready':'One photo required';
-    const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent='SUBMIT FOR REVIEW';save.disabled=engine.busy||engine.saveUncertain||!ready;}
+    if(next){next.hidden=false;next.innerHTML=`<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14v12H3z M5 14l4-4 3 3 2-2 2 3"/></svg><span>${photo?"Photo added":"Add Photo"}</span>`;next.setAttribute("aria-label",photo?"View or edit draft photo":"Add Photo");next.disabled=engine.busy||engine.saveUncertain||!ready;}
+    const message=document.getElementById('expiryEvidenceMessage');if(message){message.textContent='';message.hidden=true;}
+    const note=document.getElementById('btnExpiryNote');if(note){note.innerHTML=`<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 15 14 5l3 3-10 10H4z"/></svg><span>${engine.identificationNote?'Note added':'Add Note'}</span>`;note.disabled=engine.busy||engine.saveUncertain;}
+    const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent=engine.busy?'SAVING…':'SAVE & NEXT';save.disabled=engine.busy||engine.saveUncertain||!ready;}
 }
 function bindExpiryEvidence(){
     const input=document.getElementById('expiryCameraInput');if(!input || input.dataset.bound==='1')return;
     input.dataset.bound='1';
     const open=()=>{
         if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || !ExpiryReviewBackend.ready)return;
+        const photo=ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product;
+        if(photo){const scope=expiryDraftScope(),item=ExpiryCaptureEngine.currentItem,authIdentity=expirySignedAuthIdentity();const guard=()=>{if(scope!==expiryDraftScope()||item!==ExpiryCaptureEngine.currentItem||authIdentity!==expirySignedAuthIdentity()||ExpiryCaptureEngine.busy)throw new Error('Draft context changed');};const url=URL.createObjectURL(photo);openExpiryPhotoViewer(url,{onClose:()=>URL.revokeObjectURL(url),onRetake:()=>{guard();if(ExpiryCaptureEngine.operation?.payload||Object.keys(ExpiryCaptureEngine.operation?.uploaded||{}).length)throw new Error('Check the pending save first');input.value='';input.click();},onRemove:async()=>{guard();if(ExpiryCaptureEngine.operation?.payload || Object.keys(ExpiryCaptureEngine.operation?.uploaded||{}).length)throw new Error('Check the pending save first');ExpiryCaptureEngine.reviewPhotos={evidence:null,product:null,expiry:null};await persistExpiryDraft();renderExpiryEvidence();}});return;}
         input.value='';input.click();
     };
     document.getElementById('btnExpiryPhoto')?.addEventListener('click',open);
+    document.getElementById('btnExpiryNote')?.addEventListener('click',openExpiryNoteEditor);
     input.addEventListener('change',async()=>{
         let file=input.files?.[0];if(!file)return;
         if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain)return;

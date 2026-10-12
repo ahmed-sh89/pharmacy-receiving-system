@@ -5,7 +5,7 @@ async function take(h,file){h.e('expiryCameraInput').files=[file];for(const fn o
 test('One Take Photo retains one evidence photo without inline image and one Submit for Review action',async()=>{
  const h=camera(),evidence=new Blob(['evidence'],{type:'image/jpeg'});
  h.e('btnExpiryPhoto').click();await take(h,evidence);assert.equal(h.e('btnExpiryPhoto').hidden,false);assert.equal(h.e('expiryEvidencePreviews').children.length,0);
- assert.equal(await h.c.engine.reviewPhotos.evidence.text(),'evidence');assert.equal(h.e('btnSaveExpiryCapture').textContent,'SUBMIT FOR REVIEW');
+ assert.equal(await h.c.engine.reviewPhotos.evidence.text(),'evidence');assert.equal(h.e('btnSaveExpiryCapture').textContent,'SAVE & NEXT');
  assert.equal(h.e('btnExpiryRetakeProduct'),undefined);assert.equal(h.e('btnExpiryRetakeExpiry'),undefined);
 });
 test('Draft recovery restores evidence without inline preview and exact bytes',async()=>{

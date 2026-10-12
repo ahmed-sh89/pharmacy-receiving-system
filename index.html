@@ -39,7 +39,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=HANDHELD_FINAL1"
+        href="css/dashboard.css?v=HANDHELD_ACCEPTANCE1"
     >
 
     <link
@@ -1345,9 +1345,10 @@
                       <div id="expiryRecoverableDrafts" hidden></div>
                       <section id="expiryEvidence" class="expiryEvidence" hidden aria-label="Needs Review evidence">
                         <div id="expiryEvidencePreviews"></div>
-                        <button id="btnExpiryPhoto" type="button">TAKE PHOTO</button>
+                        <button id="btnExpiryNote" type="button"><span aria-hidden="true">✎</span> Add Note</button>
+                        <button id="btnExpiryPhoto" type="button"><span aria-hidden="true">▣</span> Add Photo</button>
                         <input id="expiryCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
-                        <span id="expiryEvidenceMessage" role="status"></span>
+                        <span id="expiryEvidenceMessage" role="status" hidden></span>
                       </section>
                       <div class="expiryCaptureActions">
                         <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
@@ -2609,11 +2610,11 @@
 
 <script src="js/needs-review.js?v=EXPIRY_ACCEPTANCE_CANDIDATE1"></script>
 
-<script src="js/expiry-operation.js?v=HANDHELD_FINAL1"></script>
-<script src="js/expiry-evidence.js?v=HANDHELD_FINAL1"></script>
+<script src="js/expiry-operation.js?v=HANDHELD_ACCEPTANCE1"></script>
+<script src="js/expiry-evidence.js?v=HANDHELD_ACCEPTANCE1"></script>
 <script src="js/expiry-capture-store.js?v=EXPIRY_OPERATION_V3"></script>
-<script src="js/expiry-active-session.js?v=ACTIVE_SESSION1"></script>
-<script src="js/expiry.js?v=ACTIVE_SESSION1"></script>
+<script src="js/expiry-active-session.js?v=SIGNED_SESSION1"></script>
+<script src="js/expiry.js?v=SIGNED_SESSION1"></script>
 <script src="js/expiry-desktop-v2.js?v=EXPIRY_CONNECTIVITY_CANDIDATE1"></script>
 <script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
 

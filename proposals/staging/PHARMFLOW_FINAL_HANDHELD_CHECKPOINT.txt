@@ -1,0 +1,6 @@
+2026-10-12 — final Handheld correction
+Staging migration 20261012002022 APPLIED and historical fingerprints verified unchanged.
+Candidate derived from 95f0b311e666f640cf902a544645cfb72963415b only.
+See PHARMFLOW_FINAL_HANDHELD_ACCEPTANCE.md for implemented behavior/tests/physical blockers.
+Next action after this candidate is published: Product Owner TC26 acceptance on stable Staging URL.
+No Production promotion; no Desktop development; no photo scheduler activation.

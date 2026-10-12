@@ -13,7 +13,7 @@ test('Authoritative save acknowledgement survives refresh; History reads server 
 });
 test('Missing save acknowledgement cannot produce success or discard the draft',async()=>{
  const h=await scanned(),rpc=h.c.authRpc;h.c.console={error(){},warn(){}};
- h.c.authRpc=async(name,p)=>name==='save_pharmflow_expiry_session_capture_v1'?[]:rpc(name,p);
+ h.c.authRpc=async(name,p)=>name==='save_pharmflow_expiry_session_capture_v2'?[]:rpc(name,p);
  await h.c.saveExpiryCapture();assert.ok(h.c.engine.currentItem);assert.equal(h.c.engine.saveUncertain,true);assert.equal(h.drafts.size,1);
 });
 test('Refresh offers Resume or Discard; it never renders an unsaved item as a new scan',async()=>{
@@ -36,9 +36,10 @@ test('Uncertain and legacy writes cannot be discarded or automatically replayed'
  assert.equal(choice(h,'Discard').disabled,true);assert.equal(h.c.engine.currentItem,null);assert.equal(h.calls.length,0);
  const draft=h.drafts.get('user1/isolated-test');draft.operation=null;h.drafts.set(draft.scope,draft);await reload(h);assert.equal(choice(h,'Discard').disabled,true);await click(choice(h,'Resume'));assert.equal(h.c.engine.saveUncertain,true);await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);
 });
-test('History is server-owned and no longer limited to fifteen local IDs',async()=>{
+test('History displays at most ten authoritative operations without deleting storage',async()=>{
  const h=harness(true);h.c.engine.selectedWorkerId='worker1';await h.c.ensureExpiryActiveSession();
  h.c.authRpc=async()=>Array.from({length:17},(_,i)=>({operation_id:'op-'+i,pharmacy_id:'isolated-test',created_by:'user1',quantity:1}));
+ // The versioned server is the owner of the ten-operation display limit.
  assert.equal((await h.c.loadExpirySessionReceipts()).length,17);
  h.c.authRpc=async()=>[{pharmacy_id:'other',created_by:'user1'}];await assert.rejects(h.c.loadExpirySessionReceipts(),/scope mismatch/);
 });
@@ -46,9 +47,9 @@ test('Draft recovery refuses another device or an invalid operator without repla
  const h=await scanned();await h.c.persistExpiryDraft();h.c.resetExpiryCaptureForm();h.c.ensureDeviceId=()=> 'other-device';await assert.rejects(h.c.prepareExpiryDraftRecovery(),/another device/);assert.equal(h.drafts.size,1);
  h.c.ensureDeviceId=()=> 'synthetic-device';h.c.engine.workers=[{worker_id:'different'}];await assert.rejects(h.c.restoreExpiryDraft(),/operator unavailable/);assert.equal(h.c.engine.currentItem,null);
 });
-test('History uses two tabs while Desktop keeps the original panel',async()=>{
+test('History uses one panel while Desktop keeps the original panel',async()=>{
  const h=harness(true);h.c.engine.selectedWorkerId='worker1';await h.c.openExpiryCapturedPanel();const markup=h.c.document.body.children.at(-1).innerHTML;
- assert.match(markup,/Active Session/);assert.match(markup,/Needs Review/);assert.doesNotMatch(markup,/Clear History/);
+ assert.doesNotMatch(markup,/role="tab"/);assert.match(markup,/History/);assert.doesNotMatch(markup,/Clear History/);
  const pc=harness(false);pc.c.loadExpiryCapturedRecords=async()=>[];await pc.c.openExpiryCapturedPanel();assert.match(pc.c.document.body.children.at(-1).innerHTML,/Recent Expiry/);
 });
 test('Invalid session response is an explicit error, never empty success',async()=>{

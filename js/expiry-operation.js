@@ -9,7 +9,7 @@ const ExpiryOperation = (() => {
     };
     function acknowledgement(value, operationId, kind){
         const row=unwrap(value);
-        if(row?.operation_id!==operationId || (kind==='UNKNOWN' ? !row.review_id || !(row.product_photo_path||row.evidence_photo_path) : !row.state_id || !row.event_id)) throw new Error('Missing durable operation acknowledgement');
+        if(row?.operation_id!==operationId || (kind==='UNKNOWN' ? !row.review_id : !row.state_id || !row.event_id)) throw new Error('Missing durable operation acknowledgement');
         return row;
     }
     function scanFacts(raw, diagnostic=false){
@@ -81,16 +81,17 @@ const ExpiryOperation = (() => {
         const params={p_pharmacy_id:operation.pharmacyId,p_operation_id:operation.id};
         const finish=async value=>{
             const ack=acknowledgement(value,operation.id,operation.payload.kind);
-            if(operation.payload.kind==='UNKNOWN'){
+            if(operation.payload.kind==='UNKNOWN' && !ack.confirmed_capture){
                 const row=await readReview(operation.pharmacyId,ack.review_id,rpc);guard();
                 const legacyTwoPhoto=!!operation.payload.expiry_photo_path;
                 const ackPath=ack.product_photo_path||ack.evidence_photo_path;
-                if(ackPath!==operation.payload.product_photo_path || (legacyTwoPhoto&&ack.expiry_photo_path!==operation.payload.expiry_photo_path) || row?.pharmacy_id!==operation.pharmacyId || row?.review_id!==ack.review_id || Object.entries(operation.payload).some(([key,value])=>row[key]!==value))throw new Error('Review read contract mismatch — draft retained');
+                if((ackPath||null)!==(operation.payload.product_photo_path||null) || (legacyTwoPhoto&&ack.expiry_photo_path!==operation.payload.expiry_photo_path) || row?.pharmacy_id!==operation.pharmacyId || row?.review_id!==ack.review_id || Object.entries(operation.payload).some(([key,value])=>row[key]!==value))throw new Error('Review read contract mismatch — draft retained');
             }
+            if(ack.confirmed_capture && (ack.pharmacy_id!==operation.pharmacyId || Object.keys(ack.confirmed_capture).length!==Object.keys(operation.payload).length || Object.entries(operation.payload).some(([key,value])=>ack.confirmed_capture[key]!==value)))throw new Error('Confirmed capture mismatch — draft retained');
             return ack;
         };
         let reserved;
-        try{reserved=directKnown && payload.kind==='KNOWN'?{operation_id:operation.id,status:'RESERVED'}:unwrap(await rpc('reserve_pharmflow_expiry_capture_v1',params));}
+        try{reserved=directKnown?{operation_id:operation.id,status:'RESERVED'}:unwrap(await rpc('reserve_pharmflow_expiry_capture_v1',params));}
         catch(error){
             // Reservation cannot write inventory. Reusing this operation ID
             // is safe even if its response was lost.
@@ -107,7 +108,7 @@ const ExpiryOperation = (() => {
             try{return await finish(result);}catch(error){error.expiryOutcome='uncertain';error.uncertain=true;throw error;}
         }
         if(!operation.payload){
-            if(payload.kind==='UNKNOWN'){
+            if(payload.kind==='UNKNOWN' && (photos?.evidence||photos?.product||photos?.expiry)){
                 const legacyTwoPhoto=!!photos?.product && !!photos?.expiry;
                 const photoRoles=legacyTwoPhoto?['product','expiry']:['evidence'];
                 const evidenceFile=photos?.evidence||photos?.product;

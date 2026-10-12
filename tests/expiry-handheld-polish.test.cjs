@@ -3,7 +3,7 @@ const {harness}=require('./expiry-capture-review.test.cjs');
 async function scan(){const h=harness(true);h.c.engine.selectedWorkerId='worker1';h.c.confirm=()=>true;await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831');return h;}
 test('Two operators share receipt references and authoritative immutable attribution, newest first',async()=>{
  const h=await scan(),rpc=h.c.authRpc;
- h.c.authRpc=async(n,p)=>{const r=await rpc(n,p);if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v1'].includes(n)){const row=h.receipts.get(p.p_operation_id);row.operator_name=p.p_capture.worker_id==='worker1'?'Operator One':'Operator Two';row.captured_at=p.p_capture.worker_id==='worker1'?'2026-10-09T00:00:00Z':'2026-10-09T00:01:00Z';}return r;};
+ h.c.authRpc=async(n,p)=>{const r=await rpc(n,p);if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(n)){const row=h.receipts.get(p.p_operation_id);row.operator_name=p.p_capture.worker_id==='worker1'?'Operator One':'Operator Two';row.captured_at=p.p_capture.worker_id==='worker1'?'2026-10-09T00:00:00Z':'2026-10-09T00:01:00Z';}return r;};
  await h.c.saveExpiryCapture();h.c.selectExpiryWorker('worker2');await h.c.resolveExpiryScannedValue('U0030');h.c.setExpiryControlValue(h.e('expiryMonth'),'10');h.c.setExpiryControlValue(h.e('expiryYear'),'2027');await h.c.saveExpiryCapture();
  let rows=await h.c.loadExpirySessionReceipts();assert.equal(rows.length,2);assert.equal(rows[0].operator_name,'Operator Two');assert.equal(rows[1].operator_name,'Operator One');
  h.c.selectExpiryWorker('worker1');rows=await h.c.loadExpirySessionReceipts();assert.equal(rows[0].operator_name,'Operator Two');assert.equal(rows[1].worker_id,'worker1');

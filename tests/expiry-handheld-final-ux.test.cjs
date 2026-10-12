@@ -6,15 +6,15 @@ test('Handheld Operator switching never reassigns an unsaved capture or pending 
  h.c.confirm=()=>true;await h.c.clearExpiryHandheldCapture();h.c.selectExpiryWorker('worker2');assert.equal(h.c.engine.selectedWorkerId,'worker2');
  h.e('expiryBarcodeInput').value='040';h.c.selectExpiryWorker('worker1');assert.equal(h.c.engine.selectedWorkerId,'worker2');
 });
-test('History has exactly two tabs and authoritative status/details',async()=>{
+test('History has no tabs and shows distinct authoritative status/details',async()=>{
  const h=harness(true);h.c.engine.selectedWorkerId='worker1';const rpc=h.c.authRpc;
- h.c.authRpc=async(name,p)=>name==='list_pharmflow_expiry_session_v1'?[{operation_id:'one',pharmacy_id:'isolated-test',created_by:'user1',kind:'KNOWN',item_name:'Test',expiry_month:10,expiry_year:2026,quantity:1,identifier_display:'001234',status:'SAVED',editable:true,revision:0}]:rpc(name,p);
+ h.c.authRpc=async(name,p)=>name==='list_pharmflow_expiry_session_v2'?[{operation_id:'one',pharmacy_id:'isolated-test',created_by:'user1',kind:'KNOWN',item_name:'Test',expiry_month:10,expiry_year:2026,quantity:1,identifier_display:'001234',status:'SAVED',editable:true,revision:0}]:rpc(name,p);
  await h.c.openExpiryRecentScans();const overlay=h.c.document.body.children.at(-1);
- assert.match(overlay.innerHTML,/Active Session/);assert.match(overlay.innerHTML,/Needs Review/);assert.equal((overlay.innerHTML.match(/role="tab"/g)||[]).length,2);
- const list=overlay.querySelector('.expiryCapturedList');assert.equal(list.children.length,1);assert.match(list.children[0].children[0].textContent,/Test.*Qty 1/);
+ assert.doesNotMatch(overlay.innerHTML,/role="tab"/);
+ const list=overlay.querySelector('.expiryCapturedList');assert.equal(list.children.length,1);assert.match(list.children[0].children[0].children[0].children[1].textContent,/Qty 1/);
 });
 test('Dedicated header centers Expiry Capture and places Operator above Scan with scroll-bounded history',()=>{
  const html=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('css/dashboard.css','utf8'),header=html.match(/<header class="expiryHandheldHeader[\s\S]*?<\/header>/)[0];
  assert.doesNotMatch(header,/PharmFlow/);assert.ok(header.indexOf('btnExpiryBackToModes')<header.indexOf('Expiry Capture'));assert.ok(header.indexOf('Expiry Capture')<header.indexOf('btnExpiryCaptured'));
- assert.match(css,/expiryHandheldHeader>div\{[^}]*text-align:center/);assert.match(css,/expiryOperatorActions\{grid-row:1/);assert.match(css,/expiryScanBox\{grid-row:2/);assert.match(css,/max-height:85dvh/);assert.match(css,/expiryRecentScans \.expiryCapturedList\{min-height:0;overflow-y:auto/);assert.match(css,/details\[open\] \.expiryRecentChevron\{transform:rotate\(180deg\)/);
+ assert.match(css,/expiryHandheldHeader>div\{[^}]*text-align:center/);assert.match(css,/expiryOperatorActions\{grid-row:1/);assert.match(css,/expiryScanBox\{grid-row:2/);assert.match(css,/max-height:calc\(var\(--handheld-visible-height,100dvh\)\*\.85\)/);assert.match(css,/expiryRecentScans \.expiryCapturedList\{min-height:0;overflow-y:auto/);assert.match(css,/details\[open\] \.expiryRecentChevron\{transform:rotate\(180deg\)/);
 });

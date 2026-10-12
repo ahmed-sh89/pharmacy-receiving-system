@@ -447,3 +447,35 @@ test('OFFLINE ONLY: coordinated AI11 private-helper proposal preserves raw scan,
   await identity(UB);await denied(()=>save(p,uuid(),PA),/Pharmacy access/);
  }finally{await identity(UA,'postgres');await db.exec(original+';');await identity();}
 });
+
+test('FINAL GATE: signed login session, optional evidence, ten authoritative receipts and operation identity moves',async()=>{
+ await identity(UA,'postgres');
+ await db.exec(fs.readFileSync('supabase/migrations/20261011200941_expiry_private_ai11_validated_production_date.sql','utf8'));
+ await db.exec(`create table auth.sessions(id uuid primary key,user_id uuid not null,created_at timestamptz default now(),not_after timestamptz);create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;`);
+ const before=await value("select md5(string_agg(row_to_json(o)::text,'' order by operation_id)) h from pharmflow_expiry_private.operations o");
+ await db.exec(fs.readFileSync('proposals/staging/expiry_final_handheld_gate.sql','utf8'));
+ assert.deepEqual(await value("select md5(string_agg(row_to_json(o)::text,'' order by operation_id)) h from pharmflow_expiry_private.operations o"),before);
+ const sid=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[sid,UA]);await identity();
+ const jwt=async(id=sid,exp=Math.floor(Date.now()/1000)+3600)=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:id,exp})]);await jwt();
+ const open=async()=>(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'synthetic-device'])).r;
+ const session=await open();assert.equal((await open()).session_id,session.session_id);
+ const save2=async(p,op=uuid())=>(await value('select public.save_pharmflow_expiry_session_capture_v2($1,$2,$3,$4::jsonb) r',[PA,session.session_id,op,JSON.stringify(p)])).r;
+ const adjust=async(op,rev,fields,request=uuid())=>(await value('select public.correct_pharmflow_expiry_session_v2($1,$2,$3,$4,$5,$6::jsonb) r',[PA,session.session_id,op,request,rev,JSON.stringify(fields)])).r;
+ for(const [name,note,photo] of [['NONE',false,false],['NOTE',true,false],['PHOTO',false,true],['BOTH',true,true]]){
+  const p=capture('OPTIONAL-'+name,'UNKNOWN');if(note)p.identification_note='Panadol';const op=photo?await singlePhoto(p):uuid();const ack=await save2(p,op);assert.ok(ack.review_id);assert.deepEqual(ack.confirmed_capture,p);assert.deepEqual(await save2(p,op),ack);
+  const row=(await value('select public.get_pharmflow_expiry_review_v1($1,$2) r',[PA,ack.review_id])).r;assert.equal(row.identifier_display,p.identifier_display);assert.equal(row.identification_note,note?'Panadol':undefined);assert.equal(row.status,'PENDING');assert.equal(row.product_photo_path,photo?p.product_photo_path:null);
+ }
+ const p=capture('MOVING-OP'),op=uuid(),second=uuid();await save2(p,op);await save2(p,second);
+ const replacement={quantity:2,batch_no:null,expiry_month:8,expiry_year:2028},request=uuid();const corrected=await adjust(op,0,replacement,request);assert.deepEqual(await adjust(op,0,replacement,request),corrected);await denied(()=>adjust(op,0,replacement),/Stale revision/);
+ const moved=await adjust(op,1,{quantity:2,batch_no:'NEW-LOT',expiry_month:9,expiry_year:2029});await identity(UA,'postgres');assert.equal((await value('select verified_quantity q from public.pharmflow_expiry_current_state_v1 where id=$1',[moved.state_id])).q,2);assert.equal((await value("select verified_quantity q from public.pharmflow_expiry_current_state_v1 where item_code=$1 and batch_key='' and expiry_month=8",[p.item_code])).q,3);await identity();
+ await adjust(op,2,{quantity:0,batch_no:'NEW-LOT',expiry_month:9,expiry_year:2029});
+ const u=capture('OPTIONAL-EDIT','UNKNOWN'),uid=uuid(),ua=await save2(u,uid);await adjust(uid,0,{quantity:4,batch_no:'REVIEW-LOT',expiry_month:11,expiry_year:2030});
+ const resolved=(await value('select public.resolve_pharmflow_expiry_review_v1($1,$2,$3,$4,$5) r',[PA,ua.review_id,uuid(),'TARGET-ITEM','Final gate'])).r;await identity(UA,'postgres');const state=await value('select * from public.pharmflow_expiry_current_state_v1 where id=$1',[resolved.state_id]);assert.equal(state.verified_quantity,4);assert.equal(state.batch_no,'REVIEW-LOT');assert.equal(state.expiry_month,11);assert.equal(state.expiry_year,2030);assert.notEqual(state.item_name,'Panadol');await identity();await denied(()=>adjust(uid,1,{quantity:1,batch_no:null,expiry_month:8,expiry_year:2028}),/Only pending/);
+ for(let i=0;i<12;i++)await save2(capture('LIMIT-'+i));const rows=(await value('select public.list_pharmflow_expiry_session_v2($1,$2) r',[PA,session.session_id])).r;assert.equal(rows.length,10);assert.equal(new Set(rows.map(r=>r.operation_id)).size,10);
+ const bsid=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[bsid,UB]);await identity(UB);await jwt(bsid);await denied(()=>open(),/Pharmacy/);await identity();await jwt();
+ await jwt(sid,1);await denied(()=>open(),/expired or revoked/);await jwt();
+ await denied(()=>db.query('select public.correct_pharmflow_expiry_session_v1($1,$2,$3,$4,0,1)',[PA,session.session_id,op,uuid()]),/permission denied/);
+ await db.query('select public.close_pharmflow_expiry_auth_session_v1()');await denied(()=>open(),/Session closed/);await denied(()=>adjust(second,0,replacement),/Session closed/);
+ const next=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[next,UA]);await identity();await jwt(next);assert.notEqual((await open()).session_id,session.session_id);await denied(()=>adjust(second,0,replacement),/scope mismatch/);
+ await identity(UA,'postgres');await db.query('delete from auth.sessions where id=$1',[next]);await identity();await denied(()=>open(),/expired or revoked/);
+});
