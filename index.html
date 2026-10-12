@@ -39,7 +39,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=EXPIRY_SCANNING1"
+        href="css/dashboard.css?v=DESKTOP_OPERATIONAL_UX1_EXPIRY_SCANNING1"
     >
 
     <link
@@ -1322,6 +1322,7 @@
                           <div class="expiryActiveDatum"><span>GTIN / Barcode</span><strong id="expiryActiveItemGTIN">—</strong></div>
                           <div class="expiryActiveDatum"><span>Category</span><strong id="expiryActiveItemCategory">—</strong></div>
                         </div>
+                        <div class="expiryActiveBadges"><span id="expiryRecognizedBadge" hidden>✓ Recognized</span><span id="expiryAutoDateBadge" hidden>✓ Expiry read</span></div>
                       </div>
                       <div class="expiryEntryGrid">
                         <label class="expiryReviewField expiryQtyField"><span class="expiryControlLabel expiryDesktopOnly">Quantity</span><div class="expiryQuantityControl"><button id="btnExpiryQtyMinus" class="expiryDesktopOnly" type="button" aria-label="Decrease quantity">−</button><input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" aria-label="Quantity" placeholder="Qty"><button id="btnExpiryQtyPlus" class="expiryDesktopOnly" type="button" aria-label="Increase quantity">+</button></div></label>
@@ -1352,7 +1353,7 @@
                       </section>
                       <div class="expiryCaptureActions">
                         <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
-                        <div id="expiryDesktopStatus" class="expiryDesktopStatus" role="status" aria-live="assertive" hidden></div>
+                        <div id="expiryDesktopStatus" class="expiryDesktopStatus" role="status" aria-live="polite" hidden></div>
                       </div>
                     </div>
 
@@ -1374,18 +1375,18 @@
 
                 <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
                     <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
-                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Session Activity</button>
+                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Session Activity <b id="expirySessionCount" class="expirySessionCount">0</b></button>
                         <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
                         <button id="btnExpiryNeedsReview" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 18 17H2L10 3Zm0 5v4m0 2.5v.1"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button>
+                        <details id="expirySessionMenu" class="expirySessionMenu"><summary aria-label="Session actions">⋯</summary><div><button id="btnClearExpirySession" type="button">Clear Session</button></div></details>
                     </nav>
-                    <div class="expiryCurrentHeader">
+                    <div id="expiryCurrentHeader" class="expiryCurrentHeader">
                         <div class="expiryCurrentTitle">
                             <span id="expiryWorkspaceTitle">Session Activity</span>
                             <strong id="expiryCurrentStateCount">0</strong>
                             <small id="expiryWorkspaceSubtitle" hidden></small>
                         </div>
                         <div class="expiryCurrentTools">
-                            <button id="btnClearExpirySession" class="expiryInventoryButton expirySessionClearButton" type="button">Clear Session</button>
                             <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search by product name, item code, GTIN / barcode or batch" hidden>
                             <button id="btnClearExpiryFilters" class="expiryInventoryButton expiryClearFiltersButton" type="button" hidden>Clear Filters</button>
                             <button id="btnExportExpiryInventory" class="expiryInventoryButton expiryExportButton" type="button" hidden>Export</button>
@@ -2614,8 +2615,8 @@
 <script src="js/expiry-evidence.js?v=HANDHELD_ACCEPTANCE1"></script>
 <script src="js/expiry-capture-store.js?v=EXPIRY_OPERATION_V3"></script>
 <script src="js/expiry-active-session.js?v=HISTORY_POLISH1"></script>
-<script src="js/expiry.js?v=SIGNED_SESSION1"></script>
-<script src="js/expiry-desktop-v2.js?v=INVENTORY_LOCAL_SEARCH1"></script>
+<script src="js/expiry.js?v=DESKTOP_OPERATIONAL_UX1"></script>
+<script src="js/expiry-desktop-v2.js?v=DESKTOP_OPERATIONAL_UX1"></script>
 <script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
 
 <script src="cloud-workspace.js?v=AUTHORITY_EMPTY1"></script>

@@ -107,6 +107,7 @@ function openExpirySelect(el){
     if(menu) menu.hidden=false;
     const selected=menu?.querySelector(".pfSelectOption.is-selected") || menu?.querySelector(".pfSelectOption:not([data-value=''])");
     selected?.scrollIntoView?.({block:"nearest"});
+    if(!expiryIsHandheld() && ["month","year"].includes(el.dataset.expirySelect))selected?.focus?.({preventScroll:true});
 }
 function toggleExpirySelect(el){
     if(el?.classList.contains("is-open")) closeExpirySelect(el,true); else openExpirySelect(el);
@@ -138,6 +139,16 @@ function initExpirySelects(){
         el.dataset.selectBound="1";
         el.querySelector(".pfSelectTrigger")?.addEventListener("click",e=>{e.stopPropagation();toggleExpirySelect(el);});
         el.addEventListener("keydown",e=>{
+            if(!expiryIsHandheld() && ["month","year"].includes(el.dataset.expirySelect)){
+                const options=[...el.querySelectorAll(".pfSelectOption")],open=el.classList.contains("is-open"),index=options.indexOf(document.activeElement);
+                if(["ArrowDown","ArrowUp","Home","End"].includes(e.key)){
+                    e.preventDefault();if(!open){openExpirySelect(el);return;}
+                    const next=e.key==="Home"?0:e.key==="End"?options.length-1:Math.max(0,Math.min(options.length-1,index+(e.key==="ArrowDown"?1:-1)));
+                    options[next]?.focus({preventScroll:true});options[next]?.scrollIntoView({block:"nearest"});return;
+                }
+                if((e.key==="Enter"||e.key===" ") && open && index>=0){e.preventDefault();options[index].click();return;}
+                if(e.key==="Tab"){closeExpirySelect(el,true);return;}
+            }
             if(e.key==="Enter"||e.key===" "||e.key==="ArrowDown"){e.preventDefault();openExpirySelect(el);}
             else if(e.key==="Escape"){e.preventDefault();closeExpirySelect(el,true);}
         });
@@ -477,6 +488,7 @@ function setExpiryDateMode(mode){
     const label=document.getElementById("expiryMonthName");
 
     ExpiryCaptureEngine.dateSource=mode==="AUTO" ? "AUTO" : "MANUAL";
+    if(!expiryIsHandheld()){const badge=document.getElementById("expiryAutoDateBadge");if(badge)badge.hidden=mode!=="AUTO";}
 
     if(mode==="AUTO"){
         setExpirySelectDisabled(month,expiryIsHandheld());
@@ -623,6 +635,10 @@ function renderExpiryActiveItem(item,gs1={}){
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||"—";};
     shell.hidden=false;
     shell.classList.toggle("is-empty",!item);
+    shell.classList.toggle("is-recognized",!!item && !item.needsReview && !!item.itemCode);
+    const recognized=document.getElementById("expiryRecognizedBadge"),autoDate=document.getElementById("expiryAutoDateBadge");
+    if(recognized)recognized.hidden=!(item && !item.needsReview && item.itemCode);
+    if(autoDate)autoDate.hidden=!(item && /^\d{4}-\d{2}-\d{2}$/.test(String(gs1.expiry||"")));
     if(!item){
         set("expiryActiveItemName","Ready for next item");
         set("expiryActiveItemCode","—");set("expiryActiveItemGTIN","—");set("expiryActiveItemCategory","—");

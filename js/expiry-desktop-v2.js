@@ -10,6 +10,9 @@
   let inventoryRequestVersion=0;
   let inventoryRowsScope=null;
   let inventorySearchFrame=false;
+  let inventoryHeadRow=null;
+  let sessionHeadRow=null;
+  let latestSessionCaptureId="";
   let recordDialog=null;
   let dialogBusy=false;
   let dialogReturnFocus=null;
@@ -170,6 +173,20 @@
   function updateMode(){
     const inv=ExpiryCaptureEngine.desktopView==="INVENTORY",shell=document.getElementById("zebraExpiryShell");
     const set=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e);};
+    const table=document.querySelector?.(".expiryCurrentTable"),head=table?.querySelector("thead");
+    if(head){
+      if(!inventoryHeadRow)inventoryHeadRow=head.querySelector("tr");
+      if(!sessionHeadRow){
+        sessionHeadRow=document.createElement("tr");
+        sessionHeadRow.innerHTML='<th>Product / Identification</th><th>Batch / Expiry</th><th>Quantity</th><th>Activity</th><th>Actions</th>';
+        head.appendChild(sessionHeadRow);
+      }
+      if(inventoryHeadRow)inventoryHeadRow.hidden=!inv;
+      sessionHeadRow.hidden=inv;
+      table.classList.toggle("expirySessionTable",!inv);
+    }
+    set("expirySessionMenu",e=>{e.hidden=inv;e.open=false;});
+    set("expiryCurrentHeader",e=>e.hidden=!inv);
     set("expiryWorkspaceTitle",e=>e.textContent=inv?"Expiry Inventory":"Session Activity");
     set("expiryWorkspaceSubtitle",e=>{e.textContent=inv?"All active verified expiry records":"";e.hidden=!inv;});
     set("btnExpirySessionView",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(!inv));e.tabIndex=inv?-1:0;});
@@ -186,24 +203,21 @@
   }
 
   function deleteActions(scope,id){
-    return '<button type="button" class="expiryRowAction danger" data-delete-start="'+esc(id)+'" data-delete-scope="'+scope+'">Delete</button>';
+    return '<button type="button" class="'+(scope==="session"?"expirySessionAction":"expiryRowAction")+' danger" data-delete-start="'+esc(id)+'" data-delete-scope="'+scope+'">Delete</button>';
   }
 
-  function sessionRowHtml(r){
-    const cur=currentFor(r),deleted=!!r.deleted||!cur,d=cur||r,fresh=(Date.now()-Date.parse(r.captured_at||""))<6000,id=String(cur?.state_id||r.state_id||"");
-    return '<tr class="expiryActivityRow '+(fresh?'expiryRowSavedStrong ':'')+(deleted?'expiryActivityDeletedRow':'')+'">'+
-      '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</td>'+
-      '<td class="expiryGtinCell" title="'+esc(d.identifier_display||d.gtin||"")+'">'+esc(d.identifier_display||d.gtin||"—")+'</td>'+
-      '<td class="expiryCodeCell"><strong>'+esc(d.item_code||"—")+'</strong></td>'+
-      '<td class="expiryProductCell" title="'+esc(d.item_name||"")+'"><strong>'+esc(d.item_name||"")+'</strong></td>'+
-      '<td><span class="expiryCategoryChip">'+esc(d.category||"Uncategorized")+'</span></td>'+
-      '<td>'+esc(d.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(d.expiry_month))+' '+esc(d.expiry_year)+'</td>'+
-      '<td class="expiryQtyCell expiryActivityQty">'+esc(deleted?(Number(r.quantity)||0):(Number(cur.verified_quantity)||0))+'</td>'+
-      '<td class="expiryOperatorCell">'+esc(cur?.verified_by_name||r.operator_name||"Desktop")+'</td>'+
-      '<td class="expiryActionsCell">'+(deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<button type="button" class="expiryRowAction" data-session-edit="'+esc(id)+'">Edit</button>'+deleteActions("session",id))+'</td></tr>';
+  function sessionRowHtml(r,index){
+    const cur=currentFor(r),deleted=!!r.deleted||!cur,d=cur||r,id=String(cur?.state_id||r.state_id||"");
+    const latest=index===0 && !!latestSessionCaptureId && r.capture_id===latestSessionCaptureId;
+    return '<tr class="expiryActivityRow '+(latest?'expiryRowSavedStrong ':'')+(deleted?'expiryActivityDeletedRow':'')+'" '+(latest?'aria-label="Latest saved activity"':'')+'>'+
+      '<td class="expirySessionProduct"><strong>'+esc(d.item_name||r.item_name||"—")+'</strong><div>Code <b>'+esc(d.item_code||"—")+'</b> · GTIN <span>'+esc(d.identifier_display||d.gtin||"—")+'</span></div><span class="expirySessionCategory">'+esc(d.category||"Uncategorized")+'</span></td>'+
+      '<td class="expirySessionBatch"><div><span>Batch</span> '+esc(d.batch_no||"—")+'</div><strong>'+esc(expiryMonthShortName(d.expiry_month))+' '+esc(d.expiry_year)+'</strong>'+((r.sample_serial||r.serial||d.sample_serial)?'<div class="expirySessionSerial"><span>Serial</span> '+esc(r.sample_serial||r.serial||d.sample_serial)+'</div>':'')+'</td>'+
+      '<td class="expiryActivityQty">'+esc(deleted?(Number(r.quantity)||0):(Number(cur.verified_quantity)||0))+'</td>'+
+      '<td class="expirySessionMeta"><time title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</time><span>'+esc(cur?.verified_by_name||r.operator_name||"Desktop")+'</span></td>'+
+      '<td class="expirySessionActions">'+(deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<button type="button" class="expirySessionAction" data-session-edit="'+esc(id)+'">Edit</button>'+deleteActions("session",id))+'</td></tr>';
   }
   window.renderExpirySessionActivity=function(){
-    const visible=sessionRows(),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expiryCurrentStateCount");
+    const visible=sessionRows(),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expirySessionCount");
     if(count)count.textContent=String(visible.length);if(!body)return;
     if(!visible.length){body.innerHTML="";if(empty){empty.hidden=false;empty.innerHTML="<strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span>";}return;}
     if(empty)empty.hidden=true;body.innerHTML=visible.map(sessionRowHtml).join("");bindDesktopRowActions();
@@ -327,7 +341,7 @@
   }
 
   window.markExpirySessionStateDeleted=function(stateId){ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).map(r=>String(r.state_id||"")===String(stateId||"")?Object.assign({},r,{deleted:true}):r);};
-  window.resetExpiryDesktopSession=function(){ExpiryCaptureEngine.sessionStartedAt=0;ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";closeRecordDialog();Object.values(FILTERS).forEach(s=>s.clear());lastUpdatedSort="NONE";};
+  window.resetExpiryDesktopSession=function(){latestSessionCaptureId="";ExpiryCaptureEngine.sessionStartedAt=0;ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";closeRecordDialog();Object.values(FILTERS).forEach(s=>s.clear());lastUpdatedSort="NONE";};
   window.recordExpirySessionCapture=function(payload){
     if(expiryIsHandheld()||!payload)return;
     const incoming=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
@@ -343,7 +357,9 @@
       rows.splice(index,1);rows.unshift(merged);
     }else rows.unshift(incoming);
     ExpiryCaptureEngine.sessionRows=rows;
+    latestSessionCaptureId=incoming.capture_id;
     renderExpirySessionActivity();
+    if(ExpiryCaptureEngine.desktopView==="SESSION"){const wrap=document.querySelector?.(".expiryCurrentTableWrap");if(wrap)wrap.scrollTop=0;}
   };
   window.renderExpiryCurrentState=function(rows){const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity();else renderInventory(safe);};
   window.refreshExpiryCurrentState=async function(){
@@ -363,6 +379,14 @@
   window.bindExpiryCaptureUI=function(){
     originalBind();bindViewport();
     if(!reviewCountBound){reviewCountBound=true;window.addEventListener("focus",refreshExpiryNeedsReviewCount);}
+    const menu=document.getElementById("expirySessionMenu");
+    if(menu && menu.dataset.bound!=="1"){
+      menu.dataset.bound="1";
+      menu.addEventListener("keydown",e=>{if(e.key==="Escape"){menu.open=false;menu.querySelector("summary")?.focus();}else if(e.key==="ArrowDown"){e.preventDefault();menu.open=true;menu.querySelector("button")?.focus();}});
+      menu.addEventListener("click",e=>{if(e.target.closest?.("#btnClearExpirySession")){menu.open=false;menu.querySelector("summary")?.focus({preventScroll:true});}});
+      menu.addEventListener("focusout",e=>{if(!menu.contains(e.relatedTarget))menu.open=false;});
+      document.addEventListener("click",e=>{if(!menu.contains(e.target))menu.open=false;});
+    }
     const inv=document.getElementById("btnOpenExpiryInventory"),back=document.getElementById("btnExpirySessionView"),review=document.getElementById("btnExpiryNeedsReview"),clearSession=document.getElementById("btnClearExpirySession"),search=document.getElementById("expiryCurrentSearch"),clearFilters=document.getElementById("btnClearExpiryFilters"),exportBtn=document.getElementById("btnExportExpiryInventory");
     const selectView=view=>{
       closeRecordDialog(false);
