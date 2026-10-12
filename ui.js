@@ -8761,24 +8761,40 @@ function filterNeedsReviewRowsToPcScope(rows){
     return (rows||[]).filter(row=>{const assigned=normalizeOrderNumber(row?.order_number||"");if(assigned)return scope.has(assigned);const captured=(Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean);return captured.some(order=>scope.has(order));});
 }
 
+let needsReviewCountersRead=null;
+function needsReviewCountersScopeKey(){
+    const scope=getPcNeedsReviewOrderScope();
+    return JSON.stringify([
+        typeof AuthState!=="undefined"?AuthState?.user?.id:null,
+        typeof AuthState!=="undefined"?AuthState?.context?.pharmacy_id:null,
+        scope===null?null:[...scope].sort()
+    ]);
+}
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
-
-    try{
-        /* Pharmacy-scoped by design. Never hide Handheld drafts because of
-           a PC-local order/workspace id mismatch. */
-        const receiving=filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
-        const rc=document.getElementById("receivingNeedsReviewCount");
-
-        const grouped=groupNeedsReviewRows(receiving);
-        if(rc) rc.textContent=String(grouped.length);
-
-        document
-            .getElementById("btnReceivingNeedsReview")
-            ?.classList.toggle("hasItems",grouped.length>0);
-    }catch(error){
-        console.warn("Needs Review V2 count failed",error);
-    }
+    if(window.PharmFlowIdleSleep?.active) return;
+    // This badge and its selected-order scope belong to Receiving only.
+    // Expiry uses its own authoritative Expiry review contract/counter.
+    if(typeof AppRouter!=="undefined" && AppRouter.currentRoute==="expiry") return;
+    const key=needsReviewCountersScopeKey(),scope=getPcNeedsReviewOrderScope();
+    if(needsReviewCountersRead?.key===key)return needsReviewCountersRead.promise;
+    const promise=(async()=>{
+        try{
+            // An empty selected-order set always projects to zero under the
+            // existing display rule; fetching pharmacy-wide rows cannot change it.
+            const receiving=scope?.size===0?[]:filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
+            if(key!==needsReviewCountersScopeKey())return;
+            const grouped=groupNeedsReviewRows(receiving);
+            const rc=document.getElementById("receivingNeedsReviewCount");
+            if(rc)rc.textContent=String(grouped.length);
+            document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",grouped.length>0);
+        }catch(error){
+            console.warn("Needs Review V2 count failed",error);
+        }
+    })();
+    needsReviewCountersRead={key,promise};
+    try{return await promise;}
+    finally{if(needsReviewCountersRead?.promise===promise)needsReviewCountersRead=null;}
 }
 
 function ensureNeedsReviewButtons(){
@@ -9588,10 +9604,9 @@ async function openExpiryNeedsReviewPanel(){
 
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
 
-/* B11: lightweight cross-device Needs Review awareness.
-   Full review rows are fetched only when the PC panel is opened; the watcher
-   asks Supabase for a tiny count so a Handheld submission becomes visible on
-   the PC without refreshing the whole workspace. */
+/* Cross-device Receiving Needs Review awareness. The selected-order badge
+   needs scoped row projection, not a pharmacy-wide count. Its existing
+   thirty-second watcher reads only while Receiving uses that badge. */
 let needsReviewCloudWatchTimer=null;
 let needsReviewCloudWatchBusy=false;
 let needsReviewCloudLastReadAt=0;
@@ -9816,13 +9831,8 @@ function refreshHandheldQuantityGuidance(){
 
 if(typeof AppEvents!=="undefined"&&AppEvents?.on){
     AppEvents.on("route:changed",payload=>{
-        setTimeout(()=>{
-            ensureNeedsReviewButtons();
-            refreshNeedsReviewCounters();
-            if(payload?.routeName==="expiry"){
-                refreshNeedsReviewCounters();
-            }
-        },30);
+        // ensureNeedsReviewButtons owns the single counter refresh on entry.
+        setTimeout(()=>ensureNeedsReviewButtons(),30);
     });
     AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));
 }
