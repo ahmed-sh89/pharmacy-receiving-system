@@ -8,6 +8,8 @@
   let lastUpdatedSort="NONE";
   let inventorySearchTimer=null;
   let inventoryRequestVersion=0;
+  let inventoryRowsScope=null;
+  let inventorySearchFrame=false;
   let recordDialog=null;
   let dialogBusy=false;
   let dialogReturnFocus=null;
@@ -43,8 +45,50 @@
       :r);
   }
 
+  function inventoryScope(){return typeof expiryDraftScope==="function"?expiryDraftScope():"desktop-fixture";}
+  function cancelInventorySearch(){
+    if(inventorySearchFrame && typeof cancelAnimationFrame==="function")cancelAnimationFrame(inventorySearchTimer);
+    else clearTimeout(inventorySearchTimer);
+    inventorySearchTimer=null;inventorySearchFrame=false;
+  }
+  function inventorySearchRows(rows){
+    const query=String(document.getElementById("expiryCurrentSearch")?.value||"").trim().toLowerCase();
+    if(!query)return rows||[];
+    let matches;
+    if(!/[\%_]/.test(query))matches=value=>String(value||"").toLowerCase().includes(query);
+    else{
+      // Preserve the existing PostgreSQL LIKE wildcard/escape semantics.
+      const pattern="%"+query+"%",escape=c=>c.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");let regex="^";
+      for(let i=0;i<pattern.length;i++){
+        const c=pattern[i];
+        if(c==="\\" && i+1<pattern.length)regex+=escape(pattern[++i]);
+        else regex+=c==="%"?".*":c==="_"?".":escape(c);
+      }
+      const expression=new RegExp(regex+"$","su");matches=value=>expression.test(String(value||"").toLowerCase());
+    }
+    return (rows||[]).filter(r=>[r.item_name,r.item_code,r.identifier_display,r.batch_no].some(matches));
+  }
+  async function loadInventorySnapshot(scope){
+    const rows=await loadExpiryCurrentState("");
+    if(scope!==inventoryScope())return [];
+    // Table RPCs can be limited by PostgREST even without SQL LIMIT. Continue
+    // from the actual returned count, until an empty page proves completeness.
+    if(!rows.length || typeof authRequest!=="function" || typeof getSupabaseAccessToken!=="function")return rows;
+    const pharmacyId=expiryPharmacyId(),all=rows.slice(),seen=new Set(rows.map(rowId));
+    for(;;){
+      if(scope!==inventoryScope())return [];
+      const page=await authRequest("/rest/v1/rpc/list_pharmacy_expiry_current_state_v1?offset="+all.length+"&limit=1000",{
+        method:"POST",headers:{Authorization:"Bearer "+getSupabaseAccessToken(),Accept:"application/json"},
+        body:JSON.stringify({p_pharmacy_id:pharmacyId,p_include_cleared:false,p_search:null})
+      });
+      if(scope!==inventoryScope())return [];
+      if(!Array.isArray(page))throw new Error("Invalid Inventory page");
+      if(!page.length)return all;
+      for(const row of page){if(!rowId(row)||seen.has(rowId(row)))throw new Error("Inventory changed during loading; refresh again");seen.add(rowId(row));all.push(row);}
+    }
+  }
   function inventoryFiltered(rows){
-    let out=(rows||[]).filter(r=>
+    let out=inventorySearchRows(rows).filter(r=>
       (!FILTERS.category.size||FILTERS.category.has(String(r.category||"Uncategorized"))) &&
       (!FILTERS.expiry.size||FILTERS.expiry.has(expiryKey(r))) &&
       (!FILTERS.operator.size||FILTERS.operator.has(operatorName(r))) &&
@@ -76,13 +120,13 @@
     if(clear)clear.classList.toggle("is-active",hasFilters());
   }
   async function clearAllFilters(){
-    clearTimeout(inventorySearchTimer);inventorySearchTimer=null;
+    cancelInventorySearch();
     const search=document.getElementById("expiryCurrentSearch");
     if(search)search.value="";
     Object.values(FILTERS).forEach(s=>s.clear());
     lastUpdatedSort="NONE";
     closeFilterMenus();updateFilterIndicators();
-    await refreshExpiryCurrentState();
+    renderInventory(ExpiryCaptureEngine.currentRows||[]);
   }
   function openFilter(type,button){
     closeFilterMenus();if(ExpiryCaptureEngine.desktopView!=="INVENTORY")return;
@@ -244,7 +288,7 @@
       '<td class="expiryQtyCell">'+esc(r.verified_quantity)+'</td><td class="expiryOperatorCell">'+esc(operatorName(r))+'</td><td class="expiryActionsCell"><button type="button" class="expiryRowAction" data-inventory-edit="'+esc(rowId(r))+'">Edit</button>'+deleteActions("inventory",rowId(r))+'</td></tr>';
   }
   function renderInventory(rows){
-    const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);
+    const safe=inventoryRowsScope===null||inventoryRowsScope===inventoryScope()?(Array.isArray(rows)?rows:[]):[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(inventorySearchRows(safe));
     const visible=inventoryFiltered(safe),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expiryCurrentStateCount");
     if(count)count.textContent=String(visible.length);if(!body)return;
     if(!visible.length){body.innerHTML="";if(empty){empty.hidden=false;empty.innerHTML="<strong>No matching expiry records</strong><span>Change the search or clear active filters.</span>";}return;}
@@ -302,7 +346,18 @@
     renderExpirySessionActivity();
   };
   window.renderExpiryCurrentState=function(rows){const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity();else renderInventory(safe);};
-  window.refreshExpiryCurrentState=async function(){if(expiryIsHandheld())return[];try{const requestVersion=++inventoryRequestVersion;const search=ExpiryCaptureEngine.desktopView==="INVENTORY"?(document.getElementById("expiryCurrentSearch")?.value||""):"";const rows=await loadExpiryCurrentState(search);if(requestVersion!==inventoryRequestVersion)return[];ExpiryCaptureEngine.currentRows=rows;renderExpiryKpis(rows);updateMode();if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity();else renderInventory(rows);return rows;}catch(e){console.error("Unable to load expiry workspace",e);return[];}};
+  window.refreshExpiryCurrentState=async function(){
+    if(expiryIsHandheld())return[];
+    const scope=inventoryScope(),requestVersion=++inventoryRequestVersion;
+    if(inventoryRowsScope!==null && inventoryRowsScope!==scope){ExpiryCaptureEngine.currentRows=[];Object.values(FILTERS).forEach(set=>set.clear());lastUpdatedSort="NONE";renderInventory([]);}
+    try{
+      const rows=await loadInventorySnapshot(scope);
+      if(requestVersion!==inventoryRequestVersion || scope!==inventoryScope())return[];
+      inventoryRowsScope=scope;ExpiryCaptureEngine.currentRows=rows;updateMode();
+      if(ExpiryCaptureEngine.desktopView==="SESSION"){renderExpiryKpis(rows);renderExpirySessionActivity();}else renderInventory(rows);
+      return rows;
+    }catch(e){console.error("Unable to load expiry workspace",e);return[];}
+  };
 
   const originalBind=window.bindExpiryCaptureUI;
   window.bindExpiryCaptureUI=function(){
@@ -327,7 +382,12 @@
     if(clearFilters&&clearFilters.dataset.v4!=="1"){clearFilters.dataset.v4="1";clearFilters.onclick=clearAllFilters;}
     if(exportBtn&&exportBtn.dataset.v4!=="1"){exportBtn.dataset.v4="1";exportBtn.onclick=exportCurrentInventory;}
     document.querySelectorAll("[data-expiry-filter-open]").forEach(b=>{if(b.dataset.v4!=="1"){b.dataset.v4="1";b.onclick=e=>{e.stopPropagation();openFilter(b.dataset.expiryFilterOpen,b);};}});
-    if(search&&search.dataset.v4!=="1"){search.dataset.v4="1";search.oninput=()=>{clearTimeout(inventorySearchTimer);updateFilterIndicators();inventorySearchTimer=setTimeout(()=>{inventorySearchTimer=null;refreshExpiryCurrentState();},180);};}
+    if(search&&search.dataset.v4!=="1"){search.dataset.v4="1";search.oninput=()=>{
+      cancelInventorySearch();updateFilterIndicators();
+      const render=()=>{inventorySearchTimer=null;inventorySearchFrame=false;if(ExpiryCaptureEngine.desktopView==="INVENTORY")renderInventory(ExpiryCaptureEngine.currentRows||[]);};
+      inventorySearchFrame=typeof requestAnimationFrame==="function";
+      inventorySearchTimer=inventorySearchFrame?requestAnimationFrame(render):setTimeout(render,0);
+    };}
     if(document.documentElement.dataset.expiryFilterDismiss!=="4"){document.documentElement.dataset.expiryFilterDismiss="4";document.addEventListener("click",e=>{if(!e.target.closest(".expiryHeaderFilterMenu")&&!e.target.closest(".expiryHeaderFilterButton"))closeFilterMenus();});}
   };
 
