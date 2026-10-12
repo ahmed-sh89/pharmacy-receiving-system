@@ -175,6 +175,12 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 #pf-idle-refresh:hover{background:#066bce}
 #pf-idle-refresh:focus-visible{outline:3px solid #55acff;outline-offset:4px}
 .pf-idle-restart{font-size:25px;line-height:1}
+.pharmflowVersionNotice{position:fixed;right:16px;bottom:16px;z-index:12000;display:flex;align-items:center;gap:12px;max-width:min(560px,calc(100vw - 32px));padding:12px 14px;border:1px solid #97bfdf;border-radius:12px;background:#fff;box-shadow:0 12px 34px rgba(18,48,78,.18);color:#173655;font:600 13px/1.4 system-ui,sans-serif}
+.pharmflowVersionNotice[hidden]{display:none}
+.pharmflowVersionNotice button{flex:none;border:0;border-radius:8px;padding:9px 12px;background:#0879e8;color:#fff;font:700 12px system-ui,sans-serif;cursor:pointer}
+.pharmflowVersionNotice button:disabled{opacity:.65;cursor:wait}
+.pharmflowVersionNotice small{flex-basis:100%;color:#8a4b16;font-weight:500}
+@media(max-width:560px){.pharmflowVersionNotice{left:12px;right:12px;bottom:12px;max-width:none;flex-wrap:wrap}.pharmflowVersionNotice span{flex:1 1 100%}}
 @media (max-height:500px){
   .pf-idle-card{padding:12px 22px 18px}
   .pf-idle-logo-card{width:66px;height:66px;margin-bottom:8px;border-radius:18px}

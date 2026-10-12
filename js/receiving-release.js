@@ -107,7 +107,7 @@
         const row={transactionId:transactionId(),scope:current,sequence:await nextSequence(),raw:String(raw||""),parsed:parsed&&typeof parsed==="object"?parsed:null,state:"accepted",acceptedAt:new Date().toISOString()};
         await put(row); void run(); return {accepted:true,transactionId:row.transactionId};
     }
-    window.PharmFlowReceivingScanQueue={enqueue,resume:run};
+    window.PharmFlowReceivingScanQueue={enqueue,resume:run,pending};
     AppEvents?.on?.("receiving:cloud-confirmed",event=>{const id=event?.transactionId;if(id) void remove(id).then(run);});
     window.addEventListener("online",()=>void run());
     window.addEventListener("auth:context-ready",()=>{if(!started){started=true;setTimeout(()=>void run(),350);}});

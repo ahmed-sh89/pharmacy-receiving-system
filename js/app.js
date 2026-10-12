@@ -228,6 +228,8 @@ async function startApplication(){
             "Application ready"
         );
 
+        window.initializePharmFlowVersionCheck?.();
+
     }
     catch(error){
 

@@ -29,6 +29,22 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Stamp deployed application version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+
+          sha = os.environ["GITHUB_SHA"]
+          index = Path("index.html")
+          source = index.read_text()
+          token = "__PHARMFLOW_BUILD_SHA__"
+          if source.count(token) != 1:
+              raise SystemExit("Expected one PharmFlow build identity token in index.html")
+          index.write_text(source.replace(token, sha))
+          Path("version.json").write_text('{"sha":"' + sha + '"}\n')
+          PY
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
