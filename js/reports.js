@@ -1155,6 +1155,32 @@ function buildReceivedQuantityByOrder(){
     return totals;
 }
 
+/* The Receiving ledger stores one authoritative total per Item + Order.
+   Uploaded order snapshots may contain that item on several original lines.
+   Project the shared total onto those immutable lines in source order so a
+   report never repeats the full order total on every duplicate line. Any
+   amount above the combined ordered quantity stays on the final source line
+   and remains visible as Over Received. */
+function allocateReceivedQuantityAcrossOrderLines(sourceRows,receivedTotal){
+    const rows=Array.isArray(sourceRows)?sourceRows:[];
+    const allocations=rows.map(()=>0);
+    if(!rows.length) return allocations;
+
+    let remaining=Math.max(0,toNumber(receivedTotal,0));
+    rows.forEach((row,index)=>{
+        const ordered=Math.max(0,toNumber(row?.orderedQty,0));
+        const allocated=Math.min(remaining,ordered);
+        allocations[index]=allocated;
+        remaining-=allocated;
+    });
+
+    if(remaining>0){
+        allocations[allocations.length-1]+=remaining;
+    }
+
+    return allocations;
+}
+
 function getOperationalGroupForReceivingRow(row){
     const direct=toSafeString(row?.group_name||row?.groupName||row?.Group||"").trim();
     if(direct) return direct;
@@ -1188,12 +1214,27 @@ function getPerOrderReceivingRows(orderNumber, options={}){
             normalizeItemCode(item?.itemCode||""),item
         ]));
 
-    const rows=source.map(row=>{
-        const code=normalizeItemCode(row.itemCode||"");
-        const received=toNumber(
-            receivedMap.get(normalized+"||"+code),
-            0
+    const sourceIndexesByCode=new Map();
+    source.forEach((row,index)=>{
+        const code=normalizeItemCode(row?.itemCode||"");
+        if(!sourceIndexesByCode.has(code)) sourceIndexesByCode.set(code,[]);
+        sourceIndexesByCode.get(code).push(index);
+    });
+    const allocationByIndex=new Array(source.length).fill(0);
+    for(const [code,indexes] of sourceIndexesByCode){
+        const codeRows=indexes.map(index=>source[index]);
+        const codeAllocations=allocateReceivedQuantityAcrossOrderLines(
+            codeRows,
+            receivedMap.get(normalized+"||"+code)
         );
+        indexes.forEach((sourceIndex,allocationIndex)=>{
+            allocationByIndex[sourceIndex]=codeAllocations[allocationIndex];
+        });
+    }
+
+    const rows=source.map((row,lineIndex)=>{
+        const code=normalizeItemCode(row.itemCode||"");
+        const received=toNumber(allocationByIndex[lineIndex],0);
         const ordered=toNumber(row.orderedQty,0);
         const difference=received-ordered;
 
