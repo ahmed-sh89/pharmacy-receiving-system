@@ -503,7 +503,7 @@ test('FINAL THREE: History excludes deleted before ten, refills newest-first, re
 });
 
 test('Desktop inventory release: zero, retained Resolve, new capture, isolated Restore, stale versions and idempotency',async()=>{
- await identity(UA,'postgres');await db.exec(fs.readFileSync('supabase/migrations/20261013012115_expiry_desktop_inventory_release.sql','utf8'));await db.exec(fs.readFileSync('supabase/migrations/20261013012928_expiry_inventory_query_validation.sql','utf8'));
+ await identity(UA,'postgres');await db.exec(fs.readFileSync('supabase/migrations/20261013012115_expiry_desktop_inventory_release.sql','utf8'));await db.exec(fs.readFileSync('supabase/migrations/20261013012928_expiry_inventory_query_validation.sql','utf8'));await db.exec(fs.readFileSync('supabase/migrations/20261013015700_expiry_desktop_receipt_operator_and_readonly.sql','utf8'));
  const sid=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[sid,UA]);await identity();await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:sid,exp:Math.floor(Date.now()/1000)+3600})]);
  const session=(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'synthetic-device'])).r;
  const p={...capture('DESKTOP-RC'),source:'PC',worker_id:null,quantity:10};
@@ -522,7 +522,7 @@ test('Desktop inventory release: zero, retained Resolve, new capture, isolated R
  const restoreRequest=uuid(),restored=await mutate('RESTORE',archived,null,restoreRequest);assert.deepEqual(await mutate('RESTORE',archived,null,restoreRequest),restored);
  assert.equal((await query()).rows[0].quantity,5);assert.equal((await query(true)).count,0);
  await denied(()=>mutate('RESTORE',archived),/Inventory changed/);
- const history=(await value('select public.list_pharmflow_expiry_desktop_session_v1($1,$2) r',[PA,session.session_id])).r;assert.equal(history.length,3);assert.equal(history.reduce((n,x)=>n+x.quantity,0),15);
+ const history=(await value('select public.list_pharmflow_expiry_desktop_session_v1($1,$2) r',[PA,session.session_id])).r;assert.equal(history.length,3);assert.ok(history.every(r=>r.worker_name==='Desktop'&&!r.editable));assert.equal(history.reduce((n,x)=>n+x.quantity,0),15);
  const ubSid=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[ubSid,UB]);await identity(UB);await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:ubSid,exp:Math.floor(Date.now()/1000)+3600})]);await denied(()=>query(),/Pharmacy access/);await identity(UA,'anon');await denied(()=>query(),/permission denied/);
  await identity();await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:sid,exp:Math.floor(Date.now()/1000)+3600})]);
  const rowsBefore=(await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n;

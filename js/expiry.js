@@ -1950,15 +1950,7 @@ function bindExpiryCaptureUI(){
         });
     });
 
-    const currentSearch=document.getElementById("expiryCurrentSearch");
-    if(currentSearch && currentSearch.dataset.bound!=="1"){
-        currentSearch.dataset.bound="1";
-        let searchTimer=null;
-        currentSearch.addEventListener("input",()=>{
-            clearTimeout(searchTimer);
-            searchTimer=setTimeout(()=>refreshExpiryCurrentState(),180);
-        });
-    }
+    // Desktop Inventory query binding is owned by expiry-desktop-v2.js.
 
     ["expiryQuantity","expiryMonth","expiryYear","expiryBatchInput","expirySerialInput","expiryWorkerSelect"].forEach(id=>{
         const field=document.getElementById(id);

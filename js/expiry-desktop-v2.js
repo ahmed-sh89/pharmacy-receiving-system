@@ -7,12 +7,15 @@
     resolved = false,
     offset = 0,
     sort = "ADDED",
+    activeSort = "ADDED",
     filters = { search: "", departments: [], months: [] };
   let page = { rows: [], count: 0, units: 0, departments: [], months: [] },
     periods = [],
     session = [],
+    sessionHydrated = false,
     selected = new Set();
-  let visibleScope = null;
+  let visibleScope = null,
+    renderedView = "";
   let requestVersion = 0,
     searchTimer,
     pendingRead,
@@ -181,18 +184,20 @@
         ([key, label, value]) =>
           '<button type="button" class="expiryKpiCard" data-metric="' +
           key +
-          '"><span>' +
+          (sessionHydrated ? '"><span>' : '" disabled><span>') +
           label +
           "</span><strong>" +
-          esc(value) +
-          "</strong><small>Current signed-in session</small></button>",
+          esc(sessionHydrated ? value : "—") +
+          "</strong><small>" +
+          (sessionHydrated ? "Current signed-in session" : "Loading session…") +
+          "</small></button>",
       )
       .join("");
     root.querySelectorAll("[data-metric]").forEach(
       (b) =>
         (b.onclick = () =>
           openDialog(
-            b.textContent.split("Current")[0],
+            values.find((v) => v[0] === b.dataset.metric)[1],
             metricRows(b.dataset.metric)
               .map(
                 (r) =>
@@ -219,7 +224,9 @@
     el("expiryResultSummary").textContent =
       page.count + " records · " + page.units + " units";
     el("expirySort").textContent = resolved
-      ? "Recently Resolved"
+      ? sort === "EXPIRY"
+        ? "Earliest Expiry"
+        : "Recently Resolved"
       : sort === "ADDED"
         ? "Recently Added"
         : sort === "UPDATED"
@@ -298,18 +305,23 @@
       .join(" · ");
   }
   function render() {
+    renderedView = mode + "/" + resolved;
     setMode();
     const body = el("expiryCurrentStateBody"),
       empty = el("expiryCurrentStateEmpty");
     const rows = mode === "SESSION" ? session : page.rows;
-    el("expirySessionCount").textContent = String(currentRows().length);
+    el("expirySessionCount").textContent = sessionHydrated
+      ? String(currentRows().length)
+      : "…";
     empty.hidden = !!rows.length;
     if (!rows.length) {
       body.innerHTML = "";
       empty.innerHTML =
         "<strong>" +
         (mode === "SESSION"
-          ? "No items captured in this session"
+          ? sessionHydrated
+            ? "No items captured in this session"
+            : "Loading Session Activity"
           : "No matching expiry records") +
         "</strong><span>" +
         (mode === "SESSION"
@@ -329,9 +341,9 @@
               : "") +
             '><td class="expirySessionProduct">' +
             identity(r) +
-            '</td><td class="expirySessionBatch">' +
+            '</td><td class="expirySessionBatch"><div>' +
             esc(r.batch_no || "Not Recorded") +
-            "<strong>" +
+            "</div><strong>" +
             month(r) +
             '</strong></td><td class="expiryActivityQty">' +
             qty(r) +
@@ -379,7 +391,7 @@
           r.row_id +
           '" ' +
           (selected.has(r.row_id) ? "checked" : "") +
-          '></td><td class="expirySessionProduct">' +
+          '></td><td class="expiryInventoryProduct">' +
           identity(r) +
           "</td><td>" +
           esc(r.batch_no || "Not Recorded") +
@@ -465,7 +477,8 @@
       sort,
       filters,
     ]);
-    if (pendingRead?.key === key && pendingRead.version === requestVersion) return pendingRead.promise;
+    if (pendingRead?.key === key && pendingRead.version === requestVersion)
+      return pendingRead.promise;
     const promise = performRefresh().finally(() => {
       if (pendingRead?.promise === promise) pendingRead = null;
     });
@@ -479,6 +492,7 @@
     if (visibleScope !== ownScope) {
       visibleScope = ownScope;
       session = [];
+      sessionHydrated = false;
       page = { rows: [], count: 0, units: 0, departments: [], months: [] };
       periods = [];
       lastSummary = 0;
@@ -494,6 +508,15 @@
       requestMode = mode,
       requestResolved = resolved;
     el("expiryCurrentStateBody").setAttribute("aria-busy", "true");
+    if (requestMode === "INVENTORY") {
+      el("expiryCurrentStateCount").textContent = "…";
+      el("expiryResultSummary").textContent = "Loading inventory…";
+      if (!page.rows.length) {
+        el("expiryCurrentStateEmpty").hidden = false;
+        el("expiryCurrentStateEmpty").innerHTML =
+          "<strong>Loading Inventory</strong><span>Reading authoritative filtered records…</span>";
+      }
+    }
     try {
       for (const [suffix, rpc] of [
         ["", "mutate_pharmflow_expiry_inventory_v1"],
@@ -532,19 +555,41 @@
           ? await authRpc("summary_pharmflow_expiry_inventory_v1", authArgs())
           : periods;
       if (ownScope !== scope() || version !== requestVersion) return [];
+      const repaint =
+        (requestMode === "SESSION" && !sessionHydrated) ||
+        renderedView !== mode + "/" + resolved ||
+        JSON.stringify(periods) !== JSON.stringify(summary) ||
+        JSON.stringify(requestMode === "SESSION" ? session : page) !==
+          JSON.stringify(
+            requestMode === "SESSION"
+              ? next.filter((r) => r.kind === "KNOWN")
+              : next,
+          );
       periods = summary;
       lastSummary = Date.now();
       if (requestMode === "SESSION") {
+        sessionHydrated = true;
         session = next.filter((r) => r.kind === "KNOWN");
         ExpiryCaptureEngine.sessionRows = session;
       } else {
         page = next;
         ExpiryCaptureEngine.currentRows = next.rows;
       }
-      render();
+      if (repaint) render();
+      else if (mode === "INVENTORY") {
+        updateToolbar();
+        if (!page.rows.length) {
+          el("expiryCurrentStateEmpty").innerHTML =
+            "<strong>No matching expiry records</strong><span>Adjust filters or return to active Inventory.</span>";
+        }
+      }
       return requestMode === "SESSION" ? session : page.rows;
     } catch (error) {
       if (ownScope === scope() && version === requestVersion) {
+        if (requestMode === "INVENTORY") {
+          el("expiryCurrentStateCount").textContent = "—";
+          el("expiryResultSummary").textContent = "Inventory unavailable";
+        }
         el("expiryCurrentStateEmpty").hidden = false;
         el("expiryCurrentStateEmpty").innerHTML =
           "<strong>Unable to load Expiry workspace</strong><span>" +
@@ -579,7 +624,7 @@
     }
     returnFocus = trigger || document.activeElement;
     dialog.innerHTML =
-      '<form><header><h2 id="expiryRecordDialogTitle">' +
+      '<form novalidate><header><h2 id="expiryRecordDialogTitle">' +
       esc(title) +
       '</h2></header><div class="expiryDialogContent">' +
       content +
@@ -593,7 +638,9 @@
       e.preventDefault();
       if (!action || busy) return;
       busy = true;
-      dialog.querySelectorAll("button").forEach((b) => (b.disabled = true));
+      dialog
+        .querySelectorAll("button,input,select")
+        .forEach((b) => (b.disabled = true));
       try {
         await action(dialog);
         lastSummary = 0;
@@ -602,7 +649,9 @@
         dialog.close();
       } catch (error) {
         busy = false;
-        dialog.querySelectorAll("button").forEach((b) => (b.disabled = false));
+        dialog
+          .querySelectorAll("button,input,select")
+          .forEach((b) => (b.disabled = false));
         const p = dialog.querySelector("[role=alert]");
         p.hidden = false;
         p.textContent =
@@ -658,7 +707,12 @@
         qty(r) +
         '"></label><p>Zero keeps this row active. Resolve is a separate operation.</p>',
       async (d) => {
-        const q = Number(d.querySelector("[data-total]").value);
+        const rawQuantity = d.querySelector("[data-total]").value.trim();
+        if (!rawQuantity)
+          throw new Error(
+            "Enter a quantity. Use 0 to keep an empty active row.",
+          );
+        const q = Number(rawQuantity);
         if (!Number.isInteger(q) || q < 0)
           throw new Error("Enter a nonnegative whole number.");
         if (frozen != null && frozen !== q)
@@ -864,7 +918,8 @@
         { wch: 11 },
         { wch: 7 },
       ];
-      ws["!rows"] = data.map(() => ({ hpt: 18 }));
+      ws["!rows"] = [{ hpt: 22 }, ...data.map(() => ({ hpt: 18 }))];
+      ws["!autofilter"] = { ref: ws["!ref"] };
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Shelf Check");
       XLSX.writeFile(wb, "PharmFlow_Expiry_Shelf_Check.xlsx");
@@ -884,11 +939,11 @@
       footer.id = "expiryPager";
       footer.className = "expiryPager";
       footer.innerHTML =
-        '<span id="expiryResultSummary"></span><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
+        '<span id="expiryResultSummary"></span><button id="expiryAll" type="button">Select All Matching</button><button id="expiryBulkAction" type="button" disabled>Resolve Selected</button><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
       document.querySelector(".expiryCurrentWorkspace").appendChild(footer);
       const tools = document.querySelector(".expiryCurrentTools");
       tools.innerHTML =
-        '<input id="expiryCurrentSearch" type="search" autocomplete="off" aria-label="Search Inventory" placeholder="Product, item code, GTIN or batch"><details id="expiryDepartments" class="expiryToolbarMenu"><summary>Department</summary><div role="menu"></div></details><details id="expiryMonths" class="expiryToolbarMenu"><summary>Expiry Months</summary><div role="menu"></div></details><button id="expirySort" type="button">Recently Added</button><button id="btnClearExpiryFilters" type="button">Clear Filters</button><button id="btnExportExpiryInventory" type="button">Excel</button><button id="expiryPrint" type="button">Print</button><button id="expiryResolved" type="button">Resolved</button><button id="expiryAll" type="button">Select All Matching</button><button id="expiryBulkAction" type="button" disabled>Resolve Selected</button><div id="expiryAppliedFilters" aria-live="polite"></div>';
+        '<input id="expiryCurrentSearch" type="search" autocomplete="off" aria-label="Search Inventory" placeholder="Product, item code, GTIN or batch"><details id="expiryDepartments" class="expiryToolbarMenu"><summary>Department</summary><div role="menu"></div></details><details id="expiryMonths" class="expiryToolbarMenu"><summary>Expiry Months</summary><div role="menu"></div></details><button id="expirySort" type="button">Recently Added</button><button id="btnClearExpiryFilters" type="button">Clear Filters</button><button id="btnExportExpiryInventory" type="button">Excel</button><button id="expiryPrint" type="button">Print</button><button id="expiryResolved" type="button">Resolved</button><div id="expiryAppliedFilters" aria-live="polite"></div>';
       tools.querySelectorAll("details").forEach((d) => {
         d.addEventListener("keydown", (e) => {
           if (e.key === "Escape") {
@@ -946,6 +1001,12 @@
       };
       el("expiryResolved").onclick = () => {
         resolved = !resolved;
+        if (resolved) {
+          activeSort = sort;
+          sort = "UPDATED";
+        } else sort = activeSort;
+        page = { rows: [], count: 0, units: 0, departments: [], months: [] };
+        render();
         offset = 0;
         selected.clear();
         void refresh();
@@ -968,13 +1029,13 @@
       mode = "INVENTORY";
       ExpiryCaptureEngine.desktopView = mode;
       selected.clear();
-      setMode();
+      render();
       void refresh();
     };
     el("btnExpirySessionView").onclick = () => {
       mode = "SESSION";
       ExpiryCaptureEngine.desktopView = mode;
-      setMode();
+      render();
       void refresh();
     };
     [
@@ -1044,6 +1105,7 @@
   };
   window.resetExpiryDesktopSession = () => {
     session = [];
+    sessionHydrated = false;
     ExpiryCaptureEngine.sessionRows = [];
     ExpiryCaptureEngine.currentRows = [];
     page = { rows: [], count: 0, units: 0, departments: [], months: [] };
@@ -1053,9 +1115,14 @@
     lastSummary = 0;
     mode = "SESSION";
     resolved = false;
+    offset = 0;
+    sort = "ADDED";
+    activeSort = "ADDED";
     filters = { search: "", departments: [], months: [] };
     selected.clear();
     ++requestVersion;
+    ExpiryCaptureEngine.desktopView = "SESSION";
+    if (el("expiryPager")) render();
   };
   window.markExpirySessionStateDeleted = () => {};
   window.activateExpiryCapture = async function () {

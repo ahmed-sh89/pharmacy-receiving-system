@@ -7138,7 +7138,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable{width:100%;table-
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th{position:sticky;top:0;background:#eef2f8;color:#496078;z-index:1;padding:9px 8px;font-size:12px;text-align:left;border-bottom:2px solid #c7d3e2}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th button{border:0;background:transparent;font:inherit;color:inherit;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTools button:focus-visible,body:not(.zebraDevice) #zebraExpiryShell .expiryToolbarMenu summary:focus-visible{outline:2px solid #8a69c2;outline-offset:2px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable td{padding:8px;border-bottom:1px solid #e2e8f0;font-size:12px;vertical-align:middle;overflow-wrap:anywhere}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable td{padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;vertical-align:middle;overflow-wrap:anywhere}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable tbody tr:hover{background:#f8f5fe}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(1){width:30px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(2){width:34%}
@@ -7148,7 +7148,8 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(5){w
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(6){width:9%}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(7){width:11%}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(8){width:16%}
-body:not(.zebraDevice) #zebraExpiryShell .expiryIdentityMeta{font-size:11px;font-weight:500;color:#597088;line-height:1.65;white-space:normal;overflow-wrap:anywhere}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryProduct>strong{display:block;font-size:13px;font-weight:650;line-height:1.35;color:#263b54}
+body:not(.zebraDevice) #zebraExpiryShell .expiryIdentityMeta{font-size:12px;font-weight:500;color:#597088;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryStatus{display:inline-block;padding:3px 7px;background:#eef6f2;color:#26714b;border-radius:6px;font-size:11px;font-weight:650}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryStatus.expired{background:#fff0f2;color:#a5293e}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryStatus.resolved{background:#edf1f6;color:#5b6d85}
@@ -7251,7 +7252,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryClearFiltersButton{min-width:104
 body:not(.zebraDevice) #zebraExpiryShell .expiryClearFiltersButton.is-active{border-color:#8d75d3!important;background:#f2eeff!important;color:#5636aa!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryExportButton{min-width:82px!important;background:#173f66!important;border-color:#173f66!important;color:#fff!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryExportButton:hover{background:#0f3458!important;color:#fff!important}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTools #expiryCurrentSearch{flex:1 1 560px!important;width:auto!important;min-width:360px!important;max-width:760px!important;height:40px!important;font-size:13px!important;font-weight:550!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTools #expiryCurrentSearch{flex:1 1 280px!important;width:auto!important;min-width:240px!important;max-width:420px!important;height:36px!important;font-size:13px!important;font-weight:550!important}
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentTools{gap:7px!important}
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentHeader{flex-wrap:wrap;min-height:62px!important}
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentTitle{flex:0 0 auto!important}
@@ -7291,7 +7292,7 @@ body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentWorks
 
 
 
-body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryTimeCell{font-size:10px!important;white-space:normal!important;line-height:1.25!important}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryTimeCell{font-size:11px!important;white-space:normal!important;line-height:1.25!important}
 @media (min-width:769px) and (max-width:1180px){
   body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTools #expiryCurrentSearch{min-width:250px!important;flex-basis:360px!important}
   body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryButton{min-width:90px!important;padding:0 9px!important;font-size:11px!important}
@@ -7426,9 +7427,10 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(2){wid
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(3){width:8%;text-align:center}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(4){width:15%}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(5){width:15%}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable td{padding:9px 12px;border-bottom:1px solid #e2e8f0;color:#344960;font-size:13px;line-height:1.4;vertical-align:middle;overflow-wrap:anywhere;background:#fff}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>strong{display:block;font-size:15px;font-weight:650;color:#263b54}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>div{font-size:12px;margin:2px 0;color:#596b80}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable td{padding:6px 12px;border-bottom:1px solid #e2e8f0;color:#344960;font-size:13px;line-height:1.4;vertical-align:middle;overflow-wrap:anywhere;background:#fff}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>strong{display:block;font-size:14px;font-weight:650;color:#263b54}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>div{font-size:12px;margin:1px 0;color:#596b80}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionBatch>strong{display:block;font-size:13px;margin-top:2px}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionBatch span,body:not(.zebraDevice) #zebraExpiryShell .expirySessionSerial{font-size:12px;color:#596b80}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMeta>*{display:block}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMeta span{font-size:12px;color:#596b80}
