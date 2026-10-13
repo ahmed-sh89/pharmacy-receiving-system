@@ -1,22 +1,20 @@
 # PharmFlow Current Checkpoint — 13 October 2026 (Riyadh)
 
-Staging branch feature/expiry-stage1-visual-gate. Parent 1ce1ad9f03013c40bf5145eb3e245aaf9c81a0bf; ending SHA is recorded in the release response. Supabase tovkcakucyagvbzvlnks; Vercel pharmflow-test.
-Stable URL: https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/
+Track: Staging only, feature/expiry-stage1-visual-gate.
+Verified start: b72c63de49176ffe5a75fb119f06223ddaaaf77b, GitHub + READY Vercel preview; no tracked uncommitted changes.
+Runtime candidate: b86ab28646da2b83c9dc52286e7c0a7ed6478854 (341a0dc Scan component refinement + b86ab286 viewport fit). Documentation-only ending SHA is recorded in the delivery.
+Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks.
+Preview: https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/
 
-Full Expiry Desktop change set READY FOR TEST. Runtime commit 822a7b8b552a9a9dc6c5b55dd7df4100b2537439 is deployed READY on the Staging branch alias. Not USER VERIFIED or DONE.
+Current phase: Expiry Scan UI Refinement Round 1. READY FOR USER TEST at verified available viewport; NOT USER VERIFIED or DONE. Exact 1366×768 visual release gate remains NOT TESTED because cloud Browser exposes a fixed 1363×936 viewport and no resize API; native Windows acceptance at requested size is required before declaring the entire visual gate PASS.
 
-Implemented: signed-session receipts/five interactive KPIs; independent Inventory/four Riyadh period cards with current-month Expired; server search/group/month intersections, count/units and pagination; compact canonical tables/menus/dialogs; versioned ACTIVE zero quantity; exact bulk selection; retained Resolve snapshots/idempotent isolated Restore; full-filter shelf Excel/A4; scoped visible/awake 30-second refresh.
+Changes: remove five Scan cards; two current-signed-session metrics in 31px Scan header. Full-width semantic Active Item; aligned form/40px Save & Next. Session table Product/Identification, Batch/actual captured Serial, separate Expiry, Quantity, Edit/Delete. One persisted serial per individual receipt, never quantity-derived multi-serial associations. Serial detail dialog. Session-only dialog action labels/identity/validation/pending/destructive treatment. Canonical CSS updated in place. Parent bottom padding subtracted only for Scan viewport; Inventory geometry unchanged.
 
-Applied additive Staging migrations 20261013012115_expiry_desktop_inventory_release and 20261013012928_expiry_inventory_query_validation. Two private deny-all RLS tables, eight signed/member-only RPCs; original Handheld/capture/Receiving/auth/review definitions unchanged. Before/after hashes matched: state 31, events 64, operations 78, reviews 14. No historical rewrite or speculative session backfill.
+Protected: no SQL, migrations, auth, RLS, Receiving, Settings, Handheld engine, GS1 parsing, save payload, aggregation, quantity-zero, Resolve/Restore, filters, exports, or polling changes. Session has no operational checkbox column; Inventory selection and printed checkbox retained.
 
-Focused 69 PASS / 0 FAIL / 1 SKIP; SQL 32 PASS / 0 FAIL / 1 SKIP. Full 593 PASS / 43 inherited FAIL / 1 SKIP; no new failure names. Build/syntax/diff PASS. Native independent concurrency unavailable. Browser and physical device gates are separate.
+Tests: focused 151 PASS / 0 FAIL / 1 existing native independent concurrency SKIP. Full 602 PASS / 43 pre-existing FAIL / 1 SKIP; failure names identical to starting checkpoint. Build/syntax/diff PASS. 768px-height layout geometry covered by automated test; not a rendered visual test.
+Live Staging: fresh session zero; two QA-SCAN-R1 receipts (SN-R1-001 qty1, SN-R1-002 qty2) -> summary item1/qty3; Edit second to3 -> qty4; Delete first -> qty3, audit row retained. Inventory aggregates ACTIVE3. Known green and Needs Review amber inspected; unknown draft cleared without saving a review. Dialogs/actual serial verified. At 1363×936: 31px summary, compact rows, no horizontal or document vertical overflow (scrollWidth1363/scrollHeight936/scrollTop0); table has 482px available in empty Active Item state. Seven screenshots captured across 341a0dc/b86ab286; final populated/recognized/review/dialog captures on b86ab286. Empty screenshot is pre-viewport-fit candidate and shares the unchanged capture presentation.
 
-Recovered execution on 13 October: GitHub/deployed HEAD was 8bf4615; retained all saved uncommitted refinements. Migration 20261013015700_expiry_desktop_receipt_operator_and_readonly was already applied and is now committed; no migrations were reapplied. Prior QA-RC-20261013-A Restore completed at 02:02:15 UTC: retained 2 + new 1 = ACTIVE 3; zero outstanding resolved snapshots. No duplicate Restore was executed.
-
-Final focused rerun 95 PASS / 0 FAIL / 1 native concurrency SKIP. Full rerun 597 PASS / 43 FAIL / 1 SKIP; no new failure names versus recovered parent. Preview build, syntax and diff PASS. Existing full-suite failures remain unresolved; no clean full-suite claim.
-
-Live Staging PASS at 1363×936: five/four horizontal KPI cards, compact capture and independent Inventory, operator attribution, two-line update time and no document horizontal overflow; saved GS1 test QA-RC-RECOVERY, session metrics/details updated; zero remained ACTIVE; exact filtered Resolve and Restore returned ACTIVE 1, no outstanding snapshot. Excel downloaded and read: header + one row, six shelf columns, item code text; print DOM matches. Receiving/Settings navigation and persisted signed-session recovery verified. Global Master UNAVAILABLE in synthetic Staging is an existing limitation; physical Windows multi-PC, Handheld and Office/A4 printed output acceptance remain NOT TESTED. Native independent lock concurrency remains NOT RUN.
-
-Next: Product Owner Windows acceptance of layout, Save & Next, session correction, period/filter combinations, zero/Resolve/Restore, Excel/A4 and second-PC persistence. No Production promotion.
-
-Protected: Production/main and Supabase zznoshzcyxmtwfbznjyr; Receiving ledger/Scan Queue/manifest/sync; Settings; Global V2/exact identifiers; Handheld workflow; Needs Review design. No Production promotion.
+Outstanding: full-suite 43 baseline failures; native independent concurrency and physical Handheld remain unverified from prior release; synthetic Staging Global Master UNAVAILABLE is not addressed. No multi-serial aggregated session row exists: each capture shows its own persisted serial. No risky migration added.
+Approved next Inventory round: hierarchical Expiry Month filter Year → January–December, multi-month across years. Record only; do not implement before Product Owner approves Round 1.
+Next: Product Owner Scan acceptance, including native ~1366×768 visual gate, rapid scanning, summary reconciliation, Edit/Delete/serial, and draft retention. No Inventory refinements or Production promotion until approval.
