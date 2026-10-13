@@ -39,7 +39,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=EXPIRY_STAGE1_RC2"
+        href="css/dashboard.css?v=EXPIRY_SCAN_ROUND1"
     >
 
     <link
@@ -1274,7 +1274,7 @@
                     <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button" aria-label="History" title="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7M3 5v6h6M12 7v5l3 2"></path></svg><span class="expiryHandheldHistoryLabel">History</span><strong id="expiryCapturedCount" hidden>0</strong></button>
                     <span id="expiryScanStatus" class="expiryScanStatus ready" role="status" aria-live="polite">READY TO SCAN</span>
                 </header>
-                <div class="expiryKpiRow" aria-label="Expiry summary">
+                <div class="expiryKpiRow" aria-label="Expiry summary" hidden>
                     <article class="expiryKpiCard expiryKpiActive">
                         <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
                     </article>
@@ -1290,6 +1290,7 @@
                 </div>
 
                 <section class="expiryCaptureCard">
+                    <header class="expiryScanHeader expiryDesktopOnly"><strong>Scan &amp; Record <span>Expiry capture</span></strong><div id="expirySessionSummary" class="expirySessionSummary" role="status" aria-label="Current Session" aria-live="polite"></div></header>
                     <div class="expiryCaptureRow">
                       <div class="expiryCapturePrimary">
                         <div class="expiryScanBox">
@@ -2615,8 +2616,8 @@
 <script src="js/expiry-evidence.js?v=HANDHELD_ACCEPTANCE1"></script>
 <script src="js/expiry-capture-store.js?v=EXPIRY_OPERATION_V3"></script>
 <script src="js/expiry-active-session.js?v=HISTORY_POLISH1"></script>
-<script src="js/expiry.js?v=EXPIRY_STAGE1_RC2"></script>
-<script src="js/expiry-desktop-v2.js?v=EXPIRY_STAGE1_RC2"></script>
+<script src="js/expiry.js?v=EXPIRY_SCAN_ROUND1"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_SCAN_ROUND1"></script>
 <script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
 
 <script src="cloud-workspace.js?v=AUTHORITY_EMPTY1"></script>

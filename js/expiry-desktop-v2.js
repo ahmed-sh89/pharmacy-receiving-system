@@ -95,16 +95,11 @@
     table.classList.toggle("expiryInventoryTable", mode === "INVENTORY");
     table.querySelector("thead").innerHTML =
       mode === "SESSION"
-        ? "<tr><th>Product / Identification</th><th>Batch / Expiry</th><th>Quantity</th><th>Activity</th><th>Actions</th></tr>"
+        ? "<tr><th>Product / Identification</th><th>Batch / Serial</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
         : '<tr><th><input type="checkbox" id="expiryPageSelection" aria-label="Select current page"></th><th>Product / Identification</th><th>Batch</th><th><button type="button" data-expiry-sort>Expiry</button></th><th>Quantity</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr>';
     el("expiryPager").hidden = mode !== "INVENTORY";
     syncViewport();
     renderKpis();
-  }
-  function metricRows(key) {
-    const rows = currentRows();
-    if (key === "LAST") return rows.slice(0, 1);
-    return rows;
   }
   function renderKpis() {
     const root = document.querySelector("#zebraExpiryShell .expiryKpiRow");
@@ -155,69 +150,32 @@
       );
       return;
     }
-    root.hidden = false;
-    const rows = currentRows();
-    const values = [
-      ["ITEMS", "Items Scanned", new Set(rows.map((r) => r.item_code)).size],
-      ["QUANTITY", "Total Quantity", rows.reduce((n, r) => n + qty(r), 0)],
-      [
-        "BATCHES",
-        "Batches",
-        new Set(
-          rows.map((r) =>
-            [
-              r.item_code,
-              String(r.batch_no || "")
-                .trim()
-                .toUpperCase(),
-              r.expiry_year,
-              r.expiry_month,
-            ].join("|"),
-          ),
-        ).size,
-      ],
-      ["MONTHS", "Expiry Months", new Set(rows.map(month)).size],
-      ["LAST", "Last Scanned", rows[0] ? month(rows[0]) : "—"],
-    ];
-    root.innerHTML = values
-      .map(
-        ([key, label, value]) =>
-          '<button type="button" class="expiryKpiCard" data-metric="' +
-          key +
-          (sessionHydrated ? '"><span>' : '" disabled><span>') +
-          label +
-          "</span><strong>" +
-          esc(sessionHydrated ? value : "—") +
-          "</strong><small>" +
-          (sessionHydrated ? "Current signed-in session" : "Loading session…") +
-          "</small></button>",
-      )
-      .join("");
-    root.querySelectorAll("[data-metric]").forEach(
-      (b) =>
-        (b.onclick = () =>
-          openDialog(
-            values.find((v) => v[0] === b.dataset.metric)[1],
-            metricRows(b.dataset.metric)
-              .map(
-                (r) =>
-                  "<li>" +
-                  identity(r) +
-                  "<span>Batch " +
-                  esc(r.batch_no || "Not Recorded") +
-                  " · " +
-                  month(r) +
-                  " · Qty " +
-                  qty(r) +
-                  "</span><time>" +
-                  esc(expiryFormatVerifiedAt(r.captured_at)) +
-                  "</time></li>",
-              )
-              .join("") || "<li>No successful session entries.</li>",
-            null,
-            b,
-          )),
-    );
+    // Inventory keeps its independent four-card period model. Scan uses a compact header.
+    root.hidden = true;
+    root.innerHTML = "";
+    const rows = currentRows(), summary = el("expirySessionSummary");
+    if (summary) {
+      summary.setAttribute("aria-busy", String(!sessionHydrated));
+      summary.innerHTML = '<span class="expirySessionSummaryLabel">Current Session</span>' +
+        '<span>Items Scanned <strong data-session-total="items">' +
+        (sessionHydrated ? new Set(rows.map(r => r.item_code)).size : "—") +
+        '</strong></span><span>Total Quantity <strong data-session-total="quantity">' +
+        (sessionHydrated ? rows.reduce((n, r) => n + qty(r), 0) : "—") + '</strong></span>';
+    }
+  }
+  function sessionSerial(r) {
+    // One receipt is one capture. Only its persisted serial is associated with it.
+    return String(r.sample_serial || "").trim();
+  }
+  function serialDetail(r, trigger) {
+    const serial = sessionSerial(r);
+    if (!serial) return;
+    openDialog("Recorded Serial", '<div class="expiryRecordIdentity">' + identity(r) +
+      '</div><dl class="expirySessionCaptureDetails"><div><dt>Batch</dt><dd>' +
+      esc(r.batch_no || "Not Recorded") + '</dd></div><div><dt>Expiry</dt><dd>' + month(r) +
+      '</dd></div><div><dt>Serial</dt><dd>' + esc(serial) +
+      '</dd></div></dl><p>Serial saved with this individual registration.</p>', null, trigger,
+      { context: "session" });
   }
   function updateToolbar() {
     el("expiryCurrentStateCount").textContent = String(page.count);
@@ -332,38 +290,23 @@
       return;
     }
     if (mode === "SESSION") {
-      body.innerHTML = rows
-        .map(
-          (r, i) =>
-            "<tr" +
-            (i === 0 && r.status !== "DELETED"
-              ? ' class="expiryRowSavedStrong"'
-              : "") +
-            '><td class="expirySessionProduct">' +
-            identity(r) +
-            '</td><td class="expirySessionBatch"><div>' +
-            esc(r.batch_no || "Not Recorded") +
-            "</div><strong>" +
-            month(r) +
-            '</strong></td><td class="expiryActivityQty">' +
-            qty(r) +
-            '</td><td class="expirySessionMeta"><time>' +
-            esc(expiryFormatVerifiedAt(r.captured_at)) +
-            "</time><span>" +
-            esc(r.worker_name || "Desktop") +
-            '</span></td><td class="expirySessionActions">' +
-            (r.status === "DELETED"
-              ? '<span class="expiryActivityDeleted">Deleted</span>'
-              : r.editable
-                ? '<button class="expirySessionAction" data-session-edit="' +
-                  i +
-                  '">Edit</button><button class="expirySessionAction danger" data-session-delete="' +
-                  i +
-                  '">Delete</button>'
-                : "<span>Saved</span>") +
-            "</td></tr>",
-        )
-        .join("");
+      body.innerHTML = rows.map((r, i) => {
+        const serial = sessionSerial(r);
+        return '<tr' + (i === 0 && r.status !== "DELETED" ? ' class="expiryRowSavedStrong"' : '') +
+          '><td class="expirySessionProduct">' + identity(r) +
+          '<div class="expirySessionMeta"><time>' + esc(expiryFormatVerifiedAt(r.captured_at)) +
+          '</time><span> · ' + esc(r.worker_name || "Desktop") + '</span></div></td>' +
+          '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "Not Recorded") + '</strong>' +
+          (serial ? '<button type="button" class="expirySessionSerial" data-session-serial="' + i +
+            '" title="View recorded serial" aria-label="View recorded serial for ' + esc(r.item_name || r.item_code) +
+            '">Serial · ' + esc(serial) + '</button>' : '<span class="expirySessionSerialEmpty">Serial · Not Recorded</span>') +
+          '</td><td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
+          '</td><td class="expirySessionActions">' + (r.status === "DELETED" ? '<span class="expiryActivityDeleted">Deleted</span>' :
+            r.editable ? '<button type="button" class="expirySessionAction" title="Edit this registration" data-session-edit="' + i +
+              '">Edit</button><button type="button" class="expirySessionAction danger" title="Delete this registration" data-session-delete="' + i + '">Delete</button>' : '<span>Saved</span>') + '</td></tr>';
+      }).join("");
+      body.querySelectorAll("[data-session-serial]").forEach(b =>
+        b.onclick = () => serialDetail(session[Number(b.dataset.sessionSerial)], b));
       body
         .querySelectorAll("[data-session-edit]")
         .forEach(
@@ -603,7 +546,7 @@
         el("expiryCurrentStateBody").setAttribute("aria-busy", "false");
     }
   }
-  function openDialog(title, content, action, trigger) {
+  function openDialog(title, content, action, trigger, options = {}) {
     if (busy) return;
     if (!dialog) {
       dialog = document.createElement("dialog");
@@ -622,14 +565,15 @@
         target?.focus?.({ preventScroll: true });
       });
     }
+    dialog.className = "expiryRecordDialog" + (options.context === "session" ? " expirySessionDialog" : "") + (options.destructive ? " is-delete" : "");
     returnFocus = trigger || document.activeElement;
     dialog.innerHTML =
       '<form novalidate><header><h2 id="expiryRecordDialogTitle">' +
       esc(title) +
       '</h2></header><div class="expiryDialogContent">' +
       content +
-      '</div><p role="alert" class="expiryRecordValidation" hidden></p><footer><button type="button" data-cancel>Close</button>' +
-      (action ? '<button type="submit" class="primary">Confirm</button>' : "") +
+      '</div><p role="alert" class="expiryRecordValidation" hidden></p><footer><button type="button" data-cancel>' + esc(options.cancelLabel || 'Close') + '</button>' +
+      (action ? '<button type="submit" class="' + (options.destructive ? 'danger' : 'primary') + '">' + esc(options.confirmLabel || 'Confirm') + '</button>' : "") +
       "</footer></form>";
     dialog.querySelector("[data-cancel]").onclick = () => {
       if (!busy) dialog.close();
@@ -638,6 +582,10 @@
       e.preventDefault();
       if (!action || busy) return;
       busy = true;
+      dialog.setAttribute("aria-busy", "true");
+      const submit = dialog.querySelector("[type=submit]");
+      const submitLabel = submit?.textContent;
+      if (submit && options.context === "session") submit.textContent = options.destructive ? "Deleting…" : "Saving…";
       dialog
         .querySelectorAll("button,input,select")
         .forEach((b) => (b.disabled = true));
@@ -646,9 +594,12 @@
         lastSummary = 0;
         await refresh();
         busy = false;
+        dialog.setAttribute("aria-busy", "false");
         dialog.close();
       } catch (error) {
         busy = false;
+        dialog.setAttribute("aria-busy", "false");
+        if (submit) submit.textContent = submitLabel;
         dialog
           .querySelectorAll("button,input,select")
           .forEach((b) => (b.disabled = false));
@@ -787,9 +738,9 @@
     let frozen;
     openDialog(
       remove ? "Delete Session Entry" : "Edit Session Entry",
-      identity(r) +
+      '<div class="expiryRecordIdentity">' + identity(r) + '</div><dl class="expirySessionCaptureDetails"><div><dt>Batch</dt><dd>' + esc(r.batch_no || "Not Recorded") + '</dd></div><div><dt>Expiry</dt><dd>' + month(r) + '</dd></div><div><dt>Quantity</dt><dd>' + qty(r) + '</dd></div></dl>' +
         (remove
-          ? "<p>Remove only this successful registration, retaining its audit history?</p>"
+          ? "<p>Delete only this individual registration? Its quantity will be reversed and its audit history retained. Other registrations are preserved.</p>"
           : '<div class="expiryRecordFields"><label>Batch<input data-batch value="' +
             esc(r.batch_no || "") +
             '"></label><label>Expiry month<input data-month type="number" min="1" max="12" value="' +
@@ -849,6 +800,7 @@
         }
       },
       trigger,
+      { context: "session", destructive: remove, cancelLabel: "Cancel", confirmLabel: remove ? "Delete Entry" : "Save Changes" },
     );
   }
   async function shelfRows() {

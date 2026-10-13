@@ -250,7 +250,7 @@ function selectExpiryWorker(workerId){
 function setExpiryStatus(kind, text){
     const desktopBox=document.getElementById("expiryDesktopStatus");
     if(desktopBox){
-        desktopBox.className=`expiryDesktopStatus ${kind||"ready"}`;
+        desktopBox.className=`expiryDesktopStatus ${!expiryIsHandheld() && text==="SAVE FOR REVIEW"?"warning":kind||"ready"}`;
         desktopBox.textContent=text||"READY TO SCAN";
         desktopBox.hidden=expiryIsHandheld() || !text;
     }
@@ -635,6 +635,10 @@ function renderExpiryActiveItem(item,gs1={}){
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value||"—";};
     shell.hidden=false;
     shell.classList.toggle("is-empty",!item);
+    shell.classList.toggle("is-review",!!item?.needsReview);
+    const stateLabel=shell.querySelector(".expiryActiveHeading>div>span"),stateIcon=shell.querySelector(".expiryActiveBadgeMark");
+    if(stateLabel)stateLabel.textContent=item?.needsReview?"NEEDS REVIEW":item?"RECOGNIZED ITEM":"ACTIVE ITEM";
+    if(stateIcon)stateIcon.textContent=item?.needsReview?"!":"✓";
     shell.classList.toggle("is-recognized",!!item && !item.needsReview && !!item.itemCode);
     const recognized=document.getElementById("expiryRecognizedBadge"),autoDate=document.getElementById("expiryAutoDateBadge");
     if(recognized)recognized.hidden=!(item && !item.needsReview && item.itemCode);
