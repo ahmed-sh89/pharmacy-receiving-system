@@ -117,22 +117,8 @@ test('uncertain Resolve retry reuses the same operation ID and item payload',asy
   assert.deepEqual(attempts[0][1],attempts[1][1]);assert.equal(ack.success,true);assert.equal(backend.resolutionOperations.size,0);
 });
 
-test('Expiry tab changes render cached view immediately and avoid focus restoration scroll',()=>{
-  const source=read('js/expiry-desktop-v2.js');
-  assert.match(source,/function closeRecordDialog\(restoreFocus=true\)/);
-  assert.match(source,/dialogReturnFocus\?\.focus\(\{preventScroll:true\}\)/);
-  assert.match(source,/next\?\.focus\(\{preventScroll:true\}\);next\?\.click\(\)/);
-  assert.match(source,/closeRecordDialog\(false\);[\s\S]{0,180}ExpiryCaptureEngine\.desktopView=view;[\s\S]{0,180}if\(view==="SESSION"\)renderExpirySessionActivity\(\);[\s\S]{0,100}else \{renderInventory\(ExpiryCaptureEngine\.currentRows\|\|\[\]\);refreshExpiryCurrentState\(\);\}/);
-});
-
-test('Expiry export uses the visible filtered inventory rows and includes pharmacy identity',()=>{
-  const source=read('js/expiry-desktop-v2.js');
-  const fn=source.slice(source.indexOf('function exportCurrentInventory'),source.indexOf('window.markExpirySessionStateDeleted'));
-  assert.match(fn,/const rows=inventoryFiltered\(ExpiryCaptureEngine\.currentRows\|\|\[\]\)/);
-  assert.match(fn,/const pharmacy=\[context\.pharmacy_code,context\.pharmacy_name\|\|context\.pharmacyName\]/);
-  assert.match(fn,/"Pharmacy":pharmacy/);
-  for(const field of ['"GTIN / Barcode"','"Item Code"','"Product Name"','"Batch"','"Expiry"','"Quantity"'])assert.ok(fn.includes(field),field);
-});
+test('Expiry tab switching retains draft controls and has no application scroll commands',async()=>{const {harness}=require('./expiry-desktop-harness.cjs');const h=harness();h.e('expiryBatchInput').value='KEEP';await h.refresh();await h.click('btnOpenExpiryInventory');await h.click('btnExpirySessionView');assert.equal(h.e('expiryBatchInput').value,'KEEP');assert.doesNotMatch(read('js/expiry-desktop-v2.js'),/scrollIntoView|scrollTo/);});
+test('Shelf exports use server filter authority and do not depend on the current page',()=>{const s=read('js/expiry-desktop-v2.js');assert.match(s,/export_pharmflow_expiry_inventory_v1/);assert.match(s,/p_filters:\s*formFilters\(\)/);assert.match(s,/"Item Code":\s*String\(r.item_code\)/);assert.match(s,/Qty:\s*qty\(r\)/);assert.doesNotMatch(s,/inventoryFiltered|loadInventorySnapshot/);});
 
 test('Resolve UI remains pharmacy-local and Storage evidence stays authenticated/private',()=>{
   const ui=read('ui.js'),backend=read('js/needs-review.js');

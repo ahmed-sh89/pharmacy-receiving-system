@@ -1,423 +1,1072 @@
-/* PharmFlow Expiry Desktop Workspace V4
-   Canonical desktop owner for Session Activity + Expiry Inventory.
-   Handheld capture remains owned by js/expiry.js. */
-(function(){
-  if(typeof window==="undefined") return;
-
-  const FILTERS={category:new Set(),expiry:new Set(),operator:new Set(),lastUpdated:new Set()};
-  let lastUpdatedSort="NONE";
-  let inventorySearchTimer=null;
-  let inventoryRequestVersion=0;
-  let inventoryRowsScope=null;
-  let inventorySearchFrame=false;
-  let inventoryHeadRow=null;
-  let sessionHeadRow=null;
-  let latestSessionCaptureId="";
-  let recordDialog=null;
-  let dialogBusy=false;
-  let dialogReturnFocus=null;
-  let viewportBound=false;
-  let reviewCountBound=false;
-
-  function esc(v){return typeof expiryEscapeHtml==="function"?expiryEscapeHtml(v):String(v??"");}
-  function timeOnly(v){const d=new Date(v||"");return Number.isFinite(d.getTime())?d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"—";}
-  function dateKey(v){const d=new Date(v||"");if(!Number.isFinite(d.getTime()))return "";const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;}
-  function dateLabel(k){const d=new Date(k+"T12:00:00");return Number.isFinite(d.getTime())?d.toLocaleDateString([],{year:"numeric",month:"short",day:"numeric"}):k;}
-  function updatedAt(r){return r?.last_verified_at||r?.updated_at||r?.captured_at||r?.created_at||"";}
-  function sessionRows(){return Array.isArray(ExpiryCaptureEngine.sessionRows)?ExpiryCaptureEngine.sessionRows:[];}
-  function sessionKey(r){
-    return [String(r?.item_code||""),String(r?.identifier_display||r?.gtin||""),String(r?.batch_no||""),Number(r?.expiry_month)||0,Number(r?.expiry_year)||0].join("|");
-  }
-  function currentFor(c){
-    const rows=ExpiryCaptureEngine.currentRows||[];
-    if(!c) return null;
-    if(c.state_id){
-      const exact=rows.find(r=>String(r.state_id||"")===String(c.state_id));
-      if(exact) return exact;
-    }
-    return null;
-  }
-  function expiryKey(r){return String(Number(r?.expiry_month)||0).padStart(2,"0")+"|"+String(Number(r?.expiry_year)||0);}
-  function expiryLabel(key){const [m,y]=String(key).split("|");return (typeof expiryMonthShortName==="function"?expiryMonthShortName(Number(m)):m)+" "+y;}
-  function operatorName(r){return String(r?.verified_by_name||r?.operator_name||"Desktop");}
-  function rowId(r){return String(r?.state_id||"");}
-  function currentRowById(id){return (ExpiryCaptureEngine.currentRows||[]).find(r=>rowId(r)===String(id||""))||null;}
-  function syncSessionAfterCorrection(stateId,v){
-    ExpiryCaptureEngine.sessionRows=sessionRows().map(r=>String(r.state_id||"")===String(stateId||"")
-      ?Object.assign({},r,{batch_no:v.batch||"",expiry_month:v.month,expiry_year:v.year,quantity:v.quantity,captured_quantity:v.quantity})
-      :r);
-  }
-
-  function inventoryScope(){return typeof expiryDraftScope==="function"?expiryDraftScope():"desktop-fixture";}
-  function cancelInventorySearch(){
-    if(inventorySearchFrame && typeof cancelAnimationFrame==="function")cancelAnimationFrame(inventorySearchTimer);
-    else clearTimeout(inventorySearchTimer);
-    inventorySearchTimer=null;inventorySearchFrame=false;
-  }
-  function inventorySearchRows(rows){
-    const query=String(document.getElementById("expiryCurrentSearch")?.value||"").trim().toLowerCase();
-    if(!query)return rows||[];
-    let matches;
-    if(!/[\%_]/.test(query))matches=value=>String(value||"").toLowerCase().includes(query);
-    else{
-      // Preserve the existing PostgreSQL LIKE wildcard/escape semantics.
-      const pattern="%"+query+"%",escape=c=>c.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");let regex="^";
-      for(let i=0;i<pattern.length;i++){
-        const c=pattern[i];
-        if(c==="\\" && i+1<pattern.length)regex+=escape(pattern[++i]);
-        else regex+=c==="%"?".*":c==="_"?".":escape(c);
-      }
-      const expression=new RegExp(regex+"$","su");matches=value=>expression.test(String(value||"").toLowerCase());
-    }
-    return (rows||[]).filter(r=>[r.item_name,r.item_code,r.identifier_display,r.batch_no].some(matches));
-  }
-  async function loadInventorySnapshot(scope){
-    const rows=await loadExpiryCurrentState("");
-    if(scope!==inventoryScope())return [];
-    // Table RPCs can be limited by PostgREST even without SQL LIMIT. Continue
-    // from the actual returned count, until an empty page proves completeness.
-    if(!rows.length || typeof authRequest!=="function" || typeof getSupabaseAccessToken!=="function")return rows;
-    const pharmacyId=expiryPharmacyId(),all=rows.slice(),seen=new Set(rows.map(rowId));
-    for(;;){
-      if(scope!==inventoryScope())return [];
-      const page=await authRequest("/rest/v1/rpc/list_pharmacy_expiry_current_state_v1?offset="+all.length+"&limit=1000",{
-        method:"POST",headers:{Authorization:"Bearer "+getSupabaseAccessToken(),Accept:"application/json"},
-        body:JSON.stringify({p_pharmacy_id:pharmacyId,p_include_cleared:false,p_search:null})
-      });
-      if(scope!==inventoryScope())return [];
-      if(!Array.isArray(page))throw new Error("Invalid Inventory page");
-      if(!page.length)return all;
-      for(const row of page){if(!rowId(row)||seen.has(rowId(row)))throw new Error("Inventory changed during loading; refresh again");seen.add(rowId(row));all.push(row);}
-    }
-  }
-  function inventoryFiltered(rows){
-    let out=inventorySearchRows(rows).filter(r=>
-      (!FILTERS.category.size||FILTERS.category.has(String(r.category||"Uncategorized"))) &&
-      (!FILTERS.expiry.size||FILTERS.expiry.has(expiryKey(r))) &&
-      (!FILTERS.operator.size||FILTERS.operator.has(operatorName(r))) &&
-      (!FILTERS.lastUpdated.size||FILTERS.lastUpdated.has(dateKey(updatedAt(r))))
+/* Canonical Expiry Desktop workspace. Inventory queries and session receipts are server-owned. */
+(function () {
+  if (typeof window === "undefined") return;
+  const originalBind = window.bindExpiryCaptureUI,
+    originalActivate = window.activateExpiryCapture;
+  let mode = "SESSION",
+    resolved = false,
+    offset = 0,
+    sort = "ADDED",
+    filters = { search: "", departments: [], months: [] };
+  let page = { rows: [], count: 0, units: 0, departments: [], months: [] },
+    periods = [],
+    session = [],
+    selected = new Set();
+  let visibleScope = null;
+  let requestVersion = 0,
+    searchTimer,
+    pendingRead,
+    lastSummary = 0,
+    dialog,
+    busy = false,
+    returnFocus,
+    sessionId,
+    viewportBound = false;
+  const esc = (v) => expiryEscapeHtml(v ?? ""),
+    el = (id) => document.getElementById(id);
+  const scope = () => expiryDraftScope() + "/" + expirySignedAuthIdentity();
+  const month = (r) =>
+    String(r.expiry_month).padStart(2, "0") + "/" + r.expiry_year;
+  const periodMonth = (n) =>
+    String(((n - 1) % 12) + 1).padStart(2, "0") +
+    "/" +
+    Math.floor((n - 1) / 12);
+  const currentRows = () =>
+    session.filter(
+      (r) => r.kind === "KNOWN" && r.status !== "DELETED" && r.quantity > 0,
     );
-    if(lastUpdatedSort!=="NONE"){
-      const dir=lastUpdatedSort==="DESC"?-1:1;
-      out=out.slice().sort((a,b)=>dir*((Date.parse(updatedAt(a))||0)-(Date.parse(updatedAt(b))||0)));
-    }
-    return out;
+  const qty = (r) => Number(r.quantity) || 0;
+  function identity(r) {
+    return (
+      "<strong>" +
+      esc(r.item_name || "Unknown item") +
+      '</strong><div class="expiryIdentityMeta">Code <b>' +
+      esc(r.item_code || "—") +
+      "</b> · GTIN <span>" +
+      esc(r.identifier_display || "—") +
+      "</span></div>"
+    );
   }
-  function hasFilters(){return Object.values(FILTERS).some(s=>s.size)||lastUpdatedSort!=="NONE"||!!document.getElementById("expiryCurrentSearch")?.value;}
-  function filterOptions(type){
-    const rows=ExpiryCaptureEngine.currentRows||[];
-    if(type==="category")return [...new Set(rows.map(r=>String(r.category||"Uncategorized")))].sort().map(v=>[v,v]);
-    if(type==="operator")return [...new Set(rows.map(operatorName))].sort().map(v=>[v,v]);
-    if(type==="lastUpdated")return [...new Set(rows.map(r=>dateKey(updatedAt(r))).filter(Boolean))].sort().reverse().map(v=>[v,dateLabel(v)]);
-    return [...new Set(rows.map(expiryKey))].sort((a,b)=>{const [am,ay]=a.split("|").map(Number),[bm,by]=b.split("|").map(Number);return ay-by||am-bm;}).map(v=>[v,expiryLabel(v)]);
+  function authArgs() {
+    return { p_pharmacy_id: expiryPharmacyId() };
   }
-  function closeFilterMenus(){document.querySelectorAll("#zebraExpiryShell .expiryHeaderFilterMenu").forEach(e=>e.remove());}
-  function updateFilterIndicators(){
-    document.querySelectorAll("[data-expiry-filter-heading]").forEach(th=>{
-      const type=th.dataset.expiryFilterHeading;
-      const active=type==="lastUpdated"?(FILTERS.lastUpdated.size>0||lastUpdatedSort!=="NONE"):!!FILTERS[type]?.size;
-      th.classList.toggle("is-filtered",active);
-      const dot=th.querySelector(".expiryHeaderFilterDot");if(dot)dot.hidden=!active;
-    });
-    const clear=document.getElementById("btnClearExpiryFilters");
-    if(clear)clear.classList.toggle("is-active",hasFilters());
+  function formFilters() {
+    return { ...filters, search: filters.search.trim() };
   }
-  async function clearAllFilters(){
-    cancelInventorySearch();
-    const search=document.getElementById("expiryCurrentSearch");
-    if(search)search.value="";
-    Object.values(FILTERS).forEach(s=>s.clear());
-    lastUpdatedSort="NONE";
-    closeFilterMenus();updateFilterIndicators();
-    renderInventory(ExpiryCaptureEngine.currentRows||[]);
-  }
-  function openFilter(type,button){
-    closeFilterMenus();if(ExpiryCaptureEngine.desktopView!=="INVENTORY")return;
-    const selected=FILTERS[type],menu=document.createElement("div");menu.className="expiryHeaderFilterMenu";
-    const opts=filterOptions(type);
-    const sort=type==="lastUpdated"?'<div class="expiryDateSort"><button type="button" data-sort="DESC" class="'+(lastUpdatedSort==="DESC"?"is-selected":"")+'">Newest first</button><button type="button" data-sort="ASC" class="'+(lastUpdatedSort==="ASC"?"is-selected":"")+'">Oldest first</button></div>':"";
-    menu.innerHTML='<div class="expiryHeaderFilterMenuTitle">'+esc(type==="lastUpdated"?"Last Updated":type==="expiry"?"Expiry":type[0].toUpperCase()+type.slice(1))+'</div>'+sort+
-      '<div class="expiryHeaderFilterOptions">'+opts.map(([value,label])=>'<button type="button" class="expiryHeaderFilterOption '+(selected.has(value)?"is-selected":"")+'" data-value="'+esc(value)+'"><span>'+esc(label)+'</span><b>✓</b></button>').join("")+'</div>'+
-      '<div class="expiryHeaderFilterActions"><button type="button" data-clear>Clear</button><button type="button" data-done>Done</button></div>';
-    button.closest("th").appendChild(menu);
-    menu.querySelectorAll("[data-sort]").forEach(b=>b.onclick=e=>{e.stopPropagation();lastUpdatedSort=b.dataset.sort;updateFilterIndicators();renderInventory(ExpiryCaptureEngine.currentRows||[]);closeFilterMenus();});
-    menu.querySelectorAll("[data-value]").forEach(b=>b.onclick=e=>{e.stopPropagation();const v=b.dataset.value;if(selected.has(v))selected.delete(v);else selected.add(v);b.classList.toggle("is-selected",selected.has(v));updateFilterIndicators();renderInventory(ExpiryCaptureEngine.currentRows||[]);});
-    menu.querySelector("[data-clear]").onclick=e=>{e.stopPropagation();selected.clear();if(type==="lastUpdated")lastUpdatedSort="NONE";updateFilterIndicators();renderInventory(ExpiryCaptureEngine.currentRows||[]);closeFilterMenus();};
-    menu.querySelector("[data-done]").onclick=e=>{e.stopPropagation();closeFilterMenus();};
-  }
-
-  function syncViewport(){
-    if(expiryIsHandheld())return;
-    const shell=document.getElementById("zebraExpiryShell");
-    if(!shell?.classList.contains("active"))return;
-    const top=Math.max(0,Math.round(shell.getBoundingClientRect().top));
-    shell.style.setProperty("--expiry-viewport-height",Math.max(420,window.innerHeight-top)+"px");
+  function syncViewport() {
+    if (expiryIsHandheld()) return;
+    const s = el("zebraExpiryShell");
+    if (!s?.classList.contains("active")) return;
+    s.style.setProperty(
+      "--expiry-viewport-height",
+      Math.max(
+        420,
+        window.innerHeight - Math.max(0, s.getBoundingClientRect().top),
+      ) + "px",
+    );
     document.body.classList.add("expiryDesktopActive");
   }
-  async function refreshExpiryNeedsReviewCount(){
-    const badge=document.getElementById("expiryNeedsReviewCount");
-    if(!badge || typeof ExpiryReviewBackend==="undefined")return;
-    await ExpiryReviewBackend.refresh();
+  function setMode() {
+    const s = el("zebraExpiryShell");
+    s?.classList.toggle("expiryInventoryMode", mode === "INVENTORY");
+    const capture = s?.querySelector(".expiryCaptureCard");
+    if (capture) capture.hidden = mode === "INVENTORY";
+    el("expiryCurrentHeader").hidden = mode !== "INVENTORY";
+    el("expirySessionMenu").hidden = true;
+    el("btnExpirySessionView").setAttribute(
+      "aria-selected",
+      String(mode === "SESSION"),
+    );
+    el("btnOpenExpiryInventory").setAttribute(
+      "aria-selected",
+      String(mode === "INVENTORY"),
+    );
+    el("expiryWorkspaceTitle").textContent = resolved
+      ? "Resolved Inventory"
+      : "Expiry Inventory";
+    el("expiryWorkspaceSubtitle").textContent = resolved
+      ? "Retained records · Restore only the selected quantities"
+      : "Active pharmacy inventory";
+    const table = s.querySelector(".expiryCurrentTable");
+    table.classList.toggle("expirySessionTable", mode === "SESSION");
+    table.classList.toggle("expiryInventoryTable", mode === "INVENTORY");
+    table.querySelector("thead").innerHTML =
+      mode === "SESSION"
+        ? "<tr><th>Product / Identification</th><th>Batch / Expiry</th><th>Quantity</th><th>Activity</th><th>Actions</th></tr>"
+        : '<tr><th><input type="checkbox" id="expiryPageSelection" aria-label="Select current page"></th><th>Product / Identification</th><th>Batch</th><th><button type="button" data-expiry-sort>Expiry</button></th><th>Quantity</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr>';
+    el("expiryPager").hidden = mode !== "INVENTORY";
+    syncViewport();
+    renderKpis();
   }
-  function bindViewport(){
-    if(viewportBound)return;viewportBound=true;
-    window.addEventListener("resize",syncViewport,{passive:true});
-    if(typeof AppEvents!=="undefined"&&AppEvents?.on){
-      AppEvents.on("route:changed",payload=>{
-        if(payload?.routeName==="expiry")setTimeout(syncViewport,0);
-        else document.body.classList.remove("expiryDesktopActive");
-      });
+  function metricRows(key) {
+    const rows = currentRows();
+    if (key === "LAST") return rows.slice(0, 1);
+    return rows;
+  }
+  function renderKpis() {
+    const root = document.querySelector("#zebraExpiryShell .expiryKpiRow");
+    if (!root) return;
+    root.classList.toggle("is-session", mode === "SESSION");
+    if (mode === "INVENTORY") {
+      root.hidden = resolved;
+      const names = {
+        EXPIRED: "Expired",
+        NEXT1: "Next Month",
+        NEXT2: "Next 2 Months",
+        NEXT6: "Next 6 Months",
+      };
+      root.innerHTML = periods
+        .map(
+          (p) =>
+            '<button type="button" class="expiryKpiCard ' +
+            (p.key === "EXPIRED" ? "expiryKpiExpired" : "") +
+            '" data-period="' +
+            p.key +
+            '"><span>' +
+            names[p.key] +
+            "</span><strong>" +
+            p.count +
+            "</strong><small>" +
+            p.units +
+            " units · " +
+            (p.from == null
+              ? periodMonth(p.to) + " and earlier"
+              : p.from === p.to
+                ? periodMonth(p.to)
+                : periodMonth(p.from) + " – " + periodMonth(p.to)) +
+            "</small></button>",
+        )
+        .join("");
+      root.querySelectorAll("[data-period]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const p = periods.find((p) => p.key === b.dataset.period);
+            delete filters.from;
+            if (p.from != null) filters.from = p.from;
+            filters.to = p.to;
+            sort = "EXPIRY";
+            offset = 0;
+            selected.clear();
+            void refresh();
+          }),
+      );
+      return;
     }
+    root.hidden = false;
+    const rows = currentRows();
+    const values = [
+      ["ITEMS", "Items Scanned", new Set(rows.map((r) => r.item_code)).size],
+      ["QUANTITY", "Total Quantity", rows.reduce((n, r) => n + qty(r), 0)],
+      [
+        "BATCHES",
+        "Batches",
+        new Set(
+          rows.map((r) =>
+            [
+              r.item_code,
+              String(r.batch_no || "")
+                .trim()
+                .toUpperCase(),
+              r.expiry_year,
+              r.expiry_month,
+            ].join("|"),
+          ),
+        ).size,
+      ],
+      ["MONTHS", "Expiry Months", new Set(rows.map(month)).size],
+      ["LAST", "Last Scanned", rows[0] ? month(rows[0]) : "—"],
+    ];
+    root.innerHTML = values
+      .map(
+        ([key, label, value]) =>
+          '<button type="button" class="expiryKpiCard" data-metric="' +
+          key +
+          '"><span>' +
+          label +
+          "</span><strong>" +
+          esc(value) +
+          "</strong><small>Current signed-in session</small></button>",
+      )
+      .join("");
+    root.querySelectorAll("[data-metric]").forEach(
+      (b) =>
+        (b.onclick = () =>
+          openDialog(
+            b.textContent.split("Current")[0],
+            metricRows(b.dataset.metric)
+              .map(
+                (r) =>
+                  "<li>" +
+                  identity(r) +
+                  "<span>Batch " +
+                  esc(r.batch_no || "Not Recorded") +
+                  " · " +
+                  month(r) +
+                  " · Qty " +
+                  qty(r) +
+                  "</span><time>" +
+                  esc(expiryFormatVerifiedAt(r.captured_at)) +
+                  "</time></li>",
+              )
+              .join("") || "<li>No successful session entries.</li>",
+            null,
+            b,
+          )),
+    );
   }
-
-  function updateMode(){
-    const inv=ExpiryCaptureEngine.desktopView==="INVENTORY",shell=document.getElementById("zebraExpiryShell");
-    const set=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e);};
-    const table=document.querySelector?.(".expiryCurrentTable"),head=table?.querySelector("thead");
-    if(head){
-      if(!inventoryHeadRow)inventoryHeadRow=head.querySelector("tr");
-      if(!sessionHeadRow){
-        sessionHeadRow=document.createElement("tr");
-        sessionHeadRow.innerHTML='<th>Product / Identification</th><th>Batch / Expiry</th><th>Quantity</th><th>Activity</th><th>Actions</th>';
-        head.appendChild(sessionHeadRow);
-      }
-      if(inventoryHeadRow)inventoryHeadRow.hidden=!inv;
-      sessionHeadRow.hidden=inv;
-      table.classList.toggle("expirySessionTable",!inv);
+  function updateToolbar() {
+    el("expiryCurrentStateCount").textContent = String(page.count);
+    el("expiryResultSummary").textContent =
+      page.count + " records · " + page.units + " units";
+    el("expirySort").textContent = resolved
+      ? "Recently Resolved"
+      : sort === "ADDED"
+        ? "Recently Added"
+        : sort === "UPDATED"
+          ? "Recently Updated"
+          : "Earliest Expiry";
+    el("expiryResolved").textContent = resolved
+      ? "Back to Inventory"
+      : "Resolved";
+    el("expiryBulkAction").textContent =
+      (resolved ? "Restore" : "Resolve") + " Selected";
+    el("expiryBulkAction").disabled = !selected.size;
+    el("expiryPageLabel").textContent = page.count
+      ? "Rows " +
+        (offset + 1) +
+        "–" +
+        Math.min(offset + 50, page.count) +
+        " of " +
+        page.count
+      : "No records";
+    el("expiryPrev").disabled = offset === 0;
+    el("expiryNext").disabled = offset + 50 >= page.count;
+    for (const [id, key, options, label] of [
+      ["expiryDepartments", "departments", page.departments, "Department"],
+      ["expiryMonths", "months", page.months, "Expiry Months"],
+    ]) {
+      const d = el(id),
+        focused = d.contains(document.activeElement)
+          ? document.activeElement?.dataset?.value
+          : null;
+      d.querySelector("summary").textContent =
+        label + (filters[key].length ? " (" + filters[key].length + ")" : "");
+      d.querySelector("div").innerHTML =
+        options
+          .map(
+            (value) =>
+              '<button type="button" role="menuitemcheckbox" aria-checked="' +
+              filters[key].includes(value) +
+              '" data-value="' +
+              esc(value) +
+              '">' +
+              esc(value) +
+              "<b>" +
+              (filters[key].includes(value) ? "✓" : "") +
+              "</b></button>",
+          )
+          .join("") || "<span>No options</span>";
+      if (focused != null)
+        [...d.querySelectorAll("button")]
+          .find((b) => b.dataset.value === focused)
+          ?.focus({ preventScroll: true });
+      d.querySelectorAll("button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const v = b.dataset.value;
+            filters[key] = filters[key].includes(v)
+              ? filters[key].filter((x) => x !== v)
+              : [...filters[key], v];
+            offset = 0;
+            selected.clear();
+            void refresh();
+          }),
+      );
     }
-    set("expirySessionMenu",e=>{e.hidden=inv;e.open=false;});
-    set("expiryCurrentHeader",e=>e.hidden=!inv);
-    set("expiryWorkspaceTitle",e=>e.textContent=inv?"Expiry Inventory":"Session Activity");
-    set("expiryWorkspaceSubtitle",e=>{e.textContent=inv?"All active verified expiry records":"";e.hidden=!inv;});
-    set("btnExpirySessionView",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(!inv));e.tabIndex=inv?-1:0;});
-    set("btnOpenExpiryInventory",e=>{e.hidden=false;e.style.display="";e.setAttribute("aria-selected",String(inv));e.tabIndex=inv?0:-1;});
-    set("btnClearExpirySession",e=>{e.hidden=inv;e.style.display=inv?"none":"";});
-    set("expiryCurrentSearch",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
-    set("btnClearExpiryFilters",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
-    set("btnExportExpiryInventory",e=>{e.hidden=!inv;e.style.display=inv?"":"none";});
-    set("expiryQuantityHeading",e=>e.textContent=inv?"Current Qty":"Quantity");
-    set("expiryTimeHeading",e=>{const text=e.childNodes[0];if(text)text.nodeValue=inv?"Last Updated ":"Time ";});
-    shell?.classList.toggle("expiryInventoryMode",inv);
-    document.querySelectorAll("[data-expiry-filter-heading]").forEach(th=>th.classList.toggle("expiryFiltersEnabled",inv));
-    closeFilterMenus();updateFilterIndicators();syncViewport();
+    el("expiryAppliedFilters").textContent = [
+      filters.search && "Search: " + filters.search,
+      ...filters.departments,
+      ...filters.months,
+      filters.to != null &&
+        "Period: " +
+          (filters.from != null
+            ? periodMonth(filters.from) + " – "
+            : "Through ") +
+          periodMonth(filters.to),
+    ]
+      .filter(Boolean)
+      .join(" · ");
   }
-
-  function deleteActions(scope,id){
-    return '<button type="button" class="'+(scope==="session"?"expirySessionAction":"expiryRowAction")+' danger" data-delete-start="'+esc(id)+'" data-delete-scope="'+scope+'">Delete</button>';
-  }
-
-  function sessionRowHtml(r,index){
-    const cur=currentFor(r),deleted=!!r.deleted||!cur,d=cur||r,id=String(cur?.state_id||r.state_id||"");
-    const latest=index===0 && !!latestSessionCaptureId && r.capture_id===latestSessionCaptureId;
-    return '<tr class="expiryActivityRow '+(latest?'expiryRowSavedStrong ':'')+(deleted?'expiryActivityDeletedRow':'')+'" '+(latest?'aria-label="Latest saved activity"':'')+'>'+
-      '<td class="expirySessionProduct"><strong>'+esc(d.item_name||r.item_name||"—")+'</strong><div>Code <b>'+esc(d.item_code||"—")+'</b> · GTIN <span>'+esc(d.identifier_display||d.gtin||"—")+'</span></div><span class="expirySessionCategory">'+esc(d.category||"Uncategorized")+'</span></td>'+
-      '<td class="expirySessionBatch"><div><span>Batch</span> '+esc(d.batch_no||"—")+'</div><strong>'+esc(expiryMonthShortName(d.expiry_month))+' '+esc(d.expiry_year)+'</strong>'+((r.sample_serial||r.serial||d.sample_serial)?'<div class="expirySessionSerial"><span>Serial</span> '+esc(r.sample_serial||r.serial||d.sample_serial)+'</div>':'')+'</td>'+
-      '<td class="expiryActivityQty">'+esc(deleted?(Number(r.quantity)||0):(Number(cur.verified_quantity)||0))+'</td>'+
-      '<td class="expirySessionMeta"><time title="'+esc(expiryFormatVerifiedAt(r.captured_at||r.created_at))+'">'+esc(timeOnly(r.captured_at||r.created_at))+'</time><span>'+esc(cur?.verified_by_name||r.operator_name||"Desktop")+'</span></td>'+
-      '<td class="expirySessionActions">'+(deleted?'<span class="expiryActivityDeleted">Deleted</span>':'<button type="button" class="expirySessionAction" data-session-edit="'+esc(id)+'">Edit</button>'+deleteActions("session",id))+'</td></tr>';
-  }
-  window.renderExpirySessionActivity=function(){
-    const visible=sessionRows(),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expirySessionCount");
-    if(count)count.textContent=String(visible.length);if(!body)return;
-    if(!visible.length){body.innerHTML="";if(empty){empty.hidden=false;empty.innerHTML="<strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span>";}return;}
-    if(empty)empty.hidden=true;body.innerHTML=visible.map(sessionRowHtml).join("");bindDesktopRowActions();
-  };
-
-  function readEditValues(tr){
-    return {
-      quantity:Number(tr?.querySelector("[data-edit-qty]")?.value||0),
-      month:Number(tr?.querySelector("[data-edit-month]")?.value||0),
-      year:Number(tr?.querySelector("[data-edit-year]")?.value||0),
-      batch:String(tr?.querySelector("[data-edit-batch]")?.value||"").trim()
+  function render() {
+    setMode();
+    const body = el("expiryCurrentStateBody"),
+      empty = el("expiryCurrentStateEmpty");
+    const rows = mode === "SESSION" ? session : page.rows;
+    el("expirySessionCount").textContent = String(currentRows().length);
+    empty.hidden = !!rows.length;
+    if (!rows.length) {
+      body.innerHTML = "";
+      empty.innerHTML =
+        "<strong>" +
+        (mode === "SESSION"
+          ? "No items captured in this session"
+          : "No matching expiry records") +
+        "</strong><span>" +
+        (mode === "SESSION"
+          ? "Scan or search above to start."
+          : "Adjust filters or return to active Inventory.") +
+        "</span>";
+      if (mode === "INVENTORY") updateToolbar();
+      return;
+    }
+    if (mode === "SESSION") {
+      body.innerHTML = rows
+        .map(
+          (r, i) =>
+            "<tr" +
+            (i === 0 && r.status !== "DELETED"
+              ? ' class="expiryRowSavedStrong"'
+              : "") +
+            '><td class="expirySessionProduct">' +
+            identity(r) +
+            '</td><td class="expirySessionBatch">' +
+            esc(r.batch_no || "Not Recorded") +
+            "<strong>" +
+            month(r) +
+            '</strong></td><td class="expiryActivityQty">' +
+            qty(r) +
+            '</td><td class="expirySessionMeta"><time>' +
+            esc(expiryFormatVerifiedAt(r.captured_at)) +
+            "</time><span>" +
+            esc(r.worker_name || "Desktop") +
+            '</span></td><td class="expirySessionActions">' +
+            (r.status === "DELETED"
+              ? '<span class="expiryActivityDeleted">Deleted</span>'
+              : r.editable
+                ? '<button class="expirySessionAction" data-session-edit="' +
+                  i +
+                  '">Edit</button><button class="expirySessionAction danger" data-session-delete="' +
+                  i +
+                  '">Delete</button>'
+                : "<span>Saved</span>") +
+            "</td></tr>",
+        )
+        .join("");
+      body
+        .querySelectorAll("[data-session-edit]")
+        .forEach(
+          (b) =>
+            (b.onclick = () =>
+              sessionEdit(session[Number(b.dataset.sessionEdit)], false, b)),
+        );
+      body
+        .querySelectorAll("[data-session-delete]")
+        .forEach(
+          (b) =>
+            (b.onclick = () =>
+              sessionEdit(session[Number(b.dataset.sessionDelete)], true, b)),
+        );
+      return;
+    }
+    updateToolbar();
+    body.innerHTML = page.rows
+      .map((r, i) => {
+        const d = new Date(r.updated_at);
+        return (
+          '<tr><td><input type="checkbox" aria-label="Select ' +
+          esc(r.item_code) +
+          '" data-row-selection="' +
+          r.row_id +
+          '" ' +
+          (selected.has(r.row_id) ? "checked" : "") +
+          '></td><td class="expirySessionProduct">' +
+          identity(r) +
+          "</td><td>" +
+          esc(r.batch_no || "Not Recorded") +
+          "</td><td>" +
+          month(r) +
+          '</td><td class="expiryQtyCell">' +
+          qty(r) +
+          '</td><td><span class="expiryInventoryStatus ' +
+          (r.status === "RESOLVED"
+            ? "resolved"
+            : r.expiry_year * 12 + r.expiry_month <= periods[0]?.to
+              ? "expired"
+              : "") +
+          '">' +
+          (r.status === "RESOLVED"
+            ? "Resolved"
+            : r.expiry_year * 12 + r.expiry_month <= periods[0]?.to
+              ? "Expired"
+              : "Active") +
+          '</span></td><td class="expiryTimeCell"><time>' +
+          esc(d.toLocaleDateString()) +
+          "<br>" +
+          esc(
+            d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          ) +
+          '</time></td><td class="expiryActionsCell">' +
+          (!resolved
+            ? '<button class="expiryRowAction" data-quantity="' +
+              i +
+              '">Edit Qty</button>'
+            : "") +
+          '<button class="expiryRowAction" data-row-action="' +
+          i +
+          '">' +
+          (resolved ? "Restore" : "Resolve") +
+          "</button></td></tr>"
+        );
+      })
+      .join("");
+    body.querySelectorAll("[data-row-selection]").forEach(
+      (b) =>
+        (b.onchange = () => {
+          if (b.checked) selected.add(b.dataset.rowSelection);
+          else selected.delete(b.dataset.rowSelection);
+          updateToolbar();
+        }),
+    );
+    el("expiryPageSelection").onchange = (e) => {
+      page.rows.forEach((r) =>
+        e.target.checked ? selected.add(r.row_id) : selected.delete(r.row_id),
+      );
+      render();
+    };
+    body
+      .querySelectorAll("[data-row-action]")
+      .forEach(
+        (b) =>
+          (b.onclick = () =>
+            confirmSelection(
+              [page.rows[Number(b.dataset.rowAction)].row_id],
+              b,
+            )),
+      );
+    body
+      .querySelectorAll("[data-quantity]")
+      .forEach(
+        (b) =>
+          (b.onclick = () =>
+            quantityEdit(page.rows[Number(b.dataset.quantity)], b)),
+      );
+    document.querySelector("[data-expiry-sort]").onclick = () => {
+      sort = "EXPIRY";
+      offset = 0;
+      void refresh();
     };
   }
-  function validateEdit(v){
-    if(!Number.isInteger(v.quantity)||v.quantity<=0)return "Quantity must be a whole number greater than 0.";
-    if(!Number.isInteger(v.month)||v.month<1||v.month>12)return "Expiry month must be between 1 and 12.";
-    if(!Number.isInteger(v.year)||v.year<2020||v.year>2200)return "Expiry year must be between 2020 and 2200.";
-    return "";
+  function refresh() {
+    const key = JSON.stringify([
+      scope(),
+      mode,
+      resolved,
+      offset,
+      sort,
+      filters,
+    ]);
+    if (pendingRead?.key === key && pendingRead.version === requestVersion) return pendingRead.promise;
+    const promise = performRefresh().finally(() => {
+      if (pendingRead?.promise === promise) pendingRead = null;
+    });
+    pendingRead = { key, promise, version: requestVersion };
+    return promise;
   }
-  function closeRecordDialog(restoreFocus=true){
-    if(dialogBusy)return;
-    if(!recordDialog?.open)return;
-    if(!restoreFocus)dialogReturnFocus=null;
-    recordDialog?.close();
-  }
-  function ensureRecordDialog(){
-    if(recordDialog)return recordDialog;
-    recordDialog=document.createElement("dialog");
-    recordDialog.className="expiryRecordDialog";
-    recordDialog.setAttribute("aria-labelledby","expiryRecordDialogTitle");
-    document.body.appendChild(recordDialog);
-    recordDialog.addEventListener("cancel",e=>{if(dialogBusy)e.preventDefault();});
-    recordDialog.addEventListener("close",()=>{recordDialog.innerHTML="";dialogReturnFocus?.focus({preventScroll:true});dialogReturnFocus=null;});
-    return recordDialog;
-  }
-  function identityHtml(row){
-    return '<div class="expiryRecordIdentity"><strong>'+esc(row.item_name||"Expiry record")+'</strong><dl>'+[
-      ["Item Code",row.item_code],["GTIN / Barcode",row.identifier_display||row.gtin],["Category",row.category||"Uncategorized"]
-    ].map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+esc(value||"—")+'</dd></div>').join("")+'</dl></div>';
-  }
-  function openRecordDialog(scope,id,kind,trigger){
-    if(expiryIsHandheld()||dialogBusy)return;
-    const row=currentRowById(id);if(!row)return;
-    const dialog=ensureRecordDialog();dialogReturnFocus=trigger;
-    dialog.classList.toggle("is-delete",kind==="delete");
-    const months=Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'"'+(Number(row.expiry_month)===i+1?' selected':'')+'>'+(i+1)+' · '+esc(expiryMonthShortName(i+1))+'</option>').join("");
-    const fields=kind==="edit"?'<div class="expiryRecordFields"><label>Batch Number<input data-edit-batch value="'+esc(row.batch_no||"")+'"></label><label>Serial Number<input value="'+esc(row.sample_serial||row.serial||"")+'" readonly><small>Serial is unchanged by corrections</small></label><label>Expiry Month<select data-edit-month>'+months+'</select></label><label>Expiry Year<input data-edit-year type="number" min="2020" max="2200" value="'+(Number(row.expiry_year)||"")+'"></label><label>Quantity<input data-edit-qty type="number" min="1" step="1" value="'+(Number(row.verified_quantity)||1)+'"></label></div>':'<p>Remove this record from current expiry inventory?</p>';
-    dialog.innerHTML='<form><header><h2 id="expiryRecordDialogTitle">'+(kind==="edit"?'Edit Expiry Record':'Delete Expiry Record?')+'</h2><span>'+esc(scope==="session"?'Session Activity':'Expiry Inventory')+'</span></header>'+identityHtml(row)+fields+'<p class="expiryRecordValidation" role="alert" hidden></p><footer><button type="button" data-record-cancel>Cancel</button><button type="submit" class="'+(kind==="delete"?'danger':'primary')+'">'+(kind==="delete"?'Delete':'Save Changes')+'</button></footer></form>';
-    dialog.querySelector('[data-record-cancel]').onclick=closeRecordDialog;
-    dialog.querySelector('form').onsubmit=async e=>{
-      e.preventDefault();if(dialogBusy)return;
-      const v=kind==="edit"?readEditValues(dialog):null,error=kind==="edit"?validateEdit(v):"";
-      const feedback=dialog.querySelector('.expiryRecordValidation');feedback.textContent=error;feedback.hidden=!error;
-      if(error)return;
-      dialogBusy=true;dialog.querySelectorAll('button,input,select').forEach(el=>el.disabled=true);
-      try{
-        if(kind==="delete"){
-          await clearExpiryCurrentState(row);
-          setExpiryStatus("success","REMOVED FROM CURRENT EXPIRY");
-        }else{
-          await saveExpiryCurrentCorrection(row,v);
-          syncSessionAfterCorrection(row.state_id,v);
-          setExpiryStatus("success",scope==="session"?"CURRENT STATE UPDATED":"UPDATED · TOTAL "+v.quantity);
+  async function performRefresh() {
+    if (expiryIsHandheld() || !expiryDraftScope()) return [];
+    if (!el("expiryPager")) bind();
+    const ownScope = scope();
+    if (visibleScope !== ownScope) {
+      visibleScope = ownScope;
+      session = [];
+      page = { rows: [], count: 0, units: 0, departments: [], months: [] };
+      periods = [];
+      lastSummary = 0;
+      selected.clear();
+      filters = { search: "", departments: [], months: [] };
+      offset = 0;
+      resolved = false;
+      el("expiryCurrentSearch").value = "";
+      render();
+    }
+    const version = ++requestVersion,
+      requestFilters = formFilters(),
+      requestMode = mode,
+      requestResolved = resolved;
+    el("expiryCurrentStateBody").setAttribute("aria-busy", "true");
+    try {
+      for (const [suffix, rpc] of [
+        ["", "mutate_pharmflow_expiry_inventory_v1"],
+        ["/session", "correct_pharmflow_expiry_desktop_session_v1"],
+      ]) {
+        const key = pendingKey() + suffix,
+          stored = sessionStorage.getItem(key);
+        if (stored) {
+          try {
+            await authRpc(rpc, JSON.parse(stored));
+            sessionStorage.removeItem(key);
+          } catch (error) {
+            if (error.serverRejected) sessionStorage.removeItem(key);
+            throw error;
+          }
         }
-        dialogBusy=false;closeRecordDialog();await refreshExpiryCurrentState();
-      }catch(error){
-        console.error("Expiry record action failed",error);
-        dialogBusy=false;dialog.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);
-        feedback.textContent=kind==="delete"?"Unable to delete this record. Please retry.":"Unable to save this correction. Please retry.";feedback.hidden=false;
-        setExpiryStatus("error",kind==="delete"?"DELETE FAILED":"UPDATE FAILED");
+      }
+      let next;
+      if (requestMode === "SESSION") {
+        sessionId = await ensureExpiryActiveSession();
+        next = await authRpc("list_pharmflow_expiry_desktop_session_v1", {
+          ...authArgs(),
+          p_session_id: sessionId,
+        });
+      } else
+        next = await authRpc("query_pharmflow_expiry_inventory_v1", {
+          ...authArgs(),
+          p_filters: requestFilters,
+          p_resolved: requestResolved,
+          p_sort: sort,
+          p_offset: offset,
+          p_limit: 50,
+        });
+      const summary =
+        !periods.length || Date.now() - lastSummary >= 30000
+          ? await authRpc("summary_pharmflow_expiry_inventory_v1", authArgs())
+          : periods;
+      if (ownScope !== scope() || version !== requestVersion) return [];
+      periods = summary;
+      lastSummary = Date.now();
+      if (requestMode === "SESSION") {
+        session = next.filter((r) => r.kind === "KNOWN");
+        ExpiryCaptureEngine.sessionRows = session;
+      } else {
+        page = next;
+        ExpiryCaptureEngine.currentRows = next.rows;
+      }
+      render();
+      return requestMode === "SESSION" ? session : page.rows;
+    } catch (error) {
+      if (ownScope === scope() && version === requestVersion) {
+        el("expiryCurrentStateEmpty").hidden = false;
+        el("expiryCurrentStateEmpty").innerHTML =
+          "<strong>Unable to load Expiry workspace</strong><span>" +
+          esc(error.message || "Refresh when connected") +
+          "</span>";
+        setExpiryStatus("error", "EXPIRY LOAD FAILED");
+      }
+      return [];
+    } finally {
+      if (version === requestVersion)
+        el("expiryCurrentStateBody").setAttribute("aria-busy", "false");
+    }
+  }
+  function openDialog(title, content, action, trigger) {
+    if (busy) return;
+    if (!dialog) {
+      dialog = document.createElement("dialog");
+      dialog.className = "expiryRecordDialog";
+      dialog.setAttribute("aria-labelledby", "expiryRecordDialogTitle");
+      document.body.appendChild(dialog);
+      dialog.addEventListener("cancel", (e) => {
+        if (busy) e.preventDefault();
+      });
+      dialog.addEventListener("close", () => {
+        const target = returnFocus?.isConnected
+          ? returnFocus
+          : el(
+              mode === "SESSION" ? "expiryBarcodeInput" : "expiryCurrentSearch",
+            );
+        target?.focus?.({ preventScroll: true });
+      });
+    }
+    returnFocus = trigger || document.activeElement;
+    dialog.innerHTML =
+      '<form><header><h2 id="expiryRecordDialogTitle">' +
+      esc(title) +
+      '</h2></header><div class="expiryDialogContent">' +
+      content +
+      '</div><p role="alert" class="expiryRecordValidation" hidden></p><footer><button type="button" data-cancel>Close</button>' +
+      (action ? '<button type="submit" class="primary">Confirm</button>' : "") +
+      "</footer></form>";
+    dialog.querySelector("[data-cancel]").onclick = () => {
+      if (!busy) dialog.close();
+    };
+    dialog.querySelector("form").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!action || busy) return;
+      busy = true;
+      dialog.querySelectorAll("button").forEach((b) => (b.disabled = true));
+      try {
+        await action(dialog);
+        lastSummary = 0;
+        await refresh();
+        busy = false;
+        dialog.close();
+      } catch (error) {
+        busy = false;
+        dialog.querySelectorAll("button").forEach((b) => (b.disabled = false));
+        const p = dialog.querySelector("[role=alert]");
+        p.hidden = false;
+        p.textContent =
+          error.message || "Result uncertain. Retry the same request.";
       }
     };
     dialog.showModal();
-    dialog.querySelector(kind==="delete"?'[data-record-cancel]':'[data-edit-batch]').focus();
+    dialog.querySelector("input,button")?.focus();
+    return dialog;
   }
-  function inventoryRowHtml(r){
-    return '<tr data-expiry-state-id="'+esc(rowId(r))+'">'+
-      '<td class="expiryTimeCell" title="'+esc(expiryFormatVerifiedAt(updatedAt(r)))+'">'+esc(expiryFormatVerifiedAt(updatedAt(r)))+'</td>'+
-      '<td class="expiryGtinCell">'+esc(r.identifier_display||"—")+'</td><td class="expiryCodeCell"><strong>'+esc(r.item_code||"—")+'</strong></td>'+
-      '<td class="expiryProductCell" title="'+esc(r.item_name||"")+'"><strong>'+esc(r.item_name||"")+'</strong></td><td><span class="expiryCategoryChip">'+esc(r.category||"Uncategorized")+'</span></td>'+
-      '<td>'+esc(r.batch_no||"—")+'</td><td>'+esc(expiryMonthShortName(r.expiry_month))+' '+esc(r.expiry_year)+'</td>'+
-      '<td class="expiryQtyCell">'+esc(r.verified_quantity)+'</td><td class="expiryOperatorCell">'+esc(operatorName(r))+'</td><td class="expiryActionsCell"><button type="button" class="expiryRowAction" data-inventory-edit="'+esc(rowId(r))+'">Edit</button>'+deleteActions("inventory",rowId(r))+'</td></tr>';
+  function pendingKey() {
+    return "pharmflow_expiry_desktop_intent/" + scope();
   }
-  function renderInventory(rows){
-    const safe=inventoryRowsScope===null||inventoryRowsScope===inventoryScope()?(Array.isArray(rows)?rows:[]):[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(inventorySearchRows(safe));
-    const visible=inventoryFiltered(safe),body=document.getElementById("expiryCurrentStateBody"),empty=document.getElementById("expiryCurrentStateEmpty"),count=document.getElementById("expiryCurrentStateCount");
-    if(count)count.textContent=String(visible.length);if(!body)return;
-    if(!visible.length){body.innerHTML="";if(empty){empty.hidden=false;empty.innerHTML="<strong>No matching expiry records</strong><span>Change the search or clear active filters.</span>";}return;}
-    if(empty)empty.hidden=true;body.innerHTML=visible.map(inventoryRowHtml).join("");bindDesktopRowActions();
-  }
-
-  function bindDesktopRowActions(){
-    const body=document.getElementById("expiryCurrentStateBody");if(!body)return;
-    body.querySelectorAll("[data-delete-start]").forEach(b=>b.onclick=()=>openRecordDialog(b.dataset.deleteScope,b.dataset.deleteStart,"delete",b));
-    body.querySelectorAll("[data-session-edit]").forEach(b=>b.onclick=()=>openRecordDialog("session",b.dataset.sessionEdit,"edit",b));
-    body.querySelectorAll("[data-inventory-edit]").forEach(b=>b.onclick=()=>openRecordDialog("inventory",b.dataset.inventoryEdit,"edit",b));
-  }
-
-  function exportCurrentInventory(){
-    const rows=inventoryFiltered(ExpiryCaptureEngine.currentRows||[]);
-    if(!rows.length){setExpiryStatus("action","NO INVENTORY ROWS TO EXPORT");return;}
-    if(typeof XLSX==="undefined"){setExpiryStatus("error","XLSX EXPORT UNAVAILABLE");return;}
-    const context=AuthState?.context||{};
-    const pharmacy=[context.pharmacy_code,context.pharmacy_name||context.pharmacyName].filter(Boolean).join(" · ")||context.pharmacy_id||context.pharmacyId||"";
-    const data=rows.map(r=>({
-      "Pharmacy":pharmacy,
-      "Last Updated":expiryFormatVerifiedAt(updatedAt(r)),
-      "GTIN / Barcode":r.identifier_display||"",
-      "Item Code":r.item_code||"",
-      "Product Name":r.item_name||"",
-      "Category":r.category||"Uncategorized",
-      "Batch":r.batch_no||"",
-      "Expiry":expiryMonthShortName(r.expiry_month)+" "+r.expiry_year,
-      "Quantity":Number(r.verified_quantity)||0,
-      "Operator":operatorName(r)
-    }));
-    const ws=XLSX.utils.json_to_sheet(data);
-    ws["!cols"]=[{wch:28},{wch:22},{wch:19},{wch:13},{wch:42},{wch:18},{wch:16},{wch:13},{wch:10},{wch:18}];
-    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Expiry Inventory");
-    XLSX.writeFile(wb,"PharmFlow_Expiry_Inventory_"+new Date().toISOString().slice(0,10)+".xlsx");
-  }
-
-  window.markExpirySessionStateDeleted=function(stateId){ExpiryCaptureEngine.sessionRows=(ExpiryCaptureEngine.sessionRows||[]).map(r=>String(r.state_id||"")===String(stateId||"")?Object.assign({},r,{deleted:true}):r);};
-  window.resetExpiryDesktopSession=function(){latestSessionCaptureId="";ExpiryCaptureEngine.sessionStartedAt=0;ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";closeRecordDialog();Object.values(FILTERS).forEach(s=>s.clear());lastUpdatedSort="NONE";};
-  window.recordExpirySessionCapture=function(payload){
-    if(expiryIsHandheld()||!payload)return;
-    const incoming=Object.assign({},payload,{captured_at:new Date().toISOString(),capture_id:"session-"+Date.now()});
-    const rows=sessionRows().slice(),key=sessionKey(incoming),index=rows.findIndex(r=>!r.deleted&&(
-      (incoming.state_id&&String(r.state_id||"")===String(incoming.state_id)) || sessionKey(r)===key
-    ));
-    if(index>=0){
-      const previous=rows[index];
-      const merged=Object.assign({},previous,incoming,{
-        quantity:(Number(previous.quantity)||0)+(Number(incoming.quantity)||0),
-        captured_quantity:(Number(previous.captured_quantity)||0)+(Number(incoming.captured_quantity)||0)
-      });
-      rows.splice(index,1);rows.unshift(merged);
-    }else rows.unshift(incoming);
-    ExpiryCaptureEngine.sessionRows=rows;
-    latestSessionCaptureId=incoming.capture_id;
-    renderExpirySessionActivity();
-    if(ExpiryCaptureEngine.desktopView==="SESSION"){const wrap=document.querySelector?.(".expiryCurrentTableWrap");if(wrap)wrap.scrollTop=0;}
-  };
-  window.renderExpiryCurrentState=function(rows){const safe=Array.isArray(rows)?rows:[];ExpiryCaptureEngine.currentRows=safe;renderExpiryKpis(safe);if(ExpiryCaptureEngine.desktopView==="SESSION")renderExpirySessionActivity();else renderInventory(safe);};
-  window.refreshExpiryCurrentState=async function(){
-    if(expiryIsHandheld())return[];
-    const scope=inventoryScope(),requestVersion=++inventoryRequestVersion;
-    if(inventoryRowsScope!==null && inventoryRowsScope!==scope){ExpiryCaptureEngine.currentRows=[];Object.values(FILTERS).forEach(set=>set.clear());lastUpdatedSort="NONE";renderInventory([]);}
-    try{
-      const rows=await loadInventorySnapshot(scope);
-      if(requestVersion!==inventoryRequestVersion || scope!==inventoryScope())return[];
-      inventoryRowsScope=scope;ExpiryCaptureEngine.currentRows=rows;updateMode();
-      if(ExpiryCaptureEngine.desktopView==="SESSION"){renderExpiryKpis(rows);renderExpirySessionActivity();}else renderInventory(rows);
-      return rows;
-    }catch(e){console.error("Unable to load expiry workspace",e);return[];}
-  };
-
-  const originalBind=window.bindExpiryCaptureUI;
-  window.bindExpiryCaptureUI=function(){
-    originalBind();bindViewport();
-    if(!reviewCountBound){reviewCountBound=true;window.addEventListener("focus",refreshExpiryNeedsReviewCount);}
-    const menu=document.getElementById("expirySessionMenu");
-    if(menu && menu.dataset.bound!=="1"){
-      menu.dataset.bound="1";
-      menu.addEventListener("keydown",e=>{if(e.key==="Escape"){menu.open=false;menu.querySelector("summary")?.focus();}else if(e.key==="ArrowDown"){e.preventDefault();menu.open=true;menu.querySelector("button")?.focus();}});
-      menu.addEventListener("click",e=>{if(e.target.closest?.("#btnClearExpirySession")){menu.open=false;menu.querySelector("summary")?.focus({preventScroll:true});}});
-      menu.addEventListener("focusout",e=>{if(!menu.contains(e.relatedTarget))menu.open=false;});
-      document.addEventListener("click",e=>{if(!menu.contains(e.target))menu.open=false;});
+  async function mutation(args) {
+    const key = pendingKey(),
+      old = sessionStorage.getItem(key),
+      payload = JSON.stringify(args);
+    if (old && old !== payload)
+      throw new Error(
+        "A previous result needs verification. Refresh and retry that operation first.",
+      );
+    sessionStorage.setItem(key, payload);
+    const ownScope = scope();
+    try {
+      const r = await authRpc("mutate_pharmflow_expiry_inventory_v1", args);
+      if (ownScope !== scope() || r.request_id !== args.p_request_id)
+        throw new Error("Acknowledgement mismatch");
+      sessionStorage.removeItem(key);
+      selected.clear();
+      lastSummary = 0;
+      return r;
+    } catch (e) {
+      if (e.serverRejected === true) sessionStorage.removeItem(key);
+      throw e;
     }
-    const inv=document.getElementById("btnOpenExpiryInventory"),back=document.getElementById("btnExpirySessionView"),review=document.getElementById("btnExpiryNeedsReview"),clearSession=document.getElementById("btnClearExpirySession"),search=document.getElementById("expiryCurrentSearch"),clearFilters=document.getElementById("btnClearExpiryFilters"),exportBtn=document.getElementById("btnExportExpiryInventory");
-    const selectView=view=>{
-      closeRecordDialog(false);
-      ExpiryCaptureEngine.desktopView=view;
-      updateMode();
-      if(view==="SESSION")renderExpirySessionActivity();
-      else {renderInventory(ExpiryCaptureEngine.currentRows||[]);refreshExpiryCurrentState();}
+  }
+  function quantityEdit(r, trigger) {
+    const args = {
+      ...authArgs(),
+      p_request_id: crypto.randomUUID(),
+      p_action: "QUANTITY",
+      p_selection: [{ id: r.row_id, version: r.version }],
     };
-    if(inv&&inv.dataset.v4!=="1"){inv.dataset.v4="1";inv.onclick=()=>selectView("INVENTORY");}
-    if(back&&back.dataset.v4!=="1"){back.dataset.v4="1";back.onclick=()=>selectView("SESSION");}
-    if(review&&review.dataset.v4!=="1"){review.dataset.v4="1";review.onclick=()=>openNeedsReviewPanel("EXPIRY");}
-    [inv,back,review].forEach(button=>{if(button)button.onkeydown=e=>{
-      if(expiryIsHandheld()||!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;
-      e.preventDefault();const enabled=[back,inv,review].filter(x=>x&&!x.disabled),current=enabled.indexOf(button);const next=e.key==="Home"?enabled[0]:e.key==="End"?enabled.at(-1):enabled[(current+(e.key==="ArrowRight"?1:-1)+enabled.length)%enabled.length];next?.focus({preventScroll:true});next?.click();
-    };});
-    if(clearSession&&clearSession.dataset.v4!=="1"){clearSession.dataset.v4="1";clearSession.onclick=()=>{closeRecordDialog();ExpiryCaptureEngine.sessionRows=[];renderExpirySessionActivity();setExpiryStatus("success","SESSION ACTIVITY CLEARED");};}
-    if(clearFilters&&clearFilters.dataset.v4!=="1"){clearFilters.dataset.v4="1";clearFilters.onclick=clearAllFilters;}
-    if(exportBtn&&exportBtn.dataset.v4!=="1"){exportBtn.dataset.v4="1";exportBtn.onclick=exportCurrentInventory;}
-    document.querySelectorAll("[data-expiry-filter-open]").forEach(b=>{if(b.dataset.v4!=="1"){b.dataset.v4="1";b.onclick=e=>{e.stopPropagation();openFilter(b.dataset.expiryFilterOpen,b);};}});
-    if(search&&search.dataset.v4!=="1"){search.dataset.v4="1";search.oninput=()=>{
-      cancelInventorySearch();updateFilterIndicators();
-      const render=()=>{inventorySearchTimer=null;inventorySearchFrame=false;if(ExpiryCaptureEngine.desktopView==="INVENTORY")renderInventory(ExpiryCaptureEngine.currentRows||[]);};
-      inventorySearchFrame=typeof requestAnimationFrame==="function";
-      inventorySearchTimer=inventorySearchFrame?requestAnimationFrame(render):setTimeout(render,0);
-    };}
-    if(document.documentElement.dataset.expiryFilterDismiss!=="4"){document.documentElement.dataset.expiryFilterDismiss="4";document.addEventListener("click",e=>{if(!e.target.closest(".expiryHeaderFilterMenu")&&!e.target.closest(".expiryHeaderFilterButton"))closeFilterMenus();});}
+    let frozen;
+    openDialog(
+      "Edit Inventory Quantity",
+      identity(r) +
+        "<p>" +
+        esc(r.batch_no || "Not Recorded") +
+        " · " +
+        month(r) +
+        '</p><label>Total quantity<input data-total type="number" min="0" step="1" value="' +
+        qty(r) +
+        '"></label><p>Zero keeps this row active. Resolve is a separate operation.</p>',
+      async (d) => {
+        const q = Number(d.querySelector("[data-total]").value);
+        if (!Number.isInteger(q) || q < 0)
+          throw new Error("Enter a nonnegative whole number.");
+        if (frozen != null && frozen !== q)
+          throw new Error("Retry the original quantity first.");
+        frozen = q;
+        await mutation({ ...args, p_quantity: q });
+      },
+      trigger,
+    );
+  }
+  async function confirmSelection(ids, trigger) {
+    const ownScope = scope(),
+      filterSnapshot = formFilters(),
+      context = resolved;
+    try {
+      const preview = await authRpc("select_pharmflow_expiry_inventory_v1", {
+        ...authArgs(),
+        p_filters: filterSnapshot,
+        p_resolved: context,
+        p_ids: ids,
+      });
+      if (
+        ownScope !== scope() ||
+        JSON.stringify(filterSnapshot) !== JSON.stringify(formFilters()) ||
+        context !== resolved
+      )
+        return;
+      if (!preview.count) {
+        setExpiryStatus("action", "NO MATCHING SELECTION");
+        return;
+      }
+      const args = {
+        ...authArgs(),
+        p_request_id: crypto.randomUUID(),
+        p_action: context ? "RESTORE" : "RESOLVE",
+        p_selection: preview.selection,
+      };
+      openDialog(
+        context ? "Restore Selected Records" : "Resolve Selected Records",
+        "<p><strong>" +
+          preview.count +
+          " records · " +
+          preview.units +
+          " units</strong></p><p>" +
+          esc(
+            [
+              filterSnapshot.search,
+              ...filterSnapshot.departments,
+              ...filterSnapshot.months,
+              filterSnapshot.to && "Through " + periodMonth(filterSnapshot.to),
+            ]
+              .filter(Boolean)
+              .join(" · ") ||
+              "All " + (context ? "resolved" : "active") + " inventory",
+          ) +
+          "</p><p>Only this exact selection will be processed. Concurrent changes require a new confirmation.</p>",
+        () => mutation(args),
+        trigger,
+      );
+    } catch (e) {
+      setExpiryStatus("error", e.message || "Unable to preview selection");
+    }
+  }
+  function sessionEdit(r, remove, trigger) {
+    const args = {
+      ...authArgs(),
+      p_session_id: sessionId,
+      p_operation_id: r.operation_id,
+      p_request_id: crypto.randomUUID(),
+      p_expected_revision: r.revision,
+    };
+    let frozen;
+    openDialog(
+      remove ? "Delete Session Entry" : "Edit Session Entry",
+      identity(r) +
+        (remove
+          ? "<p>Remove only this successful registration, retaining its audit history?</p>"
+          : '<div class="expiryRecordFields"><label>Batch<input data-batch value="' +
+            esc(r.batch_no || "") +
+            '"></label><label>Expiry month<input data-month type="number" min="1" max="12" value="' +
+            r.expiry_month +
+            '"></label><label>Expiry year<input data-year type="number" min="2020" max="2200" value="' +
+            r.expiry_year +
+            '"></label><label>Quantity<input data-qty type="number" min="1" step="1" value="' +
+            qty(r) +
+            '"></label></div>'),
+      async (d) => {
+        const correction = remove
+          ? {
+              quantity: 0,
+              batch_no: r.batch_no || null,
+              expiry_month: r.expiry_month,
+              expiry_year: r.expiry_year,
+            }
+          : {
+              quantity: Number(d.querySelector("[data-qty]").value),
+              batch_no: d.querySelector("[data-batch]").value.trim() || null,
+              expiry_month: Number(d.querySelector("[data-month]").value),
+              expiry_year: Number(d.querySelector("[data-year]").value),
+            };
+        if (
+          !Number.isInteger(correction.quantity) ||
+          (!remove && correction.quantity <= 0) ||
+          !Number.isInteger(correction.expiry_month) ||
+          correction.expiry_month < 1 ||
+          correction.expiry_month > 12 ||
+          !Number.isInteger(correction.expiry_year) ||
+          correction.expiry_year < 2020 ||
+          correction.expiry_year > 2200
+        )
+          throw new Error("Check quantity and expiry.");
+        if (frozen && JSON.stringify(frozen) !== JSON.stringify(correction))
+          throw new Error("Retry original correction first.");
+        frozen = correction;
+        const key = pendingKey() + "/session",
+          payload = JSON.stringify({ ...args, p_correction: correction });
+        if (
+          sessionStorage.getItem(key) &&
+          sessionStorage.getItem(key) !== payload
+        )
+          throw new Error("Previous correction awaits verification");
+        sessionStorage.setItem(key, payload);
+        try {
+          const ack = await authRpc(
+            "correct_pharmflow_expiry_desktop_session_v1",
+            { ...args, p_correction: correction },
+          );
+          if (ack.request_id !== args.p_request_id)
+            throw new Error("Correction acknowledgement mismatch");
+          sessionStorage.removeItem(key);
+        } catch (e) {
+          if (e.serverRejected) sessionStorage.removeItem(key);
+          throw e;
+        }
+      },
+      trigger,
+    );
+  }
+  async function shelfRows() {
+    return authRpc("export_pharmflow_expiry_inventory_v1", {
+      ...authArgs(),
+      p_filters: formFilters(),
+      p_resolved: resolved,
+    });
+  }
+  async function exportShelf(print = false) {
+    const ownScope = scope();
+    try {
+      const rows = await shelfRows();
+      if (ownScope !== scope()) return;
+      if (!rows.length) {
+        setExpiryStatus("action", "NO MATCHING RECORDS");
+        return;
+      }
+      if (print) {
+        const root =
+          el("expiryShelfPrint") ||
+          document.body.appendChild(
+            Object.assign(document.createElement("section"), {
+              id: "expiryShelfPrint",
+            }),
+          );
+        root.innerHTML =
+          "<h1>PharmFlow · Expiry Shelf Check</h1><p>" +
+          esc(AuthState.context?.pharmacy_code || "") +
+          " · " +
+          esc(new Date().toLocaleDateString()) +
+          "</p><table><thead><tr><th>✓</th><th>Item Code</th><th>Product Name</th><th>Batch</th><th>Expiry</th><th>Qty</th></tr></thead><tbody>" +
+          rows
+            .map(
+              (r) =>
+                "<tr><td>□</td><td>" +
+                esc(r.item_code) +
+                "</td><td>" +
+                esc(r.item_name) +
+                "</td><td>" +
+                esc(r.batch_no || "Not Recorded") +
+                "</td><td>" +
+                month(r) +
+                "</td><td>" +
+                qty(r) +
+                "</td></tr>",
+            )
+            .join("") +
+          "</tbody></table>";
+        window.print();
+        return;
+      }
+      const data = rows.map((r) => ({
+          "✓": "",
+          "Item Code": String(r.item_code),
+          "Product Name": r.item_name,
+          Batch: r.batch_no || "Not Recorded",
+          Expiry: month(r),
+          Qty: qty(r),
+        })),
+        ws = XLSX.utils.json_to_sheet(data);
+      ws["!cols"] = [
+        { wch: 3 },
+        { wch: 14 },
+        { wch: 48 },
+        { wch: 18 },
+        { wch: 11 },
+        { wch: 7 },
+      ];
+      ws["!rows"] = data.map(() => ({ hpt: 18 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Shelf Check");
+      XLSX.writeFile(wb, "PharmFlow_Expiry_Shelf_Check.xlsx");
+    } catch (e) {
+      setExpiryStatus("error", e.message || "EXPORT FAILED");
+    }
+  }
+  async function refreshReview() {
+    if (typeof ExpiryReviewBackend !== "undefined")
+      await ExpiryReviewBackend.refresh();
+  }
+  function bind() {
+    originalBind();
+    if (expiryIsHandheld()) return;
+    if (!el("expiryPager")) {
+      const footer = document.createElement("footer");
+      footer.id = "expiryPager";
+      footer.className = "expiryPager";
+      footer.innerHTML =
+        '<span id="expiryResultSummary"></span><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
+      document.querySelector(".expiryCurrentWorkspace").appendChild(footer);
+      const tools = document.querySelector(".expiryCurrentTools");
+      tools.innerHTML =
+        '<input id="expiryCurrentSearch" type="search" autocomplete="off" aria-label="Search Inventory" placeholder="Product, item code, GTIN or batch"><details id="expiryDepartments" class="expiryToolbarMenu"><summary>Department</summary><div role="menu"></div></details><details id="expiryMonths" class="expiryToolbarMenu"><summary>Expiry Months</summary><div role="menu"></div></details><button id="expirySort" type="button">Recently Added</button><button id="btnClearExpiryFilters" type="button">Clear Filters</button><button id="btnExportExpiryInventory" type="button">Excel</button><button id="expiryPrint" type="button">Print</button><button id="expiryResolved" type="button">Resolved</button><button id="expiryAll" type="button">Select All Matching</button><button id="expiryBulkAction" type="button" disabled>Resolve Selected</button><div id="expiryAppliedFilters" aria-live="polite"></div>';
+      tools.querySelectorAll("details").forEach((d) => {
+        d.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            d.open = false;
+            d.querySelector("summary").focus();
+          } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+            e.preventDefault();
+            d.open = true;
+            const buttons = [...d.querySelectorAll("button")],
+              i = buttons.indexOf(document.activeElement),
+              next =
+                e.key === "Home"
+                  ? 0
+                  : e.key === "End"
+                    ? buttons.length - 1
+                    : Math.max(
+                        0,
+                        Math.min(
+                          buttons.length - 1,
+                          i + (e.key === "ArrowDown" ? 1 : -1),
+                        ),
+                      );
+            buttons[next]?.focus();
+          }
+        });
+        document.addEventListener("click", (e) => {
+          if (!d.contains(e.target)) d.open = false;
+        });
+      });
+      el("expiryCurrentSearch").oninput = (e) => {
+        clearTimeout(searchTimer);
+        filters.search = e.target.value;
+        offset = 0;
+        selected.clear();
+        ++requestVersion;
+        searchTimer = setTimeout(() => void refresh(), 160);
+      };
+      el("btnClearExpiryFilters").onclick = () => {
+        filters = { search: "", departments: [], months: [] };
+        sort = "ADDED";
+        offset = 0;
+        selected.clear();
+        el("expiryCurrentSearch").value = "";
+        void refresh();
+      };
+      el("expirySort").onclick = () => {
+        sort =
+          sort === "ADDED"
+            ? "UPDATED"
+            : sort === "UPDATED"
+              ? "EXPIRY"
+              : "ADDED";
+        offset = 0;
+        void refresh();
+      };
+      el("expiryResolved").onclick = () => {
+        resolved = !resolved;
+        offset = 0;
+        selected.clear();
+        void refresh();
+      };
+      el("expiryAll").onclick = (e) => confirmSelection(null, e.target);
+      el("expiryBulkAction").onclick = (e) =>
+        confirmSelection([...selected], e.target);
+      el("expiryPrev").onclick = () => {
+        offset = Math.max(0, offset - 50);
+        void refresh();
+      };
+      el("expiryNext").onclick = () => {
+        offset += 50;
+        void refresh();
+      };
+      el("btnExportExpiryInventory").onclick = () => exportShelf();
+      el("expiryPrint").onclick = () => exportShelf(true);
+    }
+    el("btnOpenExpiryInventory").onclick = () => {
+      mode = "INVENTORY";
+      ExpiryCaptureEngine.desktopView = mode;
+      selected.clear();
+      setMode();
+      void refresh();
+    };
+    el("btnExpirySessionView").onclick = () => {
+      mode = "SESSION";
+      ExpiryCaptureEngine.desktopView = mode;
+      setMode();
+      void refresh();
+    };
+    [
+      el("btnExpirySessionView"),
+      el("btnOpenExpiryInventory"),
+      el("btnExpiryNeedsReview"),
+    ].forEach(
+      (button) =>
+        (button.onkeydown = (e) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key))
+            return;
+          e.preventDefault();
+          const buttons = [
+              el("btnExpirySessionView"),
+              el("btnOpenExpiryInventory"),
+              el("btnExpiryNeedsReview"),
+            ].filter((b) => !b.disabled),
+            i = buttons.indexOf(button),
+            next =
+              e.key === "Home"
+                ? buttons[0]
+                : e.key === "End"
+                  ? buttons.at(-1)
+                  : buttons[
+                      (i + (e.key === "ArrowRight" ? 1 : -1) + buttons.length) %
+                        buttons.length
+                    ];
+          next?.focus({ preventScroll: true });
+          next?.click();
+        }),
+    );
+    el("btnExpiryNeedsReview").onclick = () => openNeedsReviewPanel("EXPIRY");
+    if (!viewportBound) {
+      viewportBound = true;
+      if (typeof setInterval === "function")
+        setInterval(() => {
+          if (
+            el("zebraExpiryShell")?.classList.contains("active") &&
+            !document.hidden &&
+            !document.documentElement.classList.contains("pf-idle-sleep-active")
+          ) {
+            lastSummary = 0;
+            void refresh();
+          }
+        }, 30000);
+      window.addEventListener("resize", syncViewport, { passive: true });
+      window.addEventListener("focus", () => {
+        if (el("zebraExpiryShell")?.classList.contains("active")) {
+          lastSummary = 0;
+          void refresh();
+          void refreshReview();
+        }
+      });
+      AppEvents?.on?.("route:changed", (p) => {
+        if (p.routeName !== "expiry")
+          document.body.classList.remove("expiryDesktopActive");
+      });
+    }
+  }
+  window.bindExpiryCaptureUI = bind;
+  window.refreshExpiryCurrentState = refresh;
+  window.renderExpiryCurrentState = () => {
+    if (!expiryIsHandheld()) render();
   };
-
-  const originalActivate=window.activateExpiryCapture;
-  window.activateExpiryCapture=async function(){
-    if(!expiryIsHandheld()){if(!Array.isArray(ExpiryCaptureEngine.sessionRows))ExpiryCaptureEngine.sessionRows=[];ExpiryCaptureEngine.desktopView="SESSION";ExpiryCaptureEngine.editingStateId="";closeRecordDialog();}
-    updateMode();const result=await originalActivate();setTimeout(syncViewport,0);refreshExpiryNeedsReviewCount();return result;
+  window.renderExpirySessionActivity = () => {
+    if (!expiryIsHandheld()) render();
+  };
+  window.resetExpiryDesktopSession = () => {
+    session = [];
+    ExpiryCaptureEngine.sessionRows = [];
+    ExpiryCaptureEngine.currentRows = [];
+    page = { rows: [], count: 0, units: 0, departments: [], months: [] };
+    visibleScope = null;
+    sessionId = null;
+    periods = [];
+    lastSummary = 0;
+    mode = "SESSION";
+    resolved = false;
+    filters = { search: "", departments: [], months: [] };
+    selected.clear();
+    ++requestVersion;
+  };
+  window.markExpirySessionStateDeleted = () => {};
+  window.activateExpiryCapture = async function () {
+    if (expiryIsHandheld()) return originalActivate();
+    mode = "SESSION";
+    ExpiryCaptureEngine.desktopView = mode;
+    bind();
+    setMode();
+    const r = await originalActivate();
+    syncViewport();
+    void refreshReview();
+    return r;
   };
 })();

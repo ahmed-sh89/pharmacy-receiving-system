@@ -86,7 +86,7 @@ test('Desktop save persists the original scanner frame and exact parsed serial',
   h.input.value=rawAlias;event(h.input,'input');event(h.input,'keydown','Enter');
   await new Promise(resolve=>setImmediate(resolve));
   await h.c.saveExpiryCapture();
-  const write=h.calls.find(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(call.name));
+  const write=h.calls.find(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(call.name));
   assert.ok(write);
   assert.equal(write.payload.p_capture.raw_scan,RAW);
   assert.equal(write.payload.p_capture.scan_format,'GS1');
@@ -120,7 +120,7 @@ test('Handheld scan presents exact serial in Last Scan and save receipt readback
   assert.equal(h.e('expiryItemSerial').textContent,SERIAL);
   assert.equal(h.e('expirySerialInput').value,SERIAL);
   await h.c.saveExpiryCapture();
-  const write=h.calls.find(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(call.name));
+  const write=h.calls.find(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(call.name));
   assert.ok(write);
   const payload=write.payload.p_capture;
   assert.equal(payload.identifier_display,GTIN);
@@ -133,9 +133,9 @@ test('Handheld scan presents exact serial in Last Scan and save receipt readback
   assert.equal(payload.worker_id,'worker1');
   assert.equal([...h.receipts.values()].length,1);
   assert.equal([...h.receipts.values()][0].sample_serial,SERIAL);
-  const writes=h.calls.filter(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(call.name)).length;
+  const writes=h.calls.filter(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(call.name)).length;
   await h.c.saveExpiryCapture();
-  assert.equal(h.calls.filter(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(call.name)).length,writes);
+  assert.equal(h.calls.filter(call=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(call.name)).length,writes);
 });
 
 test('Handheld keeps Batch and Serial out of Last Scan metadata for the adjacent capture fields',()=>{

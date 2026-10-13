@@ -23,7 +23,7 @@ function harness(handheld=false){
    if(name==='get_pharmflow_expiry_auth_session_v1')return {session_id:'signed-session',auth_session_id:'signed-auth',status:'OPEN'};
    if(name==='close_pharmflow_expiry_auth_session_v1')return {auth_session_id:'signed-auth',status:'CLOSED'};
    if(name==='reserve_pharmflow_expiry_capture_v1')return {operation_id:payload.p_operation_id,status:'RESERVED'};
-   if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(name)){
+   if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(name)){
     const ack={operation_id:payload.p_operation_id,...(payload.p_capture.kind==='UNKNOWN'?{review_id:'review1',product_photo_path:payload.p_capture.product_photo_path||null}:{state_id:'state1',event_id:'event1'}),...(name.endsWith('_v2')?{pharmacy_id:payload.p_pharmacy_id,confirmed_capture:structuredClone(payload.p_capture)}:{})};
     receipts.set(payload.p_operation_id,{...structuredClone(payload.p_capture),operation_id:payload.p_operation_id,pharmacy_id:payload.p_pharmacy_id,created_by:c.AuthState.user.id,acknowledgement:ack,captured_at:new Date().toISOString(),status:'SAVED',session_id:payload.p_session_id,editable:true,revision:0});return ack;
    }
@@ -48,9 +48,9 @@ test('Desktop complete GS1 stays unsaved and all review controls remain editable
 test('Save uses edited Batch, Serial, Date, Quantity, exact identifier and null Desktop operator',async()=>{
  const h=harness();h.c.parseGS1Barcode=raw=>({identifierDisplay:raw});await h.c.resolveExpiryScannedValue('04065272072977');h.e('expiryBatchInput').value=' EDITED-BATCH ';h.e('expirySerialInput').value=' EDITED-SERIAL ';h.e('expiryQuantity').value='7';h.c.setExpiryControlValue(h.e('expiryMonth'),'9');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
  const session=[];h.c.recordExpirySessionCapture=p=>session.push(p);await h.c.saveExpiryCapture();
- assert.equal(h.calls.length,2);const p=h.calls[1].payload.p_capture;
+ assert.equal(h.calls.length,3);assert.equal(h.calls[0].name,'get_pharmflow_expiry_auth_session_v1');const p=h.calls.find(x=>x.name==='save_pharmflow_expiry_desktop_capture_v1').payload.p_capture;
  assert.equal(p.batch_no,'EDITED-BATCH');assert.equal(p.sample_serial,'EDITED-SERIAL');assert.equal(p.quantity,7);assert.equal(p.expiry_month,9);assert.equal(p.expiry_year,2028);assert.equal(p.identifier_display,'04065272072977');assert.equal(p.worker_id,null);assert.equal(p.kind,'KNOWN');
- assert.equal(session[0].batch_no,'EDITED-BATCH');h.flush(500);h.flush(40);
+ assert.equal([...h.receipts.values()][0].batch_no,'EDITED-BATCH');h.flush(500);h.flush(40);
  assert.equal(h.c.engine.currentItem,null);assert.equal(h.e('expiryBatchInput').value,'');assert.equal(h.e('expirySerialInput').value,'');assert.equal(h.e('expiryMonth').dataset.value,'');assert.equal(h.e('expiryYear').dataset.value,'');assert.equal(h.c.document.activeElement.id,'expiryBarcodeInput');
 });
 test('Ambiguous save retains review fields and blocks unsafe retry',async()=>{
@@ -59,15 +59,15 @@ test('Ambiguous save retains review fields and blocks unsafe retry',async()=>{
 });
 test('Concurrent Save clicks submit once and expose saving then confirmed saved states',async()=>{
  const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030',rawBarcode:'U0030',category:'Medicine'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
- let release;const gate=new Promise(resolve=>release=resolve),rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3')await gate;return rpc(name,payload);};
- const first=h.c.saveExpiryCapture();assert.match(h.e('expiryDesktopStatus').textContent,/SAVING/);await h.c.saveExpiryCapture();assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(x.name)).length,0);release();await first;
- assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(x.name)).length,1);assert.match(h.e('expiryDesktopStatus').textContent,/SAVED/);
+ let release;const gate=new Promise(resolve=>release=resolve),rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_desktop_capture_v1')await gate;return rpc(name,payload);};
+ const first=h.c.saveExpiryCapture();assert.match(h.e('expiryDesktopStatus').textContent,/SAVING/);await h.c.saveExpiryCapture();assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(x.name)).length,0);release();await first;
+ assert.equal(h.calls.filter(x=>['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(x.name)).length,1);assert.match(h.e('expiryDesktopStatus').textContent,/SAVED/);
 });
 test('Definitive rejection retains capture and reuses the same operation ID for corrected retry',async()=>{
  const h=harness();h.c.engine.currentItem={itemCode:'ITEM1',itemName:'Test Product',identifierDisplay:'U0030',rawBarcode:'U0030',category:'Medicine'};h.e('expiryQuantity').value='1';h.c.setExpiryControlValue(h.e('expiryMonth'),'8');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
- const ids=[],rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2'].includes(name)){ids.push(payload.p_operation_id);const e=new Error('Invalid capture');e.httpStatus=422;e.serverRejected=true;throw e;}return rpc(name,payload);};
+ const ids=[],rpc=h.c.authRpc;h.c.authRpc=async(name,payload)=>{if(['save_pharmflow_expiry_capture_v3','save_pharmflow_expiry_session_capture_v2','save_pharmflow_expiry_desktop_capture_v1'].includes(name)){ids.push(payload.p_operation_id);const e=new Error('Invalid capture');e.httpStatus=422;e.serverRejected=true;throw e;}return rpc(name,payload);};
  await h.c.saveExpiryCapture();const stableId=h.c.engine.operation.id;assert.equal(h.c.engine.saveUncertain,false);assert.equal(h.c.engine.currentItem.itemCode,'ITEM1');assert.equal(h.c.engine.operation.payload,null);assert.match(h.e('expiryDesktopStatus').textContent,/SERVER REJECTED/);
- h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_capture_v3')ids.push(payload.p_operation_id);return rpc(name,payload);};
+ h.c.authRpc=async(name,payload)=>{if(name==='save_pharmflow_expiry_desktop_capture_v1')ids.push(payload.p_operation_id);return rpc(name,payload);};
  await h.c.saveExpiryCapture();assert.deepEqual(ids,[stableId,stableId]);assert.equal(h.c.engine.currentItem,null);
 });
 test('Clear and scan report blocked action while uncertain save keeps the same operation',async()=>{

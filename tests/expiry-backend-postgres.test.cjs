@@ -501,3 +501,50 @@ test('FINAL THREE: History excludes deleted before ten, refills newest-first, re
  const bsid=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[bsid,UB]);await identity(UB);await jwt(bsid);await denied(()=>list(),/Pharmacy|scope mismatch/);await identity();await jwt();await denied(()=>db.query('select public.list_pharmflow_expiry_session_v2($1,$2)',[PB,session.session_id]),/Pharmacy|scope mismatch/);
  const other=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[other,UA]);await identity();await jwt(other);await denied(()=>list(),/scope mismatch/);await jwt();await db.query('select public.close_pharmflow_expiry_auth_session_v1()');await denied(()=>list(),/Session closed/);
 });
+
+test('Desktop inventory release: zero, retained Resolve, new capture, isolated Restore, stale versions and idempotency',async()=>{
+ await identity(UA,'postgres');await db.exec(fs.readFileSync('supabase/migrations/20261013012115_expiry_desktop_inventory_release.sql','utf8'));await db.exec(fs.readFileSync('supabase/migrations/20261013012928_expiry_inventory_query_validation.sql','utf8'));
+ const sid=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[sid,UA]);await identity();await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:sid,exp:Math.floor(Date.now()/1000)+3600})]);
+ const session=(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'synthetic-device'])).r;
+ const p={...capture('DESKTOP-RC'),source:'PC',worker_id:null,quantity:10};
+ const savePC=async(q)=>value('select public.save_pharmflow_expiry_desktop_capture_v1($1,$2,$3,$4::jsonb) r',[PA,session.session_id,uuid(),JSON.stringify({...p,quantity:q})]);
+ await savePC(10);
+ await denied(()=>db.query('select public.query_pharmflow_expiry_inventory_v1($1,$2::jsonb,false,$3,0,null)',[PA,'{}','ADDED']),/Invalid inventory query/);
+ const query=async(resolved=false)=> (await value('select public.query_pharmflow_expiry_inventory_v1($1,$2::jsonb,$3) r',[PA,JSON.stringify({search:p.item_code}),resolved])).r;
+ const mutate=async(action,row,qty=null,request=uuid())=>(await value('select public.mutate_pharmflow_expiry_inventory_v1($1,$2,$3,$4::jsonb,$5) r',[PA,request,action,JSON.stringify([{id:row.row_id,version:row.version}]),qty])).r;
+ let r=(await query()).rows[0];assert.equal(r.quantity,10);
+ const zeroRequest=uuid(),zero=await mutate('QUANTITY',r,0,zeroRequest);assert.deepEqual(await mutate('QUANTITY',r,0,zeroRequest),zero);
+ assert.equal((await query()).count,1);assert.equal((await query()).rows[0].quantity,0);assert.equal((await query(true)).count,0);
+ await denied(()=>mutate('QUANTITY',r,2),/Inventory changed/);
+ await savePC(3);r=(await query()).rows[0];assert.equal(r.quantity,3);await mutate('RESOLVE',r);assert.equal((await query()).count,0);
+ const archived=(await query(true)).rows[0];assert.equal(archived.quantity,3);
+ await savePC(2);assert.equal((await query()).rows[0].quantity,2);assert.equal((await query(true)).rows[0].quantity,3);
+ const restoreRequest=uuid(),restored=await mutate('RESTORE',archived,null,restoreRequest);assert.deepEqual(await mutate('RESTORE',archived,null,restoreRequest),restored);
+ assert.equal((await query()).rows[0].quantity,5);assert.equal((await query(true)).count,0);
+ await denied(()=>mutate('RESTORE',archived),/Inventory changed/);
+ const history=(await value('select public.list_pharmflow_expiry_desktop_session_v1($1,$2) r',[PA,session.session_id])).r;assert.equal(history.length,3);assert.equal(history.reduce((n,x)=>n+x.quantity,0),15);
+ const ubSid=uuid();await identity(UA,'postgres');await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[ubSid,UB]);await identity(UB);await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:ubSid,exp:Math.floor(Date.now()/1000)+3600})]);await denied(()=>query(),/Pharmacy access/);await identity(UA,'anon');await denied(()=>query(),/permission denied/);
+ await identity();await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:sid,exp:Math.floor(Date.now()/1000)+3600})]);
+ const rowsBefore=(await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n;
+ const malformed=await query();await denied(()=>mutate('QUANTITY',malformed.rows[0],-1),/Nonnegative/);
+ assert.equal((await value('select count(*)::int n from public.pharmflow_expiry_current_state_v1')).n,rowsBefore);
+});
+
+test('Desktop server paging, shared export filters, exact bulk scope, stale all-or-nothing and session detail beyond ten',async()=>{
+ await identity(UA,'postgres');const sid=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[sid,UA]);await identity();await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:sid,exp:Math.floor(Date.now()/1000)+3600})]);
+ const session=(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'synthetic-device'])).r;
+ for(let i=0;i<55;i++){const p={...capture('PAGE-RC-'+i),source:'PC',worker_id:null,quantity:1,expiry_month:i%12+1,expiry_year:2027};await db.query('select public.save_pharmflow_expiry_desktop_capture_v1($1,$2,$3,$4::jsonb)',[PA,session.session_id,uuid(),JSON.stringify(p)]);}
+ const filter={search:'PAGE-RC',departments:['Medicine']};
+ const query=async(off=0,res=false,f=filter)=>(await value('select public.query_pharmflow_expiry_inventory_v1($1,$2::jsonb,$3,$4,$5,$6) r',[PA,JSON.stringify(f),res,'EXPIRY',off,50])).r;
+ const first=await query(),second=await query(50);assert.equal(first.count,55);assert.equal(first.units,55);assert.equal(first.rows.length,50);assert.equal(second.rows.length,5);assert.equal(new Set([...first.rows,...second.rows].map(r=>r.row_id)).size,55);
+ const exported=(await value('select public.export_pharmflow_expiry_inventory_v1($1,$2::jsonb,false) r',[PA,JSON.stringify(filter)])).r;assert.equal(exported.length,55);for(let i=1;i<exported.length;i++)assert.ok(exported[i-1].expiry_year*12+exported[i-1].expiry_month<=exported[i].expiry_year*12+exported[i].expiry_month);
+ const mult={...filter,months:['2027-01','2027-12'],from:2027*12+1,to:2027*12+12};const filtered=await query(0,false,mult);const filteredExport=(await value('select public.export_pharmflow_expiry_inventory_v1($1,$2::jsonb,false) r',[PA,JSON.stringify(mult)])).r;assert.equal(filtered.count,filteredExport.length);assert.ok(filtered.rows.every(r=>[1,12].includes(r.expiry_month)));
+ const preview=(await value('select public.select_pharmflow_expiry_inventory_v1($1,$2::jsonb,false) r',[PA,JSON.stringify(filter)])).r;assert.equal(preview.count,55);
+ const mutate=async(action,sel,q=null,id=uuid())=>(await value('select public.mutate_pharmflow_expiry_inventory_v1($1,$2,$3,$4::jsonb,$5) r',[PA,id,action,JSON.stringify(sel),q])).r;
+ await mutate('QUANTITY',[preview.selection[10]],2);await denied(()=>mutate('RESOLVE',preview.selection),/Inventory changed/);assert.equal((await query()).count,55);assert.equal((await query(0,true)).count,0);
+ const fresh=(await value('select public.select_pharmflow_expiry_inventory_v1($1,$2::jsonb,false) r',[PA,JSON.stringify(filter)])).r;const request=uuid(),result=await mutate('RESOLVE',fresh.selection,null,request);assert.equal(result.count,55);assert.deepEqual(await mutate('RESOLVE',fresh.selection,null,request),result);assert.equal((await query()).count,0);assert.equal((await query(0,true)).count,55);
+ const one=(await query(0,true)).rows[0];await mutate('RESTORE',[{id:one.row_id,version:one.version}]);assert.equal((await query()).count,1);assert.equal((await query(0,true)).count,54);
+ const history=(await value('select public.list_pharmflow_expiry_desktop_session_v1($1,$2) r',[PA,session.session_id])).r;assert.equal(history.length,55);assert.equal(history.reduce((n,r)=>n+r.quantity,0),55);
+ const summary=(await value('select public.summary_pharmflow_expiry_inventory_v1($1) r',[PA])).r;assert.equal(summary.length,4);assert.equal(summary.find(p=>p.key==='NEXT6').to-summary.find(p=>p.key==='NEXT6').from,5);
+ const expired=summary.find(p=>p.key==='EXPIRED');const actual=(await value("select count(*)::int n from public.pharmflow_expiry_current_state_v1 where pharmacy_id=$1 and status='ACTIVE' and expiry_year*12+expiry_month<=$2",[PA,expired.to])).n;assert.equal(expired.count,actual);
+});

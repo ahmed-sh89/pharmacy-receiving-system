@@ -1119,9 +1119,9 @@ async function saveExpiryCapture(options={}){
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||"",...(item.needsReview&&ExpiryCaptureEngine.identificationNote?{identification_note:ExpiryCaptureEngine.identificationNote}:{})};
         const operation=ExpiryCaptureEngine.operation;
-        if(expiryIsHandheld()){const start=saveClock(),sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;if(operation.sessionId!==sessionId){operation.sessionId=sessionId;await measuredPersist();}}
+        {const start=saveClock(),sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;if(operation.sessionId!==sessionId){operation.sessionId=sessionId;await measuredPersist();}}
         const measuredRpc=async(name,args)=>{const start=saveClock();try{
-            if(expiryIsHandheld() && name==="save_pharmflow_expiry_capture_v3")return await authRpc("save_pharmflow_expiry_session_capture_v2",{...args,p_session_id:operation.sessionId});
+            if(name==="save_pharmflow_expiry_capture_v3")return await authRpc(expiryIsHandheld()?"save_pharmflow_expiry_session_capture_v2":"save_pharmflow_expiry_desktop_capture_v1",{...args,p_session_id:operation.sessionId});
             return await authRpc(name,args);
         }finally{timings.rpcMs+=saveClock()-start;}};
         const measuredUpload=async(path,file)=>{const start=saveClock();try{return await ExpiryOperation.upload(path,file);}finally{timings.photoMs+=saveClock()-start;}};
@@ -1139,16 +1139,6 @@ async function saveExpiryCapture(options={}){
         await measuredPersist("ACKNOWLEDGED");
         await ExpiryDraftStore.remove(saveScope);
 
-        if(!expiryIsHandheld() && !item.needsReview && typeof window.recordExpirySessionCapture==="function"){
-            window.recordExpirySessionCapture({
-                item_code:item.itemCode,item_name:item.itemName,identifier_display:item.identifierDisplay || item.gtin,
-                category:item.category || "",quantity:quantity,captured_quantity:quantity,
-                expiry_month:month,expiry_year:year,batch_no:toSafeString(gs1.lot||""),
-                sample_serial:toSafeString(gs1.serial||""),source:expiryCurrentSource(),
-                state_id:Array.isArray(saveResult)?saveResult[0]?.state_id:saveResult?.state_id,
-                operator_name:(Array.isArray(saveResult)?saveResult[0]?.verified_by_name:saveResult?.verified_by_name) || (ExpiryCaptureEngine.workers.find(w=>w.worker_id===workerId)?.worker_name) || "Desktop"
-            });
-        }
 
         const worker = ExpiryCaptureEngine.workers.find(w => w.worker_id === workerId);
         const saved = document.getElementById("expiryLastSaved");

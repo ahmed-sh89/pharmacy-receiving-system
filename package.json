@@ -12,6 +12,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "fake-indexeddb": "6.2.5",
+    "linkedom": "0.18.12",
     "pg": "8.23.1",
     "vite": "^8.2.0"
   }
