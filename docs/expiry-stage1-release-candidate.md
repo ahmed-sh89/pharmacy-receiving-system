@@ -31,7 +31,9 @@ Resolve retains a snapshot and records CLEARED through the existing event model.
 
 Focused 69 PASS / 0 FAIL / 1 SKIP; SQL 32 PASS / 0 FAIL / 1 SKIP. Full suite 593 PASS / 43 FAIL / 1 SKIP; all 43 failure names exist at the parent. This is not a clean full-suite PASS. Preview build, syntax and diff checks pass. Native independent PostgreSQL concurrency is NOT RUN: no native server is installed; serialized locks/stale revisions/idempotency are tested in PGlite.
 
-Live browser visual/operational gate: pending deployment. Physical Windows multi-PC/Handheld and Office acceptance remain Product Owner gates. New signed/member-checked SECURITY DEFINER facades and private deny-all RLS tables are intentional advisor findings; their ACLs and guards were inspected. No auth configuration changed.
+Live browser visual/operational gate completed on runtime 822a7b8b552a9a9dc6c5b55dd7df4100b2537439 at the verified branch alias. Five session/four Inventory cards share a row at 1363×936; no document horizontal overflow. Compact rows, saved operator, separate batch/expiry and two-line Last Updated inspected. Successful GS1 QA-RC-RECOVERY save updated metrics and Last Scanned details; aggregate zero remained ACTIVE; exact filtered Resolve/Restore retained quantity 1. Downloaded Excel has six shelf columns, one matching row and text item code; print DOM matches. Receiving/Settings navigation works. Physical Windows multi-PC/Handheld and Office/A4 output acceptance remain Product Owner gates. Synthetic Staging Global Master shows UNAVAILABLE; this run does not claim that separate baseline limitation was repaired.
+
+Recovery: 8bf4615 was both GitHub and READY deployment HEAD; local refinements were preserved and finished. Migration 20261013015700_expiry_desktop_receipt_operator_and_readonly was already applied, so was committed without reapplication. Audit proves earlier QA-RC-20261013-A Restore had already completed (2 retained + 1 new = 3 active); no repeat performed. New account reset now clears page and sorting; loading counters and stable unchanged polling preserve focus. Final focused 95 PASS / 0 FAIL / 1 SKIP; full 597 PASS / 43 inherited FAIL / 1 SKIP, no new failure names. Preview build/syntax/diff PASS. Native independent lock concurrency remains NOT RUN. No auth configuration changed.
 
 ## Rollback and acceptance
 
@@ -44,4 +46,4 @@ Restore the preceding Staging preview if a gate fails; retain additive tables/RP
 5. Select all matching pages; verify records/units before Resolve/Restore.
 6. Check Excel/A4, Refresh, second Windows PC and Handheld/Receiving spot checks.
 
-Status: IMPLEMENTED / AUTOMATED VERIFIED; not USER VERIFIED or DONE.
+Status: READY FOR TEST; not USER VERIFIED or DONE. Production untouched.
