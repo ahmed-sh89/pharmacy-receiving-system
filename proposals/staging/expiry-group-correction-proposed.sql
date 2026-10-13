@@ -27,6 +27,7 @@ declare
  member record;
  expected jsonb;actual jsonb;results jsonb:='[]'::jsonb;
  old_total bigint;delta bigint;new_qty integer;child jsonb;answer jsonb;
+ added_operation uuid;device text;
 begin
  -- Existing helper validates pharmacy membership, auth.uid(), live auth.sessions
  -- and exact signed auth-session ownership; it locks the session row first.
@@ -92,8 +93,8 @@ begin
   raise exception 'Invalid resulting Inventory quantity';
  end if;
  delta:=p_quantity-old_total;
- -- Deterministic allocation: reduce largest operation UUID first, increase
- -- that first member only. Original operation payloads/serials stay immutable.
+ -- Reduce serial-free group adjustments first, then original captures.
+ -- NEVER increase an original capture quantity or copy its serial to new units.
  -- Calls below execute INSIDE THIS ONE database transaction, never client loops.
  for member in
   select c.*,o.payload from pharmflow_expiry_private.session_captures_v1 c
@@ -101,7 +102,9 @@ begin
   where c.pharmacy_id=p_pharmacy_id and c.session_id=p_session_id and c.quantity>0
     and o.created_by=auth.uid() and o.payload->>'kind'='KNOWN'
     and coalesce((c.facts->>'effective_state_id')::uuid,(o.result->>'state_id')::uuid)=p_state_id
-  order by c.operation_id desc
+  order by case when exists(select 1 from pharmflow_expiry_private.session_group_adjustments_v1 g
+    where g.pharmacy_id=p_pharmacy_id and g.session_id=p_session_id and g.created_by=auth.uid()
+      and g.result->>'added_operation_id'=c.operation_id::text) then 0 else 1 end,c.operation_id desc
  loop
   if member.payload->>'source' is distinct from 'PC' then raise exception 'Desktop group required';end if;
   -- Preserve the existing external recount/read-only check even for no-op members.
@@ -115,7 +118,7 @@ begin
       where a.event_id=e.id or coalesce(a.result->'event_ids','[]'::jsonb) ? e.id::text)) then
    raise exception 'Inventory recounted; group read only';
   end if;
-  new_qty:=greatest(0,member.quantity::bigint+delta)::integer;
+  new_qty:=case when delta<0 then greatest(0,member.quantity::bigint+delta)::integer else member.quantity end;
   delta:=delta-(new_qty-member.quantity);
   if new_qty<>member.quantity then
    child:=public.correct_pharmflow_expiry_desktop_session_v1(p_pharmacy_id,p_session_id,
@@ -125,9 +128,33 @@ begin
    results:=results||jsonb_build_array(child);
   end if;
  end loop;
+ if delta>0 then
+  select device_id into device from pharmflow_expiry_private.active_sessions_v1 where id=p_session_id;
+  added_operation:=gen_random_uuid();
+  -- Reuse the existing signed-session capture transaction for a new serial-free
+  -- quantity contribution. Explicit provenance says this is a group adjustment,
+  -- NOT a physical scan. raw_scan is required by the existing PLAIN validator;
+  -- it contains only the derived exact identifier, no invented GS1/serial.
+  child:=public.save_pharmflow_expiry_desktop_capture_v1(p_pharmacy_id,p_session_id,
+    added_operation,jsonb_build_object('kind','KNOWN','source','PC','worker_id',null,
+      'device_id',device,'item_code',v.item_code,'item_name',v.item_name,
+      'identifier_display',v.identifier_display,'category',v.category,
+      'raw_scan',v.identifier_display,'scan_format','PLAIN','sample_serial',null,
+      'batch_no',v.batch_no,'expiry_month',v.expiry_month,'expiry_year',v.expiry_year,
+      'quantity',delta::integer,'contribution_type','GROUP_QUANTITY_ADJUSTMENT',
+      'origin_request_id',p_request_id,'raw_scan_origin','SERVER_DERIVED_IDENTIFIER_NOT_SCANNER'));
+  if (child->>'state_id')::uuid is distinct from p_state_id then raise exception 'Adjustment group identity mismatch';end if;
+  update pharmflow_expiry_private.session_captures_v1
+   set facts=facts||jsonb_build_object('contribution_type','GROUP_QUANTITY_ADJUSTMENT',
+       'origin_request_id',p_request_id,'serial_attribution','NONE')
+   where pharmacy_id=p_pharmacy_id and operation_id=added_operation and session_id=p_session_id;
+  results:=results||jsonb_build_array(child||jsonb_build_object('contribution_type','GROUP_QUANTITY_ADJUSTMENT'));
+  delta:=0;
+ end if;
  if delta<>0 then raise exception 'Group allocation failed';end if;
  answer:=jsonb_build_object('request_id',p_request_id,'state_id',p_state_id,
-   'session_id',p_session_id,'previous_quantity',old_total,'quantity',p_quantity,'adjustments',results);
+   'session_id',p_session_id,'previous_quantity',old_total,'quantity',p_quantity,'adjustments',results,
+   'added_operation_id',added_operation,'serial_policy','ORIGINALS_UNCHANGED_ADDITIONS_UNSERIALIZED');
  insert into pharmflow_expiry_private.session_group_adjustments_v1
   (request_id,pharmacy_id,session_id,state_id,created_by,expected_members,previous_quantity,quantity,result)
  values(p_request_id,p_pharmacy_id,p_session_id,p_state_id,auth.uid(),expected,old_total,p_quantity,answer);

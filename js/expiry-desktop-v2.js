@@ -162,7 +162,7 @@
     const rows = currentRows(), summary = el("expirySessionSummary");
     if (summary) {
       summary.setAttribute("aria-busy", String(!sessionHydrated));
-      summary.innerHTML = '<span class="expirySessionMetric"><span>ITEMS RECORDED</span><strong data-session-total="items">' +
+      summary.innerHTML = '<span class="expirySessionMetric"><span>TOTAL ITEMS</span><strong data-session-total="items">' +
         (sessionHydrated ? new Set(rows.map(r => r.item_code)).size : "—") +
         '</strong></span><span class="expirySessionMetric"><span>TOTAL UNITS</span><strong data-session-total="quantity">' +
         (sessionHydrated ? rows.reduce((n, r) => n + qty(r), 0) : "—") + '</strong></span>';

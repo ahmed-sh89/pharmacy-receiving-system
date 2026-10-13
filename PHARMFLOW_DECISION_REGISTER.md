@@ -22,3 +22,8 @@ Two top-level workspaces; Review outside tabs. Batch-centric session projection 
 ## 2026-10-14 — Approved Enterprise Expiry refinement
 
 Enterprise tabs with subtle active background/3px underline replace segmented buttons. One toolbar; session metrics hidden in Inventory. Serial input/raw data retained. Session exact six-column order; canonical state grouping/current signed session retained. Group writes disabled pending separate atomic RPC approval.
+
+
+## 2026-10-14 — Final focused polish / Serial-safe group review
+
+Purple reserved primarily for active Enterprise tab; neutral/blue scan/search/actions. Batch|Serial|Expiry(Month+Year)|Quantity. Group quantity additions must be serial-free distinct audit-linked contributions, never multiplied original Serial. New RPC remains unapproved/unapplied.

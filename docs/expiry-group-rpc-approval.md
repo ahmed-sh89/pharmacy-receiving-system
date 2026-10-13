@@ -13,7 +13,7 @@ Expected members are the COMPLETE active operation IDs/revisions for one signed-
 
 ## Tables and data affected
 
-Add private session_group_adjustments_v1, one audit/idempotency record per group request. Update only existing current session_captures_v1 effective quantities/revisions/facts through the existing single-capture correction function. Its existing session_adjustments_v1 and expiry events preserve individual audit linkage. Current pharmacy Inventory receives only the delta. No historical capture rewrite, raw-operation payload/serial rewrite, backfill, destructive merge, Receiving tables, or existing Inventory RPC changes. SQL is outside the migrations directory and is not a deployment migration.
+Add private session_group_adjustments_v1, one audit/idempotency record per group request. Reduce existing current session_captures_v1 effective quantities/revisions/facts through the existing single-capture correction function; increases add one explicitly marked, serial-free contribution through the existing signed Desktop save API, never enlarge an original serialized capture. Its existing session_adjustments_v1 and expiry events preserve individual audit linkage. Current pharmacy Inventory receives only the delta. No historical capture rewrite, raw-operation payload/serial rewrite, backfill, destructive merge, Receiving tables, or existing Inventory RPC changes. SQL is outside the migrations directory and is not a deployment migration.
 
 ## Authentication, RLS, ownership
 
@@ -23,7 +23,7 @@ The live require_signed_session helper checks pharmacy membership, auth.uid(), v
 
 One SQL call is one transaction. Lock order: signed session row (existing helper), request advisory lock, existing canonical advisory lock, current Inventory row, deterministic capture row locks. Re-read COMPLETE member IDs/revisions under locks and reject stale/added/removed members. Same-session new capture/correction uses the same session lock; other sessions' Inventory writes use the existing canonical lock. Reuse external RECOUNT/CLEARED read-only guards. Internal server calls to the existing correction routine remain in the same transaction; any later error rolls back ALL earlier member changes/events/audits. This is not a client request loop. Deadlock/serialization failure must cause whole-call rollback and durable retry of the SAME request, never partial success.
 
-Deterministic allocation preserves source records: descending operation UUID, decrease member quantities until delta exhausted, or add increase to first member. Preserve immutable raw payload and original serial. This changes effective contributions, not historical captures; the group parent links member adjustment acknowledgements. Maximum supported group500 members; larger group returns an explicit unsupported error rather than partially editing.
+Corrected Serial-safe allocation: quantity increases NEVER increase original capture quantities or copy their Serial. The existing signed Desktop capture RPC creates one separate PLAIN, serial-free contribution for the delta, with explicit GROUP_QUANTITY_ADJUSTMENT and SERVER_DERIVED_IDENTIFIER_NOT_SCANNER provenance. Its exact operation ID is linked by the private group audit parent; payload provenance alone is not trusted as authorization. Decreases cancel audit-linked serial-free adjustments first, then reduce original captures deterministically without changing their raw payload/Serial. Existing state/event samples for added units are null. UI integration must treat these records as quantity adjustments, not physical scanner registrations, and must not count their timestamp as an original scan time.
 
 ## Idempotence and rollback
 
@@ -40,3 +40,12 @@ Existing native independent-concurrency test remains skipped; independent connec
 Approval requested: apply this reviewed SQL to Staging only, then separately wire the UI to one durable group request and verify all acceptance cases. Current Edit/Delete buttons remain disabled until that work is approved and passes.
 
 Primary security reference: https://supabase.com/docs/guides/database/functions
+
+
+## Final focused review — 2026-10-14
+
+Live dependencies rechecked: active_sessions_v1/session_captures_v1/operations/session_adjustments_v1 types; require_signed_session, valid_auth_session, save_known_core, scan_facts, signed Desktop save/list and single correction/reservation. Existing correction hash408c2b260f8db0a29ad252f9b1854d06; authenticated execute true/anon false. New proposal not present/applied in Staging.
+
+Local tests additionally assert both serialized1-unit contributions stay1 when total rises2→4; added2-unit contribution has nullSerial, PLAIN derived identifier, explicit origin and authoritative parent audit link. Inventory9 has nullsampleSerial for newly added units. Same-pharmacy different authenticated user is rejected; historical/session isolation/retry/stale/full rollback tests pass.
+
+Independent PostgreSQL concurrency could NOT run: no postgres/initdb/psql executable or configured disposable local PostgreSQL URL is available. PGlite is one database connection and is not a substitute. Safety design is approval-ready, with this concurrency verification gate explicitly pending. Approval should authorize Staging installation and isolated concurrent tests; keep group UI disabled until those pass. No migration/RPC/live business data changed during review.

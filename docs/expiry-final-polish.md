@@ -1,0 +1,11 @@
+# Final Expiry polish and focused group RPC review — 2026-10-14
+
+Start deployed/GitHubcd3fbafcce6dc8102500787a7c7141e42c11aa3d; preserved local875bd77e3b111aa79ec15cb564c1cfb6548b6885 (visual documentation not previously pushed). No reset/history rewrite. Staging only pharmflow-test/tovkcakucyagvbzvlnks; Production untouched.
+
+TaskA canonical changes: Total Items label only, unchanged current-session unique-product definition; Total Units retained.26px blue/neutral numbers versus smaller labels. Enterprise active tab remainspurple; scan container/borders neutral, focus/primary action restrainedblue. Search hover palegray-blue versus keyboard selectionblue with outline. Batch/Serial/one Expiry(Month+Year)/Quantity desktop field row; original placeholders/accessible labels/IDs and Serial parsing/storage retained. Handheld date wrappers displaycontents to preserve its existing grid. No scanning/save API or quantity rules changed.
+
+TaskB corrected complete SQL: proposals/staging/expiry-group-correction-proposed.sql. Increases use one separate serial-free quantity adjustment through existing signed capture API, original serialized contributions unchanged. Reductions use audit-linked adjustments first. Original rawSerial remains immutable; addition explicitly markednotphysicalscan. Same signed session/pharmacy/canonical state, complete member/revision check, one atomic transaction, request idempotence and parent/member audit retained. No SQL applied; UI group writes staydisabled.
+
+Focused UI72PASS/0FAIL. Backend34PASS/0FAIL/1SKIP on disposable localPGlite, including5+2→7→9→5, originalSerial/quantity preservation, nonserialized addition, same-pharmacy different owner, stale membership/revisions, retries/conflicts and full rollback. Independent native connections unavailable: no local PostgreSQL binary or configured disposable URL. BuildPASS. Full-suite baseline610/43/1 remains last comprehensive evidence; not rerun for this fast focused round.
+
+Actual new visual QA pending this candidate deployment; requested1366x768/larger remainsUNVERIFIED unless actually available. Previous browser viewport1363x936. Backend proposal approval-ready with independent concurrency gate pending before UI enablement. OverallNOTDONE. Exact new deployment SHA/visual findings in delivery record.

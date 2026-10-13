@@ -35,3 +35,8 @@ Canonical compact toolbar/enterprise navigation, unified scanning workspace, rea
 
 
 Verified runtime de845b5c0e813747054495a07de68af3e61b8201 READY on pharmflow-test Preview. New browser login wall prevents authenticated visual QA;1363x936 available,1366x768/larger UNVERIFIED. No Supabase changes.
+
+
+## 2026-10-14 — Final focused polish / Serial-safe group review
+
+RenameTotalItems, larger distinct metric values; remove scanning-purple emphasis; blue/neutral search hover distinct from keyboard selection; grouped Expiry controls. Correct proposed group quantity increase via serial-free contribution using existing signed save RPC. No liveDBmigration/RPC/data change; group controls disabled.

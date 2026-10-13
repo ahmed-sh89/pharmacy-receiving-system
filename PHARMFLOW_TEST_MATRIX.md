@@ -50,3 +50,13 @@ Enterprise round focused161PASS/0FAIL/1SKIP; full610PASS/43existingFAIL/1SKIP, i
 
 
 Verified runtime de845b5c0e813747054495a07de68af3e61b8201 READY on pharmflow-test Preview. New browser login wall prevents authenticated visual QA;1363x936 available,1366x768/larger UNVERIFIED. No Supabase changes.
+
+
+## Authenticated visual follow-up — 2026-10-14
+
+Login blocker cleared. Actual1363x936 inspected with8screenshots, tabs/hover/search/recognized/warning/GS1Serial/Inventory verified at that size. Exact1366x768/larger and populated session actions remainUNVERIFIED. No source/deployment/database change; liveSHAcd3fbafcce6dc8102500787a7c7141e42c11aa3d. Backend approval stillpending. See docs/expiry-enterprise-visual-qa.md.
+
+
+## 2026-10-14 — Final focused polish / Serial-safe group review
+
+Fast final round: focusedUI72PASS/0FAIL; localDB34PASS/0FAIL/1nativeconcurrencySKIP; buildPASS. Latest fullbaseline610/43/1 not rerun. Serial-safe group increase and same-pharmacy different owner checks added. Actualnewvisual check pending.
