@@ -47,3 +47,6 @@ Focused 157/0/1; full 606/43/1 versus recovered baseline 601/44/1, no new failin
 ## 2026-10-14 — Approved Enterprise Expiry refinement
 
 Enterprise round focused161PASS/0FAIL/1SKIP; full610PASS/43existingFAIL/1SKIP, identical failure names against606/43/1; buildPASS. Local SQL proposal validates atomic5+2→7→9→5 and rollback/idempotence/scope only; native independent concurrency and requested visual size remain unverified.
+
+
+Verified runtime de845b5c0e813747054495a07de68af3e61b8201 READY on pharmflow-test Preview. New browser login wall prevents authenticated visual QA;1363x936 available,1366x768/larger UNVERIFIED. No Supabase changes.

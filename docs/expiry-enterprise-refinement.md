@@ -10,6 +10,13 @@ Baseline focused157/0/1. New focused161PASS/0FAIL/1SKIP; full610PASS/43FAIL/1SKI
 
 Backend proposal is review-only: docs/expiry-group-rpc-approval.md and proposals/staging/expiry-group-correction-proposed.sql. Local PGlite tests do not authorize or prove a deployed RPC. No Supabase migration/RPC/data write. Grouped mutation BLOCKED PENDING BACKEND APPROVAL.
 
-Rendered Staging QA is pending candidate deployment. Available Cloud Browser previously1363x936 with no resize API; mandatory1366x768/larger remains UNVERIFIED unless actually available. No calculated geometry or synthetic DOM screenshot constitutes Staging visual approval. Populated current-session groups require real existing session captures; do not manufacture data or mutate database under UI-only approval.
+Rendered Staging QA is blocked by a new login wall after READY candidate deployment. Available Cloud Browser previously1363x936 with no resize API; mandatory1366x768/larger remains UNVERIFIED unless actually available. No calculated geometry or synthetic DOM screenshot constitutes Staging visual approval. Populated current-session groups require real existing session captures; do not manufacture data or mutate database under UI-only approval.
 
 Ending runtime SHA, actual viewport/screenshots and visual findings will be recorded after deployment. Overall NOT DONE until Product Owner acceptance. Inventory Year→months remains deferred.
+
+
+## Verified Staging deployment and visual blocker
+
+Frontend runtime de845b5c0e813747054495a07de68af3e61b8201, exact tree3766252d347e61059dd3c0c60eec6bfc8feb8931 matching preserved locale101fc3bdc1133283281d903b646458456a91d05. Vercel dpl_38ju6DyryKTRTQoN5inGUJNqZd7m READY, Preview targetnull, correct project/branch/SHA. URL https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/ loads EXPIRY_ENTERPRISE1 scripts. Current Cloud Browser1363x936; previous tab/auth session absent and new tab shows login. No new authenticated visual inspection/screenshots; all requested after screenshots and1366x768/larger gates UNVERIFIED. Do not label source-level layout assertions as rendered passes.
+
+Frontend READY FOR USER TEST after verified deployment, rendered QA BLOCKED BY LOGIN. Grouped Edit/Delete BLOCKED PENDING BACKEND APPROVAL. Overall NOT DONE. Resume secure manual Staging login, then inspect both workspaces, selected/inactive hover, typed scan/search dropdown, recognized/review states, serial input and six-column current-session groups. Do not insert/delete data merely to fabricate screenshot state. Approval file describes exact SQL, protections, allocation/audit, rollback and pending independent concurrency verification.
