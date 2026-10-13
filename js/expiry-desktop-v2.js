@@ -60,11 +60,14 @@
     if (expiryIsHandheld()) return;
     const s = el("zebraExpiryShell");
     if (!s?.classList.contains("active")) return;
+    const bottomInset = mode === "SESSION"
+      ? parseFloat(window.getComputedStyle(s.parentElement).paddingBottom) || 0
+      : 0;
     s.style.setProperty(
       "--expiry-viewport-height",
       Math.max(
         420,
-        window.innerHeight - Math.max(0, s.getBoundingClientRect().top),
+        window.innerHeight - Math.max(0, s.getBoundingClientRect().top) - bottomInset,
       ) + "px",
     );
     document.body.classList.add("expiryDesktopActive");
