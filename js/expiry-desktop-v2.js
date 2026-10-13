@@ -174,11 +174,15 @@
       // Reuse the authoritative aggregate identity; do not infer grouping from name/serial.
       const state = r.effective_state_id || r.acknowledgement?.state_id;
       const key = JSON.stringify([r.pharmacy_id || expiryPharmacyId(), state || r.operation_id]);
-      if (!groups.has(key)) groups.set(key, { ...r, quantity: 0, members: [] });
+      if (!groups.has(key)) groups.set(key, { ...r, quantity: 0, members: [], captured_at: null, registrations: 0, adjustments: 0 });
       const g = groups.get(key);
       g.quantity += qty(r);
       g.members.push(r);
-      if (Date.parse(r.captured_at) > Date.parse(g.captured_at)) g.captured_at = r.captured_at;
+      if (r.contribution_type === "GROUP_QUANTITY_ADJUSTMENT") g.adjustments++;
+      else {
+        g.registrations++;
+        if (!g.captured_at || Date.parse(r.captured_at) > Date.parse(g.captured_at)) g.captured_at = r.captured_at;
+      }
     }
     return [...groups.values()];
   }
@@ -297,19 +301,23 @@
     }
     if (mode === "SESSION") {
       body.innerHTML = rows.map((r, i) => {
-        const multi = r.members.length > 1;
+        const available = groupEditable(r);
         return '<tr' + (i === 0 ? ' class="expiryRowSavedStrong"' : '') +
           '><td class="expirySessionIdentifier"><strong>' + esc(r.item_code || '—') +
           '</strong><span>GTIN <b>' + esc(r.identifier_display || '—') + '</b></span></td>' +
           '<td class="expirySessionProduct"><strong>' + esc(r.item_name || 'Unknown item') + '</strong>' +
           '<div class="expirySessionMeta"><time>' + esc(expiryFormatVerifiedAt(r.captured_at)) +
-          '</time><span> · ' + r.members.length + ' registration' + (multi ? 's' : '') + '</span></div></td>' +
+          '</time><span> · ' + r.registrations + ' registration' + (r.registrations === 1 ? '' : 's') +
+          (r.adjustments ? ' · ' + r.adjustments + ' quantity adjustment' + (r.adjustments === 1 ? '' : 's') : '') + '</span></div></td>' +
           '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "Not Recorded") + '</strong></td>' +
           '<td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
-          '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" disabled title="Awaiting approved atomic group correction" data-session-edit="' + i +
-          '">Edit</button><button type="button" class="expirySessionAction danger" disabled title="Awaiting approved atomic group correction" data-session-delete="' + i +
-          '">Delete</button><small class="expiryGroupActionLimit">Awaiting approval</small></td></tr>';
+          '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-edit="' + i +
+          '">Edit</button><button type="button" class="expirySessionAction danger" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-delete="' + i +
+          '">Delete</button></td></tr>';
       }).join("");
+      body.querySelectorAll("[data-session-edit],[data-session-delete]").forEach(b => {
+        if (!b.disabled) b.onclick = () => sessionGroupDialog(rows[Number(b.dataset.sessionEdit ?? b.dataset.sessionDelete)], b, b.hasAttribute("data-session-delete"));
+      });
       return;
     }
     updateToolbar();
@@ -453,12 +461,15 @@
       for (const [suffix, rpc] of [
         ["", "mutate_pharmflow_expiry_inventory_v1"],
         ["/session", "correct_pharmflow_expiry_desktop_session_v1"],
+        ["/group", "correct_pharmflow_expiry_desktop_group_v1"],
       ]) {
         const key = pendingKey() + suffix,
           stored = sessionStorage.getItem(key);
         if (stored) {
           try {
-            await authRpc(rpc, JSON.parse(stored));
+            const args = JSON.parse(stored);
+            const ack = await authRpc(rpc, args);
+            if (suffix === "/group") verifyGroupAck(ack, args, ownScope);
             sessionStorage.removeItem(key);
           } catch (error) {
             if (error.serverRejected) sessionStorage.removeItem(key);
@@ -604,6 +615,57 @@
   }
   function pendingKey() {
     return "pharmflow_expiry_desktop_intent/" + scope();
+  }
+  function groupEditable(r) {
+    return sessionHydrated && !!sessionId && !!(r.effective_state_id || r.acknowledgement?.state_id) &&
+      r.members.length <= 500 && r.members.every(m => m.editable !== false &&
+        (!m.session_id || m.session_id === sessionId) && Number.isInteger(m.revision) && m.revision >= 0);
+  }
+  function verifyGroupAck(r, args, ownScope) {
+    if (ownScope !== scope() || !r || r.request_id !== args.p_request_id ||
+        r.session_id !== args.p_session_id || r.state_id !== args.p_state_id || r.quantity !== args.p_quantity)
+      throw new Error("Result uncertain. Refresh to verify the same group request.");
+  }
+  async function groupMutation(args, ownScope) {
+    if (ownScope !== scope() || args.p_session_id !== sessionId)
+      throw new Error("Session changed. Reload Session Activity before editing.");
+    const key = pendingKey() + "/group", payload = JSON.stringify(args), old = sessionStorage.getItem(key);
+    if (old && old !== payload) throw new Error("A previous group result needs verification. Refresh first.");
+    sessionStorage.setItem(key, payload);
+    try {
+      const ack = await authRpc("correct_pharmflow_expiry_desktop_group_v1", args);
+      verifyGroupAck(ack, args, ownScope);
+      sessionStorage.removeItem(key);
+      lastSummary = 0;
+      return ack;
+    } catch (error) {
+      if (error.serverRejected === true) sessionStorage.removeItem(key);
+      throw error;
+    }
+  }
+  function sessionGroupDialog(r, trigger, deleting) {
+    if (!groupEditable(r)) return;
+    const ownScope = scope(), args = {
+      ...authArgs(), p_session_id: sessionId,
+      p_state_id: r.effective_state_id || r.acknowledgement.state_id,
+      p_request_id: crypto.randomUUID(),
+      p_expected_members: r.members.map(m => ({ operation_id: m.operation_id, revision: m.revision }))
+        .sort((a,b) => a.operation_id.localeCompare(b.operation_id))
+    };
+    let frozen;
+    openDialog(deleting ? "Delete Current Session Group" : "Edit Current Session Quantity",
+      identity(r) + '<p>' + esc(r.batch_no || "Not Recorded") + ' · ' + month(r) + '</p>' +
+      (deleting ? '<p>Remove <strong>' + qty(r) + ' units</strong> contributed by this current session?</p>' :
+        '<label>Current session quantity<input data-session-quantity type="number" min="1" max="2147483647" step="1" value="' + qty(r) + '"></label>') +
+      '<p>Historical inventory and original captured Serial evidence are preserved.</p>',
+      async d => {
+        const raw = deleting ? "0" : d.querySelector("[data-session-quantity]").value.trim(), q = Number(raw);
+        if (!raw || !Number.isInteger(q) || q < (deleting ? 0 : 1) || q > 2147483647)
+          throw new Error("Enter a positive whole number. Use Delete to remove this session group.");
+        if (frozen != null && frozen !== q) throw new Error("Retry the original quantity first.");
+        frozen = q;
+        await groupMutation({ ...args, p_quantity: q }, ownScope);
+      }, trigger, { context: "session", destructive: deleting, cancelLabel: "Cancel", confirmLabel: deleting ? "Delete Session Contribution" : "Save Quantity" });
   }
   async function mutation(args) {
     const key = pendingKey(),
