@@ -1,15 +1,7 @@
-# PharmFlow Current Checkpoint — Expiry Round 2, 13 October 2026
+# PharmFlow Current Checkpoint — Enterprise Expiry, 14 October 2026
 
-Status: BLOCKED / locally saved and tested, not released.
+Verified starting Staging/GitHub b11503c49b228728faad97269435a6218dd6f913. Local original3839503 and bundle preserved; starting trees identical. Development branch only feature/expiry-stage1-visual-gate. Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks. Production untouched.
 
-Date: 2026-10-13. Staging only. Branch: feature/expiry-stage1-visual-gate.
-Recovered GitHub/local HEAD: 75489e63a48390a31d1700c0848ce6c8fbda3247.
-Recovered READY deployment: dpl_FnuL6LUBpv2fGPSxeQapxQzr4jMV, project pharmflow-test.
-Staging URL: https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/
-Staging Supabase: tovkcakucyagvbzvlnks. Production main and Production Supabase untouched.
-Initial tracked worktree was clean; untracked supabase/.temp/ preserved. This checkpoint is local only; no Round 2 push/deployment.
+Approved frontend refinement implemented/tested; candidate deployment/rendered verification pending. Focused161/0/1; full610/43/1 with unchanged baseline failure names; build PASS. Exact release SHA and rendered results will follow in release record.
 
-
-Full recovery, implementation, test matrix, backend dependency and next steps: docs/expiry-round2-verification.md.
-
-Focused 157 PASS / 0 FAIL / 1 SKIP; full 606 PASS / 43 existing FAIL / 1 SKIP; build PASS. Group mutations disabled; visual verification blocked by Staging login. No migration, push or deployment this round.
+Canonical toolbar/tabs/scan/search/six-column batch session UI; source serial preserved. Group Edit/Delete visibly disabled. Proposed SQL tested LOCAL ONLY, not applied; separate approval required. See docs/expiry-enterprise-refinement.md and docs/expiry-group-rpc-approval.md. Mandatory1366x768 gate remains UNVERIFIED without actual viewport access. Overall NOT DONE.

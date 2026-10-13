@@ -114,7 +114,7 @@ test('Capture has one canonical desktop owner and transparent handheld wrappers'
  assert.match(css,/body:not\(\.zebraDevice\) #zebraExpiryShell \.expiryCaptureActions\{display:contents\}/);
  assert.match(css,/\.expirySaveButton\{grid-column:2;grid-row:3;/);
  assert.doesNotMatch(theme,/body:not\(\.zebraMode\) \.expiryCaptureCard/);
- assert.match(css,/\.expiryScanBox:focus-within\{border-color:[^;]+;box-shadow:none\}/);
+ assert.match(css,/\.expiryScanBox:focus-within\{border-color:[^;]+;box-shadow:0 0 0 3px [^}]+\}/);
  assert.match(css,/#expiryBarcodeInput:focus\{padding:0;border:0;outline:none;box-shadow:none\}/);
  assert.match(css,/body\.zebraDevice #zebraExpiryShell \.expiryCaptureActions\{display:contents\}/);
 });

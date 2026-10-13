@@ -79,6 +79,7 @@
     s?.classList.toggle("expiryInventoryMode", mode === "INVENTORY");
     const capture = s?.querySelector(".expiryCaptureCard");
     if (capture) capture.hidden = mode === "INVENTORY";
+    if (el("expirySessionSummary")) el("expirySessionSummary").hidden = mode !== "SESSION";
     el("expiryCurrentHeader").hidden = mode !== "INVENTORY";
     el("expirySessionMenu").hidden = true;
     el("btnExpirySessionView").setAttribute(
@@ -100,7 +101,7 @@
     table.classList.toggle("expiryInventoryTable", mode === "INVENTORY");
     table.querySelector("thead").innerHTML =
       mode === "SESSION"
-        ? "<tr><th>Product / Identification</th><th>Batch</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
+        ? "<tr><th>Item Code / Identifier</th><th>Product Name</th><th>Batch</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
         : '<tr><th><input type="checkbox" id="expiryPageSelection" aria-label="Select current page"></th><th>Product / Identification</th><th>Batch</th><th><button type="button" data-expiry-sort>Expiry</button></th><th>Quantity</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr>';
     el("expiryPager").hidden = mode !== "INVENTORY";
     syncViewport();
@@ -161,10 +162,9 @@
     const rows = currentRows(), summary = el("expirySessionSummary");
     if (summary) {
       summary.setAttribute("aria-busy", String(!sessionHydrated));
-      summary.innerHTML = '<span class="expirySessionSummaryLabel">Current Session</span>' +
-        '<span>Items Recorded <strong data-session-total="items">' +
+      summary.innerHTML = '<span class="expirySessionMetric"><span>ITEMS RECORDED</span><strong data-session-total="items">' +
         (sessionHydrated ? new Set(rows.map(r => r.item_code)).size : "—") +
-        '</strong></span><span>Total Units <strong data-session-total="quantity">' +
+        '</strong></span><span class="expirySessionMetric"><span>TOTAL UNITS</span><strong data-session-total="quantity">' +
         (sessionHydrated ? rows.reduce((n, r) => n + qty(r), 0) : "—") + '</strong></span>';
     }
   }
@@ -178,6 +178,7 @@
       const g = groups.get(key);
       g.quantity += qty(r);
       g.members.push(r);
+      if (Date.parse(r.captured_at) > Date.parse(g.captured_at)) g.captured_at = r.captured_at;
     }
     return [...groups.values()];
   }
@@ -275,6 +276,7 @@
     el("expirySessionCount").textContent = sessionHydrated
       ? String(sessionGroups().length)
       : "…";
+    el("zebraExpiryShell").classList.toggle("expirySessionEmpty",mode === "SESSION" && !rows.length);
     empty.hidden = !!rows.length;
     if (!rows.length) {
       body.innerHTML = "";
@@ -297,19 +299,17 @@
       body.innerHTML = rows.map((r, i) => {
         const multi = r.members.length > 1;
         return '<tr' + (i === 0 ? ' class="expiryRowSavedStrong"' : '') +
-          '><td class="expirySessionProduct">' + identity(r) +
+          '><td class="expirySessionIdentifier"><strong>' + esc(r.item_code || '—') +
+          '</strong><span>GTIN <b>' + esc(r.identifier_display || '—') + '</b></span></td>' +
+          '<td class="expirySessionProduct"><strong>' + esc(r.item_name || 'Unknown item') + '</strong>' +
           '<div class="expirySessionMeta"><time>' + esc(expiryFormatVerifiedAt(r.captured_at)) +
           '</time><span> · ' + r.members.length + ' registration' + (multi ? 's' : '') + '</span></div></td>' +
           '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "Not Recorded") + '</strong></td>' +
           '<td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
-          '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" title="View grouped edit scope" data-session-edit="' + i +
-          '">Edit</button><button type="button" class="expirySessionAction danger" title="View grouped delete scope" data-session-delete="' + i +
-          '">Delete</button><small class="expiryGroupActionLimit">Preview only</small></td></tr>';
+          '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" disabled title="Awaiting approved atomic group correction" data-session-edit="' + i +
+          '">Edit</button><button type="button" class="expirySessionAction danger" disabled title="Awaiting approved atomic group correction" data-session-delete="' + i +
+          '">Delete</button><small class="expiryGroupActionLimit">Awaiting approval</small></td></tr>';
       }).join("");
-      body.querySelectorAll("[data-session-edit]").forEach(b => b.onclick = () =>
-        sessionGroupDialog(rows[Number(b.dataset.sessionEdit)], false, b));
-      body.querySelectorAll("[data-session-delete]").forEach(b => b.onclick = () =>
-        sessionGroupDialog(rows[Number(b.dataset.sessionDelete)], true, b));
       return;
     }
     updateToolbar();
@@ -715,20 +715,6 @@
     } catch (e) {
       setExpiryStatus("error", e.message || "Unable to preview selection");
     }
-  }
-  function sessionGroupDialog(r, remove, trigger) {
-    // Current server contract adjusts one capture, not an atomic complete session group.
-    // Never fan out requests or derive a write from this presentation-only total.
-    openDialog(remove ? "Delete Session Batch" : "Edit Session Batch",
-      '<div class="expiryRecordIdentity">' + identity(r) +
-      '</div><dl class="expirySessionCaptureDetails"><div><dt>Batch</dt><dd>' +
-      esc(r.batch_no || "Not Recorded") + '</dd></div><div><dt>Expiry</dt><dd>' + month(r) +
-      '</dd></div><div><dt>Session units</dt><dd>' + qty(r) + '</dd></div></dl>' +
-      '<p>Scope: ' + r.members.length + ' successful registration' + (r.members.length === 1 ? '' : 's') +
-      ' in your current session. Previously recorded inventory must remain intact.</p>' +
-      (!remove ? '<label class="expiryGroupQuantityLabel">New current-session total<input type="number" value="' + qty(r) + '" disabled></label>' : '') +
-      '<p class="expiryGroupBlockedNotice" role="status">Grouped changes are not available in this preview. No quantities will be changed.</p>',
-      null, trigger, { context: "session", destructive: remove, cancelLabel: "Cancel", unavailableLabel: remove ? "Delete Session Group" : "Save Session Quantity" });
   }
   async function shelfRows() {
     return authRpc("export_pharmflow_expiry_inventory_v1", {

@@ -42,3 +42,8 @@
 ## 2026-10-13 — Expiry Round 2
 
 Focused 157/0/1; full 606/43/1 versus recovered baseline 601/44/1, no new failing names; build PASS. Local single-capture history 5→7→9→5 PASS; complete group contract BLOCKED. Actual requested visual sizes UNVERIFIED. See docs/expiry-round2-verification.md.
+
+
+## 2026-10-14 — Approved Enterprise Expiry refinement
+
+Enterprise round focused161PASS/0FAIL/1SKIP; full610PASS/43existingFAIL/1SKIP, identical failure names against606/43/1; buildPASS. Local SQL proposal validates atomic5+2→7→9→5 and rollback/idempotence/scope only; native independent concurrency and requested visual size remain unverified.

@@ -759,11 +759,21 @@ function closeExpirySearchResults(invalidate=false){
     const box=document.getElementById("expirySearchResults");
     if(box){box.hidden=true;box.innerHTML="";}
     ExpiryCaptureEngine.desktopSearchRows=[];
+    ExpiryCaptureEngine.desktopSearchIndex=-1;
+    const input=document.getElementById("expiryBarcodeInput");
+    input?.removeAttribute("aria-activedescendant");
+    input?.setAttribute("aria-expanded","false");
 }
 function renderExpirySearchResults(rows){
     const box=document.getElementById("expirySearchResults");
     if(!box) return;
     ExpiryCaptureEngine.desktopSearchRows=Array.isArray(rows)?rows:[];
+    ExpiryCaptureEngine.desktopSearchIndex=-1;
+    box.setAttribute("role","listbox");
+    const input=document.getElementById("expiryBarcodeInput");
+    input?.setAttribute("aria-controls","expirySearchResults");
+    input?.setAttribute("aria-expanded","true");
+    input?.removeAttribute("aria-activedescendant");
     if(!ExpiryCaptureEngine.desktopSearchRows.length){
         box.innerHTML='<div class="expirySearchEmpty"><strong>Item not found</strong><span>No matching item was found.</span></div>';
         box.hidden=false;
@@ -771,19 +781,32 @@ function renderExpirySearchResults(rows){
     }
     box.innerHTML=ExpiryCaptureEngine.desktopSearchRows.map((row,index)=>{
         const identifier=toSafeString(row.identifier_display).trim();
-        return '<button type="button" class="smartSearchResult expirySearchResult" data-expiry-search-index="'+index+'">'+
+        return '<button type="button" class="smartSearchResult expirySearchResult" role="option" aria-selected="false" id="expirySearchOption'+index+'" data-expiry-search-index="'+index+'">'+
             '<div class="smartSearchResultMain expirySearchResultMain">'+
                 '<strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong>'+
-                (identifier?'<span>GTIN / Barcode: <b>'+expiryEscapeHtml(identifier)+'</b></span>':'')+
-            '</div>'+
-            '<div class="expirySearchResultMeta">'+
-                '<strong>'+expiryEscapeHtml(row.item_code||"—")+'</strong>'+
-                '<span>'+expiryEscapeHtml(row.category||row.group_name||"Uncategorized")+'</span>'+
+                '<span class="expirySearchResultIdentification"><span>Item Code <b>'+expiryEscapeHtml(row.item_code||"—")+'</b></span>'+
+                (identifier?'<span>GTIN / Barcode <b>'+expiryEscapeHtml(identifier)+'</b></span>':'')+'</span>'+
+                ((row.category||row.group_name)?'<small>'+expiryEscapeHtml(row.category||row.group_name)+'</small>':'')+
             '</div>'+
         '</button>';
     }).join("");
     box.hidden=false;
     box.querySelectorAll("[data-expiry-search-index]").forEach(button=>button.onclick=()=>selectExpirySearchResult(Number(button.dataset.expirySearchIndex)));
+}
+function moveExpirySearchSelection(key){
+    const box=document.getElementById("expirySearchResults");
+    const rows=ExpiryCaptureEngine.desktopSearchRows||[];
+    if(expiryIsHandheld() || !box || box.hidden || !rows.length) return false;
+    const old=Number.isInteger(ExpiryCaptureEngine.desktopSearchIndex)?ExpiryCaptureEngine.desktopSearchIndex:-1;
+    const index=key==="Home"?0:key==="End"?rows.length-1:Math.max(0,Math.min(rows.length-1,old+(key==="ArrowDown"?1:-1)));
+    ExpiryCaptureEngine.desktopSearchIndex=index;
+    box.querySelectorAll("[data-expiry-search-index]").forEach((button,i)=>{
+        button.setAttribute("aria-selected",String(i===index));
+        button.classList.toggle("is-keyboard-active",i===index);
+    });
+    document.getElementById("expiryBarcodeInput")?.setAttribute("aria-activedescendant","expirySearchOption"+index);
+    box.querySelector('[data-expiry-search-index="'+index+'"]')?.scrollIntoView?.({block:"nearest"});
+    return true;
 }
 async function selectExpirySearchResult(index){
     if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || (ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload)) return;
@@ -1839,6 +1862,10 @@ function bindExpiryCaptureUI(){
 
         barcode.addEventListener("keydown",event=>{
             if(event.key==="Escape"){closeExpirySearchResults();return;}
+            if(!expiryIsHandheld() && ["ArrowDown","ArrowUp","Home","End"].includes(event.key) && moveExpirySearchSelection(event.key)){event.preventDefault();return;}
+            if(!expiryIsHandheld() && event.key==="Enter" && !document.getElementById("expirySearchResults")?.hidden && ExpiryCaptureEngine.desktopSearchIndex>=0){
+                event.preventDefault();void selectExpirySearchResult(ExpiryCaptureEngine.desktopSearchIndex);return;
+            }
             if(event.key==="Enter" || event.key==="Tab"){event.preventDefault();commitHardwareScan();}
         });
 

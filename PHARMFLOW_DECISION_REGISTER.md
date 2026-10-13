@@ -17,3 +17,8 @@ Approved next Inventory refinement: hierarchical Year → January–December sel
 ## 2026-10-13 — Expiry Round 2
 
 Two top-level workspaces; Review outside tabs. Batch-centric session projection retains raw serials. All group mutations disabled until separately approved atomic membership-validated server correction. Inventory Year→months remains deferred.
+
+
+## 2026-10-14 — Approved Enterprise Expiry refinement
+
+Enterprise tabs with subtle active background/3px underline replace segmented buttons. One toolbar; session metrics hidden in Inventory. Serial input/raw data retained. Session exact six-column order; canonical state grouping/current signed session retained. Group writes disabled pending separate atomic RPC approval.
