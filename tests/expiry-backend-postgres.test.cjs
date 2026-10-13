@@ -548,3 +548,22 @@ test('Desktop server paging, shared export filters, exact bulk scope, stale all-
  const summary=(await value('select public.summary_pharmflow_expiry_inventory_v1($1) r',[PA])).r;assert.equal(summary.length,4);assert.equal(summary.find(p=>p.key==='NEXT6').to-summary.find(p=>p.key==='NEXT6').from,5);
  const expired=summary.find(p=>p.key==='EXPIRED');const actual=(await value("select count(*)::int n from public.pharmflow_expiry_current_state_v1 where pharmacy_id=$1 and status='ACTIVE' and expiry_year*12+expiry_month<=$2",[PA,expired.to])).n;assert.equal(expired.count,actual);
 });
+
+test('Existing single-capture contract preserves historical 5 through +2, edit4, delete and idempotent retry; not an atomic group contract',async()=>{
+ await identity(UA,'postgres');const oldAuth=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[oldAuth,UA]);await identity();
+ const jwtFor=async sid=>db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({session_id:sid,exp:Math.floor(Date.now()/1000)+3600})]);await jwtFor(oldAuth);
+ const oldSession=(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'history-device'])).r;
+ const p={...capture('ROUND2-HISTORY'),source:'PC',worker_id:null,quantity:5,device_id:'history-device',batch_no:'BATCH A',sample_serial:'OLD-SERIAL'};const oldOp=uuid();
+ const oldAck=(await value('select public.save_pharmflow_expiry_desktop_capture_v1($1,$2,$3,$4::jsonb) r',[PA,oldSession.session_id,oldOp,JSON.stringify(p)])).r;
+ await identity(UA,'postgres');const before=await value('select payload,result from pharmflow_expiry_private.operations where operation_id=$1',[oldOp]);const nextAuth=uuid();await db.query('insert into auth.sessions(id,user_id) values($1,$2)',[nextAuth,UA]);await identity();await jwtFor(nextAuth);
+ const nextSession=(await value('select public.get_pharmflow_expiry_auth_session_v1($1,$2) r',[PA,'new-device'])).r;const newOp=uuid();await db.query('select public.save_pharmflow_expiry_desktop_capture_v1($1,$2,$3,$4::jsonb)',[PA,nextSession.session_id,newOp,JSON.stringify({...p,device_id:'new-device',quantity:2,sample_serial:'NEW-SERIAL'})]);
+ const state=async()=> (await value('select verified_quantity q from public.pharmflow_expiry_current_state_v1 where id=$1',[oldAck.state_id])).q;
+ const receipts=async()=> (await value('select public.list_pharmflow_expiry_desktop_session_v1($1,$2) r',[PA,nextSession.session_id])).r;
+ assert.equal(await state(),7);assert.equal((await receipts()).reduce((n,r)=>n+r.quantity,0),2);
+ const edit=uuid(),correction={quantity:4,batch_no:p.batch_no,expiry_month:p.expiry_month,expiry_year:p.expiry_year};
+ const correct=async(id,rev,c)=> (await value('select public.correct_pharmflow_expiry_desktop_session_v1($1,$2,$3,$4,$5,$6::jsonb) r',[PA,nextSession.session_id,newOp,id,rev,JSON.stringify(c)])).r;
+ const ack=await correct(edit,0,correction);assert.equal(await state(),9);assert.deepEqual(await correct(edit,0,correction),ack);assert.equal(await state(),9);
+ const cancel=uuid(),zero={...correction,quantity:0};const removed=await correct(cancel,1,zero);assert.equal(await state(),5);assert.deepEqual(await correct(cancel,1,zero),removed);assert.equal(await state(),5);
+ assert.equal((await receipts()).filter(r=>r.quantity>0).length,0);
+ await identity(UA,'postgres');assert.deepEqual(await value('select payload,result from pharmflow_expiry_private.operations where operation_id=$1',[oldOp]),before);assert.equal((await value('select quantity q from pharmflow_expiry_private.session_captures_v1 where operation_id=$1',[oldOp])).q,5);assert.equal((await value('select payload->>\'sample_serial\' s from pharmflow_expiry_private.operations where operation_id=$1',[oldOp])).s,'OLD-SERIAL');
+});

@@ -37,3 +37,8 @@
 - [ ] Handheld receiving remains synchronized.
 - [ ] Active Order Manifest remains correct after refresh.
 - [ ] Hidden tab produces no periodic cloud reads.
+
+
+## 2026-10-13 — Expiry Round 2
+
+Focused 157/0/1; full 606/43/1 versus recovered baseline 601/44/1, no new failing names; build PASS. Local single-capture history 5→7→9→5 PASS; complete group contract BLOCKED. Actual requested visual sizes UNVERIFIED. See docs/expiry-round2-verification.md.

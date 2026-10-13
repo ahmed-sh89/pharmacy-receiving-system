@@ -36,7 +36,9 @@
     Math.floor((n - 1) / 12);
   const currentRows = () =>
     session.filter(
-      (r) => r.kind === "KNOWN" && r.status !== "DELETED" && r.quantity > 0,
+      (r) => r.kind === "KNOWN" && r.status !== "DELETED" && r.quantity > 0 &&
+        (!r.pharmacy_id || r.pharmacy_id === expiryPharmacyId()) &&
+        (!r.created_by || !AuthState.user?.id || r.created_by === AuthState.user.id),
     );
   const qty = (r) => Number(r.quantity) || 0;
   function identity(r) {
@@ -98,7 +100,7 @@
     table.classList.toggle("expiryInventoryTable", mode === "INVENTORY");
     table.querySelector("thead").innerHTML =
       mode === "SESSION"
-        ? "<tr><th>Product / Identification</th><th>Batch / Serial</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
+        ? "<tr><th>Product / Identification</th><th>Batch</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
         : '<tr><th><input type="checkbox" id="expiryPageSelection" aria-label="Select current page"></th><th>Product / Identification</th><th>Batch</th><th><button type="button" data-expiry-sort>Expiry</button></th><th>Quantity</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr>';
     el("expiryPager").hidden = mode !== "INVENTORY";
     syncViewport();
@@ -160,25 +162,24 @@
     if (summary) {
       summary.setAttribute("aria-busy", String(!sessionHydrated));
       summary.innerHTML = '<span class="expirySessionSummaryLabel">Current Session</span>' +
-        '<span>Items Scanned <strong data-session-total="items">' +
+        '<span>Items Recorded <strong data-session-total="items">' +
         (sessionHydrated ? new Set(rows.map(r => r.item_code)).size : "—") +
-        '</strong></span><span>Total Quantity <strong data-session-total="quantity">' +
+        '</strong></span><span>Total Units <strong data-session-total="quantity">' +
         (sessionHydrated ? rows.reduce((n, r) => n + qty(r), 0) : "—") + '</strong></span>';
     }
   }
-  function sessionSerial(r) {
-    // One receipt is one capture. Only its persisted serial is associated with it.
-    return String(r.sample_serial || "").trim();
-  }
-  function serialDetail(r, trigger) {
-    const serial = sessionSerial(r);
-    if (!serial) return;
-    openDialog("Recorded Serial", '<div class="expiryRecordIdentity">' + identity(r) +
-      '</div><dl class="expirySessionCaptureDetails"><div><dt>Batch</dt><dd>' +
-      esc(r.batch_no || "Not Recorded") + '</dd></div><div><dt>Expiry</dt><dd>' + month(r) +
-      '</dd></div><div><dt>Serial</dt><dd>' + esc(serial) +
-      '</dd></div></dl><p>Serial saved with this individual registration.</p>', null, trigger,
-      { context: "session" });
+  function sessionGroups() {
+    const groups = new Map();
+    for (const r of currentRows()) {
+      // Reuse the authoritative aggregate identity; do not infer grouping from name/serial.
+      const state = r.effective_state_id || r.acknowledgement?.state_id;
+      const key = JSON.stringify([r.pharmacy_id || expiryPharmacyId(), state || r.operation_id]);
+      if (!groups.has(key)) groups.set(key, { ...r, quantity: 0, members: [] });
+      const g = groups.get(key);
+      g.quantity += qty(r);
+      g.members.push(r);
+    }
+    return [...groups.values()];
   }
   function updateToolbar() {
     el("expiryCurrentStateCount").textContent = String(page.count);
@@ -270,9 +271,9 @@
     setMode();
     const body = el("expiryCurrentStateBody"),
       empty = el("expiryCurrentStateEmpty");
-    const rows = mode === "SESSION" ? session : page.rows;
+    const rows = mode === "SESSION" ? sessionGroups() : page.rows;
     el("expirySessionCount").textContent = sessionHydrated
-      ? String(currentRows().length)
+      ? String(sessionGroups().length)
       : "…";
     empty.hidden = !!rows.length;
     if (!rows.length) {
@@ -294,36 +295,21 @@
     }
     if (mode === "SESSION") {
       body.innerHTML = rows.map((r, i) => {
-        const serial = sessionSerial(r);
-        return '<tr' + (i === 0 && r.status !== "DELETED" ? ' class="expiryRowSavedStrong"' : '') +
+        const multi = r.members.length > 1;
+        return '<tr' + (i === 0 ? ' class="expiryRowSavedStrong"' : '') +
           '><td class="expirySessionProduct">' + identity(r) +
           '<div class="expirySessionMeta"><time>' + esc(expiryFormatVerifiedAt(r.captured_at)) +
-          '</time><span> · ' + esc(r.worker_name || "Desktop") + '</span></div></td>' +
-          '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "Not Recorded") + '</strong>' +
-          (serial ? '<button type="button" class="expirySessionSerial" data-session-serial="' + i +
-            '" title="View recorded serial" aria-label="View recorded serial for ' + esc(r.item_name || r.item_code) +
-            '">Serial · ' + esc(serial) + '</button>' : '<span class="expirySessionSerialEmpty">Serial · Not Recorded</span>') +
-          '</td><td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
-          '</td><td class="expirySessionActions">' + (r.status === "DELETED" ? '<span class="expiryActivityDeleted">Deleted</span>' :
-            r.editable ? '<button type="button" class="expirySessionAction" title="Edit this registration" data-session-edit="' + i +
-              '">Edit</button><button type="button" class="expirySessionAction danger" title="Delete this registration" data-session-delete="' + i + '">Delete</button>' : '<span>Saved</span>') + '</td></tr>';
+          '</time><span> · ' + r.members.length + ' registration' + (multi ? 's' : '') + '</span></div></td>' +
+          '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "Not Recorded") + '</strong></td>' +
+          '<td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
+          '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" title="View grouped edit scope" data-session-edit="' + i +
+          '">Edit</button><button type="button" class="expirySessionAction danger" title="View grouped delete scope" data-session-delete="' + i +
+          '">Delete</button><small class="expiryGroupActionLimit">Preview only</small></td></tr>';
       }).join("");
-      body.querySelectorAll("[data-session-serial]").forEach(b =>
-        b.onclick = () => serialDetail(session[Number(b.dataset.sessionSerial)], b));
-      body
-        .querySelectorAll("[data-session-edit]")
-        .forEach(
-          (b) =>
-            (b.onclick = () =>
-              sessionEdit(session[Number(b.dataset.sessionEdit)], false, b)),
-        );
-      body
-        .querySelectorAll("[data-session-delete]")
-        .forEach(
-          (b) =>
-            (b.onclick = () =>
-              sessionEdit(session[Number(b.dataset.sessionDelete)], true, b)),
-        );
+      body.querySelectorAll("[data-session-edit]").forEach(b => b.onclick = () =>
+        sessionGroupDialog(rows[Number(b.dataset.sessionEdit)], false, b));
+      body.querySelectorAll("[data-session-delete]").forEach(b => b.onclick = () =>
+        sessionGroupDialog(rows[Number(b.dataset.sessionDelete)], true, b));
       return;
     }
     updateToolbar();
@@ -576,7 +562,7 @@
       '</h2></header><div class="expiryDialogContent">' +
       content +
       '</div><p role="alert" class="expiryRecordValidation" hidden></p><footer><button type="button" data-cancel>' + esc(options.cancelLabel || 'Close') + '</button>' +
-      (action ? '<button type="submit" class="' + (options.destructive ? 'danger' : 'primary') + '">' + esc(options.confirmLabel || 'Confirm') + '</button>' : "") +
+      (action ? '<button type="submit" class="' + (options.destructive ? 'danger' : 'primary') + '">' + esc(options.confirmLabel || 'Confirm') + '</button>' : options.unavailableLabel ? '<button type="button" disabled class="' + (options.destructive ? 'danger' : 'primary') + '">' + esc(options.unavailableLabel) + '</button>' : "") +
       "</footer></form>";
     dialog.querySelector("[data-cancel]").onclick = () => {
       if (!busy) dialog.close();
@@ -730,81 +716,19 @@
       setExpiryStatus("error", e.message || "Unable to preview selection");
     }
   }
-  function sessionEdit(r, remove, trigger) {
-    const args = {
-      ...authArgs(),
-      p_session_id: sessionId,
-      p_operation_id: r.operation_id,
-      p_request_id: crypto.randomUUID(),
-      p_expected_revision: r.revision,
-    };
-    let frozen;
-    openDialog(
-      remove ? "Delete Session Entry" : "Edit Session Entry",
-      '<div class="expiryRecordIdentity">' + identity(r) + '</div><dl class="expirySessionCaptureDetails"><div><dt>Batch</dt><dd>' + esc(r.batch_no || "Not Recorded") + '</dd></div><div><dt>Expiry</dt><dd>' + month(r) + '</dd></div><div><dt>Quantity</dt><dd>' + qty(r) + '</dd></div></dl>' +
-        (remove
-          ? "<p>Delete only this individual registration? Its quantity will be reversed and its audit history retained. Other registrations are preserved.</p>"
-          : '<div class="expiryRecordFields"><label>Batch<input data-batch value="' +
-            esc(r.batch_no || "") +
-            '"></label><label>Expiry month<input data-month type="number" min="1" max="12" value="' +
-            r.expiry_month +
-            '"></label><label>Expiry year<input data-year type="number" min="2020" max="2200" value="' +
-            r.expiry_year +
-            '"></label><label>Quantity<input data-qty type="number" min="1" step="1" value="' +
-            qty(r) +
-            '"></label></div>'),
-      async (d) => {
-        const correction = remove
-          ? {
-              quantity: 0,
-              batch_no: r.batch_no || null,
-              expiry_month: r.expiry_month,
-              expiry_year: r.expiry_year,
-            }
-          : {
-              quantity: Number(d.querySelector("[data-qty]").value),
-              batch_no: d.querySelector("[data-batch]").value.trim() || null,
-              expiry_month: Number(d.querySelector("[data-month]").value),
-              expiry_year: Number(d.querySelector("[data-year]").value),
-            };
-        if (
-          !Number.isInteger(correction.quantity) ||
-          (!remove && correction.quantity <= 0) ||
-          !Number.isInteger(correction.expiry_month) ||
-          correction.expiry_month < 1 ||
-          correction.expiry_month > 12 ||
-          !Number.isInteger(correction.expiry_year) ||
-          correction.expiry_year < 2020 ||
-          correction.expiry_year > 2200
-        )
-          throw new Error("Check quantity and expiry.");
-        if (frozen && JSON.stringify(frozen) !== JSON.stringify(correction))
-          throw new Error("Retry original correction first.");
-        frozen = correction;
-        const key = pendingKey() + "/session",
-          payload = JSON.stringify({ ...args, p_correction: correction });
-        if (
-          sessionStorage.getItem(key) &&
-          sessionStorage.getItem(key) !== payload
-        )
-          throw new Error("Previous correction awaits verification");
-        sessionStorage.setItem(key, payload);
-        try {
-          const ack = await authRpc(
-            "correct_pharmflow_expiry_desktop_session_v1",
-            { ...args, p_correction: correction },
-          );
-          if (ack.request_id !== args.p_request_id)
-            throw new Error("Correction acknowledgement mismatch");
-          sessionStorage.removeItem(key);
-        } catch (e) {
-          if (e.serverRejected) sessionStorage.removeItem(key);
-          throw e;
-        }
-      },
-      trigger,
-      { context: "session", destructive: remove, cancelLabel: "Cancel", confirmLabel: remove ? "Delete Entry" : "Save Changes" },
-    );
+  function sessionGroupDialog(r, remove, trigger) {
+    // Current server contract adjusts one capture, not an atomic complete session group.
+    // Never fan out requests or derive a write from this presentation-only total.
+    openDialog(remove ? "Delete Session Batch" : "Edit Session Batch",
+      '<div class="expiryRecordIdentity">' + identity(r) +
+      '</div><dl class="expirySessionCaptureDetails"><div><dt>Batch</dt><dd>' +
+      esc(r.batch_no || "Not Recorded") + '</dd></div><div><dt>Expiry</dt><dd>' + month(r) +
+      '</dd></div><div><dt>Session units</dt><dd>' + qty(r) + '</dd></div></dl>' +
+      '<p>Scope: ' + r.members.length + ' successful registration' + (r.members.length === 1 ? '' : 's') +
+      ' in your current session. Previously recorded inventory must remain intact.</p>' +
+      (!remove ? '<label class="expiryGroupQuantityLabel">New current-session total<input type="number" value="' + qty(r) + '" disabled></label>' : '') +
+      '<p class="expiryGroupBlockedNotice" role="status">Grouped changes are not available in this preview. No quantities will be changed.</p>',
+      null, trigger, { context: "session", destructive: remove, cancelLabel: "Cancel", unavailableLabel: remove ? "Delete Session Group" : "Save Session Quantity" });
   }
   async function shelfRows() {
     return authRpc("export_pharmflow_expiry_inventory_v1", {
@@ -996,7 +920,6 @@
     [
       el("btnExpirySessionView"),
       el("btnOpenExpiryInventory"),
-      el("btnExpiryNeedsReview"),
     ].forEach(
       (button) =>
         (button.onkeydown = (e) => {
@@ -1006,8 +929,7 @@
           const buttons = [
               el("btnExpirySessionView"),
               el("btnOpenExpiryInventory"),
-              el("btnExpiryNeedsReview"),
-            ].filter((b) => !b.disabled),
+                    ].filter((b) => !b.disabled),
             i = buttons.indexOf(button),
             next =
               e.key === "Home"

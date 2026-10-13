@@ -86,7 +86,7 @@ test('Critical capture IDs occur once and Session Activity markup is preserved',
 
 test('Compact rows have explicit siblings and no anonymous grid text',()=>{
  const html=fs.readFileSync('index.html','utf8');
- const capture=html.slice(html.indexOf('<section class="expiryCaptureCard">'),html.indexOf('<div class="expiryItemCard expiryHandheldItemCard">'));
+ const capture=html.slice(html.indexOf('<section id="expiryCapturePanel" class="expiryCaptureCard">'),html.indexOf('<div class="expiryItemCard expiryHandheldItemCard">'));
  assert.doesNotMatch(capture,/\\n/);
  const root={children:[]},stack=[root],nodes=[];
  for(const token of capture.matchAll(/<!--[^]*?-->|<\/?[a-z][^>]*>|[^<]+/gi)){

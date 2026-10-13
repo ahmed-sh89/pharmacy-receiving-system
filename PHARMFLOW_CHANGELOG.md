@@ -22,3 +22,8 @@
 - Removed generic files:updated ownership of full cloud-workspace writes.
 - Preserved structural manifest dirty sync and explicit lifecycle workspace persistence.
 - Added cache-bust for cloud-workspace.js.
+
+
+## 2026-10-13 — Expiry Round 2 — local candidate, not deployed
+
+Saved two top-level tabs, current-session batch projection, summary/status and canonical scoped UI refinements. Group dialogs preview only; missing atomic grouped RPC blocks writes. No live data/schema changes. Browser authentication blocks rendered verification and release. See docs/expiry-round2-verification.md.

@@ -251,7 +251,7 @@ function setExpiryStatus(kind, text){
     const desktopBox=document.getElementById("expiryDesktopStatus");
     if(desktopBox){
         desktopBox.className=`expiryDesktopStatus ${!expiryIsHandheld() && text==="SAVE FOR REVIEW"?"warning":kind||"ready"}`;
-        desktopBox.textContent=text||"READY TO SCAN";
+        desktopBox.textContent=(kind==="error"?"✕ ":"")+(text||"READY TO SCAN");
         desktopBox.hidden=expiryIsHandheld() || !text;
     }
     const box = document.getElementById("expiryScanStatus");
@@ -638,7 +638,7 @@ function renderExpiryActiveItem(item,gs1={}){
     shell.classList.toggle("is-review",!!item?.needsReview);
     const stateLabel=shell.querySelector(".expiryActiveHeading>div>span"),stateIcon=shell.querySelector(".expiryActiveBadgeMark");
     if(stateLabel)stateLabel.textContent=item?.needsReview?"NEEDS REVIEW":item?"RECOGNIZED ITEM":"ACTIVE ITEM";
-    if(stateIcon)stateIcon.textContent=item?.needsReview?"!":"✓";
+    if(stateIcon)stateIcon.innerHTML=item?.needsReview?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 22 21H2Z"/><path d="M12 9v5m0 3v.5"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m7.5 12 3 3 6-6"/></svg>';
     shell.classList.toggle("is-recognized",!!item && !item.needsReview && !!item.itemCode);
     const recognized=document.getElementById("expiryRecognizedBadge"),autoDate=document.getElementById("expiryAutoDateBadge");
     if(recognized)recognized.hidden=!(item && !item.needsReview && item.itemCode);

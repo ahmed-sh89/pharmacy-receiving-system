@@ -39,7 +39,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=EXPIRY_SCAN_ROUND1"
+        href="css/dashboard.css?v=EXPIRY_BATCH_ROUND2"
     >
 
     <link
@@ -1274,6 +1274,10 @@
                     <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button" aria-label="History" title="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7M3 5v6h6M12 7v5l3 2"></path></svg><span class="expiryHandheldHistoryLabel">History</span><strong id="expiryCapturedCount" hidden>0</strong></button>
                     <span id="expiryScanStatus" class="expiryScanStatus ready" role="status" aria-live="polite">READY TO SCAN</span>
                 </header>
+                <header class="expiryTopWorkspace">                    <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
+                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCapturePanel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Scan &amp; Activity <b id="expirySessionCount" class="expirySessionCount">0</b></button>
+                        <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
+                    </nav><div class="expiryHeaderActions"><button id="btnExpiryNeedsReview" type="button" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 18 17H2L10 3Zm0 5v4m0 2.5v.1"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button></div></header>
                 <div class="expiryKpiRow" aria-label="Expiry summary" hidden>
                     <article class="expiryKpiCard expiryKpiActive">
                         <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
@@ -1289,8 +1293,8 @@
                     </article>
                 </div>
 
-                <section class="expiryCaptureCard">
-                    <header class="expiryScanHeader expiryDesktopOnly"><strong>Scan &amp; Record <span>Expiry capture</span></strong><div id="expirySessionSummary" class="expirySessionSummary" role="status" aria-label="Current Session" aria-live="polite"></div></header>
+                <section id="expiryCapturePanel" class="expiryCaptureCard">
+                    <header class="expiryScanHeader expiryDesktopOnly"><strong>Record Expiry <span>Scan · identify · save</span></strong><div id="expirySessionSummary" class="expirySessionSummary" role="status" aria-label="Current Session" aria-live="polite"></div></header>
                     <div class="expiryCaptureRow">
                       <div class="expiryCapturePrimary">
                         <div class="expiryScanBox">
@@ -1375,12 +1379,7 @@
                 </section>
 
                 <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
-                    <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
-                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Session Activity <b id="expirySessionCount" class="expirySessionCount">0</b></button>
-                        <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
-                        <button id="btnExpiryNeedsReview" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 18 17H2L10 3Zm0 5v4m0 2.5v.1"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button>
-                        <details id="expirySessionMenu" class="expirySessionMenu"><summary aria-label="Session actions">⋯</summary><div><button id="btnClearExpirySession" type="button">Clear Session</button></div></details>
-                    </nav>
+<details id="expirySessionMenu" class="expirySessionMenu"><summary aria-label="Session actions">⋯</summary><div><button id="btnClearExpirySession" type="button">Clear Session</button></div></details>
                     <div id="expiryCurrentHeader" class="expiryCurrentHeader">
                         <div class="expiryCurrentTitle">
                             <span id="expiryWorkspaceTitle">Session Activity</span>
@@ -2616,8 +2615,8 @@
 <script src="js/expiry-evidence.js?v=HANDHELD_ACCEPTANCE1"></script>
 <script src="js/expiry-capture-store.js?v=EXPIRY_OPERATION_V3"></script>
 <script src="js/expiry-active-session.js?v=HISTORY_POLISH1"></script>
-<script src="js/expiry.js?v=EXPIRY_SCAN_ROUND1"></script>
-<script src="js/expiry-desktop-v2.js?v=EXPIRY_SCAN_ROUND1"></script>
+<script src="js/expiry.js?v=EXPIRY_BATCH_ROUND2"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_BATCH_ROUND2"></script>
 <script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
 
 <script src="cloud-workspace.js?v=AUTHORITY_EMPTY1"></script>
