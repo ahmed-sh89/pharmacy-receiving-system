@@ -25,6 +25,6 @@ test('Diagnostic rendering failures never throw into Save and no network/storage
  const s=fs.readFileSync('js/expiry-save-diagnostic.js','utf8');assert.doesNotMatch(s,/fetch\(|authRpc\(|localStorage|sessionStorage|console\./);
 });
 test('Save hooks retain acknowledgement guard and refresh/flash order',()=>{
- const s=fs.readFileSync('js/expiry.js','utf8');assert.match(s,/acknowledged=true;mark\("acknowledged"\)/);assert.match(s,/await refreshExpiryCurrentState\(\);\s*if\(saveScope/);
+ const s=fs.readFileSync('js/expiry.js','utf8');assert.match(s,/acknowledged=true;mark\("acknowledged"\)/);assert.match(s,/await refreshExpiryCurrentState\(\{confirmedSessionId:operation.sessionId,confirmedOperationId:operation.id\}\);\s*if\(saveScope/);
  const d=fs.readFileSync('js/expiry-desktop-v2.js','utf8');assert.match(d,/operationId && !r.members.some/);assert.match(d,/ExpirySaveDiagnostic.paint\(row\)/);
 });

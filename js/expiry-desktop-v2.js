@@ -19,6 +19,7 @@
   let requestVersion = 0,
     searchTimer,
     pendingRead,
+    pendingSummary,
     lastSummary = 0,
     dialog,
     busy = false,
@@ -452,7 +453,7 @@
       void refresh();
     };
   }
-  function refresh() {
+  function refresh(options={}) {
     const key = JSON.stringify([
       scope(),
       mode,
@@ -460,16 +461,26 @@
       offset,
       sort,
       filters,
+      options.confirmedOperationId || null,
     ]);
     if (pendingRead?.key === key && pendingRead.version === requestVersion)
       return pendingRead.promise;
-    const promise = performRefresh().finally(() => {
+    const promise = performRefresh(options).finally(() => {
       if (pendingRead?.promise === promise) pendingRead = null;
     });
     pendingRead = { key, promise, version: requestVersion };
     return promise;
   }
-  async function performRefresh() {
+  function readSummary(ownScope){
+    if(pendingSummary?.scope===ownScope)return pendingSummary.promise;
+    if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryRequest");
+    const promise=authRpc("summary_pharmflow_expiry_inventory_v1",authArgs()).then(rows=>{
+      if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryResponse");
+      return rows;
+    }).finally(()=>{if(pendingSummary?.promise===promise)pendingSummary=null;});
+    pendingSummary={scope:ownScope,promise};return promise;
+  }
+  async function performRefresh(options={}) {
     if (expiryIsHandheld() || !expiryDraftScope()) return [];
     if (!el("expiryPager")) bind();
     try{if(typeof reconcileExpiryClearSession === "function")await reconcileExpiryClearSession();}
@@ -483,7 +494,7 @@
       sessionHydrated = false;
       page = { rows: [], count: 0, units: 0, departments: [], months: [] };
       periods = [];
-      lastSummary = 0;
+      lastSummary = 0;pendingSummary=null;
       selected.clear();
       filters = { search: "", departments: [], months: [] };
       offset = 0;
@@ -525,10 +536,20 @@
           }
         }
       }
+      // Summary is independent of session receipts. It must not gate saved-row rendering.
+      const needsSummary=!periods.length || Date.now()-lastSummary>=30000;
+      const summaryRead=needsSummary?readSummary(ownScope):null;
+      if(requestMode==="SESSION" && summaryRead)void summaryRead.then(summary=>{
+        if(ownScope!==scope() || version!==requestVersion)return;
+        periods=summary;lastSummary=Date.now();
+      }).catch(()=>{}); // Inventory entry retries; a read failure cannot hide a confirmed save.
       let next;
       if (requestMode === "SESSION") {
         if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("projectionSessionStart");
-        const nextSession = await ensureExpiryActiveSession({fresh:true});
+        // Only the immediately acknowledged save can reuse this hydrated signed session.
+        // Other refreshes retain fresh session discovery and old-intent reconciliation above.
+        const confirmedSession=sessionHydrated && options.confirmedOperationId && options.confirmedSessionId===sessionId;
+        const nextSession = confirmedSession?sessionId:await ensureExpiryActiveSession({fresh:true});
         if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("projectionSessionEnd");
         if(sessionId && nextSession!==sessionId){clearSavedFlashes();sessionSearch="";session=[];sessionHydrated=false;}
         sessionId=nextSession;
@@ -547,12 +568,7 @@
           p_offset: offset,
           p_limit: 50,
         });
-      const needsSummary=!periods.length || Date.now() - lastSummary >= 30000;
-      if(needsSummary && typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryRequest");
-      const summary = needsSummary
-          ? await authRpc("summary_pharmflow_expiry_inventory_v1", authArgs())
-          : periods;
-      if(needsSummary && typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryResponse");
+      const summary = requestMode==="INVENTORY" && summaryRead?await summaryRead:periods;
       if (ownScope !== scope() || version !== requestVersion) return [];
       const repaint =
         (requestMode === "SESSION" && !sessionHydrated) ||
@@ -565,7 +581,7 @@
               : next,
           );
       periods = summary;
-      lastSummary = Date.now();
+      if(requestMode==="INVENTORY" && summaryRead)lastSummary = Date.now();
       if (requestMode === "SESSION") {
         sessionHydrated = true;
         session = next.filter((r) => r.kind === "KNOWN");
@@ -648,7 +664,7 @@
         .forEach((b) => (b.disabled = true));
       try {
         await action(dialog);
-        lastSummary = 0;
+        lastSummary = 0;pendingSummary=null;
         await refresh();
         busy = false;
         dialog.setAttribute("aria-busy", "false");
@@ -693,7 +709,7 @@
       const ack = await authRpc("correct_pharmflow_expiry_desktop_group_v1", args);
       verifyGroupAck(ack, args, ownScope);
       sessionStorage.removeItem(key);
-      lastSummary = 0;
+      lastSummary = 0;pendingSummary=null;
       return ack;
     } catch (error) {
       if (error.serverRejected === true) sessionStorage.removeItem(key);
@@ -740,7 +756,7 @@
         throw new Error("Acknowledgement mismatch");
       sessionStorage.removeItem(key);
       selected.clear();
-      lastSummary = 0;
+      lastSummary = 0;pendingSummary=null;
       return r;
     } catch (e) {
       if (e.serverRejected === true) sessionStorage.removeItem(key);
@@ -1079,14 +1095,14 @@
             !document.hidden &&
             !document.documentElement.classList.contains("pf-idle-sleep-active")
           ) {
-            lastSummary = 0;
+            lastSummary = 0;pendingSummary=null;
             void refresh();
           }
         }, 30000);
       window.addEventListener("resize", syncViewport, { passive: true });
       window.addEventListener("focus", () => {
         if (el("zebraExpiryShell")?.classList.contains("active")) {
-          lastSummary = 0;
+          lastSummary = 0;pendingSummary=null;
           void refresh();
           void refreshReview();
         }
@@ -1117,7 +1133,7 @@
     visibleScope = null;
     sessionId = null;
     periods = [];
-    lastSummary = 0;
+    lastSummary = 0;pendingSummary=null;
     mode = "SESSION";
     resolved = false;
     offset = 0;

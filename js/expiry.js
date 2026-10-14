@@ -1206,7 +1206,7 @@ async function saveExpiryCapture(options={}){
         if(item.needsReview&&typeof ExpiryReviewBackend!=="undefined")await ExpiryReviewBackend.refresh();
         refreshExpiryCapturedCount();
         mark("reconciliationStart");
-        await refreshExpiryCurrentState();
+        await refreshExpiryCurrentState({confirmedSessionId:operation.sessionId,confirmedOperationId:operation.id});
         if(saveScope===expiryDraftScope() && !item.needsReview && typeof window.flashExpirySessionGroup==="function"){
             window.flashExpirySessionGroup(saveResult.state_id,operation.sessionId,operation.id);
         }
