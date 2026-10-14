@@ -1063,6 +1063,11 @@ async function resolveExpiryScannedValue(rawValue){
     return true;
 }
 
+// Temporary opt-in Preview timing. Numeric durations only; no capture/account data.
+function expirySaveProbe(stage, ms){
+    if(typeof location==='undefined' || !location.hostname.endsWith('.vercel.app') || !new URLSearchParams(location.search).has('expirySaveTiming'))return;
+    console.info('EXPIRY_SAVE_TIMING',JSON.stringify({stage,ms:Math.round(ms*100)/100}));
+}
 async function saveExpiryCapture(options={}){
     const saveClock=()=>typeof performance!=="undefined"?performance.now():Date.now();
     const handlerStarted=saveClock();
@@ -1122,7 +1127,7 @@ async function saveExpiryCapture(options={}){
     setExpiryStatus("busy","SAVING...");
     if(button)button.textContent="SAVING…";
     const saveStarted=handlerStarted;const timings={validationMs:saveClock()-handlerStarted,handlerToFeedbackMs:saveClock()-handlerStarted,rpcMs:0,photoMs:0,localPersistenceMs:0,ackTransitionMs:0};
-    const measuredPersist=async status=>{const start=saveClock();try{return await persistExpiryDraft(status);}finally{timings.localPersistenceMs+=saveClock()-start;}};
+    const measuredPersist=async status=>{const start=saveClock();try{return await persistExpiryDraft(status);}finally{const ms=saveClock()-start;timings.localPersistenceMs+=ms;expirySaveProbe('durable',ms);}};
     const captureControls=["expiryQuantity","expiryBatchInput","expirySerialInput"].map(id=>document.getElementById(id)).filter(Boolean);
     const controlStates=captureControls.map(el=>[el,el.disabled]);
     captureControls.forEach(el=>el.disabled=true);
@@ -1156,20 +1161,20 @@ async function saveExpiryCapture(options={}){
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||"",...(item.needsReview&&ExpiryCaptureEngine.identificationNote?{identification_note:ExpiryCaptureEngine.identificationNote}:{})};
         const operation=ExpiryCaptureEngine.operation;
-        {const start=saveClock(),sessionId=await ensureExpiryActiveSession({fresh:!expiryIsHandheld()});timings.rpcMs+=saveClock()-start;
+        {const start=saveClock(),sessionId=await ensureExpiryActiveSession({fresh:!expiryIsHandheld()});timings.rpcMs+=saveClock()-start;expirySaveProbe('sessionBeforeSave',saveClock()-start);
             // Persisted operations belong to their original session, including ACK retries after Clear.
             if(!operation.sessionId){if(operation.payload)throw new Error("Pending capture session identity unavailable — capture retained for reconciliation");operation.sessionId=sessionId;await measuredPersist();}
         }
         const measuredRpc=async(name,args)=>{const start=saveClock();try{
             if(name==="save_pharmflow_expiry_capture_v3")return await authRpc(expiryIsHandheld()?"save_pharmflow_expiry_session_capture_v2":"save_pharmflow_expiry_desktop_capture_v1",{...args,p_session_id:operation.sessionId});
             return await authRpc(name,args);
-        }finally{timings.rpcMs+=saveClock()-start;}};
+        }finally{const ms=saveClock()-start;timings.rpcMs+=ms;expirySaveProbe(name,ms);}};
         const measuredUpload=async(path,file)=>{const start=saveClock();try{return await ExpiryOperation.upload(path,file);}finally{timings.photoMs+=saveClock()-start;}};
         const saveResult=await ExpiryOperation.save({rpc:measuredRpc,upload:measuredUpload,
             persist:measuredPersist,scope:saveScope,currentScope:expiryDraftScope,
             operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID(),
             directKnown:expiryIsHandheld() && (payload.kind==="KNOWN" || !(ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product))});
-        submitted=true;
+        submitted=true;expirySaveProbe('clickToAuthoritativeAck',saveClock()-saveStarted);
         const acknowledgementStarted=saveClock();
 
         // Authoritative save acknowledgement is sufficient. History reads server receipts on demand.
@@ -1200,7 +1205,9 @@ async function saveExpiryCapture(options={}){
         try{
         if(item.needsReview&&typeof ExpiryReviewBackend!=="undefined")await ExpiryReviewBackend.refresh();
         refreshExpiryCapturedCount();
-        await refreshExpiryCurrentState();
+        const projectionStarted=saveClock();
+        await refreshExpiryCurrentState({saveTiming:true});
+        expirySaveProbe('projection',saveClock()-projectionStarted);
         if(saveScope===expiryDraftScope() && !item.needsReview && typeof window.flashExpirySessionGroup==="function"){
             window.flashExpirySessionGroup(saveResult.state_id,operation.sessionId,operation.id);
         }
@@ -1236,6 +1243,7 @@ async function saveExpiryCapture(options={}){
     }finally{
         ExpiryCaptureEngine.busy = false;
         renderExpiryEvidence();
+        expirySaveProbe('clickToReady',saveClock()-saveStarted);
         if(!ExpiryCaptureEngine.saveUncertain){
             controlStates.forEach(([el,disabled])=>el.disabled=ExpiryCaptureEngine.currentItem?disabled:false);
             selectStates.forEach(([el,disabled])=>setExpirySelectDisabled(el,ExpiryCaptureEngine.currentItem?disabled:false));
