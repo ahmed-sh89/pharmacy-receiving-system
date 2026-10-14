@@ -1161,7 +1161,7 @@ async function saveExpiryCapture(options={}){
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||"",...(item.needsReview&&ExpiryCaptureEngine.identificationNote?{identification_note:ExpiryCaptureEngine.identificationNote}:{})};
         const operation=ExpiryCaptureEngine.operation;
-        {mark("sessionRequest");const start=saveClock(),sessionId=await ensureExpiryActiveSession({fresh:!expiryIsHandheld()});timings.rpcMs+=saveClock()-start;mark("sessionResponse");
+        {mark("sessionRequest");const start=saveClock(),sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;mark("sessionResponse");
             // Persisted operations belong to their original session, including ACK retries after Clear.
             if(!operation.sessionId){if(operation.payload)throw new Error("Pending capture session identity unavailable — capture retained for reconciliation");operation.sessionId=sessionId;await measuredPersist();}
         }
@@ -1173,7 +1173,9 @@ async function saveExpiryCapture(options={}){
         const saveResult=await ExpiryOperation.save({rpc:measuredRpc,upload:measuredUpload,
             persist:measuredPersist,scope:saveScope,currentScope:expiryDraftScope,
             operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID(),
-            directKnown:expiryIsHandheld() && (payload.kind==="KNOWN" || !(ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product))});
+            // Desktop known writes reserve atomically inside the verified session RPC.
+            // Unknown/photo workflow and Handheld semantics stay unchanged.
+            directKnown:(!expiryIsHandheld() && payload.kind==="KNOWN") || (expiryIsHandheld() && (payload.kind==="KNOWN" || !(ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product)))});
         submitted=true;
         const acknowledgementStarted=saveClock();
 
