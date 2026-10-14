@@ -16,17 +16,18 @@ async function reconcileExpirySessionCorrection(){
         throw error;
     }
 }
-async function ensureExpiryActiveSession(){
+async function ensureExpiryActiveSession(options={}){
     const {key,session}=expiryHandheldSession(),scope=expiryDraftScope();
     const authIdentity=expirySignedAuthIdentity();
+    if(options.fresh && expirySessionOpenPromise?.settled)expirySessionOpenPromise=null;
     if(expirySessionOpenPromise?.scope===scope && expirySessionOpenPromise.authIdentity===authIdentity)return expirySessionOpenPromise.promise;
     const promise=authRpc('get_pharmflow_expiry_auth_session_v1',{p_pharmacy_id:expiryPharmacyId(),p_device_id:session.deviceId}).then(row=>{
-        if(scope!==expiryDraftScope() || !row?.session_id || row.status!=='OPEN')throw new Error('Signed session acknowledgement mismatch');
+        if(scope!==expiryDraftScope() || authIdentity!==expirySignedAuthIdentity() || !row?.session_id || row.status!=='OPEN')throw new Error('Signed session acknowledgement mismatch');
         session.id=row.session_id;session.authSessionId=row.auth_session_id;session.serverOpened=true;session.closed=false;
         sessionStorage.setItem(key,JSON.stringify(session));return row.session_id;
     });
-    expirySessionOpenPromise={scope,authIdentity,promise};
-    try{return await promise;}catch(error){expirySessionOpenPromise=null;throw error;}
+    const entry={scope,authIdentity,promise,settled:false};expirySessionOpenPromise=entry;
+    try{return await promise;}catch(error){if(expirySessionOpenPromise===entry)expirySessionOpenPromise=null;throw error;}finally{entry.settled=true;}
 }
 async function closeExpiryActiveSession(){
     const scope=expiryDraftScope();

@@ -7441,7 +7441,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryActiveBadges>span{padding:2px 7p
 body:not(.zebraDevice) #zebraExpiryShell .expiryActiveBadges>span[hidden]{display:none}
 body:not(.zebraDevice) #zebraExpiryShell #btnExpiryQtyPlus{background:#e4f3e9;border-color:#a1cbb2;color:#22643f}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionCount{display:inline-grid;place-items:center;min-width:23px;padding:2px 6px;border-radius:12px;background:#e9e4f3;color:#52397e;font-size:12px}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu{position:relative;flex:none;align-self:center;margin:0 7px}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu{position:relative;flex:none;align-self:flex-end;margin:0 10px 0 0}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu summary{display:grid;place-items:center;width:36px;height:36px;border-radius:7px;color:#53647b;font-size:25px;cursor:pointer;list-style:none}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu summary::-webkit-details-marker{display:none}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu>div{position:absolute;right:0;top:40px;z-index:190;width:168px;padding:5px;border:1px solid #d4dce7;border-radius:9px;background:#fff;box-shadow:0 8px 24px #23354d26}

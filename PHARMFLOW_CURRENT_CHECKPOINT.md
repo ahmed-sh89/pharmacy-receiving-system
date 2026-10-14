@@ -1,64 +1,38 @@
-# PharmFlow Current Checkpoint — Enterprise Expiry, 14 October 2026
+# PharmFlow current checkpoint — 14 October 2026
 
-Verified starting Staging/GitHub b11503c49b228728faad97269435a6218dd6f913. Local original3839503 and bundle preserved; starting trees identical. Development branch only feature/expiry-stage1-visual-gate. Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks. Production untouched.
+## Current scope and status
 
-Approved frontend refinement implemented/tested; candidate deployment READY, rendered verification BLOCKED BY LOGIN. Focused161/0/1; full610/43/1 with unchanged baseline failure names; build PASS. Runtime SHA de845b5c0e813747054495a07de68af3e61b8201; details in docs/expiry-enterprise-refinement.md.
+Clear Session safety gates passed; READY FOR USER TEST after Staging deployment verification. Production/main/Production Supabase untouched. Repository ahmed-sh89/pharmacy-receiving-system; branch ONLY feature/expiry-stage1-visual-gate; Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks. Starting deployed SHA90e7c16bffc513014867d0af7330b0858602bee3; final release SHA is the commit containing this checkpoint and is recorded in the execution delivery report. Branch URL https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/.
 
-Canonical toolbar/tabs/scan/search/six-column batch session UI; source serial preserved. Group Edit/Delete visibly disabled. Proposed SQL tested LOCAL ONLY, not applied; separate approval required. See docs/expiry-enterprise-refinement.md and docs/expiry-group-rpc-approval.md. Mandatory1366x768 gate remains UNVERIFIED without actual viewport access. Frontend READY FOR USER TEST; group correction BLOCKED PENDING BACKEND APPROVAL; overall NOT DONE.
+Original local repository0e20960 remains untouched at /workspace/scratch/a6aa23eff6c3/pharmflow. Prior unpublished group acceptance evidence retained. Full prior checkpoint/history preserved in docs/expiry-continuation-checkpoint-history.md. Older BLOCKED/prepared entries are superseded by this checkpoint, not to be replayed.
 
+## Implemented
 
-## Authenticated visual follow-up — 2026-10-14
+Discreet three-dot menu immediately above Actions, exact label Clear Session, confirmation/cancel with scanner focus. RPC-confirmed new empty scanning session, durable scoped clear intent and exact retry after unknown/lost response. Fresh server lookup through existing refresh/focus scheduler; same-auth tabs adopt successor, independently signed PCs keep their own sessions. No new polling service. Pending draft/save/correction gates, capture freeze during confirmation/transition, immutable original operation session identity. Stale uncommitted captures stay retained/blocked; never silently rebound. Existing unsaved-form Clear remains separate.
 
-Login blocker cleared. Actual1363x936 inspected with8screenshots, tabs/hover/search/recognized/warning/GS1Serial/Inventory verified at that size. Exact1366x768/larger and populated session actions remainUNVERIFIED. No source/deployment/database change; liveSHAcd3fbafcce6dc8102500787a7c7141e42c11aa3d. Backend approval stillpending. See docs/expiry-enterprise-visual-qa.md.
+Scanning full-card background from prior release retained. Serial→Batch→Expiry→Year→Quantity, neutral editable Serial, GS1 identities/leading zeros, quantity-only grouped Edit/Delete, session search,1second saved-row flash,2500ms notice, Needs Review, Inventory and Handheld workflows preserved.
 
+## Applied Staging database
 
-## 2026-10-14 — Final focused polish / Serial-safe group review
+20261014122351_expiry_desktop_durable_clear_session_v1 already applied; NOT reapplied.
+20261014130331_expiry_auth_closure_marker_v1 applied exactly from approved SQL SHA25676184bcd3e4c65023a9c61d4c70d49c71554e1a3e25bf9dcaba0fa11ee1cd105.
 
-Final approved UI polish implemented; deployment/visual checks pending. Total Items/session-only calculations unchanged, neutral/blue scan states, grouped Expiry selectors. Serial-safe SQL corrected and LOCAL-tested only. UI72/0, backend34/0/1, buildPASS; independent concurrency unavailable. Production untouched. See docs/expiry-final-polish.md.
+Private immutable owner/auth-session closure marker prevents reopening even before first Expiry session and for unused member pharmacies. Existing function signatures/grants preserved, private RLS/no direct client access, anonymous API access denied. Exact applied SQL tracked under supabase/migrations; retained REVIEW ONLY comments describe original review artifacts, this record establishes applied status. No guessed historical closure backfill.
 
+## Verification evidence
 
-# Controlled group RPC Staging execution — 2026-10-14 Riyadh
+228 Expiry focused/regression tests PASS;8 Receiving safety/order/scope tests PASS; build PASS; diff check PASS. Includes13 new unit/UI integration tests: confirm/cancel/freeze/scanner focus, pending capture/correction gates, lost reply/refresh exact retry, scope changes, stale remote draft preservation, latest-successor hydration.
 
-Status: READY FOR USER TEST — grouped actions remain DISABLED; concurrency gate BLOCKED. Not a completed grouped Edit/Delete release.
+Live Staging close-before-first-get retest PASS (rollback-only fixture). Anonymous/expired/absent auth, pharmacy/signed-identity isolation, stable request retry, payload conflict and empty successor tests PASS. Private closure marker RLS=true/client access=false; scoped function privileges checked. Expected private deny-all/advisory definer API notices; unrelated existing advisors not modified.
 
-Applied migration: 20261013234424_expiry_desktop_current_session_group_correction_v1.
-Verified project: tovkcakucyagvbzvlnks / pharmflow-staging / ACTIVE_HEALTHY / PostgreSQL17.
-Exact package SQL equals preserved repository SQL; SHA256 d3b800712008e405ad0b0a68764f57a128886cf51602d36182add7fa51f5cb1f.
-The original artifact retains its REVIEW ONLY header as immutable review evidence; this record supersedes its applied-status comment.
+Genuine overlapping independent pg_cron SQL connections, three rounds/10 transactions passed. Clear holding8seconds vs save/correction/getter/retry/sign-out; save holding8seconds then clear; group correction holding8seconds then clear. Distinct PIDs AND overlapping call intervals verified. Historical5+current2=7 remains7 after first clear. Winning save1→Inventory8, clear preserves8. New capture2 and group2→4→Inventory12, clear preserves12; successor empty. Original3 Serial evidences retained, added adjustment serial-free. Raw evidence docs/expiry-clear-session-concurrency.json. These are real SQL integration tests with synthetic signed identities, not physical device tests.
 
-Pre-application gates passed: new audit table/new function absent before application; additive CREATE only, no existing RPC replacement or business-data backfill. Explicit signed auth-session, pharmacy membership/owner scope and private audit path reviewed against live dependencies. No Production access. Safe disablement is possible by revoking authenticated EXECUTE on the new function; retain all audit records. No disablement SQL was executed.
+Disposable fixture pharmacy/user/auth/captures/audits and10 jobs removed only after retaining evidence. Pre-existing captures63/Inventory53/events152/operations126/adjustments30/group audits20 fully identical hashes after cleanup. Original19 sessions retained unchanged; one additional independently authenticated/membership-valid session observed during execution (total20), proven by excluding that one row and matching original19-row digest. No unexplained existing-data modification. No real Clear receipts created during backend tests.
 
-Installed function hash29b402465098598f9290c23e0c590264. SECURITY DEFINER with search_path=pg_catalog; anon execute=false, authenticated=true. Audit RLS=true, authenticated direct table access=false, group audit rows0. Live missing-auth-session smoke test rejected and rolled back. Security advisor notes expected authenticated definer API / private RLS without policies; unrelated existing advisories were not modified.
+## User verification still required
 
-Before/after live reconciliation: Inventory39 rows/100 units; session captures34 rows/56 units; operations97; events103; single-adjustments10. All unchanged. No group corrections or synthetic business-data writes were committed.
+Windows: cancel preserves current rows; confirmed Clear gives zero current items/units; refresh stays empty; Inventory/historical Serial unchanged; new scan succeeds; pending save blocks Clear. Test two physical PCs/auth identities and Handheld compatibility. Prior Serial/Batch and new/repeated green-row flash corrections remain READY FOR USER TEST until Product Owner acceptance. Exact1366x768 remains physical visual gate. No DONE claim or Production promotion approval.
 
-Actual concurrency availability probe used two tool calls launched together, each reporting a different PostgreSQL backend. A PID576986 ran23:43:01.495968–23:43:04.499021UTC; B PID576987 ran23:43:06.822531–23:43:09.823293UTC. Intervals DO NOT overlap. This access path is insufficient for actual concurrency verification. No psql/postgres/initdb executable or configured PHARMFLOW_LOCAL_PG_URL/direct disposable connection is available. Different PIDs alone are not concurrent proof. Simultaneous edits, new scan/correction race, simultaneous retry, cross-device totals and interruption retry therefore remain NOT RUN, not PASS.
+## Next action / non-regression
 
-Focused local database suite34PASS/0FAIL/1SKIP; local sequential cases verify historical5+current2=7, edit current4=>9, delete=>5, capturedSerial preservation, retries/conflicts, stale members, scope and all-or-none rollback. These are NOT a substitute for independent-connection tests. UI group-disabled suite9PASS/0FAIL. BuildPASS.
-
-No frontend source changed; existing Inventory Edit/Delete remains unchanged. No group UI integration, refresh/multi-PC acceptance or live5+2 functional claim. No new Preview deployment warranted while the mandatory gate is blocked. Current verified READY Preview SHA a9550c8b23fe8dd52fd08827b374836e970b46e1 remains deployed:
-https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/
-
-Changed repository files: this execution record and PHARMFLOW_CURRENT_CHECKPOINT.md only; local documentation commit retained. Applied SQL tracked by Supabase migration history. No code/reset/force-push/Production changes.
-
-Remaining exact blocker: independent simultaneous SQL/RPC connections to an isolated test scope in Staging. A configured authorized Staging PostgreSQL connection or equivalent independent authenticated test transport is required. Credentials must be provisioned securely, never pasted into chat. Existing authorization is sufficient once that transport is available; do not reapply this migration. Enable group UI only after the required concurrent tests succeed.
-
-
-## 2026-10-14 — Group actions released after genuine concurrent Staging verification
-
-Deployed120eccacab01b23e7b69174c6b6d70eaa16443c3 READY. Existing20261013234424 migration not reapplied. Real overlapping independent pg_cron connections passed; complete browser5+2=7→9→5, Serial/retry/refresh/two-tab sync verified. Group actions ENABLED for current authenticated session only.77focusedPASS/buildPASS. Disposable fixture cleanup restored39Inventoryrows/100units and all pre-existing counts. Physical two-PC acceptance pending; READY FOR USER TEST; Production untouched. See docs/expiry-group-actions-release.md. This supersedes earlier blocked concurrency/disabled-action entries.
-
-
-## 2026-10-14 — Four final Desktop visual corrections
-
-Start remote/deployed09371ceab10d9da5cd7e6c2afa775a436c07f2f6 confirmed; Product Owner has verified prior grouping/Edit/Delete/search/synchronization. Outer3px brand accent, restrained table separation, success→READY after2500ms with version guard, fixed center350–420px search. Persistent Active Item/errors/Review unaffected; no search/group/business/backend changes.93focusedPASS/0FAIL/buildPASS. Candidate deploy and actual viewport evidence in delivery report; exact1366x768 remains UNVERIFIED if browser cannot resize. Staging only; Production untouched.
-
-
-## 2026-10-14 — Expiry Desktop final closure candidate
-
-Starting verified remote/Staging5949bd8275bfc949f014bc01789947af811a6c3f. Local8ba95280111731a8ddd6edae35a8d5f9d9e14afa preserved. Serial→Batch→Expiry→Year→Quantity, separate Year label, neutral editable Serial. Old Inventory row selector replaced with confirmed ACK state identity in canonical Session renderer;1000ms per-group flash, guarded timers, search preservation, reduced motion.98 focused tests PASS/0FAIL/0SKIP; production build PASS. Manual+GS1 payload mapping, grouped actions, metrics, search, scanner and2500ms success guards covered. No SQL/RPC/Supabase changes. Browser verification/release evidence recorded separately after deployment; exact1366×768 and populated-session flash screenshots pending availability. READY FOR USER TEST.
-
-
-### Final closure actual verification
-
-99 focused PASS / 0 FAIL / 0 SKIP; build PASS. Confirmed-session and loaded operation-membership guards prevent late ACK from flashing another session or stale projection. Actual authenticated Staging browser1363×936: Serial→Batch→Expiry→Year→Quantity verified, Year visible, Serial editable with normal focus, neutral Serial247/249/251 vs white Batch, input values distinct, Clear restores scanner focus. Search420×36 centered inside existing card1099×251.796875; no clipping/overlap/height increase. Global input theme precedence corrected only for unfocused Desktop Serial. Exact1366×768 UNVERIFIED: no supported viewport resize. Populated-session new/incremented row flash screenshots UNVERIFIED: authenticated current session has0 rows and this task prohibits Supabase modifications. Unit coverage verifies both groups, repeated timers, same-batch distinct identities, filtering and unchanged metrics; no browser saves performed. No Production, database, RPC, migration, or other workstream changes. READY FOR USER TEST. Final deployed SHA is recorded in the delivery report.
+Product Owner acceptance on existing Staging URL; report outcomes before Production promotion. Do not reapply migrations or delete/recount Inventory to clear a session. Protect pharmacy/user/auth/device isolation, old intent retention/idempotency, historical Serial/evidence/audits/Inventory contributions, scanner throughput/focus, grouping/search, GS1/quantity/month/year, Needs Review and Receiving. No Inventory-development workstream or unrelated refactor authorized.

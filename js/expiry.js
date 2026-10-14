@@ -395,7 +395,8 @@ async function openExpiryRecentScans(){return openExpiryHandheldHistory();}
 
 function expiryDraftSnapshot(status="DRAFT"){
     if(ExpiryCaptureEngine.currentItem && !ExpiryCaptureEngine.operation && !ExpiryCaptureEngine.saveUncertain){
-        ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId:expiryPharmacyId()};
+        const active=expiryHandheldSession().session;
+        ExpiryCaptureEngine.operation={id:crypto.randomUUID(),pharmacyId:expiryPharmacyId(),...(active.serverOpened&&!active.closed?{sessionId:active.id}:{})};
     }
     const session=expiryIsHandheld()?expiryHandheldSession().session:null;
     return {deviceId:session?.deviceId||null,sessionId:session?.id||null,sourceKey:ExpiryCaptureEngine.draftSourceKey||null,
@@ -844,7 +845,7 @@ async function selectExpirySearchResult(index){
 }
 
 async function resolveExpiryScannedValue(rawValue){
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.operation?.payload){
+    if((!expiryIsHandheld() && typeof expiryHasClearIntent==="function" && expiryHasClearIntent()) || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.operation?.payload){
         setExpiryStatus("error","SCAN BLOCKED — A SAVE IS PENDING OR UNCERTAIN; CHECK / RETRY THE SAME OPERATION FIRST");
         const input=document.getElementById("expiryBarcodeInput");if(input)input.value="";
         return false;
@@ -1065,7 +1066,7 @@ async function resolveExpiryScannedValue(rawValue){
 async function saveExpiryCapture(options={}){
     const saveClock=()=>typeof performance!=="undefined"?performance.now():Date.now();
     const handlerStarted=saveClock();
-    if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving){setExpiryStatus("busy","SAVE IN PROGRESS — WAIT FOR THE RESULT");return;}
+    if((!expiryIsHandheld() && typeof expiryHasClearIntent==="function" && expiryHasClearIntent()) || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving){setExpiryStatus("busy","SAVE IN PROGRESS — WAIT FOR THE RESULT");return;}
     if(ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload){setExpiryStatus("error","RESULT UNCERTAIN — NO SAFE RETRY PAYLOAD; CONTACT SUPPORT BEFORE RESCANNING");return;}
 
     cancelExpiryScanAutoClear();
@@ -1155,7 +1156,10 @@ async function saveExpiryCapture(options={}){
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||"",...(item.needsReview&&ExpiryCaptureEngine.identificationNote?{identification_note:ExpiryCaptureEngine.identificationNote}:{})};
         const operation=ExpiryCaptureEngine.operation;
-        {const start=saveClock(),sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;if(operation.sessionId!==sessionId){operation.sessionId=sessionId;await measuredPersist();}}
+        {const start=saveClock(),sessionId=await ensureExpiryActiveSession({fresh:!expiryIsHandheld()});timings.rpcMs+=saveClock()-start;
+            // Persisted operations belong to their original session, including ACK retries after Clear.
+            if(!operation.sessionId){if(operation.payload)throw new Error("Pending capture session identity unavailable — capture retained for reconciliation");operation.sessionId=sessionId;await measuredPersist();}
+        }
         const measuredRpc=async(name,args)=>{const start=saveClock();try{
             if(name==="save_pharmflow_expiry_capture_v3")return await authRpc(expiryIsHandheld()?"save_pharmflow_expiry_session_capture_v2":"save_pharmflow_expiry_desktop_capture_v1",{...args,p_session_id:operation.sessionId});
             return await authRpc(name,args);
@@ -1208,7 +1212,7 @@ async function saveExpiryCapture(options={}){
     }catch(error){
         console.error("Unable to save expiry capture",error);
         const uncertain=submitted || error?.expiryOutcome==="uncertain" || error?.uncertain===true;
-        if(error?.expiryOutcome==="rejected" && ExpiryCaptureEngine.operation?.payload){
+        if(error?.expiryOutcome==="rejected" && ExpiryCaptureEngine.operation?.payload && !/Session closed|Signed session scope/i.test(String(error.message))){
             const rejectedPayload=ExpiryCaptureEngine.operation.payload;
             ExpiryCaptureEngine.operation.payload=null;
             ExpiryCaptureEngine.saveUncertain=false;

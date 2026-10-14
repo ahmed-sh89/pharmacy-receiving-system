@@ -108,7 +108,7 @@
     if (capture) capture.hidden = mode === "INVENTORY";
     if (el("expirySessionSummary")) el("expirySessionSummary").hidden = mode !== "SESSION";
     el("expiryCurrentHeader").hidden = mode !== "INVENTORY";
-    el("expirySessionMenu").hidden = true;
+    el("expirySessionMenu").hidden = mode !== "SESSION" || !sessionHydrated;
     el("btnExpirySessionView").setAttribute(
       "aria-selected",
       String(mode === "SESSION"),
@@ -468,6 +468,8 @@
   async function performRefresh() {
     if (expiryIsHandheld() || !expiryDraftScope()) return [];
     if (!el("expiryPager")) bind();
+    try{if(typeof reconcileExpiryClearSession === "function")await reconcileExpiryClearSession();}
+    catch(error){setExpiryStatus("error",error.message);return [];}
     const ownScope = scope();
     if (visibleScope !== ownScope) {
       clearSavedFlashes();
@@ -521,7 +523,9 @@
       }
       let next;
       if (requestMode === "SESSION") {
-        sessionId = await ensureExpiryActiveSession();
+        const nextSession = await ensureExpiryActiveSession({fresh:true});
+        if(sessionId && nextSession!==sessionId){clearSavedFlashes();sessionSearch="";session=[];sessionHydrated=false;}
+        sessionId=nextSession;
         next = await authRpc("list_pharmflow_expiry_desktop_session_v1", {
           ...authArgs(),
           p_session_id: sessionId,
@@ -599,7 +603,8 @@
         if (busy) e.preventDefault();
       });
       dialog.addEventListener("close", () => {
-        const target = returnFocus?.isConnected
+        if(typeof releaseExpiryClearConfirmation === "function")releaseExpiryClearConfirmation();
+        const target = dialog.dataset.clearSession === "true" ? el("expiryBarcodeInput") : returnFocus?.isConnected
           ? returnFocus
           : el(
               mode === "SESSION" ? "expiryBarcodeInput" : "expiryCurrentSearch",
@@ -608,6 +613,7 @@
       });
     }
     dialog.className = "expiryRecordDialog" + (options.context === "session" ? " expirySessionDialog" : "") + (options.destructive ? " is-delete" : "");
+    dialog.dataset.clearSession = String(!!options.clearSession);
     returnFocus = trigger || document.activeElement;
     dialog.innerHTML =
       '<form novalidate><header><h2 id="expiryRecordDialogTitle">' +
@@ -1014,6 +1020,24 @@
       el("btnExportExpiryInventory").onclick = () => exportShelf();
       el("expiryPrint").onclick = () => exportShelf(true);
     }
+    const menu=el("expirySessionMenu");
+    menu.setAttribute("aria-label","Session actions");
+    const tableOwner=document.querySelector(".expiryCurrentWorkspace");
+    tableOwner.insertBefore(menu,tableOwner.querySelector(".expiryCurrentTableWrap") || tableOwner.querySelector("table")?.parentElement);
+    el("btnClearExpirySession").onclick = async () => {
+      if(busy || !sessionHydrated || mode!=="SESSION")return;
+      try {
+        if(!expiryHasClearIntent())await expiryAssertClearSafe();
+        ExpiryCaptureEngine.busy=true;ExpiryCaptureEngine.sessionClearing=true;ExpiryCaptureEngine.sessionClearingKey=expiryClearIntentKey();
+        const ownSession=sessionId,ownScope=scope();
+        el("expirySessionMenu").open=false;
+        openDialog("Clear Session", "<p>Start a new empty scanning session? All historical captures and Expiry Inventory quantities will be preserved.</p>", async()=>{
+          if(scope()!==ownScope)throw new Error("Clear account changed");
+          // Freeze starts after pending-intent gates; start helper performs the final safety check.
+          await startExpiryClearSession(ownSession);
+        },el("btnClearExpirySession"),{context:"session",clearSession:true,confirmLabel:"Clear Session",cancelLabel:"Cancel"});
+      }catch(error){setExpiryStatus("error",error.message);}
+    };
     el("btnOpenExpiryInventory").onclick = () => {
       mode = "INVENTORY";
       ExpiryCaptureEngine.desktopView = mode;
