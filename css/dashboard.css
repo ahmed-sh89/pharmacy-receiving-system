@@ -7333,7 +7333,7 @@ body:not(.zebraDevice) #zebraExpiryShell.appPage.active{display:flex!important;f
 
 
 
-body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{flex:none;width:100%;max-width:none;margin:0;padding:12px;border:1px solid #cad4e0;border-left:3px solid var(--exp-accent);border-radius:10px;background:#f7f9fc;box-shadow:none;box-sizing:border-box;overflow:visible}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{flex:none;width:100%;max-width:none;margin:0;padding:12px;border:1px solid #cad4e0;border-radius:10px;background:#eef3f8;box-shadow:none;box-sizing:border-box;overflow:visible}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions{display:flex;align-items:center;gap:16px}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSummary[hidden]{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric{display:grid;grid-template-columns:auto auto;align-items:center;gap:10px}
