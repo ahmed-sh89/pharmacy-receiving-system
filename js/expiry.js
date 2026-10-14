@@ -254,6 +254,15 @@ function setExpiryStatus(kind, text){
         desktopBox.textContent=(kind==="error"?"✕ ":"")+(text||"READY TO SCAN");
         desktopBox.hidden=expiryIsHandheld() || !text;
     }
+    if(desktopBox && !expiryIsHandheld()){
+        clearTimeout(desktopBox._expirySuccessTimer);
+        const version=desktopBox._expiryStatusVersion=(desktopBox._expiryStatusVersion||0)+1;
+        if(kind==="success" && text!=="SAVE FOR REVIEW"){
+            desktopBox._expirySuccessTimer=setTimeout(()=>{
+                if(desktopBox._expiryStatusVersion===version)setExpiryStatus("ready","READY TO SCAN");
+            },2500);
+        }
+    }
     const box = document.getElementById("expiryScanStatus");
     if(box){
         const displayKind=expiryIsHandheld() && text==="SAVE FOR REVIEW" ? "error" : kind;

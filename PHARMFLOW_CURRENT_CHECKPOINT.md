@@ -42,3 +42,13 @@ https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.a
 Changed repository files: this execution record and PHARMFLOW_CURRENT_CHECKPOINT.md only; local documentation commit retained. Applied SQL tracked by Supabase migration history. No code/reset/force-push/Production changes.
 
 Remaining exact blocker: independent simultaneous SQL/RPC connections to an isolated test scope in Staging. A configured authorized Staging PostgreSQL connection or equivalent independent authenticated test transport is required. Credentials must be provisioned securely, never pasted into chat. Existing authorization is sufficient once that transport is available; do not reapply this migration. Enable group UI only after the required concurrent tests succeed.
+
+
+## 2026-10-14 — Group actions released after genuine concurrent Staging verification
+
+Deployed120eccacab01b23e7b69174c6b6d70eaa16443c3 READY. Existing20261013234424 migration not reapplied. Real overlapping independent pg_cron connections passed; complete browser5+2=7→9→5, Serial/retry/refresh/two-tab sync verified. Group actions ENABLED for current authenticated session only.77focusedPASS/buildPASS. Disposable fixture cleanup restored39Inventoryrows/100units and all pre-existing counts. Physical two-PC acceptance pending; READY FOR USER TEST; Production untouched. See docs/expiry-group-actions-release.md. This supersedes earlier blocked concurrency/disabled-action entries.
+
+
+## 2026-10-14 — Four final Desktop visual corrections
+
+Start remote/deployed09371ceab10d9da5cd7e6c2afa775a436c07f2f6 confirmed; Product Owner has verified prior grouping/Edit/Delete/search/synchronization. Outer3px brand accent, restrained table separation, success→READY after2500ms with version guard, fixed center350–420px search. Persistent Active Item/errors/Review unaffected; no search/group/business/backend changes.93focusedPASS/0FAIL/buildPASS. Candidate deploy and actual viewport evidence in delivery report; exact1366x768 remains UNVERIFIED if browser cannot resize. Staging only; Production untouched.

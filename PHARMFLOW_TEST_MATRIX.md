@@ -60,3 +60,8 @@ Login blocker cleared. Actual1363x936 inspected with8screenshots, tabs/hover/sea
 ## 2026-10-14 — Final focused polish / Serial-safe group review
 
 Fast final round: focusedUI72PASS/0FAIL; localDB34PASS/0FAIL/1nativeconcurrencySKIP; buildPASS. Latest fullbaseline610/43/1 not rerun. Serial-safe group increase and same-pharmacy different owner checks added. Actualnewvisual check pending.
+
+
+## 2026-10-14 — Four final Desktop visual corrections
+
+Start remote/deployed09371ceab10d9da5cd7e6c2afa775a436c07f2f6 confirmed; Product Owner has verified prior grouping/Edit/Delete/search/synchronization. Outer3px brand accent, restrained table separation, success→READY after2500ms with version guard, fixed center350–420px search. Persistent Active Item/errors/Review unaffected; no search/group/business/backend changes.93focusedPASS/0FAIL/buildPASS. Candidate deploy and actual viewport evidence in delivery report; exact1366x768 remains UNVERIFIED if browser cannot resize. Staging only; Production untouched.

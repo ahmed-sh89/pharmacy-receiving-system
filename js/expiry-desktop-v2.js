@@ -315,7 +315,7 @@
     if (mode === "SESSION") {
       body.innerHTML = rows.map((r, i) => {
         const available = groupEditable(r);
-        return '<tr' + (i === 0 ? ' class="expiryRowSavedStrong"' : '') +
+        return '<tr' +
           '><td class="expirySessionIdentifier"><strong>' + esc(r.item_code || '—') +
           '</strong><span>GTIN <b>' + esc(r.identifier_display || '—') + '</b></span></td>' +
           '<td class="expirySessionProduct"><strong>' + esc(r.item_name || 'Unknown item') + '</strong>' +
