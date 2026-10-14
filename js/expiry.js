@@ -1196,20 +1196,9 @@ async function saveExpiryCapture(options={}){
         try{
         if(item.needsReview&&typeof ExpiryReviewBackend!=="undefined")await ExpiryReviewBackend.refresh();
         refreshExpiryCapturedCount();
-        const savedRows=await refreshExpiryCurrentState();
-        if(Array.isArray(savedRows)){
-            const match=savedRows.find(row=>String(row.item_code||"")===String(item.itemCode||"") && Number(row.expiry_month)===month && Number(row.expiry_year)===year && String(row.batch_no||"")===String(toSafeString(gs1.lot||"")));
-            if(match){
-                ExpiryCaptureEngine.highlightedStateId=match.state_id;
-                renderExpiryCurrentState(savedRows);
-                const savedRow=document.querySelector('[data-expiry-state-id="'+String(match.state_id).replace(/"/g,'\\\"')+'"]');
-                if(savedRow){
-                    savedRow.classList.remove("expiryRowSavedStrong");
-                    void savedRow.offsetWidth;
-                    savedRow.classList.add("expiryRowSavedStrong");
-                    setTimeout(()=>savedRow.classList.remove("expiryRowSavedStrong"),5000);
-                }
-            }
+        await refreshExpiryCurrentState();
+        if(saveScope===expiryDraftScope() && !item.needsReview && typeof window.flashExpirySessionGroup==="function"){
+            window.flashExpirySessionGroup(saveResult.state_id);
         }
 
         }catch(error){

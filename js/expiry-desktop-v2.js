@@ -29,6 +29,32 @@
   const esc = (v) => expiryEscapeHtml(v ?? ""),
     el = (id) => document.getElementById(id);
   const scope = () => expiryDraftScope() + "/" + expirySignedAuthIdentity();
+  const savedFlashes = new Map();
+  const groupKey = (r) => JSON.stringify([r.pharmacy_id || expiryPharmacyId(),
+    r.effective_state_id || r.acknowledgement?.state_id || r.operation_id]);
+  function clearSavedFlashes() {
+    savedFlashes.forEach(f => clearTimeout(f.timer));
+    savedFlashes.clear();
+  }
+  window.flashExpirySessionGroup = function (stateId) {
+    if (!stateId || expiryIsHandheld() || !sessionHydrated) return;
+    const r = sessionGroups().find(r => (r.effective_state_id || r.acknowledgement?.state_id) === stateId);
+    if (!r) return;
+    const key = groupKey(r), ownScope = scope(), ownSession = sessionId;
+    const previous = savedFlashes.get(key);
+    if (previous) clearTimeout(previous.timer);
+    const flash = { scope: ownScope, session: ownSession, until: Date.now() + 1000 };
+    savedFlashes.set(key, flash);
+    render();
+    flash.timer = setTimeout(() => {
+      if (savedFlashes.get(key) !== flash) return;
+      savedFlashes.delete(key);
+      if (scope() !== ownScope || sessionId !== ownSession) return;
+      el("expiryCurrentStateBody").querySelectorAll("[data-expiry-group-key]").forEach(row => {
+        if (row.dataset.expiryGroupKey === key) row.classList.remove("expiryRowSavedStrong");
+      });
+    }, 1000);
+  };
   const month = (r) =>
     String(r.expiry_month).padStart(2, "0") + "/" + r.expiry_year;
   const periodMonth = (n) =>
@@ -173,8 +199,7 @@
     const groups = new Map();
     for (const r of currentRows()) {
       // Reuse the authoritative aggregate identity; do not infer grouping from name/serial.
-      const state = r.effective_state_id || r.acknowledgement?.state_id;
-      const key = JSON.stringify([r.pharmacy_id || expiryPharmacyId(), state || r.operation_id]);
+      const key = groupKey(r);
       if (!groups.has(key)) groups.set(key, { ...r, quantity: 0, members: [], captured_at: null, registrations: 0, adjustments: 0 });
       const g = groups.get(key);
       g.quantity += qty(r);
@@ -315,7 +340,9 @@
     if (mode === "SESSION") {
       body.innerHTML = rows.map((r, i) => {
         const available = groupEditable(r);
-        return '<tr' +
+        const flash = savedFlashes.get(groupKey(r));
+        const flashing = flash && flash.scope === scope() && flash.session === sessionId && flash.until > Date.now();
+        return '<tr data-expiry-group-key="' + esc(groupKey(r)) + '"' + (flashing ? ' class="expiryRowSavedStrong" style="--expiry-flash-delay:' + (flash.until - Date.now() - 1000) + 'ms"' : '') +
           '><td class="expirySessionIdentifier"><strong>' + esc(r.item_code || '—') +
           '</strong><span>GTIN <b>' + esc(r.identifier_display || '—') + '</b></span></td>' +
           '<td class="expirySessionProduct"><strong>' + esc(r.item_name || 'Unknown item') + '</strong>' +
@@ -443,6 +470,7 @@
     if (!el("expiryPager")) bind();
     const ownScope = scope();
     if (visibleScope !== ownScope) {
+      clearSavedFlashes();
       visibleScope = ownScope;
       sessionSearch = "";
       session = [];
@@ -1063,6 +1091,7 @@
     if (!expiryIsHandheld()) render();
   };
   window.resetExpiryDesktopSession = () => {
+    clearSavedFlashes();
     sessionSearch = "";
     session = [];
     sessionHydrated = false;

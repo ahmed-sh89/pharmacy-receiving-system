@@ -52,3 +52,8 @@ Deployed120eccacab01b23e7b69174c6b6d70eaa16443c3 READY. Existing20261013234424 m
 ## 2026-10-14 — Four final Desktop visual corrections
 
 Start remote/deployed09371ceab10d9da5cd7e6c2afa775a436c07f2f6 confirmed; Product Owner has verified prior grouping/Edit/Delete/search/synchronization. Outer3px brand accent, restrained table separation, success→READY after2500ms with version guard, fixed center350–420px search. Persistent Active Item/errors/Review unaffected; no search/group/business/backend changes.93focusedPASS/0FAIL/buildPASS. Candidate deploy and actual viewport evidence in delivery report; exact1366x768 remains UNVERIFIED if browser cannot resize. Staging only; Production untouched.
+
+
+## 2026-10-14 — Expiry Desktop final closure candidate
+
+Starting verified remote/Staging5949bd8275bfc949f014bc01789947af811a6c3f. Local8ba95280111731a8ddd6edae35a8d5f9d9e14afa preserved. Serial→Batch→Expiry→Year→Quantity, separate Year label, neutral editable Serial. Old Inventory row selector replaced with confirmed ACK state identity in canonical Session renderer;1000ms per-group flash, guarded timers, search preservation, reduced motion.98 focused tests PASS/0FAIL/0SKIP; production build PASS. Manual+GS1 payload mapping, grouped actions, metrics, search, scanner and2500ms success guards covered. No SQL/RPC/Supabase changes. Browser verification/release evidence recorded separately after deployment; exact1366×768 and populated-session flash screenshots pending availability. READY FOR USER TEST.
