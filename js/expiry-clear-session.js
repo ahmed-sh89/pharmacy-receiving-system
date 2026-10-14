@@ -6,6 +6,7 @@ async function expiryAssertClearSafe(){
     const e=ExpiryCaptureEngine;
     if((e.busy && !e.sessionClearing) || e.resolving || e.saveUncertain || e.currentItem || e.operation || e.pendingDraft)throw new Error('Save or reconcile the current capture before clearing the session');
     const scope=expiryDraftScope(),auth=expirySignedAuthIdentity();
+    await reconcileExpiryDesktopDrafts();
     const drafts=[await ExpiryDraftStore.get(scope),...(await ExpiryDraftStore.list(scope)).map(x=>x.draft)];
     if(scope!==expiryDraftScope() || auth!==expirySignedAuthIdentity())throw new Error('Clear account changed');
     if(drafts.some(x=>x && (x.item || x.operation || x.status==='UNCERTAIN')))throw new Error('A durable capture is pending — reconcile it before clearing');

@@ -144,15 +144,22 @@ const ExpiryOperation = (() => {
     }
     async function readReceipt(operation,rpc=authRpc){
         const payload=operation?.payload;
-        if(!operation?.id || !payload?.device_id || !payload.worker_id)throw new Error('Capture receipt scope unavailable');
-        const rows=await rpc('list_pharmflow_expiry_capture_receipts_v1',{
+        if(!operation?.id || !payload?.device_id || (payload.source!=='PC' && !payload.worker_id))throw new Error('Capture receipt scope unavailable');
+        const desktop=payload.source==='PC';
+        if(desktop && !operation.sessionId)throw new Error('Capture session scope unavailable');
+        const rows=desktop?await rpc('list_pharmflow_expiry_desktop_session_v1',{
+            p_pharmacy_id:operation.pharmacyId,p_session_id:operation.sessionId
+        }):await rpc('list_pharmflow_expiry_capture_receipts_v1',{
             p_pharmacy_id:operation.pharmacyId,p_device_id:payload.device_id,
             p_worker_id:payload.worker_id,p_operation_ids:[operation.id]
         });
         if(!Array.isArray(rows))throw new Error('Capture receipt reader incompatible');
-        if(!rows.length)return null;
-        const row=rows[0];
-        if(rows.length!==1 || row.operation_id!==operation.id || row.pharmacy_id!==operation.pharmacyId ||
+        const matches=desktop?rows.filter(row=>row.operation_id===operation.id):rows;
+        if(!matches.length)return null;
+        const row=matches[0];
+        // Corrected receipts may differ from the immutable original payload.
+        // Fail closed rather than treating current quantity as original evidence.
+        if(matches.length!==1 || row.operation_id!==operation.id || row.pharmacy_id!==operation.pharmacyId ||
            Object.entries(payload).some(([key,value])=>row[key]!==value))throw new Error('Capture receipt mismatch');
         acknowledgement(row.acknowledgement,operation.id,payload.kind);
         return row;

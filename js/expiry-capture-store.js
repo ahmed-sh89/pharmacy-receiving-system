@@ -38,7 +38,7 @@ const ExpiryDraftStore = (() => {
     }
     return {
         put(scope,draft){
-            const copy=structuredClone(draft);
+            const copy={...structuredClone(draft),storageRevision:crypto.randomUUID()};
             if(copy.scope!==scope)throw new Error("Draft scope mismatch");
             return transact(scope,"readwrite",(store,k)=>{
                 if(copy.sourceKey && copy.sourceKey.startsWith(scope+'/') && copy.sourceKey!==k)store.put(copy,copy.sourceKey);
@@ -66,6 +66,22 @@ const ExpiryDraftStore = (() => {
                         store.put(recovered,sourceKey);store.put(recovered,k);
                     };
                 };return {get result(){return recovered;}};
+            });
+        },
+        removeVerified(scope,entryKey,snapshot,guard=()=>{}){
+            if(snapshot.scope!==scope || (entryKey && !entryKey.startsWith(scope+'/')))throw new Error('Draft scope mismatch');
+            let removed=false;
+            return transact(scope,'readwrite',(store,k)=>{
+                const target=entryKey||k,row=store.get(target);
+                row.onsuccess=()=>{
+                    // Every put adds a revision, including writes to legacy records.
+                    // Compare the complete metadata as well, never delete a newer draft.
+                    try{guard();}catch(_){store.transaction.abort();return;}
+                    if(row.result && JSON.stringify(row.result)===JSON.stringify(snapshot)){
+                        store.delete(target);removed=true;
+                    }
+                };
+                return {get result(){return removed;}};
             });
         },
         remove:scope=>transact(scope,"readwrite",(store,k)=>{

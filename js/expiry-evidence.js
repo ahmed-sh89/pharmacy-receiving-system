@@ -44,7 +44,31 @@ function bindExpiryEvidence(){
 function expiryDraftDiscardable(draft){
     return draft.status==="DRAFT" && !!draft.operation?.id && !draft.operation?.payload && !Object.keys(draft.operation?.uploaded||{}).length;
 }
+async function reconcileExpiryDesktopDrafts(){
+    if(expiryIsHandheld())return;
+    const scope=expiryDraftScope(),auth=expirySignedAuthIdentity();
+    const guard=()=>{if(scope!==expiryDraftScope() || auth!==expirySignedAuthIdentity())throw new Error('Capture account changed');};
+    const current=await ExpiryDraftStore.get(scope);
+    const entries=[...(current?[{key:null,draft:current}]:[]),...await ExpiryDraftStore.list(scope)];
+    guard();
+    for(const {key,draft} of entries){
+        const op=draft.operation;
+        if(draft.scope!==scope || op?.pharmacyId!==expiryPharmacyId() || !op?.payload || op.payload.source!=='PC' || !op.sessionId)continue;
+        const reconcile=async()=>{
+            guard();
+            const receipt=await ExpiryOperation.readReceipt(op,authRpc);guard();
+            if(!receipt)return;
+            if(receipt.created_by!==AuthState.user?.id)throw new Error('Capture receipt owner mismatch');
+            await ExpiryDraftStore.removeVerified(scope,key,draft,guard);guard();
+        };
+        // Do not touch a capture another live tab is still editing or saving.
+        if(typeof navigator!=='undefined' && navigator.locks){
+            await navigator.locks.request('pharmflow-expiry-operation-'+op.id,{ifAvailable:true},async lock=>{if(lock)await reconcile();});
+        }else if(!key){await reconcile();}
+    }
+}
 async function prepareExpiryDraftRecovery(){
+    if(!expiryIsHandheld())await reconcileExpiryDesktopDrafts();
     const scope=expiryDraftScope(),draft=await ExpiryDraftStore.get(scope);
     if(scope!==expiryDraftScope())throw new Error("Capture account changed");
     if(!draft?.item || draft.scope!==scope)return false;

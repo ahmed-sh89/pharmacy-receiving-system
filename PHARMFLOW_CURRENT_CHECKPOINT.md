@@ -2,7 +2,7 @@
 
 ## Current scope and status
 
-Clear Session safety gates passed; READY FOR USER TEST after Staging deployment verification. Production/main/Production Supabase untouched. Repository ahmed-sh89/pharmacy-receiving-system; branch ONLY feature/expiry-stage1-visual-gate; Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks. Starting deployed SHA90e7c16bffc513014867d0af7330b0858602bee3; final release SHA is the commit containing this checkpoint and is recorded in the execution delivery report. Branch URL https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/.
+Clear Session remains BLOCKED pending Product Owner retest after the confirmed pending-capture acceptance failure. Final narrow Desktop reconciliation recovery is in this release; do not claim DONE or start another cycle if the same warning persists. Production/main/Production Supabase untouched. Repository ahmed-sh89/pharmacy-receiving-system; branch ONLY feature/expiry-stage1-visual-gate; Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks. Starting deployed SHA90e7c16bffc513014867d0af7330b0858602bee3; final release SHA is the commit containing this checkpoint and is recorded in the execution delivery report. Branch URL https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/.
 
 Original local repository0e20960 remains untouched at /workspace/scratch/a6aa23eff6c3/pharmflow. Prior unpublished group acceptance evidence retained. Full prior checkpoint/history preserved in docs/expiry-continuation-checkpoint-history.md. Older BLOCKED/prepared entries are superseded by this checkpoint, not to be replayed.
 
@@ -36,3 +36,13 @@ Windows: cancel preserves current rows; confirmed Clear gives zero current items
 ## Next action / non-regression
 
 Product Owner acceptance on existing Staging URL; report outcomes before Production promotion. Do not reapply migrations or delete/recount Inventory to clear a session. Protect pharmacy/user/auth/device isolation, old intent retention/idempotency, historical Serial/evidence/audits/Inventory contributions, scanner throughput/focus, grouping/search, GS1/quantity/month/year, Needs Review and Receiving. No Inventory-development workstream or unrelated refactor authorized.
+
+## Final Desktop reconciliation recovery — 14 October 2026
+
+Baseline446fe9e10404514f2c034679829db6ca7356bd46. Proven gap: cross-tab durable draft blocking lacked Desktop read-only committed-operation reconciliation. Reuse ExpiryOperation.readReceipt with the existing live Desktop session reader, original operation session, exact operation/pharmacy/device/payload and owner checks, valid acknowledgement. No save replay and no new SQL. Corrected/mismatched payloads, closed original sessions, missing identities, uncommitted operations and active-tab locks remain retained/blocked. This conservative proof may leave unprovable legacy drafts blocking Clear; do not bypass guard.
+
+Reconcile at Desktop recovery and before the existing Clear safety check. IndexedDB compare-and-delete removes only the exact verified record; revision on writes protects concurrent edits, account guard checked inside transaction, no wholesale storage reset. Orphan records require available per-operation Web Lock; existing Handheld reader/recovery remains unchanged. Historical Inventory/Serial/audit untouched (read-only RPCs only). Current local queue from affected user browser was not inspected; no claim that its particular operation was committed.
+
+Focused automated execution413 PASS/0 FAIL, including10 new recovery tests and existing Clear tests; build PASS. Broader diagnostic446:422 PASS/24 FAIL; all24 stale source-shape failures independently reproduced on exact baseline in expiry-stage1-identity.test.cjs (baseline33:9 PASS/24 FAIL). No safety/integration test failures. No SQL/production/Receiving changes.
+
+One acceptance attempt: affected browser refresh, open Expiry, Clear Session, confirm, refresh again; expect empty Session Activity while historical Inventory remains. If identical pending warning persists, recommend retiring Clear Session, preserving queued captures and historical records, instead of another development cycle. Status remains BLOCKED until successful user retest. Exact published SHA/deployment belongs in delivery.
