@@ -20,13 +20,13 @@ assert(html.includes('class="barcodeControlOverlay" aria-hidden="true" hidden'),
 assert(!html.includes('class="needsReviewOverlay barcodeControlOverlay"'),"Barcode Control must not inherit the Needs Review overlay implementation");
 assert(settings.includes("modal.hidden=false"),"Barcode Control open lifecycle must explicitly reveal the modal");
 assert(settings.includes("modal.hidden=true"),"Barcode Control close lifecycle must explicitly hide the modal");
-assert(css.includes(".barcodeControlOverlay[hidden]{display:none}"),"Barcode Control hidden state must override the Needs Review display rule");
+assert.match(css,/\.barcodeControlOverlay\[hidden\]\{display:none(?:!important)?\}/,"Barcode Control hidden state must override the Needs Review display rule");
 assert(html.includes('data-admin-search type="search"'),"Unified Settings search input is missing");
 assert(!html.includes('class="globalIdentifierMasterLookupGrid barcodeManagementLookup barcodeManagementUnifiedLookup"'),"Legacy inline barcode lookup must be removed");
 assert(!html.includes('id="btnGlobalIdentifierMasterClear"'),"Legacy full-size Clear button must be removed");
 assert(!html.includes("globalIdentifierMasterItemSearch"),"Legacy second item-search field must be removed");
-assert(settings.includes("IdentifierService.resolve(query)"),"Unified search must resolve exact barcodes");
-assert(settings.includes("IdentifierService.searchItems(query,12)"),"Unified search must search Item Code / Item Name");
+assert(settings.includes("IdentifierService.resolve(search.query)"),"Unified search must resolve exact barcodes");
+assert(settings.includes("IdentifierService.searchItems(search.query,12)"),"Unified search must search Item Code / Item Name");
 assert(settings.includes("+ Add Barcode"),"Add Barcode action is missing");
 assert(settings.includes("Remove Barcode"),"Remove Barcode action is missing");
 assert(settings.includes("Delete Item"),"Delete Item action is missing");
@@ -37,15 +37,15 @@ assert(settings.includes('auditReason("ADD_ITEM")'),"New Item must retain automa
 assert(!settings.includes("ActiveOrder"),"Settings barcode management must not depend on Active Order state");
 assert(!settings.includes("activeOrder"),"Settings barcode management must not depend on Active Order state");
 assert(settings.includes("parseGS1Barcode"),"Settings scanner input must reuse the Receiving GS1 parser");
-assert(settings.includes("searchInput.addEventListener(\"input\",queueSuggestions)"),"Manual typing must provide item suggestions");
+assert(settings.includes("searchInput.addEventListener(\"input\",event=>"),"Manual typing must provide item suggestions");
 assert(settings.includes("searchInput.addEventListener(\"keydown\""),"Enter search support is missing");
 assert(!settings.includes("setInterval"),"Barcode Management must not auto-reset on a timer");
-assert(!settings.includes("data-correct"),"Correct must not appear in the Settings workflow");
+assert(settings.includes("data-correct-barcode"),"Authorized barcode mappings must expose the explicit correction action");
 assert(!settings.includes("data-reason"),"Manual reason input must not appear in the Settings workflow");
 assert(settings.includes('auditReason("ADD_BARCODE")'),"Add must retain automatic audit reason");
 assert(settings.includes('auditReason("REMOVE_BARCODE")'),"Remove must retain automatic audit reason");
 assert(settings.includes('auditReason("DELETE_ITEM")'),"Delete must retain automatic audit reason");
-assert(settings.includes("The item itself will remain."),"Remove must clearly preserve the item");
+assert(settings.includes("the item itself will remain."),"Remove must clearly preserve the item");
 assert(service.includes("listPharmflow")===false,"Service naming guard");
 assert(service.includes("listPharmacyItemIdentifiers"),"Pharmacy barcode list service is missing");
 assert(service.includes("removeSettingsIdentifier"),"Coordinated HHP084 remove service is missing");
@@ -70,7 +70,7 @@ assert(!html.includes('id="mappingFilesList"'),"Legacy Mapping File list must be
 assert(!html.includes("Order &amp; Mapping Compatibility"),"Legacy Mapping File terminology must be removed from Manage Orders");
 console.log("PASS settings barcode management regression");
 
-assert(settings.includes("const deleteButton=buttonEvent.currentTarget"),"Delete Item must preserve the clicked button across async confirmation");
+assert(settings.includes("const button=event.currentTarget"),"Delete Item must preserve the clicked button across async confirmation");
 assert(settings.includes("const isPlainGtin=/^\\d{8,14}$/"),"GTIN parsing must be limited to plain GTIN or strong GS1 input");
 assert(settings.includes("isStrongGs1"),"Strong GS1 detection is required before parser normalization");
 assert(settings.includes("barcodeSuggestionCode"),"Suggestion results must show Item Code");

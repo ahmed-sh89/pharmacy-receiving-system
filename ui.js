@@ -8983,6 +8983,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
+    const isPharmacyMappingAdmin=()=>toSafeString(AuthState?.context?.member_role).trim().toLowerCase()==="admin";
     const isReferencePharmacyAdmin=()=>isCurrentPharmacyAdmin()&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
     const auditReason=action=>`SETTINGS_${action}`;
@@ -9057,13 +9058,17 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const loadBarcodeRows=async item=>{
         const itemCode=itemCodeOf(item);
-        const globalRows=await IdentifierService.listItemIdentifiers(itemCode);
-        if(canWriteGlobal()) return globalRows.map(row=>({...row,mappingScope:"GLOBAL",removable:true}));
-        const pharmacyRows=await IdentifierService.listPharmacyItemIdentifiers(itemCode);
-        const localKeys=new Set(pharmacyRows.map(row=>toSafeString(row.identifier_key)));
+        const [globalRows,pharmacyRows]=await Promise.all([
+            IdentifierService.listItemIdentifiers(itemCode),
+            IdentifierService.listPharmacyItemIdentifiers(itemCode)
+        ]);
+        const pharmacyKeys=new Set(pharmacyRows.map(row=>toSafeString(row.identifier_key||row.identifier_display).trim().toUpperCase()));
         return [
-            ...pharmacyRows.map(row=>({...row,mappingScope:"PHARMACY",removable:isCurrentPharmacyAdmin()})),
-            ...globalRows.filter(row=>!localKeys.has(toSafeString(row.identifier_key))).map(row=>({...row,mappingScope:"GLOBAL",removable:false}))
+            ...pharmacyRows.map(row=>({...row,mappingScope:"PHARMACY",removable:isPharmacyMappingAdmin(),correctable:isPharmacyMappingAdmin(),resolutionPriority:"PHARMACY"})),
+            ...globalRows.map(row=>{
+                const shadowed=pharmacyKeys.has(toSafeString(row.identifier_key||row.identifier_display).trim().toUpperCase());
+                return {...row,mappingScope:"GLOBAL",removable:canWriteGlobal(),correctable:canWriteGlobal(),resolutionPriority:shadowed?"FALLBACK":"GLOBAL"};
+            })
         ];
     };
     const renderBarcodeList=rows=>{
@@ -9071,8 +9076,9 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         return `<section class="barcodeListCard"><div class="barcodeSectionHeading"><span class="barcodeSectionLabel">BARCODES</span><strong>${rows.length} linked</strong></div><div class="barcodeRows">${rows.map((row,index)=>`
             <div class="barcodeManagementRow">
                 <strong>${esc(row.identifier_display)}</strong>
-                <span class="barcodeRowMeta ${row.mappingScope==="PHARMACY"?"isLocal":"isGlobal"}">${row.mappingScope==="PHARMACY"?"THIS PHARMACY":(!canWriteGlobal()?"GLOBAL":"GLOBAL MASTER")}</span>
-                ${row.removable?`<button type="button" class="barcodeRemoveButton" data-remove-barcode="${index}">Remove Barcode</button>`:""}
+                <span class="barcodeRowMeta ${row.mappingScope==="PHARMACY"?"isLocal":"isGlobal"}">${row.mappingScope==="PHARMACY"?"THIS PHARMACY · RESOLVES FIRST":(row.resolutionPriority==="FALLBACK"?"GLOBAL MASTER · LOWER PRIORITY":"GLOBAL MASTER · USED FOR RESOLUTION")}</span>
+                ${(row.correctable||row.removable)?`<span class="barcodeRowActions">${row.correctable?`<button type="button" class="barcodeCorrectButton" data-correct-barcode="${index}">Correct Mapping</button>`:""}${row.removable?`<button type="button" class="barcodeRemoveButton" data-remove-barcode="${index}">Remove Barcode</button>`:""}</span>`:""}
+                <div class="barcodeCorrectionHost" data-correction-host="${index}"></div>
             </div>`).join("")}</div></section>`;
     };
 
@@ -9138,14 +9144,48 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         workspace.querySelector("[data-new-identifier]")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();workspace.querySelector("[data-add-barcode]")?.click();}});
         workspace.querySelectorAll("[data-remove-barcode]").forEach(button=>button.addEventListener("click",async()=>{
             const row=rows[Number(button.dataset.removeBarcode)];if(!row||!row.removable)return;
-            const ok=await pharmFlowConfirm({title:"Remove Barcode?",message:`Remove ${toSafeString(row.identifier_display)} from this item? The item itself will remain.`,confirmText:"Remove Barcode",tone:"danger"});
+            const ok=await pharmFlowConfirm({title:"Remove Barcode Mapping?",message:`Remove only the ${row.mappingScope==="PHARMACY"?"current-pharmacy":"Global"} mapping for ${toSafeString(row.identifier_display)}? Any mapping in the other scope and the item itself will remain.`,confirmText:"Remove Mapping",tone:"danger"});
             if(!ok)return;button.disabled=true;
             try{
                 if(row.mappingScope==="PHARMACY")await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
-                else if(isReferencePharmacyAdmin())await IdentifierService.removeSettingsIdentifier(nrV2OperationId(),nrV2OperationId(),row.identifier_display,auditReason("REMOVE_BARCODE"));
                 else await IdentifierService.removeIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
                 await showItem(item);showToast?.("Barcode removed","success");
             }catch(error){button.disabled=false;showToast?.(error?.message||"Unable to remove barcode","error");}
+        }));
+        workspace.querySelectorAll("[data-correct-barcode]").forEach(button=>button.addEventListener("click",()=>{
+            const row=rows[Number(button.dataset.correctBarcode)];if(!row||!row.correctable)return;
+            const index=Number(button.dataset.correctBarcode);
+            const host=workspace.querySelector(`[data-correction-host="${index}"]`);
+            if(!host)return;
+            host.innerHTML=`<div class="barcodeCorrectionForm"><label>Search target item<input type="search" data-correction-query autocomplete="off" placeholder="Item Code or item name"></label><div class="barcodeCorrectionActions"><button type="button" class="secondaryButton" data-find-correction-target>Find Item</button><button type="button" class="secondaryButton" data-cancel-correction>Cancel</button></div><div class="barcodeCorrectionResults" data-correction-results></div></div>`;
+            const query=host.querySelector("[data-correction-query]");
+            const results=host.querySelector("[data-correction-results]");
+            host.querySelector("[data-cancel-correction]")?.addEventListener("click",()=>{host.innerHTML="";});
+            const findTarget=async()=>{
+                const value=toSafeString(query?.value).trim();if(!value){showToast?.("Enter a target Item Code or item name","warning");query?.focus();return;}
+                const findButton=host.querySelector("[data-find-correction-target]");findButton.disabled=true;
+                try{
+                    const targets=await IdentifierService.searchItems(value,12);
+                    results.innerHTML=targets.length?targets.map((target,targetIndex)=>`<button type="button" class="barcodeCorrectionTarget" data-correction-target="${targetIndex}"><strong>${esc(itemCodeOf(target))}</strong><span>${esc(itemNameOf(target))}</span></button>`).join(""):'<span class="barcodeCorrectionEmpty">No matching Global item found.</span>';
+                    results.querySelectorAll("[data-correction-target]").forEach(targetButton=>targetButton.addEventListener("click",async()=>{
+                        const target=targets[Number(targetButton.dataset.correctionTarget)];if(!target)return;
+                        if(itemCodeOf(target)===itemCode){showToast?.("Choose a different target item","warning");return;}
+                        const targetCode=itemCodeOf(target),targetName=itemNameOf(target);
+                        const confirmed=await pharmFlowConfirm({title:"Confirm Barcode Correction",message:`Correct ${toSafeString(row.identifier_display)} in ${row.mappingScope} scope to ${targetCode} — ${targetName}? Only this mapping will change. Confirm the physical package identifier before continuing.`,confirmText:`Correct to ${targetCode}`,tone:"warning"});
+                        if(!confirmed)return;
+                        targetButton.disabled=true;
+                        try{
+                            if(row.mappingScope==="PHARMACY")await IdentifierService.correctPharmacyIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,target,auditReason("CORRECT_BARCODE"));
+                            else await IdentifierService.correctIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,targetCode,auditReason("CORRECT_BARCODE"));
+                            await showItem(item);showToast?.("Barcode mapping corrected","success");
+                        }catch(error){targetButton.disabled=false;showToast?.(error?.message||"Unable to correct barcode mapping","error");}
+                    }));
+                }catch(error){showToast?.(error?.message||"Unable to search target items","error");}
+                finally{if(findButton.isConnected)findButton.disabled=false;}
+            };
+            host.querySelector("[data-find-correction-target]")?.addEventListener("click",findTarget);
+            query?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();findTarget();}});
+            query?.focus();
         }));
         workspace.querySelector("[data-delete-item]")?.addEventListener("click",async event=>{
             const button=event.currentTarget;
