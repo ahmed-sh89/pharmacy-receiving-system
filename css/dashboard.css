@@ -7129,7 +7129,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button:focus-visibl
 /* Session / inventory workspace. */
 
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiRow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 8px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentHeader[hidden],body:not(.zebraDevice) #zebraExpiryShell .expiryPager[hidden],body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu[hidden],body:not(.zebraDevice) #zebraExpiryShell .expiryKpiRow[hidden],body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard[hidden]{display:none!important}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentHeader[hidden],body:not(.zebraDevice) #zebraExpiryShell .expiryPager[hidden],body:not(.zebraDevice) #zebraExpiryShell .expiryKpiRow[hidden],body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard[hidden]{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiCard{display:block;min-width:0;padding:9px 12px;border:1px solid #d8e1ec;border-radius:10px;background:#fff;text-align:left;font:inherit;cursor:pointer;color:#233b57}
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiCard span{display:block;font-size:12px;font-weight:650;color:#566b81}
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiCard strong{display:block;font-size:24px;line-height:1.3;color:#243e60}
@@ -7333,7 +7333,7 @@ body:not(.zebraDevice) #zebraExpiryShell.appPage.active{display:flex!important;f
 
 
 
-body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{flex:none;width:100%;max-width:none;margin:0;padding:12px;border:1px solid #cad4e0;border-radius:10px;background:#eef3f8;box-shadow:none;box-sizing:border-box;overflow:visible}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureCard{flex:none;width:100%;max-width:none;margin:0;padding:12px;border:1px solid #cad4e0;border-radius:10px;background:#e3ecf5;box-shadow:none;box-sizing:border-box;overflow:visible}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions{display:flex;align-items:center;gap:16px}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSummary[hidden]{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric{display:grid;grid-template-columns:auto auto;align-items:center;gap:10px}
@@ -7441,13 +7441,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryActiveBadges>span{padding:2px 7p
 body:not(.zebraDevice) #zebraExpiryShell .expiryActiveBadges>span[hidden]{display:none}
 body:not(.zebraDevice) #zebraExpiryShell #btnExpiryQtyPlus{background:#e4f3e9;border-color:#a1cbb2;color:#22643f}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionCount{display:inline-grid;place-items:center;min-width:23px;padding:2px 6px;border-radius:12px;background:#e9e4f3;color:#52397e;font-size:12px}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu{position:relative;flex:none;align-self:flex-end;margin:0 10px 0 0}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu summary{display:grid;place-items:center;width:36px;height:36px;border-radius:7px;color:#53647b;font-size:25px;cursor:pointer;list-style:none}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu summary::-webkit-details-marker{display:none}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu>div{position:absolute;right:0;top:40px;z-index:190;width:168px;padding:5px;border:1px solid #d4dce7;border-radius:9px;background:#fff;box-shadow:0 8px 24px #23354d26}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu button{width:100%;min-height:38px;border:0;border-radius:5px;background:#fff;color:#a22c3c;font:600 13px inherit;cursor:pointer;text-align:left;padding:8px 10px}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu button:hover{background:#fff1f3}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMenu summary:focus-visible,body:not(.zebraDevice) #zebraExpiryShell .pfSelectOption:focus-visible{outline:2px solid #7454b4;outline-offset:2px}
+body:not(.zebraDevice) #zebraExpiryShell .pfSelectOption:focus-visible{outline:2px solid #7454b4;outline-offset:2px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentHeader[hidden]{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable thead tr[hidden]{display:none}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}

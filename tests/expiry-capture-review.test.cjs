@@ -80,7 +80,7 @@ test('Handheld retains worker guard, GS1 date locking and original GS1 payload',
  assert.equal(h.e('expiryQuantity').readOnly,true);assert.equal(h.e('expiryMonth').dataset.disabled,'true');h.e('expiryBatchInput').value='DESKTOP-ONLY';await h.c.saveExpiryCapture();assert.equal(h.calls[1].payload.p_capture.batch_no,'GS1-BATCH');assert.equal(h.calls[1].payload.p_capture.sample_serial,null);assert.equal(h.calls[1].payload.p_capture.worker_id,'worker1');
 });
 test('Critical capture IDs occur once and Session Activity markup is preserved',()=>{
- const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryCaptureValidation','expiryQuantity','expiryMonth','expiryYear','expiryBatchInput','expirySerialInput','btnExpiryQtyMinus','btnExpiryQtyPlus','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnClearExpirySession','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);
+ const html=fs.readFileSync('index.html','utf8');for(const id of ['expiryBarcodeInput','expiryCaptureValidation','expiryQuantity','expiryMonth','expiryYear','expiryBatchInput','expirySerialInput','btnExpiryQtyMinus','btnExpiryQtyPlus','btnSaveExpiryCapture','btnClearExpiryActive','expiryWorkerSelect','expiryCurrentStateBody','btnOpenExpiryInventory'])assert.equal(html.split(`id="${id}"`).length-1,1,id);
  const css=fs.readFileSync('css/dashboard.css','utf8');assert.doesNotMatch(css,/grid-area:(scan|qty|month|year|save|operator|active)!important/);
 });
 

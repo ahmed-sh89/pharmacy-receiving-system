@@ -1,5 +1,15 @@
 # PharmFlow current checkpoint — 14 October 2026
 
+## Latest authority: Clear Session retired — authorized Staging release
+
+Product Owner retired Clear Session after failed final acceptance. Starting/current deployed HEAD991f71b1d86e512306c1d5ce4a3fb3d809d64080. Verified focused retirement release: remove menu/row/handlers/new-rotation helpers/CSS; preserve row Edit/Delete and compact table; stronger cohesive full-card blue-gray#e3ecf5. No pending captures or storage removed. Preserve recovery ONLY for previously persisted Clear intents and its save guard; no new requests can be created. Existing ordinary Desktop/Handheld reconciliation retained. Both applied Staging SQL migrations retained unchanged, not rolled back or reapplied. Production/Receiving/etc untouched.
+
+405 focused tests PASS/0 FAIL; build PASS; diff check PASS. Tests updated to expect retirement/new background, not to bypass persistence safety. Controlled save comparison9 samples each:baseline446fe9e median77.69ms, deployed991f71b median78.08ms, candidate77.79ms, identical3 RPC sequence getter→reserve→Desktop save.25ms mocked RPC delay + real fake-indexeddb transactions. Not physical-user/live-network performance evidence; no proven latest reconciliation Save regression, so no Save code change.
+
+Release authorized explicitly by Product Owner: browser unavailability is not a release blocker.1366×768 visual verification PENDING USER TEST.547 focused Expiry/layout/persistence/Receiving safety tests PASS, production build PASS and diff check PASS. Broader diagnostics19 failures all reproduced on exact991f71b baseline with identical dependencies; zero new failures. Live Save latency NOT VERIFIED; synthetic measurements are not live latency evidence. Publish only feature/expiry-stage1-visual-gate to existing pharmflow-test Preview. No SQL changes. Final commit/deployment recorded in release response. No Clear Session redevelopment.
+
+Earlier sections below are historical and superseded by this latest section where inconsistent.
+
 ## Current scope and status
 
 Clear Session remains BLOCKED pending Product Owner retest after the confirmed pending-capture acceptance failure. Final narrow Desktop reconciliation recovery is in this release; do not claim DONE or start another cycle if the same warning persists. Production/main/Production Supabase untouched. Repository ahmed-sh89/pharmacy-receiving-system; branch ONLY feature/expiry-stage1-visual-gate; Vercel pharmflow-test; Supabase tovkcakucyagvbzvlnks. Starting deployed SHA90e7c16bffc513014867d0af7330b0858602bee3; final release SHA is the commit containing this checkpoint and is recorded in the execution delivery report. Branch URL https://pharmflow-test-git-feature-expiry-stage1-115007-fhyh2xtskz-3504.vercel.app/.
