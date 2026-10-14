@@ -447,7 +447,7 @@
       void refresh();
     };
   }
-  function refresh(options={}) {
+  function refresh() {
     const key = JSON.stringify([
       scope(),
       mode,
@@ -458,15 +458,13 @@
     ]);
     if (pendingRead?.key === key && pendingRead.version === requestVersion)
       return pendingRead.promise;
-    const promise = performRefresh(options).finally(() => {
+    const promise = performRefresh().finally(() => {
       if (pendingRead?.promise === promise) pendingRead = null;
     });
     pendingRead = { key, promise, version: requestVersion };
     return promise;
   }
-  async function performRefresh(options={}) {
-    const clock=()=>typeof performance!=="undefined"?performance.now():Date.now();
-    const measure=async(stage,fn)=>{const start=clock();try{return await fn();}finally{if(options.saveTiming && typeof expirySaveProbe==="function")expirySaveProbe(stage,clock()-start);}};
+  async function performRefresh() {
     if (expiryIsHandheld() || !expiryDraftScope()) return [];
     if (!el("expiryPager")) bind();
     try{if(typeof reconcileExpiryClearSession === "function")await reconcileExpiryClearSession();}
@@ -524,13 +522,13 @@
       }
       let next;
       if (requestMode === "SESSION") {
-        const nextSession = await measure("projectionSession",()=>ensureExpiryActiveSession({fresh:true}));
+        const nextSession = await ensureExpiryActiveSession({fresh:true});
         if(sessionId && nextSession!==sessionId){clearSavedFlashes();sessionSearch="";session=[];sessionHydrated=false;}
         sessionId=nextSession;
-        next = await measure("projectionList",()=>authRpc("list_pharmflow_expiry_desktop_session_v1", {
+        next = await authRpc("list_pharmflow_expiry_desktop_session_v1", {
           ...authArgs(),
           p_session_id: sessionId,
-        }));
+        });
       } else
         next = await authRpc("query_pharmflow_expiry_inventory_v1", {
           ...authArgs(),
@@ -542,7 +540,7 @@
         });
       const summary =
         !periods.length || Date.now() - lastSummary >= 30000
-          ? await measure("projectionSummary",()=>authRpc("summary_pharmflow_expiry_inventory_v1", authArgs()))
+          ? await authRpc("summary_pharmflow_expiry_inventory_v1", authArgs())
           : periods;
       if (ownScope !== scope() || version !== requestVersion) return [];
       const repaint =
@@ -565,7 +563,7 @@
         page = next;
         ExpiryCaptureEngine.currentRows = next.rows;
       }
-      if (repaint) {const start=clock();render();if(options.saveTiming && typeof expirySaveProbe==="function")expirySaveProbe("render",clock()-start);}
+      if (repaint) render();
       else if (mode === "INVENTORY") {
         updateToolbar();
         if (!page.rows.length) {
