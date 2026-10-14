@@ -24,7 +24,8 @@
     busy = false,
     returnFocus,
     sessionId,
-    viewportBound = false;
+    viewportBound = false,
+    sessionSearch = "";
   const esc = (v) => expiryEscapeHtml(v ?? ""),
     el = (id) => document.getElementById(id);
   const scope = () => expiryDraftScope() + "/" + expirySignedAuthIdentity();
@@ -276,7 +277,17 @@
     setMode();
     const body = el("expiryCurrentStateBody"),
       empty = el("expiryCurrentStateEmpty");
-    const rows = mode === "SESSION" ? sessionGroups() : page.rows;
+    const groups = mode === "SESSION" ? sessionGroups() : [],
+      query = sessionSearch.trim().toLocaleLowerCase(),
+      rows = mode === "SESSION" ? groups.filter(r => !query ||
+        [r.item_name, r.item_code, r.identifier_display, r.batch_no]
+          .some(v => String(v ?? "").toLocaleLowerCase().includes(query))) : page.rows;
+    const search = el("expirySessionSearch");
+    if (search) {
+      search.disabled = !sessionHydrated || !currentRows().length;
+      search.value = sessionSearch;
+      el("expirySessionSearchClear").hidden = !sessionSearch;
+    }
     el("expirySessionCount").textContent = sessionHydrated
       ? String(sessionGroups().length)
       : "…";
@@ -286,14 +297,16 @@
       body.innerHTML = "";
       empty.innerHTML =
         "<strong>" +
-        (mode === "SESSION"
+        (mode === "SESSION" && query && groups.length
+          ? "No matching session items"
+          : mode === "SESSION"
           ? sessionHydrated
             ? "No items captured in this session"
             : "Loading Session Activity"
           : "No matching expiry records") +
         "</strong><span>" +
         (mode === "SESSION"
-          ? "Scan or search above to start."
+          ? query && groups.length ? "Try another name, code, GTIN or batch, or clear session search." : "Scan or search above to start."
           : "Adjust filters or return to active Inventory.") +
         "</span>";
       if (mode === "INVENTORY") updateToolbar();
@@ -431,6 +444,7 @@
     const ownScope = scope();
     if (visibleScope !== ownScope) {
       visibleScope = ownScope;
+      sessionSearch = "";
       session = [];
       sessionHydrated = false;
       page = { rows: [], count: 0, units: 0, departments: [], months: [] };
@@ -861,6 +875,26 @@
   function bind() {
     originalBind();
     if (expiryIsHandheld()) return;
+    const sessionInput = el("expirySessionSearch");
+    if (sessionInput && !sessionInput.dataset.bound) {
+      sessionInput.dataset.bound = "1";
+      sessionInput.addEventListener("input", () => {
+        sessionSearch = sessionInput.value;
+        render();
+      });
+      const clearSessionSearch = () => {
+        sessionSearch = "";
+        render();
+        if (typeof focusExpiryScanner === "function") focusExpiryScanner();
+        else el("expiryBarcodeInput")?.focus({ preventScroll: true });
+      };
+      el("expirySessionSearchClear").onclick = clearSessionSearch;
+      sessionInput.addEventListener("keydown", e => {
+        e.stopPropagation();
+        if (e.key === "Enter") e.preventDefault();
+        if (e.key === "Escape") { e.preventDefault(); clearSessionSearch(); }
+      });
+    }
     if (!el("expiryPager")) {
       const footer = document.createElement("footer");
       footer.id = "expiryPager";
@@ -1029,6 +1063,7 @@
     if (!expiryIsHandheld()) render();
   };
   window.resetExpiryDesktopSession = () => {
+    sessionSearch = "";
     session = [];
     sessionHydrated = false;
     ExpiryCaptureEngine.sessionRows = [];

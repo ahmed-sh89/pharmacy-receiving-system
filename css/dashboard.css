@@ -7351,11 +7351,22 @@ body:not(.zebraDevice) #zebraExpiryShell #expiryBarcodeInput:focus{padding:0;bor
 body:not(.zebraDevice) #zebraExpiryShell #expiryBarcodeInput::placeholder{color:#66778c;font-size:14px;font-weight:500;opacity:1}
 body:not(.zebraDevice) #zebraExpiryShell .expiryOperatorActions{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:7px;min-width:0}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureActions{display:contents}
-body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus{grid-column:1/-1;grid-row:4;align-self:center;justify-self:start;max-width:100%;min-height:0;padding:0 2px;color:#4c5f77;font-size:12px;font-weight:700;line-height:1.35}
+body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureBottomRow{grid-column:1/-1;grid-row:4;display:flex;align-items:center;gap:12px;min-width:0}
+body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus{flex:0 1 auto;max-width:45%;min-height:0;padding:0 2px;color:#4c5f77;font-size:12px;font-weight:700;line-height:1.35}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch{display:flex;align-items:center;gap:8px;flex:1;max-width:520px;min-width:0;height:36px;padding:0 10px;border:1px solid var(--exp-border);border-radius:8px;background:#fff;box-sizing:border-box;color:var(--exp-muted)}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch:focus-within{border-color:#4e799f;box-shadow:0 0 0 3px #4e799f15}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch:has(input:disabled){background:#f6f8fb;color:#8a98aa}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch svg{flex:none;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearch{flex:1;min-width:0;width:100%;height:34px;margin:0;padding:0;border:0;border-radius:0;outline:0;background:transparent;box-shadow:none;color:var(--exp-text);font:550 13px "Segoe UI",Arial,sans-serif}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearch::placeholder{color:var(--exp-muted);font-weight:400}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearchClear{display:grid;place-items:center;flex:none;width:26px;height:26px;min-height:0;margin:0;padding:0;border:0;border-radius:6px;background:transparent;color:var(--exp-muted);cursor:pointer}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearchClear[hidden]{display:none}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearchClear:hover{background:#edf3f8;color:var(--exp-text)}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearchClear:focus-visible{outline:2px solid #628aad;outline-offset:1px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus:not([hidden]){padding:3px 7px;border:1px solid #d7e0eb;border-radius:7px;background:#f6f8fb}
 body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus.busy{border-color:#b7c9df;background:#f1f6fc;color:#345b84}
 body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus.success{border-color:#a9d8bd;background:#f0faf4;color:#246443}
-body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus.error{grid-column:1/-1;grid-row:4;justify-self:stretch;max-width:none;border-color:#e6b9c0;background:#fff5f6;color:#a12637}
+body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus.error{border-color:#e6b9c0;background:#fff5f6;color:#a12637}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScannerDiagnosticToggle{flex:none;max-width:132px;padding:4px 7px;border:1px solid #d0d9e4;border-radius:6px;background:#f7f9fc;color:#52647a;font-size:10px;line-height:1.2;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScannerDiagnosticToggle[hidden]{display:none}
 body:not(.zebraDevice) #zebraExpiryShell .expiryScannerDiagnosticToggle:focus-visible{outline:2px solid #7454b4;outline-offset:2px}
@@ -7473,7 +7484,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable tr.expiryRowSavedSt
 @media(max-width:800px){
   body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureRow{grid-template-columns:1fr}
  body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton{grid-column:1;grid-row:4;width:100%}
- body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus{grid-row:5}
+ body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureBottomRow{grid-row:5}
  body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
  body:not(.zebraDevice) #zebraExpiryShell .expiryQtyField{grid-column:1/-1}
  body:not(.zebraDevice) #zebraExpiryShell .expiryActiveItem{grid-template-columns:1fr}
