@@ -1,3 +1,6 @@
+# PharmFlow checkpoint — 14 October 2026
+Desktop visual layout USER VERIFIED; Save latency REJECTED (2–3s on pharmacy PC). Current work: temporary opt-in on-device diagnostic, NOT a performance fix. Baseline161d48c9b009b3086086e5e9ed4d24cefc35599e. Preview-only URL query expirySaveTiming=1 plus exact Staging Supabase tovkcakucyagvbzvlnks and Desktop gates. Numeric memory-only timestamps: durable writes, session/reserve/save RPC boundaries, authoritative acknowledgement, projection reads/state, confirmed group render/green flash, two-frame visibility boundary and scanner focus. Copy Timings needs no DevTools; no extra RPC/storage/logs/sensitive identifiers. Accepted design unchanged without opt-in. Timing instrumentation catches its own errors; preserves persistence and retry.552 focused tests PASS; build/diff checks PASS. Next: Product Owner captures ONE real Windows PC sample and shares copied report. Then identify measured owner and implement narrow fix; do not claim performance fixed. Clear Session stays retired; historical Inventory/Serial/audit, pending captures, Handheld and Production untouched. No SQL. Prior browser save test retained one synthetic FLUTAB LATENCYTEST record; browser console access unavailable, not retried.
+
 # PharmFlow current checkpoint — 14 October 2026
 
 ## Latest authority: Clear Session retired — authorized Staging release

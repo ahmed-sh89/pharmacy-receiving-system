@@ -46,6 +46,11 @@
     const flash = { scope: ownScope, session: ownSession, until: Date.now() + 1000 };
     savedFlashes.set(key, flash);
     render();
+    if(typeof ExpirySaveDiagnostic!=="undefined"){
+      ExpirySaveDiagnostic.mark("greenFlash");
+      const row=Array.from(el("expiryCurrentStateBody").querySelectorAll("[data-expiry-group-key]")).find(row=>row.dataset.expiryGroupKey===key);
+      if(row)ExpirySaveDiagnostic.paint(row);
+    }
     flash.timer = setTimeout(() => {
       if (savedFlashes.get(key) !== flash) return;
       savedFlashes.delete(key);
@@ -522,13 +527,17 @@
       }
       let next;
       if (requestMode === "SESSION") {
+        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("projectionSessionStart");
         const nextSession = await ensureExpiryActiveSession({fresh:true});
+        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("projectionSessionEnd");
         if(sessionId && nextSession!==sessionId){clearSavedFlashes();sessionSearch="";session=[];sessionHydrated=false;}
         sessionId=nextSession;
+        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("rowsRequest");
         next = await authRpc("list_pharmflow_expiry_desktop_session_v1", {
           ...authArgs(),
           p_session_id: sessionId,
         });
+        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("rowsResponse");
       } else
         next = await authRpc("query_pharmflow_expiry_inventory_v1", {
           ...authArgs(),
@@ -538,10 +547,12 @@
           p_offset: offset,
           p_limit: 50,
         });
-      const summary =
-        !periods.length || Date.now() - lastSummary >= 30000
+      const needsSummary=!periods.length || Date.now() - lastSummary >= 30000;
+      if(needsSummary && typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryRequest");
+      const summary = needsSummary
           ? await authRpc("summary_pharmflow_expiry_inventory_v1", authArgs())
           : periods;
+      if(needsSummary && typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryResponse");
       if (ownScope !== scope() || version !== requestVersion) return [];
       const repaint =
         (requestMode === "SESSION" && !sessionHydrated) ||
@@ -559,6 +570,7 @@
         sessionHydrated = true;
         session = next.filter((r) => r.kind === "KNOWN");
         ExpiryCaptureEngine.sessionRows = session;
+        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("stateUpdated");
       } else {
         page = next;
         ExpiryCaptureEngine.currentRows = next.rows;
@@ -1101,6 +1113,7 @@
     ExpiryCaptureEngine.sessionRows = [];
     ExpiryCaptureEngine.currentRows = [];
     page = { rows: [], count: 0, units: 0, departments: [], months: [] };
+    if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.reset();
     visibleScope = null;
     sessionId = null;
     periods = [];

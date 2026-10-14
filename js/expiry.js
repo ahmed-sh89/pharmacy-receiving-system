@@ -728,6 +728,7 @@ function focusExpiryScanner(){
     input.setAttribute("inputmode",expiryIsHandheld()?"none":"text");
     input.setAttribute("autocomplete","off");
     try{ input.focus({preventScroll:true}); }catch(_){ input.focus(); }
+    if(document.activeElement===input && typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("scannerFocus");
 }
 
 function expiryIdentifierFromScan(cleaned, parsed){
@@ -1066,9 +1067,13 @@ async function resolveExpiryScannedValue(rawValue){
 async function saveExpiryCapture(options={}){
     const saveClock=()=>typeof performance!=="undefined"?performance.now():Date.now();
     const handlerStarted=saveClock();
+    const diagnostic=typeof ExpirySaveDiagnostic!=="undefined"?ExpirySaveDiagnostic:null;
+    let diagnosticToken=null;
+    const mark=stage=>diagnostic?.mark(stage,diagnosticToken);
     if((!expiryIsHandheld() && typeof expiryHasClearIntent==="function" && expiryHasClearIntent()) || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving){setExpiryStatus("busy","SAVE IN PROGRESS — WAIT FOR THE RESULT");return;}
     if(ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload){setExpiryStatus("error","RESULT UNCERTAIN — NO SAFE RETRY PAYLOAD; CONTACT SUPPORT BEFORE RESCANNING");return;}
 
+    diagnosticToken=diagnostic?.begin();
     cancelExpiryScanAutoClear();
 
     const item = ExpiryCaptureEngine.currentItem;
@@ -1122,7 +1127,7 @@ async function saveExpiryCapture(options={}){
     setExpiryStatus("busy","SAVING...");
     if(button)button.textContent="SAVING…";
     const saveStarted=handlerStarted;const timings={validationMs:saveClock()-handlerStarted,handlerToFeedbackMs:saveClock()-handlerStarted,rpcMs:0,photoMs:0,localPersistenceMs:0,ackTransitionMs:0};
-    const measuredPersist=async status=>{const start=saveClock();try{return await persistExpiryDraft(status);}finally{timings.localPersistenceMs+=saveClock()-start;}};
+    const measuredPersist=async status=>{const start=saveClock();try{return await persistExpiryDraft(status);}finally{timings.localPersistenceMs+=saveClock()-start;mark("durable");}};
     const captureControls=["expiryQuantity","expiryBatchInput","expirySerialInput"].map(id=>document.getElementById(id)).filter(Boolean);
     const controlStates=captureControls.map(el=>[el,el.disabled]);
     captureControls.forEach(el=>el.disabled=true);
@@ -1156,14 +1161,14 @@ async function saveExpiryCapture(options={}){
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||"",...(item.needsReview&&ExpiryCaptureEngine.identificationNote?{identification_note:ExpiryCaptureEngine.identificationNote}:{})};
         const operation=ExpiryCaptureEngine.operation;
-        {const start=saveClock(),sessionId=await ensureExpiryActiveSession({fresh:!expiryIsHandheld()});timings.rpcMs+=saveClock()-start;
+        {mark("sessionRequest");const start=saveClock(),sessionId=await ensureExpiryActiveSession({fresh:!expiryIsHandheld()});timings.rpcMs+=saveClock()-start;mark("sessionResponse");
             // Persisted operations belong to their original session, including ACK retries after Clear.
             if(!operation.sessionId){if(operation.payload)throw new Error("Pending capture session identity unavailable — capture retained for reconciliation");operation.sessionId=sessionId;await measuredPersist();}
         }
-        const measuredRpc=async(name,args)=>{const start=saveClock();try{
+        const measuredRpc=async(name,args)=>{const stage=name==="save_pharmflow_expiry_capture_v3"?"save":"reserve";mark(stage+"Request");const start=saveClock();try{
             if(name==="save_pharmflow_expiry_capture_v3")return await authRpc(expiryIsHandheld()?"save_pharmflow_expiry_session_capture_v2":"save_pharmflow_expiry_desktop_capture_v1",{...args,p_session_id:operation.sessionId});
             return await authRpc(name,args);
-        }finally{timings.rpcMs+=saveClock()-start;}};
+        }finally{timings.rpcMs+=saveClock()-start;mark(stage+"Response");}};
         const measuredUpload=async(path,file)=>{const start=saveClock();try{return await ExpiryOperation.upload(path,file);}finally{timings.photoMs+=saveClock()-start;}};
         const saveResult=await ExpiryOperation.save({rpc:measuredRpc,upload:measuredUpload,
             persist:measuredPersist,scope:saveScope,currentScope:expiryDraftScope,
@@ -1174,7 +1179,7 @@ async function saveExpiryCapture(options={}){
 
         // Authoritative save acknowledgement is sufficient. History reads server receipts on demand.
         if(saveScope!==expiryDraftScope())throw new Error("Capture account changed");
-        acknowledged=true;
+        acknowledged=true;mark("acknowledged");
         if(saveScope!==expiryDraftScope()) return;
         await measuredPersist("ACKNOWLEDGED");
         await ExpiryDraftStore.remove(saveScope);
@@ -1200,6 +1205,7 @@ async function saveExpiryCapture(options={}){
         try{
         if(item.needsReview&&typeof ExpiryReviewBackend!=="undefined")await ExpiryReviewBackend.refresh();
         refreshExpiryCapturedCount();
+        mark("reconciliationStart");
         await refreshExpiryCurrentState();
         if(saveScope===expiryDraftScope() && !item.needsReview && typeof window.flashExpirySessionGroup==="function"){
             window.flashExpirySessionGroup(saveResult.state_id,operation.sessionId,operation.id);
@@ -1236,6 +1242,7 @@ async function saveExpiryCapture(options={}){
     }finally{
         ExpiryCaptureEngine.busy = false;
         renderExpiryEvidence();
+        mark("finished");
         if(!ExpiryCaptureEngine.saveUncertain){
             controlStates.forEach(([el,disabled])=>el.disabled=ExpiryCaptureEngine.currentItem?disabled:false);
             selectStates.forEach(([el,disabled])=>setExpirySelectDisabled(el,ExpiryCaptureEngine.currentItem?disabled:false));
