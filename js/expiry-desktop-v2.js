@@ -47,11 +47,6 @@
     const flash = { scope: ownScope, session: ownSession, until: Date.now() + 1000 };
     savedFlashes.set(key, flash);
     render();
-    if(typeof ExpirySaveDiagnostic!=="undefined"){
-      ExpirySaveDiagnostic.mark("greenFlash");
-      const row=Array.from(el("expiryCurrentStateBody").querySelectorAll("[data-expiry-group-key]")).find(row=>row.dataset.expiryGroupKey===key);
-      if(row)ExpirySaveDiagnostic.paint(row);
-    }
     flash.timer = setTimeout(() => {
       if (savedFlashes.get(key) !== flash) return;
       savedFlashes.delete(key);
@@ -473,9 +468,7 @@
   }
   function readSummary(ownScope){
     if(pendingSummary?.scope===ownScope)return pendingSummary.promise;
-    if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryRequest");
     const promise=authRpc("summary_pharmflow_expiry_inventory_v1",authArgs()).then(rows=>{
-      if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("inventoryResponse");
       return rows;
     }).finally(()=>{if(pendingSummary?.promise===promise)pendingSummary=null;});
     pendingSummary={scope:ownScope,promise};return promise;
@@ -545,20 +538,16 @@
       }).catch(()=>{}); // Inventory entry retries; a read failure cannot hide a confirmed save.
       let next;
       if (requestMode === "SESSION") {
-        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("projectionSessionStart");
         // Only the immediately acknowledged save can reuse this hydrated signed session.
         // Other refreshes retain fresh session discovery and old-intent reconciliation above.
         const confirmedSession=sessionHydrated && options.confirmedOperationId && options.confirmedSessionId===sessionId;
         const nextSession = confirmedSession?sessionId:await ensureExpiryActiveSession({fresh:true});
-        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("projectionSessionEnd");
         if(sessionId && nextSession!==sessionId){clearSavedFlashes();sessionSearch="";session=[];sessionHydrated=false;}
         sessionId=nextSession;
-        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("rowsRequest");
         next = await authRpc("list_pharmflow_expiry_desktop_session_v1", {
           ...authArgs(),
           p_session_id: sessionId,
         });
-        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("rowsResponse");
       } else
         next = await authRpc("query_pharmflow_expiry_inventory_v1", {
           ...authArgs(),
@@ -586,7 +575,6 @@
         sessionHydrated = true;
         session = next.filter((r) => r.kind === "KNOWN");
         ExpiryCaptureEngine.sessionRows = session;
-        if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.mark("stateUpdated");
       } else {
         page = next;
         ExpiryCaptureEngine.currentRows = next.rows;
@@ -1129,7 +1117,6 @@
     ExpiryCaptureEngine.sessionRows = [];
     ExpiryCaptureEngine.currentRows = [];
     page = { rows: [], count: 0, units: 0, departments: [], months: [] };
-    if(typeof ExpirySaveDiagnostic!=="undefined")ExpirySaveDiagnostic.reset();
     visibleScope = null;
     sessionId = null;
     periods = [];

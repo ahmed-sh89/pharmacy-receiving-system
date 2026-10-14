@@ -7353,11 +7353,11 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryOperatorActions{display:grid;gri
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureActions{display:contents}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureBottomRow{grid-column:1/-1;grid-row:4;display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,420px) minmax(0,1fr);align-items:center;gap:16px;min-width:0}
 body:not(.zebraDevice) #zebraExpiryShell .expiryDesktopStatus{grid-column:1;justify-self:start;min-width:0;max-width:100%;min-height:0;padding:0 2px;color:#4c5f77;font-size:12px;font-weight:700;line-height:1.35}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch{grid-column:2;display:flex;align-items:center;gap:8px;width:100%;max-width:420px;min-width:0;height:36px;padding:0 10px;border:1px solid var(--exp-border);border-radius:8px;background:#fff;box-sizing:border-box;color:var(--exp-muted)}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch{grid-column:2;display:flex;align-items:center;gap:8px;width:100%;max-width:420px;min-width:0;height:36px;padding:0 10px;border:1px solid var(--exp-border);border-radius:8px;background:#fff;box-sizing:border-box;overflow:hidden;color:var(--exp-muted)}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch:focus-within{border-color:#4e799f;box-shadow:0 0 0 3px #4e799f15}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch:has(input:disabled){background:#f6f8fb;color:#8a98aa}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSearch svg{flex:none;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
-body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearch{flex:1;min-width:0;width:100%;height:34px;margin:0;padding:0;border:0;border-radius:0;outline:0;background:transparent;box-shadow:none;color:var(--exp-text);font:550 13px "Segoe UI",Arial,sans-serif}
+body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearch{flex:1;min-width:0;width:100%;height:34px;min-height:0;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:0;outline:0;background:transparent;box-shadow:none;color:var(--exp-text);font:550 13px "Segoe UI",Arial,sans-serif}
 body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearch::placeholder{color:var(--exp-muted);font-weight:400}
 body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearchClear{display:grid;place-items:center;flex:none;width:26px;height:26px;min-height:0;margin:0;padding:0;border:0;border-radius:6px;background:transparent;color:var(--exp-muted);cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell #expirySessionSearchClear[hidden]{display:none}
