@@ -7389,7 +7389,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryEntryGrid{grid-column:1;grid-row
 body:not(.zebraDevice) #zebraExpiryShell .expiryReviewField{display:flex;flex-direction:column;gap:3px;min-width:0;padding:0;margin:0;border:0;background:none}
 body:not(.zebraDevice) #zebraExpiryShell .expiryControlLabel{display:block;height:17px;margin:0;font-size:13px;line-height:17px;font-weight:650;color:var(--exp-text)}
 body:not(.zebraDevice) #zebraExpiryShell .expiryReviewField>input{width:100%;height:40px;min-height:40px;padding:0 10px;border:1px solid #cad4e0;border-radius:8px;background:#fff;color:#263950;font-family:inherit;font-size:15px;box-sizing:border-box}
-body:not(.zebraDevice) #zebraExpiryShell .expirySerialField>input{background:#f7f9fb;border-color:#dce3eb}
+body:not(.zebraDevice) #zebraExpiryShell .expirySerialField>input:not(:focus){background:#f7f9fb!important;border-color:#dce3eb!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySerialField>input::placeholder{color:#8b97a7}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureValidation{flex:0 1 auto;max-width:45%;color:#b42335;font-size:12px;font-weight:650;line-height:1.2}
 body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureValidation[hidden],body:not(.zebraDevice) #zebraExpiryShell #expiryWorkspaceSubtitle[hidden]{display:none!important}
