@@ -36,10 +36,10 @@
     savedFlashes.forEach(f => clearTimeout(f.timer));
     savedFlashes.clear();
   }
-  window.flashExpirySessionGroup = function (stateId) {
-    if (!stateId || expiryIsHandheld() || !sessionHydrated) return;
+  window.flashExpirySessionGroup = function (stateId, confirmedSessionId = sessionId, operationId) {
+    if (!stateId || expiryIsHandheld() || !sessionHydrated || confirmedSessionId !== sessionId) return;
     const r = sessionGroups().find(r => (r.effective_state_id || r.acknowledgement?.state_id) === stateId);
-    if (!r) return;
+    if (!r || (operationId && !r.members.some(m => m.operation_id === operationId))) return;
     const key = groupKey(r), ownScope = scope(), ownSession = sessionId;
     const previous = savedFlashes.get(key);
     if (previous) clearTimeout(previous.timer);

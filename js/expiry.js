@@ -1198,7 +1198,7 @@ async function saveExpiryCapture(options={}){
         refreshExpiryCapturedCount();
         await refreshExpiryCurrentState();
         if(saveScope===expiryDraftScope() && !item.needsReview && typeof window.flashExpirySessionGroup==="function"){
-            window.flashExpirySessionGroup(saveResult.state_id);
+            window.flashExpirySessionGroup(saveResult.state_id,operation.sessionId,operation.id);
         }
 
         }catch(error){
