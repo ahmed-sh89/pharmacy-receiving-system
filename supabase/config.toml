@@ -1,0 +1,4 @@
+project_id = "pharmacy-receiving-system"
+
+[functions.pharmflow-expiry-photo-cleanup]
+verify_jwt = false

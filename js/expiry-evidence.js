@@ -1,0 +1,151 @@
+/* One camera input and one evidence image for each Expiry review case. */
+let expiryPreviewURLs=[];
+function renderExpiryEvidence(){
+    const panel=document.getElementById('expiryEvidence');if(!panel)return;
+    const engine=ExpiryCaptureEngine;
+    panel.hidden=!expiryIsHandheld() || !engine.currentItem?.needsReview;
+    expiryPreviewURLs.forEach(url=>URL.revokeObjectURL(url));expiryPreviewURLs=[];
+    const previews=document.getElementById('expiryEvidencePreviews');if(previews)previews.replaceChildren();
+    if(panel.hidden)return;
+    const photo=engine.reviewPhotos.evidence||engine.reviewPhotos.product;
+    // Photo values stay in the durable draft; previews belong in saved case details only.
+    const next=document.getElementById('btnExpiryPhoto');
+    const ready=typeof ExpiryReviewBackend!=='undefined'&&ExpiryReviewBackend.ready;
+    if(next){next.hidden=false;next.innerHTML=`<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14v12H3z M5 14l4-4 3 3 2-2 2 3"/></svg><span>${photo?"Photo added":"Add Photo"}</span>`;next.setAttribute("aria-label",photo?"View or edit draft photo":"Add Photo");next.disabled=engine.busy||engine.saveUncertain||!ready;}
+    const message=document.getElementById('expiryEvidenceMessage');if(message){message.textContent='';message.hidden=true;}
+    const note=document.getElementById('btnExpiryNote');if(note){note.innerHTML=`<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 15 14 5l3 3-10 10H4z"/></svg><span>${engine.identificationNote?'Note added':'Add Note'}</span>`;note.disabled=engine.busy||engine.saveUncertain;}
+    const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent=engine.busy?'SAVING…':'SAVE & NEXT';save.disabled=engine.busy||engine.saveUncertain||!ready;}
+}
+function bindExpiryEvidence(){
+    const input=document.getElementById('expiryCameraInput');if(!input || input.dataset.bound==='1')return;
+    input.dataset.bound='1';
+    const open=()=>{
+        if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || !ExpiryReviewBackend.ready)return;
+        const photo=ExpiryCaptureEngine.reviewPhotos.evidence||ExpiryCaptureEngine.reviewPhotos.product;
+        if(photo){const scope=expiryDraftScope(),item=ExpiryCaptureEngine.currentItem,authIdentity=expirySignedAuthIdentity();const guard=()=>{if(scope!==expiryDraftScope()||item!==ExpiryCaptureEngine.currentItem||authIdentity!==expirySignedAuthIdentity()||ExpiryCaptureEngine.busy)throw new Error('Draft context changed');};const url=URL.createObjectURL(photo);openExpiryPhotoViewer(url,{onClose:()=>URL.revokeObjectURL(url),onRetake:()=>{guard();if(ExpiryCaptureEngine.operation?.payload||Object.keys(ExpiryCaptureEngine.operation?.uploaded||{}).length)throw new Error('Check the pending save first');input.value='';input.click();},onRemove:async()=>{guard();if(ExpiryCaptureEngine.operation?.payload || Object.keys(ExpiryCaptureEngine.operation?.uploaded||{}).length)throw new Error('Check the pending save first');ExpiryCaptureEngine.reviewPhotos={evidence:null,product:null,expiry:null};await persistExpiryDraft();renderExpiryEvidence();}});return;}
+        input.value='';input.click();
+    };
+    document.getElementById('btnExpiryPhoto')?.addEventListener('click',open);
+    document.getElementById('btnExpiryNote')?.addEventListener('click',openExpiryNoteEditor);
+    input.addEventListener('change',async()=>{
+        let file=input.files?.[0];if(!file)return;
+        if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain)return;
+        ExpiryCaptureEngine.resolving=true;
+        try{
+            if(typeof nrV2PreparePhoto==="function")file=await nrV2PreparePhoto(file);
+            await setExpiryEvidencePhoto('evidence',file);
+            renderExpiryEvidence();
+            setExpiryStatus('action','EVIDENCE READY — SUBMIT FOR REVIEW');
+        }catch(error){setExpiryStatus('error',String(error.message)+' — CAPTURE RETAINED');}
+        finally{ExpiryCaptureEngine.resolving=false;input.value='';focusExpiryScanner();}
+    });
+}
+
+function expiryDraftDiscardable(draft){
+    return draft.status==="DRAFT" && !!draft.operation?.id && !draft.operation?.payload && !Object.keys(draft.operation?.uploaded||{}).length;
+}
+async function reconcileExpiryDesktopDrafts(){
+    if(expiryIsHandheld())return;
+    const scope=expiryDraftScope(),auth=expirySignedAuthIdentity();
+    const guard=()=>{if(scope!==expiryDraftScope() || auth!==expirySignedAuthIdentity())throw new Error('Capture account changed');};
+    const current=await ExpiryDraftStore.get(scope);
+    const entries=[...(current?[{key:null,draft:current}]:[]),...await ExpiryDraftStore.list(scope)];
+    guard();
+    for(const {key,draft} of entries){
+        const op=draft.operation;
+        if(draft.scope!==scope || op?.pharmacyId!==expiryPharmacyId() || !op?.payload || op.payload.source!=='PC' || !op.sessionId)continue;
+        const reconcile=async()=>{
+            guard();
+            const receipt=await ExpiryOperation.readReceipt(op,authRpc);guard();
+            if(!receipt)return;
+            if(receipt.created_by!==AuthState.user?.id)throw new Error('Capture receipt owner mismatch');
+            await ExpiryDraftStore.removeVerified(scope,key,draft,guard);guard();
+        };
+        // Do not touch a capture another live tab is still editing or saving.
+        if(typeof navigator!=='undefined' && navigator.locks){
+            await navigator.locks.request('pharmflow-expiry-operation-'+op.id,{ifAvailable:true},async lock=>{if(lock)await reconcile();});
+        }else if(!key){await reconcile();}
+    }
+}
+async function prepareExpiryDraftRecovery(){
+    if(!expiryIsHandheld())await reconcileExpiryDesktopDrafts();
+    const scope=expiryDraftScope(),draft=await ExpiryDraftStore.get(scope);
+    if(scope!==expiryDraftScope())throw new Error("Capture account changed");
+    if(!draft?.item || draft.scope!==scope)return false;
+    const device=draft.deviceId||draft.operation?.payload?.device_id;
+    if(expiryIsHandheld() && device && device!==expiryDeviceId())throw new Error("Draft belongs to another device");
+    // An acknowledged or uncertain write is checked read-only, never replayed.
+    if(expiryIsHandheld() && draft.operation?.payload){
+        const receipt=await ExpiryOperation.readReceipt(draft.operation,authRpc);
+        if(scope!==expiryDraftScope())throw new Error("Capture account changed");
+        if(receipt){
+            const previous=ExpiryCaptureEngine.selectedWorkerId;
+            try{ExpiryCaptureEngine.selectedWorkerId=draft.workerId;rememberExpiryReceipt(receipt);}
+            finally{ExpiryCaptureEngine.selectedWorkerId=previous;}
+            await ExpiryDraftStore.remove(scope);
+            return false;
+        }
+    }
+    ExpiryCaptureEngine.pendingDraft={scope,draft};
+    ExpiryCaptureEngine.draftReady=false;
+    await renderExpiryRecoverableDrafts();
+    setExpiryStatus("action","Unsaved Capture · Resume or Discard");
+    return true;
+}
+async function renderExpiryRecoverableDrafts(){
+    const panel=document.getElementById('expiryRecoverableDrafts');if(!panel)return;
+    panel.replaceChildren();panel.hidden=true;
+    const scope=expiryDraftScope();
+    let entries=ExpiryCaptureEngine.pendingDraft?[{key:null,draft:ExpiryCaptureEngine.pendingDraft.draft}]:(ExpiryDraftStore.list?await ExpiryDraftStore.list(scope):[]);
+    if(scope!==expiryDraftScope() || ExpiryCaptureEngine.currentItem)return;
+    entries=entries.filter(({draft})=>draft.scope===scope && (!expiryIsHandheld() || !draft.deviceId || draft.deviceId===expiryDeviceId()));
+    for(const {key,draft} of entries){
+        const row=document.createElement('div');row.className='expiryDraftRecovery';
+        const label=document.createElement('strong');label.textContent='Unsaved Capture';row.appendChild(label);
+        const detail=document.createElement('span');detail.textContent=draft.item.identifierDisplay+(expiryDraftDiscardable(draft)?'':' · Save status requires checking');row.appendChild(detail);
+        const action=async discard=>{
+            if(scope!==expiryDraftScope() || ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.busy)return;
+            if(discard && !expiryDraftDiscardable(draft))return;
+            if(key && (typeof navigator==='undefined' || !navigator.locks)){setExpiryStatus('error','Cross-tab recovery unavailable — draft retained');return;}
+            ExpiryCaptureEngine.busy=true;
+            try{
+                await claimExpiryOperation(draft.operation?.id);
+                if(key)await ExpiryDraftStore.recover(scope,key);
+                if(discard){
+                    const latest=await ExpiryDraftStore.get(scope);
+                    if(!latest || latest.operation?.id!==draft.operation?.id || !expiryDraftDiscardable(latest))throw new Error('Draft changed');
+                    await ExpiryDraftStore.remove(scope);releaseExpiryOperation();
+                    ExpiryCaptureEngine.pendingDraft=null;ExpiryCaptureEngine.draftReady=true;
+                    panel.replaceChildren();panel.hidden=true;setExpiryStatus('ready','READY TO SCAN');
+                }else{
+                    if(!await prepareExpiryDraftRecovery()){ExpiryCaptureEngine.pendingDraft=null;ExpiryCaptureEngine.draftReady=true;panel.replaceChildren();panel.hidden=true;}
+                    else await restoreExpiryDraft();
+                }
+                focusExpiryScanner();
+            }catch(error){setExpiryStatus('error','Draft recovery blocked — capture retained');}
+            finally{ExpiryCaptureEngine.busy=false;renderExpiryEvidence();}
+        };
+        const resume=document.createElement('button');resume.type='button';resume.textContent='Resume';resume.addEventListener('click',()=>action(false));row.appendChild(resume);
+        const discard=document.createElement('button');discard.type='button';discard.textContent='Discard';discard.disabled=!expiryDraftDiscardable(draft);discard.addEventListener('click',()=>action(true));row.appendChild(discard);
+        panel.appendChild(row);panel.hidden=false;
+    }
+}
+
+let expiryHeldOperation=null;
+let expiryLockPending=null;
+async function claimExpiryOperation(id){
+    if(!id || typeof navigator==='undefined' || !navigator.locks)return;
+    if(expiryHeldOperation?.id===id)return;
+    if(expiryLockPending){await expiryLockPending;if(expiryHeldOperation?.id===id)return;}
+    if(expiryHeldOperation)throw new Error('Another draft is active');
+    let readyResolve,readyReject;
+    expiryLockPending=new Promise((resolve,reject)=>{readyResolve=resolve;readyReject=reject;});
+    navigator.locks.request('pharmflow-expiry-operation-'+id,{ifAvailable:true},lock=>{
+        if(!lock){readyReject(new Error('Capture is open in another tab'));return;}
+        return new Promise(release=>{expiryHeldOperation={id,release};readyResolve();});
+    }).catch(readyReject);
+    try{await expiryLockPending;}finally{expiryLockPending=null;}
+}
+function releaseExpiryOperation(){
+    expiryHeldOperation?.release();expiryHeldOperation=null;
+}

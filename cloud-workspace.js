@@ -167,6 +167,7 @@ const PharmFlowCloudWorkspace = {
     visibleStatus:"",
     activeManifestRevision:0,
     activeManifestPresent:false,
+    lastManifestResponseEmpty:false,
     activeManifestBusy:false,
     activeManifestReadSerial:0,
     manifestBootstrapPromise:null,
@@ -609,9 +610,11 @@ function resetRuntimeForAuthenticatedContextChange(newScope){
         PharmFlowCloudWorkspace.lastAppliedWorkspaceSignature="";
         PharmFlowCloudWorkspace.activeManifestRevision=0;
         PharmFlowCloudWorkspace.activeManifestPresent=false;
+        PharmFlowCloudWorkspace.lastManifestResponseEmpty=false;
         PharmFlowCloudWorkspace.activeManifestReadSerial=0;
         PharmFlowCloudWorkspace.lastManifestPullAt=null;
         PharmFlowCloudWorkspace.lastManifestPullError=null;
+
         PharmFlowCloudWorkspace.receivingCursorCreatedAt=null;
         PharmFlowCloudWorkspace.receivingCursorTransactionId=null;
         PharmFlowCloudWorkspace.receivingBootstrapComplete=false;
@@ -1310,6 +1313,7 @@ async function pullActiveOrderManifest(options={}){
     }
 
     PharmFlowCloudWorkspace.activeManifestBusy=true;
+    PharmFlowCloudWorkspace.lastManifestResponseEmpty=false;
     PharmFlowCloudWorkspace.lastManifestFullReadAt=now;
 
     try{
@@ -1325,6 +1329,7 @@ async function pullActiveOrderManifest(options={}){
         PharmFlowCloudWorkspace.lastManifestPullError=null;
 
         if(!row?.manifest){
+            if(pharmacyId===cloudWorkspacePharmacyId()) PharmFlowCloudWorkspace.lastManifestResponseEmpty=true;
             PharmFlowCloudWorkspace.activeManifestPresent=false;
             PharmFlowCloudWorkspace.activeManifestRevision=0;
 
@@ -1349,6 +1354,7 @@ async function pullActiveOrderManifest(options={}){
                 : [];
 
         if(!incomingFiles.length || !incomingData.length){
+            if(pharmacyId===cloudWorkspacePharmacyId()) PharmFlowCloudWorkspace.lastManifestResponseEmpty=true;
             PharmFlowCloudWorkspace.activeManifestPresent=false;
             PharmFlowCloudWorkspace.activeManifestRevision=0;
 
@@ -1492,6 +1498,13 @@ async function pullActiveOrderManifestAuthority(options={}){
 
         if(pulled===true){
             return true;
+        }
+
+        // Empty is a successful authority answer, not a transport/busy retry.
+        // Change detection remains live: metadata polling and future pulls still run.
+        if(!PharmFlowCloudWorkspace.activeManifestBusy &&
+           PharmFlowCloudWorkspace.lastManifestResponseEmpty===true){
+            return false;
         }
 
         await new Promise(resolve=>setTimeout(resolve,150*attempt));
@@ -2303,7 +2316,11 @@ async function pullCloudWorkspaceTransactions(options={}){
             !Array.isArray(AppState?.workspace?.orderData) ||
             !AppState.workspace.orderData.length
         ){
-            if(typeof pullActiveOrderManifest==="function"){
+            // A successful empty manifest is already authoritative. The
+            // unchanged metadata poll discovers new orders; a failed metadata
+            // poll invalidates this answer so full-read recovery remains live.
+            if(typeof pullActiveOrderManifest==="function" &&
+               (options?.force===true || PharmFlowCloudWorkspace.lastManifestResponseEmpty!==true)){
                 await pullActiveOrderManifest();
             }
         }
@@ -2396,13 +2413,17 @@ async function pullCloudWorkspaceTransactions(options={}){
       finally{
         PharmFlowCloudWorkspace.applyingRemote=false;
         PharmFlowCloudWorkspace.receivingSyncBusy=false;
-        if(PharmFlowCloudWorkspace.receivingSyncPromise===syncPromise){
-            PharmFlowCloudWorkspace.receivingSyncPromise=null;
-        }
       }
     })();
     PharmFlowCloudWorkspace.receivingSyncPromise=syncPromise;
-    return await syncPromise;
+    // Empty-authority path can finish synchronously. Cleanup must reference the
+    // promise only after initialization, while preserving overlapping callers.
+    try{ return await syncPromise; }
+    finally{
+        if(PharmFlowCloudWorkspace.receivingSyncPromise===syncPromise){
+            PharmFlowCloudWorkspace.receivingSyncPromise=null;
+        }
+    }
 }
 
 async function pollActiveOrderManifestMeta(){
@@ -2443,6 +2464,7 @@ async function pollActiveOrderManifestMeta(){
         }
         return true;
     }catch(error){
+        PharmFlowCloudWorkspace.lastManifestResponseEmpty=false;
         Logger.warn("Active Order Manifest metadata poll failed",error);
         return false;
     }finally{

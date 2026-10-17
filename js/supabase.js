@@ -10,8 +10,8 @@
 ===================================================== */
 
 const CLOUD_CONFIG = Object.freeze({
-    url:"https://zznoshzcyxmtwfbznjyr.supabase.co",
-    publishableKey:"sb_publishable_dulQyE_y0NZK2XyJyW_0TA_xhvwIxCS",
+    url:"https://tovkcakucyagvbzvlnks.supabase.co",
+    publishableKey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvdmtjYWt1Y3lhZ3ZienZsbmtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDYxMTksImV4cCI6MjEwNzAyMjExOX0.ubkzYAJ-mjwTTbolVnXG9hWpK3eW0wVZUuMkTVDK4nM",
     pollIntervalMs:5000,
     rpcTimeoutMs:9000
 });

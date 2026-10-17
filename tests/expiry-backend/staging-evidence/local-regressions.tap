@@ -1,0 +1,138 @@
+TAP version 13
+# LOCAL SQL ENGINE: PostgreSQL 18.3 (PGlite 0.5.8) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit
+# Legacy Receiving 13-argument RPC: same pre-existing created_at ambiguity before/after
+# Subtest: SQL exact identity and additive acknowledgement: U0030
+ok 1 - SQL exact identity and additive acknowledgement: U0030
+  ---
+  duration_ms: 1942.960262
+  type: 'test'
+  ...
+# Subtest: SQL exact identity and additive acknowledgement: S00110
+ok 2 - SQL exact identity and additive acknowledgement: S00110
+  ---
+  duration_ms: 6.368582
+  type: 'test'
+  ...
+# Subtest: SQL exact identity and additive acknowledgement: 1234A
+ok 3 - SQL exact identity and additive acknowledgement: 1234A
+  ---
+  duration_ms: 5.810339
+  type: 'test'
+  ...
+# Subtest: SQL exact identity and additive acknowledgement: 001234
+ok 4 - SQL exact identity and additive acknowledgement: 001234
+  ---
+  duration_ms: 6.427286
+  type: 'test'
+  ...
+# Subtest: SQL exact identity and additive acknowledgement: 04065272072977
+ok 5 - SQL exact identity and additive acknowledgement: 04065272072977
+  ---
+  duration_ms: 5.423796
+  type: 'test'
+  ...
+# Subtest: SQL raw GS1, batch, serial, month-end day00 and both photos survive authorized read
+ok 6 - SQL raw GS1, batch, serial, month-end day00 and both photos survive authorized read
+  ---
+  duration_ms: 21.115201
+  type: 'test'
+  ...
+# Subtest: SQL required fields, raw identity mismatch and bad dates reject atomically
+ok 7 - SQL required fields, raw identity mismatch and bad dates reject atomically
+  ---
+  duration_ms: 13.155028
+  type: 'test'
+  ...
+# Subtest: SQL GS1 mismatches and unsupported/malformed input reject; optional manual batch works
+ok 8 - SQL GS1 mismatches and unsupported/malformed input reject; optional manual batch works
+  ---
+  duration_ms: 8.797688
+  type: 'test'
+  ...
+# Subtest: SQL photo replacement/rename/deletion is blocked before resolution, including another member/admin
+ok 9 - SQL photo replacement/rename/deletion is blocked before resolution, including another member/admin
+  ---
+  duration_ms: 14.549608
+  type: 'test'
+  ...
+# Subtest: SQL safe retake deletes only uploader staging object; missing/type-invalid/wrong-role photos reject
+ok 10 - SQL safe retake deletes only uploader staging object; missing/type-invalid/wrong-role photos reject
+  ---
+  duration_ms: 11.590508
+  type: 'test'
+  ...
+# Subtest: SQL resolved cleanup requires admin authorization; row/audit/photo references survive Storage deletion
+ok 11 - SQL resolved cleanup requires admin authorization; row/audit/photo references survive Storage deletion
+  ---
+  duration_ms: 24.1839
+  type: 'test'
+  ...
+# Subtest: SQL idempotency payload/owner conflict, uncertain response reconciliation and separate legitimate captures
+ok 12 - SQL idempotency payload/owner conflict, uncertain response reconciliation and separate legitimate captures
+  ---
+  duration_ms: 9.01323
+  type: 'test'
+  ...
+# Subtest: SQL cross-pharmacy/worker, anonymous and System Owner without membership cannot bypass new permissions
+ok 13 - SQL cross-pharmacy/worker, anonymous and System Owner without membership cannot bypass new permissions
+  ---
+  duration_ms: 11.087183
+  type: 'test'
+  ...
+# Subtest: SQL all legacy Expiry capture paths reject; Receiving legacy bodies and legacy media behavior remain unchanged
+ok 14 - SQL all legacy Expiry capture paths reject; Receiving legacy bodies and legacy media behavior remain unchanged
+  ---
+  duration_ms: 22.47773
+  type: 'test'
+  ...
+# Subtest: SQL alternate creators cannot insert incomplete Expiry review or mutate saved evidence
+ok 15 - SQL alternate creators cannot insert incomplete Expiry review or mutate saved evidence
+  ---
+  duration_ms: 14.234493
+  type: 'test'
+  ...
+# Subtest: SQL known capture cannot orphan uploaded review photos
+ok 16 - SQL known capture cannot orphan uploaded review photos
+  ---
+  duration_ms: 4.29978
+  type: 'test'
+  ...
+# Subtest: Native PostgreSQL independent-connection duplicate and same-item concurrency
+ok 17 - Native PostgreSQL independent-connection duplicate and same-item concurrency # SKIP NOT RUN: native PostgreSQL unavailable; PGlite has one connection
+  ---
+  duration_ms: 0.066971
+  type: 'test'
+  ...
+# Subtest: Client adapter executes actual operation SQL, two media rows and authorized review read
+ok 18 - Client adapter executes actual operation SQL, two media rows and authorized review read
+  ---
+  duration_ms: 16.6762
+  type: 'test'
+  ...
+# Subtest: Migration is reproducible and all legacy Receiving bodies remain exact apart from Expiry-only guard
+ok 19 - Migration is reproducible and all legacy Receiving bodies remain exact apart from Expiry-only guard
+  ---
+  duration_ms: 56.212174
+  type: 'test'
+  ...
+# Subtest: Migration does not replace auth, Global Master, Receiving ledger or existing media policies
+ok 20 - Migration does not replace auth, Global Master, Receiving ledger or existing media policies
+  ---
+  duration_ms: 1.271495
+  type: 'test'
+  ...
+# Subtest: Native integration runner refuses remote/non-disposable database targets before connection
+ok 21 - Native integration runner refuses remote/non-disposable database targets before connection
+  ---
+  duration_ms: 0.405298
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 2353.120556

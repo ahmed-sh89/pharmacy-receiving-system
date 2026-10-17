@@ -40,22 +40,22 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=HANDHELD_RELEASE1"
+        href="css/dashboard.css?v=EXPIRY_GROUP_CANONICAL1"
     >
 
     <link
         rel="stylesheet"
-        href="css/responsive.css?v=PHONE_CLEAN1"
+        href="css/responsive.css?v=HANDHELD_VIEWPORT3"
     >
 
     <link
         rel="stylesheet"
-        href="css/auth.css?v=HANDHELD_ASSIGN_AUTH2"
+        href="css/auth.css?v=HANDHELD_VIEWPORT3"
     >
 
-<link rel="stylesheet" href="css/pharmflow-next.css?v=CUSTOM_FILTER_RC3">
-<link rel="stylesheet" href="css/receiving-surface.css?v=UI_REVIEW_CLEAN1">
-<link rel="stylesheet" href="css/identity.css?v=KPI_SNAPSHOT_READY1">
+<link rel="stylesheet" href="css/pharmflow-next.css?v=PROD_EXPIRY_INTEGRATION1">
+<link rel="stylesheet" href="css/receiving-surface.css?v=HANDHELD_VIEWPORT3">
+<link rel="stylesheet" href="css/identity.css?v=PROD_EXPIRY_INTEGRATION1">
 <link rel="stylesheet" href="css/mobile-phone.css?v=PHONE_FINAL5">
 
     <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
@@ -152,7 +152,7 @@
                         <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
                         <button id="btnAuthForgotPassword" class="authSecondaryLink authForgotPassword" type="button">Forgot Password?</button>
                         <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
-                        
+
                         <button id="btnAuthShowOwnerSetup" class="authSecondaryLink" type="button" hidden>First system setup — Owner only</button>
                     </div>
 
@@ -357,6 +357,7 @@
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
 
+            <button class="sidebarItem" type="button" data-page="expiry" aria-label="Expiry" title="Expiry"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Expiry</span></button>
             <button class="sidebarItem" type="button" data-page="settings" aria-label="Settings" title="Settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
         </nav>
 
@@ -1268,126 +1269,152 @@
                 id="zebraExpiryShell"
                 class="appPage zebraExpiryShell"
             >
-                <div class="zebraExpiryTop">
-                    <button id="btnExpiryBackToModes" type="button">‹ Modes</button>
-
-                    <div class="expiryPageTitle">
-                        <span>NEAR EXPIRY</span>
-                        <strong class="expiryDesktopCaptureTitle">Capture</strong>
-                        <button
-                            id="btnClearExpiryScreenTop"
-                            class="expiryClearScreenTop"
-                            type="button"
-                        >
-                            CLEAR SCREEN
-                        </button>
-                    </div>
-
-                    <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button">
-                        CAPTURED <strong id="expiryCapturedCount">0</strong>
-                    </button>
+                <header class="expiryHandheldHeader expiryHandheldOnly">
+                    <button id="btnExpiryBackToModes" type="button" aria-label="Back to workspaces"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Back</span></button>
+                    <div><strong>Expiry Scanning</strong></div>
+                    <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button" aria-label="History" title="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7M3 5v6h6M12 7v5l3 2"></path></svg><span class="expiryHandheldHistoryLabel">History</span><strong id="expiryCapturedCount" hidden>0</strong></button>
+                    <span id="expiryScanStatus" class="expiryScanStatus ready" role="status" aria-live="polite">READY TO SCAN</span>
+                </header>
+                <header class="expiryTopWorkspace">
+                    <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
+                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCapturePanel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Scan &amp; Activity <b id="expirySessionCount" class="expirySessionCount">0</b></button>
+                        <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
+                    </nav><div class="expiryHeaderActions"><div id="expirySessionSummary" class="expirySessionSummary expiryDesktopOnly" role="status" aria-label="Current Session" aria-live="polite"></div><button id="btnExpiryNeedsReview" type="button" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 18 17H2L10 3Zm0 5v4m0 2.5v.1"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button></div></header>
+                <div class="expiryKpiRow" aria-label="Expiry summary" hidden>
+                    <article class="expiryKpiCard expiryKpiActive">
+                        <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiUnits">
+                        <span>Total Units</span><strong id="expiryKpiTotalUnits">0</strong><small>Verified quantity</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiExpired">
+                        <span>Expired</span><strong id="expiryKpiExpired">0</strong><small>Past expiry month</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiUpcoming">
+                        <span>Upcoming</span><strong id="expiryKpiUpcoming">0</strong><small>Future expiry</small>
+                    </article>
                 </div>
 
-                <section class="expiryCaptureCard">
-                    <div class="expiryWorkerBar">
-                        <div class="expiryWorkerCompactLabel">
-                            <span class="expiryWorkerIcon">👤</span>
-                            <label for="expiryWorkerSelect">WORKER</label>
+                <section id="expiryCapturePanel" class="expiryCaptureCard">
+                    <div class="expiryCaptureRow">
+                      <div class="expiryCapturePrimary">
+                        <div class="expiryScanBox">
+                            <span class="expiryScanIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M7 12h10M8 9v6M11 9v6M14 9v6M17 9v6"></path></svg></span>
+                            <input id="expiryBarcodeInput" type="text" inputmode="none" autocomplete="off" placeholder="Scan barcode or search by Item Code / Item Name">
+                            <button id="expiryScannerDiagnosticToggle" type="button" class="expiryScannerDiagnosticToggle" hidden>Capture scanner metadata</button>
+                            <span id="expiryCaptureValidation" class="expiryCaptureValidation expiryDesktopOnly" role="alert" hidden></span>
+                            <div id="expirySearchResults" class="expirySearchResults" hidden></div>
                         </div>
-                        <select id="expiryWorkerSelect" aria-label="Expiry worker">
-                            <option value="">Select worker...</option>
-                        </select>
+
+                        <div class="expiryOperatorActions">
+                        <div class="expiryWorkerControl" title="Operator is optional on Desktop">
+                            <div id="expiryWorkerSelect" class="pfSelect pfSelectOperator" data-expiry-select="worker" data-value="" tabindex="0" role="combobox" aria-label="Operator" aria-expanded="false">
+                                <button type="button" class="pfSelectTrigger" tabindex="-1">
+                                    <span class="expiryOperatorIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.5 19c.7-3.6 3-5.5 6.5-5.5s5.8 1.9 6.5 5.5"></path></svg></span>
+                                    <span class="pfSelectValue">Desktop</span>
+                                    <svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg>
+                                </button>
+                                <div class="pfSelectMenu" role="listbox" hidden></div>
+                            </div>
+                        </div>
+                        <button id="btnClearExpiryActive" class="expiryActiveClear" type="button">Clear</button>
+                        </div>
+
+                      </div>
+                      <div id="expiryActiveItem" class="expiryActiveItem is-empty" aria-live="polite">
+                        <div class="expiryActiveHeading"><span class="expiryActiveBadgeMark" aria-hidden="true">✓</span><div><span>ACTIVE ITEM</span><strong id="expiryActiveItemName">Ready for next item</strong></div></div>
+                        <div class="expiryActiveDetails">
+                          <div class="expiryActiveDatum"><span>Item Code</span><strong id="expiryActiveItemCode">—</strong></div>
+                          <div class="expiryActiveDatum"><span>GTIN / Barcode</span><strong id="expiryActiveItemGTIN">—</strong></div>
+                          <div class="expiryActiveDatum"><span>Category</span><strong id="expiryActiveItemCategory">—</strong></div>
+                        </div>
+                        <div class="expiryActiveBadges"><span id="expiryRecognizedBadge" hidden>✓ Recognized</span><span id="expiryAutoDateBadge" hidden>✓ Expiry read</span></div>
+                      </div>
+                      <div class="expiryEntryGrid">
+                        <label class="expiryReviewField expirySerialField"><span class="expiryControlLabel">Serial</span><input aria-label="Serial Number" id="expirySerialInput" type="text" autocomplete="off" placeholder="Enter serial"></label>
+                        <label class="expiryReviewField expiryBatchField"><span class="expiryControlLabel">Batch</span><input aria-label="Batch Number" id="expiryBatchInput" type="text" autocomplete="off" placeholder="Enter batch"></label>
+                        <div class="expiryReviewField expiryDateField"><span class="expiryControlLabel expiryDesktopOnly">Expiry</span>
+                            <div id="expiryMonth" class="pfSelect" data-expiry-select="month" data-value="" tabindex="0" role="combobox" aria-label="Expiry month" aria-expanded="false">
+                                <button type="button" class="pfSelectTrigger" tabindex="-1"><span class="pfSelectValue">Month</span><svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg></button>
+                                <div class="pfSelectMenu" role="listbox" hidden></div>
+                            </div>
+                        </div>
+                        <div class="expiryReviewField expiryYearField"><span class="expiryControlLabel expiryDesktopOnly">Year</span>
+                            <div id="expiryYear" class="pfSelect" data-expiry-select="year" data-value="" tabindex="0" role="combobox" aria-label="Expiry year" aria-expanded="false">
+                                <button type="button" class="pfSelectTrigger" tabindex="-1"><span class="pfSelectValue">Year</span><svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg></button>
+                                <div class="pfSelectMenu" role="listbox" hidden></div>
+                            </div>
+                        </div>
+                        <label class="expiryReviewField expiryQtyField"><span class="expiryControlLabel expiryDesktopOnly">Quantity</span><div class="expiryQuantityControl"><button id="btnExpiryQtyMinus" class="expiryDesktopOnly" type="button" aria-label="Decrease quantity">−</button><input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" aria-label="Quantity" placeholder="Qty"><button id="btnExpiryQtyPlus" class="expiryDesktopOnly" type="button" aria-label="Increase quantity">+</button></div></label>
+                      </div>
+                      <small id="expiryMonthName" hidden></small>
+                      <div id="expiryRecoverableDrafts" hidden></div>
+                      <section id="expiryEvidence" class="expiryEvidence" hidden aria-label="Needs Review evidence">
+                        <div id="expiryEvidencePreviews"></div>
+                        <button id="btnExpiryNote" type="button"><span aria-hidden="true">✎</span> Add Note</button>
+                        <button id="btnExpiryPhoto" type="button"><span aria-hidden="true">▣</span> Add Photo</button>
+                        <input id="expiryCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+                        <span id="expiryEvidenceMessage" role="status" hidden></span>
+                      </section>
+                      <div class="expiryCaptureActions">
+                        <button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
+                        <div class="expiryCaptureBottomRow expiryDesktopOnly">
+                          <div id="expiryDesktopStatus" class="expiryDesktopStatus" role="status" aria-live="polite" hidden></div>
+                          <div class="expirySessionSearch">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="m12.5 12.5 4 4"></path></svg>
+                            <input id="expirySessionSearch" type="text" autocomplete="off" spellcheck="false" aria-label="Search current Session Activity" placeholder="Search session by name, code, GTIN or batch..." disabled>
+                            <button id="expirySessionSearchClear" type="button" aria-label="Clear session search" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8"></path></svg></button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    <div id="expiryScanStatus" class="expiryScanStatus ready">READY TO SCAN</div>
-
-                    <div class="expiryScanBox">
-                        <span class="expiryScanIcon">▥</span>
-                        <input
-                            id="expiryBarcodeInput"
-                            type="text"
-                            inputmode="none"
-                            autocomplete="off"
-                            placeholder="Scan barcode"
-                        >
-                    </div>
-
-                    <div class="expiryItemCard">
-                        <span>LAST ITEM</span>
+                    <div class="expiryItemCard expiryHandheldItemCard">
+                        <div class="expiryLastScanHeading"><span>LAST SCAN</span></div>
                         <strong id="expiryItemName">—</strong>
-
                         <div class="expiryItemMeta">
-                            <div>
-                                <span>Item Code</span>
-                                <strong id="expiryItemCode">—</strong>
-                            </div>
+                            <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
+                            <div><span>Identifier</span><strong id="expiryItemGTIN">—</strong></div>
+                            <div><span>Category</span><strong id="expiryItemCategory">—</strong></div>
+                            <div><span>Batch Number</span><strong id="expiryItemBatch">—</strong></div>
+                            <div><span>Serial</span><strong id="expiryItemSerial">—</strong></div>
+                        </div>
 
-                            <div>
-                                <span>GTIN</span>
-                                <strong id="expiryItemGTIN">—</strong>
-                            </div>
+                    </div>
 
-                            <div>
-                                <span>Category</span>
-                                <strong id="expiryItemCategory">—</strong>
-                            </div>
-                            <div>
-                                <span>Batch</span>
-                                <strong id="expiryItemBatch">—</strong>
-                            </div>
-                            <div>
-                                <span>Serial</span>
-                                <strong id="expiryItemSerial">—</strong>
-                            </div>
+                    <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
+                </section>
+
+                <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
+                    <div id="expiryCurrentHeader" class="expiryCurrentHeader">
+                        <div class="expiryCurrentTitle">
+                            <span id="expiryWorkspaceTitle">Session Activity</span>
+                            <strong id="expiryCurrentStateCount">0</strong>
+                            <small id="expiryWorkspaceSubtitle" hidden></small>
+                        </div>
+                        <div class="expiryCurrentTools">
+                            <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search by product name, item code, GTIN / barcode or batch" hidden>
+                            <button id="btnClearExpiryFilters" class="expiryInventoryButton expiryClearFiltersButton" type="button" hidden>Clear Filters</button>
+                            <button id="btnExportExpiryInventory" class="expiryInventoryButton expiryExportButton" type="button" hidden>Export</button>
                         </div>
                     </div>
-
-                    <div class="expiryEntryGrid">
-                        <label>
-                            <span>Quantity</span>
-                            <input
-                                id="expiryQuantity"
-                                type="number"
-                                min="1"
-                                step="1"
-                                inputmode="numeric"
-                                placeholder="Qty"
-                            >
-                        </label>
-
-                        <label>
-                            <span>Month</span>
-                            <select id="expiryMonth" aria-label="Expiry month">
-                                <option value="">Month</option>
-                            </select>
-                            <small id="expiryMonthName"></small>
-                        </label>
-
-                        <label>
-                            <span>Year</span>
-                            <select id="expiryYear" aria-label="Expiry year">
-                                <option value="">Year</option>
-                            </select>
-                        </label>
+                    <div class="expiryCurrentTableWrap">
+                        <table class="expiryCurrentTable">
+                            <thead><tr>
+                                <th id="expiryTimeHeading" class="expiryFilterHeading" data-expiry-filter-heading="lastUpdated">Time <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="lastUpdated" aria-label="Filter Last Updated">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th><th>GTIN / Barcode</th><th>Item Code</th><th>Product Name</th>
+                                <th class="expiryFilterHeading" data-expiry-filter-heading="category">Category <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="category" aria-label="Filter Category">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
+                                <th>Batch</th>
+                                <th class="expiryFilterHeading" data-expiry-filter-heading="expiry">Expiry <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="expiry" aria-label="Filter Expiry">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
+                                <th id="expiryQuantityHeading">Quantity</th>
+                                <th class="expiryFilterHeading" data-expiry-filter-heading="operator">Operator <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="operator" aria-label="Filter Operator">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
+                                <th>Action</th>
+                            </tr></thead>
+                            <tbody id="expiryCurrentStateBody"></tbody>
+                        </table>
+                        <div id="expiryCurrentStateEmpty" class="expiryCurrentEmpty"><strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span></div>
                     </div>
-
-                    <button
-                        id="btnSaveExpiryCapture"
-                        class="expirySaveButton"
-                        type="button"
-                        disabled
-                    >
-                        SAVE &amp; NEXT
-                    </button>
-
-                    <div
-                        id="expiryLastSaved"
-                        class="expiryLastSaved"
-                        aria-live="polite"
-                    ></div>
                 </section>
             </section>
-
 
             <!-- ==================================================
                  REPORTS PAGE
@@ -2143,7 +2170,7 @@
                             </section>
                         </div>
 
-                        
+
 
                     </section>
 
@@ -2561,7 +2588,7 @@
 
 <script src="js/state.js?v=WORK_SCOPE1"></script>
 
-<script src="js/router.js?v=B10CLEAN15_15"></script>
+<script src="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1"></script>
 
 <script src="ui.js?v=GROUP_INTEGRITY_20261017_1"></script>
 
@@ -2582,16 +2609,26 @@
 
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
-<script src="js/auth.js?v=STARTUP_GATE1"></script>
+<script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
+<script src="js/auth.js?v=EXPIRY_SESSION_EXIT1"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
 
-<script src="js/needs-review.js?v=NR_AUTO_ALLOC1"></script>
+<script src="js/needs-review.js?v=EXPIRY_ACCEPTANCE_CANDIDATE1"></script>
 
-<script src="js/expiry.js?v=SETTINGS_PROD1"></script>
+<script src="js/expiry-operation.js?v=DESKTOP_RECONCILE1"></script>
+<script src="js/expiry-evidence.js?v=DESKTOP_RECONCILE1"></script>
+<script src="js/expiry-capture-store.js?v=DESKTOP_RECONCILE1"></script>
+<script src="js/expiry-active-session.js?v=CLEAR_SESSION2"></script>
+<script src="js/expiry.js?v=DESKTOP_FINAL_CLEAN1"></script>
+<script src="js/expiry-clear-session.js?v=RETIRE_CLEAR1"></script>
+<script src="js/expiry-inventory-report.js?v=EXPIRY_GROUP_CANONICAL1"></script>
+<script src="js/expiry-inventory-filters.js?v=EXPIRY_GROUP_CANONICAL1"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_GROUP_CANONICAL1"></script>
+<script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
 
-<script src="cloud-workspace.js?v=KPI_SNAPSHOT_READY1"></script>
+<script src="cloud-workspace.js?v=PROD_EXPIRY_INTEGRATION1"></script>
 <script src="js/app-version.js?v=VERSION_NOTICE1"></script>
 
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
@@ -2600,7 +2637,8 @@
 <script src="js/app.js?v=KPI_SNAPSHOT_READY1"></script>
 
 <script src="js/handheld-runtime.js?v=RECEIVING_U0030_RECOVERY2"></script>
-<script src="js/receiving-release.js?v=GROUP_INTEGRITY_20261017_1"></script>\n<script src="js/receiving-history.js?v=HISTORY7"></script>
+<script src="js/receiving-release.js?v=GROUP_INTEGRITY_20261017_1"></script>
+<script src="js/receiving-history.js?v=HISTORY7"></script>
 
 
 </body>

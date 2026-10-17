@@ -10,10 +10,10 @@
    HANDHELD RECEIVING — CANONICAL PRESENTATION
    Handheld-only. Desktop/PC selectors and behavior are intentionally untouched.
 ============================================================ */
-body.zebraDevice.zebraReceivingActive{height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;background:#edf3f9!important}
-body.zebraDevice.zebraReceivingActive .mainApplication{height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;overflow:hidden!important}
-body.zebraDevice.zebraReceivingActive .mainContent{height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;padding:3px!important;box-sizing:border-box!important}
-body.zebraDevice.zebraReceivingActive #page-dashboard{height:100%!important;max-height:100%!important;overflow:hidden!important;padding:2px!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important}
+body.zebraDevice.zebraReceivingActive{height:var(--handheld-visible-height,100dvh)!important;min-height:0!important;max-height:var(--handheld-visible-height,100dvh)!important;overflow:hidden!important;background:#edf3f9!important}
+body.zebraDevice.zebraReceivingActive .mainApplication{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+body.zebraDevice.zebraReceivingActive .mainContent{height:100%!important;max-height:100%!important;overflow-y:auto!important;padding:3px!important;box-sizing:border-box!important}
+body.zebraDevice.zebraReceivingActive #page-dashboard{height:100%!important;max-height:100%!important;overflow-y:auto!important;padding:2px!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important}
 body.zebraDevice.zebraReceivingActive #page-dashboard>.pageHeading,
 body.zebraDevice.zebraReceivingActive #page-dashboard>.dashboardStats,
 body.zebraDevice.zebraReceivingActive #page-dashboard>.contentCard:not(#lastScanCard){display:none!important}
@@ -148,7 +148,7 @@ body.zebraDevice.zebraReceivingActive #scanBox.flashSuccess .scanBoxIcon{backgro
 @keyframes pfHandheldSuccess{0%{background:#afe8bf}100%{background:#dff5e5}}
 
 /* Last Scan — one readable card with subtle colored fields. */
-body.zebraDevice.zebraReceivingActive #lastScanCard{position:relative!important;flex:1 1 auto!important;min-height:0!important;margin:0!important;padding:5px!important;border:1px solid #ead7a6!important;border-radius:10px!important;background:#fff8e8!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;gap:3px!important;box-shadow:none!important}
+body.zebraDevice.zebraReceivingActive #lastScanCard{position:relative!important;flex:1 1 auto!important;min-height:0!important;margin:0!important;padding:5px!important;border:1px solid #ead7a6!important;border-radius:10px!important;background:#fff8e8!important;overflow-y:auto!important;display:flex!important;flex-direction:column!important;gap:3px!important;box-shadow:none!important}
 body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader{min-height:22px!important;margin:0!important;padding:0 50px 0 0!important;display:flex!important;align-items:center!important}
 body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader .sectionEyebrow{display:none!important}
 body.zebraDevice.zebraReceivingActive #lastScanCard .cardHeader h3{margin:0!important;color:#15395e!important;font-size:15px!important;line-height:1!important;font-weight:950!important;text-transform:uppercase!important}
@@ -189,8 +189,8 @@ body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived span
 body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetric strong{margin-top:2px!important;color:#123c72!important;font-size:25px!important;font-weight:950!important;line-height:1!important}
 body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricReceived strong{color:#15703a!important}
 body.zebraDevice.zebraReceivingActive #lastScanCard .lastScanMetricRemaining strong{color:#5a3ca0!important}
-body.zebraDevice .handheldAssignedOrdersPanel{max-height:72dvh!important}
-body.zebraDevice .handheldAssignedOrdersList{max-height:45dvh!important;overflow:auto!important}
+body.zebraDevice .handheldAssignedOrdersPanel{max-height:calc(var(--handheld-visible-height,100dvh)*.72)!important}
+body.zebraDevice .handheldAssignedOrdersList{max-height:calc(var(--handheld-visible-height,100dvh)*.45)!important;overflow:auto!important}
 body.zebraDevice .handheldAssignedOrderRow{display:grid!important;grid-template-columns:22px minmax(0,1fr)!important;align-items:center!important;gap:7px!important;padding:9px 8px!important;border:1px solid #d8e7f3!important;border-radius:9px!important;background:#f8fbfe!important}
 body.zebraDevice .handheldAssignedOrderRow span{display:grid!important;place-items:center!important;width:22px!important;height:22px!important;border-radius:50%!important;background:#dbeefd!important;color:#225b90!important;font-size:8px!important;font-weight:950!important}
 body.zebraDevice .handheldAssignedOrderRow strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#143e67!important;font-size:12px!important}

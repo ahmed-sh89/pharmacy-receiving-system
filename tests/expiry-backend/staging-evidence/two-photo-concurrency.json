@@ -1,0 +1,38 @@
+[
+  {
+    "test": "Native duplicate unknown review with actual uploaded photos",
+    "result": "PASS",
+    "seconds": 33.92,
+    "evidence": {
+      "operation_id": "5a8e0bb1-3408-4445-adc2-a9aba14baf86",
+      "review_id": "9c00cf31-45fb-4545-88c2-e8bfcfe9a166",
+      "backend_pids": [
+        16685,
+        16697
+      ],
+      "overlap": true,
+      "same_review_ack": true
+    }
+  },
+  {
+    "test": "Actual Storage deletion versus concurrent finalization",
+    "result": "PASS",
+    "seconds": 88.11,
+    "evidence": [
+      {
+        "operation_id": "3258d01c-43ff-480f-b4e1-34af584d3e5c",
+        "outcome": "staging deletion won, finalization rejected",
+        "save_http": 400,
+        "delete_http": 200,
+        "read_http": 400
+      },
+      {
+        "operation_id": "e9278e3a-4792-44c9-99ce-7288644a82cc",
+        "outcome": "staging deletion won, finalization rejected",
+        "save_http": 400,
+        "delete_http": 200,
+        "read_http": 400
+      }
+    ]
+  }
+]

@@ -3445,8 +3445,10 @@ function refreshMasterGTINUI(){
     if(!status || status.installed !== true){
 
         if(headerMaster){
-            headerMaster.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
-            headerMaster.title="Global GTIN Master is not available on this device yet";
+            headerMaster.textContent=navigator.onLine ? "UNAVAILABLE" : "OFFLINE";
+            headerMaster.title=navigator.onLine
+                ? "Global GTIN Master data has not been loaded in this environment"
+                : "Global GTIN Master is unavailable while offline";
         }
 
         setElementText(
@@ -3456,9 +3458,9 @@ function refreshMasterGTINUI(){
 
         if(UI.elements.masterGTINNotice){
             UI.elements.masterGTINNotice.textContent =
-                "System Global GTIN is not available on this device yet. PharmFlow will sync it automatically after sign-in.";
+                "System Global GTIN data is not loaded in this environment. Cloud mapping remains unavailable until the approved dataset is provided.";
             UI.elements.masterGTINNotice.className =
-                "masterGTINNotice";
+                "masterGTINNotice warning";
         }
 
         const ordersMasterStatus=document.getElementById("ordersMasterStatus");
@@ -3467,13 +3469,12 @@ function refreshMasterGTINUI(){
         const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
 
         if(ordersMasterStatus){
-            ordersMasterStatus.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
+            ordersMasterStatus.textContent=navigator.onLine ? "UNAVAILABLE" : "OFFLINE";
         }
         if(ordersMasterCount) ordersMasterCount.textContent="0";
         if(ordersMasterUpdated) ordersMasterUpdated.textContent="-";
         if(ordersMasterCard){
-            ordersMasterCard.classList.remove("isActive");
-            ordersMasterCard.classList.add("isSyncing");
+            ordersMasterCard.classList.remove("isActive","isSyncing");
         }
 
         return;
@@ -7333,7 +7334,7 @@ function initializeZebraInterface(){
                     <div><strong>Receiving</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
-                <button class="zebraModeCard zebraModeExpiry" type="button" disabled aria-disabled="true" title="Coming soon">
+                <button id="btnZebraExpiryMode" class="zebraModeCard zebraModeExpiry" type="button" aria-label="Open Near Expiry">
                     <span class="zebraModeIcon" aria-hidden="true">◷</span>
                     <div><strong>Near Expiry</strong></div>
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
@@ -7345,6 +7346,9 @@ function initializeZebraInterface(){
 
         document.getElementById("btnZebraReceivingMode")?.addEventListener("click", async function(){
             await openUnifiedHandheldReceiving();
+        });
+        document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
+            setZebraExpiryMode();
         });
         document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
             const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
@@ -8783,24 +8787,40 @@ function filterNeedsReviewRowsToPcScope(rows){
     return (rows||[]).filter(row=>{const assigned=normalizeOrderNumber(row?.order_number||"");if(assigned)return scope.has(assigned);const captured=(Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean);return captured.some(order=>scope.has(order));});
 }
 
+let needsReviewCountersRead=null;
+function needsReviewCountersScopeKey(){
+    const scope=getPcNeedsReviewOrderScope();
+    return JSON.stringify([
+        typeof AuthState!=="undefined"?AuthState?.user?.id:null,
+        typeof AuthState!=="undefined"?AuthState?.context?.pharmacy_id:null,
+        scope===null?null:[...scope].sort()
+    ]);
+}
 async function refreshNeedsReviewCounters(){
     if(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice()) return;
-
-    try{
-        /* Pharmacy-scoped by design. Never hide Handheld drafts because of
-           a PC-local order/workspace id mismatch. */
-        const receiving=filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
-        const rc=document.getElementById("receivingNeedsReviewCount");
-
-        const grouped=groupNeedsReviewRows(receiving);
-        if(rc) rc.textContent=String(grouped.length);
-
-        document
-            .getElementById("btnReceivingNeedsReview")
-            ?.classList.toggle("hasItems",grouped.length>0);
-    }catch(error){
-        console.warn("Needs Review V2 count failed",error);
-    }
+    if(window.PharmFlowIdleSleep?.active) return;
+    // This badge and its selected-order scope belong to Receiving only.
+    // Expiry uses its own authoritative Expiry review contract/counter.
+    if(typeof AppRouter!=="undefined" && AppRouter.currentRoute==="expiry") return;
+    const key=needsReviewCountersScopeKey(),scope=getPcNeedsReviewOrderScope();
+    if(needsReviewCountersRead?.key===key)return needsReviewCountersRead.promise;
+    const promise=(async()=>{
+        try{
+            // An empty selected-order set always projects to zero under the
+            // existing display rule; fetching pharmacy-wide rows cannot change it.
+            const receiving=scope?.size===0?[]:filterNeedsReviewRowsToPcScope(await loadNeedsReviewRows("RECEIVING",null));
+            if(key!==needsReviewCountersScopeKey())return;
+            const grouped=groupNeedsReviewRows(receiving);
+            const rc=document.getElementById("receivingNeedsReviewCount");
+            if(rc)rc.textContent=String(grouped.length);
+            document.getElementById("btnReceivingNeedsReview")?.classList.toggle("hasItems",grouped.length>0);
+        }catch(error){
+            console.warn("Needs Review V2 count failed",error);
+        }
+    })();
+    needsReviewCountersRead={key,promise};
+    try{return await promise;}
+    finally{if(needsReviewCountersRead?.promise===promise)needsReviewCountersRead=null;}
 }
 
 function ensureNeedsReviewButtons(){
@@ -9345,6 +9365,7 @@ setTimeout(()=>{
 },600);
 
 async function openNeedsReviewPanel(workflow="RECEIVING"){
+    if(String(workflow).toUpperCase()==="EXPIRY") return openExpiryNeedsReviewPanel();
     const handheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
     closeNeedsReviewPhotoViewer();
     const previousPanel=document.getElementById("needsReviewOverlay");
@@ -9566,12 +9587,115 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     });
 }
 
+/* Expiry case list reuses Receiving's established overlay, row, photo viewer,
+   and selection presentation. Its data and write contract stay Expiry-specific. */
+function expiryGlobalMasterSummary(item,esc){
+    const name=item?.itemName||item?.item_name||'Unnamed Global Master item';
+    const code=item?.itemCode||item?.item_code||'—';
+    const raw=item?.identifiers||item?.identifierValues||item?.identifier_values||[];
+    const ids=(Array.isArray(raw)?raw.map(x=>typeof x==='string'?x:(x?.identifierDisplay||x?.identifier_display||x?.value||x?.gtin)):[])
+        .concat([item?.identifierDisplay,item?.identifier_display,item?.gtin].filter(Boolean));
+    const identifiers=[...new Set(ids.map(x=>toSafeString(x).trim()).filter(Boolean))];
+    return `<span class="expiryGlobalMasterIdentity"><strong>${esc(name)}</strong><span>Item Code <b>${esc(code)}</b></span>${identifiers.length?`<span>Identifiers ${esc(identifiers.join(' · '))}</span>`:''}</span>`;
+}
+
+async function openExpiryNeedsReviewPanel(){
+    closeNeedsReviewPhotoViewer();
+    const previous=document.getElementById('needsReviewOverlay');previous?.disposeFocus?.();previous?.remove();
+    let rows;
+    try{rows=await ExpiryReviewBackend.list();}
+    catch(error){showToast?.(error?.message||'Unable to load Expiry Needs Review','error');return;}
+    const esc=value=>escapeHTML(toSafeString(value));
+    // Resolve writes only a pharmacy-local identifier mapping. The RPC checks
+    // active pharmacy membership; Global Master remains read-only in this UI.
+    const canResolve=!!(typeof getCurrentPharmacyId==='function'&&getCurrentPharmacyId())||!!AuthState?.context?.pharmacy_id;
+    const overlay=document.createElement('div');overlay.id='needsReviewOverlay';overlay.className='needsReviewOverlay';
+    overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','needsReviewTitle');
+    overlay.innerHTML=`<button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button><section class="needsReviewPanel expiryNeedsReviewPanel">
+      <header><div><span class="needsReviewKicker">EXPIRY</span><h2 id="needsReviewTitle">Pending review <b class="pfnReviewCount">${rows.length}</b></h2></div>
+      <div class="needsReviewHeaderActions"><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div></header>
+      <div class="needsReviewList" data-review-list>${rows.length?rows.map((row,index)=>`<section class="needsReviewRow" data-expiry-review-id="${esc(row.review_id)}"><div class="expiryReviewCaseHeading"><button class="needsReviewRowSummary" type="button" data-expiry-detail="${index}" aria-expanded="false"><strong>${esc(row.identifier_display||row.gtin||'Identifier unavailable')}</strong><i aria-hidden="true">›</i></button><button type="button" class="expiryCopyBarcode" data-copy-barcode="${index}">Copy Barcode</button></div><div class="needsReviewCaseDetail" data-expiry-case="${index}" hidden><div class="needsReviewInfo"><span>Batch <b>${esc(row.batch_no||'—')}</b></span>${row.sample_serial?`<span>Serial <b>${esc(row.sample_serial)}</b></span>`:''}<span>Expiry <b>${row.expiry_month?String(row.expiry_month).padStart(2,'0'):'—'}/${esc(row.expiry_year||'—')}</b></span><span>Quantity <b>${esc(row.quantity||row.pending_quantity||1)}</b></span></div>
+<div class="pfnReviewPhotoGrid">${row.evidence_photo_path?`<div class="expiryReviewPhoto"><button type="button" data-expiry-photo-open="${index}" aria-label="Open evidence photo"><img data-expiry-photo="${index}" alt="Expiry Needs Review evidence" hidden><span data-expiry-photo-state="${index}">Open details to load evidence photo</span></button><button type="button" data-expiry-photo-retry="${index}" hidden>Retry photo</button></div>`:'<span>No evidence photo available</span>'}</div>
+        ${row.status==='PENDING'&&canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Select Item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search Global Master by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:''}
+        <div class="expiryReviewCaseActions"><button type="button" data-review-delete="${index}">Delete</button></div>
+      </div></section>`).join(''):'<div class="needsReviewEmpty">Nothing needs review.</div>'}</div></section>`;
+    document.body.appendChild(overlay);
+    const setTabState=open=>{
+        const reviewTab=document.getElementById('btnExpiryNeedsReview'),activity=document.getElementById('btnExpirySessionView'),inventory=document.getElementById('btnOpenExpiryInventory');
+        if(reviewTab)reviewTab.setAttribute('aria-selected',String(open));
+        if(activity)activity.setAttribute('aria-selected',String(!open&&ExpiryCaptureEngine.desktopView!=='INVENTORY'));
+        if(inventory)inventory.setAttribute('aria-selected',String(!open&&ExpiryCaptureEngine.desktopView==='INVENTORY'));
+    };
+    setTabState(true);
+    const close=()=>{overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus({preventScroll:true});};
+    overlay.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
+    let expanded=null;
+    rows.forEach((row,index)=>{
+        const section=overlay.querySelector(`[data-expiry-review-id="${CSS.escape(row.review_id)}"]`),detail=section?.querySelector(`[data-expiry-case="${index}"]`);
+        let photoLoading=false,photoLoaded=false;
+        const loadEvidencePhoto=async()=>{
+            if(!row.evidence_photo_path||photoLoading||photoLoaded)return;
+            photoLoading=true;
+            const img=overlay.querySelector(`[data-expiry-photo="${index}"]`),state=overlay.querySelector(`[data-expiry-photo-state="${index}"]`);
+            const retry=overlay.querySelector(`[data-expiry-photo-retry="${index}"]`);
+            state.hidden=false;state.textContent='Loading evidence photo…';state.classList.remove('is-error');retry.hidden=true;img.hidden=true;
+            try{
+                const url=await nrV2PhotoObjectUrl(row.evidence_photo_path);
+                if(!url)throw new Error('Private evidence photo could not be loaded');
+                await nrV2WaitForEvidenceImage(img,url);
+                img.hidden=false;state.hidden=true;photoLoaded=true;
+            }
+            catch(_){nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);img.removeAttribute('src');state.textContent='Evidence photo unavailable. Retry or check pharmacy access.';state.classList.add('is-error');retry.hidden=false;}
+            finally{photoLoading=false;}
+        };
+        section?.querySelector(`[data-expiry-detail="${index}"]`)?.addEventListener('click',event=>{const open=detail.hidden;if(expanded!==null&&expanded!==index){const prev=overlay.querySelector(`[data-expiry-case="${expanded}"]`);if(prev)prev.hidden=true;overlay.querySelector(`[data-expiry-detail="${expanded}"]`)?.setAttribute('aria-expanded','false');}detail.hidden=!open;event.currentTarget.setAttribute('aria-expanded',String(open));expanded=open?index:null;if(open)loadEvidencePhoto();});
+        if(row.evidence_photo_path){
+            overlay.querySelector(`[data-expiry-photo-open="${index}"]`)?.addEventListener('click',async()=>{const img=overlay.querySelector(`[data-expiry-photo="${index}"]`);if(img?.src&& !img.hidden)openNeedsReviewPhotoViewer(img.src);else showToast?.('Evidence photo is not available','error');});
+            overlay.querySelector(`[data-expiry-photo-retry="${index}"]`)?.addEventListener('click',loadEvidencePhoto);
+        }
+        section?.querySelector(`[data-copy-barcode="${index}"]`)?.addEventListener('click',async()=>{
+            try{await navigator.clipboard.writeText(toSafeString(row.raw_barcode||row.identifier_display||row.gtin));showToast?.('Barcode copied','success');}
+            catch(_){showToast?.('Unable to copy barcode','error');}
+        });
+        section?.querySelector(`[data-review-delete="${index}"]`)?.addEventListener('click',async event=>{
+            if(!window.confirm('Delete this pending Expiry review case?'))return;
+            const button=event.currentTarget;button.disabled=true;
+            try{await ExpiryReviewBackend.delete(row.review_id);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry review case deleted; evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
+            catch(error){button.disabled=false;showToast?.(error?.message||'Unable to delete Expiry review case','error');}
+        });
+        section?.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
+        if(!canResolve)return;
+        const input=section?.querySelector(`[data-master-search="${index}"]`),matches=section?.querySelector(`[data-master-matches="${index}"]`),selection=section?.querySelector(`[data-master-selection="${index}"]`);
+        let timer=0,request=0,selected=null;
+        input?.addEventListener('input',()=>{
+            clearTimeout(timer);const query=input.value.trim();selected=null;selection.hidden=true;selection.replaceChildren();
+            if(!query){matches.replaceChildren();return;}
+            const token=++request;timer=setTimeout(async()=>{
+                try{
+                    const items=await IdentifierService.searchItems(query,8);if(token!==request||input.value.trim()!==query)return;
+                    matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-global-match="${itemIndex}">${expiryGlobalMasterSummary(item,esc)}</button>`).join(''):'<div class="needsReviewNoMatches">No Global Master item found.</div>';
+                    matches.querySelectorAll('[data-global-match]').forEach(button=>button.addEventListener('click',()=>{
+                        selected=items[Number(button.dataset.globalMatch)]||null;if(!selected)return;selection.hidden=false;
+                        selection.innerHTML=`<div>${expiryGlobalMasterSummary(selected,esc)}</div><button type="button" data-global-confirm>Confirm Resolution</button>`;
+                        selection.querySelector('[data-global-confirm]').addEventListener('click',async event=>{
+                            const confirm=event.currentTarget;confirm.disabled=true;overlay.dataset.busy='1';
+                            try{await ExpiryReviewBackend.resolve(row.review_id,selected);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry case resolved to this pharmacy and evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
+                            catch(error){confirm.disabled=false;showToast?.(error?.message||'Unable to resolve Expiry case','error');}
+                            finally{overlay.dataset.busy='';}
+                        });
+                    }));
+                }catch(error){if(token===request)matches.textContent=error?.message||'Global Master search is unavailable.';}
+            },220);
+        });
+    });
+    overlay.querySelector('[data-expiry-detail="0"]')?.focus();
+}
+
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;
 
-/* B11: lightweight cross-device Needs Review awareness.
-   Full review rows are fetched only when the PC panel is opened; the watcher
-   asks Supabase for a tiny count so a Handheld submission becomes visible on
-   the PC without refreshing the whole workspace. */
+/* Cross-device Receiving Needs Review awareness. The selected-order badge
+   needs scoped row projection, not a pharmacy-wide count. Its existing
+   thirty-second watcher reads only while Receiving uses that badge. */
 let needsReviewCloudWatchTimer=null;
 let needsReviewCloudWatchBusy=false;
 let needsReviewCloudLastReadAt=0;
@@ -9796,13 +9920,8 @@ function refreshHandheldQuantityGuidance(){
 
 if(typeof AppEvents!=="undefined"&&AppEvents?.on){
     AppEvents.on("route:changed",payload=>{
-        setTimeout(()=>{
-            ensureNeedsReviewButtons();
-            refreshNeedsReviewCounters();
-            if(payload?.routeName==="expiry"){
-                refreshNeedsReviewCounters();
-            }
-        },30);
+        // ensureNeedsReviewButtons owns the single counter refresh on entry.
+        setTimeout(()=>ensureNeedsReviewButtons(),30);
     });
     AppEvents.on("receiving:updated",()=>setTimeout(refreshNeedsReviewCounters,30));
 }

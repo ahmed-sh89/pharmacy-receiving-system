@@ -1,3 +1,18 @@
+# PharmFlow isolated integration checkpoint — 15 October 2026
+
+Scope: candidate preparation ONLY; no push, branch promotion, deploy or database action authorized.
+Branch: integration/production-expiry-20261015, derived from exact Expiry93fba99a87c5c5a981cddbcef5555033e46ed5d8; merge complete Production26da5078163f69ca76a9169dd8d97365d7ba6c54. Merge base036ff5c7de988e5db06de1a2ddf779daef814164.
+
+Four conflicts explicitly resolved: three entry/cache/script loading blocks; cloud manifest reset combines both states. Additional proven integration fix moves syncPromise cleanup past initialization for synchronous empty-manifest return. Version refresh now guards pending Expiry work alongside Receiving.
+
+Verification: full755 tests/712PASS/42FAIL/1SKIP; all failure names reproduced on exact baseline(s), zero new failures. Focused619PASS/0FAIL. Production build and diff check PASS. Expiry modules and sensitive non-overlap owners byte-for-byte preserved. Full evidence and baseline failure list: docs/production-expiry-integration-review.md.
+
+Status: candidate prepared for review; full suite is NOT green.42 baseline failures remain documented; physical operational behavior READY FOR USER TEST, not DONE. Next: Product Owner reviews merge and known test limitations before any separate approval for Staging integration. No approval yet to touch original Expiry/main or deployed Preview.
+
+Protect: Production Receiving barcode/KPI/duplicate-line/filter/over-received/idle/version hotfixes; accepted Expiry Save optimizations/durable retries/green flash/search border/diagnostic removal/Handheld/Serial/Batch/history; account isolation and no SQL changes. Clear Session stays retired. Original local dirty worktree preserved separately and must never be reset.
+
+---
+
 # PharmFlow Global Master Group Integrity — Gate B Preparation
 
 **Status:** Code implementation prepared in an isolated local branch. Production SQL and deployment are not approved and were not executed.
