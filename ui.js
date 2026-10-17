@@ -9205,6 +9205,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 <label class="barcodeNewItemCode">Item Code<input data-new-item-code autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Item Code" value="${esc(prefill.itemCode||"")}"></label>
                 <label class="barcodeNewItemName">Item Name<input data-new-item-name autocomplete="off" placeholder="Item Name"></label>
                 <label class="barcodeNewItemBarcode">Barcode<input data-new-item-barcode autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode" value="${esc(prefill.barcode||"")}"></label>
+                <label class="barcodeNewItemGroup"><span>Group <b>*</b></span><select data-new-item-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select></label>
                 <div class="barcodeNewItemActions"><button type="button" class="secondaryButton" data-cancel-new-item>Cancel</button><button type="button" class="primaryButton" data-create-item>Add Item</button></div>
             </div>
         </section>`;
@@ -9215,13 +9216,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             let existingGlobal;
             try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Global Master","error");return;}
             if(existingGlobal){searchInput.value=itemCode;await showItem(existingGlobal);return;}
-            let groupField=workspace.querySelector("[data-new-item-group]");
-            if(!groupField){
-                const label=document.createElement("label");label.className="barcodeNewItemGroup";
-                label.innerHTML='<span>Group <b>*</b></span><select data-new-item-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select>';
-                workspace.querySelector(".barcodeNewItemBarcode")?.before(label);groupField=label.querySelector("select");
-                showToast?.("This Global Item is new. Select its Group, then choose Add Item again.","info");groupField?.focus();return;
-            }
+            const groupField=workspace.querySelector("[data-new-item-group]");
             const groupName=toSafeString(groupField.value).trim();
             if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName)){showToast?.("Select one of the six approved Groups","warning");groupField.focus();return;}
             event.currentTarget.disabled=true;
