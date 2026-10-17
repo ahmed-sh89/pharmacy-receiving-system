@@ -9015,14 +9015,14 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const parseSearch=value=>{
         const raw=toSafeString(value).trim();
-        if(!raw) return {raw:"",query:"",isBarcode:false};
+        if(!raw) return {raw:"",query:"",isBarcode:false,isPlainGtin:false,isStrongGs1:false};
         const isPlainGtin=/^\d{8,14}$/.test(raw);
         const isStrongGs1=typeof looksLikeStrongBarcode==="function"&&looksLikeStrongBarcode(raw);
         if((isPlainGtin||isStrongGs1)&&typeof parseGS1Barcode==="function"){
             try{
                 const parsed=parseGS1Barcode(raw);
                 const gtin=toSafeString(parsed?.gtin).trim();
-                if(gtin&&parsed?.parsed) return {raw,query:gtin,isBarcode:true};
+                if(gtin&&parsed?.parsed) return {raw,query:gtin,isBarcode:true,isPlainGtin,isStrongGs1};
             }catch(_error){}
         }
 
@@ -9040,16 +9040,20 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             ? cleanScannerInput(raw)
             : raw.replace(/^\](?:C1|d2|Q3)/i,"").replace(/\\?~+/g,"\x1D");
         const ai01Match=gs1Payload.match(/^01(\d{14})/);
-        if(isStrongGs1&&ai01Match) return {raw,query:ai01Match[1],isBarcode:true};
+        if(isStrongGs1&&ai01Match) return {raw,query:ai01Match[1],isBarcode:true,isPlainGtin,isStrongGs1};
 
-        return {raw,query:raw,isBarcode:false};
+        return {raw,query:raw,isBarcode:false,isPlainGtin,isStrongGs1};
     };
     const itemCodeOf=item=>toSafeString(item?.item_code||item?.itemCode).trim();
     const itemNameOf=item=>toSafeString(item?.item_name||item?.itemName||"Unnamed item").trim();
     const newItemAction=()=>canWriteGlobal()?'<section class="barcodeNewItemAction"><div><span class="barcodeSectionLabel">NEW ITEM</span><strong>Add New Item</strong><small>Add an item manually using Item Code, Item Name and Barcode.</small></div><button type="button" class="secondaryButton" data-add-new-item>+ Add New Item</button></section>':"";
     const bindNewItemAction=prefill=>workspace.querySelector("[data-add-new-item]")?.addEventListener("click",()=>renderNewItemForm(prefill));
     const renderDefault=()=>{selectedItem=null;workspace.innerHTML=`<div class="barcodeControlWelcome"><strong>Ready to search</strong><span>Scan a barcode or enter an item code or item name.</span></div>${newItemAction()}`;bindNewItemAction("");};
-    const itemSummary=item=>`<section class="barcodeItemCard"><span class="barcodeSectionLabel">SELECTED ITEM</span><div class="barcodeItemIdentity"><strong>${esc(itemCodeOf(item))}</strong><b>${esc(itemNameOf(item))}</b></div></section>`;
+    const itemSummary=item=>{
+        const normalizedGroup=window.PharmFlowClassificationFilters?.normalize(item||{}).group||"";
+        const group=normalizedGroup?window.PharmFlowClassificationFilters.displayGroup(normalizedGroup):"—";
+        return `<section class="barcodeItemCard"><span class="barcodeSectionLabel">SELECTED ITEM</span><div class="barcodeItemIdentity"><div class="barcodeItemIdentityField"><span>Item Code</span><strong>${esc(itemCodeOf(item)||"—")}</strong></div><div class="barcodeItemIdentityField"><span>Item Name</span><b>${esc(itemNameOf(item))}</b></div><div class="barcodeItemIdentityField"><span>Group</span><strong>${esc(group)}</strong></div></div></section>`;
+    };
 
     const openControl=()=>{if(!modal)return;modal.hidden=false;modal.setAttribute("aria-hidden","false");renderDefault();requestAnimationFrame(()=>searchInput.focus());};
     const closeControl=()=>{if(!modal)return;modal.hidden=true;modal.setAttribute("aria-hidden","true");clearTimeout(searchSuggestTimer);searchInput.value="";workspace.innerHTML="";selectedItem=null;};
@@ -9225,10 +9229,14 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             catch(error){button.disabled=false;showToast?.(error?.message||"Unable to add item","error");}
         });
     };
-    const renderNoResults=search=>{
+    const newItemPrefillForNoResult=(search,{barcodeConfirmed=false}={})=>{
+        const confirmedBarcode=!!search?.isStrongGs1||(barcodeConfirmed&&!!search?.isBarcode);
+        return confirmedBarcode?{barcode:search.query}:{itemCode:search?.raw||search?.query||""};
+    };
+    const renderNoResults=(search,options={})=>{
         selectedItem=null;
         workspace.innerHTML=`<div class="barcodeControlEmpty"><strong>Item Not Found</strong><span>No matching item was found.</span></div>${newItemAction()}`;
-        bindNewItemAction(search?.isBarcode?{barcode:search.query}:{itemCode:search?.query||""});
+        bindNewItemAction(newItemPrefillForNoResult(search,options));
     };
     const renderItemResults=items=>{
         selectedItem=null;
@@ -9262,7 +9270,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             }
 
             const items=await IdentifierService.searchItems(search.query,12);
-            if(!items.length){renderNoResults(search);return;}
+            if(!items.length){renderNoResults(search,{barcodeConfirmed:scanned});return;}
             renderItemResults(items);
         }catch(error){renderDefault();showToast?.(error?.message||"Unable to search items","error");}
         finally{searchButton.disabled=false;}

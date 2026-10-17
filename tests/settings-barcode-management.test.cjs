@@ -86,8 +86,37 @@ assert(html.includes('class="secondaryButton barcodeControlClearButton"'),"Barco
 assert(html.includes('class="primaryButton barcodeControlSearchButton"'),"Barcode Control search must use the PharmFlow button system");
 assert(settings.includes("barcodeSearchResults"),"Search results must use the dedicated Barcode Control result component");
 assert(settings.includes("barcodeItemCard"),"Selected items must use the dedicated Barcode Control item card");
+assert.match(settings,/Item Code<\/span><strong>\$\{esc\(itemCodeOf\(item\)/,"Selected Item card must label Item Code separately");
+assert.match(settings,/Item Name<\/span><b>\$\{esc\(itemNameOf\(item\)/,"Selected Item card must label Item Name separately");
+assert.match(settings,/Group<\/span><strong>\$\{esc\(group\)/,"Selected Item card must display Group separately");
 assert(!settings.includes("needsReviewMappingCurrent"),"Barcode Control must not retain legacy Needs Review item markup");
 assert(!settings.includes("needsReviewMappingCompare"),"Barcode Control must not retain legacy Needs Review barcode-list markup");
+
+test("Selected Item card presents Item Code, Item Name, and effective Group separately",()=>{
+  const summaryMatch=settings.match(/const itemSummary=item=>\{([\s\S]*?)\n    \};/);
+  assert(summaryMatch,"Selected Item summary renderer must be available for focused regression coverage");
+  const render=new Function("item","esc","itemCodeOf","itemNameOf","window",`return (()=>{${summaryMatch[1]}})();`);
+  const output=render({item_code:"I100",item_name:"Sample Product",group_name:"HomeHealth",category:"Hair Care"},String,value=>value.item_code,value=>value.item_name,{
+    PharmFlowClassificationFilters:{normalize:item=>({group:item.group_name}),displayGroup:value=>value==="HomeHealth"?"Home Health":value}
+  });
+  assert.match(output,/Item Code[\s\S]*I100/);
+  assert.match(output,/Item Name[\s\S]*Sample Product/);
+  assert.match(output,/Group[\s\S]*Home Health/);
+  assert(!output.includes("Hair Care"),"A subordinate category must not be presented as the main Group");
+});
+
+test("Unknown barcode prefill preserves ambiguous numeric Item Code searches",()=>{
+  const prefillMatch=settings.match(/const newItemPrefillForNoResult=\(search,\{barcodeConfirmed=false\}=\{\}\)=>\{([\s\S]*?)\n    \};/);
+  assert(prefillMatch,"No-result Add New Item prefill helper must be available for focused regression coverage");
+  assert.match(settings,/data-new-item-code[^>]*value="\$\{esc\(prefill\.itemCode\|\|""\)\}"/);
+  assert.match(settings,/data-new-item-barcode[^>]*value="\$\{esc\(prefill\.barcode\|\|""\)\}"/);
+  assert(settings.includes("renderNoResults(search,{barcodeConfirmed:scanned})"),"Only scanner-confirmed values inherit barcode intent from ambiguous numeric input");
+  const prefill=new Function(`return (search,{barcodeConfirmed=false}={})=>{${prefillMatch[1]}}`)();
+  assert.deepStrictEqual(prefill({raw:"TESTPFGROUP2701",query:"TESTPFGROUP2701",isBarcode:true},{barcodeConfirmed:true}),{barcode:"TESTPFGROUP2701"});
+  assert.deepStrictEqual(prefill({raw:"123456789012",query:"123456789012",isBarcode:true,isPlainGtin:true}),{itemCode:"123456789012"},"Plain numeric input is ambiguous and remains an Item Code search when manually entered");
+  assert.deepStrictEqual(prefill({raw:"0106281086107829",query:"06281086107829",isBarcode:true,isStrongGs1:true}),{barcode:"06281086107829"});
+  assert.deepStrictEqual(prefill({raw:"PF-NEW-01",query:"PF-NEW-01",isBarcode:false}),{itemCode:"PF-NEW-01"});
+});
 
 test("Settings new Global Item creation handles asynchronous success and rejection",async t=>{
   const handlerMatch=settings.match(/workspace\.querySelector\("\[data-create-item\]"\)\?\.addEventListener\("click",async event=>\{([\s\S]*?)\n        \}\);/);
