@@ -9211,6 +9211,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         </section>`;
         workspace.querySelector("[data-cancel-new-item]")?.addEventListener("click",renderDefault);
         workspace.querySelector("[data-create-item]")?.addEventListener("click",async event=>{
+            const button=event.currentTarget;
             const itemCode=toSafeString(workspace.querySelector("[data-new-item-code]")?.value).trim(),itemName=toSafeString(workspace.querySelector("[data-new-item-name]")?.value).trim(),identifierDisplay=toSafeString(workspace.querySelector("[data-new-item-barcode]")?.value).trim();
             if(!itemCode||!itemName||!identifierDisplay){showToast?.("Item Code, Item Name and Barcode are required","warning");return;}
             let existingGlobal;
@@ -9219,9 +9220,9 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             const groupField=workspace.querySelector("[data-new-item-group]");
             const groupName=toSafeString(groupField.value).trim();
             if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName)){showToast?.("Select one of the six approved Groups","warning");groupField.focus();return;}
-            event.currentTarget.disabled=true;
+            button.disabled=true;
             try{await IdentifierService.createItem(nrV2OperationId(),{itemCode,itemName,groupName,identifierDisplay,reason:auditReason("ADD_ITEM")});searchInput.value=itemCode;await showItem({item_code:itemCode,item_name:itemName,group_name:groupName});showToast?.("Item added to Global Master","success");}
-            catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add item","error");}
+            catch(error){button.disabled=false;showToast?.(error?.message||"Unable to add item","error");}
         });
     };
     const renderNoResults=search=>{

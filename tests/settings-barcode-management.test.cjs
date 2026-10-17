@@ -1,6 +1,7 @@
 "use strict";
 const fs=require("fs");
 const assert=require("assert");
+const {test}=require("node:test");
 
 const html=fs.readFileSync("index.html","utf8");
 const ui=fs.readFileSync("ui.js","utf8");
@@ -87,3 +88,43 @@ assert(settings.includes("barcodeSearchResults"),"Search results must use the de
 assert(settings.includes("barcodeItemCard"),"Selected items must use the dedicated Barcode Control item card");
 assert(!settings.includes("needsReviewMappingCurrent"),"Barcode Control must not retain legacy Needs Review item markup");
 assert(!settings.includes("needsReviewMappingCompare"),"Barcode Control must not retain legacy Needs Review barcode-list markup");
+
+test("Settings new Global Item creation handles asynchronous success and rejection",async t=>{
+  const handlerMatch=settings.match(/workspace\.querySelector\("\[data-create-item\]"\)\?\.addEventListener\("click",async event=>\{([\s\S]*?)\n        \}\);/);
+  assert(handlerMatch,"Settings new-item click handler must be available for behavioral regression coverage");
+  const scenarios=[
+    {name:"successful creation",result:{success:true},expectedMessage:["Item added to Global Master","success"],expectedDisabled:true},
+    {name:"rejected creation",error:new Error("RPC rejected test creation"),expectedMessage:["RPC rejected test creation","error"],expectedDisabled:false}
+  ];
+  for(const scenario of scenarios){
+    await t.test(scenario.name,async()=>{
+      const calls=[];
+      const button={disabled:false};
+      const fields={
+        "[data-new-item-code]":{value:"PFTESTGROUP01"},
+        "[data-new-item-name]":{value:"PHARMFLOW GROUP TEST ITEM"},
+        "[data-new-item-barcode]":{value:"TESTPFGROUP2701"},
+        "[data-new-item-group]":{value:"Medicine",focus(){calls.push("group-focus");}}
+      };
+      let currentTarget=button;
+      const event={get currentTarget(){return currentTarget;}};
+      const workspace={querySelector(selector){return selector==="[data-create-item]"?button:fields[selector]||null;}};
+      const IdentifierService={
+        findGlobalItemByCode:async code=>{calls.push(["lookup",code]);return null;},
+        createItem:async(operationId,payload)=>{calls.push(["create",operationId,payload]);if(scenario.error)throw scenario.error;return scenario.result;}
+      };
+      const messages=[];
+      const callback=new Function("event","workspace","toSafeString","IdentifierService","searchInput","showItem","showToast","nrV2OperationId","auditReason",`return (async()=>{${handlerMatch[1]}})();`);
+      const work=callback(event,workspace,value=>String(value??""),IdentifierService,{value:""},async item=>calls.push(["show",item]),(message,kind)=>messages.push([message,kind]),()=>"isolated-op",reason=>reason);
+      currentTarget=null; // Browser dispatch clears currentTarget when the listener returns its Promise.
+      await work;
+      assert.deepStrictEqual(calls[0],["lookup","PFTESTGROUP01"]);
+      assert.deepStrictEqual(calls[1],["create","isolated-op",{
+        itemCode:"PFTESTGROUP01",itemName:"PHARMFLOW GROUP TEST ITEM",groupName:"Medicine",
+        identifierDisplay:"TESTPFGROUP2701",reason:"ADD_ITEM"
+      }],"Creation must reach the service with the selected Group and submitted item identity");
+      assert.strictEqual(button.disabled,scenario.expectedDisabled);
+      assert.deepStrictEqual(messages,[scenario.expectedMessage]);
+    });
+  }
+});
