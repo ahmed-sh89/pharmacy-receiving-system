@@ -286,7 +286,7 @@ test("reference pharmacy learning is centralized for Receiving and future Expiry
   assert.match(service,/isReferencePharmacy\(\)/);
   assert.match(service,/pharmacy_code[\s\S]*HHP084/);
   assert.match(service,/async learnIdentifier\(/);
-  assert.match(service,/learn_pharmflow_identifier_v1/);
+  assert.match(service,/learn_pharmflow_identifier_v2/);
   assert.match(service,/p_global_operation_id:operationId/);
   assert.match(service,/p_pharmacy_operation_id:globalThis\.crypto\.randomUUID\(\)/);
   assert.match(service,/return row\?\.pharmacyMapping/);
@@ -352,6 +352,6 @@ test("HHP084 Link & Receive auto-creates a missing Global item through the autho
   assert.match(migration,/create_pharmflow_global_item_and_learn_v1/);
   assert.match(migration,/'GLOBAL_AND_PHARMACY'/);
   assert.match(migration,/else[\s\S]*add_pharmflow_pharmacy_identifier_v2/);
-  assert.match(service,/learn_pharmflow_identifier_v1/);
+  assert.match(service,/learn_pharmflow_identifier_v2/);
   assert.match(receiving,/IdentifierService\.learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,selectedItem/);
 });

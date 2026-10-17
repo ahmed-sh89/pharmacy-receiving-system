@@ -2422,9 +2422,9 @@ function refreshReceivingCategoryFilter(){
            truthfully in the selector by checking every available Group. */
         if(key==="groups" && state[key].length===0 && choices[key].length) state[key]=choices[key].slice();
         const sig=choices[key].join("|")+"::"+state[key].join("|");if(menu.dataset.signature===sig)return;menu.dataset.signature=sig;
-        menu.innerHTML=`<div class="pfrFilterOptions">${choices[key].length?choices[key].map(v=>`<label><input type="checkbox" value="${escapeHTML(v)}" ${state[key].includes(v)?"checked":""}><span>${escapeHTML(v)}</span></label>`).join(""):'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
+        menu.innerHTML=`<div class="pfrFilterOptions">${choices[key].length?choices[key].map(v=>`<label><input type="checkbox" value="${escapeHTML(v)}" ${state[key].includes(v)?"checked":""}><span>${escapeHTML(window.PharmFlowClassificationFilters.displayGroup(v))}</span></label>`).join(""):'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
         const groupLabel=details.querySelector("#receivingGroupFilterLabel")||details.querySelector("summary strong");
-        const groupText=!state[key].length||state[key].length===choices[key].length?"Group":state[key].length===1?state[key][0]:state[key].length+" groups";
+        const groupText=!state[key].length||state[key].length===choices[key].length?"Group":state[key].length===1?window.PharmFlowClassificationFilters.displayGroup(state[key][0]):state[key].length+" groups";
         if(groupLabel) groupLabel.textContent=groupText;
     });
     if(host.dataset.bound!=="1"){
@@ -2489,7 +2489,7 @@ function createReceivingTableRow(
         </td>
 
         <td class="receivingCategoryCell">
-            ${escapeHTML(toSafeString((window.PharmFlowClassificationFilters?.normalize(item)?.group || "—")))}
+            ${escapeHTML(toSafeString((window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalize(item)?.group) || "—")))}
         </td>
 
         <td>
@@ -8557,8 +8557,8 @@ function renderItemBrowser(body, rows, options={}){
            opening at "All groups" means every available Group is explicitly
            selected, never an arbitrary subset inherited from a prior render. */
         if(selectedGroups.length===0 && choices.groups.length) selectedGroups=choices.groups.slice();
-        menu.innerHTML=`<div class="pfrFilterOptions">${choices.groups.map(value=>`<label><input type="checkbox" value="${esc(value)}" ${selectedGroups.includes(value)?"checked":""}><span>${esc(value)}</span></label>`).join('')||'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
-        const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?selectedGroups[0]:selectedGroups.length+' groups';
+        menu.innerHTML=`<div class="pfrFilterOptions">${choices.groups.map(value=>`<label><input type="checkbox" value="${esc(value)}" ${selectedGroups.includes(value)?"checked":""}><span>${esc(window.PharmFlowClassificationFilters.displayGroup(value))}</span></label>`).join('')||'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
+        const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?window.PharmFlowClassificationFilters.displayGroup(selectedGroups[0]):selectedGroups.length+' groups';
     };
     rebuildClassification();
     const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
@@ -9212,8 +9212,20 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         workspace.querySelector("[data-create-item]")?.addEventListener("click",async event=>{
             const itemCode=toSafeString(workspace.querySelector("[data-new-item-code]")?.value).trim(),itemName=toSafeString(workspace.querySelector("[data-new-item-name]")?.value).trim(),identifierDisplay=toSafeString(workspace.querySelector("[data-new-item-barcode]")?.value).trim();
             if(!itemCode||!itemName||!identifierDisplay){showToast?.("Item Code, Item Name and Barcode are required","warning");return;}
+            let existingGlobal;
+            try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Global Master","error");return;}
+            if(existingGlobal){searchInput.value=itemCode;await showItem(existingGlobal);return;}
+            let groupField=workspace.querySelector("[data-new-item-group]");
+            if(!groupField){
+                const label=document.createElement("label");label.className="barcodeNewItemGroup";
+                label.innerHTML='<span>Group <b>*</b></span><select data-new-item-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select>';
+                workspace.querySelector(".barcodeNewItemBarcode")?.before(label);groupField=label.querySelector("select");
+                showToast?.("This Global Item is new. Select its Group, then choose Add Item again.","info");groupField?.focus();return;
+            }
+            const groupName=toSafeString(groupField.value).trim();
+            if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName)){showToast?.("Select one of the six approved Groups","warning");groupField.focus();return;}
             event.currentTarget.disabled=true;
-            try{await IdentifierService.createItem(nrV2OperationId(),{itemCode,itemName,identifierDisplay,reason:auditReason("ADD_ITEM")});searchInput.value=itemCode;await showItem({item_code:itemCode,item_name:itemName});showToast?.("Item added to Global Master","success");}
+            try{await IdentifierService.createItem(nrV2OperationId(),{itemCode,itemName,groupName,identifierDisplay,reason:auditReason("ADD_ITEM")});searchInput.value=itemCode;await showItem({item_code:itemCode,item_name:itemName,group_name:groupName});showToast?.("Item added to Global Master","success");}
             catch(error){event.currentTarget.disabled=false;showToast?.(error?.message||"Unable to add item","error");}
         });
     };

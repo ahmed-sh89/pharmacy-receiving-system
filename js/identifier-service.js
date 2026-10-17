@@ -42,6 +42,12 @@ const IdentifierService={
     async createItem(operationId,item){
         return authRpc("create_pharmflow_global_item_v2",{p_operation_id:operationId,p_item_code:toSafeString(item.itemCode),p_item_name:toSafeString(item.itemName),p_group_name:toSafeString(item.groupName)||null,p_category:toSafeString(item.category)||null,p_sub_category:toSafeString(item.subCategory)||null,p_identifier_display:toSafeString(item.identifierDisplay),p_reason:toSafeString(item.reason)});
     },
+    async findGlobalItemByCode(itemCode){
+        const code=toSafeString(itemCode).trim().toUpperCase();
+        if(!code) return null;
+        const rows=await this.searchItems(toSafeString(itemCode).trim(),20);
+        return rows.find(row=>toSafeString(row?.item_code).trim().toUpperCase()===code)||null;
+    },
     async deleteUnusedItem(operationId,itemCode,reason="SETTINGS_DELETE_ITEM"){
         return authRpc("delete_unused_pharmflow_global_item_v1",{p_operation_id:operationId,p_item_code:toSafeString(itemCode),p_reason:toSafeString(reason)});
     },
@@ -68,17 +74,18 @@ const IdentifierService={
     isReferencePharmacy(){
         return toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     },
-    async learnIdentifier(operationId,identifierDisplay,item,reason){
+    async learnIdentifier(operationId,identifierDisplay,item,reason,groupName=""){
         const pharmacyId=this.pharmacyId();
         if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
         if(!globalThis.crypto?.randomUUID) throw new Error("This browser cannot create a secure operation ID");
-        const result=await authRpc("learn_pharmflow_identifier_v1",{
+        const result=await authRpc("learn_pharmflow_identifier_v2",{
             p_global_operation_id:operationId,
             p_pharmacy_operation_id:globalThis.crypto.randomUUID(),
             p_pharmacy_id:pharmacyId,
             p_identifier_display:toSafeString(identifierDisplay),
             p_item_code:toSafeString(item?.itemCode||item?.item_code),
             p_item_name:toSafeString(item?.itemName||item?.item_name),
+            p_group_name:toSafeString(groupName),
             p_reason:toSafeString(reason)
         });
         const row=Array.isArray(result)?result[0]:result;

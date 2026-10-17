@@ -164,20 +164,30 @@ window.PharmFlowDeviceWorkScope={
 };
 
 window.PharmFlowClassificationFilters={
+    approvedGroups:["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"],
+    normalizeGroup(value){
+        const cleaned=String(value??"").trim();
+        const key=cleaned.toLowerCase();
+        if(key==="home health")return "HomeHealth";
+        return this.approvedGroups.find(group=>group.toLowerCase()===key)||"";
+    },
+    displayGroup(value){const group=this.normalizeGroup(value);return group==="HomeHealth"?"Home Health":group;},
     normalize(row){
+        const rawGroup=row?.group_name||row?.groupName||row?.Group||"";
         const legacy=String(row?.category||row?.Category||"").trim();
-        return {group:String(row?.group_name||row?.groupName||row?.Group||legacy).trim(),category:String(row?.category||row?.Category||"").trim(),subCategory:String(row?.sub_category||row?.subCategory||row?.["Sub Category"]||"").trim()};
+        return {group:this.normalizeGroup(rawGroup)||this.normalizeGroup(legacy),category:legacy,subCategory:String(row?.sub_category||row?.subCategory||row?.["Sub Category"]||"").trim()};
     },
     choices(rows,selection={}){
         const values=(list,key)=>[...new Set(list.map(r=>this.normalize(r)[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-        const groups=new Set(selection.groups||[]),categories=new Set(selection.categories||[]);
+        const groups=new Set((selection.groups||[]).map(value=>this.normalizeGroup(value)).filter(Boolean)),categories=new Set(selection.categories||[]);
         const groupRows=groups.size?rows.filter(r=>groups.has(this.normalize(r).group)):rows;
         const categoryRows=categories.size?groupRows.filter(r=>categories.has(this.normalize(r).category)):groupRows;
-        return {groups:values(rows,"group"),categories:values(groupRows,"category"),subCategories:values(categoryRows,"subCategory")};
+        return {groups:this.approvedGroups.slice(),categories:values(groupRows,"category"),subCategories:values(categoryRows,"subCategory")};
     },
     filter(rows,selection={}){
-        const sets={groups:new Set(selection.groups||[]),categories:new Set(selection.categories||[]),subCategories:new Set(selection.subCategories||[])};
-        return rows.filter(row=>{const c=this.normalize(row);return(!sets.groups.size||sets.groups.has(c.group))&&(!sets.categories.size||sets.categories.has(c.category))&&(!sets.subCategories.size||sets.subCategories.has(c.subCategory));});
+        const sets={groups:new Set((selection.groups||[]).map(value=>this.normalizeGroup(value)).filter(Boolean)),categories:new Set(selection.categories||[]),subCategories:new Set(selection.subCategories||[])};
+        const allApprovedGroupsSelected=this.approvedGroups.every(group=>sets.groups.has(group));
+        return rows.filter(row=>{const c=this.normalize(row);return(!sets.groups.size||allApprovedGroupsSelected||sets.groups.has(c.group))&&(!sets.categories.size||sets.categories.has(c.category))&&(!sets.subCategories.size||sets.subCategories.has(c.subCategory));});
     }
 };
 

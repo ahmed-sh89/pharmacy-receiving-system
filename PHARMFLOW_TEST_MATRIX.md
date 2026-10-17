@@ -8,3 +8,6 @@
 - [ ] Handheld receiving remains synchronized.
 - [ ] Active Order Manifest remains correct after refresh.
 - [ ] Hidden tab produces no periodic cloud reads.
+
+## 2026-10-17 — Global Master Group Gate B
+See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case status. Automated focused checks and build are recorded there. Live Supabase behavior, Production migration/deployment, handheld acceptance, and Product Owner acceptance remain NOT RUN.

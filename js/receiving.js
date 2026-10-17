@@ -1021,7 +1021,23 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 const button=event.currentTarget;button.disabled=true;
                 try{
                     if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin())throw new Error("Pharmacy admin permission is required to link a new barcode.");
-                    const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,selectedItem,"Receiving barcode resolution");
+                    let groupName="";
+                    if(IdentifierService.isReferencePharmacy()){
+                        const globalItem=await IdentifierService.findGlobalItemByCode(selectedItem?.itemCode||selectedItem?.item_code);
+                        if(!globalItem){
+                            let groupSelect=selection.querySelector("[data-link-group]");
+                            if(!groupSelect){
+                                const field=document.createElement("label");field.className="pfnLinkGroupField";
+                                field.innerHTML='<span>Group <b>*</b></span><select data-link-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select>';
+                                selection.insertBefore(field,button);groupSelect=field.querySelector("select");
+                                panel.querySelector(".gtinPanelMessage").textContent="This Order item will be created in Global Master. Select its Group to continue.";
+                                groupSelect.focus();button.disabled=false;return;
+                            }
+                            groupName=toSafeString(groupSelect.value).trim();
+                            if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName))throw new Error("Select one of the six approved Groups before creating this Global Item.");
+                        }
+                    }
+                    const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,selectedItem,"Receiving barcode resolution",groupName);
                     const mapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
                     const resolution=mapping?{kind:"PHARMACY_LEARNED",mappingId:mapping.identifierId,mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode}:null;
                     const txs=receiveAutoAllocatedItem({item:selectedItem,quantity:readQuantity(),gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
@@ -1061,19 +1077,31 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 if(!itemCode||!itemName) throw new Error("Item Code and Item Name are required.");
                 if(!Number.isInteger(quantity)||quantity<1) throw new Error("Enter a whole quantity of 1 or more.");
                 const item={itemCode,itemName};
-                if(IdentifierService.isReferencePharmacy()){
-                    await IdentifierService.createItem(globalThis.crypto.randomUUID(),{itemCode,itemName,identifierDisplay:gtin,reason:"Receiving new item creation"});
+                const orderItem=getItemByCode?.(itemCode);
+                const targetOrder=orderItem?"":normalizeOrderNumber(panel.querySelector("[data-new-order]")?.value||selectedOrders[0]||"");
+                if(!orderItem&&!targetOrder) throw new Error("Choose an active Order before receiving this Extra Item.");
+                const existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);
+                if(existingGlobal){
+                    await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,existingGlobal,"Receiving barcode resolution");
+                }else if(IdentifierService.isReferencePharmacy()){
+                    let groupSelect=panel.querySelector("[data-new-group]");
+                    if(!groupSelect){
+                        const label=document.createElement("label");label.className="pfnCreateGroup";
+                        label.innerHTML='<span>Group <b>*</b></span><select data-new-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select>';
+                        createPane.querySelector(".pfnCreateGrid")?.appendChild(label);groupSelect=label.querySelector("select");
+                        button.disabled=false;panel.querySelector(".gtinPanelMessage").textContent="This is a new Global Item. Select its Group, then choose Create & Receive again.";groupSelect?.focus();return;
+                    }
+                    const groupName=toSafeString(groupSelect.value).trim();
+                    if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName)) throw new Error("Select one of the six approved Groups before creating this Global Item.");
+                    await IdentifierService.createItem(globalThis.crypto.randomUUID(),{itemCode,itemName,groupName,identifierDisplay:gtin,reason:"Receiving new item creation"});
                 }else{
                     await IdentifierService.addPharmacyIdentifier(globalThis.crypto.randomUUID(),gtin,item,"Receiving new item creation");
                 }
-                const orderItem=getItemByCode?.(itemCode);
                 let tx;
                 if(orderItem){
                     const txs=receiveAutoAllocatedItem({item:orderItem,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true});
                     tx=txs?.[0]||true;
                 }else{
-                    const targetOrder=normalizeOrderNumber(panel.querySelector("[data-new-order]")?.value||selectedOrders[0]||"");
-                    if(!targetOrder) throw new Error("Choose an active Order before receiving this Extra Item.");
                     const extra=prepareManualExtraItem(itemCode,itemName,gtin,targetOrder);
                     tx=receiveOrderItem({item:extra,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true});
                 }

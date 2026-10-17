@@ -1182,20 +1182,16 @@ function allocateReceivedQuantityAcrossOrderLines(sourceRows,receivedTotal){
 }
 
 function getOperationalGroupForReceivingRow(row){
-    const direct=toSafeString(row?.group_name||row?.groupName||row?.Group||"").trim();
-    if(direct) return direct;
+    const direct=window.PharmFlowClassificationFilters?.normalize(row||{}).group||"";
+    if(direct) return window.PharmFlowClassificationFilters.displayGroup(direct);
 
     const code=normalizeItemCode(row?.itemCode||row?.["Item Number"]||"");
     if(!code) return "";
 
     const workspaceItem=(AppState?.workspace?.orderData||[])
         .find(item=>normalizeItemCode(item?.itemCode||"")===code);
-    return toSafeString(
-        workspaceItem?.group_name||
-        workspaceItem?.groupName||
-        workspaceItem?.Group||
-        ""
-    ).trim();
+    const fallback=window.PharmFlowClassificationFilters?.normalize(workspaceItem||{}).group||"";
+    return fallback?window.PharmFlowClassificationFilters.displayGroup(fallback):"";
 }
 
 function getPerOrderReceivingRows(orderNumber, options={}){
@@ -1213,6 +1209,14 @@ function getPerOrderReceivingRows(orderNumber, options={}){
         : new Map((AppState?.workspace?.orderData||[]).map(item=>[
             normalizeItemCode(item?.itemCode||""),item
         ]));
+    const groupFor=(row,fallback={})=>{
+        const filters=typeof window!=="undefined"?window.PharmFlowClassificationFilters:null;
+        if(filters){
+            const group=filters.normalize(row||{}).group||filters.normalize(fallback||{}).group||"";
+            return group?filters.displayGroup(group):"";
+        }
+        return toSafeString(row?.group_name||row?.groupName||row?.Group||fallback?.group_name||fallback?.groupName||fallback?.Group||"").trim();
+    };
 
     const sourceIndexesByCode=new Map();
     source.forEach((row,index)=>{
@@ -1264,12 +1268,7 @@ function getPerOrderReceivingRows(orderNumber, options={}){
             "Difference":difference,
             "Issue Type":issueType,
             issueKey,
-            "Group":toSafeString(
-                row?.group_name||row?.groupName||row?.Group||
-                workspaceByCode.get(code)?.group_name||
-                workspaceByCode.get(code)?.groupName||
-                workspaceByCode.get(code)?.Group||""
-            ).trim(),
+            "Group":groupFor(row,workspaceByCode.get(code)||{}),
             "Category":row.category||"",
             "Sub Category":row.sub_category||row.subCategory||""
         };
@@ -1308,11 +1307,7 @@ function getPerOrderReceivingRows(orderNumber, options={}){
             "Difference":extra.received,
             "Issue Type":"Extra Item",
             issueKey:"manual",
-            "Group":toSafeString(
-                workspaceByCode.get(normalizeItemCode(extra.itemCode))?.group_name||
-                workspaceByCode.get(normalizeItemCode(extra.itemCode))?.groupName||
-                workspaceByCode.get(normalizeItemCode(extra.itemCode))?.Group||""
-            ).trim(),
+            "Group":groupFor(workspaceByCode.get(normalizeItemCode(extra.itemCode))||{}),
             "Category":toSafeString(workspaceByCode.get(normalizeItemCode(extra.itemCode))?.category||"").trim(),
             "Sub Category":toSafeString(workspaceByCode.get(normalizeItemCode(extra.itemCode))?.sub_category||workspaceByCode.get(normalizeItemCode(extra.itemCode))?.subCategory||"").trim()
         });
@@ -1525,7 +1520,7 @@ function buildLiveReceivingReport(options={}){
             "Received Qty":received,
             "Difference":difference,
             "Status":status,
-            "Group":item?.group_name||item?.groupName||item?.Group||item?.category||"",
+            "Group":window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalize(item)?.group)||"",
             "Category":item?.category||"",
             "Sub Category":item?.sub_category||item?.subCategory||"",
             "Extra Item":item?.manual===true
@@ -1766,7 +1761,7 @@ function buildReceivingDiscrepancyReportLegacy(options={}){
             "Received Qty":received,
             "Difference":difference,
             "Issue Type":issueType,
-            "Group":item.group_name||item.groupName||item.category||"",
+            "Group":window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalize(item)?.group)||"",
             "Category":item.category||"",
             "Sub Category":item.sub_category||item.subCategory||""
         });
