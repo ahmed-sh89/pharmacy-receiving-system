@@ -9022,7 +9022,14 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             try{
                 const parsed=parseGS1Barcode(raw);
                 const gtin=toSafeString(parsed?.gtin).trim();
-                if(gtin&&parsed?.parsed) return {raw,query:gtin,isBarcode:true,isPlainGtin,isStrongGs1};
+                /* The shared parser has a permissive FALLBACK mode for
+                   recovering likely GTINs from scanner payloads. That mode
+                   must not rewrite arbitrary long alphanumeric identifiers
+                   (for example TESTPFPREFILL20261017) into a numeric tail.
+                   Settings accepts only an authoritative GS1 parse, or a
+                   plain numeric GTIN that was already recognized above. */
+                const authoritativeParse=parsed?.format==="GS1"||(isPlainGtin&&parsed?.format==="LINEAR");
+                if(gtin&&parsed?.parsed&&authoritativeParse) return {raw,query:gtin,isBarcode:true,isPlainGtin,isStrongGs1};
             }catch(_error){}
         }
 

@@ -106,15 +106,40 @@ test("Selected Item card presents Item Code, Item Name, and effective Group sepa
 });
 
 test("Unknown barcode prefill preserves ambiguous numeric Item Code searches",()=>{
+  const parseMatch=settings.match(/const parseSearch=value=>\{([\s\S]*?)\n    \};/);
   const prefillMatch=settings.match(/const newItemPrefillForNoResult=\(search,\{barcodeConfirmed=false\}=\{\}\)=>\{([\s\S]*?)\n    \};/);
+  assert(parseMatch,"Settings search parser must be available for focused regression coverage");
   assert(prefillMatch,"No-result Add New Item prefill helper must be available for focused regression coverage");
   assert.match(settings,/data-new-item-code[^>]*value="\$\{esc\(prefill\.itemCode\|\|""\)\}"/);
   assert.match(settings,/data-new-item-barcode[^>]*value="\$\{esc\(prefill\.barcode\|\|""\)\}"/);
   assert(settings.includes("renderNoResults(search,{barcodeConfirmed:scanned})"),"Only scanner-confirmed values inherit barcode intent from ambiguous numeric input");
   const prefill=new Function(`return (search,{barcodeConfirmed=false}={})=>{${prefillMatch[1]}}`)();
-  assert.deepStrictEqual(prefill({raw:"TESTPFGROUP2701",query:"TESTPFGROUP2701",isBarcode:true},{barcodeConfirmed:true}),{barcode:"TESTPFGROUP2701"});
-  assert.deepStrictEqual(prefill({raw:"123456789012",query:"123456789012",isBarcode:true,isPlainGtin:true}),{itemCode:"123456789012"},"Plain numeric input is ambiguous and remains an Item Code search when manually entered");
-  assert.deepStrictEqual(prefill({raw:"0106281086107829",query:"06281086107829",isBarcode:true,isStrongGs1:true}),{barcode:"06281086107829"});
+  const parse=new Function("toSafeString","looksLikeStrongBarcode","parseGS1Barcode","cleanScannerInput",`return value=>{${parseMatch[1]}}`)(
+    value=>String(value??""),
+    value=>/^\](?:C1|d2|Q3)/i.test(value)||value.length>=18&&/\d{8,}/.test(value),
+    value=>{
+      const raw=String(value??"").replace(/^\](?:C1|d2|Q3)/i,"");
+      if(/^\d{8,14}$/.test(raw))return {gtin:raw,parsed:true,format:"LINEAR"};
+      const gs1=raw.match(/^01(\d{14})/);
+      if(gs1)return {gtin:gs1[1],parsed:true,format:"GS1"};
+      const fallback=raw.match(/(?:^|\D)(\d{8,13})(?:\D|$)/);
+      return fallback?{gtin:fallback[1],parsed:true,format:"FALLBACK"}:{gtin:"",parsed:false,format:"UNKNOWN"};
+    },
+    value=>String(value??"").replace(/^\](?:C1|d2|Q3)/i,"")
+  );
+  for(const identifier of ["TESTPFPREFILL20261017","TESTPFGROUP2701"]){
+    const parsed=parse(identifier);
+    assert.strictEqual(parsed.query,identifier,`${identifier} must not be reduced to a numeric substring`);
+    const confirmedScan={...parsed,isBarcode:true};
+    assert.deepStrictEqual(prefill(confirmedScan,{barcodeConfirmed:true}),{barcode:identifier},`${identifier} must retain its complete identifier in Barcode`);
+  }
+  const numericGtin=parse("06281086107829");
+  assert.deepStrictEqual(numericGtin,{raw:"06281086107829",query:"06281086107829",isBarcode:true,isPlainGtin:true,isStrongGs1:false});
+  assert.deepStrictEqual(prefill(numericGtin,{barcodeConfirmed:true}),{barcode:"06281086107829"},"A confirmed GTIN must remain unchanged in Barcode");
+  assert.deepStrictEqual(prefill(numericGtin),{itemCode:"06281086107829"},"A manually entered numeric value must preserve Item Code search behavior");
+  const gs1=parse("]C10100840164519373");
+  assert.deepStrictEqual(gs1,{raw:"]C10100840164519373",query:"00840164519373",isBarcode:true,isPlainGtin:false,isStrongGs1:true});
+  assert.deepStrictEqual(prefill(gs1),{barcode:"00840164519373"},"Valid GS1 must extract AI 01 GTIN and preserve leading zeroes");
   assert.deepStrictEqual(prefill({raw:"PF-NEW-01",query:"PF-NEW-01",isBarcode:false}),{itemCode:"PF-NEW-01"});
 });
 
