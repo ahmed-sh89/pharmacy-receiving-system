@@ -7813,3 +7813,8 @@ body.zebraDevice #zebraExpiryShell #expiryEvidenceMessage{flex-basis:100%}
  body.zebraDevice #zebraExpiryShell .expirySerialField{grid-column:3;grid-row:2}
  body.zebraDevice #zebraExpiryShell .expiryHandheldItemCard{padding:4px!important;gap:2px 6px}
 }
+
+/* Month options need room for their label and selection check on TC26. */
+body.zebraDevice #zebraExpiryShell #expiryMonth .pfSelectMenu{width:max-content;min-width:max(100%,140px)}
+body.zebraDevice #zebraExpiryShell #expiryMonth .pfSelectOption{white-space:nowrap}
+body.zebraDevice #zebraExpiryShell #expiryMonth .pfSelectCheck{flex-shrink:0}

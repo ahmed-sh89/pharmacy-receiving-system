@@ -162,9 +162,9 @@ function populateExpiryDateDropdowns(){
     const month = document.getElementById("expiryMonth");
     const year = document.getElementById("expiryYear");
     if(month?.dataset?.expirySelect){
-        buildExpirySelectOptions(month,[{value:"",label:"Month"},...Array.from({length:12},(_,i)=>({value:String(i+1),label:`${i+1} · ${expiryMonthShortName(i+1)}`}))]);
+        buildExpirySelectOptions(month,[{value:"",label:"Month"},...Array.from({length:12},(_,i)=>({value:String(i+1),label:`${expiryIsHandheld()?String(i+1).padStart(2,"0"):i+1} · ${expiryMonthShortName(i+1)}`}))]);
     }else if(month && month.tagName === "SELECT"){
-        const selected=month.value; month.innerHTML=`<option value="">Month</option>`+Array.from({length:12},(_,i)=>{const n=i+1;return `<option value="${n}">${n} · ${expiryMonthShortName(n)}</option>`}).join(""); if(selected)month.value=selected;
+        const selected=month.value; month.innerHTML=`<option value="">Month</option>`+Array.from({length:12},(_,i)=>{const n=i+1;return `<option value="${n}">${expiryIsHandheld()?String(n).padStart(2,"0"):n} · ${expiryMonthShortName(n)}</option>`}).join(""); if(selected)month.value=selected;
     }
     const current=new Date().getFullYear();
     if(year?.dataset?.expirySelect){
@@ -637,7 +637,7 @@ function renderExpiryActiveItem(item,gs1={}){
     const serialFromGS1=gs1.serialFromGS1??(gs1.format==="GS1"&&!!gs1.serial);
     if(batchInput){batchInput.readOnly=expiryIsHandheld() && !!(item && batchFromGS1);batchInput.value=item?(gs1.lot||""):"";}
     if(serialInput){serialInput.readOnly=expiryIsHandheld() && !!(item && serialFromGS1);serialInput.value=item?(gs1.serial||""):"";}
-    if(serialField)serialField.hidden=expiryIsHandheld() && !(item && serialFromGS1);
+    if(serialField)serialField.hidden=expiryIsHandheld();
     if(expiryIsHandheld()){
         return;
     }
