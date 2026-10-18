@@ -466,7 +466,7 @@ async function restoreExpiryDraft(){
     setExpiryControlValue(document.getElementById("expiryMonth"),draft.month);
     setExpiryControlValue(document.getElementById("expiryYear"),draft.year);
     setExpiryDateMode(draft.dateSource);
-    for(const [id,value] of Object.entries({expiryItemName:draft.item.itemName,expiryItemCode:draft.item.itemCode||"Needs Review",expiryItemGTIN:draft.item.identifierDisplay,expiryItemCategory:draft.item.category||"Pending",expiryItemBatch:draft.batch||draft.gs1?.lot,expiryItemSerial:draft.serial||draft.gs1?.serial})){
+    for(const [id,value] of Object.entries({expiryItemName:draft.item.itemName,expiryItemCode:draft.item.itemCode||"Needs Review",expiryItemGTIN:draft.item.identifierDisplay,expiryItemCategory:draft.item.groupName||"Pending",expiryItemBatch:draft.batch||draft.gs1?.lot,expiryItemSerial:draft.serial||draft.gs1?.serial})){
         const el=document.getElementById(id);if(el)el.textContent=value||"—";
     }
     const button=document.getElementById("btnSaveExpiryCapture");if(button){button.disabled=ExpiryCaptureEngine.saveUncertain && !ExpiryCaptureEngine.operation?.payload;button.textContent=ExpiryCaptureEngine.saveUncertain && ExpiryCaptureEngine.operation?"CHECK / RETRY SAVE":"SAVE & NEXT";}
@@ -661,7 +661,7 @@ function renderExpiryActiveItem(item,gs1={}){
     set("expiryActiveItemName",item.itemName||"Item not recognized");
     set("expiryActiveItemCode",item.itemCode||"Needs Review");
     set("expiryActiveItemGTIN",item.identifierDisplay||item.gtin||"—");
-    set("expiryActiveItemCategory",item.category||"Uncategorized");
+    set("expiryActiveItemCategory",item.groupName||"Uncategorized");
     shell.hidden=false;
 }
 
@@ -796,7 +796,7 @@ function renderExpirySearchResults(rows){
                 '<strong>'+expiryEscapeHtml(row.item_name||"Unnamed item")+'</strong>'+
                 '<span class="expirySearchResultIdentification"><span>Item Code <b>'+expiryEscapeHtml(row.item_code||"—")+'</b></span>'+
                 (identifier?'<span>GTIN / Barcode <b>'+expiryEscapeHtml(identifier)+'</b></span>':'')+'</span>'+
-                ((row.category||row.group_name)?'<small>'+expiryEscapeHtml(row.category||row.group_name)+'</small>':'')+
+                (row.group_name?'<small>'+expiryEscapeHtml(row.group_name)+'</small>':'')+
             '</div>'+
         '</button>';
     }).join("");
@@ -829,9 +829,9 @@ async function selectExpirySearchResult(index){
         const identifier=toSafeString(identifiers?.[0]?.identifier_display).trim();
         if(!identifier) throw new Error("No identifier mapped");
         ExpiryCaptureEngine.scannedGS1={identifierDisplay:identifier,gtin:identifier};
-        ExpiryCaptureEngine.currentItem={itemCode:row.item_code||"",itemName:row.item_name||"",identifierDisplay:identifier,gtin:identifier,category:row.category||row.group_name||"",identifierSource:"GLOBAL_SEARCH"};
+        ExpiryCaptureEngine.currentItem={itemCode:row.item_code||"",itemName:row.item_name||"",identifierDisplay:identifier,gtin:identifier,category:row.category||"",groupName:row.group_name||"",identifierSource:"GLOBAL_SEARCH"};
         renderExpiryActiveItem(ExpiryCaptureEngine.currentItem,{});
-        const values={expiryItemName:row.item_name||"Unnamed item",expiryItemCode:row.item_code||"—",expiryItemGTIN:identifier,expiryItemCategory:row.category||row.group_name||"Uncategorized"};
+        const values={expiryItemName:row.item_name||"Unnamed item",expiryItemCode:row.item_code||"—",expiryItemGTIN:identifier,expiryItemCategory:row.group_name||"Uncategorized"};
         Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
         const qty=document.getElementById("expiryQuantity");if(qty){qty.value="1";qty.readOnly=expiryIsHandheld();qty.dataset.intentionalEdit="0";}
         setExpiryDateMode("MANUAL");
@@ -1006,6 +1006,7 @@ async function resolveExpiryScannedValue(rawValue){
         identifierDisplay:resolvedIdentifier,
         gtin:resolvedIdentifier,
         category: record.category || "",
+        groupName: record.groupName || "",
         identifierSource:record.source||"",
         rawBarcode:String(rawValue??"")
     };
@@ -1013,7 +1014,7 @@ async function resolveExpiryScannedValue(rawValue){
     document.getElementById("expiryItemName").textContent = ExpiryCaptureEngine.currentItem.itemName || "Unnamed item";
     document.getElementById("expiryItemCode").textContent = ExpiryCaptureEngine.currentItem.itemCode || "—";
     document.getElementById("expiryItemGTIN").textContent = resolvedIdentifier;
-    document.getElementById("expiryItemCategory").textContent = ExpiryCaptureEngine.currentItem.category || "Uncategorized";
+    document.getElementById("expiryItemCategory").textContent = ExpiryCaptureEngine.currentItem.groupName || "Uncategorized";
     renderExpiryActiveItem(ExpiryCaptureEngine.currentItem,parsed||{});
 
     const batch = toSafeString(parsed?.lot || "").trim();
