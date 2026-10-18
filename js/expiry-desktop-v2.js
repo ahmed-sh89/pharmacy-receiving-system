@@ -243,7 +243,7 @@
     if(openInventoryMenu===id){closeInventoryMenus(true);return;}
     closeInventoryMenus();openInventoryMenu=id;
     if(id==='expiryFilter'){
-      if(!filters.months.length&&filters.expiredThrough==null)expandedYears.clear();
+      expandedSections.clear();expandedYears.clear();
       filterDraft=JSON.parse(JSON.stringify(filters));filterDraftScope=scope();renderInventoryFilters();
     }
     if(id==='expiryBulkMenu'){openFloatingMenu(el(id+'Panel'),el(id));return;}

@@ -7761,3 +7761,10 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer button.primar
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button{min-height:36px;cursor:pointer;transition:background-color .12s,color .12s}
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button[aria-checked=true]:hover{background:#e7e0f2}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderFilterButton:focus-visible{outline:2px solid #8066b5!important;outline-offset:1px!important}
+
+/* Keep filter actions fixed while only the filter options area scrolls. */
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel{width:370px;max-width:calc(100vw - 32px);max-height:min(560px,calc(100vh - 140px));max-height:min(560px,calc(100dvh - 140px));min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>header,
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext,
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer{flex:0 0 auto}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
