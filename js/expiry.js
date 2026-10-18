@@ -722,6 +722,7 @@ function resetExpiryCaptureForm(options = {}){
 }
 
 function focusExpiryScanner(){
+    if(document.getElementById("needsReviewOverlay"))return;
     if(expiryIsHandheld() && (document.getElementById("expiryCapturedOverlay") || document.querySelector(".expiryPhotoViewer")))return;
     const input = document.getElementById("expiryBarcodeInput");
     if(!input) return;

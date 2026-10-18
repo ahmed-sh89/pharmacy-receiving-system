@@ -147,3 +147,5 @@ module.exports={harness};
  test('Desktop unknown capture offers Resolve Now and Save for Review; Handheld keeps original actions',()=>{
  for(const handheld of [false,true]){const h=harness(handheld);h.c.engine.currentItem={needsReview:true};h.c.renderExpiryEvidence();if(!handheld){assert.equal(h.e('btnResolveExpiryNow').hidden,false);assert.equal(h.e('btnSaveExpiryCapture').textContent,'Save for Review');h.c.engine.saveUncertain=true;h.c.renderExpiryEvidence();assert.equal(h.e('btnResolveExpiryNow').disabled,true);assert.equal(h.e('btnSaveExpiryCapture').textContent,'CHECK / RETRY SAVE');}else assert.equal(h.e('btnSaveExpiryCapture').textContent,'SAVE & NEXT');}
  });
+
+test('scanner focus never escapes an open Needs Review dialog',()=>{const h=harness();const old=h.c.document.getElementById;h.c.document.getElementById=id=>id==='needsReviewOverlay'?{}:old(id);h.c.focusExpiryScanner();assert.notEqual(h.c.document.activeElement,h.e('expiryBarcodeInput'));});

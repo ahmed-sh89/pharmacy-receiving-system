@@ -84,4 +84,6 @@ See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case stat
 - [x] Live Staging rollback-only tests: six Groups, original capture metadata/quantity, retry, local-only B, unauthorized creation, cross-pharmacy denial. All synthetic writes rolled back.
 - [x] DOM tests: existing selection, original barcode, exact Group dropdown, no creation for local-only account, frozen uncertain retry.
 - [x] Existing Desktop/Handheld capture and operation tests; build. Historical baseline failures remain separately recorded.
-- [ ] Browser acceptance of final Preview and physical Handheld acceptance: report actual observed results at release.
+- [x] Desktop candidate browser: Resolve Now -> existing item, code/name lookup, original barcode, required-field validation, existing-code conflict retains Pending, Save for Review -> Create & Resolve, inventory rows and preserved old identifier. 1363x936 viewport.
+- [x] Handheld mode rendered existing scan/photo/save actions without Resolve Now; source and automated capture/photo regression verified.
+- [ ] Physical TC26 scan/camera/throughput and native Handheld/1366x768 viewports remain Product Owner acceptance; desktop-sized emulation is not device verification.

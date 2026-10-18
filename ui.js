@@ -9719,7 +9719,14 @@ async function openExpiryNeedsReviewPanel(options={}){
     setTabState(true);
     const close=()=>{if(overlay.dataset.busy==='1')return;overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus({preventScroll:true});};
     overlay.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
-    overlay.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close();}});
+    overlay.addEventListener('keydown',event=>{
+        if(event.key==='Escape'){event.preventDefault();close();return;}
+        if(event.key!=='Tab')return;
+        const controls=[...overlay.querySelectorAll('.expiryNeedsReviewPanel button,.expiryNeedsReviewPanel input,.expiryNeedsReviewPanel select')].filter(node=>!node.disabled&&node.getClientRects().length);
+        const first=controls[0],last=controls[controls.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    });
     let expanded=null;
     rows.forEach((row,index)=>{
         const section=overlay.querySelector(`[data-expiry-review-id="${CSS.escape(row.review_id)}"]`),detail=section?.querySelector(`[data-expiry-case="${index}"]`);
@@ -9764,7 +9771,10 @@ async function openExpiryNeedsReviewPanel(options={}){
         }});
     });
     const target=options.reviewId?rows.findIndex(row=>row.review_id===options.reviewId):-1;
-    if(target>=0)overlay.querySelector(`[data-expiry-detail="${target}"]`)?.click();
+    if(target>=0){
+        overlay.querySelector(`[data-expiry-detail="${target}"]`)?.click();
+        overlay.querySelector(`[data-master-search="${target}"]`)?.focus({preventScroll:true});
+    }
     else overlay.querySelector('[data-expiry-detail="0"]')?.focus();
 }
 
