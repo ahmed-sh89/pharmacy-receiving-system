@@ -9250,7 +9250,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             if(existingGlobal){
                 searchInput.value=itemCode;
                 try{await showItem(existingGlobal);}
-                catch(error){showToast?.("Item already exists in Global Master. No duplicate was created, but its details could not be loaded.","warning");}
+                catch(error){closeControl();showToast?.("Item already exists in Global Master. No duplicate was created, but its details could not be loaded.","warning");}
                 return;
             }
             const groupField=workspace.querySelector("[data-new-item-group]");

@@ -60,9 +60,11 @@ test("genuine create RPC failure stays visible and safely retryable",async()=>{
 });
 
 test("existing item retry never creates a duplicate item or mapping",async()=>{
-  const result=await exercise({existingItem:{item_code:"PFHOTFIX01",item_name:"Already exists",group_name:"Medicine"}});
+  const result=await exercise({existingItem:{item_code:"PFHOTFIX01",item_name:"Already exists",group_name:"Medicine"},refreshError:new Error("detail list unavailable")});
   assert.equal(result.calls.some(call=>Array.isArray(call)&&call[0]==="create"),false);
   assert.equal(result.calls.some(call=>Array.isArray(call)&&call[0]==="resolve"),false);
+  assert.equal(result.closed,true);
+  assert.deepEqual(result.messages,[["Item already exists in Global Master. No duplicate was created, but its details could not be loaded.","warning"]]);
 });
 
 test("barcode already mapped to another item is rejected before create",async()=>{
