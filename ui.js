@@ -9247,13 +9247,30 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             if(!itemCode||!itemName||!identifierDisplay){showToast?.("Item Code, Item Name and Barcode are required","warning");return;}
             let existingGlobal;
             try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Global Master","error");return;}
-            if(existingGlobal){searchInput.value=itemCode;await showItem(existingGlobal);return;}
+            if(existingGlobal){
+                searchInput.value=itemCode;
+                try{await showItem(existingGlobal);}
+                catch(error){showToast?.("Item already exists in Global Master. No duplicate was created, but its details could not be loaded.","warning");}
+                return;
+            }
             const groupField=workspace.querySelector("[data-new-item-group]");
             const groupName=toSafeString(groupField.value).trim();
             if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName)){showToast?.("Select one of the six approved Groups","warning");groupField.focus();return;}
+            let existingIdentifier;
+            try{existingIdentifier=await IdentifierService.resolve(identifierDisplay);}
+            catch(error){showToast?.(error?.message||"Unable to check barcode mapping","error");return;}
+            if(existingIdentifier?.found){
+                const mappedCode=toSafeString(existingIdentifier.itemCode||existingIdentifier.item_code).trim();
+                showToast?.(mappedCode?(`Barcode is already linked to Item Code ${mappedCode}. No duplicate was created.`):"Barcode is already mapped. No duplicate was created.","error");
+                return;
+            }
             button.disabled=true;
-            try{await IdentifierService.createItem(nrV2OperationId(),{itemCode,itemName,groupName,identifierDisplay,reason:auditReason("ADD_ITEM")});searchInput.value=itemCode;await showItem({item_code:itemCode,item_name:itemName,group_name:groupName});showToast?.("Item added to Global Master","success");}
-            catch(error){button.disabled=false;showToast?.(error?.message||"Unable to add item","error");}
+            try{await IdentifierService.createItem(nrV2OperationId(),{itemCode,itemName,groupName,identifierDisplay,reason:auditReason("ADD_ITEM")});}
+            catch(error){button.disabled=false;showToast?.(error?.message||"Unable to add item","error");return;}
+            try{await showItem({item_code:itemCode,item_name:itemName,group_name:groupName});}
+            catch(refreshError){if(typeof Logger!=="undefined")Logger.warn("Global Master item created but detail refresh failed",refreshError);}
+            closeControl();
+            showToast?.("Item added to Global Master","success");
         });
     };
     const newItemPrefillForNoResult=(search,{barcodeConfirmed=false}={})=>{
