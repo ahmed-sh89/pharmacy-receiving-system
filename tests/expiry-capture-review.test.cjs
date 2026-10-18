@@ -149,8 +149,8 @@ test('Existing invalid quantity rule is exposed and +/- correction clears error'
  const h=harness();h.c.bindExpiryCaptureUI();h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='0';await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryCaptureValidation').textContent,'Enter quantity');assert.equal(h.e('expiryQuantity').classList.contains('expiryFieldError'),true);
  h.e('btnExpiryQtyPlus').dispatchEvent(new h.c.Event('click'));assert.equal(h.e('expiryQuantity').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryCaptureValidation').hidden,true);
 });
-test('New validation presentation remains Desktop-only',async()=>{
- const h=harness(true);h.c.engine.selectedWorkerId='worker';h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='1';await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryMonth').classList.contains('expiryFieldError'),false);assert.equal(h.e('expiryCaptureValidation').textContent,'');
+test('Handheld year validation uses the visible status and existing field highlight',async()=>{
+ const h=harness(true);h.c.engine.selectedWorkerId='worker';h.c.engine.currentItem={itemCode:'ITEM1'};h.e('expiryQuantity').value='1';await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);h.c.setExpiryControlValue(h.e('expiryMonth'),'2');await h.c.saveExpiryCapture();assert.equal(h.e('expiryYear').classList.contains('expiryFieldError'),true);assert.equal(h.e('expiryScanStatus').textContent,'Select expiry year');assert.equal(h.e('expiryCaptureValidation').hidden,true);
 });
 
 module.exports={harness};

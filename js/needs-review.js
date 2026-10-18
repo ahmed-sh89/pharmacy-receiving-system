@@ -69,7 +69,7 @@ const ExpiryReviewBackend = {
         }})();
         this.refreshPromise=request;
         this.refreshPharmacyId=pharmacyId;
-        try{return await request;}finally{if(this.refreshPromise===request)this.refreshPromise=null;}
+        try{return await request;}finally{if(this.refreshPromise===request){this.refreshPromise=null;if(typeof renderExpiryEvidence==='function')renderExpiryEvidence();}}
     },
     async list(){
         if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until the approved Staging migration is applied and verified');
@@ -152,15 +152,15 @@ function nrV2WaitForEvidenceImage(image,url,timeoutMs=10000){
     });
 }
 window.nrV2WaitForEvidenceImage=nrV2WaitForEvidenceImage;
-if(typeof AppEvents!=="undefined"&&AppEvents?.on){
-    AppEvents.on('auth:context',()=>{
+window.addEventListener?.('auth:context-ready',()=>{
         // Auth context can be re-emitted during ordinary same-pharmacy sync.
         // Keep the last verified tab usable while refreshing; every list/write
         // RPC still authenticates and checks membership on the server.
         const pharmacyId=nrV2PharmacyId();
         if(!pharmacyId||(ExpiryReviewBackend.pharmacyId&&ExpiryReviewBackend.pharmacyId!==pharmacyId))ExpiryReviewBackend.invalidate();
         setTimeout(()=>ExpiryReviewBackend.refresh(),0);
-    });
+});
+if(typeof AppEvents!=="undefined"&&AppEvents?.on){
     AppEvents.on('route:changed',payload=>{if(payload?.routeName==='expiry')setTimeout(()=>ExpiryReviewBackend.refresh(),0);});
 }
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>ExpiryReviewBackend.refresh(),0));

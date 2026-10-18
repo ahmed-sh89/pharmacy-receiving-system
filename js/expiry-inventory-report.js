@@ -2,8 +2,8 @@
 (function(){
   const headers=['✓','Item Code','GTIN','Product Name','Group','Batch','Expiry','Qty'];
   const excelHeaders=['Item Code','GTIN','Product Name','Group','Batch','Expiry','Quantity','Last Updated','Status'];
-  const groupLabel=row=>window.ExpiryInventoryFilters?.rowGroup(row).label||'No canonical Group';
-  const rows=source=>source.map(r=>['',String(r.item_code??''),String(r.identifier_display??''),String(r.item_name??''),groupLabel(r),r.batch_no||'Not Recorded',String(r.expiry_month).padStart(2,'0')+'/'+r.expiry_year,Number(r.quantity)||0]);
+  const groupLabel=row=>window.ExpiryInventoryFilters?.rowGroup(row).label||'Uncategorized';
+  const rows=source=>source.map(r=>['',String(r.item_code??''),String(r.identifier_display??''),String(r.item_name??''),groupLabel(r),r.batch_no||'—',String(r.expiry_month).padStart(2,'0')+'/'+r.expiry_year,Number(r.quantity)||0]);
   const excelRows=source=>rows(source).map((r,i)=>[...r.slice(1,7),r[7],String(source[i].updated_at||''),String(source[i].status||'ACTIVE')]);
   const layout={margin:14.1732,rowHeight:10.5,headerHeight:10,metaHeight:9,font:7,minFont:6.5,widths:[12,65,89,0,65,104,54,48]};
   const columnWidths=width=>layout.widths.map((v,i)=>i===3?width-layout.widths.reduce((a,b)=>a+b,0):v);

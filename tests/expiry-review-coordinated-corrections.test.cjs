@@ -11,7 +11,7 @@ function backendHarness(rpc){
   const button={disabled:true,title:'',attrs:{},setAttribute(k,v){this.attrs[k]=v;}};
   const pharmacy={id:'pharmacy-a'};
   const events={};
-  const window={addEventListener(){}};
+  const window={addEventListener(name,handler){events[name]=handler;}};
   const context={
     window,document:{getElementById:id=>id==='btnExpiryNeedsReview'?button:null,addEventListener(){}},
     AuthState:{context:{pharmacy_id:pharmacy.id}},getCurrentPharmacyId:()=>pharmacy.id,
@@ -57,7 +57,7 @@ test('same-pharmacy auth-context refresh does not strand a verified Needs Review
   };
   const {backend,button,events}=backendHarness(rpc);
   assert.equal(await backend.refresh(),true);assert.equal(button.disabled,false);
-  fail=true;events['auth:context']();await backend.refresh();
+  fail=true;events['auth:context-ready']();await backend.refresh();
   assert.equal(backend.ready,true);assert.equal(backend.pendingCount,2);assert.equal(button.disabled,false);
 });
 
@@ -132,4 +132,12 @@ test('Resolve UI remains pharmacy-local and Storage evidence stays authenticated
   assert.match(ui,/nrV2WaitForEvidenceImage\(img,url\)/);assert.match(ui,/Evidence photo unavailable\. Retry or check pharmacy access\./);
   assert.match(ui,/data-expiry-photo-retry/);
   assert.doesNotMatch(backend,/storage\.from\([^)]*\)\.makePublic|service_role/i);
+});
+
+test('Actual context-ready event initializes an unready backend; failed refresh settles before rendering availability',async()=>{
+ let calls=0;const h=backendHarness(async name=>{calls++;return name==='get_pharmflow_expiry_review_contract_v1'?{contract_version:'EXPIRY_NEEDS_REVIEW_20261010_V2'}:0;});
+ assert.equal(h.backend.ready,false);assert.equal(typeof h.events['auth:context-ready'],'function');assert.equal(h.events['auth:context'],undefined);
+ h.events['auth:context-ready']();await new Promise(resolve=>setTimeout(resolve,5));assert.equal(h.backend.ready,true);assert.equal(calls,2);
+ h.backend.invalidate();let pendingAtFinalRender=true;h.context.renderExpiryEvidence=()=>{pendingAtFinalRender=!!h.backend.refreshPromise;};
+ h.context.authRpc=async()=>{throw Error('offline');};await h.backend.refresh();assert.equal(h.backend.ready,false);assert.equal(pendingAtFinalRender,false);
 });

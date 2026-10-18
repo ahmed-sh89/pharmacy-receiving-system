@@ -15,7 +15,7 @@ test('Expiry Group display uses the Production canonical mapping and never falls
   const f=c.window.ExpiryInventoryFilters;
   assert.deepEqual(Array.from(c.window.PharmFlowClassificationFilters.approvedGroups),['Beauty','FMCG','HomeHealth','Medicine','Mom & Baby','Supplement']);
   assert.equal(f.rowGroup({group_name:'HomeHealth',category:'Beauty'}).label,'Home Health');
-  assert.deepEqual(JSON.parse(JSON.stringify(f.rowGroup({group_name:null,category:'Medicine'}))),{group:'',label:'No canonical Group'});
+  assert.deepEqual(JSON.parse(JSON.stringify(f.rowGroup({group_name:null,category:'Medicine'}))),{group:'',label:'Uncategorized'});
   assert.equal(f.rowGroup({group_name:'Legacy Retail',category:'Medicine'}).label,'Unmapped Group');
 });
 
@@ -53,12 +53,12 @@ test('Missing Group selection is explicit and reports retain exact identifiers a
   const h=harness();await h.click('btnOpenExpiryInventory');await h.click('expiryFilter');await h.e('expirySectiongroups').onclick();
   const missing=h.e('expiryGroups').querySelector('[data-unassigned]');assert.ok(missing);missing.onclick();await h.e('expiryApplyFilters').onclick();await h.refresh();await new Promise(r=>setImmediate(r));
   const q=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1).p;
-  assert.equal(q.p_filters.include_unassigned,true);assert.ok(h.document.querySelector('.expiryInventoryTable tbody').textContent.includes('No canonical Group'));
+  assert.equal(q.p_filters.include_unassigned,true);assert.ok(h.document.querySelector('.expiryInventoryTable tbody').textContent.includes('Uncategorized'));
   const rows=h.data.filter(r=>!h.window.PharmFlowClassificationFilters.normalizeGroup(r.group_name));
   const report=h.c.ExpiryInventoryReport;
   assert.equal(report.excelHeaders[3],'Group');
   const output=report.rows(rows);
-  assert.equal(output[0][1],rows[0].item_code);assert.equal(output[0][2],rows[0].identifier_display);assert.ok(output.some(row=>row[4]==='Unmapped Group'));assert.ok(output.some(row=>row[4]==='No canonical Group'));
+  assert.equal(output[0][1],rows[0].item_code);assert.equal(output[0][2],rows[0].identifier_display);assert.ok(output.some(row=>row[4]==='Unmapped Group'));assert.ok(output.some(row=>row[4]==='Uncategorized'));
   assert.equal(report.headers[4],'Group');
 });
 
@@ -77,4 +77,14 @@ test('Inventory Group reads stay inside the authorized pharmacy RPC boundary',as
   assert.equal(query.p.p_pharmacy_id,'pharmacy1');
   const client=fs.readFileSync('js/expiry-desktop-v2.js','utf8');
   assert.doesNotMatch(client,/\.from\s*\(\s*['"]pharmflow_global_items_v2/);
+});
+
+test('Inventory, report preview and Excel present missing Batch and canonical Group without changing records',async()=>{
+ const h=harness();await h.click('btnOpenExpiryInventory');
+ const record={item_code:'0001',identifier_display:'05000167019391',item_name:'Original',batch_no:null,group_name:null,category:'Medicine',expiry_month:2,expiry_year:2027,quantity:3};
+ const before=JSON.stringify(record),report=h.c.ExpiryInventoryReport;
+ const rows=report.rows([record]),excel=report.excelRows([record]);
+ assert.equal(rows[0][4],'Uncategorized');assert.equal(rows[0][5],'—');assert.equal(excel[0][3],'Uncategorized');assert.equal(excel[0][4],'—');assert.equal(excel[0][1],'05000167019391');assert.equal(JSON.stringify(record),before);
+ record.batch_no='Sa799';assert.equal(report.rows([record])[0][5],'Sa799');
+ assert.doesNotMatch(fs.readFileSync('js/expiry-desktop-v2.js','utf8'),/Not Recorded/);
 });

@@ -398,7 +398,7 @@
           '<div class="expirySessionMeta"><time>' + esc(expiryFormatVerifiedAt(r.captured_at)) +
           '</time><span> · ' + r.registrations + ' registration' + (r.registrations === 1 ? '' : 's') +
           (r.adjustments ? ' · ' + r.adjustments + ' quantity adjustment' + (r.adjustments === 1 ? '' : 's') : '') + '</span></div></td>' +
-          '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "Not Recorded") + '</strong></td>' +
+          '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "—") + '</strong></td>' +
           '<td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
           '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-edit="' + i +
           '">Edit</button><button type="button" class="expirySessionAction danger" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-delete="' + i +
@@ -413,7 +413,7 @@
     body.innerHTML=page.rows.map((r,i)=>{
       const d=new Date(r.updated_at),isResolved=r.status==='RESOLVED';
       const group=monthFilters.rowGroup(r);
-      return '<tr'+(isResolved?' class="expiryResolvedRow"':'')+'><td><input type="checkbox" aria-label="Select '+esc(r.item_code)+'" data-row-selection="'+esc(r.row_id)+'" '+(selected.has(r.row_id)?'checked':'')+'></td><td class="expiryInventoryIdentifiers"><strong role="button" data-copy-identifier="Item Code" tabindex="0" aria-label="Copy full Item Code: '+esc(r.item_code||'—')+'" title="'+esc(r.item_code||'—')+'">'+esc(r.item_code||'—')+'</strong><span role="button" data-copy-identifier="GTIN" tabindex="0" aria-label="Copy full GTIN: '+esc(r.identifier_display||'—')+'" title="'+esc(r.identifier_display||'—')+'">'+esc(r.identifier_display||'—')+'</span></td><td class="expiryInventoryProduct"><strong>'+esc(r.item_name)+'</strong>'+(isResolved?'<span class="expiryResolvedLabel">Resolved</span>':'')+'</td><td class="expiryInventoryGroup" title="'+esc(group.label)+'">'+esc(group.label)+'</td><td>'+esc(r.batch_no||'Not Recorded')+'</td><td><span class="expiryDateBadge '+expiryPeriodClass(r)+'">'+month(r)+'</span></td><td class="expiryQtyCell">'+qty(r)+'</td><td class="expiryTimeCell"><time>'+esc(d.toLocaleDateString())+'<br>'+esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</time></td><td class="expiryActionsCell">'+(!isResolved?'<button type="button" class="expiryInventoryAction" data-row-edit="'+i+'" aria-label="Edit quantity for '+esc(r.item_code)+'" '+(busy?'disabled':'')+'>Edit</button> ':'')+'<button type="button" class="expiryInventoryAction expiryInventoryResolve" data-row-resolve="'+i+'" aria-label="'+(isResolved?'Restore':'Resolve')+' record '+esc(r.item_code)+'" '+(busy?'disabled':'')+'>'+(isResolved?'Restore':'Resolve')+'</button></td></tr>';
+      return '<tr'+(isResolved?' class="expiryResolvedRow"':'')+'><td><input type="checkbox" aria-label="Select '+esc(r.item_code)+'" data-row-selection="'+esc(r.row_id)+'" '+(selected.has(r.row_id)?'checked':'')+'></td><td class="expiryInventoryIdentifiers"><strong role="button" data-copy-identifier="Item Code" tabindex="0" aria-label="Copy full Item Code: '+esc(r.item_code||'—')+'" title="'+esc(r.item_code||'—')+'">'+esc(r.item_code||'—')+'</strong><span role="button" data-copy-identifier="GTIN" tabindex="0" aria-label="Copy full GTIN: '+esc(r.identifier_display||'—')+'" title="'+esc(r.identifier_display||'—')+'">'+esc(r.identifier_display||'—')+'</span></td><td class="expiryInventoryProduct"><strong>'+esc(r.item_name)+'</strong>'+(isResolved?'<span class="expiryResolvedLabel">Resolved</span>':'')+'</td><td class="expiryInventoryGroup" title="'+esc(group.label)+'">'+esc(group.label)+'</td><td>'+esc(r.batch_no||'—')+'</td><td><span class="expiryDateBadge '+expiryPeriodClass(r)+'">'+month(r)+'</span></td><td class="expiryQtyCell">'+qty(r)+'</td><td class="expiryTimeCell"><time>'+esc(d.toLocaleDateString())+'<br>'+esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</time></td><td class="expiryActionsCell">'+(!isResolved?'<button type="button" class="expiryInventoryAction" data-row-edit="'+i+'" aria-label="Edit quantity for '+esc(r.item_code)+'" '+(busy?'disabled':'')+'>Edit</button> ':'')+'<button type="button" class="expiryInventoryAction expiryInventoryResolve" data-row-resolve="'+i+'" aria-label="'+(isResolved?'Restore':'Resolve')+' record '+esc(r.item_code)+'" '+(busy?'disabled':'')+'>'+(isResolved?'Restore':'Resolve')+'</button></td></tr>';
     }).join('');
     body.querySelectorAll('[data-copy-identifier]').forEach(b=>{b.onclick=()=>copyInventoryIdentifier(b);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();return copyInventoryIdentifier(b);}};});
     body.querySelectorAll('[data-row-edit]').forEach(b=>b.onclick=()=>quantityEdit(page.rows[Number(b.dataset.rowEdit)],b));
@@ -712,7 +712,7 @@
     };
     let frozen;
     openDialog(deleting ? "Delete Current Session Group" : "Edit Current Session Quantity",
-      identity(r) + '<p>' + esc(r.batch_no || "Not Recorded") + ' · ' + month(r) + '</p>' +
+      identity(r) + '<p>' + esc(r.batch_no || "—") + ' · ' + month(r) + '</p>' +
       (deleting ? '<p>Remove <strong>' + qty(r) + ' units</strong> contributed by this current session?</p>' :
         '<label>Current session quantity<input data-session-quantity type="number" min="1" max="2147483647" step="1" value="' + qty(r) + '"></label>') +
       '<p>Historical inventory and original captured Serial evidence are preserved.</p>',
@@ -760,7 +760,7 @@
       "Edit Inventory Quantity",
       identity(r) +
         "<p>" +
-        esc(r.batch_no || "Not Recorded") +
+        esc(r.batch_no || "—") +
         " · " +
         month(r) +
         '</p><label>Total quantity<input data-total type="number" min="0" step="1" value="' +

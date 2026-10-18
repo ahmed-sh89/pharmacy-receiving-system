@@ -20,7 +20,7 @@
  const groupService=()=>window.PharmFlowClassificationFilters;
  const normalizeGroup=value=>groupService()?.normalizeGroup(value)||"";
  const displayGroup=value=>groupService()?.displayGroup(value)||"";
- function rowGroup(row){const raw=String(row?.group_name??'').trim(),group=normalizeGroup(raw);return {group,label:group?displayGroup(group):raw?'Unmapped Group':'No canonical Group'};}
+ function rowGroup(row){const raw=String(row?.group_name??'').trim(),group=normalizeGroup(raw);return {group,label:group?displayGroup(group):raw?'Unmapped Group':'Uncategorized'};}
  function hasCanonicalGroupContract(payload){const approved=groupService()?.approvedGroups||[];return approved.length===6&&Array.isArray(payload?.groups)&&payload.groups.length===approved.length&&approved.every((group,i)=>payload.groups[i]===group)&&typeof payload?.has_unassigned_group==='boolean'&&Array.isArray(payload?.rows)&&payload.rows.every(row=>Object.prototype.hasOwnProperty.call(row,'group_name'));}
  function assertCanonicalGroupContract(payload){if(!hasCanonicalGroupContract(payload))throw new Error('Canonical Group data is unavailable from the Expiry Inventory service. Refresh after the Group backend contract is installed.');return payload;}
  function assertCanonicalGroupRows(rows){if(!Array.isArray(rows)||rows.some(row=>!Object.prototype.hasOwnProperty.call(row,'group_name')))throw new Error('Canonical Group data is unavailable from the Expiry report service. Refresh after the Group backend contract is installed.');return rows;}

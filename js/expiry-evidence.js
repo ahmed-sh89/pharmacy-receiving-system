@@ -19,9 +19,9 @@ function renderExpiryEvidence(){
     const next=document.getElementById('btnExpiryPhoto');
     const ready=typeof ExpiryReviewBackend!=='undefined'&&ExpiryReviewBackend.ready;
     if(next){next.hidden=false;next.innerHTML=`<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14v12H3z M5 14l4-4 3 3 2-2 2 3"/></svg><span>${photo?"Photo added":"Add Photo"}</span>`;next.setAttribute("aria-label",photo?"View or edit draft photo":"Add Photo");next.disabled=engine.busy||engine.saveUncertain||!ready;}
-    const message=document.getElementById('expiryEvidenceMessage');if(message){message.textContent='';message.hidden=true;}
+    const message=document.getElementById('expiryEvidenceMessage');if(message){message.textContent=ready?'':ExpiryReviewBackend.refreshPromise?'Checking Needs Review…':'Needs Review unavailable. Reconnect and reopen Expiry.';message.hidden=ready;}
     const note=document.getElementById('btnExpiryNote');if(note){note.innerHTML=`<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 15 14 5l3 3-10 10H4z"/></svg><span>${engine.identificationNote?'Note added':'Add Note'}</span>`;note.disabled=engine.busy||engine.saveUncertain;}
-    const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent=engine.busy?'SAVING…':'SAVE & NEXT';save.disabled=engine.busy||engine.saveUncertain||!ready;}
+    const save=document.getElementById('btnSaveExpiryCapture');if(save&&engine.currentItem?.needsReview){save.textContent=engine.busy?'SAVING…':engine.saveUncertain?'CHECK / RETRY SAVE':'SAVE & NEXT';save.disabled=engine.busy||(engine.saveUncertain&&!engine.operation?.payload)||!ready;}
 }
 function bindExpiryEvidence(){
     const input=document.getElementById('expiryCameraInput');if(!input || input.dataset.bound==='1')return;

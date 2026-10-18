@@ -7790,3 +7790,26 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton:focus-visible,.expiry
 .expiryNeedsReviewPanel .expiryGlobalMasterIdentity{overflow-wrap:anywhere}
 @media(max-width:900px){body:not(.zebraDevice) #zebraExpiryShell #btnResolveExpiryNow{grid-column:1;grid-row:4}.expiryNeedsReviewPanel .expiryResolutionForm{grid-template-columns:minmax(0,1fr)}}
 .expiryNeedsReviewPanel [hidden],body:not(.zebraDevice) #zebraExpiryShell #btnResolveExpiryNow[hidden]{display:none!important}
+
+/* Short Handheld viewport: keep all fields and 44px touch targets in flow.
+   Reuse the existing visible-height owner; Desktop and History are untouched. */
+body.zebraDevice #zebraExpiryShell .expiryFieldError .pfSelectTrigger{border-color:#c03649!important;background:#fff2f3!important}
+body.zebraDevice #zebraExpiryShell .expiryCaptureCard #btnSaveExpiryCapture{position:static;bottom:auto;flex:none}
+body.zebraDevice #zebraExpiryShell #expiryEvidence{flex-wrap:wrap}
+body.zebraDevice #zebraExpiryShell #expiryEvidenceMessage{flex-basis:100%}
+@media (min-width:340px){
+ body.zebraDevice.zebraExpiryActive .mainContent{padding:2px!important}
+ body.zebraDevice #zebraExpiryShell .expiryHandheldHeader{margin-bottom:4px;gap:3px 6px}
+ body.zebraDevice #zebraExpiryShell .expiryCaptureCard{padding:4px!important;gap:2px}
+ body.zebraDevice #zebraExpiryShell .expiryEntryGrid{grid-template-columns:minmax(0,1fr) minmax(0,.9fr) minmax(140px,1.6fr);gap:5px}
+ body.zebraDevice #zebraExpiryShell .expiryDateField{grid-column:1!important;grid-row:1!important}
+ body.zebraDevice #zebraExpiryShell .expiryYearField{grid-column:2!important;grid-row:1!important}
+ body.zebraDevice #zebraExpiryShell .expiryQtyField{grid-column:3;grid-row:1}
+ body.zebraDevice #zebraExpiryShell .expiryQuantityControl{grid-template-columns:44px minmax(0,1fr) 44px;gap:2px}
+ body.zebraDevice #zebraExpiryShell .expiryQuantityControl button{min-width:44px}
+ body.zebraDevice #zebraExpiryShell .expiryEntryGrid .pfSelectTrigger{padding:0 5px;gap:2px}
+ body.zebraDevice #zebraExpiryShell .expiryBatchField{grid-column:1/-1;grid-row:2}
+ body.zebraDevice #zebraExpiryShell .expiryEntryGrid:has(.expirySerialField:not([hidden])) .expiryBatchField{grid-column:1/span 2;grid-row:2}
+ body.zebraDevice #zebraExpiryShell .expirySerialField{grid-column:3;grid-row:2}
+ body.zebraDevice #zebraExpiryShell .expiryHandheldItemCard{padding:4px!important;gap:2px 6px}
+}

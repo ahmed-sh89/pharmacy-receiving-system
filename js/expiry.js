@@ -301,23 +301,21 @@ function setExpiryStatus(kind, text){
     }
 }
 
-// Desktop validation presentation only; acceptance conditions remain in saveExpiryCapture.
+// Shared validation state; each device keeps its established status presentation.
 function showExpiryCaptureValidation(invalidIds,message){
-    if(expiryIsHandheld()) return;
     ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
         const field=document.getElementById(id);
         if(!field) return;
         const invalid=invalidIds.includes(id);
         field.classList.toggle("expiryFieldError",invalid);
-        if(invalid){field.setAttribute("aria-invalid","true");field.setAttribute("aria-describedby","expiryCaptureValidation");}
+        if(invalid){field.setAttribute("aria-invalid","true");field.setAttribute("aria-describedby",expiryIsHandheld()?"expiryScanStatus":"expiryCaptureValidation");}
         else{field.removeAttribute("aria-invalid");field.removeAttribute("aria-describedby");}
     });
     const feedback=document.getElementById("expiryCaptureValidation");
-    if(feedback){feedback.textContent=message||"";feedback.hidden=!message;}
+    if(feedback){feedback.textContent=message||"";feedback.hidden=expiryIsHandheld()||!message;}
     if(message) setExpiryStatus("error",message);
 }
 function clearCorrectedExpiryValidation(){
-    if(expiryIsHandheld()) return;
     const remaining=[];
     ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
         const field=document.getElementById(id);
@@ -328,7 +326,8 @@ function clearCorrectedExpiryValidation(){
         if(invalid) remaining.push(id);
     });
     const feedback=document.getElementById("expiryCaptureValidation");
-    if(!feedback || feedback.hidden) return;
+    if(!feedback || (!expiryIsHandheld() && feedback.hidden)) return;
+    if(expiryIsHandheld() && !remaining.length){showExpiryCaptureValidation([],"");setExpiryStatus("action","Ready to save");return;}
     const message=remaining.includes("expiryQuantity")?"Enter quantity":remaining.length===2?"Enter expiry month and year":remaining.includes("expiryMonth")?"Enter expiry month":remaining.includes("expiryYear")?"Enter expiry year":"";
     showExpiryCaptureValidation(remaining,message);
     if(!message) setExpiryStatus("ready","READY TO SCAN");
@@ -476,7 +475,7 @@ async function restoreExpiryDraft(){
         ["expiryQuantity","expiryBatchInput","expirySerialInput"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
         ["expiryMonth","expiryYear","expiryWorkerSelect"].forEach(id=>setExpirySelectDisabled(document.getElementById(id),true));
     }
-    setExpiryStatus(ExpiryCaptureEngine.saveUncertain?"error":"action",ExpiryCaptureEngine.saveUncertain?(ExpiryCaptureEngine.operation?"RESULT UNCERTAIN — CHECK / RETRY SAME OPERATION; DO NOT RESCAN":"RESULT UNCERTAIN — DO NOT RESEND"):"UNSAVED CAPTURE RESTORED");
+    setExpiryStatus(ExpiryCaptureEngine.saveUncertain?"error":"action",ExpiryCaptureEngine.operation?.authRecoveryRequired?"Session recovery required. Sign in, then retry your retained capture.":ExpiryCaptureEngine.saveUncertain?(ExpiryCaptureEngine.operation?"RESULT UNCERTAIN — CHECK / RETRY SAME OPERATION; DO NOT RESCAN":"RESULT UNCERTAIN — DO NOT RESEND"):"UNSAVED CAPTURE RESTORED");
     return true;
 }
 
@@ -1117,7 +1116,7 @@ async function saveExpiryCapture(options={}){
     }
     if(year < 2020 || year > 2200){
         if(!expiryIsHandheld()) showExpiryCaptureValidation(["expiryYear"],"Enter expiry year");
-        else setExpiryStatus("action","SELECT YEAR");
+        else showExpiryCaptureValidation(["expiryYear"],"Select expiry year");
         document.getElementById("expiryYear")?.focus();
         return;
     }
@@ -1164,7 +1163,8 @@ async function saveExpiryCapture(options={}){
             batch_no:gs1.lot||null,sample_serial:gs1.serial||null,device_id:deviceId,source:expiryCurrentSource(),
             item_code:item.itemCode,item_name:item.itemName,category:item.category||"",...(item.needsReview&&ExpiryCaptureEngine.identificationNote?{identification_note:ExpiryCaptureEngine.identificationNote}:{})};
         const operation=ExpiryCaptureEngine.operation;
-        {const start=saveClock(),sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;
+        const recoveredReceipt=operation.authRecoveryRequired?await prepareExpiryAuthenticatedRetry(operation,saveScope):null;
+        if(!recoveredReceipt){const start=saveClock(),sessionId=await ensureExpiryActiveSession();timings.rpcMs+=saveClock()-start;
             // Persisted operations belong to their original session, including ACK retries after Clear.
             if(!operation.sessionId){if(operation.payload)throw new Error("Pending capture session identity unavailable — capture retained for reconciliation");operation.sessionId=sessionId;await measuredPersist();}
         }
@@ -1173,7 +1173,7 @@ async function saveExpiryCapture(options={}){
             return await authRpc(name,args);
         }finally{timings.rpcMs+=saveClock()-start;}};
         const measuredUpload=async(path,file)=>{const start=saveClock();try{return await ExpiryOperation.upload(path,file);}finally{timings.photoMs+=saveClock()-start;}};
-        const saveResult=await ExpiryOperation.save({rpc:measuredRpc,upload:measuredUpload,
+        const saveResult=recoveredReceipt?.acknowledgement || await ExpiryOperation.save({rpc:measuredRpc,upload:measuredUpload,
             persist:measuredPersist,scope:saveScope,currentScope:expiryDraftScope,
             operation,payload,photos:ExpiryCaptureEngine.reviewPhotos,uuid:()=>crypto.randomUUID(),
             // Desktop known writes reserve atomically inside the verified session RPC.
@@ -1224,7 +1224,25 @@ async function saveExpiryCapture(options={}){
     }catch(error){
         console.error("Unable to save expiry capture",error);
         const uncertain=submitted || error?.expiryOutcome==="uncertain" || error?.uncertain===true;
-        if(error?.expiryOutcome==="rejected" && ExpiryCaptureEngine.operation?.payload && !/Session closed|Signed session scope/i.test(String(error.message))){
+        if(expiryAuthenticationRejected(error) && saveScope===expiryDraftScope()){
+            const operation=ExpiryCaptureEngine.operation;
+            if(operation)operation.authRecoveryRequired=true;
+            ExpiryCaptureEngine.saveUncertain=!!operation?.payload;
+            captureControls.forEach(el=>el.disabled=true);
+            selects.forEach(el=>setExpirySelectDisabled(el,true));
+            await measuredPersist("AUTH_REQUIRED").catch(()=>{});
+            const message="Session expired. Sign in again to continue. Your capture has been retained.";
+            setExpiryStatus("error",message);
+            if(button){button.disabled=!operation;button.textContent="CHECK / RETRY SAVE";}
+            // Recover authentication through the existing flow, never replay a capture.
+            if(/authentication session expired or revoked/i.test(String(error.message||"")) && typeof clearRejectedAuthSession==="function" && AuthState.session?.refresh_token){
+                clearRejectedAuthSession(AuthState.session.refresh_token);
+            }else if(typeof refreshAuthToken==="function"){
+                const restored=await refreshAuthToken().catch(()=>false);
+                if(saveScope===expiryDraftScope() && restored)setExpiryStatus("action","Session restored. Retry save to check your retained capture.");
+                else if(!AuthState.session && typeof setAuthMessage==="function")setAuthMessage(message,"error");
+            }
+        }else if(error?.expiryOutcome==="rejected" && ExpiryCaptureEngine.operation?.payload && !/Session closed|Signed session scope/i.test(String(error.message))){
             const rejectedPayload=ExpiryCaptureEngine.operation.payload;
             ExpiryCaptureEngine.operation.payload=null;
             ExpiryCaptureEngine.saveUncertain=false;
@@ -2029,6 +2047,7 @@ async function activateExpiryCapture(){
     bindExpiryEvidence();
     populateExpiryDateDropdowns();
     if(expiryIsHandheld()){
+        if(typeof ExpiryReviewBackend!=="undefined" && expiryDraftScope())void ExpiryReviewBackend.refresh();
         if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving)return;
         if(ExpiryCaptureEngine.currentItem && ExpiryCaptureEngine.draftScope===expiryDraftScope()){
             setExpiryStatus("action",ExpiryCaptureEngine.saveUncertain?"SAVE RESULT REQUIRES RECONCILIATION — DO NOT RESEND":"UNSAVED CAPTURE RETAINED");return;

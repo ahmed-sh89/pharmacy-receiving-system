@@ -1,5 +1,25 @@
 /* Server-owned session lifecycle and operation corrections; no inventory cache. */
 let expirySessionOpenPromise=null;
+function expiryAuthenticationRejected(error){
+    return error?.serverRejected===true && /authentication session expired or revoked|authentication required|jwt expired|token is expired|invalid jwt/i.test(String(error.message||''));
+}
+async function prepareExpiryAuthenticatedRetry(operation,scope){
+    const guard=()=>{if(scope!==expiryDraftScope() || operation.pharmacyId!==expiryPharmacyId() || (operation.payload && operation.payload.device_id!==expiryDeviceId()))throw Error('Capture account changed');};
+    guard();
+    const receipt=operation.payload?await ExpiryOperation.readReceipt(operation,authRpc):null;
+    guard();
+    if(receipt){
+        if(receipt.created_by!==AuthState.user?.id || receipt.device_id!==expiryDeviceId())throw Error('Capture receipt scope mismatch');
+        return receipt;
+    }
+    // Only an explicitly auth-rejected, uncommitted capture may use a fresh
+    // signed session for the same account/pharmacy/device. Keep its operation ID.
+    const sessionId=await ensureExpiryActiveSession({fresh:true});guard();
+    operation.sessionId=sessionId;
+    operation.authRecoveryRequired=false;
+    await persistExpiryDraft('DRAFT');guard();
+    return null;
+}
 function expiryCorrectionKey(){return `pharmflow_expiry_correction_${expiryDraftScope()}/${expiryDeviceId()}`;}
 async function reconcileExpirySessionCorrection(){
     const scope=expiryDraftScope(),key=expiryCorrectionKey(),stored=sessionStorage.getItem(key);
