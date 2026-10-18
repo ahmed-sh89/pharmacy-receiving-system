@@ -37,6 +37,17 @@ function harness(handheld=false){
  c.refreshExpiryCapturedCount=()=>{};c.refreshExpiryCurrentState=async()=>[];c.renderExpiryCurrentState=()=>{};
  return {c,drafts,session,receipts,e:id=>elements.get(id),calls,timers,flush(ms){for(const [id,t] of [...timers])if(t.ms===ms){timers.delete(id);t.fn();}}};
 }
+test('Desktop recognized card displays canonical Groups from either identifier scope without category fallback',async()=>{
+ for(const group of ['Beauty','FMCG','HomeHealth','Medicine','Mom & Baby','Supplement'])for(const source of ['PHARMACY_V2','GLOBAL_V2']){
+  const h=harness(false);h.c.IdentifierService.resolve=async id=>({found:true,itemCode:'CODE',itemName:'Item',identifierDisplay:id,groupName:group,category:'Legacy wrong category',source});
+  await h.c.resolveExpiryScannedValue('001234');assert.equal(h.e('expiryActiveItemCategory').textContent,group);assert.equal(h.e('expiryItemCategory').textContent,group);assert.equal(h.calls.length,0);
+ }
+});
+test('Desktop failure hook receives original input and exact rejection before any identifier lookup',async()=>{
+ const h=harness(false);let captured=null,lookups=0;h.c.expiryFailedScanDiagnostic={clear(){captured=null;},capture(raw,error){captured={raw,error};}};h.c.IdentifierService.resolve=async()=>{lookups++;return {found:false};};
+ const raw=']d2011234';assert.equal(await h.c.resolveExpiryScannedValue(raw),false);assert.equal(captured.raw,raw);assert.equal(captured.error.expiryScanDiagnostic.reason,'FIXED_LENGTH');assert.equal(lookups,0);assert.equal(h.calls.length,0);
+ await h.c.resolveExpiryScannedValue('UNKNOWN-ITEM');assert.equal(captured,null);assert.equal(lookups,1);
+});
 test('Desktop complete GS1 stays unsaved and all review controls remain editable',async()=>{
  const h=harness();await h.c.resolveExpiryScannedValue('(01)04065272072977(17)270831(10)GS1-BATCH');
  assert.equal(h.calls.length,0);assert.equal(h.e('expiryActiveItemName').textContent,'Test Product');
