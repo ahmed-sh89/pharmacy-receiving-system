@@ -709,7 +709,7 @@
         await groupMutation({ ...args, p_quantity: q }, ownScope);
       }, trigger, { context: "session", destructive: deleting, cancelLabel: "Cancel", confirmLabel: deleting ? "Delete Session Contribution" : "Save Quantity" });
   }
-  async function mutation(args) {
+  async function mutation(args, rpcName = "mutate_pharmflow_expiry_inventory_v1") {
     const key = pendingKey(),
       old = sessionStorage.getItem(key),
       payload = JSON.stringify(args);
@@ -720,7 +720,7 @@
     sessionStorage.setItem(key, payload);
     const ownScope = scope();
     try {
-      const r = await authRpc("mutate_pharmflow_expiry_inventory_v1", args);
+      const r = await authRpc(rpcName, args);
       if (ownScope !== scope() || r.request_id !== args.p_request_id)
         throw new Error("Acknowledgement mismatch");
       sessionStorage.removeItem(key);
@@ -771,15 +771,24 @@
     if(busy||previewing)return;previewing=true;if(trigger)trigger.disabled=true;
     const ownScope=scope(),filterSnapshot=JSON.parse(JSON.stringify(filters)),context=resolved,allFiltered=ids==null;
     try{
-      const preview=await authRpc('select_pharmflow_expiry_inventory_v1',{...authArgs(),p_filters:await effectiveFilters(filterSnapshot,context),p_resolved:context,p_ids:ids});
+      const wireFilters=await effectiveFilters(filterSnapshot,context);
+      const preview=await authRpc('select_pharmflow_expiry_inventory_v1',{...authArgs(),p_filters:wireFilters,p_resolved:context,p_ids:ids});
       const guard=()=>{if(ownScope!==scope()||JSON.stringify(filterSnapshot)!==JSON.stringify(filters)||context!==resolved){const e=Error('Inventory scope or filters changed. Review again.');e.reviewRequired=true;throw e;}};guard();
       if(!preview.count){setExpiryStatus('action','NO MATCHING SELECTION');return;}
       if(!allFiltered&&(preview.count!==new Set(ids).size||preview.selection.length!==preview.count||preview.selection.some(r=>!ids.includes(r.id))))throw Error('Selected records changed; select and review again.');
       const snapshot=JSON.parse(JSON.stringify(preview.selection)),args={...authArgs(),p_request_id:crypto.randomUUID(),p_action:context?'RESTORE':'RESOLVE',p_selection:snapshot};
+      const filteredArgs={...authArgs(),p_request_id:args.p_request_id,p_filters:wireFilters,p_selection:snapshot,p_expected_count:preview.count,p_expected_units:preview.units};
       const verb=context?'Restore':'Resolve',scopeText=[filterSnapshot.search,...filterSnapshot.groups.map(monthFilters.displayGroup),filterSnapshot.includeUnassigned&&'No canonical Group',...filterSnapshot.months,filterSnapshot.expiredThrough&&'Through '+periodMonth(filterSnapshot.expiredThrough),filterSnapshot.excludedMonths?.length&&'Except '+filterSnapshot.excludedMonths.join(', ')].filter(Boolean).join(' · ')||'All '+(context?'resolved':'active')+' inventory';
       const summary='<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(allFiltered?'All filtered results across every page.':'Exactly '+preview.count+' explicitly selected record IDs, including selections retained across pages.')+'</p><p>'+esc(scopeText)+'</p><p>'+(context?'Restores the reviewed quantities to Active Inventory.':'Moves the reviewed quantities out of Active Inventory. Historical records and audit are retained.')+'</p>';
       const final=()=>{
-        const d=openDialog('Final '+verb+' Confirmation',summary+(allFiltered?'<p class="expirySafetyGate" role="note">All-filtered execution is blocked pending server safety approval. No records will be changed.</p><label>Type RESOLVE<input id="expiryResolvePhrase" autocomplete="off" aria-label="Type RESOLVE"></label>':''),allFiltered?null:async()=>{guard();try{return await mutation(args);}catch(e){if(/changed|unavailable|scope/i.test(e.message))e.reviewRequired=true;throw e;}},trigger,{destructive:true,confirmLabel:verb+' '+preview.count+' Selected',unavailableLabel:'Execution blocked — safety approval required'});
+        const canResolveAll=allFiltered&&!context;
+        const action=allFiltered?(canResolveAll?async d=>{
+          guard();
+          if(d.querySelector('#expiryResolvePhrase')?.value.trim()!=='RESOLVE')throw Error('Type RESOLVE to continue.');
+          try{return await mutation(filteredArgs,'resolve_all_filtered_pharmflow_expiry_inventory_v1');}
+          catch(e){if(/changed|unavailable|scope/i.test(e.message)){e.reviewRequired=true;try{await refresh();}catch{}}throw e;}
+        }:null):async()=>{guard();try{return await mutation(args);}catch(e){if(/changed|unavailable|scope/i.test(e.message))e.reviewRequired=true;throw e;}};
+        const d=openDialog('Final '+verb+' Confirmation',summary+(allFiltered?'<p class="expirySafetyGate" role="note">'+(canResolveAll?'The server will recheck the complete filtered scope before making any changes.':'All-filtered execution is unavailable for this action.')+'</p><label>Type RESOLVE<input id="expiryResolvePhrase" autocomplete="off" aria-label="Type RESOLVE"></label>':''),action,trigger,{destructive:true,confirmLabel:verb+' '+preview.count+(allFiltered?' Filtered':' Selected'),unavailableLabel:allFiltered&&!canResolveAll?'Execution blocked — safety approval required':undefined});
         if(allFiltered&&d)d.querySelector('#expiryResolvePhrase')?.focus();
       };
       openDialog(verb+' Scope Review',summary+(allFiltered?'<p class="expirySafetyGate">Execution is currently gated. You can review the full filtered scope without changing records.</p>':''),()=>{guard();return {next:final};},trigger,{confirmLabel:'Review Final Confirmation'});
