@@ -78,3 +78,10 @@ Starting verified remote/Staging5949bd8275bfc949f014bc01789947af811a6c3f. Local8
 
 ## 2026-10-17 — Global Master Group Gate B
 See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case status. Automated focused checks and build are recorded there. Live Supabase behavior, Production migration/deployment, handheld acceptance, and Product Owner acceptance remain NOT RUN.
+
+## 2026-10-18 — Expiry Needs Review V2
+- [x] Local PostgreSQL-engine tests: six Groups, authorized Global link/create, local-only resolve, retry, conflict rollback, cross-pharmacy denial, seven Receiving boundaries.
+- [x] Live Staging rollback-only tests: six Groups, original capture metadata/quantity, retry, local-only B, unauthorized creation, cross-pharmacy denial. All synthetic writes rolled back.
+- [x] DOM tests: existing selection, original barcode, exact Group dropdown, no creation for local-only account, frozen uncertain retry.
+- [x] Existing Desktop/Handheld capture and operation tests; build. Historical baseline failures remain separately recorded.
+- [ ] Browser acceptance of final Preview and physical Handheld acceptance: report actual observed results at release.

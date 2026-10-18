@@ -3,6 +3,13 @@ let expiryPreviewURLs=[];
 function renderExpiryEvidence(){
     const panel=document.getElementById('expiryEvidence');if(!panel)return;
     const engine=ExpiryCaptureEngine;
+    if(!expiryIsHandheld()){
+        const unknown=!!engine.currentItem?.needsReview;
+        const resolve=document.getElementById('btnResolveExpiryNow');
+        const save=document.getElementById('btnSaveExpiryCapture');
+        if(resolve){resolve.hidden=!unknown;resolve.disabled=engine.busy||engine.saveUncertain||!ExpiryReviewBackend.ready;}
+        if(save){save.classList.toggle('is-review-secondary',unknown);if(unknown)save.textContent=engine.saveUncertain?'CHECK / RETRY SAVE':engine.busy?'SAVING…':'Save for Review';}
+    }
     panel.hidden=!expiryIsHandheld() || !engine.currentItem?.needsReview;
     expiryPreviewURLs.forEach(url=>URL.revokeObjectURL(url));expiryPreviewURLs=[];
     const previews=document.getElementById('expiryEvidencePreviews');if(previews)previews.replaceChildren();

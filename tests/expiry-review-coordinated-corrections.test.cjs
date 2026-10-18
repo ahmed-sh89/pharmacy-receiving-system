@@ -100,7 +100,7 @@ test('uncertain Resolve retry reuses the same operation ID and item payload',asy
   let first=true;const calls=[];
   const rpc=async(name,args)=>{
     calls.push([name,args]);
-    if(name==='resolve_pharmflow_expiry_review_v1'){
+    if(name==='resolve_pharmflow_expiry_review_v2'){
       if(first){first=false;throw new Error('lost response');}
       return {success:true,review_id:'review-1',item_code:'ITEM-1',operation_id:args.p_operation_id,already_resolved:false};
     }
@@ -110,9 +110,9 @@ test('uncertain Resolve retry reuses the same operation ID and item payload',asy
   };
   const {backend}=backendHarness(rpc);backend.ready=true;backend.pharmacyId='pharmacy-a';backend.pendingCount=1;
   await assert.rejects(()=>backend.resolve('review-1',{itemCode:'ITEM-1'}),/lost response/);
-  const firstArgs=calls.find(x=>x[0]==='resolve_pharmflow_expiry_review_v1')[1];
+  const firstArgs=calls.find(x=>x[0]==='resolve_pharmflow_expiry_review_v2')[1];
   const ack=await backend.resolve('review-1',{itemCode:'ITEM-1'});
-  const attempts=calls.filter(x=>x[0]==='resolve_pharmflow_expiry_review_v1');
+  const attempts=calls.filter(x=>x[0]==='resolve_pharmflow_expiry_review_v2');
   assert.equal(attempts.length,2);assert.equal(attempts[0][1].p_operation_id,attempts[1][1].p_operation_id);
   assert.deepEqual(attempts[0][1],attempts[1][1]);assert.equal(ack.success,true);assert.equal(backend.resolutionOperations.size,0);
 });

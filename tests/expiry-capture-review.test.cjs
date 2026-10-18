@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 function harness(handheld=false){
- const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnExpiryQty[^" ]+|btnClearExpiryActive|btnExpiryPhoto|btnExpiryNote|btnExpiryRetakeProduct|btnExpiryRetakeExpiry)"/g)].map(m=>m[1]);
+ const ids=[...fs.readFileSync('index.html','utf8').matchAll(/id="(expiry[^"]+|btnSaveExpiryCapture|btnResolveExpiryNow|btnExpiryQty[^" ]+|btnClearExpiryActive|btnExpiryPhoto|btnExpiryNote|btnExpiryRetakeProduct|btnExpiryRetakeExpiry)"/g)].map(m=>m[1]);
  const timers=new Map(),calls=[],elements=new Map(),session=new Map(),receipts=new Map();let timer=0;
  function element(id){
   const classes=new Set(),listeners={};
@@ -143,3 +143,7 @@ test('New validation presentation remains Desktop-only',async()=>{
 });
 
 module.exports={harness};
+
+ test('Desktop unknown capture offers Resolve Now and Save for Review; Handheld keeps original actions',()=>{
+ for(const handheld of [false,true]){const h=harness(handheld);h.c.engine.currentItem={needsReview:true};h.c.renderExpiryEvidence();if(!handheld){assert.equal(h.e('btnResolveExpiryNow').hidden,false);assert.equal(h.e('btnSaveExpiryCapture').textContent,'Save for Review');h.c.engine.saveUncertain=true;h.c.renderExpiryEvidence();assert.equal(h.e('btnResolveExpiryNow').disabled,true);assert.equal(h.e('btnSaveExpiryCapture').textContent,'CHECK / RETRY SAVE');}else assert.equal(h.e('btnSaveExpiryCapture').textContent,'SAVE & NEXT');}
+ });

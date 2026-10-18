@@ -84,7 +84,7 @@ test('submission waits for verified migration contract with optional Note and Ph
  assert.match(client,/get_pharmflow_expiry_review_contract_v1/);
  assert.match(client,/count_pharmflow_expiry_reviews_v1/);
  assert.match(client,/list_pharmflow_expiry_reviews_v1/);
- assert.match(client,/resolve_pharmflow_expiry_review_v1/);
+ assert.match(client,/resolve_pharmflow_expiry_review_v2/);
  assert.match(evidence,/save\.disabled=.*!ready/);
  assert.match(evidence,/SAVE & NEXT/);
  assert.equal((markup.match(/id="btnExpiryPhoto"/g)||[]).length,1);
@@ -104,7 +104,7 @@ test('pending-only operational review UI keeps the authorized Global Master and 
  assert.match(ui,/data-review-delete/);assert.match(ui,/window\.confirm\('Delete this pending Expiry review case/);
  assert.match(ui,/expiryGlobalMasterSummary/);const panel=ui.slice(ui.indexOf('async function openExpiryNeedsReviewPanel'),ui.indexOf('window.refreshNeedsReviewCounters'));
  assert.doesNotMatch(panel,/nrV2ItemSummary|Only approved Global Master writers/);assert.match(panel,/Search Global Master by Item Code or name/);assert.match(panel,/pharmacy-local identifier mapping/);
- assert.doesNotMatch(panel,/History|Resolved|Deleted/);assert.match(panel,/Pending review/);assert.match(panel,/Search Global Master/);
+ assert.doesNotMatch(panel,/>History<|>Resolved<|>Deleted</);assert.match(panel,/Pending review/);assert.match(panel,/Search Global Master/);
  assert.match(ui,/expanded!==null&&expanded!==index/);assert.match(ui,/Private evidence photo could not be loaded/);
  assert.match(panel,/if\(open\)loadEvidencePhoto\(\)/);assert.match(panel,/Open details to load evidence photo/);
  assert.match(deleteMigration,/add column deleted_by uuid references auth\.users/i);assert.match(deleteMigration,/add column deleted_at timestamptz/i);

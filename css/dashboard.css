@@ -7764,3 +7764,29 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button{min-height:36p
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button[aria-checked=true]:hover{background:#e7e0f2}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderFilterButton:focus-visible{outline:2px solid #8066b5!important;outline-offset:1px!important}
 
+
+/* Expiry resolution reuses the established Needs Review panel and button tokens. */
+body:not(.zebraDevice) #zebraExpiryShell #btnResolveExpiryNow{height:33px;min-height:33px;margin-bottom:39px;font-size:12px}
+body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton.is-review-secondary{height:33px;min-height:33px;font-size:12px}
+body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton.is-review-secondary{background:#fff;border-color:var(--exp-border,#c9d4e3);color:var(--exp-ink,#294968)}
+body:not(.zebraDevice) #zebraExpiryShell .expirySaveButton:focus-visible,.expiryNeedsReviewPanel button:focus-visible,.expiryNeedsReviewPanel input:focus-visible,.expiryNeedsReviewPanel select:focus-visible{outline:2px solid #4e799f;outline-offset:2px}
+.expiryNeedsReviewPanel .expiryResolutionModes{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px}
+.expiryNeedsReviewPanel .expiryResolutionModes button{min-height:34px;padding:6px 12px;border:1px solid #c9d4e3;border-radius:7px;background:#fff;color:#415b7b;font-family:inherit;font-weight:600;font-size:12px;cursor:pointer}
+.expiryNeedsReviewPanel .expiryResolutionModes button.is-active{background:#edf3f8;border-color:#7f9db9;color:#294968}
+.expiryNeedsReviewPanel .expiryGlobalSelection{display:block;min-width:0;padding:12px;border:1px solid #d9e2ed;border-radius:8px;background:#f8fafc}
+.expiryNeedsReviewPanel .expiryResolutionForm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px}
+.expiryNeedsReviewPanel .expiryResolutionForm label{display:grid;gap:5px;color:#50647e;font-size:12px;font-weight:600;min-width:0}
+.expiryNeedsReviewPanel .expiryResolutionForm input,.expiryNeedsReviewPanel .expiryResolutionForm select{box-sizing:border-box;width:100%;min-width:0;height:38px;padding:7px 10px;border:1px solid #c9d4e3;border-radius:7px;background:#fff;color:#294968;font:inherit}
+.expiryNeedsReviewPanel .expiryResolutionForm input[readonly]{background:#edf2f7;color:#50647e}
+.expiryNeedsReviewPanel [data-resolution-status]{grid-column:1/-1;margin:0;font-size:12px;line-height:1.5;color:#50647e}
+.expiryNeedsReviewPanel [data-resolution-status]:empty{display:none}
+.expiryNeedsReviewPanel [data-resolution-status].is-error{color:#a43b3b}
+.expiryNeedsReviewPanel .expiryResolutionForm>button{grid-column:1/-1;justify-self:end}
+.expiryNeedsReviewPanel .primaryButton{min-height:36px;padding:7px 14px;border:1px solid #355f83;border-radius:7px;background:#355f83;color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.expiryNeedsReviewPanel .primaryButton:hover{background:#294968}
+.expiryNeedsReviewPanel button:disabled{opacity:.55;cursor:default}
+.expiryNeedsReviewPanel .expiryResolutionBarcode{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;color:#50647e;font-size:12px;overflow-wrap:anywhere}
+.expiryNeedsReviewPanel .expiryResolutionBarcode strong{color:#294968}
+.expiryNeedsReviewPanel .expiryGlobalMasterIdentity{overflow-wrap:anywhere}
+@media(max-width:900px){body:not(.zebraDevice) #zebraExpiryShell #btnResolveExpiryNow{grid-column:1;grid-row:4}.expiryNeedsReviewPanel .expiryResolutionForm{grid-template-columns:minmax(0,1fr)}}
+.expiryNeedsReviewPanel [hidden],body:not(.zebraDevice) #zebraExpiryShell #btnResolveExpiryNow[hidden]{display:none!important}

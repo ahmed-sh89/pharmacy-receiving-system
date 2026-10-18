@@ -1089,6 +1089,11 @@ async function saveExpiryCapture(options={}){
         focusExpiryScanner();
         return;
     }
+    if(item.needsReview && !workerId){
+        setExpiryStatus("action","SELECT OPERATOR FOR REVIEW");
+        document.getElementById("expiryWorkerSelect")?.focus();
+        return;
+    }
     if(item.needsReview && (typeof ExpiryReviewBackend==="undefined" || !ExpiryReviewBackend.ready)){
         setExpiryStatus("action","Checking review availability — retry when ready");
         if(typeof ExpiryReviewBackend!=="undefined")void ExpiryReviewBackend.refresh();
@@ -1212,6 +1217,7 @@ async function saveExpiryCapture(options={}){
         }catch(error){
             console.warn("Expiry saved; display refresh failed",error);
         }
+        return saveResult;
 
     }catch(error){
         console.error("Unable to save expiry capture",error);
@@ -1999,6 +2005,15 @@ function bindExpiryCaptureUI(){
         }));
     });
 
+    const resolveNow=document.getElementById('btnResolveExpiryNow');
+    if(resolveNow&&resolveNow.dataset.bound!=='1'){
+        resolveNow.dataset.bound='1';
+        resolveNow.addEventListener('click',async()=>{
+            if(expiryIsHandheld()||ExpiryCaptureEngine.busy||!ExpiryCaptureEngine.currentItem?.needsReview)return;
+            const ack=await saveExpiryCapture();
+            if(ack?.review_id)await openExpiryNeedsReviewPanel({reviewId:ack.review_id});
+        });
+    }
     const save = document.getElementById("btnSaveExpiryCapture");
     if(save && save.dataset.bound !== "1"){
         save.dataset.bound = "1";

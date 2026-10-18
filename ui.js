@@ -9616,16 +9616,89 @@ function expiryGlobalMasterSummary(item,esc){
     return `<span class="expiryGlobalMasterIdentity"><strong>${esc(name)}</strong><span>Item Code <b>${esc(code)}</b></span>${identifiers.length?`<span>Identifiers ${esc(identifiers.join(' · '))}</span>`:''}</span>`;
 }
 
-async function openExpiryNeedsReviewPanel(){
+/* One resolution experience for saved cases and Desktop Resolve Now. */
+function mountExpiryReviewResolver(section,row,index,{canCreate,overlay,onResolved}){
+    const esc=value=>escapeHTML(toSafeString(value));
+    const input=section.querySelector(`[data-master-search="${index}"]`);
+    const matches=section.querySelector(`[data-master-matches="${index}"]`);
+    const selection=section.querySelector(`[data-master-selection="${index}"]`);
+    const identifier=toSafeString(row.identifier_display||row.gtin);
+    const modes=document.createElement('div');modes.className='expiryResolutionModes';modes.hidden=!canCreate;
+    modes.innerHTML=`<button type="button" class="secondaryButton is-active" data-existing-mode aria-pressed="true">Existing Item</button>${canCreate?'<button type="button" class="secondaryButton" data-create-mode aria-pressed="false">Create New Item</button>':''}`;
+    input.closest('.expiryGlobalSearchRow').before(modes);
+    const searchRow=input.closest('.expiryGlobalSearchRow');
+    let timer=0,request=0,busy=false,mode='existing',uncertain=false;
+    const setMode=next=>{
+        if(busy||uncertain)return;
+        mode=next;request++;clearTimeout(timer);matches.replaceChildren();selection.replaceChildren();selection.hidden=true;
+        searchRow.hidden=next!=='existing';
+        modes.querySelectorAll('button').forEach(b=>{const active=b.hasAttribute(next==='new'?'data-create-mode':'data-existing-mode');b.classList.toggle('is-active',active);b.setAttribute('aria-pressed',String(active));});
+        if(next==='new')renderCreate();else{input.value='';input.focus();}
+    };
+    const submit=async(item,newItem,button)=>{
+        if(busy)return;
+        busy=true;overlay.dataset.busy='1';
+        const controls=[...section.querySelectorAll('input,select,button')];
+        const old=controls.map(control=>[control,control.disabled]);controls.forEach(control=>control.disabled=true);
+        const label=button.textContent;button.textContent='Resolving…';
+        const status=selection.querySelector('[data-resolution-status]');status.textContent='';
+        try{
+            await ExpiryReviewBackend.resolve(row.review_id,item,'Expiry Needs Review resolution',newItem);
+            await onResolved();
+        }catch(error){
+            uncertain=!(error?.serverRejected===true&&Number(error.httpStatus)>=400&&Number(error.httpStatus)<500);
+            status.textContent=uncertain?'Resolution not confirmed. Retry the same selection; the captured record is retained.':(error.message||'Unable to resolve. The captured record is retained.');
+            status.classList.add('is-error');
+            old.forEach(([control,disabled])=>control.disabled=uncertain?true:disabled);
+            button.disabled=false;button.textContent=uncertain?'Retry Resolution':label;
+        }finally{busy=false;overlay.dataset.busy='';}
+    };
+    const renderSelected=item=>{
+        selection.hidden=false;
+        selection.innerHTML=`<div>${expiryGlobalMasterSummary(item,esc)}</div><div class="expiryResolutionBarcode"><span>Scanned Barcode</span><strong>${esc(identifier)}</strong></div><p data-resolution-status role="status" aria-live="polite"></p><button type="button" class="primaryButton" data-confirm-resolution>Confirm Resolution</button>`;
+        const button=selection.querySelector('[data-confirm-resolution]');
+        button.onclick=()=>submit(item,null,button);
+    };
+    const renderCreate=()=>{
+        selection.hidden=false;
+        selection.innerHTML=`<form class="expiryResolutionForm"><label>Item Code<input name="item_code" autocomplete="off" required></label><label>Item Name<input name="item_name" autocomplete="off" required></label><label>Barcode / GTIN<input name="barcode" value="${esc(identifier)}" readonly></label><label>Group<select name="group_name" required><option value="">Select Group</option>${['Beauty','FMCG','HomeHealth','Medicine','Mom & Baby','Supplement'].map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}</select></label><p data-resolution-status role="status" aria-live="polite"></p><button type="submit" class="primaryButton">Create &amp; Resolve</button></form>`;
+        const form=selection.querySelector('form');
+        form.onsubmit=event=>{
+            event.preventDefault();if(!form.reportValidity())return;
+            const code=form.querySelector('[name="item_code"]').value.trim(),name=form.querySelector('[name="item_name"]').value.trim(),group=form.querySelector('[name="group_name"]').value;
+            if(!code||!name){selection.querySelector('[data-resolution-status]').textContent='Item Code and Item Name are required.';return;}
+            return submit({itemCode:code},{item_name:name,group_name:group},form.querySelector('button'));
+        };
+        form.querySelector('[name="item_code"]').focus();
+    };
+    modes.querySelector('[data-existing-mode]').onclick=()=>setMode('existing');
+    modes.querySelector('[data-create-mode]')?.addEventListener('click',()=>setMode('new'));
+    input.addEventListener('input',()=>{
+        if(busy||uncertain)return;clearTimeout(timer);const token=++request,query=input.value.trim();
+        selection.hidden=true;selection.replaceChildren();matches.replaceChildren();if(!query)return;
+        matches.textContent='Searching Global Master…';
+        timer=setTimeout(async()=>{
+            try{
+                const items=await IdentifierService.searchItems(query,8);
+                if(!section.isConnected||token!==request||mode!=='existing')return;
+                matches.innerHTML=items.length?items.map((item,i)=>`<button type="button" data-global-match="${i}">${expiryGlobalMasterSummary(item,esc)}</button>`).join(''):'<div class="needsReviewNoMatches">No matching item in Global Master.</div>';
+                matches.querySelectorAll('[data-global-match]').forEach(button=>button.onclick=()=>renderSelected(items[Number(button.dataset.globalMatch)]));
+            }catch(error){if(token===request)matches.textContent=error.message||'Search unavailable. Try again.';}
+        },220);
+    });
+}
+
+async function openExpiryNeedsReviewPanel(options={}){
     closeNeedsReviewPhotoViewer();
     const previous=document.getElementById('needsReviewOverlay');previous?.disposeFocus?.();previous?.remove();
     let rows;
     try{rows=await ExpiryReviewBackend.list();}
     catch(error){showToast?.(error?.message||'Unable to load Expiry Needs Review','error');return;}
     const esc=value=>escapeHTML(toSafeString(value));
-    // Resolve writes only a pharmacy-local identifier mapping. The RPC checks
-    // active pharmacy membership; Global Master remains read-only in this UI.
+    // The Expiry RPC owns pharmacy-local identifier mapping and authorized Global writes.
     const canResolve=!!(typeof getCurrentPharmacyId==='function'&&getCurrentPharmacyId())||!!AuthState?.context?.pharmacy_id;
+    let canCreate=false;
+    try{canCreate=!(typeof expiryIsHandheld==='function'&&expiryIsHandheld())&&await authRpc('pharmflow_is_reference_master_admin_v1',{})===true;}catch(_){}
     const overlay=document.createElement('div');overlay.id='needsReviewOverlay';overlay.className='needsReviewOverlay';
     overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','needsReviewTitle');
     overlay.innerHTML=`<button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button><section class="needsReviewPanel expiryNeedsReviewPanel">
@@ -9644,8 +9717,9 @@ async function openExpiryNeedsReviewPanel(){
         if(inventory)inventory.setAttribute('aria-selected',String(!open&&ExpiryCaptureEngine.desktopView==='INVENTORY'));
     };
     setTabState(true);
-    const close=()=>{overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus({preventScroll:true});};
+    const close=()=>{if(overlay.dataset.busy==='1')return;overlay.disposeFocus?.();overlay.remove();setTabState(false);document.getElementById('btnExpiryNeedsReview')?.focus({preventScroll:true});};
     overlay.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
+    overlay.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close();}});
     let expanded=null;
     rows.forEach((row,index)=>{
         const section=overlay.querySelector(`[data-expiry-review-id="${CSS.escape(row.review_id)}"]`),detail=section?.querySelector(`[data-expiry-case="${index}"]`);
@@ -9682,30 +9756,16 @@ async function openExpiryNeedsReviewPanel(){
         });
         section?.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
         if(!canResolve)return;
-        const input=section?.querySelector(`[data-master-search="${index}"]`),matches=section?.querySelector(`[data-master-matches="${index}"]`),selection=section?.querySelector(`[data-master-selection="${index}"]`);
-        let timer=0,request=0,selected=null;
-        input?.addEventListener('input',()=>{
-            clearTimeout(timer);const query=input.value.trim();selected=null;selection.hidden=true;selection.replaceChildren();
-            if(!query){matches.replaceChildren();return;}
-            const token=++request;timer=setTimeout(async()=>{
-                try{
-                    const items=await IdentifierService.searchItems(query,8);if(token!==request||input.value.trim()!==query)return;
-                    matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-global-match="${itemIndex}">${expiryGlobalMasterSummary(item,esc)}</button>`).join(''):'<div class="needsReviewNoMatches">No Global Master item found.</div>';
-                    matches.querySelectorAll('[data-global-match]').forEach(button=>button.addEventListener('click',()=>{
-                        selected=items[Number(button.dataset.globalMatch)]||null;if(!selected)return;selection.hidden=false;
-                        selection.innerHTML=`<div>${expiryGlobalMasterSummary(selected,esc)}</div><button type="button" data-global-confirm>Confirm Resolution</button>`;
-                        selection.querySelector('[data-global-confirm]').addEventListener('click',async event=>{
-                            const confirm=event.currentTarget;confirm.disabled=true;overlay.dataset.busy='1';
-                            try{await ExpiryReviewBackend.resolve(row.review_id,selected);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry case resolved to this pharmacy and evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
-                            catch(error){confirm.disabled=false;showToast?.(error?.message||'Unable to resolve Expiry case','error');}
-                            finally{overlay.dataset.busy='';}
-                        });
-                    }));
-                }catch(error){if(token===request)matches.textContent=error?.message||'Global Master search is unavailable.';}
-            },220);
-        });
+        mountExpiryReviewResolver(section,row,index,{canCreate,overlay,onResolved:async()=>{
+            nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);
+            showToast?.('Expiry case resolved','success');
+            try{await refreshExpiryCurrentState();}catch(_){/* Resolution is committed; projections can refresh later. */}
+            await openExpiryNeedsReviewPanel();
+        }});
     });
-    overlay.querySelector('[data-expiry-detail="0"]')?.focus();
+    const target=options.reviewId?rows.findIndex(row=>row.review_id===options.reviewId):-1;
+    if(target>=0)overlay.querySelector(`[data-expiry-detail="${target}"]`)?.click();
+    else overlay.querySelector('[data-expiry-detail="0"]')?.focus();
 }
 
 window.refreshNeedsReviewCounters=refreshNeedsReviewCounters;

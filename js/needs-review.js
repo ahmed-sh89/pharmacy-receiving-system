@@ -90,26 +90,29 @@ const ExpiryReviewBackend = {
         }
         return refreshed;
     },
-    async resolve(reviewId,item,reason='Authorized Expiry review resolution'){
+    async resolve(reviewId,item,reason='Authorized Expiry review resolution',newItem=null){
         if(!this.ready&&!await this.refresh())throw new Error('Expiry Needs Review is unavailable until the approved Staging migration is applied and verified');
         if(!globalThis.crypto?.randomUUID)throw new Error('Secure resolution operation IDs are unavailable');
-        const pharmacyId=nrV2PharmacyId(),itemCode=item?.itemCode||'',key=pharmacyId+':'+reviewId;
+        const pharmacyId=nrV2PharmacyId(),itemCode=item?.itemCode||item?.item_code||'',key=pharmacyId+':'+reviewId;
+        const payloadKey=JSON.stringify({itemCode,newItem});
+        const storageKey='pharmflow.expiry.resolve:'+key;
+        if(!this.resolutionOperations.has(key)){try{const saved=JSON.parse(sessionStorage.getItem(storageKey));if(saved?.operationId)this.resolutionOperations.set(key,saved);}catch(_){}}
         let operation=this.resolutionOperations.get(key);
-        if(operation&&operation.itemCode!==itemCode)throw new Error('Retry the same selected item to safely confirm the previous resolution result.');
-        if(!operation){operation={operationId:globalThis.crypto.randomUUID(),itemCode};this.resolutionOperations.set(key,operation);}
+        if(operation&&(operation.itemCode!==itemCode||operation.payloadKey!==payloadKey))throw new Error('Retry the same selected item to safely confirm the previous resolution result.');
+        if(!operation){operation={operationId:globalThis.crypto.randomUUID(),itemCode,payloadKey};this.resolutionOperations.set(key,operation);try{sessionStorage.setItem(storageKey,JSON.stringify(operation));}catch(_){}}
         let result;
-        try{result=await authRpc('resolve_pharmflow_expiry_review_v1',{
+        try{result=await authRpc('resolve_pharmflow_expiry_review_v2',{
             p_pharmacy_id:pharmacyId,p_review_id:reviewId,p_operation_id:operation.operationId,
-            p_item_code:itemCode,p_reason:reason
+            p_item_code:itemCode,p_reason:reason,p_new_item:newItem
         });}catch(error){
             // A definitive client/input rejection did not commit. Allow a new
             // selection; network/5xx failures retain the operation for retry.
-            if(Number(error?.httpStatus)>=400&&Number(error?.httpStatus)<500)this.resolutionOperations.delete(key);
+            if(error?.serverRejected===true&&Number(error?.httpStatus)>=400&&Number(error?.httpStatus)<500){this.resolutionOperations.delete(key);try{sessionStorage.removeItem(storageKey);}catch(_){}}
             throw error;
         }
         const row=Array.isArray(result)?result[0]:result;
         if(!row?.success||row.review_id!==reviewId||row.item_code!==itemCode)throw new Error('Expiry resolution was not acknowledged');
-        this.resolutionOperations.delete(key);
+        this.resolutionOperations.delete(key);try{sessionStorage.removeItem(storageKey);}catch(_){}
         await this.refreshAfterTerminal(!row.already_resolved);
         return row;
     },
