@@ -1110,7 +1110,7 @@ async function saveExpiryCapture(options={}){
         if(!expiryIsHandheld()){
             const invalidYear=year < 2020 || year > 2200;
             showExpiryCaptureValidation(invalidYear?["expiryMonth","expiryYear"]:["expiryMonth"],invalidYear?"Enter expiry month and year":"Enter expiry month");
-        }else setExpiryStatus("action","SELECT MONTH");
+        }else showExpiryCaptureValidation(["expiryMonth"],"Select expiry month");
         document.getElementById("expiryMonth")?.focus();
         return;
     }
@@ -1199,7 +1199,7 @@ async function saveExpiryCapture(options={}){
         }
 
         ExpiryCaptureEngine.saveUncertain=false;
-        resetExpiryCaptureForm({focus:true});
+        resetExpiryCaptureForm({focus:!expiryIsHandheld()});
         setExpiryStatus("success",expiryIsHandheld()?(item.needsReview?"Submitted for Review · Ready to Scan":"Saved · Ready to Scan"):options.auto?"✓ AUTO SAVED — NEXT ITEM":"✓ SAVED — NEXT ITEM");
         scheduleExpirySavedAutoClear();
         timings.ackTransitionMs=saveClock()-acknowledgementStarted;
@@ -1271,6 +1271,9 @@ async function saveExpiryCapture(options={}){
             controlStates.forEach(([el,disabled])=>el.disabled=ExpiryCaptureEngine.currentItem?disabled:false);
             selectStates.forEach(([el,disabled])=>setExpirySelectDisabled(el,ExpiryCaptureEngine.currentItem?disabled:false));
         }
+        // The committed capture is cleared and controls are settled. Restore the
+        // hardware target once, never on a retained/failed capture or another scope.
+        if(acknowledged && expiryIsHandheld() && saveScope===expiryDraftScope() && !ExpiryCaptureEngine.currentItem && !ExpiryCaptureEngine.saveUncertain)focusExpiryScanner();
     }
 }
 

@@ -26,7 +26,7 @@ test('Handheld dates start blank and remain mandatory; unknown scan leaves a com
  h.c.parseGS1Barcode=raw=>({raw});h.c.IdentifierService.resolve=async()=>({found:false});h.e('expiryBarcodeInput').value='UNKNOWN-U0030';
  await h.c.resolveExpiryScannedValue('UNKNOWN-U0030');
  assert.equal(h.e('expiryBarcodeInput').value,'');assert.equal(h.c.engine.currentItem.rawBarcode,'UNKNOWN-U0030');
- await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryScanStatus').textContent,'SELECT MONTH');
+ await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryScanStatus').textContent,'Select expiry month');
  h.c.setExpiryControlValue(h.e('expiryMonth'),'8');await h.c.saveExpiryCapture();assert.equal(h.calls.length,0);assert.equal(h.e('expiryScanStatus').textContent,'Select expiry year');
  const item=h.c.engine.currentItem;await h.c.resolveExpiryScannedValue('1234A');assert.equal(h.c.engine.currentItem,item);
  assert.equal(h.e('expiryScanStatus').textContent,'Save current item first');

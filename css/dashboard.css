@@ -7818,3 +7818,9 @@ body.zebraDevice #zebraExpiryShell #expiryEvidenceMessage{flex-basis:100%}
 body.zebraDevice #zebraExpiryShell #expiryMonth .pfSelectMenu{width:max-content;min-width:max(100%,140px)}
 body.zebraDevice #zebraExpiryShell #expiryMonth .pfSelectOption{white-space:nowrap}
 body.zebraDevice #zebraExpiryShell #expiryMonth .pfSelectCheck{flex-shrink:0}
+
+/* Handheld capture: primary scanner and compact secondary Batch control. */
+body.zebraDevice #zebraExpiryShell .expiryScanBox{background:#eef4ff}
+body.zebraDevice #zebraExpiryShell .expiryEntryGrid .expiryBatchField{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch;gap:0;min-height:46px;border:1px solid #dbe3ed;border-radius:9px;background:#fff}
+body.zebraDevice #zebraExpiryShell .expiryBatchField>.expiryControlLabel{display:flex;align-items:center;padding:0 10px!important;margin:0;border-radius:8px 0 0 8px;background:#eef3f8;border-right:1px solid #dbe3ed;color:#50647e;font-weight:650}
+body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width:0;border:0;border-radius:0 8px 8px 0;background:#fff}
