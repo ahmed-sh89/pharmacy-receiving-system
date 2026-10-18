@@ -7216,12 +7216,12 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryMenu>button:hover{backg
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryMenu>button[aria-expanded=true],body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryMenu>button.is-active{background:#eee9f8;border-color:#a592cf;color:#5c4096}
 body:not(.zebraDevice) #zebraExpiryShell #expiryFilterCount{padding:1px 5px;border-radius:5px;background:#ded5f0;font-size:10px;font-variant-numeric:tabular-nums}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryPopover{position:absolute;top:calc(100% + 7px);right:0;z-index:12;box-sizing:border-box;width:215px;max-width:calc(100vw - 32px);padding:6px;border:1px solid #ccd7e6;border-radius:10px;background:#fff;box-shadow:0 12px 32px #263d5a24;color:#314b6a;font-size:12px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel{width:370px;padding:0;display:flex;flex-direction:column;max-height:calc(100dvh - 330px);overflow:hidden}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel{position:fixed;top:12px;left:12px;right:auto;z-index:120;box-sizing:border-box;width:min(370px,calc(100vw - 24px));max-height:min(560px,calc(100dvh - 24px));min-height:0;padding:0;display:flex;flex-direction:column;overflow:hidden}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>header,body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>header{border-bottom:1px solid #e5eaf2;font-size:13px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>header{flex:0 0 auto;border-bottom:1px solid #e5eaf2;font-size:13px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel button,body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button{font-family:inherit;font-size:12px;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>header button{display:grid;place-items:center;border:0;background:transparent;color:#60758f;padding:3px;border-radius:4px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll{min-height:0;flex:1;overflow:auto;padding:10px 12px;overscroll-behavior:contain}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll{min-height:0;flex:1 1 auto;overflow-x:hidden;overflow-y:auto;padding:10px 12px;overscroll-behavior:contain}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3{margin:0 0 6px;font-size:12px;font-weight:650;color:#2d4666}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3 button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:5px 0;border:0;background:transparent;color:inherit;font-weight:600}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3 button[aria-expanded=true] svg{transform:rotate(180deg)}
@@ -7242,9 +7242,11 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true],
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true] i,body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed] i{background:#7354b1;border-color:#7354b1;color:#fff}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true] i:before{content:'✓'}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed] i:before{content:'−'}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;border-top:1px solid #e6ebf3;background:#f8fafc;font-size:11px;color:#667d98}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer{display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:6px;padding:8px 12px;border-top:1px solid #e4eaf2;background:#f8fafc}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:0;background:#f3f6fa;font-size:11px;color:#667d98}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterFooterActions{display:flex;align-items:center;justify-content:space-between;gap:8px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext button{padding:4px 6px;border:0;border-radius:4px;background:transparent;color:#65469d;text-decoration:underline}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer{border-top:1px solid #e4eaf2}
+
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer button{min-height:32px;padding:0 12px;border:1px solid #c9d4e3;border-radius:6px;background:#fff;color:#4a607d;font-weight:600}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer button.primary{border-color:#7151b0;background:#7151b0;color:#fff}
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button{display:flex;align-items:center;gap:8px;min-height:34px;width:100%;padding:7px 9px;text-align:left;border:0;border-radius:6px;background:transparent;color:#415b7b}
@@ -7724,7 +7726,7 @@ body.zebraDevice .expiryPhotoViewer>.expirySessionEditor{width:min(100%,440px);m
 body.zebraDevice .expirySessionEditor label{display:grid;gap:3px;font-size:12px;color:#50647e}
 
 /* Expiry Inventory filters: grouped sections and consistent desktop controls. */
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel{max-height:min(560px,calc(100vh - 140px));max-height:min(560px,calc(100dvh - 140px))}
+
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll{scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#c4cfdd transparent}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section,
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section+section{margin:8px 0 0;padding:9px;border:1px solid #e1e7ef;border-radius:8px;background:#f7f9fc}
@@ -7750,7 +7752,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel button:focus-visible
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button:focus-visible{outline:2px solid #8066b5;outline-offset:1px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryYearToggle{width:35px;height:34px;border-radius:6px;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell #expiryGroups .expiryFilterChoice{width:100%}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext{background:#f3f6fa}
+
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext button{min-height:30px;padding:5px 7px;border-radius:5px;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext button:hover{background:#e8edf4}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer button,
@@ -7762,9 +7764,3 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button{min-height:36p
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button[aria-checked=true]:hover{background:#e7e0f2}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderFilterButton:focus-visible{outline:2px solid #8066b5!important;outline-offset:1px!important}
 
-/* Keep filter actions fixed while only the filter options area scrolls. */
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel{width:370px;max-width:calc(100vw - 32px);max-height:min(560px,calc(100vh - 140px));max-height:min(560px,calc(100dvh - 140px));min-height:0;display:flex;flex-direction:column;overflow:hidden}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>header,
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext,
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer{flex:0 0 auto}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}

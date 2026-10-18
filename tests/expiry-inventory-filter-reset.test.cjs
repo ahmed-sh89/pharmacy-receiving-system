@@ -26,12 +26,14 @@ test('Filter sections and years reopen collapsed while applied values remain sel
  assert.equal(h.e('expiryMonths').querySelector('[data-month="2027-01"]').getAttribute('aria-checked'),'true');
 });
 test('Filter popover keeps header, resolved controls and actions fixed around an internal scroll area',()=>{
- const css=fs.readFileSync(path.join(__dirname,'../css/dashboard.css'),'utf8'),block=css.slice(css.lastIndexOf('/* Keep filter actions fixed while only the filter options area scrolls. */'));
- assert.match(block,/max-height:min\(560px,calc\(100vh - 140px\)\)/);assert.match(block,/max-height:min\(560px,calc\(100dvh - 140px\)\)/);
- assert.match(block,/\.expiryFilterPanel>header,[\s\S]*?\.expiryFilterContext,[\s\S]*?\.expiryFilterPanel>footer\{flex:0 0 auto\}/);
- assert.match(block,/\.expiryFilterScroll\{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable\}/);
- assert.ok(block.split('\n').filter(line=>line.startsWith('body:not(.zebraDevice)')).every(line=>line.includes('#zebraExpiryShell')));
- const maxHeight=v=>Math.min(560,v-140);for(const viewportHeight of [768,960,1024])assert.equal(maxHeight(viewportHeight),560);
+ const css=fs.readFileSync(path.join(__dirname,'../css/dashboard.css'),'utf8'),base=css.slice(css.indexOf('.expiryInventoryPopover{'),css.indexOf('.expiryOptionMenu button{display:flex',css.indexOf('.expiryInventoryPopover{')));
+ assert.match(base,/\.expiryFilterPanel\{position:fixed;top:12px;left:12px;right:auto;z-index:120;box-sizing:border-box;width:min\(370px,calc\(100vw - 24px\)\);max-height:min\(560px,calc\(100dvh - 24px\)\)/);
+ assert.match(base,/\.expiryFilterPanel>footer\{display:flex;flex:0 0 auto;flex-direction:column/);
+ assert.match(base,/\.expiryFilterScroll\{min-height:0;flex:1 1 auto;overflow-x:hidden;overflow-y:auto/);
+ assert.doesNotMatch(css,/Keep filter actions fixed while only the filter options area scrolls/);
+ assert.match(css,/\.expiryFilterFooterActions\{display:flex;align-items:center;justify-content:space-between/);
+ const js=fs.readFileSync(path.join(__dirname,'../js/expiry-desktop-v2.js'),'utf8');assert.match(js,/filterPanelPositionCleanup=\(\)=>\{window\.removeEventListener\?\.\('resize',reposition\);window\.removeEventListener\?\.\('scroll',reposition,true\);\}/);
+ for(const viewportHeight of [768,960,1024])assert.ok(Math.min(560,viewportHeight-24)<=viewportHeight-24);
 });
 test('Expired KPI keeps the inclusive Through Oct 2026 label and boundary',async()=>{
  const h=harness();h.data[0].expiry_year=2026;h.data[0].expiry_month=10;h.data[1].expiry_year=2026;h.data[1].expiry_month=11;

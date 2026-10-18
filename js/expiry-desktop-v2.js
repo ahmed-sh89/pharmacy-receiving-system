@@ -230,11 +230,12 @@
     return [...groups.values()];
   }
   const inventoryIcon = name => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ({sheet:'M4 3h16v18H4zM4 9h16M4 15h16M10 3v18',document:'M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6',check:'m5 12 4 4L19 6',chevron:'m7 10 5 5 5-5',printer:'M6 9V3h12v6M6 17H3V9h18v8h-3M6 14h12v7H6z',search:'m21 21-5-5M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0',filters:'M4 7h16M7 12h10M10 17h4',sort:'M8 4v16m-4-4 4 4 4-4M14 6h6m-6 5h4m-4 5h2',export:'M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5',select:'M5 3h14v18H5zM8 12l3 3 5-6',close:'m6 6 12 12M6 18 18 6'}[name] || '') + '"/></svg>';
-  let selectionMode = false, openInventoryMenu = null, filterDraft = null, filterDraftScope = null;
+  let selectionMode = false, openInventoryMenu = null, filterDraft = null, filterDraftScope = null, filterPanelPositionCleanup = null;
   const expandedYears=new Set(),expandedSections=new Set();
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   function closeInventoryMenus(restore=false) {
     const old=openInventoryMenu;closeFloatingMenu();
+    filterPanelPositionCleanup?.();filterPanelPositionCleanup=null;
     for(const id of ['expiryFilter','expirySort','expiryExport','expiryBulkMenu']){if(el(id+'Panel'))el(id+'Panel').hidden=true;el(id)?.setAttribute('aria-expanded','false');}
     openInventoryMenu=null;filterDraft=null;filterDraftScope=null;
     if(restore && old)el(old)?.focus({preventScroll:true});
@@ -248,6 +249,21 @@
     }
     if(id==='expiryBulkMenu'){openFloatingMenu(el(id+'Panel'),el(id));return;}
     el(id+'Panel').hidden=false;el(id).setAttribute('aria-expanded','true');
+    if(id==='expiryFilter'){
+      const reposition=()=>{
+        const panel=el('expiryFilterPanel'),anchor=el('expiryFilter').getBoundingClientRect();
+        const viewportWidth=document.documentElement.clientWidth||window.innerWidth,viewportHeight=document.documentElement.clientHeight||window.innerHeight,margin=12,gap=7;
+        const below=viewportHeight-anchor.bottom-gap-margin,above=anchor.top-gap-margin,maxHeight=Math.min(560,viewportHeight-margin*2);
+        let top,available;
+        if(below>=Math.min(maxHeight,360)||below>=above){top=anchor.bottom+gap;available=viewportHeight-top-margin;}
+        else{available=above;top=Math.max(margin,anchor.top-gap-Math.min(maxHeight,available));}
+        if(available<160){top=margin;available=viewportHeight-margin*2;}
+        const width=Math.max(0,Math.min(370,viewportWidth-margin*2));
+        panel.style.top=top+'px';panel.style.left=Math.max(margin,Math.min(anchor.right-width,viewportWidth-width-margin))+'px';panel.style.right='auto';panel.style.maxHeight=Math.max(160,Math.min(maxHeight,available))+'px';
+      };
+      reposition();window.addEventListener('resize',reposition,{passive:true});window.addEventListener('scroll',reposition,true);
+      filterPanelPositionCleanup=()=>{window.removeEventListener?.('resize',reposition);window.removeEventListener?.('scroll',reposition,true);};
+    }
     el(id+'Panel').querySelector('button:not(:disabled)')?.focus({preventScroll:true});
   }
   function resetInventoryFilters(){
@@ -865,7 +881,7 @@
       const tools = document.querySelector(".expiryCurrentTools");
       tools.innerHTML =
         '<button id="expirySelect" type="button" aria-pressed="false" aria-label="Enter selection mode" title="Enter selection mode">'+inventoryIcon('check')+'</button><label class="expiryInventorySearch">'+inventoryIcon('search')+'<input id="expiryCurrentSearch" type="search" autocomplete="off" aria-label="Search Inventory" placeholder="Search product, code, GTIN or batch"><button id="expirySearchClear" type="button" aria-label="Clear search" hidden>'+inventoryIcon('close')+'</button></label>'+
-        '<button id="expiryQuickClearKpi" type="button" title="Clear KPI Selection" aria-label="Clear KPI Selection" hidden>'+inventoryIcon('close')+'</button><div class="expiryInventoryMenu"><button type="button" id="expiryFilter" aria-expanded="false" aria-controls="expiryFilterPanel">'+inventoryIcon('filters')+'<span id="expiryFilterLabel">Filters</span> <b id="expiryFilterCount" hidden>0</b></button><section id="expiryFilterPanel" class="expiryInventoryPopover expiryFilterPanel" aria-label="Inventory filters" role="dialog" hidden><header><strong>Inventory Filters</strong><button type="button" data-dismiss-menu aria-label="Close filters">'+inventoryIcon('close')+'</button></header><div class="expiryFilterScroll"><section><h3><button type="button" id="expirySectionmonths" aria-expanded="false">Expiry Months '+inventoryIcon('chevron')+'</button></h3><div id="expiryMonthContent" hidden><button type="button" class="expiryFilterChoice" role="checkbox" aria-checked="false" id="expiryExpiredChoice">Expired</button><div id="expiryMonths"></div></div></section><section><h3><button type="button" id="expirySectiongroups" aria-expanded="false">Group '+inventoryIcon('chevron')+'</button></h3><div id="expiryGroups" hidden></div></section></div><div class="expiryFilterContext"><span id="expiryInventoryView"></span><button type="button" id="expiryResolved">Show Resolved Records</button><button type="button" id="expiryClearPeriod" hidden>Clear KPI Period</button></div><footer><button id="btnClearExpiryFilters" type="button">Reset All</button><button id="expiryApplyFilters" type="button" class="primary">Apply Filters</button></footer></section></div>'+
+        '<button id="expiryQuickClearKpi" type="button" title="Clear KPI Selection" aria-label="Clear KPI Selection" hidden>'+inventoryIcon('close')+'</button><div class="expiryInventoryMenu"><button type="button" id="expiryFilter" aria-expanded="false" aria-controls="expiryFilterPanel">'+inventoryIcon('filters')+'<span id="expiryFilterLabel">Filters</span> <b id="expiryFilterCount" hidden>0</b></button><section id="expiryFilterPanel" class="expiryInventoryPopover expiryFilterPanel" aria-label="Inventory filters" role="dialog" hidden><header><strong>Inventory Filters</strong><button type="button" data-dismiss-menu aria-label="Close filters">'+inventoryIcon('close')+'</button></header><div class="expiryFilterScroll"><section><h3><button type="button" id="expirySectionmonths" aria-expanded="false">Expiry Months '+inventoryIcon('chevron')+'</button></h3><div id="expiryMonthContent" hidden><button type="button" class="expiryFilterChoice" role="checkbox" aria-checked="false" id="expiryExpiredChoice">Expired</button><div id="expiryMonths"></div></div></section><section><h3><button type="button" id="expirySectiongroups" aria-expanded="false">Group '+inventoryIcon('chevron')+'</button></h3><div id="expiryGroups" hidden></div></section></div><footer class="expiryFilterFooter"><div class="expiryFilterContext"><span id="expiryInventoryView"></span><button type="button" id="expiryResolved">Show Resolved Records</button><button type="button" id="expiryClearPeriod" hidden>Clear KPI Period</button></div><div class="expiryFilterFooterActions"><button id="btnClearExpiryFilters" type="button">Reset All</button><button id="expiryApplyFilters" type="button" class="primary">Apply Filters</button></div></footer></section></div>'+
         '<div class="expiryInventoryMenu"><button type="button" id="expirySort" aria-expanded="false" aria-controls="expirySortPanel">'+inventoryIcon('sort')+'<span id="expirySortLabel">Recently Added</span></button><div id="expirySortPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Sort inventory" hidden>'+[['ADDED','Recently Added'],['UPDATED','Recently Updated'],['EXPIRY','Earliest Expiry']].map(([key,label])=>'<button type="button" role="menuitemradio" data-sort="'+key+'" aria-checked="false">'+label+'</button>').join('')+'</div></div>'+
         '<div class="expiryInventoryMenu"><button type="button" id="expiryExport" aria-expanded="false" aria-controls="expiryExportPanel">'+inventoryIcon('export')+'Export</button><div id="expiryExportPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Export filtered inventory" hidden><button id="btnExportExpiryInventory" type="button" role="menuitem">'+inventoryIcon('sheet')+'Excel (.xlsx)</button><button id="expiryPdf" type="button" role="menuitem">'+inventoryIcon('document')+'PDF (.pdf)</button><button id="expiryPrint" type="button" role="menuitem">'+inventoryIcon('printer')+'Print</button></div></div>';
       for(const id of ['expiryFilter','expirySort','expiryExport','expiryBulkMenu'])el(id).onclick=()=>openInventoryPanel(id);
