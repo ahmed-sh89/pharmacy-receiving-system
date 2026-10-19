@@ -189,10 +189,10 @@ async function loadExpiryWorkers(){
     try{ saved = (expiryIsHandheld()?sessionStorage:localStorage).getItem(ExpiryCaptureEngine.storageKey()) || ""; }catch(_){}
 
     if(ExpiryCaptureEngine.currentItem && ExpiryCaptureEngine.selectedWorkerId){renderExpiryWorkerSelects();return ExpiryCaptureEngine.workers;}
-    if(saved && ExpiryCaptureEngine.workers.some(w => w.worker_id === saved)){
-        ExpiryCaptureEngine.selectedWorkerId = saved;
-    }else if(ExpiryCaptureEngine.workers.length === 1){
-        ExpiryCaptureEngine.selectedWorkerId = ExpiryCaptureEngine.workers[0].worker_id;
+    const stable=ExpiryCaptureEngine.selectedWorkerId||saved;
+    if(stable && ExpiryCaptureEngine.workers.some(w => w.worker_id === stable)){
+        ExpiryCaptureEngine.selectedWorkerId = stable;
+
     }else{
         ExpiryCaptureEngine.selectedWorkerId = "";
     }
@@ -211,10 +211,10 @@ function renderExpiryWorkerSelects(){
     selects.forEach(select => {
         const current = ExpiryCaptureEngine.selectedWorkerId || "";
         if(select.dataset?.expirySelect){
-            buildExpirySelectOptions(select,[{value:"",label:expiryIsHandheld()?"Select operator":"Desktop"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
+            buildExpirySelectOptions(select,[{value:"",label:"Select operator"},...ExpiryCaptureEngine.workers.map(w=>({value:String(w.worker_id),label:String(w.worker_name)}))]);
             setExpiryControlValue(select,current);
         }else{
-            select.innerHTML=`<option value="">${expiryIsHandheld() ? "Select operator" : "Desktop"}</option>`+ExpiryCaptureEngine.workers.map(w=>`<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`).join("");
+            select.innerHTML=`<option value="">Select operator</option>`+ExpiryCaptureEngine.workers.map(w=>`<option value="${expiryEscapeHtml(w.worker_id)}">${expiryEscapeHtml(w.worker_name)}</option>`).join("");
             select.value=current;
         }
     });
@@ -1088,7 +1088,7 @@ async function saveExpiryCapture(options={}){
 
     if(year > 0 && year < 100) year += 2000;
 
-    if(expiryIsHandheld() && !workerId){
+    if(!workerId){
         setExpiryStatus("action","SELECT WORKER");
         return;
     }
@@ -2130,25 +2130,26 @@ function ensureExpiryWorkerSettingsCard(){
 
     const card = document.createElement("section");
     card.id = "expiryWorkersSettingsCard";
-    card.className = "contentCard expiryWorkersSettingsCard settingsFutureFeature";
+    card.className = "contentCard expiryWorkersSettingsCard";
     card.hidden = true;
     card.setAttribute("aria-hidden","true");
     card.innerHTML = `
         <div class="cardHeader">
             <div>
                 <span class="sectionEyebrow">NEAR EXPIRY</span>
-                <h2>Expiry Workers</h2>
-                <p class="settingsDescription">Add worker names once. The selected worker is remembered on each device.</p>
+                <h2>Operators</h2>
+                <p class="settingsDescription">Manage pharmacy Operators. Historical attribution is preserved.</p>
             </div>
         </div>
         <div class="expiryWorkerAddRow">
-            <input id="expiryWorkerNameInput" type="text" maxlength="60" placeholder="Worker name">
-            <button id="btnAddExpiryWorker" class="primaryButton" type="button">Add Worker</button>
+            <input id="expiryWorkerNameInput" type="text" maxlength="60" placeholder="Operator name" aria-label="Operator name">
+            <button id="btnAddExpiryWorker" class="primaryButton" type="button">Add Operator</button>
         </div>
         <div id="expiryWorkersSettingsList" class="expiryWorkersSettingsList"></div>
     `;
 
     settings.appendChild(card);
+    refreshExpiryOperatorManagement();
 
     document.getElementById("btnAddExpiryWorker")?.addEventListener("click", saveExpiryWorkerFromSettings);
     document.getElementById("expiryWorkerNameInput")?.addEventListener("keydown", event => {
@@ -2197,10 +2198,16 @@ function renderExpiryWorkerSettingsList(){
     list.innerHTML = ExpiryCaptureEngine.workers.map(w => `
         <div class="expiryWorkerRow">
             <strong>${expiryEscapeHtml(w.worker_name)}</strong>
+            <button type="button" class="secondaryButton" data-expiry-worker-rename="${expiryEscapeHtml(w.worker_id)}">Rename</button>
             <button type="button" class="secondaryButton" data-expiry-worker-remove="${expiryEscapeHtml(w.worker_id)}">Disable</button>
         </div>
     `).join("");
 
+    list.querySelectorAll('[data-expiry-worker-rename]').forEach(button=>button.onclick=async()=>{
+        const worker=ExpiryCaptureEngine.workers.find(w=>w.worker_id===button.dataset.expiryWorkerRename);
+        const name=window.prompt('Operator name',worker.worker_name);if(name===null||name.trim()===worker.worker_name)return;
+        button.disabled=true;try{await authRpc('rename_pharmacy_expiry_worker',{p_pharmacy_id:expiryPharmacyId(),p_worker_id:worker.worker_id,p_worker_name:name.trim(),p_expected_name:worker.worker_name});await loadExpiryWorkers();}catch(error){showToast?.(error.message||'Unable to rename Operator','error');button.disabled=false;}
+    });
     list.querySelectorAll("[data-expiry-worker-remove]").forEach(button => {
         button.addEventListener("click", async () => {
             const id = button.getAttribute("data-expiry-worker-remove");
@@ -2225,7 +2232,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 if(typeof AppEvents !== "undefined" && AppEvents?.on){
-    AppEvents.on("auth:context", async () => {
+    AppEvents.on("auth:context-ready", async () => {
         ensureExpiryWorkerSettingsCard();
         try{ await loadExpiryWorkers(); }catch(_){}
     });
@@ -2248,3 +2255,12 @@ if(typeof AppEvents !== "undefined" && AppEvents?.on){
    GS1/2D extracted lot/expiry stays automatic; GTIN-only requires manual date.
    Review photos are temporary identification evidence and may be deleted after
    successful resolution by the Needs Review media lifecycle. */
+
+async function refreshExpiryOperatorManagement(){
+ const card=document.getElementById('expiryWorkersSettingsCard');if(!card)return;
+ const pharmacy=expiryPharmacyId();card.hidden=true;card.setAttribute('aria-hidden','true');
+ if(!pharmacy||expiryIsHandheld())return;
+ try{const allowed=await authRpc('is_pharmacy_admin',{p_pharmacy_id:pharmacy});if(pharmacy!==expiryPharmacyId())return;card.hidden=allowed!==true;card.setAttribute('aria-hidden',String(!allowed));if(allowed)await loadExpiryWorkers();}catch(_){}
+}
+window.addEventListener?.('auth:context-ready',()=>{ensureExpiryWorkerSettingsCard();void refreshExpiryOperatorManagement();});
+if(typeof AppEvents!=='undefined')AppEvents.on('route:changed',p=>{if(p?.routeName==='settings')void refreshExpiryOperatorManagement();});
