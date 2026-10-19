@@ -1031,7 +1031,7 @@ body:not(.zebraDevice) #btnReceivingNeedsReview.hasItems strong{background:#c241
 body:not(.zebraDevice) .gtinResolutionPanelWide{width:min(880px,94vw)!important}
 body:not(.zebraDevice) .gtinResolutionSelection{margin-top:8px;padding:12px;border:2px solid #2780c5;border-radius:12px;background:#edf7ff}
 body:not(.zebraDevice) .gtinPrimaryAction{width:100%;min-height:40px;margin-top:8px}
-body:not(.zebraDevice) .needsReviewPanel{width:min(1180px,96vw)}
+body:not(.zebraDevice) .needsReviewPanel:not(.expiryNeedsReviewPanel){width:min(1180px,96vw)}
 body:not(.zebraDevice) .needsReviewRow.hasSelectedReviewItem .needsReviewSearchRow,body:not(.zebraDevice) .needsReviewRow.hasSelectedReviewItem .needsReviewMatches{display:none}
 body:not(.zebraDevice) .needsReviewRow.hasSelectedReviewItem .needsReviewSelection{display:block}
 @media(max-width:760px){body:not(.zebraDevice) .gtinItemMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.gtinAllocationSummary{grid-template-columns:1fr}.gtinAllocationSummary span{text-align:left}}

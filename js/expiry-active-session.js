@@ -144,7 +144,7 @@ async function openExpiryHandheldHistory(){
         const requestId=crypto.randomUUID();let submitted=null;
         editor.onsubmit=async event=>{
             event.preventDefault();if(confirm.disabled || scope!==expiryDraftScope())return;
-            const correction={quantity:remove?0:Number(fields.quantity.value),batch_no:fields.batch_no.value.trim()||null,expiry_month:Number(fields.expiry_month.value),expiry_year:Number(fields.expiry_year.value)};
+            const correction={quantity:remove?0:Number(fields.quantity.value),batch_no:(locks.batch?fields.batch_no.value:fields.batch_no.value.trim())||null,expiry_month:Number(fields.expiry_month.value),expiry_year:Number(fields.expiry_year.value)};
             if(!Number.isInteger(correction.quantity)||correction.quantity<0||(!remove&&correction.quantity<1)||!Number.isInteger(correction.expiry_month)||correction.expiry_month<1||correction.expiry_month>12||!Number.isInteger(correction.expiry_year)||correction.expiry_year<2020||correction.expiry_year>2200||(correction.batch_no!==row.batch_no && String(correction.batch_no||'').length>(row.scan_format==='GS1'?20:128))){status.textContent='Check quantity, batch and expiry';return;}
             if(!remove && correction.batch_no!==row.batch_no && ExpiryOperation.batchIsScannerPayload(correction.batch_no)){status.textContent='Use Scan Barcode, not Batch';return;}
             if(!remove && ((locks.batch && correction.batch_no!==(row.batch_no||null)) || (locks.expiry && (correction.expiry_month!==Number(row.expiry_month)||correction.expiry_year!==Number(row.expiry_year))))){status.textContent='Fields captured from GS1 are read only';return;}

@@ -654,7 +654,7 @@
       esc(title) +
       '</h2></header><div class="expiryDialogContent">' +
       content +
-      '</div><p role="alert" class="expiryRecordValidation" hidden></p><footer><button type="button" data-cancel>' + esc(options.cancelLabel || 'Close') + '</button>' +
+      '</div><p role="alert" class="expiryRecordValidation" hidden></p><footer><button type="button" data-cancel>' + esc(options.cancelLabel || (action?'Cancel':'Close')) + '</button>' +
       (action ? '<button type="submit" class="' + (options.destructive ? 'danger' : 'primary') + '">' + esc(options.confirmLabel || 'Confirm') + '</button>' : options.unavailableLabel ? '<button type="button" disabled class="' + (options.destructive ? 'danger' : 'primary') + '">' + esc(options.unavailableLabel) + '</button>' : "") +
       "</footer></form>";
     dialog.querySelector("[data-cancel]").onclick = () => {
@@ -817,7 +817,8 @@
       const snapshot=JSON.parse(JSON.stringify(preview.selection)),args={...authArgs(),p_request_id:crypto.randomUUID(),p_action:context?'RESTORE':'RESOLVE',p_selection:snapshot};
       const filteredArgs={...authArgs(),p_request_id:args.p_request_id,p_filters:wireFilters,p_selection:snapshot,p_expected_count:preview.count,p_expected_units:preview.units};
       const verb=context?'Restore':'Resolve',scopeText=[filterSnapshot.search,...filterSnapshot.groups.map(monthFilters.displayGroup),filterSnapshot.includeUnassigned&&'No canonical Group',...filterSnapshot.months,filterSnapshot.expiredThrough&&'Through '+periodMonth(filterSnapshot.expiredThrough),filterSnapshot.excludedMonths?.length&&'Except '+filterSnapshot.excludedMonths.join(', ')].filter(Boolean).join(' · ')||'All '+(context?'resolved':'active')+' inventory';
-      const summary='<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(allFiltered?'All filtered results across every page.':'Exactly '+preview.count+' explicitly selected record IDs, including selections retained across pages.')+'</p><p>'+esc(scopeText)+'</p><p>'+(context?'Restores the reviewed quantities to Active Inventory.':'Moves the reviewed quantities out of Active Inventory. Historical records and audit are retained.')+'</p>';
+      const singleRecord=!allFiltered&&ids.length===1?page.rows.find(r=>r.row_id===ids[0]):null;
+      const summary=(singleRecord?identity(singleRecord):'')+'<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(allFiltered?'All filtered results across every page.':singleRecord?'Selected record only.':'Exactly '+preview.count+' explicitly selected record IDs, including selections retained across pages.')+'</p><p>'+esc(scopeText)+'</p><p>'+(context?'Restores the reviewed quantities to Active Inventory.':'Moves the reviewed quantities out of Active Inventory. Historical records and audit are retained.')+'</p>';
       const final=()=>{
         const canResolveAll=allFiltered&&!context;
         const action=allFiltered?(canResolveAll?async d=>{
@@ -857,7 +858,7 @@
         root.innerHTML=ExpiryInventoryReport.printMarkup(dataRows,meta);guard();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));guard();window.print();if(feedback)feedback.hidden=true;return;
       }
       const data=ExpiryInventoryReport.excelRows(rows),headers=ExpiryInventoryReport.excelHeaders,ws=XLSX.utils.json_to_sheet(data.map(row=>Object.fromEntries(headers.map((h,i)=>[h,row[i]]))));
-      ws['!cols']=[14,18,100,20,26,12,10,24,14].map(wch=>({wch}));ws['!rows']=[{hpt:10.5},...data.map(()=>({hpt:10.5}))];ws['!autofilter']={ref:ws['!ref']};ws['!margins']={left:.19685,right:.19685,top:.19685,bottom:.19685,header:0,footer:0};
+      ws['!cols']=[10,14,27,10,16,10,7,15,9].map(wch=>({wch}));ws['!rows']=[{hpt:10.5},...data.map(()=>({hpt:10.5}))];ws['!autofilter']={ref:ws['!ref']};ws['!margins']={left:.19685,right:.19685,top:.19685,bottom:.19685,header:0,footer:0};
       const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Expiry Inventory');guard();ExpiryInventoryReport.saveWorkbook(wb,guard);if(feedback)feedback.hidden=true;
     } catch (e) {
       if(feedback){feedback.setAttribute("role","alert");feedback.textContent=e.message||"Export failed. Please retry.";}
@@ -1004,7 +1005,7 @@
         }
       });
       document.addEventListener('scroll',()=>{if(floatingMenu)closeInventoryMenus();},true);
-      document.addEventListener('focusin',e=>{if(openInventoryMenu&&!floatingMenu?.contains(e.target)&&!el(openInventoryMenu)?.parentElement.contains(e.target))closeInventoryMenus();});
+      document.addEventListener('focusin',e=>{const owner=openInventoryMenu==='expiryRowAction'?floatingTrigger:el(openInventoryMenu)?.parentElement;if(openInventoryMenu&&!floatingMenu?.contains(e.target)&&!owner?.contains(e.target))closeInventoryMenus();});
       if (typeof setInterval === "function")
         setInterval(() => {
           if (

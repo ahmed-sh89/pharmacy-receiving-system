@@ -1058,6 +1058,9 @@ async function refreshAuthToken(){
                 method:"POST",
                 body:JSON.stringify({refresh_token:startingRefreshToken})
             });
+            // Logout or another sign-in may finish while the refresh HTTP call is in flight.
+            // Never resurrect the old identity from a late token response.
+            if(!AuthState.session || String(AuthState.session.refresh_token||"")!==startingRefreshToken)return false;
             persistAuthSession(session);
             setAuthConnectionDegraded(false);
             return true;

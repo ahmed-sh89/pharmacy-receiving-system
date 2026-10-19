@@ -67,7 +67,7 @@ async function fixture(baseline){
     return {singleIndicator:document.querySelectorAll('.expiryNavIndicator').length===1,moved,immediate,cleaned,unchangedTweens};
    });
    await page.emulateMedia({reducedMotion:'reduce'});
-   await page.evaluate(()=>new Promise(requestAnimationFrame));
+   await page.waitForTimeout(100); // Let Chromium dispatch the media-query change event.
    result.reduced=await page.evaluate(async()=>{const gsap=(await import('/node_modules/gsap/index.js')).gsap;document.querySelector('[data-kpi-number="records"]').textContent='11';ExpiryTopMotion.sync();return {indicators:document.querySelectorAll('.expiryNavIndicator').length,value:document.querySelector('[data-kpi-number="records"]').textContent,tweens:gsap.globalTimeline.getChildren().filter(t=>t.duration()>0).length};});
    result.handheld=await page.evaluate(()=>{document.body.classList.add('zebraDevice');ExpiryTopMotion.sync();return {indicators:document.querySelectorAll('.expiryNavIndicator').length,nav:getComputedStyle(document.querySelector('.expiryTopWorkspace')).display};});
   }

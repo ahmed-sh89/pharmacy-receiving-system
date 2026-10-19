@@ -183,6 +183,7 @@ async function loadExpiryWorkers(){
         p_pharmacy_id: pharmacyId
     });
 
+    if(pharmacyId!==expiryPharmacyId())return [];
     ExpiryCaptureEngine.workers = Array.isArray(rows) ? rows : [];
 
     let saved = "";
@@ -2164,7 +2165,7 @@ async function saveExpiryWorkerFromSettings(){
     const input = document.getElementById("expiryWorkerNameInput");
     const name = String(input?.value || "").trim();
     if(name.length < 2){
-        if(typeof showToast === "function") showToast("Enter worker name","warning");
+        if(typeof showToast === "function") showToast("Enter Operator name","warning");
         input?.focus();
         return;
     }
@@ -2176,12 +2177,12 @@ async function saveExpiryWorkerFromSettings(){
         });
         input.value = "";
         await loadExpiryWorkers();
-        if(typeof showToast === "function") showToast("Worker saved","success");
+        if(typeof showToast === "function") showToast("Operator saved","success");
     }catch(error){
         const message = String(error?.message || "");
         const friendly = /jwt|token|sign-in expired/i.test(message)
             ? "Your sign-in expired. Please sign in again."
-            : (message || "Unable to save worker");
+            : (message || "Unable to save Operator");
         if(typeof showToast === "function") showToast(friendly,"error");
     }
 }
@@ -2191,7 +2192,7 @@ function renderExpiryWorkerSettingsList(){
     if(!list) return;
 
     if(ExpiryCaptureEngine.workers.length === 0){
-        list.innerHTML = `<div class="registrationEmpty">No workers added yet.</div>`;
+        list.innerHTML = `<div class="registrationEmpty">No Operators added yet.</div>`;
         return;
     }
 
@@ -2199,7 +2200,7 @@ function renderExpiryWorkerSettingsList(){
         <div class="expiryWorkerRow">
             <strong>${expiryEscapeHtml(w.worker_name)}</strong>
             <button type="button" class="secondaryButton" data-expiry-worker-rename="${expiryEscapeHtml(w.worker_id)}">Rename</button>
-            <button type="button" class="secondaryButton" data-expiry-worker-remove="${expiryEscapeHtml(w.worker_id)}">Disable</button>
+            <button type="button" class="secondaryButton" data-expiry-worker-remove="${expiryEscapeHtml(w.worker_id)}">Deactivate</button>
         </div>
     `).join("");
 

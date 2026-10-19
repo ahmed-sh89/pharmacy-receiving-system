@@ -5,7 +5,7 @@ do $qa$
 declare
  actor uuid;pa uuid;pb uuid;sid uuid;ses uuid;op uuid:=gen_random_uuid();op2 uuid:=gen_random_uuid();op3 uuid:=gen_random_uuid();
  wid uuid;wid2 uuid;w jsonb;cap jsonb;ack jsonb;ack2 jsonb;rows jsonb;page jsonb;result jsonb;reject boolean;
- batch text:='QA'||substr(replace(gen_random_uuid()::text,'-',''),1,12);nm text;stateid uuid;rid uuid:=gen_random_uuid();first_event text;
+ batch text:='QA'||substr(replace(gen_random_uuid()::text,'-',''),1,12);nm text;stateid uuid;rid uuid:=gen_random_uuid();first_event text;historic_op uuid:=gen_random_uuid();
 begin
  select id into strict actor from auth.users where email='tc26-expiry@example.invalid';
  select pharmacy_id into strict pa from public.pharmacy_members where user_id=actor and active=true;
@@ -26,6 +26,8 @@ begin
  cap:=jsonb_build_object('kind','KNOWN','source','HANDHELD','worker_id',wid,'device_id',nm,'item_code','1011923','item_name','QA fixture','identifier_display','06291100080069','category','Medicine','raw_scan','(01)06291100080069(17)310200(10)'||batch,'scan_format','GS1','sample_serial',null,'batch_no',batch,'expiry_month',2,'expiry_year',2031,'quantity',1);
  execute 'set local role authenticated';
  ack:=public.save_pharmflow_expiry_session_capture_v2(pa,ses,op,cap);stateid:=(ack->>'state_id')::uuid;
+ -- Each real scan commits in its own transaction. Give rollback fixtures distinct recorded times.
+ execute 'reset role';update pharmflow_expiry_private.operations set created_at=now()-interval '2 minutes',status=status where pharmacy_id=pa and operation_id=op;execute 'set local role authenticated';
  if public.save_pharmflow_expiry_session_capture_v2(pa,ses,op,cap) is distinct from ack then raise exception 'Retry changed receipt';end if;
  rows:=public.list_pharmflow_expiry_session_v2(pa,ses);select r into result from jsonb_array_elements(rows) r where r->>'operation_id'=op::text;
  if result->'gs1_source_locks'<>jsonb_build_object('batch',true,'expiry',true) then raise exception 'GS1 locks unavailable';end if;
@@ -33,6 +35,7 @@ begin
  reject:=false;begin perform public.correct_pharmflow_expiry_session_v2(pa,ses,op,gen_random_uuid(),0,jsonb_build_object('quantity',2,'batch_no',batch,'expiry_month',3,'expiry_year',2031));exception when raise_exception then if SQLERRM<>'Expiry captured from GS1 is read only' then raise;end if;reject:=true;end;if not reject then raise exception 'GS1 expiry tamper accepted';end if;
  result:=public.correct_pharmflow_expiry_session_v2(pa,ses,op,rid,0,jsonb_build_object('quantity',2,'batch_no',batch,'expiry_month',2,'expiry_year',2031));
  if public.correct_pharmflow_expiry_session_v2(pa,ses,op,rid,0,jsonb_build_object('quantity',2,'batch_no',batch,'expiry_month',2,'expiry_year',2031)) is distinct from result then raise exception 'Correction retry changed receipt';end if;
+ reject:=false;begin perform public.correct_pharmflow_expiry_session_v2(pa,ses,op,gen_random_uuid(),1,jsonb_build_object('quantity',2,'batch_no','Changed after quantity edit','expiry_month',2,'expiry_year',2031));exception when raise_exception then if SQLERRM<>'Batch captured from GS1 is read only' then raise;end if;reject:=true;end;if not reject then raise exception 'Quantity correction unlocked GS1 fields';end if;
  cap:=cap||jsonb_build_object('raw_scan','06291100080069','scan_format','PLAIN','batch_no',lower(batch),'worker_id',wid2);
  ack2:=public.save_pharmflow_expiry_session_capture_v2(pa,ses,op2,cap);if ack2->>'state_id'<>stateid::text then raise exception 'Case variants separated';end if;
  page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',batch),false,'ADDED',0,50);
@@ -41,16 +44,32 @@ begin
  perform public.correct_pharmflow_expiry_session_v2(pa,ses,op,gen_random_uuid(),1,jsonb_build_object('quantity',0,'batch_no',batch,'expiry_month',2,'expiry_year',2031));
  page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',batch),false,'ADDED',0,50);
  if page->'rows'->0->>'first_operator_event_id'<>first_event or (page->'rows'->0->>'quantity')::int<>1 then raise exception 'Original deletion lost first attribution';end if;
+ perform public.save_pharmflow_expiry_session_capture_v2(pa,ses,historic_op,cap||jsonb_build_object('worker_id',wid,'batch_no',batch||'H'));
  perform public.rename_pharmacy_expiry_worker(pa,wid,'QA Renamed '||batch,'QA First '||batch);
  perform public.deactivate_pharmacy_expiry_worker(pa,wid);
  page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',batch),false,'ADDED',0,50);
  if page->'rows'->0->>'first_operator_name'<>'QA First '||batch then raise exception 'Historical Operator rewritten';end if;
- -- Original operation deletion must retain attribution (use active second operator for the correction event path).
- -- Inactive original Operator corrections currently reject in save_known_core; report separately, do not bypass.
+ perform public.correct_pharmflow_expiry_session_v2(pa,ses,historic_op,gen_random_uuid(),0,jsonb_build_object('quantity',2,'batch_no',batch||'H','expiry_month',2,'expiry_year',2031));
+ reject:=false;begin perform public.save_pharmflow_expiry_session_capture_v2(pa,ses,gen_random_uuid(),cap||jsonb_build_object('worker_id',wid,'batch_no',batch||'H2'));exception when raise_exception then if SQLERRM<>'Active pharmacy worker required' then raise;end if;reject:=true;end;if not reject then raise exception 'New capture accepted inactive Operator';end if;
+
  cap:=cap||jsonb_build_object('batch_no',batch||'X');
  ack2:=public.save_pharmflow_expiry_session_capture_v2(pa,ses,op3,cap);
  perform public.correct_pharmflow_expiry_session_v2(pa,ses,op3,gen_random_uuid(),0,jsonb_build_object('quantity',2,'batch_no',batch||'Y','expiry_month',3,'expiry_year',2031));
  reject:=false;begin perform public.query_pharmflow_expiry_inventory_v1(pb,'{}',false,'ADDED',0,50);exception when raise_exception then reject:=true;end;if not reject then raise exception 'Cross-pharmacy read accepted';end if;
+ -- Delayed Needs Review must retain original scan attribution, not the resolving editor.
+ declare unknown_op uuid:=gen_random_uuid();known_op uuid:=gen_random_uuid();resolve_op uuid:=gen_random_uuid();review_id uuid;late_worker uuid;identifier text:='QA-'||gen_random_uuid();case_batch text:=batch||'R';
+ begin
+ late_worker:=(public.save_pharmacy_expiry_worker(pa,'QA Late '||batch)->>'id')::uuid;
+ ack:=public.save_pharmflow_expiry_session_capture_v2(pa,ses,unknown_op,cap||jsonb_build_object('kind','UNKNOWN','worker_id',wid2,'identifier_display',identifier,'raw_scan',identifier,'scan_format','PLAIN','batch_no',case_batch,'expiry_month',2,'expiry_year',2031));review_id:=(ack->>'review_id')::uuid;
+ execute 'reset role';update pharmflow_expiry_private.operations set created_at=now()-interval '1 hour' where pharmacy_id=pa and operation_id=unknown_op;execute 'set local role authenticated';
+ ack2:=public.save_pharmflow_expiry_session_capture_v2(pa,ses,known_op,cap||jsonb_build_object('worker_id',late_worker,'batch_no',case_batch));
+ result:=public.resolve_pharmflow_expiry_review_v2(pa,review_id,resolve_op,'1011923','Controlled rollback QA',null);
+ page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',case_batch),false,'ADDED',0,50);
+ if page->'rows'->0->>'first_operator_id'<>wid2::text or (page->'rows'->0->>'quantity')::int<>2 then raise exception 'Delayed resolution lost original Operator';end if;
+ perform public.resolve_pharmflow_expiry_review_v2(pa,review_id,resolve_op,'1011923','Controlled rollback QA',null);
+ page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',case_batch),false,'ADDED',0,50);
+ if (page->'rows'->0->>'quantity')::int<>2 then raise exception 'Resolve retry duplicated quantity';end if;
+ end;
  perform set_config('request.jwt.claims','{}',true);
  reject:=false;begin perform public.save_pharmacy_expiry_worker(pa,'Unauthenticated');exception when raise_exception then reject:=true;end;if not reject then raise exception 'Unauthenticated manager accepted';end if;
 end $qa$;

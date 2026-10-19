@@ -7092,7 +7092,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain small{font-size
 .expiryRecordFields input,.expiryRecordFields select{width:100%;min-width:0;height:40px;padding:0 9px;border:1px solid #ab96d0;border-radius:7px;background:#fff;color:#263950;font:inherit;box-sizing:border-box}
 .expiryRecordFields input[readonly]{border-color:#d5dce5;background:#f4f6f9;color:#738096}
 .expiryRecordFields small{font-size:10px;font-weight:400;color:#738096}
-.expiryRecordDialog input:focus-visible,.expiryRecordDialog select:focus-visible,.expiryRecordDialog button:focus-visible{outline:2px solid #7454b4;outline-offset:2px}
+.expiryRecordDialog input:focus-visible,.expiryRecordDialog select:focus-visible,.expiryRecordDialog button:focus-visible{outline:2px solid var(--dialog-accent);outline-offset:2px}
 .expiryRecordDialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .expiryRecordDialog button{min-height:38px;padding:0 15px;border:1px solid #cbd4df;border-radius:8px;background:#fff;color:#53647b;font:600 13px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}
 .expiryRecordDialog button.primary{background:var(--dialog-accent,#7454b4);border-color:var(--dialog-accent,#7454b4);color:#fff}
@@ -7304,9 +7304,10 @@ body:not(.zebraDevice) #zebraExpiryShell button:disabled{opacity:.55;cursor:defa
 .expiryDialogContent input{display:block;width:100%;padding:8px;border:1px solid #becbdb;border-radius:7px;font:inherit;box-sizing:border-box}
 #expiryShelfPrint{display:none}
 @media print{
- @page{size:A4 portrait;margin:5mm}
+ @page{size:A4 landscape;margin:5mm}
+ @page pharmflowExpiry{size:A4 portrait;margin:5mm}
  body>*:not(#expiryShelfPrint){display:none!important}
- #expiryShelfPrint{display:block!important;background:#fff!important;font:7pt Arial,sans-serif;color:#111}
+ #expiryShelfPrint{page:pharmflowExpiry;display:block!important;background:#fff!important;font:7pt Arial,sans-serif;color:#111}
  #expiryShelfPrint .expiryPaperMeta{height:9pt;line-height:8pt;margin:0;white-space:nowrap;font-size:6.5pt}
  #expiryShelfPrint table{width:100%;table-layout:fixed;border-collapse:collapse}
  #expiryShelfPrint thead{display:table-header-group}

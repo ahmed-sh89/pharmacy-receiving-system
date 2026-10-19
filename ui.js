@@ -9691,16 +9691,25 @@ function mountExpiryReviewResolver(section,row,index,{canCreate,overlay,onResolv
 
 async function openExpiryNeedsReviewPanel(options={}){
     closeNeedsReviewPhotoViewer();
-    const previous=document.getElementById('needsReviewOverlay');previous?.disposeFocus?.();previous?.remove();
-    let rows;
-    try{rows=await ExpiryReviewBackend.list();}
-    catch(error){showToast?.(error?.message||'Unable to load Expiry Needs Review','error');return;}
-    const esc=value=>escapeHTML(toSafeString(value));
-    // The Expiry RPC owns pharmacy-local identifier mapping and authorized Global writes.
-    const canResolve=!!(typeof getCurrentPharmacyId==='function'&&getCurrentPharmacyId())||!!AuthState?.context?.pharmacy_id;
-    let canCreate=false;
-    try{canCreate=!(typeof expiryIsHandheld==='function'&&expiryIsHandheld())&&await authRpc('pharmflow_is_reference_master_admin_v1',{})===true;}catch(_){}
+    const previous=document.getElementById('needsReviewOverlay');
+    if(previous){previous.querySelector('input,button')?.focus({preventScroll:true});return;}
     const overlay=document.createElement('div');overlay.id='needsReviewOverlay';overlay.className='needsReviewOverlay';
+    overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Expiry Needs Review');overlay.setAttribute('aria-busy','true');
+    overlay.innerHTML='<section class="needsReviewPanel expiryNeedsReviewPanel"><header><h2>Needs Review</h2><button type="button" class="needsReviewClose">Close</button></header><p class="needsReviewEmpty" role="status">Loading pending review…</p></section>';
+    overlay.querySelector('button').onclick=()=>overlay.remove();document.body.appendChild(overlay);overlay.querySelector('button').focus({preventScroll:true});
+    const esc=value=>escapeHTML(toSafeString(value));
+    const canResolve=!!(typeof getCurrentPharmacyId==='function'&&getCurrentPharmacyId())||!!AuthState?.context?.pharmacy_id;
+    const openingPharmacy=AuthState?.context?.pharmacy_id||getCurrentPharmacyId?.();
+    let rows,canCreate=false;
+    try{
+      [rows,canCreate]=await Promise.all([ExpiryReviewBackend.list(),(async()=>{
+        if(typeof expiryIsHandheld==='function'&&expiryIsHandheld())return false;
+        try{return await authRpc('pharmflow_is_reference_master_admin_v1',{})===true;}catch(_){return false;}
+      })()]);
+    }catch(error){overlay.setAttribute('aria-busy','false');overlay.querySelector('[role="status"]').textContent=error?.message||'Unable to load Needs Review. Close and retry.';return;}
+    if(!overlay.isConnected)return;
+    if(openingPharmacy!==(AuthState?.context?.pharmacy_id||getCurrentPharmacyId?.())){overlay.remove();return;}
+    overlay.setAttribute('aria-busy','false');
     overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','needsReviewTitle');
     overlay.innerHTML=`<button class="needsReviewScrim" data-review-close aria-label="Close Needs Review"></button><section class="needsReviewPanel expiryNeedsReviewPanel">
       <header><div><span class="needsReviewKicker">EXPIRY</span><h2 id="needsReviewTitle">Pending review <b class="pfnReviewCount">${rows.length}</b></h2></div>
