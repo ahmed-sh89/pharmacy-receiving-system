@@ -7302,7 +7302,7 @@ body:not(.zebraDevice) #zebraExpiryShell button:disabled{opacity:.55;cursor:defa
 .expiryDialogContent input{display:block;width:100%;padding:8px;border:1px solid #becbdb;border-radius:7px;font:inherit;box-sizing:border-box}
 #expiryShelfPrint{display:none}
 @media print{
- @page{size:A4 landscape;margin:5mm}
+ @page{size:A4 portrait;margin:5mm}
  body>*:not(#expiryShelfPrint){display:none!important}
  #expiryShelfPrint{display:block!important;background:#fff!important;font:7pt Arial,sans-serif;color:#111}
  #expiryShelfPrint .expiryPaperMeta{height:9pt;line-height:8pt;margin:0;white-space:nowrap;font-size:6.5pt}
