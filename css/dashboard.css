@@ -7179,14 +7179,16 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th button{border:
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable td{padding:5px 6px;border-bottom:1px solid #e2e8f0;font-size:12px;vertical-align:middle;overflow-wrap:anywhere}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable tbody tr:hover{background:#f8f5fe}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(1){width:28px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(2){width:220px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(2){width:155px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(3){width:auto}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(4){width:120px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(5){width:100px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(6){width:84px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(7){width:78px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(8){width:110px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(9){width:126px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(4){width:92px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(5){width:85px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(6){width:78px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(7){width:65px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(8){width:125px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(9){width:108px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(10){width:58px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryOperatorCell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryProduct>strong{display:block;font-size:12.5px;font-weight:650;line-height:1.35;color:#263b54}
 body:not(.zebraDevice) #zebraExpiryShell .expiryIdentityMeta{font-size:12px;font-weight:500;color:#597088;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers strong,body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers span{display:block;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:copy;font-variant-numeric:tabular-nums}

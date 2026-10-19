@@ -33,7 +33,7 @@ function harness(handheld=false){
   },window:null};c.window=c;c.ExpiryReviewBackend={ready:true,refresh:async()=>true};vm.createContext(c);
  vm.runInContext(fs.readFileSync('js/expiry-operation.js','utf8')+fs.readFileSync('js/expiry-evidence.js','utf8')+fs.readFileSync('js/expiry-active-session.js','utf8')+fs.readFileSync('js/expiry.js','utf8')+'\nthis.engine=ExpiryCaptureEngine;this.expiryOperation=ExpiryOperation;',c);
  const drafts=new Map();c.ExpiryDraftStore={put:async(scope,draft)=>drafts.set(scope,structuredClone(draft)),get:async scope=>drafts.get(scope),remove:async scope=>drafts.delete(scope)};c.Blob=Blob;
- c.engine.draftReady=true;
+ c.engine.draftReady=true;if(!handheld){c.engine.selectedWorkerId="worker1";c.engine.workers=[{worker_id:"worker1",worker_name:"Operator One"}];}
  c.refreshExpiryCapturedCount=()=>{};c.refreshExpiryCurrentState=async()=>[];c.renderExpiryCurrentState=()=>{};
  return {c,drafts,session,receipts,e:id=>elements.get(id),calls,timers,flush(ms){for(const [id,t] of [...timers])if(t.ms===ms){timers.delete(id);t.fn();}}};
 }
@@ -56,11 +56,11 @@ test('Desktop complete GS1 stays unsaved and all review controls remain editable
  assert.equal(h.e('expiryQuantity').readOnly,false);assert.equal(h.e('expiryMonth').dataset.disabled,'false');assert.equal(h.e('expiryYear').dataset.disabled,'false');
  assert.equal([...h.timers.values()].some(t=>t.ms===30000),false);
 });
-test('Save uses edited Batch, Serial, Date, Quantity, exact identifier and null Desktop operator',async()=>{
+test('Save uses edited Batch, Serial, Date, Quantity, exact identifier and selected Desktop Operator',async()=>{
  const h=harness();h.c.parseGS1Barcode=raw=>({identifierDisplay:raw});await h.c.resolveExpiryScannedValue('04065272072977');h.e('expiryBatchInput').value=' EDITED-BATCH ';h.e('expirySerialInput').value=' EDITED-SERIAL ';h.e('expiryQuantity').value='7';h.c.setExpiryControlValue(h.e('expiryMonth'),'9');h.c.setExpiryControlValue(h.e('expiryYear'),'2028');
  const session=[];h.c.recordExpirySessionCapture=p=>session.push(p);await h.c.saveExpiryCapture();
  assert.equal(h.calls.length,2);assert.equal(h.calls[0].name,'get_pharmflow_expiry_auth_session_v1');assert.equal(h.calls.some(x=>x.name==='reserve_pharmflow_expiry_capture_v1'),false);const p=h.calls.find(x=>x.name==='save_pharmflow_expiry_desktop_capture_v1').payload.p_capture;
- assert.equal(p.batch_no,'EDITED-BATCH');assert.equal(p.sample_serial,'EDITED-SERIAL');assert.equal(p.quantity,7);assert.equal(p.expiry_month,9);assert.equal(p.expiry_year,2028);assert.equal(p.identifier_display,'04065272072977');assert.equal(p.worker_id,null);assert.equal(p.kind,'KNOWN');
+ assert.equal(p.batch_no,'EDITED-BATCH');assert.equal(p.sample_serial,'EDITED-SERIAL');assert.equal(p.quantity,7);assert.equal(p.expiry_month,9);assert.equal(p.expiry_year,2028);assert.equal(p.identifier_display,'04065272072977');assert.equal(p.worker_id,"worker1");assert.equal(p.kind,'KNOWN');
  assert.equal([...h.receipts.values()][0].batch_no,'EDITED-BATCH');h.flush(500);h.flush(40);
  assert.equal(h.c.engine.currentItem,null);assert.equal(h.e('expiryBatchInput').value,'');assert.equal(h.e('expirySerialInput').value,'');assert.equal(h.e('expiryMonth').dataset.value,'');assert.equal(h.e('expiryYear').dataset.value,'');assert.equal(h.c.document.activeElement.id,'expiryBarcodeInput');
 });
