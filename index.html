@@ -40,7 +40,7 @@
 
     <link
         rel="stylesheet"
-        href="css/dashboard.css?v=EXPIRY_HANDHELD_FOCUS_20261019"
+        href="css/dashboard.css?v=EXPIRY_TOP_MOTION_20261019"
     >
 
     <link
@@ -1279,7 +1279,7 @@
                     <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
                         <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCapturePanel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Scan &amp; Activity <b id="expirySessionCount" class="expirySessionCount">0</b></button>
                         <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
-                    </nav><div class="expiryHeaderActions"><div id="expirySessionSummary" class="expirySessionSummary expiryDesktopOnly" role="status" aria-label="Current Session" aria-live="polite"></div><button id="btnExpiryNeedsReview" type="button" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 18 17H2L10 3Zm0 5v4m0 2.5v.1"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button></div></header>
+                    </nav><div class="expiryHeaderActions"><div id="expirySessionSummary" class="expirySessionSummary expiryDesktopOnly" role="status" aria-label="Current Session" aria-live="polite"></div><button id="btnExpiryNeedsReview" type="button" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3h14v14H3zM3 11h4l1.5 2h3l1.5-2h4M7 6h6M7 8.5h4"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button></div></header>
                 <div class="expiryKpiRow" aria-label="Expiry summary" hidden>
                     <article class="expiryKpiCard expiryKpiActive">
                         <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
@@ -2625,7 +2625,8 @@
 <script src="js/expiry-clear-session.js?v=RETIRE_CLEAR1"></script>
 <script src="js/expiry-inventory-report.js?v=EXPIRY_ACCEPTANCE_HOTFIX_20261019"></script>
 <script src="js/expiry-inventory-filters.js?v=EXPIRY_ACCEPTANCE_HOTFIX_20261019"></script>
-<script src="js/expiry-desktop-v2.js?v=EXPIRY_BATCH_20261019"></script>
+<script type="module" src="js/expiry-top-motion.js"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_TOP_MOTION_20261019"></script>
 <script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
 
 <script src="cloud-workspace.js?v=PROD_EXPIRY_INTEGRATION1"></script>

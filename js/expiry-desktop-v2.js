@@ -165,44 +165,60 @@
       root.hidden = resolved;
       root.setAttribute("aria-busy",String(!summaryDisjoint));
       const cards=summaryDisjoint?periods:periods.length?monthFilters.buckets(periods[0].to):[];
-      root.innerHTML = cards
-        .map(
-          (p) =>
-            '<button type="button" class="expiryKpiCard ' +
-            ({ EXPIRED: "expiryKpiExpired", NEXT1: "expiryKpiNextMonth", NEXT2: "expiryKpiNextTwo", NEXT6: "expiryKpiNextSix" }[p.key] || "") +
-            '" data-period="' +
-            p.key +
-            '" '+(summaryDisjoint?'':'disabled')+'><span class="expiryKpiHeading"><span class="expiryKpiLabel">' +
-            (p.from==null ? "Expired" : kpiPeriod(p)) +
-            '</span> <span class="expiryKpiPeriod">' + (p.from==null ? kpiPeriod(p) : '') +
-            '</span></span> <span class="expiryKpiCounts"><span class="expiryKpiRecords"><strong>' +
-            (p.count==null?"…":kpiNumber.format(p.count)) +
-            '</strong> <span>Records</span></span> <span class="expiryKpiUnits">' +
-            (p.units==null?"…":kpiNumber.format(p.units)) +
-            ' Units</span></span></button>',
-        )
-        .join("");
-      root.querySelectorAll("[data-period]").forEach(
-        (b) =>
-          (b.onclick = () => {
-            if(!summaryDisjoint)return;
-            const p = periods.find((p) => p.key === b.dataset.period);
-            monthFilters.toggle(filters,p);
-            const reveal=p.from==null?page.months.filter(m=>monthFilters.number(m)<=p.to):monthFilters.months(p);
-            if(!filters.months.length&&filters.expiredThrough==null)expandedYears.clear();
-            else{reveal.filter(m=>monthFilters.has(filters,m)).forEach(m=>expandedYears.add(m.slice(0,4)));expandedSections.add('months');}
-            closeInventoryMenus();
-            sort = "EXPIRY";
-            offset = 0;
-            selected.clear();++requestVersion;
-            void refresh();
-          }),
-      );
+      const signature=cards.map(p=>p.key).join("/");
+      if(root.dataset.periodKeys!==signature){
+        root.dataset.periodKeys=signature;
+        root.innerHTML = cards
+          .map(
+            (p) =>
+              '<button type="button" class="expiryKpiCard ' +
+              ({ EXPIRED: "expiryKpiExpired", NEXT1: "expiryKpiNextMonth", NEXT2: "expiryKpiNextTwo", NEXT6: "expiryKpiNextSix" }[p.key] || "") +
+              '" data-period="' +
+              p.key +
+              '" '+(summaryDisjoint?'':'disabled')+'><span class="expiryKpiHeading"><span class="expiryKpiLabel">' +
+              (p.from==null ? "Expired" : kpiPeriod(p)) +
+              '</span> <span class="expiryKpiPeriod">' + (p.from==null ? kpiPeriod(p) : '') +
+              '</span></span> <svg class="expiryKpiMark" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2v3m10-3v3M3 8h14M3 4h14v13H3zM7 11h2m2 0h2m-6 3h2"/></svg> <span class="expiryKpiCounts"><span class="expiryKpiRecords"><strong data-kpi-number="records">' +
+              (p.count==null?"…":kpiNumber.format(p.count)) +
+              '</strong> <span>Records</span></span> <span class="expiryKpiUnits"><strong data-kpi-number="units">' +
+              (p.units==null?"…":kpiNumber.format(p.units)) +
+              '</strong> <span>Units</span></span></span></button>',
+          )
+          .join("");
+        root.querySelectorAll("[data-period]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              if(!summaryDisjoint)return;
+              const p = periods.find((p) => p.key === b.dataset.period);
+              monthFilters.toggle(filters,p);
+              const reveal=p.from==null?page.months.filter(m=>monthFilters.number(m)<=p.to):monthFilters.months(p);
+              if(!filters.months.length&&filters.expiredThrough==null)expandedYears.clear();
+              else{reveal.filter(m=>monthFilters.has(filters,m)).forEach(m=>expandedYears.add(m.slice(0,4)));expandedSections.add('months');}
+              closeInventoryMenus();
+              sort = "EXPIRY";
+              offset = 0;
+              selected.clear();++requestVersion;
+              void refresh();
+            }),
+        );
+      }
+      cards.forEach(p=>{
+        const card=[...root.querySelectorAll('[data-period]')].find(b=>b.dataset.period===p.key);
+        if(!card)return;
+        card.disabled=!summaryDisjoint;
+        card.querySelector('.expiryKpiLabel').textContent=p.from==null?'Expired':kpiPeriod(p);
+        card.querySelector('.expiryKpiPeriod').textContent=p.from==null?kpiPeriod(p):'';
+        for(const [field,value] of [['records',p.count],['units',p.units]]){
+          const node=card.querySelector('[data-kpi-number="'+field+'"]');
+          const text=value==null?'…':kpiNumber.format(value);if(node.textContent!==text)node.textContent=text;
+        }
+      });
+      window.ExpiryTopMotion?.sync(el('zebraExpiryShell'));
       return;
     }
     // Inventory keeps its independent four-card period model. Scan uses a compact header.
     root.hidden = true;
-    root.innerHTML = "";
+    window.ExpiryTopMotion?.sync(el("zebraExpiryShell"));
     const rows = currentRows(), summary = el("expirySessionSummary");
     if (summary) {
       summary.setAttribute("aria-busy", String(!sessionHydrated));
@@ -1005,8 +1021,10 @@
         }
       });
       AppEvents?.on?.("route:changed", (p) => {
-        if (p.routeName !== "expiry")
+        if (p.routeName !== "expiry"){
+          window.ExpiryTopMotion?.dispose();
           document.body.classList.remove("expiryDesktopActive");
+        }
       });
     }
   }
@@ -1019,6 +1037,7 @@
     if (!expiryIsHandheld()) render();
   };
   window.resetExpiryDesktopSession = () => {
+    window.ExpiryTopMotion?.dispose();
     clearSavedFlashes();
     closeInventoryMenus();expandedYears.clear();expandedSections.clear();selectionMode=false;el("expiryShelfPrint")?.remove();
     sessionSearch = "";
