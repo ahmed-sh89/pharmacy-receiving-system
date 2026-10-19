@@ -223,6 +223,8 @@
       g.members.push(r);
       if (r.contribution_type === "GROUP_QUANTITY_ADJUSTMENT") g.adjustments++;
       else {
+        const displayOrder=String(Date.parse(r.captured_at)||0).padStart(16,'0')+'/'+r.operation_id;
+        if(!g.batchDisplayOrder || displayOrder<g.batchDisplayOrder){g.batchDisplayOrder=displayOrder;g.batch_no=r.batch_no;}
         g.registrations++;
         if (!g.captured_at || Date.parse(r.captured_at) > Date.parse(g.captured_at)) g.captured_at = r.captured_at;
       }

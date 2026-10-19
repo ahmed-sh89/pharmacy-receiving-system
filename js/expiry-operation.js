@@ -75,6 +75,18 @@ const ExpiryOperation = (() => {
         if(facts['11'] && !facts['17'])reject('GS1 expiry AI 17 required with production date','REQUIRED','EXPIRY_MISSING',normalized.length,'17');
         facts.identifier=facts['01'];return facts;
     }
+    // Validation only: never normalize or replace the original Batch value.
+    function batchIsScannerPayload(value){
+        const raw=String(value??'');
+        try{
+            const facts=scanFacts(raw);
+            if(facts.format==='GS1' && ['10','11','17','21'].some(ai=>facts[ai]!==undefined))return true;
+        }catch(_error){/* Recognizable framed scans remain invalid Batch values. */}
+        const framed=typeof cleanScannerInput==='function'?cleanScannerInput(raw):raw;
+        const s=framed.replace(/^\][A-Za-z][0-9]/,'');
+        const marked=/^\](?:C1|d2|Q3)/i.test(raw) || s.includes('\x1d') || s.startsWith('(01)');
+        return marked && /^(?:01\d{14}(?:11|17|10|21|\x1d)|\(01\)\d{14}\((?:11|17|10|21)\))/.test(s);
+    }
     async function save({rpc,upload,persist,scope,currentScope,operation,payload,photos,uuid,directKnown=false}){
         const guard=()=>{if(scope!==currentScope())throw new Error('Capture account changed');};
         guard();
@@ -167,5 +179,5 @@ const ExpiryOperation = (() => {
     async function readReview(pharmacyId,reviewId,rpc=authRpc){
         return unwrap(await rpc('get_pharmflow_expiry_review_v1',{p_pharmacy_id:pharmacyId,p_review_id:reviewId}));
     }
-    return {save,scanFacts,acknowledgement,upload,readReview,readReceipt};
+    return {save,scanFacts,batchIsScannerPayload,acknowledgement,upload,readReview,readReceipt};
 })();

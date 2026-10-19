@@ -303,7 +303,7 @@ function setExpiryStatus(kind, text){
 
 // Shared validation state; each device keeps its established status presentation.
 function showExpiryCaptureValidation(invalidIds,message){
-    ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
+    ["expiryMonth","expiryYear","expiryQuantity","expiryBatchInput"].forEach(id=>{
         const field=document.getElementById(id);
         if(!field) return;
         const invalid=invalidIds.includes(id);
@@ -325,10 +325,12 @@ function clearCorrectedExpiryValidation(){
         const invalid=id==="expiryMonth"?(value<1||value>12):id==="expiryYear"?(value<2020||value>2200):(!Number.isInteger(value)||value<=0);
         if(invalid) remaining.push(id);
     });
+    const batchField=document.getElementById("expiryBatchInput");
+    if(batchField?.classList.contains("expiryFieldError") && batchField.value!==ExpiryCaptureEngine.scannedGS1?.lot && ExpiryOperation.batchIsScannerPayload(batchField.value))remaining.push("expiryBatchInput");
     const feedback=document.getElementById("expiryCaptureValidation");
     if(!feedback || (!expiryIsHandheld() && feedback.hidden)) return;
     if(expiryIsHandheld() && !remaining.length){showExpiryCaptureValidation([],"");setExpiryStatus("action","Ready to save");return;}
-    const message=remaining.includes("expiryQuantity")?"Enter quantity":remaining.length===2?"Enter expiry month and year":remaining.includes("expiryMonth")?"Enter expiry month":remaining.includes("expiryYear")?"Enter expiry year":"";
+    const message=remaining.includes("expiryBatchInput")?"Use Scan Barcode, not Batch":remaining.includes("expiryQuantity")?"Enter quantity":remaining.length===2?"Enter expiry month and year":remaining.includes("expiryMonth")?"Enter expiry month":remaining.includes("expiryYear")?"Enter expiry year":"";
     showExpiryCaptureValidation(remaining,message);
     if(!message) setExpiryStatus("ready","READY TO SCAN");
 }
@@ -1121,6 +1123,11 @@ async function saveExpiryCapture(options={}){
         return;
     }
 
+    const enteredBatch=document.getElementById("expiryBatchInput")?.value||"";
+    if(enteredBatch!==ExpiryCaptureEngine.scannedGS1?.lot && ExpiryOperation.batchIsScannerPayload(enteredBatch)){
+        showExpiryCaptureValidation(["expiryBatchInput"],"Use Scan Barcode, not Batch");
+        return;
+    }
     showExpiryCaptureValidation([],"");
     ExpiryCaptureEngine.busy = true;
     const button = document.getElementById("btnSaveExpiryCapture");
@@ -1781,6 +1788,11 @@ function bindExpiryCaptureUI(){
         });
     }
 
+    const batchValidationField=document.getElementById("expiryBatchInput");
+    if(batchValidationField && batchValidationField.dataset.batchValidationBound!=="1"){
+        batchValidationField.dataset.batchValidationBound="1";
+        batchValidationField.addEventListener("input",clearCorrectedExpiryValidation);
+    }
     if(!expiryIsHandheld()){
         ["expiryMonth","expiryYear","expiryQuantity"].forEach(id=>{
             const field=document.getElementById(id);
