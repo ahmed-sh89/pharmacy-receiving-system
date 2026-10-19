@@ -7071,16 +7071,18 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultIdentification b{fon
 body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain small{font-size:12px;color:var(--exp-muted)}
 
 /* Expiry record presentation; persistence remains in the existing correction/clear paths. */
-.expiryRecordDialog{width:min(580px,calc(100vw - 32px));max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid #d8d0e6;border-radius:14px;background:#fff;color:#31445d;font-family:Inter,"Segoe UI",Arial,sans-serif;box-shadow:0 24px 80px #17243a40;overflow:auto;box-sizing:border-box}
+.expiryRecordDialog{--dialog-accent:#326da6;width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid #d8d0e6;border-radius:14px;background:#fff;color:#31445d;font-family:Inter,"Segoe UI",Arial,sans-serif;box-shadow:0 24px 80px #17243a40;overflow:auto;box-sizing:border-box}
 .expiryRecordDialog::backdrop{background:#17243a80}
-.expiryRecordDialog.is-delete{width:min(440px,calc(100vw - 32px))}
+.expiryRecordDialog.is-delete{--dialog-accent:#b42335}
+.expiryRecordDialog.is-resolve{--dialog-accent:#7454b4}
 .expiryRecordDialog form{padding:22px}
 .expiryRecordDialog header{margin-bottom:14px}
-.expiryRecordDialog h2{margin:0 0 4px;font-size:20px;color:#37234f}
+.expiryRecordDialog h2{margin:0 0 4px;font-size:20px;color:var(--dialog-accent)}
 .expiryRecordDialog header>span{font-size:12px;color:#738096}
 .expiryRecordIdentity{padding:12px;border:1px solid #e7e0f2;border-radius:9px;background:#faf8fd;overflow-wrap:anywhere}
-.expiryRecordIdentity>strong{font-size:16px;color:#263950}
-.expiryRecordIdentity dl{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0 0}
+.expiryRecordIdentity dd{overflow-wrap:anywhere}
+.expiryRecordIdentity dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+.expiryRecordIdentity dl>div:first-child{grid-column:1/-1}
 .expiryRecordIdentity dl>div{min-width:100px;flex:1}
 .expiryRecordIdentity dt{font-size:11px;color:#738096}
 .expiryRecordIdentity dd{margin:3px 0 0;font-size:12px;font-weight:600}
@@ -7093,8 +7095,8 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain small{font-size
 .expiryRecordDialog input:focus-visible,.expiryRecordDialog select:focus-visible,.expiryRecordDialog button:focus-visible{outline:2px solid #7454b4;outline-offset:2px}
 .expiryRecordDialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .expiryRecordDialog button{min-height:38px;padding:0 15px;border:1px solid #cbd4df;border-radius:8px;background:#fff;color:#53647b;font:600 13px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}
-.expiryRecordDialog button.primary{background:#7454b4;border-color:#7454b4;color:#fff}
-.expiryRecordDialog button.danger{background:#b42335;border-color:#b42335;color:#fff}
+.expiryRecordDialog button.primary{background:var(--dialog-accent,#7454b4);border-color:var(--dialog-accent,#7454b4);color:#fff}
+.expiryRecordDialog button.danger{background:var(--dialog-accent);border-color:var(--dialog-accent);color:#fff}
 .expiryRecordDialog button:disabled{opacity:.55;cursor:wait}
 .expirySessionDialog .expirySessionCaptureDetails{display:flex;gap:22px;margin:14px 0;color:#53677d}
 .expirySessionDialog .expirySessionCaptureDetails>div{min-width:0;flex:1}

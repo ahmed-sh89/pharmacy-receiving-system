@@ -85,15 +85,10 @@
     );
   const qty = (r) => Number(r.quantity) || 0;
   function identity(r) {
-    return (
-      "<strong>" +
-      esc(r.item_name || "Unknown item") +
-      '</strong><div class="expiryIdentityMeta">Code <b>' +
-      esc(r.item_code || "—") +
-      "</b> · GTIN <span>" +
-      esc(r.identifier_display || "—") +
-      "</span></div>"
-    );
+    return '<section class="expiryRecordIdentity"><dl>'+[
+      ['Item Name',r.item_name||'Unknown item'],['Item Code',r.item_code||'—'],
+      ['GTIN',r.identifier_display||'—'],['Batch',r.batch_no||'—'],['Expiry',month(r)]
+    ].map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl></section>';
   }
   function authArgs() {
     return { p_pharmacy_id: expiryPharmacyId() };
@@ -644,7 +639,7 @@
         target?.focus?.({ preventScroll: true });
       });
     }
-    dialog.className = "expiryRecordDialog" + (options.context === "session" ? " expirySessionDialog" : "") + (options.destructive ? " is-delete" : "");
+    dialog.className = "expiryRecordDialog" + (options.context === "session" ? " expirySessionDialog" : "") + (/resolve|restore/i.test(title) ? " is-resolve" : options.destructive ? " is-delete" : "");
     returnFocus = trigger || document.activeElement;
     dialog.innerHTML =
       '<form novalidate><header><h2 id="expiryRecordDialogTitle">' +
@@ -735,7 +730,7 @@
     };
     let frozen;
     openDialog(deleting ? "Delete Current Session Group" : "Edit Current Session Quantity",
-      identity(r) + '<p>' + esc(r.batch_no || "—") + ' · ' + month(r) + '</p>' +
+      identity(r) +
       (deleting ? '<p>Remove <strong>' + qty(r) + ' units</strong> contributed by this current session?</p>' :
         '<label>Current session quantity<input data-session-quantity type="number" min="1" max="2147483647" step="1" value="' + qty(r) + '"></label>') +
       '<p>Historical inventory and original captured Serial evidence are preserved.</p>',
@@ -782,11 +777,7 @@
     openDialog(
       "Edit Inventory Quantity",
       identity(r) +
-        "<p>" +
-        esc(r.batch_no || "—") +
-        " · " +
-        month(r) +
-        '</p><label>Total quantity<input data-total type="number" min="0" step="1" value="' +
+        '<label>Total quantity<input data-total type="number" min="0" step="1" value="' +
         qty(r) +
         '"></label><p>Zero keeps this row active. Resolve is a separate operation.</p>',
       async (d) => {
