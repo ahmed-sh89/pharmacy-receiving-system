@@ -34,7 +34,7 @@ function mount(root){
         const geometry=JSON.stringify(target);
         if(geometry!==s.geometry){
             if(!s.active||s.media.matches)engine.set(s.indicator,target);
-            else s.animate(s.indicator,{...target,duration:.32,ease:'power3.out'});
+            else s.animate(s.indicator,{...target,duration:.25,ease:'power3.out'});
             s.geometry=geometry;
         }
         s.active=selected;

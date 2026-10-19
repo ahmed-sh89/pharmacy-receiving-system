@@ -1,8 +1,8 @@
 // Real Chromium before/after fixture check. No Supabase/network traffic; routes serve local files.
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
-const repo=path.resolve(__dirname,'..'),out=process.env.PHARMFLOW_VISUAL_OUTPUT||path.join(require('os').tmpdir(),'pharmflow-expiry-top-refinement');
+const repo=path.resolve(__dirname,'..'),out=process.env.PHARMFLOW_VISUAL_OUTPUT||path.join(require('os').tmpdir(),'pharmflow-expiry-toolbar-hybrid');
 fs.mkdirSync(out,{recursive:true});
-const baselineFile=name=>require('child_process').execFileSync('git',['show','e4141a5dd911e2943c35fe64ca9c5e9ecfde66ef:'+name],{cwd:repo,encoding:'utf8'});
+const baselineFile=name=>require('child_process').execFileSync('git',['show','72da7063789e10a5572afa5bbe1449d73d5faae6:'+name],{cwd:repo,encoding:'utf8'});
 process.chdir(repo);
 const {chromium}=require(process.env.PHARMFLOW_PLAYWRIGHT_CORE||'playwright-core');
 // Install Playwright outside the application if not already available. No live API calls.
@@ -54,6 +54,11 @@ async function fixture(baseline){
     const inventory=document.getElementById('btnOpenExpiryInventory'),scan=document.getElementById('btnExpirySessionView');
     inventory.setAttribute('aria-selected','false');scan.setAttribute('aria-selected','true');await new Promise(r=>setTimeout(r,400));
     const moved=indicator.getBoundingClientRect().left===scan.getBoundingClientRect().left;
+    for(let i=0;i<12;i++){inventory.setAttribute('aria-selected',String(i%2===0));scan.setAttribute('aria-selected',String(i%2!==0));ExpiryTopMotion.sync(root);}
+    await new Promise(r=>setTimeout(r,310));
+    if(Math.abs(indicator.getBoundingClientRect().left-scan.getBoundingClientRect().left)>.1)throw Error('Rapid switch lost active indicator');
+    const style=getComputedStyle(indicator);if(style.backgroundColor!=='rgb(229, 240, 255)'||style.borderBottomWidth!=='3px')throw Error('Hybrid surface or underline missing');
+
     const gsap=(await import('/node_modules/gsap/index.js')).gsap;ExpiryTopMotion.sync(root);const unchangedTweens=gsap.globalTimeline.getChildren().length;
     const n=document.querySelector('[data-kpi-number="records"]');n.textContent='9';ExpiryTopMotion.sync(root);const immediate=n.textContent;
     await new Promise(r=>setTimeout(r,400));

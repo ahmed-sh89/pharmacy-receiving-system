@@ -32,3 +32,17 @@ test('Session counters format complete large values and update their existing no
   assert.equal(current.textContent,n.toLocaleString('en-US'));assert.equal(h.e('expirySessionSummary').querySelector('[data-session-total="quantity"]').textContent,n.toLocaleString('en-US'));
  }
 });
+
+test('Toolbar refinement preserves approved KPI styles and uses one 250ms Hybrid indicator',()=>{
+ const cp=require('node:child_process'),css=fs.readFileSync('css/dashboard.css','utf8'),baseline=cp.execFileSync('git',['show','72da7063789e10a5572afa5bbe1449d73d5faae6:css/dashboard.css'],{encoding:'utf8'});
+ const cards=s=>s.slice(s.indexOf('/* Inventory period cards'),s.indexOf('.expiryInventoryTable{'));
+ assert.equal(cards(css),cards(baseline));
+ assert.match(fs.readFileSync('js/expiry-top-motion.js','utf8'),/duration:\.25/);
+ assert.equal((css.match(/\.expiryNavIndicator\{/g)||[]).length,1);
+ assert.doesNotMatch(css,/\.expiryTopWorkspace\{[^}]*flex-wrap:wrap/);
+ assert.match(css,/\.expirySessionMetric\{[^}]*height:34px/);
+});
+test('Needs Review remains delegated to the existing Expiry panel without changing the draft',async()=>{
+ const h=harness();await h.refresh();let scope;h.c.openNeedsReviewPanel=value=>scope=value;
+ const before=h.e('expiryBatchInput').value;await h.click('btnExpiryNeedsReview');assert.equal(scope,'EXPIRY');assert.equal(h.e('expiryBatchInput').value,before);
+});

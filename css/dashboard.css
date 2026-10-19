@@ -7107,36 +7107,42 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain small{font-size
 .expirySessionDialog.is-delete h2{color:#992c3c}
 .expiryRecordValidation{font-size:12px;color:#b42335}
 body:not(.zebraDevice) #zebraExpiryShell .expiryVisuallyHidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-/* Expiry Desktop top navigation — one owner; unchanged 38px footprint. */
-body:not(.zebraDevice) #zebraExpiryShell .expiryTopWorkspace{display:flex;align-items:center;justify-content:space-between;gap:14px;flex:none;min-height:38px;padding:0;margin:0 0 8px;border-bottom:1px solid var(--exp-border)}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav{position:relative;isolation:isolate;display:flex;align-items:stretch;gap:8px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;min-height:38px;overflow:visible}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav>button{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;height:38px;min-width:0;padding:0 15px;border:0;border-bottom:3px solid transparent;border-radius:8px 8px 0 0;background:transparent;color:#65758b;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .18s ease,background-color .18s ease}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button:hover:not(:disabled){background:#eef3f880;color:#243f60}
+/* Expiry Desktop top navigation — one owner; unified operational toolbar; unchanged 38px controls. */
+body:not(.zebraDevice) #zebraExpiryShell .expiryTopWorkspace{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;flex-wrap:nowrap;min-height:38px;padding:0;margin:0 0 8px;border-bottom:1px solid var(--exp-border)}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav{position:relative;isolation:isolate;display:flex;align-items:stretch;gap:4px;margin:0;padding:0;border:0;border-radius:8px;background:#f1f5fa;box-shadow:inset 0 0 0 1px #d9e3ef;min-height:38px;flex:none;overflow:visible}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav>button{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;height:38px;min-width:0;padding:0 13px;border:0;border-bottom:3px solid transparent;border-radius:8px;background:transparent;color:#65758b;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .18s ease,background-color .18s ease}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button:hover:not(:disabled){background:#e7eef8;color:#244c7a}
 body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button[aria-selected="true"]{background:#edf4fc;border-bottom-color:#436d9e;color:#294e79;font-weight:600;box-shadow:none}
+body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button[aria-selected="true"]{background:#e5f0ff;border-bottom-color:#3478bf;color:#215e9c;font-weight:600;box-shadow:none}
 body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav.has-motion button[aria-selected="true"]{background:transparent;border-bottom-color:transparent}
-body:not(.zebraDevice) #zebraExpiryShell .expiryNavIndicator{position:absolute;z-index:0;left:0;top:0;pointer-events:none;box-sizing:border-box;background:#edf4fc;border:1px solid #dce7f5;border-bottom:3px solid #436d9e;border-radius:8px 8px 0 0}
+body:not(.zebraDevice) #zebraExpiryShell .expiryNavIndicator{position:absolute;z-index:0;left:0;top:0;pointer-events:none;box-sizing:border-box;background:#e5f0ff;border:1px solid #c6dcf4;border-bottom:3px solid #3478bf;border-radius:8px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button:focus-visible{outline:2px solid #436d9e;outline-offset:-3px}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionCount{display:inline-grid;place-items:center;min-width:23px;padding:2px 6px;border-radius:6px;background:#e5edf8;color:#3a5d87;font-size:12px;font-variant-numeric:tabular-nums}
-body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions #btnExpiryNeedsReview{display:flex;align-items:center;gap:7px;position:relative;height:34px;padding:0 11px;border:1px solid #dfcdb9;border-radius:8px;background:#fff;color:#745537;font-family:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer;box-shadow:0 1px 2px #243f6006;transition:border-color .18s ease,box-shadow .18s ease,color .18s ease}
-body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions #btnExpiryNeedsReview:hover:not(:disabled){border-color:#b98b53;color:#775022;box-shadow:0 2px 5px #79563212}
+body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions #btnExpiryNeedsReview{display:flex;align-items:center;gap:7px;position:relative;height:34px;box-sizing:border-box;padding:0 11px;border:1px solid #d7b88d;border-radius:8px;background:#fff8ed;color:#7b4d19;font-family:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer;box-shadow:0 1px 2px #243f6006;transition:border-color .18s ease,box-shadow .18s ease,color .18s ease}
+body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions #btnExpiryNeedsReview:hover:not(:disabled){border-color:#ad7a37;background:#fff1d9;color:#684014;box-shadow:0 2px 5px #79563212}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions{display:flex;align-items:center;gap:8px;flex:none}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSummary[hidden]{display:none!important}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionSummary{display:flex;align-items:center;flex-wrap:nowrap;gap:6px;padding:0;border:0;background:transparent;white-space:nowrap}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric{display:flex;align-items:center;gap:8px;flex:none;height:32px;box-sizing:border-box;padding:0 9px;border:1px solid #d9e3ee;border-radius:7px;background:#fff;box-shadow:0 1px 2px #243f6005;transition:border-color .18s ease,box-shadow .18s ease}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric>span{font-size:10px;font-weight:650;line-height:1.2;letter-spacing:.03em;white-space:nowrap;color:#65758b}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionSummary strong{display:inline-block;min-width:1ch;text-align:right;font-size:20px;line-height:1;font-weight:700;color:#294968;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric:hover{border-color:#a8bfd8;box-shadow:0 2px 5px #243f600c}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric{display:flex;align-items:center;gap:8px;flex:none;height:34px;box-sizing:border-box;padding:0 10px;border:1px solid #b9ccdf;border-radius:8px;background:#eaf1f8;box-shadow:inset 0 1px 0 #ffffffb3;transition:border-color .18s ease,box-shadow .18s ease}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric>span{font-size:10px;font-weight:650;line-height:1.2;letter-spacing:.035em;white-space:nowrap;color:#435e7a}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionSummary strong{display:inline-block;min-width:1ch;text-align:right;font-size:20px;line-height:1;font-weight:700;color:#183f69;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric:hover{border-color:#8eaed0;box-shadow:inset 0 1px 0 #ffffffb3,0 2px 5px #243f600c}
 body:not(.zebraDevice) #zebraExpiryShell #btnExpiryNeedsReview:after{content:'';position:absolute;inset:0;border:1px solid #b98b53;border-radius:7px;opacity:0;transform:scale(.98);pointer-events:none;transition:opacity .2s ease,transform .2s ease}
 body:not(.zebraDevice) #zebraExpiryShell #btnExpiryNeedsReview:hover:not(:disabled):after{opacity:1;transform:scale(1)}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions button:focus-visible{outline:2px solid #436d9e;outline-offset:2px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions button:disabled{opacity:.6;cursor:wait}
-body:not(.zebraDevice) #zebraExpiryShell #expiryNeedsReviewCount{display:inline-grid;place-items:center;min-width:22px;height:22px;box-sizing:border-box;padding:0 6px;border:1px solid #edd7be;border-radius:6px;background:#fcf4e9;color:#885720;font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
+body:not(.zebraDevice) #zebraExpiryShell #expiryNeedsReviewCount{display:inline-grid;place-items:center;min-width:22px;height:22px;box-sizing:border-box;padding:0 6px;border:1px solid #c89b5b;border-radius:6px;background:#f4dfb8;color:#643e11;font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
 body:not(.zebraDevice) #zebraExpiryShell #expiryNeedsReviewCount[hidden]{display:none}
 body:not(.zebraDevice) #zebraExpiryShell .expiryGroupActionLimit{display:block;font-size:11px;color:#76551d;margin-top:2px;white-space:normal}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionAction:disabled{opacity:.5;cursor:not-allowed}
-@media(max-width:680px){body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav{flex-wrap:wrap}body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav>button{flex-basis:100%}}
+/* Narrow Desktop keeps the same row; horizontal access replaces clipped actions. */
+@media(max-width:1100px){
+ body:not(.zebraDevice) #zebraExpiryShell .expiryTopWorkspace{gap:8px;overflow-x:auto;scrollbar-width:thin}
+ body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav>button{padding:0 9px;font-size:12px;gap:6px}
+ body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions{gap:6px;margin-left:auto}
+ body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric{padding:0 7px;gap:6px}
+}
 
 /* Inventory period cards — same 68px cards + 12px tray + 8px margin. */
 body:not(.zebraDevice) #zebraExpiryShell .expiryKpiRow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 8px;padding:6px;border-radius:12px;background:transparent}
@@ -7548,10 +7554,6 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable tr.expiryRowSavedSt
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable tr.expiryRowSavedStrong td:first-child{border-left:3px solid #419966}
 @keyframes expirySessionSavedFade{from{background:#d9f0e2;box-shadow:inset 0 1px #b6d9c3,inset 0 -1px #b6d9c3}to{background:#fff;box-shadow:none}}
 @media(prefers-reduced-motion:reduce){body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable tr.expiryRowSavedStrong td{animation:none}}
-@media(max-width:1100px){
- body:not(.zebraDevice) #zebraExpiryShell .expiryTopWorkspace{flex-wrap:wrap;gap:6px 12px}
- body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions{margin-left:auto}
-}
 @media(max-width:1000px){
  body:not(.zebraDevice) #zebraExpiryShell .expiryCaptureBottomRow{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
 }
