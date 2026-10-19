@@ -122,6 +122,20 @@ async function nrV2Count(workflow="RECEIVING"){
     return Number(result||0)||0;
 }
 
+async function nrV2CountScope(workflow="RECEIVING",orderNumbers=[]){
+    const pharmacyId=nrV2PharmacyId();
+    const orders=[...new Set((orderNumbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+    if(!pharmacyId || !orders.length || typeof authRpc!=="function") return 0;
+    const result=await authRpc("count_pharmflow_needs_review_scope_v3",{
+        p_pharmacy_id:pharmacyId,
+        p_workflow:workflow,
+        p_order_numbers:orders
+    });
+    if(Array.isArray(result)) return Number(result[0]?.pending_count||result[0]||0)||0;
+    if(result && typeof result==="object") return Number(result.pending_count||0)||0;
+    return Number(result||0)||0;
+}
+
 async function nrV2List(workflow="RECEIVING",orderNumber=null){
     const pharmacyId=nrV2PharmacyId();
     if(!pharmacyId || typeof authRpc!=="function") return [];
@@ -511,3 +525,4 @@ window.showPharmFlowOperationReceipt=showPharmFlowOperationReceipt;
 window.nrV2DeleteResolvedPhoto=nrV2DeleteResolvedPhoto;
 
 window.nrV2Count=nrV2Count;
+window.nrV2CountScope=nrV2CountScope;
