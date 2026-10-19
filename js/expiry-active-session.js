@@ -1,3 +1,11 @@
+/* Expiry requests refresh an aging access token before its first protected call.
+   No write replay and no new session store; the existing single-flight path owns rotation. */
+async function ensureExpiryAuthenticationFresh(){
+    if(typeof isRestoredAccessTokenStale!=="function" || !isRestoredAccessTokenStale(AuthState.session))return;
+    const user=AuthState.user?.id,pharmacy=expiryPharmacyId();
+    const refreshed=await refreshAuthToken();
+    if(!refreshed || !AuthState.session || user!==AuthState.user?.id || pharmacy!==expiryPharmacyId())throw Error("Sign-in could not be refreshed. Your capture is retained; reconnect or sign in again.");
+}
 /* Server-owned session lifecycle and operation corrections; no inventory cache. */
 let expirySessionOpenPromise=null;
 function expiryAuthenticationRejected(error){
@@ -37,6 +45,7 @@ async function reconcileExpirySessionCorrection(){
     }
 }
 async function ensureExpiryActiveSession(options={}){
+    await ensureExpiryAuthenticationFresh();
     const {key,session}=expiryHandheldSession(),scope=expiryDraftScope();
     const authIdentity=expirySignedAuthIdentity();
     if(options.fresh && expirySessionOpenPromise?.settled)expirySessionOpenPromise=null;

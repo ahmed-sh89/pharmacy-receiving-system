@@ -568,7 +568,8 @@ function isRestoredAccessTokenStale(session){
 function scheduleTokenRefresh(session){
     if(AuthState.refreshTimer){ clearTimeout(AuthState.refreshTimer); }
     if(!session || !session.expires_in || !session.refresh_token){ return; }
-    const ms = Math.max(30000, (Number(session.expires_in) * 1000) - 120000);
+    const remaining = Number(session.expires_at)>0 ? Number(session.expires_at)*1000-Date.now() : Number(session.expires_in)*1000;
+    const ms = Math.max(1000, remaining - 120000);
     AuthState.refreshTimer = setTimeout(()=>refreshAuthToken().catch(()=>{}), ms);
 }
 

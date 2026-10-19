@@ -874,6 +874,9 @@ async function resolveExpiryScannedValue(rawValue){
 
     ExpiryCaptureEngine.resolving=true;
     const lookupScope=expiryDraftScope();
+    try{if(typeof ensureExpiryAuthenticationFresh==="function")await ensureExpiryAuthenticationFresh();}
+    catch(error){ExpiryCaptureEngine.resolving=false;setExpiryStatus("error",error.message);return false;}
+    if(lookupScope!==expiryDraftScope()){ExpiryCaptureEngine.resolving=false;return false;}
     setExpiryStatus("busy","READING...");
 
     let parsed;
