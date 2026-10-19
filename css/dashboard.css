@@ -7609,6 +7609,9 @@ body.zebraDevice #zebraExpiryShell .pfSelectOption{display:flex;align-items:cent
 body.zebraDevice #zebraExpiryShell .pfSelectOption.is-selected{background:#f3effb;color:#5f439c}
 body.zebraDevice #zebraExpiryShell .pfSelect[data-disabled="true"] .pfSelectTrigger{opacity:.65}
 body.zebraDevice #zebraExpiryShell .expiryHandheldItemCard{grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);gap:3px 8px;margin:0!important;padding:6px!important;border:1px solid #c5e5d3;border-radius:10px;background:#f1faf5;box-shadow:none}
+body.zebraDevice #zebraExpiryShell .expiryHandheldItemCard.is-review{background:#fff2f3;border-color:#d88a96}
+body.zebraDevice #zebraExpiryShell .expiryHandheldItemCard.is-review #expiryItemName{color:#8e2435}
+body.zebraDevice #zebraExpiryShell .expiryHandheldItemCard.is-review .expiryItemMeta strong{color:#792c3a}
 body.zebraDevice #zebraExpiryShell .expiryLastScanHeading{display:none}
 body.zebraDevice #zebraExpiryShell #expiryItemName{grid-column:1;margin:0!important;font-size:18px!important;line-height:1.25!important;color:#243b55;font-weight:750;overflow-wrap:anywhere}
 body.zebraDevice #zebraExpiryShell .expiryItemMeta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 12px;margin:0!important;padding:0}

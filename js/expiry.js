@@ -640,6 +640,8 @@ function renderExpiryActiveItem(item,gs1={}){
     if(batchInput){batchInput.readOnly=expiryIsHandheld() && !!(item && batchFromGS1);batchInput.value=item?(gs1.lot||""):"";}
     if(serialInput){serialInput.readOnly=expiryIsHandheld() && !!(item && serialFromGS1);serialInput.value=item?(gs1.serial||""):"";}
     if(serialField)serialField.hidden=expiryIsHandheld();
+    const handheldCard=document.querySelector(".expiryHandheldItemCard");
+    handheldCard?.classList.toggle("is-review",!!item?.needsReview);
     if(expiryIsHandheld()){
         return;
     }
