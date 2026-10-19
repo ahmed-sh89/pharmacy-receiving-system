@@ -178,7 +178,7 @@
               '" '+(summaryDisjoint?'':'disabled')+'><span class="expiryKpiHeading"><span class="expiryKpiLabel">' +
               (p.from==null ? "Expired" : kpiPeriod(p)) +
               '</span> <span class="expiryKpiPeriod">' + (p.from==null ? kpiPeriod(p) : '') +
-              '</span></span> <svg class="expiryKpiMark" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2v3m10-3v3M3 8h14M3 4h14v13H3zM7 11h2m2 0h2m-6 3h2"/></svg> <span class="expiryKpiCounts"><span class="expiryKpiRecords"><strong data-kpi-number="records">' +
+              '</span></span> <svg class="expiryKpiMark" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2v3m10-3v3M3 8h14M3 4h14v13H3zM7 11h2m2 0h2m-6 3h2"/></svg><svg class="expiryKpiOutline" aria-hidden="true"><rect x="1" y="1" rx="8" pathLength="1"/></svg> <span class="expiryKpiCounts"><span class="expiryKpiRecords"><strong data-kpi-number="records">' +
               (p.count==null?"…":kpiNumber.format(p.count)) +
               '</strong> <span>Records</span></span> <span class="expiryKpiUnits"><strong data-kpi-number="units">' +
               (p.units==null?"…":kpiNumber.format(p.units)) +
@@ -218,16 +218,21 @@
     }
     // Inventory keeps its independent four-card period model. Scan uses a compact header.
     root.hidden = true;
-    window.ExpiryTopMotion?.sync(el("zebraExpiryShell"));
     const rows = currentRows(), summary = el("expirySessionSummary");
     if (summary) {
       summary.setAttribute("aria-busy", String(!sessionHydrated));
-      summary.innerHTML = '<span class="expirySessionMetric"><span>TOTAL ITEMS</span><strong data-session-total="items">' +
-        (sessionHydrated ? new Set(rows.map(r => r.item_code)).size : "—") +
-        '</strong></span><span class="expirySessionMetric"><span>TOTAL UNITS</span><strong data-session-total="quantity">' +
-        (sessionHydrated ? rows.reduce((n, r) => n + qty(r), 0) : "—") + '</strong></span>';
+      if(!summary.querySelector('[data-session-total]')){
+        summary.innerHTML='<span class="expirySessionMetric"><span>TOTAL ITEMS</span><strong data-session-total="items">—</strong></span><span class="expirySessionMetric"><span>TOTAL UNITS</span><strong data-session-total="quantity">—</strong></span>';
+      }
+      const totals={items:new Set(rows.map(r=>r.item_code)).size,quantity:rows.reduce((n,r)=>n+qty(r),0)};
+      for(const [key,value] of Object.entries(totals)){
+        const node=summary.querySelector('[data-session-total="'+key+'"]');
+        const text=sessionHydrated?kpiNumber.format(value):'—';if(node.textContent!==text)node.textContent=text;
+      }
     }
+    window.ExpiryTopMotion?.sync(el("zebraExpiryShell"));
   }
+
   function sessionGroups() {
     const groups = new Map();
     for (const r of currentRows()) {

@@ -1,8 +1,8 @@
 // Real Chromium before/after fixture check. No Supabase/network traffic; routes serve local files.
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
-const repo=path.resolve(__dirname,'..'),out=process.env.PHARMFLOW_VISUAL_OUTPUT||path.join(require('os').tmpdir(),'pharmflow-expiry-top-visual');
+const repo=path.resolve(__dirname,'..'),out=process.env.PHARMFLOW_VISUAL_OUTPUT||path.join(require('os').tmpdir(),'pharmflow-expiry-top-refinement');
 fs.mkdirSync(out,{recursive:true});
-const baselineFile=name=>require('child_process').execFileSync('git',['show','6449eb0d016094c7959ada85400ed64935ead678:'+name],{cwd:repo,encoding:'utf8'});
+const baselineFile=name=>require('child_process').execFileSync('git',['show','e4141a5dd911e2943c35fe64ca9c5e9ecfde66ef:'+name],{cwd:repo,encoding:'utf8'});
 process.chdir(repo);
 const {chromium}=require(process.env.PHARMFLOW_PLAYWRIGHT_CORE||'playwright-core');
 // Install Playwright outside the application if not already available. No live API calls.
@@ -42,6 +42,12 @@ async function fixture(baseline){
   });
   await page.screenshot({path:path.join(out,label+'.png')});
   if(!baseline){
+   const card=page.locator('.expiryKpiCard').first(),beforeHover=await card.boundingBox();
+   await card.hover();await page.waitForTimeout(430);
+   result.border=await card.evaluate(e=>({offset:getComputedStyle(e.querySelector('.expiryKpiOutline rect')).strokeDashoffset,color:getComputedStyle(e.querySelector('.expiryKpiRecords strong')).color,top:getComputedStyle(e).borderTopWidth,rectWidth:e.querySelector('.expiryKpiOutline rect').getBoundingClientRect().width}));
+   assert.deepEqual(await card.boundingBox(),beforeHover,'Hover moved card');assert.equal(parseFloat(result.border.offset),0);assert.equal(result.border.top,'4px');assert(result.border.rectWidth>200);
+   await page.mouse.move(10,10);await page.waitForTimeout(430);
+   assert.equal(parseFloat(await card.evaluate(e=>getComputedStyle(e.querySelector('.expiryKpiOutline rect')).strokeDashoffset)),1);
    result.motion=await page.evaluate(async()=>{
     const root=document.getElementById('zebraExpiryShell');ExpiryTopMotion.sync(root);ExpiryTopMotion.sync(root);
     const indicator=document.querySelector('.expiryNavIndicator');
@@ -59,6 +65,19 @@ async function fixture(baseline){
    await page.evaluate(()=>new Promise(requestAnimationFrame));
    result.reduced=await page.evaluate(async()=>{const gsap=(await import('/node_modules/gsap/index.js')).gsap;document.querySelector('[data-kpi-number="records"]').textContent='11';ExpiryTopMotion.sync();return {indicators:document.querySelectorAll('.expiryNavIndicator').length,value:document.querySelector('[data-kpi-number="records"]').textContent,tweens:gsap.globalTimeline.getChildren().filter(t=>t.duration()>0).length};});
    result.handheld=await page.evaluate(()=>{document.body.classList.add('zebraDevice');ExpiryTopMotion.sync();return {indicators:document.querySelectorAll('.expiryNavIndicator').length,nav:getComputedStyle(document.querySelector('.expiryTopWorkspace')).display};});
+  }
+  if(!baseline){
+   await page.evaluate(()=>{document.body.classList.remove('zebraDevice');document.querySelector('.expiryKpiRow').hidden=true;document.getElementById('expirySessionSummary').hidden=false;});
+   result.counterLayouts=[];
+   for(const value of ['0','5','350','1,250','12,500']){
+    const boxes=await page.evaluate(value=>{
+     document.querySelectorAll('[data-session-total]').forEach(e=>e.textContent=value);
+     const box=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,client:e.clientWidth,scroll:e.scrollWidth}};
+     return {value,metrics:[...document.querySelectorAll('.expirySessionMetric')].map(box),nav:box(document.querySelector('.expiryWorkspaceNav')),review:box(document.getElementById('btnExpiryNeedsReview')),header:box(document.querySelector('.expiryTopWorkspace'))};
+    },value);
+    assert.equal(boxes.metrics[0].top,boxes.metrics[1].top);assert(boxes.metrics.every(e=>e.client>=e.scroll));assert(boxes.metrics[0].left>=boxes.nav.right);assert(boxes.metrics[1].right<=boxes.review.left);assert.equal(boxes.header.bottom-boxes.header.top,result.after.tabs.height);result.counterLayouts.push(boxes);
+   }
+   await page.screenshot({path:path.join(out,'after-scan-counters.png')});
   }
   await page.close();
  }

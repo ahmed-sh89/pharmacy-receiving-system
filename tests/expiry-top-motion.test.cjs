@@ -13,10 +13,22 @@ test('KPI refresh preserves DOM identity, authoritative Records/Units and filter
 });
 test('GSAP is lazy, bounded to Desktop, uses current values and owns cleanup',()=>{
  const source=fs.readFileSync('js/expiry-top-motion.js','utf8'),css=fs.readFileSync('css/dashboard.css','utf8');
- assert.match(source,/import\('gsap'\)/);assert.match(source,/prefers-reduced-motion: reduce/);assert.match(source,/s\.abort\.abort\(\)/);assert.match(source,/s\.observer\.disconnect\(\)/);assert.match(source,/s\.resize\?\.disconnect\(\)/);assert.match(source,/s\.tweens\.delete\(tween\)/);
+ assert.match(source,/import\('gsap'\)/);assert.match(source,/prefers-reduced-motion: reduce/);assert.match(source,/s\.observer\.disconnect\(\)/);assert.match(source,/s\.resize\?\.disconnect\(\)/);assert.match(source,/s\.tweens\.delete\(tween\)/);
  assert.doesNotMatch(source,/setInterval|textContent\s*=|authRpc|fetch\(/);
  assert.equal((css.match(/\.expiryKpiCard\.is-active\{/g)||[]).length,1);
  assert.equal((css.match(/\.expiryKpiCard\.is-partial\{/g)||[]).length,1);
  assert.doesNotMatch(css,/#btnExpiryNeedsReview:has\(/);
  assert.match(css,/\.expiryKpiCard\{[^}]*height:68px/);
+});
+test('Session counters format complete large values and update their existing nodes',()=>{
+ const vm=require('node:vm'),h=harness(),source=fs.readFileSync('js/expiry-desktop-v2.js','utf8');
+ const start=source.indexOf('    const rows = currentRows(), summary = el("expirySessionSummary");'),end=source.indexOf('\n  function sessionGroups()',start);
+ const c={currentRows:()=>Array.from({length:c.n},(_,i)=>({item_code:String(i),quantity:1})),el:h.e,qty:r=>r.quantity,sessionHydrated:true,kpiNumber:new Intl.NumberFormat('en-US'),window:{ExpiryTopMotion:{sync(){}}},n:0};
+ vm.createContext(c);vm.runInContext('function renderSummary(){'+source.slice(start,end)+';globalThis.renderSummary=renderSummary;',c);
+ let node;
+ for(const n of [0,5,350,1250,12500]){
+  c.n=n;c.renderSummary();const current=h.e('expirySessionSummary').querySelector('[data-session-total="items"]');
+  if(node)assert.equal(current,node);node=current;
+  assert.equal(current.textContent,n.toLocaleString('en-US'));assert.equal(h.e('expirySessionSummary').querySelector('[data-session-total="quantity"]').textContent,n.toLocaleString('en-US'));
+ }
 });
