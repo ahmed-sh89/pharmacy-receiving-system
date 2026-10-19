@@ -9636,7 +9636,7 @@ function mountExpiryReviewResolver(section,row,index,{canCreate,overlay,onResolv
         if(next==='new')renderCreate();else{input.value='';input.focus();}
     };
     const submit=async(item,newItem,button)=>{
-        if(busy)return;
+        if(busy||overlay.dataset.busy==='1')return;
         busy=true;overlay.dataset.busy='1';
         const controls=[...section.querySelectorAll('input,select,button')];
         const old=controls.map(control=>[control,control.disabled]);controls.forEach(control=>control.disabled=true);
@@ -9654,6 +9654,7 @@ function mountExpiryReviewResolver(section,row,index,{canCreate,overlay,onResolv
         }finally{busy=false;overlay.dataset.busy='';}
     };
     const renderSelected=item=>{
+        matches.replaceChildren();
         selection.hidden=false;
         selection.innerHTML=`<div>${expiryGlobalMasterSummary(item,esc)}</div><div class="expiryResolutionBarcode"><span>Scanned Barcode</span><strong>${esc(identifier)}</strong></div><p data-resolution-status role="status" aria-live="polite"></p><button type="button" class="primaryButton" data-confirm-resolution>Confirm Resolution</button>`;
         const button=selection.querySelector('[data-confirm-resolution]');
@@ -9727,6 +9728,13 @@ async function openExpiryNeedsReviewPanel(options={}){
         if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
         else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
     });
+    const completeCase=section=>{
+        section.remove();expanded=null;
+        const remaining=overlay.querySelectorAll('[data-expiry-review-id]').length;
+        overlay.querySelector('.pfnReviewCount').textContent=String(remaining);
+        if(!remaining)overlay.querySelector('[data-review-list]').innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
+        (overlay.querySelector('[data-expiry-detail]')||overlay.querySelector('[data-review-close]'))?.focus({preventScroll:true});
+    };
     let expanded=null;
     rows.forEach((row,index)=>{
         const section=overlay.querySelector(`[data-expiry-review-id="${CSS.escape(row.review_id)}"]`),detail=section?.querySelector(`[data-expiry-case="${index}"]`);
@@ -9758,7 +9766,7 @@ async function openExpiryNeedsReviewPanel(options={}){
         section?.querySelector(`[data-review-delete="${index}"]`)?.addEventListener('click',async event=>{
             if(!window.confirm('Delete this pending Expiry review case?'))return;
             const button=event.currentTarget;button.disabled=true;
-            try{await ExpiryReviewBackend.delete(row.review_id);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry review case deleted; evidence cleanup is queued','success');await openExpiryNeedsReviewPanel();}
+            try{await ExpiryReviewBackend.delete(row.review_id);nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);showToast?.('Expiry review case deleted; evidence cleanup is queued','success');completeCase(section);}
             catch(error){button.disabled=false;showToast?.(error?.message||'Unable to delete Expiry review case','error');}
         });
         section?.querySelectorAll('[data-review-close]').forEach(button=>button.addEventListener('click',close));
@@ -9767,7 +9775,7 @@ async function openExpiryNeedsReviewPanel(options={}){
             nrV2ReleasePhotoObjectUrl?.(row.evidence_photo_path);
             showToast?.('Expiry case resolved','success');
             try{await refreshExpiryCurrentState();}catch(_){/* Resolution is committed; projections can refresh later. */}
-            await openExpiryNeedsReviewPanel();
+            completeCase(section);
         }});
     });
     const target=options.reviewId?rows.findIndex(row=>row.review_id===options.reviewId):-1;
