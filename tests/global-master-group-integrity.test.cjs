@@ -59,9 +59,10 @@ test("Settings and Receiving expose a controlled Group selector only on Global c
   assert.match(settings,/includes\(groupName\)/);
   assert.match(settings,/groupName,identifierDisplay/);
   assert.match(receiving,/Group <b>\*<\/b><\/span><select data-new-group required>/);
-  assert.match(receiving,/findGlobalItemByCode\(selectedItem\?\.itemCode/);
-  assert.match(receiving,/if\(!globalItem\)[\s\S]*data-link-group/);
-  assert.match(receiving,/learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,selectedItem,"Receiving barcode resolution",groupName\)/);
+  assert.match(receiving,/findGlobalItemByCode\(resolvingItem.itemCode/);
+  assert.match(receiving,/if\(!globalItem\) throw new Error/);
+  assert.ok(!receiving.includes("data-link-group"),"existing-item linking must never create an order-row Master item");
+  assert.match(receiving,/learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,globalItem,"Receiving barcode resolution"\)/);
   assert.match(receiving,/existingGlobal\)[\s\S]*learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,existingGlobal/);
   assert.match(service,/learn_pharmflow_identifier_v2/);
   assert.match(service,/p_group_name:toSafeString\(groupName\)/);

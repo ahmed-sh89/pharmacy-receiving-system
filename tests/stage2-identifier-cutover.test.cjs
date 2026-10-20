@@ -342,7 +342,7 @@ test("Scan Item search projects quantities from the per-order receiving ledger",
 });
 
 
-test("HHP084 Link & Receive auto-creates a missing Global item through the authoritative learning RPC",()=>{
+test("historical learning RPC is retained; Link & Receive selects an existing Master item",()=>{
   const migration=read("PHASE2C1167_RECEIVING_LINK_AUTOCREATE_GLOBAL_ITEM.sql");
   const receiving=read("js/receiving.js");
   const service=read("js/identifier-service.js");
@@ -353,5 +353,6 @@ test("HHP084 Link & Receive auto-creates a missing Global item through the autho
   assert.match(migration,/'GLOBAL_AND_PHARMACY'/);
   assert.match(migration,/else[\s\S]*add_pharmflow_pharmacy_identifier_v2/);
   assert.match(service,/learn_pharmflow_identifier_v2/);
-  assert.match(receiving,/IdentifierService\.learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,selectedItem/);
+  assert.match(receiving,/IdentifierService\.learnIdentifier\(globalThis\.crypto\.randomUUID\(\),gtin,globalItem/);
+  assert.match(receiving,/if\(!globalItem\) throw new Error/);
 });

@@ -43,10 +43,10 @@ const IdentifierService={
         return authRpc("create_pharmflow_global_item_v2",{p_operation_id:operationId,p_item_code:toSafeString(item.itemCode),p_item_name:toSafeString(item.itemName),p_group_name:toSafeString(item.groupName)||null,p_category:toSafeString(item.category)||null,p_sub_category:toSafeString(item.subCategory)||null,p_identifier_display:toSafeString(item.identifierDisplay),p_reason:toSafeString(item.reason)});
     },
     async findGlobalItemByCode(itemCode){
-        const code=toSafeString(itemCode).trim().toUpperCase();
+        const code=normalizeItemCode(itemCode);
         if(!code) return null;
         const rows=await this.searchItems(toSafeString(itemCode).trim(),20);
-        return rows.find(row=>toSafeString(row?.item_code).trim().toUpperCase()===code)||null;
+        return rows.find(row=>normalizeItemCode(row?.item_code)===code)||null;
     },
     async deleteUnusedItem(operationId,itemCode,reason="SETTINGS_DELETE_ITEM"){
         return authRpc("delete_unused_pharmflow_global_item_v1",{p_operation_id:operationId,p_item_code:toSafeString(itemCode),p_reason:toSafeString(reason)});

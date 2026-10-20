@@ -882,6 +882,25 @@ function buildReceivingResolverSearchIndex(workScopeOrderNumbers=[]){
     },[]);
 }
 
+/* Master establishes identity; uploaded rows supply Receiving context only. */
+async function searchReceivingMasterItems(query,workScopeOrderNumbers=[]){
+    const q=toSafeString(query).trim();
+    if(!q) return [];
+    const pharmacyId=IdentifierService.pharmacyId();
+    const rows=await IdentifierService.searchItems(q,50);
+    if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
+    const orderIndex=buildReceivingResolverSearchIndex(workScopeOrderNumbers);
+    const seen=new Set();
+    return rows.flatMap(master=>{
+        const code=normalizeItemCode(master?.item_code||"");
+        if(!code||seen.has(code)) return [];
+        seen.add(code);
+        const orderItem=orderIndex.find(entry=>normalizeItemCode(entry.item.itemCode)===code)?.item;
+        return [{itemCode:master.item_code,itemName:master.item_name,groupName:master.group_name,
+            inActiveOrder:!!orderItem,receivingItem:orderItem||null}];
+    }).sort((a,b)=>Number(b.inActiveOrder)-Number(a.inActiveOrder));
+}
+
 function findReceivingResolverMatches(query,searchIndex=[],limit=8){
     const q=toSafeString(query).toLowerCase().replace(/\s+/g," ").trim();
     if(!q) return [];
@@ -989,14 +1008,15 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             resolverQuantity=value;
             return value;
         };
-        let selectedItem=null,finished=false;
+        let selectedItem=null,finished=false,linking=false,reviewStarted=false;
         const finish=value=>{
             if(finished)return;finished=true;panel.remove();
             setScanBoxState?.(value?"success":"ready");
             setTimeout(()=>focusScannerInput?.(),30);
             resolve(value);
         };
-        const searchableItems=buildReceivingResolverSearchIndex(selectedOrders);
+        let searchGeneration=0;
+        const pharmacyId=IdentifierService.pharmacyId();
         const drawSelection=()=>{
             if(!selectedItem){
                 selection.hidden=true;selection.innerHTML="";
@@ -1007,7 +1027,8 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 results.removeAttribute("aria-hidden");
                 return;
             }
-            const model=buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders);
+            const inOrder=getReceivingAutoAllocationCandidates(selectedItem,selectedOrders).length>0;
+            const model=inOrder?buildReceivingResolverSelectionModel(selectedItem,resolverQuantity,selectedOrders):null;
             panel.querySelector(".gtinResolutionPanel")?.classList.add("isSelectionLocked");
             results.innerHTML="";
             searchLabel.hidden=true;
@@ -1015,59 +1036,82 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             search.setAttribute("aria-hidden","true");
             results.setAttribute("aria-hidden","true");
             selection.hidden=false;
-            selection.innerHTML=renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item")+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
+            selection.innerHTML=(model?renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item"):
+                `<div class="resolverSelectedCard"><strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small><p>Not in Active Order · Ordered Quantity 0</p><button type="button" data-change-item>Change Item</button><label>Target Order <select data-extra-target><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label></div>`)+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
             selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
+                if(linking||reviewStarted)return;
+                const resolvingItem=selectedItem;linking=true;
                 const button=event.currentTarget;button.disabled=true;
+                panel.querySelector("[data-review]").disabled=true;
                 try{
                     if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin())throw new Error("Pharmacy admin permission is required to link a new barcode.");
-                    let groupName="";
-                    if(IdentifierService.isReferencePharmacy()){
-                        const globalItem=await IdentifierService.findGlobalItemByCode(selectedItem?.itemCode||selectedItem?.item_code);
-                        if(!globalItem){
-                            let groupSelect=selection.querySelector("[data-link-group]");
-                            if(!groupSelect){
-                                const field=document.createElement("label");field.className="pfnLinkGroupField";
-                                field.innerHTML='<span>Group <b>*</b></span><select data-link-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select>';
-                                selection.insertBefore(field,button);groupSelect=field.querySelector("select");
-                                panel.querySelector(".gtinPanelMessage").textContent="This Order item will be created in Global Master. Select its Group to continue.";
-                                groupSelect.focus();button.disabled=false;return;
-                            }
-                            groupName=toSafeString(groupSelect.value).trim();
-                            if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName))throw new Error("Select one of the six approved Groups before creating this Global Item.");
-                        }
-                    }
-                    const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,selectedItem,"Receiving barcode resolution",groupName);
+                    if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
+                    const quantity=readQuantity();
+                    const targetOrder=inOrder?"":normalizeOrderNumber(selection.querySelector("[data-extra-target]")?.value||"");
+                    if(!inOrder&&(!targetOrder||!selectedOrders.includes(targetOrder))) throw new Error("Select a Target Order for this Extra Item.");
+                    if(!inOrder&&!getSelectedReceivingOrderNumbers().includes(targetOrder)) throw new Error("Target Order is no longer selected. Reopen Receiving resolution.");
+                    if(inOrder) buildReceivingAutoAllocationPlan(resolvingItem,quantity,selectedOrders);
+                    const globalItem=await IdentifierService.findGlobalItemByCode(resolvingItem.itemCode);
+                    if(!globalItem) throw new Error("This item is no longer available in Global Master. Search again.");
+                    if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
+                    const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,globalItem,"Receiving barcode resolution");
+                    if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                     const mapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
                     const resolution=mapping?{kind:"PHARMACY_LEARNED",mappingId:mapping.identifierId,mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode}:null;
-                    const txs=receiveAutoAllocatedItem({item:selectedItem,quantity:readQuantity(),gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
+                    if(!inOrder){
+                        const extra=prepareManualExtraItem(resolvingItem.itemCode,resolvingItem.itemName,gtin,targetOrder);
+                        const tx=receiveOrderItem({item:extra,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true,gtinResolution:resolution});
+                        if(!tx) throw new Error("Unable to record Extra Item receipt.");
+                        finish(tx);return;
+                    }
+                    const txs=receiveAutoAllocatedItem({item:resolvingItem,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
                     finish(txs[0]||true);
                 }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
+                finally{linking=false;if(!finished)panel.querySelector("[data-review]").disabled=false;}
             });
         };
         let searchFrame=0;
-        const render=()=>{
+        const render=async()=>{
             searchFrame=0;
+            const generation=++searchGeneration;
             const q=toSafeString(search.value).trim();
             if(!q){results.innerHTML="";return;}
-            const items=findReceivingResolverMatches(q,searchableItems,8);
-            results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in this device\'s active Orders.</div>';
-            results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.i)]||null;drawSelection();}));
+            results.textContent="Searching Global Master…";
+            try{
+                const items=await searchReceivingMasterItems(q,selectedOrders);
+                if(generation!==searchGeneration||finished||search.value.trim()!==q)return;
+                results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)} · Group ${escapeHTML(item.groupName||"—")}</small><small>${item.inActiveOrder?"In Active Order":"Not in Active Order"}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching Global Master item.</div>';
+                results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{const item=items[Number(button.dataset.i)];selectedItem=item?.receivingItem||item;drawSelection();}));
+            }catch(error){if(generation===searchGeneration)results.textContent=error?.message||"Unable to search Global Master.";}
+
         };
         search.addEventListener("input",()=>{
-            if(searchFrame)cancelAnimationFrame(searchFrame);
-            searchFrame=requestAnimationFrame(render);
+            searchGeneration++;results.innerHTML="";
+            if(searchFrame)clearTimeout(searchFrame);
+            searchFrame=setTimeout(render,250);
         });
         qtyInput?.addEventListener("input",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);}catch(_error){}});
         qtyInput?.addEventListener("change",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
-        panel.querySelector("[data-review]")?.addEventListener("click",async()=>{
+        const reviewOperationId=globalThis.crypto.randomUUID();
+        let reviewDraft=null,reviewSaving=false;
+        panel.querySelector("[data-review]")?.addEventListener("click",async event=>{
+            if(reviewSaving||linking)return;
+            reviewStarted=true;
+            const button=event.currentTarget;reviewSaving=true;button.disabled=true;
+            panel.querySelectorAll("[data-link-receive],[data-create-receive],[data-mode-find],[data-mode-create]").forEach(action=>action.disabled=true);
             try{
+                if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                 const quantity=readQuantity();
-                await nrV2CreateDraft({...parsed,quantity,identifierDisplay:gtin},{workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
+                reviewDraft=reviewDraft||await nrV2CreateDraft({...parsed,quantity,identifierDisplay:gtin},{operationId:reviewOperationId,workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
+                if(!reviewDraft?.review_id)throw new Error("Review confirmation is unavailable. Retry Save for Review.");
+                await nrV2SetQty(reviewDraft.review_id,quantity);
                 await refreshNeedsReviewCounters?.();finish(true);
             }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
+            finally{reviewSaving=false;button.disabled=false;}
         });
         panel.querySelector("[data-create-receive]")?.addEventListener("click",async event=>{
+            if(linking||reviewStarted)return;
             const button=event.currentTarget;button.disabled=true;
             try{
                 if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin()) throw new Error("Pharmacy admin permission is required to create a new item.");
@@ -1507,7 +1551,10 @@ function resolveReceivingTransactionOrder(item,preferredOrder=""){
     const eligible=memberships.filter(order=>selectedOrders.includes(order));
     const preferred=normalizeOrderNumber(preferredOrder||"");
 
-    if(preferred && eligible.includes(preferred)) return preferred;
+    if(preferred){
+        if(eligible.includes(preferred)) return preferred;
+        throw new Error("The original target Order is no longer selected. Restore its work scope before receiving.");
+    }
     if(selectedOrders.length===1 && memberships.includes(selectedOrders[0])) return selectedOrders[0];
     if(eligible.length===1) return eligible[0];
     if(eligible.length>1){

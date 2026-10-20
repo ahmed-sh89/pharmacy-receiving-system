@@ -8893,13 +8893,22 @@ function nrV2AllocationPreview(group,item){
 
 async function nrV2ResolveGroupToOrderItem(group,item){
     const scope=nrV2AllocationScope(group);
+    const pharmacyId=IdentifierService.pharmacyId();
     if(!scope.length) throw new Error("Captured Receiving work scope is unavailable.");
     const identifier=toSafeString(group?.rows?.[0]?.identifier_display||group?.rows?.[0]?.gtin||group?.gtin).trim();
+    if(IdentifierService.pharmacyId()!==group.rows?.[0]?.pharmacy_id && group.rows?.[0]?.pharmacy_id) throw new Error("Review belongs to a different pharmacy.");
+    const selectedOrders=getSelectedReceivingOrderNumbers();
+    if(!scope.every(order=>selectedOrders.includes(order))) throw new Error("Select the original captured Orders before resolving this review.");
+    buildReceivingAutoAllocationPlan(item,group.total_quantity,scope);
+    const globalItem=await IdentifierService.findGlobalItemByCode(item.itemCode);
+    if(!globalItem) throw new Error("Select an existing Global Master item.");
+    if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
     let pharmacyMapping=null;
     if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()&&identifier){
-        const mappingResult=await IdentifierService.learnIdentifier(nrV2OperationId(),identifier,item,"Needs Review resolution");
+        const mappingResult=await IdentifierService.learnIdentifier(nrV2OperationId(),identifier,globalItem,"Needs Review resolution");
         pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
     }
+    if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
     const resolution=pharmacyMapping?{
         kind:"PHARMACY_LEARNED",
         mappingId:pharmacyMapping.identifierId,
@@ -9447,14 +9456,6 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
     });
 
-    const resolverSearchIndexes=new Map();
-    const getResolverSearchIndex=group=>{
-        const scope=nrV2AllocationScope(group);
-        const key=scope.slice().sort().join("|");
-        if(!resolverSearchIndexes.has(key)) resolverSearchIndexes.set(key,nrV2BuildSearchIndex(scope));
-        return resolverSearchIndexes.get(key);
-    };
-
     groups.forEach((group,index)=>{
         const section=overlay.querySelector(`[data-i="${index}"]`);
         const detail=section.querySelector("[data-review-case-detail]");
@@ -9514,8 +9515,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             }catch(error){ showToast?.(error?.message||"Unable to open review photo","error"); }
         }));
 
-        const searchIndex=getResolverSearchIndex(group);
-        let searchFrame=0;
+        let searchFrame=0,searchGeneration=0;
         const setResolveMode=active=>{
             section.classList.toggle("hasSelectedReviewItem",active);
             if(search) search.hidden=active;
@@ -9552,16 +9552,21 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 finally{overlay.dataset.busy="";}
             });
         };
-        const drawMatches=()=>{
+        const drawMatches=async()=>{
+            const generation=++searchGeneration;
             const q=toSafeString(search?.value||"").trim();
             if(selectedItem){selectedItem=null;drawSelection();}
             if(!q){matches.innerHTML="";return;}
-            const items=nrV2FindOrderMatches(q,searchIndex);
-            matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}">${nrV2ItemSummary(item,esc)}</button>`).join(""):`<div class="needsReviewNoMatches">No matching item in the captured active Orders.</div>`;
-            matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.match)]||null;drawSelection();}));
+            matches.textContent="Searching Global Master…";
+            try{
+                const items=await searchReceivingMasterItems(q,nrV2AllocationScope(group));
+                if(generation!==searchGeneration||search.value.trim()!==q||!section.isConnected)return;
+                matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}" ${item.inActiveOrder?"":"disabled"}><span><strong>${esc(item.itemName)}</strong><small>Item Code ${esc(item.itemCode)} · Group ${esc(item.groupName||"—")}</small><small>${item.inActiveOrder?"In captured Active Orders":"Not in Active Order — this review cannot yet be resolved as an Extra Item"}</small></span></button>`).join(""):`<div class="needsReviewNoMatches">No matching Global Master item.</div>`;
+                matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.match)]?.receivingItem||null;drawSelection();}));
+            }catch(error){if(generation===searchGeneration)matches.textContent=error?.message||"Unable to search Global Master.";}
         };
-        search?.addEventListener("input",()=>{if(searchFrame)cancelAnimationFrame(searchFrame);searchFrame=requestAnimationFrame(()=>{searchFrame=0;drawMatches();});});
-        clearReview?.addEventListener("click",()=>{if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
+        search?.addEventListener("input",()=>{searchGeneration++;matches.innerHTML="";if(searchFrame)clearTimeout(searchFrame);searchFrame=setTimeout(drawMatches,250);});
+        clearReview?.addEventListener("click",()=>{searchGeneration++;if(searchFrame)clearTimeout(searchFrame);if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
     });
 
     if(!handheld) overlay.querySelector("[data-review-detail=\"0\"]")?.focus();

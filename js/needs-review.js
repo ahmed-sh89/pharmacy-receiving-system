@@ -73,14 +73,16 @@ async function nrV2CreateDraft(parsed,options={}){
         ? [...new Set(getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean))]
         : [];
     const explicitOrder=normalizeOrderNumber(options.orderNumber||"");
-    const originalOrder=explicitOrder || (selectedOrders.length===1 ? selectedOrders[0] : "");
+    const capturedOrders=options.workScopeOrderNumbers||selectedOrders;
+    const originalOrder=explicitOrder || (capturedOrders.length===1 ? normalizeOrderNumber(capturedOrders[0]) : "");
     const workScope=[...new Set((options.workScopeOrderNumbers||selectedOrders).map(normalizeOrderNumber).filter(Boolean))];
     if(originalOrder&&!workScope.includes(originalOrder)) workScope.push(originalOrder);
     if((options.workflow||"RECEIVING")==="RECEIVING"&&!workScope.length){
         throw new Error("Select a Receiving Order on this device before saving this scan for review.");
     }
 
-    const result=await authRpc("create_pharmflow_needs_review_v4",{
+    const result=await authRpc(options.operationId?"create_pharmflow_needs_review_v5":"create_pharmflow_needs_review_v4",{
+        ...(options.operationId?{p_operation_id:options.operationId}:{}),
         p_pharmacy_id:pharmacyId,
         p_workflow:options.workflow||"RECEIVING",
         p_identifier_display:capturedCode,
