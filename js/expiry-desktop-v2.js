@@ -9,8 +9,8 @@
     pageSize = 40,
     sort = "ADDED",
     activeSort = "ADDED",
-    filters = { search: "", groups: [], includeUnassigned: false, months: [] };
-  let page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, months: [] },
+    filters = { search: "", groups: [], includeUnassigned: false, operators: [], months: [] };
+  let page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, operators: [], months: [] },
     periods = [],
     session = [],
     sessionHydrated = false,
@@ -146,7 +146,7 @@
     table.classList.toggle("expiryInventoryTable", mode === "INVENTORY");
     table.querySelector("thead").innerHTML =
       mode === "SESSION"
-        ? "<tr><th>Item Code / Identifier</th><th>Product Name</th><th>Batch</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
+        ? "<tr><th>Item Code / Identifier</th><th>Product Name</th><th>Group</th><th>Batch</th><th>Expiry</th><th>Quantity</th><th>Actions</th></tr>"
         : '<tr><th><input type="checkbox" id="expiryPageSelection" aria-label="Select all eligible rows on current page" '+(selectionMode?'':'hidden')+'></th><th>Code / GTIN</th><th>Product Name</th><th>Group</th><th>Batch</th><th><button type="button" data-expiry-sort>Expiry</button></th><th>Quantity</th><th>Operator</th><th>Last Updated</th><th>Actions</th></tr>' ;
     el("expiryPager").hidden = mode !== "INVENTORY";
     syncViewport();
@@ -299,7 +299,7 @@
     el(id+'Panel').querySelector('button:not(:disabled)')?.focus({preventScroll:true});
   }
   function resetInventoryFilters(){
-    filters={search:'',groups:[],includeUnassigned:false,months:[]};sort='ADDED';activeSort='ADDED';resolved=false;offset=0;selectionMode=false;selected.clear();++requestVersion;
+    filters={search:'',groups:[],includeUnassigned:false,operators:[],months:[]};sort='ADDED';activeSort='ADDED';resolved=false;offset=0;selectionMode=false;selected.clear();++requestVersion;
     expandedYears.clear();expandedSections.clear();clearTimeout(searchTimer);el('expiryCurrentSearch').value='';closeInventoryMenus(true);render();void refresh();
   }
   function renderInventoryFilters() {
@@ -316,21 +316,23 @@
     const approvedGroups=window.PharmFlowClassificationFilters?.approvedGroups||[];
     el('expiryGroups').innerHTML=approvedGroups.map(v=>'<button type="button" role="checkbox" class="expiryFilterChoice" aria-checked="'+filterDraft.groups.includes(v)+'" data-group="'+esc(v)+'"><i aria-hidden="true"></i>'+esc(monthFilters.displayGroup(v))+'</button>').join('')+
       (page.has_unassigned_group?'<button type="button" role="checkbox" class="expiryFilterChoice" aria-checked="'+filterDraft.includeUnassigned+'" data-unassigned="true"><i aria-hidden="true"></i>No canonical Group</button>':'');
+    el('expiryOperators').innerHTML=(page.operators||[]).map(v=>'<button type="button" role="checkbox" class="expiryFilterChoice" aria-checked="'+filterDraft.operators.includes(v)+'" data-operator="'+esc(v)+'"><i aria-hidden="true"></i>'+esc(v)+'</button>').join('')||'<p class="expiryMenuEmpty">No recorded Operators</p>';
     const choice=(button,key,value,values=[value])=>{
       const remove=values.every(v=>key==='months'?monthFilters.has(filterDraft,v):filterDraft[key].includes(v));
       if(key==='months')values.forEach(v=>monthFilters.set(filterDraft,v,!remove));else filterDraft[key]=remove?filterDraft[key].filter(v=>!values.includes(v)):[...new Set([...filterDraft[key],...values])];
-      const attribute=key==='groups'?'data-group':button.hasAttribute('data-year')?'data-year':'data-month';
+      const attribute=key==='operators'?'data-operator':key==='groups'?'data-group':button.hasAttribute('data-year')?'data-year':'data-month';
       renderInventoryFilters();[...el('expiryFilterPanel').querySelectorAll('['+attribute+']')].find(b=>b.getAttribute(attribute)===value)?.focus({preventScroll:true});
     };
     monthsRoot.querySelectorAll('[data-year]').forEach(b=>b.onclick=()=>choice(b,'months',b.dataset.year,allMonths.filter(m=>m.startsWith(b.dataset.year+'-'))));
     monthsRoot.querySelectorAll('[data-month]').forEach(b=>b.onclick=()=>choice(b,'months',b.dataset.month));
     el('expiryGroups').querySelectorAll('[data-group]').forEach(b=>b.onclick=()=>choice(b,'groups',b.dataset.group));
+    el('expiryOperators').querySelectorAll('[data-operator]').forEach(b=>b.onclick=()=>choice(b,'operators',b.dataset.operator));
     const unassigned=el('expiryGroups').querySelector('[data-unassigned]');if(unassigned)unassigned.onclick=()=>{filterDraft.includeUnassigned=!filterDraft.includeUnassigned;renderInventoryFilters();el('expiryGroups [data-unassigned]')?.focus({preventScroll:true});};
     monthsRoot.querySelectorAll('[data-year-toggle]').forEach(b=>b.onclick=()=>{const open=b.getAttribute('aria-expanded')!=='true';if(open)expandedYears.add(b.dataset.yearToggle);else expandedYears.delete(b.dataset.yearToggle);b.setAttribute('aria-expanded',String(open));el('expiryYear'+b.dataset.yearToggle).hidden=!open;b.setAttribute('aria-label',(open?'Collapse':'Expand')+' months for '+b.dataset.yearToggle);});
     el('expiryClearPeriod').hidden=!filters.expiredThrough&&!filters.months.length;
     const past=periods[0];el('expiryExpiredChoice').textContent=past?kpiPeriod(past):'Expired';el('expiryExpiredChoice').setAttribute('aria-checked',past?monthFilters.state(filterDraft,past):'false');
     el('expiryExpiredChoice').onclick=()=>{if(past){monthFilters.toggle(filterDraft,past,'manual');renderInventoryFilters();}};
-    for(const key of ['months','groups']){const button=el('expirySection'+key);button.setAttribute('aria-expanded',String(expandedSections.has(key)));el(key==='months'?'expiryMonthContent':'expiryGroups').hidden=!expandedSections.has(key);button.onclick=()=>{if(expandedSections.has(key))expandedSections.delete(key);else expandedSections.add(key);renderInventoryFilters();};}
+    for(const key of ['months','groups','operators']){const button=el('expirySection'+key);button.setAttribute('aria-expanded',String(expandedSections.has(key)));el(key==='months'?'expiryMonthContent':key==='groups'?'expiryGroups':'expiryOperators').hidden=!expandedSections.has(key);button.onclick=()=>{if(expandedSections.has(key))expandedSections.delete(key);else expandedSections.add(key);renderInventoryFilters();};}
   }
   function updateToolbar() {
     el('expiryCurrentStateCount').textContent=String(page.count);
@@ -339,7 +341,7 @@
     el('expirySortLabel').textContent=sortName;
     el('expiryResolved').textContent=resolved?'Show Active Records':'Show Resolved Records';
     el('expiryInventoryView').textContent=resolved?'Resolved inventory':'Active inventory';
-    const count=filters.groups.length+(filters.includeUnassigned?1:0)+filters.months.length+(filters.expiredThrough!=null?1:0)+(resolved?1:0);
+    const count=filters.operators.length+filters.groups.length+(filters.includeUnassigned?1:0)+filters.months.length+(filters.expiredThrough!=null?1:0)+(resolved?1:0);
     el('expiryFilterLabel').textContent=resolved?'Filters · Resolved':'Filters';el('expiryFilterCount').textContent=String(count);el('expiryFilterCount').hidden=!count;
     el('expiryFilter').classList.toggle('is-active',!!count);el('expiryFilter').title=resolved?'Filters · Resolved inventory':'Filters · Active inventory';
     el('expirySearchClear').hidden=!filters.search;
@@ -347,8 +349,8 @@
     el('expirySelect').innerHTML=inventoryIcon(selectionMode?'close':'check');el('expirySelect').setAttribute('aria-label',selectionMode?'Exit selection mode':'Enter selection mode');el('expirySelect').title=selectionMode?'Exit selection mode':'Enter selection mode';el('expirySelect').setAttribute('aria-pressed',String(selectionMode));el('expirySelect').onclick=()=>{selectionMode=!selectionMode;selected.clear();closeInventoryMenus();render();};
     document.querySelector('.expiryInventoryTable')?.classList.toggle('is-selecting',selectionMode);
     el('expiryBulkMenu').hidden=!selectionMode&&!resolved;el('expiryBulkMenu').parentElement.hidden=!selectionMode&&!resolved;el('expiryAll').hidden=false;el('expiryAll').disabled=!page.count;el('expiryAll').textContent=resolved?'Restore All':'Remove All Filtered…';el('expiryClearResolved').hidden=!resolved;el('expiryClearResolved').disabled=!page.count;el('expiryBulkMenuPanel').classList.toggle('expiryResolvedBulkMenu',resolved);
-    el('expiryBulkAction').hidden=!selectionMode||!selected.size;
-    el('expiryBulkAction').textContent=(resolved?'Restore ':'Remove ')+selected.size+' Selected';el('expiryBulkAction').disabled=!selected.size;
+    el('expiryBulkAction').hidden=!selectionMode;el('expiryClearSelected').hidden=!selectionMode||!resolved;el('expiryClearSelected').disabled=!selected.size;
+    el('expiryBulkAction').textContent=resolved?'Restore Selected':'Remove '+selected.size+' Selected';el('expiryBulkAction').disabled=!selected.size;
     el('expiryPageLabel').textContent=page.count?'Rows '+(offset+1)+'–'+Math.min(offset+pageSize,page.count)+' of '+page.count:'No records';
     el('expiryPrev').disabled=offset===0;el('expiryNext').disabled=offset+pageSize>=page.count;
     el('expiryPageSize').value=String(pageSize);
@@ -359,13 +361,16 @@
   let floatingMenu=null,floatingTrigger=null;
   function closeFloatingMenu(restore=false){
     if(!floatingMenu)return;try{floatingMenu.hidePopover?.();}catch{}floatingMenu.hidden=true;
-    floatingTrigger?.setAttribute('aria-expanded','false');if(restore&&floatingTrigger?.isConnected)floatingTrigger.focus({preventScroll:true});floatingMenu=null;floatingTrigger=null;
+    floatingTrigger?.setAttribute('aria-expanded','false');floatingTrigger?.classList.remove('is-menu-open');if(restore&&floatingTrigger?.isConnected)floatingTrigger.focus({preventScroll:true});floatingMenu=null;floatingTrigger=null;
   }
   function openFloatingMenu(panel,trigger){
-    closeFloatingMenu();floatingMenu=panel;floatingTrigger=trigger;trigger.setAttribute('aria-expanded','true');
+    closeFloatingMenu();floatingMenu=panel;floatingTrigger=trigger;trigger.setAttribute('aria-expanded','true');trigger.classList.add('is-menu-open');
     panel.hidden=false;panel.showPopover?.();const rect=trigger.getBoundingClientRect?.()||{left:8,top:300,bottom:332},box=panel.getBoundingClientRect?.()||{width:225,height:44};
-    panel.style.left=Math.max(8,Math.min(rect.left,(window.innerWidth||1366)-box.width-8))+'px';
-    panel.style.top=Math.max(8,rect.top-box.height-6)+'px';panel.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
+    const rowMenu=panel.classList.contains('expiryRowActionMenu'),vw=window.innerWidth||1366,vh=window.innerHeight||768;
+    let left=rowMenu?rect.left-box.width-6:rect.left;
+    if(rowMenu&&left<8&&rect.right+box.width+6<vw-8)left=rect.right+6;
+    panel.style.left=Math.max(8,Math.min(left,vw-box.width-8))+'px';
+    panel.style.top=Math.max(8,Math.min(rowMenu?rect.top:rect.top-box.height-6,vh-box.height-8))+'px';panel.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
   }
   async function copyInventoryIdentifier(trigger){
     const value=trigger.textContent,kind=trigger.dataset.copyIdentifier;
@@ -424,13 +429,14 @@
         const flash = savedFlashes.get(groupKey(r));
         const flashing = flash && flash.scope === scope() && flash.session === sessionId && flash.until > Date.now();
         return '<tr data-expiry-group-key="' + esc(groupKey(r)) + '"' + (flashing ? ' class="expiryRowSavedStrong" style="--expiry-flash-delay:' + (flash.until - Date.now() - 1000) + 'ms"' : '') +
-          '><td class="expirySessionIdentifier"><strong>' + esc(r.item_code || '—') +
-          '</strong><span>GTIN <b>' + esc(r.identifier_display || '—') + '</b></span></td>' +
-          '<td class="expirySessionProduct"><strong>' + esc(r.item_name || 'Unknown item') + '</strong>' +
+          '><td class="expirySessionIdentifier"><strong title="'+esc(r.item_code||'—')+'">' + esc(r.item_code || '—') +
+          '</strong><span title="'+esc(r.identifier_display||'—')+'">GTIN <b>' + esc(r.identifier_display || '—') + '</b></span></td>' +
+          '<td class="expirySessionProduct"><strong title="'+esc(r.item_name||'Unknown item')+'">' + esc(r.item_name || 'Unknown item') + '</strong>' +
           '<div class="expirySessionMeta"><time>' + esc(expiryFormatVerifiedAt(r.captured_at)) +
           '</time><span> · ' + r.registrations + ' registration' + (r.registrations === 1 ? '' : 's') +
           (r.adjustments ? ' · ' + r.adjustments + ' quantity adjustment' + (r.adjustments === 1 ? '' : 's') : '') + '</span></div></td>' +
-          '<td class="expirySessionBatch"><strong>' + esc(r.batch_no || "—") + '</strong></td>' +
+          '<td class="expiryInventoryGroup" title="'+esc(monthFilters.rowGroup(r).label)+'">'+esc(monthFilters.rowGroup(r).label)+'</td>'+
+          '<td class="expirySessionBatch" title="'+esc(r.batch_no||'—')+'"><strong>' + esc(r.batch_no || "—") + '</strong></td>' +
           '<td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
           '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-edit="' + i +
           '">Edit</button><button type="button" class="expirySessionAction danger" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-delete="' + i +
@@ -445,7 +451,7 @@
     body.innerHTML=page.rows.map((r,i)=>{
       const d=new Date(r.updated_at),isResolved=r.status==='RESOLVED';
       const group=monthFilters.rowGroup(r);
-      return '<tr'+(isResolved?' class="expiryResolvedRow"':'')+'><td><input type="checkbox" aria-label="Select '+esc(r.item_code)+'" data-row-selection="'+esc(r.row_id)+'" '+(selected.has(r.row_id)?'checked':'')+'></td><td class="expiryInventoryIdentifiers"><strong role="button" data-copy-identifier="Item Code" tabindex="0" aria-label="Copy full Item Code: '+esc(r.item_code||'—')+'" title="'+esc(r.item_code||'—')+'">'+esc(r.item_code||'—')+'</strong><span role="button" data-copy-identifier="GTIN" tabindex="0" aria-label="Copy full GTIN: '+esc(r.identifier_display||'—')+'" title="'+esc(r.identifier_display||'—')+'">'+esc(r.identifier_display||'—')+'</span></td><td class="expiryInventoryProduct"><strong>'+esc(r.item_name)+'</strong>'+(isResolved?'<span class="expiryResolvedLabel">Resolved</span>':'')+'</td><td class="expiryInventoryGroup" title="'+esc(group.label)+'">'+esc(group.label)+'</td><td>'+esc(r.batch_no||'—')+'</td><td><span class="expiryDateBadge '+expiryPeriodClass(r)+'">'+month(r)+'</span></td><td class="expiryQtyCell">'+qty(r)+'</td><td class="expiryOperatorCell" title="'+esc(r.first_operator_name||'—')+'">'+esc(r.first_operator_name||'—')+'</td><td class="expiryTimeCell"><time>'+esc(d.toLocaleDateString())+'<br>'+esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</time></td><td class="expiryActionsCell"><button type="button" class="expiryInventoryAction" data-row-actions="'+i+'" aria-label="Actions for '+esc(r.item_code)+'" aria-haspopup="menu" aria-expanded="false" '+(busy?'disabled':'')+'>⋯</button></td></tr>';
+      return '<tr'+(isResolved?' class="expiryResolvedRow"':'')+'><td><input type="checkbox" aria-label="Select '+esc(r.item_code)+'" data-row-selection="'+esc(r.row_id)+'" '+(selected.has(r.row_id)?'checked':'')+'></td><td class="expiryInventoryIdentifiers"><strong role="button" data-copy-identifier="Item Code" tabindex="0" aria-label="Copy full Item Code: '+esc(r.item_code||'—')+'" title="'+esc(r.item_code||'—')+'">'+esc(r.item_code||'—')+'</strong><span role="button" data-copy-identifier="GTIN" tabindex="0" aria-label="Copy full GTIN: '+esc(r.identifier_display||'—')+'" title="'+esc(r.identifier_display||'—')+'">'+esc(r.identifier_display||'—')+'</span></td><td class="expiryInventoryProduct"><strong title="'+esc(r.item_name)+'">'+esc(r.item_name)+'</strong>'+(isResolved?'<span class="expiryResolvedLabel">Resolved</span>':'')+'</td><td class="expiryInventoryGroup" title="'+esc(group.label)+'">'+esc(group.label)+'</td><td class="expiryBatchCell" title="'+esc(r.batch_no||'—')+'">'+esc(r.batch_no||'—')+'</td><td><span class="expiryDateBadge '+expiryPeriodClass(r)+'">'+month(r)+'</span></td><td class="expiryQtyCell">'+qty(r)+'</td><td class="expiryOperatorCell" title="'+esc(r.first_operator_name||'—')+'">'+esc(r.first_operator_name||'—')+'</td><td class="expiryTimeCell"><time>'+esc(d.toLocaleDateString())+'<br>'+esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</time></td><td class="expiryActionsCell"><button type="button" class="expiryInventoryAction" data-row-actions="'+i+'" aria-label="Actions for '+esc(r.item_code)+'" aria-haspopup="menu" aria-expanded="false" '+(busy?'disabled':'')+'>⋯</button></td></tr>';
     }).join('');
     body.querySelectorAll('[data-copy-identifier]').forEach(b=>{b.onclick=()=>copyInventoryIdentifier(b);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();return copyInventoryIdentifier(b);}};});
     body.querySelectorAll('[data-row-actions]').forEach(trigger=>trigger.onclick=()=>{
@@ -519,11 +525,11 @@
       sessionSearch = "";
       session = [];
       sessionHydrated = false;
-      page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, months: [] };
+      page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, operators: [], months: [] };
       periods = [];
       lastSummary = 0;pendingSummary=null;
       selected.clear();
-      filters = { search: "", groups: [], includeUnassigned: false, months: [] };
+      filters = { search: "", groups: [], includeUnassigned: false, operators: [], months: [] };
       offset = 0;pageSize=40;
       resolved = false;
       el("expiryCurrentSearch").value = "";
@@ -822,7 +828,7 @@
     );
   }
   async function confirmSelection(ids,trigger,clearList=false){
-    if(clearList&&(!resolved||mode!=="INVENTORY"||ids!==null))return;
+    if(clearList&&(!resolved||mode!=="INVENTORY"))return;
     if(busy||previewing)return;previewing=true;if(trigger)trigger.disabled=true;
     const ownScope=scope(),filterSnapshot=JSON.parse(JSON.stringify(filters)),context=resolved,allFiltered=ids==null;
     try{
@@ -834,7 +840,7 @@
       const snapshot=JSON.parse(JSON.stringify(preview.selection)),args={...authArgs(),p_request_id:crypto.randomUUID(),p_action:clearList?'CLEAR_RESOLVED':context?'RESTORE':'RESOLVE',p_selection:snapshot};
       const filteredArgs={...authArgs(),p_request_id:args.p_request_id,p_filters:wireFilters,p_selection:snapshot,p_expected_count:preview.count,p_expected_units:preview.units};
       if(clearList&&(preview.selection.length!==preview.count||new Set(preview.selection.map(r=>r.id)).size!==preview.count))throw Error('Resolved list changed; refresh and confirm again.');
-      const verb=clearList?'Clear All':context?'Restore':'Remove';
+      const verb=clearList?(allFiltered?'Clear All':'Clear Selected'):context?'Restore':'Remove';
       const singleRecord=!allFiltered&&ids.length===1?page.rows.find(r=>r.row_id===ids[0]):null;
       const summary=clearList?'<p>This will clear <strong>'+preview.count+' records</strong> from the Resolved list. Historical data will be kept.</p>':(singleRecord?identity(singleRecord):'')+'<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(context?'The selected quantities will return to active Inventory.':'This item will be removed from the active list and kept in History.')+'</p>'+(singleRecord?'':'<p>'+(allFiltered?'All matching records across every page.':'Only the selected records.')+'</p>');
       openDialog(clearList?'Clear resolved list?':context?'Restore '+preview.count+' records?':singleRecord?'Remove this item?':'Remove '+preview.count+' records?',summary,async()=>{
@@ -869,7 +875,7 @@
         root.innerHTML=ExpiryInventoryReport.printMarkup(dataRows,meta);guard();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));guard();window.print();if(generation===exportGeneration)clearExportNotice();return;
       }
       const data=ExpiryInventoryReport.excelRows(rows),headers=ExpiryInventoryReport.excelHeaders,ws=XLSX.utils.json_to_sheet(data.map(row=>Object.fromEntries(headers.map((h,i)=>[h,row[i]]))));
-      const widths=[18,24,50,18,22,12,12,28,26,12];ws['!cols']=widths.map(wch=>({wch}));ws['!rows']=[{hpt:24},...data.map(row=>({hpt:Math.max(20,...row.map((value,i)=>Math.ceil(String(value).length/widths[i])*13+5))}))];
+      const widths=[16,22,42,17,20,11,10,24,23,12];ws['!cols']=widths.map(wch=>({wch}));
       for(let i=0;i<data.length;i++)for(const col of ['A','B']){const cell=ws[col+(i+2)];if(cell){cell.t='s';cell.z='@';}}ws['!autofilter']={ref:ws['!ref']};ws['!margins']={left:.19685,right:.19685,top:.19685,bottom:.19685,header:0,footer:0};
       const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Expiry Inventory');guard();ExpiryInventoryReport.saveWorkbook(wb,guard);if(generation===exportGeneration)clearExportNotice();
     } catch (e) {
@@ -908,14 +914,14 @@
       footer.id = "expiryPager";
       footer.className = "expiryPager";
       footer.innerHTML =
-        '<span id="expiryResultSummary"></span><div class="expiryBulkMenu"><button id="expiryBulkMenu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expiryBulkMenuPanel" hidden>Bulk Actions</button><div id="expiryBulkMenuPanel" class="expiryFloatingMenu" popover="manual" role="menu" aria-label="Bulk inventory actions" hidden><button id="expiryAll" type="button" role="menuitem">Remove All Filtered…</button><button id="expiryClearResolved" class="expiryClearResolved" type="button" role="menuitem" hidden>Clear All</button></div></div><button id="expiryBulkAction" type="button" disabled>Remove Selected</button><label class="expiryPageSize">Rows <select id="expiryPageSize" aria-label="Records per page"><option>20</option><option selected>40</option><option>50</option><option>100</option></select></label><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
+        '<span id="expiryResultSummary"></span><div class="expiryBulkMenu"><button id="expiryBulkMenu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expiryBulkMenuPanel" hidden>Bulk Actions</button><div id="expiryBulkMenuPanel" class="expiryFloatingMenu" popover="manual" role="menu" aria-label="Bulk inventory actions" hidden><button id="expiryAll" type="button" role="menuitem">Remove All Filtered…</button><button id="expiryClearResolved" class="expiryClearResolved" type="button" role="menuitem" hidden>Clear All</button></div></div><button id="expiryBulkAction" type="button" disabled>Remove Selected</button><button id="expiryClearSelected" type="button" disabled hidden>Clear Selected</button><label class="expiryPageSize">Rows <select id="expiryPageSize" aria-label="Records per page"><option>20</option><option selected>40</option><option>50</option><option>100</option></select></label><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
       document.querySelector(".expiryCurrentWorkspace").appendChild(footer);
       document.body.appendChild(el('expiryBulkMenuPanel'));
       const exportStatus=document.createElement('p');exportStatus.id='expiryExportStatus';exportStatus.className='expiryExportStatus';exportStatus.hidden=true;exportStatus.setAttribute('aria-live','polite');footer.before(exportStatus);
       const tools = document.querySelector(".expiryCurrentTools");
       tools.innerHTML =
         '<button id="expirySelect" type="button" aria-pressed="false" aria-label="Enter selection mode" title="Enter selection mode">'+inventoryIcon('check')+'</button><label class="expiryInventorySearch">'+inventoryIcon('search')+'<input id="expiryCurrentSearch" type="search" autocomplete="off" aria-label="Search Inventory" placeholder="Search product, code, GTIN or batch"><button id="expirySearchClear" type="button" aria-label="Clear search" hidden>'+inventoryIcon('close')+'</button></label>'+
-        '<button id="expiryQuickClearKpi" type="button" title="Clear KPI Selection" aria-label="Clear KPI Selection" hidden>'+inventoryIcon('close')+'</button><div class="expiryInventoryMenu"><button type="button" id="expiryFilter" aria-expanded="false" aria-controls="expiryFilterPanel">'+inventoryIcon('filters')+'<span id="expiryFilterLabel">Filters</span> <b id="expiryFilterCount" hidden>0</b></button><section id="expiryFilterPanel" class="expiryInventoryPopover expiryFilterPanel" aria-label="Inventory filters" role="dialog" hidden><header><strong>Inventory Filters</strong><button type="button" data-dismiss-menu aria-label="Close filters">'+inventoryIcon('close')+'</button></header><div class="expiryFilterScroll"><section><h3><button type="button" id="expirySectionmonths" aria-expanded="false">Expiry Months '+inventoryIcon('chevron')+'</button></h3><div id="expiryMonthContent" hidden><button type="button" class="expiryFilterChoice" role="checkbox" aria-checked="false" id="expiryExpiredChoice">Expired</button><div id="expiryMonths"></div></div></section><section><h3><button type="button" id="expirySectiongroups" aria-expanded="false">Group '+inventoryIcon('chevron')+'</button></h3><div id="expiryGroups" hidden></div></section></div><footer class="expiryFilterFooter"><div class="expiryFilterContext"><span id="expiryInventoryView"></span><button type="button" id="expiryResolved">Show Resolved Records</button><button type="button" id="expiryClearPeriod" hidden>Clear KPI Period</button></div><div class="expiryFilterFooterActions"><button id="btnClearExpiryFilters" type="button">Reset All</button><button id="expiryApplyFilters" type="button" class="primary">Apply Filters</button></div></footer></section></div>'+
+        '<button id="expiryQuickClearKpi" type="button" title="Clear KPI Selection" aria-label="Clear KPI Selection" hidden>'+inventoryIcon('close')+'</button><div class="expiryInventoryMenu"><button type="button" id="expiryFilter" aria-expanded="false" aria-controls="expiryFilterPanel">'+inventoryIcon('filters')+'<span id="expiryFilterLabel">Filters</span> <b id="expiryFilterCount" hidden>0</b></button><section id="expiryFilterPanel" class="expiryInventoryPopover expiryFilterPanel" aria-label="Inventory filters" role="dialog" hidden><header><strong>Inventory Filters</strong><button type="button" data-dismiss-menu aria-label="Close filters">'+inventoryIcon('close')+'</button></header><div class="expiryFilterScroll"><section data-filter-section="months"><h3><button type="button" id="expirySectionmonths" aria-expanded="false">Expiry Months '+inventoryIcon('chevron')+'</button></h3><div id="expiryMonthContent" hidden><button type="button" class="expiryFilterChoice" role="checkbox" aria-checked="false" id="expiryExpiredChoice">Expired</button><div id="expiryMonths"></div></div></section><section data-filter-section="groups"><h3><button type="button" id="expirySectiongroups" aria-expanded="false">Group '+inventoryIcon('chevron')+'</button></h3><div id="expiryGroups" hidden></div></section><section data-filter-section="operators"><h3><button type="button" id="expirySectionoperators" aria-expanded="false">Operator '+inventoryIcon('chevron')+'</button></h3><div id="expiryOperators" hidden></div></section></div><footer class="expiryFilterFooter"><div class="expiryFilterContext"><span id="expiryInventoryView"></span><button type="button" id="expiryResolved">Show Resolved Records</button><button type="button" id="expiryClearPeriod" hidden>Clear KPI Period</button></div><div class="expiryFilterFooterActions"><button id="btnClearExpiryFilters" type="button">Reset All</button><button id="expiryApplyFilters" type="button" class="primary">Apply Filters</button></div></footer></section></div>'+
         '<div class="expiryInventoryMenu"><button type="button" id="expirySort" aria-expanded="false" aria-controls="expirySortPanel">'+inventoryIcon('sort')+'<span id="expirySortLabel">Recently Added</span></button><div id="expirySortPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Sort inventory" hidden>'+[['ADDED','Recently Added'],['UPDATED','Recently Updated'],['EXPIRY','Earliest Expiry']].map(([key,label])=>'<button type="button" role="menuitemradio" data-sort="'+key+'" aria-checked="false">'+label+'</button>').join('')+'</div></div>'+
         '<div class="expiryInventoryMenu"><button type="button" id="expiryExport" aria-expanded="false" aria-controls="expiryExportPanel">'+inventoryIcon('export')+'Export</button><div id="expiryExportPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Export inventory reports" hidden><button id="btnExportExpiryInventory" title="All active Inventory in this pharmacy" type="button" role="menuitem">'+inventoryIcon('sheet')+'Excel (.xlsx)</button><button id="expiryPdf" type="button" role="menuitem">'+inventoryIcon('document')+'PDF (.pdf)</button><button id="expiryPrint" type="button" role="menuitem">'+inventoryIcon('printer')+'Print</button></div></div>';
       for(const id of ['expiryFilter','expirySort','expiryExport','expiryBulkMenu'])el(id).onclick=()=>openInventoryPanel(id);
@@ -941,12 +947,13 @@
           activeSort = sort;
           sort = "UPDATED";
         } else sort = activeSort;
-        page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, months: [] };
+        page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, operators: [], months: [] };
         render();
         offset = 0;
         selected.clear();
         void refresh();
       };
+      el("expiryClearSelected").onclick=e=>confirmSelection([...selected],e.target,true);
       el("expiryClearResolved").onclick=()=>{closeInventoryMenus();void confirmSelection(null,el("expiryBulkMenu"),true);};
       el("expiryAll").onclick = () => {closeInventoryMenus();void confirmSelection(null, el("expiryBulkMenu"));};
       el("expiryBulkAction").onclick = (e) =>
@@ -1062,7 +1069,7 @@
     sessionHydrated = false;
     ExpiryCaptureEngine.sessionRows = [];
     ExpiryCaptureEngine.currentRows = [];
-    page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, months: [] };
+    page = { rows: [], count: 0, units: 0, groups: [], has_unassigned_group: false, operators: [], months: [] };
     visibleScope = null;
     sessionId = null;
     periods = [];
@@ -1072,7 +1079,7 @@
     offset = 0;pageSize=40;
     sort = "ADDED";
     activeSort = "ADDED";
-    filters = { search: "", groups: [], includeUnassigned: false, months: [] };
+    filters = { search: "", groups: [], includeUnassigned: false, operators: [], months: [] };
     selected.clear();
     ++requestVersion;
     ExpiryCaptureEngine.desktopView = "SESSION";

@@ -1,5 +1,11 @@
 # PharmFlow current Staging checkpoint
 
+## 2026-10-20 — Final Expiry acceptance fixes
+
+Baseline 788e60db49cb140e048711898cb6f677cfe30917. Real Excel month dates, compact A4 Landscape reports, exact-trigger row menu, canonical Group in Session, readable columns, colored filters plus first-Operator multiselect, and Restore/Clear Selected. Applied Staging read-only-contract migration 20261020045631_expiry_acceptance_reports_filters_v1; no operational data/attribution/RLS changes.
+
+252 focused tests/build PASS; authenticated rollback-only SQL and real Chromium/artifact verification PASS. Data fingerprints unchanged, toolbar y=242px retained, no Desktop table horizontal overflow at 1366×768. Excel UI/physical TC26/two-PC acceptance pending. Evidence and non-destructive recovery: docs/expiry-final-acceptance-verification.md and docs/expiry-final-acceptance-recovery.sql. Production untouched. Status READY FOR PRODUCT OWNER TEST, not DONE.
+
 ## 2026-10-20 — Resolved Clear All
 
 Product Owner withdrew permanent Delete All. Added Clear All beside Restore All in the existing Resolved list, with one counted confirmation and durable pharmacy-scoped cleared markers. Retains all history, quantities, original Operators and Needs Review. Applied Staging migration 20261020015824_expiry_resolved_clear_v1; existing RPC signature preserved. Baseline cf48360748cd36e291b8fc2d94ba3abecd153370.

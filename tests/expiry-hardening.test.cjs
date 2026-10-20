@@ -26,8 +26,8 @@ test('Token scheduler uses absolute remaining lifetime after 30–60 minute idle
  c.scheduleTokenRefresh({expires_at:3600,expires_in:3600,refresh_token:'fixture'});assert.equal(delay,1000);
  c.scheduleTokenRefresh({expires_at:5400,expires_in:3600,refresh_token:'fixture'});assert.equal(delay,1680000);
 });
-test('A4 Portrait and workbook fit-width preserve existing report columns',()=>{
- const s=fs.readFileSync('js/expiry-inventory-report.js','utf8');assert.match(s,/orientation:'portrait'/);assert.doesNotMatch(s,/orientation:'landscape'/);assert.match(s,/orientation="portrait" fitToWidth="1" fitToHeight="0"/);assert.match(s,/_xlnm.Print_Titles/);assert.match(fs.readFileSync('css/dashboard.css','utf8'),/@page pharmflowExpiry\{size:A4 portrait/);
+test('A4 Landscape and workbook fit-width preserve existing report columns',()=>{
+ const s=fs.readFileSync('js/expiry-inventory-report.js','utf8');assert.match(s,/orientation:'landscape'/);assert.doesNotMatch(s,/orientation:'portrait'/);assert.match(s,/orientation="landscape" fitToWidth="1" fitToHeight="0"/);assert.match(s,/_xlnm.Print_Titles/);assert.match(fs.readFileSync('css/dashboard.css','utf8'),/@page pharmflowExpiry\{size:A4 landscape/);
 });
 test('Needs Review terminal success removes only its case, never remounts the overlay',()=>{
  const s=fs.readFileSync('ui.js','utf8').split('async function openExpiryNeedsReviewPanel')[1];assert.match(s,/completeCase\(section\)/);assert.doesNotMatch(s,/await openExpiryNeedsReviewPanel\(/);

@@ -33,7 +33,7 @@ test('Excel uses all active pharmacy rows, exact text identifiers, Operator and 
  const h=await inventory();const source=h.c.ExpiryInventoryReport;let written;
  h.c.XLSX={utils:{json_to_sheet:data=>{written=data;return {'!ref':'A1:J74',A2:{},B2:{}}},book_new:()=>({}),book_append_sheet(){}}};
  source.saveWorkbook=()=>{};h.e('expiryCurrentSearch').value='Product 7';h.e('expiryCurrentSearch').oninput({target:h.e('expiryCurrentSearch')});await h.flush();h.e('btnExportExpiryInventory').onclick();await tick();
- const c=h.calls.filter(c=>c.name==='export_pharmflow_expiry_inventory_v1').at(-1);assert.deepEqual(Object.keys(c.p.p_filters),[]);assert.equal(c.p.p_resolved,false);assert.equal(written.length,73);assert.equal(written[0]['Item Code'],'000');assert.equal(written[0].GTIN,'0000');assert.equal(written[0].Operator,'—');assert.doesNotMatch(written[0]['Last Updated'],/T12:30:00Z/);assert('Group' in written[0]);assert(!('Category' in written[0]));
+ const c=h.calls.filter(c=>c.name==='export_pharmflow_expiry_inventory_v1').at(-1);assert.deepEqual(Object.keys(c.p.p_filters),[]);assert.equal(c.p.p_resolved,false);assert.equal(written.length,73);assert.equal(written[0]['Item Code'],'000');assert.equal(written[0].GTIN,'0000');assert.equal(written[0].Operator,h.data[0].first_operator_name);assert.doesNotMatch(written[0]['Last Updated'],/T12:30:00Z/);assert('Group' in written[0]);assert(!('Category' in written[0]));
 });
 test('export errors have close control, timeout and are cleared by switching tabs',async()=>{
  const h=await inventory();h.c.ExpiryInventoryReport.pdf=async()=>{throw Error('Fixture PDF failure')};h.e('expiryPrint').onclick();await tick();

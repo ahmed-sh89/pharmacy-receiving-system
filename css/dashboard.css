@@ -7181,22 +7181,23 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th button{border:
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable td{padding:5px 6px;border-bottom:1px solid #e2e8f0;font-size:12px;vertical-align:middle;overflow-wrap:anywhere}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable tbody tr:hover{background:#f8f5fe}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(1){width:28px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(2){width:155px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(2){width:150px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(3){width:auto}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(4){width:92px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(5){width:85px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(6){width:78px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(7){width:65px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(8){width:125px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(9){width:108px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(10){width:58px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(4){width:116px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(5){width:78px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(6){width:77px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(7){width:62px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(8){width:117px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(9){width:102px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryTable th:nth-child(10){width:54px;padding:8px 4px;font-size:11px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryOperatorCell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryProduct>strong{display:block;font-size:12.5px;font-weight:650;line-height:1.35;color:#263b54}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryProduct>strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;font-weight:650;line-height:1.35;color:#263b54}
 body:not(.zebraDevice) #zebraExpiryShell .expiryIdentityMeta{font-size:12px;font-weight:500;color:#597088;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers strong,body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers span{display:block;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:copy;font-variant-numeric:tabular-nums}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers strong{color:#243d5c;font-size:12px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers span{margin-top:2px;color:#4f647e;font-size:11.5px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryIdentifiers [role=button]:focus-visible{outline:2px solid #8d74bd;outline-offset:-2px;border-radius:2px}
+body:not(.zebraDevice) #zebraExpiryShell .expiryBatchCell,
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryGroup{white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis}
 body:not(.zebraDevice) #zebraExpiryShell .expiryResolvedLabel{display:inline-block;margin-top:3px;padding:1px 5px;border:1px solid #bdcad9;border-radius:4px;color:#536a85;background:#edf1f6;font-size:10px;font-weight:600}
 body:not(.zebraDevice) #zebraExpiryShell .expiryDateBadge{display:inline-block;padding:3px 5px;border-radius:5px;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;background:#edf1f6;color:#4d6178}
@@ -7207,6 +7208,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryDateBadge.teal{background:#A8D8D
 body:not(.zebraDevice) #zebraExpiryShell .expiryActionsCell{text-align:center;white-space:nowrap;padding:6px 4px;overflow:visible}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryAction{min-height:29px;padding:0 8px;border:1px solid #aec4dd;border-radius:6px;background:#eef5fd;color:#244f7f;font:600 12px "Segoe UI",Arial,sans-serif;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryResolve{border-color:#d8b4bc;background:#fff2f4;color:#8d2b43}
+body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryAction.is-menu-open{background:#dce9f9;border-color:#789cc9;box-shadow:0 0 0 2px #dce9f980}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryAction:hover:not(:disabled){filter:brightness(.96)}
 body:not(.zebraDevice) #zebraExpiryShell .expiryInventoryAction:focus-visible{outline:2px solid #8d74bd;outline-offset:2px}
 .expiryFloatingMenu{position:fixed;inset:auto;margin:0;height:auto;min-height:0;z-index:10000;box-sizing:border-box;width:225px;max-width:calc(100vw - 16px);padding:5px;border:1px solid #c5d1e1;border-radius:8px;background:#fff;box-shadow:0 8px 24px #20365030;color:#324d70}
@@ -7232,9 +7234,9 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryPager button{height:32px;min-hei
 body:not(.zebraDevice) #zebraExpiryShell .expiryPager button:hover:not(:disabled){background:#edf2fa;border-color:#92aac8}
 body:not(.zebraDevice) #zebraExpiryShell .expiryPager button:disabled{opacity:1;background:#e3eaf3;border-color:#ccd7e4;color:#78899e;cursor:default}
 body:not(.zebraDevice) #zebraExpiryShell .expiryPager button:focus-visible{outline:2px solid #8d74bd;outline-offset:2px}
-body:not(.zebraDevice) #zebraExpiryShell #expiryBulkAction{background:#fff1f2;border-color:#e5b9c1;color:#933046}
+body:not(.zebraDevice) #zebraExpiryShell #expiryBulkAction,body:not(.zebraDevice) #zebraExpiryShell #expiryClearSelected{background:#fff1f2;border-color:#e5b9c1;color:#933046}
 body:not(.zebraDevice) #zebraExpiryShell .expiryBulkMenu{position:relative;padding-left:8px;border-left:1px solid #d8e1ed}
-body:not(.zebraDevice) #zebraExpiryShell .expiryBulkMenu[hidden],body:not(.zebraDevice) #zebraExpiryShell #expiryBulkMenu[hidden],body:not(.zebraDevice) #zebraExpiryShell #expiryBulkAction[hidden]{display:none}
+body:not(.zebraDevice) #zebraExpiryShell .expiryBulkMenu[hidden],body:not(.zebraDevice) #zebraExpiryShell #expiryBulkMenu[hidden],body:not(.zebraDevice) #zebraExpiryShell #expiryBulkAction[hidden],body:not(.zebraDevice) #zebraExpiryShell #expiryClearSelected[hidden]{display:none}
 
 
 
@@ -7280,7 +7282,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice{display:flex;align-
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice:hover,body:not(.zebraDevice) #zebraExpiryShell .expiryYearToggle:hover{background:#eaf0f8}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice i{display:grid;place-items:center;box-sizing:border-box;flex:none;width:15px;height:15px;border:1px solid #a9b9ce;border-radius:4px;background:#fff;font-style:normal;font-size:11px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true],body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed]{color:#60449b;background:#f0ebf8}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true] i,body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed] i{background:#7354b1;border-color:#7354b1;color:#fff}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true] i,body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed] i{background:var(--filter-accent,#7354b1);border-color:var(--filter-accent,#7354b1);color:#fff}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true] i:before{content:'✓'}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed] i:before{content:'−'}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel>footer{display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:6px;padding:8px 12px;border-top:1px solid #e4eaf2;background:#f8fafc}
@@ -7317,13 +7319,13 @@ body:not(.zebraDevice) #zebraExpiryShell button:disabled{opacity:.55;cursor:defa
 #expiryShelfPrint{display:none}
 @media print{
  @page{size:A4 landscape;margin:5mm}
- @page pharmflowExpiry{size:A4 portrait;margin:5mm}
+ @page pharmflowExpiry{size:A4 landscape;margin:5mm}
  body>*:not(#expiryShelfPrint){display:none!important}
- #expiryShelfPrint{page:pharmflowExpiry;display:block!important;background:#fff!important;font:7pt Arial,sans-serif;color:#111}
+ #expiryShelfPrint{page:pharmflowExpiry;display:block!important;background:#fff!important;font:8pt Arial,sans-serif;color:#111}
  #expiryShelfPrint .expiryPaperMeta{height:9pt;line-height:8pt;margin:0;white-space:nowrap;font-size:6.5pt}
  #expiryShelfPrint table{width:100%;table-layout:fixed;border-collapse:collapse}
  #expiryShelfPrint thead{display:table-header-group}
- #expiryShelfPrint th,#expiryShelfPrint td{height:auto;box-sizing:border-box;padding:1.5pt!important;vertical-align:top;line-height:10pt!important;text-align:left;font-size:7pt!important;font-weight:400!important;border:0!important;border-bottom:.2pt solid #aaa!important;background:#fff!important;color:#111!important}
+ #expiryShelfPrint th,#expiryShelfPrint td{height:auto;box-sizing:border-box;padding:1.5pt!important;vertical-align:top;line-height:9pt!important;text-align:left;font-size:8pt!important;font-weight:400!important;border:0!important;border-bottom:.2pt solid #aaa!important;background:#fff!important;color:#111!important}
  #expiryShelfPrint th{height:10pt;font-size:6.5pt!important;font-weight:600!important}
  #expiryShelfPrint td span{display:block;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;line-height:9pt}
  #expiryShelfPrint td.essential span{word-break:break-all}
@@ -7542,20 +7544,21 @@ body:not(.zebraDevice) #zebraExpiryShell .pfSelectOption:focus-visible{outline:2
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTable thead tr[hidden]{display:none}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th{position:sticky;top:0;z-index:2;background:#e9eef6;color:#344960;text-align:left;padding:9px 10px;font-size:13px;font-weight:750;border-bottom:1px solid #ccd6e3}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(1){width:20%;}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(2){width:30%;border-right:1px solid #cbd7e6;}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(1){width:18%;}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(2){width:27%;border-right:1px solid #cbd7e6;}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable td:nth-child(2){border-right:1px solid #d5deea}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(3){width:14%;}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(4){width:11%;text-align:center}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(3){width:12%;}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(4){width:11%;}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(5){width:9%;text-align:center}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(6){width:16%;text-align:right}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionIdentifier>strong{display:block;font-size:14px;color:var(--exp-ink);font-weight:750}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionIdentifier>span{display:block;margin-top:3px;font-size:13px;color:var(--exp-muted);overflow-wrap:anywhere}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(6){width:8%;text-align:center}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable th:nth-child(7){width:15%;text-align:right}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionIdentifier>strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:var(--exp-ink);font-weight:750}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionIdentifier>span{display:block;margin-top:3px;font-size:12px;color:var(--exp-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionIdentifier b{font-weight:600;color:var(--exp-text)}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionTable td{padding:6px 12px;border-bottom:1px solid #d5deea;color:#344960;font-size:13px;line-height:1.4;vertical-align:middle;overflow-wrap:anywhere;background:#fff}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>strong{display:block;font-size:15px;line-height:1.35;font-weight:650;color:var(--exp-ink)}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;font-weight:650;color:var(--exp-ink)}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionProduct>div{font-size:12px;margin:1px 0;color:#596b80}
-body:not(.zebraDevice) #zebraExpiryShell .expirySessionBatch>strong{display:block;font-size:13px;margin-top:2px}
+body:not(.zebraDevice) #zebraExpiryShell .expirySessionBatch>strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;margin-top:2px}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionBatch span{font-size:12px;color:#596b80}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMeta{margin-top:3px;font-size:12px;color:var(--exp-muted)}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionMeta span{font-size:11px;color:#718095}
@@ -7761,29 +7764,31 @@ body.zebraDevice .expirySessionEditor label{display:grid;gap:3px;font-size:12px;
 
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll{scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#c4cfdd transparent}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section,
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section+section{margin:8px 0 0;padding:9px;border:1px solid #e1e7ef;border-radius:8px;background:#f7f9fc}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section+section{--filter-tint:#eef5fc;--filter-selected:#dfebfa;--filter-border:#d5e3f3;--filter-ink:#345e8d;--filter-accent:#4f7dad;margin:8px 0 0;padding:9px;border:1px solid var(--filter-border);border-radius:8px;background:var(--filter-tint)}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section[data-filter-section=groups]{--filter-tint:#f5f1fb;--filter-selected:#eae1f5;--filter-border:#e3daef;--filter-ink:#674d8c;--filter-accent:#8564ad}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section[data-filter-section=operators]{--filter-tint:#eff8f2;--filter-selected:#dfefe5;--filter-border:#d7e8de;--filter-ink:#3b7051;--filter-accent:#528567}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll>section:first-child{margin-top:0}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3{margin:0 0 7px;color:#344b68;font-size:12px;font-weight:700}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3{margin:0 0 7px;color:var(--filter-ink,#344b68);font-size:12px;font-weight:700}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3 button{min-height:32px;padding:3px 2px;border-radius:5px;cursor:pointer;transition:background-color .12s,color .12s}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3 button:hover{background:#edf1f7;color:#263e5c}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterYear>div:first-child{background:#edf1f6;border:1px solid #e2e8f0}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterYear>div:first-child{background:var(--filter-tint);border:1px solid var(--filter-border)}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice{min-height:35px;padding:7px 8px;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:background-color .12s,border-color .12s,color .12s}
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice:hover{background:#edf1f7}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice:hover{background:var(--filter-selected)}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true],
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed]{border-color:#ddd5ed;background:#eeeaf6;color:#594486}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed]{border-color:var(--filter-border);background:var(--filter-selected);color:var(--filter-ink)}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=true]:hover,
-body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed]:hover{background:#e8e1f3}
+body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice[aria-checked=mixed]:hover{background:var(--filter-selected)}
 body:not(.zebraDevice) #zebraExpiryShell #expiryExpiredChoice{display:flex;align-items:center;gap:7px}
 body:not(.zebraDevice) #zebraExpiryShell #expiryExpiredChoice:before{display:grid;place-items:center;box-sizing:border-box;flex:none;width:15px;height:15px;border:1px solid #a9b9ce;border-radius:4px;background:#fff;color:#fff;font-size:11px;font-weight:700;content:''}
 body:not(.zebraDevice) #zebraExpiryShell #expiryExpiredChoice[aria-checked=true]:before,
-body:not(.zebraDevice) #zebraExpiryShell #expiryExpiredChoice[aria-checked=mixed]:before{border-color:#7354b1;background:#7354b1;content:'✓'}
+body:not(.zebraDevice) #zebraExpiryShell #expiryExpiredChoice[aria-checked=mixed]:before{border-color:var(--filter-accent,#7354b1);background:var(--filter-accent,#7354b1);content:'✓'}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterChoice:focus-visible,
 body:not(.zebraDevice) #zebraExpiryShell .expiryYearToggle:focus-visible,
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterScroll h3 button:focus-visible,
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterPanel button:focus-visible,
 body:not(.zebraDevice) #zebraExpiryShell .expiryOptionMenu button:focus-visible{outline:2px solid #8066b5;outline-offset:1px}
 body:not(.zebraDevice) #zebraExpiryShell .expiryYearToggle{width:35px;height:34px;border-radius:6px;cursor:pointer}
-body:not(.zebraDevice) #zebraExpiryShell #expiryGroups .expiryFilterChoice{width:100%}
+body:not(.zebraDevice) #zebraExpiryShell #expiryGroups .expiryFilterChoice,body:not(.zebraDevice) #zebraExpiryShell #expiryOperators .expiryFilterChoice{width:100%}
 
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext button{min-height:30px;padding:5px 7px;border-radius:5px;cursor:pointer}
 body:not(.zebraDevice) #zebraExpiryShell .expiryFilterContext button:hover{background:#e8edf4}

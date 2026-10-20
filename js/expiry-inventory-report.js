@@ -2,11 +2,13 @@
 (function(){
   const headers=['✓','Item Code','GTIN','Product Name','Group','Batch','Expiry','Qty'];
   const excelHeaders=['Item Code','GTIN','Product Name','Group','Batch','Expiry','Quantity','Operator','Last Updated','Status'];
-  const groupLabel=row=>window.ExpiryInventoryFilters?.rowGroup(row).label||'Uncategorized';
+  const groupLabel=row=>window.ExpiryInventoryFilters?.rowGroup(row).label||'—';
   const rows=source=>source.map(r=>['',String(r.item_code??''),String(r.identifier_display??''),String(r.item_name??''),groupLabel(r),r.batch_no||'—',String(r.expiry_month).padStart(2,'0')+'/'+r.expiry_year,Number(r.quantity)||0]);
   const localDate=value=>{const date=new Date(value);return value&&!Number.isNaN(date.getTime())?date.toLocaleString():'';};
-  const excelRows=source=>rows(source).map((r,i)=>[...r.slice(1,7),r[7],String(source[i].first_operator_name||'—'),localDate(source[i].updated_at),String(source[i].status||'ACTIVE')]);
-  const layout={margin:14.1732,rowHeight:10.5,headerHeight:10,metaHeight:9,font:7,minFont:6.5,widths:[10,49,70,0,53,80,40,25]};
+  // UTC serial for the first day of the captured month: timezone-independent Excel date.
+  const excelDate=r=>(Date.UTC(Number(r.expiry_year),Number(r.expiry_month)-1,1)-Date.UTC(1899,11,30))/86400000;
+  const excelRows=source=>rows(source).map((r,i)=>[...r.slice(1,6),excelDate(source[i]),r[7],String(source[i].first_operator_name||'—'),localDate(source[i].updated_at),String(source[i].status||'ACTIVE')]);
+  const layout={margin:14.1732,rowHeight:12,headerHeight:12,metaHeight:10,font:8,minFont:7.5,widths:[12,76,108,0,68,92,43,27]};
   const columnWidths=width=>layout.widths.map((v,i)=>i===3?width-layout.widths.reduce((a,b)=>a+b,0):v);
   // Keep A4 columns bounded. Exact identifiers wrap; their values are never shortened.
   function paperWidths(data,width){return columnWidths(width);}
@@ -36,13 +38,13 @@
   async function pdf(data,meta,guard=()=>{},save=true){
     if(!window.jspdf?.jsPDF)throw Error('PDF library unavailable. Please retry when connected.');
     const font=await fontData();guard();
-    const doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+    const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
     doc.addFileToVFS('ShelfSans.ttf',font);doc.addFont('ShelfSans.ttf','ShelfSans','normal');doc.setFont('ShelfSans','normal');
     const m=layout.margin,w=doc.internal.pageSize.getWidth()-2*m,h=doc.internal.pageSize.getHeight(),measure=(text,size)=>{doc.setFontSize(size);return doc.getTextWidth(text);},widths=paperWidths(data,w,measure),xs=[m];
     widths.slice(0,-1).forEach(v=>xs.push(xs.at(-1)+v));
     const fitted=data.map(row=>row.map((v,i)=>i===0?['']:wrap(v,widths[i]-3,measure,i===3||i===4)));
     let y=0,page=0,perPage=[];
-    const heading=()=>{page++;perPage.push(0);doc.setFontSize(6.5);doc.setTextColor(35);doc.text('PharmFlow Expiry Shelf Check - '+String(meta.pharmacy||'')+' - '+meta.date,m,m+6);doc.text(String(page),m+w,m+6,{align:'right'});y=m+layout.metaHeight;doc.setFillColor(240);doc.rect(m,y,w,layout.headerHeight,'F');doc.setFontSize(6.5);headers.forEach((v,i)=>{if(i)doc.text(v,xs[i]+1.5,y+7);});y+=layout.headerHeight;};
+    const heading=()=>{page++;perPage.push(0);doc.setFontSize(6.5);doc.setTextColor(35);doc.text('PharmFlow Expiry Shelf Check - '+String(meta.pharmacy||'')+' - '+meta.date,m,m+6);doc.text(String(page),m+w,m+6,{align:'right'});y=m+layout.metaHeight;doc.setFillColor(240);doc.rect(m,y,w,layout.headerHeight,'F');doc.setFontSize(6.5);headers.forEach((v,i)=>{if(i)doc.text(v,xs[i]+1.5,y+9);});y+=layout.headerHeight;};
     heading();
     fitted.forEach(row=>{
       const height=Math.max(layout.rowHeight,...row.map(lines=>lines.length*9+3));
@@ -52,28 +54,31 @@
       row.forEach((lines,i)=>{if(!i){doc.rect(xs[0]+2,y+3,4.5,4.5);return;}doc.setFontSize(layout.font);lines.forEach((line,j)=>doc.text(line,i===7?xs[i]+widths[i]-1.5:xs[i]+1.5,y+8+j*9,i===7?{align:'right'}:undefined));});
       y+=height;perPage[page-1]++;
     });
-    doc.pharmflowReport={rows:data.length,rowsPerPage:perPage,orientation:'portrait',font:layout.font,rowHeight:'content',shortenedNames:0};
+    doc.pharmflowReport={rows:data.length,rowsPerPage:perPage,orientation:'landscape',font:layout.font,rowHeight:'content',shortenedNames:0};
     guard();if(save)doc.save('PharmFlow_Expiry_Shelf_Check.pdf');return doc;
   }
   function printMarkup(data,meta){
-    const widths=paperWidths(data,595.28-2*layout.margin);
-    return '<div class="expiryPaperMeta">PharmFlow Expiry Shelf Check - '+escape(meta.pharmacy)+' - '+escape(meta.date)+'</div><table><colgroup>'+widths.map(w=>'<col style="width:'+w/(595.28-2*layout.margin)*100+'%">').join('')+'</colgroup><thead><tr>'+headers.map(v=>'<th>'+escape(v)+'</th>').join('')+'</tr></thead><tbody>'+data.map(row=>'<tr>'+row.map((v,i)=>'<td'+([1,2,5,6,7].includes(i)?' class="essential"':'')+'><span'+''+'>'+escape(i===0?'□':v)+'</span></td>').join('')+'</tr>').join('')+'</tbody></table>';
+    const widths=paperWidths(data,841.89-2*layout.margin);
+    return '<div class="expiryPaperMeta">PharmFlow Expiry Shelf Check - '+escape(meta.pharmacy)+' - '+escape(meta.date)+'</div><table><colgroup>'+widths.map(w=>'<col style="width:'+w/(841.89-2*layout.margin)*100+'%">').join('')+'</colgroup><thead><tr>'+headers.map(v=>'<th>'+escape(v)+'</th>').join('')+'</tr></thead><tbody>'+data.map(row=>'<tr>'+row.map((v,i)=>'<td'+([1,2,5,6,7].includes(i)?' class="essential"':'')+'><span'+''+'>'+escape(i===0?'□':v)+'</span></td>').join('')+'</tr>').join('')+'</tbody></table>';
   }
   function workbookBytes(wb){
+    const sheet=wb.Sheets[wb.SheetNames[0]],range=XLSX.utils.decode_range(sheet['!ref']);
+    for(let i=1;i<=range.e.r;i++){const cell=sheet['F'+(i+1)];if(cell&&cell.t==='n')cell.z='mm/yyyy';}
+    sheet['!rows']=[{hpt:18},...Array.from({length:range.e.r},()=>({hpt:15}))];
     if(!XLSX.CFB)throw Error('Excel print configuration unavailable. Reload and retry.');
     const zip=XLSX.CFB.read(new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'})),{type:'buffer'}),decoder=new TextDecoder(),encoder=new TextEncoder();
     const patch=(path,fn)=>{const i=zip.FullPaths.findIndex(p=>p.endsWith('/'+path));if(i<0)throw Error('Excel package missing '+path);const entry=zip.FileIndex[i];entry.content=encoder.encode(fn(decoder.decode(entry.content)));entry.size=entry.content.length;};
-    patch('xl/worksheets/sheet1.xml',xml=>xml.replace(/<worksheet([^>]*)>/,'<worksheet$1><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>').replace(/<sheetViews>[\s\S]*?<\/sheetViews>/,'<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>').replace(/<pageMargins[^>]*\/>/,m=>'<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>'));
+    patch('xl/worksheets/sheet1.xml',xml=>xml.replace(/<worksheet([^>]*)>/,'<worksheet$1><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>').replace(/<sheetViews>[\s\S]*?<\/sheetViews>/,'<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>').replace(/<pageMargins[^>]*\/>/,m=>'<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'));
     let headerStyle;
     patch('xl/styles.xml',xml=>{
       const fonts=Number(xml.match(/<fonts count="(\d+)"/)[1]),fills=Number(xml.match(/<fills count="(\d+)"/)[1]);
       headerStyle=Number(xml.match(/<cellXfs count="(\d+)"/)[1]);
-      return xml.replace(/<sz val="[\d.]+"\s*\/>/g,'<sz val="10"/>')
-        .replace(/<fonts count="\d+"/, '<fonts count="'+(fonts+1)+'"').replace('</fonts>','<font><sz val="10"/><b/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>')
+      return xml.replace(/<sz val="[\d.]+"\s*\/>/g,'<sz val="9"/>')
+        .replace(/<fonts count="\d+"/, '<fonts count="'+(fonts+1)+'"').replace('</fonts>','<font><sz val="9"/><b/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>')
         .replace(/<fills count="\d+"/,'<fills count="'+(fills+1)+'"').replace('</fills>','<fill><patternFill patternType="solid"><fgColor rgb="FF304E70"/><bgColor indexed="64"/></patternFill></fill></fills>')
         .replace(/<cellXfs count="\d+"/,'<cellXfs count="'+(headerStyle+1)+'"')
-        .replace(/<xf([^>]*?)\/>/g,'<xf$1 applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>')
-        .replace('</cellXfs>','<xf numFmtId="0" fontId="'+fonts+'" fillId="'+fills+'" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf></cellXfs>');
+        .replace(/<xf([^>]*?)\/>/g,'<xf$1 applyAlignment="1"><alignment vertical="center" wrapText="0"/></xf>')
+        .replace('</cellXfs>','<xf numFmtId="0" fontId="'+fonts+'" fillId="'+fills+'" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="0"/></xf></cellXfs>');
     });
     patch('xl/worksheets/sheet1.xml',xml=>xml.replace(/(<row r="1"[^>]*>)([\s\S]*?)(<\/row>)/,(all,start,body,end)=>start+body.replace(/<c([^>]*)>/g,(match,attrs)=>'<c'+attrs.replace(/ s="\d+"/,'')+' s="'+headerStyle+'">')+end));
 

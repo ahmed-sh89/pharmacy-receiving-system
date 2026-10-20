@@ -1,0 +1,55 @@
+-- STAGING ONLY: disposable captures; complete transaction is rolled back.
+begin;
+set local statement_timeout='45s';
+do $qa$
+declare actor uuid;pa uuid;pb uuid;sid uuid;ses uuid;device text;desktop uuid;handheld uuid;op uuid:=gen_random_uuid();req uuid:=gen_random_uuid();prefix text:='QA-FINAL-'||gen_random_uuid();cap jsonb;filters jsonb;page jsonb;preview jsonb;one jsonb;receipt jsonb;rest jsonb;group_value text;rejected boolean;sid_rows jsonb;
+begin
+ select id into strict actor from auth.users where email='tc26-expiry@example.invalid';
+ select pharmacy_id into strict pa from public.pharmacy_members where user_id=actor and active;
+ select id into strict pb from public.pharmacies where id<>pa limit 1;
+ select id into strict sid from auth.sessions where user_id=actor and (not_after is null or not_after>now()) order by created_at desc limit 1;
+ select public.pharmflow_normalize_main_group_v1(group_name) into strict group_value from public.pharmflow_global_items_v2 where item_code='1011923';
+ if group_value is null then raise exception 'Fixture needs canonical Group';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','session_id',sid,'exp',extract(epoch from now()+interval '1 hour'))::text,true);
+ execute 'set local role authenticated';
+ select worker_id into strict desktop from public.list_pharmacy_expiry_workers(pa) where worker_name='Desktop';
+ select worker_id into strict handheld from public.list_pharmacy_expiry_workers(pa) where worker_name='Handheld';
+ ses:=(public.get_pharmflow_expiry_auth_session_v1(pa,'QA-'||prefix)->>'session_id')::uuid;
+ execute 'reset role';select device_id into strict device from pharmflow_expiry_private.active_sessions_v1 where id=ses;execute 'set local role authenticated';
+ cap:=jsonb_build_object('kind','KNOWN','source','PC','worker_id',desktop,'device_id',device,'item_code','1011923','item_name','Disposable final acceptance fixture','identifier_display','06291100080069','raw_scan','06291100080069','scan_format','PLAIN','sample_serial',null,'batch_no',prefix||'A','expiry_month',2,'expiry_year',2031,'quantity',2);
+ perform public.save_pharmflow_expiry_desktop_capture_v1(pa,ses,op,cap);
+ perform public.save_pharmflow_expiry_desktop_capture_v1(pa,ses,gen_random_uuid(),cap||jsonb_build_object('batch_no',prefix||'B','quantity',3));
+ perform public.save_pharmflow_expiry_desktop_capture_v1(pa,ses,gen_random_uuid(),cap||jsonb_build_object('worker_id',handheld,'batch_no',prefix||'C','quantity',7));
+ filters:=jsonb_build_object('search',prefix,'operators',jsonb_build_array('Desktop'),'groups',jsonb_build_array(group_value),'months',jsonb_build_array('2031-02'));
+ page:=public.query_pharmflow_expiry_inventory_v1(pa,filters,false,'ADDED',0,40);
+ if (page->>'count')::int<>2 or (page->>'units')::int<>5 or not(page->'operators' ? 'Desktop') or not(page->'operators' ? 'Handheld') then raise exception 'Operator facet/filter mismatch';end if;
+ if exists(select 1 from jsonb_array_elements(page->'rows') r where r->>'first_operator_name'<>'Desktop') then raise exception 'Wrong Operator in result';end if;
+ if jsonb_array_length(public.export_pharmflow_expiry_inventory_v1(pa,filters,false))<>2 then raise exception 'Filtered paper scope mismatch';end if;
+ preview:=public.select_pharmflow_expiry_inventory_v1(pa,filters,false,null);
+ if (preview->>'count')::int<>2 or (preview->>'units')::int<>5 then raise exception 'Selection scope differs';end if;
+ select coalesce(jsonb_agg(r),'[]'::jsonb) into sid_rows from jsonb_array_elements(public.list_pharmflow_expiry_desktop_session_v1(pa,ses)) r where r->>'batch_no' like prefix||'%';
+ if jsonb_array_length(sid_rows)<>3 or exists(select 1 from jsonb_array_elements(sid_rows) r where r->>'group_name' is distinct from group_value) then raise exception 'Canonical Session Group mismatch';end if;
+ rejected:=false;begin perform public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('operators','bad'),false,'ADDED',0,40);exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Invalid operator filter accepted';end if;
+ rejected:=false;begin perform public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('operators',jsonb_build_array(42)),false,'ADDED',0,40);exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Non-text operator accepted';end if;
+ rejected:=false;begin perform public.query_pharmflow_expiry_inventory_v1(pb,filters,false,'ADDED',0,40);exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Cross-pharmacy query accepted';end if;
+ -- Existing all-filtered Remove must honor the same combined Operator filter.
+ perform public.resolve_all_filtered_pharmflow_expiry_inventory_v1(pa,gen_random_uuid(),filters,preview->'selection',2,5);
+ page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',prefix),false,'ADDED',0,40);
+ if (page->>'count')::int<>1 or (page->>'units')::int<>7 then raise exception 'Filtered Remove touched unrelated Operator';end if;
+ preview:=public.select_pharmflow_expiry_inventory_v1(pa,filters,true,null);
+ one:=jsonb_build_array(preview->'selection'->0);
+ receipt:=public.mutate_pharmflow_expiry_inventory_v1(pa,req,'CLEAR_RESOLVED',one);
+ if (receipt->>'count')::int<>1 or public.mutate_pharmflow_expiry_inventory_v1(pa,req,'CLEAR_RESOLVED',one) is distinct from receipt then raise exception 'Selected clear retry failed';end if;
+ rest:=public.select_pharmflow_expiry_inventory_v1(pa,filters,true,null);
+ if (rest->>'count')::int<>1 then raise exception 'Clear Selected touched unselected rows';end if;
+ rejected:=false;begin perform public.mutate_pharmflow_expiry_inventory_v1(pa,gen_random_uuid(),'RESTORE',one);exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Stale cleared selection restored';end if;
+ perform public.mutate_pharmflow_expiry_inventory_v1(pa,gen_random_uuid(),'RESTORE',rest->'selection');
+ if (public.select_pharmflow_expiry_inventory_v1(pa,filters,true,null)->>'count')::int<>0 then raise exception 'Restore did not finish';end if;
+ execute 'reset role';
+ if (select count(*) from pharmflow_expiry_private.resolved_inventory_v1 where pharmacy_id=pa and snapshot->>'batch_no' like prefix||'%')<>2 then raise exception 'Historical snapshots lost';end if;
+ execute 'set local role anon';
+ if has_function_privilege('anon','public.query_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean,text,integer,integer)','execute') then raise exception 'Anon gained execution';end if;
+ execute 'reset role';
+end $qa$;
+rollback;
+select 'PASS: combined server filters, canonical Session Group, exact selected Clear/Restore, retry, stale selection, scope isolation; all fixture writes rolled back' result;

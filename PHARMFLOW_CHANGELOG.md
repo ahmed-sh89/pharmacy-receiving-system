@@ -1,3 +1,7 @@
+# 2026-10-20 — Final Expiry acceptance fixes
+
+Real Excel expiry dates and compact landscape reports; anchored row menus, canonical Group tables, original-Operator filter and durable selected Clear/Restore. Staging migration 20261020045631_expiry_acceptance_reports_filters_v1 changes read contracts only. 252 focused tests/build plus authenticated rollback SQL and Chromium/artifact checks PASS; original data fingerprints unchanged. See docs/expiry-final-acceptance-verification.md. Physical/Excel/two-PC acceptance pending. Production untouched.
+
 # PharmFlow Changelog
 
 ## 2026-10-20 — Resolved Clear All
