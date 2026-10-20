@@ -931,7 +931,7 @@ function buildReceivingResolverSelectionModel(item,quantity,workScopeOrderNumber
         : delta>0
             ? {label:"OVER",value:`+${delta}`,className:"isOver"}
             : delta<0
-                ? {label:"REMAINING",value:`-${Math.abs(delta)}`,className:"isRemaining"}
+                ? {label:"REMAINING",value:String(Math.abs(delta)),className:"isRemaining"}
                 : {label:"COMPLETE",value:"0",className:"isComplete"};
     return {item,quantity:qty,scope,plan,ordered,received,afterReceived,status,totalOrders:new Set(plan.map(row=>row.orderNumber)).size};
 }
@@ -1105,7 +1105,10 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 const quantity=readQuantity();
                 reviewDraft=reviewDraft||await nrV2CreateDraft({...parsed,quantity,identifierDisplay:gtin},{operationId:reviewOperationId,workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
                 if(!reviewDraft?.review_id)throw new Error("Review confirmation is unavailable. Retry Save for Review.");
-                await nrV2SetQty(reviewDraft.review_id,quantity);
+                const savedReview=await nrV2SetQty(reviewDraft.review_id,quantity);
+                if(savedReview?.review_id!==reviewDraft.review_id||Number(savedReview?.pending_quantity)!==quantity){
+                    throw new Error("Saved quantity could not be confirmed. Retry Save for Review.");
+                }
                 await refreshNeedsReviewCounters?.();finish(true);
             }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
             finally{reviewSaving=false;button.disabled=false;}
