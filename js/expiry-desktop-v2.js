@@ -346,7 +346,7 @@
     el('expiryQuickClearKpi').hidden=!monthFilters.hasKpis(filters);
     el('expirySelect').innerHTML=inventoryIcon(selectionMode?'close':'check');el('expirySelect').setAttribute('aria-label',selectionMode?'Exit selection mode':'Enter selection mode');el('expirySelect').title=selectionMode?'Exit selection mode':'Enter selection mode';el('expirySelect').setAttribute('aria-pressed',String(selectionMode));el('expirySelect').onclick=()=>{selectionMode=!selectionMode;selected.clear();closeInventoryMenus();render();};
     document.querySelector('.expiryInventoryTable')?.classList.toggle('is-selecting',selectionMode);
-    el('expiryBulkMenu').hidden=!selectionMode&&!resolved;el('expiryBulkMenu').parentElement.hidden=!selectionMode&&!resolved;el('expiryAll').hidden=false;el('expiryAll').disabled=!page.count;el('expiryAll').textContent=resolved?'Restore All':'Remove All Filtered…';
+    el('expiryBulkMenu').hidden=!selectionMode&&!resolved;el('expiryBulkMenu').parentElement.hidden=!selectionMode&&!resolved;el('expiryAll').hidden=false;el('expiryAll').disabled=!page.count;el('expiryAll').textContent=resolved?'Restore All':'Remove All Filtered…';el('expiryClearResolved').hidden=!resolved;el('expiryClearResolved').disabled=!page.count;el('expiryBulkMenuPanel').classList.toggle('expiryResolvedBulkMenu',resolved);
     el('expiryBulkAction').hidden=!selectionMode||!selected.size;
     el('expiryBulkAction').textContent=(resolved?'Restore ':'Remove ')+selected.size+' Selected';el('expiryBulkAction').disabled=!selected.size;
     el('expiryPageLabel').textContent=page.count?'Rows '+(offset+1)+'–'+Math.min(offset+pageSize,page.count)+' of '+page.count:'No records';
@@ -661,7 +661,7 @@
         target?.focus?.({ preventScroll: true });
       });
     }
-    dialog.className = "expiryRecordDialog" + (options.context === "session" ? " expirySessionDialog" : "") + (/resolve|restore/i.test(title) ? " is-resolve" : options.destructive ? " is-delete" : "");
+    dialog.className = "expiryRecordDialog" + (options.context === "session" ? " expirySessionDialog" : "") + (options.context === "clear" ? " is-delete" : /resolve|restore/i.test(title) ? " is-resolve" : options.destructive ? " is-delete" : "");
     returnFocus = trigger || document.activeElement;
     dialog.innerHTML =
       '<form novalidate><header><h2 id="expiryRecordDialogTitle">' +
@@ -683,6 +683,7 @@
       const submit = dialog.querySelector("[type=submit]");
       const submitLabel = submit?.textContent;
       if (submit && options.context === "session") submit.textContent = options.destructive ? "Removing…" : "Saving…";
+      if (submit && options.context === "clear") submit.textContent = "Clearing…";
       dialog
         .querySelectorAll("button,input,select")
         .forEach((b) => (b.disabled = true));
@@ -820,25 +821,27 @@
       trigger,
     );
   }
-  async function confirmSelection(ids,trigger){
+  async function confirmSelection(ids,trigger,clearList=false){
+    if(clearList&&(!resolved||mode!=="INVENTORY"||ids!==null))return;
     if(busy||previewing)return;previewing=true;if(trigger)trigger.disabled=true;
     const ownScope=scope(),filterSnapshot=JSON.parse(JSON.stringify(filters)),context=resolved,allFiltered=ids==null;
     try{
       const wireFilters=await effectiveFilters(filterSnapshot,context);
       const preview=await authRpc('select_pharmflow_expiry_inventory_v1',{...authArgs(),p_filters:wireFilters,p_resolved:context,p_ids:ids});
-      const guard=()=>{if(ownScope!==scope()||JSON.stringify(filterSnapshot)!==JSON.stringify(filters)||context!==resolved){const e=Error('Inventory scope or filters changed. Review again.');e.reviewRequired=true;throw e;}};guard();
-      if(!preview.count){setExpiryStatus('action','NO MATCHING SELECTION');return;}
+      const guard=()=>{if(mode!=='INVENTORY'||ownScope!==scope()||JSON.stringify(filterSnapshot)!==JSON.stringify(filters)||context!==resolved){const e=Error('Inventory scope or filters changed. Review again.');e.reviewRequired=true;throw e;}};guard();
+      if(!preview.count){if(clearList){void refresh();if(typeof showToast==='function')showToast('No records to clear.','info');}else setExpiryStatus('action','NO MATCHING SELECTION');return;}
       if(!allFiltered&&(preview.count!==new Set(ids).size||preview.selection.length!==preview.count||preview.selection.some(r=>!ids.includes(r.id))))throw Error('Selected records changed; select and review again.');
-      const snapshot=JSON.parse(JSON.stringify(preview.selection)),args={...authArgs(),p_request_id:crypto.randomUUID(),p_action:context?'RESTORE':'RESOLVE',p_selection:snapshot};
+      const snapshot=JSON.parse(JSON.stringify(preview.selection)),args={...authArgs(),p_request_id:crypto.randomUUID(),p_action:clearList?'CLEAR_RESOLVED':context?'RESTORE':'RESOLVE',p_selection:snapshot};
       const filteredArgs={...authArgs(),p_request_id:args.p_request_id,p_filters:wireFilters,p_selection:snapshot,p_expected_count:preview.count,p_expected_units:preview.units};
-      const verb=context?'Restore':'Remove';
+      if(clearList&&(preview.selection.length!==preview.count||new Set(preview.selection.map(r=>r.id)).size!==preview.count))throw Error('Resolved list changed; refresh and confirm again.');
+      const verb=clearList?'Clear All':context?'Restore':'Remove';
       const singleRecord=!allFiltered&&ids.length===1?page.rows.find(r=>r.row_id===ids[0]):null;
-      const summary=(singleRecord?identity(singleRecord):'')+'<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(context?'The selected quantities will return to active Inventory.':'This item will be removed from the active list and kept in History.')+'</p>'+(singleRecord?'':'<p>'+(allFiltered?'All matching records across every page.':'Only the selected records.')+'</p>');
-      openDialog(context?'Restore '+preview.count+' records?':singleRecord?'Remove this item?':'Remove '+preview.count+' records?',summary,async()=>{
-        guard();try{return await mutation(allFiltered&&!context?filteredArgs:args,allFiltered&&!context?'resolve_all_filtered_pharmflow_expiry_inventory_v1':'mutate_pharmflow_expiry_inventory_v1');}
+      const summary=clearList?'<p>This will clear <strong>'+preview.count+' records</strong> from the Resolved list. Historical data will be kept.</p>':(singleRecord?identity(singleRecord):'')+'<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(context?'The selected quantities will return to active Inventory.':'This item will be removed from the active list and kept in History.')+'</p>'+(singleRecord?'':'<p>'+(allFiltered?'All matching records across every page.':'Only the selected records.')+'</p>');
+      openDialog(clearList?'Clear resolved list?':context?'Restore '+preview.count+' records?':singleRecord?'Remove this item?':'Remove '+preview.count+' records?',summary,async()=>{
+        guard();try{const result=await mutation(allFiltered&&!context?filteredArgs:args,allFiltered&&!context?'resolve_all_filtered_pharmflow_expiry_inventory_v1':'mutate_pharmflow_expiry_inventory_v1');if(clearList){offset=0;if(typeof showToast==='function')showToast('Cleared '+result.count+' records from the Resolved list.','success');}return result;}
         catch(e){if(/changed|unavailable|scope/i.test(e.message))e.reviewRequired=true;throw e;}
-      },trigger,{destructive:!context,confirmLabel:verb});
-    }catch(e){setExpiryStatus('error',e.message||'Unable to preview selection');}finally{previewing=false;if(trigger)trigger.disabled=false;}
+      },trigger,{context:clearList?"clear":undefined,destructive:clearList||!context,confirmLabel:verb});
+    }catch(e){if(clearList&&typeof showToast==='function')showToast(e.message||'Unable to open Clear All.','error');else setExpiryStatus('error',e.message||'Unable to preview selection');}finally{previewing=false;if(trigger)trigger.disabled=false;}
   }
   async function shelfRows(fullActive=false) {
     return authRpc("export_pharmflow_expiry_inventory_v1", {
@@ -905,7 +908,7 @@
       footer.id = "expiryPager";
       footer.className = "expiryPager";
       footer.innerHTML =
-        '<span id="expiryResultSummary"></span><div class="expiryBulkMenu"><button id="expiryBulkMenu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expiryBulkMenuPanel" hidden>Bulk Actions</button><div id="expiryBulkMenuPanel" class="expiryFloatingMenu" popover="manual" role="menu" aria-label="Bulk inventory actions" hidden><button id="expiryAll" type="button" role="menuitem">Remove All Filtered…</button></div></div><button id="expiryBulkAction" type="button" disabled>Remove Selected</button><label class="expiryPageSize">Rows <select id="expiryPageSize" aria-label="Records per page"><option>20</option><option selected>40</option><option>50</option><option>100</option></select></label><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
+        '<span id="expiryResultSummary"></span><div class="expiryBulkMenu"><button id="expiryBulkMenu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expiryBulkMenuPanel" hidden>Bulk Actions</button><div id="expiryBulkMenuPanel" class="expiryFloatingMenu" popover="manual" role="menu" aria-label="Bulk inventory actions" hidden><button id="expiryAll" type="button" role="menuitem">Remove All Filtered…</button><button id="expiryClearResolved" class="expiryClearResolved" type="button" role="menuitem" hidden>Clear All</button></div></div><button id="expiryBulkAction" type="button" disabled>Remove Selected</button><label class="expiryPageSize">Rows <select id="expiryPageSize" aria-label="Records per page"><option>20</option><option selected>40</option><option>50</option><option>100</option></select></label><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
       document.querySelector(".expiryCurrentWorkspace").appendChild(footer);
       document.body.appendChild(el('expiryBulkMenuPanel'));
       const exportStatus=document.createElement('p');exportStatus.id='expiryExportStatus';exportStatus.className='expiryExportStatus';exportStatus.hidden=true;exportStatus.setAttribute('aria-live','polite');footer.before(exportStatus);
@@ -944,6 +947,7 @@
         selected.clear();
         void refresh();
       };
+      el("expiryClearResolved").onclick=()=>{closeInventoryMenus();void confirmSelection(null,el("expiryBulkMenu"),true);};
       el("expiryAll").onclick = () => {closeInventoryMenus();void confirmSelection(null, el("expiryBulkMenu"));};
       el("expiryBulkAction").onclick = (e) =>
         confirmSelection([...selected], e.target);
