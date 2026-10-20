@@ -44,14 +44,14 @@
     widths.slice(0,-1).forEach(v=>xs.push(xs.at(-1)+v));
     const fitted=data.map(row=>row.map((v,i)=>i===0?['']:wrap(v,widths[i]-3,measure,i===3||i===4)));
     let y=0,page=0,perPage=[];
-    const heading=()=>{page++;perPage.push(0);doc.setFontSize(6.5);doc.setTextColor(35);doc.text('PharmFlow Expiry Shelf Check - '+String(meta.pharmacy||'')+' - '+meta.date,m,m+6);doc.text(String(page),m+w,m+6,{align:'right'});y=m+layout.metaHeight;doc.setFillColor(240);doc.rect(m,y,w,layout.headerHeight,'F');doc.setFontSize(6.5);headers.forEach((v,i)=>{if(i)doc.text(v,xs[i]+1.5,y+9);});y+=layout.headerHeight;};
+    const heading=()=>{page++;perPage.push(0);doc.setFontSize(6.5);doc.setTextColor(35);doc.text('PharmFlow Expiry Shelf Check - '+String(meta.pharmacy||'')+' - '+meta.date,m,m+6);doc.text(String(page),m+w,m+6,{align:'right'});y=m+layout.metaHeight;doc.setFillColor(240);doc.rect(m,y,w,layout.headerHeight,'F');doc.setFontSize(6.5);headers.forEach((v,i)=>{if(i)doc.text(v,i===7?xs[i]+widths[i]/2:xs[i]+1.5,y+9,i===7?{align:'center'}:undefined);});y+=layout.headerHeight;};
     heading();
     fitted.forEach(row=>{
       const height=Math.max(layout.rowHeight,...row.map(lines=>lines.length*9+3));
       if(height>h-2*m-layout.metaHeight-layout.headerHeight)throw Error('A report row exceeds one page. Use Excel for this record.');
       if(y+height>h-m){doc.addPage();heading();}
       doc.setDrawColor(165);doc.setLineWidth(.2);doc.line(m,y+height,m+w,y+height);
-      row.forEach((lines,i)=>{if(!i){doc.rect(xs[0]+2,y+3,4.5,4.5);return;}doc.setFontSize(layout.font);lines.forEach((line,j)=>doc.text(line,i===7?xs[i]+widths[i]-1.5:xs[i]+1.5,y+8+j*9,i===7?{align:'right'}:undefined));});
+      row.forEach((lines,i)=>{if(!i){doc.rect(xs[0]+2,y+3,4.5,4.5);return;}doc.setFontSize(layout.font);lines.forEach((line,j)=>doc.text(line,i===7?xs[i]+widths[i]/2:xs[i]+1.5,y+8+j*9,i===7?{align:'center'}:undefined));});
       y+=height;perPage[page-1]++;
     });
     doc.pharmflowReport={rows:data.length,rowsPerPage:perPage,orientation:'landscape',font:layout.font,rowHeight:'content',shortenedNames:0};
@@ -81,6 +81,21 @@
         .replace('</cellXfs>','<xf numFmtId="0" fontId="'+fonts+'" fillId="'+fills+'" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="0"/></xf></cellXfs>');
     });
     patch('xl/worksheets/sheet1.xml',xml=>xml.replace(/(<row r="1"[^>]*>)([\s\S]*?)(<\/row>)/,(all,start,body,end)=>start+body.replace(/<c([^>]*)>/g,(match,attrs)=>'<c'+attrs.replace(/ s="\d+"/,'')+' s="'+headerStyle+'">')+end));
+
+
+    // Clone only Quantity cell styles, including its header; leave date/text formats intact.
+    patch('xl/styles.xml',xml=>xml.replace(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/,(all,count,body)=>{
+      const styles=body.match(/<xf\b[^>]*>[\s\S]*?<\/xf>|<xf\b[^>]*\/>/g),centered=new Map(),extra=[];
+      patch('xl/worksheets/sheet1.xml',sheetXml=>sheetXml.replace(/<c\b([^>]*\br="G\d+"[^>]*)>/g,(cell,attrs)=>{
+        const prior=Number(attrs.match(/\bs="(\d+)"/)?.[1]||0);
+        if(!centered.has(prior)){
+          centered.set(prior,Number(count)+extra.length);
+          extra.push(styles[prior].replace(/<alignment\b([^>]*?)\/>/,(tag,a)=>'<alignment'+a.replace(/\s+horizontal="[^"]*"/g,'')+' horizontal="center"/>'));
+        }
+        return '<c'+attrs.replace(/ s="\d+"/,'')+' s="'+centered.get(prior)+'">';
+      }));
+      return '<cellXfs count="'+(Number(count)+extra.length)+'">'+body+extra.join('')+'</cellXfs>';
+    }));
 
     const ref=wb.Sheets[wb.SheetNames[0]]['!ref'];
     const names='<definedName name="_xlnm.Print_Area" localSheetId="0">&apos;Expiry Inventory&apos;!'+ref.split(':').map(a=>a.replace(/([A-Z]+)(\d+)/,'$$$1$$$2')).join(':')+'</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">&apos;Expiry Inventory&apos;!$1:$1</definedName>';

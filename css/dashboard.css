@@ -7330,7 +7330,7 @@ body:not(.zebraDevice) #zebraExpiryShell button:disabled{opacity:.55;cursor:defa
  #expiryShelfPrint td span{display:block;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;line-height:9pt}
  #expiryShelfPrint td.essential span{word-break:break-all}
  #expiryShelfPrint tr{break-inside:avoid;page-break-inside:avoid}
- #expiryShelfPrint td:last-child{text-align:right}
+ #expiryShelfPrint th:last-child,#expiryShelfPrint td:last-child{text-align:center}
  #expiryShelfPrint td.essential{font-size:6.5pt!important}
  .expiryFloatingMenu{display:none!important}
 }

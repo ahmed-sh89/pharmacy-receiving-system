@@ -1,5 +1,9 @@
 # PharmFlow current Staging checkpoint
 
+## 2026-10-20 — Report Quantity alignment
+
+Baseline d7a46fcb6899d7a0c2d2eb7fd7465f44425b2c98. Quantity header and values centered in Excel/PDF/Print only. Date hierarchy and real mm/yyyy expiry cells unchanged; widths, heights, fonts, A4 Landscape and pagination preserved. Generated 180-row XLSX verified (all Quantity styles centered), actual PDF/Chromium Print rendered and inspected; PDF remains five pages with 41/45/45/45/4 rows. Focused report/regression tests and build PASS. No SQL or Production access. Physical Excel/printer acceptance pending. READY FOR PRODUCT OWNER TEST.
+
 ## 2026-10-20 — Final Expiry acceptance fixes
 
 Baseline 788e60db49cb140e048711898cb6f677cfe30917. Real Excel month dates, compact A4 Landscape reports, exact-trigger row menu, canonical Group in Session, readable columns, colored filters plus first-Operator multiselect, and Restore/Clear Selected. Applied Staging read-only-contract migration 20261020045631_expiry_acceptance_reports_filters_v1; no operational data/attribution/RLS changes.
