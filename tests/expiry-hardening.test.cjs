@@ -6,7 +6,7 @@ test('Inventory Operator follows Quantity and action menu uses existing quantity
  assert.deepEqual(heads.slice(-4),['Quantity','Operator','Last Updated','Actions']);
  assert.equal(h.document.querySelector('.expiryOperatorCell').textContent,h.data[0].first_operator_name);
  const trigger=h.document.querySelector('[data-row-actions]');trigger.onclick();
- const panel=h.e('expiryRowActionPanel');assert.equal(panel.hidden,false);assert.match(panel.textContent,/EditResolve/);
+ const panel=h.e('expiryRowActionPanel');assert.equal(panel.hidden,false);assert.match(panel.textContent,/EditRemove/);
  panel.querySelector('[data-menu-edit]').click();const d=h.document.querySelector('dialog');assert.equal(d.open,true);
  for(const name of ['Item Name','Item Code','GTIN','Batch','Expiry'])assert.match(d.textContent,new RegExp(name));
  d.querySelector('[data-total]').value='12';await h.submit();assert(h.calls.some(c=>c.name==='mutate_pharmflow_expiry_inventory_v1'&&c.p.p_quantity===12));

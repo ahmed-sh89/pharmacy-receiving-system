@@ -195,7 +195,7 @@ async function loadExpiryWorkers(){
         ExpiryCaptureEngine.selectedWorkerId = stable;
 
     }else{
-        ExpiryCaptureEngine.selectedWorkerId = "";
+        ExpiryCaptureEngine.selectedWorkerId = ExpiryCaptureEngine.workers.find(w => w.worker_name === (expiryIsHandheld()?"Handheld":"Desktop"))?.worker_id || "";
     }
 
     renderExpiryWorkerSelects();
@@ -1090,7 +1090,8 @@ async function saveExpiryCapture(options={}){
     if(year > 0 && year < 100) year += 2000;
 
     if(!workerId){
-        setExpiryStatus("action","SELECT WORKER");
+        setExpiryStatus("error","Select an Operator before saving. Your capture has been retained.");
+        document.getElementById("expiryWorkerSelect")?.focus();
         return;
     }
     if(!item){
@@ -1969,9 +1970,8 @@ function bindExpiryCaptureUI(){
         worker.addEventListener("change", () => {
             selectExpiryWorker(expiryControlValue(worker));
 
-            /* Desktop operator is optional. Always return focus to Scan after
-               changing or clearing it so hardware input never remains trapped
-               in the operator select. Handheld keeps its required-worker guard. */
+            /* An Operator change never submits a retained capture. Return focus
+               through the existing scanner mechanism; save remains explicit. */
             if(!expiryIsHandheld() || expiryControlValue(worker)){
                 setTimeout(()=>{
                     focusExpiryScanner();
@@ -2196,7 +2196,7 @@ function renderExpiryWorkerSettingsList(){
         return;
     }
 
-    list.innerHTML = ExpiryCaptureEngine.workers.map(w => `
+    list.innerHTML = ExpiryCaptureEngine.workers.filter(w => !["Desktop","Handheld"].includes(w.worker_name)).map(w => `
         <div class="expiryWorkerRow">
             <strong>${expiryEscapeHtml(w.worker_name)}</strong>
             <button type="button" class="secondaryButton" data-expiry-worker-rename="${expiryEscapeHtml(w.worker_id)}">Rename</button>

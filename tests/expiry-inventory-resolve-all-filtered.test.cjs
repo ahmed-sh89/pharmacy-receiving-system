@@ -6,13 +6,11 @@ async function openAllFiltered(h){
   h.e('expiryBulkMenu').onclick();
   h.e('expiryAll').onclick();
   await tick();
-  assert.match(h.document.querySelector('dialog').textContent,/All filtered results across every page/);
-  await h.submit();
-  await tick();
-  assert.match(h.document.querySelector('dialog').textContent,/Final Resolve Confirmation/);
+  assert.match(h.document.querySelector('dialog').textContent,/All matching records across every page/);
+  assert.match(h.document.querySelector('dialog').textContent,/Remove 73 records/);
 }
 
-test('Resolve All Filtered confirms every server-matched row across pagination and requires RESOLVE',async()=>{
+test('Remove All Filtered confirms every server-matched row across pagination once',async()=>{
   const h=harness(),base=h.c.authRpc,calls=[];
   h.c.authRpc=async(name,p)=>{
     if(name==='resolve_all_filtered_pharmflow_expiry_inventory_v1'){
@@ -24,13 +22,8 @@ test('Resolve All Filtered confirms every server-matched row across pagination a
   await openAllFiltered(h);
   const dialog=h.document.querySelector('dialog'),button=dialog.querySelector('[type=submit]');
   assert.equal(button.classList.contains('danger'),true);
-  assert.match(button.textContent,/Resolve 73 Filtered/);
-  assert.equal(dialog.querySelector('#expiryResolvePhrase').value,'');
-  dialog.querySelector('#expiryResolvePhrase').value='resolve';
-  await h.submit();
-  assert.equal(calls.length,0);
-  assert.match(dialog.querySelector('[role=alert]').textContent,/Type RESOLVE/);
-  dialog.querySelector('#expiryResolvePhrase').value='RESOLVE';
+  assert.equal(button.textContent,'Remove');
+  assert.equal(dialog.querySelector('#expiryResolvePhrase'),null);
   await h.submit();
   assert.equal(calls.length,1);
   assert.equal(calls[0].p.p_expected_count,73);
@@ -52,7 +45,6 @@ test('A stale filtered scope is rejected and disables execution for that review'
   };
   await openAllFiltered(h);
   const dialog=h.document.querySelector('dialog');
-  dialog.querySelector('#expiryResolvePhrase').value='RESOLVE';
   await h.submit();
   assert.equal(calls,1);
   assert.match(dialog.querySelector('[role=alert]').textContent,/Filtered inventory changed/);
@@ -61,7 +53,7 @@ test('A stale filtered scope is rejected and disables execution for that review'
   assert.equal(h.data.length,73);
 });
 
-test('Resolve Selected and individual Resolve retain the existing explicit-selection RPC',async()=>{
+test('Remove Selected and individual Remove retain the existing explicit-selection RPC',async()=>{
   for(const mode of ['selected','individual']){
     const h=harness(),base=h.c.authRpc,mutations=[];
     h.c.authRpc=async(name,p)=>{
@@ -74,7 +66,7 @@ test('Resolve Selected and individual Resolve retain the existing explicit-selec
       const row=h.document.querySelector('[data-row-selection]');
       row.checked=true;row.onchange();
       h.e('expiryBulkAction').onclick({target:h.e('expiryBulkAction')});
-    }else h.document.querySelector('[data-row-resolve]').onclick();
+    }else {h.document.querySelector('[data-row-actions]').onclick();h.e('expiryRowActionPanel').querySelector('[data-menu-resolve]').click();}
     await tick();
     await h.submit();
     await h.submit();

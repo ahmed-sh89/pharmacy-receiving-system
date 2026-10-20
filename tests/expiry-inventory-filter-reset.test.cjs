@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),{harness}=r
 const fs=require('node:fs'),path=require('node:path');
 test('Inventory pages are server limited; session and Inventory never share KPI authority',async()=>{const h=harness();await h.refresh();assert.equal(h.document.querySelectorAll('[data-metric]').length,0);assert.equal(h.document.querySelector('[data-session-total=items]').textContent,'2');assert.equal(h.calls.some(x=>x.name==='query_pharmflow_expiry_inventory_v1'),false);await h.click('btnOpenExpiryInventory');assert.equal(h.e('expiryCurrentStateCount').textContent,'73');assert.equal(h.document.querySelectorAll('tbody tr').length,40);assert.equal(h.document.querySelector('.expiryCaptureCard').hidden,true);const q=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1).p;assert.equal(q.p_limit,40);assert.equal(q.p_offset,0);assert.equal(q.p_sort,'ADDED');});
 test('Combined search, month, Group and KPI bounds share one query contract; Clear removes every restriction',async()=>{
- const h=harness();await h.click('btnOpenExpiryInventory');h.document.querySelector('[data-period=NEXT6]').onclick();await new Promise(r=>setImmediate(r));
+ const h=harness();await h.click('btnOpenExpiryInventory');h.document.querySelector('[data-period=NEXT6]').onclick({detail:1});await h.flush();
  await h.click('expiryFilter');h.e('expirySectiongroups').onclick();h.e('expiryGroups').querySelector('[data-group]').onclick();h.e('expirySectionmonths').onclick();h.e('expiryMonths').querySelector('[data-month]').onclick();
  await h.e('expiryApplyFilters').onclick();await h.refresh();h.e('expiryCurrentSearch').value='Product';h.e('expiryCurrentSearch').oninput({target:h.e('expiryCurrentSearch')});await h.flush();
  const q=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1).p;assert.equal(q.p_filters.groups.length,1);assert.ok(q.p_filters.months.includes('2027-01'));assert.equal(q.p_filters.search,'Product');assert.equal(q.p_sort,'EXPIRY');
@@ -37,7 +37,7 @@ test('Filter popover keeps header, resolved controls and actions fixed around an
 });
 test('Expired KPI keeps the inclusive Through Oct 2026 label and boundary',async()=>{
  const h=harness();h.data[0].expiry_year=2026;h.data[0].expiry_month=10;h.data[1].expiry_year=2026;h.data[1].expiry_month=11;
- await h.click('btnOpenExpiryInventory');h.document.querySelector('[data-period="EXPIRED"]').onclick();await h.refresh();
+ await h.click('btnOpenExpiryInventory');h.document.querySelector('[data-period="EXPIRED"]').onclick({detail:1});await h.flush();await h.refresh();
  const query=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1);
  assert.equal(query.p.p_filters.to,2026*12+10);assert.equal(query.p.p_filters.from,undefined);assert.equal(h.e('expiryCurrentStateCount').textContent,'1');
  await h.click('expiryFilter');assert.match(h.e('expiryExpiredChoice').textContent,/Through Oct 2026/);

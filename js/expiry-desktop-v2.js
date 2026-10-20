@@ -121,7 +121,7 @@
   }
   function setMode() {
     const s = el("zebraExpiryShell");
-    if(mode!=="INVENTORY")closeInventoryMenus();
+    if(mode!=="INVENTORY"){closeInventoryMenus();cancelKpiClick();clearExportNotice();}
     s?.classList.toggle("expiryInventoryMode", mode === "INVENTORY");
     const capture = s?.querySelector(".expiryCaptureCard");
     if (capture) capture.hidden = mode === "INVENTORY";
@@ -151,6 +151,32 @@
     el("expiryPager").hidden = mode !== "INVENTORY";
     syncViewport();
     renderKpis();
+  }
+  let kpiClick=null, exportNoticeTimer=null, exportGeneration=0;
+  function cancelKpiClick(){if(kpiClick)clearTimeout(kpiClick.timer);kpiClick=null;}
+  function applyKpiSelection(key,add){
+    if(!summaryDisjoint||mode!=='INVENTORY'||resolved)return;
+    const p=periods.find(p=>p.key===key);if(!p)return;
+    if(!add){filters.months=[];delete filters.expiredThrough;delete filters.excludedMonths;delete filters.kpiMonths;delete filters.kpiExpired;expandedYears.clear();}
+    if(monthFilters.state(filters,p)!=='true')monthFilters.toggle(filters,p);
+    const reveal=p.from==null?page.months.filter(m=>monthFilters.number(m)<=p.to):monthFilters.months(p);
+    reveal.forEach(m=>expandedYears.add(m.slice(0,4)));expandedSections.add('months');
+    closeInventoryMenus();sort='EXPIRY';offset=0;selected.clear();++requestVersion;void refresh();
+  }
+  function queueKpiSelection(key,detail){
+    if(!summaryDisjoint)return;
+    // Wait once before replacing. A second click adds directly to the untouched selection.
+    if(kpiClick?.key===key){cancelKpiClick();applyKpiSelection(key,true);return;}
+    if(kpiClick){const previous=kpiClick.key;cancelKpiClick();applyKpiSelection(previous,false);}
+    if(detail===0){applyKpiSelection(key,false);return;}
+    const pending={key,timer:setTimeout(()=>{if(kpiClick!==pending)return;kpiClick=null;applyKpiSelection(key,false);},260)};kpiClick=pending;
+  }
+  function clearExportNotice(){++exportGeneration;clearTimeout(exportNoticeTimer);const node=el('expiryExportStatus');if(node){node.hidden=true;node.replaceChildren();}}
+  function exportNotice(message,error=false,transient=true){
+    clearTimeout(exportNoticeTimer);const node=el('expiryExportStatus');if(!node)return;
+    node.hidden=false;node.setAttribute('role',error?'alert':'status');node.replaceChildren();
+    const text=document.createElement('span');text.textContent=message;const close=document.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Dismiss export notification');close.onclick=clearExportNotice;node.append(text,close);
+    if(transient)exportNoticeTimer=setTimeout(clearExportNotice,error?12000:7000);
   }
   function renderKpis() {
     const root = document.querySelector("#zebraExpiryShell .expiryKpiRow");
@@ -182,19 +208,7 @@
           .join("");
         root.querySelectorAll("[data-period]").forEach(
           (b) =>
-            (b.onclick = () => {
-              if(!summaryDisjoint)return;
-              const p = periods.find((p) => p.key === b.dataset.period);
-              monthFilters.toggle(filters,p);
-              const reveal=p.from==null?page.months.filter(m=>monthFilters.number(m)<=p.to):monthFilters.months(p);
-              if(!filters.months.length&&filters.expiredThrough==null)expandedYears.clear();
-              else{reveal.filter(m=>monthFilters.has(filters,m)).forEach(m=>expandedYears.add(m.slice(0,4)));expandedSections.add('months');}
-              closeInventoryMenus();
-              sort = "EXPIRY";
-              offset = 0;
-              selected.clear();++requestVersion;
-              void refresh();
-            }),
+            (b.onclick = event => queueKpiSelection(b.dataset.period,event?.detail)),
         );
       }
       cards.forEach(p=>{
@@ -247,7 +261,7 @@
     }
     return [...groups.values()];
   }
-  const inventoryIcon = name => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ({sheet:'M4 3h16v18H4zM4 9h16M4 15h16M10 3v18',document:'M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6',check:'m5 12 4 4L19 6',chevron:'m7 10 5 5 5-5',printer:'M6 9V3h12v6M6 17H3V9h18v8h-3M6 14h12v7H6z',search:'m21 21-5-5M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0',filters:'M4 7h16M7 12h10M10 17h4',sort:'M8 4v16m-4-4 4 4 4-4M14 6h6m-6 5h4m-4 5h2',export:'M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5',select:'M5 3h14v18H5zM8 12l3 3 5-6',close:'m6 6 12 12M6 18 18 6'}[name] || '') + '"/></svg>';
+  const inventoryIcon = name => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ({sheet:'M4 3h16v18H4zM4 9h16M4 15h16M10 3v18',document:'M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6',check:'m5 12 4 4L19 6',chevron:'m7 10 5 5 5-5',printer:'M6 9V3h12v6M6 17H3V9h18v8h-3M6 14h12v7H6z',search:'m21 21-5-5M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0',filters:'M4 7h16M7 12h10M10 17h4',sort:'M8 4v16m-4-4 4 4 4-4M14 6h6m-6 5h4m-4 5h2',export:'M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5',select:'M5 3h14v18H5zM8 12l3 3 5-6',edit:'m4 16 12-12 4 4-12 12H4zM14 6l4 4',remove:'M3 4h18v4H3zM5 8v13h14V8M9 12h6',restore:'M4 10a8 8 0 1 1 1 9M4 4v6h6',close:'m6 6 12 12M6 18 18 6'}[name] || '') + '"/></svg>';
   let selectionMode = false, openInventoryMenu = null, filterDraft = null, filterDraftScope = null, filterPanelPositionCleanup = null;
   const expandedYears=new Set(),expandedSections=new Set();
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -332,9 +346,9 @@
     el('expiryQuickClearKpi').hidden=!monthFilters.hasKpis(filters);
     el('expirySelect').innerHTML=inventoryIcon(selectionMode?'close':'check');el('expirySelect').setAttribute('aria-label',selectionMode?'Exit selection mode':'Enter selection mode');el('expirySelect').title=selectionMode?'Exit selection mode':'Enter selection mode';el('expirySelect').setAttribute('aria-pressed',String(selectionMode));el('expirySelect').onclick=()=>{selectionMode=!selectionMode;selected.clear();closeInventoryMenus();render();};
     document.querySelector('.expiryInventoryTable')?.classList.toggle('is-selecting',selectionMode);
-    el('expiryBulkMenu').hidden=!selectionMode;el('expiryBulkMenu').parentElement.hidden=!selectionMode;el('expiryAll').hidden=false;el('expiryAll').disabled=!page.count;el('expiryAll').textContent=(resolved?'Restore':'Resolve')+' All Filtered…';
+    el('expiryBulkMenu').hidden=!selectionMode&&!resolved;el('expiryBulkMenu').parentElement.hidden=!selectionMode&&!resolved;el('expiryAll').hidden=false;el('expiryAll').disabled=!page.count;el('expiryAll').textContent=resolved?'Restore All':'Remove All Filtered…';
     el('expiryBulkAction').hidden=!selectionMode||!selected.size;
-    el('expiryBulkAction').textContent=(resolved?'Restore ':'Resolve ')+selected.size+' Selected';el('expiryBulkAction').disabled=!selected.size;
+    el('expiryBulkAction').textContent=(resolved?'Restore ':'Remove ')+selected.size+' Selected';el('expiryBulkAction').disabled=!selected.size;
     el('expiryPageLabel').textContent=page.count?'Rows '+(offset+1)+'–'+Math.min(offset+pageSize,page.count)+' of '+page.count:'No records';
     el('expiryPrev').disabled=offset===0;el('expiryNext').disabled=offset+pageSize>=page.count;
     el('expiryPageSize').value=String(pageSize);
@@ -420,7 +434,7 @@
           '<td class="expirySessionExpiry">' + month(r) + '</td><td class="expiryActivityQty">' + qty(r) +
           '</td><td class="expirySessionActions"><button type="button" class="expirySessionAction" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-edit="' + i +
           '">Edit</button><button type="button" class="expirySessionAction danger" ' + (available ? '' : 'disabled title="Reload current session to verify this group" ') + 'data-session-delete="' + i +
-          '">Delete</button></td></tr>';
+          '">Remove</button></td></tr>';
       }).join("");
       body.querySelectorAll("[data-session-edit],[data-session-delete]").forEach(b => {
         if (!b.disabled) b.onclick = () => sessionGroupDialog(rows[Number(b.dataset.sessionEdit ?? b.dataset.sessionDelete)], b, b.hasAttribute("data-session-delete"));
@@ -438,8 +452,8 @@
       if(busy)return;const r=page.rows[Number(trigger.dataset.rowActions)];
       if(floatingTrigger===trigger){closeInventoryMenus(true);return;}
       closeInventoryMenus();let panel=el('expiryRowActionPanel');
-      if(!panel){panel=document.createElement('div');panel.id='expiryRowActionPanel';panel.className='expiryFloatingMenu';panel.setAttribute('role','menu');panel.setAttribute('popover','manual');document.body.appendChild(panel);}
-      panel.innerHTML=(!resolved?'<button type="button" role="menuitem" data-menu-edit>Edit</button>':'')+'<button type="button" role="menuitem" data-menu-resolve>'+(resolved?'Restore':'Resolve')+'</button>';
+      if(!panel){panel=document.createElement('div');panel.id='expiryRowActionPanel';panel.className='expiryFloatingMenu expiryRowActionMenu';panel.setAttribute('role','menu');panel.setAttribute('popover','manual');document.body.appendChild(panel);}
+      panel.innerHTML=(!resolved?'<button type="button" role="menuitem" data-menu-edit>'+inventoryIcon('edit')+'Edit</button>':'')+'<button type="button" role="menuitem" data-menu-resolve ' + (resolved?'data-restore':'') + '>'+inventoryIcon(resolved?'restore':'remove')+(resolved?'Restore':'Remove')+'</button>';
       panel.querySelector('[data-menu-edit]')?.addEventListener('click',()=>{closeInventoryMenus();quantityEdit(r,trigger);});
       panel.querySelector('[data-menu-resolve]').onclick=()=>{closeInventoryMenus();void confirmSelection([r.row_id],trigger);};
       openInventoryMenu='expiryRowAction';openFloatingMenu(panel,trigger);
@@ -660,19 +674,20 @@
     dialog.querySelector("[data-cancel]").onclick = () => {
       if (!busy) dialog.close();
     };
+    let completed=false;
     dialog.querySelector("form").onsubmit = async (e) => {
       e.preventDefault();
-      if (!action || busy) return;
+      if (!action || busy || completed) return;
       busy = true;
       dialog.setAttribute("aria-busy", "true");
       const submit = dialog.querySelector("[type=submit]");
       const submitLabel = submit?.textContent;
-      if (submit && options.context === "session") submit.textContent = options.destructive ? "Deleting…" : "Saving…";
+      if (submit && options.context === "session") submit.textContent = options.destructive ? "Removing…" : "Saving…";
       dialog
         .querySelectorAll("button,input,select")
         .forEach((b) => (b.disabled = true));
       try {
-        const outcome=await action(dialog);
+        const outcome=await action(dialog);completed=true;
         if(outcome?.next){busy=false;dialog.setAttribute("aria-busy","false");dialog.close();outcome.next();return;}
         lastSummary = 0;pendingSummary=null;
         await refresh();
@@ -737,19 +752,19 @@
         .sort((a,b) => a.operation_id.localeCompare(b.operation_id))
     };
     let frozen;
-    openDialog(deleting ? "Delete Current Session Group" : "Edit Current Session Quantity",
+    openDialog(deleting ? "Remove this item?" : "Edit Current Session Quantity",
       identity(r) +
-      (deleting ? '<p>Remove <strong>' + qty(r) + ' units</strong> contributed by this current session?</p>' :
-        '<label>Current session quantity<input data-session-quantity type="number" min="1" max="2147483647" step="1" value="' + qty(r) + '"></label>') +
-      '<p>Historical inventory and original captured Serial evidence are preserved.</p>',
+      (deleting ? '<p><strong>' + qty(r) + ' units · Current Session only</strong></p>' :
+        '<label class="expiryCompactQuantity">Quantity<input data-session-quantity type="number" min="1" max="2147483647" step="1" value="' + qty(r) + '"></label>') +
+      (deleting?'<p>This item will be removed from the active list and kept in History.</p>':''),
       async d => {
         const raw = deleting ? "0" : d.querySelector("[data-session-quantity]").value.trim(), q = Number(raw);
         if (!raw || !Number.isInteger(q) || q < (deleting ? 0 : 1) || q > 2147483647)
-          throw new Error("Enter a positive whole number. Use Delete to remove this session group.");
+          throw new Error("Enter a positive whole number. Use Remove to remove this session group.");
         if (frozen != null && frozen !== q) throw new Error("Retry the original quantity first.");
         frozen = q;
         await groupMutation({ ...args, p_quantity: q }, ownScope);
-      }, trigger, { context: "session", destructive: deleting, cancelLabel: "Cancel", confirmLabel: deleting ? "Delete Session Contribution" : "Save Quantity" });
+      }, trigger, { context: "session", destructive: deleting, cancelLabel: "Cancel", confirmLabel: deleting ? "Remove" : "Save Quantity" });
   }
   async function mutation(args, rpcName = "mutate_pharmflow_expiry_inventory_v1") {
     const key = pendingKey(),
@@ -785,9 +800,9 @@
     openDialog(
       "Edit Inventory Quantity",
       identity(r) +
-        '<label>Total quantity<input data-total type="number" min="0" step="1" value="' +
+        '<label class="expiryCompactQuantity">Total Quantity<input data-total type="number" min="0" step="1" value="' +
         qty(r) +
-        '"></label><p>Zero keeps this row active. Resolve is a separate operation.</p>',
+        '"></label><p>Zero keeps this row active. Remove is a separate operation.</p>',
       async (d) => {
         const rawQuantity = d.querySelector("[data-total]").value.trim();
         if (!rawQuantity)
@@ -816,53 +831,46 @@
       if(!allFiltered&&(preview.count!==new Set(ids).size||preview.selection.length!==preview.count||preview.selection.some(r=>!ids.includes(r.id))))throw Error('Selected records changed; select and review again.');
       const snapshot=JSON.parse(JSON.stringify(preview.selection)),args={...authArgs(),p_request_id:crypto.randomUUID(),p_action:context?'RESTORE':'RESOLVE',p_selection:snapshot};
       const filteredArgs={...authArgs(),p_request_id:args.p_request_id,p_filters:wireFilters,p_selection:snapshot,p_expected_count:preview.count,p_expected_units:preview.units};
-      const verb=context?'Restore':'Resolve',scopeText=[filterSnapshot.search,...filterSnapshot.groups.map(monthFilters.displayGroup),filterSnapshot.includeUnassigned&&'No canonical Group',...filterSnapshot.months,filterSnapshot.expiredThrough&&'Through '+periodMonth(filterSnapshot.expiredThrough),filterSnapshot.excludedMonths?.length&&'Except '+filterSnapshot.excludedMonths.join(', ')].filter(Boolean).join(' · ')||'All '+(context?'resolved':'active')+' inventory';
+      const verb=context?'Restore':'Remove';
       const singleRecord=!allFiltered&&ids.length===1?page.rows.find(r=>r.row_id===ids[0]):null;
-      const summary=(singleRecord?identity(singleRecord):'')+'<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(allFiltered?'All filtered results across every page.':singleRecord?'Selected record only.':'Exactly '+preview.count+' explicitly selected record IDs, including selections retained across pages.')+'</p><p>'+esc(scopeText)+'</p><p>'+(context?'Restores the reviewed quantities to Active Inventory.':'Moves the reviewed quantities out of Active Inventory. Historical records and audit are retained.')+'</p>';
-      const final=()=>{
-        const canResolveAll=allFiltered&&!context;
-        const action=allFiltered?(canResolveAll?async d=>{
-          guard();
-          if(d.querySelector('#expiryResolvePhrase')?.value.trim()!=='RESOLVE')throw Error('Type RESOLVE to continue.');
-          try{return await mutation(filteredArgs,'resolve_all_filtered_pharmflow_expiry_inventory_v1');}
-          catch(e){if(/changed|unavailable|scope/i.test(e.message)){e.reviewRequired=true;try{await refresh();}catch{}}throw e;}
-        }:null):async()=>{guard();try{return await mutation(args);}catch(e){if(/changed|unavailable|scope/i.test(e.message))e.reviewRequired=true;throw e;}};
-        const d=openDialog('Final '+verb+' Confirmation',summary+(allFiltered?'<p class="expirySafetyGate" role="note">'+(canResolveAll?'The server will recheck the complete filtered scope before making any changes.':'All-filtered execution is unavailable for this action.')+'</p><label>Type RESOLVE<input id="expiryResolvePhrase" autocomplete="off" aria-label="Type RESOLVE"></label>':''),action,trigger,{destructive:true,confirmLabel:verb+' '+preview.count+(allFiltered?' Filtered':' Selected'),unavailableLabel:allFiltered&&!canResolveAll?'Execution blocked — safety approval required':undefined});
-        if(allFiltered&&d)d.querySelector('#expiryResolvePhrase')?.focus();
-      };
-      openDialog(verb+' Scope Review',summary+(allFiltered?'<p class="expirySafetyGate">Execution is currently gated. You can review the full filtered scope without changing records.</p>':''),()=>{guard();return {next:final};},trigger,{confirmLabel:'Review Final Confirmation'});
+      const summary=(singleRecord?identity(singleRecord):'')+'<p><strong>'+preview.count+' records · '+preview.units+' units</strong></p><p>'+(context?'The selected quantities will return to active Inventory.':'This item will be removed from the active list and kept in History.')+'</p>'+(singleRecord?'':'<p>'+(allFiltered?'All matching records across every page.':'Only the selected records.')+'</p>');
+      openDialog(context?'Restore '+preview.count+' records?':singleRecord?'Remove this item?':'Remove '+preview.count+' records?',summary,async()=>{
+        guard();try{return await mutation(allFiltered&&!context?filteredArgs:args,allFiltered&&!context?'resolve_all_filtered_pharmflow_expiry_inventory_v1':'mutate_pharmflow_expiry_inventory_v1');}
+        catch(e){if(/changed|unavailable|scope/i.test(e.message))e.reviewRequired=true;throw e;}
+      },trigger,{destructive:!context,confirmLabel:verb});
     }catch(e){setExpiryStatus('error',e.message||'Unable to preview selection');}finally{previewing=false;if(trigger)trigger.disabled=false;}
   }
-  async function shelfRows() {
+  async function shelfRows(fullActive=false) {
     return authRpc("export_pharmflow_expiry_inventory_v1", {
       ...authArgs(),
-      p_filters: await effectiveFilters(JSON.parse(JSON.stringify(filters)),resolved),
-      p_resolved: resolved,
+      p_filters: fullActive?{}:await effectiveFilters(JSON.parse(JSON.stringify(filters)),resolved),
+      p_resolved: fullActive?false:resolved,
     });
   }
   async function exportShelf(format = "EXCEL") {
+    clearExportNotice();const generation=exportGeneration;
     const ownScope = scope(),context=JSON.stringify([filters,resolved]);
-    const guard=()=>{if(ownScope!==scope() || context!==JSON.stringify([filters,resolved]))throw Error('Inventory scope or filters changed. Export again.');};
-    const feedback=el('expiryExportStatus');if(feedback){feedback.hidden=false;feedback.textContent='Preparing '+format.toLowerCase()+' report…';feedback.setAttribute('role','status');}
+    const guard=()=>{if(generation!==exportGeneration||mode!=='INVENTORY'||ownScope!==scope() || context!==JSON.stringify([filters,resolved]))throw Error('Inventory scope or filters changed. Export again.');};
+    exportNotice('Preparing '+format.toLowerCase()+' report…',false,false);
     try {
-      const rows = monthFilters.assertCanonicalGroupRows(await shelfRows());
+      const rows = monthFilters.assertCanonicalGroupRows(await shelfRows(format==='EXCEL'));
       guard();
       if (!rows.length) {
-        if(feedback)feedback.textContent="No matching records to export.";
+        exportNotice("No matching records to export.");
         return;
       }
       const dataRows=ExpiryInventoryReport.rows(rows),meta={pharmacy:AuthState.context?.pharmacy_code||'',date:new Date().toLocaleDateString()};
-      if(format==='PDF'){await ExpiryInventoryReport.pdf(dataRows,meta,guard);if(feedback)feedback.hidden=true;return;}
+      if(format==='PDF'){await ExpiryInventoryReport.pdf(dataRows,meta,guard);if(generation===exportGeneration)clearExportNotice();return;}
       if(format==='PRINT'){
         const root=el('expiryShelfPrint')||document.body.appendChild(Object.assign(document.createElement('section'),{id:'expiryShelfPrint'}));
-        root.innerHTML=ExpiryInventoryReport.printMarkup(dataRows,meta);guard();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));guard();window.print();if(feedback)feedback.hidden=true;return;
+        root.innerHTML=ExpiryInventoryReport.printMarkup(dataRows,meta);guard();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));guard();window.print();if(generation===exportGeneration)clearExportNotice();return;
       }
       const data=ExpiryInventoryReport.excelRows(rows),headers=ExpiryInventoryReport.excelHeaders,ws=XLSX.utils.json_to_sheet(data.map(row=>Object.fromEntries(headers.map((h,i)=>[h,row[i]]))));
-      ws['!cols']=[10,14,27,10,16,10,7,15,9].map(wch=>({wch}));ws['!rows']=[{hpt:10.5},...data.map(()=>({hpt:10.5}))];ws['!autofilter']={ref:ws['!ref']};ws['!margins']={left:.19685,right:.19685,top:.19685,bottom:.19685,header:0,footer:0};
-      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Expiry Inventory');guard();ExpiryInventoryReport.saveWorkbook(wb,guard);if(feedback)feedback.hidden=true;
+      const widths=[18,24,50,18,22,12,12,28,26,12];ws['!cols']=widths.map(wch=>({wch}));ws['!rows']=[{hpt:24},...data.map(row=>({hpt:Math.max(20,...row.map((value,i)=>Math.ceil(String(value).length/widths[i])*13+5))}))];
+      for(let i=0;i<data.length;i++)for(const col of ['A','B']){const cell=ws[col+(i+2)];if(cell){cell.t='s';cell.z='@';}}ws['!autofilter']={ref:ws['!ref']};ws['!margins']={left:.19685,right:.19685,top:.19685,bottom:.19685,header:0,footer:0};
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Expiry Inventory');guard();ExpiryInventoryReport.saveWorkbook(wb,guard);if(generation===exportGeneration)clearExportNotice();
     } catch (e) {
-      if(feedback){feedback.setAttribute("role","alert");feedback.textContent=e.message||"Export failed. Please retry.";}
-      setExpiryStatus("error", e.message || "EXPORT FAILED");
+      if(generation===exportGeneration&&mode==='INVENTORY'&&ownScope===scope())exportNotice(e.message||"Export failed. Please retry.",true);
     }
   }
   async function refreshReview() {
@@ -897,7 +905,7 @@
       footer.id = "expiryPager";
       footer.className = "expiryPager";
       footer.innerHTML =
-        '<span id="expiryResultSummary"></span><div class="expiryBulkMenu"><button id="expiryBulkMenu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expiryBulkMenuPanel" hidden>Bulk Actions</button><div id="expiryBulkMenuPanel" class="expiryFloatingMenu" popover="manual" role="menu" aria-label="Bulk inventory actions" hidden><button id="expiryAll" type="button" role="menuitem">Resolve All Filtered…</button></div></div><button id="expiryBulkAction" type="button" disabled>Resolve Selected</button><label class="expiryPageSize">Rows <select id="expiryPageSize" aria-label="Records per page"><option>20</option><option selected>40</option><option>50</option><option>100</option></select></label><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
+        '<span id="expiryResultSummary"></span><div class="expiryBulkMenu"><button id="expiryBulkMenu" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expiryBulkMenuPanel" hidden>Bulk Actions</button><div id="expiryBulkMenuPanel" class="expiryFloatingMenu" popover="manual" role="menu" aria-label="Bulk inventory actions" hidden><button id="expiryAll" type="button" role="menuitem">Remove All Filtered…</button></div></div><button id="expiryBulkAction" type="button" disabled>Remove Selected</button><label class="expiryPageSize">Rows <select id="expiryPageSize" aria-label="Records per page"><option>20</option><option selected>40</option><option>50</option><option>100</option></select></label><span id="expiryPageLabel"></span><button id="expiryPrev" type="button">Previous</button><button id="expiryNext" type="button">Next</button>';
       document.querySelector(".expiryCurrentWorkspace").appendChild(footer);
       document.body.appendChild(el('expiryBulkMenuPanel'));
       const exportStatus=document.createElement('p');exportStatus.id='expiryExportStatus';exportStatus.className='expiryExportStatus';exportStatus.hidden=true;exportStatus.setAttribute('aria-live','polite');footer.before(exportStatus);
@@ -906,7 +914,7 @@
         '<button id="expirySelect" type="button" aria-pressed="false" aria-label="Enter selection mode" title="Enter selection mode">'+inventoryIcon('check')+'</button><label class="expiryInventorySearch">'+inventoryIcon('search')+'<input id="expiryCurrentSearch" type="search" autocomplete="off" aria-label="Search Inventory" placeholder="Search product, code, GTIN or batch"><button id="expirySearchClear" type="button" aria-label="Clear search" hidden>'+inventoryIcon('close')+'</button></label>'+
         '<button id="expiryQuickClearKpi" type="button" title="Clear KPI Selection" aria-label="Clear KPI Selection" hidden>'+inventoryIcon('close')+'</button><div class="expiryInventoryMenu"><button type="button" id="expiryFilter" aria-expanded="false" aria-controls="expiryFilterPanel">'+inventoryIcon('filters')+'<span id="expiryFilterLabel">Filters</span> <b id="expiryFilterCount" hidden>0</b></button><section id="expiryFilterPanel" class="expiryInventoryPopover expiryFilterPanel" aria-label="Inventory filters" role="dialog" hidden><header><strong>Inventory Filters</strong><button type="button" data-dismiss-menu aria-label="Close filters">'+inventoryIcon('close')+'</button></header><div class="expiryFilterScroll"><section><h3><button type="button" id="expirySectionmonths" aria-expanded="false">Expiry Months '+inventoryIcon('chevron')+'</button></h3><div id="expiryMonthContent" hidden><button type="button" class="expiryFilterChoice" role="checkbox" aria-checked="false" id="expiryExpiredChoice">Expired</button><div id="expiryMonths"></div></div></section><section><h3><button type="button" id="expirySectiongroups" aria-expanded="false">Group '+inventoryIcon('chevron')+'</button></h3><div id="expiryGroups" hidden></div></section></div><footer class="expiryFilterFooter"><div class="expiryFilterContext"><span id="expiryInventoryView"></span><button type="button" id="expiryResolved">Show Resolved Records</button><button type="button" id="expiryClearPeriod" hidden>Clear KPI Period</button></div><div class="expiryFilterFooterActions"><button id="btnClearExpiryFilters" type="button">Reset All</button><button id="expiryApplyFilters" type="button" class="primary">Apply Filters</button></div></footer></section></div>'+
         '<div class="expiryInventoryMenu"><button type="button" id="expirySort" aria-expanded="false" aria-controls="expirySortPanel">'+inventoryIcon('sort')+'<span id="expirySortLabel">Recently Added</span></button><div id="expirySortPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Sort inventory" hidden>'+[['ADDED','Recently Added'],['UPDATED','Recently Updated'],['EXPIRY','Earliest Expiry']].map(([key,label])=>'<button type="button" role="menuitemradio" data-sort="'+key+'" aria-checked="false">'+label+'</button>').join('')+'</div></div>'+
-        '<div class="expiryInventoryMenu"><button type="button" id="expiryExport" aria-expanded="false" aria-controls="expiryExportPanel">'+inventoryIcon('export')+'Export</button><div id="expiryExportPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Export filtered inventory" hidden><button id="btnExportExpiryInventory" type="button" role="menuitem">'+inventoryIcon('sheet')+'Excel (.xlsx)</button><button id="expiryPdf" type="button" role="menuitem">'+inventoryIcon('document')+'PDF (.pdf)</button><button id="expiryPrint" type="button" role="menuitem">'+inventoryIcon('printer')+'Print</button></div></div>';
+        '<div class="expiryInventoryMenu"><button type="button" id="expiryExport" aria-expanded="false" aria-controls="expiryExportPanel">'+inventoryIcon('export')+'Export</button><div id="expiryExportPanel" class="expiryInventoryPopover expiryOptionMenu" role="menu" aria-label="Export inventory reports" hidden><button id="btnExportExpiryInventory" title="All active Inventory in this pharmacy" type="button" role="menuitem">'+inventoryIcon('sheet')+'Excel (.xlsx)</button><button id="expiryPdf" type="button" role="menuitem">'+inventoryIcon('document')+'PDF (.pdf)</button><button id="expiryPrint" type="button" role="menuitem">'+inventoryIcon('printer')+'Print</button></div></div>';
       for(const id of ['expiryFilter','expirySort','expiryExport','expiryBulkMenu'])el(id).onclick=()=>openInventoryPanel(id);
       tools.querySelectorAll('[data-dismiss-menu]').forEach(b=>b.onclick=()=>closeInventoryMenus(true));
       el('expiryApplyFilters').onclick=()=>{
@@ -915,7 +923,7 @@
       };
       el('expiryClearPeriod').onclick=()=>{delete filters.expiredThrough;delete filters.excludedMonths;delete filters.kpiExpired;delete filters.kpiMonths;filters.months=[];expandedYears.clear();offset=0;selected.clear();++requestVersion;closeInventoryMenus(true);void refresh();};
       el('btnClearExpiryFilters').onclick=resetInventoryFilters;
-      el('expiryQuickClearKpi').onclick=()=>{monthFilters.clearKpis(filters);if(!filters.months.length&&filters.expiredThrough==null)expandedYears.clear();offset=0;selected.clear();++requestVersion;closeInventoryMenus();render();void refresh();el('expiryFilter').focus();};
+      el('expiryQuickClearKpi').onclick=()=>{cancelKpiClick();monthFilters.clearKpis(filters);if(!filters.months.length&&filters.expiredThrough==null)expandedYears.clear();offset=0;selected.clear();++requestVersion;closeInventoryMenus();render();void refresh();el('expiryFilter').focus();};
       el('expiryPageSize').onchange=e=>{const size=Number(e.target.value);if(![20,40,50,100].includes(size))return;pageSize=size;offset=0;selected.clear();++requestVersion;void refresh();};
       el('expiryCurrentSearch').oninput=e=>{
         clearTimeout(searchTimer);filters.search=e.target.value;offset=0;selected.clear();++requestVersion;el('expirySearchClear').hidden=!filters.search;
@@ -1043,7 +1051,7 @@
   };
   window.resetExpiryDesktopSession = () => {
     window.ExpiryTopMotion?.dispose();
-    clearSavedFlashes();
+    clearSavedFlashes();cancelKpiClick();clearExportNotice();
     closeInventoryMenus();expandedYears.clear();expandedSections.clear();selectionMode=false;el("expiryShelfPrint")?.remove();
     sessionSearch = "";
     session = [];

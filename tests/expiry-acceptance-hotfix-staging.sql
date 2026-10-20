@@ -1,0 +1,43 @@
+-- STAGING ONLY. Disposable unique-batch fixtures, never user records. Rollback includes built-in provisioning.
+begin;
+set local statement_timeout='45s';
+do $qa$
+declare actor uuid;pa uuid;pb uuid;sid uuid;ses uuid;device text;wid uuid;op uuid:=gen_random_uuid();req uuid:=gen_random_uuid();
+ prefix text:='QA-HOTFIX-'||gen_random_uuid();cap jsonb;ack jsonb;preview jsonb;resolved_preview jsonb;receipt jsonb;page jsonb;rejected boolean;ids uuid[];ids2 uuid[];
+begin
+ select id into strict actor from auth.users where email='tc26-expiry@example.invalid';
+ select pharmacy_id into strict pa from public.pharmacy_members where user_id=actor and active;
+ select id into strict pb from public.pharmacies where id<>pa limit 1;
+ select id into strict sid from auth.sessions where user_id=actor and (not_after is null or not_after>now()) order by created_at desc limit 1;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','session_id',sid,'exp',extract(epoch from now()+interval '1 hour'))::text,true);
+ execute 'set local role authenticated';
+ select array_agg(worker_id order by worker_id) into ids from public.list_pharmacy_expiry_workers(pa) where worker_name in ('Desktop','Handheld');
+ select array_agg(worker_id order by worker_id) into ids2 from public.list_pharmacy_expiry_workers(pa) where worker_name in ('Desktop','Handheld');
+ if array_length(ids,1)<>2 or ids is distinct from ids2 then raise exception 'Built-in provisioning not stable';end if;
+ select worker_id into strict wid from public.list_pharmacy_expiry_workers(pa) where worker_name='Desktop';
+ rejected:=false;begin perform public.deactivate_pharmacy_expiry_worker(pa,wid);exception when raise_exception then if SQLERRM<>'Built-in Operators cannot be changed' then raise;end if;rejected:=true;end;if not rejected then raise exception 'System Operator deactivated';end if;
+ rejected:=false;begin perform public.rename_pharmacy_expiry_worker(pa,wid,'Wrong name','Desktop');exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'System Operator renamed';end if;
+ rejected:=false;begin perform public.list_pharmacy_expiry_workers(pb);exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Cross-pharmacy list allowed';end if;
+ ses:=(public.get_pharmflow_expiry_auth_session_v1(pa,'QA-'||prefix)->>'session_id')::uuid;
+ execute 'reset role';select device_id into strict device from pharmflow_expiry_private.active_sessions_v1 where id=ses;execute 'set local role authenticated';
+ cap:=jsonb_build_object('kind','KNOWN','source','HANDHELD','worker_id',wid,'device_id',device,'item_code','1011923','item_name','Disposable hotfix fixture','identifier_display','06291100080069','raw_scan','06291100080069','scan_format','PLAIN','sample_serial',null,'batch_no',prefix||'A','expiry_month',2,'expiry_year',2031,'quantity',2);
+ ack:=public.save_pharmflow_expiry_session_capture_v2(pa,ses,op,cap);
+ if public.save_pharmflow_expiry_session_capture_v2(pa,ses,op,cap) is distinct from ack then raise exception 'Capture retry changed';end if;
+ perform public.save_pharmflow_expiry_session_capture_v2(pa,ses,gen_random_uuid(),cap||jsonb_build_object('batch_no',prefix||'B','quantity',3));
+ preview:=public.select_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',prefix),false,null);
+ if (preview->>'count')::int<>2 or (preview->>'units')::int<>5 then raise exception 'Fixture active quantities incorrect';end if;
+ receipt:=public.mutate_pharmflow_expiry_inventory_v1(pa,req,'RESOLVE',preview->'selection');
+ if public.mutate_pharmflow_expiry_inventory_v1(pa,req,'RESOLVE',preview->'selection') is distinct from receipt then raise exception 'Remove retry changed';end if;
+ resolved_preview:=public.select_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',prefix),true,null);
+ if (resolved_preview->>'count')::int<>2 or (resolved_preview->>'units')::int<>5 then raise exception 'History quantities incorrect';end if;
+ req:=gen_random_uuid();receipt:=public.mutate_pharmflow_expiry_inventory_v1(pa,req,'RESTORE',resolved_preview->'selection');
+ if public.mutate_pharmflow_expiry_inventory_v1(pa,req,'RESTORE',resolved_preview->'selection') is distinct from receipt then raise exception 'Restore retry changed';end if;
+ rejected:=false;begin perform public.mutate_pharmflow_expiry_inventory_v1(pa,gen_random_uuid(),'RESTORE',resolved_preview->'selection');exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Stale restore accepted';end if;
+ rejected:=false;begin perform public.mutate_pharmflow_expiry_inventory_v1(pb,gen_random_uuid(),'RESTORE',resolved_preview->'selection');exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Cross pharmacy restore accepted';end if;
+ page:=public.query_pharmflow_expiry_inventory_v1(pa,jsonb_build_object('search',prefix),false,'EXPIRY',0,50);
+ if (page->>'count')::int<>2 or (page->>'units')::int<>5 then raise exception 'Restore duplicated or lost quantity';end if;
+ if exists(select 1 from jsonb_array_elements(page->'rows') r where r->>'first_operator_name'<>'Desktop') then raise exception 'Restore changed original Operator';end if;
+ perform set_config('request.jwt.claims','{}',true);
+ rejected:=false;begin perform public.list_pharmacy_expiry_workers(pa);exception when raise_exception then rejected:=true;end;if not rejected then raise exception 'Unsigned list allowed';end if;
+end $qa$;
+rollback;
