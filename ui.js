@@ -9265,7 +9265,15 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         searchButton.disabled=true;
         try{
             const resolved=await IdentifierService.resolve(search.query);
-            if(resolved?.found){if(search.isBarcode)searchInput.value=search.query;await showItem({item_code:resolved.itemCode,item_name:resolved.itemName});return;}
+            if(resolved?.found){
+                if(search.isBarcode)searchInput.value=search.query;
+                /* The identifier resolver may return only identity fields, especially
+                   for pharmacy-scoped mappings. Fetch the canonical Global Master
+                   row so Settings displays its stored Group without changing data. */
+                const masterItem=await IdentifierService.findGlobalItemByCode(resolved.itemCode);
+                await showItem(masterItem||{item_code:resolved.itemCode,item_name:resolved.itemName});
+                return;
+            }
 
             /* Auto-create is a SCANNER behavior only. A manual search for the
                exact same text must remain a normal Find Item operation. */
