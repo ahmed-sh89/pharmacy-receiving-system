@@ -166,8 +166,8 @@ async function hhProcessReceiving(raw,input){
 }
 
 async function hhProcessExpiry(raw,input){
-    if(HandheldRuntime.expiryBusy) return false;
-    if(hhIsImmediateDuplicate(raw)) return false;
+    if(HandheldRuntime.expiryBusy){if(input)input.value="";setExpiryStatus?.("busy","SCAN BLOCKED — EXPIRY SCAN IS STILL PROCESSING");return false;}
+    if(hhIsImmediateDuplicate(raw)){if(input)input.value="";setExpiryStatus?.("action","DUPLICATE SCAN IGNORED — WAIT FOR THE CURRENT RESULT");return false;}
     HandheldRuntime.expiryBusy=true;
     if(input) input.value="";
     hhSetVisualState("processing","PROCESSING…");
@@ -202,7 +202,17 @@ function hhCaptureInput(event){
     event.stopPropagation();
 
     if(receiving) hhProcessReceiving(raw,target);
-    else hhProcessExpiry(raw,target);
+    else {
+        // Expiry alone waits for the input burst to settle. TC26 profiles may
+        // emit one insertion or one event per character; neither needs Enter.
+        clearTimeout(HandheldRuntime.expiryInputTimer);
+        HandheldRuntime.expiryInputTimer=setTimeout(()=>{
+            HandheldRuntime.expiryInputTimer=null;
+            if(hhMode()==="EXPIRY" && target.isConnected && target.value){
+                hhProcessExpiry(String(target.value),target);
+            }
+        },90);
+    }
 }
 
 function hhCaptureKey(event){
@@ -263,7 +273,9 @@ function hhFocusActiveScanner(force=false){
 }
 
 async function hhRefreshWorkspaceAuthority(){
-    if(!hhIsDevice() || !navigator.onLine) return false;
+    // Shared cloud startup/sync and durable retries retain their own owners.
+    // This extra wake refresh serves the Receiving scanner surface only.
+    if(!hhIsDevice() || hhMode()!=="RECEIVING" || !navigator.onLine || window.PharmFlowIdleSleep?.active) return false;
     if(typeof refreshUnifiedHandheldWorkspace!=="function") return false;
     if(HandheldRuntime.terminationBusy) return false;
     HandheldRuntime.terminationBusy=true;

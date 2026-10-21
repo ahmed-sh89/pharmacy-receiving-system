@@ -77,6 +77,16 @@
                 if((await scanQueue.pending()).length) return true;
             }catch(_){ return true; }
         }
+        // Integration boundary: disabled Expiry fields may still own a durable write.
+        if(typeof ExpiryCaptureEngine!=="undefined" && (ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.operation || ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.pendingDraft))return true;
+        if(typeof expiryHasClearIntent==="function" && expiryHasClearIntent())return true;
+        if(typeof ExpiryDraftStore!=="undefined" && typeof expiryDraftScope==="function"){
+            try{
+                const scope=expiryDraftScope();
+                const drafts=[await ExpiryDraftStore.get(scope),...(await ExpiryDraftStore.list(scope)).map(row=>row.draft)];
+                if(scope!==expiryDraftScope() || drafts.some(d=>d && (d.item || d.operation || d.status==="UNCERTAIN")))return true;
+            }catch(_){return true;}
+        }
         return false;
     }
 

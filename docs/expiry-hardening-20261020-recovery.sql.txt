@@ -1,0 +1,268 @@
+-- STAGING RECOVERY REFERENCE ONLY. Never auto-run or target Production.
+-- Requires a separately approved recovery decision and confirmed Staging connection.
+-- Restore baseline ea11911 client first, pause Expiry writes, then run this transaction.
+-- All business data, Operators, audit rows and attribution metadata are retained.
+begin;
+drop trigger if exists expiry_operation_operator_origin_v1 on pharmflow_expiry_private.operations;
+drop trigger if exists expiry_review_operator_origin_v1 on public.pharmflow_expiry_review_resolution_audit_v1;
+drop trigger if exists expiry_first_operator_v1 on public.pharmflow_expiry_events_v1;
+CREATE OR REPLACE FUNCTION public.save_pharmflow_expiry_capture_v3(p_pharmacy_id uuid, p_operation_id uuid, p_capture jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+AS $function$
+declare
+ v_op pharmflow_expiry_private.operations%rowtype;v_kind text;v_identifier text;v_facts jsonb;v_month integer;v_year integer;v_qty integer;v_worker uuid;v_worker_name text;
+ v_product text;v_expiry text;v_ack record;v_review uuid;v_result jsonb;v_date date;v_key text;
+begin
+ perform pharmflow_expiry_private.valid_auth_session();
+ if auth.uid() is null or p_pharmacy_id is null or public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required';end if;
+ if p_operation_id is null or jsonb_typeof(p_capture) is distinct from 'object' then raise exception 'Operation and capture required';end if;
+ perform public.reserve_pharmflow_expiry_capture_v1(p_pharmacy_id,p_operation_id);
+ select * into v_op from pharmflow_expiry_private.operations where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id for update;
+ if v_op.status='COMMITTED' then
+  if v_op.payload is distinct from p_capture then raise exception 'Operation payload conflict';end if;return v_op.result;
+ end if;
+ if not (p_capture ?& array['kind','identifier_display','raw_scan','scan_format','quantity','expiry_month','expiry_year','worker_id','device_id','source','batch_no','sample_serial']) then raise exception 'Complete capture fields required';end if;
+ if jsonb_typeof(p_capture->'raw_scan') is distinct from 'string' or jsonb_typeof(p_capture->'identifier_display') is distinct from 'string' or jsonb_typeof(p_capture->'device_id') is distinct from 'string' or btrim(p_capture->>'device_id')='' then raise exception 'Exact scan, identifier and device required';end if;
+ v_facts:=pharmflow_expiry_private.scan_facts(p_capture->>'raw_scan',p_capture->>'scan_format');v_identifier:=p_capture->>'identifier_display';
+ if v_identifier='' or v_identifier is distinct from v_facts->>'identifier' then raise exception 'Identifier does not match raw scan';end if;
+ if jsonb_typeof(p_capture->'quantity') is distinct from 'number' or (p_capture->>'quantity') !~ '^[1-9][0-9]*$' or jsonb_typeof(p_capture->'expiry_month') is distinct from 'number' or jsonb_typeof(p_capture->'expiry_year') is distinct from 'number' then raise exception 'Integer quantity and expiry required';end if;
+ v_qty:=(p_capture->>'quantity')::integer;v_month:=(p_capture->>'expiry_month')::integer;v_year:=(p_capture->>'expiry_year')::integer;
+ if v_month not between 1 and 12 or v_year not between 2020 and 2200 then raise exception 'Invalid expiry';end if;
+ if jsonb_typeof(p_capture->'batch_no') not in ('string','null') or jsonb_typeof(p_capture->'sample_serial') not in ('string','null') then raise exception 'Invalid optional batch or serial';end if;
+ if not (v_facts ? '10') and pharmflow_expiry_private.batch_is_scanner_payload(p_capture->>'batch_no') then raise exception 'Use Scan Barcode, not Batch';end if;
+ if v_facts ? '10' and coalesce(p_capture->>'batch_no','')<>v_facts->>'10' then raise exception 'GS1 batch mismatch';end if;
+ if v_facts ? '21' and coalesce(p_capture->>'sample_serial','')<>v_facts->>'21' then raise exception 'GS1 serial mismatch';end if;
+ if v_facts ? '17' then
+  if (substr(v_facts->>'17',3,2))::integer<>v_month or 2000+(left(v_facts->>'17',2))::integer<>v_year then raise exception 'GS1 expiry mismatch';end if;
+  if right(v_facts->>'17',2)<>'00' then v_date:=make_date(v_year,v_month,(right(v_facts->>'17',2))::integer);end if;
+ end if;
+ if p_capture ? 'identification_note' and (jsonb_typeof(p_capture->'identification_note') not in ('string','null') or length(p_capture->>'identification_note')>250) then raise exception 'Invalid identification note';end if;
+ v_kind:=p_capture->>'kind';if v_kind is null or v_kind not in ('KNOWN','UNKNOWN') or p_capture->>'source' is null or p_capture->>'source' not in ('HANDHELD','PC') then raise exception 'Invalid capture kind or source';end if;
+ v_worker:=(p_capture->>'worker_id')::uuid;
+ if v_worker is not null then
+  select worker_name into v_worker_name from public.pharmflow_expiry_workers_v1 where pharmacy_id=p_pharmacy_id and id=v_worker and active=true;
+  if v_worker_name is null then raise exception 'Active pharmacy worker required';end if;
+ elsif p_capture->>'source'='HANDHELD' or v_kind='UNKNOWN' then raise exception 'Worker required';else v_worker_name:='Desktop';end if;
+ update pharmflow_expiry_private.operations set status='COMMITTING',payload=p_capture where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;
+ if v_kind='KNOWN' then
+  if exists(select 1 from pharmflow_expiry_private.photos where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id and deleted_at is null) then raise exception 'Known captures cannot orphan review photos';end if;
+  if jsonb_typeof(p_capture->'item_code') is distinct from 'string' or jsonb_typeof(p_capture->'item_name') is distinct from 'string' or btrim(p_capture->>'item_code')='' or btrim(p_capture->>'item_name')='' then raise exception 'Known item fields required';end if;
+  v_key:=p_pharmacy_id::text||'/item/'||btrim(p_capture->>'item_code')||'/'||upper(btrim(coalesce(p_capture->>'batch_no','')))||'/'||v_year::text||'/'||v_month::text;
+  perform pg_advisory_xact_lock(hashtextextended(v_key,0));
+  select * into v_ack from pharmflow_expiry_private.save_known_core(p_pharmacy_id,p_capture->>'item_code',p_capture->>'item_name',v_identifier,p_capture->>'category',v_qty,v_month,v_year,v_worker,p_capture->>'batch_no',p_capture->>'sample_serial',p_capture->>'device_id',p_capture->>'source','CAPTURE');
+  if v_ack.state_id is null or v_ack.event_id is null then raise exception 'Save acknowledgement required';end if;
+  v_result:=jsonb_build_object('operation_id',p_operation_id,'state_id',v_ack.state_id,'event_id',v_ack.event_id);
+ else
+  v_product:=coalesce(p_capture->>'product_photo_path',p_capture->>'evidence_photo_path');v_expiry:=p_capture->>'expiry_photo_path';
+  if (v_product is null and v_expiry is not null) or (v_expiry is not null and v_product=v_expiry) then raise exception 'One evidence photo is required; legacy two-photo submissions remain supported';end if;
+  -- The upload path remains in the existing private immutable Storage namespace.
+  -- New submissions use the approved product-role slot for their single evidence image.
+  if (v_product is not null and not exists(select 1 from pharmflow_expiry_private.photos p join storage.objects o on o.name=p.path and o.bucket_id='pharmflow-needs-review' where p.path=v_product and p.pharmacy_id=p_pharmacy_id and p.operation_id=p_operation_id and p.role='product' and p.created_by=auth.uid() and p.deleted_at is null))
+   or (v_expiry is not null and not exists(select 1 from pharmflow_expiry_private.photos p join storage.objects o on o.name=p.path and o.bucket_id='pharmflow-needs-review' where p.path=v_expiry and p.pharmacy_id=p_pharmacy_id and p.operation_id=p_operation_id and p.role='expiry' and p.created_by=auth.uid() and p.deleted_at is null)) then raise exception 'Uploaded role-correct evidence photo required';end if;
+  insert into public.pharmflow_needs_review_v2(pharmacy_id,workflow,gtin,identifier_display,identifier_key,raw_barcode,pending_quantity,review_reason,source,device_id,created_by,operation_id)
+  values(p_pharmacy_id,'EXPIRY',v_identifier,v_identifier,public.pharmflow_identifier_key_v2(v_identifier),p_capture->>'raw_scan',v_qty,'UNKNOWN_GTIN',p_capture->>'source',p_capture->>'device_id',auth.uid(),p_operation_id::text) returning id into v_review;
+  insert into pharmflow_expiry_private.review_details(review_id,pharmacy_id,operation_id,worker_name,product_photo_path,expiry_photo_path)
+  values(v_review,p_pharmacy_id,p_operation_id,v_worker_name,v_product,v_expiry);
+  v_result:=jsonb_build_object('operation_id',p_operation_id,'review_id',v_review,'quantity',v_qty,'product_photo_path',v_product,'expiry_photo_path',v_expiry,'evidence_photo_path',v_product);
+ end if;
+ update pharmflow_expiry_private.operations set status='COMMITTED',result=v_result where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;return v_result;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.correct_pharmflow_expiry_session_v2(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_request_id uuid, p_expected_revision integer, p_correction jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+AS $function$
+declare c pharmflow_expiry_private.session_captures_v1%rowtype;o pharmflow_expiry_private.operations%rowtype;
+ a pharmflow_expiry_private.session_adjustments_v1%rowtype;v public.pharmflow_expiry_current_state_v1%rowtype;
+ qty integer;mo integer;yr integer;batch text;oldid uuid;anchor uuid;keyold text;keynew text;lockkey text;total integer;ack record;target record;result jsonb;events jsonb:='[]'::jsonb;
+begin
+ perform pharmflow_expiry_private.require_signed_session(p_pharmacy_id,p_session_id,false);
+ if p_request_id is null or p_expected_revision is null or jsonb_typeof(p_correction)<>'object' or not(p_correction ?& array['quantity','batch_no','expiry_month','expiry_year']) or (select count(*) from jsonb_object_keys(p_correction))<>4 then raise exception 'Complete correction required';end if;
+ select * into a from pharmflow_expiry_private.session_adjustments_v1 where request_id=p_request_id;
+ if found then
+  if a.session_id<>p_session_id or a.operation_id<>p_operation_id or a.created_by<>auth.uid() or a.expected_revision<>p_expected_revision or a.result->'correction' is distinct from p_correction then raise exception 'Correction payload conflict';end if;return a.result;
+ end if;
+ perform pharmflow_expiry_private.require_signed_session(p_pharmacy_id,p_session_id,true);
+ if jsonb_typeof(p_correction->'quantity')<>'number' or (p_correction->>'quantity') !~ '^[0-9]+$' or jsonb_typeof(p_correction->'expiry_month')<>'number' or jsonb_typeof(p_correction->'expiry_year')<>'number' or jsonb_typeof(p_correction->'batch_no') not in ('string','null') then raise exception 'Invalid correction values';end if;
+ qty:=(p_correction->>'quantity')::integer;mo:=(p_correction->>'expiry_month')::integer;yr:=(p_correction->>'expiry_year')::integer;batch:=nullif(btrim(p_correction->>'batch_no'),'');
+ if mo not between 1 and 12 or yr not between 2020 and 2200 then raise exception 'Invalid corrected batch or expiry';end if;
+ select * into c from pharmflow_expiry_private.session_captures_v1 where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id and session_id=p_session_id for update;
+ if not found or c.quantity=0 then raise exception 'Operation not editable';end if;
+ if c.revision<>p_expected_revision then raise exception 'Stale revision; reload History';end if;
+ select * into o from pharmflow_expiry_private.operations where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;
+ if o.created_by<>auth.uid() then raise exception 'Operation scope mismatch';end if;
+ if batch is distinct from coalesce(c.facts->>'batch_no',o.payload->>'batch_no') and pharmflow_expiry_private.batch_is_scanner_payload(batch) then raise exception 'Use Scan Barcode, not Batch';end if;
+ if batch is distinct from coalesce(c.facts->>'batch_no',o.payload->>'batch_no') and (length(coalesce(batch,''))>case when o.payload->>'scan_format'='GS1' then 20 else 128 end or coalesce(batch,'')~'[[:cntrl:]]') then raise exception 'Invalid corrected batch';end if;
+ if o.payload->>'kind'='UNKNOWN' then
+  perform 1 from public.pharmflow_needs_review_v2 where id=(o.result->>'review_id')::uuid and pharmacy_id=p_pharmacy_id and status='PENDING' for update;
+  if not found then raise exception 'Only pending review operations are editable';end if;
+  if qty=0 then perform public.delete_pharmflow_expiry_review_v1(p_pharmacy_id,(o.result->>'review_id')::uuid);end if;
+ else
+  oldid:=coalesce((c.facts->>'effective_state_id')::uuid,(o.result->>'state_id')::uuid);anchor:=coalesce((c.facts->>'effective_event_id')::uuid,(o.result->>'event_id')::uuid);
+  select * into v from public.pharmflow_expiry_current_state_v1 where id=oldid and pharmacy_id=p_pharmacy_id;
+  if not found then raise exception 'Inventory unavailable';end if;
+  keyold:=p_pharmacy_id::text||'/item/'||v.item_code||'/'||v.batch_key||'/'||v.expiry_year||'/'||v.expiry_month;
+  keynew:=p_pharmacy_id::text||'/item/'||v.item_code||'/'||upper(coalesce(batch,''))||'/'||yr||'/'||mo;
+  for lockkey in select distinct k from unnest(array[keyold,keynew]) k order by k loop perform pg_advisory_xact_lock(hashtextextended(lockkey,0));end loop;
+  select * into v from public.pharmflow_expiry_current_state_v1 where id=oldid for update;
+  if exists(select 1 from public.pharmflow_expiry_events_v1 x where x.state_id=oldid and x.occurred_at>=(select occurred_at from public.pharmflow_expiry_events_v1 where id=anchor) and x.event_type in ('RECOUNT','CLEARED') and not exists(select 1 from pharmflow_expiry_private.session_adjustments_v1 y where y.event_id=x.id or coalesce(y.result->'event_ids','[]'::jsonb) ? x.id::text)) then raise exception 'Inventory recounted; operation is read only';end if;
+  total:=v.verified_quantity-c.quantity+case when keyold=keynew then qty else 0 end;
+  if total<0 then raise exception 'Correction would make inventory negative';end if;
+  select * into ack from pharmflow_expiry_private.save_known_core(p_pharmacy_id,v.item_code,v.item_name,v.identifier_display,v.category,total,v.expiry_month,v.expiry_year,(o.payload->>'worker_id')::uuid,v.batch_no,v.sample_serial,o.payload->>'device_id','HANDHELD',case when total=0 then 'CLEARED' else 'RECOUNT' end);
+  events:=events||jsonb_build_array(ack.event_id::text);
+  if keyold<>keynew and qty>0 then
+   select * into target from pharmflow_expiry_private.save_known_core(p_pharmacy_id,o.payload->>'item_code',o.payload->>'item_name',o.payload->>'identifier_display',o.payload->>'category',qty,mo,yr,(o.payload->>'worker_id')::uuid,batch,o.payload->>'sample_serial',o.payload->>'device_id','HANDHELD','CAPTURE');
+   oldid:=target.state_id;anchor:=target.event_id;events:=events||jsonb_build_array(target.event_id::text);
+  else anchor:=ack.event_id;end if;
+ end if;
+ result:=jsonb_build_object('operation_id',p_operation_id,'request_id',p_request_id,'quantity',qty,'revision',c.revision+1,'correction',p_correction,'event_ids',events,'state_id',oldid);
+ insert into pharmflow_expiry_private.session_adjustments_v1(request_id,session_id,operation_id,created_by,previous_quantity,quantity,expected_revision,result,event_id) values(p_request_id,p_session_id,p_operation_id,auth.uid(),c.quantity,qty,p_expected_revision,result,anchor);
+ update pharmflow_expiry_private.session_captures_v1 set quantity=qty,revision=revision+1,facts=jsonb_build_object('batch_no',batch,'expiry_month',mo,'expiry_year',yr,'effective_state_id',oldid,'effective_event_id',anchor,'correction_source','OPERATOR_CORRECTION') where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;
+ return result;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.list_pharmflow_expiry_session_v2(p_pharmacy_id uuid, p_session_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+AS $function$
+declare r jsonb;
+begin
+ perform pharmflow_expiry_private.require_signed_session(p_pharmacy_id,p_session_id);
+ select coalesce(jsonb_agg(x.receipt order by x.captured_at desc,x.operation_id desc),'[]'::jsonb) into r from (
+  select coalesce(e.occurred_at,n.created_at,o.created_at) captured_at,o.operation_id,o.payload||c.facts||jsonb_build_object('operation_id',o.operation_id,'pharmacy_id',o.pharmacy_id,'created_by',o.created_by,'acknowledgement',o.result,'quantity',c.quantity,'revision',c.revision,'captured_at',coalesce(e.occurred_at,n.created_at,o.created_at),'status',case when c.quantity=0 then 'DELETED' when o.payload->>'kind'='UNKNOWN' then n.status else 'SAVED' end,'editable',c.quantity>0 and (o.payload->>'kind'='KNOWN' or n.status='PENDING')) receipt
+  from pharmflow_expiry_private.session_captures_v1 c join pharmflow_expiry_private.operations o using(pharmacy_id,operation_id)
+  left join public.pharmflow_expiry_events_v1 e on e.id=(o.result->>'event_id')::uuid and e.pharmacy_id=o.pharmacy_id
+  left join public.pharmflow_needs_review_v2 n on n.id=(o.result->>'review_id')::uuid and n.pharmacy_id=o.pharmacy_id
+  where c.session_id=p_session_id and c.quantity>0 and n.status is distinct from 'DELETED' order by coalesce(e.occurred_at,n.created_at,o.created_at) desc,o.operation_id desc limit 10
+ ) x;return r;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.query_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_filters jsonb DEFAULT '{}'::jsonb, p_resolved boolean DEFAULT false, p_sort text DEFAULT 'ADDED'::text, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'pharmflow_expiry_private', 'pg_temp'
+AS $function$
+declare result jsonb; filters jsonb:=coalesce(p_filters,'{}'::jsonb);
+begin
+  perform pharmflow_expiry_private.valid_auth_session();
+  if public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required'; end if;
+  if p_filters is null or p_resolved is null or p_sort is null or p_offset is null or p_limit is null
+     or p_limit not between 1 and 250 or p_offset<0 or jsonb_typeof(filters)<>'object'
+     or p_sort not in ('ADDED','UPDATED','EXPIRY')
+     or (filters ? 'groups' and jsonb_typeof(filters->'groups')<>'array')
+     or (filters ? 'departments' and jsonb_typeof(filters->'departments')<>'array')
+     or (filters ? 'months' and jsonb_typeof(filters->'months')<>'array')
+     or (filters ? 'include_unassigned' and jsonb_typeof(filters->'include_unassigned')<>'boolean') then
+    raise exception 'Invalid inventory query';
+  end if;
+  with rows as materialized (
+    select * from pharmflow_expiry_private.inventory_rows_group_v1(p_pharmacy_id,p_resolved)
+  ), matching as materialized (
+    select * from rows r where pharmflow_expiry_private.inventory_match_v1(to_jsonb(r),filters)
+  ), page as (
+    select * from matching order by
+      case when p_sort='EXPIRY' then expiry_year*12+expiry_month end asc,
+      case when p_sort='UPDATED' or p_resolved then updated_at end desc,
+      case when p_sort='ADDED' and not p_resolved then added_at end desc,row_id
+    limit p_limit offset p_offset
+  )
+  select jsonb_build_object(
+    'rows',coalesce((select jsonb_agg(to_jsonb(p)) from page p),'[]'::jsonb),
+    'count',(select count(*) from matching),
+    'units',(select coalesce(sum(quantity),0) from matching),
+    'departments',(select coalesce(jsonb_agg(d order by d),'[]'::jsonb) from (select distinct department d from rows) v),
+    'groups',jsonb_build_array('Beauty','FMCG','HomeHealth','Medicine','Mom & Baby','Supplement'),
+    'has_unassigned_group',(select exists(select 1 from rows where group_name is null)),
+    'months',(select coalesce(jsonb_agg(m order by m),'[]'::jsonb) from (select distinct expiry_year::text||'-'||lpad(expiry_month::text,2,'0') m from rows) v)
+  ) into result;
+  return result;
+end
+$function$
+;
+CREATE OR REPLACE FUNCTION public.export_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'pharmflow_expiry_private', 'pg_temp'
+AS $function$
+declare result jsonb; filters jsonb:=coalesce(p_filters,'{}'::jsonb);
+begin
+  perform pharmflow_expiry_private.valid_auth_session();
+  if public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required'; end if;
+  if p_filters is null or p_resolved is null or jsonb_typeof(filters)<>'object'
+     or (filters ? 'groups' and jsonb_typeof(filters->'groups')<>'array')
+     or (filters ? 'departments' and jsonb_typeof(filters->'departments')<>'array')
+     or (filters ? 'months' and jsonb_typeof(filters->'months')<>'array')
+     or (filters ? 'include_unassigned' and jsonb_typeof(filters->'include_unassigned')<>'boolean') then
+    raise exception 'Invalid inventory query';
+  end if;
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.expiry_year,x.expiry_month,x.item_name,x.row_id),'[]'::jsonb)
+  into result
+  from pharmflow_expiry_private.inventory_rows_group_v1(p_pharmacy_id,p_resolved) x
+  where pharmflow_expiry_private.inventory_match_v1(to_jsonb(x),filters);
+  return result;
+end
+$function$
+;
+CREATE OR REPLACE FUNCTION pharmflow_expiry_private.save_known_core(p_pharmacy_id uuid, p_item_code text, p_item_name text, p_identifier_display text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid DEFAULT NULL::uuid, p_batch_no text DEFAULT NULL::text, p_sample_serial text DEFAULT NULL::text, p_device_id text DEFAULT NULL::text, p_source text DEFAULT 'HANDHELD'::text, p_event_type text DEFAULT 'CAPTURE'::text)
+ RETURNS TABLE(state_id uuid, event_id uuid, last_verified_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+ v_user uuid:=auth.uid(); v_worker_name text; v_identifier_display text:=btrim(coalesce(p_identifier_display,''));
+ v_identifier_key text; v_item_code text:=btrim(coalesce(p_item_code,'')); v_item_name text:=btrim(coalesce(p_item_name,''));
+ v_batch_no text:=nullif(coalesce(p_batch_no,''),''); v_batch_key text:=coalesce(nullif(upper(btrim(coalesce(p_batch_no,''))),''),'');
+ v_source text:=upper(btrim(coalesce(p_source,'HANDHELD'))); v_event_type text:=upper(btrim(coalesce(p_event_type,'CAPTURE')));
+ v_state_id uuid; v_event_id uuid; v_previous_quantity integer; v_new_quantity integer; v_now timestamptz:=now();
+begin
+ if v_user is null or not public.is_pharmacy_member(p_pharmacy_id) then raise exception 'Pharmacy access required'; end if;
+ if v_item_code='' or v_item_name='' or v_identifier_display='' then raise exception 'Item Code, Item Name and Identifier are required'; end if;
+ v_identifier_key:=public.pharmflow_identifier_key_v2(v_identifier_display);
+ if nullif(v_identifier_key,'') is null then raise exception 'Identifier is invalid'; end if;
+ if p_quantity is null or p_quantity<0 then raise exception 'Quantity cannot be negative'; end if;
+ if p_expiry_month not between 1 and 12 or p_expiry_year not between 2020 and 2200 then raise exception 'Expiry date is invalid'; end if;
+ if v_source not in ('HANDHELD','PC') then raise exception 'Invalid expiry source'; end if;
+ if v_event_type not in ('CAPTURE','RECOUNT','CLEARED') then raise exception 'Invalid expiry event type'; end if;
+ if (v_event_type='CLEARED' and p_quantity<>0) or (v_event_type<>'CLEARED' and p_quantity=0) then raise exception 'Invalid zero quantity event'; end if;
+ if p_worker_id is not null then
+   select w.worker_name into v_worker_name from public.pharmflow_expiry_workers_v1 w
+   where w.id=p_worker_id and w.pharmacy_id=p_pharmacy_id and w.active=true;
+   if v_worker_name is null then raise exception 'Selected operator is not active'; end if;
+ elsif v_source='HANDHELD' then raise exception 'Select an active worker before saving';
+ else v_worker_name:='Desktop';
+ end if;
+ perform pg_advisory_xact_lock(hashtextextended(p_pharmacy_id::text||'/item/'||v_item_code||'/'||v_batch_key||'/'||p_expiry_year::text||'/'||p_expiry_month::text,0));
+ select s.id,s.verified_quantity into v_state_id,v_previous_quantity from public.pharmflow_expiry_current_state_v1 s
+ where s.pharmacy_id=p_pharmacy_id and s.item_code=v_item_code and s.batch_key=v_batch_key
+ and s.expiry_year=p_expiry_year and s.expiry_month=p_expiry_month for update;
+ if v_event_type='CAPTURE' then v_new_quantity:=coalesce(v_previous_quantity,0)+p_quantity;
+ elsif v_event_type='RECOUNT' then v_new_quantity:=p_quantity; else v_new_quantity:=0; end if;
+ if v_state_id is null then
+  insert into public.pharmflow_expiry_current_state_v1(pharmacy_id,item_code,item_name,identifier_display,identifier_key,category,batch_no,batch_key,sample_serial,expiry_month,expiry_year,verified_quantity,worker_id,verified_by_name,verified_by_user_id,last_verified_at,device_id,source,status)
+  values(p_pharmacy_id,v_item_code,v_item_name,v_identifier_display,v_identifier_key,nullif(btrim(coalesce(p_category,'')),''),v_batch_no,v_batch_key,nullif(btrim(coalesce(p_sample_serial,'')),''),p_expiry_month,p_expiry_year,v_new_quantity,p_worker_id,v_worker_name,v_user,v_now,nullif(btrim(coalesce(p_device_id,'')),''),v_source,case when v_new_quantity=0 then 'CLEARED' else 'ACTIVE' end)
+  returning id into v_state_id;
+ else
+  update public.pharmflow_expiry_current_state_v1 set item_name=v_item_name,identifier_display=v_identifier_display,identifier_key=v_identifier_key,
+  category=nullif(btrim(coalesce(p_category,'')),''),batch_no=case when v_event_type='CAPTURE' then coalesce(batch_no,v_batch_no) else v_batch_no end,sample_serial=nullif(btrim(coalesce(p_sample_serial,'')),''),
+  verified_quantity=v_new_quantity,worker_id=p_worker_id,verified_by_name=v_worker_name,verified_by_user_id=v_user,last_verified_at=v_now,
+  device_id=nullif(btrim(coalesce(p_device_id,'')),''),source=v_source,status=case when v_new_quantity=0 then 'CLEARED' else 'ACTIVE' end,updated_at=v_now where id=v_state_id;
+ end if;
+ insert into public.pharmflow_expiry_events_v1(state_id,pharmacy_id,event_type,item_code,item_name,identifier_display,identifier_key,category,batch_no,sample_serial,expiry_month,expiry_year,previous_quantity,verified_quantity,worker_id,verified_by_name,verified_by_user_id,device_id,source,occurred_at)
+ values(v_state_id,p_pharmacy_id,v_event_type,v_item_code,v_item_name,v_identifier_display,v_identifier_key,nullif(btrim(coalesce(p_category,'')),''),v_batch_no,nullif(btrim(coalesce(p_sample_serial,'')),''),p_expiry_month,p_expiry_year,v_previous_quantity,v_new_quantity,p_worker_id,v_worker_name,v_user,nullif(btrim(coalesce(p_device_id,'')),''),v_source,v_now) returning id into v_event_id;
+ return query select v_state_id,v_event_id,v_now;
+end $function$
+;
+commit;
+-- Private metadata/audit tables and the unique Operator-name index intentionally remain.
+-- Operator management RPCs retain their authenticated, pharmacy-admin authorization.
+

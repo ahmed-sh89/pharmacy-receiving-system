@@ -1,3 +1,76 @@
+# PharmFlow current Staging checkpoint
+
+## 2026-10-20 — Report Quantity alignment
+
+Baseline d7a46fcb6899d7a0c2d2eb7fd7465f44425b2c98. Quantity header and values centered in Excel/PDF/Print only. Date hierarchy and real mm/yyyy expiry cells unchanged; widths, heights, fonts, A4 Landscape and pagination preserved. Generated 180-row XLSX verified (all Quantity styles centered), actual PDF/Chromium Print rendered and inspected; PDF remains five pages with 41/45/45/45/4 rows. Focused report/regression tests and build PASS. No SQL or Production access. Physical Excel/printer acceptance pending. READY FOR PRODUCT OWNER TEST.
+
+## 2026-10-20 — Final Expiry acceptance fixes
+
+Baseline 788e60db49cb140e048711898cb6f677cfe30917. Real Excel month dates, compact A4 Landscape reports, exact-trigger row menu, canonical Group in Session, readable columns, colored filters plus first-Operator multiselect, and Restore/Clear Selected. Applied Staging read-only-contract migration 20261020045631_expiry_acceptance_reports_filters_v1; no operational data/attribution/RLS changes.
+
+252 focused tests/build PASS; authenticated rollback-only SQL and real Chromium/artifact verification PASS. Data fingerprints unchanged, toolbar y=242px retained, no Desktop table horizontal overflow at 1366×768. Excel UI/physical TC26/two-PC acceptance pending. Evidence and non-destructive recovery: docs/expiry-final-acceptance-verification.md and docs/expiry-final-acceptance-recovery.sql. Production untouched. Status READY FOR PRODUCT OWNER TEST, not DONE.
+
+## 2026-10-20 — Resolved Clear All
+
+Product Owner withdrew permanent Delete All. Added Clear All beside Restore All in the existing Resolved list, with one counted confirmation and durable pharmacy-scoped cleared markers. Retains all history, quantities, original Operators and Needs Review. Applied Staging migration 20261020015824_expiry_resolved_clear_v1; existing RPC signature preserved. Baseline cf48360748cd36e291b8fc2d94ba3abecd153370.
+
+246 focused tests/build PASS; authenticated rollback-only SQL and committed isolated-fixture persistence/retry/order checks PASS. Original user-data fingerprints unchanged. Two QA captures and three resolution snapshots retained as history, with no active/visible test rows. Real parallel SQL overlap could not be proven because the connector serialized requests; two-PC acceptance remains pending. Chromium source-fixture visual review PASS. Evidence/recovery: docs/expiry-resolved-clear-verification.md. Status READY FOR PRODUCT OWNER TEST, not DONE. Production untouched.
+
+## 2026-10-20 — Expiry acceptance hotfix 01–08
+
+Baseline b534ee115bf5919c121a4b9e039d571ead08491e; existing Staging only. Device-default real Operators, compact quantities/action menu, one-confirmation Remove, complete A4 PDF/Print, dismissible scoped notifications, full active Inventory Excel, Restore All, and single/double-click KPI selection. Applied 20261020013030_expiry_operator_device_defaults_v1. Existing operational rows/fingerprints unchanged.
+
+240 focused tests and build PASS; rollback-only authenticated SQL and Chromium/artifact verification PASS. Table top y=242px retained. Permanent Delete All is BLOCKED by shared active/history state and restrictive audit dependencies; no deletion was implemented or performed. Physical TC26 acceptance pending. Full evidence/recovery: docs/expiry-hotfix-01-08-verification.md. Status READY FOR PRODUCT OWNER TEST for implemented changes, not DONE. Production untouched.
+
+## 2026-10-20 — Staging final Expiry hardening
+
+Scope: approved eight-stage implementation on fix/staging-preview-splash-css-path. Baseline ea11911fc27d52c3c6efc6ec4e809130070b2360; Production/main and Production Supabase were not accessed. The existing branch Preview remains the release target.
+
+Implemented: persistent red unknown-item warning; absolute token-refresh deadline, pre-scan recovery and late-refresh logout guard; proven GS1 field locks in History and server correction; existing pharmacy Operator management with authenticated administrator checks; unified 520px Desktop correction dialogs; stable in-place Needs Review with bounded search/photo layout; A4 Portrait PDF/Excel/named-page Print; durable first-Operator projection and keyboard-accessible floating Actions menu.
+
+Operator attribution uses original operation provenance, including delayed review resolution and corrected/re-keyed groups. Timestamp/event-ID ties have a deterministic order. Inactive Operator references and original names remain in audit. New captures require an active selected Operator on Desktop and Handheld. Older corrected records without provable field provenance remain conservatively editable; new verified GS1 locks persist across quantity edits. No original scan payloads are rewritten.
+
+Applied Staging migrations (exact SQL in supabase/migrations):
+- 20261019224613_expiry_gs1_source_locks
+- 20261019224744_expiry_operator_management
+- 20261019225005_expiry_first_operator_attribution
+- 20261019225913_expiry_locked_batch_original_text
+- 20261019230034_expiry_historical_operator_reference
+- 20261019230300_expiry_original_scan_operator_origin
+- 20261019230341_expiry_corrected_group_operator_origin
+- 20261019230852_expiry_correction_field_provenance
+
+Verification: 274 focused automated tests PASS; production build PASS. Staging authenticated-role SQL simulation in tests/expiry-hardening-staging.sql PASS with all test writes rolled back: authorization, duplicate names, inactive Operators, GS1 tamper denial and persistent locks, ordinary edit/re-key, case-insensitive Batch quantities, first attribution after deletion/rename, delayed Needs Review resolution, and idempotent retries. Anon has no management EXECUTE; private helpers/tables remain inaccessible to anon/authenticated and RLS enabled. Existing states/events/operations fingerprints stayed exactly unchanged (73 / 248 / 187 rows).
+
+Actual local Chromium source-fixture inspection: four Desktop dialog types, stable review overlay through resolution, private-photo presentation with synthetic evidence, 1366x768 Inventory and 360x640 Handheld. Search y=242px and workspace height=541px unchanged; Handheld warning remains red in ready state, Serial hidden and Save visible. This is not authenticated deployed-browser or physical TC26 acceptance. Long Operator names use an ellipsis with the complete value in title; no data is truncated.
+
+Actual report artifacts: 180 rows, PDF A4 Portrait 595.28x841.89pt, 3 pages [75,75,30]; Chromium Print A4 Portrait, 3 pages; Excel reopened with all 180 rows, full values, filters, frozen/repeated heading and fit-width Portrait settings. Named Expiry print page leaves the pre-existing default page rule unchanged. Browser/printer settings can override defaults.
+
+Known baseline test failures: Settings barcode-management subset 8 PASS / 1 FAIL; the failing new-item handler-regex test was reproduced against ea11911 source (it cannot find the handler). The older operational-UX report test expects a superseded column list. These are not marked green or silently rewritten. Full historical suite was not run; prior baseline failures are not claimed resolved.
+
+Pending physical acceptance: 30–60 minute TC26 idle/recovery and first scan; revoked real login and logout; scan/save/scan focus chain; Operator synchronization between actual devices; real attached-photo resolution and printed-paper readability. Real parallel multi-device commit stress is not claimed: SQL idempotent retries and existing advisory/row lock paths were verified, not a concurrent load exercise.
+
+Recovery: baseline ea11911 and docs/expiry-hardening-20261020-recovery.sql.txt. Recovery SQL is reference-only, not executed; metadata, Operators and audit are retained. Reverting frontend alone does not undo server-required Operator selection. Pause Expiry writes and review the documented recovery transaction before a separately approved rollback. No Production promotion is authorized.
+
+Status: READY FOR PRODUCT OWNER ACCEPTANCE — NOT DONE, conditional on final Preview READY/SHA verification recorded in the delivery response.
+
+---
+
+# PharmFlow isolated integration checkpoint — 15 October 2026
+
+Scope: candidate preparation ONLY; no push, branch promotion, deploy or database action authorized.
+Branch: integration/production-expiry-20261015, derived from exact Expiry93fba99a87c5c5a981cddbcef5555033e46ed5d8; merge complete Production26da5078163f69ca76a9169dd8d97365d7ba6c54. Merge base036ff5c7de988e5db06de1a2ddf779daef814164.
+
+Four conflicts explicitly resolved: three entry/cache/script loading blocks; cloud manifest reset combines both states. Additional proven integration fix moves syncPromise cleanup past initialization for synchronous empty-manifest return. Version refresh now guards pending Expiry work alongside Receiving.
+
+Verification: full755 tests/712PASS/42FAIL/1SKIP; all failure names reproduced on exact baseline(s), zero new failures. Focused619PASS/0FAIL. Production build and diff check PASS. Expiry modules and sensitive non-overlap owners byte-for-byte preserved. Full evidence and baseline failure list: docs/production-expiry-integration-review.md.
+
+Status: candidate prepared for review; full suite is NOT green.42 baseline failures remain documented; physical operational behavior READY FOR USER TEST, not DONE. Next: Product Owner reviews merge and known test limitations before any separate approval for Staging integration. No approval yet to touch original Expiry/main or deployed Preview.
+
+Protect: Production Receiving barcode/KPI/duplicate-line/filter/over-received/idle/version hotfixes; accepted Expiry Save optimizations/durable retries/green flash/search border/diagnostic removal/Handheld/Serial/Batch/history; account isolation and no SQL changes. Clear Session stays retired. Original local dirty worktree preserved separately and must never be reset.
+
+---
+
 # PharmFlow Global Master Group Integrity — Gate B Preparation
 
 **Status:** Code implementation prepared in an isolated local branch. Production SQL and deployment are not approved and were not executed.

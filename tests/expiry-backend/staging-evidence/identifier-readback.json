@@ -1,0 +1,37 @@
+[
+  {
+    "identifier": "001234",
+    "raw_scan": " ]C0001234\r\n",
+    "quantity": "3",
+    "expiry_month": "8",
+    "expiry_year": "2028"
+  },
+  {
+    "identifier": "04065272072977",
+    "raw_scan": " ]C004065272072977\r\n",
+    "quantity": "3",
+    "expiry_month": "8",
+    "expiry_year": "2028"
+  },
+  {
+    "identifier": "1234A",
+    "raw_scan": " ]C01234A\r\n",
+    "quantity": "3",
+    "expiry_month": "8",
+    "expiry_year": "2028"
+  },
+  {
+    "identifier": "S00110",
+    "raw_scan": " ]C0S00110\r\n",
+    "quantity": "3",
+    "expiry_month": "8",
+    "expiry_year": "2028"
+  },
+  {
+    "identifier": "U0030",
+    "raw_scan": " ]C0U0030\r\n",
+    "quantity": "3",
+    "expiry_month": "8",
+    "expiry_year": "2028"
+  }
+]

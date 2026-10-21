@@ -37,8 +37,8 @@ assert(settings.includes("Item Code, Item Name and Barcode are required"),"New i
 assert.match(settings,/workspace\.innerHTML=`[\s\S]*<label class="barcodeNewItemGroup"><span>Group <b>\*<\/b><\/span><select data-new-item-group required>/,"Add New Item must render its required Group selector immediately");
 assert(settings.includes('value="HomeHealth">Home Health</option>'),"New Global Item must use the controlled six-Group selector");
 assert(!settings.includes('if(!groupField)'),"Group must not be deferred until the first Add Item attempt");
-assert(settings.includes("findGlobalItemByCode(itemCode)")&&settings.includes("if(existingGlobal){searchInput.value=itemCode;await showItem(existingGlobal);return;}"),"Existing Global Item must open the no-Group identifier-linking flow");
-assert(settings.indexOf("if(existingGlobal){searchInput.value=itemCode;await showItem(existingGlobal);return;}")<settings.indexOf("const groupField=workspace.querySelector"),"Existing-item linking must bypass Group validation");
+assert(settings.includes("findGlobalItemByCode(itemCode)")&&settings.includes("if(existingGlobal){")&&settings.includes("No duplicate was created"),"Existing Global Item must be detected before create and never duplicated");
+assert(settings.indexOf("if(existingGlobal){")<settings.indexOf("const groupField=workspace.querySelector"),"Existing-item protection must run before Group validation");
 assert(settings.includes('auditReason("ADD_ITEM")'),"New Item must retain automatic audit reason");
 assert(!settings.includes("ActiveOrder"),"Settings barcode management must not depend on Active Order state");
 assert(!settings.includes("activeOrder"),"Settings barcode management must not depend on Active Order state");
@@ -143,12 +143,12 @@ test("Unknown barcode prefill preserves ambiguous numeric Item Code searches",()
   assert.deepStrictEqual(prefill({raw:"PF-NEW-01",query:"PF-NEW-01",isBarcode:false}),{itemCode:"PF-NEW-01"});
 });
 
-test("Settings new Global Item creation handles asynchronous success and rejection",async t=>{
+test("Settings new Global Item creation separates committed save from optional detail refresh",async t=>{
   const handlerMatch=settings.match(/workspace\.querySelector\("\[data-create-item\]"\)\?\.addEventListener\("click",async event=>\{([\s\S]*?)\n        \}\);/);
   assert(handlerMatch,"Settings new-item click handler must be available for behavioral regression coverage");
   const scenarios=[
-    {name:"successful creation",result:{success:true},expectedMessage:["Item added to Global Master","success"],expectedDisabled:true},
-    {name:"rejected creation",error:new Error("RPC rejected test creation"),expectedMessage:["RPC rejected test creation","error"],expectedDisabled:false}
+    {name:"successful create despite refresh failure",result:{success:true},refreshError:new Error("optional detail refresh failed"),expectedMessage:["Item added to Global Master","success"],expectedDisabled:true,expectedClosed:true},
+    {name:"genuine create rejection",error:new Error("RPC rejected test creation"),expectedMessage:["RPC rejected test creation","error"],expectedDisabled:false,expectedClosed:false}
   ];
   for(const scenario of scenarios){
     await t.test(scenario.name,async()=>{
@@ -160,25 +160,33 @@ test("Settings new Global Item creation handles asynchronous success and rejecti
         "[data-new-item-barcode]":{value:"TESTPFGROUP2701"},
         "[data-new-item-group]":{value:"Medicine",focus(){calls.push("group-focus");}}
       };
-      let currentTarget=button;
-      const event={get currentTarget(){return currentTarget;}};
       const workspace={querySelector(selector){return selector==="[data-create-item]"?button:fields[selector]||null;}};
       const IdentifierService={
         findGlobalItemByCode:async code=>{calls.push(["lookup",code]);return null;},
+        resolve:async value=>{calls.push(["resolve",value]);return {found:false};},
         createItem:async(operationId,payload)=>{calls.push(["create",operationId,payload]);if(scenario.error)throw scenario.error;return scenario.result;}
       };
-      const messages=[];
-      const callback=new Function("event","workspace","toSafeString","IdentifierService","searchInput","showItem","showToast","nrV2OperationId","auditReason",`return (async()=>{${handlerMatch[1]}})();`);
-      const work=callback(event,workspace,value=>String(value??""),IdentifierService,{value:""},async item=>calls.push(["show",item]),(message,kind)=>messages.push([message,kind]),()=>"isolated-op",reason=>reason);
-      currentTarget=null; // Browser dispatch clears currentTarget when the listener returns its Promise.
+      const messages=[],logs=[];
+      let closed=false,currentTarget=button;
+      const callback=new Function("event","workspace","toSafeString","IdentifierService","searchInput","showItem","showToast","nrV2OperationId","auditReason","closeControl","Logger",`return (async()=>{${handlerMatch[1]}})();`);
+      const work=callback({get currentTarget(){return currentTarget;}},workspace,value=>String(value??""),IdentifierService,{value:""},
+        async item=>{calls.push(["show",item]);if(scenario.refreshError)throw scenario.refreshError;},
+        (message,kind)=>messages.push([message,kind]),()=>"isolated-op",reason=>reason,
+        ()=>{closed=true;calls.push("close");},{warn:(...args)=>logs.push(args)});
+      currentTarget=null;
       await work;
       assert.deepStrictEqual(calls[0],["lookup","PFTESTGROUP01"]);
-      assert.deepStrictEqual(calls[1],["create","isolated-op",{
-        itemCode:"PFTESTGROUP01",itemName:"PHARMFLOW GROUP TEST ITEM",groupName:"Medicine",
-        identifierDisplay:"TESTPFGROUP2701",reason:"ADD_ITEM"
-      }],"Creation must reach the service with the selected Group and submitted item identity");
+      assert.deepStrictEqual(calls[1],["resolve","TESTPFGROUP2701"]);
+      if(scenario.error){
+        assert.deepStrictEqual(calls[2],["create","isolated-op",{
+          itemCode:"PFTESTGROUP01",itemName:"PHARMFLOW GROUP TEST ITEM",groupName:"Medicine",
+          identifierDisplay:"TESTPFGROUP2701",reason:"ADD_ITEM"
+        }],"Creation must retain the selected canonical Group and submitted identity");
+      }
       assert.strictEqual(button.disabled,scenario.expectedDisabled);
+      assert.strictEqual(closed,scenario.expectedClosed);
       assert.deepStrictEqual(messages,[scenario.expectedMessage]);
+      assert.strictEqual(logs.length,scenario.refreshError?1:0);
     });
   }
 });

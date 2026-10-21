@@ -1,0 +1,51 @@
+name: Expiry photo cleanup
+
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: expiry-photo-cleanup-production
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main' && vars.EXPIRY_CLEANUP_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Invoke authenticated cleanup worker
+        env:
+          WORKER_URL: ${{ secrets.EXPIRY_CLEANUP_WORKER_URL }}
+          CRON_TOKEN: ${{ secrets.EXPIRY_CLEANUP_CRON_TOKEN }}
+        shell: bash
+        run: |
+          node <<'NODE'
+          (async () => {
+            const expected = 'https://zznoshzcyxmtwfbznjyr.supabase.co/functions/v1/pharmflow-expiry-photo-cleanup';
+            if (process.env.WORKER_URL !== expected || !process.env.CRON_TOKEN) {
+              throw new Error('Cleanup configuration missing or wrong project');
+            }
+            const response = await fetch(expected, {
+              method: 'POST', redirect: 'error',
+              headers: { Authorization: 'Bearer ' + process.env.CRON_TOKEN },
+              signal: AbortSignal.timeout(120000)
+            });
+            const result = await response.json();
+            const keys = ['claimed', 'completed', 'failed', 'claim_lost', 'deferred'];
+            if (!response.ok || result.success !== true ||
+                keys.some(k => !Number.isSafeInteger(result[k]) || result[k] < 0) ||
+                result.claimed > 4 || result.completed !== result.claimed ||
+                result.failed !== 0 || result.claim_lost !== 0 || result.deferred !== 0) {
+              throw new Error('Cleanup did not acknowledge complete batch; inspect protected worker logs');
+            }
+            console.log(JSON.stringify(Object.fromEntries(keys.map(k => [k, result[k]]))));
+          })().catch(() => {
+            console.error('Expiry cleanup failed; follow release-operations/RUNBOOK.md');
+            process.exitCode = 1;
+          });
+          NODE
