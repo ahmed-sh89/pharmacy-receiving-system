@@ -1,3 +1,5 @@
+CURRENT NOTE: lifecycle migration 20261022151445 is now applied and functional tests passed. Older BLOCKED lifecycle sections below are historical. See RECEIVING_QUICK_ADD_STATUS_20261022.md for current release and cleanup status.
+
 # Quick Add recovery and focused diagnostics — 22 October 2026
 
 Status: BLOCKED for end-to-end order upload / Quick Add acceptance.

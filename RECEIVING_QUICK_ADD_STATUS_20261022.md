@@ -1,23 +1,15 @@
-# CURRENT STATUS: BLOCKED for order-upload acceptance
+# Receiving Quick Add — current release checkpoint, 22 October 2026
 
-See STAGING_REPAIR_AND_PRODUCTION_FINDINGS_20261022.md for newer verified state. Earlier Quick Add tests remain historical evidence, not end-to-end upload acceptance.
+Functional status: READY FOR USER TEST after the published Preview smoke check. Product Owner has NOT verified it; not DONE. Cleanup status: BLOCKED by connector Invalid or expired requestState, independently verified test-only fixtures remain.
 
-# Receiving Quick Add — Staging verification, 22 October 2026
+Staging: tovkcakucyagvbzvlnks, pharmflow-staging, ACTIVE_HEALTHY. Production untouched, main 4b3fe2e03d438ba5d462d5eabae0a6446884e125. Parent Quick Add remote a69c7ca9efabbc10a2e815f99ad5e045b54612b5 preserved; no application runtime changes in this release continuation.
 
-Base Production: 4b3fe2e03d438ba5d462d5eabae0a6446884e125.
-Original prepared commit 9a9fba6eb324e626b25a7e7b81b4b532b30ebe81 retained locally and in prior verified bundle. GitHub publication uses an equivalent source commit based on the same Production parent because local authenticated push is unavailable.
-Branch: fix/receiving-quick-add-staging-20261022.
+Migration 20261022151445 receiving_staging_order_lifecycle_compatibility is VERIFIED APPLIED. Source is preserved in supabase/migrations/20261022151445_receiving_staging_order_lifecycle_compatibility.sql and the matching review SQL. Live register/get definitions match recovered Production MD5 c629de8204d6b5158a8ecb7e540d5b1c / 0e4427460fbd825eed0596631777695d. Browser entry EXECUTE is authenticated-only; table RLS/direct grants unchanged. Previous migrations 00/01/02/04/05 retained; 03 remains DEFERRED.
 
-Recovered exact source table columns/defaults/constraints/indexes/RLS/ACL from saved expiry-production-evidence catalog, with no operational rows. Original source table has RLS enabled, no browser grants or policies. Recovered current append receipt definition and ACL from functions-000.json. Save/get source v2 contracts recovered from PHASE2C1151_RECEIVING_RELEASE_PREPARED.sql. No historical whole-schema SQL was replayed. Compatibility creates absent objects only.
+Prior successful tests retained without rerun: order manifest save, registration, retrieval, original source rows, selected Order persistence, duplicate-order rejection, pharmacy isolation, Group required, Quick Add creation/mapping/Received 4, same-operation retry one receipt. Independent connection read of COMMITTED order/source/selection/quantity/retry passed. 13 focused tests, production build, SQL+PLpgSQL parsing PASS (verification/final-lifecycle-*). These are database role/JWT fixture tests plus synthetic client tests, not browser-authenticated acceptance. No application changes invalidate those results.
 
-Applied ONLY to Staging tovkcakucyagvbzvlnks, in order:
-20261022140245 receiving_quick_add_staging_dependencies (00)
-20261022140256 receiving_quick_add_identity_provenance (01)
-20261022140308 receiving_quick_add_atomic_review_capture (02)
-Migration 03 remains DEFERRED and unexecuted.
+Interrupted cleanup recovery: exact IDs from tests/staging-final-lifecycle-quick-add.sql and before/after catalog reads establish ownership. No cleanup had completed. New targeted transaction and a smaller single-receipt DELETE both failed at the connector request channel with Invalid or expired requestState. No successful deletion is claimed. Final separate read confirms the same remaining records: two isolated pharmacies, three synthetic users/members, one system-owner entry for the synthetic user, one Order/source row/manifest/generation, one receipt quantity 4, one Global item/identifier/audit. Actor/pharmacy/operation UUIDs and actual row IDs are in verification/resume-cleanup-before.json and resume-cleanup-verification.json. No HHP084 records were used or modified.
 
-Actual live SQL tests PASS: authorized Global creation and quantity four; exact retry returns same receipt; changed retry rejected; pharmacy-only admin cannot create Global item; viewer rejected; other pharmacy rejected; existing Master reused with Pharmacy mapping and quantity three; over-remaining rejected; atomic review capture quantity four; original source upload/read; browser table and anon RPC grants closed. Tests use SET LOCAL ROLE authenticated with synthetic JWT claims, exercising database role/authorization, not GoTrue login.
-Two independently submitted concurrent requests committed one receipt quantity four; one response new, the other idempotent. Separate connection verified count one/sum four. All test fixtures then deleted by exact generated actor/pharmacy/order IDs. No HHP084 records used.
-43 focused client tests previously passed, no runtime feature code changes since then. New compatibility SQL parser and refreshed Staging build PASS. Existing classic-script Vite warnings remain.
+Do not infer fixture ownership from names or dates. Do not reset tables. Next cleanup attempt requires a working connector and rechecking exact UUIDs/references from preserved evidence. Release testing can use the separately authorized Staging HHP084 test account; these test pharmacies are separate. Do not use or change Production HHP084. Cleanup remains an explicit unfinished item.
 
-Preview source is explicitly configured for Staging Supabase. Production main, Production DB, accepted Staging branch and deployment are not modified. Expiry runtime preserved. Live browser login/device/multi-PC acceptance remains Product Owner verification. Publish/URL verification recorded in final response.
+Next Product Owner acceptance: in a Staging test Order, scan a new barcode for an Order-only item, choose Find in Order / Quick Add, select Group, receive quantity 4 and refresh; confirm 4 once. Full signed-in browser workflow remains user verification. Do not bypass browser security warnings. No Production promotion authorized.

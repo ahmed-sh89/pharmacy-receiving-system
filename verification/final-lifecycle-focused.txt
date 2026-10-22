@@ -1,0 +1,21 @@
+✔ Quick Add replaces legacy creation, populates readonly code/name from the selected Order and receives quantity 4 (6.072103ms)
+✔ missing Group blocks creation; a concurrently existing Master is reused without Group re-entry (2.005099ms)
+✔ pharmacy-only mapping permission cannot create a Master; Save for Review remains available (1.334166ms)
+✔ pharmacy-only user may Quick Add an already existing Master through the same scoped server contract (1.922117ms)
+✔ mapping conflict never creates a local receiving transaction or falls back to another writer (1.096894ms)
+✔ lost committed reply freezes original row/quantity; retry acknowledges one receipt without receiving twice (1.094441ms)
+✔ changed selected scope or lack of mapping permission blocks Quick Add before any RPC (1.915697ms)
+✔ Quick Add search uses captured Order rows and never selects an unrelated current Order (0.768208ms)
+✔ existing Master Link partial retry preserves allocation IDs and skips already recorded receipts (1.569384ms)
+✔ SQL reuses Settings creation, checks server roles/Group/source, commits receipt atomically and keeps migration 3 deferred (2.157055ms)
+✔ simultaneous Quick Add clicks issue only one server operation (7.421932ms)
+✔ a malformed server receipt is rejected before local merge (1.203813ms)
+✔ reprocessing an acknowledged Quick Add receipt does not duplicate Last Scan batch or local quantity (1.0403ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 133.341226
