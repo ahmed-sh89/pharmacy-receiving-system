@@ -9445,7 +9445,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                 ${group.photos.length?`<div class="pfnReviewPhotoGrid">${group.photos.map((path,pidx)=>`<button type="button" data-photo-open="${index}:${pidx}"><img data-photo="${index}:${pidx}" alt="Temporary product photo" hidden><span>View temporary photo</span></button>`).join("")}</div>`:""}
               </div>
               ${handheld
-                ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span><button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button></div>`
+                ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span><button class="needsReviewCancel" type="button" data-cancel-review="${index}">Delete Review</button></div>`
                 : `<div class="needsReviewResolve">
                     <div class="needsReviewSearchRow">
                       <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
@@ -9453,7 +9453,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                     </div>
                     <div class="needsReviewMatches" data-matches="${index}"></div>
                     <div class="needsReviewSelection" data-selection="${index}" hidden></div>
-                    <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Cancel Review</button>
+                    <button class="needsReviewCancel" type="button" data-cancel-review="${index}">Delete Review</button>
                   </div>`}
               </div>
             </section>`).join(""):`<div class="needsReviewEmpty">Nothing needs review.</div>`}
@@ -9490,7 +9490,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             const history=await nrV3ListHistory?.(workflow,null)||[];
             if(backButton) backButton.hidden=false;
             if(historyButton) historyButton.hidden=true;
-            list.innerHTML=history.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Status</th><th>Updated</th><th>Identifier</th><th>Order</th><th>Quantity</th><th>Photo</th></tr></thead><tbody>${history.slice().sort((a,b)=>String(b.updated_at||b.created_at||"").localeCompare(String(a.updated_at||a.created_at||""))).map(row=>`<tr><td><b>${esc(row.status||"PENDING")}</b></td><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.updated_at||row.created_at):row.updated_at||row.created_at||"—")}</td><td>${esc(row.identifier_display||row.gtin||"—")}</td><td>${esc(row.order_number||"—")}</td><td>${esc(row.pending_quantity||1)}</td><td>${row.photo_path?"Photo retained":"—"}</td></tr>`).join("")}</tbody></table></div>`:'<div class="needsReviewEmpty">No Needs Review history.</div>';
+            list.innerHTML=history.length?`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Status</th><th>Updated</th><th>Identifier</th><th>Order</th><th>Quantity</th><th>Photo</th></tr></thead><tbody>${history.slice().sort((a,b)=>String(b.updated_at||b.created_at||"").localeCompare(String(a.updated_at||a.created_at||""))).map(row=>`<tr><td><b>${esc(row.status||"PENDING")}</b></td><td>${esc(typeof formatDateTime==="function"?formatDateTime(row.updated_at||row.created_at):row.updated_at||row.created_at||"—")}</td><td>${esc(row.identifier_display||row.gtin||"—")}</td><td>${esc(row.order_number||"—")}</td><td>${esc(row.pending_quantity||1)}</td><td>${row.photo_path?"Photo cleanup scheduled":"—"}</td></tr>`).join("")}</tbody></table></div>`:'<div class="needsReviewEmpty">No Needs Review history.</div>';
         }catch(error){showToast?.(error?.message||"Unable to load Needs Review history","error");}
     });
 
@@ -9519,28 +9519,29 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
         });
 
         cancelReview?.addEventListener("click",async()=>{
-            if(!await pharmFlowConfirm({title:"Cancel Needs Review Group?",message:`GTIN ${group.gtin}. This will not learn the GTIN or change any received quantity.`,confirmText:"Cancel Group",tone:"danger"})) return;
+            if(!await pharmFlowConfirm({title:"Delete Review?",message:`This will delete the selected review (${group.rows.length} ${group.rows.length===1?"entry":"entries"}) and schedule its associated photos for permanent deletion. Existing received quantities will not be changed.`,confirmText:"Delete Review",tone:"danger"})) return;
             /* Handheld cancellation is an operational wrong-scan cleanup.
                Do not invoke browser prompt(): Zebra kiosk/focus handling can
                suppress it and workers should not type free-form reasons.
                Desktop retains the existing audited reason requirement. */
             const reason=handheld
                 ? "Wrong Scan — Handheld"
-                : toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Item Cancelled, or Other")||"").trim();
-            if(!reason){showToast?.("A cancellation reason is required","warning");return;}
+                : toSafeString(window.prompt("Reason required: Wrong Scan, Test Entry, Review No Longer Needed, or Other")||"").trim();
+            if(!reason){showToast?.("A deletion reason is required","warning");return;}
             cancelReview.disabled=true; overlay.dataset.busy="1";
             try{
-                /* The current V2 delete RPC has no reason field. Deletion is
-                   intentionally limited to the exact rows in this displayed
-                   GTIN/order/reason group; Storage objects are intentionally preserved until a verified lifecycle policy exists. */
-                for(const row of group.rows) await nrV2Delete(row.review_id);
+                // Delete only constituent records from this selected visible review.
+                // The database transition atomically queues its photos for cleanup.
+                for(const row of group.rows){
+                    if(!await nrV2Delete(row.review_id)) throw new Error("Review changed; refresh Needs Review before retrying.");
+                }
                 section.remove(); await refreshNeedsReviewCounters();
                 const count=overlay.querySelectorAll(".needsReviewRow").length;
                 const countNode=overlay.querySelector(".pfnReviewCount");
                 if(countNode) countNode.textContent=String(count);
                 if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
-                showToast?.(`Needs Review cancelled — ${reason}`,"success");
-            }catch(error){cancelReview.disabled=false;showToast?.(error?.message||"Unable to cancel review","error");}
+                showToast?.(`Review deleted — photos queued for cleanup`,"success");
+            }catch(error){cancelReview.disabled=false;showToast?.(error?.message||"Unable to delete review","error");}
             finally{overlay.dataset.busy="";}
         });
 
@@ -9564,7 +9565,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             if(!selectedItem){selection.hidden=true;selection.innerHTML="";setResolveMode(false);return;}
             const model=buildReceivingResolverSelectionModel(selectedItem,group.total_quantity,nrV2AllocationScope(group));
             setResolveMode(true);selection.hidden=false;
-            selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+`<button type="button" class="gtinPrimaryAction" data-resolve>Link &amp; Receive</button>`;
+            selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+`<button type="button" class="gtinPrimaryAction" data-resolve>Resolve Review</button>`;
             selection.querySelector("[data-change-review-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();if(search){search.value="";search.focus();}});
             selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
                 const button=event.currentTarget;button.disabled=true;overlay.dataset.busy="1";
@@ -9579,7 +9580,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
                             const pendingRows=await nrV2List(workflow,null);
                             if(!pendingRows.some(row=>reviewIds.has(toSafeString(row?.review_id||"")))){resolved=true;break;}
                         }
-                        if(!resolved){button.textContent="Processing — Close & reopen to refresh";showToast?.("Receipt is still processing. Do not press Link & Receive again.","warning");return;}
+                        if(!resolved){button.textContent="Processing — Close & reopen to refresh";showToast?.("Receipt is still processing. Do not press Resolve Review again.","warning");return;}
                     }
                     section.remove();await refreshNeedsReviewCounters();
                     const count=overlay.querySelectorAll(".needsReviewRow").length,countNode=overlay.querySelector(".pfnReviewCount");

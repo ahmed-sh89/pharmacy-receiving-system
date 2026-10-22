@@ -11,7 +11,7 @@ type CleanupJob = {
   job_id: string;
   pharmacy_id: string;
   review_id: string | null;
-  operation_id: string;
+  operation_id: string | null;
   object_path: string;
   attempts: number;
   claim_token: string;
@@ -42,7 +42,7 @@ async function serviceRequest(path: string, init: RequestInit = {}) {
     headers: {
       apikey: serviceKey,
       Authorization: "Bearer " + serviceKey,
-      "Content-Type": "application/json",
+      ...(init.body == null ? {} : { "Content-Type": "application/json" }),
       ...init.headers,
     },
   }, REQUEST_TIMEOUT_MS);
@@ -74,10 +74,34 @@ Deno.serve(async (request: Request) => {
     const result = await processCleanupJobs(jobs, {
       deleteObject: async (job: CleanupJob) => {
         const encodedPath = job.object_path.split("/").map(encodeURIComponent).join("/");
-        return await serviceRequest(
-          "/storage/v1/object/" + STORAGE_BUCKET + "/" + encodedPath,
-          { method: "DELETE" },
-        );
+        const removed = await serviceRequest("/storage/v1/object/" + STORAGE_BUCKET, {
+          method: "DELETE",
+          body: JSON.stringify({ prefixes: [job.object_path] }),
+        });
+        if (!removed.ok && removed.status !== 404) {
+          const detail = await removed.clone().json().catch(() => ({}));
+          console.warn(JSON.stringify({ event: "expiry_photo_delete_failed", job_id: job.job_id,
+            status: removed.status, code: String(detail.code ?? detail.error ?? "unknown").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 80) }));
+          return removed;
+        }
+        // Do not acknowledge a queue job on metadata mutation alone.
+        const read = await serviceRequest("/storage/v1/object/authenticated/" + STORAGE_BUCKET + "/" + encodedPath, {
+          method: "GET", headers: { "Cache-Control": "no-cache, no-store", Range: "bytes=0-0" },
+        });
+        let absent = read.status === 404;
+        let readCode = "";
+        if (!absent && !read.ok) {
+          const detail = await read.json().catch(() => ({}));
+          readCode = String(detail.code ?? detail.error ?? "");
+          absent = read.status === 400 && String(detail.statusCode) === "404" &&
+            (detail.message === "Object not found" || detail.code === "NoSuchKey");
+        } else {
+          await read.body?.cancel();
+        }
+        console.info(JSON.stringify({ event: "expiry_photo_absence_check", job_id: job.job_id,
+          delete_status: removed.status, read_status: read.status, absent,
+          read_code: readCode.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 80) }));
+        return absent ? new Response(null, { status: 200 }) : new Response(null, { status: 409 });
       },
       complete: (job: CleanupJob) => rpc<boolean>("complete_photo_cleanup_job", {
         p_job_id: job.job_id,

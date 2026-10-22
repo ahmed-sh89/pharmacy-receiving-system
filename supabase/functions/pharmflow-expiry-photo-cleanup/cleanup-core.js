@@ -5,6 +5,12 @@ export const MAX_BATCH = 4;
 export function validCleanupJob(job) {
   const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
   const path = new RegExp("^(" + uuid + ")/expiry-v1/(" + uuid + ")/(product|expiry)/(" + uuid + ")\\.(jpg|png|webp)$", "i");
+  if (job?.operation_id === null) {
+    const receivingPath = new RegExp("^(" + uuid + ")/(" + uuid + ")/[0-9]{10,20}[.](jpg|png|webp)$", "i");
+    const receiving = receivingPath.exec(job.object_path ?? "");
+    return !!receiving && receiving[1].toLowerCase() === job.pharmacy_id?.toLowerCase() &&
+      receiving[2].toLowerCase() === job.review_id?.toLowerCase() && !!job.claim_token && !!job.job_id;
+  }
   const match = path.exec(job?.object_path ?? "");
   return !!match &&
     match[1].toLowerCase() === job.pharmacy_id?.toLowerCase() &&
