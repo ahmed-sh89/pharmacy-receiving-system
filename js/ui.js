@@ -3288,7 +3288,11 @@ function refreshMasterGTINUI(){
     if(!status || status.installed !== true){
 
         if(headerMaster){
-            headerMaster.textContent=navigator.onLine ? "SYNCING" : "OFFLINE";
+            const isOnline=navigator.onLine;
+            headerMaster.textContent=isOnline ? "SYNCING" : "OFFLINE";
+            headerMaster.classList.toggle("isActive",false);
+            headerMaster.classList.toggle("isOffline",!isOnline);
+            headerMaster.classList.toggle("isSyncing",isOnline);
             headerMaster.title="Global GTIN Master is not available on this device yet";
         }
 
@@ -3339,7 +3343,11 @@ function refreshMasterGTINUI(){
 
     if(headerMaster){
         const count=toInteger(status.itemCount,0);
-        headerMaster.textContent=navigator.onLine ? "ACTIVE · "+count.toLocaleString() : "CACHED · "+count.toLocaleString();
+        const isOnline=navigator.onLine;
+        headerMaster.textContent=isOnline ? "ACTIVE" : "CACHED · "+count.toLocaleString();
+        headerMaster.classList.toggle("isActive",isOnline);
+        headerMaster.classList.toggle("isOffline",!isOnline);
+        headerMaster.classList.toggle("isSyncing",false);
         headerMaster.title="Global GTIN Master — "+count.toLocaleString()+" items";
     }
 
