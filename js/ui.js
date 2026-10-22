@@ -3339,7 +3339,7 @@ function refreshMasterGTINUI(){
 
     if(headerMaster){
         const count=toInteger(status.itemCount,0);
-        headerMaster.textContent=navigator.onLine ? "ACTIVE · "+count.toLocaleString() : "CACHED · "+count.toLocaleString();
+        headerMaster.textContent=navigator.onLine ? "ACTIVE" : "CACHED · "+count.toLocaleString();
         headerMaster.title="Global GTIN Master — "+count.toLocaleString()+" items";
     }
 

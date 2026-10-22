@@ -1,0 +1,10 @@
+/* Targeted Desktop header alignment; preserves original PharmFlow colors and runtime states. */
+@media (min-width:769px){
+  body:not(.zebraDevice) .pageHeading p{display:none!important}
+  body:not(.zebraDevice) .topBar{align-items:center}
+  body:not(.zebraDevice) .pageHeading{display:flex;flex-direction:column;justify-content:center;min-height:36px}
+  body:not(.zebraDevice) .pharmacyNameField{display:flex;align-items:center;justify-content:center;min-width:0;min-height:36px;gap:0}
+  body:not(.zebraDevice) .pfnContextBar{align-items:center;gap:7px}
+  body:not(.zebraDevice) .pfnContextBar>div,
+  body:not(.zebraDevice) .pfnContextBar>.cloudWorkspaceStatus{height:36px;min-height:36px}
+}
