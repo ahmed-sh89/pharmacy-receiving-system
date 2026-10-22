@@ -2123,6 +2123,13 @@ function renderAuthState(){
         : (account && account.member_role ? account.member_role.toUpperCase() : "");
 
     setText("accountPharmacyName",account && account.pharmacy_name || "Pharmacy");
+    const headerDisplayName=String(account && account.display_name || "").trim();
+    setText(
+        "topBarUserName",
+        headerDisplayName && !headerDisplayName.includes("@")
+            ? headerDisplayName
+            : "User"
+    );
     setText("accountUserName",account && (account.display_name || account.email) || "User");
     setText("accountUserRole",roleText);
     setText("dashboardPharmacyName",account && account.pharmacy_name || "Pharmacy");
