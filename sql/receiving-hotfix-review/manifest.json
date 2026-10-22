@@ -1,0 +1,25 @@
+{
+  "base_sha": "9477ee398dcc7ea220802ed373c5befc36855967",
+  "executed": false,
+  "order": [
+    {
+      "file": "01_identity_and_provenance.sql",
+      "decision": "REVISE",
+      "sha256": "8e2c7cf554f7dc90d9c8a2a2d02d60460f3712317fde031c9fda96e72fa73eff"
+    },
+    {
+      "file": "02_atomic_capture.sql",
+      "decision": "REQUIRED",
+      "sha256": "d55bc735c8d72e8b990acb4c8cdb2d06a8efd5c47662fe9e969a7b73373874ab"
+    }
+  ],
+  "deferred": [
+    {
+      "file": "deferred/03_deferred_resolution.sql",
+      "decision": "DEFER",
+      "apply": false,
+      "reason": "Not needed for approved immediate Quick Add / Settings Extra workflow"
+    }
+  ],
+  "preserved_previous_package_sha256": "096b71ba6d0d8a30bb2d60c32b231de5053343b7fceb668e7527928bd45d2bdd"
+}

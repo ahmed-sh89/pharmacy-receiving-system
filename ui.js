@@ -8925,18 +8925,11 @@ async function nrV2ResolveGroupToOrderItem(group,item){
     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
     let pharmacyMapping=null;
     if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()&&identifier){
-        const mappingResult=await IdentifierService.learnIdentifier(nrV2OperationId(),identifier,globalItem,"Needs Review resolution");
+        const mappingResult=await IdentifierService.learnExistingIdentifier(nrV2OperationId(),identifier,globalItem,"Needs Review resolution");
         pharmacyMapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
     }
     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
-    const resolution=pharmacyMapping?{
-        kind:"PHARMACY_LEARNED",
-        mappingId:pharmacyMapping.identifierId,
-        mappingRevision:pharmacyMapping.mappingRevision,
-        identifierDisplay:pharmacyMapping.identifierDisplay,
-        identifierKey:pharmacyMapping.identifierKey,
-        resolvedItemCode:pharmacyMapping.itemCode
-    }:null;
+    const resolution=pharmacyMapping?IdentifierService.receivingProvenance(pharmacyMapping):null;
     const remainingState=new Map();
     for(const order of getReceivingAutoAllocationCandidates(item,scope)){
         const row=getReceivingOrderRow(item,order);

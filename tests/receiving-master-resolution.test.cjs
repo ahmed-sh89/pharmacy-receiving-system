@@ -43,20 +43,20 @@ test('deferred resolution validates captured scope before learning or writing a 
  await assert.rejects(c.nrV2ResolveGroupToOrderItem({rows:[{pharmacy_id:'P'}]},{}),/original captured Orders/);assert.equal(learns,0);
  await assert.rejects(c.nrV2ResolveGroupToOrderItem({rows:[{pharmacy_id:'Q'}]},{}),/different pharmacy/);
 });
-test('review draft uses stable operation ID and original captured scope, retaining legacy callers',async()=>{
- const calls=[];const c=context({nrV2PharmacyId:()=> 'P',AppState:{session:{},workspace:{}},getSelectedReceivingOrderNumbers:()=>['B'],authRpc:async(name,args)=>{calls.push({name,args});return [{review_id:'R'}];}});
+test('atomic review capture uses stable operation ID and original captured scope',async()=>{
+ const calls=[];const c=context({nrV2PharmacyId:()=> 'P',globalThis:{crypto:{randomUUID:()=> 'generated-op'}},AppState:{session:{},workspace:{}},getSelectedReceivingOrderNumbers:()=>['B'],authRpc:async(name,args)=>{calls.push({name,args});return [{review_id:'R',pending_quantity:1,status:'PENDING'}];}});
  vm.runInNewContext(fn(fs.readFileSync('js/needs-review.js','utf8'),'nrV2CreateDraft'),c);
  await c.nrV2CreateDraft({identifierDisplay:'06285147015764'},{operationId:'stable',workScopeOrderNumbers:['A']});
  await c.nrV2CreateDraft({identifierDisplay:'A07XA04'},{});
- assert.equal(calls[0].name,'create_pharmflow_needs_review_v5');assert.equal(calls[0].args.p_order_number,'A');
+ assert.equal(calls[0].name,'create_pharmflow_needs_review_v6');assert.equal(calls[0].args.p_order_number,'A');
  assert.equal(calls[0].args.p_operation_id,'stable');assert.equal(calls[0].args.p_identifier_display,'06285147015764');
- assert.equal(calls[1].name,'create_pharmflow_needs_review_v4');assert.equal(calls[1].args.p_identifier_display,'A07XA04');
+ assert.equal(calls[1].name,'create_pharmflow_needs_review_v6');assert.equal(calls[1].args.p_identifier_display,'A07XA04');
 });
-test('immediate Save retains draft on quantity update retry and blocks duplicate click',()=>{
+test('immediate atomic Save retains capture on retry and blocks duplicate click',()=>{
  // These guards accompany the executable draft and scope tests; no live RPCs are called.
- assert.match(receiving,/if\(reviewSaving\|\|linking\)return/);
+ assert.match(receiving,/if\(reviewSaving\|\|linking\|\|quickCapture\)return/);
  assert.match(receiving,/reviewDraft=reviewDraft\|\|await nrV2CreateDraft/);
- assert.match(receiving,/await nrV2SetQty\(reviewDraft.review_id,quantity\)/);
+ assert.match(receiving,/const savedReview=reviewDraft/);
  assert.match(receiving,/data-extra-target><option value="">Select Target Order/);
  assert.match(receiving,/gtinResolution:resolution/);
 });

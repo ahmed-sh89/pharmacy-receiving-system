@@ -74,6 +74,34 @@ const IdentifierService={
     isReferencePharmacy(){
         return toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
     },
+    async learnExistingIdentifier(operationId,identifierDisplay,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        const result=await authRpc("learn_pharmflow_existing_identifier_v3",{
+            p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),
+            p_item_code:toSafeString(item?.itemCode||item?.item_code),p_reason:toSafeString(reason)
+        });
+        const mapping=Array.isArray(result)?result[0]:result;
+        if(!mapping?.success||!["GLOBAL","PHARMACY"].includes(mapping.mappingScope)||!mapping.identifierId||!mapping.mappingRevision) throw new Error("Identifier learning was not confirmed");
+        return mapping;
+    },
+    async quickAddOrderItem(capture){
+        if(this.pharmacyId()!==capture.pharmacyId) throw new Error("Pharmacy changed. Reopen Receiving.");
+        const result=await authRpc("quick_add_pharmflow_order_item_v1",capture.params);
+        const reply=Array.isArray(result)?result[0]:result;
+        if(reply?.success===false&&reply.code==="GLOBAL_CREATION_PERMISSION_REQUIRED"){
+            const error=new Error(reply.message);error.safeNoWrites=true;throw error;
+        }
+        if(reply?.success!==true||reply.pharmacyId!==capture.pharmacyId||reply.operationId!==capture.operationId||!Array.isArray(reply.receipts)||reply.receipts.length!==1) throw new Error("Quick Add receipt confirmation is unavailable. Retry the same selection.");
+        const tx=reply.receipts[0];
+        if(tx.transaction_id!==`QUICK_ADD_V1:${capture.operationId}`||tx.order_number!==capture.params.p_source_order||normalizeItemCode(tx.item_code)!==normalizeItemCode(capture.params.p_item_code)||Number(tx.quantity)!==capture.params.p_quantity||toSafeString(tx.gtin).trim()!==capture.params.p_identifier_display) throw new Error("Quick Add receipt confirmation does not match the captured selection.");
+        return reply;
+    },
+    receivingProvenance(mapping){
+        if(!mapping||!["GLOBAL","PHARMACY"].includes(mapping.mappingScope)||!mapping.identifierId||!mapping.mappingRevision||!mapping.identifierKey||!mapping.itemCode) throw new Error("Confirmed mapping provenance required");
+        return {contractVersion:4,kind:mapping.mappingScope==="GLOBAL"?"GLOBAL_LEARNED":"PHARMACY_LEARNED",mappingId:mapping.identifierId,
+            mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode};
+    },
     async learnIdentifier(operationId,identifierDisplay,item,reason,groupName=""){
         const pharmacyId=this.pharmacyId();
         if(!pharmacyId) throw new Error("Current pharmacy is unavailable");

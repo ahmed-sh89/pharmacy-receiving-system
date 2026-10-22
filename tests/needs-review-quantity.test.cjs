@@ -35,20 +35,15 @@ function harness({loseCreateReply=false,failSetOnce=false,badConfirmation=false,
   nrV2PharmacyId:()=> 'P',AppState:{session:{},workspace:{}},refreshNeedsReviewCounters:async()=>{},
   authRpc:async(name,args)=>{
    calls.push({name,args});
-   if(name==='create_pharmflow_needs_review_v5'){
+   if(name==='create_pharmflow_needs_review_v6'){
     let row=rows.get(args.p_operation_id);
-    if(!row){row={review_id:'R',pending_quantity:1,identifier_display:args.p_identifier_display,work_scope_order_numbers:args.p_work_scope_order_numbers,order_number:args.p_order_number,status:'PENDING'};rows.set(args.p_operation_id,row);}
-    if(loseCreateReply){loseCreateReply=false;throw Error('Create reply lost');}
-    return [{...row}];
-   }
-   if(name==='set_pharmflow_needs_review_qty_v2'){
+    if(!row){row={review_id:'R',pending_quantity:args.p_pending_quantity,identifier_display:args.p_identifier_display,work_scope_order_numbers:args.p_work_scope_order_numbers,order_number:args.p_order_number,status:'PENDING'};rows.set(args.p_operation_id,row);}
     if(delaySet)await gate;
-    if(failSetOnce){failSetOnce=false;throw Error('Set quantity unavailable');}
-    const row=[...rows.values()].find(r=>r.review_id===args.p_review_id);
-    assert(row);row.pending_quantity=args.p_pending_quantity;
-    if(badConfirmation==='quantity')return [{review_id:row.review_id,pending_quantity:1}];
-    if(badConfirmation==='review')return [{review_id:'OTHER',pending_quantity:row.pending_quantity}];
-    return badConfirmation?[]:[{review_id:row.review_id,pending_quantity:row.pending_quantity}];
+    if(failSetOnce){failSetOnce=false;throw Error('Atomic capture unavailable');}
+    if(loseCreateReply){loseCreateReply=false;throw Error('Create reply lost');}
+    if(badConfirmation==='quantity')return [{...row,pending_quantity:1}];
+    if(badConfirmation==='review')return [{...row,review_id:null}];
+    return badConfirmation?[]:[{...row}];
    }
    if(name==='list_pharmflow_needs_review_v4')return [...rows.values()].map(r=>({...r}));
    throw Error(`Unexpected write/contract: ${name}`);
@@ -58,17 +53,17 @@ function harness({loseCreateReply=false,failSetOnce=false,badConfirmation=false,
  const done=c.openQuickGTINResolver({identifierDisplay:'884400159403',quantity:1});
  return {c,panel,calls,rows,done,releaseSet,changeOrders:()=>{selected=['OTHER'];},save:async(qty=4)=>{panel.querySelector('[data-resolver-qty]').value=String(qty);await panel.querySelector('[data-review]').click();},reopen:async()=>c.groupNeedsReviewRows(await c.nrV2List())};
 }
-test('Quantity 4 reaches the actual Save handler, cloud setter, and reopened grouped review with original two-order scope',async()=>{
+test('Quantity 4 reaches the actual Save handler, atomic create, and reopened grouped review with original two-order scope',async()=>{
  const h=harness();h.changeOrders();await h.save(4);assert.equal(await h.done,true);
  const groups=await h.reopen();assert.equal(groups.length,1);assert.equal(groups[0].total_quantity,4);assert.equal(groups[0].rows.length,1);
  assert.deepEqual(Array.from(groups[0].work_scope_order_numbers),['TO-000519647','TO-000522923']);
- assert.equal(h.calls[0].args.p_operation_id,'stable-capture-operation');assert.equal(h.calls[1].args.p_pending_quantity,4);
- assert.equal(h.calls[1].args.p_review_id,'R');assert.equal(h.calls[1].args.p_pharmacy_id,'P');
+ assert.equal(h.calls[0].args.p_operation_id,'stable-capture-operation');assert.equal(h.calls[0].args.p_pending_quantity,4);
+ assert.equal([...h.rows.values()][0].review_id,'R');assert.equal(h.calls[0].args.p_pharmacy_id,'P');
  assert(h.calls.every(c=>!c.name.includes('resolution')&&!c.name.includes('transaction')&&!c.name.includes('identifier_v2')));
 });
-test('failed quantity update keeps dialog open; retry reuses same draft and saves 4 once',async()=>{
+test('failed capture reply keeps dialog open; same operation retries one atomic quantity-four row',async()=>{
  const h=harness({failSetOnce:true});await h.save(4);assert.equal(h.panel.removed,false);assert.match(h.panel.querySelector('.gtinPanelMessage').textContent,/unavailable/);
- await h.save(4);assert.equal(await h.done,true);assert.equal(h.rows.size,1);assert.equal(h.calls.filter(c=>c.name.startsWith('create_')).length,1);
+ await h.save(4);assert.equal(await h.done,true);assert.equal(h.rows.size,1);assert.equal(h.calls.filter(c=>c.name.startsWith('create_')).length,2);
  assert.equal((await h.reopen())[0].total_quantity,4);
 });
 test('lost create reply retries the same operation ID without a second review',async()=>{
@@ -76,14 +71,14 @@ test('lost create reply retries the same operation ID without a second review',a
  assert.equal(await h.done,true);assert.equal(h.rows.size,1);assert.equal((await h.reopen())[0].total_quantity,4);
  const creates=h.calls.filter(c=>c.name.startsWith('create_'));assert.equal(creates.length,2);assert.equal(creates[0].args.p_operation_id,creates[1].args.p_operation_id);
 });
-test('concurrent Save clicks produce one create and one quantity update',async()=>{
+test('concurrent Save clicks produce one atomic create and no separate setter',async()=>{
  const h=harness({delaySet:true});const first=h.save(4);await Promise.resolve();await h.save(4);h.releaseSet();await first;
- assert.equal(await h.done,true);assert.equal(h.calls.filter(c=>c.name.startsWith('create_')).length,1);assert.equal(h.calls.filter(c=>c.name.startsWith('set_')).length,1);
+ assert.equal(await h.done,true);assert.equal(h.calls.filter(c=>c.name.startsWith('create_')).length,1);assert.equal(h.calls.filter(c=>c.name.startsWith('set_')).length,0);
 });
 for(const badConfirmation of [true,'quantity','review']){
  test(`invalid quantity confirmation (${badConfirmation}) keeps dialog open`,async()=>{
   const h=harness({badConfirmation});await h.save(4);
-  assert.equal(h.panel.removed,false);assert.match(h.panel.querySelector('.gtinPanelMessage').textContent,/quantity.*confirm/i);
+  assert.equal(h.panel.removed,false);assert.match(h.panel.querySelector('.gtinPanelMessage').textContent,/review.*confirm/i);
  });
 }
 test('invalid entered quantity does not issue a create or setter call',async()=>{
@@ -101,4 +96,11 @@ test('Remaining is positive pending quantity; Complete, Over and Extra retain th
  assert.equal(selection(4).status.label,'COMPLETE');assert.equal(selection(4).status.value,'0');
  assert.equal(selection(5).status.label,'OVER');assert.equal(selection(5).status.value,'+1');
  assert.equal(selection(4,0).status.label,'EXTRA');assert.equal(selection(4,0).status.value,'+4');
+});
+
+test('lost reply retry pins the original quantity and RPC payload after Order/session metadata changes',async()=>{
+ const h=harness({loseCreateReply:true});await h.save(4);
+ h.changeOrders();h.c.AppState.workspace.orderName='DIFFERENT';h.c.AppState.session.id='OTHER';
+ await h.save(9);assert.equal(await h.done,true);assert.equal(h.calls[0].args,h.calls[1].args);
+ assert.equal(h.calls[1].args.p_pending_quantity,4);assert.equal((await h.reopen())[0].total_quantity,4);
 });

@@ -1,0 +1,3 @@
+00_staging_receiving_dependencies.sql: SQL + PL/pgSQL parse PASS; 25 statements; no execution
+01_identity_and_provenance.sql: SQL + PL/pgSQL parse PASS; 15 statements; no execution
+02_atomic_capture.sql: SQL + PL/pgSQL parse PASS; 11 statements; no execution

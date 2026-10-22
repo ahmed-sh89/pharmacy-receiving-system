@@ -1,0 +1,52 @@
+✔ six approved Groups normalize case and whitespace, with Home Health display alias (1.950478ms)
+✔ effective Group prefers canonical Group and only validates legacy category fallback (0.313534ms)
+✔ Receiving Group choices contain only six approved values and filters use effective Group (9.857697ms)
+✔ Settings and Receiving expose a controlled Group selector only on Global creation (3.566842ms)
+✔ server migration validates creation, preserves legacy linking RPC, and avoids global NOT NULL (1.114911ms)
+✔ Production baseline is pinned and legacy Beauty casing normalizes without changing category (0.535363ms)
+✔ approved workbook migration is deterministic and preserves subordinate classification fields (0.610363ms)
+✔ Expiry sources remain unchanged and required compatibility is documented only (0.233316ms)
+Needs Review auto allocation static guards: PASS
+✔ tests/needs-review-auto-allocation.test.cjs (86.893914ms)
+✔ Quantity 4 reaches the actual Save handler, atomic create, and reopened grouped review with original two-order scope (6.055136ms)
+✔ failed capture reply keeps dialog open; same operation retries one atomic quantity-four row (1.669311ms)
+✔ lost create reply retries the same operation ID without a second review (1.382297ms)
+✔ concurrent Save clicks produce one atomic create and no separate setter (2.096975ms)
+✔ invalid quantity confirmation (true) keeps dialog open (1.114661ms)
+✔ invalid quantity confirmation (quantity) keeps dialog open (1.088532ms)
+✔ invalid quantity confirmation (review) keeps dialog open (1.073159ms)
+✔ invalid entered quantity does not issue a create or setter call (1.643474ms)
+✔ Remaining is positive pending quantity; Complete, Over and Extra retain their meanings (5.630378ms)
+✔ lost reply retry pins the original quantity and RPC payload after Order/session metadata changes (1.611416ms)
+✔ Receiving existing-item learning uses one scope-aware contract without new-item/Group parameters (3.033111ms)
+✔ GLOBAL_LEARNED version 4 selects append_pharmflow_learned_transaction_v4 and preserves alphanumeric identity (1.47167ms)
+✔ PHARMACY_LEARNED version 4 selects append_pharmflow_learned_transaction_v4 and preserves alphanumeric identity (0.883138ms)
+✔ PHARMACY_LEARNED version null selects append_pharmflow_learned_transaction_v3 and preserves alphanumeric identity (0.836158ms)
+✔ Global validation/RPC failure never downgrades to an ordinary receipt or marks it synced (1.197112ms)
+✔ Master identity excludes uploaded-only items, ranks normalized codes, preserves Group and live order object (3.683554ms)
+✔ Master read fails closed on pharmacy change or service error; no order-only fallback (3.275391ms)
+✔ explicit original order cannot fall back after current selection changes (0.979621ms)
+✔ deferred resolution validates captured scope before learning or writing a receipt (1.246075ms)
+✔ atomic review capture uses stable operation ID and original captured scope (1.481604ms)
+✔ immediate atomic Save retains capture on retry and blocks duplicate click (0.434313ms)
+✔ Quick Add replaces legacy creation, populates readonly code/name from the selected Order and receives quantity 4 (11.006067ms)
+✔ missing Group blocks creation; a concurrently existing Master is reused without Group re-entry (2.917751ms)
+✔ pharmacy-only mapping permission cannot create a Master; Save for Review remains available (1.828488ms)
+✔ pharmacy-only user may Quick Add an already existing Master through the same scoped server contract (2.420544ms)
+✔ mapping conflict never creates a local receiving transaction or falls back to another writer (5.718828ms)
+✔ lost committed reply freezes original row/quantity; retry acknowledges one receipt without receiving twice (1.062353ms)
+✔ changed selected scope or lack of mapping permission blocks Quick Add before any RPC (1.921686ms)
+✔ Quick Add search uses captured Order rows and never selects an unrelated current Order (0.762139ms)
+✔ existing Master Link partial retry preserves allocation IDs and skips already recorded receipts (1.049574ms)
+✔ SQL reuses Settings creation, checks server roles/Group/source, commits receipt atomically and keeps migration 3 deferred (1.640268ms)
+✔ simultaneous Quick Add clicks issue only one server operation (7.109868ms)
+✔ a malformed server receipt is rejected before local merge (1.115742ms)
+✔ reprocessing an acknowledged Quick Add receipt does not duplicate Last Scan batch or local quantity (0.980101ms)
+ℹ tests 43
+ℹ suites 0
+ℹ pass 43
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 148.124583

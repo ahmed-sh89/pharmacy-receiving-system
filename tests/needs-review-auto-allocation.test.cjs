@@ -15,7 +15,7 @@ assert(receiving.includes("function renderReceivingResolverSelectedCard"));
 assert(ui.includes("renderReceivingResolverSelectedCard(model,esc"));
 assert(receiving.includes("if(left>0)"));
 assert(receiving.includes("allowOverReceiving"));
-assert(receiving.includes("receiveAutoAllocatedItem({item:resolvingItem"));
+assert(ui.includes("nrV2RequestResolution(row,item,baseId,allocations)"));
 assert(review.includes("request_pharmflow_needs_review_resolution_v5"));
 assert(migration.includes("p_allocations jsonb"));
 assert(migration.includes("ORDER_OUTSIDE_CAPTURED_WORK_SCOPE"));
