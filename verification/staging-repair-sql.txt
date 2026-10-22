@@ -1,0 +1,5 @@
+00_staging_receiving_dependencies.sql: SQL + PL/pgSQL parse PASS; 25 statements; no execution
+01_identity_and_provenance.sql: SQL + PL/pgSQL parse PASS; 15 statements; no execution
+02_atomic_capture.sql: SQL + PL/pgSQL parse PASS; 11 statements; no execution
+04_staging_manifest_contract.sql: SQL + PL/pgSQL parse PASS; 6 statements; no execution
+05_staging_v2_master_cache.sql: SQL + PL/pgSQL parse PASS; 9 statements; no execution

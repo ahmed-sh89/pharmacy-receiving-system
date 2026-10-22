@@ -655,16 +655,11 @@ async function applyMasterGTINToCurrentOrder(
 
         const orderItem = AppState.indexes.itemByCode.get(record.itemCode);
         if(orderItem){
-            if(record.group_name) orderItem.group_name=record.group_name;
-            if(record.category) orderItem.category=record.category;
-            if(record.sub_category) orderItem.sub_category=record.sub_category;
+            // Enrich only absent working classification; original uploaded sourceRows stay immutable.
+            if(!toSafeString(orderItem.group_name||orderItem.groupName||orderItem.Group).trim() && record.group_name) orderItem.group_name=record.group_name;
+            if(!toSafeString(orderItem.category).trim() && record.category) orderItem.category=record.category;
+            if(!toSafeString(orderItem.sub_category||orderItem.subCategory).trim() && record.sub_category) orderItem.sub_category=record.sub_category;
         }
-        (AppState.workspace.orderFiles||[]).forEach(file=>(file.sourceRows||[]).forEach(sourceRow=>{
-            if(normalizeItemCode(sourceRow?.itemCode||"")!==record.itemCode)return;
-            if(record.group_name)sourceRow.group_name=record.group_name;
-            if(record.category)sourceRow.category=record.category;
-            if(record.sub_category)sourceRow.sub_category=record.sub_category;
-        }));
 
         matchedCodes.add(
             record.itemCode
@@ -1030,7 +1025,7 @@ async function getGlobalMasterGTINCloudMeta(){
     if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
         return null;
     }
-    const result=await authRpc("get_global_master_gtin_meta",{});
+    const result=await authRpc("get_pharmflow_master_cache_meta_v2",{});
     const row=Array.isArray(result)?result[0]:result;
     return row || null;
 }
@@ -1044,7 +1039,7 @@ async function performGlobalMasterGTINSync(options = {}){
     const cloudCount=meta ? Number(meta.item_count || 0) : 0;
     const cloudVersion=meta ? String(meta.version || "") : "";
 
-    if(!meta || cloudCount===0){
+    if(!meta || (cloudCount===0 && Number(meta.global_item_count||0)===0)){
         if(options.allowEmpty===true){
             const previousDbName=MasterGTINEngine.dbName;
             if(MasterGTINEngine.db){ MasterGTINEngine.db.close(); }
@@ -1062,7 +1057,7 @@ async function performGlobalMasterGTINSync(options = {}){
         MasterGTINEngine.db &&
         MasterGTINEngine.metadata.installed &&
         String(MasterGTINEngine.metadata.cloudVersion || "")===cloudVersion &&
-        Number(MasterGTINEngine.metadata.itemCount || 0)===cloudCount
+        Number(MasterGTINEngine.metadata.recordCount ?? MasterGTINEngine.metadata.itemCount ?? 0)===cloudCount
     ){
         if(AppState.workspace.orderData && AppState.workspace.orderData.length>0){
             await applyMasterGTINToCurrentOrder({silent:true});
@@ -1073,15 +1068,7 @@ async function performGlobalMasterGTINSync(options = {}){
     const pageSize=1000;
     const records=[];
     for(let offset=0; offset<cloudCount; offset+=pageSize){
-        let pageResult;
-        try{
-            pageResult=await authRpc("get_global_master_gtin_page_v2",{p_offset:offset,p_limit:pageSize});
-        }catch(error){
-            const message=String(error?.message||"");
-            if(/PGRST202|get_global_master_gtin_page_v2.*(does not exist|schema cache)/i.test(message)){
-                pageResult=await authRpc("get_global_master_gtin_page",{p_offset:offset,p_limit:pageSize});
-            }else throw error;
-        }
+        const pageResult=await authRpc("get_pharmflow_master_cache_page_v2",{p_offset:offset,p_limit:pageSize});
         const rows=Array.isArray(pageResult)?pageResult:[];
         rows.forEach(row=>{
             const itemCode=normalizeItemCode(row.item_code);
@@ -1116,7 +1103,9 @@ async function performGlobalMasterGTINSync(options = {}){
         installed:true,
         fileName:toSafeString(meta.source_file || "Supabase Global GTIN"),
         updatedAt:meta.updated_at || nowISO(),
-        itemCount:records.length,
+        itemCount:Number(meta.global_item_count ?? records.length),
+        recordCount:records.length,
+        identifierCount:Number(meta.identifier_count ?? records.length),
         duplicateGTINCount:0,
         cloudVersion
     };
@@ -1163,7 +1152,7 @@ async function ensureGlobalMasterGTINReady(options = {}){
         const cacheCurrent=!!(
             MasterGTINEngine.db && MasterGTINEngine.metadata.installed &&
             cloudVersion && String(MasterGTINEngine.metadata.cloudVersion || "")===cloudVersion &&
-            Number(MasterGTINEngine.metadata.itemCount || 0)===cloudCount
+            Number(MasterGTINEngine.metadata.recordCount ?? MasterGTINEngine.metadata.itemCount ?? 0)===cloudCount
         );
         if(!cacheCurrent){
             return await syncGlobalMasterGTINFromCloud({allowEmpty:forceCloud,silent:options.silent===true});

@@ -1,3 +1,7 @@
+# CURRENT STATUS: BLOCKED for order-upload acceptance
+
+See STAGING_REPAIR_AND_PRODUCTION_FINDINGS_20261022.md for newer verified state. Earlier Quick Add tests remain historical evidence, not end-to-end upload acceptance.
+
 # Receiving Quick Add — Staging verification, 22 October 2026
 
 Base Production: 4b3fe2e03d438ba5d462d5eabae0a6446884e125.

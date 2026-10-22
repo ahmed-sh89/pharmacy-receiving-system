@@ -1,0 +1,18 @@
+✔ six approved Groups normalize case and whitespace, with Home Health display alias (2.169105ms)
+✔ effective Group prefers canonical Group and only validates legacy category fallback (0.299314ms)
+✔ Receiving Group choices contain only six approved values and filters use effective Group (11.496217ms)
+✔ Settings and Receiving expose a controlled Group selector only on Global creation (8.465395ms)
+✔ server migration validates creation, preserves legacy linking RPC, and avoids global NOT NULL (2.111439ms)
+✔ Production baseline is pinned and legacy Beauty casing normalizes without changing category (0.702771ms)
+✔ approved workbook migration is deterministic and preserves subordinate classification fields (0.960633ms)
+✔ Expiry sources remain unchanged and required compatibility is documented only (0.373414ms)
+✔ V2 cache separates Global item total from numeric identifier rows and preserves uploaded Group (15.285281ms)
+✔ V2 item collection remains available when it has no numeric GTIN cache rows (2.996381ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.779876
