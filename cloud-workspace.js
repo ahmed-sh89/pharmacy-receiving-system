@@ -364,13 +364,15 @@ function removeCloudQueueTransactions(transactionIds){
 async function uploadCloudReceivingTransaction(tx,pharmacyId){
     const resolution=tx?.gtinResolution;
     const learnedQuantity=toNumber(tx?.quantity,0)>0 &&
-        resolution?.kind==="PHARMACY_LEARNED" &&
+        ["PHARMACY_LEARNED","GLOBAL_LEARNED"].includes(resolution?.kind) &&
         toSafeString(resolution.mappingId) &&
         toSafeString(resolution.mappingRevision) &&
         toSafeString(resolution.identifierKey) &&
         normalizeItemCode(resolution.resolvedItemCode);
+    if(toNumber(tx?.quantity,0)>0&&(resolution?.kind==="GLOBAL_LEARNED"||resolution?.contractVersion===4)&&!learnedQuantity) throw new Error("Complete learned mapping provenance required");
+    const versionedLearned=learnedQuantity&&(resolution.kind==="GLOBAL_LEARNED"||resolution.contractVersion===4);
     const rpcName=learnedQuantity
-        ? "append_pharmflow_learned_transaction_v3"
+        ? (versionedLearned?"append_pharmflow_learned_transaction_v4":"append_pharmflow_learned_transaction_v3")
         : "append_pharmflow_receiving_action_v4";
     /* Existing durable learned receipts may have been queued before the
        transaction state retained alphanumeric displays. Their authoritative
@@ -408,6 +410,7 @@ async function uploadCloudReceivingTransaction(tx,pharmacyId){
         params.p_mapping_id=toSafeString(resolution.mappingId);
         params.p_mapping_revision=toSafeString(resolution.mappingRevision);
     }
+    if(versionedLearned) params.p_mapping_scope=resolution.kind==="GLOBAL_LEARNED"?"GLOBAL":"PHARMACY";
     let acknowledgement;
     try{
         acknowledgement=await authRpc(rpcName,params);
@@ -422,7 +425,7 @@ async function uploadCloudReceivingTransaction(tx,pharmacyId){
         }
     }
     const ackRow=Array.isArray(acknowledgement)?acknowledgement[0]:acknowledgement;
-    if(!learnedQuantity && ackRow && ackRow.acknowledged===false){
+    if((versionedLearned&&ackRow?.acknowledged!==true)||(!learnedQuantity && ackRow && ackRow.acknowledged===false)){
         throw new Error("Receiving action was not acknowledged by the server");
     }
 

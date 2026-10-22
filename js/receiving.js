@@ -450,6 +450,8 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
         });
     });
 
+    const reviewOperationId=globalThis.crypto.randomUUID();
+    let reviewCapture=null;
     const submit=async()=>{
         const button=card.querySelector("#btnHandheldAddExtra");
         if(button) button.disabled=true;
@@ -464,8 +466,8 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
                choose the target Order on PC.
             */
             if(needsPharmacistTarget){
-                const draft=await nrV2CreateDraft(parsed,{
-                    workflow:"RECEIVING",
+                const draft=await nrV2CreateDraft(reviewCapture=reviewCapture||{...parsed,quantity},{
+                    operationId:reviewOperationId,workScopeOrderNumbers:selectedOrders,workflow:"RECEIVING",
                     reason:"KNOWN_NOT_IN_ORDER",
                     itemCode:code,
                     itemName:name,
@@ -476,7 +478,6 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
                     throw new Error("Unable to save extra item for review");
                 }
 
-                await nrV2SetQty(draft.review_id,quantity);
                 refreshNeedsReviewCounters?.();
 
                 card.querySelector(".handheldKnownExtraStatus").textContent=
@@ -847,7 +848,7 @@ function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
         document.getElementById("quickGTINResolver")?.remove();
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";panel.className="gtinResolutionShell open";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
-        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
+        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
         document.body.appendChild(panel);let done=false;
         const finish=value=>{if(done)return;done=true;panel.remove();setScanBoxState?.(value?"success":"ready");setTimeout(()=>focusScannerInput?.(),30);resolve(value);};
         panel.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>finish(false));
@@ -948,11 +949,70 @@ function renderReceivingResolverSelectedCard(model,escapeFn=escapeHTML,changeAtt
     </div>`;
 }
 
+function receivePinnedReceivingLink(capture,identifier,parsed,resolution){
+    const transactions=[];
+    for(let i=0;i<capture.plan.length;i++){
+        const allocation=capture.plan[i];
+        const transactionId=capture.plan.length===1?capture.transactionId:`${capture.transactionId}:A${i+1}`;
+        const prior=(AppState?.workspace?.receivingHistory||[]).find(tx=>tx.transactionId===transactionId);
+        if(prior){
+            if(normalizeItemCode(prior.itemCode)!==normalizeItemCode(capture.item.itemCode)||normalizeOrderNumber(prior.selectedOrderNumber||prior.orderId)!==allocation.orderNumber||Number(prior.quantity)!==allocation.quantity||toSafeString(prior.gtin).trim().toUpperCase()!==identifier.trim().toUpperCase())throw new Error("Existing receipt differs from the original capture. Refresh Receiving.");
+            transactions.push(prior);continue;
+        }
+        const item=capture.extra?prepareManualExtraItem(capture.item.itemCode,capture.item.itemName,identifier,allocation.orderNumber):capture.item;
+        const tx=receiveOrderItem({item,quantity:allocation.quantity,transactionId,gtin:identifier,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,targetOrder:allocation.orderNumber,manual:capture.extra,identifierPreserveExact:true,gtinResolution:resolution});
+        if(!tx)throw new Error("Receipt was not completed. Retry the original item, Order and quantity.");
+        transactions.push(tx);
+    }
+    return transactions;
+}
+
+function findReceivingQuickAddOrderMatches(query,scope=[]){
+    const q=toSafeString(query).trim().toLowerCase(),parts=q.split(/\s+/).filter(Boolean),seen=new Set(),matches=[];
+    if(!q)return matches;
+    for(const sourceOrder of scope){
+        for(const row of getWorkspaceOrderSourceRows(sourceOrder)||[]){
+            const itemCode=toSafeString(row.itemCode),itemName=toSafeString(row.itemName),key=[sourceOrder,normalizeItemCode(itemCode),itemName].join("|");
+            const text=`${itemCode} ${itemName}`.toLowerCase();
+            if(!itemCode||seen.has(key)||!parts.every(part=>text.includes(part)))continue;
+            seen.add(key);matches.push({itemCode,itemName,sourceOrder});
+            if(matches.length===30)return matches;
+        }
+    }
+    return matches;
+}
+
+function applyReceivingQuickAddReceipt(reply,pharmacyId){
+    if(IdentifierService.pharmacyId()!==pharmacyId)throw new Error("Receipt saved for the original pharmacy. Reopen Receiving to synchronize.");
+    if(typeof mergeCloudReceivingLedger!=="function")throw new Error("Receipt saved. Refresh Receiving to synchronize.");
+    const raw=reply.receipts[0];
+    const prior=(AppState?.workspace?.receivingHistory||[]).find(tx=>tx.transactionId===raw.transaction_id);
+    if(prior&&(normalizeItemCode(prior.itemCode)!==normalizeItemCode(raw.item_code)||Number(prior.quantity)!==Number(raw.quantity)||normalizeOrderNumber(prior.selectedOrderNumber||prior.orderId)!==raw.order_number||toSafeString(prior.gtin).trim().toUpperCase()!==toSafeString(raw.gtin).trim().toUpperCase()))throw new Error("Receipt saved, but local receipt data differs. Refresh Receiving.");
+    mergeCloudReceivingLedger(reply.receipts);
+    rebuildStateIndexes();recalculateStatistics();
+    const receipt=(AppState?.workspace?.receivingHistory||[]).find(tx=>tx.transactionId===raw.transaction_id);
+    if(!receipt)throw new Error("Receipt saved. Refresh Receiving to synchronize its original Order.");
+    if(!prior){
+        const item=typeof getItemByCode==="function"?getItemByCode(receipt.itemCode):null;
+        if(item){
+            updateLastScanFromReceiving(item,receipt);
+            if(typeof ReceivingEngine!=="undefined")ReceivingEngine.lastTransaction=receipt;
+            updateLocalRuntimeBatchFromTransaction(item,receipt);
+            rememberRecentScannerTransaction(item,receipt);
+        }
+    }
+    saveWorkspaceSnapshot();
+    AppEvents.emit("receiving:updated",{source:"quick-add",synchronized:true});
+    if(typeof refreshEntireUI==="function")refreshEntireUI();
+    else if(typeof refreshAllUI==="function")refreshAllUI();
+    return receipt;
+}
+
 function openQuickGTINResolver(parsed,knownRecord=null){
     return new Promise(resolve=>{
         const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||parsed?.original||"");
         document.getElementById("quickGTINResolver")?.remove();
-        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():[];
+        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"?[...getSelectedReceivingOrderNumbers()]:[];
         let resolverQuantity=getValidReceivingQuantity(parsed?.quantity);
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";
@@ -969,18 +1029,28 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             </header>
             <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
             <section class="gtinResolutionSection pfnUnknownWorkspace">
-              <div class="pfnResolverTabs"><button type="button" class="isActive" data-mode-find>Find Existing Item</button><button type="button" data-mode-create>Create New Item</button></div>
+              <div class="pfnResolverTabs"><button type="button" class="isActive" data-mode-find>Find Existing Item</button><button type="button" data-mode-quick>Find in Order — Quick Add</button></div>
               <div data-find-pane>
                 <label class="gtinResolutionLabel" for="gtinResolutionSearch">Find Item</label>
                 <input id="gtinResolutionSearch" data-search class="gtinResolutionSearch" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false">
                 <div data-results class="gtinResolutionResults"></div>
                 <div data-selection class="gtinResolutionSelection" hidden></div>
               </div>
-              <div data-create-pane class="pfnCreateItemPane" hidden>
-                <div class="pfnCreateIntro"><b>New item</b><span>Use this only when the product does not already exist in the master.</span></div>
-                <div class="pfnCreateGrid"><label><span>Item Code</span><input data-new-code autocomplete="off" placeholder="Enter Item Code"></label><label><span>Item Name</span><input data-new-name autocomplete="off" placeholder="Enter Item Name"></label></div>
-                <div class="pfnCreateMeta"><span><small>SCANNED GTIN</small><b>${escapeHTML(gtin)}</b></span><span class="pfnCreateQtyMirror"><small>QUANTITY</small><b data-create-qty-mirror>${escapeHTML(resolverQuantity)}</b></span>${selectedOrders.length>1?`<label><small>TARGET ORDER</small><select data-new-order>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>`:""}</div>
-                <button type="button" class="gtinPrimaryAction pfnCreateReceive" data-create-receive>Create &amp; Receive</button>
+              <div data-quick-pane class="pfnCreateItemPane" hidden>
+                <div class="pfnCreateIntro"><b>Find in Order — Quick Add</b><span>Select an uploaded Order item. An existing Master item will be reused.</span></div>
+                <div data-quick-search-area>
+                  <input data-quick-search class="gtinResolutionSearch" placeholder="Search Order by Item Code or Item Name" aria-label="Search Active Order items" autocomplete="off">
+                  <div data-quick-results class="gtinResolutionResults"></div>
+                </div>
+                <div data-quick-selection role="region" aria-label="Selected Order item" hidden>
+                  <div class="resolverSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-quick-change>Change Item</button></div>
+                  <div class="pfnCreateGrid"><label><span>Item Code</span><input data-quick-code readonly></label><label><span>Item Name</span><input data-quick-name readonly></label></div>
+                  <p data-quick-source></p>
+                  <label class="pfnCreateGroup"><span>Group <b>*</b></span><select data-quick-group><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select></label>
+                  <small>Group is required for a new Master item. Existing approved Group is preserved.</small>
+                  <button type="button" class="gtinPrimaryAction" data-quick-receive>Quick Add &amp; Receive</button>
+                </div>
+                <p>If the item is not in an Active Order, use Settings → Find Barcode → Add New Item, then scan again.</p>
               </div>
             </section>
             <div class="gtinPanelMessage" aria-live="polite"></div>
@@ -992,23 +1062,24 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const searchLabel=panel.querySelector('label[for="gtinResolutionSearch"]');
         const selection=panel.querySelector("[data-selection]");
         const qtyInput=panel.querySelector("[data-resolver-qty]");
-        const findPane=panel.querySelector("[data-find-pane]"),createPane=panel.querySelector("[data-create-pane]");
-        const findTab=panel.querySelector("[data-mode-find]"),createTab=panel.querySelector("[data-mode-create]");
+        const findPane=panel.querySelector("[data-find-pane]"),quickPane=panel.querySelector("[data-quick-pane]");
+        const findTab=panel.querySelector("[data-mode-find]"),quickTab=panel.querySelector("[data-mode-quick]");
         const setResolverMode=mode=>{
-            const create=mode==="create";findPane.hidden=create;createPane.hidden=!create;
-            findTab.classList.toggle("isActive",!create);createTab.classList.toggle("isActive",create);
+            if(quickCapture||linking||reviewStarted)return;
+            const quick=mode==="quick";findPane.hidden=quick;quickPane.hidden=!quick;
+            findTab.classList.toggle("isActive",!quick);quickTab.classList.toggle("isActive",quick);
             panel.querySelector(".gtinPanelMessage").textContent="";
-            setTimeout(()=>panel.querySelector(create?"[data-new-code]":"[data-search]")?.focus(),30);
+            setTimeout(()=>panel.querySelector(quick?(quickItem?"[data-quick-group]":"[data-quick-search]"):"[data-search]")?.focus(),30);
         };
         findTab.addEventListener("click",()=>setResolverMode("find"));
-        createTab.addEventListener("click",()=>setResolverMode("create"));
+        quickTab.addEventListener("click",()=>setResolverMode("quick"));
         const readQuantity=()=>{
             const value=Number(qtyInput?.value);
             if(!Number.isInteger(value)||value<1) throw new Error("Enter a whole quantity of 1 or more.");
             resolverQuantity=value;
             return value;
         };
-        let selectedItem=null,finished=false,linking=false,reviewStarted=false;
+        let selectedItem=null,finished=false,linking=false,reviewStarted=false,quickCapture=null,quickSubmitting=false,linkCapture=null;
         const finish=value=>{
             if(finished)return;finished=true;panel.remove();
             setScanBoxState?.(value?"success":"ready");
@@ -1040,7 +1111,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 `<div class="resolverSelectedCard"><strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small><p>Not in Active Order · Ordered Quantity 0</p><button type="button" data-change-item>Change Item</button><label>Target Order <select data-extra-target><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label></div>`)+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
             selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
-                if(linking||reviewStarted)return;
+                if(linking||reviewStarted||quickCapture)return;
                 const resolvingItem=selectedItem;linking=true;
                 const button=event.currentTarget;button.disabled=true;
                 panel.querySelector("[data-review]").disabled=true;
@@ -1051,21 +1122,16 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                     const targetOrder=inOrder?"":normalizeOrderNumber(selection.querySelector("[data-extra-target]")?.value||"");
                     if(!inOrder&&(!targetOrder||!selectedOrders.includes(targetOrder))) throw new Error("Select a Target Order for this Extra Item.");
                     if(!inOrder&&!getSelectedReceivingOrderNumbers().includes(targetOrder)) throw new Error("Target Order is no longer selected. Reopen Receiving resolution.");
-                    if(inOrder) buildReceivingAutoAllocationPlan(resolvingItem,quantity,selectedOrders);
+                    if(linkCapture&&(normalizeItemCode(linkCapture.item.itemCode)!==normalizeItemCode(resolvingItem.itemCode)||linkCapture.quantity!==quantity||linkCapture.extra===inOrder||(!inOrder&&linkCapture.plan[0].orderNumber!==targetOrder)))throw new Error("Retry the original item, Order and quantity, or close this dialog.");
+                    linkCapture=linkCapture||{item:resolvingItem,quantity,extra:!inOrder,transactionId:`RECEIVING_LINK:${globalThis.crypto.randomUUID()}`,plan:inOrder?buildReceivingAutoAllocationPlan(resolvingItem,quantity,selectedOrders):[{orderNumber:targetOrder,quantity}]};
                     const globalItem=await IdentifierService.findGlobalItemByCode(resolvingItem.itemCode);
                     if(!globalItem) throw new Error("This item is no longer available in Global Master. Search again.");
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
-                    const mappingResult=await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,globalItem,"Receiving barcode resolution");
+                    const mappingResult=await IdentifierService.learnExistingIdentifier(globalThis.crypto.randomUUID(),gtin,globalItem,"Receiving barcode resolution");
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                     const mapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
-                    const resolution=mapping?{kind:"PHARMACY_LEARNED",mappingId:mapping.identifierId,mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode}:null;
-                    if(!inOrder){
-                        const extra=prepareManualExtraItem(resolvingItem.itemCode,resolvingItem.itemName,gtin,targetOrder);
-                        const tx=receiveOrderItem({item:extra,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true,gtinResolution:resolution});
-                        if(!tx) throw new Error("Unable to record Extra Item receipt.");
-                        finish(tx);return;
-                    }
-                    const txs=receiveAutoAllocatedItem({item:resolvingItem,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true,gtinResolution:resolution});
+                    const resolution=IdentifierService.receivingProvenance(mapping);
+                    const txs=receivePinnedReceivingLink(linkCapture,gtin,parsed,resolution);
                     finish(txs[0]||true);
                 }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
                 finally{linking=false;if(!finished)panel.querySelector("[data-review]").disabled=false;}
@@ -1094,18 +1160,20 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         qtyInput?.addEventListener("input",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);}catch(_error){}});
         qtyInput?.addEventListener("change",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
         const reviewOperationId=globalThis.crypto.randomUUID();
-        let reviewDraft=null,reviewSaving=false;
+        const reviewOptions={operationId:reviewOperationId,workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders};
+        let reviewDraft=null,reviewSaving=false,reviewCapture=null;
         panel.querySelector("[data-review]")?.addEventListener("click",async event=>{
-            if(reviewSaving||linking)return;
+            if(reviewSaving||linking||quickCapture)return;
             reviewStarted=true;
             const button=event.currentTarget;reviewSaving=true;button.disabled=true;
-            panel.querySelectorAll("[data-link-receive],[data-create-receive],[data-mode-find],[data-mode-create]").forEach(action=>action.disabled=true);
+            panel.querySelectorAll("[data-link-receive],[data-quick-receive],[data-mode-find],[data-mode-quick]").forEach(action=>action.disabled=true);
             try{
                 if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
-                const quantity=readQuantity();
-                reviewDraft=reviewDraft||await nrV2CreateDraft({...parsed,quantity,identifierDisplay:gtin},{operationId:reviewOperationId,workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders});
+                const quantity=reviewCapture?.quantity??readQuantity();
+                reviewCapture=reviewCapture||{...parsed,quantity,identifierDisplay:gtin};
+                reviewDraft=reviewDraft||await nrV2CreateDraft(reviewCapture,reviewOptions);
                 if(!reviewDraft?.review_id)throw new Error("Review confirmation is unavailable. Retry Save for Review.");
-                const savedReview=await nrV2SetQty(reviewDraft.review_id,quantity);
+                const savedReview=reviewDraft;
                 if(savedReview?.review_id!==reviewDraft.review_id||Number(savedReview?.pending_quantity)!==quantity){
                     throw new Error("Saved quantity could not be confirmed. Retry Save for Review.");
                 }
@@ -1113,47 +1181,71 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
             finally{reviewSaving=false;button.disabled=false;}
         });
-        panel.querySelector("[data-create-receive]")?.addEventListener("click",async event=>{
-            if(linking||reviewStarted)return;
-            const button=event.currentTarget;button.disabled=true;
+        const quickOperationId=globalThis.crypto.randomUUID();
+        let quickItem=null;
+        const quickSearch=panel.querySelector("[data-quick-search]"),quickResults=panel.querySelector("[data-quick-results]");
+        const quickSearchArea=panel.querySelector("[data-quick-search-area]"),quickSelection=panel.querySelector("[data-quick-selection]");
+        const clearQuickItem=()=>{
+            quickItem=null;
+            panel.querySelector("[data-quick-code]").value="";
+            panel.querySelector("[data-quick-name]").value="";
+            panel.querySelector("[data-quick-source]").textContent="";
+            panel.querySelector("[data-quick-group]").value="";
+            panel.querySelector(".gtinPanelMessage").textContent="";
+            quickSelection.hidden=true;quickSearchArea.hidden=false;
+        };
+        panel.querySelector("[data-quick-change]").addEventListener("click",()=>{
+            if(quickCapture||quickSubmitting||linking||reviewStarted)return;
+            clearQuickItem();quickSearch.focus();
+        });
+        quickSearch.addEventListener("input",()=>{
+            if(quickCapture||quickSubmitting)return;
+            const items=findReceivingQuickAddOrderMatches(quickSearch.value,selectedOrders);
+            quickResults.innerHTML=items.length?items.map((item,i)=>`<button type="button" class="gtinResult" data-quick-index="${i}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)} · Order ${escapeHTML(item.sourceOrder)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in the captured Orders.</div>';
+            quickResults.querySelectorAll("[data-quick-index]").forEach(button=>button.addEventListener("click",()=>{
+                if(quickCapture||quickSubmitting||linking||reviewStarted)return;
+                const item=items[Number(button.dataset.quickIndex)];
+                if(!item)return;
+                clearQuickItem();quickItem=item;
+                panel.querySelector("[data-quick-code]").value=quickItem.itemCode;
+                panel.querySelector("[data-quick-name]").value=quickItem.itemName;
+                panel.querySelector("[data-quick-source]").textContent=`Target Order: ${quickItem.sourceOrder}`;
+                quickSearchArea.hidden=true;quickSelection.hidden=false;
+                panel.querySelector("[data-quick-group]").focus();
+            }));
+        });
+        const lockQuick=locked=>{
+            panel.querySelectorAll("[data-review],[data-mode-find],[data-mode-quick],[data-quick-search],[data-quick-change],[data-quick-group],[data-resolver-qty]").forEach(node=>node.disabled=locked);
+            quickResults.querySelectorAll("button").forEach(node=>node.disabled=locked);
+        };
+        panel.querySelector("[data-quick-receive]")?.addEventListener("click",async event=>{
+            if(quickSubmitting||linking||reviewStarted)return;
+            const button=event.currentTarget;button.disabled=true;quickSubmitting=true;
             try{
-                if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin()) throw new Error("Pharmacy admin permission is required to create a new item.");
-                const itemCode=normalizeItemCode(panel.querySelector("[data-new-code]")?.value||"");
-                const itemName=toSafeString(panel.querySelector("[data-new-name]")?.value||"").trim();
-                const quantity=readQuantity();
-                if(!itemCode||!itemName) throw new Error("Item Code and Item Name are required.");
-                if(!Number.isInteger(quantity)||quantity<1) throw new Error("Enter a whole quantity of 1 or more.");
-                const item={itemCode,itemName};
-                const orderItem=getItemByCode?.(itemCode);
-                const targetOrder=orderItem?"":normalizeOrderNumber(panel.querySelector("[data-new-order]")?.value||selectedOrders[0]||"");
-                if(!orderItem&&!targetOrder) throw new Error("Choose an active Order before receiving this Extra Item.");
-                const existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);
-                if(existingGlobal){
-                    await IdentifierService.learnIdentifier(globalThis.crypto.randomUUID(),gtin,existingGlobal,"Receiving barcode resolution");
-                }else if(IdentifierService.isReferencePharmacy()){
-                    let groupSelect=panel.querySelector("[data-new-group]");
-                    if(!groupSelect){
-                        const label=document.createElement("label");label.className="pfnCreateGroup";
-                        label.innerHTML='<span>Group <b>*</b></span><select data-new-group required><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select>';
-                        createPane.querySelector(".pfnCreateGrid")?.appendChild(label);groupSelect=label.querySelector("select");
-                        button.disabled=false;panel.querySelector(".gtinPanelMessage").textContent="This is a new Global Item. Select its Group, then choose Create & Receive again.";groupSelect?.focus();return;
-                    }
-                    const groupName=toSafeString(groupSelect.value).trim();
-                    if(!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName)) throw new Error("Select one of the six approved Groups before creating this Global Item.");
-                    await IdentifierService.createItem(globalThis.crypto.randomUUID(),{itemCode,itemName,groupName,identifierDisplay:gtin,reason:"Receiving new item creation"});
-                }else{
-                    await IdentifierService.addPharmacyIdentifier(globalThis.crypto.randomUUID(),gtin,item,"Receiving new item creation");
+                if(!quickCapture){
+                    if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin())throw new Error("Pharmacy admin permission is required. Save for Review instead.");
+                    if(!quickItem)throw new Error("Select an Order item first.");
+                    if(pharmacyId!==IdentifierService.pharmacyId()||!selectedOrders.every(order=>getSelectedReceivingOrderNumbers().includes(order)))throw new Error("Pharmacy or selected Orders changed. Reopen Receiving.");
+                    const selectedOrderItem={...quickItem};
+                    const quantity=readQuantity();
+                    const groupName=toSafeString(panel.querySelector("[data-quick-group]").value);
+                    const master=await IdentifierService.findGlobalItemByCode(selectedOrderItem.itemCode);
+                    if(!master&&!["Beauty","FMCG","HomeHealth","Medicine","Mom & Baby","Supplement"].includes(groupName))throw new Error("Select Group before creating a new Master item.");
+                    if(pharmacyId!==IdentifierService.pharmacyId()||!selectedOrders.every(order=>getSelectedReceivingOrderNumbers().includes(order)))throw new Error("Pharmacy or selected Orders changed. Reopen Receiving.");
+                    quickCapture={operationId:quickOperationId,pharmacyId,params:{
+                        p_operation_id:quickOperationId,p_pharmacy_id:pharmacyId,p_source_order:selectedOrderItem.sourceOrder,p_work_scope_order_numbers:[...selectedOrders],
+                        p_item_code:selectedOrderItem.itemCode,p_item_name:selectedOrderItem.itemName,p_group_name:groupName,p_identifier_display:gtin,p_quantity:quantity,
+                        p_allow_over_receiving:AppState?.settings?.allowOverReceiving===true,p_capture:{lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",raw:parsed?.raw||parsed?.original||"",deviceId:typeof ensureDeviceId==="function"?ensureDeviceId():"",deviceType:typeof getReceivingRuntimeDeviceType==="function"?getReceivingRuntimeDeviceType():"PC",occurredAt:typeof nowISO==="function"?nowISO():new Date().toISOString()}
+                    }};
+                    lockQuick(true);
                 }
-                let tx;
-                if(orderItem){
-                    const txs=receiveAutoAllocatedItem({item:orderItem,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,workScopeOrderNumbers:selectedOrders,identifierPreserveExact:true});
-                    tx=txs?.[0]||true;
-                }else{
-                    const extra=prepareManualExtraItem(itemCode,itemName,gtin,targetOrder);
-                    tx=receiveOrderItem({item:extra,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true});
-                }
-                finish(tx||true);
-            }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to create and receive item";}
+                const reply=await IdentifierService.quickAddOrderItem(quickCapture);
+                const receipt=applyReceivingQuickAddReceipt(reply,pharmacyId);
+                finish(receipt);
+            }catch(error){
+                if(error?.safeNoWrites){quickCapture=null;lockQuick(false);}
+                panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Quick Add was not confirmed. Retry the same selection.";
+            }finally{quickSubmitting=false;button.disabled=false;}
         });
         panel.querySelectorAll("[data-close]").forEach(button=>button.addEventListener("click",()=>finish(false)));
         setTimeout(()=>search.focus(),80);

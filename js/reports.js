@@ -1182,7 +1182,7 @@ function allocateReceivedQuantityAcrossOrderLines(sourceRows,receivedTotal){
 }
 
 function getOperationalGroupForReceivingRow(row){
-    const direct=window.PharmFlowClassificationFilters?.normalize(row||{}).group||"";
+    const direct=window.PharmFlowClassificationFilters?.normalizeReceiving(row||{}).group||"";
     if(direct) return window.PharmFlowClassificationFilters.displayGroup(direct);
 
     const code=normalizeItemCode(row?.itemCode||row?.["Item Number"]||"");
@@ -1190,7 +1190,7 @@ function getOperationalGroupForReceivingRow(row){
 
     const workspaceItem=(AppState?.workspace?.orderData||[])
         .find(item=>normalizeItemCode(item?.itemCode||"")===code);
-    const fallback=window.PharmFlowClassificationFilters?.normalize(workspaceItem||{}).group||"";
+    const fallback=window.PharmFlowClassificationFilters?.normalizeReceiving(workspaceItem||{}).group||"";
     return fallback?window.PharmFlowClassificationFilters.displayGroup(fallback):"";
 }
 
@@ -1212,7 +1212,7 @@ function getPerOrderReceivingRows(orderNumber, options={}){
     const groupFor=(row,fallback={})=>{
         const filters=typeof window!=="undefined"?window.PharmFlowClassificationFilters:null;
         if(filters){
-            const group=filters.normalize(row||{}).group||filters.normalize(fallback||{}).group||"";
+            const group=filters.normalizeReceiving(row||{}).group||filters.normalizeReceiving(fallback||{}).group||"";
             return group?filters.displayGroup(group):"";
         }
         return toSafeString(row?.group_name||row?.groupName||row?.Group||fallback?.group_name||fallback?.groupName||fallback?.Group||"").trim();
@@ -1520,7 +1520,7 @@ function buildLiveReceivingReport(options={}){
             "Received Qty":received,
             "Difference":difference,
             "Status":status,
-            "Group":window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalize(item)?.group)||"",
+            "Group":window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalizeReceiving(item)?.group)||"",
             "Category":item?.category||"",
             "Sub Category":item?.sub_category||item?.subCategory||"",
             "Extra Item":item?.manual===true
@@ -1761,7 +1761,7 @@ function buildReceivingDiscrepancyReportLegacy(options={}){
             "Received Qty":received,
             "Difference":difference,
             "Issue Type":issueType,
-            "Group":window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalize(item)?.group)||"",
+            "Group":window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalizeReceiving(item)?.group)||"",
             "Category":item.category||"",
             "Sub Category":item.sub_category||item.subCategory||""
         });

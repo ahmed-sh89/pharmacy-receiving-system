@@ -235,8 +235,11 @@ async function nrV2CreateDraft(parsed,options={}){
         throw new Error("Select a Receiving Order on this device before saving this scan for review.");
     }
 
-    const result=await authRpc(options.operationId?"create_pharmflow_needs_review_v5":"create_pharmflow_needs_review_v4",{
-        ...(options.operationId?{p_operation_id:options.operationId}:{}),
+    const quantity=Number(parsed?.quantity??1);
+    if(!Number.isInteger(quantity)||quantity<1) throw new Error("Enter a whole quantity of 1 or more.");
+    const operationId=options.operationId||globalThis.crypto.randomUUID();
+    const params=options.captureRequest||{
+        p_operation_id:operationId,p_pending_quantity:quantity,
         p_pharmacy_id:pharmacyId,
         p_workflow:options.workflow||"RECEIVING",
         p_identifier_display:capturedCode,
@@ -250,15 +253,20 @@ async function nrV2CreateDraft(parsed,options={}){
         p_source:(typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice())?"HANDHELD":"PC",
         p_device_id:typeof ensureDeviceId==="function"?ensureDeviceId():"",
         p_work_scope_order_numbers:workScope
-    });
+    };
+    if(params.p_pharmacy_id!==pharmacyId) throw new Error("Pharmacy changed. Reopen review capture.");
+    options.captureRequest=params;
+    const result=await authRpc("create_pharmflow_needs_review_v6",params);
 
-    return Array.isArray(result) ? result[0] : result;
+    const draft=Array.isArray(result)?result[0]:result;
+    if(!draft?.review_id||Number(draft.pending_quantity)!==params.p_pending_quantity||draft.status!=="PENDING") throw new Error("Saved review quantity/status could not be confirmed. Retry with the same capture.");
+    return draft;
 }
 
 async function nrV2SetQty(reviewId,quantity){
     const pharmacyId=nrV2PharmacyId();
     const qty=Math.max(1,Number(quantity||1)||1);
-    const result=await authRpc("set_pharmflow_needs_review_qty_v2",{
+    const result=await authRpc("set_pharmflow_needs_review_qty_v3",{
         p_pharmacy_id:pharmacyId,
         p_review_id:reviewId,
         p_pending_quantity:qty

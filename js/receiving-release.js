@@ -177,19 +177,75 @@ window.PharmFlowClassificationFilters={
         const legacy=String(row?.category||row?.Category||"").trim();
         return {group:this.normalizeGroup(rawGroup)||this.normalizeGroup(legacy),category:legacy,subCategory:String(row?.sub_category||row?.subCategory||row?.["Sub Category"]||"").trim()};
     },
+    normalizeReceiving(row){
+        const uploaded=[row?.group_name,row?.groupName,row?.Group].map(value=>String(value??"").trim()).find(Boolean)||"";
+        const value=this.normalize({...row,group_name:uploaded});
+        if(!uploaded) value.group=window.PharmFlowReceivingGroups?.get(row)||value.group;
+        return value;
+    },
     choices(rows,selection={}){
-        const values=(list,key)=>[...new Set(list.map(r=>this.normalize(r)[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+        const values=(list,key)=>[...new Set(list.map(r=>this.normalizeReceiving(r)[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
         const groups=new Set((selection.groups||[]).map(value=>this.normalizeGroup(value)).filter(Boolean)),categories=new Set(selection.categories||[]);
-        const groupRows=groups.size?rows.filter(r=>groups.has(this.normalize(r).group)):rows;
-        const categoryRows=categories.size?groupRows.filter(r=>categories.has(this.normalize(r).category)):groupRows;
+        const groupRows=groups.size?rows.filter(r=>groups.has(this.normalizeReceiving(r).group)):rows;
+        const categoryRows=categories.size?groupRows.filter(r=>categories.has(this.normalizeReceiving(r).category)):groupRows;
         return {groups:this.approvedGroups.slice(),categories:values(groupRows,"category"),subCategories:values(categoryRows,"subCategory")};
     },
     filter(rows,selection={}){
         const sets={groups:new Set((selection.groups||[]).map(value=>this.normalizeGroup(value)).filter(Boolean)),categories:new Set(selection.categories||[]),subCategories:new Set(selection.subCategories||[])};
         const allApprovedGroupsSelected=this.approvedGroups.every(group=>sets.groups.has(group));
-        return rows.filter(row=>{const c=this.normalize(row);return(!sets.groups.size||allApprovedGroupsSelected||sets.groups.has(c.group))&&(!sets.categories.size||sets.categories.has(c.category))&&(!sets.subCategories.size||sets.subCategories.has(c.subCategory));});
+        return rows.filter(row=>{const c=this.normalizeReceiving(row);return(!sets.groups.size||allApprovedGroupsSelected||sets.groups.has(c.group))&&(!sets.categories.size||sets.categories.has(c.category))&&(!sets.subCategories.size||sets.subCategories.has(c.subCategory));});
     }
 };
+
+// Display projection only. Never serialized into orders, source rows or receipts.
+window.PharmFlowReceivingGroups={
+    scope:"",version:"",values:new Map(),pending:new Map(),generation:0,
+    context(){return typeof AuthState!=="undefined"&&AuthState.context?String(AuthState.context.pharmacy_id||"")+"|"+String(AuthState.user?.id||AuthState.context.user_id||""):"";},
+    code(row){return normalizeItemCode(row?.itemCode||row?.item_code||row?.["Item Number"]||"");},
+    get(row){return this.scope&&this.scope===this.context()?this.values.get(this.code(row))||"":"";},
+    async refresh(rows,version=""){
+        const scope=this.context();
+        if(!scope||scope.startsWith("|"))return;
+        if(scope!==this.scope||version!==this.version){this.scope=scope;this.version=version;this.values=new Map();this.pending=new Map();this.generation++;}
+        const generation=this.generation;
+        const codes=[...new Set(rows.map(row=>this.code(row)).filter(Boolean))];
+        for(let offset=0;offset<codes.length;offset+=1000){
+            const batch=codes.slice(offset,offset+1000).filter(code=>!this.values.has(code));
+            if(!batch.length)continue;
+            const key=JSON.stringify(batch.sort());
+            let request=this.pending.get(key);
+            if(!request){
+                request=authRpc("get_pharmflow_receiving_groups_v1",{p_item_codes:batch});
+                this.pending.set(key,request);
+            }
+            try{
+                const result=await request;
+                if(generation!==this.generation||scope!==this.context())return;
+                if(!Array.isArray(result))throw new Error("Invalid Receiving Group projection");
+                batch.forEach(code=>this.values.set(code,""));
+                result.forEach(row=>{if(batch.includes(this.code(row)))this.values.set(this.code(row),window.PharmFlowClassificationFilters.normalizeGroup(row.group_name));});
+            }finally{if(generation===this.generation)this.pending.delete(key);}
+        }
+    }
+};
+
+// Existing workspace notifications, with cached/batched reads rather than a new poller.
+function refreshReceivingGroupDisplay(){
+    const version=typeof MasterGTINEngine!=="undefined"?String(MasterGTINEngine.metadata.cloudVersion||""):"";
+    window.PharmFlowReceivingGroups.refresh(AppState.workspace.orderData||[],version).then(()=>{
+        if(typeof refreshReceivingTable==="function")refreshReceivingTable();
+        if(typeof refreshReceivingCategoryFilter==="function")refreshReceivingCategoryFilter();
+    }).catch(error=>Logger.warn("Receiving Group display unavailable",error));
+}
+if(typeof AppEvents!=="undefined"){
+    AppEvents.on("files:updated",refreshReceivingGroupDisplay);
+    AppEvents.on("receiving:updated",event=>{
+        if(event?.source!=="quick-add")return;
+        window.PharmFlowReceivingGroups.values.clear();
+        refreshReceivingGroupDisplay();
+    });
+}
+
 
 
 /* Retired device-local Handheld work-scope chooser. */
