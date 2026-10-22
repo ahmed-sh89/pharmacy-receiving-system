@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <link rel="icon" href="data:,">
+  <title>PharmFlow — Receiving Report KPI Demo</title>
+  <style>
+    :root { font-family: Inter, "Segoe UI", Arial, sans-serif; color: #263e5b; background: #f5f3ef; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 760px; background: #f5f3ef; }
+    .demo-page { width: min(1440px, calc(100% - 48px)); margin: 34px auto; }
+    .demo-header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:18px; }
+    .demo-header h1 { margin:5px 0 4px; color:#193a59; font-size:24px; line-height:1.2; font-weight:750; letter-spacing:-.4px; }
+    .demo-header p { margin:0; color:#63788a; font-size:13px; }
+    .demo-eyebrow { color:#607b91; font-size:10px; line-height:1.3; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
+    .demo-badge { flex:none; padding:8px 11px; border:1px solid #e7c995; border-radius:7px; background:#fff8e9; color:#875d1f; font-size:10px; font-weight:850; letter-spacing:.08em; }
+    .demo-notice { margin:0 0 16px; padding:10px 13px; border:1px solid #d8e4ec; border-radius:8px; background:#f8fbfd; color:#526b7b; font-size:12px; line-height:1.5; }
+    .demo-panel { padding:16px; border:1px solid #dce4ee; border-radius:10px; background:#fff; box-shadow:0 1px 2px #243f6008; }
+    .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 11px; }
+    .panel-heading h2 { margin:0; color:#263e5b; font-size:16px; font-weight:750; }
+    .panel-heading span { color:#708397; font-size:10px; font-weight:800; letter-spacing:.08em; }
+    .receivingSummaryGrid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; }
+    .pfnIssueCard {
+      --report-kpi-accent:#4d8fa8; --report-kpi-ink:#286b86; --report-kpi-tint:#eef7fa;
+      position:relative; display:flex; min-width:0; height:62px; flex-direction:column; justify-content:center; gap:4px;
+      overflow:hidden; padding:7px 25px 7px 11px; border:1px solid #dce4ee; border-top:4px solid var(--report-kpi-accent);
+      border-radius:9px; background:#fff; color:#485b73; text-align:left; cursor:pointer;
+      box-shadow:0 1px 2px #243f6009,0 3px 8px #243f6005;
+      transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease;
+    }
+    .pfnKpiAll { --report-kpi-accent:#4d8fa8; --report-kpi-ink:#286b86; --report-kpi-tint:#eef7fa; }
+    .pfnKpiShortage { --report-kpi-accent:#bd6864; --report-kpi-ink:#97433f; --report-kpi-tint:#fbf0ef; }
+    .pfnKpiReceived { --report-kpi-accent:#4d9b78; --report-kpi-ink:#287653; --report-kpi-tint:#edf7f1; }
+    .pfnKpiOver { --report-kpi-accent:#c58d48; --report-kpi-ink:#8c5c26; --report-kpi-tint:#fcf5eb; }
+    .pfnKpiExtra { --report-kpi-accent:#8b77b6; --report-kpi-ink:#68518f; --report-kpi-tint:#f4f1fa; }
+    .pfnKpiDiscrepancy { --report-kpi-accent:#b77952; --report-kpi-ink:#895335; --report-kpi-tint:#fbf2ec; }
+    .pfnIssueCard span { overflow:hidden; color:#485b73; font-size:11px; line-height:1.1; font-weight:650; letter-spacing:.025em; text-overflow:ellipsis; white-space:nowrap; }
+    .pfnIssueCard strong { margin-top:3px; color:var(--report-kpi-ink); font-size:19px; line-height:1; font-weight:750; font-variant-numeric:tabular-nums; }
+    .pfnIssueCard:hover,.pfnIssueCard.active { border-color:var(--report-kpi-accent); border-top-color:var(--report-kpi-accent); background:var(--report-kpi-tint); box-shadow:inset 0 0 0 1px var(--report-kpi-accent),0 3px 10px #243f6014; }
+    .pfnIssueCard.active { color:var(--report-kpi-ink); }
+    .pfnIssueCard.active::after { content:"✓"; position:absolute; top:5px; right:7px; display:grid; width:15px; height:15px; place-items:center; border-radius:50%; background:var(--report-kpi-accent); color:#fff; font-size:10px; font-weight:800; line-height:1; }
+    .pfnIssueCard:focus-visible { outline:2px solid var(--report-kpi-ink); outline-offset:2px; }
+    .demo-hint { display:flex; justify-content:space-between; gap:12px; margin-top:11px; color:#63788a; font-size:11px; }
+    #selectionStatus { color:#405f78; font-weight:700; text-align:right; }
+    @media(max-width:900px) { .demo-page { width:calc(100% - 28px); margin:20px auto; } .demo-header h1 { font-size:21px; } .demo-panel { padding:12px; } .receivingSummaryGrid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; } }
+  </style>
+</head>
+<body>
+  <main class="demo-page" id="receiving-report-demo">
+    <header class="demo-header">
+      <div>
+        <span class="demo-eyebrow">PharmFlow · Desktop Receiving Report</span>
+        <h1>Receiving Report KPI filters</h1>
+        <p>Static visual preview of the report filter cards.</p>
+      </div>
+      <span class="demo-badge">DEMO DATA</span>
+    </header>
+    <p class="demo-notice"><strong>DEMO DATA</strong> — Fixed sample values only. Click several cards to preview selected Multi-Select styling. This local visual simulation does not test or reproduce PharmFlow reporting/filter logic.</p>
+    <section class="demo-panel" aria-labelledby="reportKpiHeading">
+      <div class="panel-heading">
+        <h2 id="reportKpiHeading">Receiving Report</h2>
+        <span>ORDER SUMMARY</span>
+      </div>
+      <div class="receivingSummaryGrid" aria-label="Demo Receiving Report KPI filters">
+        <button type="button" class="pfnIssueCard pfnKpiAll active" data-issue-card="all" aria-pressed="true"><span>All Items</span><strong>248</strong></button>
+        <button type="button" class="pfnIssueCard pfnKpiShortage" data-issue-card="shortage" aria-pressed="false"><span>Shortage</span><strong>31</strong></button>
+        <button type="button" class="pfnIssueCard pfnKpiReceived" data-issue-card="received" aria-pressed="false"><span>Received</span><strong>179</strong></button>
+        <button type="button" class="pfnIssueCard pfnKpiOver" data-issue-card="over" aria-pressed="false"><span>Over Received</span><strong>4</strong></button>
+        <button type="button" class="pfnIssueCard pfnKpiExtra" data-issue-card="manual" aria-pressed="false"><span>Extra Items</span><strong>3</strong></button>
+        <button type="button" class="pfnIssueCard pfnKpiDiscrepancy" data-issue-card="discrepancy" aria-pressed="false"><span>Discrepancy</span><strong>38</strong></button>
+      </div>
+      <div class="demo-hint">
+        <span>Use a desktop mouse to compare normal, hover, selected, and deselected states.</span>
+        <span id="selectionStatus" aria-live="polite">Selected: All Items</span>
+      </div>
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll("[data-issue-card]").forEach((card) => {
+      card.addEventListener("click", () => {
+        const selected = card.classList.toggle("active");
+        card.setAttribute("aria-pressed", selected ? "true" : "false");
+        const active = [...document.querySelectorAll("[data-issue-card].active span")].map((label) => label.textContent.trim());
+        document.getElementById("selectionStatus").textContent = active.length ? "Selected: " + active.join(", ") : "Selected: none";
+      });
+    });
+  </script>
+</body>
+</html>
