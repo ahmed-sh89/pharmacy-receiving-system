@@ -230,6 +230,7 @@
     white-space:nowrap;
   }
   body:not(.zebraDevice) .pfnHeaderUserIcon { display:grid; place-items:center; width:28px; height:28px; border:1px solid #d5e1eb; border-radius:50%; background:#f5f8fb; }
+  body:not(.zebraDevice) .pfnHeaderUserLabel { max-width:130px; overflow:hidden; text-overflow:ellipsis; }
   body:not(.zebraDevice) .pfnHeaderUserIcon svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 
   @media (max-width:1100px) {
