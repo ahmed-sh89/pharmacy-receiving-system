@@ -67,6 +67,7 @@
     </style>
 <link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI4">
 <link rel="stylesheet" href="css/receiving-visual-preview.css?v=20261023-1">
+<link rel="stylesheet" href="css/unified-shell-visual.css?v=UNIFIED_SHELL_20261022">
 
 </head>
 
@@ -441,215 +442,23 @@
             </div>
 
 
-            <div class="pharmacyNameField pfnPharmacyNameHero"><strong id="topBarPharmacyName"></strong></div>
+            <div class="pfnHeaderPharmacy" role="group" aria-label="Pharmacy identity">
+                <strong id="topBarPharmacyName"></strong>
+                <span class="pfnHeaderPharmacyCode"><small>CODE</small><strong id="topBarPharmacyCode">—</strong></span>
+            </div>
 
             <div class="topBarRight pfnContextBar" aria-label="Workspace status">
-
-                <div class="pfnWorkspaceIdentity" aria-label="Pharmacy workspace">
-                    <strong id="topBarPharmacyCode">—</strong>
-                </div>
-
                 <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
                     <strong id="headerMasterGTINStatus">SYNCING</strong>
                 </div>
-
-                <div
-                    id="systemStatus"
-                    class="systemStatus ready"
-                >
-                    READY
-                </div>
-
+                <div id="systemStatus" class="systemStatus ready">READY</div>
                 <span id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</span>
-
             </div>
 
-
-        </header>
-
-
-        <!-- ==================================================
-             MAIN CONTENT
-        =================================================== -->
-
-        <div class="mainContent">
-
-
-            <!-- ==================================================
-                 DASHBOARD PAGE
-            =================================================== -->
-
-            <section
-                id="page-dashboard"
-                class="appPage active"
-            >
-
-<!-- STATISTICS -->
-
-                <section class="statisticsGrid">
-
-
-                    <article class="statCard dashboardKpiCard" data-kpi="total" role="button" tabindex="0" aria-label="Open total items">
-
-                        <div class="statCardLabel">
-
-                            Total Items
-
-                        </div>
-
-                        <strong id="statTotalItems">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                    <article class="statCard statSuccess dashboardKpiCard" data-kpi="completed" role="button" tabindex="0" aria-label="Open completed items">
-
-                        <div class="statCardLabel">
-
-                            Completed
-
-                        </div>
-
-                        <strong id="statCompleted">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remainingItems" role="button" tabindex="0" aria-label="Open remaining items">
-
-                        <div class="statCardLabel">
-
-                            Remaining Items
-
-                        </div>
-
-                        <strong id="statRemainingItems">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remaining" role="button" tabindex="0" aria-label="Open remaining units">
-
-                        <div class="statCardLabel">
-
-                            Remaining Units
-
-                        </div>
-
-                        <strong id="statRemaining">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                    <article class="statCard statDanger dashboardKpiCard" data-kpi="over" role="button" tabindex="0" aria-label="Open over received items">
-
-                        <div class="statCardLabel">
-
-                            Over Received
-
-                        </div>
-
-                        <strong id="statOver">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                    <article class="statCard dashboardKpiCard" data-kpi="manual" role="button" tabindex="0" aria-label="Open extra items">
-
-                        <div class="statCardLabel">
-
-                            Extra Items
-
-                        </div>
-
-                        <strong id="statManual">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                    <article class="statCard dashboardKpiCard" data-kpi="scans" role="button" tabindex="0" aria-label="Open receiving activity">
-
-                        <div class="statCardLabel">
-
-                            Receiving Activity
-
-                        </div>
-
-                        <strong id="statScans">
-
-                            0
-
-                        </strong>
-
-                    </article>
-
-
-                </section>
-
-
-
-                <!-- SCAN AREA -->
-
-                <section class="scanPanel">
-
-
-                    <div class="scanPanelHeader">
-
-
-                        <div>
-
-                            <span class="sectionEyebrow">
-
-                                ACTIVE RECEIVING
-
-                            </span>
-
-                            <h2>
-
-                                Scan item
-
-                            </h2>
-
-                        </div>
-
-
-                        <div
-                            id="scanStatusBadge"
-                            class="scanStatusBadge ready"
-                        >
-
-                            <span class="scanPulse"></span>
-
-                            READY TO SCAN
-
-                        </div>
-
-
-                    </div>
+            <div class="pfnHeaderUser" aria-label="User">
+                <span class="pfnHeaderUserIcon" aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="6.2" r="3.1"/><path d="M3.8 17c.5-3.1 2.7-5 6.2-5s5.7 1.9 6.2 5"/></svg></span>
+                <span class="pfnHeaderUserLabel">User</span>
+            </div>
 
 
                     <!-- IMPORTANT SCAN BOX -->
