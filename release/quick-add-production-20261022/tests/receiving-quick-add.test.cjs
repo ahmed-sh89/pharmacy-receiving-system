@@ -7,7 +7,7 @@ class Element{
  constructor(){this.nodes=new Map();this.handlers={};this.value='';this.disabled=false;this.dataset={quickIndex:'0'};this.classList={toggle(){},add(){},remove(){}};}
  querySelector(k){if(!this.nodes.has(k))this.nodes.set(k,new Element());return this.nodes.get(k);}
  querySelectorAll(k){return k.split(',').map(key=>this.querySelector(key));}
- addEventListener(type,handler){this.handlers[type]=handler;}setAttribute(){}removeAttribute(){}focus(){}remove(){this.removed=true;}
+ addEventListener(type,handler){this.handlers[type]=handler;}setAttribute(){}removeAttribute(){}focus(){this.focused=true;}remove(){this.removed=true;}
  async click(){return this.handlers.click?.({currentTarget:this});}
  async input(value){this.value=String(value);return this.handlers.input?.({currentTarget:this});}
 }
@@ -104,4 +104,36 @@ test('reprocessing an acknowledged Quick Add receipt does not duplicate Last Sca
  const h=harness();await h.select();await h.submit();await h.done;
  const params=h.calls[0].args,reply=await h.c.window.IdentifierService.quickAddOrderItem({pharmacyId:'P',operationId:params.p_operation_id,params});
  h.c.applyReceivingQuickAddReceipt(reply,'P');assert.equal(h.history.length,1);assert.equal(h.hooks.length,3);assert(!h.events.some(e=>e.name==='receiving:transaction'));
+});
+
+
+test('Quick Add selection collapses search/results and focuses the selected Group control',async()=>{
+ const h=harness();h.panel.querySelector('[data-resolver-qty]').value='7';await h.select();
+ assert.equal(h.panel.querySelector('[data-quick-search-area]').hidden,true);
+ assert.equal(h.panel.querySelector('[data-quick-selection]').hidden,false);
+ assert.equal(h.panel.querySelector('[data-quick-group]').focused,true);
+ assert.equal(h.panel.querySelector('[data-resolver-qty]').value,'7');
+ assert.match(h.panel.innerHTML,/data-quick-selection role="region" aria-label="Selected Order item"/);
+ assert.match(h.panel.innerHTML,/<button type="button" data-quick-change>Change Item<\/button>/);
+ assert.match(h.panel.innerHTML,/aria-label="Search Active Order items"/);
+ assert.equal(h.calls.length,0);
+});
+test('Change Item restores results and clears item-specific fields/Group while preserving scan and quantity',async()=>{
+ const h=harness();await h.select();const results=h.panel.querySelector('[data-quick-results]').innerHTML;
+ h.panel.querySelector('[data-resolver-qty]').value='7';h.panel.querySelector('[data-quick-group]').value='Beauty';
+ await h.panel.querySelector('[data-quick-change]').click();
+ assert.equal(h.panel.querySelector('[data-quick-search-area]').hidden,false);assert.equal(h.panel.querySelector('[data-quick-selection]').hidden,true);
+ for(const field of ['code','name','group'])assert.equal(h.panel.querySelector('[data-quick-'+field+']').value,'');
+ assert.equal(h.panel.querySelector('[data-quick-source]').textContent,'');assert.equal(h.panel.querySelector('[data-quick-search]').focused,true);
+ assert.equal(h.panel.querySelector('[data-quick-results]').innerHTML,results);assert.equal(h.panel.querySelector('[data-resolver-qty]').value,'7');
+ await h.panel.querySelector('[data-quick-search]').input('order');const button=h.panel.querySelector('[data-quick-results]').querySelector('[data-quick-index]');button.dataset.quickIndex='1';await button.click();
+ assert.equal(h.panel.querySelector('[data-quick-code]').value,'106');assert.equal(h.panel.querySelector('[data-quick-name]').value,'Order Other');
+ await h.submit(7,'');assert.equal(h.calls.length,0);assert.match(h.panel.querySelector('.gtinPanelMessage').textContent,/Select Group/);
+ await h.submit(7,'Medicine');assert.equal(h.calls[0].args.p_source_order,'B');assert.equal(h.calls[0].args.p_identifier_display,'06285147015764');assert.equal(h.calls[0].args.p_quantity,7);
+});
+test('Change Item cannot alter a frozen or in-flight receiving operation',async()=>{
+ const h=harness({delay:true});await h.select();const pending=h.submit(4,'Medicine');await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.panel.querySelector('[data-quick-change]').disabled,true);await h.panel.querySelector('[data-quick-change]').click();
+ assert.equal(h.panel.querySelector('[data-quick-code]').value,'105');assert.equal(h.panel.querySelector('[data-quick-group]').value,'Medicine');
+ assert.equal(h.panel.querySelector('[data-quick-search-area]').hidden,true);h.release();await pending;assert.equal(h.history.length,1);assert.equal(h.history[0].quantity,4);
 });

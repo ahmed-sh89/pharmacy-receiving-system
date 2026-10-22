@@ -1038,9 +1038,12 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               </div>
               <div data-quick-pane class="pfnCreateItemPane" hidden>
                 <div class="pfnCreateIntro"><b>Find in Order — Quick Add</b><span>Select an uploaded Order item. An existing Master item will be reused.</span></div>
-                <input data-quick-search class="gtinResolutionSearch" placeholder="Search Order by Item Code or Item Name" autocomplete="off">
-                <div data-quick-results class="gtinResolutionResults"></div>
-                <div data-quick-selection hidden>
+                <div data-quick-search-area>
+                  <input data-quick-search class="gtinResolutionSearch" placeholder="Search Order by Item Code or Item Name" aria-label="Search Active Order items" autocomplete="off">
+                  <div data-quick-results class="gtinResolutionResults"></div>
+                </div>
+                <div data-quick-selection role="region" aria-label="Selected Order item" hidden>
+                  <div class="resolverSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-quick-change>Change Item</button></div>
                   <div class="pfnCreateGrid"><label><span>Item Code</span><input data-quick-code readonly></label><label><span>Item Name</span><input data-quick-name readonly></label></div>
                   <p data-quick-source></p>
                   <label class="pfnCreateGroup"><span>Group <b>*</b></span><select data-quick-group><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select></label>
@@ -1066,7 +1069,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             const quick=mode==="quick";findPane.hidden=quick;quickPane.hidden=!quick;
             findTab.classList.toggle("isActive",!quick);quickTab.classList.toggle("isActive",quick);
             panel.querySelector(".gtinPanelMessage").textContent="";
-            setTimeout(()=>panel.querySelector(quick?"[data-quick-search]":"[data-search]")?.focus(),30);
+            setTimeout(()=>panel.querySelector(quick?(quickItem?"[data-quick-group]":"[data-quick-search]"):"[data-search]")?.focus(),30);
         };
         findTab.addEventListener("click",()=>setResolverMode("find"));
         quickTab.addEventListener("click",()=>setResolverMode("quick"));
@@ -1181,20 +1184,38 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const quickOperationId=globalThis.crypto.randomUUID();
         let quickItem=null;
         const quickSearch=panel.querySelector("[data-quick-search]"),quickResults=panel.querySelector("[data-quick-results]");
+        const quickSearchArea=panel.querySelector("[data-quick-search-area]"),quickSelection=panel.querySelector("[data-quick-selection]");
+        const clearQuickItem=()=>{
+            quickItem=null;
+            panel.querySelector("[data-quick-code]").value="";
+            panel.querySelector("[data-quick-name]").value="";
+            panel.querySelector("[data-quick-source]").textContent="";
+            panel.querySelector("[data-quick-group]").value="";
+            panel.querySelector(".gtinPanelMessage").textContent="";
+            quickSelection.hidden=true;quickSearchArea.hidden=false;
+        };
+        panel.querySelector("[data-quick-change]").addEventListener("click",()=>{
+            if(quickCapture||quickSubmitting||linking||reviewStarted)return;
+            clearQuickItem();quickSearch.focus();
+        });
         quickSearch.addEventListener("input",()=>{
             if(quickCapture||quickSubmitting)return;
             const items=findReceivingQuickAddOrderMatches(quickSearch.value,selectedOrders);
             quickResults.innerHTML=items.length?items.map((item,i)=>`<button type="button" class="gtinResult" data-quick-index="${i}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)} · Order ${escapeHTML(item.sourceOrder)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in the captured Orders.</div>';
             quickResults.querySelectorAll("[data-quick-index]").forEach(button=>button.addEventListener("click",()=>{
-                quickItem=items[Number(button.dataset.quickIndex)];
+                if(quickCapture||quickSubmitting||linking||reviewStarted)return;
+                const item=items[Number(button.dataset.quickIndex)];
+                if(!item)return;
+                clearQuickItem();quickItem=item;
                 panel.querySelector("[data-quick-code]").value=quickItem.itemCode;
                 panel.querySelector("[data-quick-name]").value=quickItem.itemName;
                 panel.querySelector("[data-quick-source]").textContent=`Target Order: ${quickItem.sourceOrder}`;
-                panel.querySelector("[data-quick-selection]").hidden=false;
+                quickSearchArea.hidden=true;quickSelection.hidden=false;
+                panel.querySelector("[data-quick-group]").focus();
             }));
         });
         const lockQuick=locked=>{
-            panel.querySelectorAll("[data-review],[data-mode-find],[data-mode-quick],[data-quick-search],[data-quick-group],[data-resolver-qty]").forEach(node=>node.disabled=locked);
+            panel.querySelectorAll("[data-review],[data-mode-find],[data-mode-quick],[data-quick-search],[data-quick-change],[data-quick-group],[data-resolver-qty]").forEach(node=>node.disabled=locked);
             quickResults.querySelectorAll("button").forEach(node=>node.disabled=locked);
         };
         panel.querySelector("[data-quick-receive]")?.addEventListener("click",async event=>{

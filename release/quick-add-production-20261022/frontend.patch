@@ -51,7 +51,7 @@ index 009ce6e..d164c39 100644
 +body:not(.zebraDevice) #quickGTINResolver [data-quick-group]{box-sizing:border-box;width:100%;height:42px;padding:0 38px 0 11px;border:1px solid #b8d0e5;border-radius:9px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%2355728d' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 13px center;appearance:none;color:#123f6d;font-family:inherit;font-size:14px;font-weight:750;outline:none}
 +body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{border-color:#1769aa;box-shadow:0 0 0 3px rgba(23,105,170,.16)}
 diff --git a/index.html b/index.html
-index bb91ba4..85e1a11 100644
+index bb91ba4..f907a0b 100644
 --- a/index.html
 +++ b/index.html
 @@ -53,7 +53,7 @@
@@ -106,7 +106,7 @@ index bb91ba4..85e1a11 100644
  <script src="js/scanner.js?v=HANDHELD_ASSIGN_AUTH3"></script>
  
 -<script src="js/receiving.js?v=REVIEW_QTY_20261021_1"></script>
-+<script src="js/receiving.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
++<script src="js/receiving.js?v=QUICK_ADD_SELECTED_ITEM_20261022"></script>
  
  <script src="js/session.js?v=RECEIVE_ALL_ATOMIC1"></script>
  
@@ -426,7 +426,7 @@ index 2376348..9fbd9f0 100644
  /* Retired device-local Handheld work-scope chooser. */
  (function retireHandheldWorkScopeChooser(){
 diff --git a/js/receiving.js b/js/receiving.js
-index ed39e10..8655f12 100644
+index ed39e10..2d0154e 100644
 --- a/js/receiving.js
 +++ b/js/receiving.js
 @@ -450,6 +450,8 @@ function renderKnownNotInOrderHandheld(parsed,masterRecord){
@@ -538,7 +538,7 @@ index ed39e10..8655f12 100644
          let resolverQuantity=getValidReceivingQuantity(parsed?.quantity);
          const panel=document.createElement("div");
          panel.id="quickGTINResolver";
-@@ -969,18 +1029,25 @@ function openQuickGTINResolver(parsed,knownRecord=null){
+@@ -969,18 +1029,28 @@ function openQuickGTINResolver(parsed,knownRecord=null){
              </header>
              <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
              <section class="gtinResolutionSection pfnUnknownWorkspace">
@@ -557,9 +557,12 @@ index ed39e10..8655f12 100644
 -                <button type="button" class="gtinPrimaryAction pfnCreateReceive" data-create-receive>Create &amp; Receive</button>
 +              <div data-quick-pane class="pfnCreateItemPane" hidden>
 +                <div class="pfnCreateIntro"><b>Find in Order — Quick Add</b><span>Select an uploaded Order item. An existing Master item will be reused.</span></div>
-+                <input data-quick-search class="gtinResolutionSearch" placeholder="Search Order by Item Code or Item Name" autocomplete="off">
-+                <div data-quick-results class="gtinResolutionResults"></div>
-+                <div data-quick-selection hidden>
++                <div data-quick-search-area>
++                  <input data-quick-search class="gtinResolutionSearch" placeholder="Search Order by Item Code or Item Name" aria-label="Search Active Order items" autocomplete="off">
++                  <div data-quick-results class="gtinResolutionResults"></div>
++                </div>
++                <div data-quick-selection role="region" aria-label="Selected Order item" hidden>
++                  <div class="resolverSelectedHeading"><span>SELECTED ITEM</span><button type="button" data-quick-change>Change Item</button></div>
 +                  <div class="pfnCreateGrid"><label><span>Item Code</span><input data-quick-code readonly></label><label><span>Item Name</span><input data-quick-name readonly></label></div>
 +                  <p data-quick-source></p>
 +                  <label class="pfnCreateGroup"><span>Group <b>*</b></span><select data-quick-group><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select></label>
@@ -570,7 +573,7 @@ index ed39e10..8655f12 100644
                </div>
              </section>
              <div class="gtinPanelMessage" aria-live="polite"></div>
-@@ -992,23 +1059,24 @@ function openQuickGTINResolver(parsed,knownRecord=null){
+@@ -992,23 +1062,24 @@ function openQuickGTINResolver(parsed,knownRecord=null){
          const searchLabel=panel.querySelector('label[for="gtinResolutionSearch"]');
          const selection=panel.querySelector("[data-selection]");
          const qtyInput=panel.querySelector("[data-resolver-qty]");
@@ -586,7 +589,7 @@ index ed39e10..8655f12 100644
 +            findTab.classList.toggle("isActive",!quick);quickTab.classList.toggle("isActive",quick);
              panel.querySelector(".gtinPanelMessage").textContent="";
 -            setTimeout(()=>panel.querySelector(create?"[data-new-code]":"[data-search]")?.focus(),30);
-+            setTimeout(()=>panel.querySelector(quick?"[data-quick-search]":"[data-search]")?.focus(),30);
++            setTimeout(()=>panel.querySelector(quick?(quickItem?"[data-quick-group]":"[data-quick-search]"):"[data-search]")?.focus(),30);
          };
          findTab.addEventListener("click",()=>setResolverMode("find"));
 -        createTab.addEventListener("click",()=>setResolverMode("create"));
@@ -602,7 +605,7 @@ index ed39e10..8655f12 100644
          const finish=value=>{
              if(finished)return;finished=true;panel.remove();
              setScanBoxState?.(value?"success":"ready");
-@@ -1040,7 +1108,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
+@@ -1040,7 +1111,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                  `<div class="resolverSelectedCard"><strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small><p>Not in Active Order · Ordered Quantity 0</p><button type="button" data-change-item>Change Item</button><label>Target Order <select data-extra-target><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label></div>`)+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
              selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
              selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
@@ -611,7 +614,7 @@ index ed39e10..8655f12 100644
                  const resolvingItem=selectedItem;linking=true;
                  const button=event.currentTarget;button.disabled=true;
                  panel.querySelector("[data-review]").disabled=true;
-@@ -1051,21 +1119,16 @@ function openQuickGTINResolver(parsed,knownRecord=null){
+@@ -1051,21 +1122,16 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                      const targetOrder=inOrder?"":normalizeOrderNumber(selection.querySelector("[data-extra-target]")?.value||"");
                      if(!inOrder&&(!targetOrder||!selectedOrders.includes(targetOrder))) throw new Error("Select a Target Order for this Extra Item.");
                      if(!inOrder&&!getSelectedReceivingOrderNumbers().includes(targetOrder)) throw new Error("Target Order is no longer selected. Reopen Receiving resolution.");
@@ -638,7 +641,7 @@ index ed39e10..8655f12 100644
                      finish(txs[0]||true);
                  }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
                  finally{linking=false;if(!finished)panel.querySelector("[data-review]").disabled=false;}
-@@ -1094,18 +1157,20 @@ function openQuickGTINResolver(parsed,knownRecord=null){
+@@ -1094,18 +1160,20 @@ function openQuickGTINResolver(parsed,knownRecord=null){
          qtyInput?.addEventListener("input",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);}catch(_error){}});
          qtyInput?.addEventListener("change",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
          const reviewOperationId=globalThis.crypto.randomUUID();
@@ -665,7 +668,7 @@ index ed39e10..8655f12 100644
                  if(savedReview?.review_id!==reviewDraft.review_id||Number(savedReview?.pending_quantity)!==quantity){
                      throw new Error("Saved quantity could not be confirmed. Retry Save for Review.");
                  }
-@@ -1113,47 +1178,53 @@ function openQuickGTINResolver(parsed,knownRecord=null){
+@@ -1113,47 +1181,71 @@ function openQuickGTINResolver(parsed,knownRecord=null){
              }catch(error){setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to save for review";}
              finally{reviewSaving=false;button.disabled=false;}
          });
@@ -675,20 +678,38 @@ index ed39e10..8655f12 100644
 +        const quickOperationId=globalThis.crypto.randomUUID();
 +        let quickItem=null;
 +        const quickSearch=panel.querySelector("[data-quick-search]"),quickResults=panel.querySelector("[data-quick-results]");
++        const quickSearchArea=panel.querySelector("[data-quick-search-area]"),quickSelection=panel.querySelector("[data-quick-selection]");
++        const clearQuickItem=()=>{
++            quickItem=null;
++            panel.querySelector("[data-quick-code]").value="";
++            panel.querySelector("[data-quick-name]").value="";
++            panel.querySelector("[data-quick-source]").textContent="";
++            panel.querySelector("[data-quick-group]").value="";
++            panel.querySelector(".gtinPanelMessage").textContent="";
++            quickSelection.hidden=true;quickSearchArea.hidden=false;
++        };
++        panel.querySelector("[data-quick-change]").addEventListener("click",()=>{
++            if(quickCapture||quickSubmitting||linking||reviewStarted)return;
++            clearQuickItem();quickSearch.focus();
++        });
 +        quickSearch.addEventListener("input",()=>{
 +            if(quickCapture||quickSubmitting)return;
 +            const items=findReceivingQuickAddOrderMatches(quickSearch.value,selectedOrders);
 +            quickResults.innerHTML=items.length?items.map((item,i)=>`<button type="button" class="gtinResult" data-quick-index="${i}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)} · Order ${escapeHTML(item.sourceOrder)}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching item in the captured Orders.</div>';
 +            quickResults.querySelectorAll("[data-quick-index]").forEach(button=>button.addEventListener("click",()=>{
-+                quickItem=items[Number(button.dataset.quickIndex)];
++                if(quickCapture||quickSubmitting||linking||reviewStarted)return;
++                const item=items[Number(button.dataset.quickIndex)];
++                if(!item)return;
++                clearQuickItem();quickItem=item;
 +                panel.querySelector("[data-quick-code]").value=quickItem.itemCode;
 +                panel.querySelector("[data-quick-name]").value=quickItem.itemName;
 +                panel.querySelector("[data-quick-source]").textContent=`Target Order: ${quickItem.sourceOrder}`;
-+                panel.querySelector("[data-quick-selection]").hidden=false;
++                quickSearchArea.hidden=true;quickSelection.hidden=false;
++                panel.querySelector("[data-quick-group]").focus();
 +            }));
 +        });
 +        const lockQuick=locked=>{
-+            panel.querySelectorAll("[data-review],[data-mode-find],[data-mode-quick],[data-quick-search],[data-quick-group],[data-resolver-qty]").forEach(node=>node.disabled=locked);
++            panel.querySelectorAll("[data-review],[data-mode-find],[data-mode-quick],[data-quick-search],[data-quick-change],[data-quick-group],[data-resolver-qty]").forEach(node=>node.disabled=locked);
 +            quickResults.querySelectorAll("button").forEach(node=>node.disabled=locked);
 +        };
 +        panel.querySelector("[data-quick-receive]")?.addEventListener("click",async event=>{
