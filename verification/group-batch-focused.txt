@@ -1,0 +1,28 @@
+✔ six approved Groups normalize case and whitespace, with Home Health display alias (1.230441ms)
+✔ effective Group prefers canonical Group and only validates legacy category fallback (0.242947ms)
+✔ Receiving Group choices contain only six approved values and filters use effective Group (6.700681ms)
+✔ Settings and Receiving expose a controlled Group selector only on Global creation (2.648214ms)
+✔ server migration validates creation, preserves legacy linking RPC, and avoids global NOT NULL (0.706939ms)
+✔ Production baseline is pinned and legacy Beauty casing normalizes without changing category (0.348587ms)
+✔ approved workbook migration is deterministic and preserves subordinate classification fields (0.497803ms)
+✔ Expiry sources remain unchanged and required compatibility is documented only (0.155455ms)
+✔ Item Code projection supplies Group without a barcode and never mutates uploaded rows or quantities (2.372367ms)
+✔ projection batches, caches, shares simultaneous requests and invalidates by Master version (1.002005ms)
+✔ late response cannot cross pharmacy/user boundary, and failed reads remain retryable (0.94538ms)
+✔ 1001 codes use bounded requests and no new polling loop (2.567261ms)
+✔ Quick Add uses scoped full-width select styling and retains all six values (1.288148ms)
+✔ order-scoped metrics retain calculations; Total V2 and identifier labels are explicit (8.811431ms)
+✔ Receiving report projection shares display fallback without changing allocation/quantity code (5.364911ms)
+✔ anonymous caller denied; authenticated caller without identity denied (1460.283235ms)
+✔ authenticated read returns canonical Group with no identifier table; no direct Global table access (8.277495ms)
+✔ ambiguous canonical codes excluded, missing/empty codes return none, request size bounded (3.089691ms)
+✔ V2 cache separates Global item total from numeric identifier rows and preserves uploaded Group (8.271647ms)
+✔ V2 item collection remains available when it has no numeric GTIN cache rows (2.318245ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1593.194123

@@ -1,0 +1,1831 @@
+/* Desktop component owners. Handheld Receiving lives in receiving-surface.css.
+   Layout is content-sized; the scan card never stretches to viewport height. */
+:root {
+  --ui-ink:#16334f; --ui-muted:#597086; --ui-line:#d6e2ed;
+  --ui-blue:#176bb1; --ui-bg:#f1f5f9; --ui-radius:12px;
+}
+body:not(.zebraDevice) {font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.4;color:var(--ui-ink)}
+body:not(.zebraDevice) .sidebar {position:fixed;inset:0 auto 0 0;z-index:90;display:flex;flex-direction:column;width:216px;min-width:216px;max-width:216px;background:#e8f0f8;border-right:1px solid #ccdce9;color:var(--ui-ink);transition:transform .2s}
+body:not(.zebraDevice) .sidebarBrand {display:flex;align-items:center;gap:10px;min-height:84px;padding:16px 13px;border-bottom:1px solid #ccdce9}
+body:not(.zebraDevice) .brandLogo {display:grid;place-items:center;flex:none;width:38px;height:42px;background:#fff;border:1px solid #c8d9e8;border-radius:10px}
+body:not(.zebraDevice) .brandLogo img {width:30px;height:32px}
+body:not(.zebraDevice) .brandText {min-width:0;display:grid;gap:3px}
+body:not(.zebraDevice) .brandText strong {font-size:23px;letter-spacing:-.8px;color:#133d64;line-height:1.15}
+body:not(.zebraDevice) .brandText span {font-size:8px;letter-spacing:.6px;font-weight:700;white-space:nowrap;color:#55718b}
+body:not(.zebraDevice) .sidebarNavigation {display:grid;gap:6px;padding:16px 10px}
+body:not(.zebraDevice) .sidebarItem {display:flex;align-items:center;gap:12px;min-height:46px;padding:0 13px;border:1px solid transparent;border-radius:9px;background:transparent;color:#385770;font-size:16px;font-weight:700;cursor:pointer;text-align:left}
+body:not(.zebraDevice) .sidebarItem.active {background:#fff;border-color:#c8daeb;color:#145c99;box-shadow:0 2px 5px #153e6210}
+body:not(.zebraDevice) .sidebarItem:hover {background:#f7fbff}
+body:not(.zebraDevice) .sidebarIcon {display:grid;place-items:center;width:21px;height:21px;flex:none}
+body:not(.zebraDevice) .sidebarIcon svg {width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7}
+body:not(.zebraDevice) .pfnLegacyNav {display:none}
+body:not(.zebraDevice) .sidebarFooter {margin-top:auto;padding:13px 14px 12px;border-top:1px solid #ccdce9;display:grid;gap:9px}
+body:not(.zebraDevice) .accountIdentity {display:block;min-width:0}
+body:not(.zebraDevice) .accountIdentityText {display:grid;gap:5px;min-width:0}
+body:not(.zebraDevice) .accountIdentityText strong {display:none}
+body:not(.zebraDevice) .accountIdentityText small {font-size:15px;letter-spacing:.5px;font-weight:800;color:#184d79}
+body:not(.zebraDevice) .accountAvatar,body:not(.zebraDevice) .accountContextKicker,body:not(.zebraDevice) .accountRoleBadge {display:none}
+.sidebarConnection {display:flex;gap:6px;align-items:center;font-size:11px;font-weight:700;color:#258056}
+.sidebarConnection::before {content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.sidebarConnection.isOffline {color:#aa6130}
+body:not(.zebraDevice) .sidebarLogoutButton {width:100%;min-height:38px;border:1px solid #bbcfdf;border-radius:8px;background:#f7fbff;color:#34536e;font-size:14px;font-weight:700;cursor:pointer}
+body:not(.zebraDevice) .autoSaveStatus {display:flex;justify-content:center;align-items:center;gap:7px;font-size:11px;color:#658174}
+body:not(.zebraDevice) .autoSaveStatus strong {font-size:10px;font-weight:700;text-transform:uppercase}
+body:not(.zebraDevice) .autoSaveStatus small {display:none}
+body:not(.zebraDevice) .sidebarFooter {gap:10px;padding:14px 14px 12px}
+body:not(.zebraDevice) .accountIdentity {padding:9px 10px;border:1px solid #c5d8e8;border-radius:9px;background:#f5f9fd}
+body:not(.zebraDevice) .accountIdentityText {gap:4px}
+body:not(.zebraDevice) .accountIdentityText small {font-size:16px;line-height:1.05;font-weight:900;letter-spacing:.6px;color:#174f7b}
+body:not(.zebraDevice) .sidebarConnection {margin-top:1px;font-size:10px;line-height:1;font-weight:850;letter-spacing:.04em}
+body:not(.zebraDevice) .sidebarConnection::before {width:7px;height:7px}
+body:not(.zebraDevice) .sidebarCloseButton {display:none}
+body:not(.zebraDevice) .mainApplication {margin-left:216px;min-height:100vh;background:var(--ui-bg)}
+body:not(.zebraDevice) .mainContent {padding:16px 24px;max-width:1600px;margin:0 auto}
+body:not(.zebraDevice) .topBar {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;min-height:74px;padding:10px 24px;background:#fff;border-bottom:1px solid var(--ui-line)}
+body:not(.zebraDevice) .topBarLeft {display:flex;align-items:center;gap:12px;min-width:0}
+body:not(.zebraDevice) .pageHeading {margin:0;min-width:0}
+body:not(.zebraDevice) .pageHeading h1 {margin:0;font-size:26px;line-height:1.2;color:#153b60;letter-spacing:-.5px}
+body:not(.zebraDevice) .pageHeading p {margin:3px 0 0;font-size:13px;color:var(--ui-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) .pfnContextBar {display:flex;flex-wrap:nowrap;align-items:center;justify-self:end;gap:6px;min-width:max-content}
+body:not(.zebraDevice) .pfnContextBar>div,body:not(.zebraDevice) .pfnContextBar>.cloudWorkspaceStatus {box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:none;height:32px;min-height:32px;margin:0;padding:0 8px;border:1px solid var(--ui-line);border-radius:7px;background:#f5f9fd;font-size:11px;font-weight:700;line-height:1;white-space:nowrap}
+body:not(.zebraDevice) .pfnContextBar strong {font:inherit}
+body:not(.zebraDevice) .pfnContextBar .pfnWorkspaceIdentity {background:#e3eff9;color:#184d79}
+body:not(.zebraDevice) .pfnContextBar .globalMasterHeaderInfo {background:#edf7f1;color:#246d53;border-color:#c2d9ce}
+body:not(.zebraDevice) .pharmacyNameField {display:grid;gap:3px;min-width:0;text-align:center}
+body:not(.zebraDevice) .pharmacyNameField>span:first-child {font-size:10px;color:var(--ui-muted);letter-spacing:.4px}
+body:not(.zebraDevice) #topBarPharmacyName {font-size:15px;font-weight:700;letter-spacing:0;color:#264c6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.zebraDevice .pharmacyNameField {display:none}
+@media(min-width:901px){body:not(.zebraDevice).pfnSidebarCollapsed .sidebar {width:60px;min-width:60px;max-width:60px;transform:none}
+body:not(.zebraDevice).pfnSidebarCollapsed .sidebarBrand {padding:16px 10px;justify-content:center}
+body:not(.zebraDevice).pfnSidebarCollapsed .brandText,body:not(.zebraDevice).pfnSidebarCollapsed .sidebarItem>span:not(.sidebarIcon),body:not(.zebraDevice).pfnSidebarCollapsed .sidebarFooter {display:none}
+body:not(.zebraDevice).pfnSidebarCollapsed .sidebarNavigation {padding:16px 6px}
+body:not(.zebraDevice).pfnSidebarCollapsed .sidebarItem {padding:0;justify-content:center}}
+@media(min-width:901px){body:not(.zebraDevice).pfnSidebarCollapsed .mainApplication {margin-left:60px}}
+
+/* Receiving — one compact vertical workflow, including the runtime-moved Last Scan. */
+body:not(.zebraDevice) #page-dashboard {min-height:0}
+body:not(.zebraDevice) #page-dashboard.active {display:grid;gap:16px}
+body:not(.zebraDevice) .statisticsGrid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin:0}
+body:not(.zebraDevice) .statCard {position:relative;min-width:0;min-height:80px;padding:10px 12px;background:#e9f2fa;border:1px solid #abc7df;border-top:3px solid #5591c4;border-radius:10px;box-shadow:none;cursor:pointer}
+body:not(.zebraDevice) .statCardLabel {font-size:12px;line-height:1.25;font-weight:700;color:#516a80;white-space:normal}
+body:not(.zebraDevice) .statCard strong {display:block;margin-top:7px;font-size:28px;line-height:1;color:#174671}
+body:not(.zebraDevice) .statSuccess {border-color:#a0ceb6;border-top-color:#32986b;background:#e4f3eb}
+body:not(.zebraDevice) .statWarning {border-color:#dcc38c;border-top-color:#d6a03d;background:#fff3d9}
+body:not(.zebraDevice) .statDanger {border-color:#dba7ae;border-top-color:#ca6570;background:#fbe9ec}
+body:not(.zebraDevice) .statCard::before {content:"▦";position:absolute;right:12px;top:39px;font-size:20px;line-height:1;color:#3475a5;pointer-events:none}
+body:not(.zebraDevice) .statCard[data-kpi="completed"]::before {content:"✓";color:#238057}
+body:not(.zebraDevice) .statCard[data-kpi="remainingItems"]::before {content:"◷";color:#a57620}
+body:not(.zebraDevice) .statCard[data-kpi="remaining"]::before {content:"▤";color:#a57620}
+body:not(.zebraDevice) .statCard[data-kpi="over"]::before {content:"↑";color:#b44859}
+body:not(.zebraDevice) .statCard[data-kpi="manual"]::before {content:"✎"}
+body:not(.zebraDevice) .statCard[data-kpi="scans"]::before {content:"↻"}
+/* Scan/Last Scan presentation restored from 8645f66, before db81d2e/89be9ad.
+   Current runtime markup, action toolbar and receiving behavior remain authoritative. */
+body:not(.zebraDevice) #page-dashboard .scanPanel {display:flex;flex-direction:column;gap:8px;margin:0;padding:8px 14px;min-height:0;height:auto;background:#f9fcff;border:1px solid #bdd7ef;border-radius:14px;box-shadow:none}
+body:not(.zebraDevice) .scanPanelHeader {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
+body:not(.zebraDevice) .scanPanelHeader h2 {font-size:19px;font-weight:850;margin:0;color:#0b376b}
+body:not(.zebraDevice) .scanPanelHeader .sectionEyebrow {display:none}
+body:not(.zebraDevice) .scanPanelHeader p {font-size:13px;margin:3px 0 0;color:var(--ui-muted)}
+body:not(.zebraDevice) .scanStatusBadge {padding:5px 9px;border:1px solid #c7e4d3;border-radius:6px;background:#eff9f3;color:#26724f;font-size:11px;font-weight:700}
+body:not(.zebraDevice) #scanBox {position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:12px;min-height:52px;height:auto;padding:4px 14px;border:2px solid #8cb9e6;border-radius:12px;background:#fff;box-shadow:none}
+body:not(.zebraDevice) #scanBox:focus-within {border-color:#237abb;box-shadow:0 0 0 3px #237abb19}
+body:not(.zebraDevice) #barcodeInput {flex:1;min-width:0;width:100%;height:40px;padding:0;border:0;outline:0;background:transparent;font-size:20px;font-weight:800;color:#173e61;caret-color:#176bb1;box-shadow:none}
+/* Historical full-field layer; trigger/timing remain owned by ui.js. */
+body:not(.zebraDevice) #scanBox>.pfnScanFlashLayer {position:absolute;inset:0;z-index:80;display:block;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .22s ease-out}
+body:not(.zebraDevice) #scanBox>.pfnScanFlashLayerSuccess {background:rgba(43,190,112,.32);box-shadow:inset 0 0 0 2px #169b59,0 0 0 3px rgba(22,155,89,.10)}
+body:not(.zebraDevice) #scanBox>.pfnScanFlashLayerError {background:rgba(224,62,78,.30);box-shadow:inset 0 0 0 2px #d73545,0 0 0 3px rgba(215,53,69,.10)}
+body:not(.zebraDevice) #scanBox>.pfnScanFlashLayerActive {opacity:1;animation:pfnC5FullScanFlash .76s ease-out forwards}
+@keyframes pfnC5FullScanFlash {0%{opacity:1}62%{opacity:.78}100%{opacity:0}}
+body:not(.zebraDevice) #barcodeInput::placeholder {color:#9aa8b5;font-size:17px;font-weight:400;opacity:1}
+body:not(.zebraDevice) .scanIcon {display:grid;place-items:center;width:26px;height:26px;color:#397aaa;font-size:22px}
+body:not(.zebraDevice) .scanBoxIndicator {font-size:11px;letter-spacing:.5px;color:#6e8293}
+body:not(.zebraDevice) #smartScanSearchArea {margin:0;min-height:0}
+body:not(.zebraDevice) #smartScanSearchArea:has(#smartScanResults:empty):has(#smartScanSelected.hidden) {display:none}
+body:not(.zebraDevice) #lastScanCard {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:0;padding:10px 12px;min-height:0;height:auto;flex:none;border:1px solid #98b9d6;border-radius:12px;background:#edf4fb;box-shadow:inset 0 0 0 1px #fff}
+body:not(.zebraDevice) #lastScanCard .cardHeader {display:contents}
+body:not(.zebraDevice) #lastScanCard .cardHeader h3 {font-size:16px;margin:0;align-self:center;grid-row:1;grid-column:1}
+body:not(.zebraDevice) #lastScanCard .sectionEyebrow {display:none}
+body:not(.zebraDevice) #lastScanTime {display:none}
+body:not(.zebraDevice) .legacyLastScanGrid {display:none}
+body:not(.zebraDevice) .professionalLastScanLayout {display:flex;flex-direction:column;gap:8px;margin:0;grid-row:2;grid-column:1/-1}
+body:not(.zebraDevice) .lastScanHero {display:contents}
+body:not(.zebraDevice) .lastScanHeroName {order:0;padding:8px 11px;border:1px solid #b8cee3;border-left:4px solid #2775ad;border-radius:8px;background:#fff;font-size:23px;font-weight:800;line-height:1.2;color:#0b376b;margin:0;overflow-wrap:anywhere}
+body:not(.zebraDevice) .lastScanMetaRow {order:2;display:grid;grid-template-columns:1fr 1.45fr 1.1fr;gap:8px;margin:0}
+body:not(.zebraDevice) .lastScanMetaItem {display:grid;gap:3px;min-width:0;min-height:36px;padding:5px 9px;border:1px solid #c6d4e1;border-radius:7px;background:#f8fafc}
+body:not(.zebraDevice) .lastScanMetaGTIN {border-color:#c6d4e1;background:#f8fafc}
+body:not(.zebraDevice) .lastScanMetaTime {border-color:#c6d4e1;background:#f8fafc}
+body:not(.zebraDevice) .lastScanMetaItem span {font-size:11px;font-weight:600;color:#64798b}
+body:not(.zebraDevice) .lastScanMetaItem strong {font-size:13px;font-weight:600;color:#365774;overflow-wrap:anywhere}
+body:not(.zebraDevice) .lastScanMetrics {order:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}
+body:not(.zebraDevice) .lastScanMetric {text-align:center;padding:7px 10px;border:1px solid #8fb9e5;border-radius:9px;background:#e5f1ff;min-width:0;min-height:42px}
+body:not(.zebraDevice) .lastScanMetric span {font-size:13px;font-weight:900;color:#365a7d}
+body:not(.zebraDevice) .lastScanMetric strong {display:block;margin-top:4px;font-size:23px;font-weight:800;line-height:1.1;color:#103f6d}
+body:not(.zebraDevice) .lastScanMetricReceived {background:#e1f5e9;border-color:#99d3af}
+body:not(.zebraDevice) .lastScanMetricRemaining {background:#fff0d5;border-color:#e4b85e}
+body:not(.zebraDevice) .lastScanMetricStatus {display:block;background:#efe9ff;border-color:#b7a4e4}
+body:not(.zebraDevice) #lastScanQuantityControls {grid-row:1;grid-column:2;display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:0;padding:0;border:0;background:transparent}
+body:not(.zebraDevice) .lastScanQtyTitle {font-size:12px;font-weight:700;color:var(--ui-muted)}
+body:not(.zebraDevice) .lastScanQtyActions {display:flex;align-items:center;gap:5px}
+body:not(.zebraDevice) .lastScanQtyButton {display:inline-flex;align-items:center;justify-content:center;width:42px;height:38px;border:0;border-radius:6px;background:#1476c9;color:#fff;font-size:22px;font-weight:900;cursor:pointer}
+body:not(.zebraDevice) .lastScanQtyValue {min-width:58px;height:38px;border:2px solid #65a5dc;border-radius:6px;background:#e7f4ff;color:#075da7;font-size:20px;font-weight:900}
+body:not(.zebraDevice) .lastScanQtyHint {display:none}
+body:not(.zebraDevice) .pcClearLastScan {grid-row:3;grid-column:2;justify-self:end;display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:4px 12px;border:1px solid #a9bdd0;border-radius:6px;background:#e3ebf3;color:#405b70;font-size:11px;cursor:pointer}
+body:not(.zebraDevice) #lastScanCard.isEmpty .professionalLastScanLayout,body:not(.zebraDevice) #lastScanCard.isEmpty #lastScanQuantityControls {display:none}
+body:not(.zebraDevice) #lastScanCard.isEmpty .cardHeader {margin:0}
+body:not(.zebraDevice) .pfnActionBar {display:grid;gap:10px;margin:0;padding:0;border:0;background:transparent}
+body:not(.zebraDevice) .pfnReceivingActionGroup {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+body:not(.zebraDevice) .pfnAction {box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:7px;height:40px;min-height:40px;padding:0 14px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:14px;font-weight:700;cursor:pointer}
+body:not(.zebraDevice) .pfnActionReview {border-color:#d7b46e;background:#fff0ce;color:#855710}
+body:not(.zebraDevice) .pfnActionReport {margin-left:0;background:#edf5fc;color:#21577f;border-color:#a6bfd4}
+body:not(.zebraDevice) .pfnOrderControlGroup {display:flex;align-items:center;gap:8px;padding:0;border:0;min-width:0;flex:1 1 auto}
+body:not(.zebraDevice) .pfnManageOrdersButton {display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:none;min-height:40px;padding:8px 14px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:14px;font-weight:700;cursor:pointer}
+.pfnManageOrdersIcon {display:block;width:19px;height:19px;flex:0 0 19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body:not(.zebraDevice) .pfnOrderSelector {display:flex;flex-direction:row;align-items:center;gap:12px;padding:0;border:0;background:transparent;min-width:0}
+body:not(.zebraDevice) .pfnOrderSelector>span {font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--ui-muted)}
+body:not(.zebraDevice) .pfnLegacyOrderId {font-size:13px}
+body:not(.zebraDevice) .pfnSessionStatus {display:none}
+body:not(.zebraDevice) #page-dashboard>.contentCard {margin:0;padding:14px 20px;border:1px solid var(--ui-line);border-radius:10px;background:#fff;box-shadow:none}
+body:not(.zebraDevice) #page-dashboard>.contentCard .cardHeader {margin:0 0 8px;padding:0;border:0}
+body:not(.zebraDevice) #page-dashboard>.contentCard h3 {font-size:16px;margin:0}
+body:not(.zebraDevice) #page-dashboard>.contentCard .sectionEyebrow {display:none}
+body:not(.zebraDevice) .progressTrack {height:9px;overflow:hidden;background:#e4edf4;border-radius:8px}
+body:not(.zebraDevice) .progressBar {height:100%;border-radius:8px;background:#2d91bc;transition:width .2s}
+body:not(.zebraDevice) .progressPercentage {font-size:19px;color:#236792}
+body:not(.zebraDevice) .progressFooter {display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:12px;color:var(--ui-muted)}
+
+/* Manage Orders owns its body scroll; header and footer never scroll away. */
+.pfnOrdersModal {width:min(1040px,calc(100vw - 48px));height:auto;max-height:calc(100dvh - 64px)}
+.pfnOrdersModal .pfnModalHeader {padding:16px 20px;flex:none}
+.pfnOrdersModal .pfnModalBody {display:grid;grid-auto-rows:max-content;gap:14px;padding:16px 20px;overflow:auto;min-height:0}
+.pfnOrdersFooter {display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:12px 20px;border-top:1px solid var(--ui-line);background:#f8fafc;color:var(--ui-muted);font-size:12px}
+.pfnOrdersFooter button {min-height:36px;padding:6px 20px;border:1px solid #b9cede;border-radius:7px;background:#fff;color:#285579;font-size:14px;font-weight:700}
+.pfnHandheldAssignment {padding:14px;border:1px solid #cadce9;border-radius:10px;background:#f4f8fc}
+.pfnHandheldAssignmentHeading {display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pfnHandheldAssignmentHeading span {font-size:10px;font-weight:700;letter-spacing:1px;color:#54728b}
+.pfnHandheldAssignment h3 {margin:3px 0;font-size:19px;color:#244b6c}
+.pfnHandheldAssignment p {margin:0;color:var(--ui-muted);font-size:13px}
+.pfnHandheldAssignment button {min-height:36px;padding:6px 12px;border:1px solid #bacfdf;border-radius:7px;background:#fff;color:#2d5b7e;font-size:13px;font-weight:700;cursor:pointer}
+.pfnHandheldOrderGrid {display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:12px 0}
+.pfnHandheldOrderGrid label {display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid #d3e0e9;border-radius:7px;background:#fff;font-size:14px;font-weight:700;color:#294f6e}
+.pfnHandheldOrderGrid input {width:17px;height:17px;accent-color:#176bb1}
+.pfnHandheldAssignmentActions {display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--ui-muted)}
+.pfnHandheldAssignmentActions .primary {background:#176bb1;color:#fff;border-color:#176bb1}
+.pfnOrdersModal #page-files {display:grid;gap:14px;margin:0;padding:0}
+#page-files .twoColumnLayout {display:block;margin:0}
+#page-files .contentCard {margin:0;padding:14px;border:1px solid var(--ui-line);border-radius:10px;background:#fff;box-shadow:none}
+#page-files .cardHeader {display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 12px;padding:0;border:0}
+#page-files .cardHeader h2,#page-files .cardHeader h3 {font-size:19px;margin:2px 0}
+#page-files .cardHeader p {font-size:13px;margin:3px 0;color:var(--ui-muted)}
+#page-files .sectionEyebrow {font-size:10px;letter-spacing:1px;color:#52738d}
+#page-files #btnLoadOrders {flex:none;min-height:38px;font-size:14px;padding:8px 14px;box-shadow:none}
+#page-files .emptyState {padding:16px;font-size:14px}
+#page-files .healthGrid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#page-files .healthGrid>div {padding:10px;min-height:0;border:1px solid var(--ui-line);border-radius:8px;background:#f8fafc}
+#page-files .healthGrid span {font-size:12px}
+#page-files .healthGrid strong {font-size:22px}
+#page-files .fileList {margin-top:10px}
+body:not(.zebraDevice) #page-files #orderFilesList{min-height:0!important;max-height:210px!important;padding:8px!important;gap:9px!important}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem{min-height:64px;padding:10px 12px;border:1px solid #c8d9e7;border-radius:9px;background:#fff;gap:16px}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem>div:first-child{min-width:0;display:grid;gap:5px}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem>div:first-child br{display:none}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem strong{font-size:15px;font-weight:750;line-height:1.2;color:#163f65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItem>div:first-child small{font-size:12px;font-weight:650;line-height:1.2;color:#607b91;white-space:nowrap}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItemActions{display:flex;align-items:center;gap:12px;flex:none}
+body:not(.zebraDevice) #page-files #orderFilesList .fileItemActions>small{font-size:12px;font-weight:700;color:#5b7489;white-space:nowrap}
+body:not(.zebraDevice) #page-files #orderFilesList .removeActiveOrderButton{min-height:32px;padding:5px 11px;border:1px solid #ef9b9b;border-radius:7px;background:#fff8f8;color:#c73535;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+
+/* Settings — bounded administration cards, no parallel state or permissions. */
+body:not(.zebraDevice) #page-settings {width:82%;max-width:1200px;margin:0 auto}
+body:not(.zebraDevice) #page-settings.active {display:grid;gap:16px}
+#page-settings>.contentCard {margin:0;padding:18px;border:1px solid var(--ui-line);border-radius:12px;background:#fff;box-shadow:none}
+#page-settings .cardHeader {margin:0 0 12px;padding:0;border:0}
+#page-settings .cardHeader h2 {font-size:21px;margin:3px 0}
+#page-settings .cardHeader p,#page-settings .settingsDescription {font-size:14px;line-height:1.5;color:var(--ui-muted)}
+#page-settings .sectionEyebrow {font-size:11px;letter-spacing:1px;color:#5f7e98}
+#page-settings .accountSettingsGrid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#page-settings .accountSettingTile {padding:12px;background:#f7fafc;border:1px solid #e0e9f0;border-radius:8px;min-width:0}
+#page-settings .accountSettingTile span {display:block;font-size:12px;color:var(--ui-muted)}
+#page-settings .accountSettingTile strong {display:block;font-size:15px;margin-top:5px;overflow-wrap:anywhere}
+#page-settings .settingsButtonGrid {display:flex;gap:12px;flex-wrap:wrap}
+#page-settings .primaryButton,#page-settings .secondaryButton,#page-settings .dangerButton {min-height:40px;font-size:14px;padding:8px 16px;box-shadow:none}
+#page-settings .masterGTINCard {border-top:3px solid #3689bd}
+.globalIdentifierMasterAdmin {display:grid;gap:14px}
+.identifierScopeBadge {display:inline-flex;align-items:center;margin-bottom:8px;padding:4px 9px;border:1px solid #bbd3e6;border-radius:5px;background:#edf5fc;color:#2e5b7e;font-size:11px;font-weight:700;letter-spacing:.6px}
+.globalIdentifierMasterLookupGrid {display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:14px 12px;align-items:end}
+.globalIdentifierMasterLookupGrid label {display:grid;gap:6px;font-size:14px;font-weight:700;color:#365b78}
+.globalIdentifierMasterLookupGrid input {width:100%;min-height:42px;padding:8px 12px;border:1px solid #b8cede;border-radius:8px;background:#fff;font-size:15px;color:#254c6b}
+.globalIdentifierMasterLookupGrid button {min-height:42px;padding:8px 16px;border:1px solid #176bb1;border-radius:8px;background:#176bb1;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+.globalIdentifierMasterLookupGrid [data-admin-clear] {grid-column:2;background:#fff;border-color:#b8cede;color:#385d78}
+#page-settings .dangerZone {border-left:3px solid #c65d66;background:#fff8f8;padding:16px;border-radius:8px;margin-top:18px}
+
+@media(max-width:1100px){
+ body:not(.zebraDevice) .statisticsGrid {grid-template-columns:repeat(4,minmax(0,1fr))}
+ body:not(.zebraDevice) .topBar {grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;padding-left:14px;padding-right:14px}
+ #page-settings .accountSettingsGrid {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:900px){
+ body:not(.zebraDevice) .sidebar {transform:translateX(-100%)}
+ body:not(.zebraDevice) .sidebar.show {transform:translateX(0)}
+ body:not(.zebraDevice) .sidebarCloseButton {display:block}
+ body:not(.zebraDevice) .sidebarOverlay.show {display:block}
+ body:not(.zebraDevice) .mainApplication {margin-left:0}
+ body:not(.zebraDevice) .mainContent {padding:14px}
+ body:not(.zebraDevice) .topBar {padding:12px 14px}
+}
+@media(max-width:600px){
+ body:not(.zebraDevice) .topBarRight {display:none}
+ body:not(.zebraDevice) .topBar {grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ body:not(.zebraDevice) .statisticsGrid {grid-template-columns:repeat(2,minmax(0,1fr))}
+ body:not(.zebraDevice) .professionalLastScanLayout {grid-template-columns:1fr}
+ body:not(.zebraDevice) .pfnOrderControlGroup {flex-wrap:wrap;gap:10px}
+ body:not(.zebraDevice) .pfnActionReport {margin-left:0}
+ .pfnOrdersModal {max-height:calc(100dvh - 24px);width:calc(100vw - 24px)}
+ #page-files .healthGrid,#page-settings .accountSettingsGrid {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #page-files .cardHeader {align-items:flex-start;flex-wrap:wrap}
+ .globalIdentifierMasterLookupGrid {grid-template-columns:1fr}
+ .globalIdentifierMasterLookupGrid [data-admin-clear] {grid-column:auto}
+}
+
+:root{
+  --pfn-bg:#f5f9ff; --pfn-surface:#ffffff; --pfn-navy:#173c68;
+  --pfn-navy-2:#234f82; --pfn-blue:#3b82f6; --pfn-blue-soft:#e9f3ff;
+  --pfn-line:#dce8f5; --pfn-text:#19324d; --pfn-muted:#71849a;
+  --pfn-success:#2f9e69; --pfn-warning:#d28b24; --pfn-danger:#cf4c5b;
+  --pfn-shadow:0 10px 30px rgba(36,78,122,.08);
+}
+body:not(.zebraMode){background:var(--pfn-bg);color:var(--pfn-text)}
+body:not(.zebraMode) .headerInfo{border-left:1px solid #e2ebf4}
+body:not(.zebraMode) .headerInfo span{color:#8a9aab}
+body:not(.zebraMode) .headerInfo strong{color:var(--pfn-navy)}
+body:not(.zebraMode) .systemStatus.ready{background:#ecf9f2;color:#27865b;border:1px solid #cfeedd}
+body.zebraDevice .pfnActionButton{position:relative;z-index:1;width:100%;min-height:43px;border:0;border-radius:12px;background:var(--pfn-navy);color:#fff;font-size:12px;font-weight:850;cursor:pointer}
+body.zebraDevice .pfnActionButton:hover{background:var(--pfn-navy-2)}
+body.zebraDevice .pfnActionButton.secondary{background:#eef6ff;color:var(--pfn-navy);border:1px solid #d7e8f8}
+.pfnMovementIntro{max-width:1060px;margin:0 auto}.pfnModuleHero{padding:25px;background:#fff;border:1px solid var(--pfn-line);border-radius:20px;box-shadow:var(--pfn-shadow)}.pfnModuleHero h2{margin:7px 0;color:var(--pfn-navy);font-size:26px}.pfnModuleHero p{margin:0;color:var(--pfn-muted);line-height:1.6;font-size:13px}
+.pfnModuleGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.pfnModuleCard{min-height:180px;padding:22px;background:#fff;border:1px solid var(--pfn-line);border-radius:18px;box-shadow:0 8px 24px rgba(40,83,126,.05)}.pfnModuleCard h3{margin:0 0 8px;color:var(--pfn-navy);font-size:16px}.pfnModuleCard p{margin:0 0 18px;color:var(--pfn-muted);font-size:12px;line-height:1.55}.pfnPrototypeTag{display:inline-flex;padding:6px 9px;border-radius:999px;background:#fff7e7;color:#a56b13;border:1px solid #f2dfb7;font-size:10px;font-weight:850}
+@media (max-width:820px){
+.pfnModuleGrid{grid-template-columns:1fr}}
+
+
+
+
+:root{
+  --pfn-bg:#F2F7FD;
+  --pfn-bg-2:#ECF4FC;
+  --pfn-sidebar:#E4EFFA;
+  --pfn-sidebar-2:#DDEAF8;
+  --pfn-surface:#FFFFFF;
+  --pfn-surface-soft:#F8FBFF;
+  --pfn-navy:#0B376B;
+  --pfn-navy-2:#174F87;
+  --pfn-blue:#1769D2;
+  --pfn-blue-soft:#E5F1FF;
+  --pfn-line:#CADDF1;
+  --pfn-line-soft:#DDEAF6;
+  --pfn-text:#163B64;
+  --pfn-muted:#66819E;
+  --pfn-shadow:0 8px 22px rgba(25,75,122,.07);
+}
+
+/* ---------- GLOBAL APP CANVAS ---------- */
+html{
+  background:var(--pfn-bg) !important;
+}
+body:not(.zebraMode){
+  background:var(--pfn-bg) !important;
+  color:var(--pfn-text) !important;
+}
+body:not(.zebraMode) .appPage{
+  background:transparent !important;
+  color:var(--pfn-text) !important;
+}
+body:not(.zebraMode) .appPage h1,
+body:not(.zebraMode) .appPage h2,
+body:not(.zebraMode) .appPage h3,
+body:not(.zebraMode) .appPage h4,
+body:not(.zebraMode) .contentCard h2,
+body:not(.zebraMode) .contentCard h3,
+body:not(.zebraMode) .settingsSection h2,
+body:not(.zebraMode) .settingsSection h3{
+  color:var(--pfn-navy) !important;
+}
+body:not(.zebraMode) .headerInfo{
+  background:#F9FCFF !important;
+  border-color:#C9DDF0 !important;
+}
+body:not(.zebraMode) .headerInfo strong{
+  color:var(--pfn-navy) !important;
+}
+
+/* ---------- SHARED PANELS / INPUTS / TABLES ---------- */
+body:not(.zebraMode) .contentCard,
+body:not(.zebraMode) .panel,
+body:not(.zebraMode) .card,
+body:not(.zebraMode) .settingsSection,
+body:not(.zebraMode) .receivingWorkspace,
+body:not(.zebraMode) .reportCard,
+body:not(.zebraMode) .receivingSummaryPanel,
+body:not(.zebraMode).zebraDevice .expiryCaptureCard,
+body:not(.zebraMode) .returnsArchivePlaceholder,
+body:not(.zebraMode) .returnsArchiveIntroGrid > *,
+body:not(.zebraMode) .ownerControlCenter,
+body:not(.zebraMode) .masterGTINCard{
+  background:#F9FCFF !important;
+  border-color:var(--pfn-line) !important;
+  color:var(--pfn-text) !important;
+  box-shadow:0 6px 18px rgba(35,78,120,.045) !important;
+}
+body:not(.zebraMode) input,
+body:not(.zebraMode) select,
+body:not(.zebraMode) textarea,
+body:not(.zebraMode) .compactSelect{
+  background:#FFFFFF !important;
+  color:var(--pfn-navy) !important;
+  border-color:#C7DAEE !important;
+}
+body:not(.zebraMode) table,
+body:not(.zebraMode) thead,
+body:not(.zebraMode) tbody{
+  color:var(--pfn-text) !important;
+}
+body:not(.zebraMode) thead th{
+  background:var(--pfn-table-header-bg,#EDF5FD) !important;
+  color:var(--pfn-table-header-ink,var(--pfn-navy)) !important;
+  border-color:var(--pfn-table-header-border,#D7E5F3) !important;
+}
+body:not(.zebraMode) tbody tr{
+  background:#FBFDFF !important;
+}
+body:not(.zebraMode) tbody tr:nth-child(even){
+  background:#F5FAFF !important;
+}
+body:not(.zebraMode) tbody td{
+  border-color:#E0EAF4 !important;
+}
+body.zebraDevice .pfnActionButton{
+  min-height:36px !important;
+  border-radius:9px !important;
+  background:var(--pfn-navy) !important;
+  font-size:10.5px !important;
+}
+body.zebraDevice .pfnActionButton:hover{
+  background:var(--pfn-navy-2) !important;
+}
+
+/* ---------- ITEM MOVEMENT ---------- */
+.pfnMovementIntro{
+  max-width:none !important;
+}
+.pfnModuleHero{
+  padding:16px 18px !important;
+  border-radius:15px !important;
+  background:#F9FCFF !important;
+  border-color:#C9DEF1 !important;
+  box-shadow:none !important;
+}
+.pfnModuleHero h2{
+  font-size:21px !important;
+  color:var(--pfn-navy) !important;
+}
+.pfnModuleGrid{
+  gap:10px !important;
+  margin-top:10px !important;
+}
+.pfnModuleCard{
+  min-height:150px !important;
+  padding:15px !important;
+  border-radius:14px !important;
+  background:#F9FCFF !important;
+  border-color:#C9DEF1 !important;
+  box-shadow:none !important;
+}
+
+/* ---------- DESKTOP VIEWPORT FIT ----------
+   Normal operational screens are compacted to fit common laptop/desktop
+   viewports without a whole-page scroll. Large record sets remain inside
+   their own table/list containers so data is never clipped.
+---------------------------------------------------------------- */
+@media (min-width: 901px){
+
+body:not(.zebraMode) #page-receiving.active,
+body:not(.zebraMode) #page-expiry.active,
+body:not(.zebraMode) #page-item-movement.active{
+    align-content:start !important;
+  }
+body:not(.zebraMode) #page-receiving .contentCard,
+body:not(.zebraMode) #page-expiry .contentCard{
+    margin-bottom:9px !important;
+    padding:12px 14px !important;
+  }
+body:not(.zebraMode) #page-receiving .tableContainer,
+body:not(.zebraMode) #page-receiving .receivingTableContainer,
+body:not(.zebraMode) #page-receiving .itemsTableContainer,
+body:not(.zebraMode) #page-expiry .tableContainer,
+body:not(.zebraMode) #page-expiry .expiryTableWrap{
+    max-height:clamp(150px,28vh,280px) !important;
+    overflow:auto !important;
+  }}
+
+/* ---------- MEDIUM / MOBILE ----------
+   Do not force viewport-fit on phones or handhelds.
+---------------------------------------------------------------- */
+@media (max-width: 900px){
+  }
+
+
+
+
+body:not(.zebraMode) #btnLoadOrders{
+  min-height:38px !important;
+  padding:0 16px !important;
+  background:#1769D2 !important;
+  border-color:#1769D2 !important;
+  color:#fff !important;
+  font-size:13px !important;
+  font-weight:800 !important;
+}
+body:not(.zebraMode) .ordersGlobalMasterCard{
+  min-height:62px !important;
+  padding:9px 12px !important;
+  background:#EEF7FF !important;
+  border-color:#C6DDF2 !important;
+}
+body:not(.zebraMode) .ordersMasterIdentity strong{
+  color:#0B376B !important;
+  font-size:15px !important;
+}
+body:not(.zebraMode) .ordersMasterIdentity small,
+body:not(.zebraMode) .ordersMasterMetric span{
+  font-size:10px !important;
+}
+body:not(.zebraMode) .ordersMasterMetric strong{
+  font-size:14px !important;
+  color:#0B376B !important;
+}
+body:not(.zebraMode) #orderFilesList{
+  min-height:76px !important;
+  max-height:150px !important;
+  overflow:auto !important;
+  background:#F7FBFF !important;
+  border-color:#CCDEF0 !important;
+}
+
+/* ---------- RECEIVING: KEEP ALL AUDIT CONTROLS VISIBLE ---------- */
+/* No receiving business JS is replaced or intercepted in B3. */
+body:not(.zebraMode) #page-receiving.active{
+  display:block !important;
+  overflow:hidden !important;
+}
+body:not(.zebraMode) #page-receiving .receivingDashboard,
+body:not(.zebraMode) #page-receiving .contentCard,
+body:not(.zebraMode) #page-receiving .receivingWorkspace{
+  background:#F9FCFF !important;
+  border-color:#CADDF1 !important;
+}
+body:not(.zebraMode) #page-receiving .dashboardMetrics{
+  gap:8px !important;
+  margin-bottom:8px !important;
+}
+body:not(.zebraMode) #page-receiving .metricCard{
+  min-height:64px !important;
+  padding:9px 10px !important;
+}
+body:not(.zebraMode) #page-receiving .scanInput,
+body:not(.zebraMode) #page-receiving #scanInput{
+  min-height:44px !important;
+  font-size:14px !important;
+}
+body:not(.zebraMode) #page-receiving .receivingProgressCard{
+  padding:9px 12px !important;
+}
+
+/* Receiving Items / discrepancy screen: retain all original controls. */
+body:not(.zebraMode) #page-receiving .receivingItemsHeader,
+body:not(.zebraMode) #page-receiving .receivingSummaryPanel{
+  margin-bottom:8px !important;
+}
+body:not(.zebraMode) #page-receiving .receivingSummaryPanel{
+  padding:10px 12px !important;
+}
+body:not(.zebraMode) #page-receiving .receivingTableContainer,
+body:not(.zebraMode) #page-receiving .tableContainer{
+  max-height:calc(100dvh - 420px) !important;
+  min-height:90px !important;
+  overflow:auto !important;
+}
+
+/* ---------- DESKTOP FIT WITHOUT HIDING FUNCTIONS ---------- */
+@media (min-width:901px){
+body:not(.zebraMode) #page-receiving.active,
+body:not(.zebraMode) #page-expiry.active,
+body:not(.zebraMode) #page-item-movement.active{
+    height:100% !important;
+    min-height:0 !important;
+    overflow:auto !important;
+    scrollbar-gutter:stable !important;
+  }}
+
+
+/* Receiving remains the reconciliation/finalization workspace.
+   No scanner is moved into this page in B4. */
+body:not(.zebraMode) #page-receiving .receivingSummaryPanel,
+body:not(.zebraMode) #page-receiving .contentCard,
+body:not(.zebraMode) #page-receiving .receivingWorkspace{
+  background:#F9FCFF !important;
+  border-color:#CADDF1 !important;
+}
+
+/* Desktop target: keep operational chrome in one viewport. Data tables
+   may scroll internally when the order itself exceeds screen height. */
+@media (min-width:901px){
+body:not(.zebraMode) #page-receiving .tableContainer,
+body:not(.zebraMode) #page-receiving .receivingTableContainer{
+    overflow:auto !important;
+  }}
+body:not(.zebraMode):not(.zebraDevice) .appPage{
+  background:#EEF5FC !important;
+  color:#163B64 !important;
+}
+body:not(.zebraMode):not(.zebraDevice) .contentCard{
+  background:#F9FCFF !important;
+  border-color:#C8DCF0 !important;
+  color:#163B64 !important;
+}
+body:not(.zebraMode):not(.zebraDevice) .sectionEyebrow{
+  color:#1769D2 !important;
+}
+body:not(.zebraMode):not(.zebraDevice) #lastItemName{
+  color:#0B376B !important;
+}
+body:not(.zebraMode):not(.zebraDevice) .tableQtyButton,
+body:not(.zebraMode):not(.zebraDevice) .quantityButton{
+  color:#0B376B !important;
+  background:#F7FBFF !important;
+  border-color:#BFD5EA !important;
+}
+body:not(.zebraMode):not(.zebraDevice) .tableQtyButton:hover,
+body:not(.zebraMode):not(.zebraDevice) .quantityButton:hover{
+  background:#E7F2FD !important;
+  border-color:#1769D2 !important;
+}
+body:not(.zebraMode):not(.zebraDevice) .tableQtyValue{
+  color:#0B376B !important;
+  background:#FFFFFF !important;
+  border-color:#BFD5EA !important;
+}
+body:not(.zebraMode):not(.zebraDevice) .smartSelectedMain h3,
+body:not(.zebraMode):not(.zebraDevice) .smartSearchResultMain strong,
+body:not(.zebraMode):not(.zebraDevice) .itemLink,
+body:not(.zebraMode):not(.zebraDevice) .itemCodeLink,
+body:not(.zebraMode):not(.zebraDevice) .orderNumberLink{
+  color:#0B4D8C !important;
+}
+
+/* Dynamic buttons created by ui.js: keep every proven A function visible. */
+body:not(.zebraMode):not(.zebraDevice) #btnQuickSearch,
+body:not(.zebraMode):not(.zebraDevice) #btnReceivedItems,
+body:not(.zebraMode):not(.zebraDevice) #btnOrderItemsPriority,
+body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview,
+body:not(.zebraMode):not(.zebraDevice) #btnOrderStatusReport{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:34px !important;
+  padding:0 13px !important;
+  border:1px solid #BDD3E9 !important;
+  border-radius:9px !important;
+  background:#FFFFFF !important;
+  color:#0B376B !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  box-shadow:none !important;
+}
+body:not(.zebraMode):not(.zebraDevice) #btnQuickSearch:hover,
+body:not(.zebraMode):not(.zebraDevice) #btnReceivedItems:hover,
+body:not(.zebraMode):not(.zebraDevice) #btnOrderItemsPriority:hover,
+body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview:hover,
+body:not(.zebraMode):not(.zebraDevice) #btnOrderStatusReport:hover{
+  background:#EAF4FE !important;
+  border-color:#1769D2 !important;
+}
+body:not(.zebraMode):not(.zebraDevice) #page-dashboard .handheldScanContext,
+body:not(.zebraMode):not(.zebraDevice) #page-dashboard .handheldScanSavedAck{
+  display:none !important;
+}
+body:not(.zebraMode):not(.zebraDevice) #page-dashboard .handheldClearLastScan{
+  min-height:28px !important;
+  padding:0 9px !important;
+  font-size:9px !important;
+}
+
+
+
+
+@media (min-width:901px){
+
+  /* Actions directly under Last Scan */
+  body:not(.zebraMode):not(.zebraDevice) #btnQuickSearch,
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivedItems,
+  body:not(.zebraMode):not(.zebraDevice) #btnOrderItemsPriority,
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview,
+  body:not(.zebraMode):not(.zebraDevice) #btnOrderStatusReport{
+    min-height:38px !important;
+    padding:0 14px !important;
+    font-size:13px !important;
+    font-weight:800 !important;
+    border-radius:9px !important;
+  }
+body:not(.zebraMode):not(.zebraDevice) #receivingProgressPercent{
+    font-size:18px !important;
+    font-weight:900 !important;
+    color:#1769D2 !important;
+  }}
+
+
+
+
+@media (min-width:901px){
+
+  body:not(.zebraMode):not(.zebraDevice) #btnQuickSearch,
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview,
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivedItems,
+  body:not(.zebraMode):not(.zebraDevice) #btnOrderItemsPriority,
+  body:not(.zebraMode):not(.zebraDevice) #btnOrderStatusReport{
+    position:static !important;
+    display:inline-flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    flex:0 0 auto !important;
+    min-height:38px !important;
+    max-height:none !important;
+    padding:0 14px !important;
+    margin:0 !important;
+    overflow:visible !important;
+    white-space:nowrap !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:1px solid #BDD3E9 !important;
+    border-radius:9px !important;
+    background:#FFFFFF !important;
+    color:#0B376B !important;
+    font-size:13px !important;
+    line-height:1 !important;
+    font-weight:800 !important;
+  }
+
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview strong,
+  body:not(.zebraMode):not(.zebraDevice) #receivingNeedsReviewCount{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-width:22px !important;
+    height:22px !important;
+    margin-left:7px !important;
+    padding:0 6px !important;
+    border-radius:999px !important;
+    background:#E7F1FB !important;
+    color:#0B376B !important;
+    font-size:11px !important;
+    font-weight:900 !important;
+  }}
+
+/* On narrower PCs, allow button row wrapping rather than hiding Needs Review. */
+@media (min-width:901px) and (max-width:1100px){
+
+  body:not(.zebraMode):not(.zebraDevice) #btnQuickSearch,
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview,
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivedItems,
+  body:not(.zebraMode):not(.zebraDevice) #btnOrderItemsPriority,
+  body:not(.zebraMode):not(.zebraDevice) #btnOrderStatusReport{
+    min-height:35px !important;
+    padding:0 11px !important;
+    font-size:12px !important;
+  }}
+
+
+
+
+@media (min-width:901px){
+
+  body:not(.zebraMode):not(.zebraDevice) #btnReceivingNeedsReview{
+    display:inline-flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+  }}
+
+/* ---------- SCAN SUCCESS / FAILURE FLASH ---------- */
+#pfnScanFlashOverlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:99998 !important;
+  pointer-events:none !important;
+  opacity:0 !important;
+  transition:opacity .08s ease-out !important;
+}
+
+#pfnScanFlashOverlay.success{
+  background:rgba(31,181,105,.18) !important;
+}
+
+#pfnScanFlashOverlay.error{
+  background:rgba(226,67,79,.18) !important;
+}
+
+#pfnScanFlashOverlay.active{
+  opacity:1 !important;
+}
+body.zebraDevice.pfnScanFlashSuccess #page-dashboard .scanBox{
+  box-shadow:0 0 0 4px rgba(31,181,105,.18) !important;
+  border-color:#22A866 !important;
+}
+body.zebraDevice.pfnScanFlashError #page-dashboard .scanBox{
+  box-shadow:0 0 0 4px rgba(226,67,79,.18) !important;
+  border-color:#D94A55 !important;
+}
+
+
+
+
+@media (min-width:901px){
+
+  body:not(.zebraMode):not(.zebraDevice) .headerOrderCheckOption{
+    gap:10px !important;
+    padding:10px 9px !important;
+    margin:3px 0 !important;
+    border-radius:10px !important;
+  }
+
+  body:not(.zebraMode):not(.zebraDevice) .headerOrderCheckOption:hover{
+    background:#EDF6FF !important;
+  }
+
+  body:not(.zebraMode):not(.zebraDevice) .headerOrderCheckBox{
+    width:19px !important;
+    height:19px !important;
+    flex:0 0 19px !important;
+    border:1.5px solid #8FB7DE !important;
+    border-radius:5px !important;
+    background:#FFFFFF !important;
+  }
+
+  body:not(.zebraMode):not(.zebraDevice) .headerOrderCheckOption input:checked + .headerOrderCheckBox{
+    background:#1769D2 !important;
+    border-color:#1769D2 !important;
+  }
+
+  body:not(.zebraMode):not(.zebraDevice) .headerOrderCheckText strong{
+    font-size:13px !important;
+    color:#0B376B !important;
+    font-weight:800 !important;
+  }
+
+  body:not(.zebraMode):not(.zebraDevice) .headerOrderCheckText small{
+    margin-top:2px !important;
+    font-size:10px !important;
+    color:#6B859F !important;
+    font-weight:600 !important;
+  }}
+
+/* ---------- LAST SCAN FULL-CARD FLASH ---------- */
+/* B9 moves scan feedback from the whole screen to Last Scan only. */
+#pfnScanFlashOverlay{
+  display:none !important;
+}
+body.zebraDevice #lastScanCard{
+  transition:
+    background-color .12s ease,
+    border-color .12s ease,
+    box-shadow .12s ease !important;
+}
+body.zebraDevice #lastScanCard.pfnLastScanFlashSuccess{
+  background:#EAF9F1 !important;
+  border-color:#28A968 !important;
+  box-shadow:
+    0 0 0 4px rgba(40,169,104,.14),
+    0 8px 24px rgba(40,169,104,.08) !important;
+}
+body.zebraDevice #lastScanCard.pfnLastScanFlashError{
+  background:#FFF0F2 !important;
+  border-color:#D94A55 !important;
+  box-shadow:
+    0 0 0 4px rgba(217,74,85,.14),
+    0 8px 24px rgba(217,74,85,.08) !important;
+}
+body.zebraDevice #lastScanCard.pfnLastScanFlashSuccess .lastScanHero,
+body.zebraDevice #lastScanCard.pfnLastScanFlashSuccess .lastScanMetaItem,
+body.zebraDevice #lastScanCard.pfnLastScanFlashSuccess .lastScanMetric{
+  background:#F7FFFA !important;
+  border-color:#BFE5D1 !important;
+}
+body.zebraDevice #lastScanCard.pfnLastScanFlashError .lastScanHero,
+body.zebraDevice #lastScanCard.pfnLastScanFlashError .lastScanMetaItem,
+body.zebraDevice #lastScanCard.pfnLastScanFlashError .lastScanMetric{
+  background:#FFF9FA !important;
+  border-color:#F0C7CD !important;
+}
+body.zebraDevice.pfnScanFlashSuccess #page-dashboard .scanBox,
+body.zebraDevice.pfnScanFlashError #page-dashboard .scanBox{
+  box-shadow:none !important;
+  border-color:#8CB9E6 !important;
+}
+body.zebraDevice .pfnActionReceived{color:#13754a!important;background:#f3fbf7!important}
+body.zebraDevice .pfnActionAdjust{color:#1764b0!important;background:#f4f9ff!important}
+body.zebraDevice .pfnActionReport{color:#393b8f!important;background:#f6f5ff!important}
+body.zebraDevice .pfnActionExport{color:#08747b!important;background:#f1fbfb!important}
+body.zebraDevice .pfnActionEmail{color:#6550a5!important;background:#f8f5ff!important}
+
+/* Large centered operational modals */
+:root{--pfn-modal-base:120000;--pfn-modal-step:1000}
+.pfnCenterOverlay{position:fixed;inset:0;z-index:var(--pfn-modal-base);background:rgba(11,30,52,.52);display:flex;align-items:center;justify-content:center;padding:24px}
+.pfnCenterModal:not(.pfnOrdersModal){width:min(1380px,92vw);height:min(820px,88vh)}
+.pfnCenterModal{display:flex;flex-direction:column;background:#fff;border:1px solid #cbd9e8;border-radius:18px;box-shadow:0 28px 80px rgba(4,24,44,.28);overflow:hidden}
+.pfnModalHeader{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #dce7f2;background:#f8fbff}.pfnModalHeader span{font-size:11px;font-weight:900;color:#5d7893;letter-spacing:.08em}.pfnModalHeader h2{margin:3px 0 0;font-size:23px;color:#123d69}.pfnModalHeader button{width:38px;height:38px;border:1px solid #c9d9e8;border-radius:10px;background:#fff;color:#244c72;font-size:18px;cursor:pointer}.pfnModalBody{min-height:0;flex:1;overflow:auto;padding:16px}
+
+body:not(.zebraDevice) .quickKpiOverlay{background:rgba(11,30,52,.52)!important;padding:24px!important}
+body:not(.zebraDevice) .quickKpiPanel.phase263Panel{width:min(1380px,92vw)!important;max-width:none!important;height:min(820px,88vh)!important;max-height:none!important;border-radius:18px!important;padding:18px!important;overflow:hidden!important}
+body:not(.zebraDevice) .quickKpiHeader h3{font-size:23px!important;color:#123d69!important}
+body:not(.zebraDevice) .phase263Panel [data-body]{display:flex;flex-direction:column;min-height:0;overflow:hidden!important}
+/* Desktop Order Item Browser: one owner for the header and Search/action rows. */
+@media (min-width:901px){
+  body:not(.zebraDevice) .pfnOrderBrowserControls{display:grid;grid-template-rows:auto auto;gap:8px;margin:0 0 8px;min-width:0}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:8px;min-width:0}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>label,body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{display:grid;gap:3px;min-width:0;color:#49657f;font-size:11px;font-weight:850}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow select{width:100%;height:38px;min-height:38px;padding:0 10px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:13px;font-weight:800}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{min-width:0}
+  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{display:flex;align-items:center;justify-content:space-between;min-height:38px;padding:0 10px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:13px;font-weight:800}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:end;gap:12px;min-width:0}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{grid-template-rows:auto 42px}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{box-sizing:border-box;width:100%;min-width:0;height:42px;padding:0 11px;border:2px solid #8fb3d2;border-radius:8px;background:#fff;color:#173f67;box-shadow:inset 0 1px 2px rgba(19,61,105,.06);font-size:14px;font-weight:700}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch::placeholder{color:#627d96;opacity:1}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch:focus{border-color:#1476c9;outline:3px solid rgba(20,118,201,.16);outline-offset:0;box-shadow:0 0 0 1px #1476c9}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions{display:flex;align-items:end;gap:8px;min-width:max-content}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter{height:42px;min-height:42px;flex:0 0 auto;padding:0 18px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:14px;font-weight:850;white-space:nowrap;cursor:pointer}
+  body:not(.zebraDevice) .pfnOrderBrowserControls [data-priority-filter]{min-width:148px}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter.active{background:#fff5d9;border-color:#e2b546;color:#8a5a00}}
+body:not(.zebraDevice) .pfnCleanWorklist{flex:1;min-height:0;max-height:none!important;overflow:auto!important}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table{font-size:15px!important}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table th{font-size:12px!important;padding:12px 14px!important}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table td{padding:13px 14px!important;font-size:15px!important}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:42%;font-size:16px!important}.pfnCleanWorklist .pfnItemName b{font-size:17px!important;color:#123d69}.pfnCleanWorklist .pfnOrderedQty{font-size:18px!important;font-weight:900!important;color:#123d69}
+body:not(.zebraDevice) .pfnPriorityCell{white-space:nowrap}.pfnPriorityMark{height:34px;min-width:66px;margin-right:6px;border:1px solid #b9c9d9;border-radius:8px;background:#fff;color:#60758d;font-size:12px;font-weight:900;cursor:pointer}.pfnPriorityMark.active.new{background:#eaf4ff;border-color:#3184d6;color:#1764b0}.pfnPriorityMark.active.short{background:#fff0f1;border-color:#d95662;color:#b42331}
+body:not(.zebraDevice) #page-receiving .contentCard h2{font-size:22px!important}
+.pfnCleanReceiving #page-receiving .receivingFilterBar button,
+.pfnCleanReceiving #page-receiving .receivingFilterBar select{font-size:13px!important;min-height:40px!important}.pfnCleanReceiving #page-receiving .dataTable{font-size:14px!important}.pfnCleanReceiving #page-receiving .dataTable th{font-size:11px!important}.pfnCleanReceiving #page-receiving .dataTable td{font-size:14px!important}
+
+/* Email preview: centered, not side drawer */
+body:not(.zebraDevice) .finalizedEmailPreviewOverlay{z-index:130000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:24px!important;background:rgba(11,30,52,.55)!important}
+body:not(.zebraDevice) .finalizedEmailScrim{position:absolute!important;inset:0!important}
+body:not(.zebraDevice) .finalizedEmailPanel{position:relative!important;inset:auto!important;transform:none!important;width:min(1200px,90vw)!important;height:min(800px,86vh)!important;max-width:none!important;max-height:none!important;border-radius:18px!important;box-shadow:0 28px 80px rgba(4,24,44,.3)!important;z-index:1!important}
+body:not(.zebraDevice) .finalizedEmailPanel h2{font-size:23px!important}.finalizedEmailCompose input{font-size:14px!important}
+
+/* keep native dropdowns and secondary dialogs above parent modal */
+.confirmModal,.modalOverlay,.loadingOverlay{z-index:140000!important}
+
+
+
+body:not(.zebraDevice).pfnCleanReceiving{--pfn-readable:15px;--pfn-readable-strong:16px}
+
+/* Desktop sidebar collapse is a real layout state, not a frozen empty rail. */
+@media(min-width:901px){
+body.zebraDevice .pfnSidebarCollapsed .accountIdentity{justify-content:center!important}}
+body.zebraDevice .pfnActionReceived{color:#0b7748!important;border-color:#8ac9aa!important}
+body.zebraDevice .pfnActionAdjust{color:#0d61b1!important;border-color:#8bb8e3!important}
+body.zebraDevice .pfnActionReport{color:#49439b!important;border-color:#aaa5df!important}
+body.zebraDevice .pfnActionExport{color:#08747b!important;border-color:#84c4c7!important}
+body.zebraDevice .pfnActionEmail{color:#6746a5!important;border-color:#b8a4df!important}
+
+/* Global operational readability for KPI dialogs and reports. */
+body:not(.zebraDevice) .quickKpiPanel.phase263Panel,body:not(.zebraDevice) .quickKpiPanel.phase263Panel button,body:not(.zebraDevice) .quickKpiPanel.phase263Panel input,body:not(.zebraDevice) .quickKpiPanel.phase263Panel select{font-size:var(--pfn-readable,15px)!important}
+body:not(.zebraDevice) .phase263Table{font-size:15px!important}body:not(.zebraDevice) .phase263Table th{font-size:13px!important;font-weight:900!important;padding:11px 12px!important}body:not(.zebraDevice) .phase263Table td{font-size:15px!important;padding:11px 12px!important;line-height:1.3!important}
+body:not(.zebraDevice) .phase263Table td b{font-size:16px!important}.phase263Summary{font-size:15px!important}
+
+/* Order Item Browser: operational column order + strong priority states. */
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemCode{font-size:15px!important;font-weight:800!important;color:#174b7c!important;white-space:nowrap}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:auto!important;min-width:300px!important}.pfnCleanWorklist .pfnItemName b{font-size:16px!important}
+body:not(.zebraDevice) .pfnPriorityCell{min-width:160px!important}.pfnPriorityMark{height:36px!important;min-width:68px!important;font-size:13px!important;background:#fff!important;color:#45627e!important;border:1px solid #9eb6ce!important}
+body:not(.zebraDevice) .pfnPriorityMark.active.new{background:#0b78d0!important;border-color:#075fa8!important;color:#fff!important;box-shadow:0 0 0 3px rgba(11,120,208,.16)!important}
+body:not(.zebraDevice) .pfnPriorityMark.active.short{background:#f28c18!important;border-color:#c96b00!important;color:#fff!important;box-shadow:0 0 0 3px rgba(242,140,24,.18)!important}
+body:not(.zebraDevice) .pfnPriorityGroup td{position:sticky;top:0;z-index:2;background:#e8f2fc!important;color:#123d69!important;padding:8px 12px!important;border-top:2px solid #9dbbd8!important;border-bottom:1px solid #bcd0e4!important}.pfnPriorityGroup strong{font-size:15px!important;margin-right:10px}.pfnPriorityGroup span{font-size:13px!important;color:#5b748d!important}
+body:not(.zebraDevice) .pfnOrderedQty{font-size:17px!important;font-weight:900!important}.pfnOrderNo{white-space:nowrap}.pfnCleanReceiving #btnLastScanMinus{background:#536f8d!important}.pfnCleanReceiving #btnLastScanPlus{background:#1476c9!important}
+
+/* Receiving / discrepancy report readability. */
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving{font-size:15px!important}.pfnCleanReceiving #page-receiving .dataTable{font-size:15px!important}.pfnCleanReceiving #page-receiving .dataTable th{font-size:13px!important;font-weight:900!important;padding:10px!important}.pfnCleanReceiving #page-receiving .dataTable td{font-size:15px!important;padding:10px!important}
+.pfnCleanReceiving #page-receiving .receivingFilterBar button,
+.pfnCleanReceiving #page-receiving .receivingFilterBar select{font-size:14px!important;font-weight:850!important}
+/* Project-wide desktop readability baseline (presentation only). */
+body:not(.zebraDevice).pfNextMode .dataTable,body:not(.zebraDevice).pfNextMode .reportTable,body:not(.zebraDevice).pfNextMode table{font-size:14px}
+body:not(.zebraDevice).pfNextMode .dataTable th,body:not(.zebraDevice).pfNextMode .reportTable th{font-size:12px;font-weight:900}
+body:not(.zebraDevice).pfNextMode .dataTable td,body:not(.zebraDevice).pfNextMode .reportTable td{font-size:14px}
+
+
+body:not(.zebraDevice).pfnCleanReceiving{--pfn-readable:16px;--pfn-readable-strong:17px}
+
+/* 3/4/15. Order browser compact columns, category, and readable rows. */
+body:not(.zebraDevice) .pfnCleanWorklist table{table-layout:fixed!important;width:100%!important}
+body:not(.zebraDevice) .pfnCleanWorklist th,body:not(.zebraDevice) .pfnCleanWorklist td{font-size:16px!important;padding:10px 12px!important;vertical-align:middle!important}
+body:not(.zebraDevice) .pfnCleanWorklist th{font-size:13px!important}
+body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(1){width:11%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(2){width:31%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(3){width:17%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(4){width:15%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(5){width:9%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(6){width:17%}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{min-width:0!important}.pfnCleanWorklist .pfnItemName b{font-size:16px!important}.pfnPriorityCell{min-width:0!important}
+body:not(.zebraDevice) .pfnPrioritySegment{display:inline-flex;gap:5px;padding:3px;border:1px solid #bfd1e2;border-radius:9px;background:#f7fbff}
+body:not(.zebraDevice) .pfnPriorityMark{height:32px!important;min-width:58px!important;font-size:13px!important;border-radius:6px!important}
+body:not(.zebraDevice) .pfnCategoryCell{font-weight:750;color:#355a7c}
+
+/* 4/6/7. One readable table standard across operational views. */
+body:not(.zebraDevice).pfNextMode .dataTable th,body:not(.zebraDevice).pfNextMode .reportTable th,body:not(.zebraDevice).pfNextMode .phase263Table th{font-size:13px!important;font-weight:900!important;letter-spacing:.01em}
+body:not(.zebraDevice).pfNextMode .dataTable td,body:not(.zebraDevice).pfNextMode .reportTable td,body:not(.zebraDevice).pfNextMode .phase263Table td{font-size:16px!important;line-height:1.25!important;font-weight:650!important}
+body:not(.zebraDevice).pfNextMode .dataTable td b,body:not(.zebraDevice).pfNextMode .reportTable td b,body:not(.zebraDevice).pfNextMode .phase263Table td b{font-size:16px!important;font-weight:850!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .tableQtyButton{min-width:36px!important;height:34px!important;font-size:18px!important}.pfnCleanReceiving #page-receiving .tableQtyValue{min-width:44px!important;height:34px!important;font-size:16px!important;font-weight:900!important}
+
+/* 5. Unified toolbar: duplicate Export/Email removed in HTML. */
+
+/* 6. Quantity modal typography. */
+body:not(.zebraDevice) .quantityAdjustmentCard{font-size:16px!important}
+body:not(.zebraDevice) .quantityAdjustmentCard h3{font-size:19px!important}.quantityAdjustmentCard .sectionEyebrow{font-size:12px!important}
+body:not(.zebraDevice) .quantityCurrentTotal span,body:not(.zebraDevice) .quantityAdjustmentLabel{font-size:14px!important;font-weight:850!important}
+body:not(.zebraDevice) .quantityCurrentTotal strong{font-size:22px!important}.quantityAdjustmentInput{font-size:20px!important;font-weight:900!important;min-height:44px!important}
+body:not(.zebraDevice) .quantityAdjustmentHelp{font-size:13px!important;line-height:1.45!important}.quantityAdjustmentActions button,.quantityAdjustmentCard .authSecondaryLink{font-size:15px!important;font-weight:850!important}
+body.zebraDevice .pfNextMode .brandText span{font-size:10px!important;line-height:1.2!important}
+body.zebraDevice .pfNextMode .sidebarIcon{width:20px!important;height:20px!important}
+body.zebraDevice .pfNextMode .accountIdentityText small,
+body.zebraDevice .pfNextMode .accountRoleBadge,
+body.zebraDevice .pfNextMode .sidebarLogoutButton{font-size:12px!important}
+body.zebraDevice .pfNextMode .autoSaveStatus strong{font-size:12px!important}
+body.zebraDevice .pfNextMode .autoSaveStatus small{font-size:10px!important}
+
+body:not(.zebraDevice).pfnCleanReceiving .pfnReceivingInlineResult{margin-top:6px;border:1px solid #9fc1df;border-radius:9px;background:#f4f9fe;padding:7px}.pfnCleanReceiving .pfnInlineRow{display:grid;grid-template-columns:1.1fr .8fr 2fr 1fr .9fr 130px 1fr 1fr;gap:9px;align-items:center;font-size:14px}.pfnCleanReceiving .pfnInlineRow strong{font-size:15px;color:#0b477d}
+
+/* 14. Discrepancy selector readability. */
+body:not(.zebraDevice).pfnCleanReceiving .issueMultiFilter summary{font-size:14px!important}.pfnCleanReceiving .issueMultiFilterMenu{min-width:260px!important;padding:10px!important}.pfnCleanReceiving .issueMultiFilterMenu label{font-size:15px!important;min-height:34px!important;gap:9px!important}.pfnCleanReceiving .issueMultiFilterMenu input[type=checkbox]{width:17px!important;height:17px!important}.pfnCleanReceiving .issueMultiFilterActions button{font-size:14px!important;min-height:36px!important}
+
+/* Category column should remain readable without forcing horizontal scrolling. */
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving .receivingCategoryCell{font-weight:750!important;color:#355b7c!important;max-width:150px;white-space:normal}
+@keyframes pfnC5FullScanFlash{
+  0%{opacity:1}
+  62%{opacity:.78}
+  100%{opacity:0}
+}
+
+/* 5 — unknown GTIN resolver: centered, compact, modern and search-first. */
+body:not(.zebraDevice) .gtinResolutionShell{position:fixed!important;inset:0!important;z-index:140000!important;display:none!important;align-items:center!important;justify-content:center!important;padding:24px!important;background:rgba(7,31,58,.48)!important}
+body:not(.zebraDevice) .gtinResolutionShell.open{display:flex!important}
+body:not(.zebraDevice) .gtinResolutionScrim{position:absolute!important;inset:0!important;background:transparent!important;border:0!important}
+body:not(.zebraDevice) .gtinResolutionPanel{position:relative!important;inset:auto!important;width:min(760px,92vw)!important;max-height:min(720px,88vh)!important;overflow:auto!important;background:#fff!important;border:1px solid #cfe0f3!important;border-radius:18px!important;box-shadow:0 28px 78px rgba(8,34,62,.28)!important;color:#143d65!important;padding:0!important;z-index:1!important}
+body:not(.zebraDevice) .gtinResolutionHeader{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;padding:20px 22px 16px!important;border-bottom:1px solid #dce9f6!important;background:#f7fbff!important}
+body:not(.zebraDevice) .gtinResolutionHeader h2{margin:3px 0!important;font-size:24px!important;color:#123f6d!important}
+body:not(.zebraDevice) .gtinResolutionHeader p{margin:0!important;font-size:14px!important;color:#5a7692!important}
+body:not(.zebraDevice) .gtinActionBadge{display:inline-flex!important;padding:5px 9px!important;border-radius:999px!important;background:#eef5fd!important;color:#1769aa!important;font-size:11px!important;font-weight:900!important;letter-spacing:.06em!important}
+body:not(.zebraDevice) .gtinCloseButton{width:36px!important;height:36px!important;border-radius:10px!important;border:1px solid #caddef!important;background:#fff!important;color:#234f78!important;font-size:18px!important}
+body:not(.zebraDevice) .gtinReadout{margin:18px 22px 0!important;padding:13px 15px!important;border-radius:12px!important;background:#eef6ff!important;border:1px solid #c9def3!important}
+body:not(.zebraDevice) .gtinReadout span{display:block!important;font-size:11px!important;font-weight:900!important;color:#5c7895!important;letter-spacing:.05em!important}
+body:not(.zebraDevice) .gtinReadout strong{display:block!important;margin-top:4px!important;font-size:20px!important;letter-spacing:.04em!important;color:#123f6d!important}
+body:not(.zebraDevice) .gtinResolutionSection{margin:16px 22px!important;padding:0!important;border:0!important;background:transparent!important}
+body:not(.zebraDevice) .gtinResolutionLabel{display:block!important;margin-bottom:7px!important;font-size:14px!important;font-weight:850!important;color:#173f68!important}
+body:not(.zebraDevice) .gtinResolutionSearch{width:100%!important;min-height:48px!important;border:1px solid #aac9e8!important;border-radius:11px!important;background:#fff!important;padding:0 14px!important;font-size:16px!important;color:#143d65!important;outline:none!important}
+body:not(.zebraDevice) .gtinResolutionSearch:focus{border-color:#2678c8!important;box-shadow:0 0 0 3px rgba(38,120,200,.12)!important}
+body:not(.zebraDevice) .gtinResolutionResults{margin-top:9px!important;gap:7px!important;max-height:260px!important;overflow:auto!important}\nbody:not(.zebraDevice) .gtinResolutionResults:not([hidden]){display:grid!important}\nbody:not(.zebraDevice) .gtinResolutionResults[hidden]{display:none!important}\nbody:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem>.gtinResolutionLabel,body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem>.gtinResolutionSearch,body:not(.zebraDevice) .gtinResolutionSection.hasSelectedItem>.gtinResolutionResults{display:none!important}
+body:not(.zebraDevice) .gtinResult{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;padding:11px 13px!important;border:1px solid #d6e5f3!important;border-radius:10px!important;background:#fff!important;color:#173f68!important;text-align:left!important}
+body:not(.zebraDevice) .gtinResult:hover{background:#f4f9ff!important;border-color:#a9cae9!important}
+body:not(.zebraDevice) .gtinResult strong{font-size:15px!important}.gtinResult small{display:block!important;margin-top:3px!important;color:#68839d!important;font-size:12px!important}.gtinResult b{font-size:12px!important;color:#1769aa!important;white-space:nowrap!important}
+body:not(.zebraDevice) details.gtinManualExtra{border-top:1px solid #e0ebf6!important;padding-top:14px!important}
+body:not(.zebraDevice) details.gtinManualExtra>summary{cursor:pointer!important;list-style:none!important;font-size:14px!important;font-weight:900!important;color:#1769aa!important}
+body:not(.zebraDevice) .gtinExtraGrid{display:grid!important;grid-template-columns:1fr 1.4fr auto!important;gap:8px!important;margin-top:10px!important}.gtinExtraGrid input{min-height:42px!important;border:1px solid #bfd5e9!important;border-radius:9px!important;padding:0 11px!important;font-size:14px!important}.gtinSecondaryAction{min-height:42px!important;border:0!important;border-radius:9px!important;background:#1769aa!important;color:#fff!important;font-weight:850!important;padding:0 15px!important}
+body:not(.zebraDevice) .gtinResolutionFooter{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:14px 22px 18px!important;border-top:1px solid #e2edf7!important;background:#fbfdff!important;color:#657f98!important;font-size:12px!important}.gtinResolutionFooter button{min-height:38px!important;border:1px solid #bfd3e7!important;border-radius:9px!important;background:#fff!important;color:#24557e!important;font-weight:800!important;padding:0 13px!important}
+
+/* 6 — authoritative PC Needs Review workspace and photo viewer. */
+body:not(.zebraMode):not(.zebraDevice) #receivingNeedsReviewCount{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:34px!important;height:30px!important;margin-left:8px!important;padding:0 9px!important;border-radius:999px!important;background:#dbeafe!important;color:#17436e!important;font-size:17px!important;font-weight:950!important}
+body:not(.zebraDevice) #btnReceivingNeedsReview.hasItems{border-color:#ef8f38!important;background:#fff0df!important;color:#8c3f08!important;box-shadow:0 0 0 2px rgba(239,143,56,.12)}
+body:not(.zebraDevice) #btnReceivingNeedsReview.hasItems strong{background:#c2410c!important;color:#fff!important}body.zebraDevice #btnReceivingNeedsReview{display:none!important}
+.needsReviewOverlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(5,18,34,.68)}.needsReviewScrim{position:absolute;inset:0;border:0;background:transparent}.needsReviewPanel{position:relative;z-index:1;width:min(1080px,94vw);max-height:min(820px,92vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #bfd3e8;border-radius:18px;background:#f4f8fc;color:#153e66;box-shadow:0 28px 80px rgba(2,15,30,.42)}
+.needsReviewPanel>header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 22px;border-bottom:1px solid #d8e5f2;background:#fff}.needsReviewKicker{color:#b42318;font-size:11px;font-weight:950;letter-spacing:.11em}.needsReviewPanel h2{margin:4px 0;color:#123f6d;font-size:29px}.needsReviewPanel header p{margin:5px 0 0;color:#657d94;font-size:14px;line-height:1.4}.pfnReviewCount{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:32px;margin-left:7px;padding:0 9px;border-radius:999px;background:#c2410c;color:#fff;font-size:17px}.needsReviewHeaderActions{display:flex;align-items:center;gap:10px}.needsReviewHeaderActions button{min-height:42px;padding:0 16px;border:1px solid #b9cde0;border-radius:9px;background:#fff;color:#244e75;font-size:14px;font-weight:850}.needsReviewClose{background:transparent!important;border-color:transparent!important;font-weight:600!important}
+.needsReviewList{min-height:0;display:grid;grid-auto-rows:max-content;flex:1;align-content:start;gap:12px;padding:15px 18px 20px;overflow:auto}.needsReviewRow{display:block;border:1px solid #d4e2ef;border-left:5px solid #d85b42;border-radius:13px;background:#fff}.needsReviewRowSummary{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto auto 20px;align-items:center;gap:12px;width:100%;min-height:48px;padding:12px 16px;border:0;border-radius:12px;background:#fff;color:#173e61;text-align:left;font:inherit;cursor:pointer}
+.needsReviewRowSummary strong,.needsReviewRowSummary span{overflow-wrap:anywhere}
+.needsReviewRowSummary i{font-size:24px;font-style:normal;text-align:center}
+.needsReviewRowSummary[aria-expanded="true"] i{transform:rotate(90deg)}
+.needsReviewRowSummary:focus-visible{outline:2px solid #176bb1;outline-offset:-3px}
+.needsReviewCaseDetail:not([hidden]){display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);gap:18px;padding:16px;border-top:1px solid #dbe6ef}
+.needsReviewCaseDetail[hidden]{display:none}
+.expiryNeedsReviewPanel{width:min(860px,96vw);max-height:min(860px,94vh);border-color:#d0dae6;border-radius:14px;background:#f7f9fc;color:#24364b}.expiryNeedsReviewPanel>header{padding:14px 18px;border-color:#e1e7ef}.expiryNeedsReviewPanel h2{margin:0;color:#263b54;font-size:22px}.expiryNeedsReviewPanel .needsReviewKicker{color:#7454b4}.expiryNeedsReviewPanel .pfnReviewCount{min-width:28px;height:26px;background:#7454b4;font-size:13px}.expiryNeedsReviewPanel .needsReviewHeaderActions button{min-height:36px;border-radius:8px;font-size:12px}.expiryNeedsReviewPanel .needsReviewList{gap:8px;padding:12px 14px}.expiryNeedsReviewPanel .needsReviewRow{border:1px solid #d9e1eb;border-radius:10px;box-shadow:0 1px 3px #1d355708}.expiryReviewCaseHeading{display:flex;align-items:center;gap:8px;padding:5px 8px}.expiryNeedsReviewPanel .needsReviewRowSummary{flex:1;grid-template-columns:minmax(0,1fr) 18px;min-height:42px;padding:7px 8px;font-size:13px}.expiryNeedsReviewPanel .needsReviewRowSummary:hover{background:#f4f7fb}.expiryCopyBarcode,.expiryReviewCaseActions button{min-height:34px;padding:0 11px;border:1px solid #ccd6e2;border-radius:7px;background:#fff;color:#43566e;font:600 12px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}.expiryCopyBarcode:hover,.expiryReviewCaseActions button:hover{background:#f0f3f8}.expiryNeedsReviewPanel .needsReviewCaseDetail:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) 180px;align-items:start;gap:10px 16px;padding:12px 16px 14px}.expiryNeedsReviewPanel .needsReviewInfo{grid-column:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;color:#66768b;font-size:12px}.expiryNeedsReviewPanel .needsReviewInfo span{display:inline-flex;gap:5px}.expiryNeedsReviewPanel .needsReviewInfo b{color:#283c54;font-weight:650}.expiryNeedsReviewPanel .pfnReviewPhotoGrid{grid-column:2;grid-row:1/span 5;margin:0}.expiryNeedsReviewPanel .pfnReviewPhotoGrid button{width:170px;padding:6px;border:1px solid #d1dce8;border-radius:8px;background:#fff;color:#50627a;text-align:left;font-size:11px}.expiryNeedsReviewPanel .pfnReviewPhotoGrid img{height:150px;object-fit:contain;margin:0 0 5px}.expiryNeedsReviewPanel .pfnReviewPhotoGrid span{display:block;padding:8px 4px;color:#66768b;font-size:11px}.expiryNeedsReviewPanel .pfnReviewPhotoGrid span.is-error{color:#b42335}.expiryNeedsReviewPanel .pfnReviewPhotoGrid span[hidden]{display:none!important}.expiryNeedsReviewPanel .expiryReviewPhoto{display:grid;justify-items:start;gap:6px}.expiryNeedsReviewPanel .expiryReviewPhoto button[data-expiry-photo-retry]{width:auto;min-height:30px;padding:0 10px}.expiryNeedsReviewPanel .expiryReviewPhoto button[hidden]{display:none!important}.expiryNeedsReviewPanel .expiryGlobalSearchRow{display:block;max-width:none;grid-column:1}.expiryNeedsReviewPanel .expiryGlobalSearchRow>label{display:grid;gap:5px;color:#4c5f77;font-size:12px;font-weight:650}.expiryNeedsReviewPanel .expiryGlobalSearchRow input{min-height:38px;padding:0 10px;border:1px solid #cbd6e2;border-radius:7px;background:#fff;font:inherit}.expiryNeedsReviewPanel .expiryGlobalMatches{grid-column:1;max-width:none;max-height:220px;overflow:auto;overscroll-behavior:contain}.expiryNeedsReviewPanel .expiryGlobalMatches>button{min-height:58px;justify-content:flex-start;border-color:#d7e0ea;border-radius:8px;background:#fff}.expiryGlobalMasterIdentity{display:grid;gap:4px;color:#64758b;font-size:11px}.expiryGlobalMasterIdentity strong{color:#273d56;font-size:14px}.expiryGlobalMasterIdentity b{color:#435773}.expiryNeedsReviewPanel .expiryGlobalSelection{grid-column:1;max-width:none}
+@media(max-width:600px){.expiryNeedsReviewPanel .needsReviewCaseDetail:not([hidden]){grid-template-columns:minmax(0,1fr)}.expiryNeedsReviewPanel .pfnReviewPhotoGrid{grid-column:1;grid-row:auto}}.expiryReviewCaseActions{grid-column:1;display:flex;justify-content:flex-start;gap:8px;padding-top:2px}.expiryReviewCaseActions [data-review-delete]{border-color:#e4b8bf;color:#a42335}.expiryNeedsReviewPanel button:focus-visible,.expiryNeedsReviewPanel input:focus-visible{outline:2px solid #7454b4;outline-offset:2px}
+.needsReviewInfo{display:flex;flex-direction:column;min-width:0}.pfnReviewReason{align-self:flex-start;padding:5px 9px;border-radius:999px;background:#fff1f2;color:#b42318;font-size:10px;font-weight:950}.capturedIdentifier{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 12px;margin-top:12px;padding:12px;border:1px solid #c5d9e8;border-radius:9px;background:#f2f7fc}.capturedIdentifier .pfnReviewLabel{grid-column:1/-1}.capturedIdentifier .pfnReviewGTIN{margin:0;padding:0;border:0;background:transparent}.pfnReviewLabel{margin-top:0;color:#6c8297;font-size:10px;font-weight:900}.pfnReviewGTIN{display:inline-block;margin:4px 0 7px;padding:9px 11px;border:1px solid #b9cee2;border-radius:9px;background:#f5f9fd;color:#102f50;font-size:21px;overflow-wrap:anywhere}.needsReviewInfo [data-copy-identifier]{align-self:flex-start;min-height:38px;padding:0 14px;border:1px solid #8eb5d6;border-radius:8px;background:#eaf4fd;color:#155f9f;font-weight:900}
+.pfnReviewMeta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.pfnReviewMeta>div{padding:9px 10px;border:1px solid #dce7f1;border-radius:9px;background:#f8fbfe}.pfnReviewMeta span{display:block;color:#687f96;font-size:10px;font-weight:850}.pfnReviewMeta b{display:block;margin-top:2px;color:#173e63;font-size:13px;overflow-wrap:anywhere}.pfnReviewMeta .important{border-color:#b8d3ec;background:#edf6ff}.pfnReviewMeta .important span{color:#285e8d;font-size:12px}.pfnReviewMeta .important b{color:#0b5c9c;font-size:25px}
+.needsReviewResolve{display:grid;align-content:start;gap:10px;min-width:0}.needsReviewSearchRow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}.needsReviewSearchRow>label{display:grid;gap:6px;color:#244f75;font-size:13px;font-weight:900}.needsReviewClear{min-width:74px;min-height:46px;padding:0 14px;border:1px solid #a9bfd4;border-radius:9px;background:#fff;color:#315675;font-size:12px;font-weight:900}.needsReviewMatches,.needsReviewSelection,.needsReviewCancel{min-width:0}.needsReviewResolve input,.needsReviewAdminBody input,.needsReviewAdminBody textarea{box-sizing:border-box;width:100%;min-height:46px;border:1px solid #9dbbd6;border-radius:9px;background:#fff;padding:9px 12px;color:#173e63;font-size:14px;font-weight:650}.needsReviewMatches{display:grid;gap:7px}.needsReviewMatches>button{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:58px;padding:10px 13px;border:1px solid #cadbea;border-radius:9px;background:#f8fbff;color:#173e63;text-align:left}.needsReviewMatches>button:hover,.needsReviewMatches>button.selected{border-color:#2780c5;background:#eaf5ff;box-shadow:inset 3px 0 #2780c5}.needsReviewMatches button span:first-child strong{display:block;font-size:14px;line-height:1.25}.needsReviewMatches button span:first-child small{display:block;margin-top:3px;font-size:11px}.needsReviewMatches>button>b{font-size:12px;color:#1769aa}.needsReviewResultQty{display:flex;gap:12px}.needsReviewResultQty small{display:grid;color:#70869b;font-size:10px;text-align:center}.needsReviewResultQty b{color:#174f7d;font-size:14px}
+.needsReviewSelection{padding:12px;border:2px solid #2780c5;border-radius:11px;background:#edf7ff}.needsReviewSelectionLabel{display:block;margin-bottom:8px;color:#1769aa;font-size:10px;font-weight:950}.needsReviewSelection>button,.needsReviewAdminBody button{min-height:40px;margin-top:11px;padding:0 14px;border:0;border-radius:8px;background:#1769aa;color:#fff;font-weight:900}.needsReviewSelection>button{width:100%}.needsReviewSelection button:disabled,.needsReviewAdminBody button:disabled{opacity:.55}
+/* Shared Receiving resolver selection — single owner for Not Recognised + Needs Review. */
+.resolverSelectedCard{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0}
+.resolverSelectedHeading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.resolverSelectedHeading>span{font-size:10px;font-weight:900;letter-spacing:.08em;color:#5d7890}
+.resolverSelectedHeading>button{flex:0 0 auto;border:0;background:transparent;color:#1769aa;font-weight:850;cursor:pointer;padding:4px 0}
+.resolverSelectedIdentity{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;min-width:0;padding:2px 0 5px}
+.resolverSelectedName{display:block;min-width:0;margin:0;color:#123f6d;font-size:18px;line-height:1.25;font-weight:900;overflow-wrap:anywhere}
+.resolverSelectedCode{display:block;margin:0;color:#58748f;font-size:12px;line-height:1.25;font-weight:750}
+.resolverSelectedCode b{color:#123f6d}
+.gtinItemMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.gtinItemMetrics>div{display:grid;align-content:center;justify-items:center;gap:4px;min-width:0;min-height:72px;padding:9px 7px;border:1px solid #cfe1f1;border-radius:9px;background:#fff;text-align:center}
+.gtinItemMetrics>div:nth-child(1){background:#e8f3ff;border-color:#9fc8ef}.gtinItemMetrics>div:nth-child(2){background:#edf4ff;border-color:#aac8e8}.gtinItemMetrics>div:nth-child(3){background:#e9f8ef;border-color:#9bd3ad}
+.gtinItemMetrics span{display:block;font-size:9px;line-height:1.15;font-weight:850;color:#66829a;text-transform:uppercase}.gtinItemMetrics b{display:block;color:#123f6d;font-size:22px;line-height:1;font-weight:900}
+.gtinItemMetrics>div.isRemaining{background:#fff3d9;border-color:#e8c36c}.gtinItemMetrics>div.isComplete{background:#e9f8ef;border-color:#9bd3ad}.gtinItemMetrics>div.isOver{background:#fff0f1;border-color:#e5a1a8}.gtinItemMetrics>div.isExtra{background:#f1edff;border-color:#b9a9e8}
+.gtinAllocationSummary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;min-width:0;min-height:42px;padding:9px 11px;border-radius:9px;background:#e7f4ff;color:#174f7d}
+.gtinAllocationSummary b,.gtinAllocationSummary span{min-width:0;overflow-wrap:anywhere}.gtinAllocationSummary span{font-size:11px;font-weight:800;text-align:right}
+.gtinAllocationSummary.isOver{background:#fff0f1;color:#9c303b}.gtinAllocationSummary.isExtra{background:#f1edff;color:#5f4898}.gtinAllocationSummary.isComplete{background:#e9f8ef;color:#286b40}.gtinAllocationSummary.isRemaining{background:#fff3d9;color:#805f12}
+.gtinAllocationDetails{border-top:1px solid #cfe1f1;padding-top:7px}.gtinAllocationDetails summary{cursor:pointer;color:#1769aa;font-size:12px;font-weight:850}.gtinAllocationDetails>div{display:flex;justify-content:space-between;padding:4px 2px;font-size:12px}
+body:not(.zebraDevice) .gtinResolutionPanelWide{width:min(880px,94vw)!important}
+body:not(.zebraDevice) .gtinResolutionSelection{margin-top:8px;padding:12px;border:2px solid #2780c5;border-radius:12px;background:#edf7ff}
+body:not(.zebraDevice) .gtinPrimaryAction{width:100%;min-height:40px;margin-top:8px}
+body:not(.zebraDevice) .needsReviewPanel:not(.expiryNeedsReviewPanel){width:min(1180px,96vw)}
+body:not(.zebraDevice) .needsReviewRow.hasSelectedReviewItem .needsReviewSearchRow,body:not(.zebraDevice) .needsReviewRow.hasSelectedReviewItem .needsReviewMatches{display:none}
+body:not(.zebraDevice) .needsReviewRow.hasSelectedReviewItem .needsReviewSelection{display:block}
+@media(max-width:760px){body:not(.zebraDevice) .gtinItemMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.gtinAllocationSummary{grid-template-columns:1fr}.gtinAllocationSummary span{text-align:left}}
+
+.pfnReviewPhotoGrid{display:flex;gap:8px;margin-top:12px}.pfnReviewPhotoGrid button{width:150px;padding:6px;border:1px solid #c9dbea;border-radius:9px;background:#f7fbff;color:#1769aa;font-weight:800}.pfnReviewPhotoGrid img{display:block;width:100%;height:86px;margin-bottom:5px;border-radius:6px;object-fit:cover}.pfnReviewPhotoGrid img[hidden]{display:none}.needsReviewPhotoViewer{position:fixed;inset:0;z-index:1010;display:grid;place-items:center;padding:28px;background:rgba(1,10,20,.88)}.needsReviewPhotoScrim{position:absolute;inset:0;border:0;background:transparent}.needsReviewPhotoViewer section{position:relative;z-index:1;display:grid;justify-items:end;gap:12px;max-width:92vw;max-height:92vh}.needsReviewPhotoViewer img{max-width:90vw;max-height:82vh;border-radius:10px;box-shadow:0 18px 70px #000}.needsReviewPhotoViewer section button{min-height:42px;padding:0 18px;border:1px solid #b8cce0;border-radius:9px;background:#fff;color:#173e63;font-weight:900}
+.needsReviewAdmin{border-bottom:1px solid #d8e5f2;background:#eaf3fc}.needsReviewAdmin>summary{padding:12px 22px;color:#174f7d;font-size:13px;font-weight:900;cursor:pointer}.needsReviewAdminBody{padding:0 22px 15px}.needsReviewAdminBody>p{margin:0 0 10px;color:#5f7790;font-size:12px}.needsReviewAdminLookup{display:grid;grid-template-columns:1fr auto;align-items:end;gap:8px}.needsReviewAdminLookup button{margin:0}.needsReviewMappingCurrent,.needsReviewMappingCompare{display:grid;gap:4px;margin:12px 0;padding:10px;border:1px solid #bfd5e8;border-radius:9px;background:#fff}.needsReviewMappingCurrent span,.needsReviewMappingCompare span{color:#647d95;font-size:10px;font-weight:950}.needsReviewMappingCompare span:nth-of-type(2){margin-top:7px;color:#1769aa}.needsReviewMappingActions{display:grid;grid-template-columns:1fr auto auto;align-items:end;gap:8px;margin-top:10px}.needsReviewMappingActions button{margin:0}.needsReviewMappingActions button.danger{background:#a63232}.needsReviewGlobalNotice,.needsReviewAdminSuccess,.needsReviewNoMatches,.needsReviewEmpty{color:#637b92;font-size:12px}.needsReviewAdminSuccess,.needsReviewNoMatches,.needsReviewEmpty{padding:18px;border:1px dashed #bfd3e5;border-radius:9px;background:#fff;text-align:center}
+@media(max-width:760px){.needsReviewOverlay{padding:8px}.needsReviewPanel{width:96vw;max-height:95vh}.needsReviewPanel>header{padding:15px}.needsReviewCaseDetail:not([hidden]){grid-template-columns:1fr}.needsReviewRowSummary{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;padding:10px;font-size:12px}.needsReviewRowSummary i{grid-column:3;grid-row:1/3}.pfnReviewMeta{grid-template-columns:1fr 1fr}.needsReviewResultQty{gap:5px}.needsReviewMappingActions,.needsReviewAdminLookup{grid-template-columns:1fr}}
+
+/* 7 — dedicated Adjust workflow. */
+body:not(.zebraDevice) .pfnAdjustModal{width:min(760px,92vw)!important;max-height:86vh!important}
+body:not(.zebraDevice) .pfnAdjustBody{padding:18px 20px 22px!important;overflow:auto!important}.pfnAdjustSearchLabel{display:block!important;font-size:13px!important;font-weight:850!important;color:#234d74!important}.pfnAdjustSearchLabel input{display:block!important;width:100%!important;min-height:46px!important;margin-top:6px!important;border:1px solid #b6cfe7!important;border-radius:10px!important;padding:0 12px!important;font-size:15px!important}
+body:not(.zebraDevice) .pfnAdjustResults{display:grid!important;gap:7px!important;margin-top:9px!important;max-height:230px!important;overflow:auto!important}.pfnAdjustResults button{display:flex!important;justify-content:space-between!important;align-items:center!important;border:1px solid #d6e4f1!important;background:#fff!important;border-radius:10px!important;padding:10px 12px!important;text-align:left!important;color:#183f66!important}.pfnAdjustResults small{display:block!important;margin-top:2px!important;color:#71879d!important}.pfnAdjustResults b{color:#1769aa!important}
+body:not(.zebraDevice) .pfnAdjustSelection{margin-top:14px!important;border:1px solid #d8e6f3!important;border-radius:12px!important;padding:15px!important;background:#f9fcff!important}.pfnAdjustItem span,.pfnAdjustCurrent span{font-size:11px!important;font-weight:900!important;color:#70879e!important;letter-spacing:.04em!important}.pfnAdjustItem strong{display:block!important;font-size:18px!important;color:#123f6d!important;margin-top:3px!important}.pfnAdjustItem small{display:block!important;color:#69839b!important;margin-top:2px!important}.pfnAdjustCurrent{margin-top:12px!important;padding:10px 12px!important;background:#eef6ff!important;border-radius:9px!important}.pfnAdjustCurrent strong{display:block!important;font-size:23px!important;color:#1769aa!important;margin-top:2px!important}.pfnAdjustQtyLabel,.pfnAdjustReason{display:block!important;margin-top:13px!important;font-size:13px!important;font-weight:900!important;color:#234e75!important}.pfnAdjustStepper{display:grid!important;grid-template-columns:48px 1fr 48px!important;gap:6px!important;margin-top:6px!important}.pfnAdjustStepper button{min-height:46px!important;border:1px solid #9fc1e2!important;border-radius:9px!important;background:#eef6ff!important;color:#1769aa!important;font-size:24px!important;font-weight:900!important}.pfnAdjustStepper input{min-height:46px!important;border:1px solid #aac7e3!important;border-radius:9px!important;text-align:center!important;font-size:20px!important;font-weight:900!important;color:#123f6d!important}.pfnAdjustReason select{display:block!important;width:100%!important;min-height:42px!important;margin-top:6px!important;border:1px solid #b6cfe6!important;border-radius:9px!important;background:#fff!important;padding:0 10px!important;font-size:14px!important}.pfnAdjustActions{display:flex!important;justify-content:flex-end!important;gap:8px!important;margin-top:16px!important}.pfnAdjustActions button{min-height:42px!important;border:1px solid #b9cee2!important;border-radius:9px!important;background:#fff!important;color:#285578!important;font-weight:850!important;padding:0 16px!important}.pfnAdjustActions .primary{background:#1769aa!important;border-color:#1769aa!important;color:#fff!important}
+
+/* 8 — professional email modal and preview language. */
+body:not(.zebraDevice) .finalizedEmailPreviewOverlay{background:rgba(7,31,58,.52)!important}
+body:not(.zebraDevice) .finalizedEmailPanel{width:min(1160px,92vw)!important;height:min(820px,88vh)!important;border:1px solid #cbdff1!important;border-radius:18px!important;background:#fff!important;color:#153f66!important;overflow:hidden!important}
+body:not(.zebraDevice) .finalizedEmailHeader{background:#f7fbff!important;border-bottom:1px solid #dbe8f5!important;padding:18px 20px!important}.finalizedEmailHeader h2{font-size:24px!important;color:#123f6d!important}.finalizedEmailHeader p{font-size:13px!important;color:#64809a!important}.finalizedEmailKicker{color:#1769aa!important;font-weight:900!important}
+body:not(.zebraDevice) .finalizedEmailSummary{display:grid!important;grid-template-columns:1.4fr 1fr .8fr .8fr!important;gap:8px!important;padding:12px 20px!important;background:#fff!important}.finalizedEmailSummary>div{border:1px solid #d6e5f2!important;border-radius:10px!important;background:#f8fbff!important;padding:10px 12px!important}.finalizedEmailSummary span{color:#69839b!important;font-size:10px!important;font-weight:900!important}.finalizedEmailSummary strong{display:block!important;margin-top:3px!important;color:#123f6d!important;font-size:15px!important}
+body:not(.zebraDevice) .finalizedEmailCompose{display:grid!important;grid-template-columns:.8fr 1.4fr!important;gap:8px!important;padding:0 20px 12px!important}.finalizedEmailCompose label span{font-size:11px!important;font-weight:900!important;color:#5f7d98!important}.finalizedEmailCompose input{min-height:42px!important;border:1px solid #b9d1e7!important;border-radius:9px!important;padding:0 11px!important;font-size:14px!important;color:#173f66!important}
+body:not(.zebraDevice) .finalizedEmailLetter{margin:0 20px 14px!important;border:1px solid #d8e5f2!important;border-radius:12px!important;background:#fff!important;overflow:auto!important;padding:14px!important}.finalizedEmailFooter{border-top:1px solid #dce8f4!important;background:#f8fbff!important;padding:12px 20px!important}.finalizedEmailSavedNote strong{color:#234f76!important}.finalizedEmailSavedNote small{color:#70869c!important}.finalizedEmailActions button{min-height:40px!important;border-radius:9px!important;font-weight:850!important}.finalizedEmailActions .primaryButton{background:#1769aa!important;border-color:#1769aa!important}
+
+/* Receiving completion actions use the report toolbar visual system; safety behavior remains in JS. */
+
+/* 11 — full-screen perfect-match success state. */
+.pfnReceivingSuccessOverlay{position:fixed;inset:0;z-index:160000;display:flex;align-items:center;justify-content:center;padding:28px;background:linear-gradient(145deg,#eaf9f1 0%,#f7fcff 70%);animation:pfnSuccessIn .22s ease-out}
+.pfnReceivingSuccessCard{width:min(720px,92vw);text-align:center;background:#fff;border:1px solid #bde4cc;border-radius:24px;padding:38px 34px;box-shadow:0 30px 90px rgba(15,74,52,.18)}
+.pfnSuccessIcon{width:92px;height:92px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#daf5e6;color:#169457;font-size:54px;font-weight:900;box-shadow:0 0 0 10px #effaf4}
+.pfnSuccessEyebrow{display:block;font-size:12px;font-weight:950;letter-spacing:.12em;color:#198754}.pfnReceivingSuccessCard h2{margin:8px 0 4px;font-size:34px;line-height:1.15;color:#123f6d}.pfnReceivingSuccessCard>strong{display:block;font-size:24px;color:#1769aa;margin-top:8px}.pfnReceivingSuccessCard p{max-width:590px;margin:14px auto 0;font-size:16px;line-height:1.55;color:#58758f}.pfnSuccessActions{display:flex;justify-content:center;gap:10px;margin-top:26px}.pfnSuccessActions button{min-width:170px;min-height:46px;border:1px solid #aac7df;border-radius:10px;background:#fff;color:#285778;font-size:14px;font-weight:900;padding:0 18px}.pfnSuccessActions .primary{background:#198754;border-color:#198754;color:#fff}
+@keyframes pfnSuccessIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+
+@media(max-width:860px){body:not(.zebraDevice) .pfnGroupedReview{grid-template-columns:1fr!important}.gtinExtraGrid{grid-template-columns:1fr!important}.finalizedEmailSummary{grid-template-columns:1fr 1fr!important}.finalizedEmailCompose{grid-template-columns:1fr!important}}
+
+/* B10 Clean 4.1 — Email preview scroll + typography root fix */
+body:not(.zebraDevice) .finalizedEmailPanel{
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+body:not(.zebraDevice) .finalizedEmailHeader,
+body:not(.zebraDevice) .finalizedEmailSummary,
+body:not(.zebraDevice) .finalizedEmailCompose,
+body:not(.zebraDevice) .finalizedEmailFooter{
+  flex:0 0 auto!important;
+}
+body:not(.zebraDevice) .finalizedEmailLetter{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  scrollbar-gutter:stable!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview{
+  min-height:min-content!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview table td{
+  font-size:15px!important;
+  font-weight:400!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview table th{
+  font-size:15px!important;
+}
+
+
+
+/* B10 Clean 4.2 — Email typography normalization */
+body:not(.zebraDevice) .finalizedEmailRichPreview{
+  font-size:16px!important;
+  font-weight:400!important;
+  line-height:1.7!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview table{
+  font-size:16px!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview table td{
+  font-size:16px!important;
+  font-weight:400!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview table th{
+  font-size:16px!important;
+  font-weight:600!important;
+}
+body:not(.zebraDevice) .finalizedEmailRichPreview p,
+body:not(.zebraDevice) .finalizedEmailRichPreview span{
+  font-size:16px!important;
+  font-weight:400!important;
+}
+
+/* Report owner: compact hierarchy, readable discrepancy controls. */
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard{max-width:1500px!important;margin:0 auto!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard>.cardHeader{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:12px!important;margin:0 0 10px!important;padding:0 0 10px!important;min-height:0!important;border-bottom:1px solid #dbe7f2!important}
+body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard>.cardHeader h2{margin:3px 0 0!important;font-size:24px!important}
+body.zebraDevice .pfnReportTitleBlock h3{margin:3px 0!important;font-size:24px!important}
+
+/* Needs Review hierarchy. */
+
+
+/* Dense Order Item Browser: preserve font size, remove wasted vertical space. */
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table th{
+  padding:7px 12px!important;font-size:12px!important;line-height:1.15!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table td{
+  padding:7px 12px!important;font-size:15px!important;line-height:1.15!important;height:42px!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnPrioritySegment{padding:2px!important;min-height:30px!important}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnPriorityMark{min-height:26px!important;padding:2px 8px!important;line-height:1!important}
+/* Stronger row tracking without increasing row height. */
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:nth-child(odd) td{
+  background:#f9fbfd!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:nth-child(even) td{
+  background:#eaf2f8!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr td{
+  border-bottom:1px solid #c7d7e5!important;
+  transition:background-color .12s ease,box-shadow .12s ease!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:hover td{
+  background:#dcebf7!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within td{
+  background:#d6e8f6!important;
+}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within td:first-child{
+  box-shadow:inset 3px 0 0 #4f83ad!important;
+}
+
+/* Receiving Activity keeps every column within the desktop modal. */
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table {width:100%;min-width:0;table-layout:fixed}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(1) {width:14%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(2) {width:24%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(3) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(4) {width:14%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(5) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(6) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(7) {width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(8) {width:8%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th{
+  padding:7px 6px!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;overflow-wrap:anywhere;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table td{
+  padding:6px 6px!important;font-size:13px!important;line-height:1.25!important;height:40px!important;vertical-align:middle!important;white-space:normal!important;overflow-wrap:anywhere;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItem{
+  display:grid!important;grid-template-columns:92px 1px minmax(0,1fr)!important;align-items:center!important;column-gap:10px!important;
+  min-width:280px!important;white-space:nowrap!important;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItemCode{
+  color:#155f9f!important;font-weight:900!important;text-align:left!important;font-variant-numeric:tabular-nums!important;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItemDivider{width:1px!important;height:22px!important;background:#c6d4e1!important}
+body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItemName{
+  min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;color:#123d69!important;font-weight:800!important;
+}
+body:not(.zebraDevice) .pfnActivityWorklist .quickUndoButton{min-height:28px!important;padding:3px 8px!important}
+body:not(.zebraDevice) .pfnActivityControls{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 10px;color:#38536d;font-size:12px;font-weight:900}
+body:not(.zebraDevice) .pfnActivityControls select{height:36px;min-width:140px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;padding:0 30px 0 10px;font:inherit}
+
+@media(max-width:1180px){
+  body:not(.zebraDevice).pfnCleanReceiving .pfnPharmacyIdentityIcon{display:none!important}
+  body:not(.zebraDevice).pfnCleanReceiving .pfnPharmacyIdentityText strong{font-size:13px!important}
+  body:not(.zebraDevice) .pfnActivityWorklist .pfnActivityItem{grid-template-columns:82px 1px minmax(0,1fr)!important;column-gap:8px!important;min-width:245px!important}}
+
+
+
+@media (max-width:760px){
+  body:not(.zebraDevice) .pfnUnifiedReceiving{gap:9px!important;width:100%!important;min-width:0!important}
+  body:not(.zebraDevice) .pfnReceivingTopline{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:8px!important;
+    padding:11px 12px!important;
+    border-radius:13px!important;
+  }
+  body:not(.zebraDevice) .pfnReceivingTopline h2{font-size:18px!important}
+  body:not(.zebraDevice) .pfnReceivingTopline p{font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body:not(.zebraDevice) #pfnManageOrders{min-height:38px!important;padding:0 10px!important;font-size:10px!important}
+
+  body:not(.zebraDevice) .pfnUnifiedToolbar{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    padding:8px!important;
+    overflow:visible!important;
+    box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .pfnUnifiedToolbar>button,
+  body:not(.zebraDevice) .pfnExportWrap,
+  body:not(.zebraDevice) .pfnExportWrap>button{width:100%!important;min-width:0!important;min-height:39px!important;padding:7px!important;font-size:10px!important}
+  body:not(.zebraDevice) .pfnExportWrap>div{left:0!important;right:0!important;min-width:0!important;top:42px!important}
+
+  body:not(.zebraDevice) .pfnSmartResults{padding:11px!important;min-height:0!important;border-radius:13px!important}
+  body:not(.zebraDevice) .pfnResultsHead{align-items:flex-start!important;margin-bottom:8px!important}
+  body:not(.zebraDevice) .pfnResultsHead h3{font-size:18px!important}
+  body:not(.zebraDevice) .pfnResultsHead p{font-size:10px!important;line-height:1.3!important}
+  body:not(.zebraDevice) .pfnContextFilters{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:7px!important;
+    padding:8px!important;
+    margin-bottom:8px!important;
+  }
+  body:not(.zebraDevice) .pfnContextFilters label{min-width:0!important;font-size:9px!important}
+  body:not(.zebraDevice) .pfnContextFilters select,
+  body:not(.zebraDevice) .pfnContextFilters input{width:100%!important;min-width:0!important;min-height:41px!important;font-size:12px!important}
+  body:not(.zebraDevice) .pfnSearchFilter{grid-column:1/-1!important;min-width:0!important}
+
+  body:not(.zebraDevice) .pfnWorklist{max-height:none!important;overflow:visible!important;border:0!important;background:transparent!important;display:grid!important;gap:8px!important}
+  body:not(.zebraDevice) .pfnWorkRow{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:0!important;
+    padding:10px!important;
+    border:1px solid #dbe7f1!important;
+    border-radius:12px!important;
+    background:#fff!important;
+  }
+  body:not(.zebraDevice) .pfnWorkIdentity{grid-column:1/-1!important;display:block!important;padding-bottom:8px!important;margin-bottom:3px!important;border-bottom:1px solid #eef3f7!important}
+  body:not(.zebraDevice) .pfnWorkIdentity strong{font-size:15px!important;line-height:1.2!important}
+  body:not(.zebraDevice) .pfnWorkIdentity small{display:block!important;margin-top:4px!important;font-size:9px!important;line-height:1.25!important}
+  body:not(.zebraDevice) .pfnWorkRow>div:not(.pfnWorkIdentity){padding:7px 3px!important;border-bottom:1px solid #eef3f7!important}
+  body:not(.zebraDevice) .pfnWorkRow>div>span{font-size:8px!important}
+  body:not(.zebraDevice) .pfnWorkRow>div>b{font-size:14px!important}
+
+  body:not(.zebraDevice) .pfnManagePanel{width:100%!important;max-width:100%!important}
+  body:not(.zebraDevice) .pfnManageHead{padding:14px!important}
+  body:not(.zebraDevice) .pfnManageHead h2{font-size:21px!important}
+  body:not(.zebraDevice) .pfnManageHead p{font-size:10px!important}
+  body:not(.zebraDevice) .pfnManageBody{padding:10px!important}}
+
+@media (max-width:430px){
+  body:not(.zebraDevice) .pfnReceivingTopline{grid-template-columns:1fr!important}
+  body:not(.zebraDevice) #pfnManageOrders{width:100%!important}
+  body:not(.zebraDevice) .pfnUnifiedToolbar{grid-template-columns:1fr 1fr!important}
+  body:not(.zebraDevice) .pfnContextFilters{grid-template-columns:1fr!important}
+  body:not(.zebraDevice) .pfnSearchFilter{grid-column:auto!important}}
+
+
+@media (max-width:760px){
+  html,body{max-width:100%!important;overflow-x:hidden!important}
+body:not(.zebraDevice) #app,
+body:not(.zebraDevice) .appPage{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) #btnMenu{width:42px!important;height:42px!important;flex:0 0 42px!important}
+body:not(.zebraDevice) .pfnPharmacyIdentity{
+    min-width:0!important;
+    max-width:none!important;
+    height:auto!important;
+    min-height:42px!important;
+    padding:6px 7px!important;
+    border-radius:9px!important;
+    box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .pfnPharmacyIdentityIcon{display:none!important}
+  body:not(.zebraDevice) .pfnPharmacyIdentityText{min-width:0!important}
+body:not(.zebraDevice) .pfnPharmacyIdentityText small{font-size:7px!important;line-height:1!important;letter-spacing:.06em!important}
+body:not(.zebraDevice) .pfnPharmacyIdentityText strong{font-size:10px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body:not(.zebraDevice) .pfnPharmacyIdentityCode{font-size:8px!important;padding:3px 5px!important}
+  body:not(.zebraDevice) .dashboardKpiCard::after{display:none!important}
+  body:not(.zebraDevice) #scanStatusBadge{min-height:30px!important;padding:5px 9px!important;font-size:9px!important;white-space:nowrap!important}
+  body:not(.zebraDevice) #lastScanQuantityControls .handheldScanContext{display:none!important}
+
+  /* KPI overlay / Order Item Browser: compact single-line rows with horizontal scroll. */
+  body:not(.zebraDevice) .quickKpiOverlay{padding:8px!important;align-items:stretch!important}
+  body:not(.zebraDevice) .quickKpiPanel.phase263Panel{
+    width:100%!important;
+    max-width:100%!important;
+    height:calc(100dvh - 16px)!important;
+    max-height:calc(100dvh - 16px)!important;
+    margin:0!important;
+    padding:12px!important;
+    border-radius:16px!important;
+    box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .quickKpiHeader h3{font-size:21px!important;line-height:1.1!important}
+  body:not(.zebraDevice) .quickKpiClose{width:40px!important;height:40px!important}
+  /* Filter strip: the ROW itself owns horizontal scrolling. No max-content parent clipping. */
+  body:not(.zebraDevice) .pfnBrowserControls{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+  body:not(.zebraDevice) .pfnBrowserControlRow{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    padding:0 4px 7px 0!important;
+    scroll-snap-type:x proximity!important;
+    scrollbar-width:thin!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    touch-action:pan-x!important;
+    -webkit-mask-image:none!important;
+    box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .pfnBrowserControlRow>*{flex-shrink:0!important;scroll-snap-align:start!important}
+  body:not(.zebraDevice) .pfnBrowserControlRow label{flex:0 0 150px!important;width:150px!important;min-width:150px!important;font-size:8px!important}
+  body:not(.zebraDevice) .pfnBrowserControlRow label:last-child{flex-basis:190px!important;width:190px!important;min-width:190px!important}
+  body:not(.zebraDevice) .pfnBrowserControlRow select{width:100%!important;min-width:0!important;min-height:38px!important;font-size:11px!important;padding:6px 26px 6px 8px!important}
+  body:not(.zebraDevice) .pfnHighPriorityFilter{flex:0 0 132px!important;width:132px!important;min-width:132px!important;min-height:38px!important;font-size:10px!important;padding:6px 8px!important}
+  body:not(.zebraDevice) .pfnWideSearch,
+  body:not(.zebraDevice) .phase263Search{width:100%!important;min-width:0!important;height:46px!important;font-size:14px!important}
+
+  /* One item = one compact row. The list itself scrolls horizontally to reveal every column. */
+  body:not(.zebraDevice) .phase263TableWrap{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:none!important;
+    overflow-x:auto!important;
+    overflow-y:visible!important;
+    border:1px solid #d6e3ef!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    scrollbar-width:thin!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  body:not(.zebraDevice) .phase263Table{
+    display:table!important;
+    width:max-content!important;
+    min-width:900px!important;
+    table-layout:fixed!important;
+    border-collapse:separate!important;
+    border-spacing:0!important;
+    background:#fff!important;
+  }
+  body:not(.zebraDevice) .phase263Table thead{display:table-header-group!important}
+  body:not(.zebraDevice) .phase263Table tbody{display:table-row-group!important}
+  body:not(.zebraDevice) .phase263Table tr,
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard{display:table-row!important;background:#fff!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr:nth-child(even){background:#f8fbfe!important}
+  body:not(.zebraDevice) .phase263Table th,
+  body:not(.zebraDevice) .phase263Table td,
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>td{
+    display:table-cell!important;
+    height:46px!important;
+    min-height:0!important;
+    padding:7px 10px!important;
+    border:0!important;
+    border-bottom:1px solid #e7eef5!important;
+    vertical-align:middle!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    overflow-wrap:normal!important;
+    font-size:11px!important;
+    line-height:1.1!important;
+    text-align:left!important;
+    box-sizing:border-box!important;
+  }
+  body:not(.zebraDevice) .phase263Table th{height:38px!important;font-size:8px!important;letter-spacing:.05em!important;text-transform:uppercase!important;color:#5f7388!important;background:#eef6fc!important;position:sticky!important;top:0!important;z-index:2!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>td::before{display:none!important;content:none!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(1),
+  body:not(.zebraDevice) .phase263Table td:nth-child(1){width:112px!important;min-width:112px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(2),
+  body:not(.zebraDevice) .phase263Table td:nth-child(2){width:255px!important;min-width:255px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(3),
+  body:not(.zebraDevice) .phase263Table td:nth-child(3){width:150px!important;min-width:150px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(4),
+  body:not(.zebraDevice) .phase263Table td:nth-child(4){width:130px!important;min-width:130px!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(5),
+  body:not(.zebraDevice) .phase263Table td:nth-child(5){width:95px!important;min-width:95px!important;text-align:right!important}
+  body:not(.zebraDevice) .phase263Table th:nth-child(6),
+  body:not(.zebraDevice) .phase263Table td:nth-child(6){width:158px!important;min-width:158px!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>.pfnItemName{display:table-cell!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;padding:7px 10px!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>.pfnItemName b{display:inline!important;font-size:11px!important;line-height:1.1!important;white-space:nowrap!important;color:#14395e!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>.pfnPriorityCell{display:table-cell!important}
+  body:not(.zebraDevice) .pfnPrioritySegment{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;margin:0!important;white-space:nowrap!important}
+  body:not(.zebraDevice) .pfnPriorityMark{min-height:26px!important;height:26px!important;padding:0 7px!important;font-size:8px!important;white-space:nowrap!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnPriorityGroup{display:table-row!important;background:#f3f8fc!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr.pfnPriorityGroup>td{display:table-cell!important;padding:6px 10px!important;white-space:nowrap!important}
+  body:not(.zebraDevice) .phase263Table tbody>tr:has(.tableEmptyState){display:table-row!important}
+
+  /* Other modal panels get full phone width instead of desktop minimums. */
+  body:not(.zebraDevice) .quickKpiPanel,
+  body:not(.zebraDevice) .pfnAdjustPanel{width:100%!important;max-width:100%!important;min-width:0!important}}
+.needsReviewCancel{margin-top:10px;border:1px solid #c94b4b;border-radius:8px;background:#fff;color:#a63232;font-weight:900;min-height:38px;padding:0 13px;cursor:pointer}
+.pfnActivityEdit{width:min(440px,calc(100vw - 28px));padding:22px;border-radius:14px;background:#fff;box-shadow:0 24px 70px rgba(20,45,70,.3)}
+.pfnActivityEdit h3{margin:0 0 8px}.pfnActivityEdit p{color:#5f7790}.pfnActivityEdit label{display:grid;gap:5px;margin-top:12px;font-size:12px;font-weight:900;color:#38536d}.pfnActivityEdit input,.pfnActivityEdit textarea{box-sizing:border-box;width:100%;border:1px solid #b9ccdc;border-radius:8px;padding:10px;font:inherit}.pfnActivityEdit>div{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.pfnActivityEdit button{min-height:40px;border:0;border-radius:8px;padding:0 14px;font-weight:900}.pfnActivityEdit button[type="submit"]{background:#1769aa;color:#fff}
+.modalOverlay.pfnModalLayer,.quickKpiOverlay.pfnModalLayer,.pfnCenterOverlay.pfnModalLayer{z-index:calc(var(--pfn-modal-base) + (var(--pfn-modal-depth,0) * var(--pfn-modal-step)))!important}
+
+/* Project A UI polish: shared notification layer and desktop-only receiving controls. */
+:root{--pfn-toast-layer:200000}
+.toastContainer{z-index:var(--pfn-toast-layer)!important;pointer-events:none!important}
+.toastContainer .toastMessage{pointer-events:auto}
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+  body:not(.zebraDevice) .smartScanResults:not(:empty){margin-top:10px!important;padding:9px!important;border:1px solid #bad0e5!important;border-radius:12px!important;background:#f5faff!important;box-shadow:0 8px 22px rgba(30,76,117,.10)!important}
+  body:not(.zebraDevice) .smartSearchResult{cursor:pointer!important;border:1px solid #d7e5f1!important;border-radius:9px!important;background:#fff!important;transition:background-color .12s ease,border-color .12s ease,box-shadow .12s ease,transform .12s ease!important}
+  body:not(.zebraDevice) .smartSearchResult:hover{background:#e5f2ff!important;border-color:#277fc5!important;box-shadow:0 5px 14px rgba(25,105,170,.18)!important;transform:translateY(-1px)}
+  body:not(.zebraDevice) .smartSearchResult:hover,body:not(.zebraDevice) .smartSearchResult:hover *{color:#123d69!important}
+  body:not(.zebraDevice) .smartSearchResult:focus-visible{outline:3px solid #4d9cdd!important;outline-offset:2px!important}}
+
+.pfnReviewHeaderMetrics{display:flex;gap:8px;margin-top:7px}.pfnReviewHeaderMetrics span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid #d3e2ef;border-radius:999px;background:#f5f9fd;color:#526f88;font-size:11px;font-weight:700}.pfnReviewHeaderMetrics b{color:#153f67;font-size:13px}.needsReviewHeaderActions button{display:inline-flex;align-items:center;justify-content:center;gap:6px}.needsReviewHeaderActions .pfnReviewHistoryButton{background:#eef6fd;border-color:#a9c8e2;color:#175d92}.needsReviewHeaderActions .needsReviewClose{background:#fff5f3!important;border:1px solid #e8c2bb!important;color:#9b382b;font-weight:800!important}
+
+/* Receiving visual refinement — one desktop owner, 2026-09-25 */
+body:not(.zebraDevice) .sidebar{background:#dce8f3;border-right-color:#bfd1e1}
+body:not(.zebraDevice) .sidebarBrand,body:not(.zebraDevice) .sidebarFooter{border-color:#bfd1e1}
+body:not(.zebraDevice) .pfnPharmacyNameHero{justify-self:center;display:flex;align-items:center;justify-content:center;min-width:250px;max-width:360px;min-height:38px;padding:7px 20px;border:1px solid #c4d8e8;border-radius:9px;background:#f5f9fd;box-shadow:0 1px 3px #173d6310}
+body:not(.zebraDevice) #topBarPharmacyName{font-size:16px;font-weight:800;color:#153f67;text-align:center}
+body:not(.zebraDevice) .pfnContextBar{gap:7px}
+body:not(.zebraDevice) .pfnContextBar>div,body:not(.zebraDevice) .pfnContextBar>.cloudWorkspaceStatus{height:36px;min-height:36px;padding:0 11px;font-size:12px;border-radius:8px}
+body:not(.zebraDevice) .pfnOrderScopeLabel{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#dcecf9;color:#176bb1;font-size:16px;font-weight:900;letter-spacing:0}
+
+/* Receiving focused refinement — 2026-09-25 */
+body:not(.zebraDevice) .pfnPharmacyNameHero{transform:translateX(-28px);min-width:300px;max-width:390px;min-height:44px;padding:9px 24px}
+body:not(.zebraDevice) .smartScanResults:not(:empty){margin-top:7px;padding:7px;background:#e8f2fa;border:1px solid #bfd5e6;border-radius:9px;box-shadow:0 4px 12px #163e6414}
+body:not(.zebraDevice) .smartSearchReviewButton{display:flex;align-items:center;justify-content:center;flex:0 0 132px!important;min-width:132px;margin:0;padding:0 12px!important;border:1px solid #7faed0!important;border-radius:8px!important;background:#edf6fd!important;color:#145d92!important;font-size:12px!important;font-weight:800!important}
+body:not(.zebraDevice) .smartSearchReviewButton:hover{background:#d8edfd!important;border-color:#4f93c5!important}
+body:not(.zebraDevice) .pfnReviewTotals{display:flex;gap:7px;margin-top:7px}
+body:not(.zebraDevice) .pfnReviewTotals span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border:1px solid #c8dbea;border-radius:999px;background:#f2f8fd;color:#52708a;font-size:11px;font-weight:700}
+body:not(.zebraDevice) .pfnReviewTotals b{font-size:13px;color:#174f7b}
+
+/* Selected item + compact Receiving Progress trial — 2026-09-25 */
+body:not(.zebraDevice) .smartScanSelected{margin-top:8px;padding:13px 15px;border:2px solid #8dbbdc;border-radius:11px;background:#f2f8fd;box-shadow:0 5px 14px #163e6418}
+body:not(.zebraDevice) .smartSelectedMain{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+body:not(.zebraDevice) .smartSelectedMain>div:first-child{min-width:0;flex:1}
+body:not(.zebraDevice) .smartSelectedMain h3{margin:3px 0 4px;font-size:19px;line-height:1.2;font-weight:850;color:#0b4d8c}
+body:not(.zebraDevice) .smartSelectedCode{font-size:12px;color:#57728a}
+body:not(.zebraDevice) .smartQuantityRow{display:grid;grid-template-columns:auto auto auto;justify-content:end;align-items:center;gap:9px;margin:-43px 38px 10px auto;width:max-content;padding:7px 9px;border:1px solid #bdd5e7;border-radius:9px;background:#fff}
+body:not(.zebraDevice) .smartQuantityLabel{font-size:12px;font-weight:800;color:#315b7b}
+body:not(.zebraDevice) .smartQuantityControl{display:flex;align-items:center;gap:5px}
+body:not(.zebraDevice) .smartQuantityControl input{width:62px;height:34px;text-align:center;font-size:17px;font-weight:800}
+body:not(.zebraDevice) .smartQuantityControl .quantityButton{width:34px;height:34px;font-size:18px}
+body:not(.zebraDevice) #btnAddSmartQuantity{width:auto;min-width:112px;min-height:34px;padding:6px 13px;font-size:12px}
+body:not(.zebraDevice) .smartSelectedStats{display:grid;grid-template-columns:repeat(3,minmax(105px,1fr));gap:8px;max-width:430px;margin-top:10px}
+body:not(.zebraDevice) .smartSelectedStats>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #c7dbea;border-radius:8px;background:#fff}
+body:not(.zebraDevice) .smartSelectedStats span{font-size:11px;font-weight:750;color:#607b91}
+body:not(.zebraDevice) .smartSelectedStats strong{font-size:17px;color:#174f7b}
+body:not(.zebraDevice) #page-dashboard>.contentCard{padding:11px 16px}
+body:not(.zebraDevice) #page-dashboard>.contentCard .cardHeader{margin-bottom:6px}
+body:not(.zebraDevice) #page-dashboard>.contentCard h3{font-size:15px}
+body:not(.zebraDevice) .progressTrack{height:11px;background:#dce8f1}
+body:not(.zebraDevice) .progressPercentage{font-size:21px;font-weight:900;color:#176bb1}
+body:not(.zebraDevice) .pfnProgressCompactDetail{justify-content:flex-start;margin-top:6px;font-size:11px;font-weight:700;color:#5a7489}
+body:not(.zebraDevice) .pfnProgressRemainingSource{display:none}
+
+/* Selected item one-screen refinement — 2026-09-25 */
+body:not(.zebraDevice) .smartScanSelected{padding:10px 13px}
+body:not(.zebraDevice) .smartSelectedMain{min-height:48px;padding-right:390px;position:relative}
+body:not(.zebraDevice) .smartSelectedMain h3{font-size:18px;margin:2px 0 3px}
+body:not(.zebraDevice) .smartQuantityRow{position:absolute;right:48px;top:9px;margin:0;padding:6px 8px;gap:8px;z-index:2}
+body:not(.zebraDevice) .smartQuantityControl input{width:68px;height:38px;font-size:18px}
+body:not(.zebraDevice) .smartQuantityControl .quantityButton{width:38px;height:38px;font-size:20px;font-weight:850}
+body:not(.zebraDevice) #btnAddSmartQuantity{min-width:124px;min-height:38px;padding:7px 15px;font-size:13px;font-weight:850}
+body:not(.zebraDevice) .smartSelectedStats{grid-template-columns:repeat(3,125px);justify-content:center;max-width:none;margin:7px auto 0;gap:8px}
+body:not(.zebraDevice) .smartSelectedStats>div{min-height:44px;padding:6px 10px}
+body:not(.zebraDevice) .smartSelectedStats>div:nth-child(1){background:#eef6ff;border-color:#b9d7ee}
+body:not(.zebraDevice) .smartSelectedStats>div:nth-child(2){background:#eef9f2;border-color:#b8dfc5}
+body:not(.zebraDevice) .smartSelectedStats>div:nth-child(3){background:#fff7e8;border-color:#ead09c}
+body:not(.zebraDevice) .smartSelectedStats strong{font-size:18px}
+body:not(.zebraDevice) .pfnProgressCompactDetail{font-size:13px;font-weight:800;color:#405f78}
+body:not(.zebraDevice) .pfnProgressCompactDetail #progressCompletedText{font-size:13px;font-weight:850}
+body:not(.zebraDevice) .needsReviewHeaderActions [data-review-back]{border-color:#9fc3df;background:#edf6fd;color:#145d92;font-weight:800}
+
+body:not(.zebraDevice) .smartScanSelected{position:relative}
+
+/* Selected item close + KPI clarity — 2026-09-25 */
+body:not(.zebraDevice) #btnCloseSmartSelection{position:absolute;right:10px;top:8px;z-index:4;width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid #c6d8e7;color:#5a7287;font-size:14px}
+body:not(.zebraDevice) .smartQuantityRow{right:52px}
+body:not(.zebraDevice) .smartSelectedStats{grid-template-columns:repeat(3,145px);gap:10px;margin-top:8px}
+body:not(.zebraDevice) .smartSelectedStats>div{min-height:50px;padding:8px 12px;border-width:1.5px;box-shadow:0 2px 6px #163e6410}
+body:not(.zebraDevice) .smartSelectedStats span{font-size:12px;font-weight:800}
+body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900}
+
+/* Search result distinction — 2026-09-25 */
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+ body:not(.zebraDevice) .smartScanResults:not(:empty){background:#fff3cf!important;border-color:#e3c36a!important}
+ body:not(.zebraDevice) .smartSearchResult{background:#fffaf0!important;border-color:#ead9a8!important}
+ body:not(.zebraDevice) .smartSearchResult:hover{background:#e5f2ff!important;border-color:#277fc5!important}
+}
+
+/* Desktop Receiving surfaces — consolidated 2026-09-25 */
+@media (min-width:901px){
+ body:not(.zebraDevice) .smartScanSelected{position:relative;margin-top:8px;padding:10px 13px;border:2px solid #8dbbdc;border-radius:11px;background:#f2f8fd;box-shadow:0 4px 12px #163e6414}
+ body:not(.zebraDevice) .smartSelectedMain{display:flex;align-items:flex-start;min-height:48px;padding-right:390px;margin:0}
+ body:not(.zebraDevice) .smartSelectedMain h3{margin:2px 0 3px;font-size:18px;color:#0b4d8c}
+ body:not(.zebraDevice) #btnCloseSmartSelection{position:absolute;right:10px;top:8px;z-index:4;width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid #c6d8e7;color:#5a7287;font-size:14px}
+ body:not(.zebraDevice) .smartQuantityRow{position:absolute;right:52px;top:9px;display:grid;grid-template-columns:auto auto auto;align-items:center;gap:8px;width:max-content;margin:0;padding:6px 8px;border:1px solid #bdd5e7;border-radius:9px;background:#fff;z-index:2}
+ body:not(.zebraDevice) .smartQuantityControl{display:flex;align-items:center;gap:5px}
+ body:not(.zebraDevice) .smartQuantityControl input{width:68px;height:38px;text-align:center;font-size:18px;font-weight:800}
+ body:not(.zebraDevice) .smartQuantityControl .quantityButton{width:38px;height:38px;font-size:20px;font-weight:850}
+ body:not(.zebraDevice) #btnAddSmartQuantity{width:auto;min-width:124px;min-height:38px;padding:7px 15px;font-size:13px;font-weight:850}
+ body:not(.zebraDevice) .smartSelectedStats{display:grid;grid-template-columns:150px 150px 118px;justify-content:center;gap:9px;max-width:none;margin:8px auto 0}
+ body:not(.zebraDevice) .smartSelectedStats>div{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;padding:6px 12px;border:1.5px solid;border-radius:8px;box-shadow:0 2px 6px #163e6410}
+ body:not(.zebraDevice) .smartSelectedStats>div:nth-child(1){background:#eaf4ff;border-color:#8dbbe1}
+ body:not(.zebraDevice) .smartSelectedStats>div:nth-child(2){background:#eaf8ef;border-color:#8fc8a2}
+ body:not(.zebraDevice) .smartSelectedStats>div:nth-child(3){background:#fff7e6;border-color:#e1bd72}
+ body:not(.zebraDevice) .smartSelectedStats span{font-size:10px;font-weight:850;color:#4f6f88;text-transform:uppercase}
+ body:not(.zebraDevice) .smartSelectedStats strong{font-size:22px;line-height:1;font-weight:900;color:#123f67}
+
+ body:not(.zebraDevice) .smartSearchResultMain strong{font-size:16px;line-height:1.2;font-weight:850;color:#0b4d8c}
+ body:not(.zebraDevice) .smartSearchResultMain span{margin-top:3px;font-size:12px;line-height:1.15;font-weight:750;color:#58748d}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit{display:grid;grid-template-columns:repeat(2,minmax(82px,1fr));align-items:stretch;justify-content:center;gap:7px;min-width:184px;height:auto;padding:0;border:0;background:transparent;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span{display:grid;grid-template-rows:auto auto;align-items:center;justify-items:center;gap:2px;min-height:42px;padding:5px 10px;border:1px solid #a9c7df;border-radius:8px;background:#eef6fd;box-sizing:border-box;white-space:nowrap}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span+span{border:1px solid #9dcdb1;background:#edf8f1}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit small{display:block;font-size:9px;line-height:1;color:#52728c;font-weight:900;letter-spacing:.04em}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit b{display:block;margin:0;font-size:18px;line-height:1;color:#124f83;font-weight:950}
+ body:not(.zebraDevice) .smartSearchResult .pfnSearchQtySplit>span+span b{color:#23704c}
+
+ body:not(.zebraDevice) .headerOrderPicker{position:relative;min-width:190px}
+ body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:190px;height:40px;min-height:40px;padding:0 12px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font:800 13px/1.2 inherit;letter-spacing:0;cursor:pointer;box-shadow:none}
+ body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton:hover{background:#e4f0fa;border-color:#7faaca;color:#174f7b}
+ body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton:focus-visible{outline:2px solid #277fc5;outline-offset:2px}
+ body:not(.zebraDevice) .headerOrderPickerMenu{position:absolute;top:calc(100% + 5px);bottom:auto;left:0;z-index:200;width:286px;max-height:min(300px,calc(100dvh - 190px));display:flex;flex-direction:column;overflow:hidden;padding:7px;background:#fff;border:1px solid #c1d3e2;border-radius:8px;box-shadow:0 8px 24px #153c6228}
+ body:not(.zebraDevice) .headerOrderPickerMenu[hidden]{display:none}
+ body:not(.zebraDevice) .headerOrderPickerTitle{display:none}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckOption{display:flex;align-items:center;gap:9px;min-height:36px;padding:5px 6px;width:100%;box-sizing:border-box;font-size:13px;cursor:pointer}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText{display:block;min-width:0;line-height:1.15}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText strong{display:block;font-size:13px;font-weight:800;color:#174f7b;white-space:nowrap}
+ body:not(.zebraDevice) .headerOrderPickerMenu .headerOrderCheckText small{display:none}
+ body:not(.zebraDevice) .headerOrderPickerOptions{max-height:218px;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+ body:not(.zebraDevice) .headerOrderPickerActions{display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:6px;flex:none;padding:7px 0 0;margin:0;border-top:1px solid var(--ui-line);border-bottom:0}
+ body:not(.zebraDevice) .headerOrderPickerActions button{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;flex:none;width:auto;height:32px;min-height:32px;margin:0;padding:0 11px;border:1px solid #a6bfd4;border-radius:7px;background:#edf5fc;color:#21577f;font:800 12px/1 inherit;box-shadow:none;cursor:pointer}
+ body:not(.zebraDevice) .headerOrderPickerActions button:hover{background:#e4f0fa;border-color:#7faaca;color:#174f7b}
+ body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk{margin-left:auto;justify-self:end;background:#176bb1;border-color:#176bb1;color:#fff}
+ body:not(.zebraDevice) .headerOrderPickerActions .headerOrderPickerOk:hover{background:#125d99;border-color:#125d99;color:#fff}
+
+ body:not(.zebraDevice) .scanPanelFooter.pfnActionBar{display:flex;align-items:center;gap:8px;margin:0;padding:10px 0 0;border-top:1px solid var(--ui-line);background:transparent;flex-wrap:nowrap}
+ body:not(.zebraDevice) .scanPanelFooter .pfnOrderControlGroup{display:flex;align-items:center;gap:8px;flex:0 1 auto;padding:0;border:0}
+ body:not(.zebraDevice) .scanPanelFooter .pfnManageOrdersButton,body:not(.zebraDevice) .scanPanelFooter .headerOrderPickerButton,body:not(.zebraDevice) .scanPanelFooter #btnReceivingReportAction,body:not(.zebraDevice) .scanPanelFooter #btnReceivingNeedsReview{box-sizing:border-box;height:40px;min-height:40px;margin:0;padding-top:0;padding-bottom:0;align-items:center}
+ body:not(.zebraDevice) .scanPanelFooter #btnReceivingReportAction{margin-left:0;background:#edf5fc;color:#21577f;border-color:#a6bfd4}
+ body:not(.zebraDevice) .scanPanelFooter .pfnReceivingActionGroupRight{display:flex;align-items:center;margin-left:auto;flex:0 0 auto}
+
+ body:not(.zebraDevice) .pageHeading{padding:6px 12px;border:1px solid #b8cee0;border-radius:9px;background:#edf5fc;min-width:190px}
+ body:not(.zebraDevice) .pageHeading h1{margin:0;font-size:19px;line-height:1.05;color:#123f67}
+ body:not(.zebraDevice) .pageHeading p{margin:3px 0 0;font-size:10px;color:#5b7890}
+
+ body:not(.zebraDevice) .quickKpiPanel.phase263Panel{position:relative;padding:12px}
+ body:not(.zebraDevice) .quickKpiHeader{display:flex;align-items:center;min-height:44px;margin:0 0 8px;padding-right:0}
+ body:not(.zebraDevice) .quickKpiHeader h3{font-size:19px;margin:0}
+ body:not(.zebraDevice) .pfnOrderBrowserControls{display:grid;grid-template-rows:auto auto;gap:8px;margin:0 0 6px;min-width:0}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;gap:10px;width:100%;z-index:3}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>label{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:center;gap:8px;min-width:0;height:40px;color:#49657f;font-size:11px;font-weight:800}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow select,body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{box-sizing:border-box;width:100%;height:40px;min-height:40px;padding:0 11px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:13px;font-weight:800}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{width:100%;min-width:0;max-width:none}
+ body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]{position:relative;width:100%;min-width:0;max-width:none}
+ body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>.pfnUnifiedMultiSelectMenu{top:calc(100% + 4px);bottom:auto;left:64px;right:0;width:auto;max-height:250px;z-index:500}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;gap:10px;min-width:0}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{display:block;min-width:0}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField>span{display:none}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{box-sizing:border-box;width:100%;height:42px}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr{cursor:pointer}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:not(.pfnBrowserRowSelected):hover td{background:#d9ebfa!important;color:#123f67!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:not(.pfnBrowserRowSelected):hover td b{color:#123f67!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected td,body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected:hover td{background:#1f67a6!important;color:#fff!important;transition:none!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnItemName b,body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected:hover .pfnItemName b{color:#fff!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnPriorityCell{background:#1f67a6!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnPriorityMark{background:#fff!important;color:#174f7b!important;border-color:#a9c4da!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnPriorityMark.active.short{background:#ff9800!important;color:#17202a!important;border-color:#cf7800!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnPriorityMark.active.new{background:#fff!important;color:#174f7b!important}
+ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:focus-within:not(.pfnBrowserRowSelected) td{background:inherit!important;color:inherit!important;box-shadow:none!important}
+}
+
+
+/* Barcode Management — Settings only. Keep Receiving/Handheld surfaces isolated. */
+#page-settings .barcodeManagementLookup{grid-template-columns:minmax(260px,1fr) auto minmax(260px,1fr) auto;gap:10px}
+#page-settings .barcodeManagementLookup [data-admin-clear]{grid-column:auto}
+#page-settings .barcodeItemSummary{grid-template-columns:auto 1fr;column-gap:14px;align-items:center}
+#page-settings .barcodeItemSummary span{grid-column:1/-1}
+#page-settings .barcodeItemSummary strong{font-size:18px;color:#123f6d}
+#page-settings .barcodeItemSummary b{font-size:16px;color:#254c6b}
+#page-settings .barcodeList{gap:8px}
+#page-settings .barcodeList strong{display:flex;align-items:center;min-height:38px;padding:7px 10px;border:1px solid #d6e5f2;border-radius:8px;background:#f8fbff;color:#173f65;font-size:15px;font-weight:800}
+#page-settings .barcodeChangeNote{grid-column:1/-1}
+#page-settings .barcodeChangeNote textarea{width:100%;min-height:54px;padding:8px 10px;border:1px solid #b8cede;border-radius:8px;resize:vertical}
+@media(max-width:1100px){#page-settings .barcodeManagementLookup{grid-template-columns:minmax(220px,1fr) auto}}
+@media(max-width:600px){#page-settings .barcodeManagementLookup{grid-template-columns:1fr}}
+
+
+/* Receiving correction/history — PharmFlow controls, never browser defaults. */
+.gtinResolverQtyLabel{display:flex!important;align-items:center!important;gap:10px!important;margin-top:10px!important;color:#315b7d!important;font-size:11px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.04em!important}
+.gtinResolverQtyInput{width:86px!important;height:38px!important;box-sizing:border-box!important;border:1px solid #9dbbd4!important;border-radius:9px!important;background:#fff!important;color:#123f69!important;padding:0 10px!important;font-size:16px!important;font-weight:900!important;outline:none!important;box-shadow:0 1px 2px rgba(20,61,95,.05)!important}
+.gtinResolverQtyInput:focus{border-color:#397db5!important;box-shadow:0 0 0 3px rgba(57,125,181,.14)!important}
+body:not(.zebraDevice) .pfnActivityToolbar{display:grid!important;grid-template-columns:minmax(320px,1fr) 180px 180px!important;gap:10px!important;align-items:end!important;margin:0 0 12px!important}
+body:not(.zebraDevice) .pfnActivityToolbar label{display:grid!important;gap:5px!important;color:#31536f!important;font-size:10px!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.04em!important}
+body:not(.zebraDevice) .pfnActivityToolbar input,body:not(.zebraDevice) .pfnActivityToolbar select{width:100%!important;height:40px!important;box-sizing:border-box!important;border:1px solid #9fbad5!important;border-radius:9px!important;background:#fff!important;color:#173f67!important;padding:0 11px!important;font-size:13px!important;font-weight:700!important;outline:none!important}
+body:not(.zebraDevice) .pfnActivityToolbar input:focus,body:not(.zebraDevice) .pfnActivityToolbar select:focus{border-color:#397db5!important;box-shadow:0 0 0 3px rgba(57,125,181,.13)!important}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(1){width:12%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(2){width:20%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(3){width:9%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(4){width:12%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(5){width:9%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(6){width:9%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(7){width:10%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(8){width:11%}
+body:not(.zebraDevice) .pfnActivityWorklist .phase263Table th:nth-child(9){width:8%}
+
+body:not(.zebraDevice) .pfnActivitySummary{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 12px;padding:12px 14px;border:1px solid #b7cee2;border-radius:12px;background:#f6fbff;box-shadow:0 2px 8px rgba(20,61,95,.05)}
+body:not(.zebraDevice) .pfnActivitySummary[hidden]{display:none!important}
+body:not(.zebraDevice) .pfnActivitySummaryIdentity{display:grid;gap:3px;min-width:260px;color:#123f69}
+body:not(.zebraDevice) .pfnActivitySummaryIdentity b{font-size:15px;font-weight:900}
+body:not(.zebraDevice) .pfnActivitySummaryIdentity span{font-size:11px;font-weight:800;color:#52718d}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics{display:grid;grid-template-columns:repeat(4,minmax(92px,1fr));gap:8px;flex:1;max-width:560px}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics>span{display:grid;gap:2px;padding:8px 10px;border:1px solid #c7d9e9;border-radius:9px;background:#fff;text-align:center}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics small{font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#607d96}
+body:not(.zebraDevice) .pfnActivitySummaryMetrics b{font-size:15px;font-weight:900;color:#123f69}
+
+/* Receiving identity workspace — PharmFlow visual language */
+body:not(.zebraDevice) .pfnIdentityPanel{width:min(700px,92vw)!important;overflow:hidden!important}
+body:not(.zebraDevice) .pfnIdentityBody{display:grid;gap:14px;padding:18px 22px}
+body:not(.zebraDevice) .pfnIdentityCard{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid #c7dced;border-radius:12px;background:#f5faff}
+body:not(.zebraDevice) .pfnIdentityCard>div:first-child{display:grid;gap:3px;min-width:0}
+body:not(.zebraDevice) .pfnIdentityCard small,.pfnCreateMeta small{font-size:9px;font-weight:950;letter-spacing:.08em;color:#69839b}
+body:not(.zebraDevice) .pfnIdentityCard strong{font-size:17px;font-weight:950;color:#123f6d}
+body:not(.zebraDevice) .pfnIdentityCard span{font-size:12px;color:#5b7893}
+body:not(.zebraDevice) .pfnBarcodeChip{display:grid;gap:3px;padding:9px 11px;border:1px solid #d2e1ef;border-radius:9px;background:#fff;white-space:nowrap}
+body:not(.zebraDevice) .pfnExtraFields{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:12px}
+body:not(.zebraDevice) .pfnExtraFields label,.pfnCreateGrid label{display:grid;gap:6px;font-size:11px;font-weight:900;color:#315979}
+body:not(.zebraDevice) .pfnExtraFields select,.pfnExtraFields input,.pfnCreateGrid input,.pfnCreateMeta input,.pfnCreateMeta select{width:100%;height:42px;border:1px solid #b8d0e5;border-radius:9px;background:#fff;padding:0 11px;color:#123f6d;font-size:14px;font-weight:750;outline:none}
+body:not(.zebraDevice) .pfnInfoStrip{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:#fff8e8;border:1px solid #efd59b;color:#72521c;font-size:11px}
+body:not(.zebraDevice) .pfnInfoStrip b{font-size:12px;white-space:nowrap}
+body:not(.zebraDevice) .pfnResolverTabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;padding:4px;border-radius:10px;background:#edf4fa}
+body:not(.zebraDevice) .pfnResolverTabs button{height:38px;border:0;border-radius:8px;background:transparent;color:#55728d;font-size:12px;font-weight:900}
+body:not(.zebraDevice) .pfnResolverTabs button.isActive{background:#fff;color:#1769aa;box-shadow:0 1px 4px rgba(18,63,109,.12)}
+body:not(.zebraDevice) .pfnCreateItemPane{display:grid;gap:13px}
+body:not(.zebraDevice) .pfnCreateItemPane[hidden],body:not(.zebraDevice) [data-find-pane][hidden]{display:none!important}
+body:not(.zebraDevice) .pfnCreateIntro{display:flex;align-items:baseline;gap:9px;padding:0 2px;color:#5d7891;font-size:11px}
+body:not(.zebraDevice) .pfnCreateIntro b{font-size:14px;color:#173f68}
+body:not(.zebraDevice) .pfnCreateGrid{display:grid;grid-template-columns:.8fr 1.6fr;gap:10px}
+body:not(.zebraDevice) .pfnCreateMeta{display:grid;grid-template-columns:1.4fr .6fr 1fr;gap:8px}
+body:not(.zebraDevice) .pfnCreateMeta>span,.pfnCreateMeta>label{display:grid;gap:4px;padding:9px 10px;border:1px solid #d5e3ef;border-radius:9px;background:#f7fbff}
+body:not(.zebraDevice) .pfnCreateMeta b{font-size:13px;color:#123f6d}
+body:not(.zebraDevice) .pfnCreateReceive{justify-self:end;min-width:170px;height:42px;border:0!important;border-radius:9px!important;background:#1769aa!important;color:#fff!important;font-weight:900!important}
+body:not(.zebraDevice) .gtinPrimaryAction{background:#1769aa!important;color:#fff!important;border-color:#1769aa!important}
+
+body:not(.zebraDevice) .pfnActivityWorklist{overflow-x:hidden}
+body:not(.zebraDevice) .pfnActivityTable{width:100%;table-layout:fixed}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:10.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:26%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:7.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:10%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:8.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:6%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:7.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:11%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:13%}
+body:not(.zebraDevice) .pfnActivityTable th{padding:8px 6px;font-size:9px;white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable td{padding:7px 6px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{font-size:12px;font-weight:700;color:#123f69;text-overflow:clip}
+body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
+body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
+
+/* Receiving Activity — canonical desktop layout. Item identity and readable one-line time are primary. */
+body:not(.zebraDevice) .pfnActivityWorklist{overflow-x:hidden}
+body:not(.zebraDevice) .pfnActivityTable{width:100%;table-layout:fixed}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDate{width:15%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColItem{width:38%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColCode{width:5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColGtin{width:7%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAction{width:6%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColAfter{width:3.5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColSource{width:5%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColDevice{width:8%}
+body:not(.zebraDevice) .pfnActivityTable .pfnColOrder{width:12.5%}
+body:not(.zebraDevice) .pfnActivityTable th{padding:8px 4px;font-size:9px;white-space:nowrap}
+body:not(.zebraDevice) .pfnActivityTable td{padding:7px 4px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:not(.zebraDevice) .pfnActivityTable td:first-child{font-size:10.25px;font-weight:750;letter-spacing:-.1px;white-space:nowrap;word-break:keep-all}
+body:not(.zebraDevice) .pfnActivityTable .pfnActivityItemName{padding-left:7px;padding-right:7px;font-size:13.25px;font-weight:700;color:#123f69;text-overflow:clip}
+body:not(.zebraDevice) .pfnActivityTable td:nth-child(6){font-weight:850;text-align:center}
+body:not(.zebraDevice) .pfnActivityTable th:nth-child(6){text-align:center}
+
+/* Unknown resolver — one quantity owner and a single selected-item state. */
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-find-pane]{display:flex;flex-direction:column}
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-selection]{order:2;margin:10px 0}
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-results]{order:3}
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-results][hidden],
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-search][hidden],
+body:not(.zebraDevice) .pfnUnknownWorkspace [data-selection][hidden],
+body:not(.zebraDevice) .pfnUnknownWorkspace label[for="gtinResolutionSearch"][hidden]{display:none!important}
+body:not(.zebraDevice) .pfnUnknownWorkspace .pfnCreateQtyMirror{display:flex;flex-direction:column;gap:7px}
+body:not(.zebraDevice) .pfnUnknownWorkspace .pfnCreateQtyMirror b{font-size:16px;color:#123f69}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked{width:min(660px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .pfnUnknownWorkspace{padding-top:8px;padding-bottom:8px}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .gtinResolutionResults{display:none!important}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .resolverSelectedCard{margin:0}
+body:not(.zebraDevice) .pfnUnknownPanel.isSelectionLocked .gtinResolutionFooter{padding-top:10px;padding-bottom:10px}
+
+/* Resolver state identity — unknown Global item is amber; known-but-not-in-order is blue. */
+body:not(.zebraDevice) .pfnUnknownPanel{border:2px solid #dca32c;box-shadow:0 24px 60px rgba(43,69,94,.22)}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinResolutionHeader{background:#fff7e5;border-bottom-color:#efd28f}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinActionBadge{background:#fff0c2;border-color:#dc9d1c;color:#805000}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinReadout{background:#fffaf0;border-color:#edd49b}
+body:not(.zebraDevice) .pfnKnownExtraPanel{border:2px solid #4d9bd2;box-shadow:0 24px 60px rgba(31,83,124,.22)}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader{background:#eaf6ff;border-bottom-color:#9fc9e6}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{background:#dff2ff;border-color:#5ba2d2;color:#0b5d91}
+body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#f7fbff}
+
+/* Focused UI clarity fix — Settings barcode management + Receiving resolver states. */
+#page-settings .masterGTINCard{border-top-color:#2d78b7}
+#page-settings .globalIdentifierMasterAdmin{padding:16px;border:1px solid #d7e5f1;border-radius:12px;background:#f8fbfe}
+#page-settings .barcodeManagementLookup{padding:14px;border:1px solid #dbe8f3;border-radius:10px;background:#fff}
+#page-settings .barcodeManagementLookup label{font-size:12px;letter-spacing:.01em;color:#315a7b}
+#page-settings .barcodeManagementLookup input{min-height:46px;border-color:#abc4d9;border-radius:9px;font-size:15px}
+#page-settings .barcodeManagementLookup input:focus{outline:none;border-color:#2d78b7;box-shadow:0 0 0 3px rgba(45,120,183,.12)}
+#page-settings .barcodeManagementLookup button{min-height:46px;border-radius:9px}
+#page-settings [data-admin-workspace]:not(:empty){padding:14px;border:1px solid #dbe8f3;border-radius:10px;background:#fff}
+#page-settings .needsReviewMappingActions{grid-template-columns:minmax(220px,1fr) auto auto;gap:10px;padding-top:12px;border-top:1px solid #e3edf5}
+#page-settings .needsReviewMappingActions label{display:grid;gap:6px;color:#315a7b;font-size:12px;font-weight:800}
+#page-settings .needsReviewMappingActions input,#page-settings .needsReviewMappingActions textarea{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #abc4d9;border-radius:9px;background:#fff;padding:9px 11px;color:#173f65;font:inherit}
+#page-settings .needsReviewMappingActions button{min-height:44px;padding:9px 15px;border:1px solid #176bb1;border-radius:9px;background:#176bb1;color:#fff;font-weight:800;cursor:pointer}
+#page-settings .needsReviewMappingActions button.danger{border-color:#a63232;background:#a63232}
+#page-settings .barcodeChangeNote{grid-column:1/-1}
+@media(max-width:760px){#page-settings .needsReviewMappingActions{grid-template-columns:1fr}}
+
+/* Unknown is an error state; known-but-not-in-order is a caution state. */
+body:not(.zebraDevice) .pfnUnknownPanel{border-color:#c94b4b!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinResolutionHeader{background:#fff1f1!important;border-bottom-color:#efb5b5!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinActionBadge{display:block!important;width:fit-content!important;padding:8px 12px!important;border:1px solid #d35b5b!important;border-radius:9px!important;background:#ffe1e1!important;color:#9e2020!important;font-size:15px!important;font-weight:950!important;letter-spacing:.035em!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinResolutionHeader h2{margin-top:9px!important;font-size:18px!important;font-weight:800!important;color:#5e3b3b!important}
+body:not(.zebraDevice) .pfnUnknownPanel .gtinReadout{background:#fff7f7!important;border-color:#efc5c5!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel{border-color:#c98a27!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader{background:#fff7e8!important;border-bottom-color:#e7c88d!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{display:block!important;width:fit-content!important;padding:8px 12px!important;border:1px solid #cf942e!important;border-radius:9px!important;background:#ffedc5!important;color:#7b4b00!important;font-size:15px!important;font-weight:950!important;letter-spacing:.035em!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .gtinResolutionHeader h2{margin-top:9px!important;font-size:18px!important;font-weight:800!important;color:#654b25!important}
+body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#fffdf8!important}
+
+/* Order Items: compact copy affordance follows row selection contrast. */
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemCode{white-space:nowrap}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:5px;padding:0;border:0;background:transparent;color:inherit;font-size:14px;line-height:1;vertical-align:middle;cursor:pointer;opacity:.78}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode:hover,body:not(.zebraDevice) .pfnCleanWorklist .pfnCopyItemCode.copied{opacity:1}
+body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr.pfnBrowserRowSelected .pfnCopyItemCode{color:#fff!important;opacity:1}
+
+
+/* Extra Items KPI: keep operational labels/actions on one line. */
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel .pfnExtraRemoveButton{
+  white-space:nowrap!important;
+  font-size:12px!important;
+  line-height:1!important;
+  padding:9px 10px!important;
+  min-width:126px!important;
+}
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Status"],
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Order"],
+body:not(.zebraDevice).pfNextMode .quickKpiPanel.phase263Panel td[data-label="Action"]{
+  white-space:nowrap!important;
+  font-size:13px!important;
+}
+
+
+/* Handheld assignment: actions stay separate from a growing order grid. */
+body:not(.zebraDevice) .pfnHandheldOrderGrid{
+  max-height:176px;
+  overflow:auto;
+  align-content:start;
+  padding-right:3px;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:9px;
+  padding-top:10px;
+  margin-top:8px;
+  border-top:1px solid #d4e1eb;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions button{
+  min-width:154px;
+  white-space:nowrap;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions [data-remove-assignment]{
+  background:#fff;
+  border-color:#9fb9cf;
+  color:#315f82;
+}
+body:not(.zebraDevice) .pfnHandheldAssignmentActions [data-remove-assignment]:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+}
+
+/* Release RC — unified custom filters for Order Items. */
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector{position:relative;min-width:0;width:100%;height:40px}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>summary{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;height:40px;padding:0 11px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:13px;font-weight:800;cursor:pointer;list-style:none}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>summary::-webkit-details-marker{display:none}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>summary:after{content:'⌄';font-size:12px;margin-left:8px}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>.pfnUnifiedMultiSelectMenu{top:calc(100% + 4px);bottom:auto;left:0;right:0;width:100%;max-height:250px;z-index:520}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions{display:grid;padding:6px;gap:3px}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions button{width:100%;min-height:34px;padding:7px 9px;border:0;border-radius:6px;background:transparent;color:#234d70;text-align:left;font:inherit;font-weight:750;cursor:pointer}
+body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions button:hover,body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions button.active{background:#dceefa;color:#123f67}
+
+/* Quick Add Group: same control geometry as the existing creation fields. */
+body:not(.zebraDevice) #quickGTINResolver .pfnCreateGroup{display:grid;width:100%;gap:6px;margin:10px 0 6px}
+body:not(.zebraDevice) #quickGTINResolver [data-quick-group]{box-sizing:border-box;width:100%;height:42px;padding:0 38px 0 11px;border:1px solid #b8d0e5;border-radius:9px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%2355728d' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 13px center;appearance:none;color:#123f6d;font-family:inherit;font-size:14px;font-weight:750;outline:none}
+body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{border-color:#1769aa;box-shadow:0 0 0 3px rgba(23,105,170,.16)}

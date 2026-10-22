@@ -1,0 +1,92 @@
+✔ Inventory pages are server limited; session and Inventory never share KPI authority (103.962743ms)
+✔ Combined search, month, Group and KPI bounds share one query contract; Clear removes every restriction (157.244005ms)
+✔ Late pharmacy and older filter responses cannot replace current rows (49.491303ms)
+✔ Filter sections and years reopen collapsed while applied values remain selected (97.009082ms)
+✔ Filter popover keeps header, resolved controls and actions fixed around an internal scroll area (2.413528ms)
+✔ Expired KPI keeps the inclusive Through Oct 2026 label and boundary (88.241609ms)
+✖ Expiry Group display uses the Production canonical mapping and never falls back to Category (4.61742ms)
+✔ Group, unassigned, search and month filters share one complete server filter contract (1.655392ms)
+✔ Old inventory response fails closed until canonical Group row and full-dataset facets are supplied (1.969987ms)
+✔ Group filter counts and paginates server matches across all authorized rows; search composes with it (193.935429ms)
+✖ Missing Group selection is explicit and reports retain exact identifiers and Group labels (82.788385ms)
+✖ Excel, PDF and Print pass the same Group scope to the authoritative export RPC (98.233533ms)
+✔ Inventory Group reads stay inside the authorized pharmacy RPC boundary (59.519432ms)
+✖ Inventory, report preview and Excel present missing Batch and canonical Group without changing records (66.651852ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 10
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 653.726714
+
+✖ failing tests:
+
+test at tests/expiry-inventory-group.test.cjs:13:1
+✖ Expiry Group display uses the Production canonical mapping and never falls back to Category (4.61742ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      group: '',
+  +   label: '—'
+  -   label: 'Uncategorized'
+    }
+  
+      at TestContext.<anonymous> (/workspace/scratch/ee25ba9eb87e/pharmflow-quick-add/tests/expiry-inventory-group.test.cjs:18:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { group: '', label: '—' },
+    expected: { group: '', label: 'Uncategorized' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/expiry-inventory-group.test.cjs:52:1
+✖ Missing Group selection is explicit and reports retain exact identifiers and Group labels (82.788385ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(h.document.querySelector('.expiryInventoryTable tbody').textContent.includes('Uncategorized'))
+  
+      at TestContext.<anonymous> (/workspace/scratch/ee25ba9eb87e/pharmflow-quick-add/tests/expiry-inventory-group.test.cjs:56:60)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/expiry-inventory-group.test.cjs:65:1
+✖ Excel, PDF and Print pass the same Group scope to the authoritative export RPC (98.233533ms)
+  SyntaxError: "undefined" is not valid JSON
+      at JSON.parse (<anonymous>)
+      at TestContext.<anonymous> (/workspace/scratch/ee25ba9eb87e/pharmflow-quick-add/tests/expiry-inventory-group.test.cjs:70:79)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+
+test at tests/expiry-inventory-group.test.cjs:82:1
+✖ Inventory, report preview and Excel present missing Batch and canonical Group without changing records (66.651852ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '—'
+  - 'Uncategorized'
+  
+      at TestContext.<anonymous> (/workspace/scratch/ee25ba9eb87e/pharmflow-quick-add/tests/expiry-inventory-group.test.cjs:87:9)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '—',
+    expected: 'Uncategorized',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

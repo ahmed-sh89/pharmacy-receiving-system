@@ -100,7 +100,7 @@ async function initializeMasterGTIN(){
         }
 
         if(
-            MasterGTINEngine.metadata.installed &&
+            MasterGTINEngine.metadata.installed && MasterGTINEngine.metadata.apiVersion===2 &&
             AppState.workspace.orderData.length > 0
         ){
 
@@ -540,6 +540,10 @@ async function applyMasterGTINToCurrentOrder(
     options = {}
 ){
 
+    try{
+        await window.PharmFlowReceivingGroups?.refresh(AppState.workspace.orderData||[],String(MasterGTINEngine.metadata.cloudVersion||""));
+    }catch(error){ Logger.warn("Receiving Group display unavailable",error); }
+
     if(
         !MasterGTINEngine.db ||
         !MasterGTINEngine.metadata.installed
@@ -656,7 +660,6 @@ async function applyMasterGTINToCurrentOrder(
         const orderItem = AppState.indexes.itemByCode.get(record.itemCode);
         if(orderItem){
             // Enrich only absent working classification; original uploaded sourceRows stay immutable.
-            if(!toSafeString(orderItem.group_name||orderItem.groupName||orderItem.Group).trim() && record.group_name) orderItem.group_name=record.group_name;
             if(!toSafeString(orderItem.category).trim() && record.category) orderItem.category=record.category;
             if(!toSafeString(orderItem.sub_category||orderItem.subCategory).trim() && record.sub_category) orderItem.sub_category=record.sub_category;
         }
@@ -1055,7 +1058,7 @@ async function performGlobalMasterGTINSync(options = {}){
     if(
         options.forceDownload!==true &&
         MasterGTINEngine.db &&
-        MasterGTINEngine.metadata.installed &&
+        MasterGTINEngine.metadata.installed && MasterGTINEngine.metadata.apiVersion===2 &&
         String(MasterGTINEngine.metadata.cloudVersion || "")===cloudVersion &&
         Number(MasterGTINEngine.metadata.recordCount ?? MasterGTINEngine.metadata.itemCount ?? 0)===cloudCount
     ){
@@ -1101,6 +1104,7 @@ async function performGlobalMasterGTINSync(options = {}){
 
     const metadata={
         installed:true,
+        apiVersion:2,
         fileName:toSafeString(meta.source_file || "Supabase Global GTIN"),
         updatedAt:meta.updated_at || nowISO(),
         itemCount:Number(meta.global_item_count ?? records.length),
@@ -1150,7 +1154,7 @@ async function ensureGlobalMasterGTINReady(options = {}){
         const cloudVersion=meta ? String(meta.version || "") : "";
         const cloudCount=meta ? Number(meta.item_count || 0) : 0;
         const cacheCurrent=!!(
-            MasterGTINEngine.db && MasterGTINEngine.metadata.installed &&
+            MasterGTINEngine.db && MasterGTINEngine.metadata.installed && MasterGTINEngine.metadata.apiVersion===2 &&
             cloudVersion && String(MasterGTINEngine.metadata.cloudVersion || "")===cloudVersion &&
             Number(MasterGTINEngine.metadata.recordCount ?? MasterGTINEngine.metadata.itemCount ?? 0)===cloudCount
         );

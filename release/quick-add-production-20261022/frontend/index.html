@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#EAF4FE">
+    <meta name="pharmflow-build-sha" content="__PHARMFLOW_BUILD_SHA__">
+
+    <meta
+        name="description"
+        content="PharmFlow Pharmacy Operations"
+    >
+
+    <title>PharmFlow | Pharmacy Operations</title>
+
+    <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark-blue.svg">
+    <link rel="shortcut icon" href="assets/pharmflow-mark-blue.svg">
+    <link rel="apple-touch-icon" href="assets/pharmflow-mark-blue.svg">
+
+    <!-- ================================
+         STYLES
+    ================================= -->
+
+    <link
+        rel="stylesheet"
+        href="css/style.css?v=GROUP_INTEGRITY_20261017_1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/sidebar.css?v=UI_REVIEW_CLEAN1"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/dashboard.css?v=EXPIRY_HARDENING_20261020"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/responsive.css?v=HANDHELD_VIEWPORT3"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/auth.css?v=HANDHELD_VIEWPORT3"
+    >
+
+<link rel="stylesheet" href="css/pharmflow-next.css?v=RECEIVING_GROUP_BATCH_20261022">
+<link rel="stylesheet" href="css/receiving-surface.css?v=HANDHELD_VIEWPORT3">
+<link rel="stylesheet" href="css/identity.css?v=PROD_EXPIRY_INTEGRATION1">
+<link rel="stylesheet" href="css/mobile-phone.css?v=PHONE_FINAL5">
+
+    <!-- Bootstrap gate: a hard refresh has one loading surface only. -->
+    <style id="pharmflowAuthBootstrapGate">
+        body.authBooting #authGate { visibility: hidden !important; }
+        body.authBooting .mainApplication {
+            visibility: hidden !important;
+        }
+    </style>
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI4">
+
+</head>
+
+
+<body class="authBooting">
+<div id="workspaceBootOverlay" class="workspaceBootOverlay" role="status" aria-live="polite" aria-label="Loading PharmFlow">
+    <div class="workspaceBootCard">
+        <div class="pfBootCapsule" aria-hidden="true">
+            <span class="pfBootCapsuleHalf pfBootCapsuleLeft"></span>
+            <span class="pfBootCapsuleHalf pfBootCapsuleRight"></span>
+            <span class="pfBootPellet pfBootPellet1"></span>
+            <span class="pfBootPellet pfBootPellet2"></span>
+            <span class="pfBootPellet pfBootPellet3"></span>
+            <span class="pfBootPellet pfBootPellet4"></span>
+            <span class="pfBootPellet pfBootPellet5"></span>
+        </div>
+        <span>LOADING WORKSPACE</span>
+        <strong>Preparing PharmFlow</strong>
+        <small>Loading your receiving workspace…</small>
+    </div>
+</div>
+<script>
+(function(){
+    try{
+        var ua=String(navigator.userAgent||"").toLowerCase();
+        var explicit=new URLSearchParams(location.search||"").get("handheld")==="1";
+        var remembered=localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")==="1";
+        var enterprise=/zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
+        var shortSide=Math.min(
+            Number((screen&&screen.width)||innerWidth||9999),
+            Number((screen&&screen.height)||innerHeight||9999)
+        );
+        var formFactor=/android/i.test(ua) && shortSide<=600 && Number(navigator.maxTouchPoints||0)>0;
+        if(enterprise||explicit||remembered||formFactor){
+            document.body.classList.add("zebraDevice");
+            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
+        }
+    }catch(_){}
+})();
+</script>
+
+<!-- ==================================================
+     AUTHENTICATION GATE — OWNER / ADMIN / STAFF
+=================================================== -->
+<div id="authGate" class="authGate visible">
+    <div class="authShell">
+
+        <section class="authBrandPanel" aria-label="PharmFlow">
+            <div class="authBrandMinimal">
+                <div class="authBrandLogoCard">
+                    <img src="assets/pharmflow-login-mark.svg" alt="PharmFlow">
+                </div>
+                <div class="authBrandName"><span>Pharm</span><strong>Flow</strong></div>
+                <div class="authBrandTagline">PHARMACY OPERATIONS PLATFORM</div>
+            </div>
+        </section>
+
+
+        <section class="authFormPanel">
+            <div class="authFormPanelInner">
+                <div id="authBootPanel" class="authBootPanel" role="status" aria-live="polite">
+                    <div class="authBootSpinner" aria-hidden="true"></div>
+                    <span class="authEyebrow">SECURE ACCESS</span>
+                    <h2>Preparing PharmFlow</h2>
+                    <p class="authLead">Checking your secure pharmacy access...</p>
+                </div>
+                <div id="authFormsPanel">
+                    <div id="authLoginForm">
+                        <span class="authEyebrow">SECURE ACCESS</span>
+                        <h2>Sign in</h2>
+                        <p class="authLead">Use the account assigned to your pharmacy.</p>
+                        <div class="authField"><label>Email</label><input id="authEmail" type="email" autocomplete="username" placeholder="name@example.com"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+                                <button id="btnToggleAuthPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <label class="authRememberRow">
+                            <input id="authRememberEmail" type="checkbox" checked>
+                            <span>Remember email on this device</span>
+                        </label>
+                        <button id="btnAuthSignIn" class="authPrimaryButton" type="button">Sign In</button>
+                        <button id="btnAuthForgotPassword" class="authSecondaryLink authForgotPassword" type="button">Forgot Password?</button>
+                        <button id="btnAuthShowPublicSignup" class="authSecondaryLink authSignupLink" type="button">Register a New Pharmacy</button>
+
+                        <button id="btnAuthShowOwnerSetup" class="authSecondaryLink" type="button" hidden>First system setup — Owner only</button>
+                    </div>
+
+                    <div id="authPublicSignupForm" hidden>
+                        <span class="authEyebrow">NEW PHARMACY</span>
+                        <h2>Request access</h2>
+                        <p class="authLead">Create your account and submit a pharmacy access request for approval.</p>
+                        <div class="authField"><label for="publicSignupEmail">Email</label><input id="publicSignupEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+                        <div class="authField">
+                            <label for="publicSignupPassword">Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="publicSignupPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter password">
+                                <button id="btnTogglePublicSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                            <small class="authFieldHelp">Use at least 8 characters.</small>
+                        </div>
+                        <div class="authField">
+                            <label for="publicSignupPasswordConfirm">Confirm Password</label>
+                            <input id="publicSignupPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password">
+                        </div>
+                        <div class="authField">
+                            <label for="publicPharmacyCode">Pharmacy Code</label>
+                            <input id="publicPharmacyCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Example: RXA271">
+                            <small class="authFieldHelp">Enter your requested pharmacy code. The administrator will verify the final pharmacy details before approval.</small>
+                        </div>
+                        <button id="btnAuthPublicSignUp" class="authPrimaryButton" type="button">Create Account & Submit Request</button>
+                        <button id="btnAuthShowLogin" class="authSecondaryLink" type="button">Back to Sign In</button>
+                    </div>
+                    <div id="authInviteSignupForm" hidden>
+                        <button id="btnAuthShowLoginFromInvite" class="authBackButton" type="button">← Back to Sign In</button>
+                        <span class="authEyebrow">PHARMACY ADMIN</span>
+                        <h2>Activate Admin Account</h2>
+                        <p class="authLead">Use the email assigned to your pharmacy.</p>
+
+                        <div class="authInfoBox">
+                            No invitation code is required. Your email must already be assigned to a pharmacy.
+                        </div>
+
+                        <div class="authField">
+                            <label>Full Name</label>
+                            <input id="inviteSignupName" type="text" autocomplete="name" placeholder="Your name">
+                        </div>
+                        <div class="authField">
+                            <label>Email</label>
+                            <input id="inviteSignupEmail" type="email" autocomplete="email" placeholder="admin@pharmacy.com">
+                        </div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="inviteSignupPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+                                <button id="btnToggleInviteSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+
+                        <button id="btnAuthInviteSignUp" class="authPrimaryButton" type="button">Create / Activate Admin Account</button>
+                    </div>
+                    <div id="authOwnerSignupForm" hidden>
+                        <button id="btnAuthShowLoginFromOwner" class="authBackButton" type="button" aria-label="Back to sign in">← Back to Sign In</button>
+                        <span class="authEyebrow">FIRST SETUP</span>
+                        <h2>Create PharmFlow Administrator</h2>
+                        <p class="authLead">This option works once only. The Owner can create other pharmacies and their Admin invitations.</p>
+                        <div class="authField"><label>Owner Name</label><input id="ownerSignupName" type="text" autocomplete="name" placeholder="Owner name"></div>
+                        <div class="authField"><label>Owner Email</label><input id="ownerSignupEmail" type="email" autocomplete="email" placeholder="Owner email"></div>
+                        <div class="authField">
+                            <label>Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="ownerSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+                                <button id="btnToggleOwnerSignupPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <div class="authField"><label>Your Pharmacy Name</label><input id="ownerPharmacyName" type="text" placeholder="Main pharmacy"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="ownerPharmacyCode" type="text" maxlength="24" placeholder="PHARM01"></div>
+                        <button id="btnAuthOwnerSignUp" class="authPrimaryButton" type="button">Create Owner & Pharmacy</button>
+                    </div>
+                </div>
+                                <template id="authForcedPasswordTemplate">
+                    <div id="authForcedPasswordForm">
+                        <span class="authEyebrow">ACCOUNT SECURITY</span>
+                        <h2>Create Your New Password</h2>
+                        <p class="authLead">You signed in with a temporary password. Create your own password before opening PharmFlow.</p>
+                        <div class="authField"><label>New Password</label><input id="authForcedPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter new password"><small class="authFieldHelp">Use at least 8 characters.</small></div>
+                        <div class="authField"><label>Confirm New Password</label><input id="authForcedPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat new password"></div>
+                        <button id="btnAuthForcedPasswordSave" class="authPrimaryButton" type="button">Save New Password</button>
+                    </div>
+                </template>
+<template id="authRecoveryTemplate">
+<div id="authRecoveryForm">
+                        <span class="authEyebrow">ACCOUNT SECURITY</span>
+                        <h2>Set a New Password</h2>
+                        <p class="authLead">Choose a new password for your PharmFlow account.</p>
+                        <div class="authInfoBox authRecoveryInfo">Your recovery link is active. Enter a new password below.</div>
+                        <div class="authField">
+                            <label>New Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authRecoveryPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+                                <button id="btnToggleRecoveryPassword" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <div class="authField">
+                            <label>Confirm New Password</label>
+                            <div class="authPasswordWrap">
+                                <input id="authRecoveryPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat the new password">
+                                <button id="btnToggleRecoveryPasswordConfirm" class="authPasswordToggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+                            </div>
+                        </div>
+                        <button id="btnAuthRecoverySave" class="authPrimaryButton" type="button">Update Password</button>
+                        <div id="authRecoveryMessage" class="authMessage" role="status" aria-live="polite"></div>
+                    </div>
+                </template>
+<div id="authAccessPanel" hidden>
+                    <span class="authEyebrow">ACCOUNT CREATED</span>
+                    <h2>Complete access</h2>
+                    <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
+
+                    <div id="pendingStandardAccessBox">
+                        <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Submit the pharmacy code you know for approval.</div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The official pharmacy identity will be verified before approval.</small></div>
+                        <button id="btnSubmitPendingRegistration" class="authPrimaryButton" type="button">Submit Pharmacy for Approval</button>
+                    </div>
+
+                    <div id="pendingRegistrationStatusBox" hidden>
+                        <div class="pendingApprovalCard">
+                            <span class="authEyebrow">PHARMACY REQUEST</span>
+                            <h3 id="pendingRegistrationPharmacy">-</h3>
+                            <div class="pendingApprovalMeta"><span>Code</span><strong id="pendingRegistrationCode">-</strong></div>
+                            <div class="pendingApprovalMeta"><span>Status</span><strong id="pendingRegistrationStatus">PENDING</strong></div>
+                            <p id="pendingRegistrationNote">Waiting for approval.</p>
+                        </div>
+                    </div>
+
+                    <div id="pendingOwnerSetupBox" hidden>
+                        <div class="authSetupNote">No PharmFlow Administrator exists yet. Complete the one-time administrator setup.</div>
+                        <div class="authField"><label>Your Pharmacy Name</label><input id="pendingOwnerPharmacyName" type="text" placeholder="Main pharmacy"></div>
+                        <div class="authField"><label>Pharmacy Code</label><input id="pendingOwnerPharmacyCode" type="text" placeholder="PHARM01"></div>
+                        <button id="btnCompleteOwnerSetup" class="authPrimaryButton" type="button">Create Administrator</button>
+                    </div>
+
+                    <button id="btnPendingLogout" class="authSecondaryLink" type="button">Sign out</button>
+                </div>
+
+                <div id="authMessage" class="authMessage"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div id="app">
+
+
+    <!-- ==================================================
+         SIDEBAR OVERLAY
+    =================================================== -->
+
+    <div
+        id="sidebarOverlay"
+        class="sidebarOverlay"
+    ></div>
+
+
+    <!-- ==================================================
+         SIDEBAR
+    =================================================== -->
+
+    <aside
+        id="sidebar"
+        class="sidebar"
+    >
+
+        <!-- BRAND -->
+
+        <div class="sidebarBrand">
+
+            <div class="brandLogo"><img src="assets/pharmflow-mark.svg" alt="" aria-hidden="true"></div>
+
+
+            <div class="brandText">
+
+                <strong data-brand-name>PharmFlow</strong>
+                <span>PHARMACY OPERATIONS</span>
+
+            </div>
+
+
+            <button
+                id="btnCloseSidebar"
+                class="sidebarCloseButton"
+                type="button"
+                aria-label="Close sidebar"
+            >
+
+                ✕
+
+            </button>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav class="sidebarNavigation">
+            <button class="sidebarItem active" type="button" data-page="dashboard" aria-label="Receiving" title="Receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Receiving</span></button>
+            <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
+            <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
+
+            <button class="sidebarItem" type="button" data-page="expiry" aria-label="Expiry" title="Expiry"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Expiry</span></button>
+            <button class="sidebarItem" type="button" data-page="settings" aria-label="Settings" title="Settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span>Settings</span></button>
+        </nav>
+
+
+        <!-- SIDEBAR FOOTER -->
+
+        <div class="sidebarFooter">
+
+            <div class="accountIdentity">
+                <div class="accountAvatar">P</div>
+                <div class="accountIdentityText">
+                    <span class="accountContextKicker">PHARMACY</span>
+                    <strong id="accountPharmacyName">Pharmacy</strong>
+                    <small><span id="accountPharmacyCode">—</span></small>
+                    <span id="sidebarConnection" class="sidebarConnection" role="status">ONLINE</span>
+                </div>
+                <span id="accountUserRole" class="accountRoleBadge"></span>
+            </div>
+            <button id="btnLogout" class="sidebarLogoutButton" type="button">Sign Out</button>
+
+            <div class="autoSaveStatus">
+
+                <span class="statusDot"></span>
+
+                <div>
+
+                    <strong>
+                        Auto Save On
+                    </strong>
+
+                    <small>
+                        Enabled
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- ==================================================
+         MAIN APPLICATION
+    =================================================== -->
+
+    <main class="mainApplication">
+
+
+        <!-- ==================================================
+             TOP BAR
+        =================================================== -->
+
+        <header class="topBar">
+
+
+            <div class="topBarLeft">
+
+                <button
+                    id="btnMenu"
+                    class="iconButton"
+                    type="button"
+                    aria-label="Open menu"
+                >
+
+                    ☰
+
+                </button>
+
+
+                <div class="pageHeading">
+
+                    <h1 id="pageTitle">Receiving</h1>
+                    <p id="pageSubtitle">Scan, review and reconcile orders</p>
+
+                </div>
+
+            </div>
+
+
+            <div class="pharmacyNameField pfnPharmacyNameHero"><strong id="topBarPharmacyName"></strong></div>
+
+            <div class="topBarRight pfnContextBar" aria-label="Workspace status">
+
+                <div class="pfnWorkspaceIdentity" aria-label="Pharmacy workspace">
+                    <strong id="topBarPharmacyCode">—</strong>
+                </div>
+
+                <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
+                    <strong id="headerMasterGTINStatus">SYNCING</strong>
+                </div>
+
+                <div
+                    id="systemStatus"
+                    class="systemStatus ready"
+                >
+                    READY
+                </div>
+
+                <span id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</span>
+
+            </div>
+
+
+        </header>
+
+
+        <!-- ==================================================
+             MAIN CONTENT
+        =================================================== -->
+
+        <div class="mainContent">
+
+
+            <!-- ==================================================
+                 DASHBOARD PAGE
+            =================================================== -->
+
+            <section
+                id="page-dashboard"
+                class="appPage active"
+            >
+
+<!-- STATISTICS -->
+
+                <section class="statisticsGrid">
+
+
+                    <article class="statCard dashboardKpiCard" data-kpi="total" role="button" tabindex="0" aria-label="Open total items">
+
+                        <div class="statCardLabel">
+
+                            Total Items
+
+                        </div>
+
+                        <strong id="statTotalItems">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statSuccess dashboardKpiCard" data-kpi="completed" role="button" tabindex="0" aria-label="Open completed items">
+
+                        <div class="statCardLabel">
+
+                            Completed
+
+                        </div>
+
+                        <strong id="statCompleted">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remainingItems" role="button" tabindex="0" aria-label="Open remaining items">
+
+                        <div class="statCardLabel">
+
+                            Remaining Items
+
+                        </div>
+
+                        <strong id="statRemainingItems">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statWarning dashboardKpiCard" data-kpi="remaining" role="button" tabindex="0" aria-label="Open remaining units">
+
+                        <div class="statCardLabel">
+
+                            Remaining Units
+
+                        </div>
+
+                        <strong id="statRemaining">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard statDanger dashboardKpiCard" data-kpi="over" role="button" tabindex="0" aria-label="Open over received items">
+
+                        <div class="statCardLabel">
+
+                            Over Received
+
+                        </div>
+
+                        <strong id="statOver">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard dashboardKpiCard" data-kpi="manual" role="button" tabindex="0" aria-label="Open extra items">
+
+                        <div class="statCardLabel">
+
+                            Extra Items
+
+                        </div>
+
+                        <strong id="statManual">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                    <article class="statCard dashboardKpiCard" data-kpi="scans" role="button" tabindex="0" aria-label="Open receiving activity">
+
+                        <div class="statCardLabel">
+
+                            Receiving Activity
+
+                        </div>
+
+                        <strong id="statScans">
+
+                            0
+
+                        </strong>
+
+                    </article>
+
+
+                </section>
+
+
+
+                <!-- SCAN AREA -->
+
+                <section class="scanPanel">
+
+
+                    <div class="scanPanelHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ACTIVE RECEIVING
+
+                            </span>
+
+                            <h2>
+
+                                Scan item
+
+                            </h2>
+
+                        </div>
+
+
+                        <div
+                            id="scanStatusBadge"
+                            class="scanStatusBadge ready"
+                        >
+
+                            <span class="scanPulse"></span>
+
+                            READY TO SCAN
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- IMPORTANT SCAN BOX -->
+
+                    <div
+                        id="scanBox"
+                        class="scanBox"
+                    >
+
+                        <div class="scanBoxIcon">
+
+                            ▥
+
+                        </div>
+
+
+                        <input
+                            id="barcodeInput"
+                            type="text"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            placeholder="Scan barcode"
+                            aria-label="Scan item"
+                        >
+
+
+                        <div class="scanBoxIndicator">
+
+                            SCANNER
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="scanPanelFooter pfnActionBar">
+                        <div class="pfnOrderControlGroup" aria-label="Active order controls">
+                            <button id="pfnManageOrders" class="pfnManageOrdersButton" type="button">
+                                <svg class="pfnManageOrdersIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M14.5 6.5 8.7 12.3a2.5 2.5 0 0 0 3.5 3.5l6.1-6.1a4 4 0 0 0-5.7-5.7L6.2 10.4a5.5 5.5 0 0 0 7.8 7.8l5.3-5.3"/>
+                                </svg>
+                                <span>Manage Orders</span>
+                            </button>
+
+                            <div class="pfnOrderSelector">
+                                <span class="pfnOrderScopeLabel" aria-hidden="true">→</span>
+                                <strong id="headerOrderId" class="pfnLegacyOrderId" aria-hidden="true">No Active Order</strong>
+                                <div id="headerOrderPicker" class="headerOrderPicker" hidden>
+                                    <button id="headerOrderPickerButton" class="headerOrderPickerButton" type="button" aria-haspopup="true" aria-expanded="false">
+                                        <span id="headerOrderPickerLabel">All Active Orders</span>
+                                        <span class="headerOrderPickerChevron" aria-hidden="true">⌄</span>
+                                    </button>
+                                    <div id="headerOrderPickerMenu" class="headerOrderPickerMenu" role="menu" hidden></div>
+                                </div>
+                            </div>
+
+                            <button id="btnReceivingReportAction" class="pfnAction pfnActionReport" type="button">Receiving Report</button>
+                            <div class="headerInfo pfnSessionStatus">
+                                <span>Session Status</span>
+                                <strong id="headerSessionId">INACTIVE</strong>
+                            </div>
+                        </div>
+                        <div class="pfnReceivingActionGroup pfnReceivingActionGroupRight" aria-label="Receiving review actions">
+                            <button id="btnReceivingNeedsReview" class="pfnAction pfnActionReview" type="button">Needs Review <strong id="receivingNeedsReviewCount">0</strong></button>
+                        </div>
+                    </div>
+
+
+                </section>
+
+
+                <!-- LAST SCAN -->
+
+                <section
+                    id="lastScanCard"
+                    class="contentCard lastScanCard"
+                >
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                LATEST ACTIVITY
+
+                            </span>
+
+                            <h3>
+
+                                Last Scan
+
+                            </h3>
+
+                        </div>
+
+
+                        <span id="lastScanTime">
+
+                            -
+
+                        </span>
+
+
+                    </div>
+
+
+                    <div class="lastScanGrid">
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Item Name
+
+                            </span>
+
+                            <strong id="lastItemName">
+
+                                -
+
+                            </strong>
+
+                        </div>
+<div class="lastScanField">
+
+                            <span>
+
+                                Ordered
+
+                            </span>
+
+                            <strong id="lastOrderedQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Received
+
+                            </span>
+
+                            <strong id="lastReceivedQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Remaining
+
+                            </span>
+
+                            <strong id="lastRemainingQty">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="lastScanField">
+
+                            <span>
+
+                                Status
+
+                            </span>
+
+                            <strong id="lastItemStatus">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- PROGRESS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                ORDER PROGRESS
+
+                            </span>
+
+                            <h3>
+
+                                Receiving Progress
+
+                            </h3>
+
+                        </div>
+
+
+                        <strong
+                            id="progressLabel"
+                            class="progressPercentage"
+                        >
+
+                            0%
+
+                        </strong>
+
+
+                    </div>
+
+
+                    <div class="progressTrack">
+
+                        <div
+                            id="progressBar"
+                            class="progressBar"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="progressDetails pfnProgressCompactDetail">
+                        <span id="progressCompletedText">0 / 0 Items Completed</span>
+                        <span id="progressRemainingText" class="pfnProgressRemainingSource" aria-hidden="true">0 Remaining</span>
+                    </div>
+
+
+                </section>
+
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 RECEIVING PAGE
+            =================================================== -->
+
+            <section
+                id="page-receiving"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <section class="receivingSummaryPanel discrepancyPanel" id="receivingSummaryPanel">
+                        <div class="receivingSummaryHeader pfnReceivingReportToolbar">
+                            <button id="btnBackToReceivingDashboard" class="pfnReportBack" type="button" aria-label="Back to Receiving"><span aria-hidden="true">←</span><span>Back to Receiving</span></button>
+                            <details class="pfnReportActionMenu">
+                                <summary><span aria-hidden="true">✉</span> Email</summary>
+                                <div>
+                                    <button id="btnExportReceivingSummaryExcel" type="button">Excel</button>
+                                    <button id="btnExportReceivingSummaryPDF" type="button">PDF</button>
+                                    <button id="btnEmailReceivingDifferences" type="button">Email</button>
+                                </div>
+                            </details>
+                            <button id="btnReceivingHistoryReport" class="pfhHistoryButton" type="button"><span aria-hidden="true">◷</span><span>History Report</span></button>
+                            <button id="btnFinalizeReceiving" class="primaryButton finalizeReceivingButton" type="button">✓ Receive Order</button>
+                            <button id="btnCompleteAllReceiving" class="secondaryButton finalizeReceivingButton" type="button">Receive All</button>
+                            <div id="receivingClassificationFilters" class="pfrClassificationFilters pfrGroupOnlyFilters" aria-label="Group filter">
+                                <details data-class-filter="groups" class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect">
+                                    <summary><strong id="receivingGroupFilterLabel">Group</strong></summary>
+                                    <div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div>
+                                </details>
+                            </div>
+                        </div>
+                        <div class="receivingSummaryGrid discrepancyGrid">
+                            <button type="button" class="displayedMetric pfnIssueCard pfnKpiAll active" data-issue-card="all"><span>All Items</span><strong id="rsTotalItems">0</strong></button>
+                            <button type="button" class="pfnIssueCard pfnKpiShortage" data-issue-card="shortage"><span>Shortage</span><strong id="rsShort">0</strong></button>
+                            <button type="button" class="pfnIssueCard pfnKpiReceived" data-issue-card="received"><span>Received</span><strong id="rsReceived">0</strong></button>
+                            <button type="button" class="pfnIssueCard pfnKpiOver" data-issue-card="over"><span>Over Received</span><strong id="rsOver">0</strong></button>
+                            <button type="button" class="pfnIssueCard pfnKpiExtra" data-issue-card="manual"><span>Extra Items</span><strong id="rsManual">0</strong></button>
+                            <button type="button" class="pfnIssueCard pfnKpiDiscrepancy" data-issue-card="discrepancy"><span>Discrepancy</span><strong id="rsDiscrepancy">0</strong></button>
+                        </div>
+                    </section>
+
+                    <div class="pfnReceivingSearchBlock">
+                        <input id="receivingInlineSearch" type="search" placeholder="Search by Item Name or Item Number" autocomplete="off" aria-label="Search receiving report items">
+                        <div id="receivingInlineResult" class="pfnReceivingInlineResult" hidden></div>
+                    </div>
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    Order Number
+                                </th>
+
+                                <th>
+                                    Item Number
+                                </th>
+
+                                <th>
+                                    Item Name
+                                </th>
+
+                                <th>
+                                    Group
+                                </th>
+
+                                <th>
+                                    Ordered
+                                </th>
+
+                                <th>
+                                    Received
+                                </th>
+
+                                <th>
+                                    Difference
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="receivingTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 ORDERS & MAPPINGS PAGE
+            =================================================== -->
+
+            <section
+                id="page-files"
+                class="appPage"
+            >
+
+
+                <div class="twoColumnLayout">
+
+
+                    <!-- ORDERS -->
+
+                    <section class="contentCard">
+
+
+                        <div class="cardHeader">
+
+
+                            <div>
+
+                                <span class="sectionEyebrow">
+
+                                    STEP 1 · ORDERS
+
+                                </span>
+
+                                <h2>
+
+                                    Active Orders
+
+                                </h2>
+
+                                <p>
+
+                                    Upload the order files you want to receive.
+
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                id="btnLoadOrders"
+                                class="primaryButton"
+                                type="button"
+                            >
+
+                                + Add Order Files
+
+                            </button>
+
+
+                        </div>
+
+
+                        <input
+                            id="orderFileInput"
+                            type="file"
+                            multiple
+                            accept=".xlsx,.xls"
+                            hidden
+                        >
+
+
+                        <div
+                            id="orderFilesList"
+                            class="fileList"
+                        >
+
+                            <div class="emptyState">
+
+                                No order files loaded.
+
+                            </div>
+
+                        </div>
+
+
+                    </section>
+
+
+
+
+
+                </div>
+
+
+                <!-- IMPORT STATUS -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                DATA HEALTH
+
+                            </span>
+
+                            <h3>
+
+                                Order Data Check
+
+                            </h3>
+
+                        </div>
+
+
+                    </div>
+
+
+                        <section
+                            id="ordersGlobalMasterCard"
+                            class="ordersGlobalMasterCard"
+                            aria-label="Global GTIN Master status"
+                        >
+                            <div class="ordersMasterIcon" aria-hidden="true">▥</div>
+
+                            <div class="ordersMasterIdentity">
+                                <span class="ordersMasterEyebrow">GLOBAL GTIN MASTER</span>
+                                <strong id="ordersMasterStatus">SYNCING</strong>
+                                <small>System Master · Supabase · Automatically used for every order</small>
+                            </div>
+
+                            <div class="ordersMasterMetric">
+                                <span>TOTAL V2 ITEMS</span>
+                                <strong id="ordersMasterItemCount">0</strong>
+                            </div>
+
+                            <div class="ordersMasterMetric">
+                                <span>IDENTIFIER MAPPINGS</span>
+                                <strong id="ordersMasterIdentifierCount">0</strong>
+                            </div>
+
+                            <div class="ordersMasterMetric">
+                                <span>LAST UPDATED</span>
+                                <strong id="ordersMasterUpdatedAt">-</strong>
+                            </div>
+                        </section>
+
+
+
+                    <div class="healthGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Workspace Items Loaded
+
+                            </span>
+
+                            <strong id="healthOrderItems">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                GTIN Matched
+
+                            </span>
+
+                            <strong id="healthMappings">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="healthMetricCard healthMetricInteractive" data-health-metric="missing" role="button" tabindex="0" aria-label="Open missing GTIN items">
+
+                            <span>
+
+                                Missing GTIN
+
+                            </span>
+
+                            <strong id="healthMissingBarcode">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                GTIN Conflicts
+
+                            </span>
+
+                            <strong id="healthDuplicateGTIN">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 NEAR EXPIRY PAGE
+                 Shared by PC and Zebra. Device CSS changes layout only.
+            =================================================== -->
+
+            <section id="page-item-movement" class="appPage"><div class="pfnMovementIntro"><section class="pfnModuleHero"><span class="pfnEyebrow">ITEM MOVEMENT · FOUNDATION</span><h2>Order data in. Movement intelligence out.</h2><p>This module is intentionally independent from Receiving. In the next phase it will read bulk order files, normalize their commercial data, discard the source files and generate item movement analysis from the extracted records.</p></section><section class="pfnModuleGrid"><article class="pfnModuleCard"><span class="pfnPrototypeTag">NEXT PHASE</span><h3>Import Orders</h3><p>Select tens or hundreds of warehouse and pharmacy-transfer order files in one operation. Files will be read locally and only structured order data will be persisted.</p><button class="pfnActionButton secondary" type="button" disabled>Bulk Import Foundation</button></article><article class="pfnModuleCard"><span class="pfnPrototypeTag">NEXT PHASE</span><h3>Movement Report</h3><p>Search by Item Code or Item Name, choose a date range and analyze quantity, source, destination and order history without relying on Receiving results.</p><button class="pfnActionButton secondary" type="button" disabled>Report Foundation</button></article></section></div></section>
+
+            <section
+                id="zebraExpiryShell"
+                class="appPage zebraExpiryShell"
+            >
+                <header class="expiryHandheldHeader expiryHandheldOnly">
+                    <button id="btnExpiryBackToModes" type="button" aria-label="Back to workspaces"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Back</span></button>
+                    <div><strong>Expiry Scanning</strong></div>
+                    <button id="btnExpiryCaptured" class="expiryCapturedButton" type="button" aria-label="History" title="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7M3 5v6h6M12 7v5l3 2"></path></svg><span class="expiryHandheldHistoryLabel">History</span><strong id="expiryCapturedCount" hidden>0</strong></button>
+                    <span id="expiryScanStatus" class="expiryScanStatus ready" role="status" aria-live="polite">READY TO SCAN</span>
+                </header>
+                <header class="expiryTopWorkspace expiryDesktopOnly">
+                    <nav class="expiryWorkspaceNav" role="tablist" aria-label="Expiry workspace views">
+                        <button id="btnExpirySessionView" class="expiryWorkspaceActivityTab" type="button" role="tab" aria-selected="true" aria-controls="expiryCapturePanel"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 1-5.4 2.5M3 3v4h4M10 6v4l3 2"/></svg>Scan &amp; Activity <b id="expirySessionCount" class="expirySessionCount">0</b></button>
+                        <button id="btnOpenExpiryInventory" class="expiryWorkspaceInventoryTab" type="button" role="tab" aria-selected="false" aria-controls="expiryCurrentStateBody"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v11H3zM6 7h8M6 10h8M6 13h5"/></svg>Expiry Inventory</button>
+                    </nav><div class="expiryHeaderActions"><div id="expirySessionSummary" class="expirySessionSummary expiryDesktopOnly" role="status" aria-label="Current Session" aria-live="polite"></div><button id="btnExpiryNeedsReview" type="button" aria-disabled="true" disabled title="Expiry Needs Review is not available until its Staging backend contract is verified"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 3h14v14H3zM3 11h4l1.5 2h3l1.5-2h4M7 6h6M7 8.5h4"/></svg>Needs Review <b id="expiryNeedsReviewCount" hidden>0</b></button></div></header>
+                <div class="expiryKpiRow" aria-label="Expiry summary" hidden>
+                    <article class="expiryKpiCard expiryKpiActive">
+                        <span>Active Items</span><strong id="expiryKpiActiveItems">0</strong><small>Current verified lines</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiUnits">
+                        <span>Total Units</span><strong id="expiryKpiTotalUnits">0</strong><small>Verified quantity</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiExpired">
+                        <span>Expired</span><strong id="expiryKpiExpired">0</strong><small>Past expiry month</small>
+                    </article>
+                    <article class="expiryKpiCard expiryKpiUpcoming">
+                        <span>Upcoming</span><strong id="expiryKpiUpcoming">0</strong><small>Future expiry</small>
+                    </article>
+                </div>
+
+                <section id="expiryCapturePanel" class="expiryCaptureCard">
+                    <div class="expiryCaptureRow">
+                      <div class="expiryCapturePrimary">
+                        <div class="expiryScanBox">
+                            <span class="expiryScanIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M7 12h10M8 9v6M11 9v6M14 9v6M17 9v6"></path></svg></span>
+                            <input id="expiryBarcodeInput" type="text" inputmode="none" autocomplete="off" placeholder="Scan barcode or search by Item Code / Item Name">
+                            <button id="expiryScannerDiagnosticToggle" type="button" class="expiryScannerDiagnosticToggle" hidden>Capture scanner metadata</button>
+                            <span id="expiryCaptureValidation" class="expiryCaptureValidation expiryDesktopOnly" role="alert" hidden></span>
+                            <div id="expirySearchResults" class="expirySearchResults" hidden></div>
+                        </div>
+
+                        <div class="expiryOperatorActions">
+                        <div class="expiryWorkerControl" title="Select the Operator for new captures">
+                            <div id="expiryWorkerSelect" class="pfSelect pfSelectOperator" data-expiry-select="worker" data-value="" tabindex="0" role="combobox" aria-label="Operator" aria-expanded="false">
+                                <button type="button" class="pfSelectTrigger" tabindex="-1">
+                                    <span class="expiryOperatorIcon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25"></circle><path d="M5.5 19c.7-3.6 3-5.5 6.5-5.5s5.8 1.9 6.5 5.5"></path></svg></span>
+                                    <span class="pfSelectValue">Desktop</span>
+                                    <svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg>
+                                </button>
+                                <div class="pfSelectMenu" role="listbox" hidden></div>
+                            </div>
+                        </div>
+                        <button id="btnClearExpiryActive" class="expiryActiveClear" type="button">Clear</button>
+                        </div>
+
+                      </div>
+                      <div id="expiryActiveItem" class="expiryActiveItem is-empty" aria-live="polite">
+                        <div class="expiryActiveHeading"><span class="expiryActiveBadgeMark" aria-hidden="true">✓</span><div><span>ACTIVE ITEM</span><strong id="expiryActiveItemName">Ready for next item</strong></div></div>
+                        <div class="expiryActiveDetails">
+                          <div class="expiryActiveDatum"><span>Item Code</span><strong id="expiryActiveItemCode">—</strong></div>
+                          <div class="expiryActiveDatum"><span>GTIN / Barcode</span><strong id="expiryActiveItemGTIN">—</strong></div>
+                          <div class="expiryActiveDatum"><span>Group</span><strong id="expiryActiveItemCategory">—</strong></div>
+                        </div>
+                        <div class="expiryActiveBadges"><span id="expiryRecognizedBadge" hidden>✓ Recognized</span><span id="expiryAutoDateBadge" hidden>✓ Expiry read</span></div>
+                      </div>
+                      <div class="expiryEntryGrid">
+                        <label class="expiryReviewField expirySerialField"><span class="expiryControlLabel">Serial</span><input aria-label="Serial Number" id="expirySerialInput" type="text" autocomplete="off" placeholder="Enter serial"></label>
+                        <label class="expiryReviewField expiryBatchField"><span class="expiryControlLabel">Batch</span><input aria-label="Batch Number" id="expiryBatchInput" type="text" autocomplete="off" placeholder="Enter batch"></label>
+                        <div class="expiryReviewField expiryDateField"><span class="expiryControlLabel expiryDesktopOnly">Expiry</span>
+                            <div id="expiryMonth" class="pfSelect" data-expiry-select="month" data-value="" tabindex="0" role="combobox" aria-label="Expiry month" aria-expanded="false">
+                                <button type="button" class="pfSelectTrigger" tabindex="-1"><span class="pfSelectValue">Month</span><svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg></button>
+                                <div class="pfSelectMenu" role="listbox" hidden></div>
+                            </div>
+                        </div>
+                        <div class="expiryReviewField expiryYearField"><span class="expiryControlLabel expiryDesktopOnly">Year</span>
+                            <div id="expiryYear" class="pfSelect" data-expiry-select="year" data-value="" tabindex="0" role="combobox" aria-label="Expiry year" aria-expanded="false">
+                                <button type="button" class="pfSelectTrigger" tabindex="-1"><span class="pfSelectValue">Year</span><svg class="pfSelectChevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg></button>
+                                <div class="pfSelectMenu" role="listbox" hidden></div>
+                            </div>
+                        </div>
+                        <label class="expiryReviewField expiryQtyField"><span class="expiryControlLabel expiryDesktopOnly">Quantity</span><div class="expiryQuantityControl"><button id="btnExpiryQtyMinus" class="expiryDesktopOnly" type="button" aria-label="Decrease quantity">−</button><input id="expiryQuantity" type="number" min="1" step="1" inputmode="numeric" aria-label="Quantity" placeholder="Qty"><button id="btnExpiryQtyPlus" class="expiryDesktopOnly" type="button" aria-label="Increase quantity">+</button></div></label>
+                      </div>
+                      <small id="expiryMonthName" hidden></small>
+                      <div id="expiryRecoverableDrafts" hidden></div>
+                      <section id="expiryEvidence" class="expiryEvidence" hidden aria-label="Needs Review evidence">
+                        <div id="expiryEvidencePreviews"></div>
+                        <button id="btnExpiryNote" type="button"><span aria-hidden="true">✎</span> Add Note</button>
+                        <button id="btnExpiryPhoto" type="button"><span aria-hidden="true">▣</span> Add Photo</button>
+                        <input id="expiryCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+                        <span id="expiryEvidenceMessage" role="status" hidden></span>
+                      </section>
+                      <div class="expiryCaptureActions">
+                        <button id="btnResolveExpiryNow" class="expirySaveButton expiryDesktopOnly" type="button" hidden>Resolve Now</button><button id="btnSaveExpiryCapture" class="expirySaveButton" type="button" disabled>SAVE &amp; NEXT</button>
+                        <div class="expiryCaptureBottomRow expiryDesktopOnly">
+                          <div id="expiryDesktopStatus" class="expiryDesktopStatus" role="status" aria-live="polite" hidden></div>
+                          <div class="expirySessionSearch">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="m12.5 12.5 4 4"></path></svg>
+                            <input id="expirySessionSearch" type="text" autocomplete="off" spellcheck="false" aria-label="Search current Session Activity" placeholder="Search session by name, code, GTIN or batch..." disabled>
+                            <button id="expirySessionSearchClear" type="button" aria-label="Clear session search" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8"></path></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="expiryItemCard expiryHandheldItemCard">
+                        <div class="expiryLastScanHeading"><span>LAST SCAN</span></div>
+                        <strong id="expiryItemName">—</strong>
+                        <div class="expiryItemMeta">
+                            <div><span>Item Code</span><strong id="expiryItemCode">—</strong></div>
+                            <div><span>Identifier</span><strong id="expiryItemGTIN">—</strong></div>
+                            <div><span>Group</span><strong id="expiryItemCategory">—</strong></div>
+                            <div><span>Batch Number</span><strong id="expiryItemBatch">—</strong></div>
+                            <div><span>Serial</span><strong id="expiryItemSerial">—</strong></div>
+                        </div>
+
+                    </div>
+
+                    <div id="expiryLastSaved" class="expiryLastSaved" aria-live="polite"></div>
+                </section>
+
+                <section class="expiryCurrentWorkspace" aria-label="Expiry workspace">
+                    <div id="expiryCurrentHeader" class="expiryCurrentHeader">
+                        <div class="expiryCurrentTitle">
+                            <span id="expiryWorkspaceTitle">Session Activity</span>
+                            <strong id="expiryCurrentStateCount">0</strong>
+                            <small id="expiryWorkspaceSubtitle" hidden></small>
+                        </div>
+                        <div class="expiryCurrentTools">
+                            <input id="expiryCurrentSearch" type="search" autocomplete="off" placeholder="Search by product name, item code, GTIN / barcode or batch" hidden>
+                            <button id="btnClearExpiryFilters" class="expiryInventoryButton expiryClearFiltersButton" type="button" hidden>Clear Filters</button>
+                            <button id="btnExportExpiryInventory" class="expiryInventoryButton expiryExportButton" type="button" hidden>Export</button>
+                        </div>
+                    </div>
+                    <div class="expiryCurrentTableWrap">
+                        <table class="expiryCurrentTable">
+                            <thead><tr>
+                                <th id="expiryTimeHeading" class="expiryFilterHeading" data-expiry-filter-heading="lastUpdated">Time <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="lastUpdated" aria-label="Filter Last Updated">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th><th>GTIN / Barcode</th><th>Item Code</th><th>Product Name</th>
+                                <th class="expiryFilterHeading" data-expiry-filter-heading="category">Category <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="category" aria-label="Filter Category">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
+                                <th>Batch</th>
+                                <th class="expiryFilterHeading" data-expiry-filter-heading="expiry">Expiry <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="expiry" aria-label="Filter Expiry">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
+                                <th id="expiryQuantityHeading">Quantity</th>
+                                <th class="expiryFilterHeading" data-expiry-filter-heading="operator">Operator <button type="button" class="expiryHeaderFilterButton" data-expiry-filter-open="operator" aria-label="Filter Operator">⌄</button><span class="expiryHeaderFilterDot" hidden></span></th>
+                                <th>Action</th>
+                            </tr></thead>
+                            <tbody id="expiryCurrentStateBody"></tbody>
+                        </table>
+                        <div id="expiryCurrentStateEmpty" class="expiryCurrentEmpty"><strong>No items captured in this session</strong><span>Scan or search for an item above to start.</span></div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- ==================================================
+                 REPORTS PAGE
+            =================================================== -->
+
+            <section
+                id="page-reports"
+                class="appPage"
+            >
+
+
+                <!-- ITEM RECEIVING HISTORY REPORT -->
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                HISTORICAL REPORT
+
+                            </span>
+
+                            <h2>
+
+                                Item Receiving Report
+
+                            </h2>
+
+                            <p>
+
+                                Find how much of a specific item was received
+                                during any selected date range.
+
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="reportFilterGrid">
+
+
+                        <div class="formField reportItemField">
+
+                            <label for="reportItemSearch">
+
+                                Item Name / Item Number
+
+                            </label>
+
+
+                            <input
+                                id="reportItemSearch"
+                                type="text"
+                                autocomplete="off"
+                                placeholder="Search by name or item number"
+                            >
+
+
+                            <div
+                                id="reportItemResults"
+                                class="dropdownResults"
+                            ></div>
+
+
+                        </div>
+
+
+                        <div class="formField">
+
+                            <label for="reportFromDate">
+
+                                From Date
+
+                            </label>
+
+                            <input
+                                id="reportFromDate"
+                                type="date"
+                            >
+
+                        </div>
+
+
+                        <div class="formField">
+
+                            <label for="reportToDate">
+
+                                To Date
+
+                            </label>
+
+                            <input
+                                id="reportToDate"
+                                type="date"
+                            >
+
+                        </div>
+
+
+                        <div class="formField reportButtonField">
+
+                            <label>
+
+                                &nbsp;
+
+                            </label>
+
+                            <button
+                                id="btnGenerateItemReport"
+                                class="primaryButton"
+                                type="button"
+                            >
+
+                                Generate Report
+
+                            </button>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- REPORT SUMMARY -->
+
+                    <div class="reportSummaryGrid">
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Selected Item
+
+                            </span>
+
+                            <strong id="reportSelectedItem">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Item Number
+
+                            </span>
+
+                            <strong id="reportSelectedCode">
+
+                                -
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard highlight">
+
+                            <span>
+
+                                Total Received
+
+                            </span>
+
+                            <strong id="reportTotalReceived">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="reportSummaryCard">
+
+                            <span>
+
+                                Number of Orders
+
+                            </span>
+
+                            <strong id="reportOrderCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Order
+                                </th>
+
+                                <th>
+                                    Item Number
+                                </th>
+
+                                <th>
+                                    Item Name
+                                </th>
+
+                                <th>
+                                    Qty
+                                </th>
+
+                                <th>
+                                    Source
+                                </th>
+
+                                <th>
+                                    Device
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="itemReportTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                    <div class="cardFooter">
+
+
+                        <button
+                            id="btnExportItemReport"
+                            class="secondaryButton"
+                            type="button"
+                        >
+
+                            Export Item Report
+
+                        </button>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- ITEM TRANSFER REPORT — ORIGINAL UPLOADED ORDER ONLY -->
+
+                <section class="contentCard itemTransferReportCard">
+                    <div class="cardHeader itemTransferHeader">
+                        <div>
+                            <span class="sectionEyebrow">OFFICIAL ORDER REPORT</span>
+                            <h2>Item Transfer Report</h2>
+                            <p>Available only after manual receiving finalization. Quantities come exclusively from the original uploaded order.</p>
+                        </div>
+                        <span id="itemTransferAvailability" class="itemTransferAvailability locked">Select a received order</span>
+                    </div>
+
+                    <div class="itemTransferControls">
+                        <div class="formField itemTransferOrderField">
+                            <label for="itemTransferOrderSelect">Received Order</label>
+                            <select id="itemTransferOrderSelect">
+                                <option value="">Select received order</option>
+                            </select>
+                        </div>
+                        <button id="btnLoadItemTransfer" class="primaryButton" type="button">Load Report</button>
+                        <button id="btnExportItemTransferExcel" class="secondaryButton" type="button" disabled>Export Excel</button>
+                        <button id="btnExportItemTransferPDF" class="secondaryButton" type="button" disabled>Export PDF</button>
+                    </div>
+
+                    <div id="itemTransferReportPreview" class="itemTransferPreview hidden">
+                        <div class="itemTransferMetaGrid">
+                            <div><span>Order Number</span><strong id="itemTransferOrderNumber">-</strong></div>
+                            <div><span>Order Date</span><strong id="itemTransferOrderDate">-</strong></div>
+                            <div><span>From Warehouse</span><strong id="itemTransferFromWarehouse">-</strong></div>
+                            <div><span>To Warehouse</span><strong id="itemTransferToWarehouse">-</strong></div>
+                            <div><span>Source File</span><strong id="itemTransferSourceFile">-</strong></div>
+                            <div><span>Total Items</span><strong id="itemTransferItemCount">0</strong></div>
+                        </div>
+
+                        <div class="tableContainer itemTransferTableContainer">
+                            <table class="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Item Number</th>
+                                        <th>Item Name</th>
+                                        <th>Transfer Qty</th>
+                                        <th>Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemTransferTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 CLOUD SESSION PAGE
+            =================================================== -->
+
+            <section
+                id="page-sessions"
+                class="appPage"
+            >
+
+                <section class="contentCard cloudSessionHero">
+                    <div class="cardHeader">
+                        <div>
+                            <span class="sectionEyebrow">SHARED RECEIVING</span>
+                            <h2>PC + Handheld Live Session</h2>
+                            <p>Create the session on the PC, then join from the Handheld using the session number or QR code. Receiving stays live across both devices.</p>
+                        </div>
+                        <div class="cloudStatusPill" id="cloudSyncStatus">LOCAL</div>
+                    </div>
+
+                    <div class="cloudActionGrid">
+                        <button id="btnCreateSession" class="largeActionCard" type="button">
+                            <span class="actionIcon">☁</span>
+                            <strong>Create Shared Session</strong>
+                            <small>PC: upload the current order and start shared receiving.</small>
+                        </button>
+
+                        <div class="cloudJoinCard">
+                            <span class="sectionEyebrow">JOIN FROM HANDHELD</span>
+                            <strong>Session Number</strong>
+                            <div class="cloudJoinRow">
+                                <input id="cloudSessionCodeInput" class="cloudCodeInput" inputmode="numeric" maxlength="8" placeholder="Enter session number" autocomplete="off">
+                                <button id="btnJoinCloudSession" class="primaryButton" type="button">Join</button>
+                            </div>
+                            <small>Enter the number shown on the PC, or scan the QR code.</small>
+                        </div>
+                    </div>
+
+                    <div id="cloudSessionQRWrap" class="cloudQRPanel hidden">
+                        <div>
+                            <span class="sectionEyebrow">SESSION STATUS</span>
+                            <div id="cloudSessionCodeDisplay" class="cloudSessionCode">CONNECTED</div>
+                            <p>Scan this QR with the Handheld to open the same receiving workspace.</p>
+                            <button id="btnRefreshCloudNow" class="secondaryButton" type="button">↻ Sync Now</button>
+                            <button id="btnLeaveCloudSession" class="secondaryButton" type="button">Disconnect</button>
+                        </div>
+                        <div id="cloudSessionQR" class="cloudQRCode" aria-label="Session QR code"></div>
+                    </div>
+                </section>
+
+                <section class="contentCard">
+                    <div class="cardHeader">
+                        <div>
+                            <span class="sectionEyebrow">CURRENT SESSION</span>
+                            <h3>Session Information</h3>
+                        </div>
+                    </div>
+
+                    <div class="sessionInfoGrid">
+                        <div><span>Session Status</span><strong id="sessionPageId">INACTIVE</strong></div>
+                        <div><span>Connection</span><strong id="sessionConnectionLabel">LOCAL</strong></div>
+                        <div><span>Pending Sync</span><strong id="sessionQueueCount">0</strong></div>
+                        <div><span>Last Cloud Sync</span><strong id="sessionLastSave">-</strong></div>
+                    </div>
+                </section>
+
+                <details class="contentCard emergencyTools">
+                    <summary><strong>Emergency Offline Tools</strong> — use only if cloud receiving is unavailable</summary>
+                    <div class="actionCardGrid emergencyActionGrid">
+                        <button id="btnPrepareZebraWork" class="largeActionCard" type="button"><span class="actionIcon">▣</span><strong>Prepare Handheld Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnLoadZebraWork" class="largeActionCard" type="button"><span class="actionIcon">⇧</span><strong>Load Handheld Work File</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnExportZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇩</span><strong>Export Handheld Session</strong><small>Emergency offline workflow.</small></button>
+                        <button id="btnMergeZebraSession" class="largeActionCard" type="button"><span class="actionIcon">⇄</span><strong>Merge Handheld Session</strong><small>Emergency recovery only.</small></button>
+                    </div>
+                </details>
+
+                <input id="zebraWorkFileInput" type="file" hidden>
+                <input id="zebraSessionFileInput" type="file" hidden>
+
+            </section>
+
+            <!-- ==================================================
+                 ARCHIVE PAGE
+            =================================================== -->
+
+            <section
+                id="page-archive"
+                class="appPage"
+            >
+
+
+                <section class="contentCard">
+
+
+                    <div class="cardHeader">
+
+
+                        <div>
+
+                            <span class="sectionEyebrow">
+
+                                HISTORICAL DATA
+
+                            </span>
+
+                            <h2>
+
+                                Receiving Archive
+
+                            </h2>
+
+                            <p>
+
+                                Completed orders remain here even after the
+                                current workspace is reset.
+
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="archiveSummaryGrid">
+
+
+                        <div>
+
+                            <span>
+
+                                Archived Orders
+
+                            </span>
+
+                            <strong id="archiveOrderCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Receiving Transactions
+
+                            </span>
+
+                            <strong id="archiveTransactionCount">
+
+                                0
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="tableContainer">
+
+
+                        <table class="dataTable">
+
+
+                            <thead>
+
+                            <tr>
+
+                                <th>
+                                    Order Number
+                                </th>
+
+                                <th>
+                                    Order Date
+                                </th>
+
+                                <th>
+                                    Received Date
+                                </th>
+
+                                <th>
+                                    Items
+                                </th>
+
+                                <th>
+                                    Received Units
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="archiveTableBody">
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 RETURNS ARCHIVE PAGE
+            =================================================== -->
+
+            <section
+                id="page-returnsArchive"
+                class="appPage"
+            >
+
+                <section class="returnsArchiveIntroGrid">
+                    <article class="contentCard returnsArchiveIntroCard">
+                        <div class="returnsArchiveIcon">↩</div>
+                        <div>
+                            <span class="sectionEyebrow">REFERENCE FILES</span>
+                            <h2>Returns Archive</h2>
+                            <p>
+                                Keep Excel, PDF, image and supporting files for each return record together.
+                                PharmFlow will store the files as uploaded without reading or analysing their contents.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="contentCard returnsArchiveRulesCard">
+                        <span class="sectionEyebrow">INDEPENDENT DATA</span>
+                        <h3>Separate from Historical Data</h3>
+                        <p>
+                            Return files and return records have their own delete controls.
+                            Deleting Historical Data in Settings will not delete Returns Archive files.
+                        </p>
+                    </article>
+                </section>
+
+                <section class="contentCard returnsArchivePlaceholder">
+                    <div>
+                        <span class="sectionEyebrow">REFERENCE ARCHIVE</span>
+                        <h2>Returns storage workspace</h2>
+                        <p>
+                            The functional archive will use a simple record structure:
+                            Date + Return Number/Title + uploaded files.
+                        </p>
+                    </div>
+                </section>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SETTINGS PAGE
+            =================================================== -->
+
+            <section
+                id="page-settings"
+                class="appPage"
+            >
+
+                <section class="contentCard settingsAccountCompact settingsIdentityBar settingsModuleCard">
+                    <div id="settingsIdentityView" class="settingsIdentityMain">
+                        <div class="settingsModuleTitleChip settingsAccountTitleChip">
+                            <span class="sectionEyebrow">ACCOUNT</span>
+                            <h2 id="settingsPharmacyName">-</h2>
+                        </div>
+                        <div class="settingsAccountDetails">
+                            <div class="settingsInfoField settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
+                            <div class="settingsInfoField"><span>PHARMACY CODE</span><strong id="settingsPharmacyCode">-</strong></div>
+                            <div class="settingsInfoField settingsRoleField"><span>ROLE</span><strong id="settingsUserRole">-</strong></div>
+                            <div class="settingsIdentityActions">
+                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button"><span aria-hidden="true">🔒</span> Change Password</button>
+                                <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="settingsPasswordOverlay" class="settingsPasswordOverlay" aria-hidden="true" hidden>
+                        <button class="settingsPasswordScrim" data-settings-password-close aria-label="Close change password"></button>
+                        <section class="settingsPasswordPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPasswordTitle">
+                            <header><div><span class="sectionEyebrow">ACCOUNT SECURITY</span><h2 id="settingsPasswordTitle">Change Password</h2><p>Confirm your current password, then create a new password.</p></div><button class="settingsPasswordClose" data-settings-password-close type="button" aria-label="Close">✕</button></header>
+                            <div class="settingsPasswordFields">
+                                <label>Current Password<input id="settingsCurrentPassword" type="password" autocomplete="current-password"></label>
+                                <label>New Password<input id="settingsNewPassword" type="password" minlength="8" autocomplete="new-password"><small>Use at least 8 characters.</small></label>
+                                <label>Confirm New Password<input id="settingsConfirmPassword" type="password" minlength="8" autocomplete="new-password"></label>
+                            </div>
+                            <div id="settingsPasswordMessage" class="authMessage" role="status" aria-live="polite"></div>
+                            <footer><button class="secondaryButton" data-settings-password-close type="button">Cancel</button><button id="btnSaveSettingsPassword" class="primaryButton" type="button">Update Password</button></footer>
+                        </section>
+                    </div>
+                    <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityNameInput">Pharmacy Name</label><input id="settingsIdentityNameInput" type="text" maxlength="120"></div>
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityCodeInput">Pharmacy Code</label><input id="settingsIdentityCodeInput" type="text" maxlength="24"></div>
+                        <div class="settingsIdentityEditButtons">
+                            <button id="btnSaveSettingsIdentity" class="primaryButton" type="button">Save</button>
+                            <button id="btnCancelSettingsIdentity" class="secondaryButton" type="button">Cancel</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
+                    <div class="settingsModuleTitleChip ownerControlHeader">
+                        <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
+                        <h2>Pharmacies &amp; Access</h2>
+                    </div>
+
+                    <div class="ownerMetricGrid" aria-label="Pharmacy access views">
+                        <button class="ownerMetricCard ownerMetricTotal" type="button" data-owner-view="total">
+                            <span>Total Pharmacies</span>
+                            <strong id="ownerMetricTotalPharmacies">0</strong>
+                        </button>
+                        <button class="ownerMetricCard ownerMetricActive" type="button" data-owner-view="active">
+                            <span>Active</span>
+                            <strong id="ownerMetricActivePharmacies">0</strong>
+                        </button>
+                        <button class="ownerMetricCard ownerMetricPending" type="button" data-owner-view="pending">
+                            <span>Pending Requests</span>
+                            <strong id="ownerMetricPendingRequests">0</strong>
+                        </button>
+                        <button class="ownerMetricCard ownerMetricAdmins" type="button" data-owner-view="suspended">
+                            <span>Suspended</span>
+                            <strong id="ownerMetricSuspendedPharmacies">0</strong>
+                        </button>
+                    </div>
+
+                    <div id="ownerManagementPanel" class="modalOverlay ownerManagementOverlay" aria-hidden="true">
+                        <section class="modalCard ownerManagementPanel" role="dialog" aria-modal="true" aria-labelledby="ownerManagementTitle">
+                        <div class="ownerManagementPanelHeader">
+                            <div>
+                                <span id="ownerManagementEyebrow" class="sectionEyebrow">PHARMACY ACCESS</span>
+                                <h3 id="ownerManagementTitle">All Pharmacies</h3>
+                                <p id="ownerManagementDescription" class="settingsDescription"></p>
+                            </div>
+                            <div class="ownerManagementPanelTools">
+                                <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
+                                    <span>Search</span>
+                                    <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
+                                </label>
+                                <button id="btnCloseOwnerManagement" class="secondaryButton" type="button">Close</button>
+                            </div>
+                        </div>
+                        <div id="ownerManagementMessage" class="authMessage ownerControlMessage" role="status" aria-live="polite" aria-atomic="true"></div>
+                        <div id="ownerRegistrationRequests" class="registrationRequestsList" hidden></div>
+                        <div id="ownerPharmacyList" class="ownerPharmacyList" hidden></div>
+                        </section>
+                    </div>
+
+                    <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
+                </section>
+
+                <section id="memberInviteCard" class="contentCard" hidden aria-hidden="true">
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invitations Disabled</h2></div>
+                    </div>
+                    <p class="settingsDescription">
+                        PharmFlow is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
+                    </p>
+                </section>
+
+
+                    <section class="contentCard masterGTINCard barcodeControlCard settingsModuleCard">
+                        <div class="settingsModuleTitleChip barcodeControlHeader">
+                            <span class="sectionEyebrow">BARCODE CONTROL</span>
+                            <h2>Manage Item Barcodes</h2>
+                        </div>
+
+                        <div class="barcodeControlActions">
+                            <button id="btnOpenBarcodeControl" class="barcodeControlAction settingsActionRow" type="button">
+                                <span class="barcodeControlActionIcon" aria-hidden="true">⌕</span>
+                                <span class="barcodeControlActionText">
+                                    <small>ITEM BARCODES</small>
+                                    <strong>Find &amp; Manage Item</strong>
+                                    <em>Search or scan by barcode, item code or item name</em>
+                                </span>
+                                <span class="barcodeControlActionArrow" aria-hidden="true">›</span>
+                            </button>
+                        </div>
+
+                        <div id="barcodeControlOverlay" class="barcodeControlOverlay" aria-hidden="true" hidden>
+                            <button class="barcodeControlScrim" data-barcode-close aria-label="Close barcode control"></button>
+                            <section id="globalIdentifierMasterAdmin" class="barcodeControlPanel" role="dialog" aria-modal="true" aria-labelledby="barcodeControlTitle">
+                                <header class="barcodeControlModalHeader">
+                                    <div>
+                                        <span class="sectionEyebrow">BARCODE CONTROL</span>
+                                        <h2 id="barcodeControlTitle">Find &amp; Manage Item</h2>
+                                        <p>Search, review and manage an item's barcode mappings.</p>
+                                    </div>
+                                    <button class="barcodeControlClose" data-barcode-close type="button" aria-label="Close">✕</button>
+                                </header>
+                                <div class="barcodeControlToolbar">
+                                    <label class="barcodeControlSearchLabel" for="globalIdentifierMasterSearch">Find Item</label>
+                                    <div class="barcodeControlSearchRow">
+                                        <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
+                                        <button id="btnGlobalIdentifierMasterSearch" class="primaryButton barcodeControlSearchButton" data-admin-search-button type="button">Search</button>
+                                        <button class="secondaryButton barcodeControlClearButton" data-admin-clear type="button">Clear</button>
+                                    </div>
+                                </div>
+                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace aria-live="polite">
+                                    <div class="barcodeControlEmpty">
+                                        <strong>Ready to search</strong>
+                                        <span>Scan a barcode or enter an item code or item name.</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+
+
+                    </section>
+
+                <section class="contentCard dangerZoneCard settingsDataSafetyCard settingsModuleCard">
+
+
+                    <div class="settingsModuleTitleChip">
+                        <span class="sectionEyebrow">WORKSPACE DATA</span>
+                        <h2>Data Management</h2>
+                    </div>
+
+
+                    <div id="historicalDeleteReceipt" class="operationReceipt" role="status" aria-live="polite" hidden></div>
+                    <div class="settingsDataActions">
+                        <div class="settingsDataActionRow">
+                            <div><span class="settingsActionLabel">CURRENT WORKSPACE</span><strong>Reset Workspace</strong><small>Clear the current operational workspace without deleting historical reports.</small></div>
+                            <button id="btnResetWorkspace" class="dangerOutlineButton" type="button">Reset Workspace</button>
+                        </div>
+                        <div class="settingsDataActionRow settingsDataDangerRow">
+                            <div><span class="settingsActionLabel dangerText">HISTORICAL DATA</span><strong>Delete Historical Data</strong><small>Permanently delete protected historical records. This action is separate from workspace reset.</small></div>
+                            <button id="btnDeleteAllHistory" class="dangerButton" type="button">Delete Historical Data</button>
+                        </div>
+                    </div>
+
+
+                </section>
+
+
+            </section>
+
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- ==================================================
+     GLOBAL ITEM SEARCH MODAL
+=================================================== -->
+
+<div
+    id="searchModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard">
+
+
+        <div class="modalHeader">
+
+
+            <div>
+
+                <span class="sectionEyebrow">
+
+                    ITEM LOOKUP
+
+                </span>
+
+                <h2>
+
+                    Search Item
+
+                </h2>
+
+            </div>
+
+
+            <button
+                id="btnCloseSearch"
+                class="iconButton"
+                type="button"
+            >
+
+                ✕
+
+            </button>
+
+
+        </div>
+
+
+        <input
+            id="globalSearchInput"
+            class="largeSearchInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Search by item name or item number..."
+        >
+
+
+        <div
+            id="globalSearchResults"
+            class="modalSearchResults"
+        ></div>
+
+
+        <div
+            id="manualAddArea"
+            class="manualAddArea"
+        >
+
+
+            <p>
+
+                Can't find the item in the current order?
+
+            </p>
+
+
+            <button
+                id="btnOpenManualAdd"
+                class="secondaryButton"
+                type="button"
+            >
+
+                + Add Extra Item
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     MANUAL ITEM MODAL
+=================================================== -->
+
+<div
+    id="manualItemModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard smallModal">
+
+
+        <div class="modalHeader">
+
+
+            <div>
+
+                <span class="sectionEyebrow">
+
+                    EXTRA ITEM
+
+                </span>
+
+                <h2>
+
+                    Add Extra Item
+
+                </h2>
+
+            </div>
+
+
+            <button
+                id="btnCloseManualItem"
+                class="iconButton"
+                type="button"
+            >
+
+                ✕
+
+            </button>
+
+
+        </div>
+
+
+        <div class="formStack">
+
+
+            <div class="formField">
+
+                <label for="manualItemCode">
+
+                    Item Number
+
+                </label>
+
+                <input
+                    id="manualItemCode"
+                    type="text"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="formField">
+
+                <label for="manualItemName">
+
+                    Item Name
+
+                </label>
+
+                <input
+                    id="manualItemName"
+                    type="text"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div class="formField">
+
+                <label for="manualItemQuantity">
+
+                    Quantity
+
+                </label>
+
+                <input
+                    id="manualItemQuantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="1"
+                >
+
+            </div>
+
+
+        </div>
+
+
+        <div class="modalFooter">
+
+
+            <button
+                id="btnCancelManualItem"
+                class="secondaryButton"
+                type="button"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                id="btnSaveManualItem"
+                class="primaryButton"
+                type="button"
+            >
+
+                Add Item
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     CONFIRM MODAL
+=================================================== -->
+
+<div
+    id="confirmModal"
+    class="modalOverlay"
+    aria-hidden="true"
+>
+
+
+    <div class="modalCard smallModal">
+
+
+        <div class="modalHeader">
+
+
+            <h2 id="confirmTitle">
+
+                Confirm
+
+            </h2>
+
+
+        </div>
+
+
+        <p
+            id="confirmMessage"
+            class="confirmMessage"
+        >
+
+            Are you sure?
+
+        </p>
+
+
+        <div class="modalFooter">
+
+
+            <button
+                id="btnConfirmCancel"
+                class="secondaryButton"
+                type="button"
+            >
+
+                Cancel
+
+            </button>
+
+
+            <button
+                id="btnConfirmOK"
+                class="dangerButton"
+                type="button"
+            >
+
+                Confirm
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     TOAST
+=================================================== -->
+
+<div
+    id="toastContainer"
+    class="toastContainer"
+></div>
+
+
+<!-- ==================================================
+     LOADING OVERLAY
+=================================================== -->
+
+<div
+    id="loadingOverlay"
+    class="loadingOverlay"
+>
+
+
+    <div class="loadingCard">
+
+
+        <div class="pfRealCapsule" aria-hidden="true">
+            <span class="pfRealCapsuleHalf pfRealCapsuleLeft"></span>
+            <span class="pfRealCapsuleHalf pfRealCapsuleRight"></span>
+            <span class="pfRealPellet pfRealPellet1"></span>
+            <span class="pfRealPellet pfRealPellet2"></span>
+            <span class="pfRealPellet pfRealPellet3"></span>
+        </div>
+
+
+        <strong id="loadingText">
+
+            Loading...
+
+        </strong>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- ==================================================
+     EXTERNAL LIBRARIES
+=================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+    defer
+></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+
+
+
+<!-- ==================================================
+     APPLICATION FILES
+=================================================== -->
+
+<script src="js/config.js?v=UI_REVIEW_CLEAN1"></script>
+
+<script src="js/utils.js?v=RECEIVING_U0030_RECOVERY2"></script>
+
+<script src="js/state.js?v=WORK_SCOPE1"></script>
+
+<script src="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1"></script>
+
+<script src="ui.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
+
+<script src="js/excel.js?v=SETTINGS_PROD1"></script>
+
+<script src="js/master-gtin.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
+<script src="js/identifier-service.js?v=RECEIVING_QUICK_ADD_20261022_1"></script>
+
+<script src="js/scanner.js?v=HANDHELD_ASSIGN_AUTH3"></script>
+
+<script src="js/receiving.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
+
+<script src="js/session.js?v=RECEIVE_ALL_ATOMIC1"></script>
+
+<script src="js/reports.js?v=RECEIVING_GROUP_BATCH_20261022_GROUP_INTEGRITY_20261017_1"></script>
+
+<script src="js/supabase.js?v=B10CLEAN15_15"></script>
+
+<script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
+
+<script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
+<script src="js/auth.js?v=EXPIRY_HARDENING_20261020"></script>
+
+<!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
+<script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
+
+<script src="js/needs-review.js?v=RECEIVING_QUICK_ADD_20261022_1"></script>
+
+<script src="js/expiry-operation.js?v=EXPIRY_PHOTO_V5_20261021"></script>
+<script src="js/expiry-evidence.js?v=EXPIRY_PHOTO_V5_20261021"></script>
+<script src="js/expiry-capture-store.js?v=DESKTOP_RECONCILE1"></script>
+<script src="js/expiry-active-session.js?v=EXPIRY_HARDENING_20261020"></script>
+<script src="js/expiry.js?v=EXPIRY_HARDENING_20261020"></script>
+<script src="js/expiry-clear-session.js?v=RETIRE_CLEAR1"></script>
+<script src="js/expiry-inventory-report.js?v=EXPIRY_HARDENING_20261020"></script>
+<script src="js/expiry-inventory-filters.js?v=EXPIRY_HARDENING_20261020"></script>
+<script type="module" src="js/expiry-top-motion.js"></script>
+<script src="js/expiry-desktop-v2.js?v=EXPIRY_HARDENING_20261020"></script>
+<script src="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1"></script>
+
+<script src="cloud-workspace.js?v=RECEIVING_QUICK_ADD_20261022_1"></script>
+<script src="js/app-version.js?v=VERSION_NOTICE1"></script>
+
+<script src="js/data-layer.js?v=B10CLEAN15_15"></script>
+<script src="js/pharmflow-next.js?v=HANDHELD_ACTION_STATE2"></script>
+
+<script src="js/app.js?v=KPI_SNAPSHOT_READY1"></script>
+
+<script src="js/handheld-runtime.js?v=RECEIVING_U0030_RECOVERY2"></script>
+<script src="js/receiving-release.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
+<script src="js/receiving-history.js?v=HISTORY7"></script>
+
+
+</body>
+
+</html>

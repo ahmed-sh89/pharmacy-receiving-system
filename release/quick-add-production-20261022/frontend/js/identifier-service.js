@@ -1,0 +1,123 @@
+"use strict";
+
+/* The sole browser boundary for identifier resolution and administration.
+   The server resolves the current pharmacy first, then Global V2. Browser
+   code never writes the legacy mapping contracts directly. */
+const IdentifierService={
+    pharmacyId(){
+        return (typeof getCurrentPharmacyId==="function"&&getCurrentPharmacyId())||AuthState?.context?.pharmacy_id||null;
+    },
+    async resolve(identifierDisplay){
+        const display=toSafeString(identifierDisplay);
+        const pharmacyId=this.pharmacyId();
+        if(!display) throw new Error("Identifier is required");
+        if(!pharmacyId||typeof authRpc!=="function") throw new Error("Authoritative identifier service is unavailable");
+        const result=await authRpc("resolve_pharmflow_identifier_v2",{p_pharmacy_id:pharmacyId,p_identifier_display:display});
+        return Array.isArray(result)?(result[0]||{found:false}):(result||{found:false});
+    },
+    async searchItems(query,limit=50){
+        if(typeof authRpc!=="function") throw new Error("Authoritative identifier service is unavailable");
+        const rows=await authRpc("search_pharmflow_global_items_v2",{p_query:toSafeString(query),p_limit:limit});
+        return Array.isArray(rows)?rows:[];
+    },
+    async listItemIdentifiers(itemCode){
+        const rows=await authRpc("list_pharmflow_global_item_identifiers_v2",{p_item_code:toSafeString(itemCode)});
+        return Array.isArray(rows)?rows:[];
+    },
+    async listPharmacyItemIdentifiers(itemCode){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        const rows=await authRpc("list_pharmflow_pharmacy_item_identifiers_v1",{p_pharmacy_id:pharmacyId,p_item_code:toSafeString(itemCode)});
+        return Array.isArray(rows)?rows:[];
+    },
+    async addIdentifier(operationId,identifierDisplay,itemCode,reason){
+        return authRpc("add_pharmflow_global_identifier_v2",{p_operation_id:operationId,p_identifier_display:toSafeString(identifierDisplay),p_item_code:toSafeString(itemCode),p_reason:toSafeString(reason)});
+    },
+    async correctIdentifier(operationId,identifierId,revision,itemCode,reason){
+        return authRpc("correct_pharmflow_global_identifier_v2",{p_operation_id:operationId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_new_item_code:toSafeString(itemCode),p_reason:toSafeString(reason)});
+    },
+    async removeIdentifier(operationId,identifierId,revision,reason){
+        return authRpc("remove_pharmflow_global_identifier_v2",{p_operation_id:operationId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
+    },
+    async createItem(operationId,item){
+        return authRpc("create_pharmflow_global_item_v2",{p_operation_id:operationId,p_item_code:toSafeString(item.itemCode),p_item_name:toSafeString(item.itemName),p_group_name:toSafeString(item.groupName)||null,p_category:toSafeString(item.category)||null,p_sub_category:toSafeString(item.subCategory)||null,p_identifier_display:toSafeString(item.identifierDisplay),p_reason:toSafeString(item.reason)});
+    },
+    async findGlobalItemByCode(itemCode){
+        const code=normalizeItemCode(itemCode);
+        if(!code) return null;
+        const rows=await this.searchItems(toSafeString(itemCode).trim(),20);
+        return rows.find(row=>normalizeItemCode(row?.item_code)===code)||null;
+    },
+    async deleteUnusedItem(operationId,itemCode,reason="SETTINGS_DELETE_ITEM"){
+        return authRpc("delete_unused_pharmflow_global_item_v1",{p_operation_id:operationId,p_item_code:toSafeString(itemCode),p_reason:toSafeString(reason)});
+    },
+    async addPharmacyIdentifier(operationId,identifierDisplay,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("add_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),p_item_code:toSafeString(item?.itemCode||item?.item_code),p_item_name:toSafeString(item?.itemName||item?.item_name),p_reason:toSafeString(reason)});
+    },
+    async correctPharmacyIdentifier(operationId,identifierId,revision,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("correct_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_new_item_code:toSafeString(item?.itemCode||item?.item_code),p_new_item_name:toSafeString(item?.itemName||item?.item_name),p_reason:toSafeString(reason)});
+    },
+    async removePharmacyIdentifier(operationId,identifierId,revision,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("remove_pharmflow_pharmacy_identifier_v2",{p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_id:identifierId,p_expected_mapping_revision:revision,p_reason:toSafeString(reason)});
+    },
+    async removeSettingsIdentifier(globalOperationId,pharmacyOperationId,identifierDisplay,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        return authRpc("remove_pharmflow_settings_identifier_v1",{p_global_operation_id:globalOperationId,p_pharmacy_operation_id:pharmacyOperationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),p_reason:toSafeString(reason)});
+    },
+    isReferencePharmacy(){
+        return toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
+    },
+    async learnExistingIdentifier(operationId,identifierDisplay,item,reason){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        const result=await authRpc("learn_pharmflow_existing_identifier_v3",{
+            p_operation_id:operationId,p_pharmacy_id:pharmacyId,p_identifier_display:toSafeString(identifierDisplay),
+            p_item_code:toSafeString(item?.itemCode||item?.item_code),p_reason:toSafeString(reason)
+        });
+        const mapping=Array.isArray(result)?result[0]:result;
+        if(!mapping?.success||!["GLOBAL","PHARMACY"].includes(mapping.mappingScope)||!mapping.identifierId||!mapping.mappingRevision) throw new Error("Identifier learning was not confirmed");
+        return mapping;
+    },
+    async quickAddOrderItem(capture){
+        if(this.pharmacyId()!==capture.pharmacyId) throw new Error("Pharmacy changed. Reopen Receiving.");
+        const result=await authRpc("quick_add_pharmflow_order_item_v1",capture.params);
+        const reply=Array.isArray(result)?result[0]:result;
+        if(reply?.success===false&&reply.code==="GLOBAL_CREATION_PERMISSION_REQUIRED"){
+            const error=new Error(reply.message);error.safeNoWrites=true;throw error;
+        }
+        if(reply?.success!==true||reply.pharmacyId!==capture.pharmacyId||reply.operationId!==capture.operationId||!Array.isArray(reply.receipts)||reply.receipts.length!==1) throw new Error("Quick Add receipt confirmation is unavailable. Retry the same selection.");
+        const tx=reply.receipts[0];
+        if(tx.transaction_id!==`QUICK_ADD_V1:${capture.operationId}`||tx.order_number!==capture.params.p_source_order||normalizeItemCode(tx.item_code)!==normalizeItemCode(capture.params.p_item_code)||Number(tx.quantity)!==capture.params.p_quantity||toSafeString(tx.gtin).trim()!==capture.params.p_identifier_display) throw new Error("Quick Add receipt confirmation does not match the captured selection.");
+        return reply;
+    },
+    receivingProvenance(mapping){
+        if(!mapping||!["GLOBAL","PHARMACY"].includes(mapping.mappingScope)||!mapping.identifierId||!mapping.mappingRevision||!mapping.identifierKey||!mapping.itemCode) throw new Error("Confirmed mapping provenance required");
+        return {contractVersion:4,kind:mapping.mappingScope==="GLOBAL"?"GLOBAL_LEARNED":"PHARMACY_LEARNED",mappingId:mapping.identifierId,
+            mappingRevision:mapping.mappingRevision,identifierDisplay:mapping.identifierDisplay,identifierKey:mapping.identifierKey,resolvedItemCode:mapping.itemCode};
+    },
+    async learnIdentifier(operationId,identifierDisplay,item,reason,groupName=""){
+        const pharmacyId=this.pharmacyId();
+        if(!pharmacyId) throw new Error("Current pharmacy is unavailable");
+        if(!globalThis.crypto?.randomUUID) throw new Error("This browser cannot create a secure operation ID");
+        const result=await authRpc("learn_pharmflow_identifier_v2",{
+            p_global_operation_id:operationId,
+            p_pharmacy_operation_id:globalThis.crypto.randomUUID(),
+            p_pharmacy_id:pharmacyId,
+            p_identifier_display:toSafeString(identifierDisplay),
+            p_item_code:toSafeString(item?.itemCode||item?.item_code),
+            p_item_name:toSafeString(item?.itemName||item?.item_name),
+            p_group_name:toSafeString(groupName),
+            p_reason:toSafeString(reason)
+        });
+        const row=Array.isArray(result)?result[0]:result;
+        return row?.pharmacyMapping||row?.pharmacy_mapping||row;
+    }
+};
+window.IdentifierService=IdentifierService;

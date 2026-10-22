@@ -1043,7 +1043,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 <div data-quick-selection hidden>
                   <div class="pfnCreateGrid"><label><span>Item Code</span><input data-quick-code readonly></label><label><span>Item Name</span><input data-quick-name readonly></label></div>
                   <p data-quick-source></p>
-                  <label><span>Group <b>*</b></span><select data-quick-group><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select></label>
+                  <label class="pfnCreateGroup"><span>Group <b>*</b></span><select data-quick-group><option value="">Select Group</option><option value="Beauty">Beauty</option><option value="FMCG">FMCG</option><option value="HomeHealth">Home Health</option><option value="Medicine">Medicine</option><option value="Mom &amp; Baby">Mom &amp; Baby</option><option value="Supplement">Supplement</option></select></label>
                   <small>Group is required for a new Master item. Existing approved Group is preserved.</small>
                   <button type="button" class="gtinPrimaryAction" data-quick-receive>Quick Add &amp; Receive</button>
                 </div>

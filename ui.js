@@ -2489,7 +2489,7 @@ function createReceivingTableRow(
         </td>
 
         <td class="receivingCategoryCell">
-            ${escapeHTML(toSafeString((window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalize(item)?.group) || "—")))}
+            ${escapeHTML(toSafeString((window.PharmFlowClassificationFilters?.displayGroup(window.PharmFlowClassificationFilters?.normalizeReceiving(item)?.group) || "—")))}
         </td>
 
         <td>
@@ -3442,7 +3442,7 @@ function refreshMasterGTINUI(){
 
     const headerMaster=document.getElementById("headerMasterGTINStatus");
 
-    if(!status || status.installed !== true){
+    if(!status || status.installed !== true || status.apiVersion!==2){
 
         if(headerMaster){
             headerMaster.textContent=navigator.onLine ? "UNAVAILABLE" : "OFFLINE";
@@ -3472,6 +3472,7 @@ function refreshMasterGTINUI(){
             ordersMasterStatus.textContent=navigator.onLine ? "UNAVAILABLE" : "OFFLINE";
         }
         if(ordersMasterCount) ordersMasterCount.textContent="0";
+        setElementText(document.getElementById("ordersMasterIdentifierCount"),"0");
         if(ordersMasterUpdated) ordersMasterUpdated.textContent="-";
         if(ordersMasterCard){
             ordersMasterCard.classList.remove("isActive","isSyncing");
@@ -3502,6 +3503,7 @@ function refreshMasterGTINUI(){
         const ordersMasterUpdated=document.getElementById("ordersMasterUpdatedAt");
         const ordersMasterCard=document.getElementById("ordersGlobalMasterCard");
         const count=toInteger(status.itemCount,0);
+        setElementText(document.getElementById("ordersMasterIdentifierCount"),toInteger(status.identifierCount,0).toLocaleString());
 
         if(ordersMasterStatus){
             ordersMasterStatus.textContent=navigator.onLine ? "ACTIVE" : "CACHED";
@@ -8459,7 +8461,7 @@ function renderItemBrowser(body, rows, options={}){
         const key=rowKey(item);
         const selected=key===selectedRowKey;
         const rowAttributes=`class="pfnMobileItemCard${selected?' pfnBrowserRowSelected':''}" data-row-key="${esc(key)}" tabindex="0" aria-selected="${selected?'true':'false'}"`;
-        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number"><span class="pfnItemCodeValue">${esc(item.itemCode)}</span><button type="button" class="pfnCopyItemCode" data-copy-code="${esc(item.itemCode)}" title="Copy item code" aria-label="Copy item code"><span>⧉</span></button></td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalize(item)||{};return x.group||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number"><span class="pfnItemCodeValue">${esc(item.itemCode)}</span><button type="button" class="pfnCopyItemCode" data-copy-code="${esc(item.itemCode)}" title="Copy item code" aria-label="Copy item code"><span>⧉</span></button></td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalizeReceiving(item)||{};return window.PharmFlowClassificationFilters.displayGroup(x.group)||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
         return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
@@ -9079,7 +9081,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const bindNewItemAction=prefill=>workspace.querySelector("[data-add-new-item]")?.addEventListener("click",()=>renderNewItemForm(prefill));
     const renderDefault=()=>{selectedItem=null;workspace.innerHTML=`<div class="barcodeControlWelcome"><strong>Ready to search</strong><span>Scan a barcode or enter an item code or item name.</span></div>${newItemAction()}`;bindNewItemAction("");};
     const itemSummary=item=>{
-        const normalizedGroup=window.PharmFlowClassificationFilters?.normalize(item||{}).group||"";
+        const normalizedGroup=window.PharmFlowClassificationFilters?.normalizeReceiving(item||{}).group||"";
         const group=normalizedGroup?window.PharmFlowClassificationFilters.displayGroup(normalizedGroup):"—";
         return `<section class="barcodeItemCard"><span class="barcodeSectionLabel">SELECTED ITEM</span><div class="barcodeItemIdentity"><div class="barcodeItemIdentityField"><span>Item Code</span><strong>${esc(itemCodeOf(item)||"—")}</strong></div><div class="barcodeItemIdentityField"><span>Item Name</span><b>${esc(itemNameOf(item))}</b></div><div class="barcodeItemIdentityField"><span>Group</span><strong>${esc(group)}</strong></div></div></section>`;
     };

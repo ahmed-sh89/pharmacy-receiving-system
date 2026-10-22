@@ -10,7 +10,7 @@ test('V2 cache separates Global item total from numeric identifier rows and pres
  await vm.runInContext('performGlobalMasterGTINSync({silent:true})',s);
  const status=vm.runInContext('getMasterGTINStatus()',s);
  assert.equal(status.installed,true);assert.equal(status.itemCount,12);assert.equal(status.recordCount,2);assert.equal(status.identifierCount,14);
- assert.equal(order[0].group_name,'Beauty');assert.equal(order[1].group_name,'HomeHealth');assert.equal(s.AppState.workspace.orderFiles[0].sourceRows[1].group_name,'');
+ assert.equal(order[0].group_name,'Beauty');assert.equal(order[1].group_name,'');assert.equal(s.AppState.workspace.orderFiles[0].sourceRows[1].group_name,'');
  assert.equal(status.currentOrder.matchedItems,2);
 });
 test('V2 item collection remains available when it has no numeric GTIN cache rows',async()=>{
