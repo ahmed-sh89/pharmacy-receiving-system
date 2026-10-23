@@ -1600,37 +1600,45 @@ function renderOwnerPharmacies(){
     const box=document.getElementById("ownerPharmacyList");
     if(!box){ return; }
     const rows=getOwnerPharmacyRowsForView();
-    const hasRole=rows.some(p=>typeof p.admin_role==="string" && p.admin_role.trim());
     if(!rows.length){
         box.innerHTML='<div class="registrationEmpty">No pharmacies match this view.</div>';
         renderOwnerMetrics();
         return;
     }
-    box.innerHTML=`<table class="ownerPharmacyTable${hasRole?' ownerHasRole':''}" aria-label="Pharmacies">
-        <colgroup><col class="ownerCodeColumn"><col class="ownerNameColumn"><col class="ownerEmailColumn"><col class="ownerStatusColumn">${hasRole?'<col class="ownerRoleColumn">':""}<col class="ownerActionsColumn"></colgroup>
-        <thead><tr><th scope="col">Pharmacy Code</th><th scope="col">Pharmacy Name</th><th scope="col">Admin Email</th><th scope="col">Status</th>${hasRole?'<th scope="col">Role</th>':""}<th scope="col">Actions</th></tr></thead>
-        <tbody>${rows.map(p=>{
-            const active=p.status==="active" && p.active!==false;
-            const adminLabel=p.admin_email
-                ? escapeAuthHtml(p.admin_email)
-                : (p.pending_admin_email
-                    ? escapeAuthHtml(p.pending_admin_email)+' <small class="ownerAwaitingTag">Awaiting activation</small>'
-                    : '<span class="ownerUnassignedTag">No ADMIN assigned</span>');
-            const adminName=p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
-            return `<tr>
-                <td><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "—")}</span></td>
-                <td><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong></td>
-                <td class="ownerPharmacyAdmin">${adminLabel}${adminName}</td>
-                <td><span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span></td>
-                ${hasRole?`<td>${escapeAuthHtml(p.admin_role || "—")}</td>`:""}
-                <td><div class="ownerPharmacyActions">
+    box.innerHTML=rows.map((p,index)=>{
+        const active=p.status==="active" && p.active!==false;
+        return `<article class="ownerPharmacyRow">
+            <button type="button" class="ownerPharmacySummary" aria-expanded="false" aria-controls="ownerPharmacyDetails${index}">
+                <span class="ownerPharmacyIdentity"><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "—")}</span></span>
+                <span class="ownerPharmacyAdmin">${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}</span>
+                <span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
+                <svg class="ownerPharmacyChevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="ownerPharmacyDetails${index}" class="ownerPharmacyDetails" hidden>
+                ${typeof p.admin_role==="string" && p.admin_role.trim()?`<p class="ownerPharmacyRole">Role: ${escapeAuthHtml(p.admin_role)}</p>`:""}
+                <div class="ownerPharmacyActions">
                     <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit</button>
                     <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
                     ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
                     <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
-                </div></td>
-            </tr>`;
-        }).join("")}</tbody></table>`;
+                </div>
+                <div class="ownerPharmacyEditor"></div>
+            </div>
+        </article>`;
+    }).join("");
+    box.querySelectorAll(".ownerPharmacySummary").forEach(summary=>{
+        summary.addEventListener("click",()=>{
+            const opening=summary.getAttribute("aria-expanded")!=="true";
+            box.querySelectorAll(".ownerPharmacySummary").forEach(control=>{
+                const selected=control===summary && opening;
+                const row=control.closest(".ownerPharmacyRow");
+                if(!selected){ row.dispatchEvent(new Event("owner:collapse")); }
+                control.setAttribute("aria-expanded",String(selected));
+                row.classList.toggle("expanded",selected);
+                row.querySelector(".ownerPharmacyDetails").hidden=!selected;
+            });
+        });
+    });
     box.querySelectorAll("[data-owner-action]").forEach(btn=>{
         btn.addEventListener("click",()=>handleOwnerPharmacyAction(btn));
     });

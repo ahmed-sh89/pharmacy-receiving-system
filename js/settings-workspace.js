@@ -76,11 +76,11 @@ window.settingsConfirm=options=>settingsDialog({...options,title:'Confirm Action
 
 // Row prompts reuse the existing validated Edit/Admin sequence and RPC handlers.
 function settingsInlinePrompt({title,label,value,anchor}){
+ settingsInlinePrompt.cancel?.();
  return new Promise(resolve=>{
-    const row=anchor.closest('tr'),table=row?.closest('table');
-    if(!row || !table){resolve(null);return;}
-    const edit=document.createElement('tr');edit.className='ownerInlineEdit';
-    const cell=document.createElement('td');cell.colSpan=row.children.length;
+    const row=anchor.closest('.ownerPharmacyRow'),host=row?.querySelector('.ownerPharmacyEditor');
+    if(!host || row.querySelector('.ownerPharmacyDetails').hidden){resolve(null);return;}
+    const edit=document.createElement('div');edit.className='ownerInlineEdit';
     const form=document.createElement('form');form.setAttribute('aria-label',title);
     const heading=document.createElement('h4');heading.textContent=title;
     const field=document.createElement('label');field.textContent=label;
@@ -88,14 +88,20 @@ function settingsInlinePrompt({title,label,value,anchor}){
     const actions=document.createElement('footer');
     const cancel=document.createElement('button');cancel.type='button';cancel.className='secondaryButton';cancel.textContent='Cancel';
     const save=document.createElement('button');save.type='submit';save.className='primaryButton';save.textContent='Continue';
-    actions.append(cancel,save);form.append(heading,field,actions);cell.append(form);edit.append(cell);row.after(edit);
+    actions.append(cancel,save);form.append(heading,field,actions);edit.append(form);host.replaceChildren(edit);
     let finished=false;
-    const finish=value=>{if(finished)return;finished=true;observer.disconnect();edit.remove();if(anchor.isConnected)anchor.focus();resolve(value);};
+    const abort=()=>finish(null);
+    const finish=value=>{
+        if(finished)return;finished=true;observer.disconnect();row.removeEventListener('owner:collapse',abort);
+        if(settingsInlinePrompt.cancel===abort){settingsInlinePrompt.cancel=null;}
+        edit.remove();if(anchor.isConnected && !row.querySelector('.ownerPharmacyDetails').hidden)anchor.focus();resolve(value);
+    };
     const observer=new MutationObserver(()=>{if(!edit.isConnected){finish(null);}});
-    observer.observe(table.parentElement,{childList:true,subtree:true});
+    observer.observe(document.getElementById('ownerPharmacyList'),{childList:true,subtree:true});
+    settingsInlinePrompt.cancel=abort;row.addEventListener('owner:collapse',abort);
     form.addEventListener('submit',event=>{event.preventDefault();finish(input.value);});
     form.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();finish(null);}});
-    cancel.addEventListener('click',()=>finish(null));input.focus();input.select();
+    cancel.addEventListener('click',abort);input.focus();input.select();
  });
 }
-window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList tr')?settingsInlinePrompt(options):settingsDialog(options);
+window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList .ownerPharmacyRow')?settingsInlinePrompt(options):settingsDialog(options);
