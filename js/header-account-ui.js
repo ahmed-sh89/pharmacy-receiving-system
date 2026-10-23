@@ -3,37 +3,9 @@
 /* Desktop Header controls. Existing account and operational actions remain owned
    by AuthState, the application status elements, and the Cloud Workspace runtime. */
 (function(){
-    const accountButton=document.getElementById("btnAccountModalOpen");
-    const accountModal=document.getElementById("accountModal");
     const statusButton=document.getElementById("btnHeaderStatus");
     const statusPopover=document.getElementById("headerStatusPopover");
-    if(!accountButton || !accountModal || !statusButton || !statusPopover){ return; }
-
-    const accountDialog=accountModal.querySelector(".accountModalDialog");
-    let returnFocus=null;
-
-    function setAccountOpen(open){
-        accountModal.hidden=!open;
-        accountButton.setAttribute("aria-expanded",String(open));
-        if(open){
-            returnFocus=document.activeElement;
-            accountDialog?.focus();
-        }else{
-            const passwordPanel=document.getElementById("settingsPasswordOverlay");
-            if(passwordPanel && !passwordPanel.hidden){
-                passwordPanel.classList.remove("open");
-                passwordPanel.hidden=true;
-                passwordPanel.setAttribute("aria-hidden","true");
-            }
-            if(document.getElementById("settingsIdentityEdit")?.classList.contains("hidden")===false){
-                document.getElementById("btnCancelSettingsIdentity")?.click();
-            }
-            if(returnFocus && typeof returnFocus.focus==="function"){ returnFocus.focus(); }
-        }
-    }
-
-    accountButton.addEventListener("click",()=>setAccountOpen(accountModal.hidden));
-    accountModal.querySelectorAll("[data-account-close]").forEach(button=>button.addEventListener("click",()=>setAccountOpen(false)));
+    if(!statusButton || !statusPopover){ return; }
 
     function readStatus(){
         const master=document.getElementById("headerMasterGTINStatus");
@@ -74,14 +46,9 @@
     });
     document.addEventListener("keydown",event=>{
         if(event.key!=="Escape"){ return; }
-        if(accountModal.hidden===false){
-            const passwordPanel=document.getElementById("settingsPasswordOverlay");
-            if(passwordPanel && !passwordPanel.hidden){
-                document.querySelector("[data-settings-password-close]")?.click();
-            }else{
-                setAccountOpen(false);
-            }
-        }
+        const passwordPanel=document.getElementById("settingsPasswordOverlay");
+        if(passwordPanel && !passwordPanel.hidden){ document.querySelector("[data-settings-password-close]")?.click(); }
+        else if(document.getElementById("accountEditOverlay")?.hidden===false){ document.getElementById("btnCancelSettingsIdentity")?.click(); }
         if(!statusPopover.hidden){
             statusPopover.hidden=true;
             statusButton.setAttribute("aria-expanded","false");
@@ -96,4 +63,48 @@
     window.addEventListener("online",readStatus);
     window.addEventListener("offline",readStatus);
     readStatus();
+
+    const editPanel=document.getElementById("settingsIdentityEdit");
+    const editOverlay=document.getElementById("accountEditOverlay");
+    const passwordOverlay=document.getElementById("settingsPasswordOverlay");
+    function syncEditDialog(){
+        if(!editPanel || !editOverlay){ return; }
+        const open=!editPanel.classList.contains("hidden");
+        const wasOpen=!editOverlay.hidden;
+        editOverlay.hidden=!open;
+        if(open && !wasOpen){ document.getElementById("settingsIdentityNameInput")?.focus(); }
+        if(!open && wasOpen){ document.getElementById("btnAccountModalOpen")?.focus(); }
+    }
+    document.querySelectorAll("[data-account-edit-close]").forEach(button=>button.addEventListener("click",()=>document.getElementById("btnCancelSettingsIdentity")?.click()));
+    if(editPanel){ new MutationObserver(syncEditDialog).observe(editPanel,{attributes:true,attributeFilter:["class"]}); }
+    syncEditDialog();
+    // Mirror the existing canonical feedback into the relocated account experience.
+    const feedback=document.getElementById("settingsAccessMessage");
+    let editFeedbackActive=false;
+    document.getElementById("btnEditSettingsIdentity")?.addEventListener("click",()=>{editFeedbackActive=!!editPanel && !editPanel.classList.contains("hidden");});
+    document.getElementById("btnCancelSettingsIdentity")?.addEventListener("click",()=>{editFeedbackActive=false;});
+    let passwordWasOpen=false;
+    if(passwordOverlay){new MutationObserver(()=>{
+        const open=!passwordOverlay.hidden;
+        if(passwordWasOpen && !open){document.getElementById("btnAccountModalOpen")?.focus();}
+        passwordWasOpen=open;
+    }).observe(passwordOverlay,{attributes:true,attributeFilter:["hidden"]});}
+    if(feedback){ new MutationObserver(()=>{
+        if(!editFeedbackActive){ return; }
+        ["accountIdentityEditMessage","accountFeedbackMessage"].forEach(id=>{
+            const target=document.getElementById(id);
+            if(target){target.textContent=feedback.textContent;target.className=feedback.className;}
+        });
+        if(editOverlay?.hidden && feedback.textContent.trim()){ document.dispatchEvent(new CustomEvent("pharmflow:account-feedback"));editFeedbackActive=false; }
+    }).observe(feedback,{childList:true,characterData:true,subtree:true,attributes:true}); }
+    // Modal keyboard containment only; validation and action handlers stay in AuthState.
+    document.addEventListener("keydown",event=>{
+        if(event.key!=="Tab"){ return; }
+        const overlay=passwordOverlay && !passwordOverlay.hidden ? passwordOverlay : (editOverlay && !editOverlay.hidden ? editOverlay : null);
+        if(!overlay){ return; }
+        const nodes=[...overlay.querySelectorAll("button,input,[tabindex]")].filter(el=>!el.disabled && el.tabIndex>=0);
+        const first=nodes[0],last=nodes[nodes.length-1];
+        if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
+        if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
+    });
 })();

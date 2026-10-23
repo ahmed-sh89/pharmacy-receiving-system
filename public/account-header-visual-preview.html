@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/account-header-visual-preview.css">
   <link rel="stylesheet" href="/header-account-shell.css">
   <script src="/header-account-menu.js" defer></script>
+  <script src="/header-account-popover.js" defer></script>
   <script src="/account-header-visual-preview.js" defer></script>
 </head>
 <body>
@@ -37,7 +38,13 @@
             <strong>System status</strong><div><span>Item Database</span><b class="ok">ACTIVE</b></div><div><span>Application</span><b class="ok">READY</b></div><div><span>Workspace sync</span><b class="ok">SYNCED</b></div>
           </div>
         </div>
-        <button id="accountOpen" class="accountButton headerControl" type="button" aria-haspopup="dialog"><span class="headerAccountIcon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><span>Account</span></button>
+<div class="headerAccountWrap">        <button id="btnAccountModalOpen" class="accountButton headerControl" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="accountPopover"><span class="headerAccountIcon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><span>Account</span><span class="headerStatusChevron" aria-hidden="true">▾</span></button>
+<section id="accountPopover" class="accountPopover" role="dialog" aria-label="Account" tabindex="-1" hidden>
+ <div class="accountPopoverHeading">Account</div>
+ <div class="popoverPharmacy"><small>ACCOUNT / PHARMACY</small><strong>Harbor Health Pharmacy</strong></div>
+ <div class="popoverFields"><div class="popoverEmail"><span>Email</span><strong>demo.owner@example.test</strong></div><div><span>Pharmacy Code</span><strong>HHP084</strong></div><div><span>Role</span><strong>System Owner</strong></div></div>
+ <div class="popoverActions"><button id="changePassword" data-account-launch class="secondaryButton" type="button">Change Password</button><button id="editPharmacy" data-account-launch class="secondaryButton" type="button">Edit Pharmacy</button></div>
+ </section></div>
         <div class="headerLogoutWrap">
                     <button id="btnHeaderLogoutToggle" class="headerControl headerLogoutTrigger" type="button" aria-label="Open sign out menu" title="Sign Out" aria-haspopup="menu" aria-expanded="false" aria-controls="headerLogoutMenu"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M9 12h11"/></svg></button>
                     <div id="headerLogoutMenu" class="headerLogoutMenu" role="menu" aria-label="Account actions" hidden>
@@ -47,29 +54,28 @@
       </div>
     </header>
     <section class="mainContent">
-      <div class="contentIntro"><div><span class="eyebrow">ACTIVE ORDER</span><h2>Receiving overview</h2></div><span class="orderBadge">DEMO · 24-1087</span></div>
       <div class="kpis">
         <article class="kpi blue"><span>Total Items</span><strong>128</strong></article><article class="kpi green"><span>Completed</span><strong>92</strong></article><article class="kpi amber"><span>Remaining Items</span><strong>36</strong></article><article class="kpi teal"><span>Remaining Units</span><strong>74</strong></article><article class="kpi rose"><span>Over Received</span><strong>3</strong></article><article class="kpi purple"><span>Extra Items</span><strong>2</strong></article><article class="kpi aqua"><span>Receiving Activity</span><strong>41</strong></article>
       </div>
+      <section class="demoScanPanel"><header class="demoScanHeading"><h2>Scan item</h2><span class="readyPill"><i></i>READY TO SCAN</span></header>
+ <div class="demoScanInput"><span aria-hidden="true">▥</span><input aria-label="Scan item — visual demo only" placeholder="Scan barcode" readonly><small>SCANNER</small></div>
+ <section class="demoLastScan"><header><h3>Last Scan</h3><small>DEMO · 10:42</small></header><div class="demoLastScanFields"><div><span>Item Name</span><strong>Demo Vitamin C 1000 mg</strong></div><div><span>Item Code</span><strong>DEMO-101</strong></div><div><span>Ordered</span><strong>12</strong></div><div><span>Received</span><strong>8</strong></div><div><span>Remaining</span><strong>4</strong></div><div><span>Status</span><strong>Receiving</strong></div></div></section>
+ <div class="demoOrderControls"><button type="button" class="secondaryButton" data-demo-action>Manage Orders</button><button type="button" class="secondaryButton" data-demo-action>All Active Orders ▾</button><button type="button" class="primaryButton" data-demo-action>Receiving Report</button><span>Session Status <b>ACTIVE</b></span><button type="button" class="secondaryButton" data-demo-action>Needs Review <b>2</b></button></div>
+ </section>
       <section class="progressCard"><div class="progressHeading"><div><span class="eyebrow">ORDER COMPLETION</span><h3>Receiving Progress</h3></div><strong>72%</strong></div><div class="track"><span></span></div><div class="progressMeta"><span>92 of 128 items completed</span><span>36 remaining</span></div></section>
-      <section class="detailCard"><div><span class="eyebrow">CURRENT WORKSPACE</span><h3>Harbor Health Pharmacy</h3><p>Design preview uses fixed sample content to show the real operational density.</p></div><span class="readyPill"><i></i>READY</span></section>
+
     </section>
   </main>
 
-  <div id="accountModal" class="modalLayer" hidden>
-    <button class="scrim" data-close type="button" aria-label="Close account"></button>
-    <section class="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountTitle" tabindex="-1">
-      <header class="modalHeader"><div><span class="eyebrow">PHARMFLOW ACCOUNT</span><h2 id="accountTitle">Account</h2></div><button class="closeButton" data-close type="button" aria-label="Close">×</button></header>
-      <div class="accountSummary"><span class="pharmacyMark">H</span><div><small>ACCOUNT / PHARMACY</small><strong>Harbor Health Pharmacy</strong></div></div>
-      <div class="accountFields"><div><span>Email</span><strong>demo.owner@example.test</strong></div><div><span>Pharmacy Code</span><strong>HHP084</strong></div><div><span>Role</span><strong>System Owner</strong></div></div>
-      <div id="ownerEdit" class="ownerEdit" hidden><div class="ownerHeading"><div><span class="eyebrow">SYSTEM OWNER</span><h3>Edit Pharmacy</h3></div><span class="ownerOnly">OWNER</span></div><label>Pharmacy Name<input value="Harbor Health Pharmacy" readonly></label><label>Pharmacy Code<input value="HHP084" readonly></label><div class="formActions"><button data-demo-save class="primaryButton" type="button">Save</button><button data-edit-cancel class="secondaryButton" type="button">Cancel</button></div><p class="demoOnlyNote">Visual demo only · changes are not saved</p></div>
-      <div class="modalActions"><button id="changePassword" class="secondaryButton" type="button">Change Password</button><button id="editPharmacy" class="primaryButton" type="button">Edit Pharmacy</button></div>
-      <p class="modalNote">Account details are fictional demo values. No credentials or operational data are loaded.</p>
-    </section>
-  </div>
+  <div id="ownerEdit" class="modalLayer" hidden><button class="scrim" tabindex="-1" data-edit-cancel type="button" aria-label="Close pharmacy edit"></button>
+ <section class="accountEditDialog" role="dialog" aria-modal="true" aria-labelledby="ownerEditTitle" tabindex="-1">
+ <header class="accountDialogHeader"><h2 id="ownerEditTitle">Edit Pharmacy</h2><button class="accountDialogClose" data-edit-cancel type="button" aria-label="Close">×</button></header>
+ <label>Pharmacy Name<input value="Harbor Health Pharmacy" readonly></label><label>Pharmacy Code<input value="HHP084" readonly></label>
+ <div class="formActions"><button data-demo-save class="primaryButton" type="button">Save</button><button data-edit-cancel class="secondaryButton" type="button">Cancel</button></div>
+ <p class="demoOnlyNote">Fictional System Owner · visual demo only · changes are not saved.</p></section></div>
 
   <div id="passwordModal" class="modalLayer nestedLayer" hidden>
-    <button class="scrim" data-password-close type="button" aria-label="Close change password"></button>
+    <button class="scrim" tabindex="-1" data-password-close type="button" aria-label="Close change password"></button>
     <section class="passwordModal" role="dialog" aria-modal="true" aria-labelledby="passwordTitle" tabindex="-1">
       <header class="modalHeader"><div><span class="eyebrow">ACCOUNT SECURITY</span><h2 id="passwordTitle">Change Password</h2></div><button class="closeButton" data-password-close type="button" aria-label="Close">×</button></header>
       <label>Current Password<input type="password" autocomplete="off" disabled placeholder="Visual preview only"></label><label>New Password<input type="password" disabled placeholder="At least 8 characters"></label><label>Confirm New Password<input type="password" disabled placeholder="Repeat new password"></label>

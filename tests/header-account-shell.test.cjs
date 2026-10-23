@@ -49,14 +49,34 @@ test("status requires all existing readiness sources and retains degraded states
 });
 test("shell retains account security controls and static preview has no app runtime",()=>{
   const {document}=fixture();
-  for(const id of ["btnChangeSettingsPassword","btnEditSettingsIdentity","btnSaveSettingsIdentity","btnCancelSettingsIdentity"]){assert.equal(document.querySelectorAll(`#${id}`).length,1,id);assert(document.getElementById("accountModal").contains(document.getElementById(id)));}
+  for(const id of ["btnChangeSettingsPassword","btnEditSettingsIdentity","btnSaveSettingsIdentity","btnCancelSettingsIdentity"]){assert.equal(document.querySelectorAll(`#${id}`).length,1,id);assert(document.getElementById(id));}
   assert.equal(document.getElementById("headerAccountName").textContent,"Account");
   assert(!document.querySelector(".headerShell #topBarPharmacyCode"));
   const demo=fs.readFileSync("public/account-header-visual-preview.html","utf8");
   const parsed=parseHTML(demo).document;
   assert(parsed.querySelector('meta[http-equiv="Content-Security-Policy"]').content.includes("connect-src 'none'"));
-  assert.deepEqual([...parsed.querySelectorAll("script[src]")].map(x=>x.getAttribute("src")),["/header-account-menu.js","/account-header-visual-preview.js"]);
-  for(const path of ["public/header-account-menu.js","public/account-header-visual-preview.js"]){assert(!/fetch\s*\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage|indexedDB|serviceWorker|supabase/i.test(fs.readFileSync(path,"utf8")));}
+  assert.deepEqual([...parsed.querySelectorAll("script[src]")].map(x=>x.getAttribute("src")),["/header-account-menu.js","/header-account-popover.js","/account-header-visual-preview.js"]);
+  for(const path of ["public/header-account-menu.js","public/header-account-popover.js","public/account-header-visual-preview.js"]){assert(!/fetch\s*\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage|indexedDB|serviceWorker|supabase/i.test(fs.readFileSync(path,"utf8")));}
   assert(!/\bGlobal\b|>WORKSPACE<|Demo Owner/i.test(demo));
   assert(!/PHARMACY CODE/i.test(parsed.querySelector('.sidebarFooter').textContent));
 });
+
+ test("account popover opens from keyboard and closes without consuming dialog actions",()=>{
+  const {document,run,key}=fixture();run("public/header-account-popover.js");
+  const trigger=document.getElementById("btnAccountModalOpen"),panel=document.getElementById("accountPopover");
+  key(trigger,"ArrowDown");assert.equal(panel.hidden,false);assert.equal(document.activeElement,panel);
+  key(panel,"Escape");assert.equal(panel.hidden,true);assert.equal(document.activeElement,trigger);
+  trigger.click();document.body.click();assert.equal(panel.hidden,true);
+  let opened=0;document.getElementById("btnChangeSettingsPassword").addEventListener("click",()=>opened++);
+  trigger.click();document.getElementById("btnChangeSettingsPassword").click();assert.equal(panel.hidden,true);assert.equal(opened,1);
+ });
+ test("relocated identity edit still obeys the original owner and protected code guards",()=>{
+  const {document}=fixture();const auth=fs.readFileSync("js/auth.js","utf8");
+  const start=auth.indexOf("function setSettingsIdentityEditMode(editing){"),end=auth.indexOf("\nasync function saveSettingsIdentity",start);
+  for(const owner of [false,true]){
+   const context={document,isSystemOwner:()=>owner,AuthState:{context:{pharmacy_id:"mock",pharmacy_name:"Demo",pharmacy_code:"HHP084"}},setInputValue:(id,value)=>{document.getElementById(id).value=value;}};
+   vm.runInNewContext(auth.slice(start,end)+";setSettingsIdentityEditMode(true);",context);
+   assert.equal(document.getElementById("settingsIdentityEdit").classList.contains("hidden"),!owner);
+   if(owner)assert.equal(document.getElementById("settingsIdentityCodeInput").disabled,true);
+  }
+ });
