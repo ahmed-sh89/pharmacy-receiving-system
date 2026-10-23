@@ -7342,6 +7342,7 @@ function initializeZebraInterface(){
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
             </div>
+            <button id="btnZebraAccount" class="zebraSignOut" type="button">Account</button>
             <button id="btnZebraSignOut" class="zebraSignOut" type="button">Sign Out</button>
         `;
         document.querySelector(".mainContent")?.prepend(home);
@@ -7352,6 +7353,7 @@ function initializeZebraInterface(){
         document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
             setZebraExpiryMode();
         });
+        document.getElementById("btnZebraAccount")?.addEventListener("click",()=>window.openHandheldAccount?.());
         document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
             const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
             if(pending > 0){
