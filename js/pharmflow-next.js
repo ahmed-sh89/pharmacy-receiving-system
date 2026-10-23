@@ -312,6 +312,7 @@
   function bind(){
     const renderConnection=()=>{
       const status=$('sidebarConnection');if(!status)return;
+      if(status.dataset.headerStatusManaged==="true")return;
       status.textContent=navigator.onLine?'ONLINE':'OFFLINE';
       status.classList.toggle('isOffline',!navigator.onLine);
     };

@@ -68,6 +68,7 @@
 <link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI4">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
+<link rel="stylesheet" href="/header-account-shell.css">
 
 </head>
 
@@ -366,7 +367,7 @@
 
         <!-- SIDEBAR FOOTER -->
 
-        <div class="sidebarFooter">
+        <div class="sidebarFooter headerShellFooter">
             <div class="accountIdentity">
                 <div class="accountAvatar">P</div>
                 <div class="accountIdentityText">
@@ -413,7 +414,7 @@
              TOP BAR
         =================================================== -->
 
-        <header class="topBar">
+        <header class="topBar headerShell">
 
 
             <div class="topBarLeft">
@@ -430,7 +431,7 @@
                 </button>
 
 
-                <div class="pageHeading">
+                <div class="pageHeading headerShellTitle">
 
                     <h1 id="pageTitle">Receiving</h1>
                     <p id="pageSubtitle">Scan, review and reconcile orders</p>
@@ -440,32 +441,34 @@
             </div>
 
 
-            <div class="pharmacyNameField pfnPharmacyNameHero" aria-label="Pharmacy identity">
+            <div class="pharmacyNameField pfnPharmacyNameHero headerShellPharmacy" aria-label="Pharmacy identity">
                 <strong id="topBarPharmacyName"></strong>
-                <span class="headerIdentityDivider" aria-hidden="true"></span>
-                <span class="headerIdentityCodeLabel">CODE</span>
-                <strong id="topBarPharmacyCode">—</strong>
             </div>
 
-            <div class="topBarRight pfnContextBar" aria-label="Workspace status">
+            <div class="topBarRight pfnContextBar headerShellActions" aria-label="Workspace status">
                 <div class="headerStatusWrap">
-                    <button id="btnHeaderStatus" class="headerUnifiedStatus is-attention" type="button" aria-expanded="false" aria-controls="headerStatusPopover">
+                    <button id="btnHeaderStatus" class="headerUnifiedStatus headerControl is-attention" type="button" aria-expanded="false" aria-controls="headerStatusPopover">
                         <span class="headerStatusDot" aria-hidden="true"></span>
                         <span id="headerUnifiedStatusLabel">ATTENTION</span>
-                        <span class="headerStatusChevron" aria-hidden="true">▾</span>
+                        <span class="headerStatusChevron"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></span>
                     </button>
                     <div id="headerStatusPopover" class="headerStatusPopover" hidden>
                         <div class="headerPopoverTitle">System status</div>
-                        <div class="headerStatusDetail"><span>Global Master</span><strong id="headerMasterGTINStatus">SYNCING</strong></div>
+                        <div class="headerStatusDetail"><span>Item Database</span><strong id="headerMasterGTINStatus">SYNCING</strong></div>
                         <div class="headerStatusDetail"><span>Application</span><strong id="systemStatus" class="systemStatus ready">READY</strong></div>
                         <div class="headerStatusDetail"><span>Workspace sync</span><strong id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</strong></div>
                     </div>
                 </div>
-                <button id="btnAccountModalOpen" class="headerAccountButton" type="button" aria-haspopup="dialog" aria-controls="accountModal">
-                    <span class="headerAccountIcon" aria-hidden="true">♙</span>
+                <button id="btnAccountModalOpen" class="headerAccountButton headerControl" type="button" aria-haspopup="dialog" aria-controls="accountModal">
+                    <span class="headerAccountIcon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span>
                     <span id="headerAccountName">Account</span>
                 </button>
-                <button id="btnLogout" class="headerSignOutButton" type="button" aria-label="Sign out">Sign Out</button>
+                <div class="headerLogoutWrap">
+                    <button id="btnHeaderLogoutToggle" class="headerControl headerLogoutTrigger" type="button" aria-label="Open sign out menu" title="Sign Out" aria-haspopup="menu" aria-expanded="false" aria-controls="headerLogoutMenu"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M9 12h11"/></svg></button>
+                    <div id="headerLogoutMenu" class="headerLogoutMenu" role="menu" aria-label="Account actions" hidden>
+                        <button id="btnLogout" class="headerLogoutAction" type="button" role="menuitem"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M9 12h11"/></svg><span>Sign Out</span></button>
+                    </div>
+                </div>
             </div>
 
 
@@ -1205,12 +1208,12 @@
                         <section
                             id="ordersGlobalMasterCard"
                             class="ordersGlobalMasterCard"
-                            aria-label="Global GTIN Master status"
+                            aria-label="Barcode Database status"
                         >
                             <div class="ordersMasterIcon" aria-hidden="true">▥</div>
 
                             <div class="ordersMasterIdentity">
-                                <span class="ordersMasterEyebrow">GLOBAL GTIN MASTER</span>
+                                <span class="ordersMasterEyebrow">BARCODE DATABASE</span>
                                 <strong id="ordersMasterStatus">SYNCING</strong>
                                 <small>System Master · Supabase · Automatically used for every order</small>
                             </div>
@@ -2656,6 +2659,7 @@
 <script src="js/handheld-runtime.js?v=RECEIVING_U0030_RECOVERY2"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
 <script src="js/receiving-history.js?v=HISTORY7"></script>
+<script src="/header-account-menu.js"></script>
 <script src="js/header-account-ui.js?v=ACCOUNT_HEADER_PREVIEW1"></script>
 
 

@@ -1274,7 +1274,7 @@ async function restoreHistoricalArchive(){
 async function deleteAllHistoricalData(){
 
     const phrase=window.prompt(
-        "Type DELETE to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Global GTIN Master, Returns Archive, and users are not affected.",
+        "Type DELETE to permanently remove all received order history for this pharmacy.\n\nCurrent Active Orders, Shared Barcode Database, Returns Archive, and users are not affected.",
         ""
     );
 

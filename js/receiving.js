@@ -599,7 +599,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
           <div class="handheldUnknownGTIN">
           <span>${codeLabel}</span>
           <strong>${escapeHTML(scannedCode)}</strong>
-          <small>${codeLabel==="GTIN"?"NOT FOUND IN GLOBAL GTIN MASTER":"NOT RECOGNISED — SENT TO NEEDS REVIEW"}</small>
+          <small>${codeLabel==="GTIN"?"NOT FOUND IN BARCODE DATABASE":"NOT RECOGNISED — SENT TO NEEDS REVIEW"}</small>
         </div>
 
         <button id="btnHandheldReviewPhoto" class="handheldPhotoButton" type="button">
@@ -848,7 +848,7 @@ function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
         document.getElementById("quickGTINResolver")?.remove();
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";panel.className="gtinResolutionShell open";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
-        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
+        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Shared Barcode Database, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Shared Barcode Database</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
         document.body.appendChild(panel);let done=false;
         const finish=value=>{if(done)return;done=true;panel.remove();setScanBoxState?.(value?"success":"ready");setTimeout(()=>focusScannerInput?.(),30);resolve(value);};
         panel.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>finish(false));
@@ -1125,7 +1125,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                     if(linkCapture&&(normalizeItemCode(linkCapture.item.itemCode)!==normalizeItemCode(resolvingItem.itemCode)||linkCapture.quantity!==quantity||linkCapture.extra===inOrder||(!inOrder&&linkCapture.plan[0].orderNumber!==targetOrder)))throw new Error("Retry the original item, Order and quantity, or close this dialog.");
                     linkCapture=linkCapture||{item:resolvingItem,quantity,extra:!inOrder,transactionId:`RECEIVING_LINK:${globalThis.crypto.randomUUID()}`,plan:inOrder?buildReceivingAutoAllocationPlan(resolvingItem,quantity,selectedOrders):[{orderNumber:targetOrder,quantity}]};
                     const globalItem=await IdentifierService.findGlobalItemByCode(resolvingItem.itemCode);
-                    if(!globalItem) throw new Error("This item is no longer available in Global Master. Search again.");
+                    if(!globalItem) throw new Error("This item is no longer available in Item Database. Search again.");
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                     const mappingResult=await IdentifierService.learnExistingIdentifier(globalThis.crypto.randomUUID(),gtin,globalItem,"Receiving barcode resolution");
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
@@ -1143,13 +1143,13 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             const generation=++searchGeneration;
             const q=toSafeString(search.value).trim();
             if(!q){results.innerHTML="";return;}
-            results.textContent="Searching Global Master…";
+            results.textContent="Searching Item Database…";
             try{
                 const items=await searchReceivingMasterItems(q,selectedOrders);
                 if(generation!==searchGeneration||finished||search.value.trim()!==q)return;
-                results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)} · Group ${escapeHTML(item.groupName||"—")}</small><small>${item.inActiveOrder?"In Active Order":"Not in Active Order"}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching Global Master item.</div>';
+                results.innerHTML=items.length?items.map((item,index)=>`<button type="button" class="gtinResult" data-i="${index}"><span><strong>${escapeHTML(item.itemName)}</strong><small>Item Code ${escapeHTML(item.itemCode)} · Group ${escapeHTML(item.groupName||"—")}</small><small>${item.inActiveOrder?"In Active Order":"Not in Active Order"}</small></span><b>Select</b></button>`).join(""):'<div class="gtinNoResult">No matching Item Database item.</div>';
                 results.querySelectorAll("[data-i]").forEach(button=>button.addEventListener("click",()=>{const item=items[Number(button.dataset.i)];selectedItem=item?.receivingItem||item;drawSelection();}));
-            }catch(error){if(generation===searchGeneration)results.textContent=error?.message||"Unable to search Global Master.";}
+            }catch(error){if(generation===searchGeneration)results.textContent=error?.message||"Unable to search Item Database.";}
 
         };
         search.addEventListener("input",()=>{

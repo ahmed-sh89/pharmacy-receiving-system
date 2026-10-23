@@ -3,3 +3,5 @@
 @media(max-width:1100px){.topbar{grid-template-columns:minmax(140px,.72fr) minmax(160px,.9fr) minmax(310px,1.45fr);gap:6px;padding-right:10px;padding-left:10px}.headerActions{gap:5px}.statusButton,.accountButton,.signOut{padding-right:7px;padding-left:7px}.mainContent{padding:18px 16px}}
 @media(max-width:900px){.topbar{grid-template-columns:minmax(145px,.75fr) minmax(180px,1fr) minmax(300px,1.5fr)}.pharmacyIdentity strong{font-size:12px}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+.track span{width:72%}
+.statusButton:focus-visible,.accountButton:focus-visible{outline:2px solid #357caf;outline-offset:2px}

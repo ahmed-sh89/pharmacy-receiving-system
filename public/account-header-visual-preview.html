@@ -7,6 +7,8 @@
   <meta name="referrer" content="no-referrer">
   <title>PharmFlow — Header &amp; Account Visual Preview</title>
   <link rel="stylesheet" href="/account-header-visual-preview.css">
+  <link rel="stylesheet" href="/header-account-shell.css">
+  <script src="/header-account-menu.js" defer></script>
   <script src="/account-header-visual-preview.js" defer></script>
 </head>
 <body>
@@ -14,29 +16,34 @@
   <aside class="sidebar" aria-label="Primary navigation">
     <div class="brand"><div class="brandMark">P</div><div><strong>PharmFlow</strong><small>PHARMACY OPERATIONS</small></div></div>
     <nav class="navigation">
-      <button class="navItem active" type="button"><span class="navGlyph">▦</span>Receiving</button>
-      <button class="navItem" type="button"><span class="navGlyph">◷</span>Expiry</button>
-      <button class="navItem" type="button"><span class="navGlyph">⚙</span>Settings</button>
+      <button class="navItem active" data-demo-page="Receiving" type="button"><span class="navGlyph">▦</span>Receiving</button>
+      <button class="navItem" data-demo-page="Expiry" type="button"><span class="navGlyph">◷</span>Expiry</button>
+      <button class="navItem" data-demo-page="Settings" type="button"><span class="navGlyph">⚙</span>Settings</button>
     </nav>
-    <div class="sidebarFooter">
-      <div class="footerCode"><span>PHARMACY CODE</span><strong>HHP084</strong></div>
+    <div class="sidebarFooter headerShellFooter">
+      <div class="footerCode"><strong>HHP084</strong></div>
       <div class="connection"><i></i>ONLINE</div>
       <div class="autosave"><i></i><strong>AUTO SAVE ON</strong></div>
     </div>
   </aside>
   <main class="workspace">
-    <header class="topbar">
-      <div class="pageIdentity"><span class="titleAccent"></span><div><span class="pageEyebrow">WORKSPACE</span><h1>Receiving</h1></div></div>
-      <div class="pharmacyIdentity"><strong>Harbor Health Pharmacy</strong><span class="identityDivider"></span><small>CODE</small><b>HHP084</b></div>
-      <div class="headerActions">
+    <header class="topbar headerShell">
+      <div class="pageIdentity headerShellTitle"><h1 id="pageTitle">Receiving</h1></div>
+      <div class="pharmacyIdentity headerShellPharmacy"><strong id="topBarPharmacyName">Harbor Health Pharmacy</strong></div>
+      <div class="headerActions headerShellActions">
         <div class="statusWrap">
-          <button id="statusButton" class="statusButton online" type="button" aria-expanded="false" aria-controls="statusPopover"><i></i><span>ONLINE</span><b>⌄</b></button>
+          <button id="statusButton" class="statusButton headerControl is-online" type="button" aria-expanded="false" aria-controls="statusPopover"><i></i><span>ONLINE</span><span class="headerStatusChevron"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></span></button>
           <div id="statusPopover" class="statusPopover" hidden>
-            <strong>System status</strong><div><span>Global Master</span><b class="ok">ACTIVE</b></div><div><span>Application</span><b class="ok">READY</b></div><div><span>Workspace sync</span><b class="ok">SYNCED</b></div>
+            <strong>System status</strong><div><span>Item Database</span><b class="ok">ACTIVE</b></div><div><span>Application</span><b class="ok">READY</b></div><div><span>Workspace sync</span><b class="ok">SYNCED</b></div>
           </div>
         </div>
-        <button id="accountOpen" class="accountButton" type="button" aria-haspopup="dialog"><span class="userIcon">♙</span><span>Demo Owner</span></button>
-        <button id="signOut" class="signOut" type="button">Sign Out</button>
+        <button id="accountOpen" class="accountButton headerControl" type="button" aria-haspopup="dialog"><span class="headerAccountIcon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><span>Account</span></button>
+        <div class="headerLogoutWrap">
+                    <button id="btnHeaderLogoutToggle" class="headerControl headerLogoutTrigger" type="button" aria-label="Open sign out menu" title="Sign Out" aria-haspopup="menu" aria-expanded="false" aria-controls="headerLogoutMenu"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M9 12h11"/></svg></button>
+                    <div id="headerLogoutMenu" class="headerLogoutMenu" role="menu" aria-label="Account actions" hidden>
+                        <button id="btnLogout" class="headerLogoutAction" type="button" role="menuitem"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M9 12h11"/></svg><span>Sign Out</span></button>
+                    </div>
+                </div>
       </div>
     </header>
     <section class="mainContent">
@@ -44,7 +51,7 @@
       <div class="kpis">
         <article class="kpi blue"><span>Total Items</span><strong>128</strong></article><article class="kpi green"><span>Completed</span><strong>92</strong></article><article class="kpi amber"><span>Remaining Items</span><strong>36</strong></article><article class="kpi teal"><span>Remaining Units</span><strong>74</strong></article><article class="kpi rose"><span>Over Received</span><strong>3</strong></article><article class="kpi purple"><span>Extra Items</span><strong>2</strong></article><article class="kpi aqua"><span>Receiving Activity</span><strong>41</strong></article>
       </div>
-      <section class="progressCard"><div class="progressHeading"><div><span class="eyebrow">ORDER COMPLETION</span><h3>Receiving Progress</h3></div><strong>72%</strong></div><div class="track"><span style="width:72%"></span></div><div class="progressMeta"><span>92 of 128 items completed</span><span>36 remaining</span></div></section>
+      <section class="progressCard"><div class="progressHeading"><div><span class="eyebrow">ORDER COMPLETION</span><h3>Receiving Progress</h3></div><strong>72%</strong></div><div class="track"><span></span></div><div class="progressMeta"><span>92 of 128 items completed</span><span>36 remaining</span></div></section>
       <section class="detailCard"><div><span class="eyebrow">CURRENT WORKSPACE</span><h3>Harbor Health Pharmacy</h3><p>Design preview uses fixed sample content to show the real operational density.</p></div><span class="readyPill"><i></i>READY</span></section>
     </section>
   </main>

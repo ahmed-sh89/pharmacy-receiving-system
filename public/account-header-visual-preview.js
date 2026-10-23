@@ -21,7 +21,7 @@
   ownerEdit.querySelector('[data-demo-save]').addEventListener('click',()=>showToast('Visual demo only · changes are not saved'));
   document.getElementById('changePassword').addEventListener('click',()=>{passwordModal.hidden=false;passwordModal.querySelector('[role="dialog"]').focus();});
   passwordModal.querySelectorAll('[data-password-close]').forEach(el=>el.addEventListener('click',()=>{passwordModal.hidden=true;}));
-  document.getElementById('signOut').addEventListener('click',()=>showToast('Visual demo only · sign out is disabled'));
+  document.getElementById('btnLogout').addEventListener('click',()=>showToast('Visual demo only · sign out is disabled'));
   statusButton.addEventListener('click',()=>{statusPopover.hidden=!statusPopover.hidden;statusButton.setAttribute('aria-expanded',String(!statusPopover.hidden));});
   document.addEventListener('click',event=>{
     if(!statusPopover.hidden&&!statusButton.contains(event.target)&&!statusPopover.contains(event.target)){
@@ -35,3 +35,11 @@
     statusPopover.hidden=true;statusButton.setAttribute('aria-expanded','false');
   });
 })();
+
+// Fictional navigation changes only the visual page identity, never app state.
+document.querySelectorAll('[data-demo-page]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    document.getElementById('pageTitle').textContent=button.dataset.demoPage;
+    document.querySelectorAll('[data-demo-page]').forEach(item=>item.classList.toggle('active',item===button));
+  });
+});

@@ -54,7 +54,8 @@
         statusButton.classList.add("is-"+label.toLowerCase());
         statusButton.setAttribute("aria-label","System status: "+label);
         const sidebarStatus=document.getElementById("sidebarConnection");
-        if(sidebarStatus){
+        if(sidebarStatus && !document.body.classList.contains("zebraDevice")){
+            sidebarStatus.dataset.headerStatusManaged="true";
             sidebarStatus.textContent=label;
             sidebarStatus.classList.toggle("isOffline",label==="OFFLINE");
             sidebarStatus.classList.toggle("isAttention",label==="ATTENTION");

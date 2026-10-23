@@ -214,7 +214,7 @@ async function handleMasterGTINFileSelection(event){
         }
 
         if(typeof authRpc !== "function" || typeof AuthState === "undefined" || !AuthState.context || !AuthState.context.pharmacy_id){
-            throw new Error("Pharmacy access is required to update Global GTIN");
+            throw new Error("Pharmacy access is required to update Barcode Database");
         }
 
         /* Phase 2B.9.1: large masters are uploaded in chunks to a staging
@@ -301,7 +301,7 @@ async function handleMasterGTINFileSelection(event){
         );
 
         showToast(
-            "Global GTIN updated — " +
+            "Barcode Database updated — " +
             parsed.records.length.toLocaleString() +
             " items",
             "success"
@@ -999,7 +999,7 @@ async function uploadGlobalMasterGTINInChunks(records,sourceFile){
     });
     const beginRow=Array.isArray(beginResult)?beginResult[0]:beginResult;
     const importId=typeof beginRow === "string" ? beginRow : (beginRow && (beginRow.import_id || beginRow.id));
-    if(!importId){ throw new Error("Unable to start Global GTIN update"); }
+    if(!importId){ throw new Error("Unable to start Barcode Database update"); }
 
     const chunkSize=750;
     for(let start=0; start<records.length; start+=chunkSize){
@@ -1013,7 +1013,7 @@ async function uploadGlobalMasterGTINInChunks(records,sourceFile){
             }else throw error;
         }
         if(typeof setLoadingText === "function"){
-            setLoadingText("Uploading Global GTIN " + Math.min(start+chunk.length,records.length) + " / " + records.length + "...");
+            setLoadingText("Uploading Barcode Database " + Math.min(start+chunk.length,records.length) + " / " + records.length + "...");
         }
     }
 
@@ -1088,13 +1088,13 @@ async function performGlobalMasterGTINSync(options = {}){
             }
         });
         if(typeof setLoadingText === "function" && options.silent!==true){
-            setLoadingText("Syncing Global GTIN " + Math.min(offset+rows.length,cloudCount) + " / " + cloudCount + "...");
+            setLoadingText("Syncing Barcode Database " + Math.min(offset+rows.length,cloudCount) + " / " + cloudCount + "...");
         }
         if(rows.length===0){ break; }
     }
 
     if(records.length!==cloudCount){
-        throw new Error("Global GTIN sync incomplete: received " + records.length + " of " + cloudCount + " records");
+        throw new Error("Barcode Database sync incomplete: received " + records.length + " of " + cloudCount + " records");
     }
 
     const previousDbName=MasterGTINEngine.dbName;

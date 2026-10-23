@@ -789,7 +789,7 @@ function requestResetWorkspace(){
 
         "Reset Current Workspace",
 
-        "This will permanently discard the CURRENT UNFINALIZED order and its receiving workspace so the same Order Number can be uploaded again. Finalized historical orders and Global GTIN Master are not deleted.",
+        "This will permanently discard the CURRENT UNFINALIZED order and its receiving workspace so the same Order Number can be uploaded again. Finalized historical orders and Shared Barcode Database are not deleted.",
 
         function(){
 
@@ -1032,7 +1032,7 @@ function requestDeleteAllHistory(){
 
         "Delete All Historical Data",
 
-        "This will permanently delete all RECEIVED order history for this pharmacy from Supabase and this browser. Active uploaded orders, Global GTIN Master, Returns Archive, users, and other pharmacies are not affected. This action cannot be undone.",
+        "This will permanently delete all RECEIVED order history for this pharmacy from Supabase and this browser. Active uploaded orders, Shared Barcode Database, Returns Archive, users, and other pharmacies are not affected. This action cannot be undone.",
 
         async function(){
 
@@ -1091,7 +1091,6 @@ async function refreshSafeAccountIdentity(){
     const pairs=[
         ["accountPharmacyName",pharmacyName],
         ["accountUserName",userName],
-        ["headerAccountName",userName],
         ["accountUserRole",role],
         ["settingsPharmacyName",pharmacyName],
         ["settingsPharmacyCode",toSafeString(c.pharmacy_code)||"-"],

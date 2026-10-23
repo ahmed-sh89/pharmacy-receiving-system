@@ -3447,8 +3447,8 @@ function refreshMasterGTINUI(){
         if(headerMaster){
             headerMaster.textContent=navigator.onLine ? "UNAVAILABLE" : "OFFLINE";
             headerMaster.title=navigator.onLine
-                ? "Global GTIN Master data has not been loaded in this environment"
-                : "Global GTIN Master is unavailable while offline";
+                ? "Shared Barcode Database data has not been loaded in this environment"
+                : "Shared Barcode Database is unavailable while offline";
         }
 
         setElementText(
@@ -3458,7 +3458,7 @@ function refreshMasterGTINUI(){
 
         if(UI.elements.masterGTINNotice){
             UI.elements.masterGTINNotice.textContent =
-                "System Global GTIN data is not loaded in this environment. Cloud mapping remains unavailable until the approved dataset is provided.";
+                "Shared Barcode Database data is not loaded in this environment. Cloud mapping remains unavailable until the approved dataset is provided.";
             UI.elements.masterGTINNotice.className =
                 "masterGTINNotice warning";
         }
@@ -3483,8 +3483,8 @@ function refreshMasterGTINUI(){
 
     if(headerMaster){
         const count=toInteger(status.itemCount,0);
-        headerMaster.textContent=navigator.onLine ? "ACTIVE · "+count.toLocaleString() : "CACHED · "+count.toLocaleString();
-        headerMaster.title="Global GTIN Master — "+count.toLocaleString()+" items";
+        headerMaster.textContent=navigator.onLine ? "ACTIVE" : "CACHED";
+        headerMaster.title="Shared Barcode Database — "+count.toLocaleString()+" items";
     }
 
     setElementText(
@@ -3559,7 +3559,7 @@ function refreshMasterGTINUI(){
         else{
 
             UI.elements.masterGTINNotice.textContent =
-                "System Global GTIN is active for the current order. Mapping file is not required.";
+                "Shared Barcode Database is active for the current order. Mapping file is not required.";
 
             UI.elements.masterGTINNotice.className =
                 "masterGTINNotice success";
@@ -3756,7 +3756,7 @@ async function requestDeleteArchivedOrder(internalOrderId,orderNumber){
     }
     const safeOrder=toSafeString(orderNumber).trim();
     if(!safeOrder){showToast("Order Number is unavailable for this archive record","error");return false;}
-    if(!await pharmFlowConfirm({title:"Delete Received Order?",message:"Delete "+safeOrder+" and its related Receiving data? This does NOT delete the Global GTIN Master or other orders.",confirmText:"Continue",tone:"danger"}))return false;
+    if(!await pharmFlowConfirm({title:"Delete Received Order?",message:"Delete "+safeOrder+" and its related Receiving data? This does NOT delete the Shared Barcode Database or other orders.",confirmText:"Continue",tone:"danger"}))return false;
     const typed=window.prompt("Type the Order Number exactly to continue:\n\n"+safeOrder,"");
     if(toSafeString(typed).trim().toUpperCase()!==safeOrder.toUpperCase()){
         showToast("Order Number confirmation did not match","warning");
@@ -8923,7 +8923,7 @@ async function nrV2ResolveGroupToOrderItem(group,item){
     if(!scope.every(order=>selectedOrders.includes(order))) throw new Error("Select the original captured Orders before resolving this review.");
     buildReceivingAutoAllocationPlan(item,group.total_quantity,scope);
     const globalItem=await IdentifierService.findGlobalItemByCode(item.itemCode);
-    if(!globalItem) throw new Error("Select an existing Global Master item.");
+    if(!globalItem) throw new Error("Select an existing Item Database item.");
     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
     let pharmacyMapping=null;
     if(typeof isPharmacyAdmin==="function"&&isPharmacyAdmin()&&identifier){
@@ -9111,7 +9111,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         return `<section class="barcodeListCard"><div class="barcodeSectionHeading"><span class="barcodeSectionLabel">BARCODES</span><strong>${rows.length} linked</strong></div><div class="barcodeRows">${rows.map((row,index)=>`
             <div class="barcodeManagementRow">
                 <strong>${esc(row.identifier_display)}</strong>
-                <span class="barcodeRowMeta ${row.mappingScope==="PHARMACY"?"isLocal":"isGlobal"}">${row.mappingScope==="PHARMACY"?"THIS PHARMACY · RESOLVES FIRST":(row.resolutionPriority==="FALLBACK"?"GLOBAL MASTER · LOWER PRIORITY":"GLOBAL MASTER · USED FOR RESOLUTION")}</span>
+                <span class="barcodeRowMeta ${row.mappingScope==="PHARMACY"?"isLocal":"isGlobal"}">${row.mappingScope==="PHARMACY"?"THIS PHARMACY · RESOLVES FIRST":(row.resolutionPriority==="FALLBACK"?"SHARED DATABASE · LOWER PRIORITY":"SHARED DATABASE · USED FOR RESOLUTION")}</span>
                 ${(row.correctable||row.removable)?`<span class="barcodeRowActions">${row.correctable?`<button type="button" class="barcodeCorrectButton" data-correct-barcode="${index}">Correct Mapping</button>`:""}${row.removable?`<button type="button" class="barcodeRemoveButton" data-remove-barcode="${index}">Remove Barcode</button>`:""}</span>`:""}
                 <div class="barcodeCorrectionHost" data-correction-host="${index}"></div>
             </div>`).join("")}</div></section>`;
@@ -9126,8 +9126,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             ${itemSummary(item)}
             ${renderBarcodeList(rows)}
             ${canAdd?`<section class="barcodeAddCard"><div class="barcodeActionHeading"><span class="barcodeSectionLabel">ADD BARCODE</span><strong>Link another barcode</strong></div><div class="barcodeAddRow"><input data-new-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode"><button type="button" class="primaryButton" data-add-barcode>+ Add Barcode</button></div></section>`:""}
-            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><div><span class="barcodeSectionLabel">DANGER ZONE</span><small>Delete only an unused Global item created by mistake.</small></div><button type="button" class="dangerButton" data-delete-item>Delete Item</button></div>`:""}
-            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Global mappings remain read only.</p>':""}
+            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><div><span class="barcodeSectionLabel">DANGER ZONE</span><small>Delete only an unused shared database item created by mistake.</small></div><button type="button" class="dangerButton" data-delete-item>Delete Item</button></div>`:""}
+            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Shared barcode mappings remain read only.</p>':""}
         `;
         workspace.querySelector("[data-add-barcode]")?.addEventListener("click",async event=>{
             const button=event.currentTarget;
@@ -9179,7 +9179,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         workspace.querySelector("[data-new-identifier]")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();workspace.querySelector("[data-add-barcode]")?.click();}});
         workspace.querySelectorAll("[data-remove-barcode]").forEach(button=>button.addEventListener("click",async()=>{
             const row=rows[Number(button.dataset.removeBarcode)];if(!row||!row.removable)return;
-            const ok=await pharmFlowConfirm({title:"Remove Barcode Mapping?",message:`Remove only the ${row.mappingScope==="PHARMACY"?"current-pharmacy":"Global"} mapping for ${toSafeString(row.identifier_display)}? Any mapping in the other scope and the item itself will remain.`,confirmText:"Remove Mapping",tone:"danger"});
+            const ok=await pharmFlowConfirm({title:"Remove Barcode Mapping?",message:`Remove only the ${row.mappingScope==="PHARMACY"?"current-pharmacy":"shared database"} mapping for ${toSafeString(row.identifier_display)}? Any mapping in the other scope and the item itself will remain.`,confirmText:"Remove Mapping",tone:"danger"});
             if(!ok)return;button.disabled=true;
             try{
                 if(row.mappingScope==="PHARMACY")await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
@@ -9201,7 +9201,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 const findButton=host.querySelector("[data-find-correction-target]");findButton.disabled=true;
                 try{
                     const targets=await IdentifierService.searchItems(value,12);
-                    results.innerHTML=targets.length?targets.map((target,targetIndex)=>`<button type="button" class="barcodeCorrectionTarget" data-correction-target="${targetIndex}"><strong>${esc(itemCodeOf(target))}</strong><span>${esc(itemNameOf(target))}</span></button>`).join(""):'<span class="barcodeCorrectionEmpty">No matching Global item found.</span>';
+                    results.innerHTML=targets.length?targets.map((target,targetIndex)=>`<button type="button" class="barcodeCorrectionTarget" data-correction-target="${targetIndex}"><strong>${esc(itemCodeOf(target))}</strong><span>${esc(itemNameOf(target))}</span></button>`).join(""):'<span class="barcodeCorrectionEmpty">No matching shared database item found.</span>';
                     results.querySelectorAll("[data-correction-target]").forEach(targetButton=>targetButton.addEventListener("click",async()=>{
                         const target=targets[Number(targetButton.dataset.correctionTarget)];if(!target)return;
                         if(itemCodeOf(target)===itemCode){showToast?.("Choose a different target item","warning");return;}
@@ -9235,7 +9235,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         if(!canWriteGlobal()){workspace.innerHTML='<div class="barcodeControlEmpty"><strong>No results</strong><span>No matching item was found.</span></div>';return;}
         selectedItem=null;
         workspace.innerHTML=`<section class="barcodeNewItemCard">
-            <div class="barcodeNewItemHeader"><div><span class="barcodeSectionLabel">NEW ITEM</span><strong>Add New Item</strong><small>Create a new Global Master item with its first barcode.</small></div></div>
+            <div class="barcodeNewItemHeader"><div><span class="barcodeSectionLabel">NEW ITEM</span><strong>Add New Item</strong><small>Create a new Item Database item with its first barcode.</small></div></div>
             <div class="barcodeNewItemForm">
                 <label class="barcodeNewItemCode">Item Code<input data-new-item-code autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Item Code" value="${esc(prefill.itemCode||"")}"></label>
                 <label class="barcodeNewItemName">Item Name<input data-new-item-name autocomplete="off" placeholder="Item Name"></label>
@@ -9250,11 +9250,11 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             const itemCode=toSafeString(workspace.querySelector("[data-new-item-code]")?.value).trim(),itemName=toSafeString(workspace.querySelector("[data-new-item-name]")?.value).trim(),identifierDisplay=toSafeString(workspace.querySelector("[data-new-item-barcode]")?.value).trim();
             if(!itemCode||!itemName||!identifierDisplay){showToast?.("Item Code, Item Name and Barcode are required","warning");return;}
             let existingGlobal;
-            try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Global Master","error");return;}
+            try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Item Database","error");return;}
             if(existingGlobal){
                 searchInput.value=itemCode;
                 try{await showItem(existingGlobal);}
-                catch(error){closeControl();showToast?.("Item already exists in Global Master. No duplicate was created, but its details could not be loaded.","warning");}
+                catch(error){closeControl();showToast?.("Item already exists in Item Database. No duplicate was created, but its details could not be loaded.","warning");}
                 return;
             }
             const groupField=workspace.querySelector("[data-new-item-group]");
@@ -9274,7 +9274,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             try{await showItem({item_code:itemCode,item_name:itemName,group_name:groupName});}
             catch(refreshError){if(typeof Logger!=="undefined")Logger.warn("Global Master item created but detail refresh failed",refreshError);}
             closeControl();
-            showToast?.("Item added to Global Master","success");
+            showToast?.("Item added to Item Database","success");
         });
     };
     const newItemPrefillForNoResult=(search,{barcodeConfirmed=false}={})=>{
@@ -9591,13 +9591,13 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
             const q=toSafeString(search?.value||"").trim();
             if(selectedItem){selectedItem=null;drawSelection();}
             if(!q){matches.innerHTML="";return;}
-            matches.textContent="Searching Global Master…";
+            matches.textContent="Searching Item Database…";
             try{
                 const items=await searchReceivingMasterItems(q,nrV2AllocationScope(group));
                 if(generation!==searchGeneration||search.value.trim()!==q||!section.isConnected)return;
-                matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}" ${item.inActiveOrder?"":"disabled"}><span><strong>${esc(item.itemName)}</strong><small>Item Code ${esc(item.itemCode)} · Group ${esc(item.groupName||"—")}</small><small>${item.inActiveOrder?"In captured Active Orders":"Not in Active Order — this review cannot yet be resolved as an Extra Item"}</small></span></button>`).join(""):`<div class="needsReviewNoMatches">No matching Global Master item.</div>`;
+                matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}" ${item.inActiveOrder?"":"disabled"}><span><strong>${esc(item.itemName)}</strong><small>Item Code ${esc(item.itemCode)} · Group ${esc(item.groupName||"—")}</small><small>${item.inActiveOrder?"In captured Active Orders":"Not in Active Order — this review cannot yet be resolved as an Extra Item"}</small></span></button>`).join(""):`<div class="needsReviewNoMatches">No matching Item Database item.</div>`;
                 matches.querySelectorAll("[data-match]").forEach(button=>button.addEventListener("click",()=>{selectedItem=items[Number(button.dataset.match)]?.receivingItem||null;drawSelection();}));
-            }catch(error){if(generation===searchGeneration)matches.textContent=error?.message||"Unable to search Global Master.";}
+            }catch(error){if(generation===searchGeneration)matches.textContent=error?.message||"Unable to search Item Database.";}
         };
         search?.addEventListener("input",()=>{searchGeneration++;matches.innerHTML="";if(searchFrame)clearTimeout(searchFrame);searchFrame=setTimeout(drawMatches,250);});
         clearReview?.addEventListener("click",()=>{searchGeneration++;if(searchFrame)clearTimeout(searchFrame);if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
@@ -9616,7 +9616,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 /* Expiry case list reuses Receiving's established overlay, row, photo viewer,
    and selection presentation. Its data and write contract stay Expiry-specific. */
 function expiryGlobalMasterSummary(item,esc){
-    const name=item?.itemName||item?.item_name||'Unnamed Global Master item';
+    const name=item?.itemName||item?.item_name||'Unnamed Item Database item';
     const code=item?.itemCode||item?.item_code||'—';
     const raw=item?.identifiers||item?.identifierValues||item?.identifier_values||[];
     const ids=(Array.isArray(raw)?raw.map(x=>typeof x==='string'?x:(x?.identifierDisplay||x?.identifier_display||x?.value||x?.gtin)):[])
@@ -9686,12 +9686,12 @@ function mountExpiryReviewResolver(section,row,index,{canCreate,overlay,onResolv
     input.addEventListener('input',()=>{
         if(busy||uncertain)return;clearTimeout(timer);const token=++request,query=input.value.trim();
         selection.hidden=true;selection.replaceChildren();matches.replaceChildren();if(!query)return;
-        matches.textContent='Searching Global Master…';
+        matches.textContent='Searching Item Database…';
         timer=setTimeout(async()=>{
             try{
                 const items=await IdentifierService.searchItems(query,8);
                 if(!section.isConnected||token!==request||mode!=='existing')return;
-                matches.innerHTML=items.length?items.map((item,i)=>`<button type="button" data-global-match="${i}">${expiryGlobalMasterSummary(item,esc)}</button>`).join(''):'<div class="needsReviewNoMatches">No matching item in Global Master.</div>';
+                matches.innerHTML=items.length?items.map((item,i)=>`<button type="button" data-global-match="${i}">${expiryGlobalMasterSummary(item,esc)}</button>`).join(''):'<div class="needsReviewNoMatches">No matching item in Item Database.</div>';
                 matches.querySelectorAll('[data-global-match]').forEach(button=>button.onclick=()=>renderSelected(items[Number(button.dataset.globalMatch)]));
             }catch(error){if(token===request)matches.textContent=error.message||'Search unavailable. Try again.';}
         },220);
@@ -9725,7 +9725,7 @@ async function openExpiryNeedsReviewPanel(options={}){
       <div class="needsReviewHeaderActions"><button class="needsReviewClose" type="button" data-review-close aria-label="Close Needs Review">Close</button></div></header>
       <div class="needsReviewList" data-review-list>${rows.length?rows.map((row,index)=>`<section class="needsReviewRow" data-expiry-review-id="${esc(row.review_id)}"><div class="expiryReviewCaseHeading"><button class="needsReviewRowSummary" type="button" data-expiry-detail="${index}" aria-expanded="false"><strong>${esc(row.identifier_display||row.gtin||'Identifier unavailable')}</strong><i aria-hidden="true">›</i></button><button type="button" class="expiryCopyBarcode" data-copy-barcode="${index}">Copy Barcode</button></div><div class="needsReviewCaseDetail" data-expiry-case="${index}" hidden><div class="needsReviewInfo"><span>Batch <b>${esc(row.batch_no||'—')}</b></span>${row.sample_serial?`<span>Serial <b>${esc(row.sample_serial)}</b></span>`:''}<span>Expiry <b>${row.expiry_month?String(row.expiry_month).padStart(2,'0'):'—'}/${esc(row.expiry_year||'—')}</b></span><span>Quantity <b>${esc(row.quantity||row.pending_quantity||1)}</b></span></div>
 <div class="pfnReviewPhotoGrid">${row.evidence_photo_path?`<div class="expiryReviewPhoto"><button type="button" data-expiry-photo-open="${index}" aria-label="Open evidence photo"><img data-expiry-photo="${index}" alt="Expiry Needs Review evidence" hidden><span data-expiry-photo-state="${index}">Open details to load evidence photo</span></button><button type="button" data-expiry-photo-retry="${index}" hidden>Retry photo</button></div>`:'<span>No evidence photo available</span>'}</div>
-        ${row.status==='PENDING'&&canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Select Item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search Global Master by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:''}
+        ${row.status==='PENDING'&&canResolve?`<div class="needsReviewSearchRow expiryGlobalSearchRow"><label>Select Item<input type="search" autocomplete="off" data-master-search="${index}" placeholder="Search Item Database by Item Code or name"></label></div><div class="needsReviewMatches expiryGlobalMatches" data-master-matches="${index}"></div><div class="needsReviewSelection expiryGlobalSelection" data-master-selection="${index}" hidden></div>`:''}
         <div class="expiryReviewCaseActions"><button type="button" data-review-delete="${index}">Delete</button></div>
       </div></section>`).join(''):'<div class="needsReviewEmpty">Nothing needs review.</div>'}</div></section>`;
     document.body.appendChild(overlay);
