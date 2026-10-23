@@ -154,7 +154,7 @@ body.zebraDevice .headerLogoutWrap{display:none!important}
  :root body:not(.zebraDevice) .accountPopover :is(.settingsModuleTitleChip,.popoverPharmacy){box-sizing:border-box;margin:0 0 2px;padding:11px 12px;border:1px solid #e0e8ef;border-radius:7px;background:#f1f5f8}
  :root body:not(.zebraDevice) .accountPopover :is(.settingsAccountEmail strong,.popoverEmail strong){color:#304252}
  :root body:not(.zebraDevice) .accountPopover :is(#settingsPharmacyCode,.popoverCode strong){display:inline-block;margin-top:5px;padding:3px 7px;border-radius:5px;background:#edf3f8;color:#365e7e;font-weight:600}
- :root body:not(.zebraDevice) .accountPopover :is(#settingsUserRole,.popoverRole strong){display:inline-block;margin-top:5px;padding:3px 7px;border-radius:5px;background:#f2f4f6;color:#4d6375}
+ :root body:not(.zebraDevice) .accountPopover #settingsUserRole,:root body:not(.zebraDevice) .accountPopover .popoverRole strong{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:5px;background:#f2f4f6;color:#4d6375}
  :root body:not(.zebraDevice) .accountPopover:has(#btnEditSettingsIdentity:not([hidden])) #settingsUserRole,:root body:not(.zebraDevice) .accountPopover .popoverRole.is-demo-owner strong{background:#edf6f0;color:#32694f}
  :root body:not(.zebraDevice) .accountPopover button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
  :root body:not(.zebraDevice) .accountPopover button.primaryButton{border-color:#286f9f;background:#286f9f;color:#fff}
