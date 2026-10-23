@@ -14,3 +14,13 @@ Browser layout evidence: isolated service-free source fixture with actual Modes 
 Activation: existing GitHub Pages main-push workflow stamps the final commit in `version.json` and the HTML build meta. Exact workflow/live-SHA results and non-destructive Production smoke are recorded in the release delivery. Do not infer authenticated Production PASS from static fixtures or Staging acceptance.
 
 Rollback: revert this selective release commit on main through the same Pages workflow; no database rollback required. Preserve later work rather than resetting main.
+
+## Activation evidence
+
+Code release: `4df52d91d6d11d3e1263e5895408391898f5dee0` on main.
+GitHub Pages run `40027074773`: completed / success, matching code-release SHA.
+Live `version.json` and HTML build meta both verified at that SHA. Live Supabase client and responsive correction byte-match the tested files. No Staging configuration, SQL, migration or operational data writes.
+
+Production signed-out smoke PASS: authentication gate visible, body authLocked and application pointer-events none. Secure credential submission was rejected with “Invalid login credentials”; authenticated Account/navigation/logout smoke is BLOCKED, not PASS. No automatic credential retry. No new application console errors observed (browser-extension metadata messages excluded).
+
+Release status: DEPLOYED — authenticated Production smoke pending. Not DONE. Staging user acceptance remains valid; physical Zebra verification remains unperformed. The following documentation-only commit records these results without changing runtime code; its exact deployed SHA is supplied by the existing version stamp.
