@@ -367,7 +367,6 @@
         <!-- SIDEBAR FOOTER -->
 
         <div class="sidebarFooter">
-
             <div class="accountIdentity">
                 <div class="accountAvatar">P</div>
                 <div class="accountIdentityText">
@@ -378,7 +377,6 @@
                 </div>
                 <span id="accountUserRole" class="accountRoleBadge"></span>
             </div>
-            <button id="btnLogout" class="sidebarLogoutButton" type="button">Sign Out</button>
 
             <div class="autoSaveStatus">
 
@@ -442,31 +440,81 @@
             </div>
 
 
-            <div class="pharmacyNameField pfnPharmacyNameHero"><strong id="topBarPharmacyName"></strong></div>
+            <div class="pharmacyNameField pfnPharmacyNameHero" aria-label="Pharmacy identity">
+                <strong id="topBarPharmacyName"></strong>
+                <span class="headerIdentityDivider" aria-hidden="true"></span>
+                <span class="headerIdentityCodeLabel">CODE</span>
+                <strong id="topBarPharmacyCode">—</strong>
+            </div>
 
             <div class="topBarRight pfnContextBar" aria-label="Workspace status">
-
-                <div class="pfnWorkspaceIdentity" aria-label="Pharmacy workspace">
-                    <strong id="topBarPharmacyCode">—</strong>
+                <div class="headerStatusWrap">
+                    <button id="btnHeaderStatus" class="headerUnifiedStatus is-attention" type="button" aria-expanded="false" aria-controls="headerStatusPopover">
+                        <span class="headerStatusDot" aria-hidden="true"></span>
+                        <span id="headerUnifiedStatusLabel">ATTENTION</span>
+                        <span class="headerStatusChevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div id="headerStatusPopover" class="headerStatusPopover" hidden>
+                        <div class="headerPopoverTitle">System status</div>
+                        <div class="headerStatusDetail"><span>Global Master</span><strong id="headerMasterGTINStatus">SYNCING</strong></div>
+                        <div class="headerStatusDetail"><span>Application</span><strong id="systemStatus" class="systemStatus ready">READY</strong></div>
+                        <div class="headerStatusDetail"><span>Workspace sync</span><strong id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</strong></div>
+                    </div>
                 </div>
-
-                <div class="globalMasterHeaderInfo" title="Global GTIN Master status">
-                    <strong id="headerMasterGTINStatus">SYNCING</strong>
-                </div>
-
-                <div
-                    id="systemStatus"
-                    class="systemStatus ready"
-                >
-                    READY
-                </div>
-
-                <span id="cloudWorkspaceStatus" class="cloudWorkspaceStatus" role="status">● CLOUD</span>
-
+                <button id="btnAccountModalOpen" class="headerAccountButton" type="button" aria-haspopup="dialog" aria-controls="accountModal">
+                    <span class="headerAccountIcon" aria-hidden="true">♙</span>
+                    <span id="headerAccountName">Account</span>
+                </button>
+                <button id="btnLogout" class="headerSignOutButton" type="button" aria-label="Sign out">Sign Out</button>
             </div>
 
 
         </header>
+
+        <div id="accountModal" class="accountModal" hidden>
+            <button class="accountModalScrim" data-account-close type="button" aria-label="Close account"></button>
+            <section class="accountModalDialog" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle" tabindex="-1">
+                <header class="accountModalHeader">
+                    <div><span class="sectionEyebrow">PHARMFLOW ACCOUNT</span><h2 id="accountModalTitle">Account</h2></div>
+                    <button class="accountModalClose" data-account-close type="button" aria-label="Close">×</button>
+                </header>
+                <section class="contentCard settingsAccountCompact settingsIdentityBar settingsModuleCard accountModalIdentity">
+                    <div id="settingsIdentityView" class="settingsIdentityMain">
+                        <div class="settingsModuleTitleChip settingsAccountTitleChip">
+                            <span class="sectionEyebrow">PHARMACY</span>
+                            <h2 id="settingsPharmacyName">-</h2>
+                        </div>
+                        <div class="settingsAccountDetails">
+                            <div class="settingsInfoField settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
+                            <div class="settingsInfoField"><span>PHARMACY CODE</span><strong id="settingsPharmacyCode">-</strong></div>
+                            <div class="settingsInfoField settingsRoleField"><span>ROLE</span><strong id="settingsUserRole">-</strong></div>
+                            <div class="settingsIdentityActions">
+                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button"><span aria-hidden="true">♙</span> Change Password</button>
+                                <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit Pharmacy</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="settingsPasswordOverlay" class="settingsPasswordOverlay" aria-hidden="true" hidden>
+                        <button class="settingsPasswordScrim" data-settings-password-close type="button" aria-label="Close change password"></button>
+                        <section class="settingsPasswordPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPasswordTitle">
+                            <header><div><span class="sectionEyebrow">ACCOUNT SECURITY</span><h2 id="settingsPasswordTitle">Change Password</h2><p>Confirm your current password, then create a new password.</p></div><button class="settingsPasswordClose" data-settings-password-close type="button" aria-label="Close">×</button></header>
+                            <div class="settingsPasswordFields">
+                                <label>Current Password<input id="settingsCurrentPassword" type="password" autocomplete="current-password"></label>
+                                <label>New Password<input id="settingsNewPassword" type="password" minlength="8" autocomplete="new-password"><small>Use at least 8 characters.</small></label>
+                                <label>Confirm New Password<input id="settingsConfirmPassword" type="password" minlength="8" autocomplete="new-password"></label>
+                            </div>
+                            <div id="settingsPasswordMessage" class="authMessage" role="status" aria-live="polite"></div>
+                            <footer><button class="secondaryButton" data-settings-password-close type="button">Cancel</button><button id="btnSaveSettingsPassword" class="primaryButton" type="button">Update Password</button></footer>
+                        </section>
+                    </div>
+                    <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityNameInput">Pharmacy Name</label><input id="settingsIdentityNameInput" type="text" maxlength="120"></div>
+                        <div class="settingsIdentityEditField"><label for="settingsIdentityCodeInput">Pharmacy Code</label><input id="settingsIdentityCodeInput" type="text" maxlength="24"></div>
+                        <div class="settingsIdentityEditButtons"><button id="btnSaveSettingsIdentity" class="primaryButton" type="button">Save</button><button id="btnCancelSettingsIdentity" class="secondaryButton" type="button">Cancel</button></div>
+                    </div>
+                </section>
+            </section>
+        </div>
 
 
         <!-- ==================================================
@@ -2032,45 +2080,6 @@
                 class="appPage"
             >
 
-                <section class="contentCard settingsAccountCompact settingsIdentityBar settingsModuleCard">
-                    <div id="settingsIdentityView" class="settingsIdentityMain">
-                        <div class="settingsModuleTitleChip settingsAccountTitleChip">
-                            <span class="sectionEyebrow">ACCOUNT</span>
-                            <h2 id="settingsPharmacyName">-</h2>
-                        </div>
-                        <div class="settingsAccountDetails">
-                            <div class="settingsInfoField settingsAccountEmail"><span>EMAIL</span><strong id="settingsSignedInUser" class="settingsIdentityEmail">-</strong></div>
-                            <div class="settingsInfoField"><span>PHARMACY CODE</span><strong id="settingsPharmacyCode">-</strong></div>
-                            <div class="settingsInfoField settingsRoleField"><span>ROLE</span><strong id="settingsUserRole">-</strong></div>
-                            <div class="settingsIdentityActions">
-                                <button id="btnChangeSettingsPassword" class="secondaryButton settingsPasswordAction" type="button"><span aria-hidden="true">🔒</span> Change Password</button>
-                                <button id="btnEditSettingsIdentity" class="secondaryButton settingsIdentityEdit" type="button" hidden>Edit</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="settingsPasswordOverlay" class="settingsPasswordOverlay" aria-hidden="true" hidden>
-                        <button class="settingsPasswordScrim" data-settings-password-close aria-label="Close change password"></button>
-                        <section class="settingsPasswordPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPasswordTitle">
-                            <header><div><span class="sectionEyebrow">ACCOUNT SECURITY</span><h2 id="settingsPasswordTitle">Change Password</h2><p>Confirm your current password, then create a new password.</p></div><button class="settingsPasswordClose" data-settings-password-close type="button" aria-label="Close">✕</button></header>
-                            <div class="settingsPasswordFields">
-                                <label>Current Password<input id="settingsCurrentPassword" type="password" autocomplete="current-password"></label>
-                                <label>New Password<input id="settingsNewPassword" type="password" minlength="8" autocomplete="new-password"><small>Use at least 8 characters.</small></label>
-                                <label>Confirm New Password<input id="settingsConfirmPassword" type="password" minlength="8" autocomplete="new-password"></label>
-                            </div>
-                            <div id="settingsPasswordMessage" class="authMessage" role="status" aria-live="polite"></div>
-                            <footer><button class="secondaryButton" data-settings-password-close type="button">Cancel</button><button id="btnSaveSettingsPassword" class="primaryButton" type="button">Update Password</button></footer>
-                        </section>
-                    </div>
-                    <div id="settingsIdentityEdit" class="settingsIdentityEditPanel hidden" aria-hidden="true">
-                        <div class="settingsIdentityEditField"><label for="settingsIdentityNameInput">Pharmacy Name</label><input id="settingsIdentityNameInput" type="text" maxlength="120"></div>
-                        <div class="settingsIdentityEditField"><label for="settingsIdentityCodeInput">Pharmacy Code</label><input id="settingsIdentityCodeInput" type="text" maxlength="24"></div>
-                        <div class="settingsIdentityEditButtons">
-                            <button id="btnSaveSettingsIdentity" class="primaryButton" type="button">Save</button>
-                            <button id="btnCancelSettingsIdentity" class="secondaryButton" type="button">Cancel</button>
-                        </div>
-                    </div>
-                </section>
-
                 <section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
                     <div class="settingsModuleTitleChip ownerControlHeader">
                         <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
@@ -2647,6 +2656,7 @@
 <script src="js/handheld-runtime.js?v=RECEIVING_U0030_RECOVERY2"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_BATCH_20261022"></script>
 <script src="js/receiving-history.js?v=HISTORY7"></script>
+<script src="js/header-account-ui.js?v=ACCOUNT_HEADER_PREVIEW1"></script>
 
 
 </body>

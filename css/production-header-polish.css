@@ -1,10 +1,83 @@
-/* Targeted Desktop header alignment; preserves original PharmFlow colors and runtime states. */
+/* Compact account and status controls; preserve the original PharmFlow identity. */
 @media (min-width:769px){
   body:not(.zebraDevice) .pageHeading p{display:none!important}
-  body:not(.zebraDevice) .topBar{align-items:center}
+  body:not(.zebraDevice) .topBar{align-items:center;grid-template-columns:minmax(175px,.82fr) minmax(190px,1fr) minmax(340px,1.45fr);gap:10px;min-height:74px;height:74px;padding:8px 18px}
   body:not(.zebraDevice) .pageHeading{display:flex;flex-direction:column;justify-content:center;min-height:36px}
-  body:not(.zebraDevice) .pharmacyNameField{display:flex;align-items:center;justify-content:center;min-width:0;min-height:36px;gap:0}
-  body:not(.zebraDevice) .pfnContextBar{align-items:center;gap:7px}
-  body:not(.zebraDevice) .pfnContextBar>div,
-  body:not(.zebraDevice) .pfnContextBar>.cloudWorkspaceStatus{height:36px;min-height:36px}
+  body:not(.zebraDevice) .pageHeading h1{font-size:23px;line-height:1.12}
+  body:not(.zebraDevice) .pharmacyNameField{display:flex;align-items:center;justify-content:flex-start;min-width:0;max-width:100%;min-height:36px;gap:8px;padding:0 10px;border:0;border-left:2px solid #c8d8e7;border-radius:0;background:transparent;box-shadow:none;transform:none!important;text-align:left}
+  body:not(.zebraDevice) #topBarPharmacyName{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:800;color:#264c6c;text-align:left}
+  body:not(.zebraDevice) .headerIdentityDivider{width:1px;height:18px;flex:none;background:#d5e0e9}
+  body:not(.zebraDevice) .headerIdentityCodeLabel{flex:none;color:#718398;font-size:9px;font-weight:800;letter-spacing:.07em}
+  body:not(.zebraDevice) #topBarPharmacyCode{flex:none;color:#506981;font-size:11px;font-weight:750;white-space:nowrap}
+  body:not(.zebraDevice) .pfnContextBar{align-items:center;justify-self:end;gap:8px;min-width:0}
+  body:not(.zebraDevice) .pfnContextBar>.headerStatusWrap{position:relative;display:block;flex:none;height:auto;min-height:0;padding:0;border:0;border-radius:0;background:transparent}
+  body:not(.zebraDevice) .pfnContextBar>button{height:36px;min-height:36px}
+  body:not(.zebraDevice) .headerUnifiedStatus,body:not(.zebraDevice) .headerAccountButton,body:not(.zebraDevice) .headerSignOutButton{display:inline-flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;min-width:0;height:36px;padding:0 11px;border:1px solid #d6e2ed;border-radius:8px;background:#fff;color:#36536c;font:700 11px/1 Arial,Helvetica,sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease}
+  body:not(.zebraDevice) .headerUnifiedStatus{min-width:102px;background:#f6f8fa}
+  body:not(.zebraDevice) .headerUnifiedStatus.is-online{border-color:#c8dfd1;background:#f1f8f3;color:#2a7250}
+  body:not(.zebraDevice) .headerUnifiedStatus.is-offline{border-color:#ead7bb;background:#fff8ec;color:#8b6128}
+  body:not(.zebraDevice) .headerUnifiedStatus.is-attention{border-color:#e5d7bf;background:#fcf7ee;color:#7f632e}
+  body:not(.zebraDevice) .headerUnifiedStatus:hover,body:not(.zebraDevice) .headerAccountButton:hover,body:not(.zebraDevice) .headerSignOutButton:hover{border-color:#a9c3d8;background:#f4f8fb;color:#174f7b}
+  body:not(.zebraDevice) .headerUnifiedStatus:focus-visible,body:not(.zebraDevice) .headerAccountButton:focus-visible,body:not(.zebraDevice) .headerSignOutButton:focus-visible,body:not(.zebraDevice) .accountModal button:focus-visible{outline:2px solid #357caf;outline-offset:2px}
+  body:not(.zebraDevice) .headerStatusDot{width:8px;height:8px;flex:none;border-radius:50%;background:#a98b51}
+  body:not(.zebraDevice) .headerUnifiedStatus.is-online .headerStatusDot{background:#389266}
+  body:not(.zebraDevice) .headerUnifiedStatus.is-offline .headerStatusDot{background:#c17b31}
+  body:not(.zebraDevice) .headerStatusChevron{margin-left:1px;color:#8193a4;font-size:12px}
+  body:not(.zebraDevice) .headerAccountIcon{display:grid;width:19px;height:19px;place-items:center;border-radius:50%;background:#edf3f8;color:#496780;font-size:15px}
+  body:not(.zebraDevice) .headerSignOutButton{border-color:#e0e5ea;background:#f9fafb;color:#637587}
+  body:not(.zebraDevice) .headerStatusPopover{position:absolute;top:43px;right:0;z-index:130;box-sizing:border-box;width:252px;padding:12px;border:1px solid #d9e3ec;border-radius:10px;background:#fff;box-shadow:0 10px 28px #173d631a;color:#334f68}
+  body:not(.zebraDevice) .headerPopoverTitle{margin:0 0 8px;color:#28445e;font-size:12px;font-weight:800}
+  body:not(.zebraDevice) .headerStatusDetail{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid #edf1f4;font-size:11px}
+  body:not(.zebraDevice) .headerStatusDetail>span{color:#708294}
+  body:not(.zebraDevice) .headerStatusDetail>strong{font-size:10px;font-weight:800;letter-spacing:.02em;text-align:right}
+  body:not(.zebraDevice) #cloudWorkspaceStatus{margin:0;padding:0;border:0;background:transparent;color:#526e83}
+  body:not(.zebraDevice) .accountModal[hidden],body:not(.zebraDevice) .headerStatusPopover[hidden]{display:none!important}
+  body:not(.zebraDevice) .accountModal{position:fixed;inset:0;z-index:200000;display:grid;place-items:center;padding:24px}
+  body:not(.zebraDevice) .accountModalScrim{position:absolute;inset:0;border:0;background:#10243b66;cursor:default}
+  body:not(.zebraDevice) .accountModalDialog{position:relative;z-index:1;box-sizing:border-box;width:min(680px,calc(100vw - 48px));max-height:min(86vh,760px);overflow:auto;padding:20px;border:1px solid #dbe4ec;border-radius:14px;background:#fff;box-shadow:0 22px 70px #10243b40}
+  body:not(.zebraDevice) .accountModalHeader{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 14px}
+  body:not(.zebraDevice) .accountModalHeader .sectionEyebrow{color:#718398;font-size:10px;font-weight:800;letter-spacing:.08em}
+  body:not(.zebraDevice) .accountModalHeader h2{margin:2px 0 0;color:#203d58;font-size:21px;line-height:1.2}
+  body:not(.zebraDevice) .accountModalClose{display:grid;width:34px;height:34px;place-items:center;border:1px solid #dbe4ec;border-radius:8px;background:#fff;color:#526a80;font-size:22px;cursor:pointer}
+  body:not(.zebraDevice) .accountModalIdentity{position:relative;margin:0;padding:14px;border:1px solid #e1e8ee;border-radius:11px;background:#fbfcfd;box-shadow:none}
+  body:not(.zebraDevice) .accountModalIdentity .settingsIdentityMain{display:block}
+  body:not(.zebraDevice) .accountModalIdentity .settingsModuleTitleChip{margin:0 0 12px;padding:0;border:0;background:transparent}
+  body:not(.zebraDevice) .accountModalIdentity .settingsModuleTitleChip h2{margin:3px 0 0;color:#294b67;font-size:18px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsAccountDetails{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(110px,.8fr) minmax(100px,.65fr);gap:10px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsInfoField{min-width:0;padding:9px 10px;border:1px solid #e4eaf0;border-radius:8px;background:#fff}
+  body:not(.zebraDevice) .accountModalIdentity .settingsInfoField>span{color:#75889a;font-size:9px;font-weight:800;letter-spacing:.06em}
+  body:not(.zebraDevice) .accountModalIdentity .settingsInfoField>strong{display:block;overflow:hidden;margin-top:3px;color:#314e67;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+  body:not(.zebraDevice) .accountModalIdentity .settingsIdentityActions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsPasswordAction,body:not(.zebraDevice) .accountModalIdentity .settingsIdentityEdit{min-height:36px;border-radius:8px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsPasswordOverlay{z-index:2}
+  body:not(.zebraDevice) .accountModalIdentity .settingsPasswordPanel{width:min(500px,calc(100vw - 40px));max-height:86vh;overflow:auto}
+  body:not(.zebraDevice) .accountModalIdentity .settingsIdentityEditPanel{display:grid;gap:12px;padding-top:8px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsIdentityEditField{display:grid;gap:5px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsIdentityEditButtons{display:flex;justify-content:flex-end;gap:8px}
+  body:not(.zebraDevice) .sidebarFooter{gap:8px}
+  body:not(.zebraDevice) .sidebarFooter .accountIdentity{padding:0;border:0;border-radius:0;background:transparent}
+  body:not(.zebraDevice) .sidebarFooter .accountIdentityText{gap:6px}
+  body:not(.zebraDevice) .sidebarFooter .accountIdentityText small{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#174f7b;font-size:13px;font-weight:850;letter-spacing:.04em}
+  body:not(.zebraDevice) .sidebarFooter .accountIdentityText small::before{content:"PHARMACY CODE";color:#6d8194;font-size:9px;font-weight:800;letter-spacing:.06em}
+  body:not(.zebraDevice) .sidebarFooter .sidebarConnection{margin:0;padding:7px 9px;border:1px solid #d2e1d8;border-radius:7px;background:#f5faf6}
+  body:not(.zebraDevice) .sidebarFooter .sidebarConnection.isOffline,body:not(.zebraDevice) .sidebarFooter .sidebarConnection.isAttention{border-color:#ead8c1;background:#fff9f1}
+  body:not(.zebraDevice) .sidebarFooter .sidebarConnection.isAttention{color:#8b6a35}
+  body:not(.zebraDevice) .sidebarFooter .autoSaveStatus{justify-content:flex-start;margin-top:1px;padding:0 1px}
+}
+body.zebraDevice .headerStatusWrap{position:static;display:flex;align-items:center;gap:6px}
+body.zebraDevice .headerUnifiedStatus,body.zebraDevice .headerAccountButton,body.zebraDevice .headerSignOutButton{display:none!important}
+body.zebraDevice .headerStatusPopover,body.zebraDevice .headerStatusPopover[hidden]{position:static;display:flex!important;align-items:center;gap:5px;width:auto;padding:0;border:0;background:transparent;box-shadow:none}
+body.zebraDevice .headerPopoverTitle,body.zebraDevice .headerStatusDetail>span{display:none!important}
+body.zebraDevice .headerStatusDetail{display:flex;align-items:center;padding:0;border:0;background:transparent}
+body.zebraDevice .headerStatusDetail>strong{box-sizing:border-box;min-height:30px;padding:7px 9px;border:1px solid #d6e2ed;border-radius:7px;background:#f5f9fd;color:#496780;font-size:10px}
+body.zebraDevice #headerMasterGTINStatus{color:#246d53}
+body.zebraDevice .accountModal{display:none!important}
+@media (max-width:1100px) and (min-width:769px){
+  body:not(.zebraDevice) .topBar{grid-template-columns:minmax(150px,.72fr) minmax(175px,.92fr) minmax(315px,1.45fr);gap:7px;padding-right:10px;padding-left:10px}
+  body:not(.zebraDevice) .pfnContextBar{gap:5px}
+  body:not(.zebraDevice) .headerUnifiedStatus,body:not(.zebraDevice) .headerAccountButton,body:not(.zebraDevice) .headerSignOutButton{padding-right:8px;padding-left:8px}
+  body:not(.zebraDevice) .accountModalIdentity .settingsAccountDetails{grid-template-columns:minmax(0,1.3fr) minmax(105px,.8fr) minmax(85px,.6fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  body:not(.zebraDevice) .headerUnifiedStatus,body:not(.zebraDevice) .headerAccountButton,body:not(.zebraDevice) .headerSignOutButton{transition:none}
 }
