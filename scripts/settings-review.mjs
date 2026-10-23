@@ -17,6 +17,7 @@ export function buildSettingsReview(out){
  document.getElementById('btnEditSettingsIdentity').hidden=false;
  const note=document.createElement('p');note.className='settingsDescription';note.textContent='DEMO DATA · Visual review only. No authentication, database or saved changes.';document.getElementById('page-settings').prepend(note);
  for(const path of ['settings-review-runtime.js','js/settings-workspace.js','js/header-account-menu.js','js/header-account-popover.js','js/header-account-ui.js']){const el=document.createElement('script');el.src='/'+path;document.body.append(el);}
+ const app=readFileSync('js/app.js','utf8');
  const ui=readFileSync('ui.js','utf8'),auth=readFileSync('js/auth.js','utf8'),expiry=readFileSync('js/expiry.js','utf8');
  const fn=(source,name)=>{const start=source.search(new RegExp('(?:async )?function '+name+'\\('));if(start<0)throw Error('Missing review source '+name);return source.slice(start,source.indexOf('\n}',start)+2);};
  const runtime=`"use strict";
@@ -53,8 +54,17 @@ renderV2IdentifierAdministration(document.getElementById('globalIdentifierMaster
 document.querySelectorAll('[data-owner-view]').forEach(b=>b.addEventListener('click',()=>openOwnerManagementPanel(b.dataset.ownerView)));
 document.getElementById('btnCloseOwnerManagement').addEventListener('click',closeOwnerManagementPanel);
 document.getElementById('ownerManagementSearch').addEventListener('input',e=>{AuthState.ownerManagementSearch=e.target.value;renderOwnerPharmacies();});
-document.getElementById('ownerPharmacyList').addEventListener('click',e=>{const button=e.target.closest('[data-owner-action]');if(button)handleOwnerPharmacyAction(button);});
-for(const id of ['btnResetWorkspace','btnDeleteAllHistory'])document.getElementById(id).addEventListener('click',()=>window.settingsConfirm({title:'Confirm Action',message:id==='btnResetWorkspace'?'Clear the current workspace? Historical reports will be preserved.':'Permanently delete received history for this pharmacy? This cannot be undone.'}).then(ok=>{if(ok)showToast('Visual review only — changes are not saved.');}));
+const UI={elements:{confirmModal:document.getElementById('confirmModal'),confirmTitle:document.getElementById('confirmTitle'),confirmMessage:document.getElementById('confirmMessage')}};
+const setElementText=(el,value)=>{if(el)el.textContent=value;};
+const focusScannerInput=()=>{};
+${fn(ui,'showConfirmModal')}
+${fn(ui,'closeConfirmModal')}
+${fn(app,'requestResetWorkspace')}
+${fn(app,'requestDeleteAllHistory')}
+document.getElementById('btnResetWorkspace').addEventListener('click',requestResetWorkspace);
+document.getElementById('btnDeleteAllHistory').addEventListener('click',requestDeleteAllHistory);
+document.getElementById('btnConfirmCancel').addEventListener('click',closeConfirmModal);
+document.getElementById('btnConfirmOK').addEventListener('click',()=>{closeConfirmModal();showToast('Visual review only — changes are not saved.');});
 setText('headerMasterGTINStatus','ACTIVE');setText('cloudWorkspaceStatus','SYNCED');
 `;
  writeFileSync(out+'/settings-review-runtime.js',runtime);

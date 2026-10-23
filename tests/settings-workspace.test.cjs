@@ -69,3 +69,12 @@ test('generated review reuses real markup and renderers, with no app initializat
  const runtime=fs.readFileSync('dist/settings-review-runtime.js','utf8');assert(!/fetch\s*\(|XMLHttpRequest|localStorage|sessionStorage|indexedDB|serviceWorker|WebSocket/.test(runtime));
  const app=parseHTML(html).document;for(const id of ['settingsItemsPanel','settingsDataPanel','settingsAccessPanel'])assert.equal(document.getElementById(id).outerHTML,app.getElementById(id).outerHTML.replace('id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden','id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard"'));
 });
+test('review delegates Owner actions only once and retains actual destructive confirmation source',()=>{
+ const runtime=fs.readFileSync('dist/settings-review-runtime.js','utf8');
+ assert.equal((runtime.match(/handleOwnerPharmacyAction\(btn\)/g)||[]).length,1);
+ assert(!runtime.includes("document.getElementById('ownerPharmacyList').addEventListener"));
+ const app=fs.readFileSync('js/app.js','utf8');
+ for(const name of ['requestResetWorkspace','requestDeleteAllHistory']){
+ const start=app.indexOf('function '+name+'(');assert(runtime.includes(app.slice(start,app.indexOf('\n}',start)+2)));
+ }
+});

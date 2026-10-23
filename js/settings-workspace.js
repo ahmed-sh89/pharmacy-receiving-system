@@ -51,7 +51,7 @@
 function settingsDialog({title="Confirm",message="",label,value,readOnly=false,confirmText="Save"}){
  return new Promise(resolve=>{
     const previous=document.activeElement;
-    const dialog=document.createElement('dialog');dialog.className='settingsTextDialog settingsDialog';
+    const dialog=document.createElement('dialog');dialog.className='settingsTextDialog settingsDialog';dialog.setAttribute('aria-label',title);
     const form=document.createElement('form');form.method='dialog';
     const heading=document.createElement('h2');heading.textContent=title;form.append(heading);
     if(message){const description=document.createElement('p');description.textContent=message;form.append(description);}
