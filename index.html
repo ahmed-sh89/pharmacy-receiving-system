@@ -2128,46 +2128,37 @@
 <section id="settingsAccessPanel" class="settingsTabPanel" role="tabpanel" aria-labelledby="settingsAccessTab" hidden><section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
 
 
-                    <div class="ownerMetricGrid" aria-label="Pharmacy access views">
-                        <button class="ownerMetricCard ownerMetricTotal" type="button" data-owner-view="total">
+                    <div class="ownerMetricGrid receivingSummaryGrid discrepancyGrid" aria-label="Pharmacy access views">
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiAll" type="button" data-owner-view="total" aria-pressed="true">
                             <span>Total Pharmacies</span>
                             <strong id="ownerMetricTotalPharmacies">0</strong>
                         </button>
-                        <button class="ownerMetricCard ownerMetricActive" type="button" data-owner-view="active">
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiReceived" type="button" data-owner-view="active" aria-pressed="false">
                             <span>Active</span>
                             <strong id="ownerMetricActivePharmacies">0</strong>
                         </button>
-                        <button class="ownerMetricCard ownerMetricPending" type="button" data-owner-view="pending">
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiOver" type="button" data-owner-view="pending" aria-pressed="false">
                             <span>Pending Requests</span>
                             <strong id="ownerMetricPendingRequests">0</strong>
                         </button>
-                        <button class="ownerMetricCard ownerMetricAdmins" type="button" data-owner-view="suspended">
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiShortage" type="button" data-owner-view="suspended" aria-pressed="false">
                             <span>Suspended</span>
                             <strong id="ownerMetricSuspendedPharmacies">0</strong>
                         </button>
                     </div>
 
-                    <div id="ownerManagementPanel" class="modalOverlay ownerManagementOverlay" aria-hidden="true">
-                        <section class="modalCard ownerManagementPanel" role="dialog" aria-modal="true" aria-labelledby="ownerManagementTitle">
-                        <div class="ownerManagementPanelHeader">
-                            <div>
-                                <span id="ownerManagementEyebrow" class="sectionEyebrow">PHARMACY ACCESS</span>
-                                <h3 id="ownerManagementTitle">All Pharmacies</h3>
-                                <p id="ownerManagementDescription" class="settingsDescription"></p>
-                            </div>
-                            <div class="ownerManagementPanelTools">
-                                <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
-                                    <span>Search</span>
-                                    <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
-                                </label>
-                                <button id="btnCloseOwnerManagement" class="secondaryButton" type="button">Close</button>
-                            </div>
-                        </div>
+                    <section id="ownerManagementPanel" class="ownerManagementWorkspace" aria-labelledby="ownerManagementTitle">
+                        <header class="ownerManagementToolbar">
+                            <h3 id="ownerManagementTitle">All Pharmacies</h3>
+                            <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
+                                <span>Search pharmacies</span>
+                                <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
+                            </label>
+                        </header>
                         <div id="ownerManagementMessage" class="authMessage ownerControlMessage" role="status" aria-live="polite" aria-atomic="true"></div>
-                        <div id="ownerRegistrationRequests" class="registrationRequestsList" hidden></div>
-                        <div id="ownerPharmacyList" class="ownerPharmacyList" hidden></div>
-                        </section>
-                    </div>
+                        <div id="ownerRegistrationRequests" class="ownerTableScroll" hidden></div>
+                        <div id="ownerPharmacyList" class="ownerTableScroll"></div>
+                    </section>
 
                     <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
                 </section><section id="memberInviteCard" class="contentCard" hidden aria-hidden="true">

@@ -159,7 +159,6 @@ function bindAuthUI(){
         button.addEventListener("click",()=>closeSettingsPasswordPanel());
     });
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
-    bindClick("btnCloseOwnerManagement", ()=>closeOwnerManagementPanel());
     bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
     bindClick("btnCancelSettingsIdentity", ()=>setSettingsIdentityEditMode(false));
     bindClick("btnSaveSettingsIdentity", ()=>saveSettingsIdentity());
@@ -1551,15 +1550,21 @@ async function loadOwnerPharmacies(){
 
 async function loadOwnerControlCenter(){
     if(!isSystemOwner()){ return; }
+    const panel=document.getElementById("ownerManagementPanel");
+    panel?.setAttribute("aria-busy","true");
+    setOwnerManagementMessage("Loading pharmacies…","");
     try{
         await Promise.all([
             loadOwnerRegistrationRequests(false),
             loadOwnerPharmacies()
         ]);
         renderOwnerMetrics();
+        renderOwnerManagementPanel();
+        setOwnerManagementMessage("","");
     }catch(error){
         setSettingsAccessMessage(error.message || "Unable to load Access Management.","error");
-    }
+        setOwnerManagementMessage(error.message || "Unable to load pharmacies.","error");
+    }finally{panel?.setAttribute("aria-busy","false");}
 }
 
 function renderOwnerMetrics(){
@@ -1569,6 +1574,8 @@ function renderOwnerMetrics(){
     setText("ownerMetricActivePharmacies",String(pharmacies.filter(p=>p.status === "active" && p.active !== false).length));
     setText("ownerMetricPendingRequests",String(requests.filter(r=>r.request_status === "pending").length));
     setText("ownerMetricSuspendedPharmacies",String(pharmacies.filter(p=>!(p.status === "active" && p.active !== false)).length));
+    const view=AuthState.ownerManagementView || "total";
+    document.querySelectorAll("[data-owner-view]").forEach(card=>{card.classList.toggle("active",card.dataset.ownerView===view);card.setAttribute("aria-pressed",String(card.dataset.ownerView===view));});
 }
 
 function ownerPharmacyMatchesSearch(p,query){
@@ -1593,41 +1600,37 @@ function renderOwnerPharmacies(){
     const box=document.getElementById("ownerPharmacyList");
     if(!box){ return; }
     const rows=getOwnerPharmacyRowsForView();
+    const hasRole=rows.some(p=>typeof p.admin_role==="string" && p.admin_role.trim());
     if(!rows.length){
         box.innerHTML='<div class="registrationEmpty">No pharmacies match this view.</div>';
         renderOwnerMetrics();
         return;
     }
-
-    box.innerHTML=rows.map(p=>{
-        const active=p.status==="active" && p.active!==false;
-        const adminLabel=p.admin_email
-            ? escapeAuthHtml(p.admin_email)
-            : (p.pending_admin_email
-                ? escapeAuthHtml(p.pending_admin_email)+' <span class="ownerAwaitingTag">Awaiting activation</span>'
-                : '<span class="ownerUnassignedTag">No ADMIN assigned</span>');
-        const adminName=p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
-
-        return `<article class="ownerPharmacyCard">
-            <div class="ownerPharmacyIdentity">
-                <div class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "-")}</div>
-                <strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong>
-            </div>
-            <div class="ownerPharmacyAdmin">
-                <span class="ownerFieldLabel">ADMIN</span>
-                <div>${adminLabel}</div>
-                ${adminName}
-            </div>
-            <div class="ownerPharmacyActions">
-                <span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
-                <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit</button>
-                <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
-                ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
-                <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
-            </div>
-        </article>`;
-    }).join("");
-
+    box.innerHTML=`<table class="ownerPharmacyTable${hasRole?' ownerHasRole':''}" aria-label="Pharmacies">
+        <colgroup><col class="ownerCodeColumn"><col class="ownerNameColumn"><col class="ownerEmailColumn"><col class="ownerStatusColumn">${hasRole?'<col class="ownerRoleColumn">':""}<col class="ownerActionsColumn"></colgroup>
+        <thead><tr><th scope="col">Pharmacy Code</th><th scope="col">Pharmacy Name</th><th scope="col">Admin Email</th><th scope="col">Status</th>${hasRole?'<th scope="col">Role</th>':""}<th scope="col">Actions</th></tr></thead>
+        <tbody>${rows.map(p=>{
+            const active=p.status==="active" && p.active!==false;
+            const adminLabel=p.admin_email
+                ? escapeAuthHtml(p.admin_email)
+                : (p.pending_admin_email
+                    ? escapeAuthHtml(p.pending_admin_email)+' <small class="ownerAwaitingTag">Awaiting activation</small>'
+                    : '<span class="ownerUnassignedTag">No ADMIN assigned</span>');
+            const adminName=p.admin_name ? `<small>${escapeAuthHtml(p.admin_name)}</small>` : "";
+            return `<tr>
+                <td><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "—")}</span></td>
+                <td><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong></td>
+                <td class="ownerPharmacyAdmin">${adminLabel}${adminName}</td>
+                <td><span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span></td>
+                ${hasRole?`<td>${escapeAuthHtml(p.admin_role || "—")}</td>`:""}
+                <td><div class="ownerPharmacyActions">
+                    <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit</button>
+                    <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
+                    ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
+                    <button type="button" class="secondaryButton" data-owner-action="${active ? "suspend" : "activate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${active ? "Suspend" : "Activate"}</button>
+                </div></td>
+            </tr>`;
+        }).join("")}</tbody></table>`;
     box.querySelectorAll("[data-owner-action]").forEach(btn=>{
         btn.addEventListener("click",()=>handleOwnerPharmacyAction(btn));
     });
@@ -1637,48 +1640,26 @@ function renderOwnerPharmacies(){
 function openOwnerManagementPanel(view){
     if(!["total","active","pending","suspended"].includes(view)){ return; }
     AuthState.ownerManagementView=view;
-    AuthState.ownerManagementSearch="";
-    const search=document.getElementById("ownerManagementSearch");
-    if(search){ search.value=""; }
     setOwnerManagementMessage("","");
     renderOwnerManagementPanel();
-
-}
-
-function closeOwnerManagementPanel(){
-    AuthState.ownerManagementView=null;
-    AuthState.ownerManagementSearch="";
-    const panel=document.getElementById("ownerManagementPanel");
-    if(panel){ panel.classList.remove("open"); panel.setAttribute("aria-hidden","true"); }
 }
 
 function renderOwnerManagementPanel(){
     const panel=document.getElementById("ownerManagementPanel");
     const pharmacyList=document.getElementById("ownerPharmacyList");
     const requests=document.getElementById("ownerRegistrationRequests");
-    const searchWrap=document.getElementById("ownerManagementSearchWrap");
     if(!panel || !pharmacyList || !requests){ return; }
-    const view=AuthState.ownerManagementView;
-    if(!view){
-        panel.classList.remove("open");
-        panel.setAttribute("aria-hidden","true");
-        return;
-    }
-    const config={
-        total:["PHARMACY ACCESS","All Pharmacies","Manage every pharmacy and its ADMIN access."],
-        active:["PHARMACY ACCESS","Active Pharmacies","Manage pharmacies that currently have active access."],
-        pending:["NEW PHARMACIES","Pending Registration Requests","Review new accounts, confirm the official pharmacy identity, then approve or reject access."],
-        suspended:["PHARMACY ACCESS","Suspended Pharmacies","Manage pharmacies whose access is currently suspended."]
-    }[view];
-    setText("ownerManagementEyebrow",config[0]);
-    setText("ownerManagementTitle",config[1]);
-    setText("ownerManagementDescription",config[2]);
-    panel.classList.add("open");
-    panel.setAttribute("aria-hidden","false");
+    const view=AuthState.ownerManagementView || "total";
+    const titles={total:"All Pharmacies",active:"Active Pharmacies",pending:"Pending Requests",suspended:"Suspended Pharmacies"};
+    setText("ownerManagementTitle",titles[view] || titles.total);
+    document.querySelectorAll("[data-owner-view]").forEach(card=>{
+        const selected=card.dataset.ownerView===view;
+        card.classList.toggle("active",selected);
+        card.setAttribute("aria-pressed",String(selected));
+    });
     const pending=view==="pending";
     requests.hidden=!pending;
     pharmacyList.hidden=pending;
-    if(searchWrap){ searchWrap.hidden=pending; }
     if(pending){ renderOwnerRegistrationRequests(); }
     else{ renderOwnerPharmacies(); }
 }
@@ -1847,9 +1828,9 @@ async function handleOwnerPharmacyAction(button){
     if(action === "identity"){
         const currentName = button.dataset.pharmacyName || "";
         const currentCode = button.dataset.pharmacyCode || "";
-        const newName = await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Name",value:currentName});
+        const newName = await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Name",value:currentName,anchor:button});
         if(newName === null){ return; }
-        const newCode = await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Code",value:currentCode});
+        const newCode = await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Code",value:currentCode,anchor:button});
         if(newCode === null){ return; }
         if(!String(newName).trim() || String(newCode).trim().length < 3){
             setSettingsAccessMessage("Pharmacy Name and a valid Pharmacy Code are required.","error");
@@ -1875,7 +1856,7 @@ async function handleOwnerPharmacyAction(button){
     if(action === "admin"){
         const pharmacy = (AuthState.ownerPharmacies || []).find(p=>String(p.pharmacy_id) === String(pharmacyId));
         const currentAdminEmail = pharmacy?.admin_email || pharmacy?.pending_admin_email || "";
-        const email = await window.settingsTextPrompt({title:"Pharmacy Admin",label:"Admin email",value:currentAdminEmail});
+        const email = await window.settingsTextPrompt({title:"Pharmacy Admin",label:"Admin email",value:currentAdminEmail,anchor:button});
         if(email === null){ return; }
         const cleanEmail = String(email).trim().toLowerCase();
         if(!cleanEmail || !cleanEmail.includes("@")){
@@ -1947,26 +1928,27 @@ async function loadOwnerRegistrationRequests(showMessage=false){
 function renderOwnerRegistrationRequests(){
     const box = document.getElementById("ownerRegistrationRequests");
     if(!box){ return; }
-    const rows = (AuthState.ownerRegistrations || []).filter(r=>r.request_status === "pending");
+    const query=String(AuthState.ownerManagementSearch || "").trim().toLowerCase();
+    const rows = (AuthState.ownerRegistrations || []).filter(r=>r.request_status === "pending").filter(r=>!query || [r.pharmacy_code,r.applicant_email,r.pharmacy_name].map(v=>String(v||"").toLowerCase()).join(" ").includes(query));
     if(!rows.length){
-        box.innerHTML = '<div class="registrationEmpty">No pending registration requests.</div>';
+        box.innerHTML = '<div class="registrationEmpty">'+(query?'No pending requests match your search.':'No pending registration requests.')+'</div>';
         return;
     }
-    box.innerHTML = rows.map(r=>`<article class="registrationRequestCard">
-        <div class="registrationRequestTop">
-            <div><strong>${escapeAuthHtml(r.applicant_email || "New account")}</strong><span>Requested code: ${escapeAuthHtml(r.pharmacy_code || "-")}</span></div>
-            <span class="registrationStatus pending">PENDING</span>
-        </div>
-        <div class="registrationMeta"><span>${escapeAuthHtml(formatAuthDate(r.submitted_at))}</span></div>
-        <div class="registrationApprovalFields">
-            <label>Official Pharmacy Name<input type="text" data-reg-name="${escapeAuthHtml(r.request_id)}" maxlength="120" placeholder="Pharmacy name"></label>
-            <label>Official Pharmacy Code<input type="text" data-reg-code="${escapeAuthHtml(r.request_id)}" maxlength="24" value="${escapeAuthHtml(r.pharmacy_code || "")}"></label>
-        </div>
-        <div class="registrationActions">
-            <button type="button" class="secondaryButton" data-reg-action="reject" data-reg-id="${escapeAuthHtml(r.request_id)}">Reject</button>
-            <button type="button" class="primaryButton" data-reg-action="approve" data-reg-id="${escapeAuthHtml(r.request_id)}">Approve & Activate</button>
-        </div>
-    </article>`).join("");
+    box.innerHTML = `<table class="ownerPharmacyTable ownerRequestsTable" aria-label="Pending pharmacy requests">
+        <thead><tr><th scope="col">Requested Code</th><th scope="col">Admin Email</th><th scope="col">Official Identity</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <tbody>${rows.map(r=>`<tr>
+            <td><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(r.pharmacy_code || "—")}</span></td>
+            <td>${escapeAuthHtml(r.applicant_email || "New account")}<small>${escapeAuthHtml(formatAuthDate(r.submitted_at))}</small></td>
+            <td><div class="ownerRequestFields">
+                <label>Pharmacy Name<input type="text" data-reg-name="${escapeAuthHtml(r.request_id)}" maxlength="120" placeholder="Official pharmacy name"></label>
+                <label>Pharmacy Code<input type="text" data-reg-code="${escapeAuthHtml(r.request_id)}" maxlength="24" value="${escapeAuthHtml(r.pharmacy_code || "")}"></label>
+            </div></td>
+            <td><span class="ownerPharmacyState suspended">PENDING</span></td>
+            <td><div class="ownerPharmacyActions">
+                <button type="button" class="secondaryButton" data-reg-action="reject" data-reg-id="${escapeAuthHtml(r.request_id)}">Reject</button>
+                <button type="button" class="primaryButton" data-reg-action="approve" data-reg-id="${escapeAuthHtml(r.request_id)}">Approve &amp; Activate</button>
+            </div></td>
+        </tr>`).join("")}</tbody></table>`;
     box.querySelectorAll("[data-reg-action]").forEach(btn=>{
         btn.addEventListener("click",()=>reviewRegistration(btn.dataset.regId,btn.dataset.regAction));
     });

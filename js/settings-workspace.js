@@ -72,5 +72,30 @@ function settingsDialog({title="Confirm",message="",label,value,readOnly=false,c
     if(input){input.focus();input.select();}else{cancel.focus();}
  });
 }
-window.settingsTextPrompt=options=>settingsDialog(options);
 window.settingsConfirm=options=>settingsDialog({...options,title:'Confirm Action',confirmText:'Confirm'}).then(result=>result===true);
+
+// Row prompts reuse the existing validated Edit/Admin sequence and RPC handlers.
+function settingsInlinePrompt({title,label,value,anchor}){
+ return new Promise(resolve=>{
+    const row=anchor.closest('tr'),table=row?.closest('table');
+    if(!row || !table){resolve(null);return;}
+    const edit=document.createElement('tr');edit.className='ownerInlineEdit';
+    const cell=document.createElement('td');cell.colSpan=row.children.length;
+    const form=document.createElement('form');form.setAttribute('aria-label',title);
+    const heading=document.createElement('h4');heading.textContent=title;
+    const field=document.createElement('label');field.textContent=label;
+    const input=document.createElement('input');input.value=value||'';input.type='text';input.autocomplete='off';field.append(input);
+    const actions=document.createElement('footer');
+    const cancel=document.createElement('button');cancel.type='button';cancel.className='secondaryButton';cancel.textContent='Cancel';
+    const save=document.createElement('button');save.type='submit';save.className='primaryButton';save.textContent='Continue';
+    actions.append(cancel,save);form.append(heading,field,actions);cell.append(form);edit.append(cell);row.after(edit);
+    let finished=false;
+    const finish=value=>{if(finished)return;finished=true;observer.disconnect();edit.remove();if(anchor.isConnected)anchor.focus();resolve(value);};
+    const observer=new MutationObserver(()=>{if(!edit.isConnected){finish(null);}});
+    observer.observe(table.parentElement,{childList:true,subtree:true});
+    form.addEventListener('submit',event=>{event.preventDefault();finish(input.value);});
+    form.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();finish(null);}});
+    cancel.addEventListener('click',()=>finish(null));input.focus();input.select();
+ });
+}
+window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList tr')?settingsInlinePrompt(options):settingsDialog(options);

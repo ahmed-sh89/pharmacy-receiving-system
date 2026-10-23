@@ -144,7 +144,7 @@ test("Settings new Global Item creation separates committed save from optional d
   const handlerMatch=settings.match(/workspace\.querySelector\("\[data-create-item\]"\)\?\.addEventListener\("click",async event=>\{([\s\S]*?)\n        \}\);/);
   assert(handlerMatch,"Settings new-item click handler must be available for behavioral regression coverage");
   const scenarios=[
-    {name:"successful create despite refresh failure",result:{success:true},refreshError:new Error("optional detail refresh failed"),expectedMessage:["Item added to Global Master","success"],expectedDisabled:true,expectedClosed:true},
+    {name:"successful create despite refresh failure",result:{success:true},refreshError:new Error("optional detail refresh failed"),expectedMessage:["Item added to Database","success"],expectedDisabled:true,expectedClosed:true},
     {name:"genuine create rejection",error:new Error("RPC rejected test creation"),expectedMessage:["RPC rejected test creation","error"],expectedDisabled:false,expectedClosed:false}
   ];
   for(const scenario of scenarios){

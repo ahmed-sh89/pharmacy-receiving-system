@@ -36,11 +36,10 @@ test('existing Settings controls stay unique; redundant launcher/modal removed',
  assert.equal(document.getElementById('barcodeControlOverlay'),null);assert.equal(document.getElementById('btnOpenBarcodeControl'),null);
  assert(document.querySelector('#settingsItemsPanel [data-admin-search]'));assert(document.querySelector('#settingsAccessPanel #ownerManagementCard[hidden]')===null);
 });
-test('Owner RPCs, validation and authorization remain exact after dialog presentation substitutions',()=>{
- const baseline=cp.execFileSync('git',['show','66ac0b2:js/auth.js'],{encoding:'utf8'});let current=fs.readFileSync('js/auth.js','utf8');
- current=current.replace(/!\(await window\.settingsConfirm\(\{message:([^\n]*?)\}\)\)/g,'!window.confirm($1)');
- const pairs=[['await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Name",value:currentName})','window.prompt("Official Pharmacy Name:", currentName)'],['await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Code",value:currentCode})','window.prompt("Official Pharmacy Code:", currentCode)'],['await window.settingsTextPrompt({title:"Pharmacy Admin",label:"Admin email",value:currentAdminEmail})','window.prompt("ADMIN email for this pharmacy:", currentAdminEmail)'],['await window.settingsTextPrompt({title:"Temporary Password",label:"Copy and send securely. The ADMIN must replace it at first sign-in.",value:temporaryPassword,readOnly:true,confirmText:"Close"})','window.prompt("Temporary password — copy and send it securely. The ADMIN must replace it at first sign-in:",temporaryPassword)']];
- for(const [from,to] of pairs)current=current.replace(from,to);assert.equal(current,baseline);
+test('Owner mutations retain their exact accepted validation, guards, RPCs and confirmations',()=>{
+ const baseline=cp.execFileSync('git',['show','ef0077c:js/auth.js'],{encoding:'utf8'}),current=fs.readFileSync('js/auth.js','utf8');
+ const fn=(s,name)=>{const a=s.indexOf('async function '+name+'(');return s.slice(a,s.indexOf('\n}',a)+2);};
+ for(const name of ['handleOwnerPharmacyAction','reviewRegistration'])assert.equal(fn(current,name).replaceAll(',anchor:button',''),fn(baseline,name));
 });
 test('restricted account cannot trigger Owner actions even with injected controls',async()=>{
  const source=fs.readFileSync('js/auth.js','utf8');const a=source.indexOf('async function handleOwnerPharmacyAction('),b=source.indexOf('async function loadOwnerRegistrationRequests',a);let calls=0;

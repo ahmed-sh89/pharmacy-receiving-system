@@ -38,22 +38,21 @@ const nrV2OperationId=()=>crypto.randomUUID();
 function showToast(message){let box=document.getElementById('settingsReviewMessage');if(!box){box=document.createElement('p');box.id='settingsReviewMessage';box.className='authMessage';box.setAttribute('role','status');document.getElementById('page-settings').append(box);}box.textContent=message;}
 const Logger={warn:()=>{}};
 const authRpc=blocked,callPasswordAdmin=blocked,loadOwnerPharmacies=blocked,loadMyAppContext=blocked,renderAuthState=()=>{};
-const setAuthBusy=()=>{},setSettingsAccessMessage=showToast,setOwnerManagementMessage=showToast;
+const setAuthBusy=()=>{};
 const formatAuthDate=v=>v;
 const ExpiryCaptureEngine={workers:[{worker_id:'demo-a',worker_name:'Demo Operator'},{worker_id:'demo-b',worker_name:'Sample Operator'}]};
 const expiryEscapeHtml=escapeHTML,expiryPharmacyId=()=> 'demo',loadExpiryWorkers=blocked;
 const saveExpiryWorkerFromSettings=()=>showToast('Visual review only — changes are not saved.');
 const refreshExpiryOperatorManagement=()=>{document.getElementById('expiryWorkersSettingsCard').hidden=false;document.getElementById('expiryWorkersSettingsCard').setAttribute('aria-hidden','false');};
 ${fn(ui,'renderV2IdentifierAdministration')}
-${['renderOwnerMetrics','ownerPharmacyMatchesSearch','getOwnerPharmacyRowsForView','renderOwnerPharmacies','openOwnerManagementPanel','closeOwnerManagementPanel','renderOwnerManagementPanel','renderOwnerRegistrationRequests','handleOwnerPharmacyAction','reviewRegistration'].map(n=>fn(auth,n)).join('\n')}
+${['renderOwnerMetrics','ownerPharmacyMatchesSearch','getOwnerPharmacyRowsForView','renderOwnerPharmacies','openOwnerManagementPanel','renderOwnerManagementPanel','renderOwnerRegistrationRequests','setOwnerManagementMessage','setSettingsAccessMessage','handleOwnerPharmacyAction','reviewRegistration'].map(n=>fn(auth,n)).join('\n')}
 ${fn(expiry,'ensureExpiryWorkerSettingsCard')}
 ${fn(expiry,'renderExpiryWorkerSettingsList')}
 function pharmFlowConfirm(options){return window.settingsConfirm(options);}
-ensureExpiryWorkerSettingsCard();renderExpiryWorkerSettingsList();renderOwnerMetrics();renderOwnerPharmacies();renderOwnerRegistrationRequests();
+ensureExpiryWorkerSettingsCard();renderExpiryWorkerSettingsList();renderOwnerMetrics();renderOwnerManagementPanel();
 renderV2IdentifierAdministration(document.getElementById('globalIdentifierMasterAdmin'));
 document.querySelectorAll('[data-owner-view]').forEach(b=>b.addEventListener('click',()=>openOwnerManagementPanel(b.dataset.ownerView)));
-document.getElementById('btnCloseOwnerManagement').addEventListener('click',closeOwnerManagementPanel);
-document.getElementById('ownerManagementSearch').addEventListener('input',e=>{AuthState.ownerManagementSearch=e.target.value;renderOwnerPharmacies();});
+document.getElementById('ownerManagementSearch').addEventListener('input',e=>{AuthState.ownerManagementSearch=e.target.value;renderOwnerManagementPanel();});
 const UI={elements:{confirmModal:document.getElementById('confirmModal'),confirmTitle:document.getElementById('confirmTitle'),confirmMessage:document.getElementById('confirmMessage')}};
 const setElementText=(el,value)=>{if(el)el.textContent=value;};
 const focusScannerInput=()=>{};
