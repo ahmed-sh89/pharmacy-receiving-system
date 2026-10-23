@@ -11,10 +11,12 @@ function fixture(){
   Object.defineProperty(document,"activeElement",{get:()=>active});
   document.querySelectorAll("*").forEach(el=>el.focus=()=>{active=el;el.dispatchEvent(new window.Event("focusin",{bubbles:true}));});
   const navigator={onLine:true};
-  const context={document,window,navigator,MutationObserver:class{observe(){}}};
+  const observers=[];
+  const context={document,window,navigator,CustomEvent:window.CustomEvent,MutationObserver:class{constructor(callback){this.callback=callback;}observe(target){observers.push({target,callback:this.callback});}}};
   const run=path=>vm.runInNewContext(fs.readFileSync(path,"utf8"),context);
   const key=(el,value)=>{const e=new window.Event("keydown",{bubbles:true,cancelable:true});e.key=value;el.dispatchEvent(e);};
-  return {document,window,navigator,run,key};
+  const notify=target=>observers.filter(x=>x.target===target).forEach(x=>x.callback());
+  return {document,window,navigator,run,key,notify};
 }
 test("logout menu supports keyboard, outside dismissal and existing action",()=>{
   const {document,run,key}=fixture();
@@ -85,3 +87,33 @@ test("shell retains account security controls and static preview has no app runt
    if(owner)assert.equal(document.getElementById("settingsIdentityCodeInput").disabled,true);
   }
  });
+
+test("Edit feedback follows actual dialog state regardless of click binding order",()=>{
+  for(const uiFirst of [true,false]){
+    const {document,run,notify}=fixture();
+    const panel=document.getElementById("settingsIdentityEdit"),overlay=document.getElementById("accountEditOverlay");
+    const feedback=document.getElementById("settingsAccessMessage"),message=document.getElementById("accountIdentityEditMessage");
+    const bindAuth=()=>{
+      document.getElementById("btnEditSettingsIdentity").addEventListener("click",()=>panel.classList.remove("hidden"));
+      document.getElementById("btnCancelSettingsIdentity").addEventListener("click",()=>panel.classList.add("hidden"));
+    };
+    if(!uiFirst)bindAuth();run("js/header-account-ui.js");if(uiFirst)bindAuth();
+    document.getElementById("btnEditSettingsIdentity").click();notify(panel);
+    assert.equal(overlay.hidden,false);
+    feedback.textContent="Pharmacy Name and a valid Pharmacy Code are required.";
+    feedback.className="authMessage error";notify(feedback);
+    assert.equal(message.textContent,feedback.textContent,`binding order uiFirst=${uiFirst}`);
+    assert.equal(message.className,"authMessage error");
+    feedback.textContent="Unable to update pharmacy identity.";notify(feedback);
+    assert.equal(message.textContent,feedback.textContent);
+    document.getElementById("btnCancelSettingsIdentity").click();notify(panel);
+    feedback.textContent="Unrelated Settings feedback";notify(feedback);
+    assert.equal(message.textContent,"Unable to update pharmacy identity.");
+    document.getElementById("btnEditSettingsIdentity").click();notify(panel);
+    panel.classList.add("hidden");notify(panel);
+    feedback.textContent="Pharmacy identity updated. Operational history was preserved.";
+    feedback.className="authMessage success";notify(feedback);
+    assert.equal(document.getElementById("accountFeedbackMessage").textContent,feedback.textContent);
+    assert.equal(message.className,"authMessage success");
+  }
+});

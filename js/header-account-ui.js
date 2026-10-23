@@ -73,11 +73,15 @@
     const editPanel=document.getElementById("settingsIdentityEdit");
     const editOverlay=document.getElementById("accountEditOverlay");
     const passwordOverlay=document.getElementById("settingsPasswordOverlay");
+    let editFeedbackActive=false;
     function syncEditDialog(){
         if(!editPanel || !editOverlay){ return; }
         const open=!editPanel.classList.contains("hidden");
         const wasOpen=!editOverlay.hidden;
         editOverlay.hidden=!open;
+        // AuthState owns the panel class; click listeners may run before it opens.
+        // Retain the route after a save closes the dialog until its result arrives.
+        if(open){ editFeedbackActive=true; }
         if(open && !wasOpen){ document.getElementById("settingsIdentityNameInput")?.focus(); }
         if(!open && wasOpen){ document.getElementById("btnAccountModalOpen")?.focus(); }
     }
@@ -86,8 +90,6 @@
     syncEditDialog();
     // Mirror the existing canonical feedback into the relocated account experience.
     const feedback=document.getElementById("settingsAccessMessage");
-    let editFeedbackActive=false;
-    document.getElementById("btnEditSettingsIdentity")?.addEventListener("click",()=>{editFeedbackActive=!!editPanel && !editPanel.classList.contains("hidden");});
     document.getElementById("btnCancelSettingsIdentity")?.addEventListener("click",()=>{editFeedbackActive=false;});
     let passwordWasOpen=false;
     if(passwordOverlay){new MutationObserver(()=>{
