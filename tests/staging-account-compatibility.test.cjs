@@ -1,0 +1,47 @@
+"use strict";
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {PGlite}=require('@electric-sql/pglite');
+const draft=fs.readFileSync('staging/prepared/20261023_account_compatibility.sql','utf8');
+const owner='10000000-0000-4000-8000-000000000001',other='10000000-0000-4000-8000-000000000002';
+const pharmacy='20000000-0000-4000-8000-000000000001',reference='20000000-0000-4000-8000-000000000002';
+test('proposed compatibility in isolated memory preserves owner, audit and reference boundaries',async()=>{
+ const db=new PGlite();
+ try{
+  await db.exec(`create role anon;create role authenticated;create schema auth;
+   create table auth.users(id uuid primary key,email text);
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+   create table public.pharmacies(id uuid primary key,status text not null,name text,code text,active boolean not null default true);
+   create table public.pharmacy_members(pharmacy_id uuid,user_id uuid,role text,active boolean,created_at timestamptz default now());
+   create table public.profiles(user_id uuid,email text,display_name text);
+   create table public.system_owners(user_id uuid primary key);
+   create table public.pharmacy_admin_assignments(pharmacy_id uuid,email text,status text);
+   alter table public.pharmacies enable row level security;
+   create function public.is_system_owner() returns boolean language sql stable security definer set search_path=public as $$select exists(select 1 from public.system_owners where user_id=auth.uid())$$;
+   revoke all on function public.is_system_owner() from public;grant execute on function public.is_system_owner() to authenticated;
+   insert into auth.users values('${owner}','owner@example.test'),('${other}','member@example.test');
+   insert into system_owners values('${owner}');
+   insert into pharmacies values('${pharmacy}','active','Original Demo','TEST001',true),('${reference}','active','Reference Demo','HHP084',true);
+  `);
+  const before=(await db.query('select * from pharmacies order by id')).rows;
+  await db.exec(draft);
+  const after=(await db.query('select id,status,name,code,active from pharmacies order by id')).rows;
+  assert.deepEqual(after,before);
+  assert((await db.query('select created_at,updated_at,approved_at from pharmacies')).rows.every(r=>Object.values(r).every(x=>x===null)));
+  await db.exec(`set role authenticated;select set_config('request.jwt.claim.sub','${other}',false);`);
+  await assert.rejects(db.query(`select * from owner_update_pharmacy_identity_v1('${pharmacy}','Forbidden','TEST999')`),/System Owner/);
+  await assert.rejects(db.query('select * from owner_list_pharmacies()'),/System Owner/);
+  await assert.rejects(db.query('select * from pharmflow_pharmacy_identity_audit_v1'),/permission denied/);
+  await db.exec(`reset role;select set_config('request.jwt.claim.sub','${owner}',false);set role authenticated;`);
+  await assert.rejects(db.query(`select * from owner_update_pharmacy_identity_v1('${reference}','Reference Demo','CHANGED')`),/protected reference/);
+  await assert.rejects(db.query(`select * from owner_update_pharmacy_identity_v1('${pharmacy}','Demo','HHP084')`),/already in use/);
+  await assert.rejects(db.query(`select * from owner_update_pharmacy_identity_v1('${pharmacy}','','T2')`),/name is required/);
+  await db.query(`select * from owner_update_pharmacy_identity_v1('${pharmacy}','Edited Demo','TEST002')`);
+  assert.equal((await db.query('select * from owner_list_pharmacies()')).rows.length,2);
+  await db.exec('reset role');
+  const audits=(await db.query('select * from pharmflow_pharmacy_identity_audit_v1')).rows;
+  assert.equal(audits.length,1);assert.equal(audits[0].changed_by,owner);assert.equal(audits[0].old_code,'TEST001');
+  await assert.rejects(db.exec(draft),/baseline changed/);
+ }finally{await db.close();}
+});
