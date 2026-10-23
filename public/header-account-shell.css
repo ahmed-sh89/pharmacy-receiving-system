@@ -94,3 +94,6 @@ body.zebraDevice .headerLogoutWrap{display:none!important}
  body:not(.zebraDevice) .accountPopover .settingsModuleTitleChip{min-width:0;width:auto}
  body:not(.zebraDevice) .accountPopover .settingsIdentityActions,body:not(.zebraDevice) .accountPopover .settingsPasswordAction{min-width:0}
 }
+@media (min-width:769px){
+ body:not(.zebraDevice) .accountEditDialog .settingsIdentityEditButtons button.primaryButton,body:not(.zebraDevice) .accountEditDialog .formActions button.primaryButton{border-color:#286f9f;background:#286f9f;color:#fff}
+}
