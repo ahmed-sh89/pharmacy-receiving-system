@@ -2126,7 +2126,7 @@ window.addEventListener?.("beforeunload",event=>{
 /* ---------------- Worker management in Settings ---------------- */
 
 function ensureExpiryWorkerSettingsCard(){
-    const settings = document.getElementById("page-settings");
+    const settings = document.getElementById("settingsOperatorsPanel") || document.getElementById("page-settings");
     if(!settings || document.getElementById("expiryWorkersSettingsCard")) return;
 
     const card = document.createElement("section");
@@ -2137,9 +2137,8 @@ function ensureExpiryWorkerSettingsCard(){
     card.innerHTML = `
         <div class="cardHeader">
             <div>
-                <span class="sectionEyebrow">NEAR EXPIRY</span>
                 <h2>Operators</h2>
-                <p class="settingsDescription">Manage pharmacy Operators. Historical attribution is preserved.</p>
+                <p class="settingsDescription">Historical attribution is preserved.</p>
             </div>
         </div>
         <div class="expiryWorkerAddRow">
@@ -2206,7 +2205,7 @@ function renderExpiryWorkerSettingsList(){
 
     list.querySelectorAll('[data-expiry-worker-rename]').forEach(button=>button.onclick=async()=>{
         const worker=ExpiryCaptureEngine.workers.find(w=>w.worker_id===button.dataset.expiryWorkerRename);
-        const name=window.prompt('Operator name',worker.worker_name);if(name===null||name.trim()===worker.worker_name)return;
+        const name=await window.settingsTextPrompt({title:'Rename Operator',label:'Operator name',value:worker.worker_name});if(name===null||name.trim()===worker.worker_name)return;
         button.disabled=true;try{await authRpc('rename_pharmacy_expiry_worker',{p_pharmacy_id:expiryPharmacyId(),p_worker_id:worker.worker_id,p_worker_name:name.trim(),p_expected_name:worker.worker_name});await loadExpiryWorkers();}catch(error){showToast?.(error.message||'Unable to rename Operator','error');button.disabled=false;}
     });
     list.querySelectorAll("[data-expiry-worker-remove]").forEach(button => {

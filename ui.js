@@ -9001,8 +9001,6 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const searchButton=overlay.querySelector("[data-admin-search-button]");
     const workspace=overlay.querySelector("[data-admin-workspace]");
     const clear=overlay.querySelector("[data-admin-clear]");
-    const modal=document.getElementById("barcodeControlOverlay");
-    const openButton=document.getElementById("btnOpenBarcodeControl");
     if(!searchInput||!searchButton||!workspace) return;
     if(searchButton.dataset.identifierAdminBound==="1") return;
     searchButton.dataset.identifierAdminBound="1";
@@ -9088,10 +9086,10 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         return `<section class="barcodeItemCard"><span class="barcodeSectionLabel">SELECTED ITEM</span><div class="barcodeItemIdentity"><div class="barcodeItemIdentityField"><span>Item Code</span><strong>${esc(itemCodeOf(item)||"—")}</strong></div><div class="barcodeItemIdentityField"><span>Item Name</span><b>${esc(itemNameOf(item))}</b></div><div class="barcodeItemIdentityField"><span>Group</span><strong>${esc(group)}</strong></div></div></section>`;
     };
 
-    const openControl=()=>{if(!modal)return;modal.hidden=false;modal.setAttribute("aria-hidden","false");renderDefault();requestAnimationFrame(()=>searchInput.focus());};
-    const closeControl=()=>{if(!modal)return;modal.hidden=true;modal.setAttribute("aria-hidden","true");clearTimeout(searchSuggestTimer);searchInput.value="";workspace.innerHTML="";selectedItem=null;};
-    openButton?.addEventListener("click",openControl);
-    modal?.querySelectorAll("[data-barcode-close]").forEach(button=>button.addEventListener("click",closeControl));
+    // Inline workspace: no launcher, modal state or competing search renderer.
+    const closeControl=()=>{clearTimeout(searchSuggestTimer);searchInput.value="";};
+    renderDefault();
+    if(typeof AppEvents!=="undefined") AppEvents.on("auth:context-ready",()=>{searchInput.value="";renderDefault();});
 
     const loadBarcodeRows=async item=>{
         const itemCode=itemCodeOf(item);

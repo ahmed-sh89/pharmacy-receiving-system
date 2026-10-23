@@ -9,9 +9,13 @@
    Never place a secret/service_role/database password here.
 ===================================================== */
 
+const stagingRuntimeConfig=window.PHARMFLOW_STAGING_CONFIG;
+if(!stagingRuntimeConfig || stagingRuntimeConfig.url!=="https://tovkcakucyagvbzvlnks.supabase.co" || !stagingRuntimeConfig.publishableKey){
+    throw new Error("Staging configuration unavailable. Connection disabled; no Production fallback.");
+}
 const CLOUD_CONFIG = Object.freeze({
-    url:"https://zznoshzcyxmtwfbznjyr.supabase.co",
-    publishableKey:"sb_publishable_dulQyE_y0NZK2XyJyW_0TA_xhvwIxCS",
+    url:stagingRuntimeConfig.url,
+    publishableKey:stagingRuntimeConfig.publishableKey,
     pollIntervalMs:5000,
     rpcTimeoutMs:9000
 });

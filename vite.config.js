@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import { cpSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { stagingPreviewConfig } from './scripts/staging-preview-config.mjs';
+import { buildSettingsReview } from './scripts/settings-review.mjs';
 
 function copyLegacyRuntime(){
   return {
@@ -8,12 +10,16 @@ function copyLegacyRuntime(){
     closeBundle(){
       const out=resolve('dist');
       mkdirSync(out,{recursive:true});
+      const staging=stagingPreviewConfig(process.env);
+      writeFileSync(resolve(out,'staging-runtime-config.js'),'"use strict";window.PHARMFLOW_STAGING_CONFIG=Object.freeze('+JSON.stringify(staging)+');\n');
+      writeFileSync(resolve(out,'version.json'),JSON.stringify({sha:process.env.VERCEL_GIT_COMMIT_SHA||'local-settings-preview',environment:'staging'}));
       if(existsSync('js')) cpSync('js',resolve(out,'js'),{recursive:true});
       // The PDF-only embedded font is loaded lazily by the classic report runtime.
       if(existsSync('assets/fonts')) cpSync('assets/fonts',resolve(out,'assets/fonts'),{recursive:true});
       for(const file of ['ui.js','cloud-workspace.js']){
         if(existsSync(file)) copyFileSync(file,resolve(out,file));
       }
+      buildSettingsReview(out);
     }
   };
 }
@@ -44,5 +50,5 @@ const isVercelBuild = process.env.VERCEL === '1'
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[copyLegacyRuntime(),copyStagingScanDiagnostic()]
+  plugins:[{name:'require-staging-config',transformIndexHtml(html){return html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||'local-settings-preview');},configResolved(config){if(config.command==='build'){stagingPreviewConfig(process.env);}}},copyLegacyRuntime(),copyStagingScanDiagnostic()]
 });

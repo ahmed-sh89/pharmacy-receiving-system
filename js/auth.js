@@ -1831,12 +1831,12 @@ async function handleOwnerPharmacyAction(button){
     if(action === "reset-password"){
         const targetUserId=button.dataset.adminUserId;
         if(!targetUserId){ return; }
-        if(!window.confirm("Create a one-time temporary password for this pharmacy ADMIN?")){ return; }
+        if(!(await window.settingsConfirm({message:"Create a one-time temporary password for this pharmacy ADMIN?"}))){ return; }
         setAuthBusy(true);
         try{
             const result=await callPasswordAdmin({action:"reset",target_user_id:targetUserId});
             const temporaryPassword=String(result.temporary_password||"");
-            window.prompt("Temporary password — copy and send it securely. The ADMIN must replace it at first sign-in:",temporaryPassword);
+            await window.settingsTextPrompt({title:"Temporary Password",label:"Copy and send securely. The ADMIN must replace it at first sign-in.",value:temporaryPassword,readOnly:true,confirmText:"Close"});
             setOwnerManagementMessage("Temporary password created. No email was sent.","success");
         }catch(error){
             setOwnerManagementMessage(error.message || "Unable to reset password.","error");
@@ -1847,15 +1847,15 @@ async function handleOwnerPharmacyAction(button){
     if(action === "identity"){
         const currentName = button.dataset.pharmacyName || "";
         const currentCode = button.dataset.pharmacyCode || "";
-        const newName = window.prompt("Official Pharmacy Name:", currentName);
+        const newName = await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Name",value:currentName});
         if(newName === null){ return; }
-        const newCode = window.prompt("Official Pharmacy Code:", currentCode);
+        const newCode = await window.settingsTextPrompt({title:"Edit Pharmacy",label:"Pharmacy Code",value:currentCode});
         if(newCode === null){ return; }
         if(!String(newName).trim() || String(newCode).trim().length < 3){
             setSettingsAccessMessage("Pharmacy Name and a valid Pharmacy Code are required.","error");
             return;
         }
-        if(!window.confirm("Update this pharmacy identity? Existing Orders, Receiving and history remain attached to the same pharmacy.")){ return; }
+        if(!(await window.settingsConfirm({message:"Update this pharmacy identity? Existing Orders, Receiving and history remain attached to the same pharmacy."}))){ return; }
         setAuthBusy(true);
         try{
             await authRpc("owner_update_pharmacy_identity_v1",{
@@ -1875,14 +1875,14 @@ async function handleOwnerPharmacyAction(button){
     if(action === "admin"){
         const pharmacy = (AuthState.ownerPharmacies || []).find(p=>String(p.pharmacy_id) === String(pharmacyId));
         const currentAdminEmail = pharmacy?.admin_email || pharmacy?.pending_admin_email || "";
-        const email = window.prompt("ADMIN email for this pharmacy:", currentAdminEmail);
+        const email = await window.settingsTextPrompt({title:"Pharmacy Admin",label:"Admin email",value:currentAdminEmail});
         if(email === null){ return; }
         const cleanEmail = String(email).trim().toLowerCase();
         if(!cleanEmail || !cleanEmail.includes("@")){
             setSettingsAccessMessage("Enter a valid ADMIN email.","error");
             return;
         }
-        if(!window.confirm("Assign " + cleanEmail + " as the single pharmacy ADMIN?")){ return; }
+        if(!(await window.settingsConfirm({message:"Assign " + cleanEmail + " as the single pharmacy ADMIN?"}))){ return; }
 
         setAuthBusy(true);
         try{
@@ -1910,7 +1910,7 @@ async function handleOwnerPharmacyAction(button){
     const question = nextStatus === "suspended"
         ? "Suspend this pharmacy? Its ADMIN will lose application access until you reactivate it."
         : "Reactivate this pharmacy?";
-    if(!window.confirm(question)){ return; }
+    if(!(await window.settingsConfirm({message:question}))){ return; }
 
     setAuthBusy(true);
     try{
@@ -1983,7 +1983,7 @@ async function reviewRegistration(requestId,decision){
         setSettingsAccessMessage("Enter the official Pharmacy Name and Pharmacy Code before approval.","error");
         return;
     }
-    if(!window.confirm(approve ? "Approve and activate this pharmacy with the official identity shown?" : "Reject this pharmacy registration request?")){ return; }
+    if(!(await window.settingsConfirm({message:approve ? "Approve and activate this pharmacy with the official identity shown?" : "Reject this pharmacy registration request?"}))){ return; }
     setAuthBusy(true);
     try{
         await authRpc("owner_review_pharmacy_registration_v2",{
