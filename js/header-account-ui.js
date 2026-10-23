@@ -17,6 +17,12 @@
         const masterActive=/\bACTIVE\b/i.test(masterText) && !/CACHED/i.test(masterText);
         const appReady=/^READY$/i.test(readyText) && ready?.classList.contains("ready");
         const workspaceSynced=/\bSYNCED\b/i.test(syncText) && !/PENDING|SYNCING/i.test(syncText);
+        // Presentation only: success colors reuse the existing readiness results.
+        [[master,masterActive],[ready,appReady],[sync,workspaceSynced]].forEach(([node,successful])=>{
+            if(!node){ return; }
+            const tone=successful ? "success" : (/error|failed|failure/i.test(node.textContent) || node.classList.contains("error") ? "error" : "warning");
+            if(node.dataset.uiTone!==tone){ node.dataset.uiTone=tone; }
+        });
         const cloudOffline=/\bOFFLINE\b/i.test(syncText) || document.documentElement.dataset.cloudWorkspaceState==="offline";
         const offline=!navigator.onLine || cloudOffline;
         const label=offline ? "OFFLINE" : (masterActive && appReady && workspaceSynced ? "ONLINE" : "ATTENTION");

@@ -40,10 +40,10 @@
         </div>
 <div class="headerAccountWrap">        <button id="btnAccountModalOpen" class="accountButton headerControl" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="accountPopover"><span class="headerAccountIcon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><span>Account</span><span class="headerStatusChevron" aria-hidden="true">▾</span></button>
 <section id="accountPopover" class="accountPopover" role="dialog" aria-label="Account" tabindex="-1" hidden>
- <div class="accountPopoverHeading">Account</div>
+ <div class="accountPopoverHeading"><svg class="accountHeadingIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg><span>Account</span></div>
  <div class="popoverPharmacy"><small>ACCOUNT / PHARMACY</small><strong>Harbor Health Pharmacy</strong></div>
- <div class="popoverFields"><div class="popoverEmail"><span>Email</span><strong>demo.owner@example.test</strong></div><div><span>Pharmacy Code</span><strong>HHP084</strong></div><div><span>Role</span><strong>System Owner</strong></div></div>
- <div class="popoverActions"><button id="changePassword" data-account-launch class="secondaryButton" type="button">Change Password</button><button id="editPharmacy" data-account-launch class="secondaryButton" type="button">Edit Pharmacy</button></div>
+ <div class="popoverFields"><div class="popoverEmail"><span>Email</span><strong>demo.owner@example.test</strong></div><div class="popoverCode"><span>Pharmacy Code</span><strong>HHP084</strong></div><div class="popoverRole is-demo-owner"><span>Role</span><strong>System Owner</strong></div></div>
+ <div class="popoverActions"><button id="changePassword" data-account-launch class="secondaryButton" type="button">Change Password</button><button id="editPharmacy" data-account-launch class="primaryButton" type="button"><svg class="accountActionIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg><span>Edit Pharmacy</span></button></div>
  </section></div>
         <div class="headerLogoutWrap">
                     <button id="btnHeaderLogoutToggle" class="headerControl headerLogoutTrigger" type="button" aria-label="Open sign out menu" title="Sign Out" aria-haspopup="menu" aria-expanded="false" aria-controls="headerLogoutMenu"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M9 12h11"/></svg></button>

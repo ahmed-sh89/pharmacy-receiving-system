@@ -145,3 +145,27 @@ body.zebraDevice .headerLogoutWrap{display:none!important}
  :root body:not(.zebraDevice) :is(.settingsPasswordPanel,.accountEditDialog) .authMessage:empty{display:none}
 }
 @media (prefers-reduced-motion:reduce){:root body:not(.zebraDevice) :is(.settingsPasswordPanel,.passwordModal,.accountEditDialog) button{transition:none}}
+
+/* Restrained Account hierarchy; colors follow existing authorized visibility. */
+@media (min-width:769px){
+ :root body:not(.zebraDevice) .accountPopover .accountPopoverHeading{display:flex;align-items:center;gap:8px;color:#203e59;font-weight:700}
+ :root body:not(.zebraDevice) .accountPopover :is(.accountHeadingIcon,.accountActionIcon){flex:none;width:16px;height:16px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+ :root body:not(.zebraDevice) .accountPopover .accountHeadingIcon{color:#527994}
+ :root body:not(.zebraDevice) .accountPopover :is(.settingsModuleTitleChip,.popoverPharmacy){box-sizing:border-box;margin:0 0 2px;padding:11px 12px;border:1px solid #e0e8ef;border-radius:7px;background:#f1f5f8}
+ :root body:not(.zebraDevice) .accountPopover :is(.settingsAccountEmail strong,.popoverEmail strong){color:#304252}
+ :root body:not(.zebraDevice) .accountPopover :is(#settingsPharmacyCode,.popoverCode strong){display:inline-block;margin-top:5px;padding:3px 7px;border-radius:5px;background:#edf3f8;color:#365e7e;font-weight:600}
+ :root body:not(.zebraDevice) .accountPopover :is(#settingsUserRole,.popoverRole strong){display:inline-block;margin-top:5px;padding:3px 7px;border-radius:5px;background:#f2f4f6;color:#4d6375}
+ :root body:not(.zebraDevice) .accountPopover:has(#btnEditSettingsIdentity:not([hidden])) #settingsUserRole,:root body:not(.zebraDevice) .accountPopover .popoverRole.is-demo-owner strong{background:#edf6f0;color:#32694f}
+ :root body:not(.zebraDevice) .accountPopover button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+ :root body:not(.zebraDevice) .accountPopover button.primaryButton{border-color:#286f9f;background:#286f9f;color:#fff}
+ :root body:not(.zebraDevice) .accountPopover button.primaryButton:hover{border-color:#205e88;background:#205e88}
+ :root body:not(.zebraDevice) .headerShell :is(.headerStatusDetail,.statusPopover>div)>span{color:#415d74}
+ :root body:not(.zebraDevice) .headerShell .headerStatusDetail>strong[data-ui-tone="success"]{color:#326e52}
+ :root body:not(.zebraDevice) .headerShell .headerStatusDetail>strong[data-ui-tone="warning"]{color:#8a6634}
+ :root body:not(.zebraDevice) .headerShell .headerStatusDetail>strong[data-ui-tone="error"]{color:#a34348}
+ :root body:not(.zebraDevice) .headerShell :is(.headerPopoverTitle,.statusPopover>strong)::before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border:1.5px solid #6c879a;border-radius:50%;vertical-align:1px}
+ :root body:not(.zebraDevice) :is(.settingsPasswordFields input,.passwordModal input,.accountEditDialog input):not(:disabled){background:#f8fafc}
+ :root body:not(.zebraDevice) :is(.accountPopover,.settingsPasswordPanel,.accountEditDialog) .authMessage.error{border:1px solid #efd3d4;background:#fcf3f3;color:#9d373e}
+ :root body:not(.zebraDevice) :is(.accountPopover,.settingsPasswordPanel,.accountEditDialog) .authMessage.success{border:1px solid #d5e7dc;background:#f1f8f4;color:#32694f}
+ :root body:not(.zebraDevice) :is(.accountPopover,.settingsPasswordPanel,.accountEditDialog) .authMessage.info{border:1px solid #d7e4ee;background:#f1f6fa;color:#365e7e}
+}

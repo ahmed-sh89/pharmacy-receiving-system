@@ -38,8 +38,11 @@ test("status requires all existing readiness sources and retains degraded states
   const label=document.getElementById("headerUnifiedStatusLabel"),sidebar=document.getElementById("sidebarConnection");
   const update=(a,b,c,online=true)=>{master.textContent=a;ready.textContent=b;sync.textContent=c;navigator.onLine=online;window.dispatchEvent(new window.Event("online"));assert.equal(sidebar.textContent,label.textContent);return label.textContent;};
   assert.equal(update("ACTIVE","READY","SYNCED"),"ONLINE");
+  assert.deepEqual([master,ready,sync].map(x=>x.dataset.uiTone),["success","success","success"]);
   assert.equal(update("CACHED","READY","SYNCED"),"ATTENTION");
   assert.equal(master.textContent,"CACHED");
+  assert.equal(master.dataset.uiTone,"warning");
+  update("FAILED","READY","SYNCED");assert.equal(master.dataset.uiTone,"error");
   assert.equal(update("ACTIVE","READY","SYNCING"),"ATTENTION");
   assert.equal(update("ACTIVE","LOADING","SYNCED"),"ATTENTION");
   assert.equal(update("ACTIVE","READY","CLOUD"),"ATTENTION");
