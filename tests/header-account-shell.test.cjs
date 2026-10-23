@@ -58,7 +58,9 @@ test("shell retains account security controls and static preview has no app runt
   assert.deepEqual([...parsed.querySelectorAll("script[src]")].map(x=>x.getAttribute("src")),["/header-account-menu.js","/header-account-popover.js","/account-header-visual-preview.js"]);
   for(const path of ["public/header-account-menu.js","public/header-account-popover.js","public/account-header-visual-preview.js"]){assert(!/fetch\s*\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage|indexedDB|serviceWorker|supabase/i.test(fs.readFileSync(path,"utf8")));}
   assert(!/\bGlobal\b|>WORKSPACE<|Demo Owner/i.test(demo));
-  assert(!/PHARMACY CODE/i.test(parsed.querySelector('.sidebarFooter').textContent));
+  assert.equal(parsed.querySelector('.sidebarFooter .footerCodeLabel').textContent,'PHARMACY CODE');
+  assert.equal(document.querySelector('.headerShellFooter .footerCodeLabel').textContent,'PHARMACY CODE');
+  assert.equal(document.getElementById('accountPharmacyCode').textContent,'—');
 });
 
  test("account popover opens from keyboard and closes without consuming dialog actions",()=>{
