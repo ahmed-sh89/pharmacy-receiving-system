@@ -16,3 +16,11 @@ Pre-release verification: production build PASS; 30 focused automated tests PASS
 Production smoke boundary: no operational test writes, Suspend, Reset or Admin reassignment authorized or performed. Signed-in navigation/role-specific behavior still requires Product Owner non-destructive smoke after activation; automated/mock tests are not actual authenticated Production acceptance. No claim of USER VERIFIED functionality is made beyond the Product Owner's accepted visual design.
 
 Rollback: revert only this selective release commit through the existing main-push Pages workflow; retain subsequent work. No database rollback is needed.
+
+## Verified activation evidence
+
+UI code release: b3c3a3b4f6563df9f8251a9876381dcc30a76753.
+GitHub Pages push workflow 40045250522: completed / success at that SHA.
+Live version.json and HTML build meta matched the code-release SHA. Live js/supabase.js, js/auth.js, js/settings-workspace.js, css/settings-workspace.css, ui.js and js/expiry.js byte-matched the tested sources. The live client retains Production project zznoshzcyxmtwfbznjyr; HTML and client contain no Staging runtime/target.
+Non-destructive signed-out browser smoke: sign-in gate visible, authLocked true, application pointer-events none, four Settings tabs and intended Settings script present; Desktop footer status labels hidden. No credentials entered and no operational mutations performed. Signed-in Settings/role smoke remains for Product Owner verification.
+This follow-up checkpoint commit changes documentation only; the same existing Pages workflow stamps its final deployed SHA. No Production SQL, migrations, roles, RLS, configuration or operational data changes.
