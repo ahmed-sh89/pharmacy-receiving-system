@@ -16,7 +16,7 @@ function createFixture(){const {document,window:domWindow}=dom();document.readyS
  const window={SettingsAccessActions:{target:()=>null},settingsConfirm:async()=>confirm,addEventListener(){}};
  const form=document.getElementById('ownerCreateAccountForm');form.reportValidity=()=>true;form.reset=()=>{form.querySelectorAll('input,select').forEach(el=>el.value='');};
  const ctx={document,window,AuthState:{},sessionStorage:{getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)},crypto:require('node:crypto').webcrypto,isSystemOwner:()=>true,setAuthBusy(){},callPasswordAdmin:async p=>{calls.push(p);if(fail)throw Error('incomplete');return {credential_status:'EXISTING_LOGIN'};},loadOwnerPharmacies:async()=>{},renderOwnerManagementPanel(){}};
- vm.createContext(ctx);vm.runInContext(settings.slice(settings.indexOf('(function bindDirectAccountCreation(){'),settings.indexOf('\nwindow.pharmflowInitialPermissionFields=')),ctx);
+ vm.createContext(ctx);require('./helpers/settings-modal-dom.cjs').installModalDOM(document,domWindow);require('./helpers/settings-modal-dom.cjs').loadModalRuntime(ctx);window.settingsConfirm=async()=>confirm;vm.runInContext(settings.slice(settings.indexOf('(function bindDirectAccountCreation(){'),settings.indexOf('\nwindow.pharmflowInitialPermissionFields=')),ctx);
  const field=n=>form.querySelector(`[name="${n}"]`),submit=()=>form.onsubmit({preventDefault(){}});
  for(const [n,v]of Object.entries({pharmacy_name:'QA',pharmacy_code:'QA001',admin_email:'test@example.invalid'}))field(n).value=v;
  return {document,window,domWindow,form,field,calls,memory,submit,setConfirm:x=>confirm=x,setFail:x=>fail=x};
@@ -29,12 +29,12 @@ test('create requires explicit permissions, journals them, retries same operatio
  f.field('expiry').value='DISABLED';await f.submit();assert.equal(f.calls[1].operation_id,op);
  f.setFail(false);await f.submit();assert.equal(f.calls[2].operation_id,op);assert.equal(f.memory.size,0);assert.match(f.form.querySelector('[data-create-status]').textContent,/password is unchanged/);assert(!JSON.stringify([...f.memory]).includes('password'));
 });
-test('creation uses focused view and protects dirty Cancel/Back then restores list controls and scroll',async()=>{
+test('creation uses centered modal and protects dirty Cancel/X then restores list state',async()=>{
  const f=createFixture();const list=f.document.getElementById('ownerPharmacyList');list.scrollTop=162;
- f.document.getElementById('btnOpenCreateAccount').click();assert.equal(f.document.getElementById('ownerManagementPanel').hidden,true);assert.equal(f.document.getElementById('ownerCreateAccountPanel').hidden,false);
+ f.document.getElementById('btnOpenCreateAccount').click();assert.equal(f.document.getElementById('ownerManagementPanel').hidden,false);assert(f.document.querySelector('dialog[open]'));assert.equal(f.document.getElementById('ownerCreateAccountPanel').hidden,false);
  f.field('pharmacy_name').dispatchEvent(new f.domWindow.Event('input',{bubbles:true}));f.setConfirm(false);
  await f.form.querySelector('[data-create-cancel]').onclick();assert.equal(f.document.getElementById('ownerCreateAccountPanel').hidden,false);
- f.setConfirm(true);await f.document.getElementById('btnCreateAccountBack').onclick();assert.equal(f.document.getElementById('ownerCreateAccountPanel').hidden,true);assert.equal(list.scrollTop,162);assert.equal(f.document.getElementById('ownerManagementSort').disabled,false);
+ f.setConfirm(true);await f.document.querySelector('.settingsModalClose').onclick();assert.equal(f.document.getElementById('ownerCreateAccountPanel').hidden,true);assert.equal(list.scrollTop,162);assert(!f.document.querySelector('dialog[open]'));
 });
 test('registration approval refuses missing permissions and sends explicit selections to atomic server API',async()=>{
  const {document}=dom();const calls=[];const ctx={document,window:{settingsConfirm:async()=>true},CSS:{escape:s=>s},isSystemOwner:()=>true,setSettingsAccessMessage(){},setAuthBusy(){},authRpc:async(...a)=>calls.push(a),loadOwnerControlCenter:async()=>{}};

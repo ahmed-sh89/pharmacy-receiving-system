@@ -43,7 +43,7 @@ test('focused permission editor reads saved values, persists revision and keeps 
  const window={settingsConfirm:async()=>true};const calls=[];let busy=false,fail=false;
  const state={context:{pharmacy_id:'different'},get busy(){return busy;}};
  const ctx={document,window,AuthState:state,isSystemOwner:()=>true,setAuthBusy:v=>{busy=v;},setOwnerManagementMessage:()=>{},authRpc:async(name,args)=>{calls.push([name,args]);if(fail)throw Error('Permission policy changed; reload');return {pharmacy_id:'a',receiving:'READ_ONLY',expiry:'DISABLED',data_access:'PHARMACY_ONLY',revision:7};}};
- vm.createContext(ctx);const src=fs.readFileSync('js/settings-workspace.js','utf8'),start=src.indexOf('window.editPharmacyPermissions=async'),end=src.indexOf('\n(function bindDirectAccountCreation',start);vm.runInContext(src.slice(start,end),ctx);
+ vm.createContext(ctx);require('./helpers/settings-modal-dom.cjs').installModalDOM(document,dom);require('./helpers/settings-modal-dom.cjs').loadModalRuntime(ctx);const src=fs.readFileSync('js/settings-workspace.js','utf8'),start=src.indexOf('window.editPharmacyPermissions=async'),end=src.indexOf('\n(function bindDirectAccountCreation',start);vm.runInContext(src.slice(start,end),ctx);
  dom.HTMLElement.prototype.focus=function(){};
  const done=window.editPharmacyPermissions(document.querySelector('button'));await new Promise(setImmediate);
  const form=document.querySelector('form');assert.equal(form.querySelector('[name="receiving"]').value,'READ_ONLY');assert.equal(form.querySelector('[name="expiry"]').value,'DISABLED');
