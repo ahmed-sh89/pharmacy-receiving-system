@@ -41,8 +41,30 @@ const isVercelBuild = process.env.VERCEL === '1'
   || process.env.VERCEL === 'true'
   || ['preview', 'production'].includes(process.env.VERCEL_ENV);
 
+function stagingAuthParity(){
+  return {
+    name:'staging-auth-parity',
+    configResolved(config){
+      if(config.command==='build' && process.env.VERCEL &&
+          (process.env.VERCEL_ENV!=='preview' ||
+           process.env.VERCEL_GIT_COMMIT_REF!=='staging/auth-access-parity-20261024')){
+        throw new Error('Staging parity source requires the isolated Preview branch');
+      }
+    },
+    transformIndexHtml(html){
+      return html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||'local-staging-auth-parity');
+    },
+    closeBundle(){
+      writeFileSync(resolve('dist/version.json'),JSON.stringify({
+        sha:process.env.VERCEL_GIT_COMMIT_SHA||'local-staging-auth-parity',
+        environment:'staging',supabaseRef:'tovkcakucyagvbzvlnks'
+      }));
+    }
+  };
+}
+
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[copyLegacyRuntime(),copyStagingScanDiagnostic()]
+  plugins:[stagingAuthParity(),copyLegacyRuntime(),copyStagingScanDiagnostic()]
 });

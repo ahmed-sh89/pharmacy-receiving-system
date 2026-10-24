@@ -7,7 +7,7 @@
 
 const AUTH_STORAGE_KEY = "PRS_V3_SUPABASE_AUTH";
 const MEDRYVO_REMEMBERED_EMAIL_KEY = "medryvo_remembered_email";
-const MEDRYVO_RECOVERY_REDIRECT = "https://ahmed-sh89.github.io/pharmacy-receiving-system/";
+const MEDRYVO_RECOVERY_REDIRECT = window.location.origin + window.location.pathname;
 const AUTH_PENDING_INVITE_KEY = "PRS_V3_PENDING_INVITE";
 const AUTH_PENDING_OWNER_KEY = "PRS_V3_PENDING_OWNER_SETUP";
 const AUTH_PENDING_REGISTRATION_KEY = "PRS_V3_PENDING_PHARMACY_REGISTRATION";
