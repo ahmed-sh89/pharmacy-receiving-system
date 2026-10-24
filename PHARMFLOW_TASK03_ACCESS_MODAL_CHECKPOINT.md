@@ -10,6 +10,7 @@ Status: READY FOR PRODUCT OWNER UI TEST.
 - Edit gathers Name/Code together; the existing validation, confirmation and identity RPC are unchanged. Admin Assignment retains its input validation and separate confirmation.
 - Reset/Suspend/Reactivate use titled compact confirmations. Temporary password result retains visibility and Copy Password; result may close while the surrounding reset handler is busy, avoiding a deadlock.
 - X, Cancel, native Escape and backdrop request guarded dismissal. Dismissal never submits. Native top-layer modality plus Tab wrapping manage focus; nested discard confirmation restores its parent's dismissal hook. Grid search, KPI, sort, expanded row and scroll are restored.
+- Unrelated Rename Operator keeps its exact previous shared-dialog presentation.
 - Copy Email text replaced with an accessible SVG icon beside the email, title/aria label and brief copied feedback. Grid and timestamps remain unchanged.
 
 ## Evidence

@@ -119,7 +119,36 @@ function settingsDialog({title='Confirm',message='',label,value,readOnly=false,c
 }
 window.settingsConfirm=options=>settingsDialog({title:({identity:'Confirm Pharmacy Update',admin:'Confirm Admin Assignment','reset-password':'Reset Password',suspend:'Suspend Pharmacy',activate:'Reactivate Pharmacy'})[window.SettingsAccessActions?.action?.()]||'Confirm Action',confirmText:'Confirm',...options}).then(result=>result===true);
 function settingsInlinePrompt(options){return settingsDialog({...options,confirmText:'Continue'});}
-window.settingsTextPrompt=options=>settingsDialog(options);
+// Preserve the unrelated accepted Expiry operator prompt.
+function legacySettingsDialog({title="Confirm",message="",label,value,readOnly=false,confirmText="Save"}){
+ return new Promise(resolve=>{
+    const previous=document.activeElement;
+    const dialog=document.createElement('dialog');dialog.className='settingsTextDialog settingsDialog';dialog.setAttribute('aria-label',title);
+    const form=document.createElement('form');form.method='dialog';
+    const heading=document.createElement('h2');heading.textContent=title;form.append(heading);
+    if(message){const description=document.createElement('p');description.textContent=message;form.append(description);}
+    let input;
+    if(label){
+        const field=document.createElement('label');field.textContent=label;
+        input=document.createElement('input');input.value=value||'';input.type='text';input.autocomplete='off';input.readOnly=readOnly;field.append(input);form.append(field);
+    }
+    const actions=document.createElement('footer');
+    const cancel=document.createElement('button');cancel.type='button';cancel.className='secondaryButton';cancel.textContent='Cancel';
+    const save=document.createElement('button');save.type='submit';save.className='primaryButton';save.textContent=confirmText;
+    if(readOnly && input){
+      const copy=document.createElement('button');copy.type='button';copy.className='secondaryButton';copy.textContent=title.includes('Password')?'Copy Password':'Copy';
+      copy.onclick=async()=>{try{await navigator.clipboard.writeText(input.value);copy.textContent='Copied';}catch(_){input.focus();input.select();copy.textContent='Select and copy';}};actions.append(copy);
+    }
+    if(!readOnly){actions.append(cancel);}actions.append(save);form.append(actions);dialog.append(form);document.body.append(dialog);
+    let result=null;
+    form.addEventListener('submit',()=>{result=input?input.value:true;});
+    cancel.addEventListener('click',()=>dialog.close());
+    dialog.addEventListener('close',()=>{dialog.remove();previous?.focus();resolve(result);},{once:true});
+    dialog.showModal();
+    if(input){input.focus();input.select();}else{cancel.focus();}
+ });
+}
+window.settingsTextPrompt=options=>options.title==='Rename Operator'?legacySettingsDialog(options):settingsDialog(options);
 window.settingsPharmacyIdentityPrompt=({name,code})=>settingsDialog({title:'Edit Pharmacy',confirmText:'Save',fields:[{name:'name',label:'Pharmacy Name',value:name},{name:'code',label:'Pharmacy Code',value:code}]});
 
 // Keep the grid in place while the native top-layer dialog makes it inert.
