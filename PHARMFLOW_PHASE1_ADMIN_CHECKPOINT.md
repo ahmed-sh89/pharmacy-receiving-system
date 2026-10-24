@@ -28,7 +28,7 @@ An isolated prior HTTP QA user was temporarily a System Administrator for these 
 Security advisor review found no new exposed-table/RLS issue from this private journal. Existing unrelated baseline notices are outside this task.
 
 ## Limits
-NOT TESTED: physical Handheld hardware and full rendered authenticated browser acceptance (browser runtime unavailable). DOM/runtime permission tests are automated evidence, not device acceptance.
+NOT TESTED: physical Handheld hardware and full rendered authenticated browser acceptance (local automated browser runtime unavailable; public Preview login screen loads in the cloud browser). DOM/runtime permission tests are automated evidence, not device acceptance.
 BLOCKED inherited Staging dependencies: delete_pharmflow_order_complete, finalize_pharmflow_order and Production Reset All RPC family. No substitutes/mocks were used to claim operational acceptance. Full Receiving Delete/Finalize/Reset acceptance remains blocked. No Phase 2 work or Production deployment.
 
 ## Product Owner acceptance (maximum three)

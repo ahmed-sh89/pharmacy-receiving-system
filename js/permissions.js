@@ -38,7 +38,7 @@ window.PharmFlowPermissions = (() => {
  const routeModule=route=>route==='expiry'?'EXPIRY':['dashboard','receiving','files','reports','sessions','archive'].includes(route)?'RECEIVING':null;
  const rule=(module,write=false,extra=null)=>({module,write,extra});
  const controls={
-  RECEIVING:'#barcodeInput,#btnLoadOrders,#orderFileInput,#btnFinalizeReceiving,#btnCompleteAllReceiving,#btnResetWorkspace,#btnDeleteAllHistory,#btnSaveManualItem,#btnOpenManualAdd,#btnCreateSession,#btnJoinCloudSession,#btnMergeZebraSession,#btnPrepareZebraWork,#btnLastScanEdit,[data-action="plus"],[data-action="minus"],[data-action="edit"],[data-remove-order-file],[data-delete-archive-order],[data-remove-last],[data-delete-entry],[data-remove-extra],#btnConfirmQuantityCorrection,#btnSearchedAdjust,#btnSearchedRemoveManual,#btnApplySearchedCorrection,#btnLastScanMinus,#btnLastScanPlus,[data-order-delete],[data-order-finalize],[data-receiving-delete],[data-receiving-reset]',
+  RECEIVING:'#barcodeInput,#btnLoadOrders,#orderFileInput,#btnFinalizeReceiving,#btnCompleteAllReceiving,#btnResetWorkspace,#btnDeleteAllHistory,#btnSaveManualItem,#btnOpenManualAdd,[data-quick-receive],[data-link-receive],[data-review],#btnCreateSession,#btnJoinCloudSession,#btnMergeZebraSession,#btnPrepareZebraWork,#btnLastScanEdit,[data-action="plus"],[data-action="minus"],[data-action="edit"],[data-remove-order-file],[data-delete-archive-order],[data-remove-last],[data-delete-entry],[data-remove-extra],#btnConfirmQuantityCorrection,#btnSearchedAdjust,#btnSearchedRemoveManual,#btnApplySearchedCorrection,#btnLastScanMinus,#btnLastScanPlus,[data-order-delete],[data-order-finalize],[data-receiving-delete],[data-receiving-reset]',
   EXPIRY:'#btnSaveExpiryCapture,#btnClearExpiryActive,.expiryHistoryActions button,#btnSaveExpiryWorker,[data-worker-delete],[data-worker-toggle],#btnExpiryQtyMinus,#btnExpiryQtyPlus,#expiryQuantity,#expiryBarcodeInput,#expiryCameraInput,#btnExpiryPhoto,#btnExpiryNote,#expiryBatchInput,#expirySerialInput,[data-review-delete],#expiryDeleteSelected,#expiryClearList,#expiryBulkAction,#expiryClearSelected,#expiryAll,#expiryClearResolved,[data-group-edit],[data-group-delete],[data-session-edit],[data-session-delete],[data-menu-edit],[data-menu-resolve],[data-edit],[data-remove]',
   DATA:'[data-add-barcode],[data-remove-mapping],[data-correct-mapping],[data-add-identifier],[data-remove-barcode],[data-correct-barcode]',
   GLOBAL:'[data-add-new-item],[data-delete-item]'
@@ -46,6 +46,8 @@ window.PharmFlowPermissions = (() => {
  function elementRule(el){
   const target=el.closest?.('button,input,select,textarea,[role="button"]');if(!target)return null;
   if(target.matches('#btnResolveExpiryNow'))return rule('EXPIRY',true,'DATA');
+  if(target.matches('[data-quick-receive],[data-link-receive]'))return rule('RECEIVING',true,'DATA');
+  if(target.matches('[data-resolve],[data-confirm-resolution]'))return rule(target.closest('.expiryNeedsReviewPanel')?'EXPIRY':'RECEIVING',true,'DATA');
   for(const [module,selector]of Object.entries(controls))if(target.matches(selector))return rule(module,true);
   if(target.closest('.expiryInventoryRowMenu,.expiryInventoryDialog,.expiryGroupDialog') && /edit|delete|save|resolve|confirm/i.test(target.textContent))return rule('EXPIRY',true);
   if(target.closest('.needsReviewSelection,.needsReviewCaseActions') && /save|resolve|confirm|link|delete/i.test(target.textContent))return rule(target.closest('.expiryNeedsReviewPanel')?'EXPIRY':'RECEIVING',true,'DATA');
@@ -61,7 +63,7 @@ window.PharmFlowPermissions = (() => {
   }
   document.querySelectorAll('[data-page]').forEach(el=>{const mod=routeModule(el.dataset.page);if(mod){el.classList.toggle('permissionHidden',!allowed(mod));}});
   for(const id of ['btnZebraReceivingMode','btnZebraExpiryMode'])document.getElementById(id)?.classList.toggle('permissionHidden',!allowed(id.includes('Expiry')?'EXPIRY':'RECEIVING'));
-  document.querySelectorAll(Object.values(controls).join(',')+',#btnResolveExpiryNow').forEach(el=>{
+  document.querySelectorAll(Object.values(controls).join(',')+',#btnResolveExpiryNow,[data-resolve],[data-confirm-resolution]').forEach(el=>{
    const denied=!permitted(elementRule(el));
    if(denied && !el.dataset.permissionBlocked){el.dataset.permissionBlocked='1';el.dataset.permissionWasDisabled=String(el.disabled);}
    if(denied){el.disabled=true;el.setAttribute('aria-disabled','true');}

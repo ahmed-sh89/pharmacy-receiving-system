@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {parseHTML}=require('linkedom');
 function fixture(){
- const {document,window:domWindow}=parseHTML('<html><body class="authLocked"><main class="mainContent"></main><button data-page="receiving"></button><button data-page="expiry"></button><input id="barcodeInput"><button id="btnSaveExpiryCapture"></button><button id="btnResolveExpiryNow"></button><button id="btnZebraReceivingMode"></button><button id="btnZebraExpiryMode"></button></body></html>');
+ const {document,window:domWindow}=parseHTML('<html><body class="authLocked"><main class="mainContent"></main><button data-page="receiving"></button><button data-page="expiry"></button><input id="barcodeInput"><button id="btnSaveExpiryCapture"></button><button data-quick-receive></button><button data-link-receive></button><button id="btnResolveExpiryNow"></button><button id="btnZebraReceivingMode"></button><button id="btnZebraExpiryMode"></button></body></html>');
  const window={addEventListener(){}};
  const state={context:{pharmacy_id:'pharmacy-a',member_role:'admin',system_role:''},mustChangePassword:false};
  let row={pharmacy_id:'pharmacy-a',receiving:'FULL',expiry:'FULL',data_access:'PHARMACY_ONLY',system_administrator:false};
@@ -17,6 +17,7 @@ test('independent module levels and mixed data permission are fail closed before
  assert(f.document.querySelector('[data-page="expiry"]').classList.contains('permissionHidden'));
  assert.throws(()=>f.p.checkRpc('register_pharmflow_order_upload',{}),/not permitted/);
  assert.doesNotThrow(()=>f.p.checkRpc('list_pharmflow_orders',{}));assert.throws(()=>f.p.checkRpc('list_pharmacy_expiry_current_state_v1',{}),/not permitted/);
+ f.set({receiving:'FULL',expiry:'FULL'});await f.p.load();assert(f.document.querySelector('[data-quick-receive]').disabled);assert(f.document.querySelector('[data-link-receive]').disabled);
  f.set({receiving:'DISABLED',expiry:'FULL'});await f.p.load();assert(!f.p.allowed('RECEIVING'));assert(f.p.allowed('EXPIRY',true));assert(!f.p.allowed('DATA',true));
  assert(f.document.getElementById('btnResolveExpiryNow').disabled);assert(!f.document.getElementById('btnSaveExpiryCapture').disabled);
 });
