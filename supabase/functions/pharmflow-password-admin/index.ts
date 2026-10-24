@@ -12,8 +12,8 @@ const json = (body: Record<string, unknown>, status = 200) =>
   });
 
 const temporaryPassword = () => {
-  const bytes = crypto.getRandomValues(new Uint8Array(18));
-  return `Pf!${Array.from(bytes, (byte) => byte.toString(36).padStart(2, "0")).join("")}`;
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return `Pf7!${btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_")}`;
 };
 
 Deno.serve(async (request) => {
@@ -54,8 +54,9 @@ Deno.serve(async (request) => {
     const params = {
       p_operation_id: body.operation_id, p_name: body.pharmacy_name,
       p_code: body.pharmacy_code, p_admin_email: body.admin_email,
+      p_receiving: body.receiving, p_expiry: body.expiry, p_data_access: body.data_access,
     };
-    const prepare = await callerClient.rpc("owner_provision_pharmacy_v1", params);
+    const prepare = await callerClient.rpc("owner_provision_pharmacy_v2", params);
     if (prepare.error) return json({ error: prepare.error.message, operation_not_started: true }, 400);
     let operation = prepare.data;
     let password: string | undefined;
@@ -69,12 +70,12 @@ Deno.serve(async (request) => {
         // Includes duplicate-email races and lost Auth responses. Never reset
         // the existing credential. The journal resolves the same email/user.
         password = undefined;
-        const recovered = await callerClient.rpc("owner_provision_pharmacy_v1", params);
+        const recovered = await callerClient.rpc("owner_provision_pharmacy_v2", params);
         if (recovered.error || !recovered.data?.admin_user_id) return json({ error: "Account creation incomplete. Retry with the same operation." }, 409);
         operation = recovered.data;
       }
     }
-    const finished = await callerClient.rpc("owner_provision_pharmacy_v1", { ...params, p_finish: true });
+    const finished = await callerClient.rpc("owner_provision_pharmacy_v2", { ...params, p_finish: true });
     if (finished.error) return json({ error: "Admin assignment incomplete. Retry with the same operation." }, 409);
     return json({ ...finished.data, temporary_password: password,
       credential_status: password ? "TEMPORARY_PASSWORD" : operation.created_for_operation ? "USE_EXPLICIT_RESET" : "EXISTING_LOGIN" });

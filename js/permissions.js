@@ -75,7 +75,7 @@ window.PharmFlowPermissions = (() => {
   if(document.body.classList.contains('zebraReceivingActive')&&!allowed('RECEIVING') || document.body.classList.contains('zebraExpiryActive')&&!allowed('EXPIRY'))window.setZebraHomeMode?.();
   let note=document.getElementById('pharmflowPermissionNotice');
   if(!note){note=document.createElement('div');note.id='pharmflowPermissionNotice';note.className='authMessage';note.setAttribute('role','status');document.querySelector('.mainContent')?.prepend(note);}
-  const noticeText=!active()?'Permissions unavailable. Reconnect or sign in again.':!allowed('RECEIVING',true)||!allowed('EXPIRY',true)?`Receiving: ${saved.receiving.replaceAll('_',' ')} · Expiry: ${saved.expiry.replaceAll('_',' ')}`:'';
+  const noticeText=!active()?'Permissions unavailable. Reconnect or sign in again.':!allowed('RECEIVING',true)||!allowed('EXPIRY',true)?`Receiving: ${({FULL:'Enabled',DISABLED:'Disabled',READ_ONLY:'Legacy Read Only'})[saved.receiving]} · Expiry: ${({FULL:'Enabled',DISABLED:'Disabled',READ_ONLY:'Legacy Read Only'})[saved.expiry]}`:'';
   if(note && note.textContent!==noticeText)note.textContent=noticeText;
  }
  let scheduled=false;

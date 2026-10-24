@@ -159,6 +159,7 @@ function bindAuthUI(){
         button.addEventListener("click",()=>closeSettingsPasswordPanel());
     });
     bindClick("btnOwnerCreatePharmacy", ()=>ownerCreatePharmacyFromSettings());
+    document.getElementById('ownerManagementSort')?.addEventListener('change',event=>{AuthState.ownerManagementSort=event.target.value;renderOwnerManagementPanel();});
     bindClick("btnEditSettingsIdentity", ()=>setSettingsIdentityEditMode(true));
     bindClick("btnCancelSettingsIdentity", ()=>setSettingsIdentityEditMode(false));
     bindClick("btnSaveSettingsIdentity", ()=>saveSettingsIdentity());
@@ -1192,6 +1193,8 @@ async function loadMyAppContext(){
         );
 
         AuthState.context = row || null;
+        AuthState.pharmacyAccessStatus=null;
+        if(!row?.pharmacy_id && !AuthState.mustChangePassword){AuthState.pharmacyAccessStatus=await authRpc('get_my_pharmacy_access_status_v1',{});}
         if(window.PharmFlowPermissions && row?.pharmacy_id && !AuthState.mustChangePassword){ await window.PharmFlowPermissions.load(); }
         AuthState.contextError = null;
 
@@ -1602,15 +1605,25 @@ function ownerPharmacyMatchesSearch(p,query){
     return haystack.includes(query.toLowerCase());
 }
 
+function sortOwnerPharmacyRows(rows,sort=AuthState.ownerManagementSort||'newest'){
+    const date=p=>{const t=Date.parse(p.created_at);return Number.isFinite(t)?t:null;};
+    return [...rows].sort((a,b)=>{
+        let result=0;
+        if(sort==='az'||sort==='za')result=String(a.pharmacy_name||'').localeCompare(String(b.pharmacy_name||''),undefined,{sensitivity:'base'})*(sort==='za'?-1:1);
+        else{const x=date(a),y=date(b);result=x===null?(y===null?0:1):y===null?-1:(x-y)*(sort==='oldest'?1:-1);}
+        return result||String(a.pharmacy_id).localeCompare(String(b.pharmacy_id));
+    });
+}
+
 function getOwnerPharmacyRowsForView(){
     const view=AuthState.ownerManagementView || "total";
     const query=String(AuthState.ownerManagementSearch||"").trim();
-    return (AuthState.ownerPharmacies||[]).filter(p=>{
+    return sortOwnerPharmacyRows((AuthState.ownerPharmacies||[]).filter(p=>{
         const active=p.status==="active" && p.active!==false;
         if(view==="active" && !active){ return false; }
         if(view==="suspended" && active){ return false; }
         return ownerPharmacyMatchesSearch(p,query);
-    });
+    }));
 }
 
 function renderOwnerPharmacies(){
@@ -1624,15 +1637,16 @@ function renderOwnerPharmacies(){
         renderOwnerMetrics();
         return;
     }
-    box.innerHTML=rows.map((p,index)=>{
+    box.innerHTML=(focusedId?'':'<div class="ownerGridHeader" aria-hidden="true"><span>Pharmacy / Code</span><span>Admin Email</span><span>Status</span><span>Created Date</span><span></span></div>')+rows.map((p,index)=>{
         const active=p.status==="active" && p.active!==false;
         return `<article class="ownerPharmacyRow" data-pharmacy-row="${escapeAuthHtml(p.pharmacy_id)}">
-            <button type="button" class="ownerPharmacySummary" aria-expanded="false" aria-controls="ownerPharmacyDetails${index}">
+            <div role="button" tabindex="0" class="ownerPharmacySummary" aria-expanded="false" aria-controls="ownerPharmacyDetails${index}">
                 <span class="ownerPharmacyIdentity"><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "—")}</span></span>
-                <span class="ownerPharmacyAdmin">${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}</span>
+                <span class="ownerPharmacyAdmin"><span>${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}</span>${p.admin_email||p.pending_admin_email?`<button type="button" class="ownerCopyEmail secondaryButton" data-copy-email="${escapeAuthHtml(p.admin_email||p.pending_admin_email)}" aria-label="Copy admin email">Copy Email</button>`:''}</span>
                 <span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
+                <time class="ownerCreatedDate" datetime="${escapeAuthHtml(p.created_at||'')}">${p.created_at&&Number.isFinite(Date.parse(p.created_at))?escapeAuthHtml(new Date(p.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})):'—'}</time>
                 <svg class="ownerPharmacyChevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
+            </div>
             <div id="ownerPharmacyDetails${index}" class="ownerPharmacyDetails" hidden>
                 ${typeof p.admin_role==="string" && p.admin_role.trim()?`<p class="ownerPharmacyRole">Role: ${escapeAuthHtml(p.admin_role)}</p>`:""}
                 <div class="ownerPharmacyActions">
@@ -1647,7 +1661,9 @@ function renderOwnerPharmacies(){
         </article>`;
     }).join("");
     box.querySelectorAll(".ownerPharmacySummary").forEach(summary=>{
-        summary.addEventListener("click",()=>{
+        summary.addEventListener("keydown",event=>{if(event.target===summary && ['Enter',' '].includes(event.key)){event.preventDefault();summary.click();}});
+        summary.addEventListener("click",event=>{
+            if(event.target.closest('[data-copy-email]')||window.SettingsAccessActions?.target())return;
             const opening=summary.getAttribute("aria-expanded")!=="true";
             box.querySelectorAll(".ownerPharmacySummary").forEach(control=>{
                 const selected=control===summary && opening;
@@ -1659,6 +1675,7 @@ function renderOwnerPharmacies(){
             });
         });
     });
+    box.querySelectorAll('[data-copy-email]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();window.copyPharmacyEmail(btn);}));
     box.querySelectorAll("[data-owner-action]").forEach(btn=>{
         btn.addEventListener("click",()=>window.SettingsAccessActions ? window.SettingsAccessActions.run(btn,()=>handleOwnerPharmacyAction(btn)) : handleOwnerPharmacyAction(btn));
     });
@@ -1966,7 +1983,7 @@ function renderOwnerRegistrationRequests(){
         return;
     }
     box.innerHTML = `<table class="ownerPharmacyTable ownerRequestsTable" aria-label="Pending pharmacy requests">
-        <thead><tr><th scope="col">Requested Code</th><th scope="col">Admin Email</th><th scope="col">Official Identity</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <thead><tr><th scope="col">Requested Code</th><th scope="col">Admin Email</th><th scope="col">Official Identity</th><th scope="col">Initial Permissions</th><th scope="col">Actions</th></tr></thead>
         <tbody>${rows.map(r=>`<tr>
             <td><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(r.pharmacy_code || "—")}</span></td>
             <td>${escapeAuthHtml(r.applicant_email || "New account")}<small>${escapeAuthHtml(formatAuthDate(r.submitted_at))}</small></td>
@@ -1974,7 +1991,7 @@ function renderOwnerRegistrationRequests(){
                 <label>Pharmacy Name<input type="text" data-reg-name="${escapeAuthHtml(r.request_id)}" maxlength="120" placeholder="Official pharmacy name"></label>
                 <label>Pharmacy Code<input type="text" data-reg-code="${escapeAuthHtml(r.request_id)}" maxlength="24" value="${escapeAuthHtml(r.pharmacy_code || "")}"></label>
             </div></td>
-            <td><span class="ownerPharmacyState pending">PENDING</span></td>
+            <td><div class="ownerInitialPermissions">${window.pharmflowInitialPermissionFields(r.request_id)}</div></td>
             <td><div class="ownerPharmacyActions">
                 <button type="button" class="secondaryButton" data-reg-action="reject" data-reg-id="${escapeAuthHtml(r.request_id)}">Reject</button>
                 <button type="button" class="primaryButton" data-reg-action="approve" data-reg-id="${escapeAuthHtml(r.request_id)}">Approve &amp; Activate</button>
@@ -1992,6 +2009,13 @@ async function reviewRegistration(requestId,decision){
     const codeInput = document.querySelector('[data-reg-code="' + CSS.escape(requestId) + '"]');
     const officialName = approve ? String(nameInput?.value || "").trim() : null;
     const officialCode = approve ? String(codeInput?.value || "").trim() : null;
+    const permissions={};
+    if(approve){
+      document.querySelectorAll('[data-permission-request="'+CSS.escape(requestId)+'"]').forEach(el=>permissions['p_'+el.dataset.initialPermission]=el.value);
+      if(!['FULL','DISABLED'].includes(permissions.p_receiving)||!['FULL','DISABLED'].includes(permissions.p_expiry)||!['READ_ONLY','PHARMACY_ONLY','PHARMACY_GLOBAL'].includes(permissions.p_data_access)){
+        setSettingsAccessMessage('Explicitly select all initial permissions before approval.','error');return;
+      }
+    }
     if(approve && (!officialName || officialCode.length < 3)){
         setSettingsAccessMessage("Enter the official Pharmacy Name and Pharmacy Code before approval.","error");
         return;
@@ -1999,7 +2023,8 @@ async function reviewRegistration(requestId,decision){
     if(!(await window.settingsConfirm({message:approve ? "Approve and activate this pharmacy with the official identity shown?" : "Reject this pharmacy registration request?"}))){ return; }
     setAuthBusy(true);
     try{
-        await authRpc("owner_review_pharmacy_registration_v2",{
+        await authRpc("owner_review_pharmacy_registration_v3",{
+            ...permissions,
             p_request_id:requestId,
             p_decision:decision,
             p_official_pharmacy_name:officialName,
@@ -2167,8 +2192,12 @@ function renderPendingAccessPanel(){
     const standardSetup = document.getElementById("pendingStandardAccessBox");
     const registrationStatus = document.getElementById("pendingRegistrationStatusBox");
     if(ownerSetup){ ownerSetup.hidden = AuthState.ownerExists; }
-    if(standardSetup){ standardSetup.hidden = !AuthState.ownerExists || !!AuthState.registration; }
-    if(registrationStatus){ registrationStatus.hidden = !AuthState.ownerExists || !AuthState.registration; }
+    const suspended=AuthState.pharmacyAccessStatus?.suspended===true;
+    const suspension=document.getElementById('pendingSuspendedBox');if(suspension)suspension.hidden=!suspended;
+    const lead=document.querySelector('#authAccessPanel .authLead');if(lead)lead.hidden=suspended;
+    const heading=document.querySelector('#authAccessPanel h2');if(heading)heading.textContent=suspended?'Pharmacy Suspended':'Complete access';
+    if(standardSetup){ standardSetup.hidden = suspended || !AuthState.ownerExists || !!AuthState.registration; }
+    if(registrationStatus){ registrationStatus.hidden = suspended || !AuthState.ownerExists || !AuthState.registration; }
     setText("pendingAccessEmail",AuthState.user && AuthState.user.email || "Signed-in account");
     if(AuthState.registration){
         const r = AuthState.registration;
@@ -2288,6 +2317,9 @@ function setAuthBusy(busy, message){
 }
 
 function setAuthMessage(message,type){
+    if(type==='error' && /email.*rate|rate.*email|over_email_send_rate_limit/i.test(String(message))){
+        message='Email sending limit reached. Please wait before retrying. Your email must still be verified; contact the System Administrator if this continues.';
+    }
     const el = document.getElementById("authMessage");
     if(!el){ return; }
     el.textContent = message || "";
