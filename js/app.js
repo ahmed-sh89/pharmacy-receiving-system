@@ -135,7 +135,7 @@ async function startApplication(){
                 return;
             }
 
-            if(typeof restoreHistoricalArchive==="function"){
+            if((!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("RECEIVING")) && typeof restoreHistoricalArchive==="function"){
                 await Promise.resolve(restoreHistoricalArchive());
             }
 
@@ -189,7 +189,7 @@ async function startApplication(){
         }
 
         /* Legacy compatibility guard, after authoritative hydration only. */
-        if(typeof reconcileRestoredWorkspaceWithCloud === "function"){
+        if((!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("RECEIVING")) && typeof reconcileRestoredWorkspaceWithCloud === "function"){
             await reconcileRestoredWorkspaceWithCloud({reason:"startup"});
         }
 
@@ -690,7 +690,7 @@ function bindApplicationLifecycleEvents(){
         "focus",
         function(){
 
-            if(typeof reconcileRestoredWorkspaceWithCloud === "function"){
+            if((!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("RECEIVING")) && typeof reconcileRestoredWorkspaceWithCloud === "function"){
                 reconcileRestoredWorkspaceWithCloud({reason:"window-focus",silent:true})
                     .then(result=>{
                         if(result && result.cleared && typeof refreshEntireUI === "function"){
@@ -984,7 +984,7 @@ async function resetCurrentWorkspace(){
             }catch(_){}
 
             try{
-                if(typeof restoreHistoricalArchive==="function"){
+                if((!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("RECEIVING")) && typeof restoreHistoricalArchive==="function"){
                     await restoreHistoricalArchive();
                 }
             }catch(_){}

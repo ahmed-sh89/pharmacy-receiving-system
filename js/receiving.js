@@ -88,6 +88,7 @@ function initializeReceiving(){
 ===================================================== */
 
 async function receiveParsedBarcode(parsed,queueOptions={}){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     if(!parsed||!parsed.gtin){
         handleReceivingFailure("Barcode could not be identified");
         return false;
@@ -310,6 +311,7 @@ function buildReceivingAutoAllocationPlan(item,quantity,workScopeOrderNumbers=nu
 }
 
 function receiveAutoAllocatedItem(options){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     if(!options?.item) throw new Error("Invalid receiving item");
     const plan=Array.isArray(options.plan)&&options.plan.length
         ? options.plan
@@ -732,6 +734,7 @@ async function renderUnknownGTINHandheld(parsed,options={}){
    physical item. Keep its exact captured value for the established Needs
    Review workflow; do not invent a GTIN or receiving transaction. */
 async function receiveUnrecognizedHandheldScan(raw){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     const scannedCode=toSafeString(raw);
     if(!scannedCode){
         handleReceivingFailure("Barcode could not be identified");
@@ -950,6 +953,7 @@ function renderReceivingResolverSelectedCard(model,escapeFn=escapeHTML,changeAtt
 }
 
 function receivePinnedReceivingLink(capture,identifier,parsed,resolution){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     const transactions=[];
     for(let i=0;i<capture.plan.length;i++){
         const allocation=capture.plan[i];
@@ -1417,6 +1421,7 @@ function addItemReceivedQuantity(
     quantity,
     source = "MANUAL_ADD"
 ){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
 
     const item =
         getItemByCode(
@@ -1470,6 +1475,7 @@ function addItemReceivedQuantity(
 ===================================================== */
 
 function receiveOrderItem(options){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
 
     if(
         !options ||
@@ -1970,6 +1976,7 @@ function setItemReceivedQuantity(
     itemCode,
     newQuantity
 ){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
 
     const item =
         getItemByCode(
@@ -2229,6 +2236,7 @@ function getRecentScannerTransactions(){
 }
 
 function undoRecentScannerTransaction(transactionId){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     let entry=ReceivingEngine.recentScans.find(row=>row.transactionId===transactionId);
 
     /*
@@ -2295,6 +2303,7 @@ function undoRecentScannerTransaction(transactionId){
 }
 
 function undoLastScannerTransaction(){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     const entry=ReceivingEngine.recentScans.find(row=>!row.undone);
     if(!entry){ showToast("No recent scanner transaction to undo","warning"); return false; }
     return undoRecentScannerTransaction(entry.transactionId);
@@ -2312,6 +2321,7 @@ function undoLastScannerTransaction(){
 ===================================================== */
 
 function applyQuantityAdjustment(options){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
 
     if(
         !options ||

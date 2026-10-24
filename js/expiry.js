@@ -424,6 +424,7 @@ async function persistExpiryDraft(status){
     ExpiryCaptureEngine.draftScope=scope;
 }
 async function setExpiryEvidencePhoto(role,file){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     if(!expiryIsHandheld() || !ExpiryCaptureEngine.currentItem?.needsReview || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.saveUncertain) throw new Error("Capture is not editable");
     if(typeof ExpiryReviewBackend==="undefined"||!ExpiryReviewBackend.ready) throw new Error("Needs Review submission is unavailable until the Staging backend migration is applied and verified");
     if(role!=="evidence" || !(file instanceof Blob) || !["image/jpeg","image/png","image/webp"].includes(file.type) || !file.size || file.size>5*1024*1024) throw new Error("Invalid review photo");
@@ -1074,6 +1075,7 @@ async function resolveExpiryScannedValue(rawValue){
 }
 
 async function saveExpiryCapture(options={}){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     const saveClock=()=>typeof performance!=="undefined"?performance.now():Date.now();
     const handlerStarted=saveClock();
     if((!expiryIsHandheld() && typeof expiryHasClearIntent==="function" && expiryHasClearIntent()) || ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving){setExpiryStatus("busy","SAVE IN PROGRESS — WAIT FOR THE RESULT");return;}
@@ -1364,6 +1366,7 @@ function expiryPopulateCategoryFilter(rows){ return rows||[]; }
 function expiryFilteredCurrentRows(rows){ return rows||[]; }
 // Desktop workspace rendering is owned by js/expiry-desktop-v2.js.
 async function saveExpiryCurrentCorrection(row,values){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     await authRpc("correct_pharmacy_expiry_current_state_v1",{
         p_pharmacy_id:expiryPharmacyId(),p_state_id:row.state_id,p_quantity:values.quantity,
         p_expiry_month:values.month,p_expiry_year:values.year,p_batch_no:values.batch||null,
@@ -1371,6 +1374,7 @@ async function saveExpiryCurrentCorrection(row,values){
     });
 }
 async function clearExpiryCurrentState(row){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     await authRpc("save_pharmacy_expiry_verified_state_v2",{
         p_pharmacy_id:expiryPharmacyId(),p_item_code:row.item_code,p_item_name:row.item_name,p_identifier_display:row.identifier_display,
         p_category:row.category||"",p_quantity:0,p_expiry_month:Number(row.expiry_month),p_expiry_year:Number(row.expiry_year),
@@ -1506,6 +1510,7 @@ async function refreshExpiryCapturedCount(){
 }
 
 async function deleteAllExpiryHistoryProtected(){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     const pharmacyId=expiryPharmacyId();
 
     if(!pharmacyId){
@@ -2064,6 +2069,13 @@ function bindExpiryCaptureUI(){
 }
 
 async function activateExpiryCapture(){
+    if(window.PharmFlowPermissions){
+        window.PharmFlowPermissions.require("EXPIRY");
+        if(!window.PharmFlowPermissions.allowed("EXPIRY",true)){
+            await loadExpiryWorkers();await refreshExpiryCurrentState();
+            setExpiryStatus("action","READ ONLY — Inventory and history are available");return;
+        }
+    }
     bindExpiryCaptureUI();
     bindExpiryEvidence();
     populateExpiryDateDropdowns();
@@ -2161,6 +2173,7 @@ function ensureExpiryWorkerSettingsCard(){
 }
 
 async function saveExpiryWorkerFromSettings(){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     const input = document.getElementById("expiryWorkerNameInput");
     const name = String(input?.value || "").trim();
     if(name.length < 2){

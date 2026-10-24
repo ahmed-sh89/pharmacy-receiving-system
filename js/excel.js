@@ -398,6 +398,7 @@ async function handleOrderFileSelection(event){
 ===================================================== */
 
 async function importOrderFile(file, preflightMeta = null){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
 
     const result = {
         success:false,

@@ -1,0 +1,9 @@
+.permissionHidden{display:none!important}
+body.permissionRECEIVINGDisabled :is(#page-dashboard,#page-receiving,#page-files,#page-reports,#page-sessions,#page-archive,#zebraReceivingShell){display:none!important}
+body.permissionEXPIRYDisabled :is(#page-expiry,#zebraExpiryShell,.expiryNeedsReviewPanel){display:none!important}
+[data-permission-blocked]{opacity:.55;cursor:not-allowed!important}
+.ownerPermissionsForm,.ownerCreateAccountForm{display:grid;gap:14px;padding:18px}
+.ownerPermissionsForm label,.ownerCreateAccountForm label{display:grid;gap:6px}
+.ownerPermissionsForm select,.ownerCreateAccountForm input{width:100%;padding:10px;border:1px solid var(--border,#dbe3ed);border-radius:8px;background:var(--card,#fff);color:inherit}
+.ownerPermissionsForm footer,.ownerCreateAccountForm footer{display:flex;gap:10px;flex-wrap:wrap}
+#pharmflowPermissionNotice:empty{display:none}

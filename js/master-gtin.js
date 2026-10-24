@@ -169,6 +169,7 @@ async function initializeMasterGTIN(){
 ===================================================== */
 
 async function handleMasterGTINFileSelection(event){
+    window.PharmFlowPermissions?.require("GLOBAL",true);
 
     const input = event.target;
 
@@ -994,6 +995,7 @@ function deleteMasterGTINDatabase(dbName){
 ===================================================== */
 
 async function uploadGlobalMasterGTINInChunks(records,sourceFile){
+    window.PharmFlowPermissions?.require("GLOBAL",true);
     const beginResult=await authRpc("begin_global_master_gtin_import",{
         p_source_file:toSafeString(sourceFile || "")
     });

@@ -54,9 +54,11 @@
         return false;
     }
     async function run(){
+        if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("RECEIVING",true))return;
         if(worker) return worker;
         worker=(async()=>{
             while(true){
+                if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("RECEIVING",true))return;
                 const rows=await pending();
                 /* An older confirmed row can remain in IndexedDB after a
                    browser restart. It must stay durable until cloud sync
@@ -103,6 +105,7 @@
         }
     }
     async function enqueue(raw,parsed=null){
+        window.PharmFlowPermissions?.require("RECEIVING",true);
         const current=scope(); if(!current) throw new Error("Receiving workspace is not connected");
         const row={transactionId:transactionId(),scope:current,sequence:await nextSequence(),raw:String(raw||""),parsed:parsed&&typeof parsed==="object"?parsed:null,state:"accepted",acceptedAt:new Date().toISOString()};
         await put(row); void run(); return {accepted:true,transactionId:row.transactionId};

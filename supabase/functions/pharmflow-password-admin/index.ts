@@ -8,7 +8,7 @@ const corsHeaders = {
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
 const temporaryPassword = () => {
@@ -47,7 +47,41 @@ Deno.serve(async (request) => {
     return json({ error: "Invalid request" }, 400);
   }
 
+  if (body.action === "create-account") {
+    // The caller RPC verifies current owner + forced-change state and journals
+    // the pharmacy exactly once. Auth creation stays on this privileged server.
+    if (supabaseUrl !== "https://tovkcakucyagvbzvlnks.supabase.co") return json({ error: "Staging only" }, 403);
+    const params = {
+      p_operation_id: body.operation_id, p_name: body.pharmacy_name,
+      p_code: body.pharmacy_code, p_admin_email: body.admin_email,
+    };
+    const prepare = await callerClient.rpc("owner_provision_pharmacy_v1", params);
+    if (prepare.error) return json({ error: prepare.error.message, operation_not_started: true }, 400);
+    let operation = prepare.data;
+    let password: string | undefined;
+    if (!operation.admin_user_id) {
+      password = temporaryPassword();
+      const created = await admin.auth.admin.createUser({
+        email: operation.admin_email, password, email_confirm: true,
+        app_metadata: { pharmflow_must_change_password: true, pharmflow_provision_operation: body.operation_id },
+      });
+      if (created.error) {
+        // Includes duplicate-email races and lost Auth responses. Never reset
+        // the existing credential. The journal resolves the same email/user.
+        password = undefined;
+        const recovered = await callerClient.rpc("owner_provision_pharmacy_v1", params);
+        if (recovered.error || !recovered.data?.admin_user_id) return json({ error: "Account creation incomplete. Retry with the same operation." }, 409);
+        operation = recovered.data;
+      }
+    }
+    const finished = await callerClient.rpc("owner_provision_pharmacy_v1", { ...params, p_finish: true });
+    if (finished.error) return json({ error: "Admin assignment incomplete. Retry with the same operation." }, 409);
+    return json({ ...finished.data, temporary_password: password,
+      credential_status: password ? "TEMPORARY_PASSWORD" : operation.created_for_operation ? "USE_EXPLICIT_RESET" : "EXISTING_LOGIN" });
+  }
+
   if (body.action === "reset") {
+    if (caller.app_metadata?.pharmflow_must_change_password === true) return json({ error: "PASSWORD_CHANGE_REQUIRED" }, 403);
     const { data: isOwner, error: ownerError } = await callerClient.rpc("is_system_owner");
     if (ownerError || isOwner !== true) return json({ error: "System Owner permission required" }, 403);
 
@@ -73,6 +107,10 @@ Deno.serve(async (request) => {
       return json({ error: "Temporary password change is not required" }, 403);
     }
     const newPassword = typeof body.new_password === "string" ? body.new_password : "";
+    // Do not let the temporary credential be reused as its replacement.
+    const sameCredential = await createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+      .auth.signInWithPassword({ email: caller.email!, password: newPassword });
+    if (!sameCredential.error) return json({ error: "Choose a different password" }, 400);
     if (newPassword.length < 8) return json({ error: "Password must be at least 8 characters" }, 400);
 
     const { error: updateError } = await admin.auth.admin.updateUserById(caller.id, {

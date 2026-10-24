@@ -642,6 +642,7 @@ async function publicRpc(functionName, params = {}){
 }
 
 async function authRpc(functionName, params = {}){
+    if(typeof window!=="undefined")window.PharmFlowPermissions?.checkRpc?.(functionName,params);
     const execute = async () => {
         const token = getSupabaseAccessToken();
         if(!token){ throw new Error("Please sign in first"); }
@@ -660,6 +661,9 @@ async function authRpc(functionName, params = {}){
             AuthState.mustChangePassword=true;
             renderAuthState();
             throw error;
+        }
+        if(message.includes("pharmflow_permission_denied") && functionName!=="get_my_pharmflow_permissions_v1"){
+            await window.PharmFlowPermissions?.load().catch(()=>{});
         }
         const looksExpired =
             message.includes("jwt expired") ||
@@ -1188,6 +1192,7 @@ async function loadMyAppContext(){
         );
 
         AuthState.context = row || null;
+        if(window.PharmFlowPermissions && row?.pharmacy_id && !AuthState.mustChangePassword){ await window.PharmFlowPermissions.load(); }
         AuthState.contextError = null;
 
         /*
@@ -1448,6 +1453,7 @@ async function signOutCurrentUser(){
     );
 
     AuthState.context = null;
+    window.PharmFlowPermissions?.clear();
     AuthState.contextError = null;
     AuthState.registration = null;
     AuthState.lastContextScope="";
@@ -1630,6 +1636,7 @@ function renderOwnerPharmacies(){
             <div id="ownerPharmacyDetails${index}" class="ownerPharmacyDetails" hidden>
                 ${typeof p.admin_role==="string" && p.admin_role.trim()?`<p class="ownerPharmacyRole">Role: ${escapeAuthHtml(p.admin_role)}</p>`:""}
                 <div class="ownerPharmacyActions">
+                    <button type="button" class="secondaryButton" data-owner-action="permissions" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">Permissions</button>
                     <button type="button" class="secondaryButton" data-owner-action="identity" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}" data-pharmacy-name="${escapeAuthHtml(p.pharmacy_name || "")}">Edit</button>
                     <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
                     ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
@@ -1830,6 +1837,8 @@ async function handleOwnerPharmacyAction(button){
     const pharmacyId = button.dataset.pharmacyId;
     const action = button.dataset.ownerAction;
     if(!pharmacyId){ return; }
+
+    if(action === "permissions"){ await window.editPharmacyPermissions(button); return; }
 
     if(action === "reset-password"){
         const targetUserId=button.dataset.adminUserId;
@@ -2181,7 +2190,7 @@ async function callPasswordAdmin(payload){
         body:JSON.stringify(payload)
     });
     const data = await response.json().catch(()=>({}));
-    if(!response.ok) throw new Error(data.error || "Password operation failed");
+    if(!response.ok){const error=new Error(data.error || "Password operation failed");error.operationNotStarted=data.operation_not_started===true;throw error;}
     return data;
 }
 

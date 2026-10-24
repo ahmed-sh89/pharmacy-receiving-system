@@ -71,6 +71,7 @@
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
 <link rel="stylesheet" href="css/settings-workspace.css">
+<link rel="stylesheet" href="css/permissions.css">
 
 </head>
 
@@ -2147,6 +2148,15 @@
                         </button>
                     </div>
 
+                    <details id="ownerCreateAccountPanel"><summary>Create Pharmacy &amp; Admin</summary>
+                    <form id="ownerCreateAccountForm" class="ownerCreateAccountForm">
+                      <label>Pharmacy Name<input name="pharmacy_name" maxlength="120" required></label>
+                      <label>Pharmacy Code<input name="pharmacy_code" pattern="[A-Za-z0-9_-]{3,24}" maxlength="24" required></label>
+                      <label>Pharmacy Admin Email<input name="admin_email" type="email" autocomplete="off" required></label>
+                      <p>New accounts receive a temporary password and must replace it at first login. Existing accounts keep their password.</p>
+                      <footer><button type="submit" class="primaryButton">Create Pharmacy &amp; Admin</button><button type="button" data-create-cancel class="secondaryButton">Cancel</button></footer>
+                      <div data-create-status role="status" aria-live="polite"></div>
+                    </form></details>
                     <section id="ownerManagementPanel" class="ownerManagementWorkspace" aria-labelledby="ownerManagementTitle">
                         <header class="ownerManagementToolbar">
                             <h3 id="ownerManagementTitle">All Pharmacies</h3>
@@ -2578,6 +2588,7 @@
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
+<script src="js/permissions.js"></script>
 <script src="js/auth.js?v=EXPIRY_HARDENING_20261020"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->

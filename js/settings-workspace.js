@@ -134,10 +134,10 @@ window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList .
     if(!current)return true;
     if(busy())return false;
     const saved=current;
-    if(saved.dirty && !(await window.settingsConfirm({message:'Discard unsaved changes and return to pharmacies?'})))return false;
+    if((list()?.querySelector('.ownerPermissionsForm') ? list().querySelector('.ownerPermissionsForm').dataset.dirty==='true' : saved.dirty) && !(await window.settingsConfirm({message:'Discard unsaved changes and return to pharmacies?'})))return false;
     // Check again after the asynchronous confirmation, before removing a form.
     if(current!==saved || busy())return false;
-    settingsInlinePrompt.cancel?.();current=null;
+    settingsInlinePrompt.cancel?.();window.editPharmacyPermissions?.cancel?.();current=null;
     document.getElementById('ownerFocusedActionHeader')?.remove();
     saved.controls.forEach(([control,disabled])=>{control.disabled=disabled;});
     list().classList.remove('ownerActionFocused');
@@ -156,7 +156,7 @@ window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList .
         controls.forEach(([control])=>{control.disabled=true;});
         const header=document.createElement('header');header.id='ownerFocusedActionHeader';header.className='ownerFocusedActionHeader';
         const backButton=document.createElement('button');backButton.type='button';backButton.className='secondaryButton';backButton.textContent='← Back to pharmacies';backButton.addEventListener('click',back);
-        const title=document.createElement('h3');title.textContent=({identity:'Edit Pharmacy',admin:'Pharmacy Admin','reset-password':'Reset Password',suspend:'Suspend Pharmacy',activate:'Activate Pharmacy'})[current.action] || 'Pharmacy action';
+        const title=document.createElement('h3');title.textContent=({permissions:'Permissions',identity:'Edit Pharmacy',admin:'Pharmacy Admin','reset-password':'Reset Password',suspend:'Suspend Pharmacy',activate:'Activate Pharmacy'})[current.action] || 'Pharmacy action';
         header.append(backButton,title);list().before(header);list().scrollTop=0;
     }
     const active=current;active.running=true;refresh();
@@ -169,5 +169,85 @@ window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList .
     if(current && navigation){event.preventDefault();event.stopImmediatePropagation();back().then(ok=>{if(ok)navigation.click();});}
  },true);
  window.addEventListener?.('beforeunload',event=>{if(current?.dirty){event.preventDefault();event.returnValue='';}});
- window.SettingsAccessActions={target:()=>current?.id || null,retainDraft:()=>!!(current?.running && list()?.querySelector('.ownerInlineEdit')),refresh,run,back};
+ window.SettingsAccessActions={target:()=>current?.id || null,retainDraft:()=>!!(current?.running && list()?.querySelector('.ownerInlineEdit,.ownerPermissionsForm')),refresh,run,back};
+})();
+
+// Permission editing is part of the existing focused pharmacy action.
+window.editPharmacyPermissions=async function(button){
+ const id=button.dataset.pharmacyId,host=button.closest('.ownerPharmacyRow')?.querySelector('.ownerPharmacyEditor');
+ if(!host || !isSystemOwner())return;
+ let row;
+ try{row=await authRpc('get_my_pharmflow_permissions_v1',{p_pharmacy_id:id});}
+ catch(error){setOwnerManagementMessage(error.message,'error');return;}
+ return new Promise(resolve=>{
+  const form=document.createElement('form');form.className='ownerPermissionsForm';form.setAttribute('aria-label','Pharmacy permissions');
+  const moduleOptions=[['DISABLED','Disabled'],['READ_ONLY','Read Only'],['FULL','Full Operations']];
+  const options=[['receiving','Receiving',moduleOptions],['expiry','Expiry',moduleOptions],['data_access','Item & Barcode',[['READ_ONLY','Read Only'],['PHARMACY_ONLY','Pharmacy Only'],['PHARMACY_GLOBAL','Pharmacy + Global']]]];
+  for(const [name,label,choices]of options){
+   const field=document.createElement('label');field.textContent=label;
+   const select=document.createElement('select');select.name=name;
+   for(const [value,text]of choices){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
+   select.value=row[name];field.append(select);form.append(field);
+  }
+  const status=document.createElement('div');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+  const footer=document.createElement('footer');
+  const save=document.createElement('button');save.type='submit';save.className='primaryButton';save.textContent='Save';
+  const cancel=document.createElement('button');cancel.type='button';cancel.className='secondaryButton';cancel.textContent='Cancel';footer.append(save,cancel);form.append(footer,status);host.replaceChildren(form);
+  const finish=()=>{form.remove();if(window.editPharmacyPermissions.cancel===finish)delete window.editPharmacyPermissions.cancel;resolve();};
+  window.editPharmacyPermissions.cancel=finish;
+  form.addEventListener('change',()=>{form.dataset.dirty='true';status.textContent='Unsaved changes';});
+  cancel.onclick=async()=>{if(form.dataset.dirty==='true' && !(await window.settingsConfirm({message:'Discard unsaved permission changes?'})))return;finish();};
+  form.onsubmit=async event=>{
+   event.preventDefault();if(AuthState.busy)return;
+   const fields=Object.fromEntries(options.map(([name])=>[name,form.querySelector(`[name="${name}"]`).value]));
+   setAuthBusy(true);save.disabled=cancel.disabled=true;form.querySelectorAll('select').forEach(el=>el.disabled=true);status.textContent='Saving…';
+   try{
+    row=await authRpc('owner_set_pharmflow_permissions_v1',{p_pharmacy_id:id,p_receiving:fields.receiving,p_expiry:fields.expiry,p_data_access:fields.data_access,p_expected_revision:row.revision});
+    form.dataset.dirty='false';status.textContent='Permissions saved.';
+    if(AuthState.context?.pharmacy_id===id)await window.PharmFlowPermissions.load();
+   }catch(error){status.textContent=error.message || 'Unable to save permissions.';}
+   finally{setAuthBusy(false);save.disabled=cancel.disabled=false;form.querySelectorAll('select').forEach(el=>el.disabled=false);}
+  };
+  form.querySelector('select').focus();
+ });
+};
+
+(function bindDirectAccountCreation(){
+ function bind(){
+  const form=document.getElementById('ownerCreateAccountForm');if(!form)return;
+  const key='PHARMFLOW_ACCOUNT_PROVISION_DRAFT_V1';let pending=null,busy=false;
+  try{pending=JSON.parse(sessionStorage.getItem(key)||'null');}catch(_){}
+  const names=['pharmacy_name','pharmacy_code','admin_email'];
+  const fields=()=>names.map(name=>form.querySelector(`[name="${name}"]`));
+  // Persist only request parameters and its retry ID, never credentials/tokens.
+  if(pending){fields().forEach((el,index)=>{el.value=pending[names[index]]||'';});document.getElementById('ownerCreateAccountPanel').open=true;}
+  const status=form.querySelector('[data-create-status]');
+  form.onsubmit=async event=>{
+   event.preventDefault();if(busy || !isSystemOwner())return;
+   const values=Object.fromEntries(fields().map(el=>[el.name,el.value.trim()]));
+   if(pending && names.some(name=>pending[name]!==values[name])){
+    status.textContent='Retry the original values or cancel this draft before starting a different request.';return;
+   }
+   pending=pending||{...values,operation_id:crypto.randomUUID()};sessionStorage.setItem(key,JSON.stringify(pending));
+   busy=true;setAuthBusy(true);form.querySelectorAll('input,button').forEach(el=>el.disabled=true);status.textContent='Creating pharmacy and linking admin…';
+   try{
+    const result=await callPasswordAdmin({action:'create-account',...pending});
+    if(result.temporary_password){
+     await window.settingsTextPrompt({title:'Initial Temporary Password',label:'Send securely to the ADMIN. Replacement is mandatory at first login.',value:result.temporary_password,readOnly:true,confirmText:'Close'});
+     delete result.temporary_password;
+    }
+    status.textContent=result.credential_status==='EXISTING_LOGIN'?'Pharmacy created. Existing ADMIN linked; their password is unchanged.':result.credential_status==='USE_EXPLICIT_RESET'?'Pharmacy and ADMIN ready. Initial password was not recovered. Use this pharmacy’s Reset action to issue a new temporary password.':'Pharmacy and ADMIN created. Temporary password replacement is required.';
+    pending=null;sessionStorage.removeItem(key);form.reset();await loadOwnerPharmacies();
+   }catch(error){if(error.operationNotStarted){pending=null;sessionStorage.removeItem(key);}status.textContent=(error.message||'Unable to complete creation.')+' Retry preserves this operation and never resets an existing password.';}
+   finally{busy=false;setAuthBusy(false);form.querySelectorAll('input,button').forEach(el=>el.disabled=false);}
+  };
+  form.querySelector('[data-create-cancel]').onclick=async()=>{
+   if(busy)return;
+   if(pending && !(await window.settingsConfirm({message:'Close this draft? An already created pharmacy/account is retained. Keep the same values to retry, or manage it from the pharmacy list.'})))return;
+   // The journal retains partial work. Explicitly confirmed cancellation can start a new draft.
+   pending=null;sessionStorage.removeItem(key);form.reset();document.getElementById('ownerCreateAccountPanel').open=false;
+  };
+  window.addEventListener('beforeunload',event=>{if(busy){event.preventDefault();event.returnValue='';}});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();

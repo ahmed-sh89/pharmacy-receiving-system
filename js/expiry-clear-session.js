@@ -3,6 +3,7 @@ let expiryClearInFlight=null;
 function expiryClearIntentKey(){return 'pharmflow_expiry_clear_v1/'+expiryDraftScope()+'/'+expirySignedAuthIdentity()+'/'+expiryDeviceId();}
 function expiryHasClearIntent(){return !expiryIsHandheld() && !!localStorage.getItem(expiryClearIntentKey());}
 async function reconcileExpiryClearSession(){
+    if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("EXPIRY",true))return;
     if(expiryIsHandheld())return false;
     const key=expiryClearIntentKey(),stored=localStorage.getItem(key);
     if(ExpiryCaptureEngine.sessionClearing && ExpiryCaptureEngine.sessionClearingKey && ExpiryCaptureEngine.sessionClearingKey!==key){
