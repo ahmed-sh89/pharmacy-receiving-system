@@ -2353,56 +2353,6 @@ body.zebraDevice .progressBar{background:linear-gradient(90deg,#0D47A1,#1976D2 7
 /* =====================================================
    MEDRYVO PHASE 2A — OWNER CONTROL CENTER
 ===================================================== */
-.ownerControlCenter{
-    overflow:hidden;
-}
-.ownerControlHeader{
-    align-items:flex-start;
-}
-.ownerControlHeader .settingsDescription{
-    margin:7px 0 0;
-    max-width:720px;
-}
-.ownerMetricGrid{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:14px;
-    margin:20px 0 24px;
-}
-.ownerMetricCard{
-    min-height:102px;
-    padding:17px 18px;
-    border:1px solid #dce6f4;
-    border-radius:18px;
-    background:linear-gradient(145deg,#ffffff,#f5f9ff);
-    box-shadow:0 10px 28px rgba(21,63,120,.06);
-}
-.ownerMetricCard span{
-    display:block;
-    color:#687894;
-    font-size:12px;
-    font-weight:700;
-    letter-spacing:.2px;
-}
-.ownerMetricCard strong{
-    display:block;
-    margin-top:9px;
-    color:#0b2a61;
-    font-size:30px;
-    line-height:1;
-}
-.ownerMetricWarning{
-    background:linear-gradient(145deg,#fffaf2,#fff4e4);
-    border-color:#ffe0b3;
-}
-.ownerMetricWarning strong{
-    color:#e66f00;
-}
-.ownerControlSection{
-    padding-top:22px;
-    margin-top:22px;
-    border-top:1px solid #e5ecf6;
-}
 .ownerSectionHeader{
     display:flex;
     align-items:center;
@@ -2414,143 +2364,13 @@ body.zebraDevice .progressBar{background:linear-gradient(90deg,#0D47A1,#1976D2 7
     margin:3px 0 0;
     color:#102a56;
 }
-.ownerPharmacyList{
-    display:grid;
-    gap:12px;
-    margin-top:16px;
-}
-.ownerPharmacyCard{
-    display:grid;
-    grid-template-columns:minmax(220px,1.2fr) minmax(240px,1.2fr) 120px auto;
-    align-items:center;
-    gap:18px;
-    padding:16px;
-    border:1px solid #dfe8f5;
-    border-radius:18px;
-    background:#fff;
-    box-shadow:0 7px 22px rgba(24,63,112,.045);
-}
-.ownerPharmacyIdentity{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    min-width:0;
-}
-.ownerPharmacyIcon{
-    width:44px;
-    height:44px;
-    flex:0 0 44px;
-    display:grid;
-    place-items:center;
-    border-radius:13px;
-    background:linear-gradient(145deg,#0754c9,#0877f5);
-    color:#fff;
-    font-weight:700;
-    box-shadow:0 9px 20px rgba(7,84,201,.18);
-}
-.ownerPharmacyIdentity strong,
-.ownerPharmacyIdentity span{
-    display:block;
-}
-.ownerPharmacyIdentity strong{
-    color:#102a56;
-    font-size:14px;
-}
-.ownerPharmacyIdentity span{
-    margin-top:3px;
-    color:#7a8aa4;
-    font-size:12px;
-    font-weight:700;
-}
-.ownerFieldLabel{
-    display:block;
-    margin-bottom:4px;
-    color:#8390a6;
-    font-size:10px;
-    font-weight:700;
-    letter-spacing:1px;
-}
-.ownerPharmacyAdmin{
-    min-width:0;
-    color:#233c66;
-    font-size:12px;
-    overflow-wrap:anywhere;
-}
-.ownerPharmacyAdmin small{
-    display:block;
-    margin-top:3px;
-    color:#7a8aa4;
-}
-.ownerAwaitingTag,
-.ownerUnassignedTag{
-    display:inline-flex;
-    margin-left:6px;
-    padding:3px 7px;
-    border-radius:999px;
-    font-size:9px;
-    font-weight:700;
-    vertical-align:middle;
-}
-.ownerAwaitingTag{
-    color:#9a5700;
-    background:#fff1d8;
-}
-.ownerUnassignedTag{
-    margin-left:0;
-    color:#a33d31;
-    background:#fff0ed;
-}
-.ownerPharmacyActions{
-    display:flex;
-    justify-content:flex-end;
-    gap:8px;
-    flex-wrap:wrap;
-}
-.ownerPharmacyActions .secondaryButton{
-    min-height:38px;
-    padding:0 12px;
-    white-space:nowrap;
-}
-.ownerControlMessage{
-    margin-top:14px;
-}
 .registrationRequestCard{
     border-radius:16px;
 }
-@media (max-width:1080px){
-    .ownerMetricGrid{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-    .ownerPharmacyCard{
-        grid-template-columns:minmax(210px,1fr) minmax(220px,1fr);
-    }
-    .ownerPharmacyStatus,
-    .ownerPharmacyActions{
-        justify-self:start;
-    }}
 @media (max-width:680px){
-    .ownerMetricGrid{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:9px;
-    }
-    .ownerMetricCard{
-        min-height:86px;
-        padding:13px;
-    }
-    .ownerMetricCard strong{
-        font-size:24px;
-    }
-    .ownerSectionHeader,
-    .ownerControlHeader{
+    .ownerSectionHeader{
         align-items:flex-start;
         flex-direction:column;
-    }
-    .ownerPharmacyCard{
-        grid-template-columns:1fr;
-        gap:12px;
-    }
-    .ownerPharmacyActions{
-        justify-content:flex-start;
     }}
 
 /* PHARMFLOW DASHBOARD — PHASE 2B */
@@ -7113,14 +6933,14 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchResultMain small{font-size
 body:not(.zebraDevice) #zebraExpiryShell .expiryVisuallyHidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* Expiry Desktop top navigation — one owner; unified operational toolbar; unchanged 38px controls. */
 body:not(.zebraDevice) #zebraExpiryShell .expiryTopWorkspace{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;flex-wrap:nowrap;min-height:38px;padding:0;margin:0 0 8px;border-bottom:1px solid var(--exp-border)}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav{position:relative;isolation:isolate;display:flex;align-items:stretch;gap:4px;margin:0;padding:0;border:0;border-radius:8px;background:#f1f5fa;box-shadow:inset 0 0 0 1px #d9e3ef;min-height:38px;flex:none;overflow:visible}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav>button{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;height:38px;min-width:0;padding:0 13px;border:0;border-bottom:3px solid transparent;border-radius:8px;background:transparent;color:#65758b;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .18s ease,background-color .18s ease}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button:hover:not(:disabled){background:#e7eef8;color:#244c7a}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button[aria-selected="true"]{background:#e5f0ff;border-bottom-color:#3478bf;color:#215e9c;font-weight:600;box-shadow:none}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav.has-motion button[aria-selected="true"]{background:transparent;border-bottom-color:transparent}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav{position:relative;isolation:isolate;display:flex;align-items:stretch;gap:4px;margin:0;padding:0;border:0;border-radius:8px;background:#f1f5fa;box-shadow:inset 0 0 0 1px #d9e3ef;min-height:38px;flex:none;overflow:visible}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav>button{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;height:38px;min-width:0;padding:0 13px;border:0;border-bottom:3px solid transparent;border-radius:8px;background:transparent;color:#65758b;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .18s ease,background-color .18s ease}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav button:hover:not(:disabled){background:#e7eef8;color:#244c7a}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav button[aria-selected="true"]{background:#e5f0ff;border-bottom-color:#3478bf;color:#215e9c;font-weight:600;box-shadow:none}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav.has-motion button[aria-selected="true"]{background:transparent;border-bottom-color:transparent}
 body:not(.zebraDevice) #zebraExpiryShell .expiryNavIndicator{position:absolute;z-index:0;left:0;top:0;pointer-events:none;box-sizing:border-box;background:#e5f0ff;border:1px solid #c6dcf4;border-bottom:3px solid #3478bf;border-radius:8px}
-body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav button:focus-visible{outline:2px solid #436d9e;outline-offset:-3px}
+body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav button:focus-visible{outline:2px solid #436d9e;outline-offset:-3px}
 body:not(.zebraDevice) #zebraExpiryShell .expirySessionCount{display:inline-grid;place-items:center;min-width:23px;padding:2px 6px;border-radius:6px;background:#e5edf8;color:#3a5d87;font-size:12px;font-variant-numeric:tabular-nums}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions #btnExpiryNeedsReview{display:flex;align-items:center;gap:7px;position:relative;height:34px;box-sizing:border-box;padding:0 11px;border:1px solid #d7b88d;border-radius:8px;background:#fff8ed;color:#7b4d19;font-family:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer;box-shadow:0 1px 2px #243f6006;transition:border-color .18s ease,box-shadow .18s ease,color .18s ease}
 body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions #btnExpiryNeedsReview:hover:not(:disabled){border-color:#ad7a37;background:#fff1d9;color:#684014;box-shadow:0 2px 5px #79563212}
@@ -7143,7 +6963,7 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySessionAction:disabled{opacity:.
 /* Narrow Desktop keeps the same row; horizontal access replaces clipped actions. */
 @media(max-width:1100px){
  body:not(.zebraDevice) #zebraExpiryShell .expiryTopWorkspace{gap:8px;overflow-x:auto;scrollbar-width:thin}
- body:not(.zebraDevice) #zebraExpiryShell .expiryWorkspaceNav>button{padding:0 9px;font-size:12px;gap:6px}
+ body:not(.zebraDevice) :is(#zebraExpiryShell,#page-settings) .expiryWorkspaceNav>button{padding:0 9px;font-size:12px;gap:6px}
  body:not(.zebraDevice) #zebraExpiryShell .expiryHeaderActions{gap:6px;margin-left:auto}
  body:not(.zebraDevice) #zebraExpiryShell .expirySessionMetric{padding:0 7px;gap:6px}
 }
@@ -7421,10 +7241,6 @@ body:not(.zebraDevice) #zebraExpiryShell .expirySearchEmpty span{font-size:11px!
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryCurrentWorkspace{margin-top:0!important}
 
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryTimeCell{font-size:11px!important;white-space:normal!important;line-height:1.25!important}
-@media (min-width:769px) and (max-width:1180px){
-
-
-}
 
 /* RC2: hidden workspace actions must stay hidden despite custom button display. */
 body:not(.zebraDevice) #zebraExpiryShell .expiryCurrentTools [hidden]{display:none!important}

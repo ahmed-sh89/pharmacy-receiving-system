@@ -15,14 +15,11 @@ const end=ui.indexOf("\nsetTimeout(()=>{",start);
 assert(start>=0&&end>start,"Settings identifier administration renderer is missing");
 const settings=ui.slice(start,end);
 
-assert(html.includes('id="btnOpenBarcodeControl"'),"Barcode Control launcher is missing");
-assert(html.includes('id="barcodeControlOverlay"'),"Barcode Control modal is missing");
-assert(html.includes('class="barcodeControlOverlay" aria-hidden="true" hidden'),"Barcode Control must be natively hidden at initial DOM render");
-assert(!html.includes('class="needsReviewOverlay barcodeControlOverlay"'),"Barcode Control must not inherit the Needs Review overlay implementation");
-assert(settings.includes("modal.hidden=false"),"Barcode Control open lifecycle must explicitly reveal the modal");
-assert(settings.includes("modal.hidden=true"),"Barcode Control close lifecycle must explicitly hide the modal");
-assert.match(css,/\.barcodeControlOverlay\[hidden\]\{display:none(?:!important)?\}/,"Barcode Control hidden state must override the Needs Review display rule");
-assert(html.includes('data-admin-search type="search"'),"Unified Settings search input is missing");
+assert(!html.includes('id="btnOpenBarcodeControl"'),"Inline search must not require a launcher");
+assert(!html.includes('id="barcodeControlOverlay"'),"Inline Settings must not retain the old modal");
+assert(html.includes('id="settingsItemsPanel"'),"Items Control panel must exist");
+assert(settings.includes('renderDefault();'),"Inline workspace must initialize immediately");
+assert(require('linkedom').parseHTML(html).document.querySelector('[data-admin-search][type="search"]'),"Unified Settings search input is missing");
 assert(!html.includes('class="globalIdentifierMasterLookupGrid barcodeManagementLookup barcodeManagementUnifiedLookup"'),"Legacy inline barcode lookup must be removed");
 assert(!html.includes('id="btnGlobalIdentifierMasterClear"'),"Legacy full-size Clear button must be removed");
 assert(!html.includes("globalIdentifierMasterItemSearch"),"Legacy second item-search field must be removed");
@@ -67,7 +64,7 @@ assert(!html.includes('Order Data Check &amp; Recovery'),"Redundant recovery pan
 assert(!html.includes('id="btnUpdateMasterGTIN"'),"Obsolete Global GTIN import recovery action must not be rendered");
 assert(!html.includes('id="masterGTINFileInput"'),"Obsolete Global GTIN import recovery input must not be rendered");
 assert(html.includes("settingsModuleTitleChip settingsAccountTitleChip"),"Account must use the compact KPI title chip");
-assert(html.includes("settingsModuleTitleChip barcodeControlHeader"),"Barcode Control must use the shared KPI title chip");
+assert(html.includes('class="expiryWorkspaceNav"'),"Settings must reuse the Expiry navigation design");
 assert(css.includes(".settingsModuleTitleChip"),"Settings modules must use the shared compact KPI title system");
 assert(!css.includes(".settingsModuleCard > .settingsIdentityMain{"),"Legacy full-width layered account header must stay removed");
 assert(!html.includes('id="btnLoadMappings"'),"Legacy Mapping File action must be removed");
@@ -97,7 +94,7 @@ test("Selected Item card presents Item Code, Item Name, and effective Group sepa
   assert(summaryMatch,"Selected Item summary renderer must be available for focused regression coverage");
   const render=new Function("item","esc","itemCodeOf","itemNameOf","window",`return (()=>{${summaryMatch[1]}})();`);
   const output=render({item_code:"I100",item_name:"Sample Product",group_name:"HomeHealth",category:"Hair Care"},String,value=>value.item_code,value=>value.item_name,{
-    PharmFlowClassificationFilters:{normalize:item=>({group:item.group_name}),displayGroup:value=>value==="HomeHealth"?"Home Health":value}
+    PharmFlowClassificationFilters:{normalizeReceiving:item=>({group:item.group_name}),displayGroup:value=>value==="HomeHealth"?"Home Health":value}
   });
   assert.match(output,/Item Code[\s\S]*I100/);
   assert.match(output,/Item Name[\s\S]*Sample Product/);
@@ -147,7 +144,7 @@ test("Settings new Global Item creation separates committed save from optional d
   const handlerMatch=settings.match(/workspace\.querySelector\("\[data-create-item\]"\)\?\.addEventListener\("click",async event=>\{([\s\S]*?)\n        \}\);/);
   assert(handlerMatch,"Settings new-item click handler must be available for behavioral regression coverage");
   const scenarios=[
-    {name:"successful create despite refresh failure",result:{success:true},refreshError:new Error("optional detail refresh failed"),expectedMessage:["Item added to Global Master","success"],expectedDisabled:true,expectedClosed:true},
+    {name:"successful create despite refresh failure",result:{success:true},refreshError:new Error("optional detail refresh failed"),expectedMessage:["Item added to Database","success"],expectedDisabled:true,expectedClosed:true},
     {name:"genuine create rejection",error:new Error("RPC rejected test creation"),expectedMessage:["RPC rejected test creation","error"],expectedDisabled:false,expectedClosed:false}
   ];
   for(const scenario of scenarios){

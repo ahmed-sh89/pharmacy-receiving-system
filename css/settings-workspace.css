@@ -1,0 +1,159 @@
+/* Settings owns its layout and controls. Shared Expiry navigation owns tabs. */
+body:not(.zebraDevice) #page-settings{width:100%;max-width:none;margin:0;--settings-line:#d9e3ed;--settings-ink:#29465f;--settings-muted:#63778b;--settings-accent:#286fa8}
+body:not(.zebraDevice) #page-settings.active{display:block}
+#page-settings .settingsWorkspace{display:grid;gap:12px;min-width:0;color:var(--settings-ink);font-size:13px}
+#page-settings .settingsWorkspaceHeader{display:flex;align-items:center;min-width:0;padding:0 0 8px;border-bottom:1px solid var(--settings-line)}
+#page-settings [hidden]{display:none!important}
+#page-settings .settingsTabPanel{min-width:0;padding:16px;border:1px solid var(--settings-line);border-radius:10px;background:#fff}
+#page-settings .settingsTabPanel>.contentCard{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+#page-settings :where(button,input,select,textarea){box-sizing:border-box;font:600 13px/1.35 Arial,Helvetica,sans-serif}
+#page-settings :where(button){min-height:36px;padding:7px 12px;border:1px solid #bccddd;border-radius:7px;background:#f8fafc;color:#365570;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s;box-shadow:none}
+#page-settings :where(button:hover:not(:disabled)){background:#eef4fa;border-color:#86a9c7;transform:none}
+#page-settings :where(button:disabled){opacity:.55;cursor:not-allowed}
+#page-settings :where(input,select,textarea){width:100%;min-width:0;min-height:38px;padding:8px 11px;border:1px solid #bfcfdd;border-radius:7px;background:#fbfdff;color:#233f58;box-shadow:none}
+#page-settings :where(label){display:grid;gap:6px;color:#526b80;font-size:12px;font-weight:600}
+#page-settings :where(button,input,select,textarea):focus-visible{outline:2px solid #436d9e;outline-offset:2px}
+#page-settings :where(.primaryButton){border-color:var(--settings-accent);background:var(--settings-accent);color:#fff}
+#page-settings :where(.primaryButton:hover:not(:disabled)){background:#215c8b;border-color:#215c8b;color:#fff}
+#page-settings :where(.dangerButton){background:#a8424e;border-color:#a8424e;color:#fff}
+#page-settings :where(.dangerButton:hover:not(:disabled)){background:#8d3340;border-color:#8d3340;color:#fff}
+#page-settings :where(.dangerOutlineButton,.barcodeRemoveButton){border-color:#dfbfc4;background:#fff7f8;color:#9c3948}
+#page-settings .settingsItemsWorkspace{min-width:0}
+#page-settings .barcodeControlToolbar{display:grid;gap:6px;margin:0 0 14px;padding:0;background:transparent}
+#page-settings .barcodeControlSearchLabel{font-weight:700;font-size:12px;color:#375670}
+#page-settings .barcodeControlSearchRow{display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:8px;max-width:100%}
+#page-settings .barcodeControlWorkspace{display:grid;gap:12px;min-width:0;padding:0}
+#page-settings :where(.barcodeControlWelcome,.barcodeControlEmpty,.settingsEmpty,.registrationEmpty){display:grid;gap:5px;margin:0;padding:22px 14px;border:1px dashed var(--settings-line);border-radius:8px;background:#f8fafc;color:var(--settings-muted);font-size:13px;text-align:center;line-height:1.5}
+#page-settings :where(.barcodeControlWelcome strong,.barcodeControlEmpty strong){color:var(--settings-ink);font-size:14px}
+#page-settings .barcodeNewItemAction{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;border-top:1px solid var(--settings-line)}
+#page-settings .barcodeNewItemAction>div{display:grid;gap:4px}
+#page-settings :where(.barcodeNewItemAction small,.barcodeNewItemHeader small,.barcodeActionHeading strong){color:var(--settings-muted);font-size:12px;font-weight:400}
+#page-settings .barcodeSectionLabel{display:block;margin-bottom:5px;color:#60788e;font-size:10px;font-weight:700;letter-spacing:.05em}
+#page-settings .barcodeItemCard{padding:13px 14px;border:1px solid #ccdeed;border-radius:8px;background:#f2f7fc}
+#page-settings .barcodeItemIdentity{display:grid;grid-template-columns:minmax(120px,.6fr) minmax(220px,2fr) minmax(120px,.7fr);gap:16px}
+#page-settings .barcodeItemIdentityField{display:grid;gap:5px;min-width:0}
+#page-settings .barcodeItemIdentityField span{color:#60788e;font-size:11px}
+#page-settings .barcodeItemIdentityField :is(strong,b){font-size:14px;font-weight:700;overflow-wrap:anywhere}
+#page-settings .barcodeResultsHeader,#page-settings .barcodeSectionHeading{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px}
+#page-settings .barcodeResultsHeader span{color:var(--settings-muted)}
+#page-settings .barcodeSearchResults{display:grid;gap:0;max-height:440px;overflow:auto;border:1px solid var(--settings-line);border-radius:8px}
+#page-settings .barcodeSearchResults>button{width:100%;min-height:48px;padding:10px 13px;border:0;border-bottom:1px solid #e4ebf2;border-radius:0;background:#fff;text-align:left}
+#page-settings .barcodeSearchResults>button:last-child{border-bottom:0}
+#page-settings .barcodeSuggestionIdentity{display:grid;grid-template-columns:minmax(90px,.4fr) minmax(0,2fr);align-items:center;gap:12px}
+#page-settings .barcodeSuggestionCode{color:#286fa8;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#page-settings .barcodeSuggestionName{color:var(--settings-ink);font-weight:600;overflow-wrap:anywhere}
+#page-settings .barcodeRows{margin-top:8px;border:1px solid var(--settings-line);border-radius:8px;overflow:hidden}
+#page-settings .barcodeManagementRow{display:grid;grid-template-columns:minmax(130px,1fr) minmax(150px,1fr) auto;align-items:center;gap:8px 14px;padding:11px 12px;border-bottom:1px solid #e6edf3}
+#page-settings .barcodeManagementRow:last-child{border:0}
+#page-settings .barcodeManagementRow>strong{font-size:13px;overflow-wrap:anywhere}
+#page-settings .barcodeRowMeta{font-size:10px;font-weight:600;color:#61778c}
+#page-settings .barcodeRowMeta.isLocal{color:#317059}
+#page-settings .barcodeRowActions{display:flex;flex-wrap:wrap;gap:6px}
+#page-settings .barcodeCorrectionHost{grid-column:1/-1}
+#page-settings .barcodeCorrectionHost:empty{display:none}
+#page-settings .barcodeCorrectionForm{display:grid;gap:10px;padding:12px;border-top:1px solid var(--settings-line);background:#f7fafc}
+#page-settings .barcodeCorrectionActions{display:flex;gap:8px}
+#page-settings .barcodeCorrectionResults{display:grid;gap:6px}
+#page-settings .barcodeCorrectionTarget{display:flex;gap:14px;align-items:center;text-align:left}
+#page-settings .barcodeAddCard{display:grid;grid-template-columns:minmax(150px,.65fr) minmax(250px,1.5fr);align-items:center;gap:16px;padding:14px 0;border-top:1px solid var(--settings-line)}
+#page-settings .barcodeAddRow{display:flex;gap:8px}
+#page-settings .barcodeAddRow input{flex:1}
+#page-settings .barcodeAddRow button{flex:none}
+#page-settings .barcodeDeleteItemZone{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;border-top:1px solid #eadadd}
+#page-settings .barcodeDeleteItemZone small{color:#8b5a63;font-size:12px}
+#page-settings .barcodeScopeNotice{margin:0;color:var(--settings-muted);font-size:12px}
+#page-settings .barcodeNewItemHeader>div{display:grid;gap:4px}
+#page-settings .barcodeNewItemForm{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:14px}
+#page-settings .barcodeNewItemBarcode,#page-settings .barcodeNewItemGroup,#page-settings .barcodeNewItemActions{grid-column:1/-1}
+#page-settings .barcodeNewItemGroup b{color:#a8424e}
+#page-settings .barcodeNewItemActions{display:flex;justify-content:flex-end;gap:8px}
+#page-settings .settingsDataActions{display:grid;gap:12px}
+#page-settings .settingsDataActionRow{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:15px;border:1px solid var(--settings-line);border-radius:8px;background:#f8fafc}
+#page-settings .settingsDataActionRow>div{display:grid;gap:6px}
+#page-settings .settingsDataActionRow strong{font-size:14px;color:var(--settings-ink)}
+#page-settings .settingsDataActionRow small{font-size:12px;line-height:1.5;color:var(--settings-muted)}
+#page-settings .settingsActionLabel{font-size:10px;letter-spacing:.05em;font-weight:700;color:#627b90}
+#page-settings .settingsDataDangerRow{background:#fff8f9;border-color:#ead0d5}
+#page-settings .settingsDataDangerRow strong{color:#963948}
+#page-settings .cardHeader{margin:0 0 12px;padding:0;border:0}
+#page-settings .cardHeader h2{margin:0;color:var(--settings-ink);font-size:16px}
+#page-settings .settingsDescription{margin:4px 0 0;color:var(--settings-muted);font-size:12px}
+#page-settings .expiryWorkerAddRow{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;margin-bottom:14px}
+#page-settings .expiryWorkerRow{display:grid;grid-template-columns:minmax(120px,1fr) auto auto;gap:8px;align-items:center;margin:0;padding:10px 0;border-bottom:1px solid var(--settings-line);background:transparent}
+#page-settings .ownerMetricGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+#page-settings .ownerManagementSearch{width:min(390px,100%);min-width:0}
+#page-settings .ownerPharmacyCodeBadge{justify-self:start;padding:3px 7px;border-radius:5px;background:#eaf2fa;color:#365f82;font-size:11px;font-weight:700}
+#page-settings .ownerPharmacyName,#page-settings .ownerPharmacyAdmin{overflow-wrap:anywhere}
+#page-settings .ownerPharmacyActions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;justify-content:flex-start}
+#page-settings .ownerPharmacyState{padding:4px 7px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.03em}
+#page-settings .ownerPharmacyState.active{background:#eaf5ee;color:#367354}
+#page-settings .ownerPharmacyState.suspended{background:#fbf0e4;color:#926536}
+#page-settings .registrationRequestCard{padding:14px;border:1px solid var(--settings-line);border-radius:8px;background:#fbfdff}
+#page-settings .registrationApprovalFields{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(150px,.6fr);gap:10px}
+#page-settings :where(.authMessage,.operationReceipt){font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+#page-settings .authMessage:empty{display:none}
+#page-settings .authMessage.error{color:#9b3545;background:#fff4f6;border-color:#ebcbd2}
+#page-settings .authMessage.success{color:#317453;background:#f0f8f3;border-color:#cde3d6}
+.settingsDialog{color:#29465f;font-family:Arial,Helvetica,sans-serif}
+dialog.settingsDialog{box-sizing:border-box;width:min(460px,calc(100vw - 28px));max-height:88dvh;overflow:auto;padding:22px;border:1px solid #cbd9e6;border-radius:12px;background:#fff;box-shadow:0 12px 36px #173d6326}
+dialog.settingsDialog::backdrop{background:#142a4066}
+.settingsDialog :is(h2,.modalHeader h2){margin:0 0 14px;color:#234967;font-size:18px;line-height:1.3}
+.settingsDialog :is(p,.modalBody){color:#5c7286;font-size:13px;line-height:1.6;white-space:pre-wrap}
+.settingsDialog label{display:grid;gap:7px;color:#526b80;font-size:12px;font-weight:600}
+.settingsDialog input{box-sizing:border-box;width:100%;min-height:40px;padding:9px 11px;border:1px solid #bdcddd;border-radius:7px;background:#f9fbfd;color:#29465f;font:600 13px/1.4 Arial,Helvetica,sans-serif}
+.settingsDialog footer,.settingsDialog .modalFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.settingsDialog button{min-height:36px;padding:8px 14px;border:1px solid #bdcddd;border-radius:7px;background:#f8fafc;color:#365570;font:600 13px/1.3 Arial,Helvetica,sans-serif;cursor:pointer;box-shadow:none}
+.settingsDialog .primaryButton{border-color:#286fa8;background:#286fa8;color:#fff}
+.settingsDialog .dangerButton{border-color:#a8424e;background:#a8424e;color:#fff}
+.settingsDialog button:hover{filter:brightness(.96)}
+.settingsDialog :is(button,input):focus-visible{outline:2px solid #436d9e;outline-offset:2px}
+.settingsDialog button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:1100px){#page-settings .ownerPharmacyActions{grid-column:1/-1;justify-content:flex-start}}
+@media(max-width:760px){#page-settings .settingsWorkspaceHeader{overflow-x:auto}#page-settings .settingsTabPanel{padding:12px}#page-settings .barcodeControlSearchRow{grid-template-columns:minmax(0,1fr) auto}#page-settings .barcodeControlSearchRow input{grid-column:1/-1}#page-settings .barcodeItemIdentity,#page-settings .barcodeNewItemForm,#page-settings .barcodeAddCard,#page-settings .ownerMetricGrid,#page-settings .registrationApprovalFields{grid-template-columns:1fr}#page-settings .barcodeManagementRow{grid-template-columns:minmax(0,1fr)}#page-settings .barcodeSuggestionIdentity{grid-template-columns:1fr;gap:4px}#page-settings .barcodeNewItemAction,#page-settings .barcodeDeleteItemZone,#page-settings .settingsDataActionRow{align-items:stretch;flex-direction:column}#page-settings .ownerPharmacyActions{grid-column:auto}#page-settings .ownerManagementSearch{min-width:0}#page-settings .expiryWorkerAddRow{grid-template-columns:minmax(0,1fr)}#page-settings .ownerMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){#page-settings :where(button){transition:none}}
+#page-settings .ownerPharmacyAdmin>div,#page-settings .ownerPharmacyAdmin small{font-size:12px;line-height:1.5}
+#page-settings .ownerAwaitingTag,#page-settings .ownerUnassignedTag{color:#986e37;font-size:11px}
+/* Access Management is one inline workspace, using the shared report KPI cards. */
+#page-settings .ownerManagementWorkspace{display:grid;gap:12px;margin-top:18px;min-width:0}
+#page-settings .ownerManagementToolbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
+#page-settings .ownerManagementToolbar h3{margin:0;color:var(--settings-ink);font-size:16px;font-weight:700}
+#page-settings .ownerManagementSearch span{font-size:11px}
+#page-settings .ownerTableScroll{min-width:0;overflow-x:auto;border:1px solid var(--settings-line);border-radius:8px}
+#page-settings .ownerTableScroll:has(.registrationEmpty){border:0}
+#page-settings .ownerPharmacyTable{width:100%;table-layout:fixed;border-collapse:collapse;text-align:left;background:#fff;font-size:13px;line-height:1.5}
+#page-settings .ownerPharmacyTable th{padding:11px 12px;border-bottom:1px solid #cedbe7;background:#f1f6fb;color:#4a657e;font-size:11px;font-weight:700;letter-spacing:.025em;text-transform:uppercase;text-align:left}
+#page-settings .ownerPharmacyTable td{height:66px;padding:13px 12px;border-bottom:1px solid #e0e8ef;vertical-align:middle;overflow-wrap:anywhere}
+#page-settings .ownerPharmacyTable tbody tr:last-child td{border-bottom:0}
+#page-settings .ownerPharmacyTable tbody tr:hover{background:#f5f9fd}
+#page-settings .ownerPharmacyName{font-size:13px;font-weight:700}
+#page-settings .ownerPharmacyActions button{min-height:34px;padding:6px 9px;font-size:12px;white-space:nowrap}
+#page-settings .ownerRequestsTable th:nth-child(1){width:13%}
+#page-settings .ownerRequestsTable th:nth-child(2){width:24%}
+#page-settings .ownerRequestsTable th:nth-child(3){width:31%}
+#page-settings .ownerRequestsTable th:nth-child(4){width:10%}
+#page-settings .ownerRequestsTable th:nth-child(5){width:22%}
+#page-settings .ownerRequestFields{display:grid;gap:10px}
+#page-settings .ownerRequestFields label{font-size:11px}
+#page-settings .ownerInlineEdit{padding-top:14px}
+#page-settings .ownerInlineEdit form{display:grid;grid-template-columns:minmax(200px,1fr) auto;align-items:end;gap:14px;max-width:720px}
+#page-settings .ownerInlineEdit h4{grid-column:1/-1;margin:0;color:#294b67;font-size:14px}
+#page-settings .ownerInlineEdit footer{display:flex;gap:8px}
+#page-settings .ownerManagementWorkspace[aria-busy="true"] .ownerTableScroll{opacity:.6;pointer-events:none}
+@media(max-width:900px){#page-settings .ownerManagementToolbar{align-items:stretch;flex-direction:column}#page-settings .ownerManagementSearch{width:100%}#page-settings .ownerRequestsTable{min-width:760px}#page-settings .ownerInlineEdit form{grid-template-columns:1fr}}
+#page-settings #ownerPharmacyList{display:grid;align-content:start;gap:8px;max-height:clamp(280px,55vh,620px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;border:0;border-radius:0;padding:2px 4px 2px 2px}
+#page-settings .ownerPharmacyRow{min-width:0;border:1px solid var(--settings-line);border-radius:8px;background:#fff;overflow:hidden;transition:border-color .16s,background .16s}
+#page-settings .ownerPharmacyRow:hover{border-color:#a6bdcf;background:#f8fafc}
+#page-settings .ownerPharmacyRow.expanded{border-color:#6b9bbd;background:#f4f8fc}
+#page-settings .ownerPharmacySummary{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto 18px;align-items:center;gap:18px;width:100%;min-height:78px;margin:0;padding:14px 16px;border:0;border-radius:0;background:transparent;color:var(--settings-ink);text-align:left;font:600 13px/1.5 Arial,Helvetica,sans-serif;cursor:pointer}
+#page-settings .ownerPharmacySummary:hover{background:#edf4f9}
+#page-settings .ownerPharmacySummary:focus-visible{outline:2px solid #397eb0;outline-offset:-3px}
+#page-settings .ownerPharmacyIdentity{display:grid;justify-items:start;gap:5px;min-width:0}
+#page-settings .ownerPharmacyIdentity strong{font-size:14px}
+#page-settings .ownerPharmacyIdentity,#page-settings .ownerPharmacyAdmin{overflow-wrap:anywhere}
+#page-settings .ownerPharmacyChevron{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;transition:transform .16s}
+#page-settings .expanded .ownerPharmacyChevron{transform:rotate(180deg)}
+#page-settings .ownerPharmacyDetails{padding:14px 16px 16px;border-top:1px solid #dbe6ef}
+#page-settings .ownerPharmacyDetails[hidden]{display:none}
+#page-settings .ownerPharmacyRole{margin:0 0 10px;font-size:12px}
+@media(max-width:760px){#page-settings .ownerPharmacySummary{grid-template-columns:minmax(0,1fr) auto 18px;gap:10px;padding:12px}#page-settings .ownerPharmacyAdmin{grid-column:1;grid-row:2}#page-settings .ownerPharmacyState{grid-column:2;grid-row:1/3}#page-settings .ownerPharmacyChevron{grid-column:3;grid-row:1/3}}
+@media(prefers-reduced-motion:reduce){#page-settings .ownerPharmacyRow,#page-settings .ownerPharmacyChevron{transition:none}}

@@ -195,20 +195,6 @@ body:not(.zebraDevice) #page-files #orderFilesList .fileItemActions>small{font-s
 body:not(.zebraDevice) #page-files #orderFilesList .removeActiveOrderButton{min-height:32px;padding:5px 11px;border:1px solid #ef9b9b;border-radius:7px;background:#fff8f8;color:#c73535;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
 
 /* Settings — bounded administration cards, no parallel state or permissions. */
-body:not(.zebraDevice) #page-settings {width:82%;max-width:1200px;margin:0 auto}
-body:not(.zebraDevice) #page-settings.active {display:grid;gap:16px}
-#page-settings>.contentCard {margin:0;padding:18px;border:1px solid var(--ui-line);border-radius:12px;background:#fff;box-shadow:none}
-#page-settings .cardHeader {margin:0 0 12px;padding:0;border:0}
-#page-settings .cardHeader h2 {font-size:21px;margin:3px 0}
-#page-settings .cardHeader p,#page-settings .settingsDescription {font-size:14px;line-height:1.5;color:var(--ui-muted)}
-#page-settings .sectionEyebrow {font-size:11px;letter-spacing:1px;color:#5f7e98}
-#page-settings .accountSettingsGrid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-#page-settings .accountSettingTile {padding:12px;background:#f7fafc;border:1px solid #e0e9f0;border-radius:8px;min-width:0}
-#page-settings .accountSettingTile span {display:block;font-size:12px;color:var(--ui-muted)}
-#page-settings .accountSettingTile strong {display:block;font-size:15px;margin-top:5px;overflow-wrap:anywhere}
-#page-settings .settingsButtonGrid {display:flex;gap:12px;flex-wrap:wrap}
-#page-settings .primaryButton,#page-settings .secondaryButton,#page-settings .dangerButton {min-height:40px;font-size:14px;padding:8px 16px;box-shadow:none}
-#page-settings .masterGTINCard {border-top:3px solid #3689bd}
 .globalIdentifierMasterAdmin {display:grid;gap:14px}
 .identifierScopeBadge {display:inline-flex;align-items:center;margin-bottom:8px;padding:4px 9px;border:1px solid #bbd3e6;border-radius:5px;background:#edf5fc;color:#2e5b7e;font-size:11px;font-weight:700;letter-spacing:.6px}
 .globalIdentifierMasterLookupGrid {display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:14px 12px;align-items:end}
@@ -216,12 +202,10 @@ body:not(.zebraDevice) #page-settings.active {display:grid;gap:16px}
 .globalIdentifierMasterLookupGrid input {width:100%;min-height:42px;padding:8px 12px;border:1px solid #b8cede;border-radius:8px;background:#fff;font-size:15px;color:#254c6b}
 .globalIdentifierMasterLookupGrid button {min-height:42px;padding:8px 16px;border:1px solid #176bb1;border-radius:8px;background:#176bb1;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
 .globalIdentifierMasterLookupGrid [data-admin-clear] {grid-column:2;background:#fff;border-color:#b8cede;color:#385d78}
-#page-settings .dangerZone {border-left:3px solid #c65d66;background:#fff8f8;padding:16px;border-radius:8px;margin-top:18px}
 
 @media(max-width:1100px){
  body:not(.zebraDevice) .statisticsGrid {grid-template-columns:repeat(4,minmax(0,1fr))}
  body:not(.zebraDevice) .topBar {grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;padding-left:14px;padding-right:14px}
- #page-settings .accountSettingsGrid {grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:900px){
  body:not(.zebraDevice) .sidebar {transform:translateX(-100%)}
@@ -240,7 +224,7 @@ body:not(.zebraDevice) #page-settings.active {display:grid;gap:16px}
  body:not(.zebraDevice) .pfnOrderControlGroup {flex-wrap:wrap;gap:10px}
  body:not(.zebraDevice) .pfnActionReport {margin-left:0}
  .pfnOrdersModal {max-height:calc(100dvh - 24px);width:calc(100vw - 24px)}
- #page-files .healthGrid,#page-settings .accountSettingsGrid {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #page-files .healthGrid {grid-template-columns:repeat(2,minmax(0,1fr))}
  #page-files .cardHeader {align-items:flex-start;flex-wrap:wrap}
  .globalIdentifierMasterLookupGrid {grid-template-columns:1fr}
  .globalIdentifierMasterLookupGrid [data-admin-clear] {grid-column:auto}
@@ -429,8 +413,6 @@ body:not(.zebraMode) #page-expiry .expiryTableWrap{
 /* ---------- MEDIUM / MOBILE ----------
    Do not force viewport-fit on phones or handhelds.
 ---------------------------------------------------------------- */
-@media (max-width: 900px){
-  }
 
 
 
@@ -1601,18 +1583,6 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
 
 
 /* Barcode Management — Settings only. Keep Receiving/Handheld surfaces isolated. */
-#page-settings .barcodeManagementLookup{grid-template-columns:minmax(260px,1fr) auto minmax(260px,1fr) auto;gap:10px}
-#page-settings .barcodeManagementLookup [data-admin-clear]{grid-column:auto}
-#page-settings .barcodeItemSummary{grid-template-columns:auto 1fr;column-gap:14px;align-items:center}
-#page-settings .barcodeItemSummary span{grid-column:1/-1}
-#page-settings .barcodeItemSummary strong{font-size:18px;color:#123f6d}
-#page-settings .barcodeItemSummary b{font-size:16px;color:#254c6b}
-#page-settings .barcodeList{gap:8px}
-#page-settings .barcodeList strong{display:flex;align-items:center;min-height:38px;padding:7px 10px;border:1px solid #d6e5f2;border-radius:8px;background:#f8fbff;color:#173f65;font-size:15px;font-weight:800}
-#page-settings .barcodeChangeNote{grid-column:1/-1}
-#page-settings .barcodeChangeNote textarea{width:100%;min-height:54px;padding:8px 10px;border:1px solid #b8cede;border-radius:8px;resize:vertical}
-@media(max-width:1100px){#page-settings .barcodeManagementLookup{grid-template-columns:minmax(220px,1fr) auto}}
-@media(max-width:600px){#page-settings .barcodeManagementLookup{grid-template-columns:1fr}}
 
 
 /* Receiving correction/history — PharmFlow controls, never browser defaults. */
@@ -1734,21 +1704,6 @@ body:not(.zebraDevice) .pfnKnownExtraPanel .gtinActionBadge{background:#dff2ff;b
 body:not(.zebraDevice) .pfnKnownExtraPanel .pfnIdentityBody{background:#f7fbff}
 
 /* Focused UI clarity fix — Settings barcode management + Receiving resolver states. */
-#page-settings .masterGTINCard{border-top-color:#2d78b7}
-#page-settings .globalIdentifierMasterAdmin{padding:16px;border:1px solid #d7e5f1;border-radius:12px;background:#f8fbfe}
-#page-settings .barcodeManagementLookup{padding:14px;border:1px solid #dbe8f3;border-radius:10px;background:#fff}
-#page-settings .barcodeManagementLookup label{font-size:12px;letter-spacing:.01em;color:#315a7b}
-#page-settings .barcodeManagementLookup input{min-height:46px;border-color:#abc4d9;border-radius:9px;font-size:15px}
-#page-settings .barcodeManagementLookup input:focus{outline:none;border-color:#2d78b7;box-shadow:0 0 0 3px rgba(45,120,183,.12)}
-#page-settings .barcodeManagementLookup button{min-height:46px;border-radius:9px}
-#page-settings [data-admin-workspace]:not(:empty){padding:14px;border:1px solid #dbe8f3;border-radius:10px;background:#fff}
-#page-settings .needsReviewMappingActions{grid-template-columns:minmax(220px,1fr) auto auto;gap:10px;padding-top:12px;border-top:1px solid #e3edf5}
-#page-settings .needsReviewMappingActions label{display:grid;gap:6px;color:#315a7b;font-size:12px;font-weight:800}
-#page-settings .needsReviewMappingActions input,#page-settings .needsReviewMappingActions textarea{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #abc4d9;border-radius:9px;background:#fff;padding:9px 11px;color:#173f65;font:inherit}
-#page-settings .needsReviewMappingActions button{min-height:44px;padding:9px 15px;border:1px solid #176bb1;border-radius:9px;background:#176bb1;color:#fff;font-weight:800;cursor:pointer}
-#page-settings .needsReviewMappingActions button.danger{border-color:#a63232;background:#a63232}
-#page-settings .barcodeChangeNote{grid-column:1/-1}
-@media(max-width:760px){#page-settings .needsReviewMappingActions{grid-template-columns:1fr}}
 
 /* Unknown is an error state; known-but-not-in-order is a caution state. */
 body:not(.zebraDevice) .pfnUnknownPanel{border-color:#c94b4b!important}

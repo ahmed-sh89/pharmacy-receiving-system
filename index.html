@@ -69,6 +69,7 @@
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
+<link rel="stylesheet" href="css/settings-workspace.css">
 
 </head>
 
@@ -2079,129 +2080,33 @@
                  SETTINGS PAGE
             =================================================== -->
 
-            <section
-                id="page-settings"
-                class="appPage"
-            >
+<section id="page-settings" class="appPage"><div class="settingsWorkspace"><header class="settingsWorkspaceHeader"><nav class="expiryWorkspaceNav" role="tablist" aria-label="Settings workspace">
+<button id="settingsItemsTab" type="button" role="tab" aria-selected="true" aria-controls="settingsItemsPanel">Items Control</button>
+<button id="settingsDataTab" type="button" role="tab" aria-selected="false" aria-controls="settingsDataPanel" tabindex="-1">Data Management</button>
+<button id="settingsOperatorsTab" type="button" role="tab" aria-selected="false" aria-controls="settingsOperatorsPanel" tabindex="-1">Operators</button>
+<button id="settingsAccessTab" type="button" role="tab" aria-selected="false" aria-controls="settingsAccessPanel" tabindex="-1" hidden>Access Management</button>
+</nav></header>
+<section id="settingsItemsPanel" class="settingsTabPanel" role="tabpanel" aria-labelledby="settingsItemsTab"><section id="globalIdentifierMasterAdmin" class="settingsItemsWorkspace">
 
-
-                <section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
-                    <div class="settingsModuleTitleChip ownerControlHeader">
-                        <span class="sectionEyebrow">ACCESS MANAGEMENT</span>
-                        <h2>Pharmacies &amp; Access</h2>
-                    </div>
-
-                    <div class="ownerMetricGrid" aria-label="Pharmacy access views">
-                        <button class="ownerMetricCard ownerMetricTotal" type="button" data-owner-view="total">
-                            <span>Total Pharmacies</span>
-                            <strong id="ownerMetricTotalPharmacies">0</strong>
-                        </button>
-                        <button class="ownerMetricCard ownerMetricActive" type="button" data-owner-view="active">
-                            <span>Active</span>
-                            <strong id="ownerMetricActivePharmacies">0</strong>
-                        </button>
-                        <button class="ownerMetricCard ownerMetricPending" type="button" data-owner-view="pending">
-                            <span>Pending Requests</span>
-                            <strong id="ownerMetricPendingRequests">0</strong>
-                        </button>
-                        <button class="ownerMetricCard ownerMetricAdmins" type="button" data-owner-view="suspended">
-                            <span>Suspended</span>
-                            <strong id="ownerMetricSuspendedPharmacies">0</strong>
-                        </button>
-                    </div>
-
-                    <div id="ownerManagementPanel" class="modalOverlay ownerManagementOverlay" aria-hidden="true">
-                        <section class="modalCard ownerManagementPanel" role="dialog" aria-modal="true" aria-labelledby="ownerManagementTitle">
-                        <div class="ownerManagementPanelHeader">
-                            <div>
-                                <span id="ownerManagementEyebrow" class="sectionEyebrow">PHARMACY ACCESS</span>
-                                <h3 id="ownerManagementTitle">All Pharmacies</h3>
-                                <p id="ownerManagementDescription" class="settingsDescription"></p>
-                            </div>
-                            <div class="ownerManagementPanelTools">
-                                <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
-                                    <span>Search</span>
-                                    <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
-                                </label>
-                                <button id="btnCloseOwnerManagement" class="secondaryButton" type="button">Close</button>
-                            </div>
-                        </div>
-                        <div id="ownerManagementMessage" class="authMessage ownerControlMessage" role="status" aria-live="polite" aria-atomic="true"></div>
-                        <div id="ownerRegistrationRequests" class="registrationRequestsList" hidden></div>
-                        <div id="ownerPharmacyList" class="ownerPharmacyList" hidden></div>
-                        </section>
-                    </div>
-
-                    <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
-                </section>
-
-                <section id="memberInviteCard" class="contentCard" hidden aria-hidden="true">
-                    <div class="cardHeader">
-                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invitations Disabled</h2></div>
-                    </div>
-                    <p class="settingsDescription">
-                        PharmFlow is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
-                    </p>
-                </section>
-
-
-                    <section class="contentCard masterGTINCard barcodeControlCard settingsModuleCard">
-                        <div class="settingsModuleTitleChip barcodeControlHeader">
-                            <span class="sectionEyebrow">BARCODE CONTROL</span>
-                            <h2>Manage Item Barcodes</h2>
-                        </div>
-
-                        <div class="barcodeControlActions">
-                            <button id="btnOpenBarcodeControl" class="barcodeControlAction settingsActionRow" type="button">
-                                <span class="barcodeControlActionIcon" aria-hidden="true">⌕</span>
-                                <span class="barcodeControlActionText">
-                                    <small>ITEM BARCODES</small>
-                                    <strong>Find &amp; Manage Item</strong>
-                                    <em>Search or scan by barcode, item code or item name</em>
-                                </span>
-                                <span class="barcodeControlActionArrow" aria-hidden="true">›</span>
-                            </button>
-                        </div>
-
-                        <div id="barcodeControlOverlay" class="barcodeControlOverlay" aria-hidden="true" hidden>
-                            <button class="barcodeControlScrim" data-barcode-close aria-label="Close barcode control"></button>
-                            <section id="globalIdentifierMasterAdmin" class="barcodeControlPanel" role="dialog" aria-modal="true" aria-labelledby="barcodeControlTitle">
-                                <header class="barcodeControlModalHeader">
-                                    <div>
-                                        <span class="sectionEyebrow">BARCODE CONTROL</span>
-                                        <h2 id="barcodeControlTitle">Find &amp; Manage Item</h2>
-                                        <p>Search, review and manage an item's barcode mappings.</p>
-                                    </div>
-                                    <button class="barcodeControlClose" data-barcode-close type="button" aria-label="Close">✕</button>
-                                </header>
                                 <div class="barcodeControlToolbar">
                                     <label class="barcodeControlSearchLabel" for="globalIdentifierMasterSearch">Find Item</label>
                                     <div class="barcodeControlSearchRow">
-                                        <input id="globalIdentifierMasterSearch" data-admin-search type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
-                                        <button id="btnGlobalIdentifierMasterSearch" class="primaryButton barcodeControlSearchButton" data-admin-search-button type="button">Search</button>
-                                        <button class="secondaryButton barcodeControlClearButton" data-admin-clear type="button">Clear</button>
+                                        <input aria-label="Barcode, Item Code or Item Name" id="globalIdentifierMasterSearch" data-admin-search="" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Barcode, Item Code or Item Name">
+                                        <button id="btnGlobalIdentifierMasterSearch" class="primaryButton barcodeControlSearchButton" data-admin-search-button="" type="button">Search</button>
+                                        <button class="secondaryButton barcodeControlClearButton" data-admin-clear="" type="button">Clear</button>
                                     </div>
                                 </div>
-                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace aria-live="polite">
+                                <div id="globalIdentifierMasterResults" class="barcodeControlWorkspace" data-admin-workspace="" aria-live="polite">
                                     <div class="barcodeControlEmpty">
                                         <strong>Ready to search</strong>
                                         <span>Scan a barcode or enter an item code or item name.</span>
                                     </div>
                                 </div>
-                            </section>
-                        </div>
+                            </section></section>
+<section id="settingsDataPanel" class="settingsTabPanel" role="tabpanel" aria-labelledby="settingsDataTab" hidden><section class="contentCard dangerZoneCard settingsDataSafetyCard settingsModuleCard">
 
 
 
-                    </section>
-
-                <section class="contentCard dangerZoneCard settingsDataSafetyCard settingsModuleCard">
-
-
-                    <div class="settingsModuleTitleChip">
-                        <span class="sectionEyebrow">WORKSPACE DATA</span>
-                        <h2>Data Management</h2>
-                    </div>
 
 
                     <div id="historicalDeleteReceipt" class="operationReceipt" role="status" aria-live="polite" hidden></div>
@@ -2217,11 +2122,52 @@
                     </div>
 
 
-                </section>
+                </section></section>
+<section id="settingsOperatorsPanel" class="settingsTabPanel" role="tabpanel" aria-labelledby="settingsOperatorsTab" hidden><p id="settingsOperatorsUnavailable" class="settingsEmpty" role="status">Operator management is unavailable for this account.</p></section>
+<section id="settingsAccessPanel" class="settingsTabPanel" role="tabpanel" aria-labelledby="settingsAccessTab" hidden><section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
 
 
-            </section>
+                    <div class="ownerMetricGrid receivingSummaryGrid discrepancyGrid" aria-label="Pharmacy access views">
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiAll" type="button" data-owner-view="total" aria-pressed="true">
+                            <span>Total Pharmacies</span>
+                            <strong id="ownerMetricTotalPharmacies">0</strong>
+                        </button>
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiReceived" type="button" data-owner-view="active" aria-pressed="false">
+                            <span>Active</span>
+                            <strong id="ownerMetricActivePharmacies">0</strong>
+                        </button>
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiOver" type="button" data-owner-view="pending" aria-pressed="false">
+                            <span>Pending Requests</span>
+                            <strong id="ownerMetricPendingRequests">0</strong>
+                        </button>
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiShortage" type="button" data-owner-view="suspended" aria-pressed="false">
+                            <span>Suspended</span>
+                            <strong id="ownerMetricSuspendedPharmacies">0</strong>
+                        </button>
+                    </div>
 
+                    <section id="ownerManagementPanel" class="ownerManagementWorkspace" aria-labelledby="ownerManagementTitle">
+                        <header class="ownerManagementToolbar">
+                            <h3 id="ownerManagementTitle">All Pharmacies</h3>
+                            <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
+                                <span>Search pharmacies</span>
+                                <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
+                            </label>
+                        </header>
+                        <div id="ownerManagementMessage" class="authMessage ownerControlMessage" role="status" aria-live="polite" aria-atomic="true"></div>
+                        <div id="ownerRegistrationRequests" class="ownerTableScroll" hidden></div>
+                        <div id="ownerPharmacyList" class="ownerTableScroll"></div>
+                    </section>
+
+                    <div id="settingsAccessMessage" class="authMessage ownerControlMessage"></div>
+                </section><section id="memberInviteCard" class="contentCard" hidden aria-hidden="true">
+                    <div class="cardHeader">
+                        <div><span class="sectionEyebrow">TEAM ACCESS</span><h2>Invitations Disabled</h2></div>
+                    </div>
+                    <p class="settingsDescription">
+                        PharmFlow is currently configured for one ADMIN per pharmacy. Staff invitations are not used in this version.
+                    </p>
+                </section></section></div></section>
 
         </div>
 
@@ -2667,6 +2613,7 @@
 <script src="js/header-account-ui.js?v=ACCOUNT_HEADER_PREVIEW1"></script>
 
 
+<script src="js/settings-workspace.js"></script>
 </body>
 
 </html>

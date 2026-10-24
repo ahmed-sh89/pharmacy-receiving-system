@@ -33,10 +33,9 @@
   :root body:not(.zebraDevice) .headerShellFooter .accountIdentityText small::before{content:none}
   :root body:not(.zebraDevice) .headerShellFooter .accountIdentityText small,:root body:not(.zebraDevice) .headerShellFooter .footerCode{display:grid;justify-items:start;gap:3px}
   :root body:not(.zebraDevice) .headerShellFooter .footerCodeLabel{color:#6b8093;font:700 9px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.05em}
-  :root body:not(.zebraDevice) .headerShellFooter #accountPharmacyCode,:root body:not(.zebraDevice) .headerShellFooter .footerCode strong{color:#174f7b;font:700 13px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.04em}
-  :root body:not(.zebraDevice) .headerShellFooter .sidebarConnection,:root body:not(.zebraDevice) .headerShellFooter .connection{display:flex;align-items:center;gap:7px;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#377e59;font:600 11px/1.3 Arial,Helvetica,sans-serif;letter-spacing:.04em}
-  :root body:not(.zebraDevice) .headerShellFooter .sidebarConnection.isOffline,:root body:not(.zebraDevice) .headerShellFooter .sidebarConnection.isAttention{border:0;background:transparent;color:#8b6a35}
-  :root body:not(.zebraDevice) .headerShellFooter .autoSaveStatus,:root body:not(.zebraDevice) .headerShellFooter .autosave{justify-content:flex-start;gap:7px;margin:0;padding:0;color:#698174;font:600 11px/1.3 Arial,Helvetica,sans-serif}
+  :root body:not(.zebraDevice) .headerShellFooter #accountPharmacyCode,:root body:not(.zebraDevice) .headerShellFooter .footerCode strong{color:#153f67;font:800 15px/1.35 Arial,Helvetica,sans-serif;letter-spacing:.04em;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+  :root body:not(.zebraDevice) .headerShellFooter .sidebarConnection,:root body:not(.zebraDevice) .headerShellFooter .autoSaveStatus{display:none
+  }
 }
 @media (min-width:769px) and (max-width:1100px){
   :root body:not(.zebraDevice) .headerShell{grid-template-columns:minmax(230px,1fr) minmax(0,1.2fr) minmax(230px,1fr);gap:8px;padding:0 12px}
@@ -82,10 +81,6 @@ body.zebraDevice .headerLogoutWrap{display:none!important}
   :root body:not(.zebraDevice) .accountEditDialog .settingsIdentityEditButtons{display:flex;justify-content:flex-end;gap:8px}
   :root body:not(.zebraDevice) .accountEditDialog button:not(.accountDialogScrim):not(.accountDialogClose){min-height:35px;padding:0 13px;border:1px solid #d4e0e8;border-radius:8px;background:#fff;color:#365a75;font-size:11px;font-weight:700;cursor:pointer}
   :root body:not(.zebraDevice) .accountEditDialog button.primaryButton{border-color:#286f9f;background:#286f9f;color:#fff}
-  :root body:not(.zebraDevice) .headerShellFooter .accountIdentityText small,:root body:not(.zebraDevice) .headerShellFooter .footerCode{padding-left:14px}
-  :root body:not(.zebraDevice) .headerShellFooter .sidebarConnection,:root body:not(.zebraDevice) .headerShellFooter .connection,:root body:not(.zebraDevice) .headerShellFooter .autoSaveStatus strong,:root body:not(.zebraDevice) .headerShellFooter .autosave strong{font:600 11px/1.3 Arial,Helvetica,sans-serif;letter-spacing:.04em}
-  :root body:not(.zebraDevice) .headerShellFooter .autoSaveStatus,:root body:not(.zebraDevice) .headerShellFooter .autosave{color:#718495}
-  :root body:not(.zebraDevice) .headerShellFooter .autoSaveStatus .statusDot,:root body:not(.zebraDevice) .headerShellFooter .autosave i{width:7px;height:7px;flex:none;background:#8fa2b0}
 }
 @media (min-width:769px) and (max-width:1100px){
  :root body:not(.zebraDevice) .headerShell .headerControl{padding:0 8px;font-size:10px}

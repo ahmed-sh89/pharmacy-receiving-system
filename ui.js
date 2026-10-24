@@ -9001,8 +9001,6 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
     const searchButton=overlay.querySelector("[data-admin-search-button]");
     const workspace=overlay.querySelector("[data-admin-workspace]");
     const clear=overlay.querySelector("[data-admin-clear]");
-    const modal=document.getElementById("barcodeControlOverlay");
-    const openButton=document.getElementById("btnOpenBarcodeControl");
     if(!searchInput||!searchButton||!workspace) return;
     if(searchButton.dataset.identifierAdminBound==="1") return;
     searchButton.dataset.identifierAdminBound="1";
@@ -9088,10 +9086,10 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         return `<section class="barcodeItemCard"><span class="barcodeSectionLabel">SELECTED ITEM</span><div class="barcodeItemIdentity"><div class="barcodeItemIdentityField"><span>Item Code</span><strong>${esc(itemCodeOf(item)||"—")}</strong></div><div class="barcodeItemIdentityField"><span>Item Name</span><b>${esc(itemNameOf(item))}</b></div><div class="barcodeItemIdentityField"><span>Group</span><strong>${esc(group)}</strong></div></div></section>`;
     };
 
-    const openControl=()=>{if(!modal)return;modal.hidden=false;modal.setAttribute("aria-hidden","false");renderDefault();requestAnimationFrame(()=>searchInput.focus());};
-    const closeControl=()=>{if(!modal)return;modal.hidden=true;modal.setAttribute("aria-hidden","true");clearTimeout(searchSuggestTimer);searchInput.value="";workspace.innerHTML="";selectedItem=null;};
-    openButton?.addEventListener("click",openControl);
-    modal?.querySelectorAll("[data-barcode-close]").forEach(button=>button.addEventListener("click",closeControl));
+    // Inline workspace: no launcher, modal state or competing search renderer.
+    const closeControl=()=>{clearTimeout(searchSuggestTimer);searchInput.value="";};
+    renderDefault();
+    if(typeof AppEvents!=="undefined") AppEvents.on("auth:context-ready",()=>{searchInput.value="";renderDefault();});
 
     const loadBarcodeRows=async item=>{
         const itemCode=itemCodeOf(item);
@@ -9113,7 +9111,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         return `<section class="barcodeListCard"><div class="barcodeSectionHeading"><span class="barcodeSectionLabel">BARCODES</span><strong>${rows.length} linked</strong></div><div class="barcodeRows">${rows.map((row,index)=>`
             <div class="barcodeManagementRow">
                 <strong>${esc(row.identifier_display)}</strong>
-                <span class="barcodeRowMeta ${row.mappingScope==="PHARMACY"?"isLocal":"isGlobal"}">${row.mappingScope==="PHARMACY"?"THIS PHARMACY · RESOLVES FIRST":(row.resolutionPriority==="FALLBACK"?"GLOBAL MASTER · LOWER PRIORITY":"GLOBAL MASTER · USED FOR RESOLUTION")}</span>
+                <span class="barcodeRowMeta ${row.mappingScope==="PHARMACY"?"isLocal":"isGlobal"}">${row.mappingScope==="PHARMACY"?"THIS PHARMACY · RESOLVES FIRST":(row.resolutionPriority==="FALLBACK"?"DATABASE · LOWER PRIORITY":"DATABASE · USED FOR RESOLUTION")}</span>
                 ${(row.correctable||row.removable)?`<span class="barcodeRowActions">${row.correctable?`<button type="button" class="barcodeCorrectButton" data-correct-barcode="${index}">Correct Mapping</button>`:""}${row.removable?`<button type="button" class="barcodeRemoveButton" data-remove-barcode="${index}">Remove Barcode</button>`:""}</span>`:""}
                 <div class="barcodeCorrectionHost" data-correction-host="${index}"></div>
             </div>`).join("")}</div></section>`;
@@ -9128,8 +9126,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             ${itemSummary(item)}
             ${renderBarcodeList(rows)}
             ${canAdd?`<section class="barcodeAddCard"><div class="barcodeActionHeading"><span class="barcodeSectionLabel">ADD BARCODE</span><strong>Link another barcode</strong></div><div class="barcodeAddRow"><input data-new-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode"><button type="button" class="primaryButton" data-add-barcode>+ Add Barcode</button></div></section>`:""}
-            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><div><span class="barcodeSectionLabel">DANGER ZONE</span><small>Delete only an unused Global item created by mistake.</small></div><button type="button" class="dangerButton" data-delete-item>Delete Item</button></div>`:""}
-            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Global mappings remain read only.</p>':""}
+            ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><div><span class="barcodeSectionLabel">DANGER ZONE</span><small>Delete only an unused Database item created by mistake.</small></div><button type="button" class="dangerButton" data-delete-item>Delete Item</button></div>`:""}
+            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Database mappings remain read only.</p>':""}
         `;
         workspace.querySelector("[data-add-barcode]")?.addEventListener("click",async event=>{
             const button=event.currentTarget;
@@ -9181,7 +9179,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         workspace.querySelector("[data-new-identifier]")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();workspace.querySelector("[data-add-barcode]")?.click();}});
         workspace.querySelectorAll("[data-remove-barcode]").forEach(button=>button.addEventListener("click",async()=>{
             const row=rows[Number(button.dataset.removeBarcode)];if(!row||!row.removable)return;
-            const ok=await pharmFlowConfirm({title:"Remove Barcode Mapping?",message:`Remove only the ${row.mappingScope==="PHARMACY"?"current-pharmacy":"Global"} mapping for ${toSafeString(row.identifier_display)}? Any mapping in the other scope and the item itself will remain.`,confirmText:"Remove Mapping",tone:"danger"});
+            const ok=await pharmFlowConfirm({title:"Remove Barcode Mapping?",message:`Remove only the ${row.mappingScope==="PHARMACY"?"current-pharmacy":"Database"} mapping for ${toSafeString(row.identifier_display)}? Any mapping in the other scope and the item itself will remain.`,confirmText:"Remove Mapping",tone:"danger"});
             if(!ok)return;button.disabled=true;
             try{
                 if(row.mappingScope==="PHARMACY")await IdentifierService.removePharmacyIdentifier(nrV2OperationId(),row.identifier_id,row.mapping_revision,auditReason("REMOVE_BARCODE"));
@@ -9203,7 +9201,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
                 const findButton=host.querySelector("[data-find-correction-target]");findButton.disabled=true;
                 try{
                     const targets=await IdentifierService.searchItems(value,12);
-                    results.innerHTML=targets.length?targets.map((target,targetIndex)=>`<button type="button" class="barcodeCorrectionTarget" data-correction-target="${targetIndex}"><strong>${esc(itemCodeOf(target))}</strong><span>${esc(itemNameOf(target))}</span></button>`).join(""):'<span class="barcodeCorrectionEmpty">No matching Global item found.</span>';
+                    results.innerHTML=targets.length?targets.map((target,targetIndex)=>`<button type="button" class="barcodeCorrectionTarget" data-correction-target="${targetIndex}"><strong>${esc(itemCodeOf(target))}</strong><span>${esc(itemNameOf(target))}</span></button>`).join(""):'<span class="barcodeCorrectionEmpty">No matching Database item found.</span>';
                     results.querySelectorAll("[data-correction-target]").forEach(targetButton=>targetButton.addEventListener("click",async()=>{
                         const target=targets[Number(targetButton.dataset.correctionTarget)];if(!target)return;
                         if(itemCodeOf(target)===itemCode){showToast?.("Choose a different target item","warning");return;}
@@ -9237,7 +9235,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         if(!canWriteGlobal()){workspace.innerHTML='<div class="barcodeControlEmpty"><strong>No results</strong><span>No matching item was found.</span></div>';return;}
         selectedItem=null;
         workspace.innerHTML=`<section class="barcodeNewItemCard">
-            <div class="barcodeNewItemHeader"><div><span class="barcodeSectionLabel">NEW ITEM</span><strong>Add New Item</strong><small>Create a new Global Master item with its first barcode.</small></div></div>
+            <div class="barcodeNewItemHeader"><div><span class="barcodeSectionLabel">NEW ITEM</span><strong>Add New Item</strong><small>Create a new Database item with its first barcode.</small></div></div>
             <div class="barcodeNewItemForm">
                 <label class="barcodeNewItemCode">Item Code<input data-new-item-code autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Item Code" value="${esc(prefill.itemCode||"")}"></label>
                 <label class="barcodeNewItemName">Item Name<input data-new-item-name autocomplete="off" placeholder="Item Name"></label>
@@ -9252,11 +9250,11 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             const itemCode=toSafeString(workspace.querySelector("[data-new-item-code]")?.value).trim(),itemName=toSafeString(workspace.querySelector("[data-new-item-name]")?.value).trim(),identifierDisplay=toSafeString(workspace.querySelector("[data-new-item-barcode]")?.value).trim();
             if(!itemCode||!itemName||!identifierDisplay){showToast?.("Item Code, Item Name and Barcode are required","warning");return;}
             let existingGlobal;
-            try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Global Master","error");return;}
+            try{existingGlobal=await IdentifierService.findGlobalItemByCode(itemCode);}catch(error){showToast?.(error?.message||"Unable to check Database","error");return;}
             if(existingGlobal){
                 searchInput.value=itemCode;
                 try{await showItem(existingGlobal);}
-                catch(error){closeControl();showToast?.("Item already exists in Global Master. No duplicate was created, but its details could not be loaded.","warning");}
+                catch(error){closeControl();showToast?.("Item already exists in Database. No duplicate was created, but its details could not be loaded.","warning");}
                 return;
             }
             const groupField=workspace.querySelector("[data-new-item-group]");
@@ -9276,7 +9274,7 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
             try{await showItem({item_code:itemCode,item_name:itemName,group_name:groupName});}
             catch(refreshError){if(typeof Logger!=="undefined")Logger.warn("Global Master item created but detail refresh failed",refreshError);}
             closeControl();
-            showToast?.("Item added to Global Master","success");
+            showToast?.("Item added to Database","success");
         });
     };
     const newItemPrefillForNoResult=(search,{barcodeConfirmed=false}={})=>{
