@@ -1,41 +1,40 @@
-# Staging Auth & Access parity — 24 October 2026
-Status: IMPLEMENTED / PRODUCT OWNER ACCEPTANCE PENDING. Not USER VERIFIED or DONE.
+# PharmFlow Staging Auth & Access — 24 October 2026
+Status: READY FOR PRODUCT OWNER TEST. Not USER VERIFIED / DONE.
+Branch: staging/auth-access-parity-20261024.
+Task 01B parent: f1afebc4b5fc791194281419bcc097b67e64c448.
+Staging Supabase: tovkcakucyagvbzvlnks.
+Preview: https://pharmflow-test-git-staging-auth-access-p-ea871d-fhyh2xtskz-3504.vercel.app
+Exact current deployed SHA is stamped in Preview version.json.
+Production zznoshzcyxmtwfbznjyr and main were not modified.
 
-Production baseline, rechecked after implementation: bd20065f0a2c7bb44861df88e1d021225e7c9725.
-Staging branch: staging/auth-access-parity-20261024.
-Runtime code commit: 215499883cb8178d9c0d5805546deff55615e31f.
-Verified runtime Preview: https://pharmflow-test-cllrlsndc-fhyh2xtskz-3504.vercel.app
-Stable branch Preview: https://pharmflow-test-git-staging-auth-access-p-ea871d-fhyh2xtskz-3504.vercel.app
-Supabase: tovkcakucyagvbzvlnks ONLY. Production received no source, DB, Auth, data or deployment mutations.
+## Preserved parity
+Task 01 restored missing Auth/Access invitation, registration, assignment and password dependencies. Existing roles, tenant isolation and operational code remain intact.
+Task 01 migrations: 20261024145354, 20261024145829, 20261024145926.
+Password Edge Function remains byte-identical to the Production baseline, with JWT verification enabled.
+Task 01 code: 215499883cb8178d9c0d5805546deff55615e31f; closure: f1afebc4b5fc791194281419bcc097b67e64c448.
 
-## Change scope
-Added only required invitation/registration/Admin-assignment/profile-trigger dependencies from live Production definitions. Added pharmacy ID/status defaults and nullable approved_by FK. Preserved existing Staging membership, RLS and operational guards; no broad schema sync and no Phase 1 permissions.
-Adapted membership conflict targets to Staging's existing composite PK and qualified invitation output names. No existing pharmacy IDs, roles, users or operational records were copied or replaced.
-Deployed pharmflow-password-admin with the exact Production source and verify_jwt=true. Browser configuration is pinned to Staging; connect-src excludes Production. Build guard rejects Production targets and any unrelated branch. Existing Account/Access/Receiving/Expiry/Handheld runtime retained.
+## Task 01B security gate
+Migration: 20261024154211_staging_password_change_security_gate.sql.
+Root cause: mandatory password replacement was a browser flag; business RPC authorization did not check it.
+The reusable private guard reads current auth.users.raw_app_meta_data for auth.uid(), ignoring user-editable metadata and stale JWT flag values.
+PostgREST pre-request enforcement denies business REST/RPC routes while mandatory replacement is active. Exact exceptions cover public setup, own identity/context/registration status, and signed Expiry session cleanup. Auth password/logout endpoints and the existing password Edge completion remain usable.
+Restrictive RLS policies protect the directly granted Expiry tables and Storage objects outside the Data API hook. Existing RLS, membership, role checks and idempotency logic were not weakened.
+The client locks on PASSWORD_CHANGE_REQUIRED, blocks resumed workspace boot/pending assignments, and obtains a fresh Auth session after password replacement before reopening session-bound Expiry operations. If reauthentication fails, it stays at login using the new password.
 
-Applied Staging migrations:
-- 20261024145354 staging_auth_access_production_parity
-- 20261024145829 staging_auth_membership_contract_adapters
-- 20261024145926 staging_claim_admin_conflict_target
-
-Changed runtime/config files: index.html, js/auth.js (same-origin recovery redirect only), js/supabase.js, vite.config.js, supabase/config.toml.
-Added migrations above and tests/staging-auth-parity.test.cjs.
-The password Edge Function source already exists unchanged in the baseline repository.
+Changed Task 01B files: js/auth.js; the migration above; tests/password-change-gate.test.cjs; this checkpoint.
 
 ## Verification
-PASS: build; 53 focused automated tests (42 Auth/Receiving/Expiry/Handheld checks, 8 Access DOM behavior checks, 3 Staging isolation/forced-password UI/build-guard checks).
-PASS with real isolated Staging Auth sessions: email/password login; pharmacy creation; Admin assignment/claim/context; owner pharmacy listing; non-owner owner-list/reset denial; identity Edit; suspension/reactivation; Change Password and subsequent login; owner Reset Password; temporary-password login/required-change flag; completion and subsequent final-password login.
-PASS: current Receiving and Expiry read smoke for all three isolated identities.
-PASS with rollback-only DB fixtures: self-registration request/owner approval; invitation redemption; cross-pharmacy read of an existing fixture order; no test operational orders remain.
-PASS: live Preview HTTP 200, exact SHA stamp, Staging Supabase URL and Production-blocking CSP; deployed password Edge source byte-matches Production.
-New invitation table: RLS enabled, no direct anon/authenticated data grants. Advisor comparison: no increase in anonymous SECURITY DEFINER endpoints; additional authenticated RPC notices are expected for the restored guarded contracts. Invitation table has intentionally no direct-access policy.
+PASS: build and 36 focused automated tests, including lock/resume, server-rejection handling, fresh-session completion and failed-reauthentication recovery.
+PASS with real Staging sessions: ordinary Receiving order write; Expiry capture write and idempotent retry.
+PASS: System Administrator reset; pre-reset old JWT and temporary-password JWT denied business Receiving/Expiry reads and writes and Access Management RPCs; GET RPC and direct REST table variants denied.
+PASS: current-user identity context and Sign Out remain available; changing user_metadata cannot bypass the server-owned flag.
+PASS: forced Storage upload rejected by RLS; a rollback-only authenticated SQL/RLS probe sees zero Expiry rows while password replacement is required.
+PASS: password replacement through existing Edge Function; same stale flag JWT accepted by the current-state gate after completion; Receiving write restored; fresh valid Auth session restores signed Expiry capture; final password login.
+PASS: another normal user remains unaffected, cross-pharmacy membership is denied, and a Pharmacy Admin cannot become System Administrator.
+Denied order registrations left no rows. Only isolated QA data was used. Credentials, tokens and temporary passwords are excluded from Git and reports.
+The prior Task 01 server-gate FAIL is now resolved on Staging only.
 
-## Open limitations — not fixed by parity
-FAIL: mandatory password-change server enforcement. In an isolated rollback-only probe, an authenticated fixture with pharmflow_must_change_password=true could register an order through the existing RPC. The UI gate passes, but must not be represented as a server guarantee. This is inherited from the current Production design; adding a new global authorization gate is outside this parity task.
-NOT TESTED: complete signed-in browser/device acceptance (Chromium download unavailable); public signup email delivery/confirmation (synthetic example.com addresses rejected by Auth). Submission/approval RPCs and unchanged signup UI were checked separately.
-No physical Handheld verification. No claim that all operational writes or the complete suite were tested.
-
-Isolated QA identities/pharmacies are distinguishable by the pf-parity- / Parity QA prefix. Credentials, temporary passwords, tokens and session state are excluded from Git and this checkpoint. No Production users, credentials, secrets or operational data were copied.
-
-## Next action
-Product Owner accepts the branch Preview with existing Staging credentials, then exercises a Parity QA Admin reset/forced-change flow and opens Receiving/Expiry. Keep the server forced-password gap explicit and obtain separate scope before modifying business authorization. Do not start Phase 1 automatically.
+## Limits and next action
+A previously issued signed Storage URL remains usable until its existing expiry; cached/downloaded data cannot be recalled by this gate.
+Physical Handheld and complete signed-in browser acceptance remain unverified. Do not claim a complete suite run.
+Product Owner: Reset a Parity QA Admin in the Preview, verify forced replacement, then save isolated Receiving/Expiry entries and sign out/in. No Phase 1 development or Production promotion is authorized.

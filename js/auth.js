@@ -656,6 +656,11 @@ async function authRpc(functionName, params = {}){
         return await execute();
     }catch(error){
         const message = String(error?.message || "").toLowerCase();
+        if(message.includes("password_change_required")){
+            AuthState.mustChangePassword=true;
+            renderAuthState();
+            throw error;
+        }
         const looksExpired =
             message.includes("jwt expired") ||
             message.includes("token is expired") ||
@@ -711,6 +716,10 @@ async function signInFromForm(){
         });
         persistAuthSession(session);
         await loadPublicSetupStatus().catch(()=>{});
+        if(AuthState.mustChangePassword){
+            renderAuthState();
+            return;
+        }
         await finishPendingAccessIfPossible();
         await loadMyAppContext();
         renderAuthState();
@@ -1258,6 +1267,7 @@ function normalizeAccountContext(row){
 }
 
 function hasApplicationAccess(){
+    if(AuthState.mustChangePassword){ return false; }
     const baseAccess=!!(AuthState.context && AuthState.context.pharmacy_id);
 
     if(!baseAccess){
@@ -1293,6 +1303,7 @@ async function claimAssignedAdminIfAvailable(throwIfMissing=false){
 }
 
 async function finishPendingAccessIfPossible(){
+    if(AuthState.mustChangePassword){ return; }
     if(!getSupabaseAccessToken()){ return; }
     await claimAssignedAdminIfAvailable(false).catch(()=>{});
     if(localStorage.getItem(AUTH_PENDING_OWNER_KEY)){
@@ -2204,10 +2215,22 @@ async function completeTemporaryPassword(){
     setAuthBusy(true,"Saving new password...");
     try{
         await callPasswordAdmin({action:"complete",new_password:password});
-        AuthState.mustChangePassword=false;
-        if(AuthState.user?.app_metadata){ AuthState.user.app_metadata.pharmflow_must_change_password=false; }
-        if(AuthState.session?.user?.app_metadata){ AuthState.session.user.app_metadata.pharmflow_must_change_password=false; }
-        persistAuthSession(AuthState.session);
+        // Password replacement can revoke the previous Auth session. Obtain a
+        // fresh signed session before resuming session-bound Expiry operations.
+        try{
+            const session=await authRequest("/auth/v1/token?grant_type=password",{
+                method:"POST",
+                body:JSON.stringify({email:AuthState.user?.email||AuthState.context?.email,password})
+            });
+            persistAuthSession(session);
+        }catch(_){
+            persistAuthSession(null);
+            AuthState.context=null;
+            lockApplicationForAuth();
+            showAuthPanel("login",{history:"replace"});
+            setAuthMessage("Password updated. Sign in with your new password.","success");
+            return;
+        }
         await loadMyAppContext();
         renderAuthState();
         unlockApplicationAfterAuth();
@@ -2362,6 +2385,10 @@ function openDashboardAfterAuthentication(){
 }
 
 function unlockApplicationAfterAuth(){
+    if(AuthState.mustChangePassword){
+        renderAuthState();
+        return;
+    }
     if(AuthState.recoveryActive || window.__MEDRYVO_RECOVERY_ACTIVE){
         finishAuthBootState();
         lockApplicationForAuth(true);
