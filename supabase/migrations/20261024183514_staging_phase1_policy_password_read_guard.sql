@@ -1,0 +1,3 @@
+CREATE POLICY pharmflow_password_change_gate ON public.pharmflow_pharmacy_permissions_v1 AS RESTRICTIVE FOR SELECT TO authenticated USING((SELECT pharmflow_auth_private.password_change_complete()));
+CREATE POLICY pharmflow_password_change_gate ON public.pharmflow_permission_audit_v1 AS RESTRICTIVE FOR SELECT TO authenticated USING((SELECT pharmflow_auth_private.password_change_complete()));
+CREATE POLICY pharmflow_password_change_gate ON public.pharmflow_central_review_events_v1 AS RESTRICTIVE FOR SELECT TO authenticated USING((SELECT pharmflow_auth_private.password_change_complete()));

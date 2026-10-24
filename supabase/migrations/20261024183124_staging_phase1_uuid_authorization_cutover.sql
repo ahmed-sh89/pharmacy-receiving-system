@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION public.pharmflow_is_reference_master_admin_v1() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO pg_catalog,public AS $f$ SELECT pharmflow_auth_private.global_allowed(); $f$;
+CREATE OR REPLACE FUNCTION public.pharmflow_is_pharmacy_identifier_admin_v2(p_pharmacy_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO pg_catalog,public AS $f$ SELECT pharmflow_auth_private.data_allowed(p_pharmacy_id,true); $f$;
+NOTIFY pgrst,'reload schema';

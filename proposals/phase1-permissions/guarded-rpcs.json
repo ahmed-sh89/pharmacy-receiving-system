@@ -1,0 +1,578 @@
+[
+  {
+    "name": "set_pharmflow_needs_review_photo_v2",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_photo_path text",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_expiry_verified_state_v1",
+    "args": "p_pharmacy_id uuid, p_item_code text, p_item_name text, p_identifier_display text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_batch_no text, p_sample_serial text, p_device_id text, p_source text, p_event_type text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_expiry_verified_state_v2",
+    "args": "p_pharmacy_id uuid, p_item_code text, p_item_name text, p_identifier_display text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_batch_no text, p_sample_serial text, p_device_id text, p_source text, p_event_type text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "create_pharmflow_needs_review_v3",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text",
+    "module": "DYNAMIC",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_expiry_capture_smart",
+    "args": "p_pharmacy_id uuid, p_item_code text, p_item_name text, p_gtin text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_batch_no text, p_sample_serial text, p_device_id text, p_source text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_needs_review",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_gtin text, p_raw_barcode text, p_order_id text, p_order_name text, p_pending_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_device_id text, p_source text",
+    "module": "DYNAMIC",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_expiry_capture",
+    "args": "p_pharmacy_id uuid, p_item_code text, p_item_name text, p_gtin text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_device_id text, p_source text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_needs_review",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_gtin text, p_raw_barcode text, p_order_id text, p_order_name text, p_pending_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_device_id text, p_source text, p_review_reason text",
+    "module": "DYNAMIC",
+    "writing": true
+  },
+  {
+    "name": "save_pharmflow_expiry_capture_v3",
+    "args": "p_pharmacy_id uuid, p_operation_id uuid, p_capture jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "can_delete_pharmflow_expiry_staged_photo_v1",
+    "args": "p_name text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "reserve_pharmflow_expiry_capture_v1",
+    "args": "p_pharmacy_id uuid, p_operation_id uuid",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_expiry_capture_operation_v1",
+    "args": "p_pharmacy_id uuid, p_operation_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "authorize_pharmflow_expiry_photo_cleanup_v1",
+    "args": "p_pharmacy_id uuid, p_review_id uuid",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_workspace_generation",
+    "args": "p_pharmacy_id uuid",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "resolve_pharmflow_needs_review_v2",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_type text, p_resolution_transaction_id text",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_active_order_manifest_v3",
+    "args": "p_pharmacy_id uuid",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "get_pharmflow_active_order_manifest_meta_v1",
+    "args": "p_pharmacy_id uuid",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "get_pharmflow_cloud_workspace",
+    "args": "p_pharmacy_id uuid",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "save_pharmflow_expiry_session_capture_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "list_pharmacy_expiry_captures",
+    "args": "p_pharmacy_id uuid, p_expiry_year integer, p_expiry_months integer[], p_categories text[], p_worker_ids uuid[], p_search text",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "list_pharmacy_expiry_current_state_v1",
+    "args": "p_pharmacy_id uuid, p_include_cleared boolean, p_search text",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_global_item_identifiers_v2",
+    "args": "p_item_code text",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_orders",
+    "args": "p_pharmacy_id uuid",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "resolve_pharmflow_identifier_v2",
+    "args": "p_pharmacy_id uuid, p_identifier_display text",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_finalized_archives",
+    "args": "p_pharmacy_id uuid",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "search_pharmflow_global_items_v3",
+    "args": "p_query text, p_limit integer",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "get_global_master_gtin_meta",
+    "args": "",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_expiry_capture_receipts_v1",
+    "args": "p_pharmacy_id uuid, p_device_id text, p_worker_id uuid, p_operation_ids uuid[]",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "create_pharmflow_global_item_v2",
+    "args": "p_operation_id uuid, p_item_code text, p_item_name text, p_group_name text, p_category text, p_sub_category text, p_identifier_display text, p_reason text",
+    "module": "GLOBAL",
+    "writing": true
+  },
+  {
+    "name": "search_pharmflow_global_items_v2",
+    "args": "p_query text, p_limit integer",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "count_pharmflow_expiry_reviews_v1",
+    "args": "p_pharmacy_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "delete_pharmflow_expiry_review_v1",
+    "args": "p_pharmacy_id uuid, p_review_id uuid",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "delete_pharmflow_needs_review_v2",
+    "args": "p_pharmacy_id uuid, p_review_id uuid",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "get_global_master_gtin_page_v2",
+    "args": "p_offset integer, p_limit integer",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "set_pharmflow_needs_review_qty_v2",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_expiry_review_v1",
+    "args": "p_pharmacy_id uuid, p_review_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "add_pharmflow_global_identifier_v2",
+    "args": "p_operation_id uuid, p_identifier_display text, p_item_code text, p_reason text",
+    "module": "GLOBAL",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_expiry_review_contract_v1",
+    "args": "p_pharmacy_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_cloud_transactions_delta_v3",
+    "args": "p_pharmacy_id uuid, p_after_created_at timestamp with time zone, p_after_transaction_id text, p_limit integer",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_needs_review_v4",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_order_number text",
+    "module": "DYNAMIC",
+    "writing": false
+  },
+  {
+    "name": "save_pharmflow_cloud_workspace",
+    "args": "p_pharmacy_id uuid, p_workspace jsonb, p_device_id text",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "resolve_pharmflow_expiry_review_v1",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_operation_id uuid, p_item_code text, p_reason text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "save_pharmflow_cloud_workspace_guarded",
+    "args": "p_pharmacy_id uuid, p_workspace jsonb, p_device_id text, p_expected_generation bigint",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "save_pharmflow_active_order_manifest_v3",
+    "args": "p_pharmacy_id uuid, p_manifest jsonb, p_expected_generation bigint",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "append_pharmflow_cloud_transaction_v2",
+    "args": "p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "open_pharmflow_expiry_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_device_id text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "close_pharmflow_expiry_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "correct_pharmflow_expiry_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_request_id uuid, p_expected_revision integer, p_quantity integer",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "list_pharmflow_expiry_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "mutate_pharmflow_expiry_inventory_v1",
+    "args": "p_pharmacy_id uuid, p_request_id uuid, p_action text, p_selection jsonb, p_quantity integer",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "correct_pharmflow_expiry_session_v2",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_request_id uuid, p_expected_revision integer, p_correction jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "save_pharmflow_expiry_session_capture_v2",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "list_pharmflow_expiry_reviews_v1",
+    "args": "p_pharmacy_id uuid, p_status text, p_limit integer, p_offset integer",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_expiry_session_v2",
+    "args": "p_pharmacy_id uuid, p_session_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "summary_pharmflow_expiry_inventory_v1",
+    "args": "p_pharmacy_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "correct_pharmflow_expiry_desktop_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_request_id uuid, p_expected_revision integer, p_correction jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "list_pharmflow_expiry_desktop_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "save_pharmflow_expiry_desktop_capture_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "correct_pharmflow_expiry_desktop_group_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_state_id uuid, p_request_id uuid, p_expected_members jsonb, p_quantity integer",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "clear_pharmflow_expiry_desktop_session_v1",
+    "args": "p_pharmacy_id uuid, p_session_id uuid, p_request_id uuid, p_device_id text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_expiry_auth_session_v1",
+    "args": "p_pharmacy_id uuid, p_device_id text",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "get_pharmflow_master_cache_page_v2",
+    "args": "p_offset integer, p_limit integer",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "count_pharmflow_needs_review_v2",
+    "args": "p_pharmacy_id uuid, p_workflow text",
+    "module": "DYNAMIC",
+    "writing": false
+  },
+  {
+    "name": "select_pharmflow_expiry_inventory_v1",
+    "args": "p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean, p_ids uuid[]",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "list_pharmflow_needs_review_history_v3",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_order_number text",
+    "module": "DYNAMIC",
+    "writing": false
+  },
+  {
+    "name": "assign_pharmflow_needs_review_order_v1",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_order_number text",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "request_pharmflow_needs_review_resolution_v4",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_transaction_id text",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "create_pharmflow_needs_review_v4",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text, p_work_scope_order_numbers text[]",
+    "module": "DYNAMIC",
+    "writing": true
+  },
+  {
+    "name": "list_pharmacy_expiry_workers",
+    "args": "p_pharmacy_id uuid",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "save_pharmflow_order_source_items_v2",
+    "args": "p_pharmacy_id uuid, p_order_number text, p_items jsonb, p_replace boolean",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_order_source_items_v2",
+    "args": "p_pharmacy_id uuid, p_order_number text",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "request_pharmflow_needs_review_resolution_v5",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_transaction_id text, p_allocations jsonb",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "export_pharmflow_expiry_inventory_v1",
+    "args": "p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "resolve_all_filtered_pharmflow_expiry_inventory_v1",
+    "args": "p_pharmacy_id uuid, p_request_id uuid, p_filters jsonb, p_selection jsonb, p_expected_count integer, p_expected_units bigint",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "list_pharmflow_pharmacy_item_identifiers_v1",
+    "args": "p_pharmacy_id uuid, p_item_code text",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "resolve_pharmflow_expiry_review_v2",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_operation_id uuid, p_item_code text, p_reason text, p_new_item jsonb",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "correct_pharmflow_global_identifier_v2",
+    "args": "p_operation_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_new_item_code text, p_reason text",
+    "module": "GLOBAL",
+    "writing": true
+  },
+  {
+    "name": "remove_pharmflow_global_identifier_v2",
+    "args": "p_operation_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_reason text",
+    "module": "GLOBAL",
+    "writing": true
+  },
+  {
+    "name": "correct_pharmflow_pharmacy_identifier_v2",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_new_item_code text, p_new_item_name text, p_reason text",
+    "module": "DATA",
+    "writing": true
+  },
+  {
+    "name": "append_pharmflow_learned_transaction_v4",
+    "args": "p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb, p_mapping_id uuid, p_mapping_revision bigint, p_mapping_scope text",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "remove_pharmflow_pharmacy_identifier_v2",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_reason text",
+    "module": "DATA",
+    "writing": true
+  },
+  {
+    "name": "save_pharmacy_expiry_worker",
+    "args": "p_pharmacy_id uuid, p_worker_name text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "add_pharmflow_pharmacy_identifier_v2",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_item_code text, p_item_name text, p_reason text",
+    "module": "DATA",
+    "writing": true
+  },
+  {
+    "name": "rename_pharmacy_expiry_worker",
+    "args": "p_pharmacy_id uuid, p_worker_id uuid, p_worker_name text, p_expected_name text",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "deactivate_pharmacy_expiry_worker",
+    "args": "p_pharmacy_id uuid, p_worker_id uuid",
+    "module": "EXPIRY",
+    "writing": true
+  },
+  {
+    "name": "query_pharmflow_expiry_inventory_v1",
+    "args": "p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean, p_sort text, p_offset integer, p_limit integer",
+    "module": "EXPIRY",
+    "writing": false
+  },
+  {
+    "name": "quick_add_pharmflow_order_item_v1",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_source_order text, p_work_scope_order_numbers text[], p_item_code text, p_item_name text, p_group_name text, p_identifier_display text, p_quantity integer, p_allow_over_receiving boolean, p_capture jsonb",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "append_pharmflow_receiving_action_v4",
+    "args": "p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "learn_pharmflow_existing_identifier_v3",
+    "args": "p_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_item_code text, p_reason text",
+    "module": "DATA",
+    "writing": true
+  },
+  {
+    "name": "create_pharmflow_needs_review_v6",
+    "args": "p_operation_id text, p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text, p_work_scope_order_numbers text[], p_pending_quantity integer",
+    "module": "DYNAMIC",
+    "writing": true
+  },
+  {
+    "name": "set_pharmflow_needs_review_qty_v3",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "save_pharmflow_active_order_manifest_v4",
+    "args": "p_pharmacy_id uuid, p_manifest jsonb, p_expected_generation bigint, p_expected_revision bigint",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_master_cache_meta_v2",
+    "args": "",
+    "module": "DATA",
+    "writing": false
+  },
+  {
+    "name": "get_pharmflow_order",
+    "args": "p_pharmacy_id uuid, p_order_number text",
+    "module": "RECEIVING",
+    "writing": false
+  },
+  {
+    "name": "register_pharmflow_order_upload",
+    "args": "p_pharmacy_id uuid, p_order_number text, p_order_date date, p_from_warehouse text, p_to_warehouse text, p_source_file text, p_item_count integer",
+    "module": "RECEIVING",
+    "writing": true
+  },
+  {
+    "name": "get_pharmflow_receiving_groups_v1",
+    "args": "p_item_codes text[]",
+    "module": "DATA",
+    "writing": false
+  }
+]
