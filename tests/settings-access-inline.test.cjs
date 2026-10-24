@@ -74,3 +74,50 @@ test('inline editing stays singular and cancels on collapse, replacement or filt
  row.querySelector('.ownerPharmacySummary').click();result=prompt('Pharmacy Code');document.querySelectorAll('.ownerPharmacySummary')[1].click();assert.equal(await result,null);
  row.querySelector('.ownerPharmacySummary').click();result=prompt('Pharmacy Code');document.getElementById('ownerPharmacyList').innerHTML='';assert.equal(await result,null);
 });
+
+function focusedFixture(){
+ const f=fixture(),{document,window,state}=f;
+ window.HTMLElement.prototype.focus=function(){};window.HTMLElement.prototype.select=function(){};
+ const code=fs.readFileSync('js/settings-workspace.js','utf8'),start=code.indexOf('function settingsInlinePrompt('),end=code.indexOf('\nwindow.settingsTextPrompt=',start);
+ const context={document,window,AuthState:state,MutationObserver:window.MutationObserver,renderOwnerManagementPanel:()=>f.ctx.renderOwnerManagementPanel()};vm.createContext(context);
+ vm.runInContext(code.slice(start,end),context);vm.runInContext(code.slice(code.indexOf('// Access action navigation owns')),context);
+ let confirmation=true,confirmations=0;window.settingsConfirm=async()=>{confirmations++;return confirmation;};
+ return {...f,prompt:context.settingsInlinePrompt,actionsUI:window.SettingsAccessActions,setConfirmation:v=>confirmation=v,confirmations:()=>confirmations};
+}
+test('focused actions keep one target/action and Back restores search, KPI and scroll',async()=>{
+ const f=focusedFixture(),{document,state,ctx,input,actionsUI}=f;state.ownerManagementView='total';state.ownerManagementSearch='example.invalid';input.value=state.ownerManagementSearch;ctx.renderOwnerManagementPanel();
+ for(const action of ['identity','admin','reset-password','suspend']){
+  const list=document.getElementById('ownerPharmacyList');list.scrollTop=93;
+  const button=document.querySelector(`[data-owner-action="${action}"]`);let called=0;
+  await actionsUI.run(button,async()=>{called++;assert.equal(actionsUI.target(),'a');assert.equal([...list.querySelectorAll('.ownerPharmacyRow')].filter(r=>!r.hidden).length,1);assert.equal([...list.querySelectorAll('[data-owner-action]')].filter(b=>!b.hidden && !b.closest('.ownerPharmacyRow').hidden).length,1);assert(input.disabled);});
+  assert.equal(called,1);assert(list.classList.contains('ownerActionFocused'));assert.equal(await actionsUI.back(),true);
+  assert.equal(list.scrollTop,93);assert.equal(input.value,'example.invalid');assert.equal(state.ownerManagementView,'total');assert.equal(input.disabled,false);assert.equal(document.querySelectorAll('.ownerPharmacyRow').length,3);assert.equal(actionsUI.target(),null);
+ }
+});
+test('Back protects a draft across sequential fields; refresh and repeated action cannot duplicate or discard it',async()=>{
+ const f=focusedFixture(),{document,window,ctx,actionsUI,prompt}=f;const anchor=document.querySelector('[data-owner-action="identity"]');
+ const running=actionsUI.run(anchor,async()=>{const name=await prompt({title:'Edit Pharmacy',label:'Pharmacy Name',value:'Original',anchor});if(name===null)return;return prompt({title:'Edit Pharmacy',label:'Pharmacy Code',value:'AAA001',anchor});});
+ let form=document.querySelector('.ownerInlineEdit form');form.querySelector('input').value='Unsaved name';form.querySelector('input').dispatchEvent(new window.Event('input',{bubbles:true}));
+ ctx.renderOwnerManagementPanel();assert.equal(document.querySelector('.ownerInlineEdit input').value,'Unsaved name');
+ await actionsUI.run(anchor,()=>{throw Error('duplicate handler');});assert.equal(document.querySelectorAll('.ownerInlineEdit').length,1);
+ f.setConfirmation(false);assert.equal(await actionsUI.back(),false);assert.equal(document.querySelector('.ownerInlineEdit input').value,'Unsaved name');
+ form.dispatchEvent(new window.Event('submit',{cancelable:true}));await Promise.resolve();await Promise.resolve();
+ assert.equal(document.querySelector('.ownerInlineEdit input').value,'AAA001');assert.equal(await actionsUI.back(),false,'prior field is still unsaved');
+ f.setConfirmation(true);assert.equal(await actionsUI.back(),true);await running;assert.equal(document.querySelectorAll('.ownerInlineEdit').length,0);assert.equal(actionsUI.target(),null);assert.equal(f.confirmations(),3);
+});
+test('refresh after a status action retains the focused target; Back reapplies the saved filter',async()=>{
+ const f=focusedFixture(),{document,state,ctx,actionsUI}=f;state.ownerManagementView='active';ctx.renderOwnerManagementPanel();
+ let done;const running=actionsUI.run(document.querySelector('[data-owner-action="suspend"]'),()=>new Promise(resolve=>{done=resolve;}));
+ state.busy=true;assert.equal(await actionsUI.back(),false);state.ownerPharmacies[0].status='suspended';state.ownerPharmacies[0].active=false;ctx.renderOwnerPharmacies();assert.equal(document.querySelectorAll('.ownerPharmacyRow').length,1);assert.equal(document.querySelector('.ownerPharmacyState').textContent,'SUSPENDED');
+ state.busy=false;done();await running;await actionsUI.back();assert.match(document.getElementById('ownerPharmacyList').textContent,/No pharmacies match/);assert.equal(state.ownerManagementView,'active');
+ const css=fs.readFileSync('css/settings-workspace.css','utf8');assert(css.includes('grid-auto-rows:max-content'));assert.match(css,/ownerPharmacyList\.ownerActionFocused\{max-height:none;overflow:visible/);assert.match(css,/ownerPharmacySummary\{[^}]*112px 18px/);
+});
+test('leaving Access by tab uses the same unsaved-change guard',async()=>{
+ const f=focusedFixture(),{document,window,actionsUI,prompt}=f;document.getElementById('ownerManagementCard').hidden=false;
+ const code=fs.readFileSync('js/settings-workspace.js','utf8');vm.runInNewContext(code.slice(0,code.indexOf('// Shared Settings prompt')), {document,window,MutationObserver:window.MutationObserver});
+ document.getElementById('settingsAccessTab').click();
+ const anchor=document.querySelector('[data-owner-action="admin"]');const running=actionsUI.run(anchor,()=>prompt({title:'Pharmacy Admin',label:'Admin email',value:'old@example.invalid',anchor}));
+ const input=document.querySelector('.ownerInlineEdit input');input.value='new@example.invalid';input.dispatchEvent(new window.Event('input',{bubbles:true}));f.setConfirmation(false);
+ document.getElementById('settingsDataTab').click();await Promise.resolve();await Promise.resolve();assert.equal(document.getElementById('settingsAccessTab').getAttribute('aria-selected'),'true');assert.equal(input.value,'new@example.invalid');
+ f.setConfirmation(true);document.getElementById('settingsDataTab').click();await running;await Promise.resolve();await Promise.resolve();assert.equal(document.getElementById('settingsDataTab').getAttribute('aria-selected'),'true');assert.equal(actionsUI.target(),null);
+});

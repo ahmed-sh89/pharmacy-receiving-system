@@ -6,7 +6,10 @@
     if(!root){return;}
     const tabs=[...root.querySelectorAll('[role="tab"]')];
     const panels=tabs.map(tab=>document.getElementById(tab.getAttribute('aria-controls')));
-    function select(tab,focus=false){
+    function select(tab,focus=false,restored=false){
+        if(!restored && tab.id!=="settingsAccessTab" && window.SettingsAccessActions?.target()){
+            window.SettingsAccessActions.back().then(ok=>{if(ok)select(tab,focus,true);});return;
+        }
         if(tab.hidden){return;}
         tabs.forEach((item,index)=>{
             const active=item===tab;
@@ -105,3 +108,66 @@ function settingsInlinePrompt({title,label,value,anchor}){
  });
 }
 window.settingsTextPrompt=options=>options.anchor?.closest('#ownerPharmacyList .ownerPharmacyRow')?settingsInlinePrompt(options):settingsDialog(options);
+
+// Access action navigation owns presentation only; existing handlers own all mutations.
+(function(){
+ let current=null;
+ const list=()=>document.getElementById('ownerPharmacyList');
+ const busy=()=>typeof AuthState!=='undefined' && AuthState.busy===true;
+ function refresh(){
+    if(!current)return;
+    const box=list();
+    box.classList.add('ownerActionFocused');
+    box.querySelectorAll('.ownerPharmacyRow').forEach(row=>{
+        const selected=row.dataset.pharmacyRow===current.id;row.hidden=!selected;
+        if(!selected)return;
+        row.classList.add('expanded');
+        const summary=row.querySelector('.ownerPharmacySummary');summary.setAttribute('aria-expanded','true');summary.disabled=true;
+        row.querySelector('.ownerPharmacyDetails').hidden=false;
+        row.querySelectorAll('[data-owner-action]').forEach(button=>{
+            button.hidden=button.dataset.ownerAction!==current.action;
+            button.disabled=current.running;
+        });
+    });
+ }
+ async function back(){
+    if(!current)return true;
+    if(busy())return false;
+    const saved=current;
+    if(saved.dirty && !(await window.settingsConfirm({message:'Discard unsaved changes and return to pharmacies?'})))return false;
+    // Check again after the asynchronous confirmation, before removing a form.
+    if(current!==saved || busy())return false;
+    settingsInlinePrompt.cancel?.();current=null;
+    document.getElementById('ownerFocusedActionHeader')?.remove();
+    saved.controls.forEach(([control,disabled])=>{control.disabled=disabled;});
+    list().classList.remove('ownerActionFocused');
+    renderOwnerManagementPanel();
+    const row=[...list().querySelectorAll('.ownerPharmacyRow')].find(r=>r.dataset.pharmacyRow===saved.id);
+    if(row){row.querySelector('.ownerPharmacySummary').click();row.querySelector(`[data-owner-action="${saved.action}"]`)?.focus();}
+    list().scrollTop=saved.scroll;
+    return true;
+ }
+ async function run(button,handler){
+    if(current?.running || busy())return;
+    const row=button.closest('.ownerPharmacyRow');if(!row)return;
+    if(!current){
+        const controls=[...document.querySelectorAll('#ownerManagementSearch,[data-owner-view]')].map(control=>[control,control.disabled]);
+        current={id:row.dataset.pharmacyRow,action:button.dataset.ownerAction,scroll:list().scrollTop,controls,dirty:false,running:false};
+        controls.forEach(([control])=>{control.disabled=true;});
+        const header=document.createElement('header');header.id='ownerFocusedActionHeader';header.className='ownerFocusedActionHeader';
+        const backButton=document.createElement('button');backButton.type='button';backButton.className='secondaryButton';backButton.textContent='← Back to pharmacies';backButton.addEventListener('click',back);
+        const title=document.createElement('h3');title.textContent=({identity:'Edit Pharmacy',admin:'Pharmacy Admin','reset-password':'Reset Password',suspend:'Suspend Pharmacy',activate:'Activate Pharmacy'})[current.action] || 'Pharmacy action';
+        header.append(backButton,title);list().before(header);list().scrollTop=0;
+    }
+    const active=current;active.running=true;refresh();
+    try{await handler();}finally{if(current===active){active.running=false;active.dirty=false;refresh();}}
+ }
+ document.addEventListener('input',event=>{if(current && event.target.closest('.ownerPharmacyEditor'))current.dirty=true;});
+ document.addEventListener('change',event=>{if(current && event.target.closest('.ownerPharmacyEditor'))current.dirty=true;});
+ document.addEventListener('click',event=>{
+    const navigation=event.target.closest?.('.sidebar [data-page]');
+    if(current && navigation){event.preventDefault();event.stopImmediatePropagation();back().then(ok=>{if(ok)navigation.click();});}
+ },true);
+ window.addEventListener?.('beforeunload',event=>{if(current?.dirty){event.preventDefault();event.returnValue='';}});
+ window.SettingsAccessActions={target:()=>current?.id || null,retainDraft:()=>!!(current?.running && list()?.querySelector('.ownerInlineEdit')),refresh,run,back};
+})();

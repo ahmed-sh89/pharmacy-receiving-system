@@ -1599,7 +1599,9 @@ function getOwnerPharmacyRowsForView(){
 function renderOwnerPharmacies(){
     const box=document.getElementById("ownerPharmacyList");
     if(!box){ return; }
-    const rows=getOwnerPharmacyRowsForView();
+    const focusedId=window.SettingsAccessActions?.target();
+    if(window.SettingsAccessActions?.retainDraft()){ return; }
+    const rows=focusedId ? (AuthState.ownerPharmacies||[]).filter(p=>String(p.pharmacy_id)===focusedId) : getOwnerPharmacyRowsForView();
     if(!rows.length){
         box.innerHTML='<div class="registrationEmpty">No pharmacies match this view.</div>';
         renderOwnerMetrics();
@@ -1607,7 +1609,7 @@ function renderOwnerPharmacies(){
     }
     box.innerHTML=rows.map((p,index)=>{
         const active=p.status==="active" && p.active!==false;
-        return `<article class="ownerPharmacyRow">
+        return `<article class="ownerPharmacyRow" data-pharmacy-row="${escapeAuthHtml(p.pharmacy_id)}">
             <button type="button" class="ownerPharmacySummary" aria-expanded="false" aria-controls="ownerPharmacyDetails${index}">
                 <span class="ownerPharmacyIdentity"><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "—")}</span></span>
                 <span class="ownerPharmacyAdmin">${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}</span>
@@ -1640,8 +1642,9 @@ function renderOwnerPharmacies(){
         });
     });
     box.querySelectorAll("[data-owner-action]").forEach(btn=>{
-        btn.addEventListener("click",()=>handleOwnerPharmacyAction(btn));
+        btn.addEventListener("click",()=>window.SettingsAccessActions ? window.SettingsAccessActions.run(btn,()=>handleOwnerPharmacyAction(btn)) : handleOwnerPharmacyAction(btn));
     });
+    window.SettingsAccessActions?.refresh();
     renderOwnerMetrics();
 }
 
@@ -1951,7 +1954,7 @@ function renderOwnerRegistrationRequests(){
                 <label>Pharmacy Name<input type="text" data-reg-name="${escapeAuthHtml(r.request_id)}" maxlength="120" placeholder="Official pharmacy name"></label>
                 <label>Pharmacy Code<input type="text" data-reg-code="${escapeAuthHtml(r.request_id)}" maxlength="24" value="${escapeAuthHtml(r.pharmacy_code || "")}"></label>
             </div></td>
-            <td><span class="ownerPharmacyState suspended">PENDING</span></td>
+            <td><span class="ownerPharmacyState pending">PENDING</span></td>
             <td><div class="ownerPharmacyActions">
                 <button type="button" class="secondaryButton" data-reg-action="reject" data-reg-id="${escapeAuthHtml(r.request_id)}">Reject</button>
                 <button type="button" class="primaryButton" data-reg-action="approve" data-reg-id="${escapeAuthHtml(r.request_id)}">Approve &amp; Activate</button>
