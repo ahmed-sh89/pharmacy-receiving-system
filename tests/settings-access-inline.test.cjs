@@ -63,3 +63,13 @@ test('footer retains dynamic code, connectivity and autosave nodes/logic; hiding
 });
 
 // Former full-page/inline action tests are superseded by settings-access-modal.test.cjs.
+
+test('pharmacy grid has six aligned cells, separate full Name/Code tooltips and readable scoped typography',()=>{
+ const {document,ctx,state}=fixture();state.ownerPharmacies[0].pharmacy_name='A very long pharmacy name with a complete tooltip';ctx.renderOwnerPharmacies();
+ assert.deepEqual([...document.querySelector('.ownerGridHeader').children].map(el=>el.textContent),['Pharmacy Name','Pharmacy Code','Admin Email','Status','Created Date','']);
+ const cells=[...document.querySelector('.ownerPharmacySummary').children];assert.equal(cells.length,6);
+ assert.equal(cells[0].title,state.ownerPharmacies[0].pharmacy_name);assert.equal(cells[0].querySelector('.ownerPharmacyCodeBadge'),null);
+ assert.equal(cells[1].textContent,'AAA001');assert.equal(cells[1].title,'AAA001');assert(cells[2].querySelector('[data-copy-email]'));
+ const css=fs.readFileSync('css/settings-workspace.css','utf8');assert.match(css,/#ownerPharmacyList :is\(\.ownerGridHeader,\.ownerPharmacySummary\)\{grid-template-columns:var\(--owner-grid-columns\)/);
+ assert.match(css,/ownerPharmacyName\{font-size:14px;font-weight:600/);assert.match(css,/ownerPharmacyCodeBadge\{box-sizing:border-box;font-size:13px;font-weight:600/);
+});

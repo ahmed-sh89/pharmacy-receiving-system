@@ -22,3 +22,8 @@ No known automated UI failures. Existing Receiving dependency blockers remain ou
 
 ## Next action
 Product Owner checks modal sizing and dismissal at normal 75–80% Chrome zoom on the final Staging Preview. No Production promotion or next phase authorized.
+
+## Minimal grid follow-up — 2026-10-25
+Baseline: 71bf84b00f68e3d19d4f74a1df6209c5cfff082e.
+Split Pharmacy Name and Pharmacy Code into separate cells and matching shared six-column header/row tracks. Added escaped full-value tooltips with ellipsis for long values. Grid-only body typography 13–14px, Name/Code weight 600, clearer header/status/date/email. Compact 58px row minimum, sticky header/internal scrolling and all actions/search/sort retained.
+PASS: 14 focused table/modal/sort checks and Preview build. Alignment verified structurally (matching shared column definition and six cells); actual Windows Chrome visual check at 75–80% remains NOT TESTED. No backend/permission changes.

@@ -1637,12 +1637,13 @@ function renderOwnerPharmacies(){
         renderOwnerMetrics();
         return;
     }
-    box.innerHTML=(focusedId?'':'<div class="ownerGridHeader" aria-hidden="true"><span>Pharmacy / Code</span><span>Admin Email</span><span>Status</span><span>Created Date</span><span></span></div>')+rows.map((p,index)=>{
+    box.innerHTML=(focusedId?'':'<div class="ownerGridHeader" aria-hidden="true"><span>Pharmacy Name</span><span>Pharmacy Code</span><span>Admin Email</span><span>Status</span><span>Created Date</span><span></span></div>')+rows.map((p,index)=>{
         const active=p.status==="active" && p.active!==false;
         return `<article class="ownerPharmacyRow" data-pharmacy-row="${escapeAuthHtml(p.pharmacy_id)}">
             <div role="button" tabindex="0" class="ownerPharmacySummary" aria-expanded="false" aria-controls="ownerPharmacyDetails${index}">
-                <span class="ownerPharmacyIdentity"><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong><span class="ownerPharmacyCodeBadge">${escapeAuthHtml(p.pharmacy_code || "—")}</span></span>
-                <span class="ownerPharmacyAdmin"><span>${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}</span>${p.admin_email||p.pending_admin_email?`<button type="button" class="ownerCopyEmail secondaryButton" data-copy-email="${escapeAuthHtml(p.admin_email||p.pending_admin_email)}" aria-label="Copy admin email" title="Copy email"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button>`:''}</span>
+                <span class="ownerPharmacyIdentity" title="${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}"><strong class="ownerPharmacyName">${escapeAuthHtml(p.pharmacy_name || "Pharmacy")}</strong></span>
+                <span class="ownerPharmacyCodeBadge" title="${escapeAuthHtml(p.pharmacy_code || "—")}">${escapeAuthHtml(p.pharmacy_code || "—")}</span>
+                <span class="ownerPharmacyAdmin"><span title="${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}">${escapeAuthHtml(p.admin_email || p.pending_admin_email || "No ADMIN assigned")}</span>${p.admin_email||p.pending_admin_email?`<button type="button" class="ownerCopyEmail secondaryButton" data-copy-email="${escapeAuthHtml(p.admin_email||p.pending_admin_email)}" aria-label="Copy admin email" title="Copy email"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button>`:''}</span>
                 <span class="ownerPharmacyState ${active ? "active" : "suspended"}">${active ? "ACTIVE" : "SUSPENDED"}</span>
                 <time class="ownerCreatedDate" datetime="${escapeAuthHtml(p.created_at||'')}">${p.created_at&&Number.isFinite(Date.parse(p.created_at))?escapeAuthHtml(new Date(p.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})):'—'}</time>
                 <svg class="ownerPharmacyChevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
