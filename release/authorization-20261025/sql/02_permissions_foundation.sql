@@ -1,4 +1,4 @@
--- Staging Phase 1. Existing UUIDs, roles, memberships and password gate remain authoritative.
+-- Authorization release Phase 1. Existing UUIDs, roles, memberships and password gate remain authoritative.
 CREATE TABLE public.pharmflow_pharmacy_permissions_v1 (
  pharmacy_id uuid PRIMARY KEY REFERENCES public.pharmacies(id),
  receiving text NOT NULL DEFAULT 'FULL' CHECK(receiving IN ('DISABLED','READ_ONLY','FULL')),
@@ -168,7 +168,11 @@ CREATE POLICY pharmflow_expiry_module ON public.pharmflow_expiry_events_v1 AS RE
 
 -- No SQL-level schema/trigger privileges are needed by browser roles.
 REVOKE TRUNCATE,REFERENCES,TRIGGER ON public.pharmflow_needs_review_v2 FROM anon,authenticated;
-REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC,anon,authenticated;
+DO $optional_hook$ BEGIN
+ IF to_regprocedure('public.rls_auto_enable()') IS NOT NULL THEN
+  REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC,anon,authenticated;
+ END IF;
+END $optional_hook$;
 
 CREATE FUNCTION pharmflow_auth_private.business_write_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO pg_catalog,public AS $f$

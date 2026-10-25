@@ -1,4 +1,4 @@
--- Staging only. No credentials are stored in the operation journal.
+-- Authorization release candidate. No credentials are stored in the operation journal.
 CREATE TABLE pharmflow_auth_private.account_provision_v1 (
  operation_id uuid PRIMARY KEY,
  actor uuid NOT NULL REFERENCES auth.users(id),

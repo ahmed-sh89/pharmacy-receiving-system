@@ -1,0 +1,1626 @@
+[
+  {
+    "name": "constraint:pharmflow_identifier_migration_conflicts_v1_conflict_type_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" ADD CONSTRAINT \"pharmflow_identifier_migration_conflicts_v1_conflict_type_check\" CHECK (conflict_type = ANY (ARRAY['GLOBAL_MULTI_ITEM'::text, 'LEGACY_MULTI_ITEM'::text, 'LEGACY_VS_GLOBAL'::text, 'LEGACY_SCOPE_REVIEW'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_migration_conflicts_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" ADD CONSTRAINT \"pharmflow_identifier_migration_conflicts_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_migration_conflicts_v1_source_uq",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" ADD CONSTRAINT \"pharmflow_identifier_migration_conflicts_v1_source_uq\" UNIQUE (source_table, source_row_id);"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_migration_conflicts_v1_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" ADD CONSTRAINT \"pharmflow_identifier_migration_conflicts_v1_status_check\" CHECK (status = ANY (ARRAY['PENDING'::text, 'RESOLVED'::text, 'DISMISSED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_resolution_intents_v1_operation_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ADD CONSTRAINT \"pharmflow_needs_review_resolution_intents_v1_operation_id_key\" UNIQUE (operation_id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_resolution_intents_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ADD CONSTRAINT \"pharmflow_needs_review_resolution_intents_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_resolution_intents_v1_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ADD CONSTRAINT \"pharmflow_needs_review_resolution_intents_v1_status_check\" CHECK (status = ANY (ARRAY['PENDING'::text, 'RESOLVED'::text, 'BLOCKED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_nr_resolution_intents_one_per_review",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ADD CONSTRAINT \"pharmflow_nr_resolution_intents_one_per_review\" UNIQUE (pharmacy_id, review_id);"
+  },
+  {
+    "name": "constraint:pharmflow_nr_resolution_intents_required_values",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ADD CONSTRAINT \"pharmflow_nr_resolution_intents_required_values\" CHECK (btrim(transaction_id) <> ''::text AND btrim(item_code) <> ''::text AND (resolution_type = ANY (ARRAY['LINK_ORDER_ITEM'::text, 'AUTO_ALLOCATED'::text])));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_reason_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_reason_check\" CHECK (review_reason = ANY (ARRAY['UNKNOWN_GTIN'::text, 'KNOWN_NOT_IN_ORDER'::text, 'MANUAL_REQUIRED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_pending_quantity_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_pending_quantity_check\" CHECK (pending_quantity > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_source_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_source_check\" CHECK (source = ANY (ARRAY['HANDHELD'::text, 'PC'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_status_check\" CHECK (status = ANY (ARRAY['PENDING'::text, 'RESOLVED'::text, 'DELETED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_workflow_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_workflow_check\" CHECK (workflow = ANY (ARRAY['RECEIVING'::text, 'EXPIRY'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_pending_quantity_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_pending_quantity_check\" CHECK (pending_quantity > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_reason_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_reason_check\" CHECK (review_reason = ANY (ARRAY['UNKNOWN_GTIN'::text, 'KNOWN_NOT_IN_ORDER'::text, 'MANUAL_REQUIRED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_resolution_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_resolution_check\" CHECK (resolution_type IS NULL OR (resolution_type = ANY (ARRAY['LINK_ORDER_ITEM'::text, 'ADD_UNORDERED'::text, 'AUTO_ALLOCATED'::text])));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_source_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_source_check\" CHECK (source = ANY (ARRAY['HANDHELD'::text, 'PC'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_status_check\" CHECK (status = ANY (ARRAY['PENDING'::text, 'RESOLVED'::text, 'DELETED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_workflow_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_workflow_check\" CHECK (workflow = ANY (ARRAY['RECEIVING'::text, 'EXPIRY'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_order_source_items_order_id_line_no_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_order_source_items\" ADD CONSTRAINT \"pharmflow_order_source_items_order_id_line_no_key\" UNIQUE (order_id, line_no);"
+  },
+  {
+    "name": "constraint:pharmflow_order_source_items_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_order_source_items\" ADD CONSTRAINT \"pharmflow_order_source_items_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_orders_pharmacy_id_order_number_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" ADD CONSTRAINT \"pharmflow_orders_pharmacy_id_order_number_key\" UNIQUE (pharmacy_id, order_number);"
+  },
+  {
+    "name": "constraint:pharmflow_orders_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" ADD CONSTRAINT \"pharmflow_orders_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_orders_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" ADD CONSTRAINT \"pharmflow_orders_status_check\" CHECK (status = ANY (ARRAY['uploaded'::text, 'received'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_audit_v1_action_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_audit_v1_action_check\" CHECK (action = ANY (ARRAY['CORRECT'::text, 'REMOVE'::text, 'MIGRATE'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_audit_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_audit_v1_pkey\" PRIMARY KEY (audit_id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_v1_pharmacy_id_gtin_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_v1_pharmacy_id_gtin_key\" UNIQUE (pharmacy_id, gtin);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_v1_revision_positive",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_v1_revision_positive\" CHECK (mapping_revision > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identifier_mapp_pharmacy_id_operation_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" ADD CONSTRAINT \"pharmflow_pharmacy_identifier_mapp_pharmacy_id_operation_id_key\" UNIQUE (pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identifier_mapping_audit_v2_action_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" ADD CONSTRAINT \"pharmflow_pharmacy_identifier_mapping_audit_v2_action_check\" CHECK (action = ANY (ARRAY['ADD'::text, 'CORRECT'::text, 'REMOVE'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identifier_mapping_audit_v2_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" ADD CONSTRAINT \"pharmflow_pharmacy_identifier_mapping_audit_v2_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identity_audit_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_identity_audit_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_history_items_v1_event_type_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_history_items_v1\" ADD CONSTRAINT \"pharmflow_receiving_history_items_v1_event_type_check\" CHECK (event_type = ANY (ARRAY['DISCREPANCY'::text, 'NEW_ITEM'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_history_items_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_history_items_v1\" ADD CONSTRAINT \"pharmflow_receiving_history_items_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_transactions_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_transactions_v1\" ADD CONSTRAINT \"pharmflow_receiving_transactions_v1_pkey\" PRIMARY KEY (pharmacy_id, transaction_id);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_workspace_hi_pharmacy_id_completion_key_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" ADD CONSTRAINT \"pharmflow_receiving_workspace_hi_pharmacy_id_completion_key_key\" UNIQUE (pharmacy_id, completion_key);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_workspace_history_v1_new_item_count_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" ADD CONSTRAINT \"pharmflow_receiving_workspace_history_v1_new_item_count_check\" CHECK (new_item_count >= 0);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_workspace_history_v1_orders_count_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" ADD CONSTRAINT \"pharmflow_receiving_workspace_history_v1_orders_count_check\" CHECK (orders_count >= 0);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_workspace_history_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" ADD CONSTRAINT \"pharmflow_receiving_workspace_history_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_workspace_history_v_discrepancy_count_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" ADD CONSTRAINT \"pharmflow_receiving_workspace_history_v_discrepancy_count_check\" CHECK (discrepancy_count >= 0);"
+  },
+  {
+    "name": "constraint:pharmflow_session_terminations_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_session_terminations\" ADD CONSTRAINT \"pharmflow_session_terminations_pkey\" PRIMARY KEY (session_id, session_secret_hash);"
+  },
+  {
+    "name": "constraint:pharmflow_workspace_generation_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_workspace_generation_v1\" ADD CONSTRAINT \"pharmflow_workspace_generation_v1_pkey\" PRIMARY KEY (pharmacy_id);"
+  },
+  {
+    "name": "constraint:profiles_pkey",
+    "sql": "ALTER TABLE \"public\".\"profiles\" ADD CONSTRAINT \"profiles_pkey\" PRIMARY KEY (user_id);"
+  },
+  {
+    "name": "constraint:session_items_pkey",
+    "sql": "ALTER TABLE \"public\".\"session_items\" ADD CONSTRAINT \"session_items_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:session_items_session_id_item_code_key",
+    "sql": "ALTER TABLE \"public\".\"session_items\" ADD CONSTRAINT \"session_items_session_id_item_code_key\" UNIQUE (session_id, item_code);"
+  },
+  {
+    "name": "constraint:sessions_pkey",
+    "sql": "ALTER TABLE \"public\".\"sessions\" ADD CONSTRAINT \"sessions_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:sessions_session_code_key",
+    "sql": "ALTER TABLE \"public\".\"sessions\" ADD CONSTRAINT \"sessions_session_code_key\" UNIQUE (session_code);"
+  },
+  {
+    "name": "constraint:sessions_status_check",
+    "sql": "ALTER TABLE \"public\".\"sessions\" ADD CONSTRAINT \"sessions_status_check\" CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'archived'::text]));"
+  },
+  {
+    "name": "constraint:system_owners_pkey",
+    "sql": "ALTER TABLE \"public\".\"system_owners\" ADD CONSTRAINT \"system_owners_pkey\" PRIMARY KEY (user_id);"
+  },
+  {
+    "name": "constraint:transactions_action_type_check",
+    "sql": "ALTER TABLE \"public\".\"transactions\" ADD CONSTRAINT \"transactions_action_type_check\" CHECK (action_type = ANY (ARRAY['scan'::text, 'manual_add'::text, 'manual_adjust'::text, 'correction'::text]));"
+  },
+  {
+    "name": "constraint:transactions_device_type_check",
+    "sql": "ALTER TABLE \"public\".\"transactions\" ADD CONSTRAINT \"transactions_device_type_check\" CHECK (device_type IS NULL OR (device_type = ANY (ARRAY['PC'::text, 'ZEBRA'::text, 'OTHER'::text])));"
+  },
+  {
+    "name": "constraint:transactions_pkey",
+    "sql": "ALTER TABLE \"public\".\"transactions\" ADD CONSTRAINT \"transactions_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:transactions_transaction_id_key",
+    "sql": "ALTER TABLE \"public\".\"transactions\" ADD CONSTRAINT \"transactions_transaction_id_key\" UNIQUE (transaction_id);"
+  },
+  {
+    "name": "constraint:buckets_lifecycle_configuration_pair_check",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_lifecycle_configuration_pair_check\" CHECK ((lifecycle_configuration IS NULL) = (lifecycle_configuration_generation IS NULL));"
+  },
+  {
+    "name": "constraint:buckets_lifecycle_configuration_shape_check",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_lifecycle_configuration_shape_check\" CHECK (lifecycle_configuration IS NULL OR jsonb_typeof(lifecycle_configuration) = 'object'::text AND lifecycle_configuration ? 'rules'::text AND\nCASE\n    WHEN jsonb_typeof(lifecycle_configuration -> 'rules'::text) = 'array'::text THEN jsonb_array_length(lifecycle_configuration -> 'rules'::text) >= 1 AND jsonb_array_length(lifecycle_configuration -> 'rules'::text) <= 1000\n    ELSE false\nEND);"
+  },
+  {
+    "name": "constraint:buckets_lifecycle_configuration_standard_only_check",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_lifecycle_configuration_standard_only_check\" CHECK (type = 'STANDARD'::storage.buckettype OR lifecycle_configuration IS NULL AND lifecycle_configuration_generation IS NULL);"
+  },
+  {
+    "name": "constraint:buckets_pkey",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:buckets_versioning_dark_check",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_versioning_dark_check\" CHECK (versioning_status = 'DISABLED'::text);"
+  },
+  {
+    "name": "constraint:buckets_versioning_standard_only_check",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_versioning_standard_only_check\" CHECK (type = 'STANDARD'::storage.buckettype OR versioning_status = 'DISABLED'::text);"
+  },
+  {
+    "name": "constraint:buckets_versioning_status_check",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" ADD CONSTRAINT \"buckets_versioning_status_check\" CHECK (versioning_status = ANY (ARRAY['DISABLED'::text, 'ENABLED'::text, 'SUSPENDED'::text]));"
+  },
+  {
+    "name": "constraint:buckets_analytics_pkey",
+    "sql": "ALTER TABLE \"storage\".\"buckets_analytics\" ADD CONSTRAINT \"buckets_analytics_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:buckets_vectors_pkey",
+    "sql": "ALTER TABLE \"storage\".\"buckets_vectors\" ADD CONSTRAINT \"buckets_vectors_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:migrations_name_key",
+    "sql": "ALTER TABLE \"storage\".\"migrations\" ADD CONSTRAINT \"migrations_name_key\" UNIQUE (name);"
+  },
+  {
+    "name": "constraint:migrations_pkey",
+    "sql": "ALTER TABLE \"storage\".\"migrations\" ADD CONSTRAINT \"migrations_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:objects_pkey",
+    "sql": "ALTER TABLE \"storage\".\"objects\" ADD CONSTRAINT \"objects_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:s3_multipart_uploads_pkey",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads\" ADD CONSTRAINT \"s3_multipart_uploads_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:s3_multipart_uploads_parts_pkey",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads_parts\" ADD CONSTRAINT \"s3_multipart_uploads_parts_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:vector_indexes_pkey",
+    "sql": "ALTER TABLE \"storage\".\"vector_indexes\" ADD CONSTRAINT \"vector_indexes_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:identities_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"identities\" ADD CONSTRAINT \"identities_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:mfa_amr_claims_session_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_amr_claims\" ADD CONSTRAINT \"mfa_amr_claims_session_id_fkey\" FOREIGN KEY (session_id) REFERENCES auth.sessions(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:mfa_challenges_auth_factor_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_challenges\" ADD CONSTRAINT \"mfa_challenges_auth_factor_id_fkey\" FOREIGN KEY (factor_id) REFERENCES auth.mfa_factors(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:mfa_factors_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_factors\" ADD CONSTRAINT \"mfa_factors_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:mfa_recovery_code_sets_mfa_factor_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" ADD CONSTRAINT \"mfa_recovery_code_sets_mfa_factor_id_fkey\" FOREIGN KEY (mfa_factor_id) REFERENCES auth.mfa_factors(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:mfa_recovery_code_sets_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" ADD CONSTRAINT \"mfa_recovery_code_sets_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:mfa_recovery_codes_mfa_recovery_code_set_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_codes\" ADD CONSTRAINT \"mfa_recovery_codes_mfa_recovery_code_set_id_fkey\" FOREIGN KEY (mfa_recovery_code_set_id) REFERENCES auth.mfa_recovery_code_sets(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:oauth_authorizations_client_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_client_id_fkey\" FOREIGN KEY (client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:oauth_authorizations_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:oauth_consents_client_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_client_id_fkey\" FOREIGN KEY (client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:oauth_consents_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:one_time_tokens_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"one_time_tokens\" ADD CONSTRAINT \"one_time_tokens_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:refresh_tokens_session_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"refresh_tokens\" ADD CONSTRAINT \"refresh_tokens_session_id_fkey\" FOREIGN KEY (session_id) REFERENCES auth.sessions(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:saml_providers_sso_provider_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" ADD CONSTRAINT \"saml_providers_sso_provider_id_fkey\" FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:saml_relay_states_flow_state_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"saml_relay_states\" ADD CONSTRAINT \"saml_relay_states_flow_state_id_fkey\" FOREIGN KEY (flow_state_id) REFERENCES auth.flow_state(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:saml_relay_states_sso_provider_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"saml_relay_states\" ADD CONSTRAINT \"saml_relay_states_sso_provider_id_fkey\" FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:scim_tokens_sso_provider_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"scim_tokens\" ADD CONSTRAINT \"scim_tokens_sso_provider_id_fkey\" FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:scim_users_sso_provider_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"scim_users\" ADD CONSTRAINT \"scim_users_sso_provider_id_fkey\" FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:scim_users_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"scim_users\" ADD CONSTRAINT \"scim_users_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;"
+  },
+  {
+    "name": "constraint:sessions_oauth_client_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"sessions\" ADD CONSTRAINT \"sessions_oauth_client_id_fkey\" FOREIGN KEY (oauth_client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:sessions_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"sessions\" ADD CONSTRAINT \"sessions_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:sso_domains_sso_provider_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"sso_domains\" ADD CONSTRAINT \"sso_domains_sso_provider_id_fkey\" FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:webauthn_challenges_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_challenges\" ADD CONSTRAINT \"webauthn_challenges_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:webauthn_credentials_user_id_fkey",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_credentials\" ADD CONSTRAINT \"webauthn_credentials_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacies_approved_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacies\" ADD CONSTRAINT \"pharmacies_approved_by_fkey\" FOREIGN KEY (approved_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_admin_assignments_assigned_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ADD CONSTRAINT \"pharmacy_admin_assignments_assigned_by_fkey\" FOREIGN KEY (assigned_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_admin_assignments_claimed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ADD CONSTRAINT \"pharmacy_admin_assignments_claimed_by_fkey\" FOREIGN KEY (claimed_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_admin_assignments_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ADD CONSTRAINT \"pharmacy_admin_assignments_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_invitations_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" ADD CONSTRAINT \"pharmacy_invitations_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_invitations_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" ADD CONSTRAINT \"pharmacy_invitations_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_invitations_used_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" ADD CONSTRAINT \"pharmacy_invitations_used_by_fkey\" FOREIGN KEY (used_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_learned_gtin_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin\" ADD CONSTRAINT \"pharmacy_learned_gtin_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_learned_gtin_audit_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin_audit\" ADD CONSTRAINT \"pharmacy_learned_gtin_audit_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_imports_v2_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_imports_v2_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_imports_v2_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_imports_v2_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_meta_v2_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_meta_v2_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_meta_v2_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_meta_v2_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmacy_members_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_members\" ADD CONSTRAINT \"pharmacy_members_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_members_user_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_members\" ADD CONSTRAINT \"pharmacy_members_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_registration_requests_applicant_user_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_registration_requests\" ADD CONSTRAINT \"pharmacy_registration_requests_applicant_user_id_fkey\" FOREIGN KEY (applicant_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmacy_registration_requests_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_registration_requests\" ADD CONSTRAINT \"pharmacy_registration_requests_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id);"
+  },
+  {
+    "name": "constraint:pharmacy_registration_requests_reviewed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_registration_requests\" ADD CONSTRAINT \"pharmacy_registration_requests_reviewed_by_fkey\" FOREIGN KEY (reviewed_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_active_order_manifest_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_active_order_manifest_v1\" ADD CONSTRAINT \"pharmflow_active_order_manifest_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_active_order_manifest_v1_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_active_order_manifest_v1\" ADD CONSTRAINT \"pharmflow_active_order_manifest_v1_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_cloud_transactions_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_transactions\" ADD CONSTRAINT \"pharmflow_cloud_transactions_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_cloud_workspaces_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_workspaces\" ADD CONSTRAINT \"pharmflow_cloud_workspaces_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_cloud_workspaces_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_workspaces\" ADD CONSTRAINT \"pharmflow_cloud_workspaces_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_captured_by_user_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_captured_by_user_id_fkey\" FOREIGN KEY (captured_by_user_id) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_worker_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_worker_id_fkey\" FOREIGN KEY (worker_id) REFERENCES pharmflow_expiry_workers_v1(id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_state_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_state_id_fkey\" FOREIGN KEY (state_id) REFERENCES pharmflow_expiry_current_state_v1(id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v1_item_code_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v1_item_code_fkey\" FOREIGN KEY (item_code) REFERENCES pharmflow_global_items_v2(item_code) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v1_performed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v1_performed_by_fkey\" FOREIGN KEY (performed_by) REFERENCES auth.users(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v1_review_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v1_review_id_fkey\" FOREIGN KEY (review_id) REFERENCES pharmflow_needs_review_v2(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v_expiry_event_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v_expiry_event_id_fkey\" FOREIGN KEY (expiry_event_id) REFERENCES pharmflow_expiry_events_v1(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v_expiry_state_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v_expiry_state_id_fkey\" FOREIGN KEY (expiry_state_id) REFERENCES pharmflow_expiry_current_state_v1(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_workers_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_workers_v1\" ADD CONSTRAINT \"pharmflow_expiry_workers_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_workers_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_workers_v1\" ADD CONSTRAINT \"pharmflow_expiry_workers_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_finalized_archives_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_finalized_archives_v1\" ADD CONSTRAINT \"pharmflow_finalized_archives_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_finalized_archives_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_finalized_archives_v1\" ADD CONSTRAINT \"pharmflow_finalized_archives_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_conflicts_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_conflicts_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_import_rows_v1_import_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_import_rows_v1_import_id_fkey\" FOREIGN KEY (import_id) REFERENCES pharmflow_global_gtin_imports_v1(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_imports_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_imports_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_meta_v1_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_meta_v1_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_item_code_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_item_code_fkey\" FOREIGN KEY (item_code) REFERENCES pharmflow_global_items_v2(item_code) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_items_v2_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_items_v2\" ADD CONSTRAINT \"pharmflow_global_items_v2_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_items_v2_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_items_v2\" ADD CONSTRAINT \"pharmflow_global_items_v2_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_mapping_disputes_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" ADD CONSTRAINT \"pharmflow_gtin_mapping_disputes_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE SET NULL;"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_mapping_disputes_v1_reported_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" ADD CONSTRAINT \"pharmflow_gtin_mapping_disputes_v1_reported_by_fkey\" FOREIGN KEY (reported_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_mapping_disputes_v1_reviewed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" ADD CONSTRAINT \"pharmflow_gtin_mapping_disputes_v1_reviewed_by_fkey\" FOREIGN KEY (reviewed_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_mapping_audit_v1_identifier_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ADD CONSTRAINT \"pharmflow_identifier_mapping_audit_v1_identifier_id_fkey\" FOREIGN KEY (identifier_id) REFERENCES pharmflow_global_item_identifiers_v2(id) ON DELETE SET NULL;"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_mapping_audit_v1_performed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ADD CONSTRAINT \"pharmflow_identifier_mapping_audit_v1_performed_by_fkey\" FOREIGN KEY (performed_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_migration_conflicts_v1_reviewed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" ADD CONSTRAINT \"pharmflow_identifier_migration_conflicts_v1_reviewed_by_fkey\" FOREIGN KEY (reviewed_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_resolution_intents_v1_review_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ADD CONSTRAINT \"pharmflow_needs_review_resolution_intents_v1_review_id_fkey\" FOREIGN KEY (review_id) REFERENCES pharmflow_needs_review_v2(id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_resolved_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_resolved_by_fkey\" FOREIGN KEY (resolved_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v1_worker_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ADD CONSTRAINT \"pharmflow_needs_review_v1_worker_id_fkey\" FOREIGN KEY (worker_id) REFERENCES pharmflow_expiry_workers_v1(id);"
+  },
+  {
+    "name": "constraint:pharmflow_needs_review_v2_deleted_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ADD CONSTRAINT \"pharmflow_needs_review_v2_deleted_by_fkey\" FOREIGN KEY (deleted_by) REFERENCES auth.users(id) ON DELETE SET NULL;"
+  },
+  {
+    "name": "constraint:pharmflow_order_source_items_order_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_order_source_items\" ADD CONSTRAINT \"pharmflow_order_source_items_order_id_fkey\" FOREIGN KEY (order_id) REFERENCES pharmflow_orders(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_order_source_items_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_order_source_items\" ADD CONSTRAINT \"pharmflow_order_source_items_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_orders_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" ADD CONSTRAINT \"pharmflow_orders_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_orders_received_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" ADD CONSTRAINT \"pharmflow_orders_received_by_fkey\" FOREIGN KEY (received_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_orders_uploaded_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" ADD CONSTRAINT \"pharmflow_orders_uploaded_by_fkey\" FOREIGN KEY (uploaded_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_audit_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_audit_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_gtin_v1_updated_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_gtin_v1_updated_by_fkey\" FOREIGN KEY (updated_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identifier_mapping_audit_v2_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" ADD CONSTRAINT \"pharmflow_pharmacy_identifier_mapping_audit_v2_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identity_audit_v1_changed_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_identity_audit_v1_changed_by_fkey\" FOREIGN KEY (changed_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_pharmacy_identity_audit_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" ADD CONSTRAINT \"pharmflow_pharmacy_identity_audit_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE RESTRICT;"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_history_items_v1_workspace_history_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_history_items_v1\" ADD CONSTRAINT \"pharmflow_receiving_history_items_v1_workspace_history_id_fkey\" FOREIGN KEY (workspace_history_id) REFERENCES pharmflow_receiving_workspace_history_v1(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_transactions_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_transactions_v1\" ADD CONSTRAINT \"pharmflow_receiving_transactions_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:pharmflow_receiving_transactions_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_transactions_v1\" ADD CONSTRAINT \"pharmflow_receiving_transactions_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_workspace_generation_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_workspace_generation_v1\" ADD CONSTRAINT \"pharmflow_workspace_generation_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:pharmflow_workspace_generation_v1_reset_by_fkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_workspace_generation_v1\" ADD CONSTRAINT \"pharmflow_workspace_generation_v1_reset_by_fkey\" FOREIGN KEY (reset_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:profiles_user_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"profiles\" ADD CONSTRAINT \"profiles_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:session_items_session_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"session_items\" ADD CONSTRAINT \"session_items_session_id_fkey\" FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:sessions_created_by_user_fkey",
+    "sql": "ALTER TABLE \"public\".\"sessions\" ADD CONSTRAINT \"sessions_created_by_user_fkey\" FOREIGN KEY (created_by_user) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:sessions_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"sessions\" ADD CONSTRAINT \"sessions_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id);"
+  },
+  {
+    "name": "constraint:system_owners_user_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"system_owners\" ADD CONSTRAINT \"system_owners_user_id_fkey\" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:transactions_session_id_fkey",
+    "sql": "ALTER TABLE \"public\".\"transactions\" ADD CONSTRAINT \"transactions_session_id_fkey\" FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:objects_bucketId_fkey",
+    "sql": "ALTER TABLE \"storage\".\"objects\" ADD CONSTRAINT \"objects_bucketId_fkey\" FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id);"
+  },
+  {
+    "name": "constraint:s3_multipart_uploads_bucket_id_fkey",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads\" ADD CONSTRAINT \"s3_multipart_uploads_bucket_id_fkey\" FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id);"
+  },
+  {
+    "name": "constraint:s3_multipart_uploads_parts_bucket_id_fkey",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads_parts\" ADD CONSTRAINT \"s3_multipart_uploads_parts_bucket_id_fkey\" FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id);"
+  },
+  {
+    "name": "constraint:s3_multipart_uploads_parts_upload_id_fkey",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads_parts\" ADD CONSTRAINT \"s3_multipart_uploads_parts_upload_id_fkey\" FOREIGN KEY (upload_id) REFERENCES storage.s3_multipart_uploads(id) ON DELETE CASCADE;"
+  },
+  {
+    "name": "constraint:vector_indexes_bucket_id_fkey",
+    "sql": "ALTER TABLE \"storage\".\"vector_indexes\" ADD CONSTRAINT \"vector_indexes_bucket_id_fkey\" FOREIGN KEY (bucket_id) REFERENCES storage.buckets_vectors(id);"
+  },
+  {
+    "name": "constraint:first_operator_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" ADD CONSTRAINT \"first_operator_v1_pkey\" PRIMARY KEY (state_id);"
+  },
+  {
+    "name": "constraint:operator_audit_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" ADD CONSTRAINT \"operator_audit_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:session_group_adjustments_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" ADD CONSTRAINT \"session_group_adjustments_v1_pkey\" PRIMARY KEY (request_id);"
+  },
+  {
+    "name": "constraint:session_group_adjustments_v1_previous_quantity_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" ADD CONSTRAINT \"session_group_adjustments_v1_previous_quantity_check\" CHECK (previous_quantity > 0);"
+  },
+  {
+    "name": "constraint:session_group_adjustments_v1_quantity_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" ADD CONSTRAINT \"session_group_adjustments_v1_quantity_check\" CHECK (quantity >= 0);"
+  },
+  {
+    "name": "constraint:resolved_inventory_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" ADD CONSTRAINT \"resolved_inventory_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:resolved_inventory_v1_quantity_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" ADD CONSTRAINT \"resolved_inventory_v1_quantity_check\" CHECK (quantity >= 0);"
+  },
+  {
+    "name": "constraint:review_details_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ADD CONSTRAINT \"review_details_check\" CHECK (product_photo_path <> expiry_photo_path);"
+  },
+  {
+    "name": "constraint:review_details_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ADD CONSTRAINT \"review_details_pkey\" PRIMARY KEY (review_id);"
+  },
+  {
+    "name": "constraint:session_adjustments_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" ADD CONSTRAINT \"session_adjustments_v1_pkey\" PRIMARY KEY (request_id);"
+  },
+  {
+    "name": "constraint:session_captures_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" ADD CONSTRAINT \"session_captures_v1_pkey\" PRIMARY KEY (pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:session_captures_v1_quantity_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" ADD CONSTRAINT \"session_captures_v1_quantity_check\" CHECK (quantity >= 0);"
+  },
+  {
+    "name": "constraint:session_clear_requests_v1_next_session_id_key",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" ADD CONSTRAINT \"session_clear_requests_v1_next_session_id_key\" UNIQUE (next_session_id);"
+  },
+  {
+    "name": "constraint:session_clear_requests_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" ADD CONSTRAINT \"session_clear_requests_v1_pkey\" PRIMARY KEY (request_id);"
+  },
+  {
+    "name": "constraint:session_clear_requests_v1_previous_session_id_key",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" ADD CONSTRAINT \"session_clear_requests_v1_previous_session_id_key\" UNIQUE (previous_session_id);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_attempts_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_attempts_check\" CHECK (attempts >= 0);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_check\" CHECK ((state = 'CLAIMED'::text) = (claim_until IS NOT NULL));"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_check1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_check1\" CHECK ((state = 'CLAIMED'::text) = (claim_token IS NOT NULL));"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_check2",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_check2\" CHECK ((state = 'DONE'::text) = (completed_at IS NOT NULL));"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_object_path_key",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_object_path_key\" UNIQUE (object_path);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_pkey\" PRIMARY KEY (job_id);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_state_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_state_check\" CHECK (state = ANY (ARRAY['PENDING'::text, 'CLAIMED'::text, 'DONE'::text, 'FAILED'::text]));"
+  },
+  {
+    "name": "constraint:photo_cleanup_reason_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_reason_check\" CHECK ((cleanup_reason = ANY (ARRAY['TERMINAL'::text, 'SUPERSEDED'::text])) AND review_id IS NOT NULL OR cleanup_reason = 'CANCELLED'::text AND review_id IS NULL);"
+  },
+  {
+    "name": "constraint:photo_cleanup_receiving_scope_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_receiving_scope_check\" CHECK (operation_id IS NOT NULL OR review_id IS NOT NULL AND cleanup_reason = 'TERMINAL'::text AND object_path ~ (((('^'::text || pharmacy_id::text) || '/'::text) || review_id::text) || '/[0-9]{10,20}[.](jpg|png|webp)$'::text));"
+  },
+  {
+    "name": "constraint:operations_cancellation_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operations\" ADD CONSTRAINT \"operations_cancellation_check\" CHECK (status = 'CANCELLED'::text AND payload IS NULL AND result IS NULL AND cancelled_at IS NOT NULL AND cancelled_by IS NOT NULL AND cancelled_by = created_by AND cancellation_reason IS NOT NULL AND (cancellation_reason = ANY (ARRAY['USER_CANCELLED'::text, 'ABANDON_CONFIRMED'::text])) OR status <> 'CANCELLED'::text AND cancelled_at IS NULL AND cancelled_by IS NULL AND cancellation_reason IS NULL);"
+  },
+  {
+    "name": "constraint:operations_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operations\" ADD CONSTRAINT \"operations_pkey\" PRIMARY KEY (pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:operations_status_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operations\" ADD CONSTRAINT \"operations_status_check\" CHECK (status = ANY (ARRAY['RESERVED'::text, 'COMMITTING'::text, 'COMMITTED'::text, 'CANCELLED'::text]));"
+  },
+  {
+    "name": "constraint:active_sessions_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" ADD CONSTRAINT \"active_sessions_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:inventory_requests_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" ADD CONSTRAINT \"inventory_requests_v1_pkey\" PRIMARY KEY (request_id);"
+  },
+  {
+    "name": "constraint:filtered_inventory_requests_v1_expected_count_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" ADD CONSTRAINT \"filtered_inventory_requests_v1_expected_count_check\" CHECK (expected_count > 0);"
+  },
+  {
+    "name": "constraint:filtered_inventory_requests_v1_expected_units_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" ADD CONSTRAINT \"filtered_inventory_requests_v1_expected_units_check\" CHECK (expected_units >= 0);"
+  },
+  {
+    "name": "constraint:filtered_inventory_requests_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" ADD CONSTRAINT \"filtered_inventory_requests_v1_pkey\" PRIMARY KEY (request_id);"
+  },
+  {
+    "name": "constraint:closed_auth_sessions_v1_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" ADD CONSTRAINT \"closed_auth_sessions_v1_pkey\" PRIMARY KEY (created_by, auth_session_id);"
+  },
+  {
+    "name": "constraint:photos_pkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photos\" ADD CONSTRAINT \"photos_pkey\" PRIMARY KEY (path);"
+  },
+  {
+    "name": "constraint:photos_role_check",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photos\" ADD CONSTRAINT \"photos_role_check\" CHECK (role = ANY (ARRAY['product'::text, 'expiry'::text]));"
+  },
+  {
+    "name": "constraint:resolved_clear_actor_pair_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" ADD CONSTRAINT \"resolved_clear_actor_pair_v1\" CHECK ((cleared_at IS NULL) = (cleared_by IS NULL));"
+  },
+  {
+    "name": "constraint:resolved_clear_restore_exclusive_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" ADD CONSTRAINT \"resolved_clear_restore_exclusive_v1\" CHECK (cleared_at IS NULL OR restored_at IS NULL);"
+  },
+  {
+    "name": "constraint:active_sessions_v1_created_by_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" ADD CONSTRAINT \"active_sessions_v1_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:active_sessions_v1_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" ADD CONSTRAINT \"active_sessions_v1_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id);"
+  },
+  {
+    "name": "constraint:session_clear_requests_v1_previous_session_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" ADD CONSTRAINT \"session_clear_requests_v1_previous_session_id_fkey\" FOREIGN KEY (previous_session_id) REFERENCES pharmflow_expiry_private.active_sessions_v1(id);"
+  },
+  {
+    "name": "constraint:review_details_product_photo_path_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ADD CONSTRAINT \"review_details_product_photo_path_fkey\" FOREIGN KEY (product_photo_path) REFERENCES pharmflow_expiry_private.photos(path);"
+  },
+  {
+    "name": "constraint:review_details_review_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ADD CONSTRAINT \"review_details_review_id_fkey\" FOREIGN KEY (review_id) REFERENCES pharmflow_needs_review_v2(id);"
+  },
+  {
+    "name": "constraint:session_adjustments_v1_event_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" ADD CONSTRAINT \"session_adjustments_v1_event_id_fkey\" FOREIGN KEY (event_id) REFERENCES pharmflow_expiry_events_v1(id);"
+  },
+  {
+    "name": "constraint:operations_created_by_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operations\" ADD CONSTRAINT \"operations_created_by_fkey\" FOREIGN KEY (created_by) REFERENCES auth.users(id);"
+  },
+  {
+    "name": "constraint:filtered_inventory_requests_v1_request_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" ADD CONSTRAINT \"filtered_inventory_requests_v1_request_id_fkey\" FOREIGN KEY (request_id) REFERENCES pharmflow_expiry_private.inventory_requests_v1(request_id);"
+  },
+  {
+    "name": "constraint:first_operator_v1_event_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" ADD CONSTRAINT \"first_operator_v1_event_id_fkey\" FOREIGN KEY (event_id) REFERENCES pharmflow_expiry_events_v1(id);"
+  },
+  {
+    "name": "constraint:session_adjustments_v1_session_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" ADD CONSTRAINT \"session_adjustments_v1_session_id_fkey\" FOREIGN KEY (session_id) REFERENCES pharmflow_expiry_private.active_sessions_v1(id);"
+  },
+  {
+    "name": "constraint:first_operator_v1_state_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" ADD CONSTRAINT \"first_operator_v1_state_id_fkey\" FOREIGN KEY (state_id) REFERENCES pharmflow_expiry_current_state_v1(id);"
+  },
+  {
+    "name": "constraint:photos_pharmacy_id_operation_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photos\" ADD CONSTRAINT \"photos_pharmacy_id_operation_id_fkey\" FOREIGN KEY (pharmacy_id, operation_id) REFERENCES pharmflow_expiry_private.operations(pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:session_captures_v1_pharmacy_id_operation_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" ADD CONSTRAINT \"session_captures_v1_pharmacy_id_operation_id_fkey\" FOREIGN KEY (pharmacy_id, operation_id) REFERENCES pharmflow_expiry_private.operations(pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_pharmacy_id_operation_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_pharmacy_id_operation_id_fkey\" FOREIGN KEY (pharmacy_id, operation_id) REFERENCES pharmflow_expiry_private.operations(pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:session_captures_v1_session_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" ADD CONSTRAINT \"session_captures_v1_session_id_fkey\" FOREIGN KEY (session_id) REFERENCES pharmflow_expiry_private.active_sessions_v1(id);"
+  },
+  {
+    "name": "constraint:session_clear_requests_v1_next_session_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" ADD CONSTRAINT \"session_clear_requests_v1_next_session_id_fkey\" FOREIGN KEY (next_session_id) REFERENCES pharmflow_expiry_private.active_sessions_v1(id);"
+  },
+  {
+    "name": "constraint:operations_pharmacy_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operations\" ADD CONSTRAINT \"operations_pharmacy_id_fkey\" FOREIGN KEY (pharmacy_id) REFERENCES pharmacies(id);"
+  },
+  {
+    "name": "constraint:resolved_inventory_v1_state_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" ADD CONSTRAINT \"resolved_inventory_v1_state_id_fkey\" FOREIGN KEY (state_id) REFERENCES pharmflow_expiry_current_state_v1(id);"
+  },
+  {
+    "name": "constraint:photo_cleanup_jobs_review_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ADD CONSTRAINT \"photo_cleanup_jobs_review_id_fkey\" FOREIGN KEY (review_id) REFERENCES pharmflow_needs_review_v2(id);"
+  },
+  {
+    "name": "constraint:review_details_expiry_photo_path_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ADD CONSTRAINT \"review_details_expiry_photo_path_fkey\" FOREIGN KEY (expiry_photo_path) REFERENCES pharmflow_expiry_private.photos(path);"
+  },
+  {
+    "name": "constraint:review_details_pharmacy_id_operation_id_fkey",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ADD CONSTRAINT \"review_details_pharmacy_id_operation_id_fkey\" FOREIGN KEY (pharmacy_id, operation_id) REFERENCES pharmflow_expiry_private.operations(pharmacy_id, operation_id);"
+  },
+  {
+    "name": "index:oauth_auth_pending_exp_idx",
+    "sql": "CREATE INDEX oauth_auth_pending_exp_idx ON auth.oauth_authorizations USING btree (expires_at) WHERE (status = 'pending'::auth.oauth_authorization_status);"
+  },
+  {
+    "name": "index:idx_pf_receiving_tx_pharmacy_created_cursor",
+    "sql": "CREATE INDEX idx_pf_receiving_tx_pharmacy_created_cursor ON public.pharmflow_receiving_transactions_v1 USING btree (pharmacy_id, created_at, transaction_id);"
+  },
+  {
+    "name": "index:sessions_user_id_idx",
+    "sql": "CREATE INDEX sessions_user_id_idx ON auth.sessions USING btree (user_id);"
+  },
+  {
+    "name": "index:idx_pharmflow_gtin_lifecycle_v3_lookup",
+    "sql": "CREATE INDEX idx_pharmflow_gtin_lifecycle_v3_lookup ON public.pharmflow_gtin_lifecycle_v3 USING btree (pharmacy_id, gtin, created_at DESC);"
+  },
+  {
+    "name": "index:idx_pf_nr_v2_count",
+    "sql": "CREATE INDEX idx_pf_nr_v2_count ON public.pharmflow_needs_review_v2 USING btree (pharmacy_id, workflow, status);"
+  },
+  {
+    "name": "index:idx_pf_receiving_tx_pharmacy_time",
+    "sql": "CREATE INDEX idx_pf_receiving_tx_pharmacy_time ON public.pharmflow_receiving_transactions_v1 USING btree (pharmacy_id, occurred_at DESC);"
+  },
+  {
+    "name": "index:scim_users_user_id_idx",
+    "sql": "CREATE INDEX scim_users_user_id_idx ON auth.scim_users USING btree (user_id);"
+  },
+  {
+    "name": "index:name_prefix_search",
+    "sql": "CREATE INDEX name_prefix_search ON storage.objects USING btree (name text_pattern_ops);"
+  },
+  {
+    "name": "index:idx_session_items_session",
+    "sql": "CREATE INDEX idx_session_items_session ON public.session_items USING btree (session_id);"
+  },
+  {
+    "name": "index:webauthn_challenges_expires_at_idx",
+    "sql": "CREATE INDEX webauthn_challenges_expires_at_idx ON auth.webauthn_challenges USING btree (expires_at);"
+  },
+  {
+    "name": "index:sso_domains_sso_provider_id_idx",
+    "sql": "CREATE INDEX sso_domains_sso_provider_id_idx ON auth.sso_domains USING btree (sso_provider_id);"
+  },
+  {
+    "name": "index:pharmflow_order_source_items_item_idx",
+    "sql": "CREATE INDEX pharmflow_order_source_items_item_idx ON public.pharmflow_order_source_items USING btree (pharmacy_id, item_code);"
+  },
+  {
+    "name": "index:pharmflow_expiry_current_state_v1_pharmacy_item_idx",
+    "sql": "CREATE INDEX pharmflow_expiry_current_state_v1_pharmacy_item_idx ON public.pharmflow_expiry_current_state_v1 USING btree (pharmacy_id, item_code);"
+  },
+  {
+    "name": "index:idx_pharmflow_expiry_capture_worker_v1",
+    "sql": "CREATE INDEX idx_pharmflow_expiry_capture_worker_v1 ON public.pharmflow_expiry_captures_v1 USING btree (pharmacy_id, captured_by_name);"
+  },
+  {
+    "name": "index:idx_auth_code",
+    "sql": "CREATE INDEX idx_auth_code ON auth.flow_state USING btree (auth_code);"
+  },
+  {
+    "name": "index:pharmflow_expiry_events_v1_pharmacy_time_idx",
+    "sql": "CREATE INDEX pharmflow_expiry_events_v1_pharmacy_time_idx ON public.pharmflow_expiry_events_v1 USING btree (pharmacy_id, occurred_at DESC);"
+  },
+  {
+    "name": "index:scim_users_user_name_idx",
+    "sql": "CREATE INDEX scim_users_user_name_idx ON auth.scim_users USING btree (sso_provider_id, user_name COLLATE \"C\", id) WHERE (deleted_at IS NULL);"
+  },
+  {
+    "name": "index:refresh_tokens_instance_id_idx",
+    "sql": "CREATE INDEX refresh_tokens_instance_id_idx ON auth.refresh_tokens USING btree (instance_id);"
+  },
+  {
+    "name": "index:idx_objects_null_version",
+    "sql": "CREATE UNIQUE INDEX idx_objects_null_version ON storage.objects USING btree (bucket_id, name COLLATE \"C\") WHERE (NOT is_versioned);"
+  },
+  {
+    "name": "index:pharmflow_nr_resolution_intents_pending_transaction_idx",
+    "sql": "CREATE INDEX pharmflow_nr_resolution_intents_pending_transaction_idx ON public.pharmflow_needs_review_resolution_intents_v1 USING btree (pharmacy_id, transaction_id) WHERE (status = 'PENDING'::text);"
+  },
+  {
+    "name": "index:idx_pharmacy_members_user",
+    "sql": "CREATE INDEX idx_pharmacy_members_user ON public.pharmacy_members USING btree (user_id, active);"
+  },
+  {
+    "name": "index:scim_users_user_name_key",
+    "sql": "CREATE UNIQUE INDEX scim_users_user_name_key ON auth.scim_users USING btree (sso_provider_id, user_name) WHERE (deleted_at IS NULL);"
+  },
+  {
+    "name": "index:idx_pf_review_pending_v1",
+    "sql": "CREATE INDEX idx_pf_review_pending_v1 ON public.pharmflow_needs_review_v1 USING btree (pharmacy_id, workflow, status, created_at DESC);"
+  },
+  {
+    "name": "index:idx_pharmflow_pharmacy_gtin_item",
+    "sql": "CREATE INDEX idx_pharmflow_pharmacy_gtin_item ON public.pharmflow_pharmacy_gtin_v1 USING btree (pharmacy_id, item_code);"
+  },
+  {
+    "name": "index:vector_indexes_name_bucket_id_idx",
+    "sql": "CREATE UNIQUE INDEX vector_indexes_name_bucket_id_idx ON storage.vector_indexes USING btree (name, bucket_id);"
+  },
+  {
+    "name": "index:expiry_worker_name_key_v1",
+    "sql": "CREATE UNIQUE INDEX expiry_worker_name_key_v1 ON public.pharmflow_expiry_workers_v1 USING btree (pharmacy_id, lower(btrim(worker_name)));"
+  },
+  {
+    "name": "index:users_instance_id_email_idx",
+    "sql": "CREATE INDEX users_instance_id_email_idx ON auth.users USING btree (instance_id, lower((email)::text));"
+  },
+  {
+    "name": "index:one_time_tokens_token_hash_hash_idx",
+    "sql": "CREATE INDEX one_time_tokens_token_hash_hash_idx ON auth.one_time_tokens USING hash (token_hash);"
+  },
+  {
+    "name": "index:sso_providers_resource_id_idx",
+    "sql": "CREATE UNIQUE INDEX sso_providers_resource_id_idx ON auth.sso_providers USING btree (lower(resource_id));"
+  },
+  {
+    "name": "index:scim_tokens_sso_provider_id_idx",
+    "sql": "CREATE INDEX scim_tokens_sso_provider_id_idx ON auth.scim_tokens USING btree (sso_provider_id);"
+  },
+  {
+    "name": "index:identities_email_idx",
+    "sql": "CREATE INDEX identities_email_idx ON auth.identities USING btree (email text_pattern_ops);"
+  },
+  {
+    "name": "index:sso_providers_resource_id_pattern_idx",
+    "sql": "CREATE INDEX sso_providers_resource_id_pattern_idx ON auth.sso_providers USING btree (resource_id text_pattern_ops);"
+  },
+  {
+    "name": "index:factor_id_created_at_idx",
+    "sql": "CREATE INDEX factor_id_created_at_idx ON auth.mfa_factors USING btree (user_id, created_at);"
+  },
+  {
+    "name": "index:scim_users_created_at_idx",
+    "sql": "CREATE INDEX scim_users_created_at_idx ON auth.scim_users USING btree (sso_provider_id, created_at, id) WHERE (deleted_at IS NULL);"
+  },
+  {
+    "name": "index:idx_pf_pharmacy_gtin_audit_v1_lookup",
+    "sql": "CREATE INDEX idx_pf_pharmacy_gtin_audit_v1_lookup ON public.pharmflow_pharmacy_gtin_audit_v1 USING btree (pharmacy_id, gtin, changed_at DESC);"
+  },
+  {
+    "name": "index:idx_pharmacy_invites_pharmacy",
+    "sql": "CREATE INDEX idx_pharmacy_invites_pharmacy ON public.pharmacy_invitations USING btree (pharmacy_id, used_at, expires_at);"
+  },
+  {
+    "name": "index:idx_objects_delete_markers",
+    "sql": "CREATE INDEX idx_objects_delete_markers ON storage.objects USING btree (bucket_id, name COLLATE \"C\") WHERE is_delete_marker;"
+  },
+  {
+    "name": "index:sessions_oauth_client_id_idx",
+    "sql": "CREATE INDEX sessions_oauth_client_id_idx ON auth.sessions USING btree (oauth_client_id);"
+  },
+  {
+    "name": "index:idx_users_created_at_desc",
+    "sql": "CREATE INDEX idx_users_created_at_desc ON auth.users USING btree (created_at DESC);"
+  },
+  {
+    "name": "index:bname",
+    "sql": "CREATE UNIQUE INDEX bname ON storage.buckets USING btree (name);"
+  },
+  {
+    "name": "index:idx_session_items_gtin",
+    "sql": "CREATE INDEX idx_session_items_gtin ON public.session_items USING btree (session_id, gtin);"
+  },
+  {
+    "name": "index:sessions_not_after_idx",
+    "sql": "CREATE INDEX sessions_not_after_idx ON auth.sessions USING btree (not_after DESC);"
+  },
+  {
+    "name": "index:one_time_tokens_user_id_token_type_key",
+    "sql": "CREATE UNIQUE INDEX one_time_tokens_user_id_token_type_key ON auth.one_time_tokens USING btree (user_id, token_type);"
+  },
+  {
+    "name": "index:oauth_clients_deleted_at_idx",
+    "sql": "CREATE INDEX oauth_clients_deleted_at_idx ON auth.oauth_clients USING btree (deleted_at);"
+  },
+  {
+    "name": "index:idx_pf_nr_v2_resolution_tx_v3",
+    "sql": "CREATE INDEX idx_pf_nr_v2_resolution_tx_v3 ON public.pharmflow_needs_review_v2 USING btree (pharmacy_id, resolution_transaction_id) WHERE (resolution_transaction_id IS NOT NULL);"
+  },
+  {
+    "name": "index:idx_pharmflow_global_gtin_v1_item_code",
+    "sql": "CREATE INDEX idx_pharmflow_global_gtin_v1_item_code ON public.pharmflow_global_gtin_v1 USING btree (item_code);"
+  },
+  {
+    "name": "index:idx_pharmflow_pharmacy_identifier_mapping_audit_v2_lookup",
+    "sql": "CREATE INDEX idx_pharmflow_pharmacy_identifier_mapping_audit_v2_lookup ON public.pharmflow_pharmacy_identifier_mapping_audit_v2 USING btree (pharmacy_id, identifier_key, created_at DESC);"
+  },
+  {
+    "name": "index:webauthn_credentials_credential_id_key",
+    "sql": "CREATE UNIQUE INDEX webauthn_credentials_credential_id_key ON auth.webauthn_credentials USING btree (credential_id);"
+  },
+  {
+    "name": "index:users_is_anonymous_idx",
+    "sql": "CREATE INDEX users_is_anonymous_idx ON auth.users USING btree (is_anonymous);"
+  },
+  {
+    "name": "index:idx_pf_receiving_workspace_history_date",
+    "sql": "CREATE INDEX idx_pf_receiving_workspace_history_date ON public.pharmflow_receiving_workspace_history_v1 USING btree (pharmacy_id, completed_at DESC);"
+  },
+  {
+    "name": "index:email_change_token_new_idx",
+    "sql": "CREATE UNIQUE INDEX email_change_token_new_idx ON auth.users USING btree (email_change_token_new) WHERE ((email_change_token_new)::text !~ '^[0-9 ]*$'::text);"
+  },
+  {
+    "name": "index:oauth_consents_active_user_client_idx",
+    "sql": "CREATE INDEX oauth_consents_active_user_client_idx ON auth.oauth_consents USING btree (user_id, client_id) WHERE (revoked_at IS NULL);"
+  },
+  {
+    "name": "index:idx_session_items_item",
+    "sql": "CREATE INDEX idx_session_items_item ON public.session_items USING btree (session_id, item_code);"
+  },
+  {
+    "name": "index:scim_users_deleted_at_idx",
+    "sql": "CREATE INDEX scim_users_deleted_at_idx ON auth.scim_users USING btree (deleted_at);"
+  },
+  {
+    "name": "index:idx_pharmacy_learned_gtin_audit_lookup",
+    "sql": "CREATE INDEX idx_pharmacy_learned_gtin_audit_lookup ON public.pharmacy_learned_gtin_audit USING btree (pharmacy_id, gtin, changed_at DESC);"
+  },
+  {
+    "name": "index:webauthn_credentials_user_id_idx",
+    "sql": "CREATE INDEX webauthn_credentials_user_id_idx ON auth.webauthn_credentials USING btree (user_id);"
+  },
+  {
+    "name": "index:identities_user_id_idx",
+    "sql": "CREATE INDEX identities_user_id_idx ON auth.identities USING btree (user_id);"
+  },
+  {
+    "name": "index:idx_transactions_created",
+    "sql": "CREATE INDEX idx_transactions_created ON public.transactions USING btree (session_id, created_at);"
+  },
+  {
+    "name": "index:scim_tokens_expires_at_idx",
+    "sql": "CREATE INDEX scim_tokens_expires_at_idx ON auth.scim_tokens USING btree (expires_at);"
+  },
+  {
+    "name": "index:expiry_worker_system_key_v1",
+    "sql": "CREATE UNIQUE INDEX expiry_worker_system_key_v1 ON public.pharmflow_expiry_workers_v1 USING btree (pharmacy_id, system_key) WHERE (system_key IS NOT NULL);"
+  },
+  {
+    "name": "index:pharmflow_pharmacy_gtin_v1_pharmacy_identifier_key_key",
+    "sql": "CREATE UNIQUE INDEX pharmflow_pharmacy_gtin_v1_pharmacy_identifier_key_key ON public.pharmflow_pharmacy_gtin_v1 USING btree (pharmacy_id, identifier_key);"
+  },
+  {
+    "name": "index:mfa_challenge_created_at_idx",
+    "sql": "CREATE INDEX mfa_challenge_created_at_idx ON auth.mfa_challenges USING btree (created_at DESC);"
+  },
+  {
+    "name": "index:buckets_analytics_unique_name_idx",
+    "sql": "CREATE UNIQUE INDEX buckets_analytics_unique_name_idx ON storage.buckets_analytics USING btree (name) WHERE (deleted_at IS NULL);"
+  },
+  {
+    "name": "index:uq_pf_receiving_lifecycle_reversal_v3",
+    "sql": "CREATE UNIQUE INDEX uq_pf_receiving_lifecycle_reversal_v3 ON public.pharmflow_receiving_transactions_v1 USING btree (pharmacy_id, ((payload #>> '{learnedGtinLifecycle,reversesTransactionId}'::text[]))) WHERE ((payload #>> '{learnedGtinLifecycle,type}'::text[]) = 'REVERSAL'::text);"
+  },
+  {
+    "name": "index:idx_users_name",
+    "sql": "CREATE INDEX idx_users_name ON auth.users USING btree (((raw_user_meta_data ->> 'name'::text))) WHERE ((raw_user_meta_data ->> 'name'::text) IS NOT NULL);"
+  },
+  {
+    "name": "index:saml_relay_states_created_at_idx",
+    "sql": "CREATE INDEX saml_relay_states_created_at_idx ON auth.saml_relay_states USING btree (created_at DESC);"
+  },
+  {
+    "name": "index:reauthentication_token_idx",
+    "sql": "CREATE UNIQUE INDEX reauthentication_token_idx ON auth.users USING btree (reauthentication_token) WHERE ((reauthentication_token)::text !~ '^[0-9 ]*$'::text);"
+  },
+  {
+    "name": "index:custom_oauth_providers_enabled_idx",
+    "sql": "CREATE INDEX custom_oauth_providers_enabled_idx ON auth.custom_oauth_providers USING btree (enabled);"
+  },
+  {
+    "name": "index:oauth_consents_user_order_idx",
+    "sql": "CREATE INDEX oauth_consents_user_order_idx ON auth.oauth_consents USING btree (user_id, granted_at DESC);"
+  },
+  {
+    "name": "index:users_email_partial_key",
+    "sql": "CREATE UNIQUE INDEX users_email_partial_key ON auth.users USING btree (email) WHERE (is_sso_user = false);"
+  },
+  {
+    "name": "index:recovery_token_idx",
+    "sql": "CREATE UNIQUE INDEX recovery_token_idx ON auth.users USING btree (recovery_token) WHERE ((recovery_token)::text !~ '^[0-9 ]*$'::text);"
+  },
+  {
+    "name": "index:idx_objects_current_version",
+    "sql": "CREATE UNIQUE INDEX idx_objects_current_version ON storage.objects USING btree (bucket_id, name COLLATE \"C\") WHERE (archived_at IS NULL);"
+  },
+  {
+    "name": "index:refresh_tokens_parent_idx",
+    "sql": "CREATE INDEX refresh_tokens_parent_idx ON auth.refresh_tokens USING btree (parent);"
+  },
+  {
+    "name": "index:idx_pf_receiving_history_items_new",
+    "sql": "CREATE INDEX idx_pf_receiving_history_items_new ON public.pharmflow_receiving_history_items_v1 USING btree (pharmacy_id, event_type, created_at DESC);"
+  },
+  {
+    "name": "index:idx_pharmflow_expiry_capture_category_v1",
+    "sql": "CREATE INDEX idx_pharmflow_expiry_capture_category_v1 ON public.pharmflow_expiry_captures_v1 USING btree (pharmacy_id, category);"
+  },
+  {
+    "name": "index:idx_users_last_sign_in_at_desc",
+    "sql": "CREATE INDEX idx_users_last_sign_in_at_desc ON auth.users USING btree (last_sign_in_at DESC);"
+  },
+  {
+    "name": "index:pharmflow_expiry_events_v1_state_time_idx",
+    "sql": "CREATE INDEX pharmflow_expiry_events_v1_state_time_idx ON public.pharmflow_expiry_events_v1 USING btree (state_id, occurred_at DESC);"
+  },
+  {
+    "name": "index:idx_pf_cloud_tx_pharmacy_time",
+    "sql": "CREATE INDEX idx_pf_cloud_tx_pharmacy_time ON public.pharmflow_cloud_transactions USING btree (pharmacy_id, occurred_at DESC);"
+  },
+  {
+    "name": "index:email_change_token_current_idx",
+    "sql": "CREATE UNIQUE INDEX email_change_token_current_idx ON auth.users USING btree (email_change_token_current) WHERE ((email_change_token_current)::text !~ '^[0-9 ]*$'::text);"
+  },
+  {
+    "name": "index:idx_pharmflow_gtin_disputes_pending",
+    "sql": "CREATE INDEX idx_pharmflow_gtin_disputes_pending ON public.pharmflow_gtin_mapping_disputes_v1 USING btree (status, reported_at DESC);"
+  },
+  {
+    "name": "index:idx_pharmacy_registration_email",
+    "sql": "CREATE INDEX idx_pharmacy_registration_email ON public.pharmacy_registration_requests USING btree (lower(applicant_email));"
+  },
+  {
+    "name": "index:idx_pharmacy_members_pharmacy",
+    "sql": "CREATE INDEX idx_pharmacy_members_pharmacy ON public.pharmacy_members USING btree (pharmacy_id, active);"
+  },
+  {
+    "name": "index:ux_pf_nr_v2_pharmacy_operation",
+    "sql": "CREATE UNIQUE INDEX ux_pf_nr_v2_pharmacy_operation ON public.pharmflow_needs_review_v2 USING btree (pharmacy_id, operation_id) WHERE (operation_id IS NOT NULL);"
+  },
+  {
+    "name": "index:refresh_tokens_updated_at_idx",
+    "sql": "CREATE INDEX refresh_tokens_updated_at_idx ON auth.refresh_tokens USING btree (updated_at DESC);"
+  },
+  {
+    "name": "index:audit_logs_instance_id_idx",
+    "sql": "CREATE INDEX audit_logs_instance_id_idx ON auth.audit_log_entries USING btree (instance_id);"
+  },
+  {
+    "name": "index:mfa_factors_user_id_idx",
+    "sql": "CREATE INDEX mfa_factors_user_id_idx ON auth.mfa_factors USING btree (user_id);"
+  },
+  {
+    "name": "index:idx_pf_receiving_history_items_workspace",
+    "sql": "CREATE INDEX idx_pf_receiving_history_items_workspace ON public.pharmflow_receiving_history_items_v1 USING btree (pharmacy_id, workspace_history_id, event_type, order_number);"
+  },
+  {
+    "name": "index:pharmflow_needs_review_v2_identifier_key_idx",
+    "sql": "CREATE INDEX pharmflow_needs_review_v2_identifier_key_idx ON public.pharmflow_needs_review_v2 USING btree (pharmacy_id, identifier_key) WHERE (status = 'PENDING'::text);"
+  },
+  {
+    "name": "index:idx_pharmacy_registration_code",
+    "sql": "CREATE INDEX idx_pharmacy_registration_code ON public.pharmacy_registration_requests USING btree (upper(requested_pharmacy_code));"
+  },
+  {
+    "name": "index:idx_multipart_uploads_list",
+    "sql": "CREATE INDEX idx_multipart_uploads_list ON storage.s3_multipart_uploads USING btree (bucket_id, key, created_at);"
+  },
+  {
+    "name": "index:idx_pharmflow_global_gtin_conflicts_status",
+    "sql": "CREATE INDEX idx_pharmflow_global_gtin_conflicts_status ON public.pharmflow_global_gtin_conflicts_v1 USING btree (status, created_at DESC);"
+  },
+  {
+    "name": "index:idx_pf_cloud_tx_pharmacy_item",
+    "sql": "CREATE INDEX idx_pf_cloud_tx_pharmacy_item ON public.pharmflow_cloud_transactions USING btree (pharmacy_id, item_code);"
+  },
+  {
+    "name": "index:idx_pharmacy_invites_token",
+    "sql": "CREATE INDEX idx_pharmacy_invites_token ON public.pharmacy_invitations USING btree (invite_token);"
+  },
+  {
+    "name": "index:refresh_tokens_session_id_revoked_idx",
+    "sql": "CREATE INDEX refresh_tokens_session_id_revoked_idx ON auth.refresh_tokens USING btree (session_id, revoked);"
+  },
+  {
+    "name": "index:saml_providers_sso_provider_id_idx",
+    "sql": "CREATE INDEX saml_providers_sso_provider_id_idx ON auth.saml_providers USING btree (sso_provider_id);"
+  },
+  {
+    "name": "index:objects_bucket_id_name_version_key",
+    "sql": "CREATE UNIQUE INDEX objects_bucket_id_name_version_key ON storage.objects USING btree (bucket_id, name COLLATE \"C\", version) NULLS NOT DISTINCT;"
+  },
+  {
+    "name": "index:custom_oauth_providers_identifier_idx",
+    "sql": "CREATE INDEX custom_oauth_providers_identifier_idx ON auth.custom_oauth_providers USING btree (identifier);"
+  },
+  {
+    "name": "index:scim_tokens_token_hash_key",
+    "sql": "CREATE UNIQUE INDEX scim_tokens_token_hash_key ON auth.scim_tokens USING btree (token_hash);"
+  },
+  {
+    "name": "index:mfa_recovery_codes_set_id_idx",
+    "sql": "CREATE INDEX mfa_recovery_codes_set_id_idx ON auth.mfa_recovery_codes USING btree (mfa_recovery_code_set_id);"
+  },
+  {
+    "name": "index:saml_relay_states_for_email_idx",
+    "sql": "CREATE INDEX saml_relay_states_for_email_idx ON auth.saml_relay_states USING btree (for_email);"
+  },
+  {
+    "name": "index:user_id_created_at_idx",
+    "sql": "CREATE INDEX user_id_created_at_idx ON auth.sessions USING btree (user_id, created_at);"
+  },
+  {
+    "name": "index:pharmflow_orders_pharmacy_status_idx",
+    "sql": "CREATE INDEX pharmflow_orders_pharmacy_status_idx ON public.pharmflow_orders USING btree (pharmacy_id, status, uploaded_at DESC);"
+  },
+  {
+    "name": "index:idx_pharmflow_expiry_capture_pharmacy_v1",
+    "sql": "CREATE INDEX idx_pharmflow_expiry_capture_pharmacy_v1 ON public.pharmflow_expiry_captures_v1 USING btree (pharmacy_id, expiry_year, expiry_month);"
+  },
+  {
+    "name": "index:uq_pharmacy_registration_open_user",
+    "sql": "CREATE UNIQUE INDEX uq_pharmacy_registration_open_user ON public.pharmacy_registration_requests USING btree (applicant_user_id) WHERE (status = ANY (ARRAY['pending'::text, 'approved'::text]));"
+  },
+  {
+    "name": "index:idx_oauth_client_states_created_at",
+    "sql": "CREATE INDEX idx_oauth_client_states_created_at ON auth.oauth_client_states USING btree (created_at);"
+  },
+  {
+    "name": "index:idx_pf_nr_v2_gtin",
+    "sql": "CREATE INDEX idx_pf_nr_v2_gtin ON public.pharmflow_needs_review_v2 USING btree (pharmacy_id, gtin, status);"
+  },
+  {
+    "name": "index:pharmflow_order_source_items_pharmacy_order_idx",
+    "sql": "CREATE INDEX pharmflow_order_source_items_pharmacy_order_idx ON public.pharmflow_order_source_items USING btree (pharmacy_id, order_number);"
+  },
+  {
+    "name": "index:confirmation_token_idx",
+    "sql": "CREATE UNIQUE INDEX confirmation_token_idx ON auth.users USING btree (confirmation_token) WHERE ((confirmation_token)::text !~ '^[0-9 ]*$'::text);"
+  },
+  {
+    "name": "index:idx_objects_bucket_id_name_lower",
+    "sql": "CREATE INDEX idx_objects_bucket_id_name_lower ON storage.objects USING btree (bucket_id, lower(name) COLLATE \"C\");"
+  },
+  {
+    "name": "index:scim_users_external_id_key",
+    "sql": "CREATE UNIQUE INDEX scim_users_external_id_key ON auth.scim_users USING btree (sso_provider_id, external_id) WHERE ((external_id IS NOT NULL) AND (deleted_at IS NULL));"
+  },
+  {
+    "name": "index:users_instance_id_idx",
+    "sql": "CREATE INDEX users_instance_id_idx ON auth.users USING btree (instance_id);"
+  },
+  {
+    "name": "index:idx_pharmacy_admin_assignments_email",
+    "sql": "CREATE INDEX idx_pharmacy_admin_assignments_email ON public.pharmacy_admin_assignments USING btree (lower(email));"
+  },
+  {
+    "name": "index:idx_pf_nr_v2_pending",
+    "sql": "CREATE INDEX idx_pf_nr_v2_pending ON public.pharmflow_needs_review_v2 USING btree (pharmacy_id, workflow, status, created_at DESC);"
+  },
+  {
+    "name": "index:scim_users_id_idx",
+    "sql": "CREATE INDEX scim_users_id_idx ON auth.scim_users USING btree (sso_provider_id, id) WHERE (deleted_at IS NULL);"
+  },
+  {
+    "name": "index:idx_pf_receiving_history_items_workspace_id",
+    "sql": "CREATE INDEX idx_pf_receiving_history_items_workspace_id ON public.pharmflow_receiving_history_items_v1 USING btree (workspace_history_id);"
+  },
+  {
+    "name": "index:idx_transactions_session",
+    "sql": "CREATE INDEX idx_transactions_session ON public.transactions USING btree (session_id);"
+  },
+  {
+    "name": "index:flow_state_created_at_idx",
+    "sql": "CREATE INDEX flow_state_created_at_idx ON auth.flow_state USING btree (created_at DESC);"
+  },
+  {
+    "name": "index:idx_users_email",
+    "sql": "CREATE INDEX idx_users_email ON auth.users USING btree (email);"
+  },
+  {
+    "name": "index:saml_relay_states_sso_provider_id_idx",
+    "sql": "CREATE INDEX saml_relay_states_sso_provider_id_idx ON auth.saml_relay_states USING btree (sso_provider_id);"
+  },
+  {
+    "name": "index:idx_user_id_auth_method",
+    "sql": "CREATE INDEX idx_user_id_auth_method ON auth.flow_state USING btree (user_id, authentication_method);"
+  },
+  {
+    "name": "index:idx_pharmflow_gtin_disputes_gtin",
+    "sql": "CREATE INDEX idx_pharmflow_gtin_disputes_gtin ON public.pharmflow_gtin_mapping_disputes_v1 USING btree (gtin);"
+  },
+  {
+    "name": "index:idx_pharmflow_expiry_workers_pharmacy_v1",
+    "sql": "CREATE INDEX idx_pharmflow_expiry_workers_pharmacy_v1 ON public.pharmflow_expiry_workers_v1 USING btree (pharmacy_id, active, worker_name);"
+  },
+  {
+    "name": "index:idx_objects_bucket_id_name",
+    "sql": "CREATE INDEX idx_objects_bucket_id_name ON storage.objects USING btree (bucket_id, name COLLATE \"C\");"
+  },
+  {
+    "name": "index:pharmflow_expiry_current_state_v1_pharmacy_expiry_idx",
+    "sql": "CREATE INDEX pharmflow_expiry_current_state_v1_pharmacy_expiry_idx ON public.pharmflow_expiry_current_state_v1 USING btree (pharmacy_id, expiry_year, expiry_month, status);"
+  },
+  {
+    "name": "index:sso_domains_domain_idx",
+    "sql": "CREATE UNIQUE INDEX sso_domains_domain_idx ON auth.sso_domains USING btree (lower(domain));"
+  },
+  {
+    "name": "index:idx_pf_receiving_learned_mapping_v3",
+    "sql": "CREATE INDEX idx_pf_receiving_learned_mapping_v3 ON public.pharmflow_receiving_transactions_v1 USING btree (pharmacy_id, ((payload #>> '{gtinResolution,mappingId}'::text[])), ((payload #>> '{gtinResolution,mappingRevision}'::text[]))) WHERE ((payload #>> '{gtinResolution,kind}'::text[]) = 'PHARMACY_LEARNED'::text);"
+  },
+  {
+    "name": "index:unique_phone_factor_per_user",
+    "sql": "CREATE UNIQUE INDEX unique_phone_factor_per_user ON auth.mfa_factors USING btree (user_id, phone);"
+  },
+  {
+    "name": "index:idx_pf_finalized_archives_v1_closed",
+    "sql": "CREATE INDEX idx_pf_finalized_archives_v1_closed ON public.pharmflow_finalized_archives_v1 USING btree (pharmacy_id, closed_at DESC);"
+  },
+  {
+    "name": "index:idx_sessions_pharmacy",
+    "sql": "CREATE INDEX idx_sessions_pharmacy ON public.sessions USING btree (pharmacy_id, created_at DESC);"
+  },
+  {
+    "name": "index:scim_users_sso_provider_id_idx",
+    "sql": "CREATE INDEX scim_users_sso_provider_id_idx ON auth.scim_users USING btree (sso_provider_id);"
+  },
+  {
+    "name": "index:custom_oauth_providers_created_at_idx",
+    "sql": "CREATE INDEX custom_oauth_providers_created_at_idx ON auth.custom_oauth_providers USING btree (created_at);"
+  },
+  {
+    "name": "index:refresh_tokens_instance_id_user_id_idx",
+    "sql": "CREATE INDEX refresh_tokens_instance_id_user_id_idx ON auth.refresh_tokens USING btree (instance_id, user_id);"
+  },
+  {
+    "name": "index:mfa_factors_user_friendly_name_unique",
+    "sql": "CREATE UNIQUE INDEX mfa_factors_user_friendly_name_unique ON auth.mfa_factors USING btree (friendly_name, user_id) WHERE (TRIM(BOTH FROM friendly_name) <> ''::text);"
+  },
+  {
+    "name": "index:pharmflow_global_item_identifiers_v2_item_code_idx",
+    "sql": "CREATE INDEX pharmflow_global_item_identifiers_v2_item_code_idx ON public.pharmflow_global_item_identifiers_v2 USING btree (item_code);"
+  },
+  {
+    "name": "index:idx_pharmacy_registration_status",
+    "sql": "CREATE INDEX idx_pharmacy_registration_status ON public.pharmacy_registration_requests USING btree (status, submitted_at DESC);"
+  },
+  {
+    "name": "index:idx_transactions_item",
+    "sql": "CREATE INDEX idx_transactions_item ON public.transactions USING btree (session_id, item_code);"
+  },
+  {
+    "name": "index:scim_users_updated_at_idx",
+    "sql": "CREATE INDEX scim_users_updated_at_idx ON auth.scim_users USING btree (sso_provider_id, updated_at, id) WHERE (deleted_at IS NULL);"
+  },
+  {
+    "name": "index:idx_pharmacy_learned_gtin_code",
+    "sql": "CREATE INDEX idx_pharmacy_learned_gtin_code ON public.pharmacy_learned_gtin USING btree (pharmacy_id, item_code);"
+  },
+  {
+    "name": "index:idx_pharmflow_global_gtin_v1_gtin",
+    "sql": "CREATE INDEX idx_pharmflow_global_gtin_v1_gtin ON public.pharmflow_global_gtin_v1 USING btree (gtin);"
+  },
+  {
+    "name": "index:uq_pharmflow_expiry_worker_name_v1",
+    "sql": "CREATE UNIQUE INDEX uq_pharmflow_expiry_worker_name_v1 ON public.pharmflow_expiry_workers_v1 USING btree (pharmacy_id, lower(worker_name));"
+  },
+  {
+    "name": "index:one_time_tokens_relates_to_hash_idx",
+    "sql": "CREATE INDEX one_time_tokens_relates_to_hash_idx ON auth.one_time_tokens USING hash (relates_to);"
+  },
+  {
+    "name": "index:idx_pharmflow_global_gtin_import_rows_v1",
+    "sql": "CREATE INDEX idx_pharmflow_global_gtin_import_rows_v1 ON public.pharmflow_global_gtin_import_rows_v1 USING btree (import_id);"
+  },
+  {
+    "name": "index:oauth_consents_active_client_idx",
+    "sql": "CREATE INDEX oauth_consents_active_client_idx ON auth.oauth_consents USING btree (client_id) WHERE (revoked_at IS NULL);"
+  },
+  {
+    "name": "index:webauthn_challenges_user_id_idx",
+    "sql": "CREATE INDEX webauthn_challenges_user_id_idx ON auth.webauthn_challenges USING btree (user_id);"
+  },
+  {
+    "name": "index:custom_oauth_providers_provider_type_idx",
+    "sql": "CREATE INDEX custom_oauth_providers_provider_type_idx ON auth.custom_oauth_providers USING btree (provider_type);"
+  },
+  {
+    "name": "index:scim_tokens_revoked_at_idx",
+    "sql": "CREATE INDEX scim_tokens_revoked_at_idx ON auth.scim_tokens USING btree (revoked_at);"
+  },
+  {
+    "name": "index:expiry_signed_session_scope",
+    "sql": "CREATE UNIQUE INDEX expiry_signed_session_scope ON pharmflow_expiry_private.active_sessions_v1 USING btree (pharmacy_id, created_by, auth_session_id) WHERE ((auth_session_id IS NOT NULL) AND (closed_at IS NULL));"
+  },
+  {
+    "name": "index:resolved_inventory_uncleared_v1",
+    "sql": "CREATE INDEX resolved_inventory_uncleared_v1 ON pharmflow_expiry_private.resolved_inventory_v1 USING btree (pharmacy_id, resolved_at DESC, id) WHERE ((restored_at IS NULL) AND (cleared_at IS NULL));"
+  },
+  {
+    "name": "index:session_captures_v1_session_id_idx",
+    "sql": "CREATE INDEX session_captures_v1_session_id_idx ON pharmflow_expiry_private.session_captures_v1 USING btree (session_id);"
+  },
+  {
+    "name": "index:resolved_inventory_v1_pharmacy_id_resolved_at_idx",
+    "sql": "CREATE INDEX resolved_inventory_v1_pharmacy_id_resolved_at_idx ON pharmflow_expiry_private.resolved_inventory_v1 USING btree (pharmacy_id, resolved_at DESC) WHERE (restored_at IS NULL);"
+  },
+  {
+    "name": "index:expiry_photo_cleanup_due_idx",
+    "sql": "CREATE INDEX expiry_photo_cleanup_due_idx ON pharmflow_expiry_private.photo_cleanup_jobs USING btree (state, next_attempt_at, claim_until, created_at);"
+  },
+  {
+    "name": "trigger:update_objects_updated_at",
+    "sql": "CREATE TRIGGER update_objects_updated_at BEFORE UPDATE ON storage.objects FOR EACH ROW EXECUTE FUNCTION storage.update_updated_at_column();"
+  },
+  {
+    "name": "trigger:enforce_bucket_name_length_trigger",
+    "sql": "CREATE TRIGGER enforce_bucket_name_length_trigger BEFORE INSERT OR UPDATE OF name ON storage.buckets FOR EACH ROW EXECUTE FUNCTION storage.enforce_bucket_name_length();"
+  },
+  {
+    "name": "trigger:protect_buckets_delete",
+    "sql": "CREATE TRIGGER protect_buckets_delete BEFORE DELETE ON storage.buckets FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();"
+  },
+  {
+    "name": "trigger:protect_objects_delete",
+    "sql": "CREATE TRIGGER protect_objects_delete BEFORE DELETE ON storage.objects FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();"
+  },
+  {
+    "name": "trigger:trg_sessions_updated_at",
+    "sql": "CREATE TRIGGER trg_sessions_updated_at BEFORE UPDATE ON sessions FOR EACH ROW EXECUTE FUNCTION update_session_timestamp();"
+  },
+  {
+    "name": "trigger:trg_pharmacies_touch",
+    "sql": "CREATE TRIGGER trg_pharmacies_touch BEFORE UPDATE ON pharmacies FOR EACH ROW EXECUTE FUNCTION touch_updated_at();"
+  },
+  {
+    "name": "trigger:trg_profiles_touch",
+    "sql": "CREATE TRIGGER trg_profiles_touch BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION touch_updated_at();"
+  },
+  {
+    "name": "trigger:prs_on_auth_user_created_v1",
+    "sql": "CREATE TRIGGER prs_on_auth_user_created_v1 AFTER INSERT OR UPDATE OF email ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_auth_user();"
+  },
+  {
+    "name": "trigger:trg_pharmacy_status_sync_v1",
+    "sql": "CREATE TRIGGER trg_pharmacy_status_sync_v1 BEFORE INSERT OR UPDATE OF status ON pharmacies FOR EACH ROW EXECUTE FUNCTION sync_pharmacy_active_status();"
+  },
+  {
+    "name": "trigger:trg_pharmacy_registration_touch_v1",
+    "sql": "CREATE TRIGGER trg_pharmacy_registration_touch_v1 BEFORE UPDATE ON pharmacy_registration_requests FOR EACH ROW EXECUTE FUNCTION touch_updated_at();"
+  },
+  {
+    "name": "trigger:trg_owner_only_global_master",
+    "sql": "CREATE TRIGGER trg_owner_only_global_master BEFORE INSERT OR DELETE OR UPDATE ON pharmacy_master_gtin_imports_v2 FOR EACH ROW EXECUTE FUNCTION guard_global_master_owner_only();"
+  },
+  {
+    "name": "trigger:trg_owner_only_global_master",
+    "sql": "CREATE TRIGGER trg_owner_only_global_master BEFORE INSERT OR DELETE OR UPDATE ON pharmacy_master_gtin_meta_v2 FOR EACH ROW EXECUTE FUNCTION guard_global_master_owner_only();"
+  },
+  {
+    "name": "trigger:pharmflow_bump_pharmacy_gtin_revision_v3",
+    "sql": "CREATE TRIGGER pharmflow_bump_pharmacy_gtin_revision_v3 BEFORE UPDATE ON pharmflow_pharmacy_gtin_v1 FOR EACH ROW EXECUTE FUNCTION pharmflow_bump_pharmacy_gtin_revision_v3();"
+  }
+]

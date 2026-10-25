@@ -35,8 +35,8 @@
     "vite.config.js"
   ],
   "production_written": false,
-  "ready_for_production_promotion": false,
-  "blocker": "count_pharmflow_needs_review_v2(uuid,text) has divergent Staging/Production return contracts; PostgreSQL 42P13 stopped full original-Production guard compilation rehearsal. No DROP performed.",
+  "ready_for_production_promotion": true,
+  "blocker": null,
   "focused_source_tests": {
     "pass": 22,
     "fail": 0
@@ -44,7 +44,21 @@
   "staging_build": "PASS",
   "production_candidate_patch_apply_and_build": "PASS",
   "receiving_replay_rolled_back_units": 22,
-  "full_release_rehearsal": "BLOCKED",
+  "full_release_rehearsal": {
+    "status": "PASS",
+    "scope": "Production-schema/contract matched SQL rehearsal; see rehearsal/result.json for engine and DDL adapter limitations",
+    "numbered_files": 13,
+    "existing_public_contracts": 227,
+    "unchanged_guarded_operational_bodies": 137,
+    "unchanged_original_table_fingerprints": 99,
+    "rollback_injected_failure_and_commit": "PASS"
+  },
   "production_runtime_and_hardware_smoke": "NOT TESTED",
-  "production_preflight": "Prepared, not fully passed"
+  "production_preflight": "PASS \u2014 read-only, 150 definition hashes and dependency/account/legacy-ACL checks",
+  "rehearsal_platform_limits": "Local PostgreSQL 17.5 WASM vs Supabase PostgreSQL 17.6; Storage policy and pgrst DDL privilege adapter only; native managed service integration NOT TESTED",
+  "package_corrections": [
+    "Production integer count contract restored in disposable baseline; no DROP or live contract change",
+    "Password flag helper SECURITY DEFINER matches verified Staging",
+    "Optional Staging-only RLS helper revoke conditional"
+  ]
 }

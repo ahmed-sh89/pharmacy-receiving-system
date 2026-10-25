@@ -1,0 +1,2710 @@
+[
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_mapping_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:migrations",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"migrations\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"objects\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"objects\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"objects\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"objects\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"objects\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"objects\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"objects\" TO \"anon\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"objects\" TO \"anon\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"objects\" TO \"anon\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"objects\" TO \"anon\";"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:objects",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"objects\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"buckets\" TO \"supabase_storage_admin\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"buckets\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:buckets",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"buckets\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads_parts",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads_parts\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_events_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_events_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_current_state_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"buckets_vectors\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_vectors\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_vectors\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets_vectors",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_vectors\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"vector_indexes\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"vector_indexes\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"vector_indexes\" TO \"anon\";"
+  },
+  {
+    "name": "acl:vector_indexes",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"vector_indexes\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:transactions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"session_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"session_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"session_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"session_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:session_items",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"session_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_meta_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_master_gtin_imports_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"buckets_analytics\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"buckets_analytics\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets_analytics\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_analytics\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets_analytics\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets_analytics\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"buckets_analytics\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"buckets_analytics\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"buckets_analytics\" TO \"anon\";"
+  },
+  {
+    "name": "acl:buckets_analytics",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"buckets_analytics\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacies\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacies\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacies\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacies\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacies\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacies\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacies\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacies\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacies\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacies\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacies\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacies\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacies",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacies\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"sessions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"sessions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"sessions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"sessions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"system_owners\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"system_owners\" TO \"anon\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"system_owners\" TO \"anon\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"system_owners\" TO \"anon\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"system_owners\" TO \"anon\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"system_owners\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"system_owners\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"system_owners\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"system_owners\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"system_owners\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"system_owners\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"system_owners\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:system_owners",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"system_owners\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_members\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_members\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_members\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_members\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_members\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_members\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_members\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_members\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_members\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_members\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_members\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_members\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_members",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_members\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_invitations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_invitations\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_invitations\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_invitations\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_invitations\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_invitations\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_invitations\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_invitations\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_invitations\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_invitations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_invitations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_invitations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_invitations",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_invitations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_registration_requests",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_registration_requests\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"profiles\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"profiles\" TO \"anon\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"profiles\" TO \"anon\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"profiles\" TO \"anon\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"profiles\" TO \"anon\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"profiles\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"profiles\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"profiles\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"profiles\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"profiles\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"profiles\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"profiles\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:profiles",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"profiles\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_admin_assignments",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_admin_assignments\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_session_terminations",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_session_terminations\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_orders\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_orders\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_orders\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_orders\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_orders",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_orders\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmflow_order_source_items_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmacy_learned_gtin_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmflow_global_gtin_v1_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_order_source_items",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_order_source_items\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_group_change_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_import_rows_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_meta_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_imports_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmflow_cloud_transactions_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_workspaces",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_workspaces\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_cloud_transactions",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_cloud_transactions\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_captures_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_gtin_conflicts_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmflow_receiving_history_items_v1_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_finalized_archives_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_workspace_generation_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit_audit_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmacy_learned_gtin_audit_audit_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  }
+]

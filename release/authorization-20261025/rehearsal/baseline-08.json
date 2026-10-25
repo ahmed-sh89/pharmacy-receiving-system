@@ -1,0 +1,786 @@
+[
+  {
+    "name": "public_functions:201",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_expiry_capture_v3(p_pharmacy_id uuid, p_operation_id uuid, p_capture jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pg_temp'\nAS $function$\ndeclare\n v_op pharmflow_expiry_private.operations%rowtype;v_kind text;v_identifier text;v_facts jsonb;v_month integer;v_year integer;v_qty integer;v_worker uuid;v_worker_name text;\n v_product text;v_expiry text;v_ack record;v_review uuid;v_result jsonb;v_date date;v_key text;\nbegin\n perform pharmflow_expiry_private.valid_auth_session();\n if auth.uid() is null or p_pharmacy_id is null or public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required';end if;\n if p_operation_id is null or jsonb_typeof(p_capture) is distinct from 'object' then raise exception 'Operation and capture required';end if;\n perform public.reserve_pharmflow_expiry_capture_v1(p_pharmacy_id,p_operation_id);\n select * into v_op from pharmflow_expiry_private.operations where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id for update;\n if v_op.status='COMMITTED' then\n  if v_op.payload is distinct from p_capture then raise exception 'Operation payload conflict';end if;return v_op.result;\n end if;\n if nullif(p_capture->>'worker_id','') is null then raise exception 'Select an active Operator before saving';end if;\n if not (p_capture ?& array['kind','identifier_display','raw_scan','scan_format','quantity','expiry_month','expiry_year','worker_id','device_id','source','batch_no','sample_serial']) then raise exception 'Complete capture fields required';end if;\n if jsonb_typeof(p_capture->'raw_scan') is distinct from 'string' or jsonb_typeof(p_capture->'identifier_display') is distinct from 'string' or jsonb_typeof(p_capture->'device_id') is distinct from 'string' or btrim(p_capture->>'device_id')='' then raise exception 'Exact scan, identifier and device required';end if;\n v_facts:=pharmflow_expiry_private.scan_facts(p_capture->>'raw_scan',p_capture->>'scan_format');v_identifier:=p_capture->>'identifier_display';\n if v_identifier='' or v_identifier is distinct from v_facts->>'identifier' then raise exception 'Identifier does not match raw scan';end if;\n if jsonb_typeof(p_capture->'quantity') is distinct from 'number' or (p_capture->>'quantity') !~ '^[1-9][0-9]*$' or jsonb_typeof(p_capture->'expiry_month') is distinct from 'number' or jsonb_typeof(p_capture->'expiry_year') is distinct from 'number' then raise exception 'Integer quantity and expiry required';end if;\n v_qty:=(p_capture->>'quantity')::integer;v_month:=(p_capture->>'expiry_month')::integer;v_year:=(p_capture->>'expiry_year')::integer;\n if v_month not between 1 and 12 or v_year not between 2020 and 2200 then raise exception 'Invalid expiry';end if;\n if jsonb_typeof(p_capture->'batch_no') not in ('string','null') or jsonb_typeof(p_capture->'sample_serial') not in ('string','null') then raise exception 'Invalid optional batch or serial';end if;\n if not (v_facts ? '10') and pharmflow_expiry_private.batch_is_scanner_payload(p_capture->>'batch_no') then raise exception 'Use Scan Barcode, not Batch';end if;\n if v_facts ? '10' and coalesce(p_capture->>'batch_no','')<>v_facts->>'10' then raise exception 'GS1 batch mismatch';end if;\n if v_facts ? '21' and coalesce(p_capture->>'sample_serial','')<>v_facts->>'21' then raise exception 'GS1 serial mismatch';end if;\n if v_facts ? '17' then\n  if (substr(v_facts->>'17',3,2))::integer<>v_month or 2000+(left(v_facts->>'17',2))::integer<>v_year then raise exception 'GS1 expiry mismatch';end if;\n  if right(v_facts->>'17',2)<>'00' then v_date:=make_date(v_year,v_month,(right(v_facts->>'17',2))::integer);end if;\n end if;\n if p_capture ? 'identification_note' and (jsonb_typeof(p_capture->'identification_note') not in ('string','null') or length(p_capture->>'identification_note')>250) then raise exception 'Invalid identification note';end if;\n v_kind:=p_capture->>'kind';if v_kind is null or v_kind not in ('KNOWN','UNKNOWN') or p_capture->>'source' is null or p_capture->>'source' not in ('HANDHELD','PC') then raise exception 'Invalid capture kind or source';end if;\n v_worker:=(p_capture->>'worker_id')::uuid;\n if v_worker is not null then\n  select worker_name into v_worker_name from public.pharmflow_expiry_workers_v1 where pharmacy_id=p_pharmacy_id and id=v_worker and active=true;\n  if v_worker_name is null then raise exception 'Active pharmacy worker required';end if;\n elsif p_capture->>'source'='HANDHELD' or v_kind='UNKNOWN' then raise exception 'Worker required';else v_worker_name:='Desktop';end if;\n update pharmflow_expiry_private.operations set status='COMMITTING',payload=p_capture where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;\n if v_kind='KNOWN' then\n  if exists(select 1 from pharmflow_expiry_private.photos where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id and deleted_at is null) then raise exception 'Known captures cannot orphan review photos';end if;\n  if jsonb_typeof(p_capture->'item_code') is distinct from 'string' or jsonb_typeof(p_capture->'item_name') is distinct from 'string' or btrim(p_capture->>'item_code')='' or btrim(p_capture->>'item_name')='' then raise exception 'Known item fields required';end if;\n  v_key:=p_pharmacy_id::text||'/item/'||btrim(p_capture->>'item_code')||'/'||upper(btrim(coalesce(p_capture->>'batch_no','')))||'/'||v_year::text||'/'||v_month::text;\n  perform pg_advisory_xact_lock(hashtextextended(v_key,0));\n  select * into v_ack from pharmflow_expiry_private.save_known_core(p_pharmacy_id,p_capture->>'item_code',p_capture->>'item_name',v_identifier,p_capture->>'category',v_qty,v_month,v_year,v_worker,p_capture->>'batch_no',p_capture->>'sample_serial',p_capture->>'device_id',p_capture->>'source','CAPTURE');\n  if v_ack.state_id is null or v_ack.event_id is null then raise exception 'Save acknowledgement required';end if;\n  v_result:=jsonb_build_object('operation_id',p_operation_id,'state_id',v_ack.state_id,'event_id',v_ack.event_id);\n else\n  v_product:=coalesce(p_capture->>'product_photo_path',p_capture->>'evidence_photo_path');v_expiry:=p_capture->>'expiry_photo_path';\n  if (v_product is null and v_expiry is not null) or (v_expiry is not null and v_product=v_expiry) then raise exception 'One evidence photo is required; legacy two-photo submissions remain supported';end if;\n  -- The upload path remains in the existing private immutable Storage namespace.\n  -- New submissions use the approved product-role slot for their single evidence image.\n  if (v_product is not null and not exists(select 1 from pharmflow_expiry_private.photos p join storage.objects o on o.name=p.path and o.bucket_id='pharmflow-needs-review' where p.path=v_product and p.pharmacy_id=p_pharmacy_id and p.operation_id=p_operation_id and p.role='product' and p.created_by=auth.uid() and p.deleted_at is null))\n   or (v_expiry is not null and not exists(select 1 from pharmflow_expiry_private.photos p join storage.objects o on o.name=p.path and o.bucket_id='pharmflow-needs-review' where p.path=v_expiry and p.pharmacy_id=p_pharmacy_id and p.operation_id=p_operation_id and p.role='expiry' and p.created_by=auth.uid() and p.deleted_at is null)) then raise exception 'Uploaded role-correct evidence photo required';end if;\n  insert into public.pharmflow_needs_review_v2(pharmacy_id,workflow,gtin,identifier_display,identifier_key,raw_barcode,pending_quantity,review_reason,source,device_id,created_by,operation_id)\n  values(p_pharmacy_id,'EXPIRY',v_identifier,v_identifier,public.pharmflow_identifier_key_v2(v_identifier),p_capture->>'raw_scan',v_qty,'UNKNOWN_GTIN',p_capture->>'source',p_capture->>'device_id',auth.uid(),p_operation_id::text) returning id into v_review;\n  insert into pharmflow_expiry_private.review_details(review_id,pharmacy_id,operation_id,worker_name,product_photo_path,expiry_photo_path)\n  values(v_review,p_pharmacy_id,p_operation_id,v_worker_name,v_product,v_expiry);\n  v_result:=jsonb_build_object('operation_id',p_operation_id,'review_id',v_review,'quantity',v_qty,'product_photo_path',v_product,'expiry_photo_path',v_expiry,'evidence_photo_path',v_product);\n end if;\n update pharmflow_expiry_private.operations set status='COMMITTED',result=v_result where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;return v_result;\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:202",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_expiry_desktop_capture_v1(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pg_temp'\nAS $function$\ndeclare s pharmflow_expiry_private.active_sessions_v1%rowtype;r jsonb;c pharmflow_expiry_private.session_captures_v1%rowtype;\nbegin\n perform pharmflow_expiry_private.require_signed_session(p_pharmacy_id,p_session_id,false);\n if auth.uid() is null or public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required';end if;\n select * into s from pharmflow_expiry_private.active_sessions_v1 where id=p_session_id for update;\n if not found or s.pharmacy_id<>p_pharmacy_id or s.created_by<>auth.uid() or s.device_id is distinct from p_capture->>'device_id' then raise exception 'Session scope mismatch';end if;\n select * into c from pharmflow_expiry_private.session_captures_v1 where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;\n if found then\n  if c.session_id<>p_session_id then raise exception 'Operation belongs to another session';end if;\n  -- Read-only acknowledgement retry remains possible after closure.\n  return public.save_pharmflow_expiry_capture_v3(p_pharmacy_id,p_operation_id,p_capture);\n end if;\n if s.closed_at is not null then raise exception 'Session closed';end if;\n if p_capture->>'source' is distinct from 'PC' then raise exception 'Desktop capture required';end if;\n perform public.reserve_pharmflow_expiry_capture_v1(p_pharmacy_id,p_operation_id);\n perform 1 from pharmflow_expiry_private.operations where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id and status='COMMITTED';\n if found then raise exception 'Historical operation cannot join a session';end if;\n r:=public.save_pharmflow_expiry_capture_v3(p_pharmacy_id,p_operation_id,p_capture);\n insert into pharmflow_expiry_private.session_captures_v1(pharmacy_id,operation_id,session_id,quantity)\n values(p_pharmacy_id,p_operation_id,p_session_id,(p_capture->>'quantity')::integer);\n return r;\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:203",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_expiry_session_capture_v1(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pg_temp'\nAS $function$\ndeclare s pharmflow_expiry_private.active_sessions_v1%rowtype;r jsonb;c pharmflow_expiry_private.session_captures_v1%rowtype;\nbegin\n if auth.uid() is null or public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required';end if;\n select * into s from pharmflow_expiry_private.active_sessions_v1 where id=p_session_id for update;\n if not found or s.pharmacy_id<>p_pharmacy_id or s.created_by<>auth.uid() or s.device_id is distinct from p_capture->>'device_id' then raise exception 'Session scope mismatch';end if;\n select * into c from pharmflow_expiry_private.session_captures_v1 where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id;\n if found then\n  if c.session_id<>p_session_id then raise exception 'Operation belongs to another session';end if;\n  -- Read-only acknowledgement retry remains possible after closure.\n  return public.save_pharmflow_expiry_capture_v3(p_pharmacy_id,p_operation_id,p_capture);\n end if;\n if s.closed_at is not null then raise exception 'Session closed';end if;\n if p_capture->>'source' is distinct from 'HANDHELD' then raise exception 'Handheld capture required';end if;\n perform public.reserve_pharmflow_expiry_capture_v1(p_pharmacy_id,p_operation_id);\n perform 1 from pharmflow_expiry_private.operations where pharmacy_id=p_pharmacy_id and operation_id=p_operation_id and status='COMMITTED';\n if found then raise exception 'Historical operation cannot join a session';end if;\n r:=public.save_pharmflow_expiry_capture_v3(p_pharmacy_id,p_operation_id,p_capture);\n insert into pharmflow_expiry_private.session_captures_v1(pharmacy_id,operation_id,session_id,quantity)\n values(p_pharmacy_id,p_operation_id,p_session_id,(p_capture->>'quantity')::integer);\n return r;\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:204",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_expiry_session_capture_v2(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pg_temp'\nAS $function$\ndeclare r jsonb;s pharmflow_expiry_private.active_sessions_v1%rowtype;\nbegin\n perform pharmflow_expiry_private.require_signed_session(p_pharmacy_id,p_session_id,false);\n select * into s from pharmflow_expiry_private.active_sessions_v1 where id=p_session_id;\n -- The original per-device validation is retained. Other devices sign in with their own signed auth session.\n r:=public.save_pharmflow_expiry_session_capture_v1(p_pharmacy_id,p_session_id,p_operation_id,p_capture);\n return r||jsonb_build_object('confirmed_capture',p_capture,'pharmacy_id',p_pharmacy_id);\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:205",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_finalized_archive(p_pharmacy_id uuid, p_archive_id text, p_order_numbers text[], p_closed_at timestamp with time zone, p_archive_payload jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\nbegin\r\n    if auth.uid() is null or not public.is_pharmacy_member(p_pharmacy_id) then\r\n        raise exception 'Pharmacy access required';\r\n    end if;\r\n\r\n    if nullif(trim(coalesce(p_archive_id,'')),'') is null then\r\n        raise exception 'Archive id is required';\r\n    end if;\r\n\r\n    insert into public.pharmflow_finalized_archives_v1(\r\n        pharmacy_id, archive_id, order_numbers, closed_at,\r\n        archive_payload, created_by\r\n    )\r\n    values(\r\n        p_pharmacy_id,\r\n        trim(p_archive_id),\r\n        coalesce(p_order_numbers,'{}'::text[]),\r\n        coalesce(p_closed_at,now()),\r\n        coalesce(p_archive_payload,'{}'::jsonb),\r\n        auth.uid()\r\n    )\r\n    on conflict(pharmacy_id,archive_id)\r\n    do update set\r\n        order_numbers=excluded.order_numbers,\r\n        closed_at=excluded.closed_at,\r\n        archive_payload=excluded.archive_payload;\r\n\r\n    return true;\r\nend;\r\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:206",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_order_source_items(p_pharmacy_id uuid, p_order_number text, p_items jsonb, p_replace boolean DEFAULT false)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare\r\n  v_order_id uuid;\r\n  v_count integer:=0;\r\nbegin\r\n  if auth.uid() is null or not public.is_pharmacy_admin(p_pharmacy_id) then\r\n    raise exception 'Pharmacy ADMIN access required';\r\n  end if;\r\n\r\n  select id into v_order_id\r\n  from public.pharmflow_orders\r\n  where pharmacy_id=p_pharmacy_id\r\n    and upper(regexp_replace(order_number,'\\\\s','','g'))=\r\n        upper(regexp_replace(p_order_number,'\\\\s','','g'))\r\n  limit 1;\r\n\r\n  if v_order_id is null then\r\n    raise exception 'Order % is not registered',p_order_number;\r\n  end if;\r\n\r\n  if p_replace then\r\n    if exists(\r\n      select 1 from public.pharmflow_orders\r\n      where id=v_order_id and status='received'\r\n    ) then\r\n      raise exception 'Received order source data is immutable';\r\n    end if;\r\n    delete from public.pharmflow_order_source_items where order_id=v_order_id;\r\n  end if;\r\n\r\n  insert into public.pharmflow_order_source_items(\r\n    pharmacy_id,order_id,order_number,line_no,item_code,item_name,\r\n    ordered_qty,category,source_sheet,source_row\r\n  )\r\n  select\r\n    p_pharmacy_id,\r\n    v_order_id,\r\n    upper(regexp_replace(trim(p_order_number),'\\\\s','','g')),\r\n    (x->>'line_no')::integer,\r\n    trim(x->>'item_code'),\r\n    coalesce(x->>'item_name',''),\r\n    (x->>'ordered_qty')::numeric,\r\n    coalesce(x->>'category',''),\r\n    coalesce(x->>'source_sheet',''),\r\n    nullif(x->>'source_row','')::integer\r\n  from jsonb_array_elements(coalesce(p_items,'[]'::jsonb)) x\r\n  where nullif(trim(x->>'item_code'),'') is not null\r\n    and coalesce((x->>'ordered_qty')::numeric,0)>0\r\n  on conflict(order_id,line_no) do update set\r\n    item_code=excluded.item_code,\r\n    item_name=excluded.item_name,\r\n    ordered_qty=excluded.ordered_qty,\r\n    category=excluded.category,\r\n    source_sheet=excluded.source_sheet,\r\n    source_row=excluded.source_row;\r\n\r\n  get diagnostics v_count=row_count;\r\n  return v_count;\r\nend;\r\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:207",
+    "sql": "CREATE OR REPLACE FUNCTION public.save_pharmflow_order_source_items_v2(p_pharmacy_id uuid, p_order_number text, p_items jsonb, p_replace boolean DEFAULT false)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare v_order_id uuid;v_count integer:=0;\nbegin\n if auth.uid() is null or not public.is_pharmacy_admin(p_pharmacy_id) then raise exception 'Pharmacy ADMIN access required';end if;\n select id into v_order_id from public.pharmflow_orders where pharmacy_id=p_pharmacy_id and upper(regexp_replace(order_number,'\\\\s','','g'))=upper(regexp_replace(p_order_number,'\\\\s','','g')) limit 1;if v_order_id is null then raise exception 'Order % is not registered',p_order_number;end if;\n if p_replace then if exists(select 1 from public.pharmflow_orders where id=v_order_id and status='received') then raise exception 'Received order source data is immutable';end if;delete from public.pharmflow_order_source_items where order_id=v_order_id;end if;\n insert into public.pharmflow_order_source_items(pharmacy_id,order_id,order_number,line_no,item_code,item_name,ordered_qty,group_name,category,sub_category,source_sheet,source_row)\n select p_pharmacy_id,v_order_id,upper(regexp_replace(trim(p_order_number),'\\\\s','','g')),(x->>'line_no')::integer,trim(x->>'item_code'),coalesce(x->>'item_name',''),(x->>'ordered_qty')::numeric,coalesce(x->>'group_name',''),coalesce(x->>'category',''),coalesce(x->>'sub_category',''),coalesce(x->>'source_sheet',''),nullif(x->>'source_row','')::integer from jsonb_array_elements(coalesce(p_items,'[]'::jsonb)) x where nullif(trim(x->>'item_code'),'') is not null and coalesce((x->>'ordered_qty')::numeric,0)>0\n on conflict(order_id,line_no) do update set item_code=excluded.item_code,item_name=excluded.item_name,ordered_qty=excluded.ordered_qty,group_name=excluded.group_name,category=excluded.category,sub_category=excluded.sub_category,source_sheet=excluded.source_sheet,source_row=excluded.source_row;\n get diagnostics v_count=row_count;return v_count;\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:208",
+    "sql": "CREATE OR REPLACE FUNCTION public.search_pharmflow_global_items_v2(p_query text, p_limit integer DEFAULT 50)\n RETURNS TABLE(item_code text, item_name text, group_name text, category text, sub_category text)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nselect i.item_code,i.item_name,i.group_name,i.category,i.sub_category\nfrom public.pharmflow_global_items_v2 i\nwhere btrim(coalesce(p_query,''))='' or i.item_code ilike '%'||btrim(p_query)||'%' or i.item_name ilike '%'||btrim(p_query)||'%'\norder by case when upper(i.item_code)=upper(btrim(p_query)) then 0 when upper(i.item_name)=upper(btrim(p_query)) then 1 when i.item_code ilike btrim(p_query)||'%' then 2 when i.item_name ilike btrim(p_query)||'%' then 3 else 4 end,i.item_name,i.item_code\nlimit least(greatest(coalesce(p_limit,50),1),100); $function$\n;\n"
+  },
+  {
+    "name": "public_functions:209",
+    "sql": "CREATE OR REPLACE FUNCTION public.search_pharmflow_global_items_v3(p_query text, p_limit integer DEFAULT 50)\n RETURNS TABLE(item_code text, item_name text, group_name text, category text, sub_category text, identifier_display text)\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nbegin\n  if auth.uid() is null then raise exception 'Authentication required' using errcode='42501'; end if;\n  return query\n  select i.item_code,i.item_name,i.group_name,i.category,i.sub_category,id.identifier_display\n  from public.pharmflow_global_items_v2 i\n  left join lateral (\n    select x.identifier_display\n    from public.pharmflow_global_item_identifiers_v2 x\n    where x.item_code=i.item_code\n    order by (x.identifier_display ~ '^[0-9]{8,14}$') desc,\n             x.mapping_revision desc nulls last,x.updated_at desc nulls last,x.created_at desc nulls last\n    limit 1\n  ) id on true\n  where btrim(coalesce(p_query,''))=''\n     or i.item_code ilike '%'||btrim(p_query)||'%'\n     or i.item_name ilike '%'||btrim(p_query)||'%'\n     or exists(select 1 from public.pharmflow_global_item_identifiers_v2 sx where sx.item_code=i.item_code and sx.identifier_display ilike '%'||btrim(p_query)||'%')\n  order by case when upper(i.item_code)=upper(btrim(p_query)) then 0 when upper(i.item_name)=upper(btrim(p_query)) then 1 when i.item_code ilike btrim(p_query)||'%' then 2 when i.item_name ilike btrim(p_query)||'%' then 3 else 4 end,i.item_name,i.item_code\n  limit least(greatest(coalesce(p_limit,50),1),100);\nend; $function$\n;\n"
+  },
+  {
+    "name": "public_functions:210",
+    "sql": "CREATE OR REPLACE FUNCTION public.select_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean, p_ids uuid[] DEFAULT NULL::uuid[])\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pharmflow_expiry_private', 'pg_temp'\nAS $function$\ndeclare result jsonb; filters jsonb:=coalesce(p_filters,'{}'::jsonb);\nbegin\n  perform pharmflow_expiry_private.valid_auth_session();\n  if public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required'; end if;\n  if p_filters is null or p_resolved is null or jsonb_typeof(filters)<>'object'\n     or (filters ? 'groups' and jsonb_typeof(filters->'groups')<>'array')\n     or (filters ? 'departments' and jsonb_typeof(filters->'departments')<>'array')\n     or (filters ? 'operators' and (jsonb_typeof(filters->'operators')<>'array' or exists(select 1 from jsonb_array_elements(case when jsonb_typeof(filters->'operators')='array' then filters->'operators' else '[]'::jsonb end) v where jsonb_typeof(v)<>'string')))\n     or (filters ? 'months' and jsonb_typeof(filters->'months')<>'array')\n     or (filters ? 'include_unassigned' and jsonb_typeof(filters->'include_unassigned')<>'boolean') then\n    raise exception 'Invalid inventory query';\n  end if;\n  select jsonb_build_object('count',count(*),'units',coalesce(sum(r.quantity),0),\n    'selection',coalesce(jsonb_agg(jsonb_build_object('id',r.row_id,'version',r.version) order by r.row_id),'[]'::jsonb))\n  into result\n  from pharmflow_expiry_private.inventory_rows_group_v1(p_pharmacy_id,p_resolved) r\n  where pharmflow_expiry_private.inventory_match_v1(case when coalesce(jsonb_array_length(filters->'operators'),0)>0 then pharmflow_expiry_private.inventory_operator_v1(p_pharmacy_id,to_jsonb(r)) else to_jsonb(r) end,filters)\n    and (p_ids is null or r.row_id=any(p_ids));\n  return result;\nend\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:211",
+    "sql": "CREATE OR REPLACE FUNCTION public.set_pharmacy_needs_review_quantity(p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer)\n RETURNS TABLE(review_id uuid, pending_quantity integer, updated_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare v_q integer:=greatest(coalesce(p_pending_quantity,1),1);\r\nbegin\r\n if auth.uid() is null or not public.is_pharmacy_member(p_pharmacy_id) then raise exception 'Pharmacy access required'; end if;\r\n return query\r\n update public.pharmflow_needs_review_v1 r\r\n set pending_quantity=v_q,updated_at=now()\r\n where r.id=p_review_id and r.pharmacy_id=p_pharmacy_id and r.status='PENDING' and r.workflow='RECEIVING'\r\n returning r.id,r.pending_quantity,r.updated_at;\r\n if not found then raise exception 'Pending review item not found'; end if;\r\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:212",
+    "sql": "CREATE OR REPLACE FUNCTION public.set_pharmflow_needs_review_photo_v2(p_pharmacy_id uuid, p_review_id uuid, p_photo_path text)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n    if auth.uid() is null or not public.is_pharmacy_member(p_pharmacy_id) then\n        raise exception 'Pharmacy access required';\n    end if;\n  perform 1 from public.pharmflow_needs_review_v2 where id=p_review_id and pharmacy_id=p_pharmacy_id and workflow<>'RECEIVING' for update;\n  if found then raise exception 'Receiving Needs Review case required'; end if;\n\n\n    update public.pharmflow_needs_review_v2\n       set photo_path = nullif(trim(coalesce(p_photo_path,'')),''),\n           updated_at = now()\n     where id = p_review_id\n       and pharmacy_id = p_pharmacy_id\n       and status = 'PENDING';\n\n    return found;\nend;\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:213",
+    "sql": "CREATE OR REPLACE FUNCTION public.set_pharmflow_needs_review_qty_v2(p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer)\n RETURNS TABLE(review_id uuid, pending_quantity integer, updated_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n    v_qty integer := greatest(coalesce(p_pending_quantity,1),1);\nbegin\n    if auth.uid() is null or not public.is_pharmacy_member(p_pharmacy_id) then\n        raise exception 'Pharmacy access required';\n    end if;\n  perform 1 from public.pharmflow_needs_review_v2 where id=p_review_id and pharmacy_id=p_pharmacy_id and workflow<>'RECEIVING' for update;\n  if found then raise exception 'Receiving Needs Review case required'; end if;\n\n\n    return query\n    update public.pharmflow_needs_review_v2 r\n       set pending_quantity = v_qty,\n           updated_at = now()\n     where r.id = p_review_id\n       and r.pharmacy_id = p_pharmacy_id\n       and r.status = 'PENDING'\n    returning r.id, r.pending_quantity, r.updated_at;\n\n    if not found then\n        raise exception 'Pending review item not found';\n    end if;\nend;\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:214",
+    "sql": "CREATE OR REPLACE FUNCTION public.set_pharmflow_needs_review_qty_v3(p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer)\n RETURNS TABLE(review_id uuid, pending_quantity integer, updated_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\n SET lock_timeout TO '3s'\nAS $function$\nBEGIN\n IF auth.uid() IS NULL OR NOT public.is_pharmacy_member(p_pharmacy_id) THEN RAISE EXCEPTION 'Pharmacy access required'; END IF;\n IF p_pending_quantity IS NULL OR p_pending_quantity<1 THEN RAISE EXCEPTION 'Positive integer quantity required'; END IF;\n PERFORM 1 FROM public.pharmflow_needs_review_v2 r WHERE r.id=p_review_id AND r.pharmacy_id=p_pharmacy_id AND r.workflow='RECEIVING' AND r.status='PENDING' FOR UPDATE;\n IF NOT FOUND THEN RAISE EXCEPTION 'Pending Receiving review required'; END IF;\n IF EXISTS(SELECT 1 FROM public.pharmflow_needs_review_resolution_intents_v1 i WHERE i.pharmacy_id=p_pharmacy_id AND i.review_id=p_review_id) THEN RAISE EXCEPTION 'Quantity is locked after a resolution request'; END IF;\n RETURN QUERY UPDATE public.pharmflow_needs_review_v2 r SET pending_quantity=p_pending_quantity,updated_at=now()\n WHERE r.id=p_review_id AND r.pharmacy_id=p_pharmacy_id RETURNING r.id,r.pending_quantity,r.updated_at;\nEND $function$\n;\n"
+  },
+  {
+    "name": "public_functions:215",
+    "sql": "CREATE OR REPLACE FUNCTION public.submit_pharmacy_registration(p_pharmacy_name text, p_pharmacy_code text, p_applicant_name text DEFAULT NULL::text)\n RETURNS TABLE(request_id uuid, request_status text, pharmacy_name text, pharmacy_code text, submitted_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_user uuid := auth.uid();\r\n    v_email text;\r\n    v_code text;\r\n    v_request uuid;\r\n    v_submitted timestamptz;\r\nbegin\r\n    if v_user is null then\r\n        raise exception 'Authentication required';\r\n    end if;\r\n\r\n    -- System Owner does not use public registration.\r\n    if public.is_system_owner() then\r\n        raise exception 'System Owner does not need public pharmacy registration';\r\n    end if;\r\n\r\n    -- Existing active membership means the user already belongs to a pharmacy.\r\n    if exists (\r\n        select 1\r\n        from public.pharmacy_members m\r\n        join public.pharmacies p on p.id = m.pharmacy_id\r\n        where m.user_id = v_user\r\n          and m.active = true\r\n          and p.status = 'active'\r\n    ) then\r\n        raise exception 'This account already belongs to an active pharmacy';\r\n    end if;\r\n\r\n    if nullif(trim(p_pharmacy_name),'') is null then\r\n        raise exception 'Pharmacy name is required';\r\n    end if;\r\n\r\n    v_code := upper(\r\n        regexp_replace(\r\n            coalesce(p_pharmacy_code,''),\r\n            '[^A-Za-z0-9_-]+',\r\n            '',\r\n            'g'\r\n        )\r\n    );\r\n\r\n    if length(v_code) < 3 then\r\n        raise exception 'Pharmacy code must be at least 3 characters';\r\n    end if;\r\n\r\n    -- Prevent requesting a code already owned by an existing pharmacy.\r\n    if exists (\r\n        select 1\r\n        from public.pharmacies p\r\n        where upper(p.code) = v_code\r\n    ) then\r\n        raise exception 'Pharmacy code is already in use';\r\n    end if;\r\n\r\n    select lower(email)\r\n    into v_email\r\n    from auth.users\r\n    where id = v_user;\r\n\r\n    if v_email is null then\r\n        raise exception 'Authenticated email was not found';\r\n    end if;\r\n\r\n    -- Existing pending or approved request is not duplicated.\r\n    if exists (\r\n        select 1\r\n        from public.pharmacy_registration_requests r\r\n        where r.applicant_user_id = v_user\r\n          and r.status in ('pending','approved')\r\n    ) then\r\n        raise exception 'A registration request already exists for this account';\r\n    end if;\r\n\r\n    -- A previously rejected user may re-submit using the same request row.\r\n    select r.id\r\n    into v_request\r\n    from public.pharmacy_registration_requests r\r\n    where r.applicant_user_id = v_user\r\n      and r.status = 'rejected'\r\n    order by r.submitted_at desc\r\n    limit 1;\r\n\r\n    if v_request is not null then\r\n        update public.pharmacy_registration_requests\r\n        set\r\n            applicant_email = v_email,\r\n            applicant_name = nullif(trim(p_applicant_name),''),\r\n            requested_pharmacy_name = trim(p_pharmacy_name),\r\n            requested_pharmacy_code = v_code,\r\n            status = 'pending',\r\n            submitted_at = now(),\r\n            reviewed_at = null,\r\n            reviewed_by = null,\r\n            review_note = null,\r\n            pharmacy_id = null\r\n        where id = v_request\r\n        returning pharmacy_registration_requests.submitted_at\r\n        into v_submitted;\r\n    else\r\n        insert into public.pharmacy_registration_requests (\r\n            applicant_user_id,\r\n            applicant_email,\r\n            applicant_name,\r\n            requested_pharmacy_name,\r\n            requested_pharmacy_code\r\n        )\r\n        values (\r\n            v_user,\r\n            v_email,\r\n            nullif(trim(p_applicant_name),''),\r\n            trim(p_pharmacy_name),\r\n            v_code\r\n        )\r\n        returning id, pharmacy_registration_requests.submitted_at\r\n        into v_request, v_submitted;\r\n    end if;\r\n\r\n    return query\r\n    select\r\n        v_request,\r\n        'pending'::text,\r\n        trim(p_pharmacy_name),\r\n        v_code,\r\n        v_submitted;\r\nend;\r\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:216",
+    "sql": "CREATE OR REPLACE FUNCTION public.submit_pharmacy_registration_v2(p_requested_pharmacy_code text)\n RETURNS TABLE(request_id uuid, request_status text, pharmacy_code text, submitted_at timestamp with time zone)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'auth'\nAS $function$\ndeclare\n    v_user uuid := auth.uid();\n    v_email text;\n    v_code text;\n    v_request uuid;\n    v_submitted timestamptz;\nbegin\n    if v_user is null then raise exception 'Authentication required'; end if;\n    if public.is_system_owner() then raise exception 'System Owner does not need public pharmacy registration'; end if;\n\n    if exists (\n        select 1 from public.pharmacy_members m\n        join public.pharmacies p on p.id=m.pharmacy_id\n        where m.user_id=v_user and m.active=true and p.status='active'\n    ) then\n        raise exception 'This account already belongs to an active pharmacy';\n    end if;\n\n    v_code := upper(regexp_replace(coalesce(p_requested_pharmacy_code,''),'[^A-Za-z0-9_-]+','','g'));\n    if length(v_code) < 3 then raise exception 'Pharmacy code must be at least 3 characters'; end if;\n\n    select lower(email) into v_email from auth.users where id=v_user;\n    if v_email is null then raise exception 'Authenticated email was not found'; end if;\n\n    if exists (\n        select 1 from public.pharmacy_registration_requests r\n        where r.applicant_user_id=v_user and r.status in ('pending','approved')\n    ) then\n        raise exception 'A registration request already exists for this account';\n    end if;\n\n    select r.id into v_request\n    from public.pharmacy_registration_requests r\n    where r.applicant_user_id=v_user and r.status='rejected'\n    order by r.submitted_at desc limit 1;\n\n    if v_request is not null then\n        update public.pharmacy_registration_requests\n        set applicant_email=v_email,\n            applicant_name=null,\n            requested_pharmacy_name='Pending owner assignment',\n            requested_pharmacy_code=v_code,\n            status='pending', submitted_at=now(),\n            reviewed_at=null, reviewed_by=null, review_note=null, pharmacy_id=null\n        where id=v_request\n        returning pharmacy_registration_requests.submitted_at into v_submitted;\n    else\n        insert into public.pharmacy_registration_requests(\n            applicant_user_id,applicant_email,applicant_name,requested_pharmacy_name,requested_pharmacy_code\n        ) values (\n            v_user,v_email,null,'Pending owner assignment',v_code\n        ) returning id, pharmacy_registration_requests.submitted_at into v_request,v_submitted;\n    end if;\n\n    return query select v_request,'pending'::text,v_code,v_submitted;\nend;\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:217",
+    "sql": "CREATE OR REPLACE FUNCTION public.summary_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pg_temp'\nAS $function$\ndeclare cur integer:=(extract(year from timezone('Asia/Riyadh',now()))::integer*12+extract(month from timezone('Asia/Riyadh',now()))::integer);result jsonb;\nbegin\n perform pharmflow_expiry_private.valid_auth_session();\n if public.is_pharmacy_member(p_pharmacy_id) is not true then raise exception 'Pharmacy access required';end if;\n select jsonb_agg(jsonb_build_object('key',p.key,'from',p.lo,'to',p.hi,'count',q.n,'units',q.units)) into result\n from (values('EXPIRED',null::integer,cur),('NEXT1',cur+1,cur+1),('NEXT2',cur+1,cur+2),('NEXT6',cur+1,cur+6)) p(key,lo,hi)\n cross join lateral(select count(*) n,coalesce(sum(s.verified_quantity),0) units from public.pharmflow_expiry_current_state_v1 s\n where s.pharmacy_id=p_pharmacy_id and s.status='ACTIVE' and (p.lo is null or s.expiry_year*12+s.expiry_month>=p.lo) and s.expiry_year*12+s.expiry_month<=p.hi) q;\n return result;\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:218",
+    "sql": "CREATE OR REPLACE FUNCTION public.sync_pharmacy_active_status()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n    if new.status = 'active' then\r\n        new.active := true;\r\n    elsif new.status = 'suspended' then\r\n        new.active := false;\r\n    end if;\r\n    return new;\r\nend;\r\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:219",
+    "sql": "CREATE OR REPLACE FUNCTION public.sync_pharmflow_pharmacy_identifier_v2()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  new.identifier_display := btrim(coalesce(new.identifier_display, new.gtin, ''));\n  new.identifier_key := public.pharmflow_identifier_key_v2(new.identifier_display);\n  if new.identifier_display = '' then\n    raise exception 'Identifier is required';\n  end if;\n  if btrim(coalesce(new.gtin,'')) = '' then\n    new.gtin := new.identifier_display;\n  end if;\n  return new;\nend;\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:220",
+    "sql": "CREATE OR REPLACE FUNCTION public.touch_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n    new.updated_at = now();\r\n    return new;\r\nend;\r\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:221",
+    "sql": "CREATE OR REPLACE FUNCTION public.try_finalize_pharmflow_needs_review_resolution_intent_v1(p_intent_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  v_intent public.pharmflow_needs_review_resolution_intents_v1%rowtype;\n  v_review public.pharmflow_needs_review_v2%rowtype;\n  v_transaction public.pharmflow_receiving_transactions_v1%rowtype;\n  v_order_status text;\nbegin\n  select * into v_intent from public.pharmflow_needs_review_resolution_intents_v1 where id=p_intent_id for update;\n  if v_intent.id is null then raise exception 'Resolution intent is unavailable'; end if;\n  if v_intent.status='RESOLVED' then\n    return jsonb_build_object('success',true,'status','RESOLVED','reviewId',v_intent.review_id,'transactionId',v_intent.transaction_id,'idempotent',true);\n  end if;\n  if v_intent.status='BLOCKED' then\n    return jsonb_build_object('success',false,'status','BLOCKED','code',v_intent.blocked_code,'detail',v_intent.blocked_detail);\n  end if;\n\n  select * into v_review from public.pharmflow_needs_review_v2 where id=v_intent.review_id and pharmacy_id=v_intent.pharmacy_id for update;\n  if v_review.id is null or v_review.status<>'PENDING' then\n    update public.pharmflow_needs_review_resolution_intents_v1 set status='BLOCKED',blocked_code='REVIEW_NOT_PENDING',blocked_detail='Needs Review case is unavailable or no longer pending.',updated_at=now() where id=v_intent.id;\n    return jsonb_build_object('success',false,'status','BLOCKED','code','REVIEW_NOT_PENDING');\n  end if;\n\n  select status into v_order_status from public.pharmflow_orders where pharmacy_id=v_intent.pharmacy_id and order_number=v_review.order_number;\n  if v_order_status is distinct from 'uploaded' then\n    update public.pharmflow_needs_review_resolution_intents_v1 set status='BLOCKED',blocked_code='ORIGINAL_ORDER_UNAVAILABLE',blocked_detail='Original order is finalized, inactive, or unavailable.',updated_at=now() where id=v_intent.id;\n    update public.pharmflow_needs_review_v2 set resolution_block_code='ORIGINAL_ORDER_UNAVAILABLE',resolution_block_detail='The original order is finalized, inactive, or unavailable.',updated_at=now() where id=v_review.id;\n    return jsonb_build_object('success',false,'status','BLOCKED','code','ORIGINAL_ORDER_UNAVAILABLE');\n  end if;\n\n  select * into v_transaction from public.pharmflow_receiving_transactions_v1 where pharmacy_id=v_intent.pharmacy_id and transaction_id=v_intent.transaction_id for update;\n  if v_transaction.transaction_id is null then\n    update public.pharmflow_needs_review_resolution_intents_v1 set last_checked_at=now(),updated_at=now() where id=v_intent.id;\n    return jsonb_build_object('success',false,'status','PENDING','code','RECEIVING_TRANSACTION_PENDING','reviewId',v_review.id,'transactionId',v_intent.transaction_id);\n  end if;\n\n  if coalesce(v_transaction.order_number,'')<>coalesce(v_review.order_number,'')\n     or v_transaction.item_code<>v_intent.item_code\n     or v_transaction.quantity<=0\n     or public.pharmflow_identifier_key_v2(v_transaction.gtin)<>v_review.identifier_key then\n    update public.pharmflow_needs_review_resolution_intents_v1 set status='BLOCKED',blocked_code='RECEIVING_TRANSACTION_MISMATCH',blocked_detail='Receiving transaction does not match the review pharmacy, original order, item, or identifier.',updated_at=now() where id=v_intent.id;\n    update public.pharmflow_needs_review_v2 set resolution_block_code='RECEIVING_TRANSACTION_MISMATCH',resolution_block_detail='The requested transaction cannot resolve this case.',updated_at=now() where id=v_review.id;\n    return jsonb_build_object('success',false,'status','BLOCKED','code','RECEIVING_TRANSACTION_MISMATCH');\n  end if;\n\n  update public.pharmflow_needs_review_v2 set status='RESOLVED',resolved_item_code=v_intent.item_code,resolved_item_name=v_intent.item_name,resolution_type=v_intent.resolution_type,resolution_transaction_id=v_intent.transaction_id,resolved_by=v_intent.requested_by,resolved_at=now(),resolution_block_code=null,resolution_block_detail=null,updated_at=now() where id=v_review.id and status='PENDING';\n  update public.pharmflow_needs_review_resolution_intents_v1 set status='RESOLVED',resolved_at=now(),last_checked_at=now(),updated_at=now() where id=v_intent.id;\n  return jsonb_build_object('success',true,'status','RESOLVED','reviewId',v_review.id,'transactionId',v_intent.transaction_id);\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:222",
+    "sql": "CREATE OR REPLACE FUNCTION public.try_finalize_pharmflow_needs_review_resolution_intent_v2(p_intent_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public', 'pg_temp'\nAS $function$\ndeclare\n  v_intent public.pharmflow_needs_review_resolution_intents_v1%rowtype;\n  v_review public.pharmflow_needs_review_v2%rowtype;\n  v_alloc jsonb; v_tx public.pharmflow_receiving_transactions_v1%rowtype;\n  v_expected_total integer:=0; v_found_total integer:=0;\nbegin\n  select * into v_intent from public.pharmflow_needs_review_resolution_intents_v1 where id=p_intent_id for update;\n  if v_intent.id is null then raise exception 'Resolution intent is unavailable'; end if;\n  if v_intent.status='RESOLVED' then return jsonb_build_object('success',true,'status','RESOLVED','reviewId',v_intent.review_id,'transactionId',v_intent.transaction_id,'idempotent',true); end if;\n  if v_intent.status='BLOCKED' then return jsonb_build_object('success',false,'status','BLOCKED','code',v_intent.blocked_code,'detail',v_intent.blocked_detail); end if;\n  select * into v_review from public.pharmflow_needs_review_v2 where id=v_intent.review_id and pharmacy_id=v_intent.pharmacy_id for update;\n  if v_review.id is null or v_review.status<>'PENDING' then\n    update public.pharmflow_needs_review_resolution_intents_v1 set status='BLOCKED',blocked_code='REVIEW_NOT_PENDING',blocked_detail='Needs Review case is unavailable or no longer pending.',updated_at=now() where id=v_intent.id;\n    return jsonb_build_object('success',false,'status','BLOCKED','code','REVIEW_NOT_PENDING');\n  end if;\n  if v_intent.allocations is null or jsonb_typeof(v_intent.allocations)<>'array' or jsonb_array_length(v_intent.allocations)=0 then\n    return public.try_finalize_pharmflow_needs_review_resolution_intent_v1(p_intent_id);\n  end if;\n  if (select count(*)<>count(distinct value->>'transactionId')\n      from jsonb_array_elements(v_intent.allocations) as a(value)) then\n    update public.pharmflow_needs_review_resolution_intents_v1\n      set status='BLOCKED',blocked_code='DUPLICATE_ALLOCATION_TRANSACTION',\n          blocked_detail='Each Receiving transaction can appear only once in an allocation.',updated_at=now()\n      where id=v_intent.id;\n    return jsonb_build_object('success',false,'status','BLOCKED','code','DUPLICATE_ALLOCATION_TRANSACTION');\n  end if;\n  for v_alloc in select value from jsonb_array_elements(v_intent.allocations) loop\n    if btrim(coalesce(v_alloc->>'transactionId',''))='' or btrim(coalesce(v_alloc->>'orderNumber',''))=''\n       or coalesce((v_alloc->>'quantity')::integer,0)<=0 then raise exception 'Invalid Needs Review allocation'; end if;\n    v_expected_total:=v_expected_total+(v_alloc->>'quantity')::integer;\n    select * into v_tx from public.pharmflow_receiving_transactions_v1\n     where pharmacy_id=v_intent.pharmacy_id and transaction_id=v_alloc->>'transactionId' for update;\n    if v_tx.transaction_id is null then\n      update public.pharmflow_needs_review_resolution_intents_v1 set last_checked_at=now(),updated_at=now() where id=v_intent.id;\n      return jsonb_build_object('success',false,'status','PENDING','code','RECEIVING_TRANSACTION_PENDING','reviewId',v_review.id,'transactionId',v_intent.transaction_id);\n    end if;\n    if coalesce(v_tx.order_number,'')<>coalesce(v_alloc->>'orderNumber','')\n       or v_tx.item_code<>v_intent.item_code or v_tx.quantity<>(v_alloc->>'quantity')::integer\n       or public.pharmflow_identifier_key_v2(v_tx.gtin)<>v_review.identifier_key then\n      update public.pharmflow_needs_review_resolution_intents_v1 set status='BLOCKED',blocked_code='RECEIVING_TRANSACTION_MISMATCH',blocked_detail='An allocated Receiving transaction does not match the review item, identifier, order, or quantity.',updated_at=now() where id=v_intent.id;\n      update public.pharmflow_needs_review_v2 set resolution_block_code='RECEIVING_TRANSACTION_MISMATCH',resolution_block_detail='The allocated Receiving transactions cannot resolve this case.',updated_at=now() where id=v_review.id;\n      return jsonb_build_object('success',false,'status','BLOCKED','code','RECEIVING_TRANSACTION_MISMATCH');\n    end if;\n    v_found_total:=v_found_total+v_tx.quantity;\n  end loop;\n  if v_expected_total<>v_review.pending_quantity or v_found_total<>v_review.pending_quantity then\n    update public.pharmflow_needs_review_resolution_intents_v1 set status='BLOCKED',blocked_code='ALLOCATION_QUANTITY_MISMATCH',blocked_detail='Allocated quantity does not equal the pending review quantity.',updated_at=now() where id=v_intent.id;\n    return jsonb_build_object('success',false,'status','BLOCKED','code','ALLOCATION_QUANTITY_MISMATCH');\n  end if;\n  update public.pharmflow_needs_review_v2 set status='RESOLVED',resolved_item_code=v_intent.item_code,\n    resolved_item_name=v_intent.item_name,resolution_type='AUTO_ALLOCATED',resolution_transaction_id=v_intent.transaction_id,\n    resolved_by=v_intent.requested_by,resolved_at=now(),resolution_block_code=null,resolution_block_detail=null,updated_at=now()\n   where id=v_review.id and pharmacy_id=v_intent.pharmacy_id and status='PENDING';\n  update public.pharmflow_needs_review_resolution_intents_v1 set status='RESOLVED',resolution_type='AUTO_ALLOCATED',resolved_at=now(),last_checked_at=now(),updated_at=now() where id=v_intent.id;\n  return jsonb_build_object('success',true,'status','RESOLVED','reviewId',v_review.id,'transactionId',v_intent.transaction_id,'allocations',v_intent.allocations);\nend\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:223",
+    "sql": "CREATE OR REPLACE FUNCTION public.update_my_display_name(p_display_name text)\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare v_name text:=nullif(trim(coalesce(p_display_name,'')),''); v_email text;\r\nbegin\r\n    if auth.uid() is null then raise exception 'Authentication required'; end if;\r\n    if v_name is null or length(v_name)<2 or length(v_name)>80 then raise exception 'Display name must be 2 to 80 characters'; end if;\r\n    select email into v_email from auth.users where id=auth.uid();\r\n    insert into public.profiles(user_id,email,display_name,display_name_verified)\r\n    values(auth.uid(),v_email,v_name,true)\r\n    on conflict(user_id) do update set display_name=excluded.display_name,display_name_verified=true,updated_at=now();\r\n    return v_name;\r\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:224",
+    "sql": "CREATE OR REPLACE FUNCTION public.update_my_pharmacy_name(p_pharmacy_id uuid, p_pharmacy_name text)\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare v_name text:=nullif(trim(coalesce(p_pharmacy_name,'')),'');\r\nbegin\r\n    if auth.uid() is null then raise exception 'Authentication required'; end if;\r\n    if v_name is null or length(v_name)<2 or length(v_name)>120 then raise exception 'Pharmacy name must be 2 to 120 characters'; end if;\r\n    if not public.is_pharmacy_admin(p_pharmacy_id) and not public.is_system_owner() then\r\n        raise exception 'Pharmacy Admin permission required';\r\n    end if;\r\n    update public.pharmacies set name=v_name,updated_at=now() where id=p_pharmacy_id;\r\n    if not found then raise exception 'Pharmacy not found'; end if;\r\n    return v_name;\r\nend $function$\n;\n"
+  },
+  {
+    "name": "public_functions:225",
+    "sql": "CREATE OR REPLACE FUNCTION public.update_session_timestamp()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nbegin\n    new.updated_at = now();\n    return new;\nend;\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:226",
+    "sql": "CREATE OR REPLACE FUNCTION public.upsert_session_item(p_session_id uuid, p_session_secret uuid, p_item_code text, p_item_name text, p_gtin text, p_category text, p_ordered_qty numeric)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n\n    if not exists (\n        select 1\n        from public.sessions s\n        where s.id = p_session_id\n          and s.session_secret = p_session_secret\n          and s.status = 'active'\n    ) then\n        return false;\n    end if;\n\n    insert into public.session_items (\n        session_id,\n        item_code,\n        item_name,\n        gtin,\n        category,\n        ordered_qty\n    )\n    values (\n        p_session_id,\n        p_item_code,\n        p_item_name,\n        p_gtin,\n        p_category,\n        coalesce(p_ordered_qty, 0)\n    )\n\n    on conflict (session_id, item_code)\n\n    do update set\n        item_name = excluded.item_name,\n        gtin = excluded.gtin,\n        category = excluded.category,\n        ordered_qty = excluded.ordered_qty;\n\n    return true;\n\nend;\n$function$\n;\n"
+  },
+  {
+    "name": "public_functions:227",
+    "sql": "CREATE OR REPLACE FUNCTION public.verify_pharmflow_historical_state_v2(p_pharmacy_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\ndeclare\r\n    v_historical_orders bigint;\r\n    v_archives bigint;\r\n    v_active_orders bigint;\r\nbegin\r\n    if auth.uid() is null or not public.is_pharmacy_member(p_pharmacy_id) then\r\n        raise exception 'Pharmacy access required';\r\n    end if;\r\n\r\n    select count(*) into v_historical_orders\r\n      from public.pharmflow_orders o\r\n     where o.pharmacy_id=p_pharmacy_id\r\n       and lower(trim(coalesce(o.status,''))) in ('received','finalized','closed');\r\n\r\n    select count(*) into v_archives\r\n      from public.pharmflow_finalized_archives_v1 a\r\n     where a.pharmacy_id=p_pharmacy_id;\r\n\r\n    select count(*) into v_active_orders\r\n      from public.pharmflow_orders o\r\n     where o.pharmacy_id=p_pharmacy_id\r\n       and lower(trim(coalesce(o.status,'uploaded'))) not in ('received','finalized','closed');\r\n\r\n    return jsonb_build_object(\r\n        'pharmacy_id',p_pharmacy_id,\r\n        'historical_orders_remaining',v_historical_orders,\r\n        'finalized_archives_remaining',v_archives,\r\n        'active_orders_present',v_active_orders,\r\n        'historical_data_empty',(v_historical_orders=0 and v_archives=0)\r\n    );\r\nend;\r\n$function$\n;"
+  },
+  {
+    "name": "constraint:audit_log_entries_pkey",
+    "sql": "ALTER TABLE \"auth\".\"audit_log_entries\" ADD CONSTRAINT \"audit_log_entries_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_authorization_url_https",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_authorization_url_https\" CHECK (authorization_url IS NULL OR authorization_url ~~ 'https://%'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_authorization_url_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_authorization_url_length\" CHECK (authorization_url IS NULL OR char_length(authorization_url) <= 2048);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_client_id_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_client_id_length\" CHECK (char_length(client_id) >= 1 AND char_length(client_id) <= 512);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_discovery_url_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_discovery_url_length\" CHECK (discovery_url IS NULL OR char_length(discovery_url) <= 2048);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_identifier_format",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_identifier_format\" CHECK (identifier ~ '^[a-z0-9][a-z0-9:-]{0,48}[a-z0-9]$'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_identifier_key",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_identifier_key\" UNIQUE (identifier);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_issuer_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_issuer_length\" CHECK (issuer IS NULL OR char_length(issuer) >= 1 AND char_length(issuer) <= 2048);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_jwks_uri_https",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_jwks_uri_https\" CHECK (jwks_uri IS NULL OR jwks_uri ~~ 'https://%'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_jwks_uri_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_jwks_uri_length\" CHECK (jwks_uri IS NULL OR char_length(jwks_uri) <= 2048);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_name_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_name_length\" CHECK (char_length(name) >= 1 AND char_length(name) <= 100);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_oauth2_requires_endpoints",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_oauth2_requires_endpoints\" CHECK (provider_type <> 'oauth2'::text OR authorization_url IS NOT NULL AND token_url IS NOT NULL AND userinfo_url IS NOT NULL);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_oidc_discovery_url_https",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_oidc_discovery_url_https\" CHECK (provider_type <> 'oidc'::text OR discovery_url IS NULL OR discovery_url ~~ 'https://%'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_oidc_issuer_https",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_oidc_issuer_https\" CHECK (provider_type <> 'oidc'::text OR issuer IS NULL OR issuer ~~ 'https://%'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_oidc_requires_issuer",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_oidc_requires_issuer\" CHECK (provider_type <> 'oidc'::text OR issuer IS NOT NULL);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_pkey",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_provider_type_check",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_provider_type_check\" CHECK (provider_type = ANY (ARRAY['oauth2'::text, 'oidc'::text]));"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_token_url_https",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_token_url_https\" CHECK (token_url IS NULL OR token_url ~~ 'https://%'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_token_url_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_token_url_length\" CHECK (token_url IS NULL OR char_length(token_url) <= 2048);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_userinfo_url_https",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_userinfo_url_https\" CHECK (userinfo_url IS NULL OR userinfo_url ~~ 'https://%'::text);"
+  },
+  {
+    "name": "constraint:custom_oauth_providers_userinfo_url_length",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" ADD CONSTRAINT \"custom_oauth_providers_userinfo_url_length\" CHECK (userinfo_url IS NULL OR char_length(userinfo_url) <= 2048);"
+  },
+  {
+    "name": "constraint:flow_state_pkey",
+    "sql": "ALTER TABLE \"auth\".\"flow_state\" ADD CONSTRAINT \"flow_state_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:identities_pkey",
+    "sql": "ALTER TABLE \"auth\".\"identities\" ADD CONSTRAINT \"identities_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:identities_provider_id_provider_unique",
+    "sql": "ALTER TABLE \"auth\".\"identities\" ADD CONSTRAINT \"identities_provider_id_provider_unique\" UNIQUE (provider_id, provider);"
+  },
+  {
+    "name": "constraint:instances_pkey",
+    "sql": "ALTER TABLE \"auth\".\"instances\" ADD CONSTRAINT \"instances_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:amr_id_pk",
+    "sql": "ALTER TABLE \"auth\".\"mfa_amr_claims\" ADD CONSTRAINT \"amr_id_pk\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:mfa_amr_claims_session_id_authentication_method_pkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_amr_claims\" ADD CONSTRAINT \"mfa_amr_claims_session_id_authentication_method_pkey\" UNIQUE (session_id, authentication_method);"
+  },
+  {
+    "name": "constraint:mfa_challenges_pkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_challenges\" ADD CONSTRAINT \"mfa_challenges_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:mfa_factors_last_challenged_at_key",
+    "sql": "ALTER TABLE \"auth\".\"mfa_factors\" ADD CONSTRAINT \"mfa_factors_last_challenged_at_key\" UNIQUE (last_challenged_at);"
+  },
+  {
+    "name": "constraint:mfa_factors_pkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_factors\" ADD CONSTRAINT \"mfa_factors_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:mfa_recovery_code_sets_failed_verification_count_check",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" ADD CONSTRAINT \"mfa_recovery_code_sets_failed_verification_count_check\" CHECK (failed_verification_count >= 0);"
+  },
+  {
+    "name": "constraint:mfa_recovery_code_sets_mfa_factor_id_key",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" ADD CONSTRAINT \"mfa_recovery_code_sets_mfa_factor_id_key\" UNIQUE (mfa_factor_id);"
+  },
+  {
+    "name": "constraint:mfa_recovery_code_sets_pkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" ADD CONSTRAINT \"mfa_recovery_code_sets_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:mfa_recovery_code_sets_user_id_key",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" ADD CONSTRAINT \"mfa_recovery_code_sets_user_id_key\" UNIQUE (user_id);"
+  },
+  {
+    "name": "constraint:mfa_recovery_codes_pkey",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_codes\" ADD CONSTRAINT \"mfa_recovery_codes_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_authorization_code_key",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_authorization_code_key\" UNIQUE (authorization_code);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_authorization_code_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_authorization_code_length\" CHECK (char_length(authorization_code) <= 255);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_authorization_id_key",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_authorization_id_key\" UNIQUE (authorization_id);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_code_challenge_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_code_challenge_length\" CHECK (char_length(code_challenge) <= 128);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_expires_at_future",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_expires_at_future\" CHECK (expires_at > created_at);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_nonce_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_nonce_length\" CHECK (char_length(nonce) <= 255);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_pkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_redirect_uri_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_redirect_uri_length\" CHECK (char_length(redirect_uri) <= 2048);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_resource_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_resource_length\" CHECK (char_length(resource) <= 2048);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_scope_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_scope_length\" CHECK (char_length(scope) <= 4096);"
+  },
+  {
+    "name": "constraint:oauth_authorizations_state_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" ADD CONSTRAINT \"oauth_authorizations_state_length\" CHECK (char_length(state) <= 4096);"
+  },
+  {
+    "name": "constraint:oauth_client_states_pkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_client_states\" ADD CONSTRAINT \"oauth_client_states_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:oauth_clients_client_name_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_clients\" ADD CONSTRAINT \"oauth_clients_client_name_length\" CHECK (char_length(client_name) <= 1024);"
+  },
+  {
+    "name": "constraint:oauth_clients_client_uri_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_clients\" ADD CONSTRAINT \"oauth_clients_client_uri_length\" CHECK (char_length(client_uri) <= 2048);"
+  },
+  {
+    "name": "constraint:oauth_clients_logo_uri_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_clients\" ADD CONSTRAINT \"oauth_clients_logo_uri_length\" CHECK (char_length(logo_uri) <= 2048);"
+  },
+  {
+    "name": "constraint:oauth_clients_pkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_clients\" ADD CONSTRAINT \"oauth_clients_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:oauth_clients_token_endpoint_auth_method_check",
+    "sql": "ALTER TABLE \"auth\".\"oauth_clients\" ADD CONSTRAINT \"oauth_clients_token_endpoint_auth_method_check\" CHECK (token_endpoint_auth_method = ANY (ARRAY['client_secret_basic'::text, 'client_secret_post'::text, 'none'::text]));"
+  },
+  {
+    "name": "constraint:oauth_consents_pkey",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:oauth_consents_revoked_after_granted",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_revoked_after_granted\" CHECK (revoked_at IS NULL OR revoked_at >= granted_at);"
+  },
+  {
+    "name": "constraint:oauth_consents_scopes_length",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_scopes_length\" CHECK (char_length(scopes) <= 2048);"
+  },
+  {
+    "name": "constraint:oauth_consents_scopes_not_empty",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_scopes_not_empty\" CHECK (char_length(TRIM(BOTH FROM scopes)) > 0);"
+  },
+  {
+    "name": "constraint:oauth_consents_user_client_unique",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" ADD CONSTRAINT \"oauth_consents_user_client_unique\" UNIQUE (user_id, client_id);"
+  },
+  {
+    "name": "constraint:one_time_tokens_pkey",
+    "sql": "ALTER TABLE \"auth\".\"one_time_tokens\" ADD CONSTRAINT \"one_time_tokens_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:one_time_tokens_token_hash_check",
+    "sql": "ALTER TABLE \"auth\".\"one_time_tokens\" ADD CONSTRAINT \"one_time_tokens_token_hash_check\" CHECK (char_length(token_hash) > 0);"
+  },
+  {
+    "name": "constraint:refresh_tokens_pkey",
+    "sql": "ALTER TABLE \"auth\".\"refresh_tokens\" ADD CONSTRAINT \"refresh_tokens_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:refresh_tokens_token_unique",
+    "sql": "ALTER TABLE \"auth\".\"refresh_tokens\" ADD CONSTRAINT \"refresh_tokens_token_unique\" UNIQUE (token);"
+  },
+  {
+    "name": "constraint:entity_id not empty",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" ADD CONSTRAINT \"entity_id not empty\" CHECK (char_length(entity_id) > 0);"
+  },
+  {
+    "name": "constraint:metadata_url not empty",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" ADD CONSTRAINT \"metadata_url not empty\" CHECK (metadata_url = NULL::text OR char_length(metadata_url) > 0);"
+  },
+  {
+    "name": "constraint:metadata_xml not empty",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" ADD CONSTRAINT \"metadata_xml not empty\" CHECK (char_length(metadata_xml) > 0);"
+  },
+  {
+    "name": "constraint:saml_providers_entity_id_key",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" ADD CONSTRAINT \"saml_providers_entity_id_key\" UNIQUE (entity_id);"
+  },
+  {
+    "name": "constraint:saml_providers_pkey",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" ADD CONSTRAINT \"saml_providers_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:request_id not empty",
+    "sql": "ALTER TABLE \"auth\".\"saml_relay_states\" ADD CONSTRAINT \"request_id not empty\" CHECK (char_length(request_id) > 0);"
+  },
+  {
+    "name": "constraint:saml_relay_states_pkey",
+    "sql": "ALTER TABLE \"auth\".\"saml_relay_states\" ADD CONSTRAINT \"saml_relay_states_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:schema_migrations_pkey",
+    "sql": "ALTER TABLE \"auth\".\"schema_migrations\" ADD CONSTRAINT \"schema_migrations_pkey\" PRIMARY KEY (version);"
+  },
+  {
+    "name": "constraint:scim_tokens_expires_at_future",
+    "sql": "ALTER TABLE \"auth\".\"scim_tokens\" ADD CONSTRAINT \"scim_tokens_expires_at_future\" CHECK (expires_at IS NULL OR expires_at > created_at);"
+  },
+  {
+    "name": "constraint:scim_tokens_pkey",
+    "sql": "ALTER TABLE \"auth\".\"scim_tokens\" ADD CONSTRAINT \"scim_tokens_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:scim_tokens_revoked_after_created",
+    "sql": "ALTER TABLE \"auth\".\"scim_tokens\" ADD CONSTRAINT \"scim_tokens_revoked_after_created\" CHECK (revoked_at IS NULL OR revoked_at >= created_at);"
+  },
+  {
+    "name": "constraint:scim_tokens_token_hash_check",
+    "sql": "ALTER TABLE \"auth\".\"scim_tokens\" ADD CONSTRAINT \"scim_tokens_token_hash_check\" CHECK (token_hash ~ '^[0-9a-f]{64}$'::text);"
+  },
+  {
+    "name": "constraint:scim_users_pkey",
+    "sql": "ALTER TABLE \"auth\".\"scim_users\" ADD CONSTRAINT \"scim_users_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:sessions_pkey",
+    "sql": "ALTER TABLE \"auth\".\"sessions\" ADD CONSTRAINT \"sessions_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:sessions_scopes_length",
+    "sql": "ALTER TABLE \"auth\".\"sessions\" ADD CONSTRAINT \"sessions_scopes_length\" CHECK (char_length(scopes) <= 4096);"
+  },
+  {
+    "name": "constraint:domain not empty",
+    "sql": "ALTER TABLE \"auth\".\"sso_domains\" ADD CONSTRAINT \"domain not empty\" CHECK (char_length(domain) > 0);"
+  },
+  {
+    "name": "constraint:sso_domains_pkey",
+    "sql": "ALTER TABLE \"auth\".\"sso_domains\" ADD CONSTRAINT \"sso_domains_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:resource_id not empty",
+    "sql": "ALTER TABLE \"auth\".\"sso_providers\" ADD CONSTRAINT \"resource_id not empty\" CHECK (resource_id = NULL::text OR char_length(resource_id) > 0);"
+  },
+  {
+    "name": "constraint:sso_providers_pkey",
+    "sql": "ALTER TABLE \"auth\".\"sso_providers\" ADD CONSTRAINT \"sso_providers_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:users_email_change_confirm_status_check",
+    "sql": "ALTER TABLE \"auth\".\"users\" ADD CONSTRAINT \"users_email_change_confirm_status_check\" CHECK (email_change_confirm_status >= 0 AND email_change_confirm_status <= 2);"
+  },
+  {
+    "name": "constraint:users_phone_key",
+    "sql": "ALTER TABLE \"auth\".\"users\" ADD CONSTRAINT \"users_phone_key\" UNIQUE (phone);"
+  },
+  {
+    "name": "constraint:users_pkey",
+    "sql": "ALTER TABLE \"auth\".\"users\" ADD CONSTRAINT \"users_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:webauthn_challenges_challenge_type_check",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_challenges\" ADD CONSTRAINT \"webauthn_challenges_challenge_type_check\" CHECK (challenge_type = ANY (ARRAY['signup'::text, 'registration'::text, 'authentication'::text]));"
+  },
+  {
+    "name": "constraint:webauthn_challenges_pkey",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_challenges\" ADD CONSTRAINT \"webauthn_challenges_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:webauthn_credentials_pkey",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_credentials\" ADD CONSTRAINT \"webauthn_credentials_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacies_code_key",
+    "sql": "ALTER TABLE \"public\".\"pharmacies\" ADD CONSTRAINT \"pharmacies_code_key\" UNIQUE (code);"
+  },
+  {
+    "name": "constraint:pharmacies_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacies\" ADD CONSTRAINT \"pharmacies_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacies_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacies\" ADD CONSTRAINT \"pharmacies_status_check\" CHECK (status = ANY (ARRAY['active'::text, 'suspended'::text]));"
+  },
+  {
+    "name": "constraint:pharmacy_admin_assignments_pharmacy_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ADD CONSTRAINT \"pharmacy_admin_assignments_pharmacy_id_key\" UNIQUE (pharmacy_id);"
+  },
+  {
+    "name": "constraint:pharmacy_admin_assignments_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ADD CONSTRAINT \"pharmacy_admin_assignments_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacy_admin_assignments_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ADD CONSTRAINT \"pharmacy_admin_assignments_status_check\" CHECK (status = ANY (ARRAY['pending'::text, 'claimed'::text, 'cancelled'::text]));"
+  },
+  {
+    "name": "constraint:pharmacy_invitations_invite_token_key",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" ADD CONSTRAINT \"pharmacy_invitations_invite_token_key\" UNIQUE (invite_token);"
+  },
+  {
+    "name": "constraint:pharmacy_invitations_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" ADD CONSTRAINT \"pharmacy_invitations_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacy_invitations_role_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" ADD CONSTRAINT \"pharmacy_invitations_role_check\" CHECK (role = ANY (ARRAY['admin'::text, 'staff'::text]));"
+  },
+  {
+    "name": "constraint:pharmacy_learned_gtin_pharmacy_id_gtin_key",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin\" ADD CONSTRAINT \"pharmacy_learned_gtin_pharmacy_id_gtin_key\" UNIQUE (pharmacy_id, gtin);"
+  },
+  {
+    "name": "constraint:pharmacy_learned_gtin_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin\" ADD CONSTRAINT \"pharmacy_learned_gtin_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacy_learned_gtin_audit_action_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin_audit\" ADD CONSTRAINT \"pharmacy_learned_gtin_audit_action_check\" CHECK (action = ANY (ARRAY['CORRECT'::text, 'REMOVE'::text]));"
+  },
+  {
+    "name": "constraint:pharmacy_learned_gtin_audit_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin_audit\" ADD CONSTRAINT \"pharmacy_learned_gtin_audit_pkey\" PRIMARY KEY (audit_id);"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_imports_v2_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_imports_v2_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_imports_v2_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_imports_v2_status_check\" CHECK (status = ANY (ARRAY['pending'::text, 'committed'::text, 'cancelled'::text]));"
+  },
+  {
+    "name": "constraint:pharmacy_master_gtin_meta_v2_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" ADD CONSTRAINT \"pharmacy_master_gtin_meta_v2_pkey\" PRIMARY KEY (pharmacy_id);"
+  },
+  {
+    "name": "constraint:pharmacy_members_pharmacy_id_user_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_members\" ADD CONSTRAINT \"pharmacy_members_pharmacy_id_user_id_key\" UNIQUE (pharmacy_id, user_id);"
+  },
+  {
+    "name": "constraint:pharmacy_members_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_members\" ADD CONSTRAINT \"pharmacy_members_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacy_members_role_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_members\" ADD CONSTRAINT \"pharmacy_members_role_check\" CHECK (role = ANY (ARRAY['admin'::text, 'staff'::text]));"
+  },
+  {
+    "name": "constraint:pharmacy_registration_requests_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_registration_requests\" ADD CONSTRAINT \"pharmacy_registration_requests_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmacy_registration_requests_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_registration_requests\" ADD CONSTRAINT \"pharmacy_registration_requests_status_check\" CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_active_order_manifest_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_active_order_manifest_v1\" ADD CONSTRAINT \"pharmflow_active_order_manifest_v1_pkey\" PRIMARY KEY (pharmacy_id);"
+  },
+  {
+    "name": "constraint:pharmflow_cloud_transactions_pharmacy_id_transaction_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_transactions\" ADD CONSTRAINT \"pharmflow_cloud_transactions_pharmacy_id_transaction_id_key\" UNIQUE (pharmacy_id, transaction_id);"
+  },
+  {
+    "name": "constraint:pharmflow_cloud_transactions_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_transactions\" ADD CONSTRAINT \"pharmflow_cloud_transactions_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_cloud_workspaces_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_workspaces\" ADD CONSTRAINT \"pharmflow_cloud_workspaces_pkey\" PRIMARY KEY (pharmacy_id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_expiry_month_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_expiry_month_check\" CHECK (expiry_month >= 1 AND expiry_month <= 12);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_expiry_year_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_expiry_year_check\" CHECK (expiry_year >= 2020 AND expiry_year <= 2200);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_quantity_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_quantity_check\" CHECK (quantity > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_captures_v1_source_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ADD CONSTRAINT \"pharmflow_expiry_captures_v1_source_check\" CHECK (source = ANY (ARRAY['HANDHELD'::text, 'PC'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_expiry_month_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_expiry_month_check\" CHECK (expiry_month >= 1 AND expiry_month <= 12);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_expiry_year_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_expiry_year_check\" CHECK (expiry_year >= 2020 AND expiry_year <= 2200);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_identity_uq",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_identity_uq\" UNIQUE (pharmacy_id, item_code, batch_key, expiry_year, expiry_month);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_source_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_source_check\" CHECK (source = ANY (ARRAY['HANDHELD'::text, 'PC'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_status_check\" CHECK (status = ANY (ARRAY['ACTIVE'::text, 'CLEARED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_current_state_v1_verified_quantity_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ADD CONSTRAINT \"pharmflow_expiry_current_state_v1_verified_quantity_check\" CHECK (verified_quantity >= 0);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_event_type_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_event_type_check\" CHECK (event_type = ANY (ARRAY['CAPTURE'::text, 'RECOUNT'::text, 'CLEARED'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_expiry_month_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_expiry_month_check\" CHECK (expiry_month >= 1 AND expiry_month <= 12);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_expiry_year_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_expiry_year_check\" CHECK (expiry_year >= 2020 AND expiry_year <= 2200);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_source_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_source_check\" CHECK (source = ANY (ARRAY['HANDHELD'::text, 'PC'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_events_v1_verified_quantity_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ADD CONSTRAINT \"pharmflow_expiry_events_v1_verified_quantity_check\" CHECK (verified_quantity >= 0);"
+  },
+  {
+    "name": "constraint:expiry_review_audit_mapping_scope_v1_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"expiry_review_audit_mapping_scope_v1_check\" CHECK (mapping_scope = 'PHARMACY'::text AND global_mapping_id IS NULL OR mapping_scope = 'GLOBAL'::text AND global_mapping_id IS NOT NULL AND global_mapping_id = mapping_id OR mapping_scope = 'GLOBAL_AND_PHARMACY'::text AND global_mapping_id IS NOT NULL);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_au_pharmacy_id_review_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_au_pharmacy_id_review_id_key\" UNIQUE (pharmacy_id, review_id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_audit_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_audit_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_review_resolution_pharmacy_id_operation_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ADD CONSTRAINT \"pharmflow_expiry_review_resolution_pharmacy_id_operation_id_key\" UNIQUE (pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:expiry_worker_system_key_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_workers_v1\" ADD CONSTRAINT \"expiry_worker_system_key_check\" CHECK (system_key IS NULL OR (system_key = ANY (ARRAY['DESKTOP'::text, 'HANDHELD'::text])));"
+  },
+  {
+    "name": "constraint:pharmflow_expiry_workers_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_workers_v1\" ADD CONSTRAINT \"pharmflow_expiry_workers_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_finalized_archives_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_finalized_archives_v1\" ADD CONSTRAINT \"pharmflow_finalized_archives_v1_pkey\" PRIMARY KEY (pharmacy_id, archive_id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_group_change_audit_classification_source_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" ADD CONSTRAINT \"pharmflow_global_group_change_audit_classification_source_check\" CHECK (classification_source = ANY (ARRAY['LEGACY_MAIN_GROUP_CATEGORY'::text, 'PRODUCT_OWNER_WORKBOOK'::text, 'NORMALIZED_EXISTING_GROUP'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_global_group_change_audit_v1_new_group_name_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" ADD CONSTRAINT \"pharmflow_global_group_change_audit_v1_new_group_name_check\" CHECK (new_group_name = ANY (ARRAY['Beauty'::text, 'FMCG'::text, 'HomeHealth'::text, 'Medicine'::text, 'Mom & Baby'::text, 'Supplement'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_global_group_change_audit_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" ADD CONSTRAINT \"pharmflow_global_group_change_audit_v1_pkey\" PRIMARY KEY (item_code);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_conflicts_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_conflicts_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_conflicts_v1_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_conflicts_v1_status_check\" CHECK (status = ANY (ARRAY['pending'::text, 'resolved'::text, 'ignored'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_imports_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_imports_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_meta_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_meta_v1_pkey\" PRIMARY KEY (singleton);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_meta_v1_singleton_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_meta_v1_singleton_check\" CHECK (singleton);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_v1_item_code_gtin_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_v1_item_code_gtin_key\" UNIQUE (item_code, gtin);"
+  },
+  {
+    "name": "constraint:pharmflow_global_gtin_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_v1\" ADD CONSTRAINT \"pharmflow_global_gtin_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_identifier_display_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_identifier_display_check\" CHECK (identifier_display = btrim(identifier_display) AND identifier_display <> ''::text);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_identifier_key_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_identifier_key_check\" CHECK (identifier_key <> ''::text);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_identifier_key_uq",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_identifier_key_uq\" UNIQUE (identifier_key);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_item_identifier_uq",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_item_identifier_uq\" UNIQUE (item_code, identifier_key);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_key_matches_display_ck",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_key_matches_display_ck\" CHECK (identifier_key = pharmflow_identifier_key_v2(identifier_display));"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_mapping_revision_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_mapping_revision_check\" CHECK (mapping_revision > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_global_item_identifiers_v2_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ADD CONSTRAINT \"pharmflow_global_item_identifiers_v2_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_global_items_v2_item_code_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_items_v2\" ADD CONSTRAINT \"pharmflow_global_items_v2_item_code_check\" CHECK (btrim(item_code) <> ''::text);"
+  },
+  {
+    "name": "constraint:pharmflow_global_items_v2_item_name_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_items_v2\" ADD CONSTRAINT \"pharmflow_global_items_v2_item_name_check\" CHECK (btrim(item_name) <> ''::text);"
+  },
+  {
+    "name": "constraint:pharmflow_global_items_v2_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_items_v2\" ADD CONSTRAINT \"pharmflow_global_items_v2_pkey\" PRIMARY KEY (item_code);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_action_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_action_check\" CHECK (action = ANY (ARRAY['CORRECT'::text, 'REMOVE'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_gtin_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_gtin_check\" CHECK (length(TRIM(BOTH FROM gtin)) > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_old_item_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_old_item_check\" CHECK (length(TRIM(BOTH FROM old_item_code)) > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_pkey\" PRIMARY KEY (pharmacy_id, operation_id);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_reason_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_reason_check\" CHECK (length(TRIM(BOTH FROM reason)) > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_revision_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_revision_check\" CHECK (old_mapping_revision > 0);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_lifecycle_v3_target_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ADD CONSTRAINT \"pharmflow_gtin_lifecycle_v3_target_check\" CHECK (action = 'CORRECT'::text AND NULLIF(TRIM(BOTH FROM new_item_code), ''::text) IS NOT NULL AND NULLIF(TRIM(BOTH FROM new_item_name), ''::text) IS NOT NULL OR action = 'REMOVE'::text AND new_item_code IS NULL AND new_item_name IS NULL);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_mapping_disputes_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" ADD CONSTRAINT \"pharmflow_gtin_mapping_disputes_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_gtin_mapping_disputes_v1_status_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" ADD CONSTRAINT \"pharmflow_gtin_mapping_disputes_v1_status_check\" CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_mapping_audit_v1_action_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ADD CONSTRAINT \"pharmflow_identifier_mapping_audit_v1_action_check\" CHECK (action = ANY (ARRAY['ADD'::text, 'CORRECT'::text, 'REMOVE'::text]));"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_mapping_audit_v1_operation_id_key",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ADD CONSTRAINT \"pharmflow_identifier_mapping_audit_v1_operation_id_key\" UNIQUE (operation_id);"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_mapping_audit_v1_pkey",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ADD CONSTRAINT \"pharmflow_identifier_mapping_audit_v1_pkey\" PRIMARY KEY (id);"
+  },
+  {
+    "name": "constraint:pharmflow_identifier_mapping_audit_v1_reason_check",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ADD CONSTRAINT \"pharmflow_identifier_mapping_audit_v1_reason_check\" CHECK (btrim(reason) <> ''::text);"
+  }
+]

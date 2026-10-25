@@ -1,0 +1,866 @@
+[
+  {
+    "name": "trigger:protect_bucket_control_insert",
+    "sql": "CREATE TRIGGER protect_bucket_control_insert BEFORE INSERT ON storage.buckets FOR EACH ROW EXECUTE FUNCTION storage.protect_bucket_control_columns('service_role');"
+  },
+  {
+    "name": "trigger:protect_bucket_control_update",
+    "sql": "CREATE TRIGGER protect_bucket_control_update BEFORE UPDATE OF lifecycle_configuration, lifecycle_configuration_generation ON storage.buckets FOR EACH ROW EXECUTE FUNCTION storage.protect_bucket_control_columns();"
+  },
+  {
+    "name": "trigger:protect_bucket_control_update_role",
+    "sql": "CREATE TRIGGER protect_bucket_control_update_role AFTER UPDATE OF lifecycle_configuration, lifecycle_configuration_generation ON storage.buckets FOR EACH ROW EXECUTE FUNCTION storage.enforce_bucket_lifecycle_service_role('service_role');"
+  },
+  {
+    "name": "trigger:trg_sync_pharmflow_pharmacy_identifier_v2",
+    "sql": "CREATE TRIGGER trg_sync_pharmflow_pharmacy_identifier_v2 BEFORE INSERT OR UPDATE OF gtin, identifier_display ON pharmflow_pharmacy_gtin_v1 FOR EACH ROW EXECUTE FUNCTION sync_pharmflow_pharmacy_identifier_v2();"
+  },
+  {
+    "name": "trigger:trg_finalize_pharmflow_needs_review_allocations_v1",
+    "sql": "CREATE TRIGGER trg_finalize_pharmflow_needs_review_allocations_v1 AFTER INSERT ON pharmflow_receiving_transactions_v1 FOR EACH ROW EXECUTE FUNCTION finalize_pharmflow_needs_review_allocations_on_receipt_v1();"
+  },
+  {
+    "name": "trigger:expiry_first_operator_v1",
+    "sql": "CREATE TRIGGER expiry_first_operator_v1 AFTER INSERT ON pharmflow_expiry_events_v1 FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.record_first_operator_v1();"
+  },
+  {
+    "name": "trigger:expiry_review_operator_origin_v1",
+    "sql": "CREATE TRIGGER expiry_review_operator_origin_v1 AFTER INSERT ON pharmflow_expiry_review_resolution_audit_v1 FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.record_review_operator_v1();"
+  },
+  {
+    "name": "trigger:expiry_system_operator_guard_v1",
+    "sql": "CREATE TRIGGER expiry_system_operator_guard_v1 BEFORE INSERT OR DELETE OR UPDATE ON pharmflow_expiry_workers_v1 FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.protect_system_operator_v1();"
+  },
+  {
+    "name": "trigger:pharmflow_expiry_review_cleanup_enqueue",
+    "sql": "CREATE TRIGGER pharmflow_expiry_review_cleanup_enqueue AFTER UPDATE OF status ON pharmflow_needs_review_v2 FOR EACH ROW WHEN (old.status = 'PENDING'::text AND (new.status = ANY (ARRAY['RESOLVED'::text, 'DELETED'::text])) AND new.workflow = 'EXPIRY'::text) EXECUTE FUNCTION pharmflow_expiry_private.enqueue_review_photo_cleanup();"
+  },
+  {
+    "name": "trigger:pharmflow_expiry_review_guard",
+    "sql": "CREATE TRIGGER pharmflow_expiry_review_guard BEFORE INSERT OR DELETE OR UPDATE ON pharmflow_needs_review_v2 FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.guard_review();"
+  },
+  {
+    "name": "trigger:pharmflow_expiry_photo_guard",
+    "sql": "CREATE TRIGGER pharmflow_expiry_photo_guard BEFORE INSERT OR DELETE OR UPDATE ON storage.objects FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.guard_photo();"
+  },
+  {
+    "name": "trigger:pharmflow_receiving_review_photo_cleanup",
+    "sql": "CREATE TRIGGER pharmflow_receiving_review_photo_cleanup AFTER UPDATE OF status, photo_path ON pharmflow_needs_review_v2 FOR EACH ROW WHEN (new.workflow = 'RECEIVING'::text AND (new.status = ANY (ARRAY['RESOLVED'::text, 'DELETED'::text])) AND (old.status IS DISTINCT FROM new.status OR old.photo_path IS DISTINCT FROM new.photo_path)) EXECUTE FUNCTION pharmflow_expiry_private.receiving_review_photo_lifecycle();"
+  },
+  {
+    "name": "trigger:pharmflow_receiving_review_photo_reference_guard",
+    "sql": "CREATE TRIGGER pharmflow_receiving_review_photo_reference_guard BEFORE INSERT OR UPDATE OF status, photo_path ON pharmflow_needs_review_v2 FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.guard_receiving_review_photo_reference();"
+  },
+  {
+    "name": "trigger:pharmflow_receiving_storage_photo_guard",
+    "sql": "CREATE TRIGGER pharmflow_receiving_storage_photo_guard BEFORE INSERT OR DELETE OR UPDATE ON storage.objects FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.guard_receiving_storage_photo();"
+  },
+  {
+    "name": "trigger:guard_photo_references_cleanup",
+    "sql": "CREATE TRIGGER guard_photo_references_cleanup BEFORE DELETE OR UPDATE ON pharmflow_expiry_private.review_details FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.guard_photo_references_cleanup();"
+  },
+  {
+    "name": "trigger:enqueue_operation_photo_cleanup",
+    "sql": "CREATE TRIGGER enqueue_operation_photo_cleanup AFTER UPDATE OF status ON pharmflow_expiry_private.operations FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.enqueue_operation_photo_cleanup();"
+  },
+  {
+    "name": "trigger:expiry_operation_operator_origin_v1",
+    "sql": "CREATE TRIGGER expiry_operation_operator_origin_v1 AFTER UPDATE OF status ON pharmflow_expiry_private.operations FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.record_operation_operator_v1();"
+  },
+  {
+    "name": "trigger:guard_photo_operation_cleanup",
+    "sql": "CREATE TRIGGER guard_photo_operation_cleanup BEFORE UPDATE ON pharmflow_expiry_private.operations FOR EACH ROW EXECUTE FUNCTION pharmflow_expiry_private.guard_photo_operation_cleanup();"
+  },
+  {
+    "name": "policy:pf_nr_v2_update",
+    "sql": "CREATE POLICY \"pf_nr_v2_update\" ON \"public\".\"pharmflow_needs_review_v2\" AS PERMISSIVE FOR UPDATE TO \"authenticated\" USING (is_pharmacy_member(pharmacy_id)) WITH CHECK (is_pharmacy_member(pharmacy_id));"
+  },
+  {
+    "name": "policy:pf_nr_v2_insert",
+    "sql": "CREATE POLICY \"pf_nr_v2_insert\" ON \"public\".\"pharmflow_needs_review_v2\" AS PERMISSIVE FOR INSERT TO \"authenticated\" WITH CHECK ((is_pharmacy_member(pharmacy_id) AND (created_by = auth.uid())));"
+  },
+  {
+    "name": "policy:pf_nr_v2_select",
+    "sql": "CREATE POLICY \"pf_nr_v2_select\" ON \"public\".\"pharmflow_needs_review_v2\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (is_pharmacy_member(pharmacy_id));"
+  },
+  {
+    "name": "policy:pharmflow_expiry_staged_photo_delete",
+    "sql": "CREATE POLICY \"pharmflow_expiry_staged_photo_delete\" ON \"storage\".\"objects\" AS PERMISSIVE FOR DELETE TO \"authenticated\" USING (((bucket_id = 'pharmflow-needs-review'::text) AND (split_part(name, '/'::text, 2) = 'expiry-v1'::text) AND can_delete_pharmflow_expiry_staged_photo_v1(name)));"
+  },
+  {
+    "name": "policy:pf_nr_photo_delete",
+    "sql": "CREATE POLICY \"pf_nr_photo_delete\" ON \"storage\".\"objects\" AS PERMISSIVE FOR DELETE TO \"authenticated\" USING (((bucket_id = 'pharmflow-needs-review'::text) AND is_pharmacy_admin(((storage.foldername(name))[1])::uuid)));"
+  },
+  {
+    "name": "policy:pf_nr_photo_update",
+    "sql": "CREATE POLICY \"pf_nr_photo_update\" ON \"storage\".\"objects\" AS PERMISSIVE FOR UPDATE TO \"authenticated\" USING (((bucket_id = 'pharmflow-needs-review'::text) AND is_pharmacy_member(((storage.foldername(name))[1])::uuid))) WITH CHECK (((bucket_id = 'pharmflow-needs-review'::text) AND is_pharmacy_member(((storage.foldername(name))[1])::uuid)));"
+  },
+  {
+    "name": "policy:pf_nr_photo_insert",
+    "sql": "CREATE POLICY \"pf_nr_photo_insert\" ON \"storage\".\"objects\" AS PERMISSIVE FOR INSERT TO \"authenticated\" WITH CHECK (((bucket_id = 'pharmflow-needs-review'::text) AND is_pharmacy_member(((storage.foldername(name))[1])::uuid)));"
+  },
+  {
+    "name": "policy:pf_nr_photo_select",
+    "sql": "CREATE POLICY \"pf_nr_photo_select\" ON \"storage\".\"objects\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (((bucket_id = 'pharmflow-needs-review'::text) AND is_pharmacy_member(((storage.foldername(name))[1])::uuid)));"
+  },
+  {
+    "name": "policy:pharmflow_expiry_events_select_member",
+    "sql": "CREATE POLICY \"pharmflow_expiry_events_select_member\" ON \"public\".\"pharmflow_expiry_events_v1\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (is_pharmacy_member(pharmacy_id));"
+  },
+  {
+    "name": "policy:pharmflow_expiry_current_state_select_member",
+    "sql": "CREATE POLICY \"pharmflow_expiry_current_state_select_member\" ON \"public\".\"pharmflow_expiry_current_state_v1\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (is_pharmacy_member(pharmacy_id));"
+  },
+  {
+    "name": "policy:pharmacies_select",
+    "sql": "CREATE POLICY \"pharmacies_select\" ON \"public\".\"pharmacies\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (is_pharmacy_member(id));"
+  },
+  {
+    "name": "policy:members_select",
+    "sql": "CREATE POLICY \"members_select\" ON \"public\".\"pharmacy_members\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (((user_id = auth.uid()) OR is_system_owner() OR is_pharmacy_admin(pharmacy_id)));"
+  },
+  {
+    "name": "policy:profiles_self_update",
+    "sql": "CREATE POLICY \"profiles_self_update\" ON \"public\".\"profiles\" AS PERMISSIVE FOR UPDATE TO \"authenticated\" USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));"
+  },
+  {
+    "name": "policy:profiles_self_select",
+    "sql": "CREATE POLICY \"profiles_self_select\" ON \"public\".\"profiles\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING ((user_id = auth.uid()));"
+  },
+  {
+    "name": "policy:pf_receiving_workspace_history_select",
+    "sql": "CREATE POLICY \"pf_receiving_workspace_history_select\" ON \"public\".\"pharmflow_receiving_workspace_history_v1\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (is_pharmacy_member(pharmacy_id));"
+  },
+  {
+    "name": "policy:pf_receiving_history_items_select",
+    "sql": "CREATE POLICY \"pf_receiving_history_items_select\" ON \"public\".\"pharmflow_receiving_history_items_v1\" AS PERMISSIVE FOR SELECT TO \"authenticated\" USING (is_pharmacy_member(pharmacy_id));"
+  },
+  {
+    "name": "table_security:audit_log_entries",
+    "sql": "ALTER TABLE \"auth\".\"audit_log_entries\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"audit_log_entries\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"audit_log_entries\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:custom_oauth_providers",
+    "sql": "ALTER TABLE \"auth\".\"custom_oauth_providers\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"custom_oauth_providers\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"custom_oauth_providers\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:flow_state",
+    "sql": "ALTER TABLE \"auth\".\"flow_state\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"flow_state\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"flow_state\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:identities",
+    "sql": "ALTER TABLE \"auth\".\"identities\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"identities\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"identities\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:instances",
+    "sql": "ALTER TABLE \"auth\".\"instances\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"instances\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"instances\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:mfa_amr_claims",
+    "sql": "ALTER TABLE \"auth\".\"mfa_amr_claims\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"mfa_amr_claims\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"mfa_amr_claims\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:mfa_challenges",
+    "sql": "ALTER TABLE \"auth\".\"mfa_challenges\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"mfa_challenges\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"mfa_challenges\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:mfa_factors",
+    "sql": "ALTER TABLE \"auth\".\"mfa_factors\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"mfa_factors\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"mfa_factors\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:mfa_recovery_code_sets",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"mfa_recovery_code_sets\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"mfa_recovery_code_sets\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:mfa_recovery_codes",
+    "sql": "ALTER TABLE \"auth\".\"mfa_recovery_codes\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"mfa_recovery_codes\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"mfa_recovery_codes\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:oauth_authorizations",
+    "sql": "ALTER TABLE \"auth\".\"oauth_authorizations\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"oauth_authorizations\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"oauth_authorizations\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:oauth_client_states",
+    "sql": "ALTER TABLE \"auth\".\"oauth_client_states\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"oauth_client_states\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"oauth_client_states\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:oauth_clients",
+    "sql": "ALTER TABLE \"auth\".\"oauth_clients\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"oauth_clients\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"oauth_clients\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:oauth_consents",
+    "sql": "ALTER TABLE \"auth\".\"oauth_consents\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"oauth_consents\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"oauth_consents\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:one_time_tokens",
+    "sql": "ALTER TABLE \"auth\".\"one_time_tokens\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"one_time_tokens\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"one_time_tokens\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:refresh_tokens",
+    "sql": "ALTER TABLE \"auth\".\"refresh_tokens\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"refresh_tokens\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"refresh_tokens\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:saml_providers",
+    "sql": "ALTER TABLE \"auth\".\"saml_providers\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"saml_providers\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"saml_providers\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:saml_relay_states",
+    "sql": "ALTER TABLE \"auth\".\"saml_relay_states\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"saml_relay_states\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"saml_relay_states\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:schema_migrations",
+    "sql": "ALTER TABLE \"auth\".\"schema_migrations\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"schema_migrations\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"schema_migrations\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:scim_tokens",
+    "sql": "ALTER TABLE \"auth\".\"scim_tokens\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"scim_tokens\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"scim_tokens\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:scim_users",
+    "sql": "ALTER TABLE \"auth\".\"scim_users\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"scim_users\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"scim_users\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:sessions",
+    "sql": "ALTER TABLE \"auth\".\"sessions\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"sessions\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"sessions\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:sso_domains",
+    "sql": "ALTER TABLE \"auth\".\"sso_domains\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"sso_domains\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"sso_domains\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:sso_providers",
+    "sql": "ALTER TABLE \"auth\".\"sso_providers\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"sso_providers\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"sso_providers\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:users",
+    "sql": "ALTER TABLE \"auth\".\"users\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"users\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"users\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:webauthn_challenges",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_challenges\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"webauthn_challenges\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"webauthn_challenges\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:webauthn_credentials",
+    "sql": "ALTER TABLE \"auth\".\"webauthn_credentials\" OWNER TO \"supabase_auth_admin\";ALTER TABLE \"auth\".\"webauthn_credentials\" DISABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"auth\".\"webauthn_credentials\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacies",
+    "sql": "ALTER TABLE \"public\".\"pharmacies\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacies\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacies\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_admin_assignments",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_admin_assignments\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_admin_assignments\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_admin_assignments\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_invitations",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_invitations\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_invitations\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_invitations\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_learned_gtin",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_learned_gtin\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_learned_gtin\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_learned_gtin_audit",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_learned_gtin_audit\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_learned_gtin_audit\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_master_gtin_imports_v2",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_master_gtin_imports_v2\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_master_gtin_meta_v2",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_master_gtin_meta_v2\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_members",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_members\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_members\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_members\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmacy_registration_requests",
+    "sql": "ALTER TABLE \"public\".\"pharmacy_registration_requests\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmacy_registration_requests\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmacy_registration_requests\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_active_order_manifest_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_active_order_manifest_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_active_order_manifest_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_cloud_transactions",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_transactions\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_cloud_transactions\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_cloud_transactions\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_cloud_workspaces",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_cloud_workspaces\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_cloud_workspaces\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_cloud_workspaces\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_expiry_captures_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_expiry_captures_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_expiry_captures_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_expiry_current_state_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_expiry_current_state_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_expiry_current_state_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_expiry_events_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_expiry_events_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_expiry_events_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_expiry_workers_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_expiry_workers_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_expiry_workers_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_finalized_archives_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_finalized_archives_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_finalized_archives_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_finalized_archives_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_group_change_audit_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_group_change_audit_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_gtin_conflicts_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_gtin_conflicts_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_gtin_import_rows_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_gtin_import_rows_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_gtin_imports_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_gtin_imports_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_gtin_meta_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_gtin_meta_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_gtin_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_gtin_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_gtin_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_gtin_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_item_identifiers_v2",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_global_items_v2",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_global_items_v2\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_global_items_v2\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_global_items_v2\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_gtin_lifecycle_v3",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_gtin_mapping_disputes_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_gtin_mapping_disputes_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_identifier_mapping_audit_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_identifier_mapping_audit_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_needs_review_resolution_intents_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_needs_review_resolution_intents_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_needs_review_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_needs_review_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_needs_review_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_needs_review_v2",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_needs_review_v2\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_needs_review_v2\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_order_source_items",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_order_source_items\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_order_source_items\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_order_source_items\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_orders",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_orders\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_orders\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_orders\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_pharmacy_gtin_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_pharmacy_gtin_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_pharmacy_identifier_mapping_audit_v2\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_pharmacy_identity_audit_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_pharmacy_identity_audit_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_receiving_history_items_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_history_items_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_receiving_history_items_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_receiving_transactions_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_transactions_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_receiving_transactions_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_receiving_workspace_history_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_session_terminations",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_session_terminations\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_session_terminations\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_session_terminations\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:pharmflow_workspace_generation_v1",
+    "sql": "ALTER TABLE \"public\".\"pharmflow_workspace_generation_v1\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"pharmflow_workspace_generation_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"pharmflow_workspace_generation_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:profiles",
+    "sql": "ALTER TABLE \"public\".\"profiles\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"profiles\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"profiles\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:session_items",
+    "sql": "ALTER TABLE \"public\".\"session_items\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"session_items\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"session_items\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:sessions",
+    "sql": "ALTER TABLE \"public\".\"sessions\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"sessions\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"sessions\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:system_owners",
+    "sql": "ALTER TABLE \"public\".\"system_owners\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"system_owners\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"system_owners\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:transactions",
+    "sql": "ALTER TABLE \"public\".\"transactions\" OWNER TO \"postgres\";ALTER TABLE \"public\".\"transactions\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"public\".\"transactions\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:buckets",
+    "sql": "ALTER TABLE \"storage\".\"buckets\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"buckets\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"buckets\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:buckets_analytics",
+    "sql": "ALTER TABLE \"storage\".\"buckets_analytics\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"buckets_analytics\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"buckets_analytics\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:buckets_vectors",
+    "sql": "ALTER TABLE \"storage\".\"buckets_vectors\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"buckets_vectors\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"buckets_vectors\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:migrations",
+    "sql": "ALTER TABLE \"storage\".\"migrations\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"migrations\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"migrations\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:objects",
+    "sql": "ALTER TABLE \"storage\".\"objects\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"objects\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"objects\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:s3_multipart_uploads",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"s3_multipart_uploads\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"s3_multipart_uploads\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:s3_multipart_uploads_parts",
+    "sql": "ALTER TABLE \"storage\".\"s3_multipart_uploads_parts\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"s3_multipart_uploads_parts\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"s3_multipart_uploads_parts\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:vector_indexes",
+    "sql": "ALTER TABLE \"storage\".\"vector_indexes\" OWNER TO \"supabase_storage_admin\";ALTER TABLE \"storage\".\"vector_indexes\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"storage\".\"vector_indexes\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:closed_auth_sessions_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:operator_audit_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:session_group_adjustments_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:active_sessions_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:inventory_requests_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:filtered_inventory_requests_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:first_operator_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:photos",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photos\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"photos\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"photos\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:resolved_inventory_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:review_details",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"review_details\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"review_details\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:session_adjustments_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:session_captures_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:session_clear_requests_v1",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:photo_cleanup_jobs",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "table_security:operations",
+    "sql": "ALTER TABLE \"pharmflow_expiry_private\".\"operations\" OWNER TO \"postgres\";ALTER TABLE \"pharmflow_expiry_private\".\"operations\" ENABLE ROW LEVEL SECURITY;REVOKE ALL ON TABLE \"pharmflow_expiry_private\".\"operations\" FROM PUBLIC,anon,authenticated,service_role,postgres;"
+  },
+  {
+    "name": "function_security:public.add_pharmflow_global_identifier_v2(uuid,text,text,text)",
+    "sql": "ALTER FUNCTION public.add_pharmflow_global_identifier_v2(uuid,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.add_pharmflow_global_identifier_v2(uuid,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.add_pharmflow_global_identifier_v2(uuid,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.add_pharmflow_global_identifier_v2(uuid,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.add_pharmflow_pharmacy_identifier_v2(uuid,uuid,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.add_pharmflow_pharmacy_identifier_v2(uuid,uuid,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.add_pharmflow_pharmacy_identifier_v2(uuid,uuid,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.add_pharmflow_pharmacy_identifier_v2(uuid,uuid,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.add_pharmflow_pharmacy_identifier_v2(uuid,uuid,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_global_master_gtin_import(uuid,jsonb)",
+    "sql": "ALTER FUNCTION public.append_global_master_gtin_import(uuid,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_global_master_gtin_import(uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_global_master_gtin_import(uuid,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_global_master_gtin_import(uuid,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_global_master_gtin_import_v2(uuid,jsonb)",
+    "sql": "ALTER FUNCTION public.append_global_master_gtin_import_v2(uuid,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_global_master_gtin_import_v2(uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_global_master_gtin_import_v2(uuid,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_global_master_gtin_import_v2(uuid,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb)",
+    "sql": "ALTER FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb)",
+    "sql": "ALTER FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb) TO PUBLIC;GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_pharmflow_cloud_transaction_v2(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb)",
+    "sql": "ALTER FUNCTION public.append_pharmflow_cloud_transaction_v2(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_pharmflow_cloud_transaction_v2(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction_v2(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_pharmflow_cloud_transaction_v2(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_pharmflow_learned_transaction_v3(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint)",
+    "sql": "ALTER FUNCTION public.append_pharmflow_learned_transaction_v3(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_pharmflow_learned_transaction_v3(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_pharmflow_learned_transaction_v3(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_pharmflow_learned_transaction_v3(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_pharmflow_learned_transaction_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint,text)",
+    "sql": "ALTER FUNCTION public.append_pharmflow_learned_transaction_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_pharmflow_learned_transaction_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_pharmflow_learned_transaction_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_pharmflow_learned_transaction_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.append_pharmflow_receiving_action_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb)",
+    "sql": "ALTER FUNCTION public.append_pharmflow_receiving_action_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.append_pharmflow_receiving_action_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.append_pharmflow_receiving_action_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.append_pharmflow_receiving_action_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.assign_pharmflow_needs_review_order_v1(uuid,uuid,text)",
+    "sql": "ALTER FUNCTION public.assign_pharmflow_needs_review_order_v1(uuid,uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.assign_pharmflow_needs_review_order_v1(uuid,uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.assign_pharmflow_needs_review_order_v1(uuid,uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.assign_pharmflow_needs_review_order_v1(uuid,uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.atomic_reset_pharmflow_current_workspace(uuid,text)",
+    "sql": "ALTER FUNCTION public.atomic_reset_pharmflow_current_workspace(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.atomic_reset_pharmflow_current_workspace(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.atomic_reset_pharmflow_current_workspace(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.atomic_reset_pharmflow_current_workspace(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.atomic_reset_pharmflow_current_workspace_v3(uuid,text)",
+    "sql": "ALTER FUNCTION public.atomic_reset_pharmflow_current_workspace_v3(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.atomic_reset_pharmflow_current_workspace_v3(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.atomic_reset_pharmflow_current_workspace_v3(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.atomic_reset_pharmflow_current_workspace_v3(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.atomic_reset_pharmflow_current_workspace_v4(uuid,text)",
+    "sql": "ALTER FUNCTION public.atomic_reset_pharmflow_current_workspace_v4(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.atomic_reset_pharmflow_current_workspace_v4(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.atomic_reset_pharmflow_current_workspace_v4(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.atomic_reset_pharmflow_current_workspace_v4(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.authorize_pharmflow_expiry_photo_cleanup_v1(uuid,uuid)",
+    "sql": "ALTER FUNCTION public.authorize_pharmflow_expiry_photo_cleanup_v1(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.authorize_pharmflow_expiry_photo_cleanup_v1(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.authorize_pharmflow_expiry_photo_cleanup_v1(uuid,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.authorize_pharmflow_expiry_photo_cleanup_v1(uuid,uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.begin_global_master_gtin_import(text)",
+    "sql": "ALTER FUNCTION public.begin_global_master_gtin_import(text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.begin_global_master_gtin_import(text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.begin_global_master_gtin_import(text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.begin_global_master_gtin_import(text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.bootstrap_system_owner(text,text)",
+    "sql": "ALTER FUNCTION public.bootstrap_system_owner(text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.bootstrap_system_owner(text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.bootstrap_system_owner(text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.bootstrap_system_owner(text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.bulk_upsert_session_items(uuid,uuid,jsonb)",
+    "sql": "ALTER FUNCTION public.bulk_upsert_session_items(uuid,uuid,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.bulk_upsert_session_items(uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.bulk_upsert_session_items(uuid,uuid,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.bulk_upsert_session_items(uuid,uuid,jsonb) TO \"anon\";GRANT EXECUTE ON FUNCTION public.bulk_upsert_session_items(uuid,uuid,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.can_delete_pharmflow_expiry_staged_photo_v1(text)",
+    "sql": "ALTER FUNCTION public.can_delete_pharmflow_expiry_staged_photo_v1(text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.can_delete_pharmflow_expiry_staged_photo_v1(text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.can_delete_pharmflow_expiry_staged_photo_v1(text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.can_delete_pharmflow_expiry_staged_photo_v1(text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.cancel_pharmflow_expiry_capture_v1(uuid,uuid,text)",
+    "sql": "ALTER FUNCTION public.cancel_pharmflow_expiry_capture_v1(uuid,uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.cancel_pharmflow_expiry_capture_v1(uuid,uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.cancel_pharmflow_expiry_capture_v1(uuid,uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.cancel_pharmflow_expiry_capture_v1(uuid,uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.claim_pharmacy_admin_assignment()",
+    "sql": "ALTER FUNCTION public.claim_pharmacy_admin_assignment() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.claim_pharmacy_admin_assignment() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.claim_pharmacy_admin_assignment() TO \"postgres\";GRANT EXECUTE ON FUNCTION public.claim_pharmacy_admin_assignment() TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.claim_photo_cleanup_jobs(integer)",
+    "sql": "ALTER FUNCTION public.claim_photo_cleanup_jobs(integer) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.claim_photo_cleanup_jobs(integer) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.claim_photo_cleanup_jobs(integer) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.claim_photo_cleanup_jobs(integer) TO \"service_role\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_active_order_manifest(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_active_order_manifest(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_active_order_manifest(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_active_order_manifest(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_active_order_manifest(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_active_order_manifest_v2(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_active_order_manifest_v2(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_active_order_manifest_v2(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_active_order_manifest_v2(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_active_order_manifest_v2(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_cloud_workspace(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_cloud_workspace(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_cloud_workspace(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_cloud_workspace(uuid) TO PUBLIC;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_cloud_workspace(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_cloud_workspace(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,text)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_receiving_needs_review_v2(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_receiving_needs_review_v2(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_receiving_needs_review_v2(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_needs_review_v2(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_needs_review_v2(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_receiving_needs_review_v3(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_receiving_needs_review_v3(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_receiving_needs_review_v3(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_needs_review_v3(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_needs_review_v3(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_receiving_transactions(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_receiving_transactions(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_receiving_transactions(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_transactions(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_transactions(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.clear_pharmflow_receiving_transactions_v2(uuid)",
+    "sql": "ALTER FUNCTION public.clear_pharmflow_receiving_transactions_v2(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.clear_pharmflow_receiving_transactions_v2(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_transactions_v2(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.clear_pharmflow_receiving_transactions_v2(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.close_pharmflow_expiry_auth_session_v1()",
+    "sql": "ALTER FUNCTION public.close_pharmflow_expiry_auth_session_v1() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.close_pharmflow_expiry_auth_session_v1() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.close_pharmflow_expiry_auth_session_v1() TO \"postgres\";GRANT EXECUTE ON FUNCTION public.close_pharmflow_expiry_auth_session_v1() TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.commit_global_master_gtin_import(uuid)",
+    "sql": "ALTER FUNCTION public.commit_global_master_gtin_import(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.commit_global_master_gtin_import(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.commit_global_master_gtin_import(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.commit_global_master_gtin_import(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.commit_global_master_gtin_import_v2(uuid)",
+    "sql": "ALTER FUNCTION public.commit_global_master_gtin_import_v2(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.commit_global_master_gtin_import_v2(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.commit_global_master_gtin_import_v2(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.commit_global_master_gtin_import_v2(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.complete_photo_cleanup_job(uuid,text,uuid)",
+    "sql": "ALTER FUNCTION public.complete_photo_cleanup_job(uuid,text,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.complete_photo_cleanup_job(uuid,text,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.complete_photo_cleanup_job(uuid,text,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.complete_photo_cleanup_job(uuid,text,uuid) TO \"service_role\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmacy_expiry_current_state_v1(uuid,uuid,integer,integer,integer,text,uuid,text)",
+    "sql": "ALTER FUNCTION public.correct_pharmacy_expiry_current_state_v1(uuid,uuid,integer,integer,integer,text,uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmacy_expiry_current_state_v1(uuid,uuid,integer,integer,integer,text,uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmacy_expiry_current_state_v1(uuid,uuid,integer,integer,integer,text,uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmacy_expiry_current_state_v1(uuid,uuid,integer,integer,integer,text,uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmacy_learned_gtin(uuid,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.correct_pharmacy_learned_gtin(uuid,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmacy_learned_gtin(uuid,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmacy_learned_gtin(uuid,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmacy_learned_gtin(uuid,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmacy_learned_gtin_v2(uuid,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.correct_pharmacy_learned_gtin_v2(uuid,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmacy_learned_gtin_v2(uuid,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmacy_learned_gtin_v2(uuid,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmacy_learned_gtin_v2(uuid,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmacy_learned_gtin_v3(uuid,uuid,text,uuid,bigint,text,text,text)",
+    "sql": "ALTER FUNCTION public.correct_pharmacy_learned_gtin_v3(uuid,uuid,text,uuid,bigint,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmacy_learned_gtin_v3(uuid,uuid,text,uuid,bigint,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmacy_learned_gtin_v3(uuid,uuid,text,uuid,bigint,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmacy_learned_gtin_v3(uuid,uuid,text,uuid,bigint,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmflow_expiry_desktop_group_v1(uuid,uuid,uuid,uuid,jsonb,integer)",
+    "sql": "ALTER FUNCTION public.correct_pharmflow_expiry_desktop_group_v1(uuid,uuid,uuid,uuid,jsonb,integer) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmflow_expiry_desktop_group_v1(uuid,uuid,uuid,uuid,jsonb,integer) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmflow_expiry_desktop_group_v1(uuid,uuid,uuid,uuid,jsonb,integer) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmflow_expiry_desktop_group_v1(uuid,uuid,uuid,uuid,jsonb,integer) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,uuid,integer,jsonb)",
+    "sql": "ALTER FUNCTION public.correct_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,uuid,integer,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,uuid,integer,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,uuid,integer,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,uuid,integer,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmflow_expiry_session_v2(uuid,uuid,uuid,uuid,integer,jsonb)",
+    "sql": "ALTER FUNCTION public.correct_pharmflow_expiry_session_v2(uuid,uuid,uuid,uuid,integer,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmflow_expiry_session_v2(uuid,uuid,uuid,uuid,integer,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmflow_expiry_session_v2(uuid,uuid,uuid,uuid,integer,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmflow_expiry_session_v2(uuid,uuid,uuid,uuid,integer,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmflow_global_identifier_v2(uuid,uuid,bigint,text,text)",
+    "sql": "ALTER FUNCTION public.correct_pharmflow_global_identifier_v2(uuid,uuid,bigint,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmflow_global_identifier_v2(uuid,uuid,bigint,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmflow_global_identifier_v2(uuid,uuid,bigint,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmflow_global_identifier_v2(uuid,uuid,bigint,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.correct_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text,text,text)",
+    "sql": "ALTER FUNCTION public.correct_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.correct_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.correct_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.correct_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.count_pharmflow_expiry_reviews_v1(uuid)",
+    "sql": "ALTER FUNCTION public.count_pharmflow_expiry_reviews_v1(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.count_pharmflow_expiry_reviews_v1(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.count_pharmflow_expiry_reviews_v1(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.count_pharmflow_expiry_reviews_v1(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.count_pharmflow_needs_review_scope_v3(uuid,text,text[])",
+    "sql": "ALTER FUNCTION public.count_pharmflow_needs_review_scope_v3(uuid,text,text[]) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.count_pharmflow_needs_review_scope_v3(uuid,text,text[]) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.count_pharmflow_needs_review_scope_v3(uuid,text,text[]) TO PUBLIC;"
+  },
+  {
+    "name": "function_security:public.count_pharmflow_needs_review_v2(uuid,text)",
+    "sql": "ALTER FUNCTION public.count_pharmflow_needs_review_v2(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.count_pharmflow_needs_review_v2(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.count_pharmflow_needs_review_v2(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.count_pharmflow_needs_review_v2(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmacy_member_invite(uuid,text,text)",
+    "sql": "ALTER FUNCTION public.create_pharmacy_member_invite(uuid,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmacy_member_invite(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmacy_member_invite(uuid,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmacy_member_invite(uuid,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_global_item_and_learn_v1(uuid,uuid,uuid,text,text,text,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.create_pharmflow_global_item_and_learn_v1(uuid,uuid,uuid,text,text,text,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_global_item_and_learn_v1(uuid,uuid,uuid,text,text,text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_global_item_and_learn_v1(uuid,uuid,uuid,text,text,text,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_global_item_and_learn_v1(uuid,uuid,uuid,text,text,text,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_global_item_v2(uuid,text,text,text,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.create_pharmflow_global_item_v2(uuid,text,text,text,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_global_item_v2(uuid,text,text,text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_global_item_v2(uuid,text,text,text,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_global_item_v2(uuid,text,text,text,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_needs_review_v2(uuid,text,text,text,text,text,text,text,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.create_pharmflow_needs_review_v2(uuid,text,text,text,text,text,text,text,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_needs_review_v2(uuid,text,text,text,text,text,text,text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v2(uuid,text,text,text,text,text,text,text,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v2(uuid,text,text,text,text,text,text,text,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_needs_review_v3(uuid,text,text,text,text,text,text,text,text,text,text,text)",
+    "sql": "ALTER FUNCTION public.create_pharmflow_needs_review_v3(uuid,text,text,text,text,text,text,text,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_needs_review_v3(uuid,text,text,text,text,text,text,text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v3(uuid,text,text,text,text,text,text,text,text,text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v3(uuid,text,text,text,text,text,text,text,text,text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_needs_review_v4(uuid,text,text,text,text,text,text,text,text,text,text,text,text[])",
+    "sql": "ALTER FUNCTION public.create_pharmflow_needs_review_v4(uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_needs_review_v4(uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v4(uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v4(uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_needs_review_v5(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[])",
+    "sql": "ALTER FUNCTION public.create_pharmflow_needs_review_v5(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_needs_review_v5(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v5(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v5(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[]) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_pharmflow_needs_review_v6(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[],integer)",
+    "sql": "ALTER FUNCTION public.create_pharmflow_needs_review_v6(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[],integer) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_pharmflow_needs_review_v6(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[],integer) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v6(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[],integer) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_pharmflow_needs_review_v6(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[],integer) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.create_receiving_session(text,text,text)",
+    "sql": "ALTER FUNCTION public.create_receiving_session(text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.create_receiving_session(text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.create_receiving_session(text,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.create_receiving_session(text,text,text) TO \"anon\";GRANT EXECUTE ON FUNCTION public.create_receiving_session(text,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.deactivate_pharmacy_expiry_worker(uuid,uuid)",
+    "sql": "ALTER FUNCTION public.deactivate_pharmacy_expiry_worker(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.deactivate_pharmacy_expiry_worker(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.deactivate_pharmacy_expiry_worker(uuid,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.deactivate_pharmacy_expiry_worker(uuid,uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_all_pharmflow_finalized_archives(uuid,text)",
+    "sql": "ALTER FUNCTION public.delete_all_pharmflow_finalized_archives(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_all_pharmflow_finalized_archives(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_all_pharmflow_finalized_archives(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_all_pharmflow_finalized_archives(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_all_pharmflow_historical_data_v2(uuid,text)",
+    "sql": "ALTER FUNCTION public.delete_all_pharmflow_historical_data_v2(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_all_pharmflow_historical_data_v2(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_all_pharmflow_historical_data_v2(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_all_pharmflow_historical_data_v2(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_all_pharmflow_received_history(uuid,text)",
+    "sql": "ALTER FUNCTION public.delete_all_pharmflow_received_history(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_all_pharmflow_received_history(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_all_pharmflow_received_history(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_all_pharmflow_received_history(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_pharmacy_expiry_capture(uuid,uuid)",
+    "sql": "ALTER FUNCTION public.delete_pharmacy_expiry_capture(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_pharmacy_expiry_capture(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_pharmacy_expiry_capture(uuid,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_pharmacy_expiry_capture(uuid,uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_pharmacy_needs_review(uuid,uuid)",
+    "sql": "ALTER FUNCTION public.delete_pharmacy_needs_review(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_pharmacy_needs_review(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_pharmacy_needs_review(uuid,uuid) TO PUBLIC;GRANT EXECUTE ON FUNCTION public.delete_pharmacy_needs_review(uuid,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_pharmacy_needs_review(uuid,uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_pharmflow_expiry_review_v1(uuid,uuid)",
+    "sql": "ALTER FUNCTION public.delete_pharmflow_expiry_review_v1(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_pharmflow_expiry_review_v1(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_pharmflow_expiry_review_v1(uuid,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_pharmflow_expiry_review_v1(uuid,uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_pharmflow_needs_review_v2(uuid,uuid)",
+    "sql": "ALTER FUNCTION public.delete_pharmflow_needs_review_v2(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_pharmflow_needs_review_v2(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_pharmflow_needs_review_v2(uuid,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_pharmflow_needs_review_v2(uuid,uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_pharmflow_order_complete(uuid,text,text)",
+    "sql": "ALTER FUNCTION public.delete_pharmflow_order_complete(uuid,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_pharmflow_order_complete(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_pharmflow_order_complete(uuid,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_pharmflow_order_complete(uuid,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.delete_unused_pharmflow_global_item_v1(uuid,text,text)",
+    "sql": "ALTER FUNCTION public.delete_unused_pharmflow_global_item_v1(uuid,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.delete_unused_pharmflow_global_item_v1(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.delete_unused_pharmflow_global_item_v1(uuid,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.delete_unused_pharmflow_global_item_v1(uuid,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.discard_all_pharmflow_active_orders(uuid,text)",
+    "sql": "ALTER FUNCTION public.discard_all_pharmflow_active_orders(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.discard_all_pharmflow_active_orders(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.discard_all_pharmflow_active_orders(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.discard_all_pharmflow_active_orders(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.discard_pharmflow_active_order(uuid,text,text)",
+    "sql": "ALTER FUNCTION public.discard_pharmflow_active_order(uuid,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.discard_pharmflow_active_order(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.discard_pharmflow_active_order(uuid,text,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.discard_pharmflow_active_order(uuid,text,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.export_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean)",
+    "sql": "ALTER FUNCTION public.export_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.export_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.export_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.export_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.fail_photo_cleanup_job(uuid,uuid,text)",
+    "sql": "ALTER FUNCTION public.fail_photo_cleanup_job(uuid,uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.fail_photo_cleanup_job(uuid,uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.fail_photo_cleanup_job(uuid,uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.fail_photo_cleanup_job(uuid,uuid,text) TO \"service_role\";"
+  },
+  {
+    "name": "function_security:public.finalize_pharmflow_needs_review_allocations_on_receipt_v1()",
+    "sql": "ALTER FUNCTION public.finalize_pharmflow_needs_review_allocations_on_receipt_v1() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.finalize_pharmflow_needs_review_allocations_on_receipt_v1() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.finalize_pharmflow_needs_review_allocations_on_receipt_v1() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:public.finalize_pharmflow_order(uuid,text)",
+    "sql": "ALTER FUNCTION public.finalize_pharmflow_order(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.finalize_pharmflow_order(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.finalize_pharmflow_order(uuid,text) TO PUBLIC;GRANT EXECUTE ON FUNCTION public.finalize_pharmflow_order(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.finalize_pharmflow_order(uuid,text) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.finalize_pharmflow_receiving_workspace_v1(uuid,text,text[],jsonb,jsonb)",
+    "sql": "ALTER FUNCTION public.finalize_pharmflow_receiving_workspace_v1(uuid,text,text[],jsonb,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.finalize_pharmflow_receiving_workspace_v1(uuid,text,text[],jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.finalize_pharmflow_receiving_workspace_v1(uuid,text,text[],jsonb,jsonb) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.finalize_pharmflow_receiving_workspace_v1(uuid,text,text[],jsonb,jsonb) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_global_master_gtin_meta()",
+    "sql": "ALTER FUNCTION public.get_global_master_gtin_meta() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_global_master_gtin_meta() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_global_master_gtin_meta() TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_global_master_gtin_meta() TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_global_master_gtin_page(integer,integer)",
+    "sql": "ALTER FUNCTION public.get_global_master_gtin_page(integer,integer) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_global_master_gtin_page(integer,integer) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_global_master_gtin_page(integer,integer) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_global_master_gtin_page(integer,integer) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_global_master_gtin_page_v2(integer,integer)",
+    "sql": "ALTER FUNCTION public.get_global_master_gtin_page_v2(integer,integer) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_global_master_gtin_page_v2(integer,integer) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_global_master_gtin_page_v2(integer,integer) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_global_master_gtin_page_v2(integer,integer) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_my_app_context()",
+    "sql": "ALTER FUNCTION public.get_my_app_context() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_my_app_context() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_my_app_context() TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_my_app_context() TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_my_pharmacy_registration()",
+    "sql": "ALTER FUNCTION public.get_my_pharmacy_registration() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_my_pharmacy_registration() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_my_pharmacy_registration() TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_my_pharmacy_registration() TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_pharmflow_active_order_manifest(uuid)",
+    "sql": "ALTER FUNCTION public.get_pharmflow_active_order_manifest(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_pharmflow_active_order_manifest(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_pharmflow_active_order_manifest_meta_v1(uuid)",
+    "sql": "ALTER FUNCTION public.get_pharmflow_active_order_manifest_meta_v1(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_pharmflow_active_order_manifest_meta_v1(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest_meta_v1(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest_meta_v1(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_pharmflow_active_order_manifest_v2(uuid)",
+    "sql": "ALTER FUNCTION public.get_pharmflow_active_order_manifest_v2(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_pharmflow_active_order_manifest_v2(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest_v2(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest_v2(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_pharmflow_active_order_manifest_v3(uuid)",
+    "sql": "ALTER FUNCTION public.get_pharmflow_active_order_manifest_v3(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_pharmflow_active_order_manifest_v3(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest_v3(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_pharmflow_active_order_manifest_v3(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_pharmflow_cloud_workspace(uuid)",
+    "sql": "ALTER FUNCTION public.get_pharmflow_cloud_workspace(uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_pharmflow_cloud_workspace(uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_pharmflow_cloud_workspace(uuid) TO PUBLIC;GRANT EXECUTE ON FUNCTION public.get_pharmflow_cloud_workspace(uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_pharmflow_cloud_workspace(uuid) TO \"authenticated\";"
+  },
+  {
+    "name": "function_security:public.get_pharmflow_expiry_auth_session_v1(uuid,text)",
+    "sql": "ALTER FUNCTION public.get_pharmflow_expiry_auth_session_v1(uuid,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION public.get_pharmflow_expiry_auth_session_v1(uuid,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION public.get_pharmflow_expiry_auth_session_v1(uuid,text) TO \"postgres\";GRANT EXECUTE ON FUNCTION public.get_pharmflow_expiry_auth_session_v1(uuid,text) TO \"authenticated\";"
+  }
+]

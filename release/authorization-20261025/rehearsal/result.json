@@ -1,0 +1,47 @@
+{
+  "engine": "PostgreSQL 17.5 on x86_64-pc-linux-gnu, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit",
+  "productionEngine": "PostgreSQL 17.6",
+  "scope": "Exact captured Production application schema/contracts, empty tables plus synthetic fixtures. Local PostgreSQL 17.5 WASM; managed services are not emulated.",
+  "ddlAdapter": "Only Storage policy ownership and pgrst role-setting statements use bootstrap privileges to model Supabase privileged DDL. All application functions retain postgres ownership; authenticated runtime tests have no superuser/BYPASSRLS.",
+  "baselineUnits": 2980,
+  "migrations": [
+    "00_account_contract_qualification.sql",
+    "01_password_gate.sql",
+    "02_permissions_foundation.sql",
+    "03_production_existing_rpc_guards.sql",
+    "04a_uuid_cutover.sql",
+    "04b_policy_password_gate.sql",
+    "04c_readonly_generation.sql",
+    "04d_provisioning.sql",
+    "04e_initial_permissions.sql",
+    "05_receiving_compatibility_helper.sql",
+    "06_legacy_retirement.sql",
+    "07_receiving_compatibility_guards.sql",
+    "08_receiving_compatibility_rls.sql"
+  ],
+  "tests": [
+    "all 99 original tables retain identical row fingerprints, including synthetic legacy history",
+    "227 existing public function signatures/return contracts retained; RPC ACLs retained except explicitly retired/superseded APIs; 137 operational bodies unchanged after guard removal",
+    "complete release assertions",
+    "whole release rollback restores original integer contract and removes new foundation",
+    "injected late migration error rolls back complete foundation, request hook and all existing records",
+    "clean rerun commits all 13 files; post-commit integer/count/isolation/RLS/password assertions pass"
+  ],
+  "status": "PASS",
+  "migrationChecksums": {
+    "00_account_contract_qualification.sql": "f220fadb5467db1c73a6721a4dc2b66a6283d0db79c6a6b40b752ed12d9e5f32",
+    "01_password_gate.sql": "b9c400126f0ff4b4f9f6754f19865618f74cf0ab184403334b2a17fedfcce578",
+    "02_permissions_foundation.sql": "a9b5da4db5c13e3dd658ac08464a28801f56c32b251b5973c598a9f5d03b3f36",
+    "03_production_existing_rpc_guards.sql": "372e5b44943cc2b036c723fa37a9a799ffa3295c87d2a79cdf600d0c114c0c56",
+    "04a_uuid_cutover.sql": "6522f3010b9b387718cdcfa386e4fc0fd9f14f810c609e143d008b349f597c04",
+    "04b_policy_password_gate.sql": "76732f47897808d3a2558f201ff705a84c3467dd45cde69251493dea6784cd4f",
+    "04c_readonly_generation.sql": "74798352f882680d45a910800248b2aac06a4d3939af5f4974bc9e88f262ebff",
+    "04d_provisioning.sql": "c32ada5cfde1942c8935c2a7189d881851106aad2820f26cd56985fb98fe86d6",
+    "04e_initial_permissions.sql": "bc2171cf8022211683004d00d2b3ea487080eac6e1253c5fa75d2661cce61abc",
+    "05_receiving_compatibility_helper.sql": "a4d30c0ef92974409a675b9176dd0c242c9931625c20b83e936850872754f064",
+    "06_legacy_retirement.sql": "ae60cc9540048b6d982d0cbead64e8da28b8adbfe8e3cf9a9d98e1f1a3abe366",
+    "07_receiving_compatibility_guards.sql": "0e4a11154b92ffed1f1d23362b2ec6571572b77a2151fac5cd7b405a86a845b4",
+    "08_receiving_compatibility_rls.sql": "833043842c1176e58ad01800547a2aa55697d922ea00e9ec6bbf8ce92488494a"
+  },
+  "baselineSha256": "2fd22cc4162ebdda9cbc196062f5ae3df18e44d8c874292df99f2bfe600f4df6"
+}

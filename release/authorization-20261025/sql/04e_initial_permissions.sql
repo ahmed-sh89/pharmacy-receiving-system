@@ -1,4 +1,4 @@
--- Staging only. Existing policies, UUIDs and historical timestamps are retained.
+-- Authorization release candidate. Existing policies, UUIDs and historical timestamps are retained.
 ALTER TABLE pharmflow_auth_private.account_provision_v1 ADD COLUMN initial_permissions jsonb;
 ALTER TABLE public.pharmacy_registration_requests ADD COLUMN initial_permissions jsonb;
 ALTER TABLE public.pharmflow_pharmacy_permissions_v1 ALTER COLUMN receiving SET DEFAULT 'DISABLED', ALTER COLUMN expiry SET DEFAULT 'DISABLED', ALTER COLUMN data_access SET DEFAULT 'READ_ONLY';

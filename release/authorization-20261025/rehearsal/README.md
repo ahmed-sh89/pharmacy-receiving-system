@@ -1,0 +1,11 @@
+# Isolated authorization contract rehearsal
+
+Run `npm ci` and then `npm test` inside this directory. The pinned PGlite 0.3.10 runner creates an empty, in-memory PostgreSQL 17.5 database and closes it after verification. It does not read database credentials, connect to Supabase, deploy code or change either environment. `PF_PGLITE_MODULE` optionally selects an already installed copy of the same pinned package for an offline run.
+
+The checksum manifest restores captured Production schema metadata, not Production records. Synthetic fixtures represent two pharmacies, a System Administrator, Pharmacy Admins, a forced-password account, grouped Receiving/Expiry review cases and legacy history. The public count RPC returns integer from the baseline onward; no DROP or return-contract conversion occurs.
+
+The runner validates function bodies while applying all 13 numbered candidate files. It checks original-table fingerprints, 227 public contracts/ACLs, 137 guard-only operational bodies, authenticated permission and RLS boundaries, module separation and the password gate. It exercises an explicit rollback, a late injected migration error with complete rollback, and a clean commit followed by authenticated assertions. The one-time foundation is retried only after rollback; committed migrations are not blindly replayed.
+
+Platform limits are explicit in result.json: Production is Supabase PostgreSQL 17.6; this local upstream PostgreSQL engine is 17.5. Supabase privileged Storage policy DDL and pgrst role-setting privileges are modeled only during migration execution. Runtime authenticated roles retain captured non-superuser/non-BYPASSRLS attributes, and application functions remain owned by postgres. No managed Auth, PostgREST, Storage service, device or deployed browser behavior is simulated. Hosted Staging branching was unavailable on the current plan.
+
+`result.json` records tested SQL checksums and baseline manifest hash. `production-preflight-result.json` records the separately passed read-only checks against the actual Production project. Re-run the preflight before a separately authorized controlled promotion. Production source, database and the 46 historical sessions were unchanged.

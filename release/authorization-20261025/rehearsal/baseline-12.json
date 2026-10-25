@@ -1,0 +1,2834 @@
+[
+  {
+    "name": "function_security:pharmflow_expiry_private.keep_operator_origin_v1(uuid,uuid,uuid,uuid,text,timestamp with time zone)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.keep_operator_origin_v1(uuid,uuid,uuid,uuid,text,timestamp with time zone) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.keep_operator_origin_v1(uuid,uuid,uuid,uuid,text,timestamp with time zone) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.keep_operator_origin_v1(uuid,uuid,uuid,uuid,text,timestamp with time zone) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.protect_system_operator_v1()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.protect_system_operator_v1() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.protect_system_operator_v1() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.protect_system_operator_v1() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.record_first_operator_v1()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.record_first_operator_v1() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.record_first_operator_v1() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.record_first_operator_v1() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.save_known_core(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text,text)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.save_known_core(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.save_known_core(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.save_known_core(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text,text) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.scan_facts(text,text)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.scan_facts(text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.scan_facts(text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.scan_facts(text,text) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.valid_auth_session()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.valid_auth_session() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.valid_auth_session() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.valid_auth_session() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.batch_is_scanner_payload(text)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.batch_is_scanner_payload(text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.batch_is_scanner_payload(text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.batch_is_scanner_payload(text) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.gs1_source_locks(jsonb,jsonb)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.gs1_source_locks(jsonb,jsonb) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.gs1_source_locks(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.gs1_source_locks(jsonb,jsonb) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.record_operation_operator_v1()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.record_operation_operator_v1() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.record_operation_operator_v1() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.record_operation_operator_v1() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.record_review_operator_v1()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.record_review_operator_v1() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.record_review_operator_v1() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.record_review_operator_v1() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.require_signed_session(uuid,uuid,boolean)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.require_signed_session(uuid,uuid,boolean) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.require_signed_session(uuid,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.require_signed_session(uuid,uuid,boolean) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.guard_photo_operation_cleanup()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.guard_photo_operation_cleanup() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.guard_photo_operation_cleanup() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.guard_photo_operation_cleanup() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.guard_photo_references_cleanup()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.guard_photo_references_cleanup() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.guard_photo_references_cleanup() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.guard_photo_references_cleanup() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.photo_cleanup_eligible(uuid,uuid,uuid,text,text)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.photo_cleanup_eligible(uuid,uuid,uuid,text,text) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.photo_cleanup_eligible(uuid,uuid,uuid,text,text) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.photo_cleanup_eligible(uuid,uuid,uuid,text,text) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.enqueue_operation_photo_cleanup()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.enqueue_operation_photo_cleanup() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.enqueue_operation_photo_cleanup() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.enqueue_operation_photo_cleanup() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.complete_photo_cleanup_job(uuid,text,uuid)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.complete_photo_cleanup_job(uuid,text,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.complete_photo_cleanup_job(uuid,text,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.complete_photo_cleanup_job(uuid,text,uuid) TO \"postgres\";GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.complete_photo_cleanup_job(uuid,text,uuid) TO \"service_role\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.enqueue_receiving_review_photos(uuid,uuid)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.enqueue_receiving_review_photos(uuid,uuid) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.enqueue_receiving_review_photos(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.enqueue_receiving_review_photos(uuid,uuid) TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.receiving_review_photo_lifecycle()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.receiving_review_photo_lifecycle() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.receiving_review_photo_lifecycle() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.receiving_review_photo_lifecycle() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.guard_receiving_review_photo_reference()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.guard_receiving_review_photo_reference() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.guard_receiving_review_photo_reference() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.guard_receiving_review_photo_reference() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.guard_receiving_storage_photo()",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.guard_receiving_storage_photo() OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.guard_receiving_storage_photo() FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.guard_receiving_storage_photo() TO \"postgres\";"
+  },
+  {
+    "name": "function_security:pharmflow_expiry_private.claim_photo_cleanup_jobs(integer)",
+    "sql": "ALTER FUNCTION pharmflow_expiry_private.claim_photo_cleanup_jobs(integer) OWNER TO \"postgres\";REVOKE ALL ON FUNCTION pharmflow_expiry_private.claim_photo_cleanup_jobs(integer) FROM PUBLIC,anon,authenticated,service_role,postgres;GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.claim_photo_cleanup_jobs(integer) TO \"postgres\";GRANT EXECUTE ON FUNCTION pharmflow_expiry_private.claim_photo_cleanup_jobs(integer) TO \"service_role\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"scim_users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"scim_users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_users",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"scim_users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"saml_relay_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"saml_relay_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_relay_states",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"saml_relay_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"flow_state\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"flow_state\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"flow_state\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:flow_state",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"flow_state\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"saml_providers\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"saml_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"saml_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:saml_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"saml_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"instances\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"instances\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"instances\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:instances",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"instances\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"scim_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"scim_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:scim_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"scim_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT SELECT ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT UPDATE ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT SELECT ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT UPDATE ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT SELECT ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT UPDATE ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"auth\".\"refresh_tokens_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"schema_migrations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:schema_migrations",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"schema_migrations\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_code_sets",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_recovery_code_sets\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_recovery_codes",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_recovery_codes\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"refresh_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"refresh_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:refresh_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"refresh_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"one_time_tokens\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"one_time_tokens\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:one_time_tokens",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"one_time_tokens\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"users\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"users\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"users\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:users",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"users\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"audit_log_entries\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"audit_log_entries\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:audit_log_entries",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"audit_log_entries\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sso_domains\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sso_domains\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sso_domains\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_domains",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sso_domains\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_amr_claims\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_amr_claims\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_amr_claims",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_amr_claims\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"identities\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"identities\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"identities\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:identities",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"identities\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sessions\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sessions\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sessions\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sessions",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sessions\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_challenges",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sso_providers\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sso_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sso_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:sso_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"sso_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\" WITH GRANT OPTION;"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_factors\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_factors\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:mfa_factors",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"mfa_factors\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_consents\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_consents\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_consents",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_consents\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_authorizations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_authorizations\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_authorizations",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_authorizations\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_client_states\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_client_states\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_client_states",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_client_states\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_clients\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_clients\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:oauth_clients",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"oauth_clients\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"custom_oauth_providers\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"custom_oauth_providers\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:custom_oauth_providers",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"custom_oauth_providers\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"webauthn_credentials\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"webauthn_credentials\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_credentials",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"webauthn_credentials\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"supabase_storage_admin\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT INSERT ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT UPDATE ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT DELETE ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT TRUNCATE ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT REFERENCES ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT TRIGGER ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT MAINTAIN ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:s3_multipart_uploads",
+    "sql": "GRANT SELECT ON TABLE \"storage\".\"s3_multipart_uploads\" TO \"anon\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"webauthn_challenges\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"webauthn_challenges\" TO \"supabase_auth_admin\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT INSERT ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT SELECT ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT UPDATE ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT DELETE ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT TRUNCATE ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT REFERENCES ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT TRIGGER ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:webauthn_challenges",
+    "sql": "GRANT MAINTAIN ON TABLE \"auth\".\"webauthn_challenges\" TO \"dashboard_user\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_items_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_items_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_global_item_identifiers_v2",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_global_item_identifiers_v2\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_identifier_migration_conflicts_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_identifier_migration_conflicts_v1\" TO \"postgres\";"
+  }
+]

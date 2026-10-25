@@ -1,0 +1,11 @@
+{
+  "name": "pharmflow-release-contract-rehearsal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run-rehearsal.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.3.10"
+  }
+}

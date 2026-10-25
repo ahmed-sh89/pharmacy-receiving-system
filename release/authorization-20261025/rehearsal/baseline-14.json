@@ -1,0 +1,994 @@
+[
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_transactions_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_receiving_transactions_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_active_order_manifest_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_active_order_manifest_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_needs_review_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_needs_review_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmacy_learned_gtin_audit",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmacy_learned_gtin_audit\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1_audit_id_seq",
+    "sql": "GRANT USAGE ON SEQUENCE \"public\".\"pharmflow_pharmacy_gtin_audit_v1_audit_id_seq\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"anon\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_pharmacy_gtin_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_pharmacy_gtin_audit_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_workspace_history_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_receiving_workspace_history_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_gtin_lifecycle_v3",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_gtin_lifecycle_v3\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_receiving_history_items_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_receiving_history_items_v1\" TO \"authenticated\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_workers_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_workers_v1\" TO \"service_role\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT INSERT ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT SELECT ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT UPDATE ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT DELETE ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:pharmflow_expiry_review_resolution_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"public\".\"pharmflow_expiry_review_resolution_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:closed_auth_sessions_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"closed_auth_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operator_audit_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"operator_audit_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_group_adjustments_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"session_group_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:active_sessions_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"active_sessions_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:inventory_requests_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:filtered_inventory_requests_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"filtered_inventory_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:first_operator_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"first_operator_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photos",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"photos\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:resolved_inventory_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"resolved_inventory_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:review_details",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"review_details\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_adjustments_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"session_adjustments_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_captures_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"session_captures_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:session_clear_requests_v1",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"session_clear_requests_v1\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:photo_cleanup_jobs",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"photo_cleanup_jobs\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT INSERT ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT SELECT ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT UPDATE ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT DELETE ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT TRUNCATE ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT REFERENCES ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT TRIGGER ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  },
+  {
+    "name": "acl:operations",
+    "sql": "GRANT MAINTAIN ON TABLE \"pharmflow_expiry_private\".\"operations\" TO \"postgres\";"
+  }
+]

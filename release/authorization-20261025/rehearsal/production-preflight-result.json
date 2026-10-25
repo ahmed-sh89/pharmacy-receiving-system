@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "read_only": true,
+  "production_project": "zznoshzcyxmtwfbznjyr",
+  "production_source": "bd20065f0a2c7bb44861df88e1d021225e7c9725",
+  "verified_definition_hashes": 150,
+  "checks": [
+    "Required operational dependency tables",
+    "Unique HHP084 and active admin membership",
+    "No legacy table API grants",
+    "No pre-existing authorization foundation/request hook",
+    "Exact original Production function definitions"
+  ],
+  "production_changes": false
+}

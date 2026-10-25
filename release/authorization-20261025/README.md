@@ -1,13 +1,25 @@
-# Authorization release package — BLOCKED
+# Authorization release package — SQL compatibility rehearsal passed
 
 Staging-only security work. No Production write, migration, source update or deployment was performed.
 
 Production baseline: `bd20065f0a2c7bb44861df88e1d021225e7c9725`, Supabase `zznoshzcyxmtwfbznjyr`.
 Approved source baseline: `644f541c1aa2889cf5ae2f1ce02489da8ff17a0d` on `staging/auth-access-parity-20261024`, Supabase `tovkcakucyagvbzvlnks`.
 
-## Blocking evidence
+## Resolved contract blocker — 2026-10-25
 
-The original-Production guard rehearsal stopped with PostgreSQL `42P13`: `count_pharmflow_needs_review_v2(uuid,text)` returns **integer in Production** and **bigint in Staging**. No DROP, contract conversion or further compatibility development was attempted. The first 22 compilation units passed inside rolled-back transactions; the next failed atomically. Full release rehearsal is incomplete. Do not promote this package until it passes against a disposable Production-matched database preserving the integer contract. Do not replace Production RPCs with Staging operational bodies.
+The previous rehearsal incorrectly overlaid Production definitions on the Staging schema, where `count_pharmflow_needs_review_v2(uuid,text)` returns bigint. The disposable baseline now restores the verified Production **integer** definition and all relevant schema metadata. No live function was dropped or changed; Production SQL `03` still returns integer. Live Staging remains compatible with its existing bigint definition.
+
+Two additional authorization-package omissions were corrected during the complete rehearsal: `01` now gives the private own-account password flag helper SECURITY DEFINER, exactly matching the verified working Staging helper and its fixed search_path; `02` conditionally revokes the optional Staging-only `rls_auto_enable()` function, which does not exist in Production. No operational function bodies were rewritten.
+
+All **13 numbered SQL files** passed with body validation enabled, including a complete commit and post-commit assertions, whole-release rollback and injected late migration failure rollback. The read-only Production preflight passed (150 definition hashes, required tables, HHP084 membership/bootstrap conditions and legacy table grants). Re-run it immediately before any separately authorized promotion.
+
+`rehearsal/` contains a checksum-verified, empty Production application schema baseline, synthetic fixtures, runner and exact migration checksums. It restores 99 tables, 227 existing public functions, Auth/Storage helpers and required private Expiry dependencies, constraints, role memberships, table/function ACLs, policies and triggers. All 227 captured public definitions matched the live Production catalog before restoration. No account or operational rows were copied; sealed import data and managed net/cron/vault service internals were excluded.
+
+**Scope and platform limitation:** this is a Production-schema/contract-matched SQL rehearsal on local PostgreSQL 17.5 (PGlite 0.3.10); Production runs Supabase PostgreSQL 17.6. The local upstream engine lacks Supabase privileged DDL support, so the runner executes only Storage policy DDL and the pgrst role setting with isolated bootstrap privileges. Application function ownership remains postgres, and authenticated runtime assertions have neither superuser nor BYPASSRLS. This is not a native Supabase/PostgREST/Auth/Storage service or deployed-client rehearsal. Hosted Staging branching was attempted but unavailable on the current plan; no branch or paid resource was created. These limits are recorded, not silently treated as tested platform integration.
+
+PASS evidence: all 227 existing public signatures/return contracts retained, RPC ACLs retained except intentional legacy/superseded APIs, 137 Receiving/Expiry operational bodies unchanged after guard removal, all 99 original table row fingerprints retained (including synthetic legacy history), Receiving/Expiry grouped counts, disabled-module separation, cross-pharmacy denial, permission RLS, HHP084 Global bootstrap, forced-password gate, missing identity denial, all 11 legacy denial ACLs, commit/retry from clean baseline and injected-failure recovery.
+
+The SQL compatibility blocker is resolved. The package is ready for the separately authorized controlled Production promotion process, subject to its release-time environment/deployment gate and authenticated smoke tests; it is not USER VERIFIED.
 
 ## Implemented and verified on Staging
 
@@ -16,13 +28,13 @@ The original-Production guard rehearsal stopped with PostgreSQL `42P13`: `count_
 - Three missing Staging dependency tables were created empty, with RLS and guarded write triggers. Existing history read policies are constrained by restrictive module policies. Production already has these dependencies; its legacy tables have no anon/authenticated table privileges.
 - Disposable fixtures were enclosed in BEGIN/ROLLBACK. PASS: 47 Disabled denials, 47 cross-pharmacy denials, 11 legacy RPC denials for both anon and authenticated, Enabled manifest/receipt/history, receipt and completion retry idempotency, Delete confirmation/data removal, Finalize validation, Reset success and injected-failure atomic rollback, historical preservation, Read Only and direct history RLS.
 - PASS: 22 focused source tests; Staging build; 22 rolled-back dependency/guard/retirement replay units; Production source patch clean application/build and Production-only connection metadata.
-- NOT TESTED: physical Handheld/PC synchronization, authenticated deployed browser smoke, full Production-matched release rehearsal, actual Production deployment configuration and Production smoke tests. The Production preflight SQL is prepared but has not fully passed.
+- NOT TESTED: physical Handheld/PC synchronization, authenticated deployed browser/Production smoke, actual Production deployment configuration and native Supabase service rehearsal. Full Production-schema SQL rehearsal and read-only Production preflight now PASS as qualified above.
 
 ## Candidate contents and dependency order
 
 `source.patch` is based on the verified Production source, includes the approved authorization/Access Management changes plus session retirement, and adapts the Supabase URL/public key, CSP, Edge environment assertion and build metadata to Production. It excludes Staging-only migrations and diagnostics. It applied and built successfully in an isolated local candidate; no source ref was promoted. The build supports Vercel main/production or GitHub Pages with `GITHUB_SHA` metadata.
 
-The numbered SQL files are **candidate release inputs, not an instruction to execute now**. After the blocker is resolved, rehearse the complete numbered sequence in one transaction against a disposable Production-matched database:
+The numbered SQL files are **candidate release inputs, not an instruction to execute now**. The complete numbered sequence was rehearsed in one transaction against the disposable Production-schema baseline:
 
 1. `00_account_contract_qualification.sql`, `01_password_gate.sql`, `02_permissions_foundation.sql`.
 2. `03_production_existing_rpc_guards.sql`: 91 existing Production bodies with only approved authorization guards. Five Staging-only Expiry APIs are explicitly excluded in `verification.json`.
@@ -33,11 +45,11 @@ Never run `STAGING_ONLY_receiving_dependencies.sql` on Production. Never blanket
 
 ## Release-time preflight and gate
 
-Re-read main/Staging heads and inspect `source.patch`; require the approved exact SHAs. Run `production-preflight.sql` read-only against the Production project. It checks 150 exact function definitions, required operational tables, HHP084 active admin membership, no exposed legacy table API and absence of an existing request hook/private authorization installation. Stop on drift or partial installation. Verify constraints, RLS/policy snapshots and account totals against the rehearsal. Verify the actual deployment project, Production domain, branch main, Production Supabase URL/public key, Auth redirect allowlist, Edge secrets and JWT verification; do not print secret values. Require a completed, passing Production-matched rehearsal before writes. Take schema/function/ACL/policy and deployment snapshots immediately before the separately authorized promotion.
+Re-read main/Staging heads and inspect `source.patch`; require the approved exact SHAs. Run `production-preflight.sql` read-only against the Production project. It checks 150 exact function definitions, required operational tables, HHP084 active admin membership, no exposed legacy table API and absence of an existing request hook/private authorization installation. Stop on drift or partial installation. Verify constraints, RLS/policy snapshots and account totals against the rehearsal. Verify the actual deployment project, Production domain, branch main, Production Supabase URL/public key, Auth redirect allowlist, Edge secrets and JWT verification; do not print secret values. Review the completed schema/contract rehearsal and its platform limits before writes; verify the actual Supabase privileged migration executor and deployment configuration at release time. Take schema/function/ACL/policy and deployment snapshots immediately before the separately authorized promotion.
 
 ## Recovery
 
-Before database commit, any error must ROLLBACK the complete release transaction; do not leave a partial foundation. Injected Reset failure already proved operational statements roll back together. After commit, retain authorization policies, permission rows, review capture and legacy denial. Correct a failed guarded definition forward with its original Production body plus the verified guard, in a transaction; re-run the exact failed test and contract checks. Do not re-grant legacy access, drop permission/review tables or reset operational records. If frontend regression occurs, roll back to the recorded previous Production deployment while retaining database security and correct forward; old legacy clients will remain denied. Full source rollback plus new database compatibility must be rehearsed before promotion.
+Before database commit, any error must ROLLBACK the complete release transaction; do not leave a partial foundation. Injected Reset failure already proved operational statements roll back together. After commit, retain authorization policies, permission rows, review capture and legacy denial. Correct a failed guarded definition forward with its original Production body plus the verified guard, in a transaction; re-run the exact failed test and contract checks. Do not re-grant legacy access, drop permission/review tables or reset operational records. If frontend regression occurs, roll back to the recorded previous Production deployment while retaining database security and correct forward; old legacy clients will remain denied. The original function signatures and return contracts remain compatible with the previous source; deployed-client rollback must be checked during controlled promotion.
 
 ## Focused Production smoke plan (separate authorization required)
 

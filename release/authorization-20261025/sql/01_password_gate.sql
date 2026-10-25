@@ -1,4 +1,4 @@
--- Staging only. A current server-owned Auth flag gates all Data API business routes.
+-- Authorization release candidate. A current server-owned Auth flag gates all Data API business routes.
 CREATE SCHEMA pharmflow_auth_private;
 REVOKE ALL ON SCHEMA pharmflow_auth_private FROM PUBLIC, anon;
 GRANT USAGE ON SCHEMA pharmflow_auth_private TO authenticated;

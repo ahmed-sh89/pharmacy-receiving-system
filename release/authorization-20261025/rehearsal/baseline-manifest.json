@@ -1,0 +1,13 @@
+{
+  "production_server": "PostgreSQL 17.6",
+  "public_tables": 49,
+  "all_tables": 99,
+  "public_functions": 227,
+  "platform_functions": 52,
+  "constraints": 411,
+  "policies": 16,
+  "triggers": 31,
+  "baseline_md5_verified_functions": 227,
+  "data_copied": false,
+  "excluded": "Sealed approved-import RPC and managed service extensions pg_net/cron/vault/statistics are outside this authorization release; no invocation/export of their data. Auth/Storage SQL tables/helpers, public object metadata and ACLs are restored."
+}
