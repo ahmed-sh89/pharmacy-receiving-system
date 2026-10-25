@@ -25,19 +25,21 @@
             if(node.dataset.uiTone!==tone){ node.dataset.uiTone=tone; }
         });
         const cloudOffline=/\bOFFLINE\b/i.test(syncText) || document.documentElement.dataset.cloudWorkspaceState==="offline";
-        const offline=!navigator.onLine || cloudOffline;
-        const label=offline ? "OFFLINE" : (masterActive && appReady && workspaceSynced ? "ONLINE" : "ATTENTION");
+        const permissionState=window.PharmFlowPermissions?.state();
+        const reconnecting=permissionState==='loading'||permissionState==='unavailable';
+        const offline=!navigator.onLine || (!reconnecting && cloudOffline);
+        const label=offline ? "OFFLINE" : reconnecting ? "RECONNECTING" : (masterActive && appReady && workspaceSynced ? "ONLINE" : "ATTENTION");
         const labelNode=document.getElementById("headerUnifiedStatusLabel");
         if(labelNode){ labelNode.textContent=label; }
         statusButton.classList.remove("is-online","is-offline","is-attention");
-        statusButton.classList.add("is-"+label.toLowerCase());
+        statusButton.classList.add("is-"+(reconnecting&&!offline?'attention':label.toLowerCase()));
         statusButton.setAttribute("aria-label","System status: "+label);
         const sidebarStatus=document.getElementById("sidebarConnection");
         if(sidebarStatus && !document.body.classList.contains("zebraDevice")){
             sidebarStatus.dataset.headerStatusManaged="true";
             sidebarStatus.textContent=label;
             sidebarStatus.classList.toggle("isOffline",label==="OFFLINE");
-            sidebarStatus.classList.toggle("isAttention",label==="ATTENTION");
+            sidebarStatus.classList.toggle("isAttention",label==="ATTENTION"||label==="RECONNECTING");
         }
     }
 
@@ -67,6 +69,7 @@
         const element=document.getElementById(id);
         if(element){ new MutationObserver(readStatus).observe(element,{childList:true,subtree:true,characterData:true,attributes:true}); }
     });
+    window.addEventListener("pharmflow:permission-state",readStatus);
     window.addEventListener("online",readStatus);
     window.addEventListener("offline",readStatus);
     readStatus();

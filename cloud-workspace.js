@@ -80,18 +80,21 @@
         ensureOverlay().classList.remove('pf-show');
         document.documentElement.classList.remove('pf-idle-sleep-active');
         arm();
+        // Permission reads blocked by the idle network guard need a fresh,
+        // in-app recovery only after the guard has actually been lifted.
+        window.dispatchEvent(new CustomEvent('pharmflow:idle-resume'));
 
         /* Resume the already-authenticated runtime immediately. The previous
            implementation reloaded the whole document, which repeated auth,
            workspace authority and archive hydration. Background authority
            reconciliation remains server-first but no longer blocks the UI. */
         try{
-            if(typeof reconcileRestoredWorkspaceWithCloud==='function'){
+            if((!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed('RECEIVING')) && typeof reconcileRestoredWorkspaceWithCloud==='function'){
                 Promise.resolve(reconcileRestoredWorkspaceWithCloud({reason:'idle-resume',silent:true}))
                     .then(result=>{ if(result?.cleared && typeof refreshEntireUI==='function') refreshEntireUI(); })
                     .catch(()=>{});
             }
-            if(typeof refreshExpiryCurrentState==='function' && document.getElementById('zebraExpiryShell')?.classList.contains('active')){
+            if((!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed('EXPIRY')) && typeof refreshExpiryCurrentState==='function' && document.getElementById('zebraExpiryShell')?.classList.contains('active')){
                 Promise.resolve(refreshExpiryCurrentState()).catch(()=>{});
             }
             setTimeout(()=>{ try{ focusScannerInput?.(); focusExpiryScanner?.(); }catch(_){} },0);
@@ -2645,6 +2648,9 @@ async function restoreCloudWorkspaceOnLogin(){
 
 async function ensureStartupCloudAuthority(){
     if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("RECEIVING")){
+        // Unavailable permission reads are not an authoritative revocation.
+        // Keep local orders/input intact while the UI remains fail-closed.
+        if(!window.PharmFlowPermissions.snapshot())return false;
         ensureCloudAccountContextIsolation?.();
         if(typeof createEmptyWorkspace==='function')AppState.workspace=createEmptyWorkspace();
         if(AppState.archive){AppState.archive.orders=[];AppState.archive.transactions=[];}
@@ -2948,6 +2954,7 @@ function initializePharmFlowCloudWorkspace(){
     /* focus + visibilitychange commonly fire together on mobile. Run exactly
        one foreground authority reconciliation and reuse it for both events. */
     const syncForegroundAuthority=()=>{
+        if(window.PharmFlowIdleSleep?.active)return Promise.resolve(false);
         const now=Date.now();
         if(PharmFlowCloudWorkspace.foregroundSyncPromise){
             return PharmFlowCloudWorkspace.foregroundSyncPromise;
@@ -2958,6 +2965,12 @@ function initializePharmFlowCloudWorkspace(){
         PharmFlowCloudWorkspace.lastForegroundSyncAt=now;
 
         PharmFlowCloudWorkspace.foregroundSyncPromise=(async()=>{
+            // Focus/visibility also start permission recovery. Wait for it before
+            // invoking the existing authority/sync path; do not race denied RPCs.
+            if(window.PharmFlowPermissions){
+                await window.PharmFlowPermissions.resume();
+                if(!window.PharmFlowPermissions.allowed("RECEIVING"))return false;
+            }
             if(PharmFlowCloudWorkspace.startupAuthorityReady!==true){
                 return await ensureStartupCloudAuthority();
             }
@@ -2993,13 +3006,20 @@ function initializePharmFlowCloudWorkspace(){
     );
     runAdaptiveCloudSync();
 
+    window.addEventListener("pharmflow:permissions-ready",()=>{
+        if(!PharmFlowCloudWorkspace.foregroundSyncPromise)PharmFlowCloudWorkspace.lastForegroundSyncAt=0;
+        if(window.PharmFlowPermissions?.allowed("RECEIVING"))syncForegroundAuthority().catch(()=>{});
+        if(window.PharmFlowPermissions?.allowed("EXPIRY") && typeof refreshExpiryCurrentState==='function' && document.getElementById('zebraExpiryShell')?.classList.contains('active')){
+            Promise.resolve(refreshExpiryCurrentState()).catch(()=>{});
+        }
+    });
     window.addEventListener("focus",()=>{
-        syncForegroundAuthority();
+        syncForegroundAuthority().catch(()=>{});
     });
 
     document.addEventListener("visibilitychange",()=>{
         if(document.visibilityState==="visible"){
-            syncForegroundAuthority();
+            syncForegroundAuthority().catch(()=>{});
         }
     });
     attemptCloudWorkspaceHydration();

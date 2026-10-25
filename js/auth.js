@@ -18,6 +18,7 @@ const AUTH_TAB_ID = "auth-" + Date.now().toString(36) + "-" + Math.random().toSt
 
 const AuthState = {
     initialized:false,
+    identityEpoch:0,
     recoveryActive:false,
     session:null,
     user:null,
@@ -476,6 +477,10 @@ function restoreAuthSession(){
 }
 
 function persistAuthSession(session){
+    if(!session || session.user?.id!==AuthState.user?.id){
+        AuthState.identityEpoch++;
+        window.PharmFlowPermissions?.clear();
+    }
     AuthState.session = session || null;
     AuthState.user = session && session.user ? session.user : null;
     AuthState.mustChangePassword = !!(AuthState.user?.app_metadata?.pharmflow_must_change_password);
@@ -525,7 +530,9 @@ function clearRejectedAuthSession(expectedRefreshToken){
     }
 
     const previousScope=String(AuthState.lastContextScope||"");
+    AuthState.identityEpoch++;
     AuthState.session=null;
+    window.PharmFlowPermissions?.clear();
     AuthState.user=null;
     AuthState.context=null;
     AuthState.registration=null;
@@ -1131,15 +1138,16 @@ async function refreshAuthToken(){
     return AuthState.refreshPromise;
 }
 
-window.addEventListener("online",()=>{
-    if(!AuthState.connectionDegraded || !isActiveHandheldWorkspace()) return;
-    refreshAuthToken().then(refreshed=>{
-        if(refreshed){
-            setAuthConnectionDegraded(false);
-            window.refreshUnifiedHandheldWorkspace?.({silent:true});
-        }
-    }).catch(()=>{});
-});
+/* Permission recovery owns resume/reconnect single-flight and bounded retry.
+   The authorized permissions RPC revalidates the JWT and pharmacy membership;
+   refresh expired/near-expiry tokens through the existing rotation lock first. */
+async function prepareAuthSessionForPermissions(){
+    if(!AuthState.session){throw new Error("Please sign in first");}
+    if(AuthState.connectionDegraded || isRestoredAccessTokenStale(AuthState.session)){
+        const refreshed=await refreshAuthToken();
+        if(!refreshed){throw new Error("Unable to revalidate sign-in. Reconnecting.");}
+    }
+}
 
 
 function getAuthContextScope(row=AuthState.context){

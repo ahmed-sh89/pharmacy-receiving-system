@@ -1,3 +1,13 @@
+# 2026-10-26 — Sleep/wake permission recovery
+
+Current focused release: automatic in-app permission/session recovery after resume or transient connectivity failure. Status: READY FOR USER VERIFICATION, conditional deployment gate and physical Windows Sleep/wake acceptance pending. Baseline/rollback: `9ed6736b62b6212f34382d0dfbad6637c813ff05`. This release preserves the Product Owner-accepted Handheld visual design.
+
+Root cause, exact changes, test results/known baseline failures and acceptance steps: [sleep/wake release record](docs/sleep-wake-recovery-20261026.md). No database, production account/permission or operational-data changes. Retain the current page/input while permission reads are unavailable, fail closed, then restore only server-authorized navigation. Existing idle pause/Resume remains in place; no browser reload.
+
+Exact next action: verify the published commit/served assets, then Product Owner Windows Sleep/wake test. Do not mark USER VERIFIED or DONE before acceptance. Earlier entries below are historical.
+
+---
+
 # 2026-10-22 — Authorized Production Quick Add release
 
 Accepted source: `7510cbcdb73a9f2a53d2b615db858e3036f91ffe`. Selective runtime promotion on Production baseline `4b3fe2e03d438ba5d462d5eabae0a6446884e125`; Production Supabase configuration preserved. Quick Add, Group display/style, V2 metrics and selected-item UX only. No Expiry/Handheld source changes.
