@@ -10,7 +10,7 @@
    HANDHELD RECEIVING — CANONICAL PRESENTATION
    Handheld-only. Desktop/PC selectors and behavior are intentionally untouched.
 ============================================================ */
-body.zebraDevice.zebraReceivingActive{height:var(--handheld-visible-height,100dvh)!important;min-height:0!important;max-height:var(--handheld-visible-height,100dvh)!important;overflow:hidden!important;background:#edf3f9!important}
+body.zebraDevice.zebraReceivingActive{height:var(--handheld-visible-height,100dvh)!important;min-height:0!important;max-height:var(--handheld-visible-height,100dvh)!important;overflow:hidden!important;background:#E5F0FC!important}
 body.zebraDevice.zebraReceivingActive .mainApplication{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
 body.zebraDevice.zebraReceivingActive .mainContent{height:100%!important;max-height:100%!important;overflow-y:auto!important;padding:3px!important;box-sizing:border-box!important}
 body.zebraDevice.zebraReceivingActive #page-dashboard{height:100%!important;max-height:100%!important;overflow-y:auto!important;padding:2px!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important}
@@ -278,12 +278,26 @@ body:not(.zebraDevice) #page-receiving #receivingInlineResult{
     display:none!important;
 }
 
-/* Handheld Receiving only: Expiry-inspired controls and bounded History. */
+/* Handheld Receiving surface, shared workspace headers and bounded History. */
 body.zebraDevice.zebraReceivingActive #zebraQuickHeader{background:#e8eff5!important;border:0!important;padding:4px 7px 6px!important}
-body.zebraReceivingActive .hhReceivingTitleRow{display:grid;grid-template-columns:92px minmax(0,1fr) 92px;align-items:center;gap:4px}
-body.zebraReceivingActive .hhReceivingTitleRow>strong{text-align:center;font-size:17px;font-weight:750;color:#163e63}
-body.zebraReceivingActive .hhReceivingTitleRow button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:38px;padding:0 4px;border:0;border-radius:7px;background:transparent;color:#245a87;font-size:13px;font-weight:700}
-body.zebraReceivingActive .hhReceivingTitleRow svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* Three separate fields, shared across Handheld workspaces. Expiry's second
+   status row keeps its existing geometry; no operational controls move. */
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow,
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader{grid-template-columns:80px minmax(0,1fr) 80px!important;column-gap:6px!important;align-items:center}
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow{display:grid}
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader{grid-template-rows:44px auto}
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow>button,
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow>strong,
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader>button,
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader>div{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;min-width:0!important;width:100%!important;height:38px!important;min-height:38px!important;max-height:38px!important;margin:0!important;padding:0 5px!important;border:1px solid #B8CFE7!important;border-radius:8px!important;background:#FFFFFF!important;color:#245B9C!important;font-size:13px!important;font-weight:700!important;line-height:1.15!important;white-space:nowrap!important;text-align:center!important;box-shadow:none!important}
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow>strong{background:#D9E9FA!important;font-size:14px!important}
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader>div{background:#DDD8F2!important}
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader>div>strong{font-size:14px!important;font-weight:700!important;line-height:1.15!important;color:#245B9C!important;white-space:nowrap}
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow svg,
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader>button svg{display:block!important;flex:none!important;width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round;stroke-linejoin:round}
+body.zebraDevice.zebraReceivingActive .mainApplication,
+body.zebraDevice.zebraReceivingActive .mainContent,
+body.zebraDevice.zebraReceivingActive #page-dashboard{background:#E5F0FC!important}
 body.zebraReceivingActive .hhReceivingOrders{margin-top:2px}
 body.zebraReceivingActive #btnHandheldAssignedOrders{display:flex!important;align-items:center;gap:8px;width:100%;min-height:34px;height:auto!important;padding:6px 10px!important;border:0!important;border-radius:7px!important;background:#ffffffb8!important;color:#243b55!important;font-size:13px!important;box-sizing:border-box}
 body.zebraReceivingActive #handheldWorkspaceStatus{display:flex!important;align-items:center;gap:6px;border:0!important;background:transparent!important;color:#216448;font-size:12px!important;font-weight:700;white-space:nowrap}
@@ -308,8 +322,8 @@ body.zebraDevice .hhReceivingHistoryStatus{font-size:11px;font-weight:700;paddin
 body.zebraDevice .hhReceivingHistoryStatus.review{background:#fff1d7;color:#875600}
 body.zebraDevice .hhReceivingHistoryStatus.resolved{background:#e8efff;color:#37578c}
 body.zebraDevice .hhReceivingHistoryStatus.deleted{background:#edf0f3;color:#586779}
-body.zebraReceivingActive .hhReceivingTitleRow button:hover{background:#dce7f2}
-body.zebraReceivingActive .hhReceivingTitleRow button:focus-visible{outline:2px solid #3679b6;outline-offset:-2px}
+body.zebraDevice.zebraReceivingActive .hhReceivingTitleRow>button:focus-visible,
+body.zebraDevice.zebraExpiryActive #zebraExpiryShell .expiryHandheldHeader>button:focus-visible{outline:2px solid #245B9C;outline-offset:2px}
 body.zebraDevice .hhReceivingHistoryChevron{flex:none;color:#0b5ed7;font-size:23px}
 body.zebraDevice .hhReceivingHistoryRow[open] .hhReceivingHistoryChevron{transform:rotate(180deg)}
 body.zebraDevice .hhReceivingHistoryDetails{display:grid;gap:8px;border-top:1px solid #dbe3ed;margin-top:8px;padding-top:8px;font-size:12px;overflow-wrap:anywhere}
