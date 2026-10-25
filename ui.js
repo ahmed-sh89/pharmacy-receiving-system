@@ -7969,11 +7969,11 @@ async function openHandheldScansPanel(){
     const current=()=>overlay.isConnected && scope===String(AuthState?.context?.pharmacy_id||"");
     const clientScope=()=>JSON.stringify(getSelectedReceivingOrderNumbers().slice().sort());
     let observedScope=clientScope();
-    const render=()=>{
+    const render=(restoreState=null)=>{
         if(!current()){close();return;}
         if(!verified)return;
-        const expanded=new Set([...list.querySelectorAll("details[open]")].map(el=>el.dataset.historyId));
-        const scroll=list.scrollTop;
+        const expanded=restoreState?.expanded||new Set([...list.querySelectorAll("details[open]")].map(el=>el.dataset.historyId));
+        const scroll=restoreState?.scroll??list.scrollTop;
         list.replaceChildren();
         const rows=getHandheldReceivingHistoryRows(reviews,assignedOrders);
         const notices=[];
@@ -8053,6 +8053,7 @@ async function openHandheldScansPanel(){
         list.scrollTop=scroll;
     };
     const loadHistory=async()=>{
+        const restoreState={expanded:new Set([...list.querySelectorAll("details[open]")].map(el=>el.dataset.historyId)),scroll:list.scrollTop,orders:JSON.stringify(assignedOrders)};
         const serial=++loadSerial;loading=true;verified=false;
         list.replaceChildren();message.textContent="Loading assigned-order history…";
         try{
@@ -8064,7 +8065,7 @@ async function openHandheldScansPanel(){
             if(orders.length && (typeof pullCloudWorkspaceTransactions!=="function" || !await pullCloudWorkspaceTransactions()))throw new Error("Receiving history synchronization incomplete");
             if(!current() || serial!==loadSerial)return;
             reviews=result.rows;assignedOrders=orders;indeterminate=Number(result.indeterminate_count);verified=true;
-            render();
+            render(restoreState.orders===JSON.stringify(assignedOrders)?restoreState:null);
         }catch(_){
             if(current() && serial===loadSerial){list.replaceChildren();message.textContent="History unavailable: the complete assigned-order result could not be verified. Reopen History to retry.";}
         }finally{if(serial===loadSerial)loading=false;}
