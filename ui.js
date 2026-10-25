@@ -7870,6 +7870,7 @@ function bindHandheldReceivingDialog(overlay,trigger){
     const close=()=>{
         document.removeEventListener("keydown",key);
         window.removeEventListener("auth:context-ready",changed);
+        overlay.onDialogClose?.();
         overlay.remove();
         trigger?.setAttribute("aria-expanded","false");
         if(scope===String(AuthState?.context?.pharmacy_id||"")){
@@ -7918,17 +7919,30 @@ function openHandheldAssignedOrdersPanel(){
     bindHandheldReceivingDialog(overlay,trigger);
 }
 
-function getHandheldReceivingHistoryRows(reviewRows=[]){
-    const device=String(ensureDeviceId()||"");
-    const rows=getHandheldDeviceReceivingRows().map(tx=>({kind:"ledger",id:String(tx.transactionId||""),time:tx.dateTime,record:tx}));
+function getHandheldHistoryOrderNumbers(row){
+    const captured=Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[];
+    const single=row?.order_number||row?.orderNumber||row?.selectedOrderNumber||row?.orderId||"";
+    return [...new Set([...captured,single].map(value=>String(value||"").trim().toUpperCase().replace(/\s/g,"")).filter(Boolean))];
+}
+
+function handheldHistoryTime(value){
+    const ms=Date.parse(value),fraction=String(value||"").match(/\.(\d+)/)?.[1]||"";
+    return Number.isFinite(ms)?ms*1000+Number(fraction.padEnd(6,"0").slice(3,6)):NaN;
+}
+
+function getHandheldReceivingHistoryRows(reviewRows=[],assignedOrders=[]){
+    const device=String(ensureDeviceId()||""),assigned=new Set(assignedOrders);
+    if(!device || !assigned.size)return [];
+    const rows=getHandheldDeviceReceivingRows().map(tx=>({kind:"ledger",id:String(tx.transactionId||""),time:tx.dateTime,record:tx,orders:getHandheldHistoryOrderNumbers(tx)}));
     const seen=new Set();
     for(const review of reviewRows){
-        // A persisted case is one record, never an invented sequence of scans.
-        if(!review.review_id || !device || String(review.device_id||"")!==device || seen.has(review.review_id))continue;
+        if(!review.review_id || String(review.device_id||"")!==device || seen.has(review.review_id))continue;
         seen.add(review.review_id);
-        rows.push({kind:"review",id:String(review.review_id),time:review.created_at,record:review});
+        rows.push({kind:"review",id:String(review.review_id),time:review.created_at,record:review,orders:getHandheldHistoryOrderNumbers(review)});
     }
-    return rows.filter(row=>Number.isFinite(Date.parse(row.time))).sort((a,b)=>Date.parse(b.time)-Date.parse(a.time)||a.id.localeCompare(b.id)).slice(0,10);
+    // Filter every source before the shared final limit. Missing scope is never guessed.
+    return rows.filter(row=>row.orders.some(order=>assigned.has(order)) && Number.isFinite(handheldHistoryTime(row.time)))
+        .sort((a,b)=>handheldHistoryTime(b.time)-handheldHistoryTime(a.time)||(b.kind+":"+b.id).localeCompare(a.kind+":"+a.id)).slice(0,10);
 }
 
 function canUndoHandheldHistoryAction(row){
@@ -7947,34 +7961,43 @@ async function openHandheldScansPanel(){
     const scope=String(AuthState?.context?.pharmacy_id||"");
     if(!scope)return;
     const overlay=document.createElement("div");overlay.id="handheldScansOverlay";overlay.className="hhReceivingHistoryOverlay";
-    overlay.innerHTML='<section class="hhReceivingHistoryPanel" role="dialog" aria-modal="true" aria-label="Receiving History"><header><strong>History</strong><button type="button" data-close aria-label="Close History">✕</button></header><div class="hhReceivingHistoryList"></div><p class="hhReceivingHistoryMessage" role="status">Loading…</p><footer><span>Latest 10 saved actions / review cases on this Handheld.</span><button type="button" data-close>Done</button></footer></section>';
+    overlay.innerHTML='<section class="hhReceivingHistoryPanel" role="dialog" aria-modal="true" aria-label="Receiving History"><header><strong>History</strong><button type="button" data-close aria-label="Close History">✕</button></header><div class="hhReceivingHistoryList"></div><p class="hhReceivingHistoryMessage" role="status">Loading…</p><footer><span>Latest 10 attributable actions / review cases in assigned orders.</span><button type="button" data-close>Done</button></footer></section>';
     document.body.append(overlay);
     const close=bindHandheldReceivingDialog(overlay,document.getElementById("btnHandheldTotalScans"));
     const list=overlay.querySelector(".hhReceivingHistoryList"),message=overlay.querySelector('[role="status"]');
-    let reviews=[],reviewError=false;
-    try{reviews=await nrV3ListHistory("RECEIVING",null);}catch(_){reviewError=true;}
+    let reviews=[],assignedOrders=[],indeterminate=0,loading=false,verified=false,loadSerial=0;
     const current=()=>overlay.isConnected && scope===String(AuthState?.context?.pharmacy_id||"");
-    if(!current()){close();return;}
+    const clientScope=()=>JSON.stringify(getSelectedReceivingOrderNumbers().slice().sort());
+    let observedScope=clientScope();
     const render=()=>{
         if(!current()){close();return;}
+        if(!verified)return;
+        const expanded=new Set([...list.querySelectorAll("details[open]")].map(el=>el.dataset.historyId));
+        const scroll=list.scrollTop;
         list.replaceChildren();
-        const rows=getHandheldReceivingHistoryRows(reviews);
-        message.textContent=reviewError?"Needs Review could not be loaded. Showing available Receiving actions; reopen to retry.":rows.length?"":"No saved actions on this Handheld.";
+        const rows=getHandheldReceivingHistoryRows(reviews,assignedOrders);
+        const notices=[];
+        if(!assignedOrders.length)notices.push("No orders are assigned from the computer.");
+        else if(!rows.length)notices.push("No saved actions in the currently assigned orders on this Handheld.");
+        if(indeterminate)notices.push(`${indeterminate} legacy review case(s) have indeterminate order scope and are not included.`);
+        message.textContent=notices.join(" ");
         for(const action of rows){
             const row=action.record,review=action.kind==="review",details=document.createElement("details");
             details.className="hhReceivingHistoryRow";
+            details.dataset.historyId=action.kind+":"+action.id;details.open=expanded.has(details.dataset.historyId);
             const summary=document.createElement("summary"),main=document.createElement("div"),name=document.createElement("strong"),meta=document.createElement("span"),status=document.createElement("span"),arrow=document.createElement("span");
             main.className="hhReceivingHistoryMain";
             name.textContent=review?(row.master_item_name_hint||"Unknown Barcode"):(row.itemName||row.itemCode||"Item");
             const identifier=review?(row.identifier_display||row.gtin||row.raw_barcode):(row.itemCode||row.gtin);
             const quantity=review?row.pending_quantity:row.quantity;
             const time=new Date(action.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
-            meta.textContent=`${identifier||"Identifier unavailable"} · Qty ${quantity??"—"} · ${time}`;
-            main.append(name,meta);status.className="hhReceivingHistoryStatus"+(review?" review":"");
-            status.textContent=review?(row.status==="RESOLVED"?"Resolved review":row.status==="DELETED"?"Deleted review":"Needs Review"):"Recognized";
+            meta.textContent=`${identifier||"Identifier unavailable"} · Qty ${quantity??"—"} · ${time} · Order ${action.orders.join(", ")}`;
+            const reviewState=String(row.status||"").toUpperCase();
+            main.append(name,meta);status.className="hhReceivingHistoryStatus "+(!review?"recognized":reviewState==="PENDING"?"review":reviewState==="RESOLVED"?"resolved":"deleted");
+            status.textContent=!review?"Recognized":reviewState==="RESOLVED"?"Resolved Review":reviewState==="DELETED"?"Deleted Review":reviewState==="PENDING"?"Needs Review":`Review · ${reviewState||"Unknown status"}`;
             arrow.className="hhReceivingHistoryChevron";arrow.textContent="⌄";arrow.setAttribute("aria-hidden","true");summary.append(main,status,arrow);details.append(summary);
             const body=document.createElement("div");body.className="hhReceivingHistoryDetails";
-            const fields=[["Identifier",identifier],["Item Code",review?row.master_item_code_hint:row.itemCode],["Order",row.order_number||row.orderNumber],["Quantity",quantity],["Recorded",new Date(action.time).toLocaleString()],["Action",review?"Review case captured":row.source],["Reason",row.review_reason],["Original barcode",row.raw_barcode],["Resolved item",row.resolved_item_name||row.resolved_item_code],["Status",review?row.status:null]];
+            const fields=[["Identifier",identifier],["Item Code",review?row.master_item_code_hint:row.itemCode],["Captured orders",action.orders.join(", ")],["Quantity",quantity],["Recorded",new Date(action.time).toLocaleString()],["Action",review?"Review case captured":row.source],["Reason",row.review_reason],["Original barcode",row.raw_barcode],["Resolved item",row.resolved_item_name||row.resolved_item_code],["Status",review?row.status:null]];
             for(const [label,value] of fields){
                 if(value===undefined||value===null||value==="")continue;
                 const field=document.createElement("div"),key=document.createElement("span"),valueEl=document.createElement("strong");
@@ -7997,7 +8020,7 @@ async function openHandheldScansPanel(){
                         const observer=new MutationObserver(()=>{
                             if(reviewPanel.isConnected)return;
                             observer.disconnect();
-                            if(current()){overlay.hidden=false;button.focus({preventScroll:true});}else close();
+                            if(current()){overlay.hidden=false;void loadHistory();}else close();
                         });
                         observer.observe(document.body,{childList:true});
                     }finally{button.disabled=false;}
@@ -8027,8 +8050,35 @@ async function openHandheldScansPanel(){
             }
             details.append(body);list.append(details);
         }
+        list.scrollTop=scroll;
     };
-    render();
+    const loadHistory=async()=>{
+        const serial=++loadSerial;loading=true;verified=false;
+        list.replaceChildren();message.textContent="Loading assigned-order history…";
+        try{
+            const result=await authRpc("list_pharmflow_handheld_receiving_history_v1",{p_pharmacy_id:scope,p_device_id:ensureDeviceId(),p_limit:10});
+            if(!current() || serial!==loadSerial)return;
+            if(!Array.isArray(result?.rows)||!Array.isArray(result?.assigned_orders)||result.rows.length>10||!Number.isSafeInteger(Number(result.indeterminate_count)))throw new Error("Invalid history response");
+            const orders=result.assigned_orders;
+            // Reuse the sole ledger synchronizer, including its in-flight join and pagination.
+            if(orders.length && (typeof pullCloudWorkspaceTransactions!=="function" || !await pullCloudWorkspaceTransactions()))throw new Error("Receiving history synchronization incomplete");
+            if(!current() || serial!==loadSerial)return;
+            reviews=result.rows;assignedOrders=orders;indeterminate=Number(result.indeterminate_count);verified=true;
+            render();
+        }catch(_){
+            if(current() && serial===loadSerial){list.replaceChildren();message.textContent="History unavailable: the complete assigned-order result could not be verified. Reopen History to retry.";}
+        }finally{if(serial===loadSerial)loading=false;}
+    };
+    const updated=()=>{
+        if(!current()){close();return;}
+        const next=clientScope();
+        if(next!==observedScope){observedScope=next;void loadHistory();}
+        else if(!loading)render();
+    };
+    const unsubscribe=typeof AppEvents!=="undefined"&&AppEvents?.on
+        ? [AppEvents.on("files:updated",updated),AppEvents.on("receiving:updated",updated)] : [];
+    overlay.onDialogClose=()=>{loadSerial++;unsubscribe.forEach(dispose=>dispose?.());};
+    await loadHistory();
 }
 
 

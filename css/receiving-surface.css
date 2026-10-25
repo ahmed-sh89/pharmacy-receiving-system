@@ -279,13 +279,13 @@ body:not(.zebraDevice) #page-receiving #receivingInlineResult{
 }
 
 /* Handheld Receiving only: Expiry-inspired controls and bounded History. */
-body.zebraDevice.zebraReceivingActive #zebraQuickHeader{background:#fff!important;border-color:#dbe3ed!important;padding:5px 7px!important}
-body.zebraReceivingActive .hhReceivingTitleRow{display:grid;grid-template-columns:82px minmax(0,1fr) 92px;align-items:center;gap:4px}
-body.zebraReceivingActive .hhReceivingTitleRow>strong{text-align:center;font-size:17px;color:#243b55}
-body.zebraReceivingActive .hhReceivingTitleRow button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;padding:0 4px;border:1px solid #cad6e5;border-radius:9px;background:white;color:#0b5ed7;font-size:14px;font-weight:700}
+body.zebraDevice.zebraReceivingActive #zebraQuickHeader{background:#e8eff5!important;border:0!important;padding:4px 7px 6px!important}
+body.zebraReceivingActive .hhReceivingTitleRow{display:grid;grid-template-columns:92px minmax(0,1fr) 92px;align-items:center;gap:4px}
+body.zebraReceivingActive .hhReceivingTitleRow>strong{text-align:center;font-size:17px;font-weight:750;color:#163e63}
+body.zebraReceivingActive .hhReceivingTitleRow button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:38px;padding:0 4px;border:0;border-radius:7px;background:transparent;color:#245a87;font-size:13px;font-weight:700}
 body.zebraReceivingActive .hhReceivingTitleRow svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-body.zebraReceivingActive .hhReceivingOrders{margin-top:5px}
-body.zebraReceivingActive #btnHandheldAssignedOrders{display:flex!important;align-items:center;gap:8px;width:100%;min-height:34px;height:auto!important;padding:6px 10px!important;border:1px solid #cad6e5!important;border-radius:8px!important;background:#f3f7fc!important;color:#243b55!important;font-size:13px!important;box-sizing:border-box}
+body.zebraReceivingActive .hhReceivingOrders{margin-top:2px}
+body.zebraReceivingActive #btnHandheldAssignedOrders{display:flex!important;align-items:center;gap:8px;width:100%;min-height:34px;height:auto!important;padding:6px 10px!important;border:0!important;border-radius:7px!important;background:#ffffffb8!important;color:#243b55!important;font-size:13px!important;box-sizing:border-box}
 body.zebraReceivingActive #handheldWorkspaceStatus{display:flex!important;align-items:center;gap:6px;border:0!important;background:transparent!important;color:#216448;font-size:12px!important;font-weight:700;white-space:nowrap}
 body.zebraReceivingActive #handheldWorkspaceStatus:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 body.zebraReceivingActive #handheldWorkspaceStatus.isOffline{color:#9a4922}
@@ -306,6 +306,10 @@ body.zebraDevice .hhReceivingHistoryMain strong{font-size:15px;line-height:1.3;o
 body.zebraDevice .hhReceivingHistoryMain>span{font-size:12px;color:#50647e;overflow-wrap:anywhere;line-height:1.4}
 body.zebraDevice .hhReceivingHistoryStatus{font-size:11px;font-weight:700;padding:3px 5px;border-radius:6px;background:#e8f4ed;color:#216448;max-width:76px;text-align:center}
 body.zebraDevice .hhReceivingHistoryStatus.review{background:#fff1d7;color:#875600}
+body.zebraDevice .hhReceivingHistoryStatus.resolved{background:#e8efff;color:#37578c}
+body.zebraDevice .hhReceivingHistoryStatus.deleted{background:#edf0f3;color:#586779}
+body.zebraReceivingActive .hhReceivingTitleRow button:hover{background:#dce7f2}
+body.zebraReceivingActive .hhReceivingTitleRow button:focus-visible{outline:2px solid #3679b6;outline-offset:-2px}
 body.zebraDevice .hhReceivingHistoryChevron{flex:none;color:#0b5ed7;font-size:23px}
 body.zebraDevice .hhReceivingHistoryRow[open] .hhReceivingHistoryChevron{transform:rotate(180deg)}
 body.zebraDevice .hhReceivingHistoryDetails{display:grid;gap:8px;border-top:1px solid #dbe3ed;margin-top:8px;padding-top:8px;font-size:12px;overflow-wrap:anywhere}

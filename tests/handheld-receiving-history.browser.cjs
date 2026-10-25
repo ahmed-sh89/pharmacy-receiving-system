@@ -4,17 +4,19 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const ui=fs.readFileSync('ui.js','utf8'),index=fs.readFileSync('index.html','utf8');
 const styles=[...index.matchAll(/href="(css\/[^"?]+\.css)(?:\?[^"]*)?"/g)].map(m=>fs.readFileSync(m[1],'utf8')).join('\n');
 const owner=name=>{const start=ui.search(new RegExp('^(?:async )?function '+name+'\\(','m'));assert.ok(start>=0,name);const end=ui.slice(start+1).search(/^(?:async )?function /m);return ui.slice(start,end<0?undefined:start+1+end);};
-const names=['getHandheldDeviceReceivingRows','getHandheldDeviceScannerRows','getHandheldTotalScans','refreshHandheldWorkspaceStatus','ensureHandheldReceivingTools','refreshHandheldReceivingTools','bindHandheldReceivingDialog','openHandheldAssignedOrdersPanel','getHandheldReceivingHistoryRows','canUndoHandheldHistoryAction','openHandheldScansPanel'];
+const names=['getHandheldDeviceReceivingRows','getHandheldDeviceScannerRows','getHandheldTotalScans','refreshHandheldWorkspaceStatus','ensureHandheldReceivingTools','refreshHandheldReceivingTools','bindHandheldReceivingDialog','openHandheldAssignedOrdersPanel','getHandheldHistoryOrderNumbers','handheldHistoryTime','getHandheldReceivingHistoryRows','canUndoHandheldHistoryAction','openHandheldScansPanel'];
 let browser,page;
 before(async()=>{browser=await chromium.launch({headless:true,executablePath:process.env.TC26_CHROMIUM_EXECUTABLE,args:['--no-sandbox','--disable-dev-shm-usage']});page=await browser.newPage();await page.route('**/*',r=>r.abort());});
 after(async()=>browser?.close());
 async function fixture(){
+ await page.close();page=await browser.newPage();await page.route("**/*",r=>r.abort());
  await page.setViewportSize({width:360,height:520});await page.setContent('<body class="zebraDevice zebraReceivingActive"><main id="page-dashboard"></main><input id="barcodeInput" inputmode="none"></body>');await page.addStyleTag({content:styles});
  await page.evaluate(()=>{
   window.AuthState={context:{pharmacy_id:'A'}};window.AppState={workspace:{receivingHistory:[]}};window.assigned=['PO-A'];window.active=['PO-A','PO-B'];window.APP_CONFIG={transactionSources:{scanner:'SCANNER'}};
   window.isLikelyZebraDevice=()=>true;window.ensureDeviceId=()=> 'TC26';window.getSelectedReceivingOrderNumbers=()=>assigned;window.getActiveReceivingOrderNumbers=()=>active;
   window.getItemByCode=code=>({itemCode:code});window.getOrderLifecycleRecord=async()=>({status:'uploaded'});window.PharmFlowPermissions={allowed:()=>true};window.setZebraHomeMode=()=>document.body.dataset.back='yes';
-  window.reviews=[];window.nrV3ListHistory=async()=>reviews;window.hhRepairScannerFocus=()=>document.getElementById('barcodeInput').focus();window.hhRefreshReadyState=()=>{};
+  window.reviews=[];window.authRpc=async()=>({rows:reviews,assigned_orders:assigned,indeterminate_count:0});window.pullCloudWorkspaceTransactions=async()=>true;
+  window.AppEvents={listeners:new Map(),on(name,fn){if(!this.listeners.has(name))this.listeners.set(name,new Set());this.listeners.get(name).add(fn);return ()=>this.listeners.get(name).delete(fn);},emit(name){this.listeners.get(name)?.forEach(fn=>fn());}};window.hhRepairScannerFocus=()=>document.getElementById('barcodeInput').focus();window.hhRefreshReadyState=()=>{};
   window.pharmFlowConfirm=async()=>true;window.undos=[];window.undoRecentScannerTransaction=id=>undos.push(id);
   window.openNeedsReviewPanel=async(_,options)=>{window.reviewOpened=options;const el=document.createElement('div');el.id='needsReviewOverlay';document.body.append(el);};
  });
@@ -35,7 +37,7 @@ test('header, Back, live status and zero/one/multiple computer-controlled assign
 test('mixed latest ten, exact chronology, device isolation, expansion and internal scroll',async()=>{
  await fixture();await page.evaluate(()=>{
   AppState.workspace.receivingHistory=Array.from({length:14},(_,i)=>({transactionId:'tx-'+i,itemName:'Recognized medicine '+i,itemCode:'CODE'+i,deviceId:'TC26',quantity:1,dateTime:new Date(Date.UTC(2026,9,25,10,i)).toISOString(),source:'SCANNER',orderNumber:'PO-A'}));
-  reviews=[{review_id:'review-1',device_id:'TC26',gtin:'UNKNOWN',pending_quantity:3,created_at:'2026-10-25T10:12:30Z',status:'PENDING'},{review_id:'foreign',device_id:'OTHER',gtin:'FOREIGN',created_at:'2026-10-25T12:00:00Z'}];
+  reviews=[{review_id:'review-1',work_scope_order_numbers:['PO-A'],device_id:'TC26',gtin:'UNKNOWN',pending_quantity:3,created_at:'2026-10-25T10:12:30Z',status:'PENDING'},{review_id:'foreign',device_id:'OTHER',gtin:'FOREIGN',created_at:'2026-10-25T12:00:00Z'}];
  });
  await page.evaluate(()=>openHandheldScansPanel());assert.equal(await page.locator('.hhReceivingHistoryRow').count(),10);
  const text=await page.locator('.hhReceivingHistoryList').innerText();assert.ok(text.indexOf('medicine 13')<text.indexOf('Unknown Barcode'));assert.ok(text.indexOf('Unknown Barcode')<text.indexOf('medicine 12'));assert.ok(!text.includes('FOREIGN'));
@@ -45,17 +47,17 @@ test('mixed latest ten, exact chronology, device isolation, expansion and intern
 });
 test('Undo eligibility and post-confirmation recheck preserve safe allocation',async()=>{
  await fixture();await page.evaluate(()=>{AppState.workspace.receivingHistory=[{transactionId:'tx',deviceId:'TC26',source:'SCANNER',itemCode:'C',quantity:1,orderNumber:'PO-A',dateTime:'2026-10-25T10:00:00Z'}];});
- await page.evaluate(()=>openHandheldScansPanel());await page.locator('summary').click();await page.getByRole('button',{name:'Undo last scan'}).click();assert.deepEqual(await page.evaluate(()=>undos),['tx']);await page.evaluate(()=>getOrderLifecycleRecord=async()=>({status:'received'}));await page.locator('summary').click();await page.getByRole('button',{name:'Undo last scan'}).click();assert.deepEqual(await page.evaluate(()=>undos),['tx']);assert.match(await page.locator('[role=status]').innerText(),/view only/);await page.getByRole('button',{name:'Done',exact:true}).click();
+ await page.evaluate(()=>openHandheldScansPanel());await page.locator('summary').click();await page.getByRole('button',{name:'Undo last scan'}).click();assert.deepEqual(await page.evaluate(()=>undos),['tx']);await page.evaluate(()=>getOrderLifecycleRecord=async()=>({status:'received'}));await page.getByRole('button',{name:'Undo last scan'}).click();assert.deepEqual(await page.evaluate(()=>undos),['tx']);assert.match(await page.locator('[role=status]').innerText(),/view only/);await page.getByRole('button',{name:'Done',exact:true}).click();
  await page.evaluate(()=>{assigned=['PO-A','PO-B'];});await page.evaluate(()=>openHandheldScansPanel());assert.equal(await page.getByRole('button',{name:'Undo last scan'}).count(),0);await page.keyboard.press('Escape');
  await page.evaluate(()=>{assigned=['PO-A'];pharmFlowConfirm=async()=>{assigned=[];return true;};});await page.evaluate(()=>openHandheldScansPanel());await page.locator('summary').click();await page.getByRole('button',{name:'Undo last scan'}).click();assert.deepEqual(await page.evaluate(()=>undos),['tx']);
 });
 test('focused existing review workflow and return to same History',async()=>{
- await fixture();await page.evaluate(()=>{reviews=[{review_id:'one',device_id:'TC26',gtin:'123',pending_quantity:2,created_at:'2026-10-25T10:00:00Z',status:'PENDING'}];});await page.evaluate(()=>openHandheldScansPanel());await page.locator('summary').click();await page.getByRole('button',{name:'Review details'}).click();assert.equal(await page.locator('#handheldScansOverlay').isVisible(),false);assert.equal(await page.evaluate(()=>reviewOpened.reviewId),'one');await page.evaluate(()=>document.getElementById('needsReviewOverlay').remove());assert.equal(await page.locator('#handheldScansOverlay').isVisible(),true);
+ await fixture();await page.evaluate(()=>{reviews=[{review_id:'one',work_scope_order_numbers:['PO-A'],device_id:'TC26',gtin:'123',pending_quantity:2,created_at:'2026-10-25T10:00:00Z',status:'PENDING'}];});await page.evaluate(()=>openHandheldScansPanel());await page.locator('summary').click();await page.getByRole('button',{name:'Review details'}).click();assert.equal(await page.locator('#handheldScansOverlay').isVisible(),false);assert.equal(await page.evaluate(()=>reviewOpened.reviewId),'one');await page.evaluate(()=>document.getElementById('needsReviewOverlay').remove());assert.equal(await page.locator('#handheldScansOverlay').isVisible(),true);
 });
 test('read errors, close during load and account switch fail safely',async()=>{
- await fixture();await page.evaluate(()=>{nrV3ListHistory=async()=>{throw Error('offline');};});await page.evaluate(()=>openHandheldScansPanel());assert.match(await page.locator('[role=status]').innerText(),/could not be loaded/);await page.keyboard.press('Escape');
- await page.evaluate(()=>{nrV3ListHistory=()=>new Promise(resolve=>window.resolveRead=resolve);void openHandheldScansPanel();});await page.keyboard.press('Escape');await page.evaluate(()=>resolveRead([]));assert.equal(await page.locator('#handheldScansOverlay').count(),0);
- await page.evaluate(()=>{nrV3ListHistory=async()=>[];});await page.evaluate(()=>openHandheldScansPanel());await page.evaluate(()=>{AuthState.context.pharmacy_id='B';window.dispatchEvent(new Event('auth:context-ready'));});assert.equal(await page.locator('#handheldScansOverlay').count(),0);
+ await fixture();await page.evaluate(()=>{authRpc=async()=>{throw Error('offline');};});await page.evaluate(()=>openHandheldScansPanel());assert.match(await page.locator('[role=status]').innerText(),/could not be verified/);await page.keyboard.press('Escape');
+ await page.evaluate(()=>{authRpc=()=>new Promise(resolve=>window.resolveRead=resolve);void openHandheldScansPanel();});await page.keyboard.press('Escape');await page.evaluate(()=>resolveRead([]));assert.equal(await page.locator('#handheldScansOverlay').count(),0);
+ await page.evaluate(()=>{authRpc=async()=>({rows:[],assigned_orders:assigned,indeterminate_count:0});});await page.evaluate(()=>openHandheldScansPanel());await page.evaluate(()=>{AuthState.context.pharmacy_id='B';window.dispatchEvent(new Event('auth:context-ready'));});assert.equal(await page.locator('#handheldScansOverlay').count(),0);
 });
 test('keyboard trap, X/backdrop dismissal and workspace Sign Out retained',async()=>{
  await fixture();await page.evaluate(()=>openHandheldScansPanel());await page.getByRole('button',{name:'Done',exact:true}).focus();await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),'Close History');await page.getByRole('button',{name:'Close History',exact:true}).click();assert.equal(await page.locator('#handheldScansOverlay').count(),0);
@@ -75,4 +77,21 @@ test('Desktop and Handheld Expiry render identically to approved baseline',{skip
   await page.addStyleTag({content:"*{animation:none!important;transition:none!important;caret-color:transparent!important}"});return require("node:crypto").createHash("sha256").update(await page.screenshot({path:"/tmp/pf-"+(dir==="."?"candidate":"baseline")+(handheld?"-expiry":"-desktop")+".png"})).digest("hex");
  }
  for(const handheld of [false,true])assert.deepEqual(await shot('.',handheld),await shot(root,handheld),handheld?'Expiry pixels unchanged':'Desktop pixels unchanged');
+});
+test('assigned scope filters before limit; multi-order cases and all four status styles',async()=>{
+ await fixture();await page.evaluate(()=>{
+  assigned=['PO-A','PO-B'];
+  AppState.workspace.receivingHistory=Array.from({length:30},(_,i)=>({transactionId:'old-'+i,itemName:'UNASSIGNED',itemCode:'OLD',deviceId:'TC26',orderId:'OLD',quantity:1,dateTime:`2026-10-25T12:${String(i).padStart(2,'0')}:00Z`}));
+  AppState.workspace.receivingHistory.push({transactionId:'current',itemName:'CURRENT',deviceId:'TC26',selectedOrderNumber:'PO-B',quantity:1,dateTime:'2026-10-25T10:00:00Z'});
+  reviews=['PENDING','RESOLVED','DELETED'].map((status,i)=>({review_id:'case-'+i,status,device_id:'TC26',work_scope_order_numbers:['OLD','PO-A'],pending_quantity:2,created_at:`2026-10-25T10:0${i+1}:00Z`,gtin:'BAR-'+i}));
+ });await page.evaluate(()=>openHandheldScansPanel());
+ assert.equal(await page.locator('.hhReceivingHistoryRow').count(),4);assert.ok(!(await page.locator('.hhReceivingHistoryList').innerText()).includes('UNASSIGNED'));assert.match(await page.locator('.hhReceivingHistoryList').innerText(),/Order OLD, PO-A/);
+ for(const [style,label] of [['recognized','Recognized'],['review','Needs Review'],['resolved','Resolved Review'],['deleted','Deleted Review']])assert.equal(await page.locator('.hhReceivingHistoryStatus.'+style).innerText(),label);
+ const colors=await page.locator('.hhReceivingHistoryStatus').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundColor));assert.equal(new Set(colors).size,4,JSON.stringify(colors));
+ await page.evaluate(()=>{assigned=['PO-B'];reviews=[];AppEvents.emit('files:updated');});await page.waitForTimeout(30);assert.equal(await page.locator('.hhReceivingHistoryRow').count(),1);assert.match(await page.locator('.hhReceivingHistoryList').innerText(),/CURRENT/);
+ await page.evaluate(()=>{assigned=[];AppEvents.emit('files:updated');});await page.waitForTimeout(30);assert.equal(await page.locator('.hhReceivingHistoryRow').count(),0);assert.match(await page.locator('[role=status]').innerText(),/No orders are assigned/);
+});
+test('indeterminate attribution and incomplete ledger reads are explicit, never silently complete',async()=>{
+ await fixture();await page.evaluate(()=>authRpc=async()=>({rows:[],assigned_orders:assigned,indeterminate_count:7}));await page.evaluate(()=>openHandheldScansPanel());assert.match(await page.locator('[role=status]').innerText(),/7 legacy review case.*indeterminate/);await page.keyboard.press('Escape');
+ await page.evaluate(()=>pullCloudWorkspaceTransactions=async()=>false);await page.evaluate(()=>openHandheldScansPanel());assert.match(await page.locator('[role=status]').innerText(),/complete assigned-order result could not be verified/);await page.evaluate(()=>AppEvents.emit('receiving:updated'));assert.match(await page.locator('[role=status]').innerText(),/could not be verified/);assert.equal(await page.locator('.hhReceivingHistoryRow').count(),0);
 });

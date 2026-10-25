@@ -1,0 +1,31 @@
+{
+  "baseline": "5ccbd315af5a35ab43027c4869c3809017f46652",
+  "migration": {
+    "name": "handheld_receiving_history_scope_read",
+    "version": "20261025175436",
+    "statement_count": 1
+  },
+  "old_history_contract_unchanged": true,
+  "authorization_guard_unchanged": true,
+  "review_count": 406,
+  "review_fingerprint": "10d55e68a9df9171f9ccf65f4bb0f368",
+  "direct_table_read_denied": true,
+  "authenticated_execute": true,
+  "anon_execute": false,
+  "native_readonly_smoke": {
+    "pages": 1,
+    "anon_denied": true,
+    "eligible_rows": 1,
+    "authenticated_read": true,
+    "indeterminate_count": 0,
+    "assigned_order_count": 1,
+    "cross_pharmacy_denied": true
+  },
+  "isolated_tests": {
+    "postgres_pass": 6,
+    "browser_pass": 10,
+    "existing_regressions_pass": 36,
+    "known_baseline_fixture_fail": 1
+  },
+  "device_acceptance": "PENDING"
+}
