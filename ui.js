@@ -7608,6 +7608,7 @@ window.refreshUnifiedHandheldWorkspace=refreshUnifiedHandheldWorkspace;
 window.openUnifiedHandheldReceiving=openUnifiedHandheldReceiving;
 
 function setZebraReceivingMode(){
+    if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("RECEIVING"))return;
     if(!isLikelyZebraDevice()){ return; }
     clearZebraModeClasses();
     setHandheldWorkerSurface(true);
@@ -7620,6 +7621,7 @@ function setZebraReceivingMode(){
     setTimeout(()=>focusScannerInput(),80);
 }
 function setZebraExpiryMode(){
+    if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("EXPIRY"))return;
     if(!isLikelyZebraDevice()){ return; }
 
     setHandheldWorkerSurface(false);
@@ -9007,9 +9009,8 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
 
     const isGlobalOwner=()=>typeof isSystemOwner==="function"&&isSystemOwner();
     const isCurrentPharmacyAdmin=()=>typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
-    const isPharmacyMappingAdmin=()=>toSafeString(AuthState?.context?.member_role).trim().toLowerCase()==="admin";
-    const isReferencePharmacyAdmin=()=>isCurrentPharmacyAdmin()&&toSafeString(AuthState?.context?.pharmacy_code).trim().toUpperCase()==="HHP084";
-    const canWriteGlobal=()=>isGlobalOwner()||isReferencePharmacyAdmin();
+    const isPharmacyMappingAdmin=()=>window.PharmFlowPermissions?.allowed("DATA",true)===true;
+    const canWriteGlobal=()=>window.PharmFlowPermissions?.allowed("GLOBAL",true)===true;
     const auditReason=action=>`SETTINGS_${action}`;
     let selectedItem=null,searchSuggestTimer=null,searchSuggestToken=0;
     /* Settings has two explicit intents:
@@ -9121,13 +9122,13 @@ function renderV2IdentifierAdministration(overlay,esc=value=>escapeHTML(toSafeSt
         const itemCode=itemCodeOf(item);if(!itemCode)return;
         selectedItem=item;
         const rows=await loadBarcodeRows(item);
-        const canAdd=canWriteGlobal()||isCurrentPharmacyAdmin();
+        const canAdd=isPharmacyMappingAdmin();
         workspace.innerHTML=`
             ${itemSummary(item)}
             ${renderBarcodeList(rows)}
             ${canAdd?`<section class="barcodeAddCard"><div class="barcodeActionHeading"><span class="barcodeSectionLabel">ADD BARCODE</span><strong>Link another barcode</strong></div><div class="barcodeAddRow"><input data-new-identifier autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan or enter barcode"><button type="button" class="primaryButton" data-add-barcode>+ Add Barcode</button></div></section>`:""}
             ${canWriteGlobal()?`<div class="barcodeDeleteItemZone"><div><span class="barcodeSectionLabel">DANGER ZONE</span><small>Delete only an unused Database item created by mistake.</small></div><button type="button" class="dangerButton" data-delete-item>Delete Item</button></div>`:""}
-            ${!canWriteGlobal()&&isCurrentPharmacyAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Database mappings remain read only.</p>':""}
+            ${!canWriteGlobal()&&isPharmacyMappingAdmin()?'<p class="barcodeScopeNotice">This pharmacy can add and remove its own barcode mappings. Database mappings remain read only.</p>':""}
         `;
         workspace.querySelector("[data-add-barcode]")?.addEventListener("click",async event=>{
             const button=event.currentTarget;
@@ -9407,7 +9408,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
 
     const groups=groupNeedsReviewRows(rawRows);
     const esc=value=>escapeHTML(toSafeString(value));
-    const admin=typeof isPharmacyAdmin==="function"&&isPharmacyAdmin();
+    const admin=typeof isPharmacyAdmin==="function"&&isPharmacyAdmin() && (!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("RECEIVING",true)&&window.PharmFlowPermissions.allowed("DATA",true));
     const overlay=document.createElement("div");
     overlay.id="needsReviewOverlay";
     overlay.className="needsReviewOverlay";
@@ -9707,7 +9708,7 @@ async function openExpiryNeedsReviewPanel(options={}){
     overlay.innerHTML='<section class="needsReviewPanel expiryNeedsReviewPanel"><header><h2>Needs Review</h2><button type="button" class="needsReviewClose">Close</button></header><p class="needsReviewEmpty" role="status">Loading pending review…</p></section>';
     overlay.querySelector('button').onclick=()=>overlay.remove();document.body.appendChild(overlay);overlay.querySelector('button').focus({preventScroll:true});
     const esc=value=>escapeHTML(toSafeString(value));
-    const canResolve=!!(typeof getCurrentPharmacyId==='function'&&getCurrentPharmacyId())||!!AuthState?.context?.pharmacy_id;
+    const canResolve=window.PharmFlowPermissions?.allowed("EXPIRY",true)===true && window.PharmFlowPermissions.allowed("DATA",true);
     const openingPharmacy=AuthState?.context?.pharmacy_id||getCurrentPharmacyId?.();
     let rows,canCreate=false;
     try{

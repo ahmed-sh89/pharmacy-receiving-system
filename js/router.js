@@ -125,6 +125,16 @@ function navigateTo(
     }
 
 
+    if(AppRouter.currentRoute==='settings' && routeName!=='settings' && window.SettingsAccessActions?.target()){
+        window.SettingsAccessActions.back().then(ok=>{if(ok)navigateTo(routeName,options);});
+        return false;
+    }
+
+    const permissionModule=window.PharmFlowPermissions?.routeModule(routeName);
+    if(permissionModule && !window.PharmFlowPermissions.allowed(permissionModule)){
+        routeName=window.PharmFlowPermissions.allowed('EXPIRY')?'expiry':'settings';
+    }
+
     const route =
         AppRouter.routes[
             routeName

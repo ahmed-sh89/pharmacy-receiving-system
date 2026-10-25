@@ -26,66 +26,10 @@ const CloudSyncEngine = {
     lastError:null
 };
 
-function initializeSupabaseCloud(){
-    if(CloudSyncEngine.initialized){
-        return;
-    }
-
-    CloudSyncEngine.initialized = true;
-
-    AppEvents.on("receiving:transaction", function(transaction){
-        if(!isCloudSessionActive() || CloudSyncEngine.applyingRemote){
-            return;
-        }
-        queueCloudTransaction(transaction);
-    });
-
-    AppEvents.on("workspace:cleared", function(){
-        stopCloudPolling();
-    });
-
-    window.addEventListener("online", function(){
-        CloudSyncEngine.online = true;
-        updateCloudConnectionUI("ONLINE");
-        flushCloudPendingQueue();
-        refreshCloudSnapshot();
-    });
-
-    window.addEventListener("offline", function(){
-        CloudSyncEngine.online = false;
-        updateCloudConnectionUI("OFFLINE");
-    });
-
-    document.addEventListener("visibilitychange", function(){
-        if(document.visibilityState === "visible" && isCloudSessionActive()){
-            flushCloudPendingQueue();
-            refreshCloudSnapshot();
-        }
-    });
-
-    setTimeout(handleCloudJoinFromURL, 600);
-
-    if(isCloudSessionActive()){
-        if(typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice() && AppState.session.role === "ZEBRA"){
-            setTimeout(validateRestoredZebraCloudSession, 80);
-        }else{
-            startCloudPolling();
-            refreshCloudSnapshot();
-        }
-    }
-
-    Logger.info("Supabase cloud module initialized");
-}
-
-function isCloudSessionActive(){
-    return !!(
-        AppState &&
-        AppState.session &&
-        AppState.session.cloud === true &&
-        AppState.session.id &&
-        AppState.session.secret
-    );
-}
+const LEGACY_RECEIVING_RPC_NAMES=Object.freeze(["create_receiving_session", "join_receiving_session", "join_receiving_session_by_code", "get_received_qty", "get_session_items", "get_session_snapshot", "record_receiving_transaction", "bulk_upsert_session_items", "upsert_session_item", "pharmflow_end_session", "pharmflow_is_session_ended"]);
+function initializeSupabaseCloud(){if(CloudSyncEngine.initialized)return;CloudSyncEngine.initialized=true;stopCloudPolling();}
+// Legacy records/local queues are retained; modern auth-scoped Receiving owns synchronization.
+function isCloudSessionActive(){return false;}
 
 function createBrowserUUID(){
     if(window.crypto && typeof window.crypto.randomUUID === "function"){
@@ -99,6 +43,7 @@ function createBrowserUUID(){
 }
 
 async function cloudRpc(functionName, params = {}){
+ if(LEGACY_RECEIVING_RPC_NAMES.includes(functionName))throw new Error('LEGACY_RECEIVING_RETIRED');
     const controller = new AbortController();
     const timer = setTimeout(()=>controller.abort(), CLOUD_CONFIG.rpcTimeoutMs);
 
@@ -145,6 +90,8 @@ async function cloudRpc(functionName, params = {}){
 }
 
 async function createCloudReceivingSession(){
+ return false; // Legacy session transport retired; preserve all existing data.
+
     if(!navigator.onLine){
         showToast("Internet connection is required to create a cloud session","warning");
         return false;
@@ -258,6 +205,8 @@ async function uploadCurrentOrderToCloud(){
 }
 
 async function joinCloudReceivingSession(sessionCode){
+ return false; // Legacy session transport retired; preserve all existing data.
+
     const code=String(sessionCode||"").replace(/\D/g,"").trim();
 
     if(!code){
@@ -387,6 +336,8 @@ function navigateToCloudReceiving(){
 }
 
 async function handleCloudJoinFromURL(){
+ return false; // Legacy session transport retired; preserve all existing data.
+
     try{
         const params = new URLSearchParams(window.location.search);
         const code = params.get("session") || params.get("join");
@@ -824,6 +775,8 @@ function isTerminalCloudSessionError(error){
 }
 
 async function validateRestoredZebraCloudSession(){
+ return false; // Legacy session transport retired; preserve all existing data.
+
     if(!(typeof isLikelyZebraDevice === "function" && isLikelyZebraDevice())){ return true; }
     if(!(AppState.session?.role === "ZEBRA" && isCloudSessionActive())){ return false; }
 
@@ -869,6 +822,8 @@ function safeParseJSON(value,fallback){
 }
 
 function startCloudPolling(){
+ return false; // Legacy session transport retired; preserve all existing data.
+
     stopCloudPolling();
     if(!isCloudSessionActive()){ return; }
     const intervalMs = (

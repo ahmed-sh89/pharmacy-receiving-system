@@ -30,6 +30,7 @@ async function prepareExpiryAuthenticatedRetry(operation,scope){
 }
 function expiryCorrectionKey(){return `pharmflow_expiry_correction_${expiryDraftScope()}/${expiryDeviceId()}`;}
 async function reconcileExpirySessionCorrection(){
+    if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("EXPIRY",true))return;
     const scope=expiryDraftScope(),key=expiryCorrectionKey(),stored=sessionStorage.getItem(key);
     if(!stored)return;
     const args=JSON.parse(stored);
@@ -114,7 +115,7 @@ async function openExpiryHandheldHistory(){
                 for(const [label,value] of [['Identifier',row.identifier_display],['Item Code',row.item_code],['Batch',row.batch_no],['Expiry',`${String(row.expiry_month).padStart(2,'0')}/${row.expiry_year}`],['Quantity',row.quantity],['Status',status.textContent],['Serial',row.sample_serial],['Note',row.identification_note]]){
                     if(value===undefined || value===null || value==='')continue;const field=document.createElement('div'),name=document.createElement('span'),text=document.createElement('strong');field.className='expiryHistoryField';name.className='expiryHistoryLabel';text.className='expiryHistoryValue';name.textContent=label;text.textContent=String(value);if(label==='Note')text.dir='auto';field.append(name,text);body.appendChild(field);
                 }
-                if(row.editable){const actions=document.createElement('div');actions.className='expiryHistoryActions';for(const [label,remove] of [['Edit',false],['Delete',true]]){const button=document.createElement('button');button.type='button';button.textContent=label;button.className=remove?'expiryHistoryDeleteButton':'';button.onclick=()=>editOperation(row,remove,button);actions.appendChild(button);}body.appendChild(actions);}
+                if(row.editable && (!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("EXPIRY",true))){const actions=document.createElement('div');actions.className='expiryHistoryActions';for(const [label,remove] of [['Edit',false],['Delete',true]]){const button=document.createElement('button');button.type='button';button.textContent=label;button.className=remove?'expiryHistoryDeleteButton':'';button.onclick=()=>editOperation(row,remove,button);actions.appendChild(button);}body.appendChild(actions);}
                 details.appendChild(body);list.appendChild(details);
                 details.addEventListener('toggle',async()=>{
                     if(!details.open)return;
@@ -127,6 +128,7 @@ async function openExpiryHandheldHistory(){
         }catch(error){list.textContent=String(error.message||'History unavailable');}
     }
     function editOperation(row,remove,trigger){
+        window.PharmFlowPermissions?.require("EXPIRY",true);
         if(ExpiryCaptureEngine.busy || ExpiryCaptureEngine.saveUncertain || activeDialog?.isConnected)return;
         const modal=document.createElement('div');modal.className='expiryHistoryActionOverlay';activeDialog=modal;
         const editor=document.createElement('form');editor.className='expirySessionEditor expiryHistoryDialog'+(remove?' expiryHistoryDeleteDialog':'');editor.setAttribute('role','dialog');editor.setAttribute('aria-modal','true');editor.setAttribute('aria-labelledby','expiryHistoryDialogTitle');const title=document.createElement('strong');title.id='expiryHistoryDialogTitle';title.textContent=`${remove?'Delete Operation':'Edit Operation'}: ${row.kind==='UNKNOWN'?row.identifier_display:row.item_name}`;const identity=document.createElement('small');identity.className='expiryHistoryOperationIdentity';identity.textContent=[row.identifier_display,row.batch_no?`Batch ${row.batch_no}`:null,`${String(row.expiry_month).padStart(2,'0')}/${row.expiry_year}`,`Qty ${row.quantity}`].filter(Boolean).join(' · ');title.appendChild(identity);

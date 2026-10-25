@@ -4,6 +4,7 @@
 <head>
 
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://zznoshzcyxmtwfbznjyr.supabase.co wss://zznoshzcyxmtwfbznjyr.supabase.co;">
 
     <meta
         name="viewport"
@@ -70,6 +71,7 @@
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
 <link rel="stylesheet" href="css/settings-workspace.css">
+<link rel="stylesheet" href="css/permissions.css">
 
 </head>
 
@@ -271,6 +273,7 @@
                     <h2>Complete access</h2>
                     <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
 
+                    <div id="pendingSuspendedBox" class="pendingApprovalCard" hidden><h3>Pharmacy Suspended</h3><p>Your pharmacy access is suspended. Contact the System Administrator for reactivation. No new registration is required.</p></div>
                     <div id="pendingStandardAccessBox">
                         <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Submit the pharmacy code you know for approval.</div>
                         <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The official pharmacy identity will be verified before approval.</small></div>
@@ -2146,9 +2149,26 @@
                         </button>
                     </div>
 
+                    <section id="ownerCreateAccountPanel" class="ownerCreateFocused" hidden aria-label="Create Pharmacy and Admin">
+                     <form id="ownerCreateAccountForm" class="ownerCreateAccountForm">
+                      <h4>Pharmacy Information</h4>
+                      <label>Pharmacy Name<input name="pharmacy_name" maxlength="120" required></label>
+                      <label>Pharmacy Code<input name="pharmacy_code" pattern="[A-Za-z0-9_-]{3,24}" maxlength="24" required></label>
+                      <label>Pharmacy Admin Email<input name="admin_email" type="email" autocomplete="off" required></label>
+                      <h4>Initial Permissions</h4>
+                      <label>Receiving<select name="receiving" required><option value="">Select…</option><option value="FULL">Enabled</option><option value="DISABLED">Disabled</option></select></label>
+                      <label>Expiry<select name="expiry" required><option value="">Select…</option><option value="FULL">Enabled</option><option value="DISABLED">Disabled</option></select></label>
+                      <label>Item &amp; Barcode<select name="data_access" required><option value="">Select…</option><option value="READ_ONLY">Read Only</option><option value="PHARMACY_ONLY">Pharmacy Only</option><option value="PHARMACY_GLOBAL">Pharmacy + Global</option></select></label>
+                      <p>No operational access is granted until the selected permissions are saved. New accounts must replace their temporary password. Existing accounts keep their password.</p>
+                      <footer><button type="submit" class="primaryButton">Create Pharmacy &amp; Admin</button><button type="button" data-create-cancel class="secondaryButton">Cancel</button></footer>
+                      <div data-create-status role="status" aria-live="polite"></div>
+                     </form>
+                    </section>
                     <section id="ownerManagementPanel" class="ownerManagementWorkspace" aria-labelledby="ownerManagementTitle">
                         <header class="ownerManagementToolbar">
                             <h3 id="ownerManagementTitle">All Pharmacies</h3>
+                            <button type="button" id="btnOpenCreateAccount" class="primaryButton">Create Pharmacy &amp; Admin</button>
+                            <label class="ownerSortLabel">Sort<select id="ownerManagementSort"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="az">Pharmacy Name A–Z</option><option value="za">Pharmacy Name Z–A</option></select></label>
                             <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
                                 <span>Search pharmacies</span>
                                 <input id="ownerManagementSearch" type="search" autocomplete="off" placeholder="Pharmacy name, code or ADMIN email">
@@ -2577,6 +2597,7 @@
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
+<script src="js/permissions.js"></script>
 <script src="js/auth.js?v=EXPIRY_HARDENING_20261020"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->

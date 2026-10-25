@@ -41,8 +41,30 @@ const isVercelBuild = process.env.VERCEL === '1'
   || process.env.VERCEL === 'true'
   || ['preview', 'production'].includes(process.env.VERCEL_ENV);
 
+function productionAuthorizationRelease(){
+  return {
+    name:'production-authorization-release',
+    configResolved(config){
+      if(config.command==='build' && process.env.VERCEL &&
+          (process.env.VERCEL_ENV!=='production' ||
+           process.env.VERCEL_GIT_COMMIT_REF!=='main')){
+        throw new Error('Production release requires main and Production configuration');
+      }
+    },
+    transformIndexHtml(html){
+      return html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization');
+    },
+    closeBundle(){
+      writeFileSync(resolve('dist/version.json'),JSON.stringify({
+        sha:process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization',
+        environment:'production',supabaseRef:'zznoshzcyxmtwfbznjyr'
+      }));
+    }
+  };
+}
+
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[copyLegacyRuntime(),copyStagingScanDiagnostic()]
+  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic()]
 });

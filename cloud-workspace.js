@@ -2644,6 +2644,12 @@ async function restoreCloudWorkspaceOnLogin(){
 
 
 async function ensureStartupCloudAuthority(){
+    if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("RECEIVING")){
+        ensureCloudAccountContextIsolation?.();
+        if(typeof createEmptyWorkspace==='function')AppState.workspace=createEmptyWorkspace();
+        if(AppState.archive){AppState.archive.orders=[];AppState.archive.transactions=[];}
+        return true;
+    }
     ensureCloudAccountContextIsolation();
     const pharmacyId=cloudWorkspacePharmacyId();
     if(!pharmacyId) return false;

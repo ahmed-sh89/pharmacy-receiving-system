@@ -168,6 +168,7 @@ async function assertOrderNumberCanUpload(orderNumber){
 }
 
 async function registerUploadedOrder(meta,rowCount){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     if(typeof authRpc!=="function"||!AuthState.context||!AuthState.context.pharmacy_id){return null;}
     const result=await authRpc("register_pharmflow_order_upload",{
         p_pharmacy_id:AuthState.context.pharmacy_id,
@@ -230,6 +231,7 @@ window.refreshOrderLifecycleRegistry=refreshOrderLifecycleRegistry;
 window.canGenerateItemTransferReport=canGenerateItemTransferReport;
 
 async function requestDeleteGlobalGTINMaster(){
+    window.PharmFlowPermissions?.require("GLOBAL",true);
     if(!AuthState.context || !AuthState.context.pharmacy_id){
         showToast("Pharmacy ADMIN context is required","error"); return false;
     }
@@ -495,6 +497,7 @@ function requestFinalizeReceiving({allOrders=false}={}){
 }
 
 async function finalizeCurrentReceiving({allOrders=false}={}){
+    window.PharmFlowPermissions?.require("RECEIVING",true);
     if(FinalizeReceivingEngine.busy){ return false; }
     FinalizeReceivingEngine.busy=true;
     refreshFinalizeReceivingButton();

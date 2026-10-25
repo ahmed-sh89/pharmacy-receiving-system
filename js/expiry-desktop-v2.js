@@ -558,7 +558,7 @@
       ]) {
         const key = pendingKey() + suffix,
           stored = sessionStorage.getItem(key);
-        if (stored) {
+        if (stored && (!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("EXPIRY",true))) {
           try {
             const args = JSON.parse(stored);
             const ack = await authRpc(rpc, args);
@@ -750,6 +750,7 @@
     }
   }
   function sessionGroupDialog(r, trigger, deleting) {
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     if (!groupEditable(r)) return;
     const ownScope = scope(), args = {
       ...authArgs(), p_session_id: sessionId,
@@ -797,6 +798,7 @@
     }
   }
   function quantityEdit(r, trigger) {
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     const args = {
       ...authArgs(),
       p_request_id: crypto.randomUUID(),
@@ -828,6 +830,7 @@
     );
   }
   async function confirmSelection(ids,trigger,clearList=false){
+    window.PharmFlowPermissions?.require("EXPIRY",true);
     if(clearList&&(!resolved||mode!=="INVENTORY"))return;
     if(busy||previewing)return;previewing=true;if(trigger)trigger.disabled=true;
     const ownScope=scope(),filterSnapshot=JSON.parse(JSON.stringify(filters)),context=resolved,allFiltered=ids==null;
