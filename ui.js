@@ -7342,7 +7342,6 @@ function initializeZebraInterface(){
                     <span class="zebraModeArrow" aria-hidden="true">›</span>
                 </button>
             </div>
-            <button id="btnZebraAccount" class="zebraSignOut" type="button">Account</button>
             <button id="btnZebraSignOut" class="zebraSignOut" type="button">Sign Out</button>
         `;
         document.querySelector(".mainContent")?.prepend(home);
@@ -7353,7 +7352,6 @@ function initializeZebraInterface(){
         document.getElementById("btnZebraExpiryMode")?.addEventListener("click", function(){
             setZebraExpiryMode();
         });
-        document.getElementById("btnZebraAccount")?.addEventListener("click",()=>window.openHandheldAccount?.());
         document.getElementById("btnZebraSignOut")?.addEventListener("click", function(){
             const pending = Array.isArray(AppState?.session?.pendingQueue) ? AppState.session.pendingQueue.length : 0;
             if(pending > 0){
@@ -7789,8 +7787,8 @@ function refreshHandheldWorkspaceStatus(){
     const setAssignedOrders=()=>{
         if(!assignedButton) return;
         const count=selectedOrders.length;
-        assignedButton.disabled=count===0;
-        assignedButton.textContent=count===1 ? "1 ORDER" : `${count} ORDERS`;
+        const label=document.getElementById("handheldAssignedOrdersCount");
+        if(label)label.textContent=count===1 ? "1 order" : `${count} orders`;
         assignedButton.title=count
             ? "View orders assigned from the computer"
             : "No orders assigned from the computer";
@@ -7834,12 +7832,13 @@ function ensureHandheldReceivingTools(){
     if(!finalHeader){
         header.innerHTML=`
             <div class="zebraFinalHeader">
-                <div class="zebraControlGrid">
-                    <div id="handheldWorkspaceStatus" class="zebraConnectedDot handheldTopControl" aria-live="polite">SYNCING…</div>
-                    <button id="btnHandheldAssignedOrders" class="handheldAssignedOrdersButton handheldTopControl" type="button" aria-label="View assigned orders">0 ORDERS</button>
-                    <button id="btnZebraModes" class="zebraModesButton handheldTopControl" type="button">MODE</button>
-                    <button id="btnHandheldTotalScans" class="handheldTotalScansButton handheldRecentButton handheldTopControl" type="button" aria-label="Open recent scans"><span>HISTORY</span><strong id="handheldTotalScansValue">0</strong></button>
-                    <button id="btnHandheldNeedsReview" class="handheldNeedsReviewButton handheldTopControl" type="button" aria-label="Open Needs Review">REVIEW</button>
+                <div class="hhReceivingTitleRow">
+                    <button id="btnZebraModes" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h15"/></svg>Back</button>
+                    <strong>Receiving</strong>
+                    <button id="btnHandheldTotalScans" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 3 8M3 4v7h7m2-4v5l3 2"/></svg>History</button>
+                </div>
+                <div class="hhReceivingOrders">
+                    <button id="btnHandheldAssignedOrders" type="button" aria-expanded="false" aria-controls="handheldAssignedOrdersOverlay"><span id="handheldWorkspaceStatus" aria-live="polite">SYNCING…</span><span id="handheldAssignedOrdersCount">0 orders</span><span aria-hidden="true">⌄</span></button>
                 </div>
             </div>
         `;
@@ -7851,7 +7850,6 @@ function ensureHandheldReceivingTools(){
     document.getElementById("btnZebraModes").onclick=setZebraHomeMode;
     document.getElementById("btnHandheldTotalScans").onclick=openHandheldScansPanel;
     document.getElementById("btnHandheldAssignedOrders").onclick=openHandheldAssignedOrdersPanel;
-    document.getElementById("btnHandheldNeedsReview").onclick=()=>openNeedsReviewPanel("RECEIVING");
 
     /* Assignment is read-only here and is managed on the computer, so staff
        cannot broaden their own scope. Needs Review is an exception workflow:
@@ -7866,122 +7864,170 @@ function refreshHandheldReceivingTools(){
     if(value) value.textContent = String(getHandheldTotalScans());
 }
 
-function openHandheldAssignedOrdersPanel(){
-    document.getElementById("handheldAssignedOrdersOverlay")?.remove();
-    const active=typeof getActiveReceivingOrderNumbers==="function"
-        ? getActiveReceivingOrderNumbers()
-        : [];
-    const assigned=typeof getSelectedReceivingOrderNumbers==="function"
-        ? getSelectedReceivingOrderNumbers()
-        : [];
-    const esc=value=>typeof escapeHtml==="function"
-        ? escapeHtml(String(value??""))
-        : String(value??"");
-    const rows=assigned.length
-        ? assigned.map((order,index)=>`<article class="handheldAssignedOrderRow"><span>${index+1}</span><strong>${esc(order)}</strong></article>`).join("")
-        : `<div class="handheldScansEmpty">No orders have been assigned from the computer.</div>`;
-    const overlay=document.createElement("div");
-    overlay.id="handheldAssignedOrdersOverlay";
-    overlay.className="handheldScansOverlay handheldRecentOverlay handheldAssignedOrdersOverlay";
-    overlay.innerHTML=`
-      <section class="handheldScansPanel handheldRecentPanel handheldAssignedOrdersPanel" role="dialog" aria-modal="true" aria-label="Assigned orders">
-        <header><div><span>COMPUTER ASSIGNMENT</span><strong>Assigned Orders</strong><small>${assigned.length} of ${active.length} active order${active.length===1?"":"s"} available on this Handheld</small></div><button type="button" data-close aria-label="Close">✕</button></header>
-        <div class="handheldRecentList handheldAssignedOrdersList">${rows}</div>
-        <div class="handheldRecentFooter"><span>Order access is controlled from Manage Orders on the computer.</span><button type="button" class="handheldPanelDone" data-close>DONE</button></div>
-      </section>`;
-    document.body.appendChild(overlay);
-    overlay.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>{
+/* Receiving dialogs suspend the existing scanner transport; no new sync loop. */
+function bindHandheldReceivingDialog(overlay,trigger){
+    const scope=String(AuthState?.context?.pharmacy_id||"");
+    const close=()=>{
+        document.removeEventListener("keydown",key);
+        window.removeEventListener("auth:context-ready",changed);
         overlay.remove();
-        setTimeout(()=>window.hhRefreshReadyState?.(),20);
-    });
+        trigger?.setAttribute("aria-expanded","false");
+        if(scope===String(AuthState?.context?.pharmacy_id||"")){
+            trigger?.focus({preventScroll:true});
+            setTimeout(()=>window.hhRepairScannerFocus?.("receiving-dialog-close"),30);
+        }
+    };
+    const changed=()=>{if(scope!==String(AuthState?.context?.pharmacy_id||""))close();};
+    const key=event=>{
+        // A confirmation/review dialog above this one owns its own keyboard.
+        if(document.getElementById("needsReviewOverlay") || document.querySelector("#confirmModal.open"))return;
+        if(event.key==="Escape"){event.preventDefault();close();return;}
+        if(event.key!=="Tab")return;
+        const nodes=[...overlay.querySelectorAll('button:not(:disabled),summary,[tabindex="0"]')].filter(el=>el.getClientRects().length);
+        const first=nodes[0],last=nodes[nodes.length-1];
+        if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
+    };
+    document.addEventListener("keydown",key);
+    window.addEventListener("auth:context-ready",changed);
+    overlay.addEventListener("click",event=>{if(event.target===overlay || event.target.closest("[data-close]"))close();});
+    overlay.disposeDialog=close;
+    overlay.querySelector("[data-close]")?.focus({preventScroll:true});
+    return close;
 }
 
-function openHandheldScansPanel(){
-    document.getElementById("handheldScansOverlay")?.remove();
-    try{ document.activeElement?.blur?.(); }catch(_){ }
-
-    const esc=value=>typeof escapeHtml==="function"
-        ? escapeHtml(String(value??""))
-        : String(value??"");
-    const formatTime=value=>{
-        try{
-            const d=new Date(value);
-            if(!Number.isFinite(d.getTime())) return "";
-            return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-        }catch(_){ return ""; }
-    };
-    const actionRows=()=>getHandheldDeviceReceivingRows().slice()
-        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")))
-        .slice(0,20);
-    const activeScans=()=>getHandheldDeviceScannerRows().slice()
-        .sort((a,b)=>String(b?.dateTime||"").localeCompare(String(a?.dateTime||"")));
-
+function openHandheldAssignedOrdersPanel(){
+    const existing=document.getElementById("handheldAssignedOrdersOverlay");
+    if(existing){existing.disposeDialog?.();return;}
+    const trigger=document.getElementById("btnHandheldAssignedOrders");
+    const assigned=typeof getSelectedReceivingOrderNumbers==="function"?getSelectedReceivingOrderNumbers():[];
     const overlay=document.createElement("div");
-    overlay.id="handheldScansOverlay";
-    overlay.className="handheldScansOverlay handheldRecentOverlay";
+    overlay.id="handheldAssignedOrdersOverlay";
+    overlay.className="hhReceivingOrdersOverlay";
+    const panel=document.createElement("section");
+    panel.className="hhReceivingOrdersPanel";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label","Assigned orders");
+    panel.innerHTML='<header><strong>Assigned orders</strong><button type="button" data-close aria-label="Close orders">✕</button></header><div class="hhReceivingOrderList"></div><footer>Selected by the computer. All listed orders are in your current work scope.</footer>';
+    const list=panel.querySelector(".hhReceivingOrderList");
+    if(!assigned.length)list.textContent="No orders assigned from the computer.";
+    for(const order of assigned){
+        const row=document.createElement("div");row.className="hhReceivingAssignedOrder";
+        const name=document.createElement("strong"),status=document.createElement("span");
+        name.textContent=order;status.textContent="✓ Selected";row.append(name,status);list.append(row);
+    }
+    overlay.append(panel);document.body.append(overlay);trigger?.setAttribute("aria-expanded","true");
+    bindHandheldReceivingDialog(overlay,trigger);
+}
 
+function getHandheldReceivingHistoryRows(reviewRows=[]){
+    const device=String(ensureDeviceId()||"");
+    const rows=getHandheldDeviceReceivingRows().map(tx=>({kind:"ledger",id:String(tx.transactionId||""),time:tx.dateTime,record:tx}));
+    const seen=new Set();
+    for(const review of reviewRows){
+        // A persisted case is one record, never an invented sequence of scans.
+        if(!review.review_id || !device || String(review.device_id||"")!==device || seen.has(review.review_id))continue;
+        seen.add(review.review_id);
+        rows.push({kind:"review",id:String(review.review_id),time:review.created_at,record:review});
+    }
+    return rows.filter(row=>Number.isFinite(Date.parse(row.time))).sort((a,b)=>Date.parse(b.time)-Date.parse(a.time)||a.id.localeCompare(b.id)).slice(0,10);
+}
+
+function canUndoHandheldHistoryAction(row){
+    if(row.kind!=="ledger" || !row.id || !document.body.classList.contains("zebraReceivingActive"))return false;
+    if(window.PharmFlowPermissions && !window.PharmFlowPermissions.allowed("RECEIVING",true))return false;
+    const assigned=getSelectedReceivingOrderNumbers();
+    const tx=row.record,order=String(tx.orderNumber||tx.order_number||"");
+    // Existing undo is item-based; never guess allocation across multiple orders.
+    if(assigned.length!==1 || order!==String(assigned[0]))return false;
+    const latest=getHandheldDeviceScannerRows().slice().reverse()[0];
+    return String(latest?.transactionId||"")===row.id && !!getItemByCode(tx.itemCode);
+}
+
+async function openHandheldScansPanel(){
+    document.getElementById("handheldScansOverlay")?.disposeDialog?.();
+    const scope=String(AuthState?.context?.pharmacy_id||"");
+    if(!scope)return;
+    const overlay=document.createElement("div");overlay.id="handheldScansOverlay";overlay.className="hhReceivingHistoryOverlay";
+    overlay.innerHTML='<section class="hhReceivingHistoryPanel" role="dialog" aria-modal="true" aria-label="Receiving History"><header><strong>History</strong><button type="button" data-close aria-label="Close History">✕</button></header><div class="hhReceivingHistoryList"></div><p class="hhReceivingHistoryMessage" role="status">Loading…</p><footer><span>Latest 10 saved actions / review cases on this Handheld.</span><button type="button" data-close>Done</button></footer></section>';
+    document.body.append(overlay);
+    const close=bindHandheldReceivingDialog(overlay,document.getElementById("btnHandheldTotalScans"));
+    const list=overlay.querySelector(".hhReceivingHistoryList"),message=overlay.querySelector('[role="status"]');
+    let reviews=[],reviewError=false;
+    try{reviews=await nrV3ListHistory("RECEIVING",null);}catch(_){reviewError=true;}
+    const current=()=>overlay.isConnected && scope===String(AuthState?.context?.pharmacy_id||"");
+    if(!current()){close();return;}
     const render=()=>{
-        const recent=actionRows();
-        const latestRemovable=activeScans()[0];
-        const latestRemovableId=String(latestRemovable?.transactionId||"");
-
-        const markup=recent.length ? recent.map((row,index)=>{
-            const qty=Number(row?.quantity||0);
-            const source=String(row?.source||"").toUpperCase();
-            const isUndo=source==="SCAN_UNDO";
-            const isScan=!isUndo && (source===String(APP_CONFIG?.transactionSources?.scanner||"SCANNER").toUpperCase() || source.includes("SCAN"));
-            const label=isUndo ? "Scan removed" : isScan ? "Scan" : qty<0 ? "Adjustment" : "Quantity";
-            const transactionId=String(row?.transactionId||"");
-            const removable=transactionId && transactionId===latestRemovableId;
-            return `
-              <article class="handheldRecentRow handheldScanHistoryRow">
-                <div class="handheldRecentIndex">${index+1}</div>
-                <div class="handheldRecentInfo">
-                  <strong>${esc(row?.itemName||"Item")}</strong>
-                  <span>${esc(row?.itemCode||"")} · ${esc(formatTime(row?.dateTime))} · ${label}</span>
-                </div>
-                <div class="handheldRecentQty ${qty<0?"isNegative":""}">${qty>0?"+":""}${qty}</div>
-                ${removable
-                    ? `<button type="button" class="handheldRemoveLastScan" data-remove-last="${esc(transactionId)}">REMOVE</button>`
-                    : `<span class="handheldRecentViewOnly">Saved</span>`}
-              </article>`;
-        }).join("") : `<div class="handheldScansEmpty">No recent receiving actions on this Handheld.</div>`;
-
-        overlay.innerHTML=`
-          <section class="handheldScansPanel handheldRecentPanel" role="dialog" aria-modal="true" aria-label="Receiving history">
-            <header>
-              <div>
-                <span>RECEIVING HISTORY</span>
-                <strong>Recent Actions</strong>
-                <small>Last ${recent.length} receiving actions on this Handheld</small>
-              </div>
-              <button type="button" data-close aria-label="Close">✕</button>
-            </header>
-            <div id="handheldRecentFeedback" class="handheldRecentFeedback" aria-live="polite"></div>
-            <div class="handheldRecentList">${markup}</div>
-            <div class="handheldRecentFooter">
-              <span>Scans and quantity adjustments are preserved. Only the latest active scan can be removed.</span>
-              <button type="button" class="handheldPanelDone" data-close>DONE</button>
-            </div>
-          </section>`;
-
-        overlay.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>{
-            overlay.remove();
-            setTimeout(()=>window.hhRefreshReadyState?.(),20);
-        });
-        overlay.querySelector("[data-remove-last]")?.addEventListener("click",async event=>{
-            const transactionId=event.currentTarget?.dataset.removeLast||"";
-            const latest=activeScans()[0];
-            if(!latest || String(latest?.transactionId||"")!==String(transactionId)) return;
-            if(!await pharmFlowConfirm({title:"Remove Last Scan?",message:`${latest.itemName||"Item"} +${Math.max(1,Number(latest.quantity||1))} will be cancelled and preserved in Receiving history.`,confirmText:"Remove Scan",tone:"danger"})) return;
-            const removed=typeof undoRecentScannerTransaction==="function"
-                ? undoRecentScannerTransaction(transactionId)
-                : false;
-            if(removed) setTimeout(()=>{ if(document.body.contains(overlay)) render(); },0);
-        });
+        if(!current()){close();return;}
+        list.replaceChildren();
+        const rows=getHandheldReceivingHistoryRows(reviews);
+        message.textContent=reviewError?"Needs Review could not be loaded. Showing available Receiving actions; reopen to retry.":rows.length?"":"No saved actions on this Handheld.";
+        for(const action of rows){
+            const row=action.record,review=action.kind==="review",details=document.createElement("details");
+            details.className="hhReceivingHistoryRow";
+            const summary=document.createElement("summary"),main=document.createElement("div"),name=document.createElement("strong"),meta=document.createElement("span"),status=document.createElement("span"),arrow=document.createElement("span");
+            main.className="hhReceivingHistoryMain";
+            name.textContent=review?(row.master_item_name_hint||"Unknown Barcode"):(row.itemName||row.itemCode||"Item");
+            const identifier=review?(row.identifier_display||row.gtin||row.raw_barcode):(row.itemCode||row.gtin);
+            const quantity=review?row.pending_quantity:row.quantity;
+            const time=new Date(action.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+            meta.textContent=`${identifier||"Identifier unavailable"} · Qty ${quantity??"—"} · ${time}`;
+            main.append(name,meta);status.className="hhReceivingHistoryStatus"+(review?" review":"");
+            status.textContent=review?(row.status==="RESOLVED"?"Resolved review":row.status==="DELETED"?"Deleted review":"Needs Review"):"Recognized";
+            arrow.className="hhReceivingHistoryChevron";arrow.textContent="⌄";arrow.setAttribute("aria-hidden","true");summary.append(main,status,arrow);details.append(summary);
+            const body=document.createElement("div");body.className="hhReceivingHistoryDetails";
+            const fields=[["Identifier",identifier],["Item Code",review?row.master_item_code_hint:row.itemCode],["Order",row.order_number||row.orderNumber],["Quantity",quantity],["Recorded",new Date(action.time).toLocaleString()],["Action",review?"Review case captured":row.source],["Reason",row.review_reason],["Original barcode",row.raw_barcode],["Resolved item",row.resolved_item_name||row.resolved_item_code],["Status",review?row.status:null]];
+            for(const [label,value] of fields){
+                if(value===undefined||value===null||value==="")continue;
+                const field=document.createElement("div"),key=document.createElement("span"),valueEl=document.createElement("strong");
+                field.className="hhReceivingHistoryField";key.textContent=label;valueEl.textContent=String(value);field.append(key,valueEl);body.append(field);
+            }
+            const note=document.createElement("small");
+            note.textContent=review?"Case quantity/status may include later review changes. Individual scan revisions are unavailable. Use the existing review workflow for corrections.":"Saved audit actions cannot be edited. Use the main quantity controls for a new adjustment. Undo is available only for the latest active scan in a single assigned order.";
+            body.append(note);
+            if(review && (!row.status||row.status==="PENDING")){
+                const button=document.createElement("button");button.type="button";button.textContent="Review details";
+                button.onclick=async()=>{
+                    if(!current())return;
+                    button.disabled=true;
+                    try{
+                        await openNeedsReviewPanel("RECEIVING",{reviewId:row.review_id});
+                        const reviewPanel=document.getElementById("needsReviewOverlay");
+                        if(!reviewPanel)return;
+                        // Reuse the approved focused resolution workflow, not a second History list.
+                        overlay.hidden=true;
+                        const observer=new MutationObserver(()=>{
+                            if(reviewPanel.isConnected)return;
+                            observer.disconnect();
+                            if(current()){overlay.hidden=false;button.focus({preventScroll:true});}else close();
+                        });
+                        observer.observe(document.body,{childList:true});
+                    }finally{button.disabled=false;}
+                };body.append(button);
+            }
+            if(canUndoHandheldHistoryAction(action)){
+                const undo=document.createElement("button");undo.type="button";undo.className="hhReceivingHistoryUndo";undo.textContent="Undo last scan";
+                undo.onclick=async()=>{
+                    undo.disabled=true;
+                    try{
+                        if(!current() || !canUndoHandheldHistoryAction(action))return;
+                        if(!await pharmFlowConfirm({title:"Undo last scan?",message:"A compensating quantity adjustment will be saved. The original action remains in history.",confirmText:"Undo scan",tone:"danger"}))return;
+                        const order=typeof getOrderLifecycleRecord==="function"
+                            ? await getOrderLifecycleRecord(row.orderNumber||row.order_number)
+                            : null;
+                        if(!current())return;
+                        if(String(order?.status||"").toLowerCase()!=="uploaded"){
+                            message.textContent="This order is completed or unavailable. History is view only.";
+                            return;
+                        }
+                        if(canUndoHandheldHistoryAction(action))undoRecentScannerTransaction(action.id);
+                        render();
+                    }catch(_){message.textContent="Unable to verify the active order. No correction was made. Reopen History to retry.";}
+                    finally{undo.disabled=false;}
+                };
+                body.append(undo);
+            }
+            details.append(body);list.append(details);
+        }
     };
-
-    document.body.appendChild(overlay);
     render();
 }
 
@@ -9394,8 +9440,9 @@ setTimeout(()=>{
     if(settingsMaster) renderV2IdentifierAdministration(settingsMaster);
 },600);
 
-async function openNeedsReviewPanel(workflow="RECEIVING"){
+async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
     if(String(workflow).toUpperCase()==="EXPIRY") return openExpiryNeedsReviewPanel();
+    const openingPharmacy=typeof AuthState!=="undefined"?AuthState?.context?.pharmacy_id:null;
     const handheld=typeof isLikelyZebraDevice==="function"&&isLikelyZebraDevice();
     closeNeedsReviewPhotoViewer();
     const previousPanel=document.getElementById("needsReviewOverlay");
@@ -9406,6 +9453,10 @@ async function openNeedsReviewPanel(workflow="RECEIVING"){
     try{ rawRows=await loadNeedsReviewRows(workflow,null); if(!handheld) rawRows=filterNeedsReviewRowsToPcScope(rawRows); }
     catch(error){ showToast?.(error?.message||"Unable to load Needs Review","error"); return; }
 
+    if(handheld && options.reviewId){
+        if(openingPharmacy!==AuthState?.context?.pharmacy_id)return;
+        rawRows=rawRows.filter(row=>String(row.review_id)===String(options.reviewId));
+    }
     const groups=groupNeedsReviewRows(rawRows);
     const esc=value=>escapeHTML(toSafeString(value));
     const admin=typeof isPharmacyAdmin==="function"&&isPharmacyAdmin() && (!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("RECEIVING",true)&&window.PharmFlowPermissions.allowed("DATA",true));
