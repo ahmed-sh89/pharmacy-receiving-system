@@ -17,15 +17,16 @@
     "05_receiving_compatibility_helper.sql",
     "06_legacy_retirement.sql",
     "07_receiving_compatibility_guards.sql",
-    "08_receiving_compatibility_rls.sql"
+    "08_receiving_compatibility_rls.sql",
+    "09_secure_admin_assignment_claim.sql"
   ],
   "tests": [
     "all 99 original tables retain identical row fingerprints, including synthetic legacy history",
     "227 existing public function signatures/return contracts retained; RPC ACLs retained except explicitly retired/superseded APIs; 137 operational bodies unchanged after guard removal",
-    "complete release assertions",
+    "complete release assertions; admin claim: auto-confirmed, unverified, confirmed timestamp, forged metadata, legitimate owner binding, retry, cross-UID, inactive membership, forced password, missing identity, anon",
     "whole release rollback restores original integer contract and removes new foundation",
     "injected late migration error rolls back complete foundation, request hook and all existing records",
-    "clean rerun commits all 13 files; post-commit integer/count/isolation/RLS/password assertions pass"
+    "clean rerun commits all 14 files; post-commit integer/count/isolation/RLS/password assertions pass"
   ],
   "status": "PASS",
   "migrationChecksums": {
@@ -41,7 +42,8 @@
     "05_receiving_compatibility_helper.sql": "a4d30c0ef92974409a675b9176dd0c242c9931625c20b83e936850872754f064",
     "06_legacy_retirement.sql": "ae60cc9540048b6d982d0cbead64e8da28b8adbfe8e3cf9a9d98e1f1a3abe366",
     "07_receiving_compatibility_guards.sql": "0e4a11154b92ffed1f1d23362b2ec6571572b77a2151fac5cd7b405a86a845b4",
-    "08_receiving_compatibility_rls.sql": "833043842c1176e58ad01800547a2aa55697d922ea00e9ec6bbf8ce92488494a"
+    "08_receiving_compatibility_rls.sql": "833043842c1176e58ad01800547a2aa55697d922ea00e9ec6bbf8ce92488494a",
+    "09_secure_admin_assignment_claim.sql": "c7d9cee115513c4d008c2743c55687f6916f816aedf957811614e0e5419b1481"
   },
   "baselineSha256": "2fd22cc4162ebdda9cbc196062f5ae3df18e44d8c874292df99f2bfe600f4df6"
 }

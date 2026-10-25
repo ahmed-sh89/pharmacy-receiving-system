@@ -159,5 +159,6 @@ DO $contracts$ DECLARE r record;BEGIN FOR r IN SELECT * FROM (VALUES ('add_pharm
 ('summary_pharmflow_expiry_inventory_v1(uuid)','0323799c20eec08989916078094a9914'),
 ('upsert_session_item(uuid,uuid,text,text,text,text,numeric)','7eac2c6f7450514e4e592d7ccab7c545'),
 ('verify_pharmflow_historical_state_v2(uuid)','011784060d6f41e7f7f45c7436108bf6')) AS x(sig,hash) LOOP IF to_regprocedure('public.'||r.sig) IS NULL OR md5(pg_get_functiondef(to_regprocedure('public.'||r.sig))) IS DISTINCT FROM r.hash THEN RAISE EXCEPTION 'Production function drift: %',r.sig;END IF;END LOOP;END $contracts$;
+DO $claim_contract$ BEGIN IF md5(pg_get_functiondef('public.claim_pharmacy_admin_assignment()'::regprocedure)) <> '75beeb86b27e8329e97fd3add2231ba0' THEN RAISE EXCEPTION 'Admin assignment claim source drift'; END IF; END $claim_contract$;
 SELECT 'PASS: Production read-only dependency/account/function preflight' AS result;
 ROLLBACK;

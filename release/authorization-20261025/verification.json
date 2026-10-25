@@ -47,7 +47,7 @@
   "full_release_rehearsal": {
     "status": "PASS",
     "scope": "Production-schema/contract matched SQL rehearsal; see rehearsal/result.json for engine and DDL adapter limitations",
-    "numbered_files": 13,
+    "numbered_files": 14,
     "existing_public_contracts": 227,
     "unchanged_guarded_operational_bodies": 137,
     "unchanged_original_table_fingerprints": 99,
@@ -60,5 +60,14 @@
     "Production integer count contract restored in disposable baseline; no DROP or live contract change",
     "Password flag helper SECURITY DEFINER matches verified Staging",
     "Optional Staging-only RLS helper revoke conditional"
-  ]
+  ],
+  "admin_assignment_security": {
+    "status": "PASS",
+    "strategy": "Trusted administrator-controlled user-ID binding; claim is read-only",
+    "staging_migration": "20261025112556_secure_admin_assignment_claim",
+    "native_staging_tests": "PASS; all fixtures rolled back",
+    "email_confirmation_timestamp_alone": "Never sufficient; auto-confirmed and independently confirmed states both require trusted binding",
+    "pending_assignment_workflow": "System Administrator explicitly assigns after the account exists",
+    "production_changed": false
+  }
 }

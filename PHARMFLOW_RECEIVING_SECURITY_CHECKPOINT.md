@@ -20,3 +20,10 @@ All 13 numbered candidate SQL files PASS, including commit/post-commit assertion
 Package fixes: private own-account password helper SECURITY DEFINER matches verified Staging; optional Staging-only rls_auto_enable revoke is conditional. No count function DROP, public return-contract change or Receiving redesign. Existing passing Receiving tests were not repeated.
 
 SQL compatibility readiness: READY for controlled Production promotion process, with mandatory release-time deployment/environment checks and authenticated smoke; not USER VERIFIED. Rehearsal engine is local PostgreSQL 17.5/PGlite 0.3.10, target Supabase PostgreSQL 17.6; only Storage policy and pgrst setting DDL privilege support is adapted. Native managed service/deployed-client integration NOT TESTED. Hosted Staging branch creation was unavailable on the current plan and created no resource. See release README and rehearsal/result.json for exact limits.
+
+
+## Final Admin assignment blocker — resolved on Staging
+
+20261025112556_secure_admin_assignment_claim applied on Staging only. Email-confirmed timestamps cannot distinguish automatic confirmation from ownership proof. The claim RPC is now a read-only projection of an existing active Admin membership plus claimed assignment bound to the authenticated user ID, gated by password replacement. It cannot create/reactivate/reassign membership or consume pending email-only assignments. Trusted owner assignment after account creation, existing provisioning and self-registration approval remain the supported grant paths. No Auth config or frontend change.
+
+PASS: focused local claim scenarios and native Staging existing-account provisioning/assignment/default-deny/retry/suspension tests (disposable fixtures rolled back). All 14 numbered release files pass complete Production-schema commit/rollback/failure-recovery rehearsal with the previously documented local engine/platform limitations. No separate Receiving/Expiry test cycle. Production main/database and historical sessions unchanged. READY for controlled promotion, with release-time environment checks and authenticated smoke required; not USER VERIFIED.

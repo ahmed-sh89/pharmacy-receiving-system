@@ -54,7 +54,7 @@ try{
  for(const old of originals){
   const updated=current.find(x=>x.signature===old.signature);if(!updated||updated.result!==old.result)throw Error('Signature/return drift: '+old.signature);
   const name=old.signature.split('(')[0];
-  if(!retired.has(name)&&name!=='owner_review_pharmacy_registration_v2')for(const role of ['anon','authenticated','service'])if(old[role]!==updated[role])throw Error('Unintended RPC ACL drift: '+old.signature+' '+role);
+  if(!retired.has(name)&&!['owner_review_pharmacy_registration_v2','claim_pharmacy_admin_assignment'].includes(name))for(const role of ['anon','authenticated','service'])if(old[role]!==updated[role])throw Error('Unintended RPC ACL drift: '+old.signature+' '+role);
   if(updated.definition.includes('require_receiving_compat')||updated.definition.includes('PERFORM pharmflow_auth_private.require_access')){
    if(name==='get_pharmflow_workspace_generation')continue; // Approved Read Only bootstrap protection.
    let value=body(updated.definition).replace(/PERFORM pharmflow_auth_private.require_(?:receiving_compat|access)\([^;]+;/gi,'');
@@ -64,8 +64,8 @@ try{
   }
  }
  result.tests.push(`${originals.length} existing public function signatures/return contracts retained; RPC ACLs retained except explicitly retired/superseded APIs; ${preserved} operational bodies unchanged after guard removal`);
- await db.exec(fs.readFileSync(path.join(root,'assertions.sql'),'utf8'));
- result.tests.push('complete release assertions');
+ await db.exec(fs.readFileSync(path.join(root,'assertions.sql'),'utf8'));await db.exec(fs.readFileSync(path.join(root,'admin-claim-assertions.sql'),'utf8'));
+ result.tests.push('complete release assertions; admin claim: auto-confirmed, unverified, confirmed timestamp, forged metadata, legitimate owner binding, retry, cross-UID, inactive membership, forced password, missing identity, anon');
  await db.exec('ROLLBACK');
  const after=(await db.query("select to_regnamespace('pharmflow_auth_private') is null as foundation_absent,pg_get_function_result('public.count_pharmflow_needs_review_v2(uuid,text)'::regprocedure) as contract")).rows[0];
  if(!after.foundation_absent||after.contract!=='integer')throw Error('Release rollback did not restore original baseline');
@@ -81,9 +81,9 @@ try{
  result.tests.push('injected late migration error rolls back complete foundation, request hook and all existing records');
  // Successful commit path, followed by assertions under real authenticated roles.
  await db.exec('BEGIN');for(const name of files)await migrate(name);await db.exec('COMMIT');
- await db.exec('BEGIN');await db.exec(fs.readFileSync(path.join(root,'assertions.sql'),'utf8'));await db.exec('ROLLBACK');
+ await db.exec('BEGIN');await db.exec(fs.readFileSync(path.join(root,'assertions.sql'),'utf8'));await db.exec(fs.readFileSync(path.join(root,'admin-claim-assertions.sql'),'utf8'));await db.exec('ROLLBACK');
  if(JSON.stringify(initialData)!==JSON.stringify(await fingerprint()))throw Error('Committed migration changed existing data');
- result.tests.push('clean rerun commits all 13 files; post-commit integer/count/isolation/RLS/password assertions pass');
+ result.tests.push('clean rerun commits all 14 files; post-commit integer/count/isolation/RLS/password assertions pass');
  result.baselineSha256=createHash('sha256').update(fs.readFileSync(path.join(root,'production-baseline.json'))).digest('hex');
  result.status='PASS';save();console.log('PASS COMPLETE');
 }catch(e){

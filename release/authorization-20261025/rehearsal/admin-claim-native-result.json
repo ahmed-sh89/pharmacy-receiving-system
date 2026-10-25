@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "environment": "Staging tovkcakucyagvbzvlnks",
+  "migration": "20261025112556_secure_admin_assignment_claim",
+  "test": "tests/admin-claim-security-staging.sql",
+  "fixtures": "New disposable pharmacy/journal, existing QA identity; all changes ROLLBACK",
+  "checks": [
+    "trusted owner provisioning",
+    "explicit initial permissions before activation",
+    "existing account bound to user ID",
+    "legitimate claim and retry",
+    "pending email-only claim denied",
+    "explicit owner assignment",
+    "suspended claim denied"
+  ],
+  "auth_settings": {
+    "staging_signup_enabled": true,
+    "staging_auto_confirm": false,
+    "production_auto_confirm_observed_in_release_preflight": true,
+    "settings_changed": false
+  },
+  "production_claim_original_md5": "75beeb86b27e8329e97fd3add2231ba0",
+  "production_changes": false
+}

@@ -11,7 +11,7 @@ The previous rehearsal incorrectly overlaid Production definitions on the Stagin
 
 Two additional authorization-package omissions were corrected during the complete rehearsal: `01` now gives the private own-account password flag helper SECURITY DEFINER, exactly matching the verified working Staging helper and its fixed search_path; `02` conditionally revokes the optional Staging-only `rls_auto_enable()` function, which does not exist in Production. No operational function bodies were rewritten.
 
-All **13 numbered SQL files** passed with body validation enabled, including a complete commit and post-commit assertions, whole-release rollback and injected late migration failure rollback. The read-only Production preflight passed (150 definition hashes, required tables, HHP084 membership/bootstrap conditions and legacy table grants). Re-run it immediately before any separately authorized promotion.
+All **14 numbered SQL files** passed with body validation enabled, including a complete commit and post-commit assertions, whole-release rollback and injected late migration failure rollback. The read-only Production preflight passed (150 definition hashes, required tables, HHP084 membership/bootstrap conditions and legacy table grants). Re-run it immediately before any separately authorized promotion.
 
 `rehearsal/` contains a checksum-verified, empty Production application schema baseline, synthetic fixtures, runner and exact migration checksums. It restores 99 tables, 227 existing public functions, Auth/Storage helpers and required private Expiry dependencies, constraints, role memberships, table/function ACLs, policies and triggers. All 227 captured public definitions matched the live Production catalog before restoration. No account or operational rows were copied; sealed import data and managed net/cron/vault service internals were excluded.
 
@@ -20,6 +20,16 @@ All **13 numbered SQL files** passed with body validation enabled, including a c
 PASS evidence: all 227 existing public signatures/return contracts retained, RPC ACLs retained except intentional legacy/superseded APIs, 137 Receiving/Expiry operational bodies unchanged after guard removal, all 99 original table row fingerprints retained (including synthetic legacy history), Receiving/Expiry grouped counts, disabled-module separation, cross-pharmacy denial, permission RLS, HHP084 Global bootstrap, forced-password gate, missing identity denial, all 11 legacy denial ACLs, commit/retry from clean baseline and injected-failure recovery.
 
 The SQL compatibility blocker is resolved. The package is ready for the separately authorized controlled Production promotion process, subject to its release-time environment/deployment gate and authenticated smoke tests; it is not USER VERIFIED.
+
+## Final Admin assignment security correction
+
+Production preflight confirmed public signup with automatic email confirmation. Therefore email_confirmed_at is not an independent ownership signal. New file `09_secure_admin_assignment_claim.sql` uses trusted administrator binding instead: the existing claim RPC returns only a claimed assignment bound to auth.uid(), with an already active Admin membership and active pharmacy, after the password gate. It performs no profile, membership or assignment writes and never grants/reactivates/reassigns an Admin. Anonymous execution is revoked. Signatures and return contracts are unchanged.
+
+Pending email-only assignments remain pending. After the intended account exists, the System Administrator must explicitly use the existing Admin Assignment action to bind that account. Even a confirmed email timestamp alone does not bypass this requirement. Existing direct provisioning and self-registration approval already bind the approved user ID through trusted owner-only RPCs and remain unchanged. Existing administrators and System Administrators retain access. No Auth settings, passwords, email sending, frontend or operational logic changed.
+
+Focused local tests PASS: auto-confirmed and unverified account states, confirmed timestamps, forged user metadata, unauthorized reassignment, pending retries, existing trusted accounts, owner assignment, other-UID isolation, inactive membership, missing identity, anonymous denial and forced-password gate. Native Staging rollback test PASS: initial-permission provisioning/default deny, trusted existing-account claims, retries, email-only pending denial, owner reassignment and suspended pharmacy. No live accounts were created; native tests used existing QA identities and disposable pharmacy fixtures, with rollback.
+
+All 14 numbered release files PASS the same complete Production-schema rehearsal with commit, explicit rollback and injected late-error rollback. The engine/managed-platform qualifications above still apply. Staging migration: 20261025112556_secure_admin_assignment_claim. Production remains unchanged. Recovery must retain this read-only claim guard; never restore email-only granting as a rollback.
 
 ## Implemented and verified on Staging
 
