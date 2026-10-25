@@ -138,6 +138,7 @@ test("adjustment handlers emit exactly one signed delta for a duplicated item gr
     const item={itemCode:"1013429",itemName:"Maxim 400 Mg 7 Tab",orderedQty:204,receivedQty:144,orderNumbers:[order]};
     const transactions=[];
     const context={
+        window:{},
         AppState:{settings:{allowOverReceiving:true},session:{deviceId:"test-device"}},
         ReceivingEngine:{adjustmentSources:{increase:"MANUAL_INCREASE",decrease:"MANUAL_DECREASE"}},
         toNumber:(value,fallback=0)=>Number.isFinite(Number(value))?Number(value):fallback,
@@ -168,5 +169,5 @@ test("adjustment handlers emit exactly one signed delta for a duplicated item gr
 });
 
 test("the active HTML entry cache-busts the corrected report source",()=>{
-    assert.match(indexSource,/<script src="js\/reports\.js\?v=GROUP_INTEGRITY_20261017_1"><\/script>/);
+    assert.match(indexSource,/<script src="js\/reports\.js\?v=[^"\s]*GROUP_INTEGRITY_20261017_1"><\/script>/);
 });

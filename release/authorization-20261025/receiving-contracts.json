@@ -1,0 +1,425 @@
+[
+  {
+    "signature": "append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb)",
+    "name": "append_pharmflow_cloud_transaction",
+    "args": "p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb",
+    "result": "boolean",
+    "source_sha256": "8037951303eb33ad17184b5742f47ac17c0f24c2d1a496f42f2fdf28dcf3deda",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "append_pharmflow_cloud_transaction(uuid,text,text,text,text,text,numeric,text,text,timestamp with time zone,jsonb)",
+    "name": "append_pharmflow_cloud_transaction",
+    "args": "p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity numeric, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb",
+    "result": "void",
+    "source_sha256": "f832de35eeb7af176c3484017c2eb1edbffc84d5798cee14cee36b4c59b36cdb",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "append_pharmflow_learned_transaction_v3(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint)",
+    "name": "append_pharmflow_learned_transaction_v3",
+    "args": "p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb, p_mapping_id uuid, p_mapping_revision bigint",
+    "result": "boolean",
+    "source_sha256": "4d3c724eba7cf1ae65afd4811a0e9c6e327a42b5ce358753826380e2f346a294",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "atomic_reset_pharmflow_current_workspace(uuid,text)",
+    "name": "atomic_reset_pharmflow_current_workspace",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "bigint",
+    "source_sha256": "295cd595eb02f5f1c3c3083aaeb017a9c7127348089bdd5a23fb3dd945d2d41f",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "atomic_reset_pharmflow_current_workspace_v3(uuid,text)",
+    "name": "atomic_reset_pharmflow_current_workspace_v3",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "jsonb",
+    "source_sha256": "e4ca51b5cbc26be71d77a9f3ac1e1361bfef1b2dafec1a1b0506f8f4574b8b41",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "atomic_reset_pharmflow_current_workspace_v4(uuid,text)",
+    "name": "atomic_reset_pharmflow_current_workspace_v4",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "jsonb",
+    "source_sha256": "1d0569aa4a3a53318955cecca6eff26e92419434acb931b1af23a22a41e8e66d",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "clear_pharmflow_active_order_manifest(uuid)",
+    "name": "clear_pharmflow_active_order_manifest",
+    "args": "p_pharmacy_id uuid",
+    "result": "boolean",
+    "source_sha256": "84c8f626cfe0acd1259684ba35aa5726987a7941373c98a8cf2474bcfd22038e",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "clear_pharmflow_active_order_manifest_v2(uuid)",
+    "name": "clear_pharmflow_active_order_manifest_v2",
+    "args": "p_pharmacy_id uuid",
+    "result": "boolean",
+    "source_sha256": "a20819558822d9b8ceb46882864dc5ecb97c4953780f5bb3dd60bd960a9fb0ad",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "clear_pharmflow_cloud_workspace(uuid)",
+    "name": "clear_pharmflow_cloud_workspace",
+    "args": "p_pharmacy_id uuid",
+    "result": "void",
+    "source_sha256": "a674a2c131367d06c794b8673885911b8bdaf39fcc6ed3814374180202bcea2b",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "clear_pharmflow_receiving_needs_review_v2(uuid)",
+    "name": "clear_pharmflow_receiving_needs_review_v2",
+    "args": "p_pharmacy_id uuid",
+    "result": "jsonb",
+    "source_sha256": "683398f4120607ee8a00c329c055ba9808afcc13e306d76f2ca2b4738558cc5c",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "clear_pharmflow_receiving_needs_review_v3(uuid)",
+    "name": "clear_pharmflow_receiving_needs_review_v3",
+    "args": "p_pharmacy_id uuid",
+    "result": "jsonb",
+    "source_sha256": "c38278d7cd67eb0cd018f1e4b2d8b9e662319378b3aa70ac59ce39a267c7f3df",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "clear_pharmflow_receiving_transactions(uuid)",
+    "name": "clear_pharmflow_receiving_transactions",
+    "args": "p_pharmacy_id uuid",
+    "result": "boolean",
+    "source_sha256": "6378fe2d231222104633202a703af553d21467955dfd7d81df6d910cc43ca0c6",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "clear_pharmflow_receiving_transactions_v2(uuid)",
+    "name": "clear_pharmflow_receiving_transactions_v2",
+    "args": "p_pharmacy_id uuid",
+    "result": "boolean",
+    "source_sha256": "1959c0b126fa792fda45ab3e63595c4ac1a53c2ec9086421e39fa293eaeee21c",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "count_pharmflow_needs_review_scope_v3(uuid,text,text[])",
+    "name": "count_pharmflow_needs_review_scope_v3",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_order_numbers text[]",
+    "result": "integer",
+    "source_sha256": "0eaa61b8ade0fee33a984eb9af38296248a0ee761505d69e0a60cadae92aa2bf",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "create_pharmflow_needs_review_v2(uuid,text,text,text,text,text,text,text,text,text,text,text)",
+    "name": "create_pharmflow_needs_review_v2",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_gtin text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text",
+    "result": "TABLE(review_id uuid, pending_quantity integer, created_at timestamp with time zone)",
+    "source_sha256": "dbefd35c6b2d23b3478a597c8e960deb16831bf0628493394025db39ec272e3b",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "create_pharmflow_needs_review_v5(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[])",
+    "name": "create_pharmflow_needs_review_v5",
+    "args": "p_operation_id text, p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text, p_work_scope_order_numbers text[]",
+    "result": "TABLE(review_id uuid, pending_quantity integer, created_at timestamp with time zone, status text)",
+    "source_sha256": "b46a19233d2a5bab92d8f9767ac76cbafdb51e6c63686744ed6d3f7982ae1922",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "delete_all_pharmflow_finalized_archives(uuid,text)",
+    "name": "delete_all_pharmflow_finalized_archives",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "boolean",
+    "source_sha256": "95b0b95e23ce8f417f4a9bd29d1510b718c165f9aea67a1ea6766cdca01e2214",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "delete_all_pharmflow_historical_data_v2(uuid,text)",
+    "name": "delete_all_pharmflow_historical_data_v2",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "jsonb",
+    "source_sha256": "f2429202653f781300c9d18322250fb45b4050b805514ca2dbdd75ddf40e1760",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "delete_all_pharmflow_received_history(uuid,text)",
+    "name": "delete_all_pharmflow_received_history",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "jsonb",
+    "source_sha256": "e6d34642538a7cf41860db1d7c038fc2a5ae26f5d0d82c137a2eb18b169908a3",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "delete_pharmacy_needs_review(uuid,uuid)",
+    "name": "delete_pharmacy_needs_review",
+    "args": "p_pharmacy_id uuid, p_review_id uuid",
+    "result": "boolean",
+    "source_sha256": "97a82ebda4da3fe5ac11feed36f6fe81da6c7a0a0ccf7bb345f2941faff25607",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "delete_pharmflow_order_complete(uuid,text,text)",
+    "name": "delete_pharmflow_order_complete",
+    "args": "p_pharmacy_id uuid, p_order_number text, p_confirmation text",
+    "result": "boolean",
+    "source_sha256": "385c64df7d963b634cb3fbe2050e0d4573f44a7fb06dbde8e9202c9cf5e6eedc",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "discard_all_pharmflow_active_orders(uuid,text)",
+    "name": "discard_all_pharmflow_active_orders",
+    "args": "p_pharmacy_id uuid, p_confirmation text",
+    "result": "boolean",
+    "source_sha256": "3c036e63dbee190bd53f06ec93e9ba2c2861f4467762bb4ae3892bf8a6430f64",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "discard_pharmflow_active_order(uuid,text,text)",
+    "name": "discard_pharmflow_active_order",
+    "args": "p_pharmacy_id uuid, p_order_number text, p_confirmation text",
+    "result": "jsonb",
+    "source_sha256": "f201f6727b677bf083fb31903f1ce55fa3d278a02a18f958520eff96fbe6001f",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "finalize_pharmflow_order(uuid,text)",
+    "name": "finalize_pharmflow_order",
+    "args": "p_pharmacy_id uuid, p_order_number text",
+    "result": "boolean",
+    "source_sha256": "ab13d21f0fb5dccd1f50f0df8b317e8bd5b9d249d05b4892c225a36b13db2d47",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "finalize_pharmflow_receiving_workspace_v1(uuid,text,text[],jsonb,jsonb)",
+    "name": "finalize_pharmflow_receiving_workspace_v1",
+    "args": "p_pharmacy_id uuid, p_completion_key text, p_order_numbers text[], p_discrepancies jsonb, p_new_items jsonb",
+    "result": "TABLE(workspace_history_id uuid, completed_at timestamp with time zone, orders_count integer, discrepancy_count integer, new_item_count integer)",
+    "source_sha256": "81d8bae0653cf529c5310b55001b6c713703362611c07d07d7890c9f26bf9b9a",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "get_pharmflow_active_order_manifest(uuid)",
+    "name": "get_pharmflow_active_order_manifest",
+    "args": "p_pharmacy_id uuid",
+    "result": "TABLE(manifest jsonb, revision bigint, updated_at timestamp with time zone)",
+    "source_sha256": "5eb3c2ba65829f1ac5ff61c7daa5e9dfba930d2119152b67004cee3d4ebaa9d2",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "get_pharmflow_active_order_manifest_v2(uuid)",
+    "name": "get_pharmflow_active_order_manifest_v2",
+    "args": "p_pharmacy_id uuid",
+    "result": "TABLE(manifest jsonb, revision bigint, updated_at timestamp with time zone, order_files integer, order_items integer)",
+    "source_sha256": "e4600e70c688d38fb6bd7ba8fd819e719518630c8abe2ba94b7bd2e94fc0b1e1",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "get_pharmflow_order_source_items(uuid,text)",
+    "name": "get_pharmflow_order_source_items",
+    "args": "p_pharmacy_id uuid, p_order_number text",
+    "result": "SETOF pharmflow_order_source_items",
+    "source_sha256": "9bc5f6aa5cda1fc36cc93bd6553835339c6dfb82a41cfe3d97fcc47020ec3af8",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "get_pharmflow_receiving_workspace_history_v1(uuid,uuid)",
+    "name": "get_pharmflow_receiving_workspace_history_v1",
+    "args": "p_pharmacy_id uuid, p_workspace_history_id uuid",
+    "result": "TABLE(event_type text, order_number text, order_name text, order_date date, item_code text, item_name text, ordered_qty numeric, received_qty numeric, difference numeric, issue_type text)",
+    "source_sha256": "e913b96fee4f97e6ed296d954da3492c9a1407a57f3a18c16c4c62d705b9f30c",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "list_pharmacy_needs_review(uuid,text,text)",
+    "name": "list_pharmacy_needs_review",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_order_id text",
+    "result": "TABLE(review_id uuid, workflow text, gtin text, raw_barcode text, order_id text, order_name text, pending_quantity integer, expiry_month integer, expiry_year integer, worker_id uuid, captured_by_name text, device_id text, source text, created_at timestamp with time zone, review_reason text)",
+    "source_sha256": "d859a977cf7a6c9487fe5da635b82ee3bcf877c106117f34287f3eba12184bf8",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "list_pharmflow_cloud_transactions(uuid,integer)",
+    "name": "list_pharmflow_cloud_transactions",
+    "args": "p_pharmacy_id uuid, p_limit integer",
+    "result": "TABLE(transaction_id text, order_number text, item_code text, item_name text, gtin text, quantity integer, source text, device_id text, occurred_at timestamp with time zone, payload jsonb)",
+    "source_sha256": "0e99ec907f8fc6c356405d858ffdd846af35d13fe43b2ea9944f6b374f4a3fcc",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "list_pharmflow_cloud_transactions_v2(uuid,integer)",
+    "name": "list_pharmflow_cloud_transactions_v2",
+    "args": "p_pharmacy_id uuid, p_limit integer",
+    "result": "TABLE(transaction_id text, order_number text, item_code text, item_name text, gtin text, quantity integer, source text, device_id text, occurred_at timestamp with time zone, payload jsonb)",
+    "source_sha256": "effe0798aba0c2688050862dfd9152165f0707a4e9aba3ee67dcbcade8b338e1",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "list_pharmflow_cloud_transactions_v3(uuid,text[],integer)",
+    "name": "list_pharmflow_cloud_transactions_v3",
+    "args": "p_pharmacy_id uuid, p_order_numbers text[], p_limit integer",
+    "result": "TABLE(transaction_id text, order_number text, item_code text, item_name text, gtin text, quantity integer, source text, device_id text, occurred_at timestamp with time zone, payload jsonb)",
+    "source_sha256": "2b8506bc5141bdd951ec3b969eae065f4f6508fc602e868c77ed65fa734b3da4",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "list_pharmflow_needs_review_v2(uuid,text,text)",
+    "name": "list_pharmflow_needs_review_v2",
+    "args": "p_pharmacy_id uuid, p_workflow text, p_order_number text",
+    "result": "TABLE(review_id uuid, workflow text, session_id text, order_number text, order_name text, gtin text, raw_barcode text, pending_quantity integer, review_reason text, master_item_code_hint text, master_item_name_hint text, photo_path text, source text, device_id text, created_at timestamp with time zone)",
+    "source_sha256": "b02d3a5d1f9f04900ea4024048958004139b5592506fb1265f23f99ebc913cf8",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "list_pharmflow_new_item_history_v1(uuid,date,date)",
+    "name": "list_pharmflow_new_item_history_v1",
+    "args": "p_pharmacy_id uuid, p_from date, p_to date",
+    "result": "TABLE(workspace_history_id uuid, completed_at timestamp with time zone, order_number text, order_name text, order_date date, item_code text, item_name text, ordered_qty numeric)",
+    "source_sha256": "eaae7ff037beed3d8d108ba3065038d635954b40fbde9aa81409b08086c3705c",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "list_pharmflow_receiving_workspace_history_v1(uuid,date,date)",
+    "name": "list_pharmflow_receiving_workspace_history_v1",
+    "args": "p_pharmacy_id uuid, p_from date, p_to date",
+    "result": "TABLE(workspace_history_id uuid, completed_at timestamp with time zone, orders_count integer, discrepancy_count integer, new_item_count integer, order_numbers text[])",
+    "source_sha256": "d2e6b5e5fa3c8ebf72ce5201b0dba9c2350a8bf4a81e4eb50975d182bc4268d0",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "patch_pharmflow_item_priorities_v1(uuid,jsonb,bigint,bigint)",
+    "name": "patch_pharmflow_item_priorities_v1",
+    "args": "p_pharmacy_id uuid, p_changes jsonb, p_expected_generation bigint, p_expected_revision bigint",
+    "result": "TABLE(revision bigint, updated_at timestamp with time zone, changed_items integer, order_files integer, order_items integer, workspace_generation bigint)",
+    "source_sha256": "1c55ba034d4875f2fa7c6cc5eaa89d70e0d014b1f7391fb43e8a61496c5d29bd",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "patch_pharmflow_item_priorities_v2(uuid,jsonb,bigint,bigint)",
+    "name": "patch_pharmflow_item_priorities_v2",
+    "args": "p_pharmacy_id uuid, p_changes jsonb, p_expected_generation bigint, p_expected_revision bigint",
+    "result": "TABLE(revision bigint, updated_at timestamp with time zone, changed_items integer, order_files integer, order_items integer, workspace_generation bigint)",
+    "source_sha256": "c4f98ec240b7b05c2300988c8bcdc3926efb487accf4c1e935084f28e6b54c41",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "pharmflow_receiving_sync_health_v2(uuid)",
+    "name": "pharmflow_receiving_sync_health_v2",
+    "args": "p_pharmacy_id uuid",
+    "result": "TABLE(transaction_count bigint, last_transaction_at timestamp with time zone)",
+    "source_sha256": "8cbf09118ab463a7d7b0f0c0e37e9ce5ff3430c54673da9c50cbc71f2bf30d87",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "resolve_pharmacy_needs_review(uuid,uuid,text,text)",
+    "name": "resolve_pharmacy_needs_review",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text",
+    "result": "TABLE(review_id uuid, workflow text, gtin text, pending_quantity integer, expiry_month integer, expiry_year integer, worker_id uuid, captured_by_name text, device_id text, source text)",
+    "source_sha256": "b1fb58866498c90687f838f90a7fcf102c24d9eb5999e288b920e6ed5f74dfc0",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "resolve_pharmflow_needs_review_v3(uuid,uuid,text,text,text,text)",
+    "name": "resolve_pharmflow_needs_review_v3",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_type text, p_resolution_transaction_id text",
+    "result": "jsonb",
+    "source_sha256": "39fd6c15398aaf72380905b2277deedf7ce33e2cf4ed39e66317c5f5cdb45101",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "save_pharmflow_active_order_manifest(uuid,jsonb)",
+    "name": "save_pharmflow_active_order_manifest",
+    "args": "p_pharmacy_id uuid, p_manifest jsonb",
+    "result": "TABLE(revision bigint, updated_at timestamp with time zone)",
+    "source_sha256": "864b87642eae7b797f7841939168558c54478c8a6082dc9e869be2cfa0c89413",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "save_pharmflow_active_order_manifest_v2(uuid,jsonb)",
+    "name": "save_pharmflow_active_order_manifest_v2",
+    "args": "p_pharmacy_id uuid, p_manifest jsonb",
+    "result": "TABLE(revision bigint, updated_at timestamp with time zone, order_files integer, order_items integer)",
+    "source_sha256": "6b73e5ccdb3fb0b0ed4628f6d501bcdd6ed79946b36cc34772f3914a8279ebf8",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "save_pharmflow_finalized_archive(uuid,text,text[],timestamp with time zone,jsonb)",
+    "name": "save_pharmflow_finalized_archive",
+    "args": "p_pharmacy_id uuid, p_archive_id text, p_order_numbers text[], p_closed_at timestamp with time zone, p_archive_payload jsonb",
+    "result": "boolean",
+    "source_sha256": "5c6177a1302ec15cd98b344bed0e99085f93b9549263ec4d52695dc0dc8d462d",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "save_pharmflow_order_source_items(uuid,text,jsonb,boolean)",
+    "name": "save_pharmflow_order_source_items",
+    "args": "p_pharmacy_id uuid, p_order_number text, p_items jsonb, p_replace boolean",
+    "result": "integer",
+    "source_sha256": "84f8035a5d692c20a76ab70f8c404625eedc5bb42a6e2e4cc725afc477fb84b7",
+    "authenticated_execute": true,
+    "anon_execute": true
+  },
+  {
+    "signature": "set_pharmacy_needs_review_quantity(uuid,uuid,integer)",
+    "name": "set_pharmacy_needs_review_quantity",
+    "args": "p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer",
+    "result": "TABLE(review_id uuid, pending_quantity integer, updated_at timestamp with time zone)",
+    "source_sha256": "47811112289960ddd96fe617ec971058d610028946d0d52b6c2cae1484ed1171",
+    "authenticated_execute": true,
+    "anon_execute": false
+  },
+  {
+    "signature": "verify_pharmflow_historical_state_v2(uuid)",
+    "name": "verify_pharmflow_historical_state_v2",
+    "args": "p_pharmacy_id uuid",
+    "result": "jsonb",
+    "source_sha256": "c75b552c8f7f9325cf29baa05170312a389f1ccdfb67f5262c2c521781d7025c",
+    "authenticated_execute": true,
+    "anon_execute": false
+  }
+]

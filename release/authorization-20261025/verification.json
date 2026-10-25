@@ -1,0 +1,50 @@
+{
+  "compatibility_signatures_returns_acls": 47,
+  "retired_denying_bodies_and_acls": 11,
+  "production_existing_guard_only_definitions": 91,
+  "excluded_staging_only_expiry_rpcs": [
+    "get_pharmflow_expiry_capture_operation_v1",
+    "open_pharmflow_expiry_session_v1",
+    "close_pharmflow_expiry_session_v1",
+    "correct_pharmflow_expiry_session_v1",
+    "list_pharmflow_expiry_session_v1"
+  ],
+  "source_files": [
+    "cloud-workspace.js",
+    "css/permissions.css",
+    "css/settings-workspace.css",
+    "index.html",
+    "js/app.js",
+    "js/auth.js",
+    "js/excel.js",
+    "js/expiry-active-session.js",
+    "js/expiry-clear-session.js",
+    "js/expiry-desktop-v2.js",
+    "js/expiry.js",
+    "js/master-gtin.js",
+    "js/orders.js",
+    "js/permissions.js",
+    "js/receiving-release.js",
+    "js/receiving.js",
+    "js/router.js",
+    "js/settings-workspace.js",
+    "js/supabase.js",
+    "supabase/config.toml",
+    "supabase/functions/pharmflow-password-admin/index.ts",
+    "ui.js",
+    "vite.config.js"
+  ],
+  "production_written": false,
+  "ready_for_production_promotion": false,
+  "blocker": "count_pharmflow_needs_review_v2(uuid,text) has divergent Staging/Production return contracts; PostgreSQL 42P13 stopped full original-Production guard compilation rehearsal. No DROP performed.",
+  "focused_source_tests": {
+    "pass": 22,
+    "fail": 0
+  },
+  "staging_build": "PASS",
+  "production_candidate_patch_apply_and_build": "PASS",
+  "receiving_replay_rolled_back_units": 22,
+  "full_release_rehearsal": "BLOCKED",
+  "production_runtime_and_hardware_smoke": "NOT TESTED",
+  "production_preflight": "Prepared, not fully passed"
+}

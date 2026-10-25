@@ -1,0 +1,62 @@
+[
+  {
+    "file": "supabase/migrations/20261025000833_staging_receiving_security_dependencies.sql",
+    "sha256": "2745e29c68ddb139caff649dc0804f154c3abefea257983b249c9ee2fc0b0689"
+  },
+  {
+    "file": "supabase/migrations/20261025002317_staging_receiving_security_guards_1.sql",
+    "sha256": "1cdebe27e5b1ae3ec71d7ccfa97ec7bc5332ed2f7bf93c02579696bf99516cc1"
+  },
+  {
+    "file": "supabase/migrations/20261025002426_staging_receiving_security_guards_2.sql",
+    "sha256": "19bfa4dc816c852f2b555375c0d32941fcfc77bd740f88fa775bd79050c5dcb6"
+  },
+  {
+    "file": "supabase/migrations/20261025002436_staging_receiving_security_guards_3.sql",
+    "sha256": "f75fc9387802014f1126b39150b88c941844017c2594ee6fefae94ebb6041040"
+  },
+  {
+    "file": "supabase/migrations/20261025002813_staging_receiving_security_guards_4.sql",
+    "sha256": "cb4f204dedeca67257c7b46532632e8a5a5857ae12237ec88bb3f8875f91f9e5"
+  },
+  {
+    "file": "supabase/migrations/20261025002815_staging_receiving_security_guards_4_part2.sql",
+    "sha256": "70f4840d453e52172fbb97740d997b933091c4c81f2815721ca0e6df5a66ec9c"
+  },
+  {
+    "file": "supabase/migrations/20261025002823_staging_receiving_security_guards_4_part3.sql",
+    "sha256": "48236430ba55c8efcf453d0992fb239f75ec589e1591176c495cfdb148eb0c6c"
+  },
+  {
+    "file": "supabase/migrations/20261025003122_staging_receiving_security_guards_4_part4_unit1.sql",
+    "sha256": "894548a0cc6a62f99bccde3188f748f54d9a638a00f305b6604bb6fef45d7e89"
+  },
+  {
+    "file": "supabase/migrations/20261025003145_staging_receiving_security_guards_4_part4_unit2.sql",
+    "sha256": "942e5093f48f0b90236a7a5a9435c7ed9a409c212a79bf98d96b357ff431727f"
+  },
+  {
+    "file": "supabase/migrations/20261025003147_staging_receiving_security_guards_4_part4_unit3.sql",
+    "sha256": "ec99d273aa0ae380a524c2f968d20a036c778f997cebf121487339f49be7f7ac"
+  },
+  {
+    "file": "supabase/migrations/20261025003148_staging_receiving_security_guards_4_part4_unit4.sql",
+    "sha256": "9a5c5b7193b945b1e3d95867441c7167a2b82a0d30305c34136c189fa86a1aea"
+  },
+  {
+    "file": "supabase/migrations/20261025003156_staging_receiving_security_retirement.sql",
+    "sha256": "cf23e03d6c74afe8e9df9c1a570cb15e823563259dd44265fca41b7c07a99b32"
+  },
+  {
+    "file": "supabase/migrations/20261025003529_staging_receiving_guard_column_qualification.sql",
+    "sha256": "f59d1e65df7242fe01dac67728bf4589f269c08f1b00f50975cc3fbcfb65ba20"
+  },
+  {
+    "file": "supabase/migrations/20261025003826_staging_receiving_guard_unique_relation_alias.sql",
+    "sha256": "4b4ed0327b91375343a19d61a167968a293656c9f385143b50f46ce4aa53b438"
+  },
+  {
+    "file": "supabase/migrations/20261025005041_staging_receiving_cloud_restrictive_read.sql",
+    "sha256": "5656e06a5a40d2f99c050d9b855d617d0ef8f9d07976cc6703024edc5b16202b"
+  }
+]

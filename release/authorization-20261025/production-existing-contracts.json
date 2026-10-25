@@ -1,0 +1,457 @@
+[
+  {
+    "signature": "set_pharmflow_needs_review_photo_v2(uuid,uuid,text)",
+    "original_sha256": "b41e4a0c66b1907509217c3693e11816b7c4c1789fc95b6511332da845e9bafc",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'set_pharmflow_needs_review_photo_v2',NULL);"
+  },
+  {
+    "signature": "save_pharmacy_expiry_verified_state_v1(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text,text)",
+    "original_sha256": "a6232ea03f00022e46084d46ac7b3fe7ab506769432cd09970a8d6c60993416a",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmacy_expiry_verified_state_v1',NULL);"
+  },
+  {
+    "signature": "save_pharmacy_expiry_verified_state_v2(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text,text)",
+    "original_sha256": "be5ff9ee6b3eb156ea6665cefcb6eaad0e1ab6c089775041f4a35c8549155dbb",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmacy_expiry_verified_state_v2',NULL);"
+  },
+  {
+    "signature": "create_pharmflow_needs_review_v3(uuid,text,text,text,text,text,text,text,text,text,text,text)",
+    "original_sha256": "be967698d08f3b5f8b86ee202a417843042a3c91d3d275e49a4302c77b20e905",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),true,'create_pharmflow_needs_review_v3',NULL);"
+  },
+  {
+    "signature": "save_pharmacy_expiry_capture_smart(uuid,text,text,text,text,integer,integer,integer,uuid,text,text,text,text)",
+    "original_sha256": "911b2c09aac7d40e6c9e3f07685dc6563e90c7241096888eeb24fe5fced4377e",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmacy_expiry_capture_smart',NULL);"
+  },
+  {
+    "signature": "save_pharmacy_needs_review(uuid,text,text,text,text,text,integer,integer,integer,uuid,text,text)",
+    "original_sha256": "10b8ba6faa261aa21bbd563c5dfe3f9d3e6c32cbde3449fd8b22af7f90ef2baa",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),true,'save_pharmacy_needs_review',NULL);"
+  },
+  {
+    "signature": "save_pharmacy_expiry_capture(uuid,text,text,text,text,integer,integer,integer,uuid,text,text)",
+    "original_sha256": "93bce43e0c8907a47717b67b6b6868de4f872b58dcb79dd8fd8f77d17868b927",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmacy_expiry_capture',NULL);"
+  },
+  {
+    "signature": "save_pharmacy_needs_review(uuid,text,text,text,text,text,integer,integer,integer,uuid,text,text,text)",
+    "original_sha256": "92468153951fe39606e0634a8de6c21774a9364781a21e6dcfbd1b5e5d4af0a2",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),true,'save_pharmacy_needs_review',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_expiry_capture_v3(uuid,uuid,jsonb)",
+    "original_sha256": "69ebd8d2c500b1eded6032846d577488dfc4c6c9565eae04f956e454f4ae63ae",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmflow_expiry_capture_v3',p_operation_id::text);"
+  },
+  {
+    "signature": "can_delete_pharmflow_expiry_staged_photo_v1(text)",
+    "original_sha256": "32d44a5276e8a41fc5ea941aad676e6e72f9ec7eda50dfcca623c57e0addd5e9",
+    "guards": "PERFORM pharmflow_auth_private.require_access(split_part(p_name,'/',1)::uuid,'EXPIRY',true,'can_delete_pharmflow_expiry_staged_photo_v1',NULL);"
+  },
+  {
+    "signature": "reserve_pharmflow_expiry_capture_v1(uuid,uuid)",
+    "original_sha256": "6efab647d09bbe8c252531fa489f638a3776a0d65d281c7ad17336e9ccfba434",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'reserve_pharmflow_expiry_capture_v1',p_operation_id::text);"
+  },
+  {
+    "signature": "authorize_pharmflow_expiry_photo_cleanup_v1(uuid,uuid)",
+    "original_sha256": "5d8ec6fcb1e7ae7f5c24b8bbd1da87d072f1d13897c878cd26c0e02978956400",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'authorize_pharmflow_expiry_photo_cleanup_v1',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_workspace_generation(uuid)",
+    "original_sha256": "961525ea9ff80789d6e4ebb8e81bfcbd5a0c07b6e1d16a34605a044c30d188bd",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'get_pharmflow_workspace_generation');"
+  },
+  {
+    "signature": "resolve_pharmflow_needs_review_v2(uuid,uuid,text,text,text,text)",
+    "original_sha256": "f8412adc4806b7e4442e08285384fa24e824d5d4baad748a9a724e02e714f8df",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'resolve_pharmflow_needs_review_v2',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_active_order_manifest_v3(uuid)",
+    "original_sha256": "400e27f8d118e3d23ade4fc21d8844c749e20a35ff92ed023b7fc23a9d2cd3e8",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'get_pharmflow_active_order_manifest_v3',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_active_order_manifest_meta_v1(uuid)",
+    "original_sha256": "be6c2a43b041d084e7f9d158b40fdb1b8c7e6d02d1703abd05783f877fce55e2",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'get_pharmflow_active_order_manifest_meta_v1',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_cloud_workspace(uuid)",
+    "original_sha256": "b4696d3e434cd6039532871bf3d7da9bd0e2f5f4c6b4f839bf012ab92e0ef45a",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'get_pharmflow_cloud_workspace',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_expiry_session_capture_v1(uuid,uuid,uuid,jsonb)",
+    "original_sha256": "011dc6dcedb4ef85d71bbbc1f64bbcad013b2703dddaa000c3825916dcc14003",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmflow_expiry_session_capture_v1',p_operation_id::text);"
+  },
+  {
+    "signature": "list_pharmacy_expiry_captures(uuid,integer,integer[],text[],uuid[],text)",
+    "original_sha256": "9fd07d20f6cb2f1d7265380aafe874f7c0198c5b660c8411afefd2cfd1856787",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmacy_expiry_captures',NULL);"
+  },
+  {
+    "signature": "list_pharmacy_expiry_current_state_v1(uuid,boolean,text)",
+    "original_sha256": "0a7363699b334adda299c67edd9506296afc24d7c45847dd8842d10e7b0b635e",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmacy_expiry_current_state_v1',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_global_item_identifiers_v2(text)",
+    "original_sha256": "7897571889179dbbb7f86fe4a3ca078245d7f9d037b156ab9010425984a534b3",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'list_pharmflow_global_item_identifiers_v2',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_orders(uuid)",
+    "original_sha256": "637dec41797fa22d2d643e2be87a599f43be4a2a6446f1556878d135228f342f",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'list_pharmflow_orders',NULL);"
+  },
+  {
+    "signature": "resolve_pharmflow_identifier_v2(uuid,text)",
+    "original_sha256": "6fd6739011b822829bca846130b84b67cf11cd5560fff11a6bff178cb7f3e2b9",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',false,'resolve_pharmflow_identifier_v2',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_finalized_archives(uuid)",
+    "original_sha256": "63f64b8ad4e039209d56a69add3bf977208000087672a1fbbaffddedac77c6a8",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'list_pharmflow_finalized_archives',NULL);"
+  },
+  {
+    "signature": "search_pharmflow_global_items_v3(text,integer)",
+    "original_sha256": "2df136bb82e67a4d7818bd68552b5f1936869001996b5b0290b0983c50b519e7",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'search_pharmflow_global_items_v3',NULL);"
+  },
+  {
+    "signature": "get_global_master_gtin_meta()",
+    "original_sha256": "1f0a1129c769943d0e22cf4e0b9bb8988ee895673bdf739696083bfec7e283c7",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'get_global_master_gtin_meta',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_expiry_capture_receipts_v1(uuid,text,uuid,uuid[])",
+    "original_sha256": "6a2bc41e58f75fdf1001d125600dbe57e418ed84eb68ad1b8a5f8ba6b37c9763",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmflow_expiry_capture_receipts_v1',NULL);"
+  },
+  {
+    "signature": "create_pharmflow_global_item_v2(uuid,text,text,text,text,text,text,text)",
+    "original_sha256": "9ee38b4bf616fb835eb3e2cc775866e9262063aae66c50266aca84e543fb40f1",
+    "guards": "PERFORM pharmflow_auth_private.require_access(NULL,'GLOBAL',true,'create_pharmflow_global_item_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "search_pharmflow_global_items_v2(text,integer)",
+    "original_sha256": "eb3507317cae3757dce345cf550c8b507b668c672de0ac71a2f1be4b18081d53",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'search_pharmflow_global_items_v2',NULL);"
+  },
+  {
+    "signature": "count_pharmflow_expiry_reviews_v1(uuid)",
+    "original_sha256": "db2352dcda6e4e01d5c044d7d0582d4139503af48d85f7eb818e347bbc3a9935",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'count_pharmflow_expiry_reviews_v1',NULL);"
+  },
+  {
+    "signature": "delete_pharmflow_expiry_review_v1(uuid,uuid)",
+    "original_sha256": "e494450f6cf1dcd4765d00d50b99bce964261f7354096e62e3ff76c37620a67e",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'delete_pharmflow_expiry_review_v1',NULL);"
+  },
+  {
+    "signature": "delete_pharmflow_needs_review_v2(uuid,uuid)",
+    "original_sha256": "584bcfe66bb9e2037a402438bf7f7f1f8ca5b478240f2120698c8233ae83c667",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'delete_pharmflow_needs_review_v2',NULL);"
+  },
+  {
+    "signature": "get_global_master_gtin_page_v2(integer,integer)",
+    "original_sha256": "2ddebdd46f746368f430552322dba9b6a19279cfdb615660415716d89ee9f02f",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'get_global_master_gtin_page_v2',NULL);"
+  },
+  {
+    "signature": "set_pharmflow_needs_review_qty_v2(uuid,uuid,integer)",
+    "original_sha256": "fb64e617a90dcd0ffcfa2bd648655fd45a38e1d3dc518e7b9ca1b8af2b87037c",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'set_pharmflow_needs_review_qty_v2',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_expiry_review_v1(uuid,uuid)",
+    "original_sha256": "71aec90ac12af66c0c6c911b4a7cf1c74e7043de2129e50d6f256fe14b3f87e5",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'get_pharmflow_expiry_review_v1',NULL);"
+  },
+  {
+    "signature": "add_pharmflow_global_identifier_v2(uuid,text,text,text)",
+    "original_sha256": "4ea24fe329be40c6df7483a28e4a1703a52d882e9d4f1b5e3b89b071536f023a",
+    "guards": "PERFORM pharmflow_auth_private.require_access(NULL,'GLOBAL',true,'add_pharmflow_global_identifier_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "get_pharmflow_expiry_review_contract_v1(uuid)",
+    "original_sha256": "b859b3c34233c611a0c3650485d3517c68110ee7851e2f2244c28a1ac217a8d4",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'get_pharmflow_expiry_review_contract_v1',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_cloud_transactions_delta_v3(uuid,timestamp with time zone,text,integer)",
+    "original_sha256": "fd88d2baab58e8f04c119b240529f5e9d3175c5ce8e3fd90442e145bcd19c55f",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'list_pharmflow_cloud_transactions_delta_v3',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_needs_review_v4(uuid,text,text)",
+    "original_sha256": "c7d0229d3f6d3e11abd118a5dff5bffd31a00756b91cbf65e870f747fdd04163",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),false,'list_pharmflow_needs_review_v4',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_cloud_workspace(uuid,jsonb,text)",
+    "original_sha256": "34631d61855fbc7fc0c9de86be7ae1ab34af5fc84d321791324cb60908722dff",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'save_pharmflow_cloud_workspace',NULL);"
+  },
+  {
+    "signature": "resolve_pharmflow_expiry_review_v1(uuid,uuid,uuid,text,text)",
+    "original_sha256": "d17a33c22edea2b6a6d236664ff23b0c569e3a4576bfdb88cc8949c32bdb357e",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'resolve_pharmflow_expiry_review_v1',p_operation_id::text);\nPERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'resolve_pharmflow_expiry_review_v1',p_operation_id::text);"
+  },
+  {
+    "signature": "save_pharmflow_cloud_workspace_guarded(uuid,jsonb,text,bigint)",
+    "original_sha256": "00bacbbe5c3812caa57cf0ea8effe4b7b2794fb57f38c7f9195f169e8623b4aa",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'save_pharmflow_cloud_workspace_guarded',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_active_order_manifest_v3(uuid,jsonb,bigint)",
+    "original_sha256": "97fc917159ce94c666e7e7d4c7a9d2fce4b0289215315a73b7358a45032ca666",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'save_pharmflow_active_order_manifest_v3',NULL);"
+  },
+  {
+    "signature": "append_pharmflow_cloud_transaction_v2(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb)",
+    "original_sha256": "08071c7e52a932b446401e09a7297f03377696cc8564b1116063ab24a873ce9a",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'append_pharmflow_cloud_transaction_v2',NULL);"
+  },
+  {
+    "signature": "mutate_pharmflow_expiry_inventory_v1(uuid,uuid,text,jsonb,integer)",
+    "original_sha256": "2fe87932932d40efce0baeceb22d0eb2589e7875ae066750cbc78c32711230be",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'mutate_pharmflow_expiry_inventory_v1',p_request_id::text);"
+  },
+  {
+    "signature": "correct_pharmflow_expiry_session_v2(uuid,uuid,uuid,uuid,integer,jsonb)",
+    "original_sha256": "1cf95ca50500bf929f976feacc18c15341ae2e29350e21a813459a99990a2498",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'correct_pharmflow_expiry_session_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "save_pharmflow_expiry_session_capture_v2(uuid,uuid,uuid,jsonb)",
+    "original_sha256": "94bea330d19c70c92b37f691f4c9779f5a5c35b6a65035b48759deede6fb5169",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmflow_expiry_session_capture_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "list_pharmflow_expiry_reviews_v1(uuid,text,integer,integer)",
+    "original_sha256": "dbf0293c16200d91b27d3c4df0d3899696caff1487e10680f356dec6a1a7705c",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmflow_expiry_reviews_v1',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_expiry_session_v2(uuid,uuid)",
+    "original_sha256": "55633bb1d18f2bee108fe3d882c10122c16ae757aa309ca13c9fd56df25f09f5",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmflow_expiry_session_v2',NULL);"
+  },
+  {
+    "signature": "summary_pharmflow_expiry_inventory_v1(uuid)",
+    "original_sha256": "10ffddf4f881455579091ec9a44ad3c33722ed3d59c071c6166b9899d83025d8",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'summary_pharmflow_expiry_inventory_v1',NULL);"
+  },
+  {
+    "signature": "correct_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,uuid,integer,jsonb)",
+    "original_sha256": "5edeb3f661961e11e46564693bd0c97a28493fb1d33c77c61e593f9aec32df29",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'correct_pharmflow_expiry_desktop_session_v1',p_operation_id::text);"
+  },
+  {
+    "signature": "list_pharmflow_expiry_desktop_session_v1(uuid,uuid)",
+    "original_sha256": "8f062bba1493eca97634aa0340a35e52a2dca9dc8c8fcbfb44f0437a82c8f9b3",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmflow_expiry_desktop_session_v1',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_expiry_desktop_capture_v1(uuid,uuid,uuid,jsonb)",
+    "original_sha256": "8579987e8a694cd5422738f8fa24a60bca843eb6e136fb9828ebcc33cda9bf78",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmflow_expiry_desktop_capture_v1',p_operation_id::text);"
+  },
+  {
+    "signature": "correct_pharmflow_expiry_desktop_group_v1(uuid,uuid,uuid,uuid,jsonb,integer)",
+    "original_sha256": "293f5e587fea330112370dbe2c2bf69216cfe8572ed1db7ee3341db5fdd7817d",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'correct_pharmflow_expiry_desktop_group_v1',p_request_id::text);"
+  },
+  {
+    "signature": "clear_pharmflow_expiry_desktop_session_v1(uuid,uuid,uuid,text)",
+    "original_sha256": "b33687ee3f2d3e61ba42a39ec33fdf3d306ef95b7b091084e4a24026aac93bd4",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'clear_pharmflow_expiry_desktop_session_v1',p_request_id::text);"
+  },
+  {
+    "signature": "get_pharmflow_expiry_auth_session_v1(uuid,text)",
+    "original_sha256": "8659741c7b273d152381ad6c435cc36569bd6fd7c7e646b30b1b75cc137fa943",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'get_pharmflow_expiry_auth_session_v1',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_master_cache_page_v2(integer,integer)",
+    "original_sha256": "16be4f8bf57bf3f39ba11cdc6b1dbf6ebdbd06020c04d69f25b5f0dbd551f74d",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'get_pharmflow_master_cache_page_v2',NULL);"
+  },
+  {
+    "signature": "count_pharmflow_needs_review_v2(uuid,text)",
+    "original_sha256": "05b0ef75ede0190798b8b99b39aea7d35c1f31fd509d898d741a076b4e4f7b72",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),false,'count_pharmflow_needs_review_v2',NULL);"
+  },
+  {
+    "signature": "select_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean,uuid[])",
+    "original_sha256": "b3ea0b546bcf21d1b603394686f67e78acb1b075d87beb9928d21d6d2e747147",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'select_pharmflow_expiry_inventory_v1',NULL);"
+  },
+  {
+    "signature": "list_pharmflow_needs_review_history_v3(uuid,text,text)",
+    "original_sha256": "540d95cf9c3df10d7574bc4649e8d0c1e66f03d747a74ebf9095eac6fc6fbdf4",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),false,'list_pharmflow_needs_review_history_v3',NULL);"
+  },
+  {
+    "signature": "assign_pharmflow_needs_review_order_v1(uuid,uuid,text)",
+    "original_sha256": "35cecaea4b14decb310a90c178470ec4da70efccfafce8a60ee96de0dd0752aa",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'assign_pharmflow_needs_review_order_v1',NULL);"
+  },
+  {
+    "signature": "request_pharmflow_needs_review_resolution_v4(uuid,uuid,uuid,text,text,text)",
+    "original_sha256": "294eb6f8799b8bf85cfe83d1a1b503f84d3a94a9676b3bed7aaab76775047b42",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'request_pharmflow_needs_review_resolution_v4',p_operation_id::text);"
+  },
+  {
+    "signature": "create_pharmflow_needs_review_v4(uuid,text,text,text,text,text,text,text,text,text,text,text,text[])",
+    "original_sha256": "33da089d9a9cc6638039bdc20b62dc23e94c339a70d34ba1bdaae3ce15f9c28d",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),true,'create_pharmflow_needs_review_v4',NULL);"
+  },
+  {
+    "signature": "list_pharmacy_expiry_workers(uuid)",
+    "original_sha256": "6fee5d363b8803d800abf2a74a960851dd82e4fc0d7b41997007202c7c48b762",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'list_pharmacy_expiry_workers',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_order_source_items_v2(uuid,text,jsonb,boolean)",
+    "original_sha256": "2a924f8911b9388d315aadd6eddb82c3bb7c05bbff61d736afc3926f9468c17f",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'save_pharmflow_order_source_items_v2',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_order_source_items_v2(uuid,text)",
+    "original_sha256": "35dd03a10332734327e0bc81fe271d5e401a538104b8a68440641a81eff884c6",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'get_pharmflow_order_source_items_v2',NULL);"
+  },
+  {
+    "signature": "request_pharmflow_needs_review_resolution_v5(uuid,uuid,uuid,text,text,text,jsonb)",
+    "original_sha256": "51806ec4544f461138353c9ffceb4c0f7e34633b971699668f5f4a0163a03c1c",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'request_pharmflow_needs_review_resolution_v5',p_operation_id::text);"
+  },
+  {
+    "signature": "export_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean)",
+    "original_sha256": "eec510d531278f28ad455c029aa006867d19869be17699edcee5a02921b180c0",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'export_pharmflow_expiry_inventory_v1',NULL);"
+  },
+  {
+    "signature": "resolve_all_filtered_pharmflow_expiry_inventory_v1(uuid,uuid,jsonb,jsonb,integer,bigint)",
+    "original_sha256": "e73d4f481a38ffa09f52a3e9b5a296157ec9f55e9a9677c2d010d226c65728ac",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'resolve_all_filtered_pharmflow_expiry_inventory_v1',p_request_id::text);"
+  },
+  {
+    "signature": "list_pharmflow_pharmacy_item_identifiers_v1(uuid,text)",
+    "original_sha256": "3de72f8844cf53f9f2d80d592c51c138fe5d4f859e03ed20252a00ca6cef4063",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',false,'list_pharmflow_pharmacy_item_identifiers_v1',NULL);"
+  },
+  {
+    "signature": "resolve_pharmflow_expiry_review_v2(uuid,uuid,uuid,text,text,jsonb)",
+    "original_sha256": "3c43396684563b2e056fa6e742a2413cfbdfa23f894345bfd7129bc2dfc78a3b",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'resolve_pharmflow_expiry_review_v2',p_operation_id::text);\nPERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'resolve_pharmflow_expiry_review_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "correct_pharmflow_global_identifier_v2(uuid,uuid,bigint,text,text)",
+    "original_sha256": "74eec4c3e9541f994f769583f180135f68414631e94bf3d1faded59e84a02e1d",
+    "guards": "PERFORM pharmflow_auth_private.require_access(NULL,'GLOBAL',true,'correct_pharmflow_global_identifier_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "remove_pharmflow_global_identifier_v2(uuid,uuid,bigint,text)",
+    "original_sha256": "c047476622489145983400bfdd34f0f20d6704ab67d8ef0b2edd9965ea36fde4",
+    "guards": "PERFORM pharmflow_auth_private.require_access(NULL,'GLOBAL',true,'remove_pharmflow_global_identifier_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "correct_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text,text,text)",
+    "original_sha256": "7fba094dfbbfa32c1a40e3aa8223d2d5d2690a4e8ba960dfc588761bb4ed7147",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'correct_pharmflow_pharmacy_identifier_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "append_pharmflow_learned_transaction_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb,uuid,bigint,text)",
+    "original_sha256": "5ed97e5c5217fa6c161323a97bdbb577b43660315b81b7c4857cbbedf8fdbda0",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'append_pharmflow_learned_transaction_v4',NULL);"
+  },
+  {
+    "signature": "remove_pharmflow_pharmacy_identifier_v2(uuid,uuid,uuid,bigint,text)",
+    "original_sha256": "df26e0743a31378fa70b557533d265da57dad1fce7a58f237ac83ff21e20808f",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'remove_pharmflow_pharmacy_identifier_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "save_pharmacy_expiry_worker(uuid,text)",
+    "original_sha256": "051411c23780bffc21b8052a333a0e701a4761a975344da8c3c6b75b64860018",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'save_pharmacy_expiry_worker',NULL);"
+  },
+  {
+    "signature": "add_pharmflow_pharmacy_identifier_v2(uuid,uuid,text,text,text,text)",
+    "original_sha256": "867933ee25381bf349f8d2bf6ab31c3f1a25ab11d7251ab0cb235e3a18ffd4f7",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'add_pharmflow_pharmacy_identifier_v2',p_operation_id::text);"
+  },
+  {
+    "signature": "rename_pharmacy_expiry_worker(uuid,uuid,text,text)",
+    "original_sha256": "8b6a4e9091154728795d944324812935b7b79b24ba81e696d84cd15a4ffdc762",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'rename_pharmacy_expiry_worker',NULL);"
+  },
+  {
+    "signature": "deactivate_pharmacy_expiry_worker(uuid,uuid)",
+    "original_sha256": "67c4cf6c6914d889da3ab9da64f9d857d16223c676e8264d72ca688a9aced5f9",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',true,'deactivate_pharmacy_expiry_worker',NULL);"
+  },
+  {
+    "signature": "query_pharmflow_expiry_inventory_v1(uuid,jsonb,boolean,text,integer,integer)",
+    "original_sha256": "8cc7397141bc91cf15ca0bd0eecb8465f0fc4b250ec30e7634c59f472cd4a02a",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'EXPIRY',false,'query_pharmflow_expiry_inventory_v1',NULL);"
+  },
+  {
+    "signature": "quick_add_pharmflow_order_item_v1(uuid,uuid,text,text[],text,text,text,text,integer,boolean,jsonb)",
+    "original_sha256": "108ec36e5b690ce5fcbeabc829d68bd501909639d65e8bfaeadaed9576f2957f",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'quick_add_pharmflow_order_item_v1',p_operation_id::text);\nPERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'quick_add_pharmflow_order_item_v1',p_operation_id::text);"
+  },
+  {
+    "signature": "append_pharmflow_receiving_action_v4(uuid,text,text,text,text,text,integer,text,text,timestamp with time zone,jsonb)",
+    "original_sha256": "8dd36bcfe7bc35de8f3bb70802dc9b0bfc3f1cd614f10f655fc1c8f0ea548543",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'append_pharmflow_receiving_action_v4',NULL);"
+  },
+  {
+    "signature": "learn_pharmflow_existing_identifier_v3(uuid,uuid,text,text,text)",
+    "original_sha256": "a5be25bd2aa3efa14727a7c0fdc1b7159750fd065584c8c0886f198ece547829",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'DATA',true,'learn_pharmflow_existing_identifier_v3',p_operation_id::text);"
+  },
+  {
+    "signature": "create_pharmflow_needs_review_v6(text,uuid,text,text,text,text,text,text,text,text,text,text,text,text[],integer)",
+    "original_sha256": "883a5ef8b8a165e636ccfd9898d3cdbcc3c325d4a0be2f67d7da64862fd9cbd9",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,upper(coalesce(p_workflow,'RECEIVING')),true,'create_pharmflow_needs_review_v6',p_operation_id::text);"
+  },
+  {
+    "signature": "set_pharmflow_needs_review_qty_v3(uuid,uuid,integer)",
+    "original_sha256": "0b45424fcd143a4e1623899c704819e3c89719a0e3aac04833cbf875c6e14534",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'set_pharmflow_needs_review_qty_v3',NULL);"
+  },
+  {
+    "signature": "save_pharmflow_active_order_manifest_v4(uuid,jsonb,bigint,bigint)",
+    "original_sha256": "80b75e74fb6b38f8414dc1c66834ab7e9990f54dc86564004556bf55ae4a23e2",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'save_pharmflow_active_order_manifest_v4',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_master_cache_meta_v2()",
+    "original_sha256": "7617da93719812e1c63d04d642ec1fd14a114fca1dbeacd2c1e21c36c00b9fb8",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'get_pharmflow_master_cache_meta_v2',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_order(uuid,text)",
+    "original_sha256": "6c5831f180059afbdec1675cfb086bc044ebfa731121606dfb32a6a54d0dd548",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',false,'get_pharmflow_order',NULL);"
+  },
+  {
+    "signature": "register_pharmflow_order_upload(uuid,text,date,text,text,text,integer)",
+    "original_sha256": "eb7e29878451dcf85c7355c557f2c002316af5829072cea2a28971914bc23856",
+    "guards": "PERFORM pharmflow_auth_private.require_access(p_pharmacy_id,'RECEIVING',true,'register_pharmflow_order_upload',NULL);"
+  },
+  {
+    "signature": "get_pharmflow_receiving_groups_v1(text[])",
+    "original_sha256": "cb6cd48dd6441ae8937edff043508340f88a7477d772ecf23d7676fc35f05d84",
+    "guards": "PERFORM pharmflow_auth_private.require_access(pharmflow_auth_private.current_pharmacy(),'DATA',false,'get_pharmflow_receiving_groups_v1',NULL);"
+  }
+]
