@@ -12,6 +12,34 @@ const ExcelEngine = {
     maxHeaderScanRows:60
 };
 
+// File pickers and parsing outlive individual focus/permission checks. Keep an
+// import bound to its original identity, never to whichever account is current
+// when an asynchronous read completes. Token refresh does not change this key.
+function orderImportScopeKey(){
+    if(typeof AuthState==='undefined')return '';
+    return [AuthState.identityEpoch||0,AuthState.user?.id||AuthState.context?.user_id||'',
+        AuthState.context?.pharmacy_id||'',!!AuthState.session,!!AuthState.mustChangePassword].join('/');
+}
+
+function assertOrderImportScope(expected){
+    if(orderImportScopeKey()!==expected)
+        throw new Error('Sign-in or pharmacy changed during import. Select the order files again.');
+}
+
+async function waitForOrderImportAccess(expected){
+    assertOrderImportScope(expected);
+    const permissions=window.PharmFlowPermissions;
+    if(!permissions)throw new Error('Permissions are unavailable. Reload PharmFlow and retry the import.');
+    // Reuse pending checks; never keep stale grants or issue extra RPCs. A
+    // superseding same-identity check can replace the promise we first awaited.
+    for(let flight=0;flight<3;flight++){
+        await permissions.whenReady?.();
+        assertOrderImportScope(expected);
+        if(permissions.state?.()!=='loading')break;
+    }
+    permissions.require('RECEIVING',true);
+}
+
 /* Publish one structural UI update only after the active-order manifest has
    been authoritatively confirmed.  This reuses existing UI events and adds
    neither polling nor a competing local state source. */
@@ -73,6 +101,8 @@ async function handleOrderFileSelection(event){
         return;
     }
 
+    const importScope=orderImportScopeKey();
+
     if(ExcelEngine.orderImportRunning){
 
         showToast(
@@ -105,6 +135,8 @@ async function handleOrderFileSelection(event){
 
     try{
 
+        await waitForOrderImportAccess(importScope);
+
         /* Phase 2C.10.4.1 — first synchronize the server generation fence.
            A second PC may have performed Reset after this browser last synced.
            We must adopt that generation BEFORE any new local Order is parsed. */
@@ -115,6 +147,7 @@ async function handleOrderFileSelection(event){
         /* Merge against latest server-authoritative Active Order Manifest.
            Server-empty is authoritative after Reset. */
         if(typeof pullActiveOrderManifestAuthority==="function"){
+            await waitForOrderImportAccess(importScope);
             const authorityReady=await pullActiveOrderManifestAuthority({
                 forceApply:true,
                 clearIfMissing:true
@@ -123,6 +156,7 @@ async function handleOrderFileSelection(event){
                 throw new Error("Active Order synchronization is still in progress. Please retry the upload.");
             }
         }else if(typeof pullActiveOrderManifest==="function"){
+            await waitForOrderImportAccess(importScope);
             await pullActiveOrderManifest({
                 force:true,
                 forceApply:true,
@@ -130,6 +164,7 @@ async function handleOrderFileSelection(event){
             });
         }
 
+        await waitForOrderImportAccess(importScope);
         const preImportWorkspace =
             typeof deepClone==="function"
                 ? deepClone(AppState.workspace)
@@ -144,10 +179,14 @@ async function handleOrderFileSelection(event){
 
         for(const file of files){
 
+            await waitForOrderImportAccess(importScope);
+
             const orderMeta =
                 typeof inspectOrderFileMetadata === "function"
                 ? await inspectOrderFileMetadata(file)
                 : null;
+
+            await waitForOrderImportAccess(importScope);
 
             if(orderMeta?.orderNumber){
                 attemptedOrderNumbers.push(
@@ -188,6 +227,8 @@ async function handleOrderFileSelection(event){
             }
         }
 
+        assertOrderImportScope(importScope);
+
         rebuildStateIndexes();
 
         if(
@@ -204,6 +245,7 @@ async function handleOrderFileSelection(event){
 
         }
 
+        await waitForOrderImportAccess(importScope);
         recalculateStatistics();
 
         /* Phase 2C.10.2.8:
@@ -232,6 +274,7 @@ async function handleOrderFileSelection(event){
 
                 for(let attempt=1; attempt<=3 && !manifestSaved; attempt++){
                     try{
+                        await waitForOrderImportAccess(importScope);
                         manifestSaved=await saveActiveOrderManifest({silent:true});
                     }catch(error){
                         lastError=error;
@@ -242,6 +285,7 @@ async function handleOrderFileSelection(event){
                 }
 
                 if(!manifestSaved){
+                    await waitForOrderImportAccess(importScope);
                     /* A save may have committed but its verification response
                        may have been interrupted. Pull once and verify by Order
                        Number before declaring failure. */
@@ -250,9 +294,11 @@ async function handleOrderFileSelection(event){
                             await syncWorkspaceGenerationBeforeStructuralWrite();
                         }
                         if(typeof pullActiveOrderManifest==="function"){
+                            await waitForOrderImportAccess(importScope);
                             await pullActiveOrderManifest({clearIfMissing:false});
                         }
 
+                        assertOrderImportScope(importScope);
                         const serverNumbers=new Set(
                             (AppState.workspace.orderFiles||[])
                                 .map(file=>normalizeOrderNumber(
@@ -268,6 +314,8 @@ async function handleOrderFileSelection(event){
                 }
 
                 if(!manifestSaved){
+
+                    assertOrderImportScope(importScope);
                     /* No partial local Order is allowed to survive a failed
                        authoritative commit. Restore the exact pre-import
                        workspace so retrying does not create a false duplicate
@@ -302,6 +350,7 @@ async function handleOrderFileSelection(event){
             const activeFiles=Array.isArray(AppState.workspace.orderFiles)
                 ? AppState.workspace.orderFiles : [];
             for(const fileRecord of activeFiles){
+                await waitForOrderImportAccess(importScope);
                 const orderNumber=normalizeOrderNumber(fileRecord.documentId||fileRecord.orderNumber||"");
                 if(!orderNumber) continue;
                 const existing=typeof getOrderLifecycleRecord==="function"
@@ -312,8 +361,10 @@ async function handleOrderFileSelection(event){
                 let committed=false,lastCommitError=null;
                 for(let attempt=1;attempt<=3 && !committed;attempt++){
                     try{
+                        await waitForOrderImportAccess(importScope);
                         await registerUploadedOrder(meta,Number(fileRecord.rows||0));
                         if(typeof saveOriginalUploadedOrderSnapshot==="function" && Array.isArray(fileRecord.sourceRows) && fileRecord.sourceRows.length){
+                            await waitForOrderImportAccess(importScope);
                             await saveOriginalUploadedOrderSnapshot(orderNumber,fileRecord.sourceRows);
                         }
                         committed=true;
@@ -327,6 +378,7 @@ async function handleOrderFileSelection(event){
                 }
             }
 
+            assertOrderImportScope(importScope);
             publishConfirmedOrderUpload();
 
             showToast(
@@ -398,7 +450,8 @@ async function handleOrderFileSelection(event){
 ===================================================== */
 
 async function importOrderFile(file, preflightMeta = null){
-    window.PharmFlowPermissions?.require("RECEIVING",true);
+    const importScope=orderImportScopeKey();
+    await waitForOrderImportAccess(importScope);
 
     const result = {
         success:false,
@@ -428,6 +481,8 @@ async function importOrderFile(file, preflightMeta = null){
         await readExcelWorkbook(
             file
         );
+
+    await waitForOrderImportAccess(importScope);
 
     let validRowsInFile = 0;
 

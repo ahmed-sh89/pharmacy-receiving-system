@@ -1,3 +1,15 @@
+# 2026-10-27 — Manage Orders import event-loss fix (Staging)
+
+READY FOR TEST; authenticated Product Owner import/persistence acceptance pending. Branch `fix/manage-orders-import-staging-20261027`, baseline SEC-001 `cad393449889410c326e2b3ea71d90cfede2d5ca`; Staging only`tovkcakucyagvbzvlnks`. Production main/Pages remain`b618af9e0e55f30a616fd7e09eec9392ca6764c1`. No database/migration/alias/Auth/RLS changes.
+
+Confirmed isolated-browser failure: native picker return focus starts existing permission revalidation; document capture guard silently stops order input/change during loading before bindCoreFileInputs. Handler0/Worker0/orders0/no toast; later recovery cannot replay selection. Preserve the normal ~1-second revalidation. Deliver selection to the async importer, wait for current permissions and require RECEIVING write access; fence pending work to original identity/pharmacy through parsing/Manifest/registry/source boundaries. Denied/readonly/scope changes fail visibly; no stale grants or extra permission polling. Prior parser-only test missed the real capture guard.
+
+Evidence:81 focused Node tests PASS; Chromium old-guard event loss reproduced then fixed; real originals total12/62 with both2 source lines preserved. Negative readonly/403/identity and mid-Manifest refresh cases PASS in isolated fixtures. SEC-001 parser/Worker/SRI/date/mapping/export tests remain green. Existing Receiving Chromium regression PASS. Persistence/permissions mocked in browser fixtures; no live authenticated import, refresh or navigation PASS claimed. No available signed-in browser session; no operational data touched. Original private workbooks not committed.
+
+Next: verify new Preview served SHA/config/artifact, then Product Owner runs one isolated Staging import→export→refresh→Expiry/Receiving scenario. Keep READY FOR TEST until accepted; do not merge Production. Details: `docs/manage-orders-import-20261027.md`.
+
+---
+
 # 2026-10-27 — SEC-001 Excel security remediation (isolated Staging)
 
 Status: READY FOR TEST after exact Preview verification; NOT USER VERIFIED / DONE. Branch `fix/sec001-excel-parser-staging-20261027` from `50ef357c36c31269e7f209db27595215ab61c816`. Production main remains `b618af9e0e55f30a616fd7e09eec9392ca6764c1`; Production/database/aliases unchanged.

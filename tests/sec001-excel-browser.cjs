@@ -17,6 +17,7 @@ ${renderer}
 window.toasts=[];window.registry=new Map();window.PharmFlowCloudWorkspace={activeManifestBusy:false};
 window.showToast=(message,type)=>{toasts.push({message,type});document.getElementById('message').textContent=message;};
 window.showLoading=window.hideLoading=window.focusScannerInput=window.recalculateStatistics=window.saveWorkspaceSnapshot=()=>{};
+window.PharmFlowPermissions={require(){}}; // Parser-only fixture; real guard coverage is in manage-orders-permission-race.browser.cjs.
 window.refreshEntireUI=()=>renderFileList(UI.elements.orderFilesList,AppState.workspace.orderFiles,'No orders');
 window.hasMasterGTIN=()=>false;
 window.getOrderLifecycleRecord=async number=>registry.get(number)||null;

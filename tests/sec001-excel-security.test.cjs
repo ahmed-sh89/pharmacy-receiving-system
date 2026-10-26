@@ -34,6 +34,7 @@ class NamedWorker{
 function harness(){
     const c={console:{log(){},warn(){},error(){}},Date,Map,Set,URL,Uint8Array,ArrayBuffer,DataView,TextDecoder,TextEncoder,Blob,setTimeout,clearTimeout,Worker:NamedWorker};
     c.window=c;c.document={currentScript:{src:'http://offline/js/excel-security.js'},getElementById:()=>null};
+    c.PharmFlowPermissions={require(){}}; // Explicit authorization fixture, not a runtime fallback.
     c.localStorage={getItem:()=>null,setItem(){},removeItem(){}};
     vm.createContext(c);
     for(const p of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js','js/excel-security.js','js/config.js','js/utils.js','js/state.js','js/excel.js','js/orders.js','js/master-gtin.js'])vm.runInContext(js(p),c);
