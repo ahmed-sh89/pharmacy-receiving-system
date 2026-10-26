@@ -1,10 +1,10 @@
-# 2026-10-26 — Sleep/wake permission recovery
+# 2026-10-26 — Expiry resume recovery (Phase A)
 
-Current focused release: automatic in-app permission/session recovery after resume or transient connectivity failure. Status: READY FOR USER VERIFICATION, conditional deployment gate and physical Windows Sleep/wake acceptance pending. Baseline/rollback: `9ed6736b62b6212f34382d0dfbad6637c813ff05`. This release preserves the Product Owner-accepted Handheld visual design.
+Production baseline/rollback: `e452f22e372ad94607ab73cc2c05efb47056bce9`. Product Owner verification: navigation recovery PASS; Expiry workspace recovery FAILED on that baseline. Overall Sleep/wake is NOT DONE.
 
-Root cause, exact changes, test results/known baseline failures and acceptance steps: [sleep/wake release record](docs/sleep-wake-recovery-20261026.md). No database, production account/permission or operational-data changes. Retain the current page/input while permission reads are unavailable, fail closed, then restore only server-authorized navigation. Existing idle pause/Resume remains in place; no browser reload.
+Focused Desktop recovery hotfix prepared and tested: [Phase A evidence](docs/expiry-resume-hotfix-20261026.md). Status READY FOR USER VERIFICATION after conditional publication and served-version verification. Preserve the selected Expiry view, filters, scanner input, quantities and correction journals; no database or role changes.
 
-Exact next action: verify the published commit/served assets, then Product Owner Windows Sleep/wake test. Do not mark USER VERIFIED or DONE before acceptance. Earlier entries below are historical.
+Exact next actions: verify Phase A Production publication, then develop monthly Inventory KPIs on a separate Staging-only Preview branch. Do not merge that KPI work into Production. Physical Sleep/wake with Scan & Activity and Inventory remains pending Product Owner acceptance. Earlier records below are historical.
 
 ---
 

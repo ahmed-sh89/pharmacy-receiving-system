@@ -30,6 +30,8 @@
     sessionId,
     viewportBound = false,
     sessionSearch = "";
+  let recoveryTimer=null,recoveryAttempts=0,loadFailed=false,deferredActivation=null;
+  const recoveryDelays=[1000,3000,8000];
   const esc = (v) => expiryEscapeHtml(v ?? ""),
     el = (id) => document.getElementById(id);
   const scope = () => expiryDraftScope() + "/" + expirySignedAuthIdentity();
@@ -484,23 +486,29 @@
       void refresh();
     };
   }
+  function cancelRecovery(){if(recoveryTimer!==null)clearTimeout(recoveryTimer);recoveryTimer=null;}
+  function visible(){return !expiryIsHandheld() && el("zebraExpiryShell")?.classList.contains("active") && !document.hidden && !window.PharmFlowIdleSleep?.active;}
+  function scheduleRecovery(error){
+    if(recoveryTimer!==null || recoveryAttempts>=recoveryDelays.length || !visible() ||
+       (typeof navigator!=="undefined" && navigator.onLine===false) ||
+       (error?.serverRejected && error.httpStatus<500))return;
+    const ownScope=scope();
+    recoveryTimer=setTimeout(()=>{recoveryTimer=null;if(ownScope===scope())void refresh();},recoveryDelays[recoveryAttempts++]);
+  }
   function refresh(options={}) {
     const key = JSON.stringify([
-      scope(),
-      mode,
-      resolved,
-      offset,
-      pageSize,
-      sort,
-      filters,
+      scope(), AuthState.identityEpoch||0, window.PharmFlowPermissions?.generation?.(),
+      mode, resolved, offset, pageSize, sort, filters,
       options.confirmedOperationId || null,
     ]);
-    if (pendingRead?.key === key && pendingRead.version === requestVersion)
+    if (pendingRead?.key === key && pendingRead.version === requestVersion && Date.now()-pendingRead.started<30000)
       return pendingRead.promise;
-    const promise = performRefresh(options).finally(() => {
-      if (pendingRead?.promise === promise) pendingRead = null;
+    cancelRecovery();
+    const request={key,version:requestVersion,started:Date.now()};
+    const promise = performRefresh({...options,readRequest:request}).finally(() => {
+      if (pendingRead===request) pendingRead = null;
     });
-    pendingRead = { key, promise, version: requestVersion };
+    request.promise=promise;pendingRead=request;
     return promise;
   }
   function readSummary(ownScope,disjoint){
@@ -513,11 +521,22 @@
     pendingSummary={scope:ownScope,disjoint,promise};return promise;
   }
   async function performRefresh(options={}) {
-    if (expiryIsHandheld() || !expiryDraftScope()) return [];
+    if (expiryIsHandheld() || !expiryDraftScope() || window.PharmFlowIdleSleep?.active) return [];
+    const initialScope=scope(),initialEpoch=AuthState.identityEpoch||0;
+    const permissions=window.PharmFlowPermissions;
+    if(permissions){
+      try{await permissions.whenReady?.();}catch(_){return [];}
+      if(initialScope!==scope() || initialEpoch!==(AuthState.identityEpoch||0))return [];
+      if(!permissions.allowed("EXPIRY")){
+        if(permissions.state?.()!=='ready')return []; // permission-ready event owns recovery
+        setExpiryStatus("error","EXPIRY ACCESS DENIED");return [];
+      }
+    }
     if (!el("expiryPager")) bind();
     try{if(typeof reconcileExpiryClearSession === "function")await reconcileExpiryClearSession();}
     catch(error){setExpiryStatus("error",error.message);return [];}
-    const ownScope = scope();
+    if(initialScope!==scope() || initialEpoch!==(AuthState.identityEpoch||0))return [];
+    const ownScope = scope(),permissionGeneration=permissions?.generation?.();
     if (visibleScope !== ownScope) {
       clearSavedFlashes();
       closeInventoryMenus();expandedYears.clear();expandedSections.clear();selectionMode=false;el("expiryShelfPrint")?.remove();
@@ -540,6 +559,9 @@
       requestMode = mode,
       requestResolved = resolved,
       requestOffset=offset,requestPageSize=pageSize,requestSort=sort;
+    if(options.readRequest)options.readRequest.version=version;
+    const current=()=>ownScope===scope() && initialEpoch===(AuthState.identityEpoch||0) && version===requestVersion &&
+      (!permissions || permissions.allowed("EXPIRY") && permissionGeneration===permissions.generation?.());
     el("expiryCurrentStateBody").setAttribute("aria-busy", "true");
     if (requestMode === "INVENTORY") {
       el("expiryCurrentStateCount").textContent = "…";
@@ -584,6 +606,7 @@
         const confirmedSession=sessionHydrated && options.confirmedOperationId && options.confirmedSessionId===sessionId;
         const nextSession = confirmedSession?sessionId:await ensureExpiryActiveSession({fresh:true});
         if(sessionId && nextSession!==sessionId){clearSavedFlashes();sessionSearch="";session=[];sessionHydrated=false;}
+        if(!current())return [];
         sessionId=nextSession;
         next = await authRpc("list_pharmflow_expiry_desktop_session_v1", {
           ...authArgs(),
@@ -599,7 +622,8 @@
           p_limit: requestPageSize,
         });
       const summary = requestMode==="INVENTORY" && summaryRead?await summaryRead:periods;
-      if (ownScope !== scope() || version !== requestVersion) return [];
+      if (!current()) return [];
+      const recovered=loadFailed;
       const repaint =
         (requestMode === "SESSION" && !sessionHydrated) ||
         renderedView !== mode + "/" + resolved ||
@@ -620,7 +644,8 @@
         page = monthFilters.assertCanonicalGroupContract(next);
         ExpiryCaptureEngine.currentRows = next.rows;
       }
-      if (repaint) render();
+      if(recovered)el("expiryCurrentStateEmpty").innerHTML="<strong>No matching expiry records</strong><span>Adjust filters or return to active Inventory.</span>";
+      if (repaint || recovered) render();
       else if (mode === "INVENTORY") {
         updateToolbar();
         if (!page.rows.length) {
@@ -628,9 +653,15 @@
             "<strong>No matching expiry records</strong><span>Adjust filters or return to active Inventory.</span>";
         }
       }
+      loadFailed=false;recoveryAttempts=0;cancelRecovery();
+      if(recovered && !ExpiryCaptureEngine.busy && !ExpiryCaptureEngine.resolving){
+        if(ExpiryCaptureEngine.saveUncertain)setExpiryStatus("error","RESULT UNCERTAIN — CHECK / RETRY THE SAME OPERATION");
+        else setExpiryStatus(ExpiryCaptureEngine.currentItem?"action":"ready",ExpiryCaptureEngine.currentItem?"UNSAVED CAPTURE RETAINED":"READY TO SCAN");
+      }
       return requestMode === "SESSION" ? session : page.rows;
     } catch (error) {
-      if (ownScope === scope() && version === requestVersion) {
+      if (current()) {
+        loadFailed=true;scheduleRecovery(error);
         if (requestMode === "INVENTORY") {
           el("expiryCurrentStateCount").textContent = "—";
           el("expiryResultSummary").textContent = "Inventory unavailable";
@@ -1040,15 +1071,20 @@
           }
         }, 30000);
       window.addEventListener("resize", ()=>{closeInventoryMenus();syncViewport();}, { passive: true });
-      window.addEventListener("focus", () => {
-        if (el("zebraExpiryShell")?.classList.contains("active")) {
-          lastSummary = 0;pendingSummary=null;
-          void refresh();
-          void refreshReview();
-        }
-      });
+      const recoverWorkspace=()=>{
+        if(!visible())return;
+        if(!window.PharmFlowPermissions || window.PharmFlowPermissions.allowed("EXPIRY"))void refreshReview().catch(()=>{});
+        if(deferredActivation===scope() && window.PharmFlowPermissions?.allowed("EXPIRY")){
+          deferredActivation=null;void window.activateExpiryCapture().catch(()=>{});
+        }else void refresh();
+      };
+      window.addEventListener("focus",recoverWorkspace);
+      window.addEventListener("pharmflow:permissions-ready",recoverWorkspace);
+      window.addEventListener("online",recoverWorkspace);
+      document.addEventListener("visibilitychange",()=>{if(document.hidden)cancelRecovery();else recoverWorkspace();});
       AppEvents?.on?.("route:changed", (p) => {
         if (p.routeName !== "expiry"){
+          cancelRecovery();
           window.ExpiryTopMotion?.dispose();
           document.body.classList.remove("expiryDesktopActive");
         }
@@ -1064,6 +1100,7 @@
     if (!expiryIsHandheld()) render();
   };
   window.resetExpiryDesktopSession = () => {
+    cancelRecovery();recoveryAttempts=0;loadFailed=false;pendingRead=null;++requestVersion;
     window.ExpiryTopMotion?.dispose();
     clearSavedFlashes();cancelKpiClick();clearExportNotice();
     closeInventoryMenus();expandedYears.clear();expandedSections.clear();selectionMode=false;el("expiryShelfPrint")?.remove();
@@ -1091,7 +1128,13 @@
   window.markExpirySessionStateDeleted = () => {};
   window.activateExpiryCapture = async function () {
     if (expiryIsHandheld()) return originalActivate();
-    mode = "SESSION";
+    const ownScope=scope(),ownEpoch=AuthState.identityEpoch||0,permissions=window.PharmFlowPermissions;
+    if(permissions){
+      try{await permissions.whenReady?.();}catch(_){deferredActivation=ownScope;return;}
+      if(ownScope!==scope() || ownEpoch!==(AuthState.identityEpoch||0))return;
+      if(!permissions.allowed("EXPIRY")){if(permissions.state?.()!=='ready')deferredActivation=ownScope;return;}
+    }
+    if(visibleScope!==scope())mode = "SESSION";
     ExpiryCaptureEngine.desktopView = mode;
     bind();
     setMode();

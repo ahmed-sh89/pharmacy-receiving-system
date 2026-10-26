@@ -156,5 +156,7 @@ window.PharmFlowPermissions = (() => {
   phase=scope()?'unavailable':'unauthenticated';apply();
  });
  return {load,resume,allowed,checkRpc,require:requireAccess,apply,routeModule,clear,
+  whenReady:()=>loading?.key===scope()?loading.promise:Promise.resolve(active()?saved:null),
+  generation:()=>epoch,
   state:()=>active()?'ready':phase,snapshot:()=>active()?saved:null};
 })();
