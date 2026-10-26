@@ -1,3 +1,15 @@
+# 2026-10-26 — Receiving focused Staging verification
+
+- PASS (44 Node tests): `receiving-consolidation-review`, `receiving-duplicate-line-allocation`, `receiving-order-attribution`, `work-orders-scope`, `handheld-scanner-rearm`, `receiving-split-queue`, `receiving-startup-hydration`, `receiving-safety-gates`.
+- PASS: Daroxime27+35=>one62/62 Completed; one/two/three Orders; source immutability; correction/undo; allocation70=>60/10; priority and over boundary; unique/multiple/missing/conflicting provenance; repeated Resolve/receipt and cross-pharmacy rejection; real scan route; Search/Dashboard/live/Excel/PDF identity; saved full-report isolation; repeated two-PC ledger hydration; durable split queue reload/all-child acknowledgement; Handheld parser/rearm; authority readiness.
+- PASS: isolated Chromium actual Receiving table/Search, Dashboard and immutable saved report. HTTP aborted; no live auth claim.
+- PASS: actual Staging authenticated SQL role under existing admin: capture3 Orders, accepted resolution intent, two-device IDs60/10, RESOLVED, repeated receipt inserted=false, repeated Resolve, foreign-pharmacy denied, count2/sum70. Subtransaction fully rolled back; independent zero-fixture query PASS. `tests/receiving-staging-rollback.sql`.
+- PASS: build, syntax/diff, guarded Staging configuration. Preview readiness/served SHA and endpoint verified in delivery.
+- NOT VERIFIED HERE: physical TC26 speed, signed-in browser save/refresh, real parallel two-PC synchronization, committed operational persistence, full legacy archive reconstruction. Product Owner checks, not USER VERIFIED/DONE. Older partial snapshots remain immutable; no guessed quantities.
+- Full suite NOT claimed. Exploratory pre-existing static/cache/v4-v5 fixture failures/timeouts remain documented in current checkpoint.
+
+---
+
 # 2026-10-26 — Approved Inventory Production promotion
 
 Starting Production/rollback: `ca7d575066af3f82c849511718aa113f58c377cd`. Accepted Staging implementation: `8240d267302f6057de7b9d4c33a8fbeeca627e47`. Product Owner confirmed eight KPIs/filtering, corrected Actions, persistent selection, three-second save emphasis, real edit persistence and repeated Actions. Prior authenticated Staging HOLD is removed by this explicit acceptance. Final deployment SHA is recorded in delivery and Pages metadata.

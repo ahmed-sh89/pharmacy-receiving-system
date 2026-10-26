@@ -41,23 +41,23 @@ const isVercelBuild = process.env.VERCEL === '1'
   || process.env.VERCEL === 'true'
   || ['preview', 'production'].includes(process.env.VERCEL_ENV);
 
-function productionAuthorizationRelease(){
+function receivingStagingRelease(){
   return {
-    name:'production-authorization-release',
+    name:'receiving-staging-release',
     configResolved(config){
       if(config.command==='build' && process.env.VERCEL &&
-          (process.env.VERCEL_ENV!=='production' ||
-           process.env.VERCEL_GIT_COMMIT_REF!=='main')){
-        throw new Error('Production release requires main and Production configuration');
+          (process.env.VERCEL_ENV!=='preview' ||
+           process.env.VERCEL_GIT_COMMIT_REF!=='fix/receiving-consolidation-review-staging-20261026')){
+        throw new Error('Receiving development requires the isolated Staging Preview branch');
       }
     },
     transformIndexHtml(html){
-      return html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization');
+      return html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-receiving-staging');
     },
     closeBundle(){
       writeFileSync(resolve('dist/version.json'),JSON.stringify({
-        sha:process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization',
-        environment:'production',supabaseRef:'zznoshzcyxmtwfbznjyr'
+        sha:process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-receiving-staging',
+        environment:'staging',supabaseRef:'tovkcakucyagvbzvlnks'
       }));
     }
   };
@@ -66,5 +66,5 @@ function productionAuthorizationRelease(){
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic()]
+  plugins:[receivingStagingRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic()]
 });

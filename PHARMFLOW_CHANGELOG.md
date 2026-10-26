@@ -1,3 +1,9 @@
+# 2026-10-26 — Receiving consolidation / captured Order resolution — Staging only
+
+One operational row per pharmacy/Order/Item Code, original lines preserved. Corrected capacity allocation and direct scan path; queue retains every split receipt until acknowledged. Unique provable original Review Order no longer depends on unrelated selections; multiple/missing/conflicting cases remain guarded. Existing durable server intents retained; pinned retry plans and exact receipt matching prevent replay. Added explicit Order identity to live/Excel/PDF/saved full reports. No migrations or Production/Expiry writes. 44 focused tests, isolated Chromium, authenticated Staging SQL rollback checks and Preview build PASS. Physical/committed browser acceptance pending. See current checkpoint and docs/receiving-consolidation-20261026/README.md. Not USER VERIFIED/DONE.
+
+---
+
 # 2026-10-26 — Approved Inventory Production promotion
 
 Starting Production/rollback: `ca7d575066af3f82c849511718aa113f58c377cd`. Accepted Staging implementation: `8240d267302f6057de7b9d4c33a8fbeeca627e47`. Product Owner confirmed eight KPIs/filtering, corrected Actions, persistent selection, three-second save emphasis, real edit persistence and repeated Actions. Prior authenticated Staging HOLD is removed by this explicit acceptance. Final deployment SHA is recorded in delivery and Pages metadata.

@@ -7076,13 +7076,14 @@ function openOrderStatusReportFromSnapshot(report){
         <div class="orderStatusReportTableWrap">
           <table class="dataTable orderStatusReportTable">
             <thead><tr>
-              <th>Item Number</th><th>Item Name</th><th>Ordered</th>
+              <th>Order Number</th><th>Item Number</th><th>Item Name</th><th>Ordered</th>
               <th>Received</th><th>Difference</th><th>Status</th>
             </tr></thead>
             <tbody>
               ${report.rows.map(row=>{
                   const diff=Number(row["Difference"]||0);
                   return `<tr>
+                    <td>${esc(row.orderNumber||row["Order Number"]||"")}</td>
                     <td>${esc(row["Item Number"])}</td>
                     <td>${esc(row["Item Name"])}</td>
                     <td>${row["Ordered Qty"]}</td>
@@ -8962,7 +8963,7 @@ function groupNeedsReviewRows(rows){
         const reason=toSafeString(row?.review_reason||"UNKNOWN_GTIN").trim();
         const capturedScope=[...new Set((Array.isArray(row?.work_scope_order_numbers)?row.work_scope_order_numbers:[]).map(normalizeOrderNumber).filter(Boolean))].sort();
         if(order&&!capturedScope.includes(normalizeOrderNumber(order))) capturedScope.push(normalizeOrderNumber(order));
-        const key=[gtin,reason,capturedScope.join("+")].join("|");
+        const key=[row?.pharmacy_id||"",gtin,reason,order,capturedScope.join("+")].join("|");
         if(!groups.has(key)){
             groups.set(key,{
                 key,
@@ -9003,26 +9004,46 @@ function nrV2HasTransactionId(transactionId){
 }
 
 function nrV2AllocationScope(group){
-    const captured=[...new Set((group?.work_scope_order_numbers||[]).map(normalizeOrderNumber).filter(Boolean))];
-    if(captured.length) return captured;
-    const legacy=normalizeOrderNumber(group?.order_number||"");
-    return legacy?[legacy]:[];
+    // A display allocation is not original capture evidence. Keep every row's
+    // recorded scope intact; reject conflicting provenance before any mutation.
+    const rows=group?.rows?.length?group.rows:[group];
+    const scopes=rows.map(row=>{
+        const captured=[...new Set((row?.work_scope_order_numbers||[]).map(normalizeOrderNumber).filter(Boolean))];
+        const original=normalizeOrderNumber(row?.order_number||"");
+        if(original && captured.length && !captured.includes(original)) throw new Error("Conflicting original Order provenance. Ask the pharmacy admin to review this case.");
+        if(original) return [original];
+        if(captured.length) return captured;
+        throw new Error("Original captured Order provenance is unavailable. Ask the pharmacy admin to review this case.");
+    });
+    const first=scopes[0];
+    if(scopes.some(scope=>scope.length!==first.length||scope.some(order=>!first.includes(order)))) throw new Error("Review entries have different original Orders. Reopen them separately.");
+    return first;
+}
+
+function nrV2ResolutionScope(group,item){
+    const scope=nrV2AllocationScope(group);
+    const active=getActiveReceivingOrderNumbers();
+    const candidates=getReceivingAutoAllocationCandidates(item,scope).filter(order=>active.includes(order));
+    if(!candidates.length) throw new Error("Item is not in an active original captured Order. Refresh Orders, select the correct item or ask the pharmacy admin to review the provenance.");
+    // Only relevant Orders need selection. A unique proven Order needs none.
+    if(candidates.length>1 && !candidates.every(order=>getSelectedReceivingOrderNumbers().includes(order))) throw new Error("Select the original captured Orders before resolving this review.");
+    return candidates;
 }
 
 function nrV2AllocationPreview(group,item){
-    const plan=buildReceivingAutoAllocationPlan(item,Math.max(1,Number(group?.total_quantity||1)||1),nrV2AllocationScope(group));
+    const plan=buildReceivingAutoAllocationPlan(item,Math.max(1,Number(group?.total_quantity||1)||1),nrV2ResolutionScope(group,item));
     return {plan,orderCount:new Set(plan.map(row=>row.orderNumber)).size};
 }
 
 async function nrV2ResolveGroupToOrderItem(group,item){
-    const scope=nrV2AllocationScope(group);
     const pharmacyId=IdentifierService.pharmacyId();
-    if(!scope.length) throw new Error("Captured Receiving work scope is unavailable.");
+    if(group.rows.some(row=>row.pharmacy_id && row.pharmacy_id!==pharmacyId)) throw new Error("Review belongs to a different pharmacy.");
+    const scope=nrV2ResolutionScope(group,item);
     const identifier=toSafeString(group?.rows?.[0]?.identifier_display||group?.rows?.[0]?.gtin||group?.gtin).trim();
-    if(IdentifierService.pharmacyId()!==group.rows?.[0]?.pharmacy_id && group.rows?.[0]?.pharmacy_id) throw new Error("Review belongs to a different pharmacy.");
-    const selectedOrders=getSelectedReceivingOrderNumbers();
-    if(!scope.every(order=>selectedOrders.includes(order))) throw new Error("Select the original captured Orders before resolving this review.");
-    buildReceivingAutoAllocationPlan(item,group.total_quantity,scope);
+    const hasPinned=group.rows.some(row=>{
+        try{return !!sessionStorage.getItem(`pharmflow.receiving.resolve:${pharmacyId}:${row.review_id}`);}catch(_){return false;}
+    });
+    if(!hasPinned) buildReceivingAutoAllocationPlan(item,group.total_quantity,scope);
     const globalItem=await IdentifierService.findGlobalItemByCode(item.itemCode);
     if(!globalItem) throw new Error("Select an existing Global Master item.");
     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
@@ -9033,27 +9054,30 @@ async function nrV2ResolveGroupToOrderItem(group,item){
     }
     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
     const resolution=pharmacyMapping?IdentifierService.receivingProvenance(pharmacyMapping):null;
-    const remainingState=new Map();
-    for(const order of getReceivingAutoAllocationCandidates(item,scope)){
-        const row=getReceivingOrderRow(item,order);
-        remainingState.set(normalizeOrderNumber(order),Math.max(0,toNumber(row?.["Remaining Qty"],toNumber(row?.["Ordered Qty"],0)-toNumber(row?.["Received Qty"],0))));
-    }
     const intents=[];
     for(const row of group.rows){
         const quantity=Math.max(1,Number(row?.pending_quantity||1)||1);
-        const plan=buildReceivingAutoAllocationPlan(item,quantity,scope,remainingState);
         const baseId=typeof nrV2ResolutionTransactionId==="function"?nrV2ResolutionTransactionId(row.review_id):`NEEDS_REVIEW_V2:${row.review_id}`;
+        // Pin retry allocations across refresh. Server intent equality remains
+        // authoritative across PCs; conflicting retries fail without a receipt.
+        const storageKey=`pharmflow.receiving.resolve:${pharmacyId}:${row.review_id}`;
+        let pinned;
+        try{pinned=JSON.parse(sessionStorage.getItem(storageKey));}catch(_){}
+        if(pinned && (pinned.itemCode!==item.itemCode||pinned.quantity!==quantity||pinned.scope.join("|")!==scope.join("|"))) throw new Error("Retry the original item and Orders to confirm the pending resolution.");
+        const plan=pinned?.plan||buildReceivingAutoAllocationPlan(item,quantity,scope);
         const allocations=plan.map((allocation,index)=>({
-            orderNumber:allocation.orderNumber,
-            quantity:allocation.quantity,
+            orderNumber:allocation.orderNumber,quantity:allocation.quantity,
             transactionId:plan.length===1?baseId:`${baseId}:A${index+1}`
         }));
+        try{sessionStorage.setItem(storageKey,JSON.stringify({itemCode:item.itemCode,quantity,scope,plan}));}catch(_){}
         const requested=await nrV2RequestResolution(row,item,baseId,allocations);
         const intent=Array.isArray(requested)?requested[0]:requested;
-        if(intent?.status==="BLOCKED"||intent?.blocked) throw new Error(intent?.detail||intent?.message||intent?.code||"Needs Review allocation was blocked.");
+        if(!intent || !["PENDING","RESOLVED"].includes(intent.status)) throw new Error(intent?.detail||intent?.message||intent?.code||"Needs Review allocation was blocked.");
+        if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Needs Review.");
         intents.push(intent);
+        if(intent.status==="RESOLVED") continue;
         receiveAutoAllocatedItem({
-            item,quantity,plan,transactionId:baseId,gtin:identifier,
+            item,quantity,plan,transactionId:baseId,gtin:identifier,reviewScope:scope,
             source:APP_CONFIG.transactionSources.scanner,identifierPreserveExact:true,gtinResolution:resolution
         });
     }
@@ -9661,7 +9685,9 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
         };
         const drawSelection=()=>{
             if(!selectedItem){selection.hidden=true;selection.innerHTML="";setResolveMode(false);return;}
-            const model=buildReceivingResolverSelectionModel(selectedItem,group.total_quantity,nrV2AllocationScope(group));
+            let model;
+            try{model=buildReceivingResolverSelectionModel(selectedItem,group.total_quantity,nrV2ResolutionScope(group,selectedItem));}
+            catch(error){selection.hidden=false;selection.textContent=error.message;setResolveMode(false);return;}
             setResolveMode(true);selection.hidden=false;
             selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+`<button type="button" class="gtinPrimaryAction" data-resolve>Resolve Review</button>`;
             selection.querySelector("[data-change-review-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();if(search){search.value="";search.focus();}});

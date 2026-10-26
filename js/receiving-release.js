@@ -46,8 +46,8 @@
         )||null;
     }
     async function discardConfirmedHead(row){
-        const tx=localTransaction(row?.transactionId);
-        if(tx?.cloudSynced===true){
+        const ids=row.transactionIds?.length?row.transactionIds:[row.transactionId];
+        if(ids.every(id=>localTransaction(id)?.cloudSynced===true)){
             await remove(row.transactionId);
             return true;
         }
@@ -87,8 +87,15 @@
                     /* Persist the wait state before receiveParsedBarcode can
                        schedule and complete a cloud acknowledgement. */
                     row.state="awaitingConfirmation"; row.lastError=""; row.lastAttemptAt=new Date().toISOString(); await put(row);
-                    const result=await receiveParsedBarcode(parsed,{transactionId:row.transactionId});
-                    if(result===false||!localTransaction(row.transactionId)){await remove(row.transactionId);}
+                    const result=await receiveParsedBarcode(parsed,{transactionId:row.transactionId,beforeReceive:async plan=>{
+                        row.transactionIds=plan.map((_,index)=>plan.length===1?row.transactionId:`${row.transactionId}:A${index+1}`);
+                        await put(row);
+                    }});
+                    const receipts=Array.isArray(result)?result:[result];
+                    const ids=receipts.map(tx=>tx?.transactionId).filter(Boolean);
+                    if(!ids.length && localTransaction(row.transactionId)) ids.push(row.transactionId);
+                    if(result===false||!ids.length){await remove(row.transactionId);}
+                    else{row.transactionIds=ids;await put(row);await discardConfirmedHead(row);}
                 }catch(error){
                     row.state="failed";row.lastError=String(error?.message||error);row.lastAttemptAt=new Date().toISOString();await put(row);
                     Logger?.warn?.("Queued scan failed without blocking later scans",error);continue;
@@ -111,7 +118,7 @@
         await put(row); void run(); return {accepted:true,transactionId:row.transactionId};
     }
     window.PharmFlowReceivingScanQueue={enqueue,resume:run,pending};
-    AppEvents?.on?.("receiving:cloud-confirmed",event=>{const id=event?.transactionId;if(id) void remove(id).then(run);});
+    AppEvents?.on?.("receiving:cloud-confirmed",()=>void run());
     window.addEventListener("online",()=>void run());
     window.addEventListener("auth:context-ready",()=>{if(!started){started=true;setTimeout(()=>void run(),350);}});
     if(document.readyState!=="loading") setTimeout(()=>void run(),600);

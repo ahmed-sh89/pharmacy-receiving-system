@@ -1,0 +1,53 @@
+✔ normal → unresolved 3/4-digit → normal accepts every scan and re-arms the Handheld (4.142086ms)
+✔ hardware alphanumeric identifiers stay exact candidates without changing manual search behavior (1.357884ms)
+✔ mapped short code stays an exact candidate and unsupported input routes to Needs Review (0.631331ms)
+✔ parser exception releases busy state and leaves the next scan usable (1.377854ms)
+✔ persisted bad head recovers without losing or duplicating later accepted transactions (6.340846ms)
+✔ PC scanner remains outside the Handheld queue transport (0.594525ms)
+✔ Daroxime 27+35 becomes one 62/62 Completed operational row; original lines/batches unchanged (3.422472ms)
+✔ three Orders remain independent; ledger corrections, undo and scoped totals never duplicate (2.386552ms)
+✔ allocation uses whole aggregate capacity, respects priority, and over-receiving boundaries (3.309622ms)
+✔ unique original candidate resolves without selecting unrelated captured Orders; multiple candidates require relevant selection (2.400023ms)
+✔ missing, conflicting, inactive and mixed provenance fail safely; legacy recorded single Order remains valid (2.020892ms)
+✔ normal scanning retains current selection guard; server-accepted unique review scope is explicit and active (1.523694ms)
+✔ retrying allocations returns existing receipts without incrementing; mismatches block (3.270603ms)
+✔ server-resolved review never replays receipt; blocked intent and cross-pharmacy rows cannot write (4.950762ms)
+✔ separate original Orders never share a review group (3.278576ms)
+✔ real scan entry and Search plan use the same aggregate capacities; queued IDs persist before receiving (2.731653ms)
+✔ Receiving Search, Dashboard, live report, Excel and PDF share separate consolidated Order rows (6.993198ms)
+✔ two PC hydration/repeated ledger delivery converges on the same per-Order quantities (4.45751ms)
+✔ operational rows consolidate original lines while retaining first appearance order (4.575407ms)
+✔ receiving report builder returns consolidated order totals (2.143147ms)
+✔ one, two, and three duplicate lines receive only the single order total (2.566133ms)
+✔ identical item codes in different Orders remain separately attributed (1.689313ms)
+✔ 120 + 84 allocations reconcile at each boundary, correction, and overage (6.949931ms)
+✔ adjustment handlers emit exactly one signed delta for a duplicated item group (2.007753ms)
+✔ the active HTML entry cache-busts the corrected report source (0.247563ms)
+✔ explicit historical receiving is never allocated to the active order (2.547665ms)
+Receiving safety gates: PASS
+✔ tests/receiving-safety-gates.test.cjs (73.991386ms)
+✔ durable split scan waits for every acknowledgement, survives restart, and never reprocesses receipts (19.969782ms)
+✔ single scan retains base ID and pre-split persisted entries remain compatible (3.64038ms)
+✔ overlapping startup callers wait for the 5s ledger snapshot (12.387548ms)
+✔ overlapping startup callers wait for the 25s ledger snapshot (4.78959ms)
+✔ a failed or empty-throttled ledger read cannot report successful readiness (1.558055ms)
+✔ a successfully loaded empty ledger is authoritative zero without a false transition (0.932233ms)
+✔ a paginated ledger is ready only after the final short or empty page (1.459392ms)
+✔ partial ledger pages followed by a failed page are never marked complete (0.90971ms)
+✔ workspace restore fails closed when the authoritative ledger fetch fails (1.021577ms)
+✔ Production startup does not initialize dashboard or scanner on failed authority (0.220652ms)
+✔ failed startup presents a direct retry without exposing the workspace (1.041608ms)
+✔ first use is distinct from an explicit ALL preference (4.083908ms)
+✔ one or multiple selections survive recreation and remain device-local (2.346051ms)
+✔ manifest hydration prunes only invalid orders (1.138063ms)
+✔ transient pre-hydration state never destroys a saved selection (0.719914ms)
+✔ a wholly removed selection becomes explicit ALL (0.830671ms)
+✔ legacy array preferences retain their meaning (0.752633ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 231.371172
