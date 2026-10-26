@@ -7692,8 +7692,12 @@ body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode :is(.expiryKpiMonth
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode :is(.expiryKpiMonthly5,.expiryDateBadge.monthly-5){--kpi-accent:#658A26;--kpi-ink:#456315;--kpi-tint:#F0F5DF}
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode :is(.expiryKpiMonthly6,.expiryDateBadge.monthly-6){--kpi-accent:#16856D;--kpi-ink:#11644F;--kpi-tint:#E1F5EC}
 body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryDateBadge[class*="monthly-"]{background:var(--kpi-tint);color:var(--kpi-ink);border:1px solid color-mix(in srgb,var(--kpi-accent) 35%,transparent)}
-body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryInventoryTable tbody tr:is(:hover,:focus-within,:has(.is-menu-open),.expiryEditingRow)>td{background:#E3EEFF!important;box-shadow:inset 0 1px #cbdcf5,inset 0 -1px #cbdcf5}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryInventoryTable tbody tr:is(:hover,:focus-within,:has(.is-menu-open),.expiryEditingRow,.expiryInventorySelected)>td{background:#E3EEFF!important;box-shadow:inset 0 1px #cbdcf5,inset 0 -1px #cbdcf5}
 @media(prefers-reduced-motion:reduce){body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryKpiCard{transition:none}}
+
+/* Desktop Inventory save acknowledgement: static emphasis also respects reduced motion. */
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode .expiryInventoryProduct [data-select-inventory]{cursor:pointer}
+body:not(.zebraDevice) #zebraExpiryShell.expiryInventoryMode tr.expiryInventorySaved>td{background:#D4E5FF!important}
 
 /* Handheld capture: primary scanner and compact secondary Batch control. */
 body.zebraDevice #zebraExpiryShell .expiryScanBox{background:#eef4ff}

@@ -1,3 +1,13 @@
+# 2026-10-26 — Inventory Edit hotfix / Production hold
+
+**STAGING HOTFIX — PRODUCTION HOLD**. Starting Staging `be3f61424e57f9d7efe9d32a6ac25623832b2b3b`; actual Production/rollback `ca7d575066af3f82c849511718aa113f58c377cd`, unchanged. Existing approved Staging branch and Supabase `tovkcakucyagvbzvlnks` only. Final publication identity is verified in the delivery/deployment metadata.
+
+Fixed the reproduced disabled-Actions render lifecycle; added stable record selection and three-second static blue save emphasis. Runtime changes limited to Desktop Expiry JS/CSS and cache versions. Six new regressions PASS; selected suites 91 PASS/one existing concurrency SKIP; isolated Chromium repeated-edit/KPI suites and Preview build PASS. Known unrelated baseline assertion/history failures remain documented; no full-suite green claim.
+
+Mandatory authenticated deployed-Staging save/reload persistence is **NOT VERIFIED**: the available browser is signed out and has no authorized test-account session. No Production promotion or live inventory writes. No DB migrations, auth/RLS/config changes, Handheld/Receiving/Sleep recovery source edits. Next action: test two consecutive quantity edits and data readback on disposable Staging rows, verify selection/emphasis and KPI/filter/export behavior. [Evidence, limitation and release/rollback details](docs/expiry-inventory-edit-hotfix-20261026.md). Not USER VERIFIED or DONE.
+
+---
+
 # 2026-10-26 — Consolidated Inventory KPIs (Staging only)
 
 Added All Items ahead of the seven rolling date buckets; restored single-replace/double-add behavior with one gesture coordinator and safe complete-read projections. All exports now share canonical filtered membership, superseding full-active Excel. Consolidated exact palette/4px borders, unchanged 18px full-number layout and row interaction highlighting. No Production or DB changes. Status READY FOR PRODUCT OWNER VERIFICATION. See [release evidence](docs/expiry-kpi-consolidated-20261026.md) for measured latency, 79 PASS/3 baseline failures and native read checks.

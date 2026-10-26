@@ -30,7 +30,34 @@
     sessionId,
     viewportBound = false,
     sessionSearch = "";
-  let inventoryProjection=null,editingRowId=null;
+  let inventoryProjection=null,editingRowId=null,selectedInventoryId=null,inventorySaved=null;
+  function setMutationBusy(value){
+    busy=value;
+    // Rendering during a save may replace buttons; release the current DOM too.
+    document.querySelectorAll('[data-row-actions]').forEach(button=>button.disabled=value);
+  }
+  function syncInventorySelection(){
+    document.querySelectorAll('[data-inventory-row-id]').forEach(row=>{
+      const active=row.dataset.inventoryRowId===selectedInventoryId;
+      row.classList.toggle('expiryInventorySelected',active);
+      row.classList.toggle('expiryInventorySaved',active&&inventorySaved?.id===selectedInventoryId);
+      row.querySelector('[data-select-inventory]')?.setAttribute('aria-pressed',String(active));
+    });
+  }
+  function selectInventoryRow(id){
+    if(selectedInventoryId!==id)clearInventorySaved();
+    selectedInventoryId=id;syncInventorySelection();
+  }
+  function clearInventorySaved(){
+    if(inventorySaved)clearTimeout(inventorySaved.timer);
+    inventorySaved=null;syncInventorySelection();
+  }
+  function flashInventorySaved(id){
+    if(selectedInventoryId!==id)return;
+    clearInventorySaved();
+    const flash={id};inventorySaved=flash;syncInventorySelection();
+    flash.timer=setTimeout(()=>{if(inventorySaved===flash)clearInventorySaved();},3000);
+  }
   let recoveryTimer=null,recoveryAttempts=0,loadFailed=false,deferredActivation=null;
   const recoveryDelays=[1000,3000,8000];
   const esc = (v) => expiryEscapeHtml(v ?? ""),
@@ -483,11 +510,16 @@
     body.innerHTML=page.rows.map((r,i)=>{
       const d=new Date(r.updated_at),isResolved=r.status==='RESOLVED';
       const group=monthFilters.rowGroup(r);
-      return '<tr data-inventory-row-id="'+esc(r.row_id)+'" class="'+(isResolved?'expiryResolvedRow ':'')+(editingRowId===r.row_id?'expiryEditingRow':'')+'"'+'><td><input type="checkbox" aria-label="Select '+esc(r.item_code)+'" data-row-selection="'+esc(r.row_id)+'" '+(selected.has(r.row_id)?'checked':'')+'></td><td class="expiryInventoryIdentifiers"><strong role="button" data-copy-identifier="Item Code" tabindex="0" aria-label="Copy full Item Code: '+esc(r.item_code||'—')+'" title="'+esc(r.item_code||'—')+'">'+esc(r.item_code||'—')+'</strong><span role="button" data-copy-identifier="GTIN" tabindex="0" aria-label="Copy full GTIN: '+esc(r.identifier_display||'—')+'" title="'+esc(r.identifier_display||'—')+'">'+esc(r.identifier_display||'—')+'</span></td><td class="expiryInventoryProduct"><strong title="'+esc(r.item_name)+'">'+esc(r.item_name)+'</strong>'+(isResolved?'<span class="expiryResolvedLabel">Resolved</span>':'')+'</td><td class="expiryInventoryGroup" title="'+esc(group.label)+'">'+esc(group.label)+'</td><td class="expiryBatchCell" title="'+esc(r.batch_no||'—')+'">'+esc(r.batch_no||'—')+'</td><td><span class="expiryDateBadge '+expiryPeriodClass(r)+'">'+month(r)+'</span></td><td class="expiryQtyCell">'+qty(r)+'</td><td class="expiryOperatorCell" title="'+esc(r.first_operator_name||'—')+'">'+esc(r.first_operator_name||'—')+'</td><td class="expiryTimeCell"><time>'+esc(d.toLocaleDateString())+'<br>'+esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</time></td><td class="expiryActionsCell"><button type="button" class="expiryInventoryAction" data-row-actions="'+i+'" aria-label="Actions for '+esc(r.item_code)+'" aria-haspopup="menu" aria-expanded="false" '+(busy?'disabled':'')+'>⋯</button></td></tr>';
+      return '<tr data-inventory-row-id="'+esc(r.row_id)+'" class="'+(isResolved?'expiryResolvedRow ':'')+(editingRowId===r.row_id?'expiryEditingRow':'')+'"'+'><td><input type="checkbox" aria-label="Select '+esc(r.item_code)+'" data-row-selection="'+esc(r.row_id)+'" '+(selected.has(r.row_id)?'checked':'')+'></td><td class="expiryInventoryIdentifiers"><strong role="button" data-copy-identifier="Item Code" tabindex="0" aria-label="Copy full Item Code: '+esc(r.item_code||'—')+'" title="'+esc(r.item_code||'—')+'">'+esc(r.item_code||'—')+'</strong><span role="button" data-copy-identifier="GTIN" tabindex="0" aria-label="Copy full GTIN: '+esc(r.identifier_display||'—')+'" title="'+esc(r.identifier_display||'—')+'">'+esc(r.identifier_display||'—')+'</span></td><td class="expiryInventoryProduct"><strong role="button" tabindex="0" data-select-inventory="'+esc(r.row_id)+'" aria-pressed="false" title="'+esc(r.item_name)+'">'+esc(r.item_name)+'</strong>'+(isResolved?'<span class="expiryResolvedLabel">Resolved</span>':'')+'</td><td class="expiryInventoryGroup" title="'+esc(group.label)+'">'+esc(group.label)+'</td><td class="expiryBatchCell" title="'+esc(r.batch_no||'—')+'">'+esc(r.batch_no||'—')+'</td><td><span class="expiryDateBadge '+expiryPeriodClass(r)+'">'+month(r)+'</span></td><td class="expiryQtyCell">'+qty(r)+'</td><td class="expiryOperatorCell" title="'+esc(r.first_operator_name||'—')+'">'+esc(r.first_operator_name||'—')+'</td><td class="expiryTimeCell"><time>'+esc(d.toLocaleDateString())+'<br>'+esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</time></td><td class="expiryActionsCell"><button type="button" class="expiryInventoryAction" data-row-actions="'+i+'" aria-label="Actions for '+esc(r.item_code)+'" aria-haspopup="menu" aria-expanded="false" '+(busy?'disabled':'')+'>⋯</button></td></tr>';
     }).join('');
+    syncInventorySelection();
+    body.querySelectorAll('[data-select-inventory]').forEach(b=>{
+      b.onclick=()=>selectInventoryRow(b.dataset.selectInventory);
+      b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.onclick();}};
+    });
     body.querySelectorAll('[data-copy-identifier]').forEach(b=>{b.onclick=()=>copyInventoryIdentifier(b);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();return copyInventoryIdentifier(b);}};});
     body.querySelectorAll('[data-row-actions]').forEach(trigger=>trigger.onclick=()=>{
-      if(busy)return;const r=page.rows[Number(trigger.dataset.rowActions)];
+      if(busy)return;const r=page.rows[Number(trigger.dataset.rowActions)];selectInventoryRow(r.row_id);
       if(floatingTrigger===trigger){closeInventoryMenus(true);return;}
       closeInventoryMenus();let panel=el('expiryRowActionPanel');
       if(!panel){panel=document.createElement('div');panel.id='expiryRowActionPanel';panel.className='expiryFloatingMenu expiryRowActionMenu';panel.setAttribute('role','menu');panel.setAttribute('popover','manual');document.body.appendChild(panel);}
@@ -570,7 +602,7 @@
     if(initialScope!==scope() || initialEpoch!==(AuthState.identityEpoch||0))return [];
     const ownScope = scope(),permissionGeneration=permissions?.generation?.();
     if (visibleScope !== ownScope) {
-      cancelKpiClick();lastKpiGesture=null;editingRowId=null;
+      cancelKpiClick();lastKpiGesture=null;editingRowId=null;selectedInventoryId=null;clearInventorySaved();
       clearSavedFlashes();
       closeInventoryMenus();expandedYears.clear();expandedSections.clear();selectionMode=false;el("expiryShelfPrint")?.remove();
       visibleScope = ownScope;
@@ -756,10 +788,11 @@
       if (!busy) dialog.close();
     };
     let completed=false;
+    const dialogScope=scope(),dialogEpoch=AuthState.identityEpoch||0;
     dialog.querySelector("form").onsubmit = async (e) => {
       e.preventDefault();
-      if (!action || busy || completed) return;
-      busy = true;
+      if (!action || busy || completed || dialogScope!==scope() || dialogEpoch!==(AuthState.identityEpoch||0)) return;
+      setMutationBusy(true);
       dialog.setAttribute("aria-busy", "true");
       const submit = dialog.querySelector("[type=submit]");
       const submitLabel = submit?.textContent;
@@ -770,14 +803,18 @@
         .forEach((b) => (b.disabled = true));
       try {
         const outcome=await action(dialog);completed=true;
-        if(outcome?.next){busy=false;dialog.setAttribute("aria-busy","false");dialog.close();outcome.next();return;}
+        if(dialogScope!==scope() || dialogEpoch!==(AuthState.identityEpoch||0))return;
+        if(outcome?.next){setMutationBusy(false);dialog.setAttribute("aria-busy","false");dialog.close();outcome.next();return;}
         inventoryProjection=null;lastSummary = 0;pendingSummary=null;
         await refresh();
-        busy = false;
+        if(dialogScope!==scope() || dialogEpoch!==(AuthState.identityEpoch||0))return;
+        if(options.savedRowId)flashInventorySaved(options.savedRowId);
+        setMutationBusy(false);
         dialog.setAttribute("aria-busy", "false");
         dialog.close();
       } catch (error) {
-        busy = false;
+        if(dialogScope!==scope() || dialogEpoch!==(AuthState.identityEpoch||0))return;
+        setMutationBusy(false);
         dialog.setAttribute("aria-busy", "false");
         if (submit) submit.textContent = submitLabel;
         dialog
@@ -902,6 +939,7 @@
         await mutation({ ...args, p_quantity: q });
       },
       trigger,
+      {savedRowId:r.row_id},
     );
   }
   async function confirmSelection(ids,trigger,clearList=false){
@@ -1149,6 +1187,7 @@
     cancelRecovery();recoveryAttempts=0;loadFailed=false;pendingRead=null;++requestVersion;
     window.ExpiryTopMotion?.dispose();
     clearSavedFlashes();cancelKpiClick();clearExportNotice();
+    selectedInventoryId=null;editingRowId=null;clearInventorySaved();setMutationBusy(false);dialog?.close();
     closeInventoryMenus();expandedYears.clear();expandedSections.clear();selectionMode=false;el("expiryShelfPrint")?.remove();
     sessionSearch = "";
     session = [];
