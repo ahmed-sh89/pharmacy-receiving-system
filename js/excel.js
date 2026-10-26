@@ -653,67 +653,8 @@ async function importOrderFile(file, preflightMeta = null){
 ===================================================== */
 
 function readExcelWorkbook(file){
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        )=>{
-
-            const reader =
-                new FileReader();
-
-            reader.onload =
-                function(event){
-
-                    try{
-
-                        const workbook =
-                            XLSX.read(
-                                event.target.result,
-                                {
-                                    type:"array",
-                                    cellDates:true,
-                                    cellText:true,
-                                    cellNF:true
-                                }
-                            );
-
-                        resolve(
-                            workbook
-                        );
-
-                    }
-                    catch(error){
-
-                        reject(
-                            error
-                        );
-
-                    }
-
-                };
-
-            reader.onerror =
-                function(){
-
-                    reject(
-                        new Error(
-                            "Unable to read file: " +
-                            file.name
-                        )
-                    );
-
-                };
-
-            reader.readAsArrayBuffer(
-                file
-            );
-
-        }
-    );
+    return window.PharmFlowExcel.readFile(file,{cellDates:true});
 }
-
 
 /* =====================================================
    WORKSHEET TO MATRIX

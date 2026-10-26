@@ -1,3 +1,15 @@
+# 2026-10-27 — SEC-001 Excel security remediation (isolated Staging)
+
+Status: READY FOR TEST after exact Preview verification; NOT USER VERIFIED / DONE. Branch `fix/sec001-excel-parser-staging-20261027` from `50ef357c36c31269e7f209db27595215ab61c816`. Production main remains `b618af9e0e55f30a616fd7e09eec9392ca6764c1`; Production/database/aliases unchanged.
+
+Replace xlsx0.18.5 with official vendored SheetJS CE0.20.3, SHA256 `cc015130aa8521e7f088f88898eba949ccdcbfb38df0bd129b44b7273c3a6f41`, SHA384 SRI and Apache-2.0 attribution. Both current/nested entries select the patched artifact. Order/mapping/Master file reads share a dedicated worker with 32MiB input/128MiB declared expanded ZIP/64 sheets/250k rows per sheet/500k total rows/256 columns/4M cells/30s deadline. Reject rather than truncate. Exports retain XLSX API. Existing numeric Item Code canonicalization and all business/auth/Receiving rules unchanged.
+
+Verification: 12 security/parser tests (both actual supplier files) plus44 existing Receiving/Handheld tests PASS; isolated actual Chromium file selection/Worker/Active Orders renderer/duplicate/invalid feedback PASS with persistence mocked and external network blocked; existing Receiving Chromium regression PASS; Staging build/diff checks PASS. Originals: TO-000529235 two lines/two items/total12; TO-000528294 two lines27+35/one item/total62; dates2026-10-26; old/new matrices identical. No real files committed. No authenticated Staging or Production writes; physical TC26/cross-PC persistence not newly verified. Separate signed-in Manage Orders blocker remains unclosed by fixture tests.
+
+Next: verify the exact delivered Preview SHA, parser version0.20.3 and Staging ref`tovkcakucyagvbzvlnks`; Product Owner performs the minimal two-file/import/export/refresh acceptance. Do not use default pharmflow-test alias (Production), merge main, change routing or promote before separate approval. Details and exact commands: `docs/sec001-excel-parser-20261027.md`.
+
+---
+
 # 2026-10-26 — Receiving consolidation and review provenance (Staging)
 
 Status: STAGING READY FOR PRODUCT OWNER VERIFICATION after Preview readiness and served-asset checks. Not USER VERIFIED/DONE. Production main and served Pages SHA verified `b618af9e0e55f30a616fd7e09eec9392ca6764c1`; no Production writes/deployment. Isolated branch: `fix/receiving-consolidation-review-staging-20261026`. Staging Supabase ONLY `tovkcakucyagvbzvlnks`. Runtime SHA is stamped in Preview `version.json`; final SHA/URL are included in delivery. Prior Production and TC26 visual acceptances remain historical and are not newly recertified.

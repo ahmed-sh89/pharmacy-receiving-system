@@ -336,13 +336,7 @@ async function parseMasterGTINFile(file){
 
     validateMasterGTINExcelFile(file);
 
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer,{
-        type:"array",
-        cellDates:false,
-        cellText:true,
-        cellNF:true
-    });
+    const workbook = await window.PharmFlowExcel.readFile(file,{cellDates:false});
 
     /* Preserve every unique Item Number + GTIN pair. One item can legitimately
        have more than one barcode, and the central master must not discard them. */
