@@ -40,9 +40,9 @@ test('Group filter counts and paginates server matches across all authorized row
   const medicine=h.e('expiryGroups').querySelector('[data-group="Medicine"]');medicine.onclick();await h.e('expiryApplyFilters').onclick();await h.refresh();await new Promise(r=>setImmediate(r));
   let q=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1).p;
   assert.deepEqual(JSON.parse(JSON.stringify(q.p_filters.groups)),['Medicine']);assert.equal(h.e('expiryCurrentStateCount').textContent,'55');assert.equal(h.document.querySelectorAll('tbody tr').length,40);
-  await h.e('expiryNext').onclick();await new Promise(r=>setImmediate(r));
+  const readsBeforePage=h.calls.length;await h.e('expiryNext').onclick();await new Promise(r=>setImmediate(r));
   q=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1).p;
-  assert.equal(q.p_offset,40);assert.equal(h.document.querySelectorAll('tbody tr').length,15);
+  assert.equal(h.calls.length,readsBeforePage,'complete authorized projection paginates without another read');assert.equal(h.document.querySelectorAll('tbody tr').length,15);
   h.e('expiryCurrentSearch').value='Product 5';h.e('expiryCurrentSearch').oninput({target:h.e('expiryCurrentSearch')});await h.flush();
   q=h.calls.filter(x=>x.name==='query_pharmflow_expiry_inventory_v1').at(-1).p;
   assert.equal(q.p_filters.search,'Product 5');assert.deepEqual(JSON.parse(JSON.stringify(q.p_filters.groups)),['Medicine']);assert.equal(Number(h.e('expiryCurrentStateCount').textContent),6);
