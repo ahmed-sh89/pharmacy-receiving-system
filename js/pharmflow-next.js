@@ -111,114 +111,85 @@
     }
   }
 
+  function assignmentScope(){return window.activeOrderAuthorityScope?.()||'';}
   function renderHandheldAssignment(overlay){
     const page=$('page-files'),body=overlay?.querySelector('.pfnModalBody');if(!page||!body)return;
     const active=typeof getActiveReceivingOrderNumbers==='function'?getActiveReceivingOrderNumbers():[];
     const assignment=body.querySelector('.pfnHandheldAssignment')||document.createElement('section');
     assignment.className='pfnHandheldAssignment';
-
-    /* Never rebuild the live assignment form while Manage Orders is open.
-       Structural manifest/file events can arrive during upload and assignment
-       saves; replacing innerHTML was destroying the user's checkbox DOM state.
-       Rebuild only when the active-order structure itself changes. */
     const signature=active.join('|');
-    if(assignment.dataset.activeSignature===signature && assignment.isConnected){
-      const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
-        ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
-        : [];
-      const status=assignment.querySelector('[data-assignment-status]');
-      if(status) status.textContent=active.length?`${assigned.length} orders assigned`:'No active orders';
-      return;
+    if(assignment.dataset.activeSignature!==signature || !assignment.isConnected){
+      assignment.dataset.activeSignature=signature;
+      assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Handheld Assignment</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}"><span>${esc(order)}</span></label>`).join('')}</div><div class="pfnHandheldAssignmentActions"><span data-assignment-status role="status" aria-live="polite"></span></div>`;
+      if(!assignment.isConnected){const layout=page.querySelector('.twoColumnLayout');if(layout)layout.insertAdjacentElement('afterend',assignment);else body.appendChild(assignment);}
+      assignment.onchange=event=>{
+        if(event.target?.matches('input[type="checkbox"]'))saveAssignment([...assignment.querySelectorAll('input:checked')].map(input=>input.value));
+      };
+      assignment.querySelector('[data-assign-all]').onclick=()=>saveAssignment(active);
     }
+    const pending=!!PF.assignmentSave;
+    const ready=overlay.dataset.ordersReady==='true';
+    const writable=window.PharmFlowPermissions?.allowed('RECEIVING',true)===true;
+    const assigned=new Set(AppState?.workspace?.handheldOrderNumbers||[]);
+    assignment.hidden=!ready;
+    assignment.setAttribute('aria-busy',String(pending));
+    assignment.querySelectorAll('input').forEach(input=>{
+      if(!pending)input.checked=assigned.has(input.value);
+      input.disabled=pending||!ready||!writable;
+    });
+    assignment.querySelector('[data-assign-all]').disabled=pending||!active.length||!writable;
+    assignment.querySelector('[data-assignment-status]').textContent=pending?'Saving assignment…':`${active.filter(order=>assigned.has(order)).length} of ${active.length} assigned`;
+  }
 
-    const assigned=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
-      ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
-      : [];
-    assignment.dataset.activeSignature=signature;
-    assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Assign to Handheld</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}" ${assigned.includes(order)?'checked':''}><span>${esc(order)}</span></label>`).join('')||'<p>No active orders available.</p>'}</div><div class="pfnHandheldAssignmentActions"><span><span data-assignment-status>${active.length?`${assigned.length} of ${active.length} assigned`:'No active orders'}</span></span><button type="button" data-remove-assignment disabled>Remove from Handheld</button><button type="button" data-save-assignment disabled>Assign to Handheld →</button></div>`;
-    const syncAssignmentActions=()=>{
-      const baseline=new Set(
-        (Array.isArray(AppState?.workspace?.handheldOrderNumbers)?AppState.workspace.handheldOrderNumbers:[])
-          .map(order=>String(order||'').trim().toUpperCase())
-          .filter(order=>active.includes(order))
-      );
-      const checked=new Set(
-        [...assignment.querySelectorAll('input[type="checkbox"]:checked')]
-          .map(input=>String(input.value||'').trim().toUpperCase())
-      );
-      const hasAdds=[...checked].some(order=>!baseline.has(order));
-      const hasRemoves=[...baseline].some(order=>!checked.has(order));
-      const saveButton=assignment.querySelector('[data-save-assignment]');
-      const removeButton=assignment.querySelector('[data-remove-assignment]');
-      if(saveButton){ saveButton.disabled=!hasAdds; saveButton.classList.toggle('primary',hasAdds); }
-      if(removeButton){ removeButton.disabled=!hasRemoves; removeButton.classList.toggle('primary',hasRemoves); removeButton.style.background=hasRemoves?'#0b6edb':''; removeButton.style.color=hasRemoves?'#fff':''; removeButton.style.borderColor=hasRemoves?'#0b6edb':''; }
-    };
-    assignment.addEventListener('change',event=>{if(event.target?.matches('input[type="checkbox"]'))syncAssignmentActions();});
-    syncAssignmentActions();
-    if(!assignment.isConnected){ const ordersLayout=page.querySelector('.twoColumnLayout'); if(ordersLayout) ordersLayout.insertAdjacentElement('afterend',assignment); else body.insertBefore(assignment,page); }
-    assignment.querySelector('[data-assign-all]')?.addEventListener('click',()=>{assignment.querySelectorAll('input').forEach(input=>input.checked=true);syncAssignmentActions();});
-    assignment.querySelector('[data-save-assignment]')?.addEventListener('click',async event=>{
-      const chosen=[...assignment.querySelectorAll('input:checked')].map(input=>input.value);
-      if(!chosen.length){showToast?.('Select at least one active order, or use Remove from Handheld','warning');return;}
-      const saveButton=event.currentTarget;
-      saveButton.disabled=true;
-      const saved=await window.setHandheldAssignedOrderNumbers?.(chosen);
-      /* The assignment section may be structurally replaced while the await
-         is in flight. Re-enable the CURRENT live button, not only the detached
-         button that originally fired this handler. */
-      saveButton.disabled=false;
-      assignment.querySelector('[data-save-assignment]')?.removeAttribute('disabled');
-      if(saved===false)return;
-
-      AppState.workspace.handheldOrderNumbers=chosen.slice();
-      AppState.workspace.handheldScopeConfigured=true;
-      saveWorkspaceSnapshot?.();
-
-      /* Update the existing controls in place. Do not call the renderer here:
-         the live checkboxes are already the exact operator selection. */
-      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{
-        input.checked=chosen.includes(input.value);
-      });
-      const status=assignment.querySelector('[data-assignment-status]');
-      if(status) status.textContent=`${chosen.length} orders assigned`;
-      syncAssignmentActions();
+  async function saveAssignment(chosen){
+    // One confirmed write at a time, including close/reopen and programmatic changes.
+    if(PF.assignmentSave){refreshOpenManageOrders();return;}
+    const overlay=$('pfnOrdersOverlay'),scope=assignmentScope();
+    if(overlay?.dataset.ordersReady!=='true')return;
+    const request={scope};PF.assignmentSave=request;
+    refreshOpenManageOrders();
+    try{
+      await window.PharmFlowPermissions?.whenReady();
+      if(scope!==assignmentScope())throw Error('Account changed. Reopen Manage Orders.');
+      window.PharmFlowPermissions.require('RECEIVING',true);
+      const saved=await window.setHandheldAssignedOrderNumbers(chosen);
+      if(scope!==assignmentScope())return;
+      if(saved!==true)throw Error('Handheld assignment could not be saved. Please try again.');
       showToast?.('Handheld assignment saved','success');
-    });
-    assignment.querySelector('[data-remove-assignment]')?.addEventListener('click',async event=>{
-      const removeButton=event.currentTarget;
-      const saveButton=assignment.querySelector('[data-save-assignment]');
-      const assignedNow=Array.isArray(AppState?.workspace?.handheldOrderNumbers)
-        ? AppState.workspace.handheldOrderNumbers.map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.includes(order))
-        : [];
-      const checkedNow=[...assignment.querySelectorAll('input:checked')].map(input=>String(input.value||'').trim().toUpperCase());
-      /* Remove only orders the operator explicitly unchecked from the
-         persisted Handheld assignment. Checked assigned orders stay assigned. */
-      const nextAssigned=assignedNow.filter(order=>checkedNow.includes(order));
-      const removed=assignedNow.filter(order=>!nextAssigned.includes(order));
-      if(!removed.length){
-        showToast?.('Uncheck an assigned order to remove it from Handheld','warning');
-        return;
+    }catch(error){
+      if(scope===assignmentScope()){
+        // Existing persistence rolls back on failure; read current authority after conflicts.
+        await window.pullActiveOrderManifestAuthority?.({clearIfMissing:true,forceApply:true});
+        if(scope===assignmentScope())showToast?.(error?.message||'Handheld assignment could not be saved','error');
       }
-      removeButton.disabled=true;
-      if(saveButton) saveButton.disabled=true;
-      const saved=await window.setHandheldAssignedOrderNumbers?.(nextAssigned);
-      if(saveButton) saveButton.disabled=false;
-      if(saved!==true){
-        removeButton.disabled=false;
-        showToast?.('Handheld assignment was not changed','error');
-        return;
+    }finally{
+      if(PF.assignmentSave===request)PF.assignmentSave=null;
+      refreshOpenManageOrders();
+    }
+  }
+
+  async function loadManageOrders(overlay){
+    if(overlay.ordersLoad)return overlay.ordersLoad;
+    const scope=assignmentScope();
+    overlay.dataset.ordersReady='false';overlay.dataset.ordersError='';
+    refreshOpenManageOrders();
+    overlay.ordersLoad=(async()=>{
+      try{
+        await window.PharmFlowPermissions?.whenReady();
+        if(scope!==assignmentScope())throw Error('Account changed. Reopen Manage Orders.');
+        window.PharmFlowPermissions.require('RECEIVING');
+        await window.pullActiveOrderManifestAuthority({clearIfMissing:true});
+        if(scope!==assignmentScope())return;
+        if(PharmFlowCloudWorkspace?.manifestAuthorityScope!==scope || PharmFlowCloudWorkspace?.lastManifestPullError)throw Error('Unable to load Active Orders. Please retry.');
+        overlay.dataset.ordersReady='true';
+      }catch(error){
+        if(scope===assignmentScope())overlay.dataset.ordersError=error?.message||'Unable to load Active Orders.';
+      }finally{
+        overlay.ordersLoad=null;
+        if(overlay.isConnected)refreshOpenManageOrders();
       }
-      AppState.workspace.handheldOrderNumbers=nextAssigned.slice();
-      AppState.workspace.handheldScopeConfigured=true;
-      saveWorkspaceSnapshot?.();
-      assignment.querySelectorAll('input[type="checkbox"]').forEach(input=>{
-        input.checked=nextAssigned.includes(String(input.value||'').trim().toUpperCase());
-      });
-      const status=assignment.querySelector('[data-assignment-status]');
-      if(status) status.textContent=`${nextAssigned.length} orders assigned`;
-      syncAssignmentActions();
-      showToast?.(removed.length===1?'Order removed from Handheld':`${removed.length} orders removed from Handheld`,'success');
-    });
+    })();
+    return overlay.ordersLoad;
   }
 
   function refreshOpenManageOrders(){
@@ -228,7 +199,13 @@
        cached. Resolve the live list node here instead of relying on the cached
        reference, then render the confirmed workspace directly into it. */
     const liveOrderList=overlay.querySelector('#orderFilesList');
-    if(liveOrderList && typeof renderFileList==='function'){
+    if(liveOrderList && overlay.dataset.ordersReady!=='true'){
+      const error=overlay.dataset.ordersError;
+      liveOrderList.setAttribute('aria-busy',String(!error));
+      liveOrderList.innerHTML=`<div role="status" class="pfnOrdersLoading">${error?esc(error)+' <button type="button" data-retry-orders>Retry</button>':'Loading Active Orders…'}</div>`;
+      liveOrderList.querySelector('[data-retry-orders]')?.addEventListener('click',()=>loadManageOrders(overlay));
+    }else if(liveOrderList && typeof renderFileList==='function'){
+      liveOrderList.setAttribute('aria-busy','false');
       renderFileList(liveOrderList,AppState?.workspace?.orderFiles||[],'No order files loaded.');
     }else if(typeof refreshFileLists==='function'){
       refreshFileLists();
@@ -245,7 +222,7 @@
     document.body.appendChild(overlay);modalStack.open(overlay);
     const body=overlay.querySelector('.pfnModalBody');
     body.appendChild(page);page.classList.add('active','pfnEmbeddedPage');page.hidden=false;
-    renderHandheldAssignment(overlay);
+    loadManageOrders(overlay);
     overlay.querySelector('[data-close]').onclick=closeOrders;overlay.querySelector('[data-done]').onclick=closeOrders;overlay.addEventListener('click',e=>{if(e.target===overlay)closeOrders();});
   }
 
@@ -331,6 +308,7 @@
          the authoritative active-manifest event emitted by the read-after-write
          apply, leaving the modal on its pre-save scope until it is reopened. */
       AppEvents.on('files:updated',()=>refreshOpenManageOrders());
+      window.addEventListener('pharmflow:permission-state',()=>refreshOpenManageOrders());
     }
     document.addEventListener('keydown',event=>{
       if(event.key!=='Escape')return;

@@ -3336,6 +3336,11 @@ function renderStatusBadge(status){
 ===================================================== */
 
 function refreshFileLists(){
+    // The open modal owns its loading/authority projection, including cached UI references.
+    if(document.getElementById('pfnOrdersOverlay') && typeof window.refreshOpenManageOrders==='function'){
+        window.refreshOpenManageOrders();
+        return;
+    }
 
     renderFileList(
         UI.elements.orderFilesList,

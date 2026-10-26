@@ -1,3 +1,9 @@
+# 2026-10-27 — Active Orders restoration and instant Handheld assignment
+
+90 focused Node tests PASS (zero failures/skips), including nine new scoped-authority/concurrency/cooldown tests. Three isolated Chromium suites PASS: new actual modal+Manifest/assignment function flow against shared local RPC fixture; prior real-file Worker/permission-race regression; Receiving/Search/Dashboard/saved report regression. Loading/failed-read Retry/genuine empty, restored checkboxes, direct check/uncheck-last, Select All, pending/rapid conflicting events, no premature success, rollback, readonly, assignment-only events, refresh/second-page and identity fencing covered in isolation. Both originals parser totals12/62 and provenance PASS. Build/syntax/diff PASS; Production target rejected. No live Staging persistence/refresh-latency/second-device or physical TC26 PASS claimed; authenticated session unavailable. Product Owner's prior two-order import/persistence/assignment acceptance recorded. Current release remains READY FOR TEST. Commands/limits: `docs/active-orders-instant-assignment-20261027.md`.
+
+---
+
 # 2026-10-27 — Manage Orders import event-loss fix (Staging)
 
 READY FOR TEST; authenticated Product Owner import/persistence acceptance pending. Branch `fix/manage-orders-import-staging-20261027`, baseline SEC-001 `cad393449889410c326e2b3ea71d90cfede2d5ca`; Staging only`tovkcakucyagvbzvlnks`. Production main/Pages remain`b618af9e0e55f30a616fd7e09eec9392ca6764c1`. No database/migration/alias/Auth/RLS changes.

@@ -1,3 +1,9 @@
+# 2026-10-27 — Staging Active Orders authority and instant assignment
+
+Focused correction on parent07eab468: compact loading/error/retry until current authoritative Manifest; shared scoped reads, cooldown after success only; current-scope response fencing. Direct checkbox/Select All saves through approved v4/readback contract, pending lock, confirmed success and authority rollback; synchronize existing controls on assignment-only events. Preserve Receiving/SEC-001/security/backend contracts. 90 Node tests/three isolated Chromium suites/build PASS. Live acceptance pending; READY FOR TEST. No Production/database/alias changes. See `docs/active-orders-instant-assignment-20261027.md`.
+
+---
+
 # 2026-10-27 — Manage Orders import event-loss fix (Staging)
 
 READY FOR TEST; authenticated Product Owner import/persistence acceptance pending. Branch `fix/manage-orders-import-staging-20261027`, baseline SEC-001 `cad393449889410c326e2b3ea71d90cfede2d5ca`; Staging only`tovkcakucyagvbzvlnks`. Production main/Pages remain`b618af9e0e55f30a616fd7e09eec9392ca6764c1`. No database/migration/alias/Auth/RLS changes.

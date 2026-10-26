@@ -1,3 +1,15 @@
+# 2026-10-27 — Active Orders restoration and direct Handheld assignment (Staging)
+
+READY FOR TEST after exact Preview SHA/config/assets verification. Branch `fix/active-orders-instant-assignment-staging-20261027`, parent `07eab4683f1647601abeeee772c19d98992b5dd4`; Staging `tovkcakucyagvbzvlnks` only. Production main remains `b618af9e0e55f30a616fd7e09eec9392ca6764c1`. No migrations, Auth/RLS/alias changes or live operational mutations.
+
+Product Owner confirms prior release imported and persisted both original orders, including Handheld assignment. That acceptance supersedes the prior import/persistence pending statement below for this reported scope only. New task addresses delayed restoration and direct checkbox assignment; not DONE.
+
+Production comparison: current main and parent share identical root cloud authority and modal code. Reuse existing generation/revision/readback contract and event-driven structural rendering; historical d3d6a94e/82d923c/e452f22e already inherited. Demonstrated failure: permission-rejected Manifest read consumes ten-second timestamp; busy callers do not share authority response; modal renders pre-authority empty and same-structure checkbox state can remain stale. Fix successful-read-only scoped throttle/shared reads, on-open loading/authority/error projection, direct single-flight checkbox/Select All save with confirmed success, rollback and identity fences. Keep adaptive polling, Receiving ledger gates and all SEC-001 protections.
+
+90 focused Node tests and three isolated Chromium suites PASS. Actual originals parse as12/62 with source lines preserved. Browser backend is local fixture; live Staging refresh latency/direct writes/second device remain Product Owner verification, no live PASS claimed. Build/syntax/diff PASS; Production build guard rejects. Details and minimal acceptance: `docs/active-orders-instant-assignment-20261027.md`. Next: verify published Preview then Product Owner refresh→toggle assignment→refresh/second-session acceptance. Preserve both orders; no reimport/reset/delete or Production merge.
+
+---
+
 # 2026-10-27 — Manage Orders import event-loss fix (Staging)
 
 READY FOR TEST; authenticated Product Owner import/persistence acceptance pending. Branch `fix/manage-orders-import-staging-20261027`, baseline SEC-001 `cad393449889410c326e2b3ea71d90cfede2d5ca`; Staging only`tovkcakucyagvbzvlnks`. Production main/Pages remain`b618af9e0e55f30a616fd7e09eec9392ca6764c1`. No database/migration/alias/Auth/RLS changes.

@@ -618,6 +618,9 @@ function resetRuntimeForAuthenticatedContextChange(newScope){
         PharmFlowCloudWorkspace.activeManifestPresent=false;
         PharmFlowCloudWorkspace.lastManifestResponseEmpty=false;
         PharmFlowCloudWorkspace.activeManifestReadSerial=0;
+        PharmFlowCloudWorkspace.manifestAuthorityScope=null;
+        PharmFlowCloudWorkspace.activeManifestRead=null;
+        PharmFlowCloudWorkspace.activeManifestBusy=false;
         PharmFlowCloudWorkspace.lastManifestPullAt=null;
         PharmFlowCloudWorkspace.lastManifestPullError=null;
 
@@ -918,6 +921,8 @@ window.serializeActiveOrderManifest=serializeActiveOrderManifest;
    Keep one persistence path: update the proposed scope locally, persist the
    complete manifest, and roll back if the verified server write fails. */
 async function setHandheldAssignedOrderNumbers(orderNumbers){
+    const scope=activeOrderAuthorityScope();
+    if(!window.PharmFlowPermissions?.require('RECEIVING',true)) return false;
     /* Assignment is a server-authoritative structural write. Refresh the
        generation/revision fence BEFORE mutating local assignment state.
        Otherwise prepare/apply can replace the proposed selection with the
@@ -928,7 +933,7 @@ async function setHandheldAssignedOrderNumbers(orderNumbers){
             ? await prepareActiveOrderManifestWrite()
             : false;
 
-    if(prepared!==true){
+    if(prepared!==true || scope!==activeOrderAuthorityScope()){
         return false;
     }
 
@@ -955,6 +960,7 @@ async function setHandheldAssignedOrderNumbers(orderNumbers){
     AppState.workspace.handheldScopeConfigured=true;
 
     const saved=await saveActiveOrderManifest({silent:true});
+    if(scope!==activeOrderAuthorityScope()) return false;
     if(saved===true){
         saveWorkspaceSnapshot?.();
         return true;
@@ -1053,6 +1059,7 @@ async function patchActiveOrderPriorities(changes){
 window.patchActiveOrderPriorities=patchActiveOrderPriorities;
 
 async function saveActiveOrderManifest(options={}){
+    const scope=activeOrderAuthorityScope();
     const pharmacyId=cloudWorkspacePharmacyId();
     const silent=options?.silent===true;
 
@@ -1094,6 +1101,7 @@ async function saveActiveOrderManifest(options={}){
             }
         );
 
+        if(scope!==activeOrderAuthorityScope()) return false;
         const row=Array.isArray(result)?result[0]:result;
 
         if(
@@ -1113,6 +1121,7 @@ async function saveActiveOrderManifest(options={}){
             {p_pharmacy_id:pharmacyId}
         );
 
+        if(scope!==activeOrderAuthorityScope()) return false;
         const verify=Array.isArray(verifyResult)
             ? verifyResult[0]
             : verifyResult;
@@ -1183,6 +1192,7 @@ async function saveActiveOrderManifest(options={}){
         return true;
     }
     catch(error){
+        if(scope!==activeOrderAuthorityScope()) return false;
         const message=error?.message || String(error);
 
         /* Another device changed the Active Orders after this browser last
@@ -1296,12 +1306,29 @@ function applyActiveOrderManifest(manifest,revision){
     return true;
 }
 
+// Identity fences cover in-flight reads and assignment writes, including same-pharmacy account switches.
+function activeOrderAuthorityScope(){
+    return [AuthState?.identityEpoch||0,AuthState?.user?.id||AuthState?.context?.user_id||'',
+        cloudWorkspacePharmacyId()||'',!!AuthState?.session,!!AuthState?.mustChangePassword].join('/');
+}
+window.activeOrderAuthorityScope=activeOrderAuthorityScope;
+
 async function pullActiveOrderManifest(options={}){
     const pharmacyId=cloudWorkspacePharmacyId();
     const now=Date.now();
+    const scope=activeOrderAuthorityScope();
+    const pending=PharmFlowCloudWorkspace.activeManifestRead;
+    if(pending?.scope===scope){
+        if(options.clearIfMissing===true)pending.options.clearIfMissing=true;
+        if(options.forceApply===true)pending.options.forceApply=true;
+        return pending.promise;
+    }
+    options={...options};
 
     if(
         options?.force!==true &&
+        PharmFlowCloudWorkspace.manifestAuthorityScope===scope &&
+        !PharmFlowCloudWorkspace.lastManifestPullError &&
         PharmFlowCloudWorkspace.lastManifestFullReadAt>0 &&
         now-PharmFlowCloudWorkspace.lastManifestFullReadAt<10000
     ){
@@ -1312,7 +1339,6 @@ async function pullActiveOrderManifest(options={}){
         !navigator.onLine ||
         !pharmacyId ||
         typeof authRpc!=="function" ||
-        PharmFlowCloudWorkspace.activeManifestBusy ||
         PharmFlowCloudWorkspace.contextSwitching
     ){
         return false;
@@ -1320,16 +1346,24 @@ async function pullActiveOrderManifest(options={}){
 
     PharmFlowCloudWorkspace.activeManifestBusy=true;
     PharmFlowCloudWorkspace.lastManifestResponseEmpty=false;
-    PharmFlowCloudWorkspace.lastManifestFullReadAt=now;
-
+    const request={scope,options,promise:null,revision:Number(PharmFlowCloudWorkspace.activeManifestRevision||0)};
+    const promise=(async()=>{
+    // Yield once so even a synchronous permission rejection shares this request.
+    await Promise.resolve();
     try{
+        if(scope!==activeOrderAuthorityScope()) return false;
         const result=await authRpc(
             "get_pharmflow_active_order_manifest_v3",
             {p_pharmacy_id:pharmacyId}
         );
+        if(scope!==activeOrderAuthorityScope()) return false;
+        PharmFlowCloudWorkspace.lastManifestFullReadAt=Date.now();
+        PharmFlowCloudWorkspace.manifestAuthorityScope=scope;
         PharmFlowCloudWorkspace.activeManifestReadSerial++;
 
         const row=Array.isArray(result)?result[0]:result;
+        if(Number(PharmFlowCloudWorkspace.activeManifestRevision||0)>request.revision &&
+           Number(row?.revision||0)<Number(PharmFlowCloudWorkspace.activeManifestRevision||0))return true;
 
         PharmFlowCloudWorkspace.lastManifestPullAt=nowISO();
         PharmFlowCloudWorkspace.lastManifestPullError=null;
@@ -1384,6 +1418,8 @@ async function pullActiveOrderManifest(options={}){
         PharmFlowCloudWorkspace.activeManifestPresent=true;
 
         const revision=Number(row.revision||0);
+        // A pre-save read may finish after read-after-write confirmation.
+        if(revision<Number(PharmFlowCloudWorkspace.activeManifestRevision||0))return true;
 
         const localFiles=
             Array.isArray(AppState?.workspace?.orderFiles)
@@ -1471,6 +1507,7 @@ async function pullActiveOrderManifest(options={}){
         return true;
     }
     catch(error){
+        if(scope!==activeOrderAuthorityScope()) return false;
         PharmFlowCloudWorkspace.lastManifestPullError=
             error?.message || String(error);
 
@@ -1487,8 +1524,15 @@ async function pullActiveOrderManifest(options={}){
         return false;
     }
     finally{
-        PharmFlowCloudWorkspace.activeManifestBusy=false;
+        if(PharmFlowCloudWorkspace.activeManifestRead===request){
+            PharmFlowCloudWorkspace.activeManifestRead=null;
+            PharmFlowCloudWorkspace.activeManifestBusy=false;
+        }
     }
+    })();
+    request.promise=promise;
+    PharmFlowCloudWorkspace.activeManifestRead=request;
+    return promise;
 }
 
 async function pullActiveOrderManifestAuthority(options={}){
@@ -1523,14 +1567,15 @@ async function pullActiveOrderManifestAuthority(options={}){
    the manifest generation fence. Refresh that authority immediately before
    the write so an operator never has to retry after a normal page refresh. */
 async function prepareActiveOrderManifestWrite(){
+    const scope=activeOrderAuthorityScope();
     const generation=await getCloudWorkspaceGeneration({force:true});
-    if(generation===null) return false;
+    if(generation===null || scope!==activeOrderAuthorityScope()) return false;
 
     const pulled=await pullActiveOrderManifestAuthority({
         forceApply:true,
         clearIfMissing:true
     });
-    if(!pulled) return false;
+    if(!pulled || scope!==activeOrderAuthorityScope()) return false;
 
     PharmFlowCloudWorkspace.generation=Number(generation);
     return true;
