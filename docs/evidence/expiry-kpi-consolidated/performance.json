@@ -1,0 +1,13 @@
+{
+  "single": {
+    "feedbackMs": 0.39999999990686774,
+    "feedbackFrameMs": 90.10000000009313,
+    "tableMs": 363.30000000004657,
+    "newReads": 0
+  },
+  "double": {
+    "tableMs": 7.2000000001862645,
+    "newReads": 0
+  },
+  "environment": "Headless Chromium, isolated 73-row fixture, mocked HTTP; single includes 350ms gesture decision"
+}

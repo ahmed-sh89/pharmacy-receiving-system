@@ -1,3 +1,7 @@
+# 2026-10-26 — Consolidated Inventory KPIs (Staging only)
+
+Added All Items ahead of the seven rolling date buckets; restored single-replace/double-add behavior with one gesture coordinator and safe complete-read projections. All exports now share canonical filtered membership, superseding full-active Excel. Consolidated exact palette/4px borders, unchanged 18px full-number layout and row interaction highlighting. No Production or DB changes. Status READY FOR PRODUCT OWNER VERIFICATION. See [release evidence](docs/expiry-kpi-consolidated-20261026.md) for measured latency, 79 PASS/3 baseline failures and native read checks.
+
 # 2026-10-22 — Authorized Production Quick Add release
 
 Accepted source: `7510cbcdb73a9f2a53d2b615db858e3036f91ffe`. Selective runtime promotion on Production baseline `4b3fe2e03d438ba5d462d5eabae0a6446884e125`; Production Supabase configuration preserved. Quick Add, Group display/style, V2 metrics and selected-item UX only. No Expiry/Handheld source changes.

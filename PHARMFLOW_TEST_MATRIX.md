@@ -1,3 +1,14 @@
+# 2026-10-26 — Eight-KPI Staging verification
+
+- PASS: All Items default/full totals; single replace; double-add up to seven; deterministic duplicate selection; X/All/reset and rapid gesture safety; independent Search/Group/manual-month intersections; partial-data fallback and stale-response rejection.
+- PASS: Excel/PDF/Print identical filtered membership across pages, unchanged columns/formatting paths; native authorized Stage query/export 46 records/246 units; filtered query/export equality; cross-pharmacy denial.
+- PASS: eight-card order/palette/4px borders, matching date badges, row hover/menu/dialog context, full values through 12,500,000 with unchanged 18px typography at 75/80/100% equivalent zoom; internal strip scrolling; Scan & Activity baseline pixels.
+- PASS: focused combined tests 79; Preview production-mode build, syntax and diff. Three known Group-label failures reproduce on starting SHA; see release evidence.
+- MEASURED: cached selected-state DOM <1ms, tested post-paint frame <100ms; additive filter ~6–8ms, zero new RPCs. Single completion ~360ms includes one 350ms gesture window; 200ms total goal not met.
+- NOT USER VERIFIED: authenticated Preview browser UI, physical Windows Chrome zoom/performance and live multi-PC timing. No Production writes, accounts, permission changes or migrations.
+
+Evidence: [consolidated release record](docs/expiry-kpi-consolidated-20261026.md). Status READY FOR PRODUCT OWNER VERIFICATION, not DONE.
+
 # B10 Clean17 Test Matrix
 
 ## 2026-10-11 Final Expiry candidate — Staging Preview

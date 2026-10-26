@@ -1,10 +1,14 @@
-# 2026-10-26 — Monthly Inventory KPIs / Staging only (Phase B)
+# 2026-10-26 — Consolidated eight-KPI Inventory / Staging only
 
-Production Phase A deployed and served assets verified: `ca7d575066af3f82c849511718aa113f58c377cd`. Prior navigation recovery USER VERIFIED PASS; actual Expiry Sleep/resume acceptance remains READY FOR USER VERIFICATION. Overall sleep recovery is not DONE.
+Starting Staging SHA: `4749d1727d087719f622da1ea54d5ca3eb9a0969`. Branch: `feature/expiry-monthly-kpi-staging-20261026`; Vercel project `pharmflow-test`, Preview only; Supabase `tovkcakucyagvbzvlnks`. Final commit identity and Preview URL are verified against deployment metadata in the delivery report.
 
-This branch: `feature/expiry-monthly-kpi-staging-20261026`. Seven exclusive monthly Inventory cards, OR selection and matching date colors. Staging Supabase only: `tovkcakucyagvbzvlnks`. Build rejects Production/main. [Implementation and evidence](docs/staging-monthly-kpi-20261026.md). No database or operational-data changes.
+Implemented All Items + seven date buckets, centralized single/double-click selection, complete authorized read projection (250 rows/30s maximum), common filtered Excel/PDF/Print membership, exact palette/4px borders, unchanged 18px full numbers with horizontal strip scrolling, and row hover/edit context. [Root causes, evidence and limitations](docs/expiry-kpi-consolidated-20261026.md).
 
-Exact next action: verify isolated Vercel Preview publication/config, then Product Owner visual verification. NOT DEPLOYED TO PRODUCTION. No merge or Production KPI promotion without new explicit approval. Preserve Phase A, all approved captures, scanner behavior, filter/export contracts and Handheld design. Earlier entries below are historical.
+Status READY FOR PRODUCT OWNER VERIFICATION — not DONE. 79 focused tests PASS; three unchanged baseline Group-label failures documented. Chromium interaction, large-number/zoom fixtures and build PASS; native Staging authorization/read checks PASS. Actual authenticated Preview UI and Windows zoom/performance acceptance remain pending. Single-click completion includes a 350ms gesture decision and does not meet the 200ms total target; additive cached filtering is under 10ms in the fixture.
+
+Production remains `ca7d575066af3f82c849511718aa113f58c377cd`, untouched by this work. Sleep/Wake source is unchanged; Product Owner reported no red notice and used Expiry's internal Refresh, not Chrome reload. Do not infer full automatic Sleep/Wake acceptance or reopen that work here.
+
+Exact next action: Product Owner verifies eight-card selection, filtered exports, palette and full-number display on the isolated Preview. No Production promotion without new explicit approval. No migrations or operational-data changes. Earlier records below are historical.
 
 ---
 
