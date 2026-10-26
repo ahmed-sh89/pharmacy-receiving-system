@@ -156,23 +156,15 @@
   }
   let kpiClick=null, exportNoticeTimer=null, exportGeneration=0;
   function cancelKpiClick(){if(kpiClick)clearTimeout(kpiClick.timer);kpiClick=null;}
-  function applyKpiSelection(key,add){
+  function applyKpiSelection(key){
     if(!summaryDisjoint||mode!=='INVENTORY'||resolved)return;
     const p=periods.find(p=>p.key===key);if(!p)return;
-    if(!add){filters.months=[];delete filters.expiredThrough;delete filters.excludedMonths;delete filters.kpiMonths;delete filters.kpiExpired;expandedYears.clear();}
-    if(monthFilters.state(filters,p)!=='true')monthFilters.toggle(filters,p);
+    monthFilters.toggle(filters,p);
     const reveal=p.from==null?page.months.filter(m=>monthFilters.number(m)<=p.to):monthFilters.months(p);
     reveal.forEach(m=>expandedYears.add(m.slice(0,4)));expandedSections.add('months');
     closeInventoryMenus();sort='EXPIRY';offset=0;selected.clear();++requestVersion;void refresh();
   }
-  function queueKpiSelection(key,detail){
-    if(!summaryDisjoint)return;
-    // Wait once before replacing. A second click adds directly to the untouched selection.
-    if(kpiClick?.key===key){cancelKpiClick();applyKpiSelection(key,true);return;}
-    if(kpiClick){const previous=kpiClick.key;cancelKpiClick();applyKpiSelection(previous,false);}
-    if(detail===0){applyKpiSelection(key,false);return;}
-    const pending={key,timer:setTimeout(()=>{if(kpiClick!==pending)return;kpiClick=null;applyKpiSelection(key,false);},260)};kpiClick=pending;
-  }
+  function queueKpiSelection(key){cancelKpiClick();applyKpiSelection(key);}
   function clearExportNotice(){++exportGeneration;clearTimeout(exportNoticeTimer);const node=el('expiryExportStatus');if(node){node.hidden=true;node.replaceChildren();}}
   function exportNotice(message,error=false,transient=true){
     clearTimeout(exportNoticeTimer);const node=el('expiryExportStatus');if(!node)return;
@@ -195,7 +187,7 @@
           .map(
             (p) =>
               '<button type="button" class="expiryKpiCard ' +
-              ({ EXPIRED: "expiryKpiExpired", NEXT1: "expiryKpiNextMonth", NEXT2: "expiryKpiNextTwo", NEXT6: "expiryKpiNextSix" }[p.key] || "") +
+              ("expiryKpiMonthly"+(p.key==="EXPIRED"?0:Number(p.key.slice(4)))) +
               '" data-period="' +
               p.key +
               '" '+(summaryDisjoint?'':'disabled')+'><span class="expiryKpiHeading"><span class="expiryKpiLabel">' +
@@ -227,7 +219,7 @@
       window.ExpiryTopMotion?.sync(el('zebraExpiryShell'));
       return;
     }
-    // Inventory keeps its independent four-card period model. Scan uses a compact header.
+    // Inventory keeps its independent rolling month model. Scan uses a compact header.
     root.hidden = true;
     const rows = currentRows(), summary = el("expirySessionSummary");
     if (summary) {
@@ -383,7 +375,7 @@
       const input=d?.querySelector('input');input?.focus();input?.select?.();
     }
   }
-  function expiryPeriodClass(r){const n=r.expiry_year*12+r.expiry_month,p=monthFilters.buckets(periods[0]?.to).find(p=>(p.from==null||n>=p.from)&&n<=p.to);return ({EXPIRED:'rose',NEXT1:'amber',NEXT2:'lavender',NEXT6:'teal'})[p?.key]||'neutral';}
+  function expiryPeriodClass(r){const n=r.expiry_year*12+r.expiry_month,p=monthFilters.buckets(periods[0]?.to).find(p=>(p.from==null||n>=p.from)&&n<=p.to);return p?'monthly-'+(p.key==='EXPIRED'?0:Number(p.key.slice(4))):'neutral';}
   function render() {
     if(floatingMenu)closeInventoryMenus();
     renderedView = mode + "/" + resolved;

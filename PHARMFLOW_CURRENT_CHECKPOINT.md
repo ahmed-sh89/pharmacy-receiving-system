@@ -1,10 +1,10 @@
-# 2026-10-26 — Expiry resume recovery (Phase A)
+# 2026-10-26 — Monthly Inventory KPIs / Staging only (Phase B)
 
-Production baseline/rollback: `e452f22e372ad94607ab73cc2c05efb47056bce9`. Product Owner verification: navigation recovery PASS; Expiry workspace recovery FAILED on that baseline. Overall Sleep/wake is NOT DONE.
+Production Phase A deployed and served assets verified: `ca7d575066af3f82c849511718aa113f58c377cd`. Prior navigation recovery USER VERIFIED PASS; actual Expiry Sleep/resume acceptance remains READY FOR USER VERIFICATION. Overall sleep recovery is not DONE.
 
-Focused Desktop recovery hotfix prepared and tested: [Phase A evidence](docs/expiry-resume-hotfix-20261026.md). Status READY FOR USER VERIFICATION after conditional publication and served-version verification. Preserve the selected Expiry view, filters, scanner input, quantities and correction journals; no database or role changes.
+This branch: `feature/expiry-monthly-kpi-staging-20261026`. Seven exclusive monthly Inventory cards, OR selection and matching date colors. Staging Supabase only: `tovkcakucyagvbzvlnks`. Build rejects Production/main. [Implementation and evidence](docs/staging-monthly-kpi-20261026.md). No database or operational-data changes.
 
-Exact next actions: verify Phase A Production publication, then develop monthly Inventory KPIs on a separate Staging-only Preview branch. Do not merge that KPI work into Production. Physical Sleep/wake with Scan & Activity and Inventory remains pending Product Owner acceptance. Earlier records below are historical.
+Exact next action: verify isolated Vercel Preview publication/config, then Product Owner visual verification. NOT DEPLOYED TO PRODUCTION. No merge or Production KPI promotion without new explicit approval. Preserve Phase A, all approved captures, scanner behavior, filter/export contracts and Handheld design. Earlier entries below are historical.
 
 ---
 

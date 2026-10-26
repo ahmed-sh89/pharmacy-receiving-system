@@ -46,9 +46,9 @@ function productionAuthorizationRelease(){
     name:'production-authorization-release',
     configResolved(config){
       if(config.command==='build' && process.env.VERCEL &&
-          (process.env.VERCEL_ENV!=='production' ||
-           process.env.VERCEL_GIT_COMMIT_REF!=='main')){
-        throw new Error('Production release requires main and Production configuration');
+          (process.env.VERCEL_ENV!=='preview' ||
+           process.env.VERCEL_GIT_COMMIT_REF!=='feature/expiry-monthly-kpi-staging-20261026')){
+        throw new Error('Monthly KPI build requires its approved Staging Preview branch');
       }
     },
     transformIndexHtml(html){
@@ -57,7 +57,7 @@ function productionAuthorizationRelease(){
     closeBundle(){
       writeFileSync(resolve('dist/version.json'),JSON.stringify({
         sha:process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization',
-        environment:'production',supabaseRef:'zznoshzcyxmtwfbznjyr'
+        environment:'staging-preview',supabaseRef:'tovkcakucyagvbzvlnks'
       }));
     }
   };
