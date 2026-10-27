@@ -1,0 +1,43 @@
+name: SEC003 isolated release checks
+
+on:
+  push:
+    branches: ['security/sec003-release-protection-rehearsal-20261027']
+  pull_request:
+    branches: ['security/sec003-release-protection-rehearsal-20261027']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sec003-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-checks:
+    name: SEC003 isolated checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Install locked tooling without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Isolated regression fixtures (no live accounts or database)
+        run: >-
+          node --test
+          tests/receiving-consolidation-review.test.cjs
+          tests/order-import-authority.test.cjs
+          tests/active-orders-authority.test.cjs
+          tests/handheld-assignment-delta.test.cjs
+          tests/auth-request-timeout.test.cjs
+          tests/expiry-operation.test.cjs
+          tests/sec001-excel-security.test.cjs
+      - name: Build only (no deployment or artifact upload)
+        run: npm run build
+      - name: Inspect built security invariants
+        run: node scripts/sec003-release-check.cjs

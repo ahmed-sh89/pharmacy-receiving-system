@@ -125,3 +125,8 @@ See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case stat
 - [x] Desktop candidate browser: Resolve Now -> existing item, code/name lookup, original barcode, required-field validation, existing-code conflict retains Pending, Save for Review -> Create & Resolve, inventory rows and preserved old identifier. 1363x936 viewport.
 - [x] Handheld mode rendered existing scan/photo/save actions without Resolve Now; source and automated capture/photo regression verified.
 - [ ] Physical TC26 scan/camera/throughput and native Handheld/1366x768 viewports remain Product Owner acceptance; desktop-sized emulation is not device verification.
+
+
+## 2026-10-27 — SEC-003 disposable release-check preparation
+
+PARTIALLY VERIFIED, not DONE. Disposable branch security/sec003-release-protection-rehearsal-20261027 from6da2af6b. Prepared read-only isolated checks, build/artifact gate and exact-branch Vercel deployment opt-out; existing Production deployment workflow unchanged. Local84 tests passed,2 optional private supplier cases skipped; build and targeted invariants passed. No protection activated; direct-push rejection/failed-check merge blocking/reviewed merge/operational rollback NOT verified. Administration API403 and no protection-write tool; no proven public-repository plan blocker. See docs/security/SEC003_ISOLATED_RELEASE_PROTECTION.md. SEC-004 authenticated acceptance remains BLOCKED, preserve33f19f67; EXPIRY-SAVE-001 OPEN, no data correction. No Production, Supabase, alias, credential or operational-data changes.
