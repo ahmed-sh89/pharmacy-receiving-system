@@ -56,7 +56,7 @@ function projectRows({orders,totals,history=[]},order){
 const order="TO-000514312";
 const key=(code,number=order)=>`${number}||${code}`;
 
-test("original uploaded lines retain source order and quantities while allocating once",()=>{
+test("operational rows consolidate original lines while retaining first appearance order",()=>{
     const source=[
         {itemCode:"1013429",itemName:"Maxim 400 Mg 7 Tab",orderedQty:120},
         {itemCode:"1013428",itemName:"Maxim 400 Mg 5 Tab",orderedQty:30},
@@ -64,13 +64,13 @@ test("original uploaded lines retain source order and quantities while allocatin
         {itemCode:"1013428",itemName:"Maxim 400 Mg 5 Tab",orderedQty:21}
     ];
     const rows=projectRows({orders:{[order]:source},totals:{[key("1013429")]:144,[key("1013428")]:40}},order);
-    assert.deepEqual(rows.map(row=>row["Item Number"]),source.map(row=>row.itemCode));
-    assert.deepEqual(rows.map(row=>row["Ordered Qty"]),[120,30,84,21]);
-    assert.deepEqual(rows.map(row=>row["Received Qty"]),[120,30,24,10]);
+    assert.deepEqual(Array.from(rows,row=>row["Item Number"]),["1013429","1013428"]);
+    assert.deepEqual(Array.from(rows,row=>row["Ordered Qty"]),[204,51]);
+    assert.deepEqual(Array.from(rows,row=>row["Received Qty"]),[144,40]);
     assert.equal(rows.filter(row=>row["Item Number"]==="1013429").reduce((sum,row)=>sum+row["Received Qty"],0),144);
 });
 
-test("receiving report builder returns the allocated source-line totals",()=>{
+test("receiving report builder returns consolidated order totals",()=>{
     const source=[{itemCode:"1013429",orderedQty:120},{itemCode:"1013429",orderedQty:84}];
     const context=reportContext({orders:{[order]:source},totals:{[key("1013429")]:204}});
     context.getSelectedReceivingOrderNumbers=()=>[order];
@@ -79,7 +79,7 @@ test("receiving report builder returns the allocated source-line totals",()=>{
     vm.runInNewContext(extractFunction(reportSource,"getPerOrderReceivingRows"),context);
     vm.runInNewContext(extractFunction(reportSource,"buildMultiOrderReceivingReport"),context);
     const report=context.buildMultiOrderReceivingReport();
-    assert.deepEqual(Array.from(report.rows,row=>row["Received Qty"]),[120,84]);
+    assert.deepEqual(Array.from(report.rows,row=>row["Received Qty"]),[204]);
     assert.equal(report.rows.reduce((sum,row)=>sum+row["Received Qty"],0),204);
     assert.deepEqual(Array.from(report.orderGroups,group=>group.orderNumber),[order]);
 });
@@ -93,8 +93,8 @@ test("one, two, and three duplicate lines receive only the single order total",(
         const total=source.length===1?3:8;
         const rows=projectRows({orders:{[order]:source},totals:{[key("A")]:total}},order);
         assert.equal(rows.reduce((sum,row)=>sum+row["Received Qty"],0),total);
-        const expected=source.length===1?[3]:source.length===2?[5,3]:[5,3,0];
-        assert.deepEqual(rows.map(row=>row["Received Qty"]),expected);
+        const expected=[total];
+        assert.deepEqual(Array.from(rows,row=>row["Received Qty"]),expected);
     }
 });
 
@@ -109,8 +109,8 @@ test("identical item codes in different Orders remain separately attributed",()=
     };
     const first=projectRows(data,order);
     const second=projectRows(data,other);
-    assert.deepEqual(first.map(row=>row["Received Qty"]),[3,3]);
-    assert.deepEqual(second.map(row=>row["Received Qty"]),[4]);
+    assert.deepEqual(Array.from(first,row=>row["Received Qty"]),[6]);
+    assert.deepEqual(Array.from(second,row=>row["Received Qty"]),[4]);
     assert.equal(first.reduce((sum,row)=>sum+row["Received Qty"],0),6);
     assert.equal(second.reduce((sum,row)=>sum+row["Received Qty"],0),4);
 });
@@ -131,13 +131,14 @@ test("120 + 84 allocations reconcile at each boundary, correction, and overage",
         assert.equal(Math.max(0,actual[0]+actual[1]-204),Math.max(0,total-204));
     }
     const completed=projectRows({orders:{[order]:source},totals:{[key("1013429")]:204}},order);
-    assert.deepEqual(completed.map(row=>row["Issue Type"]),["Received","Received"]);
+    assert.deepEqual(Array.from(completed,row=>row["Issue Type"]),["Received"]);
 });
 
 test("adjustment handlers emit exactly one signed delta for a duplicated item group",()=>{
     const item={itemCode:"1013429",itemName:"Maxim 400 Mg 7 Tab",orderedQty:204,receivedQty:144,orderNumbers:[order]};
     const transactions=[];
     const context={
+        window:{},
         AppState:{settings:{allowOverReceiving:true},session:{deviceId:"test-device"}},
         ReceivingEngine:{adjustmentSources:{increase:"MANUAL_INCREASE",decrease:"MANUAL_DECREASE"}},
         toNumber:(value,fallback=0)=>Number.isFinite(Number(value))?Number(value):fallback,
@@ -168,5 +169,5 @@ test("adjustment handlers emit exactly one signed delta for a duplicated item gr
 });
 
 test("the active HTML entry cache-busts the corrected report source",()=>{
-    assert.match(indexSource,/<script src="js\/reports\.js\?v=GROUP_INTEGRITY_20261017_1"><\/script>/);
+    assert.match(indexSource,/<script src="js\/reports\.js\?v=RECEIVING_CONSOLIDATION_20261026"><\/script>/);
 });

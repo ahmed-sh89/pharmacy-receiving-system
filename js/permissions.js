@@ -117,6 +117,10 @@ window.PharmFlowPermissions = (() => {
   document.querySelectorAll('[data-page]').forEach(el=>{const mod=routeModule(el.dataset.page);if(mod){el.classList.toggle('permissionHidden',!allowed(mod));}});
   for(const id of ['btnZebraReceivingMode','btnZebraExpiryMode'])document.getElementById(id)?.classList.toggle('permissionHidden',!allowed(id.includes('Expiry')?'EXPIRY':'RECEIVING'));
   document.querySelectorAll(Object.values(controls).join(',')+',#btnResolveExpiryNow,[data-resolve],[data-confirm-resolution]').forEach(el=>{
+   // A native file picker can return while focus has started revalidation.
+   // Keep its previously enabled input alive so the selection is delivered;
+   // the importer awaits the current check and re-authorizes before any work.
+   if(el.matches('#orderFileInput[type="file"]') && phase==='loading' && !el.dataset.permissionBlocked)return;
    const denied=!permitted(elementRule(el));
    if(denied && !el.dataset.permissionBlocked){el.dataset.permissionBlocked='1';el.dataset.permissionWasDisabled=String(el.disabled);}
    if(denied){el.disabled=true;el.setAttribute('aria-disabled','true');}
@@ -136,6 +140,10 @@ window.PharmFlowPermissions = (() => {
  function bind(){
   new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
   for(const type of ['click','submit','keydown','input','change'])document.addEventListener(type,event=>{
+   // Receiving a selection is not permission to import. Do not silently eat
+   // this async input: its handler retains the File objects and fails closed
+   // after whenReady()/require(), including readonly, logout or scope changes.
+   if((type==='input'||type==='change') && event.target?.matches?.('#orderFileInput[type="file"]'))return;
    const r=elementRule(event.target);if(!permitted(r)){event.preventDefault();event.stopImmediatePropagation();if(type==='click')window.showToast?.('Read Only or Disabled: this action is not permitted','warning');}
   },true);
   apply();

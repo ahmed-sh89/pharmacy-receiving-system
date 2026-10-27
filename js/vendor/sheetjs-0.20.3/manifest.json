@@ -1,0 +1,11 @@
+{
+  "name": "SheetJS Community Edition",
+  "version": "0.20.3",
+  "source": "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js",
+  "archive_source": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+  "sha256": "cc015130aa8521e7f088f88898eba949ccdcbfb38df0bd129b44b7273c3a6f41",
+  "integrity": "sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT",
+  "bytes": 951904,
+  "license": "Apache-2.0",
+  "modified": false
+}

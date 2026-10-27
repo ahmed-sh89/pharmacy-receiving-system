@@ -1218,27 +1218,20 @@ function getPerOrderReceivingRows(orderNumber, options={}){
         return toSafeString(row?.group_name||row?.groupName||row?.Group||fallback?.group_name||fallback?.groupName||fallback?.Group||"").trim();
     };
 
-    const sourceIndexesByCode=new Map();
-    source.forEach((row,index)=>{
+    // Immutable uploaded lines remain in orderFiles/source snapshots. Operational
+    // identity is the current pharmacy + this Order + normalized Item Code.
+    const byCode=new Map();
+    source.forEach(row=>{
         const code=normalizeItemCode(row?.itemCode||"");
-        if(!sourceIndexesByCode.has(code)) sourceIndexesByCode.set(code,[]);
-        sourceIndexesByCode.get(code).push(index);
+        if(!code) return;
+        if(!byCode.has(code)) byCode.set(code,{...row,itemCode:code,orderedQty:0});
+        const item=byCode.get(code);
+        item.orderedQty+=toNumber(row.orderedQty,0);
+        if(!item.itemName && row.itemName) item.itemName=row.itemName;
     });
-    const allocationByIndex=new Array(source.length).fill(0);
-    for(const [code,indexes] of sourceIndexesByCode){
-        const codeRows=indexes.map(index=>source[index]);
-        const codeAllocations=allocateReceivedQuantityAcrossOrderLines(
-            codeRows,
-            receivedMap.get(normalized+"||"+code)
-        );
-        indexes.forEach((sourceIndex,allocationIndex)=>{
-            allocationByIndex[sourceIndex]=codeAllocations[allocationIndex];
-        });
-    }
-
-    const rows=source.map((row,lineIndex)=>{
-        const code=normalizeItemCode(row.itemCode||"");
-        const received=toNumber(allocationByIndex[lineIndex],0);
+    const rows=Array.from(byCode.values(),row=>{
+        const code=normalizeItemCode(row.itemCode);
+        const received=toNumber(receivedMap.get(normalized+"||"+code),0);
         const ordered=toNumber(row.orderedQty,0);
         const difference=received-ordered;
 
@@ -1495,16 +1488,21 @@ function getLiveReceivingItemStatus(item){
 }
 
 function buildLiveReceivingReport(options={}){
-    const allSourceItems=Array.isArray(options.items)
-        ? options.items
-        : (Array.isArray(AppState?.workspace?.orderData) ? AppState.workspace.orderData : []);
+    const receivedMap=buildReceivedQuantityByOrder();
+    const selectedOrders=getSelectedReceivingOrderNumbers();
+    const scopedItems=selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap}).map(row=>({
+        orderNumber:order,itemCode:row["Item Number"],itemName:row["Item Name"],
+        orderedQty:row["Ordered Qty"],receivedQty:row["Received Qty"],
+        group_name:row.Group,category:row.Category,sub_category:row["Sub Category"],manual:row.issueKey==="manual"
+    })));
+    const allSourceItems=Array.isArray(options.items)?options.items:scopedItems;
     const sourceItems=options.classification && window.PharmFlowClassificationFilters
         ? window.PharmFlowClassificationFilters.filter(allSourceItems,options.classification)
         : allSourceItems;
 
     const orderMetadata=
         typeof getReceivingOrderMetadata==="function"
-            ? getReceivingOrderMetadata()
+            ? getReceivingOrderMetadata().filter(meta=>selectedOrders.includes(normalizeOrderNumber(meta.orderNumber)))
             : [];
 
     const rows=sourceItems.map(item=>{
@@ -1514,6 +1512,8 @@ function buildLiveReceivingReport(options={}){
         const status=getLiveReceivingItemStatus(item);
 
         return {
+            orderNumber:item.orderNumber||"",
+            "Order Number":item.orderNumber||"",
             "Item Number":item?.itemCode||"",
             "Item Name":item?.itemName||"",
             "Ordered Qty":ordered,
@@ -1689,7 +1689,7 @@ td.num{text-align:center}
  <div><span>REQUIRES REVIEW</span><strong>${live.counts?.requiresReview||0}</strong></div>
 </div>
 <table>
-<thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Difference</th><th>Status</th></tr></thead>
+<thead><tr><th>Order Number</th><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Difference</th><th>Status</th></tr></thead>
 <tbody>
 ${(live.rows||[]).map(row=>{
     const status=String(row.Status||"");
@@ -1699,6 +1699,7 @@ ${(live.rows||[]).map(row=>{
               status==="OVER RECEIVED"?"over":"unordered";
     const diff=Number(row["Difference"]||0);
     return `<tr>
+      <td>${esc(row.orderNumber||row["Order Number"]||"")}</td>
       <td>${esc(row["Item Number"])}</td>
       <td>${esc(row["Item Name"])}</td>
       <td class="num">${row["Ordered Qty"]}</td>
@@ -1888,12 +1889,12 @@ function exportReceivingSummaryExcel(){
     (s.orders||[]).forEach(o=>aoa.push([o.orderNumber,o.orderDate,o.fromWarehouse,o.toWarehouse,o.sourceFile]));
     aoa.push([]);
     const headerRow=aoa.length+1;
-    aoa.push(["Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Group"]);
-    s.rows.forEach(r=>aoa.push([r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""]));
+    aoa.push(["Order Number","Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Group"]);
+    s.rows.forEach(r=>aoa.push([r.orderNumber||"",r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""]));
     const ws=XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"]=[{wch:18},{wch:44},{wch:13},{wch:13},{wch:12},{wch:25},{wch:22}];
+    ws["!cols"]=[{wch:20},{wch:18},{wch:44},{wch:13},{wch:13},{wch:12},{wch:25},{wch:22}];
     ws["!freeze"]={xSplit:0,ySplit:headerRow};
-    ws["!autofilter"]={ref:`A${headerRow}:G${aoa.length}`};
+    ws["!autofilter"]={ref:`A${headerRow}:H${aoa.length}`};
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,"Receiving View");
     XLSX.writeFile(wb,getReceivingReportFileBase(s)+".xlsx");
@@ -1909,13 +1910,14 @@ function exportReceivingSummaryPDF(){
     const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
     const margin=32;
     const cols=[
-        {key:"Item Number",label:"Item Number",x:32,w:82},
-        {key:"Item Name",label:"Item Name",x:114,w:272},
-        {key:"Ordered Qty",label:"Ordered",x:386,w:68},
-        {key:"Received Qty",label:"Received",x:454,w:68},
-        {key:"Difference",label:"Difference",x:522,w:68},
-        {key:"Issue Type",label:"Issue Type",x:590,w:150},
-        {key:"Group",label:"Group",x:740,w:68}
+        {key:"orderNumber",label:"Order Number",x:32,w:90},
+        {key:"Item Number",label:"Item Number",x:122,w:75},
+        {key:"Item Name",label:"Item Name",x:197,w:220},
+        {key:"Ordered Qty",label:"Ordered",x:417,w:55},
+        {key:"Received Qty",label:"Received",x:472,w:55},
+        {key:"Difference",label:"Difference",x:527,w:55},
+        {key:"Issue Type",label:"Issue Type",x:582,w:145},
+        {key:"Group",label:"Group",x:727,w:81}
     ];
     const rowH=24;
     let y=0,pageNo=0;
@@ -1956,15 +1958,16 @@ function exportReceivingSummaryPDF(){
     s.rows.forEach((r)=>{
         if(y+rowH>pageH-38){footer();doc.addPage();header();}
         doc.setFont("helvetica","normal");doc.setFontSize(8);
-        const nameLines=doc.splitTextToSize(String(r["Item Name"]||""),cols[1].w-8).slice(0,2);
-        const catLines=doc.splitTextToSize(String(r.Group||""),cols[6].w-4).slice(0,2);
-        doc.text(String(r["Item Number"]||""),cols[0].x,y);
-        doc.text(nameLines,cols[1].x,y);
-        doc.text(String(r["Ordered Qty"]),cols[2].x,y);
-        doc.text(String(r["Received Qty"]),cols[3].x,y);
-        doc.text((r.Difference>0?"+":"")+String(r.Difference),cols[4].x,y);
-        doc.setFont("helvetica","bold");doc.text(String(r["Issue Type"]),cols[5].x,y);
-        doc.setFont("helvetica","normal");doc.text(catLines,cols[6].x,y);
+        const nameLines=doc.splitTextToSize(String(r["Item Name"]||""),cols[2].w-8).slice(0,2);
+        const catLines=doc.splitTextToSize(String(r.Group||""),cols[7].w-4).slice(0,2);
+        doc.text(String(r.orderNumber||""),cols[0].x,y);
+        doc.text(String(r["Item Number"]||""),cols[1].x,y);
+        doc.text(nameLines,cols[2].x,y);
+        doc.text(String(r["Ordered Qty"]),cols[3].x,y);
+        doc.text(String(r["Received Qty"]),cols[4].x,y);
+        doc.text((r.Difference>0?"+":"")+String(r.Difference),cols[5].x,y);
+        doc.setFont("helvetica","bold");doc.text(String(r["Issue Type"]),cols[6].x,y);
+        doc.setFont("helvetica","normal");doc.text(catLines,cols[7].x,y);
         doc.setDrawColor(225);doc.line(margin,y+15,pageW-margin,y+15);
         y+=rowH;
     });

@@ -89,8 +89,12 @@ test("persisted bad head recovers without losing or duplicating later accepted t
     assert.equal(rows.some(row=>row.transactionId==="bad"),false);
     assert.deepEqual(rows.map(row=>[row.transactionId,row.state]),[["good-1","awaitingConfirmation"],["good-2","awaitingConfirmation"]]);
     assert.deepEqual(rearms,["ready","receiving-queue-recovery"]);
+    context.AppState.workspace.receivingHistory.find(tx=>tx.transactionId==="good-1").cloudSynced=true;
     await handlers.get("receiving:cloud-confirmed")({transactionId:"good-1"});
+    await context.window.PharmFlowReceivingScanQueue.resume();
+    context.AppState.workspace.receivingHistory.find(tx=>tx.transactionId==="good-2").cloudSynced=true;
     await handlers.get("receiving:cloud-confirmed")({transactionId:"good-2"});
+    await context.window.PharmFlowReceivingScanQueue.resume();
     assert.deepEqual(rows,[]);
     assert.deepEqual(received,["good-1","good-2"]);
 });

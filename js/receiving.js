@@ -123,7 +123,10 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
             return showKnownItemOutsideHandheldScope(current.item);
         }
 
-        return receiveOrderItem({
+        const plan=buildReceivingAutoAllocationPlan(current.item,getValidReceivingQuantity(parsed.quantity));
+        if(typeof queueOptions.beforeReceive==="function") await queueOptions.beforeReceive(plan);
+        return receiveAutoAllocatedItem({
+            plan,
             item:current.item,
             quantity:getValidReceivingQuantity(parsed.quantity),
             transactionId:queueOptions.transactionId||null,
@@ -243,9 +246,9 @@ function getReceivingEligibleOrders(item){
     return memberships.filter(order=>selected.includes(order));
 }
 
-function getReceivingOrderRow(item,orderNumber){
+function getReceivingOrderRow(item,orderNumber,projection={}){
     if(!item || !orderNumber || typeof getPerOrderReceivingRows!=="function") return null;
-    return getPerOrderReceivingRows(orderNumber).find(
+    return getPerOrderReceivingRows(orderNumber,projection).find(
         row=>normalizeItemCode(row?.["Item Number"]||"")===normalizeItemCode(item.itemCode||"")
     )||null;
 }
@@ -270,22 +273,25 @@ function getReceivingDisplayMetrics(item,orderNumber){
     return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
 }
 
-function getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers=null){
+function getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers=null,projection={}){
     const captured=Array.isArray(workScopeOrderNumbers)
         ? [...new Set(workScopeOrderNumbers.map(normalizeOrderNumber).filter(Boolean))]
         : getReceivingEligibleOrders(item);
     const memberships=[...new Set((item?.orderNumbers||[item?.orderNumber]).map(normalizeOrderNumber).filter(Boolean))];
-    return captured.filter(order=>memberships.includes(order)&&getReceivingOrderRow(item,order));
+    return captured.filter(order=>memberships.includes(order)&&getReceivingOrderRow(item,order,projection));
 }
 
 function buildReceivingAutoAllocationPlan(item,quantity,workScopeOrderNumbers=null,remainingState=null){
     let left=getValidReceivingQuantity(quantity);
-    const candidates=getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers);
+    // Reuse one ledger aggregate for this scan, regardless of Order count.
+    const projection=typeof buildReceivedQuantityByOrder==="function"
+        ? {receivedMap:buildReceivedQuantityByOrder()} : {};
+    const candidates=getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers,projection);
     if(!candidates.length) throw new Error("Item not found in active Orders.");
     const plan=[];
     for(const order of candidates){
         if(left<=0) break;
-        const row=getReceivingOrderRow(item,order);
+        const row=getReceivingOrderRow(item,order,projection);
         const key=normalizeOrderNumber(order);
         const currentRemaining=remainingState?.has(key)
             ? Math.max(0,toNumber(remainingState.get(key),0))
@@ -320,6 +326,14 @@ function receiveAutoAllocatedItem(options){
     const transactions=[];
     for(let index=0;index<plan.length;index++){
         const allocation=plan[index];
+        const transactionId=plan.length===1?baseId:`${baseId}:A${index+1}`;
+        const prior=(AppState?.workspace?.receivingHistory||[]).find(tx=>tx.transactionId===transactionId);
+        if(prior){
+            if(normalizeItemCode(prior.itemCode)!==normalizeItemCode(options.item.itemCode)||
+                normalizeOrderNumber(prior.selectedOrderNumber||prior.orderId||prior.orderNumber)!==allocation.orderNumber||
+                Number(prior.quantity)!==allocation.quantity||toSafeString(prior.gtin).trim()!==toSafeString(options.gtin).trim()) throw new Error("Existing review receipt differs. Refresh Receiving before retrying.");
+            transactions.push(prior);continue;
+        }
         const tx=receiveOrderItem({
             item:options.item,
             quantity:allocation.quantity,
@@ -330,6 +344,7 @@ function receiveAutoAllocatedItem(options){
             source:options.source||APP_CONFIG.transactionSources.scanner,
             manual:options.manual===true,
             targetOrder:allocation.orderNumber,
+            reviewScope:options.reviewScope,
             transactionId:plan.length===1?baseId:`${baseId}:A${index+1}`,
             identifierPreserveExact:options.identifierPreserveExact===true,
             gtinResolution:options.gtinResolution||null
@@ -1500,7 +1515,7 @@ function receiveOrderItem(options){
 
     let targetOrder="";
     try{
-        targetOrder=resolveReceivingTransactionOrder(item,options.targetOrder||"");
+        targetOrder=resolveReceivingTransactionOrder(item,options.targetOrder||"",options.reviewScope);
     }catch(error){
         handleReceivingFailure(error?.message||"Unable to determine target Order");
         return false;
@@ -1593,6 +1608,7 @@ function receiveOrderItem(options){
 
             targetOrder:
                 targetOrder,
+            reviewScope:options.reviewScope,
 
             gtinResolution:
                 options.gtinResolution||null,
@@ -1643,7 +1659,7 @@ function receiveOrderItem(options){
 ===================================================== */
 
 
-function resolveReceivingTransactionOrder(item,preferredOrder=""){
+function resolveReceivingTransactionOrder(item,preferredOrder="",reviewScope=null){
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
         ? getSelectedReceivingOrderNumbers()
         : [];
@@ -1654,6 +1670,11 @@ function resolveReceivingTransactionOrder(item,preferredOrder=""){
 
     if(preferred){
         if(eligible.includes(preferred)) return preferred;
+        // Only the deferred review path passes this after the authenticated
+        // server has accepted its captured-scope allocation intent.
+        if(Array.isArray(reviewScope) && reviewScope.length===1 &&
+            reviewScope[0]===preferred && memberships.includes(preferred) &&
+            getActiveReceivingOrderNumbers().includes(preferred)) return preferred;
         throw new Error("The original target Order is no longer selected. Restore its work scope before receiving.");
     }
     if(selectedOrders.length===1 && memberships.includes(selectedOrders[0])) return selectedOrders[0];
@@ -1682,7 +1703,7 @@ function createReceivingTransaction(options){
 
     const item=options.item;
     const transactionOrder=
-        resolveReceivingTransactionOrder(item,options.targetOrder||"");
+        resolveReceivingTransactionOrder(item,options.targetOrder||"",options.reviewScope);
 
     return addReceivingTransaction({
 
