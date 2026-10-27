@@ -1,0 +1,13 @@
+{
+  "owned_auth_identities_created": 6,
+  "owned_auth_identities_remaining": 0,
+  "owned_pharmacies_remaining": 0,
+  "owned_profiles_remaining": 0,
+  "owned_owner_roles_remaining": 0,
+  "owned_sessions_remaining": 0,
+  "runner_version": 12,
+  "runner_status": 410,
+  "verify_jwt": true,
+  "runner_privileged_capability_removed": true,
+  "platform_audit_logs_retained": true
+}
