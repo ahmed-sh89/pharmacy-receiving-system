@@ -1,0 +1,27 @@
+name: Security source candidate
+on:
+  push:
+    branches: ['security/source-hardening-staging-20261028']
+  pull_request:
+    branches: ['security/source-hardening-staging-20261028']
+permissions:
+  contents: read
+jobs:
+  source-checks:
+    name: Security source candidate checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # resolved official v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-fund --no-audit
+      - name: Focused offline security and Receiving fixtures
+        run: node --test tests/security-source-hardening.test.cjs tests/receiving-consolidation-review.test.cjs
+      - name: Advisory inventory
+        run: npm audit --package-lock-only --ignore-scripts --audit-level=low
+      - name: Build without deploying
+        run: npm run build

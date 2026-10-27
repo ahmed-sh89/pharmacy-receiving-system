@@ -152,3 +152,8 @@ RenameTotalItems, larger distinct metric values; remove scanning-purple emphasis
 - Added transactional authorized Global linking/creation plus existing pharmacy-local Expiry resolution; retained original capture, audit, identifier lists and retry identity.
 - Applied Staging migration 20261018185307_expiry_review_transactional_resolution_v2: six canonical Groups enforced on creation; seven Receiving mutators reject Expiry records. No role, policy, or operational-data migration.
 - SQL fixtures, live rollback-only SQL verification, UI fixtures and build pass. Full-suite historical failures are compared against ce877ddd, not treated as new failures. Browser/physical-device acceptance tracked separately.
+
+
+## 2026-10-28 — consolidated security source candidate
+
+Production NOT READY for security release; main6da2af6b unchanged. Branch security/source-hardening-staging-20261028 prepares SEC-008 patched lockfile (Vite8.2.4,nanoid3.3.20,source-map-js1.2.2; audit0), SEC-012 CI pins, SEC-005 active-script SRI and SEC-011 dormant CSV neutralization.17 focused tests/clean install/build/isolated browser SRI QR+PDF pass.4 additional existing Global/Expiry Group assertions also fail on untouched baseline; not hidden or repaired. No app Preview/alias/DB/Auth/Production change. Branch auto-Preview disabled; live stable URL remains unsafe for testing. SEC-002 BLOCKED; SEC-003 PARTIALLY VERIFIED; SEC-004 authenticated acceptance BLOCKED (prior16/401 evidence retained), Production legacyv3 still unpatched. Remaining findings stay OPEN/REQUIRES VERIFICATION; see docs/security/CONSOLIDATED_SECURITY_PROGRAM_20261028.md for all13 statuses, admin links, single acceptance checklist and separately authorized release plan. EXPIRY-SAVE-001 OPEN, no data correction.
