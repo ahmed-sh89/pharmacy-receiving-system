@@ -130,3 +130,8 @@ See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case stat
 ## 2026-10-27 — SEC-003 disposable release-check preparation
 
 PARTIALLY VERIFIED, not DONE. Disposable branch security/sec003-release-protection-rehearsal-20261027 from6da2af6b. Prepared read-only isolated checks, build/artifact gate and exact-branch Vercel deployment opt-out; existing Production deployment workflow unchanged. Local84 tests passed,2 optional private supplier cases skipped; build and targeted invariants passed. No protection activated; direct-push rejection/failed-check merge blocking/reviewed merge/operational rollback NOT verified. Administration API403 and no protection-write tool; no proven public-repository plan blocker. See docs/security/SEC003_ISOLATED_RELEASE_PROTECTION.md. SEC-004 authenticated acceptance remains BLOCKED, preserve33f19f67; EXPIRY-SAVE-001 OPEN, no data correction. No Production, Supabase, alias, credential or operational-data changes.
+
+
+### SEC-003 actual GitHub execution evidence
+
+Prepared commit9ff13da082cd601201776ffc6edee1b41a99acfd ran successfully on GitHub Actions, run40536385698/job122302666075 (27 October2026,18:59 Riyadh). Fresh locked install, isolated tests84 PASS/2 optional supplier skips, build and artifact checks all succeeded. Actual job token log: Contents read, Metadata read; no deployment/OIDC permissions. No Production secret references or environment requested. Vercel branch deployment listing returned zero records after the run. Disposable branch itself remains protected:false; no enforcement claim. Direct protected-push rejection, failed-check merge blocking, reviewed merge and protected rollback remain untested/blocked. Main remains6da2af6b.

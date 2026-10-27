@@ -45,3 +45,8 @@ EXPIRY-SAVE-001 OPEN: two physical units legitimate; no correction required. Stu
 ## Sources
 
 Original PHARMFLOW_SECURITY_FINDINGS_REGISTER.md SEC-003 and security continuation recommended order. GitHub live branch/rulesets/workflow reads. Official docs: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches ; https://docs.github.com/en/actions/tutorials/authenticate-with-github_token ; https://vercel.com/docs/project-configuration/git-configuration .
+
+
+### SEC-003 actual GitHub execution evidence
+
+Prepared commit9ff13da082cd601201776ffc6edee1b41a99acfd ran successfully on GitHub Actions, run40536385698/job122302666075 (27 October2026,18:59 Riyadh). Fresh locked install, isolated tests84 PASS/2 optional supplier skips, build and artifact checks all succeeded. Actual job token log: Contents read, Metadata read; no deployment/OIDC permissions. No Production secret references or environment requested. Vercel branch deployment listing returned zero records after the run. Disposable branch itself remains protected:false; no enforcement claim. Direct protected-push rejection, failed-check merge blocking, reviewed merge and protected rollback remain untested/blocked. Main remains6da2af6b.
