@@ -1,3 +1,11 @@
+# 2026-10-27 — SEC-004 Staging password endpoint parity
+
+READY FOR TEST — isolated automated handler verification passed; live disposable Staging account acceptance pending. Production unchanged at6da2af6b. Branch fix/sec004-password-parity-staging-20261027. Only legacy completion guard added, matching existing current handler: reject reuse of current temporary credential. Preserve bearer getUser, caller-only update, owner-only reset, must-change flag, length policy and sessions. No SQL migration, UI/Auth/RLS/settings changes. Staging legacy endpoint newly installed (previously absent), ACTIVE v1 verify_jwt:true, exact deployed source checked. Current Staging handler unchanged.16 Node handler tests PASS with synthetic isolated users/backends; not live Auth/password/session PASS. No Production credential/account testing. Required later release: disposable Staging account old-password refusal/new-password completion/login tests through both paths, then separate Production Edge deployment authorization; preserve v3 rollback source and verify_jwt.
+
+EXPIRY-SAVE-001 OPEN: two legitimate physical units25/27 October, no quantity correction; pending notification root cause unconfirmed, no Expiry changes. Product Owner preference for narrow direct Production hotfix only after sufficient verification remains recorded.
+
+---
+
 # 2026-10-27 — Production publication verified
 
 **DEPLOYED — READY FOR USER TEST.** Not USER VERIFIED or DONE.
