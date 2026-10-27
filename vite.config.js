@@ -47,7 +47,7 @@ function receivingStagingRelease(){
     configResolved(config){
       if(config.command==='build' && process.env.VERCEL &&
           (process.env.VERCEL_ENV!=='preview' ||
-           process.env.VERCEL_GIT_COMMIT_REF!=='fix/active-orders-instant-assignment-staging-20261027')){
+           process.env.VERCEL_GIT_COMMIT_REF!=='fix/handheld-assignment-stability-staging-20261027')){
         throw new Error('Receiving development requires the isolated Staging Preview branch');
       }
     },

@@ -1,3 +1,9 @@
+# 2026-10-27 — Staging per-order assignment stability and compact section
+
+Replace global assignment pending lock with confirmed/per-order pending projection, keyed controls and serialized fresh-authority delta persistence using existing v4/readback contracts. Keep unrelated rows enabled/blue; only touched rows show Saving. Select All verifies full desired scope, failures cannot falsely succeed. Compact two-column status rows/max176px scrolling. Preserve other sections, fast restoration, SEC-001/Worker/import/session/Receiving rules. 99 tests/three isolated Chromium scripts/build PASS; live acceptance pending. No Production/database changes. See `docs/handheld-assignment-stability-20261027.md`.
+
+---
+
 # 2026-10-27 — Staging Active Orders authority and instant assignment
 
 Focused correction on parent07eab468: compact loading/error/retry until current authoritative Manifest; shared scoped reads, cooldown after success only; current-scope response fencing. Direct checkbox/Select All saves through approved v4/readback contract, pending lock, confirmed success and authority rollback; synchronize existing controls on assignment-only events. Preserve Receiving/SEC-001/security/backend contracts. 90 Node tests/three isolated Chromium suites/build PASS. Live acceptance pending; READY FOR TEST. No Production/database/alias changes. See `docs/active-orders-instant-assignment-20261027.md`.

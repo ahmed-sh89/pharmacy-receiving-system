@@ -1,3 +1,13 @@
+# 2026-10-27 — Handheld assignment stability and compact UI (Staging)
+
+READY FOR TEST after exact Preview SHA/config/assets verification. Branch `fix/handheld-assignment-stability-staging-20261027`, parent `6e5ec0829b0e00eb36e638e9ee53900959b9b30d`. Staging Supabase`tovkcakucyagvbzvlnks` only. Production main remains`b618af9e0e55f30a616fd7e09eec9392ca6764c1`; no database/Auth/RLS/alias/Production changes.
+
+Product Owner confirms prior fast Active Orders refresh restoration, direct assignment/removal and post-save success PASS. Remaining global pending UI disabled every checkbox, making unrelated confirmed rows appear inactive during another save. Reuse Production's preserved controls and prepare-before-mutation authority pattern. New per-order confirmed/pending projection, keyed rows and serialized fresh-authority deltas keep unrelated states stable. Select All remains full bulk intent with complete readback; partial/failing responses cannot show success. Compact two-column list, explicit Assigned/Not Assigned/Saving icons/status, max176px vertical scrolling. Other Manage Orders sections unchanged.
+
+99 Node tests +three isolated Chromium scripts PASS, including continuous untouched-row DOM/color/checkbox monitoring, queued/failing/partial bulk state,18 count/zoom layouts, actual supplier/Worker race and Receiving regressions. Build/syntax/diff PASS; Production target rejected. No signed-in Staging session available; no live authenticated or physical-device PASS claimed. Details: `docs/handheld-assignment-stability-20261027.md`. Next: verify new Preview and Product Owner toggleB whileA assigned, reverse, Select All→refresh/second-session check. Preserve existing orders/quantities; READY FOR TEST until accepted.
+
+---
+
 # 2026-10-27 — Active Orders restoration and direct Handheld assignment (Staging)
 
 READY FOR TEST after exact Preview SHA/config/assets verification. Branch `fix/active-orders-instant-assignment-staging-20261027`, parent `07eab4683f1647601abeeee772c19d98992b5dd4`; Staging `tovkcakucyagvbzvlnks` only. Production main remains `b618af9e0e55f30a616fd7e09eec9392ca6764c1`. No migrations, Auth/RLS/alias changes or live operational mutations.

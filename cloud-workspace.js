@@ -920,7 +920,7 @@ window.serializeActiveOrderManifest=serializeActiveOrderManifest;
 /* Handheld assignment is authoritative Active Order Manifest state.
    Keep one persistence path: update the proposed scope locally, persist the
    complete manifest, and roll back if the verified server write fails. */
-async function setHandheldAssignedOrderNumbers(orderNumbers){
+async function setHandheldAssignedOrderNumbers(orderNumbers, options={}){
     const scope=activeOrderAuthorityScope();
     if(!window.PharmFlowPermissions?.require('RECEIVING',true)) return false;
     /* Assignment is a server-authoritative structural write. Refresh the
@@ -950,11 +950,20 @@ async function setHandheldAssignedOrderNumbers(orderNumbers){
                 .filter(Boolean)
             : []
     );
-    const nextOrders=[...new Set(
-        (Array.isArray(orderNumbers)?orderNumbers:[])
-            .map(order=>String(order||"").trim().toUpperCase())
-            .filter(order=>order && activeOrders.has(order))
-    )];
+    // Per-order UI intents must not carry a stale full-list snapshot over a
+    // different row or administrator's confirmed assignment. Merge only the
+    // requested changes after the generation/revision preparation above.
+    const changes=options?.changes;
+    if(changes!==undefined && (!Array.isArray(changes) || !changes.length ||
+       changes.some(change=>typeof change?.assigned!=='boolean' ||
+           !activeOrders.has(String(change?.orderNumber||'').trim().toUpperCase()))))return false;
+    const selected=new Set((changes?previousOrders:(Array.isArray(orderNumbers)?orderNumbers:[]))
+        .map(order=>String(order||'').trim().toUpperCase()).filter(order=>activeOrders.has(order)));
+    if(changes)for(const change of changes){
+        const order=String(change.orderNumber).trim().toUpperCase();
+        if(change.assigned)selected.add(order);else selected.delete(order);
+    }
+    const nextOrders=[...selected];
 
     AppState.workspace.handheldOrderNumbers=nextOrders;
     AppState.workspace.handheldScopeConfigured=true;

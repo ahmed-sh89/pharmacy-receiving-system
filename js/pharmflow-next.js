@@ -112,59 +112,114 @@
   }
 
   function assignmentScope(){return window.activeOrderAuthorityScope?.()||'';}
+  function assignmentModel(){
+    const scope=assignmentScope();
+    if(PF.assignmentModel?.scope!==scope){
+      PF.assignmentModel={scope,confirmed:new Set(),pending:new Map(),queue:[],running:false};
+    }
+    return PF.assignmentModel;
+  }
+  function syncAssignmentAuthority(){
+    const model=assignmentModel(),active=new Set(getActiveReceivingOrderNumbers());
+    // Called only for an authoritative Manifest application/readback, never an
+    // optimistic AppState proposal or an unrelated UI/permission repaint.
+    model.confirmed=new Set((AppState?.workspace?.handheldOrderNumbers||[])
+      .map(order=>String(order||'').trim().toUpperCase()).filter(order=>active.has(order)));
+  }
+  function paintAssignment(){renderHandheldAssignment($('pfnOrdersOverlay'));}
   function renderHandheldAssignment(overlay){
     const page=$('page-files'),body=overlay?.querySelector('.pfnModalBody');if(!page||!body)return;
     const active=typeof getActiveReceivingOrderNumbers==='function'?getActiveReceivingOrderNumbers():[];
+    const model=assignmentModel();
     const assignment=body.querySelector('.pfnHandheldAssignment')||document.createElement('section');
     assignment.className='pfnHandheldAssignment';
-    const signature=active.join('|');
-    if(assignment.dataset.activeSignature!==signature || !assignment.isConnected){
-      assignment.dataset.activeSignature=signature;
-      assignment.innerHTML=`<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Handheld Assignment</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldOrderGrid">${active.map(order=>`<label><input type="checkbox" value="${esc(order)}"><span>${esc(order)}</span></label>`).join('')}</div><div class="pfnHandheldAssignmentActions"><span data-assignment-status role="status" aria-live="polite"></span></div>`;
-      if(!assignment.isConnected){const layout=page.querySelector('.twoColumnLayout');if(layout)layout.insertAdjacentElement('afterend',assignment);else body.appendChild(assignment);}
+    if(!assignment.isConnected){
+      assignment.innerHTML='<div class="pfnHandheldAssignmentHeading"><div><span>STEP 2 · HANDHELD ASSIGNMENT</span><h3>Assign to Handheld</h3></div><button type="button" data-assign-all>Select All</button></div><div class="pfnHandheldAssignmentActions"><span data-assignment-status role="status" aria-live="polite"></span></div><div class="pfnHandheldOrderGrid"></div>';
+      const layout=page.querySelector('.twoColumnLayout');if(layout)layout.insertAdjacentElement('afterend',assignment);else body.appendChild(assignment);
       assignment.onchange=event=>{
-        if(event.target?.matches('input[type="checkbox"]'))saveAssignment([...assignment.querySelectorAll('input:checked')].map(input=>input.value));
+        if(event.target?.matches('input[type="checkbox"]'))queueAssignment([{orderNumber:event.target.value,assigned:event.target.checked}]);
       };
-      assignment.querySelector('[data-assign-all]').onclick=()=>saveAssignment(active);
+      assignment.querySelector('[data-assign-all]').onclick=()=>queueAssignment(getActiveReceivingOrderNumbers().map(orderNumber=>({orderNumber,assigned:true})),true);
     }
-    const pending=!!PF.assignmentSave;
     const ready=overlay.dataset.ordersReady==='true';
     const writable=window.PharmFlowPermissions?.allowed('RECEIVING',true)===true;
-    const assigned=new Set(AppState?.workspace?.handheldOrderNumbers||[]);
     assignment.hidden=!ready;
-    assignment.setAttribute('aria-busy',String(pending));
-    assignment.querySelectorAll('input').forEach(input=>{
-      if(!pending)input.checked=assigned.has(input.value);
-      input.disabled=pending||!ready||!writable;
-    });
-    assignment.querySelector('[data-assign-all]').disabled=pending||!active.length||!writable;
-    assignment.querySelector('[data-assignment-status]').textContent=pending?'Saving assignment…':`${active.filter(order=>assigned.has(order)).length} of ${active.length} assigned`;
+    const grid=assignment.querySelector('.pfnHandheldOrderGrid');
+    const rows=new Map([...grid.children].map(row=>[row.dataset.assignmentOrder,row]));
+    for(const [order,row] of rows)if(!active.includes(order))row.remove();
+    for(const order of active){
+      let row=rows.get(order);
+      if(!row){
+        row=document.createElement('label');row.className='pfnAssignmentOrder';row.dataset.assignmentOrder=order;
+        row.innerHTML=`<input type="checkbox" value="${esc(order)}" aria-label="Assign ${esc(order)} to Handheld"><span class="pfnAssignmentOrderId">${esc(order)}</span><span class="pfnAssignmentOrderStatus"><span data-assignment-icon aria-hidden="true"></span><span data-order-assignment-status></span></span>`;
+        grid.appendChild(row);
+      }
+      const pending=model.pending.get(order),confirmed=model.confirmed.has(order);
+      const input=row.querySelector('input');
+      input.checked=pending?pending.assigned:confirmed;
+      input.disabled=!!pending||!ready||!writable;
+      row.classList.toggle('isAssigned',confirmed);
+      row.classList.toggle('isSaving',!!pending);
+      row.setAttribute('aria-busy',String(!!pending));
+      const status=pending?'saving':confirmed?'assigned':'unassigned';
+      if(row.dataset.assignmentState!==status){
+        row.dataset.assignmentState=status;
+        row.querySelector('[data-order-assignment-status]').textContent=pending?'Saving...':confirmed?'Assigned':'Not Assigned';
+        row.querySelector('[data-assignment-icon]').innerHTML=pending?'<span class="pfnAssignmentSpinner"></span>':`<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/>${confirmed?'<path d="m6 10 2.5 2.5L14 7"/>':'<path d="m7 7 6 6m0-6-6 6"/>'}</svg>`;
+      }
+    }
+    assignment.querySelector('[data-assign-all]').disabled=!!model.pending.size||!active.length||!writable||active.every(order=>model.confirmed.has(order));
+    assignment.querySelector('[data-assignment-status]').textContent=`${active.filter(order=>model.confirmed.has(order)).length} of ${active.length} assigned`;
   }
 
-  async function saveAssignment(chosen){
-    // One confirmed write at a time, including close/reopen and programmatic changes.
-    if(PF.assignmentSave){refreshOpenManageOrders();return;}
-    const overlay=$('pfnOrdersOverlay'),scope=assignmentScope();
-    if(overlay?.dataset.ordersReady!=='true')return;
-    const request={scope};PF.assignmentSave=request;
-    refreshOpenManageOrders();
+  function queueAssignment(changes,bulk=false){
+    const model=assignmentModel(),overlay=$('pfnOrdersOverlay');
+    if(overlay?.dataset.ordersReady!=='true'||bulk&&model.pending.size)return;
+    const active=new Set(getActiveReceivingOrderNumbers());
+    const effective=changes.filter(change=>active.has(change.orderNumber)&&!model.pending.has(change.orderNumber)&&model.confirmed.has(change.orderNumber)!==change.assigned);
+    if(!effective.length){paintAssignment();return;}
+    // Select All expresses a complete bulk intent, including locally confirmed
+    // rows: the server may have changed one since the last UI read.
+    const request={changes:bulk?changes.filter(change=>active.has(change.orderNumber)):effective};
+    for(const change of effective)model.pending.set(change.orderNumber,{...change,request});
+    model.queue.push(request);
+    paintAssignment();
+    void drainAssignments(model);
+  }
+
+  async function drainAssignments(model){
+    // Manifest writes are serialized, while unrelated rows stay enabled. Each
+    // delta is merged into FRESH authority by the existing persistence API.
+    if(model.running)return;
+    model.running=true;PF.assignmentSave=model;
     try{
-      await window.PharmFlowPermissions?.whenReady();
-      if(scope!==assignmentScope())throw Error('Account changed. Reopen Manage Orders.');
-      window.PharmFlowPermissions.require('RECEIVING',true);
-      const saved=await window.setHandheldAssignedOrderNumbers(chosen);
-      if(scope!==assignmentScope())return;
-      if(saved!==true)throw Error('Handheld assignment could not be saved. Please try again.');
-      showToast?.('Handheld assignment saved','success');
-    }catch(error){
-      if(scope===assignmentScope()){
-        // Existing persistence rolls back on failure; read current authority after conflicts.
-        await window.pullActiveOrderManifestAuthority?.({clearIfMissing:true,forceApply:true});
-        if(scope===assignmentScope())showToast?.(error?.message||'Handheld assignment could not be saved','error');
+      while(model.queue.length && model.scope===assignmentScope()){
+        const request=model.queue.shift();
+        try{
+          await window.PharmFlowPermissions?.whenReady();
+          if(model.scope!==assignmentScope())return;
+          window.PharmFlowPermissions.require('RECEIVING',true);
+          const saved=await window.setHandheldAssignedOrderNumbers([], {changes:request.changes});
+          if(model.scope!==assignmentScope())return;
+          if(saved!==true)throw Error('Handheld assignment could not be confirmed. Check the connection and try again.');
+          syncAssignmentAuthority();
+          showToast?.('Handheld assignment saved','success');
+        }catch(error){
+          if(model.scope===assignmentScope()){
+            await window.pullActiveOrderManifestAuthority?.({clearIfMissing:true,forceApply:true});
+            if(model.scope===assignmentScope())showToast?.(error?.message||'Handheld assignment could not be saved. Please try again.','error');
+          }
+        }finally{
+          for(const change of request.changes){
+            if(model.pending.get(change.orderNumber)?.request===request)model.pending.delete(change.orderNumber);
+          }
+          if(model.scope===assignmentScope())paintAssignment();
+        }
       }
     }finally{
-      if(PF.assignmentSave===request)PF.assignmentSave=null;
-      refreshOpenManageOrders();
+      model.running=false;
+      if(PF.assignmentSave===model)PF.assignmentSave=null;
+      if(model.scope===assignmentScope())paintAssignment();
     }
   }
 
@@ -181,6 +236,7 @@
         await window.pullActiveOrderManifestAuthority({clearIfMissing:true});
         if(scope!==assignmentScope())return;
         if(PharmFlowCloudWorkspace?.manifestAuthorityScope!==scope || PharmFlowCloudWorkspace?.lastManifestPullError)throw Error('Unable to load Active Orders. Please retry.');
+        syncAssignmentAuthority();
         overlay.dataset.ordersReady='true';
       }catch(error){
         if(scope===assignmentScope())overlay.dataset.ordersError=error?.message||'Unable to load Active Orders.';
@@ -307,7 +363,10 @@
          the modal is open. Restricting this to order-upload-confirmed misses
          the authoritative active-manifest event emitted by the read-after-write
          apply, leaving the modal on its pre-save scope until it is reopened. */
-      AppEvents.on('files:updated',()=>refreshOpenManageOrders());
+      AppEvents.on('files:updated',event=>{
+        if(event?.source==='active-manifest'||String(event?.source||'').startsWith('server-authority-empty'))syncAssignmentAuthority();
+        refreshOpenManageOrders();
+      });
       window.addEventListener('pharmflow:permission-state',()=>refreshOpenManageOrders());
     }
     document.addEventListener('keydown',event=>{
