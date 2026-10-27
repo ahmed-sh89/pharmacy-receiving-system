@@ -45,10 +45,13 @@ jobs:
           Path("version.json").write_text('{"sha":"' + sha + '"}\n')
           PY
 
+      - name: Assemble runtime-only Pages artifact
+        run: node scripts/build-pages-artifact.cjs
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: pages-artifact
 
       - name: Deploy to GitHub Pages
         id: deployment

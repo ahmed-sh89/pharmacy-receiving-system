@@ -1,0 +1,292 @@
+{
+  "live_authenticated_cases": 41,
+  "all_passed": true,
+  "deployed_handlers": [
+    "pharmflow-password-admin-settings-rc v1",
+    "pharmflow-password-admin v4"
+  ],
+  "observations": [
+    {
+      "case": "old access token after password change 0",
+      "status": 403
+    },
+    {
+      "case": "access token after global sign-out 0",
+      "status": 403
+    },
+    {
+      "case": "old access token after password change 1",
+      "status": 403
+    },
+    {
+      "case": "access token after global sign-out 1",
+      "status": 403
+    }
+  ],
+  "owned_identities_created": 4,
+  "owned_identities_deleted": 4,
+  "owned_profiles_removed": 4,
+  "owned_owner_role_created_and_removed": 1,
+  "results": [
+    {
+      "name": "create owned disposable identity 0",
+      "pass": true
+    },
+    {
+      "name": "temporary login 0",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "create owned disposable identity 1",
+      "pass": true
+    },
+    {
+      "name": "temporary login 1",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc unauthenticated denied",
+      "pass": true,
+      "status": 401
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc temporary password reuse rejected",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc rejected reuse preserves must-change",
+      "pass": true
+    },
+    {
+      "name": "pharmflow-password-admin unauthenticated denied",
+      "pass": true,
+      "status": 401
+    },
+    {
+      "name": "pharmflow-password-admin temporary password reuse rejected",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin rejected reuse preserves must-change",
+      "pass": true
+    },
+    {
+      "name": "legacy authorized caller-only completion",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "foreign target unchanged after legacy completion",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "current authorized caller-only completion",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "new password login 0",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "previous password rejected 0",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc non-owner cannot reset foreign identity 0",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc completed account cannot bypass restriction 0",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "pharmflow-password-admin non-owner cannot reset foreign identity 0",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "pharmflow-password-admin completed account cannot bypass restriction 0",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "replacement session refresh 0",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "global sign-out fixture 0",
+      "pass": true,
+      "status": 204
+    },
+    {
+      "name": "signed-out refresh rejected 0",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "new password login 1",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "previous password rejected 1",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc non-owner cannot reset foreign identity 1",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc completed account cannot bypass restriction 1",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "pharmflow-password-admin non-owner cannot reset foreign identity 1",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "pharmflow-password-admin completed account cannot bypass restriction 1",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "replacement session refresh 1",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "global sign-out fixture 1",
+      "pass": true,
+      "status": 204
+    },
+    {
+      "name": "signed-out refresh rejected 1",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "isolated owner login",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "trusted database recognizes only newly assigned fixture owner",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc authorized owner reset succeeds",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc reset credential logs in with required change",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc owner-reset credential reuse denied",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc reset completion succeeds with distinct replacement",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin authorized owner reset succeeds",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin reset credential logs in with required change",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin owner-reset credential reuse denied",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin reset completion succeeds with distinct replacement",
+      "pass": true,
+      "status": 200
+    }
+  ],
+  "cleanup_note": "Auth deletion initially blocked by generated profile FKs; exact owned profile rows removed with guarded Staging cleanup, then supported Admin API deletion verified. Platform Auth audit logs retained.",
+  "post_pin_staging_versions": {
+    "current": 5,
+    "legacy": 2
+  },
+  "post_pin_owner_cases": [
+    {
+      "name": "isolated owner login",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "trusted database recognizes only newly assigned fixture owner",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc authorized owner reset succeeds",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc reset credential logs in with required change",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc owner-reset credential reuse denied",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin-settings-rc reset completion succeeds with distinct replacement",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin authorized owner reset succeeds",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin reset credential logs in with required change",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "pharmflow-password-admin owner-reset credential reuse denied",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "pharmflow-password-admin reset completion succeeds with distinct replacement",
+      "pass": true,
+      "status": 200
+    }
+  ],
+  "post_pin_owner_cases_passed": true,
+  "live_case_count_total": 51
+}

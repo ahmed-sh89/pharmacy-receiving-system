@@ -1,14 +1,14 @@
-name: Security source candidate
+name: PharmFlow security checks
 on:
   push:
-    branches: ['security/source-hardening-staging-20261028']
+    branches: ['security/final-closure-staging-20261028']
   pull_request:
-    branches: ['security/source-hardening-staging-20261028']
+    branches: ['main']
 permissions:
   contents: read
 jobs:
   source-checks:
-    name: Security source candidate checks
+    name: PharmFlow security checks
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -20,7 +20,7 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-fund --no-audit
       - name: Focused offline security and Receiving fixtures
-        run: node --test tests/security-source-hardening.test.cjs tests/receiving-consolidation-review.test.cjs
+        run: node --test tests/security-source-hardening.test.cjs tests/security-closure.test.cjs tests/security-session-gate.test.cjs tests/receiving-consolidation-review.test.cjs tests/sec004-password-parity.test.cjs
       - name: Advisory inventory
         run: npm audit --package-lock-only --ignore-scripts --audit-level=low
       - name: Build without deploying

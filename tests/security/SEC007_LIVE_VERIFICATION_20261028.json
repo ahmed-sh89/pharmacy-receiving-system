@@ -1,0 +1,476 @@
+{
+  "staging_migration": "20261027223203_sec007_trusted_session_gate",
+  "before": {
+    "results": [
+      {
+        "case": "isolated pharmacy login 0",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "cross-fixture pharmacy denied 0",
+        "pass": true,
+        "status": 403
+      },
+      {
+        "case": "fixture logout",
+        "pass": true,
+        "status": 204
+      },
+      {
+        "case": "isolated pharmacy login 1",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "cross-fixture pharmacy denied 1",
+        "pass": true,
+        "status": 403
+      },
+      {
+        "case": "owned identity password reset",
+        "pass": true
+      },
+      {
+        "case": "actual reset completion",
+        "pass": true,
+        "status": 200
+      }
+    ],
+    "observations": [
+      {
+        "label": "before revocation",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      },
+      {
+        "label": "after global logout",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "after global logout",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "after global logout",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 400
+      },
+      {
+        "label": "before revocation",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      },
+      {
+        "label": "after reset and completed replacement",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "after reset and completed replacement",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "after reset and completed replacement",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 400
+      }
+    ],
+    "phase": "revocation"
+  },
+  "after": {
+    "results": [
+      {
+        "case": "isolated pharmacy login 0",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "cross-fixture pharmacy denied 0",
+        "pass": true,
+        "status": 403
+      },
+      {
+        "case": "fixture logout",
+        "pass": true,
+        "status": 204
+      },
+      {
+        "case": "isolated pharmacy login 1",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "cross-fixture pharmacy denied 1",
+        "pass": true,
+        "status": 403
+      },
+      {
+        "case": "owned identity password reset",
+        "pass": true
+      },
+      {
+        "case": "actual reset completion",
+        "pass": true,
+        "status": 200
+      }
+    ],
+    "observations": [
+      {
+        "label": "before revocation",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      },
+      {
+        "label": "after global logout",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "after global logout",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "after global logout",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      },
+      {
+        "label": "before revocation",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "before revocation",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      },
+      {
+        "label": "after reset and completed replacement",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "after reset and completed replacement",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "after reset and completed replacement",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      }
+    ],
+    "phase": "afterfix"
+  },
+  "parallel": {
+    "results": [
+      {
+        "case": "two independent sessions authenticate",
+        "pass": true
+      },
+      {
+        "case": "local logout succeeds",
+        "pass": true,
+        "status": 204
+      }
+    ],
+    "observations": [
+      {
+        "label": "parallel first before",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel first before",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel first before",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel second before",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel second before",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel second before",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel first revoked",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "parallel first revoked",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "parallel first revoked",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      },
+      {
+        "label": "parallel second remains",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel second remains",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 200
+      },
+      {
+        "label": "parallel second remains",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 200
+      }
+    ],
+    "phase": "parallel"
+  },
+  "suspended": {
+    "results": [
+      {
+        "case": "isolated pharmacy login 0",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "isolated pharmacy login 1",
+        "pass": true,
+        "status": 200
+      }
+    ],
+    "observations": [
+      {
+        "label": "suspended",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "suspended",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "suspended",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      },
+      {
+        "label": "suspended",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "suspended",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "suspended",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      }
+    ],
+    "phase": "suspended"
+  },
+  "modules-disabled": {
+    "results": [
+      {
+        "case": "isolated pharmacy login 0",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "isolated pharmacy login 1",
+        "pass": true,
+        "status": 200
+      }
+    ],
+    "observations": [
+      {
+        "label": "modules-disabled",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "modules-disabled",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "modules-disabled",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      },
+      {
+        "label": "modules-disabled",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 200
+      },
+      {
+        "label": "modules-disabled",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "modules-disabled",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      }
+    ],
+    "phase": "modules-disabled"
+  },
+  "member-disabled": {
+    "results": [
+      {
+        "case": "isolated pharmacy login 0",
+        "pass": true,
+        "status": 200
+      },
+      {
+        "case": "isolated pharmacy login 1",
+        "pass": true,
+        "status": 200
+      }
+    ],
+    "observations": [
+      {
+        "label": "member-disabled",
+        "account": 0,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "member-disabled",
+        "account": 0,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "member-disabled",
+        "account": 0,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      },
+      {
+        "label": "member-disabled",
+        "account": 1,
+        "rpc": "get_my_pharmflow_permissions_v1",
+        "status": 403
+      },
+      {
+        "label": "member-disabled",
+        "account": 1,
+        "rpc": "get_pharmflow_active_order_manifest_meta_v1",
+        "status": 403
+      },
+      {
+        "label": "member-disabled",
+        "account": 1,
+        "rpc": "query_pharmflow_expiry_inventory_v1",
+        "status": 403
+      }
+    ],
+    "phase": "member-disabled"
+  }
+}

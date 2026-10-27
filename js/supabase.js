@@ -10,8 +10,8 @@
 ===================================================== */
 
 const CLOUD_CONFIG = Object.freeze({
-    url:"https://zznoshzcyxmtwfbznjyr.supabase.co",
-    publishableKey:"sb_publishable_dulQyE_y0NZK2XyJyW_0TA_xhvwIxCS",
+    url:"https://tovkcakucyagvbzvlnks.supabase.co",
+    publishableKey:"sb_publishable_wck-im5qsFKt6-xCOlPZQw_lxBy3C7U",
     pollIntervalMs:5000,
     rpcTimeoutMs:9000
 });

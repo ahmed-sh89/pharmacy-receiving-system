@@ -1,3 +1,5 @@
+> Historical preparation record. Superseded by FINAL_SECURITY_CLOSURE_20261028.md and the final verified execution report. Fixed-URL/Git-disconnect recommendations no longer apply.
+
 # PharmFlow security program — 28 October 2026
 
 Production release readiness: **NOT READY**. No Production release authorized or performed. This branch is development source only; no new application Preview published and the stable test URL is NOT repaired.
