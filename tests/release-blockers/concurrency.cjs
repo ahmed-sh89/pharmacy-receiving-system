@@ -1,7 +1,7 @@
 // Dedicated ephemeral GitHub PostgreSQL service ONLY. Never Supabase.
 const {Client}=require('pg'),fs=require('fs'),assert=require('assert/strict'),{performance}=require('perf_hooks');
 const config={host:'127.0.0.1',port:5432,user:'postgres',password:'synthetic-ci-only',database:'pharmflow_blockers'};
-const clients=[];async function client(){const c=new Client(config);await c.connect();clients.push(c);await c.query("set statement_timeout='15s';set lock_timeout='5s';set deadlock_timeout='100ms';select set_config('test.uid','11111111-1111-4111-8111-111111111111',false),set_config('test.jwt',$1,false)",[JSON.stringify({exp:Math.floor(Date.now()/1000)+3600,session_id:'33333333-3333-4333-8333-333333333333'})]);return c;}
+const clients=[];async function client(){const c=new Client(config);await c.connect();clients.push(c);await c.query("set statement_timeout='15s';set lock_timeout='5s';set deadlock_timeout='100ms';");await c.query("select set_config('test.uid','11111111-1111-4111-8111-111111111111',false),set_config('test.jwt',$1,false)",[JSON.stringify({exp:Math.floor(Date.now()/1000)+3600,session_id:'33333333-3333-4333-8333-333333333333'})]);return c;}
 const ms=()=>performance.now(),result={};
 async function page(c,version=null){return (await c.query("select public.owner_export_global_items_page_v2('Items','',750,$1) p",[version])).rows[0].p;}
 async function waiting(observer,pid){for(let i=0;i<100;i++){const r=await observer.query('select wait_event_type from pg_stat_activity where pid=$1',[pid]);if(r.rows[0]?.wait_event_type==='Lock')return;await new Promise(r=>setTimeout(r,10));}throw Error('Expected independent writer lock wait');}
