@@ -94,5 +94,21 @@
       "full-size Windows browser/Excel performance unverified"
     ],
     "productionUnchanged": true
+  },
+  "resumedExportFix": {
+    "productionReadOnlyPreflight": "PASS",
+    "connectionIssue": "malformed Production link identifier corrected; no auth change",
+    "stagingMigration": "20261028141551_owner_export_revision_before_statement",
+    "triggerTiming": "BEFORE STATEMENT",
+    "stagingMasterPreserved": {
+      "items": 17,
+      "identifiers": 22,
+      "revision": 1
+    },
+    "focusedTests": 6,
+    "previous51Tests": "PASS retained, not rerun",
+    "realPostgresConcurrency": "prior exact correction proof retained;40P01 reproduction eliminated in tested schedule",
+    "remainingGate": "full-size Windows Chrome/Excel result",
+    "productionUnchanged": true
   }
 }

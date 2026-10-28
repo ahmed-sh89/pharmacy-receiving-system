@@ -45,8 +45,8 @@ BEGIN
  RETURN NULL;
 END $fn$;
 REVOKE ALL ON FUNCTION pharmflow_export_private.bump_master_revision() FROM PUBLIC,anon,authenticated,service_role;
-CREATE TRIGGER pharmflow_export_revision_items AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE ON public.pharmflow_global_items_v2 FOR EACH STATEMENT EXECUTE FUNCTION pharmflow_export_private.bump_master_revision();
-CREATE TRIGGER pharmflow_export_revision_identifiers AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE ON public.pharmflow_global_item_identifiers_v2 FOR EACH STATEMENT EXECUTE FUNCTION pharmflow_export_private.bump_master_revision();
+CREATE TRIGGER pharmflow_export_revision_items BEFORE INSERT OR UPDATE OR DELETE OR TRUNCATE ON public.pharmflow_global_items_v2 FOR EACH STATEMENT EXECUTE FUNCTION pharmflow_export_private.bump_master_revision();
+CREATE TRIGGER pharmflow_export_revision_identifiers BEFORE INSERT OR UPDATE OR DELETE OR TRUNCATE ON public.pharmflow_global_item_identifiers_v2 FOR EACH STATEMENT EXECUTE FUNCTION pharmflow_export_private.bump_master_revision();
 CREATE FUNCTION public.owner_export_global_items_page_v2(p_kind text,p_after text DEFAULT '',p_limit integer DEFAULT 750,p_version text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $fn$
 DECLARE v_rows jsonb;v_version text;v_meta jsonb:='{}';v_limit integer:=least(greatest(coalesce(p_limit,750),1),1000);

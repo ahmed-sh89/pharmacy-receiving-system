@@ -153,3 +153,8 @@ See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case stat
 ## 2026-10-28 — Consolidated selective Production preparation
 
 All Staging improvements through97c7385 are Product Owner USER VERIFIED within tested scenarios. Production main/served08843e4 unchanged. Production-based release includes accepted startup, ExportV2, labels/Loading/Access, Reports, final Receiving toolbar and canonical Group.51 focusedPASS/buildPASS; final guarded SQL apply/rollback2PASS; full-size56588/78164 XLSX183requests. Live Supabase preflight unavailable (Unknown tool); concurrent writer lock impact and full-size Windows/Excel limits remain OPEN gates. No deployment or migration. Authoritative inventory, hashes, limitations, release/rollback/smoke sequence: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED; final approval blocked pending gates.
+
+
+## 2026-10-28 — Resumed export blocker correction
+
+Production read-only schema/RLS/SEC007 compatibilityPASS after correcting malformed connection identifier. Staging migration20261028141551 switches revision triggers to BEFORE STATEMENT;17Items/22Identifiers/revision1 preserved. Owner/non-owner/revoked/session/mutation/rollback checksPASS. Existing real PostgreSQL concurrency proof reused;6 affected testsPASS,51 priorPASS retained. Production apply/rollback revised to BEFORE, no runtime/UI changes. Windows Chrome/Excel full-size result remainsOPEN. Details/hashes: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. No Production writes/merges/deployments.

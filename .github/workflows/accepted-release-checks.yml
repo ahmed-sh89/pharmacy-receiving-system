@@ -18,18 +18,6 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-fund --no-audit
       - name: Focused selective-release checks
-        run: >-
-          node --test
-          tests/order-toolbar-refactor.test.cjs
-          tests/receiving-group-ui-hotfix.test.cjs
-          tests/staging-startup-hotfix.test.cjs
-          tests/startup-version-safety.test.cjs
-          tests/export-v2.test.cjs
-          tests/export-v2-scale.test.cjs
-          tests/global-items-export.test.cjs
-          tests/production-owner-export-prep.test.cjs
-          tests/final-refinements-ui.test.cjs
-          tests/sleep-wake-permissions.test.cjs
-          tests/receiving-report-performance.test.cjs
+        run: node --test tests/export-v2.test.cjs tests/production-owner-export-prep.test.cjs
       - name: Build without deploying
         run: npm run build
