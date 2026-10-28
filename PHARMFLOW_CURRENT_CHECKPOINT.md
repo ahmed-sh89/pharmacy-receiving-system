@@ -1,3 +1,7 @@
+## Selective security release preparation — 28 October 2026
+
+PREPARED / NOT DEPLOYED. Production main/live 6da2af6bac8c302e46a12cb9c95bb34cb67e3e19 unchanged. Branch security/selective-production-prep-20261028. Owner reports functional Stage smoke PASS; scope not expanded. 41 focused local tests, clean install, audit zero and build PASS; hosted CI recorded separately. SEC-007 strict preflight PASS, isolated apply/rollback/drift tests PASS; Production Edge v5/v3-specific patches prepared only. SEC-009, Stage config/fixtures/headers, performance/UX and EXPIRY-SAVE-001 excluded. No Production writes/Auth changes/Edge deployment/main merge. See docs/security/SELECTIVE_PRODUCTION_RELEASE_20261028.md for approvals, exact sequence and limitations.
+
 # 2026-10-27 — Production publication verified
 
 **DEPLOYED — READY FOR USER TEST.** Not USER VERIFIED or DONE.

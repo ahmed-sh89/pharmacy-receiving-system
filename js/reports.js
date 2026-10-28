@@ -850,7 +850,13 @@ function objectsToCSV(rows){
 }
 
 function escapeCSVValue(value){
-    const text = String(value ?? "");
+    let text = String(value ?? "");
+    // Quoting alone does not prevent a spreadsheet from interpreting text as
+    // a formula. Keep real numbers numeric (including negative quantities).
+    // Prefix the entire original string, preserving its whitespace/content.
+    if(typeof value === "string" && /^[\u0000-\u0020\u007f-\u009f\u00a0\ufeff]*[=+\-@]/u.test(text)){
+        text = "'" + text;
+    }
 
     return (
         '"'
