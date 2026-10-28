@@ -13,3 +13,8 @@ Staging-only migration `20261028022820_owner_export_revision_stream_v2`: private
 35 focused tests and default/Staging builds PASS; full-size independent ZIP/openpyxl count/text/association checks PASS. See `docs/staging-final-20261028/IMPLEMENTATION.md` and TEST_RESULTS.json. Proposed Production apply/rollback refreshed and isolated-SQL tested; no promotion authorized.
 
 Next: Owner tests updated Preview: Refresh Loading, Administrator, compact toolbar/KPI layout and Excel download. Full-size target Windows/browser/Excel acceptance remains open. DATA-001, Azinc/Expiry, Pharmacy Code and SEC-009 remain excluded. Preserve October 28 security, all report/quantity rules, capsule design, pharmacy isolation and Vercel main block. See `docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md` for later approval/deploy/rollback sequence.
+
+
+## 2026-10-28 — Consolidated selective Production preparation
+
+All Staging improvements through97c7385 are Product Owner USER VERIFIED within tested scenarios. Production main/served08843e4 unchanged. Production-based release includes accepted startup, ExportV2, labels/Loading/Access, Reports, final Receiving toolbar and canonical Group.51 focusedPASS/buildPASS; final guarded SQL apply/rollback2PASS; full-size56588/78164 XLSX183requests. Live Supabase preflight unavailable (Unknown tool); concurrent writer lock impact and full-size Windows/Excel limits remain OPEN gates. No deployment or migration. Authoritative inventory, hashes, limitations, release/rollback/smoke sequence: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED; final approval blocked pending gates.

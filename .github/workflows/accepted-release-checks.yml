@@ -20,6 +20,10 @@ jobs:
       - name: Focused selective-release checks
         run: >-
           node --test
+          tests/order-toolbar-refactor.test.cjs
+          tests/receiving-group-ui-hotfix.test.cjs
+          tests/staging-startup-hotfix.test.cjs
+          tests/startup-version-safety.test.cjs
           tests/export-v2.test.cjs
           tests/export-v2-scale.test.cjs
           tests/global-items-export.test.cjs

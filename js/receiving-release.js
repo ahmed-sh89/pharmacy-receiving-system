@@ -189,8 +189,8 @@ window.PharmFlowClassificationFilters={
     },
     normalizeReceiving(row){
         const uploaded=[row?.group_name,row?.groupName,row?.Group].map(value=>String(value??"").trim()).find(Boolean)||"";
-        const value=this.normalize({...row,group_name:uploaded});
-        if(!uploaded) value.group=window.PharmFlowReceivingGroups?.get(row)||value.group;
+        const value={group:this.normalizeGroup(uploaded),category:String(row?.category||row?.Category||""),subCategory:String(row?.sub_category||row?.subCategory||"")};
+        if(!uploaded) value.group=window.PharmFlowReceivingGroups?.get(row)||"";
         return value;
     },
     choices(rows,selection={}){
@@ -244,6 +244,8 @@ function refreshReceivingGroupDisplay(){
     const version=typeof MasterGTINEngine!=="undefined"?String(MasterGTINEngine.metadata.cloudVersion||""):"";
     window.PharmFlowReceivingGroups.refresh(AppState.workspace.orderData||[],version).then(()=>{
         if(typeof refreshReceivingTable==="function")refreshReceivingTable();
+        window.dispatchEvent(new Event("receiving:groups-ready"));
+        if(typeof refreshOpenOrderStatusReport==="function")refreshOpenOrderStatusReport();
         if(typeof refreshReceivingCategoryFilter==="function")refreshReceivingCategoryFilter();
     }).catch(error=>Logger.warn("Receiving Group display unavailable",error));
 }

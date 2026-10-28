@@ -63,5 +63,36 @@
   "sql_sha256": {
     "owner-export-apply.sql": "488eea2a203f40083845b3f78ed3954a09cba9934244cf5deeb994dd79709a04",
     "owner-export-rollback.sql": "986631439d5d77de284c6221368aedda1974eeb25fdbc899adda153f45f8ba54"
+  },
+  "finalConsolidatedPreparation": {
+    "acceptedStaging": "97c7385b04bb1a42264df32f1c890a3a30bb16f6",
+    "status": "PREPARED FOR PRODUCTION APPROVAL \u2014 NOT DEPLOYED",
+    "approvalBlocked": true,
+    "focusedTests": 51,
+    "failures": 0,
+    "guardedSqlTests": 2,
+    "scale": {
+      "items": 56588,
+      "identifiers": 78164,
+      "requests": 183,
+      "countQueries": 2,
+      "metadataResponses": 1,
+      "fullFingerprints": 0,
+      "baselineSingleHashMs": 646.89,
+      "databaseAllPagesMs": 1315.88,
+      "workbookMs": 1000.24,
+      "exportMs": 3144.48,
+      "totalMs": 12526.32,
+      "xlsxBytes": 4764297,
+      "writerRssMiB": 730,
+      "wholeProcessPeakRssMiB": 1134,
+      "conditions": "local PGlite and Node VM; includes SQL/collector/workbook/readback, excludes browser/network"
+    },
+    "openGates": [
+      "current Production Supabase schema/RLS/SEC007/Owner helper preflight: connector Unknown tool",
+      "concurrent Master import/write lock/retry impact",
+      "full-size Windows browser/Excel performance unverified"
+    ],
+    "productionUnchanged": true
   }
 }

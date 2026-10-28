@@ -148,3 +148,8 @@ See `PHARMFLOW_GLOBAL_GROUP_GATE_B_TEST_MATRIX.md` for the detailed 17-case stat
 - [x] Desktop candidate browser: Resolve Now -> existing item, code/name lookup, original barcode, required-field validation, existing-code conflict retains Pending, Save for Review -> Create & Resolve, inventory rows and preserved old identifier. 1363x936 viewport.
 - [x] Handheld mode rendered existing scan/photo/save actions without Resolve Now; source and automated capture/photo regression verified.
 - [ ] Physical TC26 scan/camera/throughput and native Handheld/1366x768 viewports remain Product Owner acceptance; desktop-sized emulation is not device verification.
+
+
+## 2026-10-28 — Consolidated selective Production preparation
+
+All Staging improvements through97c7385 are Product Owner USER VERIFIED within tested scenarios. Production main/served08843e4 unchanged. Production-based release includes accepted startup, ExportV2, labels/Loading/Access, Reports, final Receiving toolbar and canonical Group.51 focusedPASS/buildPASS; final guarded SQL apply/rollback2PASS; full-size56588/78164 XLSX183requests. Live Supabase preflight unavailable (Unknown tool); concurrent writer lock impact and full-size Windows/Excel limits remain OPEN gates. No deployment or migration. Authoritative inventory, hashes, limitations, release/rollback/smoke sequence: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED; final approval blocked pending gates.

@@ -10,9 +10,27 @@ BEGIN
  OR f.proacl IS DISTINCT FROM '{postgres=X/postgres,authenticated=X/postgres}'::aclitem[]
  OR f.proconfig IS DISTINCT FROM ARRAY['search_path=pg_catalog, auth']::text[] THEN RAISE EXCEPTION 'SEC-007 drift: STOP';END IF;
  IF to_regprocedure('public.owner_export_global_items_page_v2(text,text,integer,text)') IS NOT NULL OR exists(select 1 from pg_namespace where nspname='pharmflow_export_private') THEN RAISE EXCEPTION 'Export V2 already exists: inspect deployment state';END IF;
+ -- Fail closed on dependencies actually consumed by the exporter.
+ IF to_regprocedure('public.is_system_owner()') IS NULL THEN RAISE EXCEPTION 'Owner guard missing: STOP';END IF;
+ IF EXISTS (
+   SELECT 1 FROM (VALUES
+    ('pharmflow_global_items_v2','item_code','text'),('pharmflow_global_items_v2','item_name','text'),
+    ('pharmflow_global_items_v2','group_name','text'),('pharmflow_global_items_v2','category','text'),('pharmflow_global_items_v2','sub_category','text'),
+    ('pharmflow_global_item_identifiers_v2','id','uuid'),('pharmflow_global_item_identifiers_v2','item_code','text'),('pharmflow_global_item_identifiers_v2','identifier_display','text')
+   ) required(table_name,column_name,data_type)
+   LEFT JOIN information_schema.columns c ON c.table_schema='public' AND c.table_name=required.table_name AND c.column_name=required.column_name
+   WHERE c.data_type IS DISTINCT FROM required.data_type
+ ) THEN RAISE EXCEPTION 'Master column/type drift: STOP';END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_index x JOIN pg_attribute a ON a.attrelid=x.indrelid AND a.attnum=x.indkey[0]
+   WHERE x.indrelid='public.pharmflow_global_items_v2'::regclass AND x.indisprimary AND x.indnkeyatts=1 AND a.attname='item_code')
+ OR NOT EXISTS(SELECT 1 FROM pg_index x JOIN pg_attribute a ON a.attrelid=x.indrelid AND a.attnum=x.indkey[0]
+   WHERE x.indrelid='public.pharmflow_global_item_identifiers_v2'::regclass AND x.indisprimary AND x.indnkeyatts=1 AND a.attname='id')
+ OR NOT EXISTS(SELECT 1 FROM pg_index x JOIN pg_attribute a ON a.attrelid=x.indrelid AND a.attnum=x.indkey[0]
+   WHERE x.indrelid='public.pharmflow_global_item_identifiers_v2'::regclass AND x.indisvalid AND x.indpred IS NULL AND a.attname='item_code')
+ THEN RAISE EXCEPTION 'Master pagination/index dependency drift: STOP';END IF;
 END $guard$;
 -- Owner export V2: monotonic transactional revision; export itself stays read-only.
--- Apply to Staging only in this work session. Production requires later approval.
+-- Production proposal only: apply after explicit approval and successful live preflight.
 CREATE SCHEMA pharmflow_export_private;
 REVOKE ALL ON SCHEMA pharmflow_export_private FROM PUBLIC,anon,authenticated,service_role;
 CREATE TABLE pharmflow_export_private.master_revision(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),revision bigint NOT NULL CHECK(revision>0));

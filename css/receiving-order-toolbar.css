@@ -1,0 +1,29 @@
+/* Authoritative Order Items header. No fixed modal height or table density changes. */
+body:not(.zebraDevice) .pfrOrderItemsPanel .quickKpiHeader[hidden]{display:none!important}
+.pfrOrderToolbar{display:grid;gap:7px;margin:0 0 7px;min-width:0}
+.pfrOrderToolbarFilters{display:grid;grid-template-columns:max-content minmax(160px,1fr) minmax(160px,1fr) minmax(210px,1fr) 32px;align-items:center;gap:10px;min-width:0}
+.pfrOrderToolbarFilters h3{margin:0;font-size:19px;line-height:1.15;white-space:nowrap;color:#123f67}
+.pfrOrderToolbarFilters>label{display:flex;align-items:center;gap:6px;min-width:0;font-size:11px;color:#49657f;font-weight:600}
+.pfrOrderToolbarFilters>label>span{flex:none}
+.pfrOrderToolbarFilters .pfrClassificationFilters{display:block;width:auto;min-width:0;margin:0}
+.pfrOrderToolbarFilters details{position:relative;min-width:0;flex:1}
+.pfrOrderToolbarFilters summary{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:6px;height:36px;padding:0 10px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:12px;font-weight:600;list-style:none;cursor:pointer;white-space:nowrap}
+.pfrOrderToolbarFilters summary strong{min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.pfrOrderToolbarFilters summary::-webkit-details-marker{display:none}
+.pfrOrderToolbarFilters summary:after{content:'⌄';flex:none}
+.pfrOrderToolbarFilters .pfnUnifiedMultiSelectMenu{top:calc(100% + 4px);left:0;right:0;width:auto;max-height:250px;z-index:520}
+.pfrOrderToolbarFilters .pfrFilterOptions button{display:block;width:100%;min-height:30px;padding:6px 9px;border:0;border-radius:6px;background:transparent;color:#234d70;text-align:left;font:inherit;cursor:pointer}
+.pfrOrderToolbarFilters .pfrFilterOptions button:hover,.pfrOrderToolbarFilters .pfrFilterOptions button.active{background:#dceefa}
+.pfrOrderToolbarFilters .quickKpiClose{width:32px!important;height:32px!important;min-width:0;justify-self:end}
+.pfrOrderToolbarActions{display:grid;grid-template-columns:minmax(180px,1fr) max-content;gap:10px;align-items:center;min-width:0}
+.pfrOrderToolbarActions .pfnBrowserSearchField{display:block;min-width:0}
+.pfrOrderToolbarActions .pfnBrowserSearchField>span{display:none}
+.pfrOrderToolbarActions .pfnWideSearch{box-sizing:border-box;width:100%;min-width:0;height:40px;padding:0 11px;border:2px solid #8fb3d2;border-radius:8px;background:#fff;color:#173f67;box-shadow:inset 0 1px 2px rgba(19,61,105,.06);font-size:14px;font-weight:700}
+.pfrOrderToolbarActions .pfnWideSearch:focus{border-color:#1476c9;outline:3px solid rgba(20,118,201,.16);outline-offset:0}
+.pfrOrderPriorityActions{display:grid;grid-template-columns:122px 64px 150px;gap:6px;align-items:center}
+.pfrOrderPriorityActions button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:36px;padding:0 9px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-family:inherit;font-size:12px;font-weight:600;line-height:1.2;white-space:nowrap;cursor:pointer}
+.pfrOrderPriorityActions button.active{background:#fff5d9;border-color:#e2b546;color:#8a5a00}
+.pfrOrderPriorityActions button[hidden]{display:inline-flex!important;visibility:hidden;pointer-events:none}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnPriorityMark{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-width:55px;height:26px;min-height:26px;margin:0;padding:0 7px;font-size:11px;font-weight:600;line-height:1;white-space:nowrap;flex-shrink:0}
+@media(max-width:1000px){.pfrOrderToolbarFilters{grid-template-columns:max-content repeat(3,minmax(0,1fr)) 32px;gap:7px}.pfrOrderToolbarFilters>label{display:grid;gap:2px}.pfrOrderToolbarFilters summary{font-size:11px;padding:0 7px}}
+@media(max-width:700px){.pfrOrderToolbarFilters{grid-template-columns:repeat(3,minmax(0,1fr)) 32px}.pfrOrderToolbarFilters h3{grid-column:1/4}.pfrOrderToolbarFilters .quickKpiClose{grid-column:4;grid-row:1}.pfrOrderToolbarFilters>label,.pfrOrderToolbarFilters>.pfrClassificationFilters{grid-row:2}.pfrOrderToolbarActions{grid-template-columns:1fr}.pfrOrderPriorityActions{justify-content:start;grid-template-columns:122px 64px 150px}}
