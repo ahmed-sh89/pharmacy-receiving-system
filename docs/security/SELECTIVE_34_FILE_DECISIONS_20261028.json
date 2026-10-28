@@ -1,0 +1,280 @@
+{
+  "base": "6da2af6bac8c302e46a12cb9c95bb34cb67e3e19",
+  "head": "7cd93a85ba916c48bbb18c279019d28b2777ce29",
+  "status": "ahead",
+  "ahead_by": 3,
+  "files": [
+    {
+      "path": ".github/workflows/deploy.yml",
+      "status": "modified",
+      "additions": 8,
+      "deletions": 5,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": ".github/workflows/security-source-candidate.yml",
+      "status": "added",
+      "additions": 27,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Replaced by read-only Production release CI with selected tests"
+    },
+    {
+      "path": "PHARMFLOW_CHANGELOG.md",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Production preparation status only"
+    },
+    {
+      "path": "PHARMFLOW_CURRENT_CHECKPOINT.md",
+      "status": "modified",
+      "additions": 24,
+      "deletions": 1,
+      "decision": "adapted",
+      "reason": "Production preparation status only"
+    },
+    {
+      "path": "PHARMFLOW_TEST_MATRIX.md",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Focused release checks only"
+    },
+    {
+      "path": "docs/security/CONSOLIDATED_SECURITY_PROGRAM_20261028.md",
+      "status": "added",
+      "additions": 74,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "docs/security/FINAL_SECURITY_CLOSURE_20261028.md",
+      "status": "added",
+      "additions": 74,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "docs/security/SEC009_LEAST_PRIVILEGE_REVIEW.md",
+      "status": "added",
+      "additions": 7,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "index.html",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 4,
+      "decision": "adapted",
+      "reason": "SRI only, Production config/title/CSP retained; report cache invalidation"
+    },
+    {
+      "path": "js/reports.js",
+      "status": "modified",
+      "additions": 7,
+      "deletions": 1,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": "js/staging-environment.js",
+      "status": "added",
+      "additions": 12,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "js/supabase.js",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "modified",
+      "additions": 198,
+      "deletions": 152,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": "proposals/security/20261028_sec007_rollback.sql",
+      "status": "added",
+      "additions": 14,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Exact live Production baseline + fixed-body/owner/ACL guards"
+    },
+    {
+      "path": "proposals/security/20261028_sec007_trusted_session_gate.sql",
+      "status": "added",
+      "additions": 27,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Exact Stage function body + strict Production pre/post guards, separate proposals path"
+    },
+    {
+      "path": "proposals/security/20261028_sec009_least_privilege.sql",
+      "status": "added",
+      "additions": 15,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "proposals/security/20261028_sec009_rollback.sql",
+      "status": "added",
+      "additions": 14,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "proposals/staging/sec012-pharmflow-password-admin-settings-rc.ts",
+      "status": "added",
+      "additions": 91,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "proposals/staging/sec012-pharmflow-password-admin.ts",
+      "status": "added",
+      "additions": 126,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "scripts/build-pages-artifact.cjs",
+      "status": "added",
+      "additions": 38,
+      "deletions": 0,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": "supabase/functions/pharmflow-password-admin-settings-rc/index.ts",
+      "status": "added",
+      "additions": 91,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Production live v3 + reuse guard + exact SDK pin"
+    },
+    {
+      "path": "supabase/functions/pharmflow-password-admin/index.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "decision": "adapted",
+      "reason": "Production live v5 + exact SDK pin only"
+    },
+    {
+      "path": "supabase/migrations/20261027223203_sec007_trusted_session_gate.sql",
+      "status": "added",
+      "additions": 27,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "tests/sec004-password-parity.test.cjs",
+      "status": "added",
+      "additions": 19,
+      "deletions": 0,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": "tests/security-closure.test.cjs",
+      "status": "added",
+      "additions": 66,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Only runtime artifact + password import checks; new Production binding/path checks; no Stage/header/grant tests"
+    },
+    {
+      "path": "tests/security-session-gate.test.cjs",
+      "status": "added",
+      "additions": 28,
+      "deletions": 0,
+      "decision": "adapted",
+      "reason": "Replaced by Production guarded migration/rollback/drift/session test"
+    },
+    {
+      "path": "tests/security-source-hardening.test.cjs",
+      "status": "added",
+      "additions": 46,
+      "deletions": 0,
+      "decision": "included",
+      "reason": "Verified shared security source"
+    },
+    {
+      "path": "tests/security/SEC004_LIVE_ACCEPTANCE_20261028.json",
+      "status": "added",
+      "additions": 292,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "tests/security/SEC007_LIVE_VERIFICATION_20261028.json",
+      "status": "added",
+      "additions": 476,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "tests/security/SECURITY_CLEANUP_20261028.json",
+      "status": "added",
+      "additions": 13,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "tests/security/live-auth-fixture.template.ts",
+      "status": "added",
+      "additions": 179,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "vercel.json",
+      "status": "added",
+      "additions": 30,
+      "deletions": 0,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    },
+    {
+      "path": "vite.config.js",
+      "status": "modified",
+      "additions": 9,
+      "deletions": 9,
+      "decision": "excluded",
+      "reason": "Stage-only/environment-specific, evidence/fixture, or separately held SEC-009; not part of selective release"
+    }
+  ]
+}
