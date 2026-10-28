@@ -8536,6 +8536,13 @@ function queueClearVisiblePriorities(items){
 }
 
 function renderItemBrowser(body, rows, options={}){
+    // Reuse the scoped, ambiguity-rejecting server projection; never classify orders.
+    const refreshGroups=()=>{if(body.isConnected){rebuildClassification();draw();}else window.removeEventListener("receiving:groups-ready",refreshGroups);};
+    if(body._receivingGroupsListener)window.removeEventListener("receiving:groups-ready",body._receivingGroupsListener);
+    body._receivingGroupsListener=refreshGroups;
+    window.addEventListener("receiving:groups-ready",refreshGroups);
+    window.PharmFlowReceivingGroups?.refresh(rows,typeof MasterGTINEngine!=="undefined"?String(MasterGTINEngine.metadata.cloudVersion||""):"")
+        .then(refreshGroups).catch(error=>Logger.warn("Receiving Group display unavailable",error));
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
     const orderMode=options.showPriority===true;
     const receivedMode=options.receivedMode===true;

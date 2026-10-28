@@ -840,7 +840,7 @@ body:not(.zebraDevice) .phase263Panel [data-body]{display:flex;flex-direction:co
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{box-sizing:border-box;width:100%;min-width:0;height:42px;padding:0 11px;border:2px solid #8fb3d2;border-radius:8px;background:#fff;color:#173f67;box-shadow:inset 0 1px 2px rgba(19,61,105,.06);font-size:14px;font-weight:700}
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch::placeholder{color:#627d96;opacity:1}
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch:focus{border-color:#1476c9;outline:3px solid rgba(20,118,201,.16);outline-offset:0;box-shadow:0 0 0 1px #1476c9}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions{display:flex;align-items:end;gap:8px;min-width:max-content}
+  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions{display:grid;grid-template-columns:148px 80px 176px;align-items:center;gap:8px;min-width:0}
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter{height:42px;min-height:42px;flex:0 0 auto;padding:0 18px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:14px;font-weight:850;white-space:nowrap;cursor:pointer}
   body:not(.zebraDevice) .pfnOrderBrowserControls [data-priority-filter]{min-width:148px}
   body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter.active{background:#fff5d9;border-color:#e2b546;color:#8a5a00}}
@@ -848,7 +848,7 @@ body:not(.zebraDevice) .pfnCleanWorklist{flex:1;min-height:0;max-height:none!imp
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table{font-size:15px!important}
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table th{font-size:12px!important;padding:12px 14px!important}
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table td{padding:13px 14px!important;font-size:15px!important}
-body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:42%;font-size:16px!important}.pfnCleanWorklist .pfnItemName b{font-size:17px!important;color:#123d69}.pfnCleanWorklist .pfnOrderedQty{font-size:18px!important;font-weight:900!important;color:#123d69}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:42%;font-size:16px!important}body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName b{font-weight:600; font-size:17px!important;color:#123d69}.pfnCleanWorklist .pfnOrderedQty{font-size:18px!important;font-weight:900!important;color:#123d69}
 body:not(.zebraDevice) .pfnPriorityCell{white-space:nowrap}.pfnPriorityMark{height:34px;min-width:66px;margin-right:6px;border:1px solid #b9c9d9;border-radius:8px;background:#fff;color:#60758d;font-size:12px;font-weight:900;cursor:pointer}.pfnPriorityMark.active.new{background:#eaf4ff;border-color:#3184d6;color:#1764b0}.pfnPriorityMark.active.short{background:#fff0f1;border-color:#d95662;color:#b42331}
 body:not(.zebraDevice) #page-receiving .contentCard h2{font-size:22px!important}
 .pfnCleanReceiving #page-receiving .receivingFilterBar button,
@@ -1306,27 +1306,6 @@ body:not(.zebraDevice) .pfnPharmacyIdentityText strong{font-size:10px!important;
     min-width:0!important;
     overflow:visible!important;
   }
-  body:not(.zebraDevice) .pfnBrowserControlRow{
-    display:flex!important;
-    flex-wrap:nowrap!important;
-    gap:8px!important;
-    width:100%!important;
-    max-width:100%!important;
-    min-width:0!important;
-    overflow-x:auto!important;
-    overflow-y:hidden!important;
-    padding:0 4px 7px 0!important;
-    scroll-snap-type:x proximity!important;
-    scrollbar-width:thin!important;
-    -webkit-overflow-scrolling:touch!important;
-    overscroll-behavior-x:contain!important;
-    touch-action:pan-x!important;
-    -webkit-mask-image:none!important;
-    box-sizing:border-box!important;
-  }
-  body:not(.zebraDevice) .pfnBrowserControlRow>*{flex-shrink:0!important;scroll-snap-align:start!important}
-  body:not(.zebraDevice) .pfnBrowserControlRow label{flex:0 0 150px!important;width:150px!important;min-width:150px!important;font-size:8px!important}
-  body:not(.zebraDevice) .pfnBrowserControlRow label:last-child{flex-basis:190px!important;width:190px!important;min-width:190px!important}
   body:not(.zebraDevice) .pfnBrowserControlRow select{width:100%!important;min-width:0!important;min-height:38px!important;font-size:11px!important;padding:6px 26px 6px 8px!important}
   body:not(.zebraDevice) .pfnHighPriorityFilter{flex:0 0 132px!important;width:132px!important;min-width:132px!important;min-height:38px!important;font-size:10px!important;padding:6px 8px!important}
   body:not(.zebraDevice) .pfnWideSearch,
@@ -1565,7 +1544,7 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{width:100%;min-width:0;max-width:none}
  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]{position:relative;width:100%;min-width:0;max-width:none}
  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>.pfnUnifiedMultiSelectMenu{top:calc(100% + 4px);bottom:auto;left:64px;right:0;width:auto;max-height:250px;z-index:500}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;gap:10px;min-width:0}
+ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid;grid-template-columns:minmax(180px,1fr) 420px;align-items:center;gap:10px;min-width:0}
  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{display:block;min-width:0}
  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField>span{display:none}
  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{box-sizing:border-box;width:100%;height:42px}
@@ -1778,3 +1757,5 @@ body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOpt
 body:not(.zebraDevice) #quickGTINResolver .pfnCreateGroup{display:grid;width:100%;gap:6px;margin:10px 0 6px}
 body:not(.zebraDevice) #quickGTINResolver [data-quick-group]{box-sizing:border-box;width:100%;height:42px;padding:0 38px 0 11px;border:1px solid #b8d0e5;border-radius:9px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%2355728d' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 13px center;appearance:none;color:#123f6d;font-family:inherit;font-size:14px;font-weight:750;outline:none}
 body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{border-color:#1769aa;box-shadow:0 0 0 3px rgba(23,105,170,.16)}
+
+@media(min-width:901px){body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions button[hidden]{display:block!important;visibility:hidden;pointer-events:none}}
