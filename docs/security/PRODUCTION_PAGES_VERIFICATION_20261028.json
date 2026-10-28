@@ -1,0 +1,32 @@
+{
+  "sha": "c7000c6065cbaf7b5e72cb5051d055bc9f3e7c26",
+  "html_exact": true,
+  "production_config": true,
+  "asset_count": 65,
+  "all_assets_200_and_byte_identical": true,
+  "sri_tags": 2,
+  "source_paths_404": [
+    [
+      "supabase/",
+      404
+    ],
+    [
+      "tests/",
+      404
+    ],
+    [
+      "proposals/",
+      404
+    ],
+    [
+      "package.json",
+      404
+    ],
+    [
+      "AGENTS.md",
+      404
+    ]
+  ],
+  "signed_in_smoke": "NOT PERFORMED - no authenticated session",
+  "operational_writes": false
+}

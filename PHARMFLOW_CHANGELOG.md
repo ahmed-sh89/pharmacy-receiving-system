@@ -1,62 +1,13 @@
-## Selective security release preparation — 28 October 2026
+## Production selective security release — 28 October 2026
 
-PREPARED / NOT DEPLOYED. Production main/live 6da2af6bac8c302e46a12cb9c95bb34cb67e3e19 unchanged. Branch security/selective-production-prep-20261028. Owner reports functional Stage smoke PASS; scope not expanded. 41 focused local tests, clean install, audit zero and build PASS; hosted CI recorded separately. SEC-007 strict preflight PASS, isolated apply/rollback/drift tests PASS; Production Edge v5/v3-specific patches prepared only. SEC-009, Stage config/fixtures/headers, performance/UX and EXPIRY-SAVE-001 excluded. No Production writes/Auth changes/Edge deployment/main merge. See docs/security/SELECTIVE_PRODUCTION_RELEASE_20261028.md for approvals, exact sequence and limitations.
-
-# 2026-10-27 — Production publication verified
-
-**DEPLOYED — READY FOR USER TEST.** Not USER VERIFIED or DONE.
-
-Runtime release commit `4c9de95ee88e79dc86bac7bbd97d7ef1663cb198`; previous Production/rollback `b618af9e0e55f30a616fd7e09eec9392ca6764c1`. Accepted Staging `12764f8044acc83108ea0d31d6cc6ac6891ae3b8`; integration branch `release/receiving-security-production-20261027`. GitHub Pages run40500905826 completed successfully. Live Production version.json matches runtime release; Production Supabase `zznoshzcyxmtwfbznjyr`, original CSP/build guard retained. This follow-up changes documentation only; its own served deployment SHA is recorded in the durable final release report.
-
-Integrated99 focused tests, three isolated Chromium regressions, Production build and actual main/nested Pages-path Worker parsing checks PASS. Live main/nested parser/Worker/security/modal/config assets match tested bytes. Actual Production browser reaches Sign In. No signed-in Production session available: Receiving/Manifest/order quantities/Needs Review/Expiry inside an authenticated account, operational writes and live second-PC synchronization are NOT newly verified. Product Owner accepted Staging scope remains recorded. No database writes/migrations or operational changes performed. No rollback needed.
-
-Exact Product Owner smoke: sign in on Production; confirm existing Receiving orders/quantities, open Manage Orders and verify saved assignment indicators, then open Needs Review and Expiry and refresh. No reset/reimport/reassignment or artificial receiving write is needed. Observe the next legitimate receiving action separately. If an operational regression appears, use the documented normal reverting-commit rollback; no force push/data restoration. Existing unrelated scheduled photo-cleanup failures require separate investigation and were not changed here.
-
----
-
-# 2026-10-27 — Approved Production Receiving/security release preparation
-
-Production integration base/rollback `b618af9e0e55f30a616fd7e09eec9392ca6764c1`; accepted Staging `12764f8044acc83108ea0d31d6cc6ac6891ae3b8`. Integration branch `release/receiving-security-production-20261027`. Product Owner authorized conditional publication; this entry records pre-publication gates. Final publication verification is recorded in the release handoff and subsequent checkpoint closure. Not USER VERIFIED or DONE on Production.
-
-Selective approved Receiving consolidation/Needs Review provenance, SheetJS CE0.20.3 vendored parser/secure Worker/limits, file-picker permission race, fast Manifest restoration and compact per-order Handheld assignment. Production Supabase/CSP/build guards/Auth/Expiry/Global GTIN/package lock/workflow preserved. No migrations, backend changes or live operational mutations. Original source rows/receiving ledger preserved; no archive backfill.
-
-Integrated source99 Node tests PASS; real supplier totals12/62 and source lines preserved. Three isolated Chromium suites PASS; Production configuration build PASS. Pages-path/main+nested entry actual Worker/CSP checks recorded in release evidence. Fixtures are isolated, no live authenticated writes or second-PC verification claimed. Product Owner Staging acceptance retained, including Needs Review relinking; explained test-mapping notice not reopened.
-
-Rollback: normal reverting commit to the base frontend tree/config, never force push or database restore. Current Production dependencies202 definitions unchanged from preflight; no migration needed. Pages deployment40309394685 successfully published rollback SHA. Existing scheduled photo-cleanup failures are separate from successful Pages deployment and were not modified.
-
----
-
-# 2026-10-26 — Approved Inventory Production promotion
-
-Starting Production/rollback: `ca7d575066af3f82c849511718aa113f58c377cd`. Accepted Staging implementation: `8240d267302f6057de7b9d4c33a8fbeeca627e47`. Product Owner confirmed eight KPIs/filtering, corrected Actions, persistent selection, three-second save emphasis, real edit persistence and repeated Actions. Prior authenticated Staging HOLD is removed by this explicit acceptance. Final deployment SHA is recorded in delivery and Pages metadata.
-
-Selective integration onto verified current main: Desktop Inventory JS, filter helper, CSS, cache versions and focused tests. Production Supabase/CSP/build configuration retained. Auth, permissions, Sleep/Wake, Receiving, Handheld and database contracts unchanged. No migrations or live inventory edits. EXPIRY-PERF-01: approximately two-second Edit/Delete confirmation latency accepted as non-blocking; deferred, not implemented.
-
-Root cause fixed: refresh replaced Actions buttons while busy; resetting only the flag left DOM buttons disabled. Mutation-state transitions now synchronize current controls. Stable row_id selection and three-second static blue success emphasis preserve selection through rendering, pagination and filtering; failures never flash. Existing frozen requests/version checks remain; duplicate/stale completion guarded.
-
-Focused verification: 91 PASS/one existing native multi-connection SKIP; Chromium isolated repeated-edit and KPI suites PASS; Production build/syntax/diff checks PASS. Known baseline Group-label and missing-history negative-control failures remain outside the selected passing suite; no full-suite green claim. Local PostgreSQL/mock readback complements Product Owner Staging acceptance; no automated Production quantity writes.
-
-Release status after successful deployment: DEPLOYED — AWAITING PRODUCT OWNER VERIFICATION. Verify served SHA, exact approved assets and Production project configuration before claiming deployment. Rollback frontend via a new reverting commit to the starting Production tree, preserving database/data. Next Product Owner check: Production Inventory shows eight KPIs; select a Product Name and verify persistent highlight, open/cancel Actions and check filters/navigation. Observe the next legitimate operational save for responsive Actions and three-second highlight; do not create an artificial Production edit. Not USER VERIFIED or DONE.
-
----
-
-# 2026-10-22 — Authorized Production Quick Add release
-
-Accepted source: `7510cbcdb73a9f2a53d2b615db858e3036f91ffe`. Selective runtime promotion on Production baseline `4b3fe2e03d438ba5d462d5eabae0a6446884e125`; Production Supabase configuration preserved. Quick Add, Group display/style, V2 metrics and selected-item UX only. No Expiry/Handheld source changes.
-
-Production migrations applied and catalog/data gate PASS: 01 `20261022203926`, 02 `20261022204003`, 05 `20261022204234`, 07 `20261022204251`. Current hardened RPCs, RLS, ACLs, constraints and aggregate operational counts unchanged. No operational records created or modified. 00/03/04/06 excluded.
-
-Nine new RPC bodies match accepted Staging tokens; signatures and grants verified. Previously accepted focused tests remain valid. Final deployment SHA, Pages workflow and read-only smoke evidence are recorded in the accompanying Production release report; this source checkpoint does not claim deployment success before activation. Recovery: restore baseline frontend only, retaining additive database contracts and data.
-
-# 2026-10-20 — Report Quantity alignment
-
-Centered Quantity header/data in Excel, PDF and Browser Print. Preserved report geometry, data/scope, date hierarchy and real mm/yyyy expiry cells. Generated artifact, Chromium and focused regression/build checks PASS. Staging only; no SQL.
-
-# 2026-10-20 — Final Expiry acceptance fixes
-
-Real Excel expiry dates and compact landscape reports; anchored row menus, canonical Group tables, original-Operator filter and durable selected Clear/Restore. Staging migration 20261020045631_expiry_acceptance_reports_filters_v1 changes read contracts only. 252 focused tests/build plus authenticated rollback SQL and Chromium/artifact checks PASS; original data fingerprints unchanged. See docs/expiry-final-acceptance-verification.md. Physical/Excel/two-PC acceptance pending. Production untouched.
-
-# PharmFlow Changelog
+Status: DEPLOYED — READY FOR USER VERIFICATION. Security program NOT CLOSED.
+Approved source e7c53750ebc6eedf07c4fa11db5543e1578f13cf plus approved main-only Vercel Git block 7a4d33398ca2c1a6a5cbc6d2ec2198695443ead2 merged via PR #31. Runtime release merge c7000c6065cbaf7b5e72cb5051d055bc9f3e7c26; Pages run 40608374725 successful. Later documentation-only commits retain identical runtime files except the deployed SHA stamp; exact final served SHA belongs in the execution result.
+Vercel root config contains only git.deploymentEnabled.main=false; unspecified Preview branches remain enabled. No automatic Vercel deployment exists for the release main merge. Existing retired aliases/routing unchanged.
+Production backend from previous authorized phase: password-admin v6 and settings-rc v4; exact approved source, SDK2.118.0, JWT true; unauthenticated requests401. SEC-007 migration20261028001737 applied; fixed body MD5 99bda52f1b8577ac07f5c0d81bdbd8f7, postgres owner, ACL and execution settings unchanged. Neither backend deployment nor migration repeated during continuation.
+Production Pro confirmed; Leaked Password Protection DISABLED per Supabase advisory and unchanged. SEC-006 remains OPEN pending separate policy approval/verification. SEC-009 unapplied.
+Focused push CI40608264523 and PR CI40608269505 successful; 41 tests/build/audit zero. Local build and41 tests PASS. Live official Pages HTML SHA/Production binding/SRI/scripts/CSS/Worker/parser/font and source-artifact exclusions checked; exact counts recorded in execution report. Signed-out browser startup reaches Sign in; no application-origin error observed (one browser-extension metadata error is unrelated).
+NO authenticated Production browser session available: actual login/session restoration, Receiving/existing orders/Manage Orders, Reports/export flows, Expiry/Needs Review, Settings and cross-pharmacy/isolation acceptance NOT newly performed. No operational writes/password changes/test identities. Physical Zebra and actual multi-PC sync remain pending. Prior owner Staging smoke PASS retained only for tested scope.
+SEC-002/003/005/006/009/012/013 remain outstanding; no whole-audit closure. EXPIRY-SAVE-001 OPEN; PERF-001/UX-001 deferred. Production runtime business logic/config and operational data preserved. Exact next action: Product Owner non-destructive signed-in Production smoke; report PASS or failing screen. No repeated password test or database administration requested.
 
 ## 2026-10-20 — Resolved Clear All
 
