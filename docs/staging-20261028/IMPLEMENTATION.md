@@ -45,8 +45,18 @@ Final focused suite: 46 tests passed, 0 failed, 0 skipped. Production/default bu
 - Focused Receiving consolidation/allocation tests passed after updating their obsolete script-version expectation to the new cache version. Export workbook was generated and read back with both worksheets and text/formula-safety assertions.
 - Focused security checks: 34 passed, 2 explicitly skipped. Existing security handlers, SEC-007 gate and runtime asset allowlist remain intact; Production code/config/workflow files remain byte-identical where unaffected.
 - Twelve failures from Access fixtures and Expiry Discard, plus one obsolete root-ui version assertion, were reproduced on the untouched `08843e4` baseline. They are not reported as passes and were not silently fixed. Full repository regression suite not certified.
-- Local Chromium unavailable; official Playwright browser download returned invalid/truncated archives. Browser visual tests and signed-in browser/multi-PC/physical Zebra acceptance remain pending. Capsule asset equality is established by source diff, not a new device screenshot.
+- Local Chromium unavailable; official Playwright browser download returned invalid/truncated archives. Cloud browser signed-out startup reached Sign in on the verified Staging Preview. Browser visual tests and signed-in browser/multi-PC/physical Zebra acceptance remain pending. Capsule asset equality is established by source diff, not a new device screenshot.
 
 ## Minimal acceptance
 
 On the Staging URL, sign in, open Receiving Report, type an item search, change selected order/Group and confirm the same quantities/export filters. Switch focus away/back and refresh; check recovery and that revoked/disabled access does not remain visible. As System Owner, download Global Items and confirm two sheets/16 items/21 identifiers (counts can change with later fixture work), and review compact Access actions. Existing Edit Pharmacy supports a disposable non-HHP084 pharmacy code. Do not use Delete Item to test historical deletion: DATA-001 remains unimplemented. Do not edit the real Azinc record.
+
+## Changed files
+
+Runtime: `js/auth.js`, `js/permissions.js`, `js/reports.js`, `js/session.js`, `js/app.js`, `js/global-items-export.js`, `js/global-items-export-worker.js`, `index.html`, `css/settings-workspace.css`, `vite.config.js`.
+
+Migration: `supabase/migrations/20261028012722_owner_global_items_export_v1.sql`.
+
+Tests: `tests/sleep-wake-permissions.test.cjs`, `tests/receiving-duplicate-line-allocation.test.cjs`, `tests/consolidated-startup.test.cjs`, `tests/consolidated-staging-performance.test.cjs`, `tests/receiving-report-performance.test.cjs`, `tests/global-items-export.test.cjs`, `tests/consolidated-staging-validation.sql`, `tests/consolidated-expiry-ack-staging.sql`.
+
+Records: `PHARMFLOW_CURRENT_CHECKPOINT.md`, `PHARMFLOW_TEST_MATRIX.md`, `PHARMFLOW_CHANGELOG.md`, `docs/staging-20261028/IMPLEMENTATION.md`, `docs/staging-20261028/DEPLOYMENT.md`, `docs/staging-20261028/TEST_RESULTS.json`, `docs/staging-20261028/PREVIOUS_CHECKPOINT.md`.

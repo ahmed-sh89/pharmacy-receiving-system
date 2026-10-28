@@ -1,0 +1,48 @@
+{
+  "focused": {
+    "tests": 46,
+    "pass": 46,
+    "fail": 0,
+    "skipped": 0
+  },
+  "security": {
+    "tests": 36,
+    "pass": 34,
+    "fail": 0,
+    "skipped": 2
+  },
+  "expiry": {
+    "tests": 62,
+    "pass": 61,
+    "fail": 1,
+    "skipped": 0
+  },
+  "access_baseline": {
+    "tests": 73,
+    "pass": 61,
+    "fail": 12,
+    "skipped": 0
+  },
+  "root_baseline": {
+    "tests": 3,
+    "pass": 2,
+    "fail": 1,
+    "skipped": 0
+  },
+  "staging_sql": {
+    "owner_export": true,
+    "non_owner_denied": true,
+    "anonymous_acl_denied": true,
+    "code_edit_uuid_preserved": true,
+    "master_counts": [
+      16,
+      21
+    ],
+    "synthetic_paging_counts": [
+      1023,
+      1028
+    ],
+    "expiry_same_operation_retry_quantity": 1,
+    "all_synthetic_writes_rolled_back": true
+  }
+}

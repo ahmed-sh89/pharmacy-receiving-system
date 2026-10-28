@@ -1,6 +1,6 @@
 # PharmFlow current checkpoint — 28 October 2026
 
-PARTIAL STAGING DELIVERY. Implemented scope ready for user testing after Preview verification. Production unchanged; no merge/promotion authorized.
+PARTIAL STAGING DELIVERY. Implemented scope READY FOR USER TEST on the verified Preview. Production unchanged; no merge/promotion authorized.
 
 Production baseline main: `08843e42399b8830af6f0eb0773f04e0269cf0b6`. Owner reports October 28 security release USER VERIFIED for tested workflows. Preserve SEC-007 and both password handlers, Pages runtime allowlist and Vercel main deployment block.
 
