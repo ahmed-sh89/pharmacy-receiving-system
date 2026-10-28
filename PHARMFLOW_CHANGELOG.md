@@ -1,3 +1,7 @@
+## Final focused Staging refinements — 28 October 2026
+
+READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.
+
 ## Accepted improvements selective release preparation — 28 October 2026
 
 PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED. HOLD: accepted Owner export has a Production-scale performance blocker; do not approve the full five-feature bundle yet. Product Owner marks Reports/search/filters/performance, Refresh/navigation, capsule/Reconnecting behavior, Owner Excel and compact Access actions USER VERIFIED — PASS on Staging. Production main stays `08843e42399b8830af6f0eb0773f04e0269cf0b6`.

@@ -1,0 +1,31 @@
+begin;
+create temp table export_v2_result(result jsonb);
+do $qa$
+declare owner_id uuid:='dddddddd-dddd-4ddd-8ddd-dddddddddddd';sid uuid;before_page jsonb;after_page jsonb;revision_before bigint;revision_after bigint;code text:='QA-EXP2-'||gen_random_uuid();denied boolean:=false;
+begin
+ select id into strict sid from auth.sessions where user_id=owner_id and (not_after is null or not_after>now()) order by created_at desc limit 1;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated','session_id',sid,'exp',extract(epoch from now()+interval '1 hour'))::text,true);
+ execute 'set local role authenticated';
+ before_page:=public.owner_export_global_items_page_v2('Items','',750,null);
+ perform public.owner_export_global_items_page_v2('Identifiers','',750,before_page->>'version');
+ execute 'reset role';
+ insert into public.pharmflow_global_items_v2(item_code,item_name,group_name) values(code,'Synthetic revision test','Medicine');
+ insert into public.pharmflow_global_item_identifiers_v2(id,item_code,identifier_display,identifier_key) values(gen_random_uuid(),code,'0000'||code,public.pharmflow_identifier_key_v2('0000'||code));
+ execute 'set local role authenticated';
+ begin perform public.owner_export_global_items_page_v2('Identifiers','',750,before_page->>'version');exception when others then if sqlerrm like '%changed during export%' then denied:=true;else raise;end if;end;
+ if not denied then raise exception 'Mutation was not detected';end if;
+ after_page:=public.owner_export_global_items_page_v2('Items','',750,null);
+ if (after_page->>'items')::int<>(before_page->>'items')::int+1 then raise exception 'Item count mismatch';end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claims',jsonb_build_object('sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','role','authenticated','session_id',sid,'exp',extract(epoch from now()+interval '1 hour'))::text,true);
+ denied:=false;begin perform public.owner_export_global_items_page_v2('Items','',1,null);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Non-owner allowed';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated','session_id',gen_random_uuid(),'exp',extract(epoch from now()+interval '1 hour'))::text,true);
+ denied:=false;begin perform public.owner_export_global_items_page_v2('Items','',1,null);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Revoked owner allowed';end if;
+ if has_function_privilege('anon','public.owner_export_global_items_page_v2(text,text,integer,text)','execute') then raise exception 'Anon ACL leak';end if;
+ if has_schema_privilege('authenticated','pharmflow_export_private','usage') then raise exception 'Revision schema exposed';end if;
+ insert into export_v2_result values(jsonb_build_object('owner_role_authenticated','PASS','non_owner_denied',true,'revoked_session_denied',true,'anonymous_execute_denied',true,'private_revision_access_denied',true,'mutation_detection','PASS','items',(before_page->>'items')::int,'identifiers',(before_page->>'identifiers')::int,'fixtures','ROLLBACK'));
+end $qa$;
+select result from export_v2_result;
+rollback;

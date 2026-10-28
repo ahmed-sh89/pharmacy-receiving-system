@@ -277,7 +277,7 @@ function showWorkspaceStartupAuthorityFailure(){
     const title=card.querySelector("strong");
     const detail=card.querySelector("small");
     if(title) title.textContent="Receiving data is not ready";
-    if(detail) detail.textContent="PharmFlow could not confirm the complete receiving snapshot. Dashboard totals and scanning are paused to protect accuracy.";
+    if(detail){detail.hidden=false;detail.textContent="PharmFlow could not confirm the complete receiving snapshot. Dashboard totals and scanning are paused to protect accuracy.";}
 
     let retry=card.querySelector("#workspaceBootRetry");
     if(!retry){
@@ -1086,7 +1086,7 @@ async function refreshSafeAccountIdentity(){
     if(looksLikeSensitiveCredential(userName)){ userName=fallback; }
     let pharmacyName=toSafeString(c.pharmacy_name).trim() || "Pharmacy";
     if(looksLikeSensitiveCredential(pharmacyName)){ pharmacyName="Pharmacy"; }
-    const role=toSafeString(c.system_role || c.member_role || "user").toUpperCase();
+    const role=formatAuthRoleLabel(c.system_role || c.member_role || "user");
 
     const pairs=[
         ["accountPharmacyName",pharmacyName],

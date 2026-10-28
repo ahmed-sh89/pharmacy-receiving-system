@@ -1,15 +1,17 @@
--- PREPARED ONLY. After explicit rollback approval and UI rollback, never run automatically.
--- Target zznoshzcyxmtwfbznjyr; removes only the new read-only export RPC.
+-- PREPARED ONLY. After approved UI rollback. No CASCADE; no Master/history/Auth changes.
 BEGIN;
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='30s';
 DO $guard$
-DECLARE f record;
 BEGIN
- SELECT p.*,pg_get_userbyid(p.proowner) owner_name INTO f FROM pg_proc p WHERE p.oid=to_regprocedure('public.owner_export_global_items_page_v1(text,text,integer)');
- IF NOT FOUND THEN RAISE EXCEPTION 'Export function absent: inspect rollback state';END IF;
- IF md5(f.prosrc) IS DISTINCT FROM '787f48593a68ae2c46aa46f5cedf185a' OR f.owner_name IS DISTINCT FROM 'postgres' OR f.prosecdef IS DISTINCT FROM true
- OR f.proconfig IS DISTINCT FROM ARRAY['search_path=pg_catalog, public']::text[] THEN RAISE EXCEPTION 'Export function drift: STOP';END IF;
+ IF (select md5(prosrc) from pg_proc where oid=to_regprocedure('public.owner_export_global_items_page_v2(text,text,integer,text)')) IS DISTINCT FROM '49c29a548cf2959fe0575bcc1c0ff32f'
+ OR (select md5(prosrc) from pg_proc where oid=to_regprocedure('pharmflow_export_private.bump_master_revision()')) IS DISTINCT FROM '4b08588f1b604fe3fe1096bc0eabfeda'
+ OR (select count(*) from pg_trigger where tgname in ('pharmflow_export_revision_items','pharmflow_export_revision_identifiers') and tgfoid=to_regprocedure('pharmflow_export_private.bump_master_revision()'))<>2 THEN RAISE EXCEPTION 'Export V2 rollback drift: STOP';END IF;
 END $guard$;
-DROP FUNCTION public.owner_export_global_items_page_v1(text,text,integer);
+DROP FUNCTION public.owner_export_global_items_page_v2(text,text,integer,text);
+DROP TRIGGER pharmflow_export_revision_items ON public.pharmflow_global_items_v2;
+DROP TRIGGER pharmflow_export_revision_identifiers ON public.pharmflow_global_item_identifiers_v2;
+DROP FUNCTION pharmflow_export_private.bump_master_revision();
+DROP TABLE pharmflow_export_private.master_revision;
+DROP SCHEMA pharmflow_export_private;
 COMMIT;
