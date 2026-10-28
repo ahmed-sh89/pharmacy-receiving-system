@@ -37,6 +37,10 @@ function copyStagingScanDiagnostic(){
   };
 }
 
+const focusedStagingPreview=process.env.VERCEL_ENV==='preview' && process.env.VERCEL_GIT_COMMIT_REF==='feature/consolidated-staging-20261028';
+const stagingRef='tovkcakucyagvbzvlnks';
+const productionRef='zznoshzcyxmtwfbznjyr';
+
 const isVercelBuild = process.env.VERCEL === '1'
   || process.env.VERCEL === 'true'
   || ['preview', 'production'].includes(process.env.VERCEL_ENV);
@@ -45,26 +49,39 @@ function productionAuthorizationRelease(){
   return {
     name:'production-authorization-release',
     configResolved(config){
-      if(config.command==='build' && process.env.VERCEL &&
+      if(config.command==='build' && process.env.VERCEL && !focusedStagingPreview &&
           (process.env.VERCEL_ENV!=='production' ||
            process.env.VERCEL_GIT_COMMIT_REF!=='main')){
         throw new Error('Production release requires main and Production configuration');
       }
     },
     transformIndexHtml(html){
-      return html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization');
+      const stamped=html.replace('__PHARMFLOW_BUILD_SHA__',process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization');
+      if(!focusedStagingPreview)return stamped;
+      return stamped.replaceAll(productionRef,stagingRef).replace('<title>','<title>STAGING | ').replace('</body>','<div style="position:fixed;bottom:2px;right:4px;z-index:99999;background:#245b9c;color:white;font:10px Arial;padding:2px 4px;border-radius:3px">STAGING — TEST DATA</div></body>');
     },
     closeBundle(){
       writeFileSync(resolve('dist/version.json'),JSON.stringify({
         sha:process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||'local-production-authorization',
-        environment:'production',supabaseRef:'zznoshzcyxmtwfbznjyr'
+        environment:focusedStagingPreview?'staging':'production',supabaseRef:focusedStagingPreview?stagingRef:productionRef
       }));
     }
   };
 }
 
+function focusedStagingBinding(){
+  return {name:'focused-staging-binding',closeBundle(){
+    if(!focusedStagingPreview)return;
+    const file=resolve('dist/js/supabase.js');
+    writeFileSync(file,readFileSync(file,'utf8').replaceAll(productionRef,stagingRef).replace('sb_publishable_dulQyE_y0NZK2XyJyW_0TA_xhvwIxCS','sb_publishable_wck-im5qsFKt6-xCOlPZQw_lxBy3C7U'));
+    const config=resolve('dist/js/config.js');
+    writeFileSync(config,readFileSync(config,'utf8').replace('"production"','"staging"'));
+    if(readFileSync(file,'utf8').includes(productionRef))throw Error('Staging backend binding failed');
+  }};
+}
+
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic()]
+  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic(),focusedStagingBinding()]
 });

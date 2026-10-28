@@ -1,3 +1,7 @@
+## Consolidated Staging work — 28 October 2026
+
+Partial delivery on `feature/consolidated-staging-20261028`, baseline `08843e4`. Production unchanged. PERF/UX, Owner Excel export and compact Access actions implemented; Pharmacy Code edit already supported, UUID preserved, HHP084 protected. DATA-001 and EXPIRY-SAVE-001 remain OPEN. One Staging migration `20261028012722_owner_global_items_export_v1`; no operational writes retained. See [implementation/test evidence](docs/staging-20261028/IMPLEMENTATION.md) and [deployment](docs/staging-20261028/DEPLOYMENT.md) for exact verification and limits. Prior security-release acceptance is USER VERIFIED per Product Owner for the workflows tested; outstanding security findings remain outstanding.
+
 ## Production selective security release — 28 October 2026
 
 Status: DEPLOYED — READY FOR USER VERIFICATION. Security program NOT CLOSED.

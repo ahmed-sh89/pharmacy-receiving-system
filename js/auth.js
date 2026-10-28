@@ -100,7 +100,9 @@ async function initializeAuth(){
         }
     }
 
-    await loadPublicSetupStatus().catch(()=>{});
+    // Setup status only controls the signed-out registration UI. A restored
+    // session still passes the context, permission and SEC-007 server gates.
+    if(!AuthState.session)await loadPublicSetupStatus().catch(()=>{});
 
     // IMPORTANT:
     // If a stored authenticated session exists, do not render an access
@@ -667,10 +669,12 @@ async function authRpc(functionName, params = {}){
         const message = String(error?.message || "").toLowerCase();
         if(message.includes("password_change_required")){
             AuthState.mustChangePassword=true;
+            window.PharmFlowPermissions?.clear();
             renderAuthState();
             throw error;
         }
         if(message.includes("pharmflow_permission_denied") && functionName!=="get_my_pharmflow_permissions_v1"){
+            window.PharmFlowPermissions?.clear();
             await window.PharmFlowPermissions?.load().catch(()=>{});
         }
         const looksExpired =
@@ -2185,6 +2189,8 @@ function renderAuthState(){
 
     const ownerCard = document.getElementById("ownerManagementCard");
     if(ownerCard){ ownerCard.hidden = !isSystemOwner(); }
+    const exportButton=document.getElementById("btnOwnerExportGlobalItems");
+    if(exportButton)exportButton.hidden=!isSystemOwner();
     if(isSystemOwner()){ loadOwnerControlCenter(false).catch(()=>{}); }
 
     // Current PharmFlow access model: one ADMIN per pharmacy, no staff invitations.

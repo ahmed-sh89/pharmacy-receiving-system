@@ -70,7 +70,7 @@
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
-<link rel="stylesheet" href="css/settings-workspace.css">
+<link rel="stylesheet" href="css/settings-workspace.css?v=CONSOLIDATED_STAGING_20261028">
 <link rel="stylesheet" href="css/permissions.css">
 
 </head>
@@ -2130,6 +2130,7 @@
 <section id="settingsAccessPanel" class="settingsTabPanel" role="tabpanel" aria-labelledby="settingsAccessTab" hidden><section id="ownerManagementCard" class="contentCard ownerControlCenter settingsModuleCard" hidden>
 
 
+                    <div class="ownerExportToolbar"><button id="btnOwnerExportGlobalItems" class="secondaryButton" type="button" hidden>Export Global Items — Download Excel</button></div>
                     <div class="ownerMetricGrid receivingSummaryGrid discrepancyGrid" aria-label="Pharmacy access views">
                         <button class="ownerMetricCard pfnIssueCard pfnKpiAll" type="button" data-owner-view="total" aria-pressed="true">
                             <span>Total Pharmacies</span>
@@ -2591,17 +2592,18 @@
 
 <script src="js/receiving.js?v=RECEIVING_CONSOLIDATION_20261026"></script>
 
-<script src="js/session.js?v=RECEIVE_ALL_ATOMIC1"></script>
+<script src="js/session.js?v=CONSOLIDATED_STAGING_20261028"></script>
 
-<script src="js/reports.js?v=RECEIVING_CONSOLIDATION_20261026_SEC011_20261028"></script>
+<script src="js/reports.js?v=CONSOLIDATED_STAGING_20261028"></script>
 
 <script src="js/supabase.js?v=B10CLEAN15_15"></script>
 
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
-<script src="js/permissions.js?v=ORDER_IMPORT_PERMISSION_20261027"></script>
-<script src="js/auth.js?v=SLEEP_WAKE_20261026"></script>
+<script src="js/permissions.js?v=CONSOLIDATED_STAGING_20261028"></script>
+<script src="js/global-items-export.js?v=20261028"></script>
+<script src="js/auth.js?v=CONSOLIDATED_STAGING_20261028"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
@@ -2626,7 +2628,7 @@
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
 <script src="js/pharmflow-next.js?v=ASSIGNMENT_STABILITY_20261027"></script>
 
-<script src="js/app.js?v=KPI_SNAPSHOT_READY1"></script>
+<script src="js/app.js?v=CONSOLIDATED_STAGING_20261028"></script>
 
 <script src="js/handheld-runtime.js?v=HANDHELD_HISTORY_SCOPE_20261025"></script>
 <script src="js/receiving-release.js?v=RECEIVING_CONSOLIDATION_20261026"></script>
