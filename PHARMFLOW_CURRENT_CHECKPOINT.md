@@ -18,3 +18,8 @@ Next: Owner tests updated Preview: Refresh Loading, Administrator, compact toolb
 ## 2026-10-28 — Consolidated selective Production preparation
 
 All Staging improvements through97c7385 are Product Owner USER VERIFIED within tested scenarios. Production main/served08843e4 unchanged. Production-based release includes accepted startup, ExportV2, labels/Loading/Access, Reports, final Receiving toolbar and canonical Group.51 focusedPASS/buildPASS; final guarded SQL apply/rollback2PASS; full-size56588/78164 XLSX183requests. Live Supabase preflight unavailable (Unknown tool); concurrent writer lock impact and full-size Windows/Excel limits remain OPEN gates. No deployment or migration. Authoritative inventory, hashes, limitations, release/rollback/smoke sequence: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED; final approval blocked pending gates.
+
+
+## 2026-10-28 — Focused final blocker evidence
+
+Prepared release7551a7e and accepted runtime unchanged;51 priorPASS retained. One Supabase retry failed Unknown tool; current Production schema/RLS/SEC007 verification OPEN. Real PostgreSQL16.15 synthetic concurrency reproduced40P01 with AFTER revision trigger. Guarded BEFORE STATEMENT candidate passes opposing-writer/invalidation/rollback checks in isolation, NOT applied to Staging. Windows standalone full-size export check ready; real Windows/Excel memory/time OPEN. No Production actions. Details: docs/releases/FINAL_BLOCKER_CLOSURE_20261028.md. NOT READY FOR PRODUCTION APPROVAL.
