@@ -1633,7 +1633,7 @@ function bindReportSearch(){
                 ){
 
                     items =
-                        getHistoricalSearchableItems();
+                        getHistoricalSearchableItems(query);
 
                 }
                 else{

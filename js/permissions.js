@@ -51,7 +51,11 @@ window.PharmFlowPermissions = (() => {
   cancelRetry();
   const request={key,epoch:++epoch,started:Date.now()};
   const current=()=>request.epoch===epoch && scope()===key;
-  saved=null;savedScope='';phase='loading';apply();
+  // Revalidate every resume, but a same-scope grant remains usable until
+  // the server replaces or rejects it. Scope changes, offline and explicit
+  // revocation still clear synchronously; RPC authorization is unchanged.
+  if(!active()){saved=null;savedScope='';phase='loading';}
+  apply();
   const promise=(async()=>{
    try{
     if(typeof prepareAuthSessionForPermissions==='function')await prepareAuthSessionForPermissions();
@@ -132,7 +136,7 @@ window.PharmFlowPermissions = (() => {
   if(active() && (document.body.classList.contains('zebraReceivingActive')&&!allowed('RECEIVING') || document.body.classList.contains('zebraExpiryActive')&&!allowed('EXPIRY')))window.setZebraHomeMode?.();
   let note=document.getElementById('pharmflowPermissionNotice');
   if(!note){note=document.createElement('div');note.id='pharmflowPermissionNotice';note.className='authMessage';note.setAttribute('role','status');document.querySelector('.mainContent')?.prepend(note);}
-  const noticeText=!active()?(phase==='loading'?'Reconnecting — verifying permissions…':!scope()?'Sign in to verify permissions.':'Permissions unavailable. Reconnect or sign in again.'):!allowed('RECEIVING',true)||!allowed('EXPIRY',true)?`Receiving: ${({FULL:'Enabled',DISABLED:'Disabled',READ_ONLY:'Legacy Read Only'})[saved.receiving]} · Expiry: ${({FULL:'Enabled',DISABLED:'Disabled',READ_ONLY:'Legacy Read Only'})[saved.expiry]}`:'';
+  const noticeText=!active()?(phase==='loading'?'Reconnecting...':!scope()?'Sign in to verify permissions.':'Permissions unavailable. Reconnect or sign in again.'):!allowed('RECEIVING',true)||!allowed('EXPIRY',true)?`Receiving: ${({FULL:'Enabled',DISABLED:'Disabled',READ_ONLY:'Legacy Read Only'})[saved.receiving]} · Expiry: ${({FULL:'Enabled',DISABLED:'Disabled',READ_ONLY:'Legacy Read Only'})[saved.expiry]}`:'';
   if(note && note.textContent!==noticeText)note.textContent=noticeText;
  }
  let scheduled=false;

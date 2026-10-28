@@ -1341,6 +1341,16 @@ function buildMultiOrderReceivingReport(options={}){
         ? (UI.receivingFilters?.classification||{})
         : {};
 
+    // These inputs are constant for this synchronous report pass. Computing
+    // classification choices per row turned search/summary into quadratic work.
+    const selectedGroups=Array.isArray(classification?.groups)?classification.groups:[];
+    const availableGroups=visibleOnly && window.PharmFlowClassificationFilters
+        ? window.PharmFlowClassificationFilters.choices((AppState?.workspace?.orderData||[]),classification)?.groups||[] : [];
+    const allGroupsSelected=!selectedGroups.length ||
+        (availableGroups.length>0 && availableGroups.every(group=>selectedGroups.includes(group)));
+    const receivedMap=buildReceivedQuantityByOrder();
+    const workspaceByCode=new Map((AppState?.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+
     const groups=[];
     const flatRows=[];
 
@@ -1359,7 +1369,7 @@ function buildMultiOrderReceivingReport(options={}){
                 normalizeOrderNumber(meta.orderNumber)===orderNumber
             ) || {orderNumber,orderDate:""};
 
-        const allRows=getPerOrderReceivingRows(orderNumber);
+        const allRows=getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode});
 
         const rows=allRows.filter(row=>{
             const received=Number(row?.["Received Qty"]||0);
@@ -1368,12 +1378,6 @@ function buildMultiOrderReceivingReport(options={}){
             }
 
             if(visibleOnly && window.PharmFlowClassificationFilters){
-                const selectedGroups=Array.isArray(classification?.groups)?classification.groups:[];
-                const availableGroups=window.PharmFlowClassificationFilters.choices(
-                    (AppState?.workspace?.orderData||[]),classification
-                )?.groups||[];
-                const allGroupsSelected=!selectedGroups.length ||
-                    (availableGroups.length>0 && availableGroups.every(group=>selectedGroups.includes(group)));
                 /* Select All means every operational row, including an Extra
                    Item that has no classification metadata. */
                 if(!allGroupsSelected && !window.PharmFlowClassificationFilters.filter([row],classification).length) return false;

@@ -1,0 +1,45 @@
+{
+  "status": "PREPARED FOR PRODUCTION APPROVAL - NOT DEPLOYED; HOLD FOR EXPORT SCALABILITY",
+  "productionMain": "08843e42399b8830af6f0eb0773f04e0269cf0b6",
+  "acceptedImplementation": "87be759e28c7bcc912c6cf8097d40955b10bcf6b",
+  "stagingHead": "f63d0b299b2f023ad88513ccdc7b6a0f580bd4d7",
+  "releaseBranch": "release/accepted-improvements-prep-20261028",
+  "productionMaster": {
+    "items": 56588,
+    "identifiers": 78164,
+    "indexesInspected": true
+  },
+  "sec007": {
+    "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+    "md5": "99bda52f1b8577ac07f5c0d81bdbd8f7",
+    "owner": "postgres",
+    "config": [
+      "search_path=pg_catalog, auth"
+    ]
+  },
+  "productionExportFunctionExists": false,
+  "scale": {
+    "fingerprintSingleSampleExecutionMs": 2321.66,
+    "pages": 183,
+    "estimatedFingerprintSeconds": 424.86377999999996,
+    "estimateOnly": true,
+    "productionFullExportRun": false,
+    "syntheticWorkbook": {
+      "items": 56588,
+      "identifiers": 78164,
+      "bytes": 10714964,
+      "workbookMs": 5886,
+      "totalMs": 10125,
+      "nodeProcessPeakRssMiB": 817
+    }
+  },
+  "productionWrites": false,
+  "productionMigrationApplied": false,
+  "productionMerge": false,
+  "productionDeployment": false,
+  "ownerAuthorization": "isolated Postgres apply, Owner success, non-owner/anonymous/revoked-session denial, rollback and original data/gate preservation PASS",
+  "sql_sha256": {
+    "owner-export-apply.sql": "49afab631a7bf6d28e711b69b7e75efca2a37e825b57bab8e0ad1930db6d648d",
+    "owner-export-rollback.sql": "6a8cd3be4fafcafd959a43b87560042dc4977a2d7768e34a83552a5747c7eb8e"
+  }
+}

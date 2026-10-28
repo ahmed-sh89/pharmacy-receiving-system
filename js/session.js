@@ -2346,7 +2346,7 @@ function mergeZebraSessionData(
    HISTORICAL SEARCHABLE ITEMS
 ===================================================== */
 
-function getHistoricalSearchableItems(){
+function getHistoricalSearchableItems(searchText=""){
 
     const itemMap =
         new Map();
@@ -2438,7 +2438,7 @@ function getHistoricalSearchableItems(){
     return sortByItemName(
         Array.from(
             itemMap.values()
-        )
+        ).filter(item=>!searchText || itemMatchesSearch(item,searchText))
     );
 
 }

@@ -1,3 +1,11 @@
+## Accepted improvements selective release preparation — 28 October 2026
+
+PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED. HOLD: accepted Owner export has a Production-scale performance blocker; do not approve the full five-feature bundle yet. Product Owner marks Reports/search/filters/performance, Refresh/navigation, capsule/Reconnecting behavior, Owner Excel and compact Access actions USER VERIFIED — PASS on Staging. Production main stays `08843e42399b8830af6f0eb0773f04e0269cf0b6`.
+
+Branch `release/accepted-improvements-prep-20261028` starts from Production and selectively carries accepted runtime only. Staging Vite binding/exception is excluded; Production config, Pages workflow, SEC-007, password handlers and Vercel main block unchanged. One export RPC apply/rollback is PREPARED ONLY under `proposals/accepted-improvements-release/`, not applied migrations. No Production database/Auth/Edge/business-data or main/deployment change.
+
+Actual Global Master 56,588/78,164; current exporter makes 183 pages with repeated full-data hashing. Read-only fingerprint sample 2,321.66ms → estimated 7.1min hashing per complete export, not a full-run timing. Synthetic full-size workbook/count/text test PASS; server scalability remains a blocker. Exact gate, tests, deployment/rollback sequence and next approval decision: [release preparation](docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md). Next: approve focused Staging export optimization or explicitly exclude export from this bundle. DATA-001, Azinc, Pharmacy Code and SEC-009 remain excluded.
+
 ## Production selective security release — 28 October 2026
 
 Status: DEPLOYED — READY FOR USER VERIFICATION. Security program NOT CLOSED.
