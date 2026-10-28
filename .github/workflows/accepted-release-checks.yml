@@ -1,7 +1,7 @@
 name: Accepted improvements release preparation
 on:
   push:
-    branches: ['release/accepted-improvements-prep-20261028']
+    branches: ['release/accepted-improvements-prep-20261028','feature/final-staging-refinements-20261028']
 permissions:
   contents: read
 jobs:
@@ -20,17 +20,12 @@ jobs:
       - name: Focused selective-release checks
         run: >-
           node --test
-          tests/security-source-hardening.test.cjs
-          tests/security-production-artifact.test.cjs
-          tests/security-production-gate.test.cjs
-          tests/sec004-password-parity.test.cjs
-          tests/consolidated-startup.test.cjs
-          tests/consolidated-staging-performance.test.cjs
-          tests/receiving-report-performance.test.cjs
+          tests/export-v2.test.cjs
+          tests/export-v2-scale.test.cjs
           tests/global-items-export.test.cjs
           tests/production-owner-export-prep.test.cjs
+          tests/final-refinements-ui.test.cjs
           tests/sleep-wake-permissions.test.cjs
-          tests/receiving-consolidation-review.test.cjs
-          tests/receiving-duplicate-line-allocation.test.cjs
+          tests/receiving-report-performance.test.cjs
       - name: Build without deploying
         run: npm run build

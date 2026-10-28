@@ -244,4 +244,5 @@ dialog.settingsDialog::backdrop{background:#142a4066}
 #page-settings #ownerPharmacyList .ownerPharmacyState{font-size:12px;font-weight:600}
 #page-settings #ownerPharmacyList .ownerCreatedDate{font-size:13px;font-weight:500;color:#435b70}
 
-#page-settings .ownerExportToolbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+#page-settings .ownerManagementActions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+#page-settings #btnOwnerExportGlobalItems{min-height:32px;padding:5px 9px;font-size:12px;white-space:nowrap}

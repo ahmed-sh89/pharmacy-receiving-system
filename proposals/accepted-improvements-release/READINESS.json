@@ -1,45 +1,67 @@
 {
-  "status": "PREPARED FOR PRODUCTION APPROVAL - NOT DEPLOYED; HOLD FOR EXPORT SCALABILITY",
-  "productionMain": "08843e42399b8830af6f0eb0773f04e0269cf0b6",
-  "acceptedImplementation": "87be759e28c7bcc912c6cf8097d40955b10bcf6b",
-  "stagingHead": "f63d0b299b2f023ad88513ccdc7b6a0f580bd4d7",
-  "releaseBranch": "release/accepted-improvements-prep-20261028",
-  "productionMaster": {
+  "scale": {
     "items": 56588,
     "identifiers": 78164,
-    "indexesInspected": true
+    "requests": 183,
+    "countQueries": 2,
+    "metadataResponses": 1,
+    "fullFingerprints": 0,
+    "baselineSingleHashMs": 539.58,
+    "databaseAllPagesMs": 1426.06,
+    "workbookMs": 952.75,
+    "exportMs": 3245.02,
+    "totalMs": 11667.74,
+    "xlsxBytes": 4764297,
+    "writerRssMiB": 693,
+    "wholeProcessPeakRssMiB": 1097,
+    "conditions": "local PGlite and Node VM; includes SQL/collector/workbook/readback, excludes browser/network"
   },
-  "sec007": {
-    "acl": "{postgres=X/postgres,authenticated=X/postgres}",
-    "md5": "99bda52f1b8577ac07f5c0d81bdbd8f7",
-    "owner": "postgres",
-    "config": [
-      "search_path=pg_catalog, auth"
-    ]
+  "isolatedWriterBefore": {
+    "mode": "before",
+    "items": 56588,
+    "identifiers": 78164,
+    "writerMs": 5497,
+    "rssMiB": 737,
+    "peakRssMiB": 737,
+    "xlsxBytes": 10714964,
+    "conditions": "isolated Node VM generation only; same synthetic data; excludes browser/DB/readback"
   },
-  "productionExportFunctionExists": false,
-  "scale": {
-    "fingerprintSingleSampleExecutionMs": 2321.66,
-    "pages": 183,
-    "estimatedFingerprintSeconds": 424.86377999999996,
-    "estimateOnly": true,
-    "productionFullExportRun": false,
-    "syntheticWorkbook": {
-      "items": 56588,
-      "identifiers": 78164,
-      "bytes": 10714964,
-      "workbookMs": 5886,
-      "totalMs": 10125,
-      "nodeProcessPeakRssMiB": 817
-    }
+  "isolatedWriterAfter": {
+    "mode": "after",
+    "items": 56588,
+    "identifiers": 78164,
+    "writerMs": 1678,
+    "rssMiB": 199,
+    "peakRssMiB": 199,
+    "xlsxBytes": 3011351,
+    "conditions": "isolated Node VM generation only; same synthetic data; excludes browser/DB/readback"
   },
-  "productionWrites": false,
-  "productionMigrationApplied": false,
-  "productionMerge": false,
-  "productionDeployment": false,
-  "ownerAuthorization": "isolated Postgres apply, Owner success, non-owner/anonymous/revoked-session denial, rollback and original data/gate preservation PASS",
+  "focusedTests": {
+    "tests": 35,
+    "pass": 35,
+    "fail": 0
+  },
+  "staging": {
+    "items": 17,
+    "identifiers": 22,
+    "migration": "20261028022820_owner_export_revision_stream_v2",
+    "ownerAuthenticated": true,
+    "nonOwnerDenied": true,
+    "revokedOwnerDenied": true,
+    "anonymousDenied": true,
+    "counterPrivate": true,
+    "mutationDetected": true,
+    "allFixturesRolledBack": true,
+    "sec007": "99bda52f1b8577ac07f5c0d81bdbd8f7"
+  },
+  "independentFullXlsx": "ZIP CRC/openpyxl exact 56588 items, 78164 identifiers, text and associations PASS",
+  "browserProductionScale": "NOT CERTIFIED; Node/SQL tests are not Windows browser measurements",
+  "status": "READY FOR USER TEST - PRODUCTION UNCHANGED; browser-scale acceptance pending",
+  "productionMain": "08843e42399b8830af6f0eb0773f04e0269cf0b6",
+  "priorPreparation": "232f7fe1238bdf01b173b97a315f49da1540da24",
+  "serverFingerprintBlocker": "RESOLVED by transactional revision and first-page counts",
   "sql_sha256": {
-    "owner-export-apply.sql": "49afab631a7bf6d28e711b69b7e75efca2a37e825b57bab8e0ad1930db6d648d",
-    "owner-export-rollback.sql": "6a8cd3be4fafcafd959a43b87560042dc4977a2d7768e34a83552a5747c7eb8e"
+    "owner-export-apply.sql": "488eea2a203f40083845b3f78ed3954a09cba9934244cf5deeb994dd79709a04",
+    "owner-export-rollback.sql": "986631439d5d77de284c6221368aedda1974eeb25fdbc899adda153f45f8ba54"
   }
 }

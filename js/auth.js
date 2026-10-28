@@ -2094,6 +2094,10 @@ function isPharmacyAdmin(){
     return isSystemOwner() || !!(AuthState.context && AuthState.context.member_role === "admin");
 }
 
+function formatAuthRoleLabel(value){
+    return ["owner","system_owner"].includes(String(value||"").toLowerCase()) ? "Administrator" : String(value||"").toUpperCase();
+}
+
 function renderAuthState(){
     if(AuthState.mustChangePassword && AuthState.session){
         finishAuthBootState();
@@ -2169,7 +2173,7 @@ function renderAuthState(){
     }
 
     const roleText = account && account.system_role === "owner"
-        ? "OWNER"
+        ? formatAuthRoleLabel("owner")
         : (account && account.member_role ? account.member_role.toUpperCase() : "");
 
     setText("accountPharmacyName",account && account.pharmacy_name || "Pharmacy");
