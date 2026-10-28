@@ -827,29 +827,13 @@ body:not(.zebraDevice) .quickKpiOverlay{background:rgba(11,30,52,.52)!important;
 body:not(.zebraDevice) .quickKpiPanel.phase263Panel{width:min(1380px,92vw)!important;max-width:none!important;height:min(820px,88vh)!important;max-height:none!important;border-radius:18px!important;padding:18px!important;overflow:hidden!important}
 body:not(.zebraDevice) .quickKpiHeader h3{font-size:23px!important;color:#123d69!important}
 body:not(.zebraDevice) .phase263Panel [data-body]{display:flex;flex-direction:column;min-height:0;overflow:hidden!important}
-/* Desktop Order Item Browser: one owner for the header and Search/action rows. */
-@media (min-width:901px){
-  body:not(.zebraDevice) .pfnOrderBrowserControls{display:grid;grid-template-rows:auto auto;gap:8px;margin:0 0 8px;min-width:0}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:8px;min-width:0}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>label,body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{display:grid;gap:3px;min-width:0;color:#49657f;font-size:11px;font-weight:850}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow select{width:100%;height:38px;min-height:38px;padding:0 10px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:13px;font-weight:800}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{min-width:0}
-  body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{display:flex;align-items:center;justify-content:space-between;min-height:38px;padding:0 10px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:13px;font-weight:800}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:end;gap:12px;min-width:0}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{grid-template-rows:auto 42px}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{box-sizing:border-box;width:100%;min-width:0;height:42px;padding:0 11px;border:2px solid #8fb3d2;border-radius:8px;background:#fff;color:#173f67;box-shadow:inset 0 1px 2px rgba(19,61,105,.06);font-size:14px;font-weight:700}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch::placeholder{color:#627d96;opacity:1}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch:focus{border-color:#1476c9;outline:3px solid rgba(20,118,201,.16);outline-offset:0;box-shadow:0 0 0 1px #1476c9}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions{display:grid;grid-template-columns:148px 80px 176px;align-items:center;gap:8px;min-width:0}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter{height:42px;min-height:42px;flex:0 0 auto;padding:0 18px;border:1px solid #9fbad5;border-radius:8px;background:#fff;color:#173f67;font-size:14px;font-weight:850;white-space:nowrap;cursor:pointer}
-  body:not(.zebraDevice) .pfnOrderBrowserControls [data-priority-filter]{min-width:148px}
-  body:not(.zebraDevice) .pfnOrderBrowserControls .pfnHighPriorityFilter.active{background:#fff5d9;border-color:#e2b546;color:#8a5a00}}
+
 body:not(.zebraDevice) .pfnCleanWorklist{flex:1;min-height:0;max-height:none!important;overflow:auto!important}
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table{font-size:15px!important}
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table th{font-size:12px!important;padding:12px 14px!important}
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table td{padding:13px 14px!important;font-size:15px!important}
-body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:42%;font-size:16px!important}body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName b{font-weight:600; font-size:17px!important;color:#123d69}.pfnCleanWorklist .pfnOrderedQty{font-size:18px!important;font-weight:900!important;color:#123d69}
-body:not(.zebraDevice) .pfnPriorityCell{white-space:nowrap}.pfnPriorityMark{height:34px;min-width:66px;margin-right:6px;border:1px solid #b9c9d9;border-radius:8px;background:#fff;color:#60758d;font-size:12px;font-weight:900;cursor:pointer}.pfnPriorityMark.active.new{background:#eaf4ff;border-color:#3184d6;color:#1764b0}.pfnPriorityMark.active.short{background:#fff0f1;border-color:#d95662;color:#b42331}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:42%;font-size:16px!important}body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName b{font-weight:500; font-size:17px!important;color:#123d69}.pfnCleanWorklist .pfnOrderedQty{font-size:18px!important;font-weight:900!important;color:#123d69}
+body:not(.zebraDevice) .pfnPriorityCell{white-space:nowrap}.pfnPriorityMark{border:1px solid #b9c9d9;border-radius:8px;background:#fff;color:#60758d;cursor:pointer}.pfnPriorityMark.active.new{background:#eaf4ff;border-color:#3184d6;color:#1764b0}.pfnPriorityMark.active.short{background:#fff0f1;border-color:#d95662;color:#b42331}
 body:not(.zebraDevice) #page-receiving .contentCard h2{font-size:22px!important}
 .pfnCleanReceiving #page-receiving .receivingFilterBar button,
 .pfnCleanReceiving #page-receiving .receivingFilterBar select{font-size:13px!important;min-height:40px!important}.pfnCleanReceiving #page-receiving .dataTable{font-size:14px!important}.pfnCleanReceiving #page-receiving .dataTable th{font-size:11px!important}.pfnCleanReceiving #page-receiving .dataTable td{font-size:14px!important}
@@ -884,7 +868,7 @@ body:not(.zebraDevice) .phase263Table td b{font-size:16px!important}.phase263Sum
 /* Order Item Browser: operational column order + strong priority states. */
 body:not(.zebraDevice) .pfnCleanWorklist .pfnItemCode{font-size:15px!important;font-weight:800!important;color:#174b7c!important;white-space:nowrap}
 body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{width:auto!important;min-width:300px!important}.pfnCleanWorklist .pfnItemName b{font-size:16px!important}
-body:not(.zebraDevice) .pfnPriorityCell{min-width:160px!important}.pfnPriorityMark{height:36px!important;min-width:68px!important;font-size:13px!important;background:#fff!important;color:#45627e!important;border:1px solid #9eb6ce!important}
+body:not(.zebraDevice) .pfnPriorityCell{min-width:160px!important}.pfnPriorityMark{background:#fff!important;color:#45627e!important;border:1px solid #9eb6ce!important}
 body:not(.zebraDevice) .pfnPriorityMark.active.new{background:#0b78d0!important;border-color:#075fa8!important;color:#fff!important;box-shadow:0 0 0 3px rgba(11,120,208,.16)!important}
 body:not(.zebraDevice) .pfnPriorityMark.active.short{background:#f28c18!important;border-color:#c96b00!important;color:#fff!important;box-shadow:0 0 0 3px rgba(242,140,24,.18)!important}
 body:not(.zebraDevice) .pfnPriorityGroup td{position:sticky;top:0;z-index:2;background:#e8f2fc!important;color:#123d69!important;padding:8px 12px!important;border-top:2px solid #9dbbd8!important;border-bottom:1px solid #bcd0e4!important}.pfnPriorityGroup strong{font-size:15px!important;margin-right:10px}.pfnPriorityGroup span{font-size:13px!important;color:#5b748d!important}
@@ -909,7 +893,7 @@ body:not(.zebraDevice) .pfnCleanWorklist th{font-size:13px!important}
 body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(1){width:11%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(2){width:31%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(3){width:17%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(4){width:15%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(5){width:9%}body:not(.zebraDevice) .pfnCleanWorklist th:nth-child(6){width:17%}
 body:not(.zebraDevice) .pfnCleanWorklist .pfnItemName{min-width:0!important}.pfnCleanWorklist .pfnItemName b{font-size:16px!important}.pfnPriorityCell{min-width:0!important}
 body:not(.zebraDevice) .pfnPrioritySegment{display:inline-flex;gap:5px;padding:3px;border:1px solid #bfd1e2;border-radius:9px;background:#f7fbff}
-body:not(.zebraDevice) .pfnPriorityMark{height:32px!important;min-width:58px!important;font-size:13px!important;border-radius:6px!important}
+body:not(.zebraDevice) .pfnPriorityMark{border-radius:6px!important}
 body:not(.zebraDevice) .pfnCategoryCell{font-weight:750;color:#355a7c}
 
 /* 4/6/7. One readable table standard across operational views. */
@@ -1120,7 +1104,7 @@ body:not(.zebraDevice) .pfnCleanWorklist .phase263Table td{
   padding:7px 12px!important;font-size:15px!important;line-height:1.15!important;height:42px!important;
 }
 body:not(.zebraDevice) .pfnCleanWorklist .pfnPrioritySegment{padding:2px!important;min-height:30px!important}
-body:not(.zebraDevice) .pfnCleanWorklist .pfnPriorityMark{min-height:26px!important;padding:2px 8px!important;line-height:1!important}
+body:not(.zebraDevice) .pfnCleanWorklist .pfnPriorityMark{}
 /* Stronger row tracking without increasing row height. */
 body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:nth-child(odd) td{
   background:#f9fbfd!important;
@@ -1375,7 +1359,7 @@ body:not(.zebraDevice) .pfnPharmacyIdentityText strong{font-size:10px!important;
   body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>.pfnItemName b{display:inline!important;font-size:11px!important;line-height:1.1!important;white-space:nowrap!important;color:#14395e!important}
   body:not(.zebraDevice) .phase263Table tbody>tr.pfnMobileItemCard>.pfnPriorityCell{display:table-cell!important}
   body:not(.zebraDevice) .pfnPrioritySegment{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;margin:0!important;white-space:nowrap!important}
-  body:not(.zebraDevice) .pfnPriorityMark{min-height:26px!important;height:26px!important;padding:0 7px!important;font-size:8px!important;white-space:nowrap!important}
+  body:not(.zebraDevice) .pfnPriorityMark{white-space:nowrap!important}
   body:not(.zebraDevice) .phase263Table tbody>tr.pfnPriorityGroup{display:table-row!important;background:#f3f8fc!important}
   body:not(.zebraDevice) .phase263Table tbody>tr.pfnPriorityGroup>td{display:table-cell!important;padding:6px 10px!important;white-space:nowrap!important}
   body:not(.zebraDevice) .phase263Table tbody>tr:has(.tableEmptyState){display:table-row!important}
@@ -1537,17 +1521,6 @@ body:not(.zebraDevice) .smartSelectedStats strong{font-size:20px;font-weight:900
  body:not(.zebraDevice) .quickKpiPanel.phase263Panel{position:relative;padding:12px}
  body:not(.zebraDevice) .quickKpiHeader{display:flex;align-items:center;min-height:44px;margin:0 0 8px;padding-right:0}
  body:not(.zebraDevice) .quickKpiHeader h3{font-size:19px;margin:0}
- body:not(.zebraDevice) .pfnOrderBrowserControls{display:grid;grid-template-rows:auto auto;gap:8px;margin:0 0 6px;min-width:0}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;gap:10px;width:100%;z-index:3}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow>label{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:center;gap:8px;min-width:0;height:40px;color:#49657f;font-size:11px;font-weight:800}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow select,body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>summary{box-sizing:border-box;width:100%;height:40px;min-height:40px;padding:0 11px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:13px;font-weight:800}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfrClassificationFilters{width:100%;min-width:0;max-width:none}
- body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]{position:relative;width:100%;min-width:0;max-width:none}
- body:not(.zebraDevice) .pfnOrderBrowserControls [data-group-filter]>.pfnUnifiedMultiSelectMenu{top:calc(100% + 4px);bottom:auto;left:64px;right:0;width:auto;max-height:250px;z-index:500}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserActionRow{display:grid;grid-template-columns:minmax(180px,1fr) 420px;align-items:center;gap:10px;min-width:0}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField{display:block;min-width:0}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserSearchField>span{display:none}
- body:not(.zebraDevice) .pfnOrderBrowserControls .pfnWideSearch{box-sizing:border-box;width:100%;height:42px}
  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr{cursor:pointer}
  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:not(.pfnBrowserRowSelected):hover td{background:#d9ebfa!important;color:#123f67!important}
  body:not(.zebraDevice) .pfnCleanWorklist .phase263Table tbody tr:not(.pfnBrowserRowSelected):hover td b{color:#123f67!important}
@@ -1744,18 +1717,9 @@ body:not(.zebraDevice) .pfnHandheldOrderGrid,.pfnHandheldOrderGrid{grid-template
 @media(max-width:640px){body:not(.zebraDevice) .pfnHandheldOrderGrid{grid-template-columns:minmax(0,1fr)}}
 
 /* Release RC — unified custom filters for Order Items. */
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector{position:relative;min-width:0;width:100%;height:40px}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>summary{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;height:40px;padding:0 11px;border:1px solid #a6bfd4;border-radius:8px;background:#edf5fc;color:#21577f;font-size:13px;font-weight:800;cursor:pointer;list-style:none}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>summary::-webkit-details-marker{display:none}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>summary:after{content:'⌄';font-size:12px;margin-left:8px}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserControlRow .pfnSingleSelector>.pfnUnifiedMultiSelectMenu{top:calc(100% + 4px);bottom:auto;left:0;right:0;width:100%;max-height:250px;z-index:520}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions{display:grid;padding:6px;gap:3px}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions button{width:100%;min-height:34px;padding:7px 9px;border:0;border-radius:6px;background:transparent;color:#234d70;text-align:left;font:inherit;font-weight:750;cursor:pointer}
-body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions button:hover,body:not(.zebraDevice) .pfnOrderBrowserControls .pfnSingleSelector .pfrFilterOptions button.active{background:#dceefa;color:#123f67}
 
 /* Quick Add Group: same control geometry as the existing creation fields. */
 body:not(.zebraDevice) #quickGTINResolver .pfnCreateGroup{display:grid;width:100%;gap:6px;margin:10px 0 6px}
 body:not(.zebraDevice) #quickGTINResolver [data-quick-group]{box-sizing:border-box;width:100%;height:42px;padding:0 38px 0 11px;border:1px solid #b8d0e5;border-radius:9px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%2355728d' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 13px center;appearance:none;color:#123f6d;font-family:inherit;font-size:14px;font-weight:750;outline:none}
 body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{border-color:#1769aa;box-shadow:0 0 0 3px rgba(23,105,170,.16)}
 
-@media(min-width:901px){body:not(.zebraDevice) .pfnOrderBrowserControls .pfnBrowserPriorityActions button[hidden]{display:block!important;visibility:hidden;pointer-events:none}}

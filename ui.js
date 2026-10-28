@@ -8547,13 +8547,28 @@ function renderItemBrowser(body, rows, options={}){
     const orderMode=options.showPriority===true;
     const receivedMode=options.receivedMode===true;
     const orderNumbers=Array.from(new Set(rows.flatMap(item=>Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).filter(Boolean)));
+    const browserPanel=body.closest(".quickKpiPanel");
+    const browserTitle=browserPanel?.querySelector("h3");
+    const browserClose=browserPanel?.querySelector("[data-close]");
     body.innerHTML=`
-      <div class="pfnBrowserControls ${orderMode?'pfnOrderBrowserControls':''}">
-        ${orderMode?`<div class="pfnBrowserControlRow"><label><span>Order</span><details data-order-filter class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>All Orders</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="ALL" class="active">All Orders</button>${orderNumbers.map(o=>`<button type="button" data-value="${esc(o)}">${esc(o)}</button>`).join('')}</div></div></details></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><details data-qty-sort class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>Highest → Lowest</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="desc" class="active">Highest → Lowest</button><button type="button" data-value="asc">Lowest → Highest</button><button type="button" data-value="default">Default / Order Sequence</button></div></div></details></label></div>`:''}
-        <div class="pfnBrowserActionRow"><label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>${orderMode?`<div class="pfnBrowserPriorityActions"><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button></div>`:''}</div>
+      <div class="pfnBrowserControls ${orderMode?'pfrOrderToolbar':''}">
+        ${orderMode?`<div class="pfrOrderToolbarFilters"><label><span>Order</span><details data-order-filter class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>All Orders</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="ALL" class="active">All Orders</button>${orderNumbers.map(o=>`<button type="button" data-value="${esc(o)}">${esc(o)}</button>`).join('')}</div></div></details></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><details data-qty-sort class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>Highest → Lowest</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="desc" class="active">Highest → Lowest</button><button type="button" data-value="asc">Lowest → Highest</button><button type="button" data-value="default">Default / Order Sequence</button></div></div></details></label></div>`:''}
+        <div class="pfrOrderToolbarActions"><label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>${orderMode?`<div class="pfrOrderPriorityActions"><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button></div>`:''}</div>
       </div>
       ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
       <div class="phase263TableWrap pfnCleanWorklist"><table class="quickKpiTable phase263Table"><thead><tr>${orderMode?'<th>Item Code</th><th>Item Name</th><th>Priority</th><th>Group</th><th>Quantity</th><th>Order No.</th>':'<th>Item Code</th><th>Item Name</th><th>Ordered</th>'}${receivedMode?'<th>Received</th>':''}</tr></thead><tbody data-rows></tbody></table></div>`;
+    if(orderMode){
+        const panel=body.closest(".quickKpiPanel");
+        panel?.classList.add("pfrOrderItemsPanel");
+        const header=panel?.querySelector(".quickKpiHeader");
+        const filters=body.querySelector(".pfrOrderToolbarFilters");
+        const title=browserTitle;
+        const close=browserClose;
+        // Move existing controls, preserving their close handler and title identity.
+        if(title)filters.prepend(title);
+        if(close)filters.append(close);
+        if(header)header.hidden=true;
+    }
     const input=body.querySelector('.phase263Search');
     const tbody=body.querySelector('[data-rows]');
     const orderFilter=body.querySelector('[data-order-filter]');

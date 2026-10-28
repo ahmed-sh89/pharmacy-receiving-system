@@ -12,9 +12,9 @@ test('canonical projection, missing and legacy Group, identity and scope',async(
  context.AuthState.context.pharmacy_id='b';assert.equal(f.normalizeReceiving({itemCode:'1'}).group,'');
 });
 test('toolbar reserves neighboring actions; only Item Name weight changes',()=>{
- const css=fs.readFileSync('css/pharmflow-next.css','utf8');
- assert(css.includes('grid-template-columns:148px 80px 176px'));
+ const css=fs.readFileSync('css/receiving-order-toolbar.css','utf8');
+ assert(css.includes('grid-template-columns:122px 64px 150px'));
  assert(css.includes('visibility:hidden;pointer-events:none'));
  assert(!css.includes('.pfnBrowserControlRow label{flex:0 0 150px'));
- assert(css.includes('.pfnItemName b{font-weight:600;'));
+ assert(fs.readFileSync('css/pharmflow-next.css','utf8').includes('.pfnItemName b{font-weight:500;')); 
 });
