@@ -89,11 +89,11 @@
       "conditions": "local PGlite and Node VM; includes SQL/collector/workbook/readback, excludes browser/network"
     },
     "openGates": [
-      "current Production Supabase schema/RLS/SEC007/Owner helper preflight: connector Unknown tool",
-      "concurrent Master import/write lock/retry impact",
-      "full-size Windows browser/Excel performance unverified"
+      "full-size Windows Chrome/Excel result remains unverified"
     ],
-    "productionUnchanged": true
+    "productionUnchanged": true,
+    "liveProductionPreflight": "PASS, superseded previous connection diagnosis",
+    "revisionConcurrency": "BEFORE correction applied and verified on Staging, prior real PostgreSQL proof retained"
   },
   "resumedExportFix": {
     "productionReadOnlyPreflight": "PASS",
@@ -109,6 +109,8 @@
     "previous51Tests": "PASS retained, not rerun",
     "realPostgresConcurrency": "prior exact correction proof retained;40P01 reproduction eliminated in tested schedule",
     "remainingGate": "full-size Windows Chrome/Excel result",
-    "productionUnchanged": true
+    "productionUnchanged": true,
+    "ci": "https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/40704739791",
+    "ciConclusion": "SUCCESS"
   }
 }
