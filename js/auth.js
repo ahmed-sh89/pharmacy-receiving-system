@@ -100,7 +100,9 @@ async function initializeAuth(){
         }
     }
 
-    await loadPublicSetupStatus().catch(()=>{});
+    // Setup status only controls the signed-out registration UI. A restored
+    // session still passes the context, permission and SEC-007 server gates.
+    if(!AuthState.session)await loadPublicSetupStatus().catch(()=>{});
 
     // IMPORTANT:
     // If a stored authenticated session exists, do not render an access
@@ -667,10 +669,12 @@ async function authRpc(functionName, params = {}){
         const message = String(error?.message || "").toLowerCase();
         if(message.includes("password_change_required")){
             AuthState.mustChangePassword=true;
+            window.PharmFlowPermissions?.clear();
             renderAuthState();
             throw error;
         }
         if(message.includes("pharmflow_permission_denied") && functionName!=="get_my_pharmflow_permissions_v1"){
+            window.PharmFlowPermissions?.clear();
             await window.PharmFlowPermissions?.load().catch(()=>{});
         }
         const looksExpired =
@@ -2090,6 +2094,10 @@ function isPharmacyAdmin(){
     return isSystemOwner() || !!(AuthState.context && AuthState.context.member_role === "admin");
 }
 
+function formatAuthRoleLabel(value){
+    return ["owner","system_owner"].includes(String(value||"").toLowerCase()) ? "Administrator" : String(value||"").toUpperCase();
+}
+
 function renderAuthState(){
     if(AuthState.mustChangePassword && AuthState.session){
         finishAuthBootState();
@@ -2165,7 +2173,7 @@ function renderAuthState(){
     }
 
     const roleText = account && account.system_role === "owner"
-        ? "OWNER"
+        ? formatAuthRoleLabel("owner")
         : (account && account.member_role ? account.member_role.toUpperCase() : "");
 
     setText("accountPharmacyName",account && account.pharmacy_name || "Pharmacy");
@@ -2185,6 +2193,8 @@ function renderAuthState(){
 
     const ownerCard = document.getElementById("ownerManagementCard");
     if(ownerCard){ ownerCard.hidden = !isSystemOwner(); }
+    const exportButton=document.getElementById("btnOwnerExportGlobalItems");
+    if(exportButton)exportButton.hidden=!isSystemOwner();
     if(isSystemOwner()){ loadOwnerControlCenter(false).catch(()=>{}); }
 
     // Current PharmFlow access model: one ADMIN per pharmacy, no staff invitations.

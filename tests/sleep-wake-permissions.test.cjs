@@ -70,3 +70,16 @@ test('idle guard defers recovery until explicit in-app resume; no duplicate idle
 test('System Administrator projection is revalidated and cannot leak into another identity',async()=>{
  const h=harness(async()=>good('p',{system_administrator:true}));await h.p.load();assert.equal(h.p.allowed('GLOBAL',true),true);h.auth.user={id:'operator'};assert.equal(h.p.allowed('GLOBAL',true),false);assert.throws(()=>h.p.checkRpc('append_pharmflow_receiving_action_v4'),/not permitted/);
 });
+
+for(const outcome of ['success','denial','malformed'])test('same-scope revalidation retains authorized content only until '+outcome,async()=>{
+ let finish,n=0;const h=harness(async()=>++n===1?good():new Promise(r=>finish=r));await h.p.load();
+ const pending=h.p.load();await tick();assert.equal(h.p.state(),'ready');assert.equal(h.p.allowed('RECEIVING'),true);
+ assert.equal(h.document.querySelector('[data-page="receiving"]').classList.contains('permissionHidden'),false);
+ finish(outcome==='success'?good():outcome==='denial'?good('p',{receiving:'DISABLED'}):{});
+ if(outcome==='malformed')await assert.rejects(pending);else await pending;
+ assert.equal(h.p.allowed('RECEIVING'),outcome==='success');
+});
+test('logout or pharmacy change removes protected content during same-scope revalidation',async()=>{
+ let finish,n=0;const h=harness(async()=>++n===1?good():new Promise(r=>finish=r));await h.p.load();const pending=h.p.load();await tick();
+ h.auth.context.pharmacy_id='other';h.p.apply();assert.equal(h.p.allowed('RECEIVING'),false);finish(good());await pending;assert.equal(h.p.snapshot(),null);
+});

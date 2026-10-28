@@ -1,0 +1,116 @@
+{
+  "scale": {
+    "items": 56588,
+    "identifiers": 78164,
+    "requests": 183,
+    "countQueries": 2,
+    "metadataResponses": 1,
+    "fullFingerprints": 0,
+    "baselineSingleHashMs": 539.58,
+    "databaseAllPagesMs": 1426.06,
+    "workbookMs": 952.75,
+    "exportMs": 3245.02,
+    "totalMs": 11667.74,
+    "xlsxBytes": 4764297,
+    "writerRssMiB": 693,
+    "wholeProcessPeakRssMiB": 1097,
+    "conditions": "local PGlite and Node VM; includes SQL/collector/workbook/readback, excludes browser/network"
+  },
+  "isolatedWriterBefore": {
+    "mode": "before",
+    "items": 56588,
+    "identifiers": 78164,
+    "writerMs": 5497,
+    "rssMiB": 737,
+    "peakRssMiB": 737,
+    "xlsxBytes": 10714964,
+    "conditions": "isolated Node VM generation only; same synthetic data; excludes browser/DB/readback"
+  },
+  "isolatedWriterAfter": {
+    "mode": "after",
+    "items": 56588,
+    "identifiers": 78164,
+    "writerMs": 1678,
+    "rssMiB": 199,
+    "peakRssMiB": 199,
+    "xlsxBytes": 3011351,
+    "conditions": "isolated Node VM generation only; same synthetic data; excludes browser/DB/readback"
+  },
+  "focusedTests": {
+    "tests": 35,
+    "pass": 35,
+    "fail": 0
+  },
+  "staging": {
+    "items": 17,
+    "identifiers": 22,
+    "migration": "20261028022820_owner_export_revision_stream_v2",
+    "ownerAuthenticated": true,
+    "nonOwnerDenied": true,
+    "revokedOwnerDenied": true,
+    "anonymousDenied": true,
+    "counterPrivate": true,
+    "mutationDetected": true,
+    "allFixturesRolledBack": true,
+    "sec007": "99bda52f1b8577ac07f5c0d81bdbd8f7"
+  },
+  "independentFullXlsx": "ZIP CRC/openpyxl exact 56588 items, 78164 identifiers, text and associations PASS",
+  "browserProductionScale": "NOT CERTIFIED; Node/SQL tests are not Windows browser measurements",
+  "status": "READY FOR USER TEST - PRODUCTION UNCHANGED; browser-scale acceptance pending",
+  "productionMain": "08843e42399b8830af6f0eb0773f04e0269cf0b6",
+  "priorPreparation": "232f7fe1238bdf01b173b97a315f49da1540da24",
+  "serverFingerprintBlocker": "RESOLVED by transactional revision and first-page counts",
+  "sql_sha256": {
+    "owner-export-apply.sql": "488eea2a203f40083845b3f78ed3954a09cba9934244cf5deeb994dd79709a04",
+    "owner-export-rollback.sql": "986631439d5d77de284c6221368aedda1974eeb25fdbc899adda153f45f8ba54"
+  },
+  "finalConsolidatedPreparation": {
+    "acceptedStaging": "97c7385b04bb1a42264df32f1c890a3a30bb16f6",
+    "status": "PREPARED FOR PRODUCTION APPROVAL \u2014 NOT DEPLOYED",
+    "approvalBlocked": true,
+    "focusedTests": 51,
+    "failures": 0,
+    "guardedSqlTests": 2,
+    "scale": {
+      "items": 56588,
+      "identifiers": 78164,
+      "requests": 183,
+      "countQueries": 2,
+      "metadataResponses": 1,
+      "fullFingerprints": 0,
+      "baselineSingleHashMs": 646.89,
+      "databaseAllPagesMs": 1315.88,
+      "workbookMs": 1000.24,
+      "exportMs": 3144.48,
+      "totalMs": 12526.32,
+      "xlsxBytes": 4764297,
+      "writerRssMiB": 730,
+      "wholeProcessPeakRssMiB": 1134,
+      "conditions": "local PGlite and Node VM; includes SQL/collector/workbook/readback, excludes browser/network"
+    },
+    "openGates": [
+      "full-size Windows Chrome/Excel result remains unverified"
+    ],
+    "productionUnchanged": true,
+    "liveProductionPreflight": "PASS, superseded previous connection diagnosis",
+    "revisionConcurrency": "BEFORE correction applied and verified on Staging, prior real PostgreSQL proof retained"
+  },
+  "resumedExportFix": {
+    "productionReadOnlyPreflight": "PASS",
+    "connectionIssue": "malformed Production link identifier corrected; no auth change",
+    "stagingMigration": "20261028141551_owner_export_revision_before_statement",
+    "triggerTiming": "BEFORE STATEMENT",
+    "stagingMasterPreserved": {
+      "items": 17,
+      "identifiers": 22,
+      "revision": 1
+    },
+    "focusedTests": 6,
+    "previous51Tests": "PASS retained, not rerun",
+    "realPostgresConcurrency": "prior exact correction proof retained;40P01 reproduction eliminated in tested schedule",
+    "remainingGate": "full-size Windows Chrome/Excel result",
+    "productionUnchanged": true,
+    "ci": "https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/40704739791",
+    "ciConclusion": "SUCCESS"
+  }
+}

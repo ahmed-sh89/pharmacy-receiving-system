@@ -70,14 +70,15 @@
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
-<link rel="stylesheet" href="css/settings-workspace.css">
+<link rel="stylesheet" href="css/settings-workspace.css?v=FINAL_REFINEMENTS_20261028">
 <link rel="stylesheet" href="css/permissions.css">
 
+<link rel="stylesheet" href="css/receiving-order-toolbar.css">
 </head>
 
 
 <body class="authBooting">
-<div id="workspaceBootOverlay" class="workspaceBootOverlay" role="status" aria-live="polite" aria-label="Loading PharmFlow">
+<div id="workspaceBootOverlay" class="workspaceBootOverlay" role="status" aria-live="polite" aria-label="Loading...">
     <div class="workspaceBootCard">
         <div class="pfBootCapsule" aria-hidden="true">
             <span class="pfBootCapsuleHalf pfBootCapsuleLeft"></span>
@@ -88,9 +89,8 @@
             <span class="pfBootPellet pfBootPellet4"></span>
             <span class="pfBootPellet pfBootPellet5"></span>
         </div>
-        <span>LOADING WORKSPACE</span>
-        <strong>Preparing PharmFlow</strong>
-        <small>Loading your receiving workspace…</small>
+        <strong>Loading...</strong>
+        <small hidden></small>
     </div>
 </div>
 <script>
@@ -134,9 +134,7 @@
             <div class="authFormPanelInner">
                 <div id="authBootPanel" class="authBootPanel" role="status" aria-live="polite">
                     <div class="authBootSpinner" aria-hidden="true"></div>
-                    <span class="authEyebrow">SECURE ACCESS</span>
-                    <h2>Preparing PharmFlow</h2>
-                    <p class="authLead">Checking your secure pharmacy access...</p>
+                    <h2>Loading...</h2>
                 </div>
                 <div id="authFormsPanel">
                     <div id="authLoginForm">
@@ -2167,7 +2165,7 @@
                     <section id="ownerManagementPanel" class="ownerManagementWorkspace" aria-labelledby="ownerManagementTitle">
                         <header class="ownerManagementToolbar">
                             <h3 id="ownerManagementTitle">All Pharmacies</h3>
-                            <button type="button" id="btnOpenCreateAccount" class="primaryButton">Create Pharmacy &amp; Admin</button>
+                            <div class="ownerManagementActions"><button type="button" id="btnOpenCreateAccount" class="primaryButton">Create Pharmacy &amp; Admin</button><button id="btnOwnerExportGlobalItems" class="secondaryButton" type="button" hidden>Export Data</button></div>
                             <label class="ownerSortLabel">Sort<select id="ownerManagementSort"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="az">Pharmacy Name A–Z</option><option value="za">Pharmacy Name Z–A</option></select></label>
                             <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
                                 <span>Search pharmacies</span>
@@ -2563,8 +2561,8 @@
 
 <script src="js/excel-security.js?v=SEC001_1"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" async></script>
 
 
 
@@ -2580,7 +2578,7 @@
 
 <script src="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1"></script>
 
-<script src="ui.js?v=ACTIVE_ORDERS_INSTANT_20261027"></script>
+<script src="ui.js?v=ORDER_TOOLBAR_REFACTOR_20261028"></script>
 
 <script src="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027"></script>
 
@@ -2591,17 +2589,18 @@
 
 <script src="js/receiving.js?v=RECEIVING_CONSOLIDATION_20261026"></script>
 
-<script src="js/session.js?v=RECEIVE_ALL_ATOMIC1"></script>
+<script src="js/session.js?v=FINAL_REFINEMENTS_20261028"></script>
 
-<script src="js/reports.js?v=RECEIVING_CONSOLIDATION_20261026_SEC011_20261028"></script>
+<script src="js/reports.js?v=FINAL_REFINEMENTS_20261028"></script>
 
 <script src="js/supabase.js?v=B10CLEAN15_15"></script>
 
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
-<script src="js/permissions.js?v=ORDER_IMPORT_PERMISSION_20261027"></script>
-<script src="js/auth.js?v=SLEEP_WAKE_20261026"></script>
+<script src="js/permissions.js?v=FINAL_REFINEMENTS_20261028"></script>
+<script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
+<script src="js/auth.js?v=FINAL_REFINEMENTS_20261028"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
@@ -2626,10 +2625,10 @@
 <script src="js/data-layer.js?v=B10CLEAN15_15"></script>
 <script src="js/pharmflow-next.js?v=ASSIGNMENT_STABILITY_20261027"></script>
 
-<script src="js/app.js?v=KPI_SNAPSHOT_READY1"></script>
+<script src="js/app.js?v=STARTUP_HOTFIX_20261028"></script>
 
 <script src="js/handheld-runtime.js?v=HANDHELD_HISTORY_SCOPE_20261025"></script>
-<script src="js/receiving-release.js?v=RECEIVING_CONSOLIDATION_20261026"></script>
+<script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
 <script src="js/receiving-history.js?v=HISTORY7"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>

@@ -1,0 +1,59 @@
+{
+  "scale": {
+    "items": 56588,
+    "identifiers": 78164,
+    "requests": 183,
+    "countQueries": 2,
+    "metadataResponses": 1,
+    "fullFingerprints": 0,
+    "baselineSingleHashMs": 539.58,
+    "databaseAllPagesMs": 1426.06,
+    "workbookMs": 952.75,
+    "exportMs": 3245.02,
+    "totalMs": 11667.74,
+    "xlsxBytes": 4764297,
+    "writerRssMiB": 693,
+    "wholeProcessPeakRssMiB": 1097,
+    "conditions": "local PGlite and Node VM; includes SQL/collector/workbook/readback, excludes browser/network"
+  },
+  "isolatedWriterBefore": {
+    "mode": "before",
+    "items": 56588,
+    "identifiers": 78164,
+    "writerMs": 5497,
+    "rssMiB": 737,
+    "peakRssMiB": 737,
+    "xlsxBytes": 10714964,
+    "conditions": "isolated Node VM generation only; same synthetic data; excludes browser/DB/readback"
+  },
+  "isolatedWriterAfter": {
+    "mode": "after",
+    "items": 56588,
+    "identifiers": 78164,
+    "writerMs": 1678,
+    "rssMiB": 199,
+    "peakRssMiB": 199,
+    "xlsxBytes": 3011351,
+    "conditions": "isolated Node VM generation only; same synthetic data; excludes browser/DB/readback"
+  },
+  "focusedTests": {
+    "tests": 35,
+    "pass": 35,
+    "fail": 0
+  },
+  "staging": {
+    "items": 17,
+    "identifiers": 22,
+    "migration": "20261028022820_owner_export_revision_stream_v2",
+    "ownerAuthenticated": true,
+    "nonOwnerDenied": true,
+    "revokedOwnerDenied": true,
+    "anonymousDenied": true,
+    "counterPrivate": true,
+    "mutationDetected": true,
+    "allFixturesRolledBack": true,
+    "sec007": "99bda52f1b8577ac07f5c0d81bdbd8f7"
+  },
+  "independentFullXlsx": "ZIP CRC/openpyxl exact 56588 items, 78164 identifiers, text and associations PASS",
+  "browserProductionScale": "NOT CERTIFIED; Node/SQL tests are not Windows browser measurements"
+}

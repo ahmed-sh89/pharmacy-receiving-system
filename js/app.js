@@ -96,7 +96,18 @@ async function bootstrapMedryvo(){
         if(typeof setAuthMessage === "function"){
             setAuthMessage(error.message || "Unable to initialize secure access.", "error");
         }
+        // A failed bootstrap must not leave its error hidden behind normal Loading.
+        // Keep the protected workspace covered; expose the existing retry surface.
+        showAuthenticationStartupFailure();
     }
+}
+
+function showAuthenticationStartupFailure(){
+    showWorkspaceStartupAuthorityFailure();
+    const card=document.querySelector("#workspaceBootOverlay .workspaceBootCard");
+    const title=card?.querySelector("strong"),detail=card?.querySelector("small");
+    if(title)title.textContent="Secure startup failed";
+    if(detail){detail.hidden=false;detail.textContent="Unable to initialize secure access. Reload to retry.";}
 }
 
 window.bootProtectedApplication = async function(){
@@ -277,7 +288,7 @@ function showWorkspaceStartupAuthorityFailure(){
     const title=card.querySelector("strong");
     const detail=card.querySelector("small");
     if(title) title.textContent="Receiving data is not ready";
-    if(detail) detail.textContent="PharmFlow could not confirm the complete receiving snapshot. Dashboard totals and scanning are paused to protect accuracy.";
+    if(detail){detail.hidden=false;detail.textContent="PharmFlow could not confirm the complete receiving snapshot. Dashboard totals and scanning are paused to protect accuracy.";}
 
     let retry=card.querySelector("#workspaceBootRetry");
     if(!retry){
@@ -1086,7 +1097,7 @@ async function refreshSafeAccountIdentity(){
     if(looksLikeSensitiveCredential(userName)){ userName=fallback; }
     let pharmacyName=toSafeString(c.pharmacy_name).trim() || "Pharmacy";
     if(looksLikeSensitiveCredential(pharmacyName)){ pharmacyName="Pharmacy"; }
-    const role=toSafeString(c.system_role || c.member_role || "user").toUpperCase();
+    const role=formatAuthRoleLabel(c.system_role || c.member_role || "user");
 
     const pairs=[
         ["accountPharmacyName",pharmacyName],
@@ -1633,7 +1644,7 @@ function bindReportSearch(){
                 ){
 
                     items =
-                        getHistoricalSearchableItems();
+                        getHistoricalSearchableItems(query);
 
                 }
                 else{
@@ -1804,14 +1815,11 @@ function handleFatalStartupError(
 ===================================================== */
 
 window.addEventListener(
-    "load",
+    "DOMContentLoaded",
     function(){
 
-        /*
-           DOMContentLoaded initializes the app.
-           This second listener binds core buttons
-           after all scripts and resources exist.
-        */
+        /* Core controls are ready with the local runtime. Optional async PDF/QR
+           downloads must not delay their binding through window.load. */
 
         try{
 

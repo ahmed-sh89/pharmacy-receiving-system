@@ -1,3 +1,15 @@
+## Final focused Staging refinements — 28 October 2026
+
+READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.
+
+## Accepted improvements selective release preparation — 28 October 2026
+
+PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED. HOLD: accepted Owner export has a Production-scale performance blocker; do not approve the full five-feature bundle yet. Product Owner marks Reports/search/filters/performance, Refresh/navigation, capsule/Reconnecting behavior, Owner Excel and compact Access actions USER VERIFIED — PASS on Staging. Production main stays `08843e42399b8830af6f0eb0773f04e0269cf0b6`.
+
+Branch `release/accepted-improvements-prep-20261028` starts from Production and selectively carries accepted runtime only. Staging Vite binding/exception is excluded; Production config, Pages workflow, SEC-007, password handlers and Vercel main block unchanged. One export RPC apply/rollback is PREPARED ONLY under `proposals/accepted-improvements-release/`, not applied migrations. No Production database/Auth/Edge/business-data or main/deployment change.
+
+Actual Global Master 56,588/78,164; current exporter makes 183 pages with repeated full-data hashing. Read-only fingerprint sample 2,321.66ms → estimated 7.1min hashing per complete export, not a full-run timing. Synthetic full-size workbook/count/text test PASS; server scalability remains a blocker. Exact gate, tests, deployment/rollback sequence and next approval decision: [release preparation](docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md). Next: approve focused Staging export optimization or explicitly exclude export from this bundle. DATA-001, Azinc, Pharmacy Code and SEC-009 remain excluded.
+
 ## Production selective security release — 28 October 2026
 
 Status: DEPLOYED — READY FOR USER VERIFICATION. Security program NOT CLOSED.
@@ -163,3 +175,13 @@ RenameTotalItems, larger distinct metric values; remove scanning-purple emphasis
 - Added transactional authorized Global linking/creation plus existing pharmacy-local Expiry resolution; retained original capture, audit, identifier lists and retry identity.
 - Applied Staging migration 20261018185307_expiry_review_transactional_resolution_v2: six canonical Groups enforced on creation; seven Receiving mutators reject Expiry records. No role, policy, or operational-data migration.
 - SQL fixtures, live rollback-only SQL verification, UI fixtures and build pass. Full-suite historical failures are compared against ce877ddd, not treated as new failures. Browser/physical-device acceptance tracked separately.
+
+
+## 2026-10-28 — Consolidated selective Production preparation
+
+All Staging improvements through97c7385 are Product Owner USER VERIFIED within tested scenarios. Production main/served08843e4 unchanged. Production-based release includes accepted startup, ExportV2, labels/Loading/Access, Reports, final Receiving toolbar and canonical Group.51 focusedPASS/buildPASS; final guarded SQL apply/rollback2PASS; full-size56588/78164 XLSX183requests. Live Supabase preflight unavailable (Unknown tool); concurrent writer lock impact and full-size Windows/Excel limits remain OPEN gates. No deployment or migration. Authoritative inventory, hashes, limitations, release/rollback/smoke sequence: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED; final approval blocked pending gates.
+
+
+## 2026-10-28 — Resumed export blocker correction
+
+Production read-only schema/RLS/SEC007 compatibilityPASS after correcting malformed connection identifier. Staging migration20261028141551 switches revision triggers to BEFORE STATEMENT;17Items/22Identifiers/revision1 preserved. Owner/non-owner/revoked/session/mutation/rollback checksPASS. Existing real PostgreSQL concurrency proof reused;6 affected testsPASS,51 priorPASS retained. Production apply/rollback revised to BEFORE, no runtime/UI changes. Windows Chrome/Excel full-size result remainsOPEN. Details/hashes: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. No Production writes/merges/deployments.

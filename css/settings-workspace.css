@@ -127,7 +127,12 @@ dialog.settingsDialog::backdrop{background:#142a4066}
 #page-settings .ownerPharmacyTable tbody tr:last-child td{border-bottom:0}
 #page-settings .ownerPharmacyTable tbody tr:hover{background:#f5f9fd}
 #page-settings .ownerPharmacyName{font-size:13px;font-weight:700}
-#page-settings .ownerPharmacyActions button{min-height:34px;padding:6px 9px;font-size:12px;white-space:nowrap}
+#page-settings .ownerPharmacyActions button{min-height:34px;padding:6px 9px;font:600 12px/1.4 'Segoe UI',Arial,sans-serif;white-space:nowrap;border:1px solid #c6d5e3;border-radius:5px;background:#f7faff;color:#245b9c;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:background .12s,border-color .12s}
+#page-settings .ownerPharmacyActions button:hover:not(:disabled){background:#e8f1fb;border-color:#8baeca}
+#page-settings .ownerPharmacyActions button:focus-visible{outline:2px solid #245b9c;outline-offset:2px}
+#page-settings .ownerPharmacyActions button:disabled{opacity:.5;cursor:default}
+#page-settings .ownerPharmacyActions button[data-owner-action="suspend"]{color:#a63c4a;border-color:#e2bdc4;background:#fff8f9}
+#page-settings .ownerPharmacyActions button[data-owner-action="suspend"]:hover:not(:disabled){background:#fbecef;border-color:#c88c98}
 #page-settings .ownerRequestsTable th:nth-child(1){width:13%}
 #page-settings .ownerRequestsTable th:nth-child(2){width:24%}
 #page-settings .ownerRequestsTable th:nth-child(3){width:31%}
@@ -238,3 +243,6 @@ dialog.settingsDialog::backdrop{background:#142a4066}
 #page-settings #ownerPharmacyList .ownerPharmacyAdmin{font-size:13px;color:#304a61}
 #page-settings #ownerPharmacyList .ownerPharmacyState{font-size:12px;font-weight:600}
 #page-settings #ownerPharmacyList .ownerCreatedDate{font-size:13px;font-weight:500;color:#435b70}
+
+#page-settings .ownerManagementActions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+#page-settings #btnOwnerExportGlobalItems{min-height:32px;padding:5px 9px;font-size:12px;white-space:nowrap}
