@@ -145,6 +145,7 @@ test("adjustment handlers emit exactly one signed delta for a duplicated item gr
         toSafeString:value=>String(value??""),
         getItemByCode:code=>code===item.itemCode?item:null,
         resolveReceivingTransactionOrder:()=>order,
+        getReceivingAutoAllocationCandidates:()=>[order],
         getReceivingDisplayMetrics:()=>({orderedQty:204,receivedQty:item.receivedQty,remainingQty:204-item.receivedQty}),
         updateItemCalculatedFields:()=>{},
         addReceivingTransaction:transaction=>{transactions.push(transaction);return transaction;},

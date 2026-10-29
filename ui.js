@@ -743,36 +743,7 @@ function bindSmartScanSelectionControls(){
 ===================================================== */
 
 function getReceivingSearchProjection(){
-    const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function"
-        ? getSelectedReceivingOrderNumbers().map(normalizeOrderNumber).filter(Boolean)
-        : [];
-    if(typeof getPerOrderReceivingRows!=="function"||!selectedOrders.length){
-        return typeof getSearchableItems==="function" ? getSearchableItems() : [];
-    }
-
-    const byCode=new Map();
-    selectedOrders.forEach(order=>{
-        getPerOrderReceivingRows(order).forEach(row=>{
-            const code=toSafeString(row["Item Number"]||"").trim();
-            if(!code) return;
-            const key=normalizeItemCode(code);
-            const current=byCode.get(key)||{
-                itemCode:code,
-                itemName:toSafeString(row["Item Name"]||""),
-                orderedQty:0,
-                receivedQty:0,
-                remainingQty:0,
-                orderNumbers:[],
-                manual:row.issueKey==="manual"
-            };
-            current.orderedQty+=toNumber(row["Ordered Qty"],0);
-            current.receivedQty+=toNumber(row["Received Qty"],0);
-            current.remainingQty+=Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0));
-            if(!current.orderNumbers.includes(order)) current.orderNumbers.push(order);
-            byCode.set(key,current);
-        });
-    });
-    return [...byCode.values()];
+    return getReceivingOperationalItems();
 }
 
 function handleSmartScanSearchInput(
@@ -1874,34 +1845,15 @@ function getSelectedOrderDashboardMetrics(){
     let remainingItems=0;
     let overReceivedItems=0;
     let manualItems=0;
-    const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
-    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
-
-    targetOrders.forEach(orderNumber=>{
-        const rows=getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode});
-
-        rows.forEach(row=>{
-            const ordered=toNumber(row["Ordered Qty"],0);
-            const received=toNumber(row["Received Qty"],0);
-
-            if(ordered>0){
-                totalItems++;
-
-                if(received===ordered){
-                    completedItems++;
-                }
-
-                remainingUnits+=Math.max(0,ordered-received);
-                if(received<ordered) remainingItems++;
-
-                if(received>ordered){
-                    overReceivedItems++;
-                }
-            }
-            else if(row.issueKey==="manual" && received>0){
-                manualItems++;
-            }
-        });
+    getReceivingOperationalItems().forEach(item=>{
+        const ordered=toNumber(item.orderedQty,0),received=toNumber(item.receivedQty,0);
+        if(ordered>0){
+            totalItems++;
+            if(received===ordered) completedItems++;
+            remainingUnits+=Math.max(0,ordered-received);
+            if(received<ordered) remainingItems++;
+            if(received>ordered) overReceivedItems++;
+        }else if(item.manual && received>0) manualItems++;
     });
 
     const totalScans=(AppState.workspace?.receivingHistory||[])
@@ -2108,8 +2060,9 @@ function refreshProgress(){
 
 function refreshLastScan(){
 
-    const scan =
-        AppState.workspace.lastScan;
+    const storedScan=AppState.workspace.lastScan;
+    const metrics=storedScan?getReceivingOperationalItems().find(item=>normalizeItemCode(item.itemCode)===normalizeItemCode(storedScan.itemCode)):null;
+    const scan=storedScan && metrics ? {...storedScan,orderedQty:metrics.orderedQty,receivedQty:metrics.receivedQty,remainingQty:metrics.remainingQty} : storedScan;
 
     UI.elements.lastScanCard?.classList.toggle("isEmpty",!scan);
 
@@ -2556,7 +2509,7 @@ function createReceivingTableRow(
                 event.stopPropagation();
 
                 if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
-                increaseItemQuantity(item.itemCode,1);
+                increaseItemQuantity(item.itemCode,1,item.orderNumber||"");
 
             }
         );
@@ -2573,7 +2526,7 @@ function createReceivingTableRow(
                 event.stopPropagation();
 
                 if(item.orderNumber){AppState.workspace.selectedOrderNumber=item.orderNumber;AppState.workspace.orderName=item.orderNumber;}
-                decreaseItemQuantity(item.itemCode,1);
+                decreaseItemQuantity(item.itemCode,1,item.orderNumber||"");
 
             }
         );

@@ -273,6 +273,41 @@ function getReceivingDisplayMetrics(item,orderNumber){
     return {orderedQty:ordered,receivedQty:received,remainingQty:Math.max(0,ordered-received)};
 }
 
+/* Operational totals share the selected active scope; reports retain Order rows.
+   This is a projection only: never redistribute existing ledger entries. */
+function getReceivingOperationalItems(){
+    const active=getActiveReceivingOrderNumbers();
+    const selected=getSelectedReceivingOrderNumbers();
+    const handheld=typeof isLikelyZebraDevice==="function" && isLikelyZebraDevice();
+    const orders=(selected.length?selected:(handheld?[]:active)).filter(order=>active.includes(order));
+    const receivedMap=buildReceivedQuantityByOrder();
+    const workspaceByCode=new Map((AppState.workspace.orderData||[]).map(item=>[normalizeItemCode(item.itemCode),item]));
+    const byCode=new Map();
+    orders.forEach(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).forEach(row=>{
+        const code=normalizeItemCode(row["Item Number"]);
+        if(!code) return;
+        const current=byCode.get(code)||{itemCode:code,itemName:row["Item Name"],orderedQty:0,receivedQty:0,orderNumbers:[],manual:true};
+        current.orderedQty+=toNumber(row["Ordered Qty"],0);
+        current.receivedQty+=toNumber(row["Received Qty"],0);
+        current.manual=current.manual && row.issueKey==="manual";
+        current.orderNumbers.push(order);
+        current.remainingQty=Math.max(0,current.orderedQty-current.receivedQty);
+        byCode.set(code,current);
+    }));
+    return [...byCode.values()];
+}
+
+function receiveOperationalItem(options){
+    if(options.item.manual===true) return receiveOrderItem(options);
+    try{
+        const transactions=receiveAutoAllocatedItem(options);
+        return transactions[transactions.length-1]||false;
+    }catch(error){
+        handleReceivingFailure(error?.message||"Unable to allocate quantity");
+        return false;
+    }
+}
+
 function getReceivingAutoAllocationCandidates(item,workScopeOrderNumbers=null,projection={}){
     const captured=Array.isArray(workScopeOrderNumbers)
         ? [...new Set(workScopeOrderNumbers.map(normalizeOrderNumber).filter(Boolean))]
@@ -796,7 +831,7 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
         const orderItem=getReceivingItemByItemCode(masterRecord.itemCode);
 
         if(orderItem){
-            return receiveOrderItem({
+            return receiveOperationalItem({
                 item:orderItem,
                 quantity:getValidReceivingQuantity(parsed?.quantity),
                 gtin,
@@ -1356,7 +1391,7 @@ function receiveItemBySearch(
 
     }
 
-    return receiveOrderItem({
+    return receiveOperationalItem({
 
         item:item,
 
@@ -1472,7 +1507,7 @@ function addItemReceivedQuantity(
         return false;
     }
 
-    return receiveOrderItem({
+    return receiveOperationalItem({
         item:item,
         quantity:qty,
         gtin:"",
@@ -1846,7 +1881,8 @@ function updateItemCalculatedFields(item){
 
 function increaseItemQuantity(
     itemCode,
-    amount = 1
+    amount = 1,
+    targetOrder = ""
 ){
 
     const item =
@@ -1888,6 +1924,7 @@ function increaseItemQuantity(
     return applyQuantityAdjustment({
 
         item:item,
+        targetOrder,
 
         difference:
             quantity,
@@ -1908,7 +1945,8 @@ function increaseItemQuantity(
 
 function decreaseItemQuantity(
     itemCode,
-    amount = 1
+    amount = 1,
+    targetOrder = ""
 ){
 
     const item =
@@ -1975,6 +2013,7 @@ function decreaseItemQuantity(
     return applyQuantityAdjustment({
 
         item:item,
+        targetOrder,
 
         difference:
             -actualDecrease,
@@ -2311,7 +2350,10 @@ function undoRecentScannerTransaction(transactionId){
     const current=toNumber(item.receivedQty,0);
     const qty=Math.min(toNumber(entry.quantity,1),current);
     if(qty<=0){ showToast("Received quantity is already zero","warning"); return false; }
-    const tx=applyQuantityAdjustment({item:item,difference:-qty,source:"SCAN_UNDO"});
+    const original=(AppState.workspace.receivingHistory||[]).find(row=>row.transactionId===transactionId);
+    const targetOrder=normalizeOrderNumber(original?.selectedOrderNumber||original?.orderId||original?.orderNumber);
+    if(!targetOrder){showToast("Original scan Order is unavailable. Refresh Receiving.","warning");return false;}
+    const tx=applyQuantityAdjustment({item:item,difference:-qty,targetOrder,source:"SCAN_UNDO",correctsTransactionId:transactionId});
     if(tx){
         entry.undone=true;
         entry.undoneAt=nowISO();
@@ -2369,6 +2411,36 @@ function applyQuantityAdjustment(options){
 
         return false;
 
+    }
+
+    // Explicit activity/report corrections stay attached to their original Order.
+    if(!options.targetOrder && item.manual!==true){
+        const candidates=getReceivingAutoAllocationCandidates(item);
+        if(candidates.length>1){
+            let plan;
+            try{
+                if(difference>0) plan=buildReceivingAutoAllocationPlan(item,difference);
+                else{
+                    let left=-difference;
+                    const projection={receivedMap:buildReceivedQuantityByOrder()};
+                    plan=[];
+                    for(const order of candidates.slice().reverse()){
+                        const row=getReceivingOrderRow(item,order,projection);
+                        const take=Math.min(left,Math.max(0,toNumber(row?.["Received Qty"],0)));
+                        if(take>0) plan.push({orderNumber:order,quantity:-take});
+                        left-=take;
+                        if(left<=0) break;
+                    }
+                    if(left>0) throw new Error("Received quantity cannot be below zero");
+                }
+            }catch(error){showToast(error.message,"warning");return false;}
+            let transaction=false;
+            for(const allocation of plan){
+                transaction=applyQuantityAdjustment({...options,targetOrder:allocation.orderNumber,difference:allocation.quantity});
+                if(!transaction) return false;
+            }
+            return transaction;
+        }
     }
 
     const targetOrder=resolveReceivingTransactionOrder(item,options.targetOrder||"");
@@ -2640,8 +2712,7 @@ function updateLastScanFromReceiving(
     transaction
 ){
 
-    const txOrder=normalizeOrderNumber(transaction?.orderId||transaction?.orderNumber||transaction?.selectedOrderNumber||"");
-    const scoped=getReceivingDisplayMetrics(item,txOrder);
+    const scoped=getReceivingOperationalItems().find(row=>normalizeItemCode(row.itemCode)===normalizeItemCode(item.itemCode));
 
     setLastScan({
 

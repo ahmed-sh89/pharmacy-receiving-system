@@ -10,7 +10,7 @@ function harness(){
  getReceivingOrderMetadata:()=>Object.keys(source).map(orderNumber=>({orderNumber})),IdentifierService:{pharmacyId:()=> 'P'},sessionStorage:{getItem:k=>c.saved.get(k)||null,setItem:(k,v)=>c.saved.set(k,v)},saved:new Map()};
  vm.createContext(c);
  for(const n of ['buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(report,n),c);
- for(const n of ['getReceivingEligibleOrders','getReceivingOrderRow','getReceivingAutoAllocationCandidates','buildReceivingAutoAllocationPlan','receiveAutoAllocatedItem','resolveReceivingTransactionOrder'])vm.runInContext(fn(receiving,n),c);
+ for(const n of ['getReceivingOperationalItems','getReceivingEligibleOrders','getReceivingOrderRow','getReceivingAutoAllocationCandidates','buildReceivingAutoAllocationPlan','receiveAutoAllocatedItem','resolveReceivingTransactionOrder'])vm.runInContext(fn(receiving,n),c);
  for(const n of ['groupNeedsReviewRows','nrV2AllocationScope','nrV2ResolutionScope','nrV2ResolveGroupToOrderItem'])vm.runInContext(fn(ui,n),c);
  return {c,item,source};
 }
@@ -79,13 +79,13 @@ test('real scan entry and Search plan use the same aggregate capacities; queued 
  const result=await c.receiveParsedBarcode({gtin:'CODE',quantity:70},{transactionId:'q',beforeReceive:async()=>events.push('persist')});
  assert.deepEqual(plain(result),[{orderNumber:'A',quantity:60},{orderNumber:'B',quantity:10}]);assert.deepEqual(events,['persist','receive']);
 });
-test('Receiving Search, Dashboard, live report, Excel and PDF share separate consolidated Order rows',()=>{
+test('Dashboard counts unique items while live report, Excel and PDF retain separate Order rows',()=>{
  const {c}=harness();c.AppState.workspace.receivingHistory=[tx('A',62),tx('B',10,'b')];c.document={getElementById:()=>null};
  c.UI={elements:{receivingTableBody:{innerHTML:'',appendChild(){}}},receivingFilters:{issues:new Set(['not_received','partial','received_any','over','manual']),search:'Daroxime 500'}};
  c.refreshReceivingCategoryFilter=()=>{};c.refreshReceivingIssueCards=()=>{};c.createReceivingTableRow=()=>({dataset:{}});
  for(const n of ['normalizeReceivingSearchText','matchesReceivingSearch','refreshReceivingTable','getSelectedOrderDashboardMetrics'])vm.runInContext(fn(ui,n),c);
  c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,3);assert.equal(c.UI.receivingVisibleItems[0].remainingQty,0);assert.equal(c.UI.receivingVisibleItems[0].status,'Completed');
- c.getSelectedReceivingOrderNumber=()=> 'ALL';c.AppState.session={};const metrics=c.getSelectedOrderDashboardMetrics();assert.equal(metrics.totalItems,3);assert.equal(metrics.completedItems,1);
+ c.getSelectedReceivingOrderNumber=()=> 'ALL';c.AppState.session={};const metrics=c.getSelectedOrderDashboardMetrics();assert.equal(metrics.totalItems,1);assert.equal(metrics.completedItems,0);
  for(const n of ['getLiveReceivingItemStatus','buildLiveReceivingReport','exportReceivingSummaryExcel','exportReceivingSummaryPDF'])vm.runInContext(fn(report,n),c);
  const live=c.buildLiveReceivingReport();assert.deepEqual(Array.from(live.rows,r=>r.orderNumber),['C','B','A']);assert.equal(live.counts.total,3);
  c.buildReceivingDiscrepancyReport=()=>c.buildMultiOrderReceivingReport();c.getReceivingReportFileBase=()=> 'test';c.showToast=()=>{};

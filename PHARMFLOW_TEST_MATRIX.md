@@ -163,3 +163,8 @@ Production read-only schema/RLS/SEC007 compatibilityPASS after correcting malfor
 ## 2026-10-28 — Production release deployed
 
 READY FOR USER VERIFICATION. Approved3648a277 merged via PR33; runtimeab05fb5a5cfc2b1dc2cf35dabd9c8c5619c960ad, Pages40726680723SUCCESS. Production migration20261028162904 BEFORE STATEMENT applied/verified. Master56588/78164 counts and complete content hashes unchanged; SEC007/RLS/ACL preserved. Owner/non-owner/revoked read-only SQL checksPASS. Windows synthetic full-size Excel USER VERIFIED/PASS. CI/build/securityPASS. Actual signed-in Production UI/export smokePENDING; no USER VERIFIED DONE claim. No operational/Auth/Edge changes, no Vercel main deployment and no rollback. Details: docs/releases/PRODUCTION_DEPLOYMENT_20261028.md. This follow-up is documentation-only, runtime/SQL unchanged.
+
+
+## 2026-10-29 — Multi-order hotfix
+
+86 focused offline tests PASS, including: 100+34/131 -> 100/31; actual 4 then +127 -> +96/+31; one search/card/Dashboard item 134/131/3; duplicate same-Order source lines consolidated; separate report Orders retained; overflow only after 134/setting enabled; aggregate decrement and explicit correction/Undo attribution; existing 131/0 unchanged by reads/planning; selected/empty Handheld scope; split queue retry and two-client ledger convergence. Build PASS. Owner real Production/Zebra acceptance pending. Legacy Needs Review quantity v5 mock failures reproduced on unchanged main; excluded from passing count. Evidence: docs/releases/RECEIVING_MULTI_ORDER_HOTFIX_20261029.md.

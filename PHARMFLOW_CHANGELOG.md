@@ -190,3 +190,8 @@ Production read-only schema/RLS/SEC007 compatibilityPASS after correcting malfor
 ## 2026-10-28 — Production release deployed
 
 READY FOR USER VERIFICATION. Approved3648a277 merged via PR33; runtimeab05fb5a5cfc2b1dc2cf35dabd9c8c5619c960ad, Pages40726680723SUCCESS. Production migration20261028162904 BEFORE STATEMENT applied/verified. Master56588/78164 counts and complete content hashes unchanged; SEC007/RLS/ACL preserved. Owner/non-owner/revoked read-only SQL checksPASS. Windows synthetic full-size Excel USER VERIFIED/PASS. CI/build/securityPASS. Actual signed-in Production UI/export smokePENDING; no USER VERIFIED DONE claim. No operational/Auth/Edge changes, no Vercel main deployment and no rollback. Details: docs/releases/PRODUCTION_DEPLOYMENT_20261028.md. This follow-up is documentation-only, runtime/SQL unchanged.
+
+
+## 2026-10-29 — Receiving multi-order allocation hotfix
+
+Operational search/scan-card/Dashboard share selected active Item Code totals. Manual/search additions and aggregate adjustments allocate deterministically across Order capacities; explicit report corrections/Undo retain attribution. Per-Order report and original ledger/source lines preserved. 86 focused offline tests/build PASS; Production release and owner verification tracked in docs/releases/RECEIVING_MULTI_ORDER_HOTFIX_20261029.md. Existing 131/0 incident correction proposed separately, not executed.
