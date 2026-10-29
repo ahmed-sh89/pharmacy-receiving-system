@@ -1,3 +1,9 @@
+# Current focused task — 29 October 2026
+
+Receiving multi-order hotfix: READY FOR RELEASE / owner verification pending. Baseline main f6e341782b6844929c5ced87511ad29ec4440487; Production zznoshzcyxmtwfbznjyr. Search/card/Dashboard now share selected-scope Item Code totals; additions allocate across Orders, reports remain separate. 86 focused tests/build PASS. No DB/schema/Auth/Edge changes or operational writes. Existing HHP084/1019577 ledger remains 131/0; separate -31/+31 proposal NOT APPROVED/NOT EXECUTED. Prior October security changes retained; no Expiry Staging merge. Required next: PR checks, controlled Pages release/served-SHA verification, then owner read-only smoke. See docs/releases/RECEIVING_MULTI_ORDER_HOTFIX_20261029.md and separate correction proposal for evidence/limits/rollback. Historical security labels below are dated; this task does not reopen or re-audit the security program.
+
+---
+
 # PharmFlow current checkpoint — 28 October 2026
 
 READY FOR USER TEST — PRODUCTION UNCHANGED. Main remains `08843e42399b8830af6f0eb0773f04e0269cf0b6`. Five original Staging improvements remain USER VERIFIED. New refinement acceptance is pending.

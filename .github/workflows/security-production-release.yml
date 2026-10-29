@@ -20,7 +20,7 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-fund --no-audit
       - name: Focused offline security and Receiving fixtures
-        run: node --test tests/security-source-hardening.test.cjs tests/security-production-artifact.test.cjs tests/security-production-gate.test.cjs tests/receiving-consolidation-review.test.cjs tests/sec004-password-parity.test.cjs
+        run: node --test tests/security-source-hardening.test.cjs tests/security-production-artifact.test.cjs tests/security-production-gate.test.cjs tests/receiving-consolidation-review.test.cjs tests/receiving-multi-order-hotfix.test.cjs tests/receiving-duplicate-line-allocation.test.cjs tests/receiving-split-queue.test.cjs tests/sec004-password-parity.test.cjs
       - name: Advisory inventory
         run: npm audit --package-lock-only --ignore-scripts --audit-level=low
       - name: Build without deploying
