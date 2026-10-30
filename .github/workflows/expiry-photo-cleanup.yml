@@ -25,19 +25,26 @@ jobs:
         shell: bash
         run: |
           node <<'NODE'
+          let stage = 'configuration';
+          let httpStatus = null;
           (async () => {
             const expected = 'https://zznoshzcyxmtwfbznjyr.supabase.co/functions/v1/pharmflow-expiry-photo-cleanup';
-            if (process.env.WORKER_URL !== expected || !process.env.CRON_TOKEN) {
-              throw new Error('Cleanup configuration missing or wrong project');
-            }
+            if (process.env.WORKER_URL !== expected) throw new Error('worker_target');
+            if (!process.env.CRON_TOKEN) throw new Error('cron_token_missing');
+            stage = 'request';
             const response = await fetch(expected, {
               method: 'POST', redirect: 'error',
               headers: { Authorization: 'Bearer ' + process.env.CRON_TOKEN },
               signal: AbortSignal.timeout(120000)
             });
+            httpStatus = response.status;
+            stage = 'http_response';
+            if (!response.ok) throw new Error('worker_http');
+            stage = 'response_json';
             const result = await response.json();
+            stage = 'acknowledgement';
             const keys = ['claimed', 'completed', 'failed', 'claim_lost', 'deferred'];
-            if (!response.ok || result.success !== true ||
+            if (!result || result.success !== true ||
                 keys.some(k => !Number.isSafeInteger(result[k]) || result[k] < 0) ||
                 result.claimed > 4 || result.completed !== result.claimed ||
                 result.failed !== 0 || result.claim_lost !== 0 || result.deferred !== 0) {
@@ -45,6 +52,9 @@ jobs:
             }
             console.log(JSON.stringify(Object.fromEntries(keys.map(k => [k, result[k]]))));
           })().catch(() => {
+            // Only locally defined stages and numeric HTTP status are logged.
+            // Never print the exception, response body, URL or environment.
+            console.error(JSON.stringify({ event: 'expiry_cleanup_failed', stage, http_status: httpStatus }));
             console.error('Expiry cleanup failed; follow release-operations/RUNBOOK.md');
             process.exitCode = 1;
           });

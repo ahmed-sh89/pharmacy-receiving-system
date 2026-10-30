@@ -1,3 +1,9 @@
+# Photo cleanup incident — 30 October 2026
+
+READY FOR PR / GITHUB CREDENTIAL REPAIR BLOCKED. Baseline main 4978f12e9daf92eb60205e140583b0e3aa758f49, PR #35 preserved. GitHub last success #5 (one completed photo), first subsequent failure #6 and #49 correlate with Production worker HTTP 401. Supabase hourly pg_cron remains operational: latest inspected 30 Oct 01:00 UTC HTTP200/success, zero work/failures. Eight queue jobs DONE; no DONE Storage files or PENDING references remain. Worker v7/source/eligibility/retention unchanged. Safe workflow stage/status diagnostics and missing runbook added; 21 focused offline tests PASS. No live POST, deletion, SQL mutation, secret rotation or Edge deployment performed. Next: owner-authenticated GitHub Secrets synchronization with existing worker credential; protected PR/CI diagnostics release; safe workflow verification (new authorization before any destructive verification). See release-operations/RUNBOOK.md. Not a claim that GitHub cleanup is restored.
+
+---
+
 # Current focused task — 29 October 2026
 
 Receiving multi-order hotfix: READY FOR RELEASE / owner verification pending. Baseline main f6e341782b6844929c5ced87511ad29ec4440487; Production zznoshzcyxmtwfbznjyr. Search/card/Dashboard now share selected-scope Item Code totals; additions allocate across Orders, reports remain separate. 86 focused tests/build PASS. No DB/schema/Auth/Edge changes or operational writes. Existing HHP084/1019577 ledger remains 131/0; separate -31/+31 proposal NOT APPROVED/NOT EXECUTED. Prior October security changes retained; no Expiry Staging merge. Required next: PR checks, controlled Pages release/served-SHA verification, then owner read-only smoke. See docs/releases/RECEIVING_MULTI_ORDER_HOTFIX_20261029.md and separate correction proposal for evidence/limits/rollback. Historical security labels below are dated; this task does not reopen or re-audit the security program.
