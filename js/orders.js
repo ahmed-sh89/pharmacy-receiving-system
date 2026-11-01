@@ -720,7 +720,7 @@ function buildFinalizedDiscrepancyEmailHTML(report){
     const nonzero=Object.entries(model.counts).filter(([,value])=>value>0);
     // One real table row, never a card grid. When all five cannot fit, the
     // bounded scroll wrapper preserves the row and readable labels/font size.
-    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#f5faff" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#f5faff;border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf",15)}</tr><tr><td align="center" style="${centered}padding:6px"><div style="width:100%;max-width:100%;overflow-x:auto"><table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:${nonzero.length*74}px;border-collapse:collapse"><tr>${nonzero.map(([kind,value])=>{
+    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#f5faff" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#f5faff;border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf",15)}</tr><tr><td align="center" style="${centered}padding:6px"><div dir="ltr" style="width:100%;max-width:100%;overflow-x:auto"><table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:${nonzero.length*74}px;border-collapse:collapse"><tr>${nonzero.map(([kind,value])=>{
         const {ink,tint}=palette[kind];
         return `<td align="center" valign="middle" bgcolor="${tint}" style="${centered}padding:5px 6px;background-color:${tint};border:1px solid #cbddea">${font(value,17,ink,true)}<br>${font(model.labels[kind],12,ink,false,17)}</td>`;
     }).join("")}</tr></table></div></td></tr></table>`:"";
@@ -734,7 +734,7 @@ function buildFinalizedDiscrepancyEmailHTML(report){
             return `<tr>${cell(font(esc(row["Item Number"])),"white-space:nowrap")}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`,"min-width:130px;white-space:normal;overflow-wrap:break-word")}${cell(font(esc(row["Ordered Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(font(esc(row["Received Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(`<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" bgcolor="${tint}" style="border-collapse:separate;background-color:${tint};border-radius:5px"><tr><td align="center" bgcolor="${tint}" style="${centered}padding:3px 6px;white-space:nowrap;background-color:${tint};border-radius:5px">${font(esc(diff),14,ink,true)}</td></tr></table>`)}${cell(font(row.label,13,"#173d63",true),"white-space:normal")}</tr>`;
         }).join("");
         return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="22" style="height:22px;font-size:1px;line-height:22px">&nbsp;</td></tr></table>
-          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#edf6fc" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#edf6fc;border-radius:10px"><tr>${bar(`<span dir="ltr">${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}</span>`)}</tr><tr><td align="center" style="${centered}padding:12px"><div style="width:100%;max-width:100%;overflow-x:auto"><table align="center" width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:560px;border-collapse:collapse;table-layout:fixed;border:1px solid #cbddea"><thead><tr>${headers.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 5px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:nowrap">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></td></tr></table>`;
+          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#edf6fc" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#edf6fc;border-radius:10px"><tr>${bar(`<span dir="ltr">${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}</span>`)}</tr><tr><td align="center" style="${centered}padding:12px"><div dir="ltr" style="width:100%;max-width:100%;overflow-x:auto"><table align="center" width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:560px;border-collapse:collapse;table-layout:fixed;border:1px solid #cbddea"><thead><tr>${headers.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 5px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:nowrap">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></td></tr></table>`;
     }).join("");
     const message=(text,closing=false)=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#97c3e3" cellpadding="0" cellspacing="0" bgcolor="#d5eaf8" style="width:100%;border-collapse:collapse;background-color:#d5eaf8;border:1px solid #97c3e3;border-radius:10px"><tr><td align="center" dir="rtl" bgcolor="#d5eaf8" style="${centered}padding:${closing?14:20}px 18px;background-color:#d5eaf8">${font(text,closing?18:20,"#173d63",true,closing?32:41)}</td></tr></table>`;
     const spacer='<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="26" style="height:26px;font-size:1px;line-height:26px">&nbsp;</td></tr></table>';
@@ -860,7 +860,7 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         <footer class="finalizedEmailFooter">
           <div class="finalizedEmailActions">
             <button type="button" class="secondaryButton" id="btnCopyFinalizedEmail">Copy Email</button>
-            <a class="primaryButton" id="btnOpenFinalizedOutlook" target="_blank" rel="noopener noreferrer" href="${esc(buildOutlookWebComposeUrl({subject}))}" style="display:inline-flex;align-items:center;text-decoration:none;padding:0 14px;min-height:40px">Open Outlook Web</a>
+            <button type="button" class="primaryButton" id="btnOpenFinalizedOutlook">Open Outlook Web</button>
           </div>
         </footer>
       </aside>`;
@@ -885,11 +885,12 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         }
     });
 
-    const outlookLink=document.getElementById("btnOpenFinalizedOutlook");
-    outlookLink?.addEventListener("click",()=>{
+    document.getElementById("btnOpenFinalizedOutlook")?.addEventListener("click",()=>{
         const to=String(document.getElementById("finalizedEmailTo")?.value||"").trim();
-        outlookLink.href=buildOutlookWebComposeUrl({to,subject});
-        showToast?.("Outlook Web opened — use Copy Email, then paste into the message body","success");
+        try{
+            window.open(buildOutlookWebComposeUrl({to,subject}),"_blank","noopener,noreferrer");
+            showToast?.("Paste the copied email into Outlook Web (Ctrl+V)","success");
+        }catch(_){showToast?.("Unable to open Outlook Web","warning");}
     });
 }
 

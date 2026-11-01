@@ -114,13 +114,13 @@ test('actual preview uses exact clipboard document and replaces Gmail with safe 
  const {c}=harness(),{document}=parseHTML('<html><body></body></html>');c.document=document;
  c.openFinalizedDiscrepancyEmailPreview(fixture());
  assert.equal(document.querySelector('iframe').getAttribute('srcdoc'),c.buildReceivingEmailClipboardHTML(fixture()));
- const link=document.querySelector('#btnOpenFinalizedOutlook');assert.equal(link.textContent,'Open Outlook Web');assert.equal(link.getAttribute('target'),'_blank');assert.match(link.getAttribute('rel'),/noopener/);
+ const link=document.querySelector('#btnOpenFinalizedOutlook');assert.equal(link.textContent,'Open Outlook Web');assert.equal(link.tagName,'BUTTON');
  assert.equal(document.querySelectorAll('#btnCopyFinalizedEmail').length,1);assert.doesNotMatch(document.body.innerHTML,/Gmail|mailto:/);
 });
 test('Outlook action preserves clipboard and uses the entered recipient without sending',()=>{
- const {c,writes,plain}=harness(),{document}=parseHTML('<html><body></body></html>');c.document=document;c.showToast=()=>{};
+ const {c,writes,plain}=harness(),{document}=parseHTML('<html><body></body></html>');c.document=document;c.showToast=()=>{};const opened=[];c.window.open=(...args)=>opened.push(args);
  c.openFinalizedDiscrepancyEmailPreview(fixture());document.querySelector('#finalizedEmailTo').value='warehouse@example.invalid';
- const link=document.querySelector('#btnOpenFinalizedOutlook');link.click();const u=new URL(link.getAttribute('href'));
+ const link=document.querySelector('#btnOpenFinalizedOutlook');link.click();assert.equal(opened[0][1],'_blank');assert.equal(opened[0][2],'noopener,noreferrer');const u=new URL(opened[0][0]);
  assert.equal(u.searchParams.get('to'),'warehouse@example.invalid');assert.equal(u.searchParams.get('subject'),'فرق توريد | TO-000535106 + TO-000532448');
  assert.equal(writes.length,0);assert.equal(plain.length,0);assert.equal(u.searchParams.has('body'),false);
 });
