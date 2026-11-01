@@ -658,14 +658,13 @@ function getEmailReportOrderGroups(report){
 
 /* Presentation only: use the canonical report rows, never workspace totals or
    report.summary (which may include completed items). Detail rows retain order
-   boundaries; each KPI counts a code once within its category across orders. */
+   boundaries. KPI magnitudes sum classified units, never item-row counts. */
 function getReceivingEmailModel(report){
     const labels={partial:"Partial Shortage",notReceived:"Not Received",over:"Over Received",extra:"Extra Items"};
     const counts={orders:0,partial:0,notReceived:0,over:0,extra:0};
-    const distinct={partial:new Set(),notReceived:new Set(),over:new Set(),extra:new Set()};
-    const groups=getEmailReportOrderGroups(report).map((group,groupIndex)=>({
+    const groups=getEmailReportOrderGroups(report).map(group=>({
         ...group,
-        rows:(group.rows||[]).flatMap((row,rowIndex)=>{
+        rows:(group.rows||[]).flatMap(row=>{
             const ordered=Number(row["Ordered Qty"]||0),received=Number(row["Received Qty"]||0);
             if(!Number.isFinite(ordered)||!Number.isFinite(received)) return [];
             const issue=String(row["Issue Type"]||row.Status||"").trim().toUpperCase();
@@ -673,8 +672,9 @@ function getReceivingEmailModel(report){
             const kind=extra&&received>0 ? "extra" : ordered>0&&received===0 ? "notReceived"
                 : received>0&&received<ordered ? "partial" : received>ordered ? "over" : "";
             if(!kind) return [];
-            const code=String(row["Item Number"]??"").trim().toUpperCase();
-            distinct[kind].add(code||`missing:${groupIndex}:${rowIndex}`);
+            // Same code on two orders contributes each order's units once.
+            // Extra is classified first and never also enters Over Received.
+            counts[kind]+=kind==="extra" ? received : kind==="notReceived" ? ordered : Math.abs(received-ordered);
             const difference=Number(row["Difference"]);
             return [{...row,kind,label:kind==="extra"?"Extra":labels[kind],
                 difference:Number.isFinite(difference)?difference:received-ordered}];
@@ -683,8 +683,11 @@ function getReceivingEmailModel(report){
     const orderNumbers=[...new Set(groups.filter(g=>!g.unassigned)
         .map(g=>String(g.orderNumber||"").trim()).filter(n=>n&&!/^(UNASSIGNED|UNORDERED)$/i.test(n)))];
     counts.orders=orderNumbers.length;
-    Object.keys(distinct).forEach(kind=>{counts[kind]=distinct[kind].size;});
     return {groups,orderNumbers,counts,labels:{orders:"Orders",...labels}};
+}
+
+function formatReceivingEmailKpiValue(kind,value){
+    return (kind==="orders"?"":kind==="partial"||kind==="notReceived"?"-":"+")+String(value);
 }
 
 function buildReceivingDiscrepancyEmailSubject(report){
@@ -711,30 +714,31 @@ function buildFinalizedDiscrepancyEmailHTML(report){
     const esc=value=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
         .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     const model=getReceivingEmailModel(report);
-    const palette={orders:{ink:"#173d63",tint:"#f1f8fe"},partial:{ink:"#8a5600",tint:"#fff5da"},
-        notReceived:{ink:"#b42318",tint:"#fff0ef"},over:{ink:"#15675c",tint:"#e7f6f1"},extra:{ink:"#504b99",tint:"#edf0ff"}};
+    const palette={orders:{ink:"#173d63",tint:"#ffffff",badge:"#176CA1"},partial:{ink:"#865600",tint:"#ffdf9e",badge:"#BF8525"},
+        notReceived:{ink:"#a72f2f",tint:"#f7c3c3",badge:"#C44949"},over:{ink:"#16634b",tint:"#bde8d7",badge:"#248568"},extra:{ink:"#62468e",tint:"#d9ccef",badge:"#7759A6"}};
     const font=(text,size=13,color="#1d3954",bold=false,line=20)=>
         `<font face="Arial, Helvetica, sans-serif" size="${size>=18?4:3}" color="${color}" style="font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:${line}px;color:${color}">${bold?"<b>"+text+"</b>":text}</font>`;
     const centered="text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;word-break:normal;";
     const bar=(text,bg="#0b5f9f",size=16)=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:12px 8px;background-color:${bg}">${font(text,size,"#ffffff",true,22)}</td>`;
     const nonzero=Object.entries(model.counts).filter(([,value])=>value>0);
-    // One real table row, never a card grid. When all five cannot fit, the
-    // bounded scroll wrapper preserves the row and readable labels/font size.
-    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#f5faff" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#f5faff;border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf",15)}</tr><tr><td align="center" style="${centered}padding:6px"><div dir="ltr" style="width:100%;max-width:100%;overflow-x:auto"><table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:${nonzero.length*74}px;border-collapse:collapse"><tr>${nonzero.map(([kind,value])=>{
-        const {ink,tint}=palette[kind];
-        return `<td align="center" valign="middle" bgcolor="${tint}" style="${centered}padding:5px 6px;background-color:${tint};border:1px solid #cbddea">${font(value,17,ink,true)}<br>${font(model.labels[kind],12,ink,false,17)}</td>`;
+    // Fixed-size neutral indicators, one TR at every width. A smaller group
+    // stays centered at its natural width; narrow panes scroll rather than wrap.
+    const kpiWidth=nonzero.length*132;
+    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#f5faff" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#f5faff;border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf",15)}</tr><tr><td align="center" style="${centered}padding:8px 0"><div dir="ltr" style="width:100%;max-width:100%;overflow-x:auto"><table role="presentation" align="center" width="${kpiWidth}" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:${kpiWidth}px;min-width:${kpiWidth}px;table-layout:fixed;border-collapse:collapse"><tr>${nonzero.map(([kind,value])=>{
+        const {badge}=palette[kind];
+        return `<td align="center" valign="top" width="124" style="${centered}width:124px;padding:0 4px"><table role="presentation" align="center" width="124" height="84" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:124px;height:84px;table-layout:fixed;border-collapse:collapse;border:1px solid #cbddea;background-color:#ffffff;border-radius:5px"><tr><td align="center" valign="middle" height="42" bgcolor="#ffffff" style="${centered}height:42px;padding:0;border:0;background-color:#ffffff"><table role="presentation" align="center" width="52" height="30" border="0" cellpadding="0" cellspacing="0" bgcolor="${badge}" style="min-width:52px;height:30px;border-collapse:separate;background-color:${badge};border-radius:4px"><tr><td align="center" dir="ltr" bgcolor="${badge}" style="${centered}padding:1px 6px;white-space:nowrap;background-color:${badge};border-radius:4px">${font(formatReceivingEmailKpiValue(kind,value),22,"#ffffff",true,28)}</td></tr></table></td></tr><tr><td align="center" valign="middle" height="42" bgcolor="#ffffff" style="${centered}height:42px;padding:0 4px;border:0;background-color:#ffffff">${font(model.labels[kind],14,"#173d63",false,18)}</td></tr></table></td>`;
     }).join("")}</tr></table></div></td></tr></table>`:"";
     const headers=[["Code",70],["Item Name",null],["Ordered",64],["Received",70],["Diff",54],["Status",100]];
     const sections=model.groups.map(group=>{
         const date=group.orderDate||(report?.orders||[]).find(order=>String(order.orderNumber||"").trim()===String(group.orderNumber||"").trim())?.orderDate;
         const rows=group.rows.map((row,index)=>{
             const bg=index%2?"#eaf4fb":"#f6fbff",{ink,tint}=palette[row.kind];
-            const cell=(content,extra="")=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:9px 5px;background-color:${bg};border-bottom:1px solid #e1ebf3;${extra}">${content}</td>`;
+            const cell=(content,extra="")=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:6px 5px;background-color:${bg};border-bottom:1px solid #e1ebf3;${extra}">${content}</td>`;
             const diff=(row.difference>0?"+":"")+row.difference;
-            return `<tr>${cell(font(esc(row["Item Number"])),"white-space:nowrap")}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`,"min-width:130px;white-space:normal;overflow-wrap:break-word")}${cell(font(esc(row["Ordered Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(font(esc(row["Received Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(`<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" bgcolor="${tint}" style="border-collapse:separate;background-color:${tint};border-radius:5px"><tr><td align="center" bgcolor="${tint}" style="${centered}padding:3px 6px;white-space:nowrap;background-color:${tint};border-radius:5px">${font(esc(diff),14,ink,true)}</td></tr></table>`)}${cell(font(row.label,13,"#173d63",true),"white-space:normal")}</tr>`;
+            return `<tr>${cell(font(esc(row["Item Number"])),"white-space:nowrap")}${cell(`<span dir="auto">${font(esc(row["Item Name"]),14)}</span>`,"min-width:130px;white-space:normal;overflow-wrap:break-word")}${cell(font(esc(row["Ordered Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(font(esc(row["Received Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(`<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" bgcolor="${tint}" style="border-collapse:separate;background-color:${tint};border-radius:5px"><tr><td align="center" bgcolor="${tint}" style="${centered}padding:3px 6px;white-space:nowrap;background-color:${tint};border-radius:5px">${font(esc(diff),14,ink,true)}</td></tr></table>`)}${cell(font(row.label,13,ink,false),"white-space:normal")}</tr>`;
         }).join("");
         return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="22" style="height:22px;font-size:1px;line-height:22px">&nbsp;</td></tr></table>
-          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#edf6fc" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#edf6fc;border-radius:10px"><tr>${bar(`<span dir="ltr">${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}</span>`)}</tr><tr><td align="center" style="${centered}padding:12px"><div dir="ltr" style="width:100%;max-width:100%;overflow-x:auto"><table align="center" width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:560px;border-collapse:collapse;table-layout:fixed;border:1px solid #cbddea"><thead><tr>${headers.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 5px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:nowrap">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></td></tr></table>`;
+          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#edf6fc" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#edf6fc;border-radius:10px"><tr>${bar(`<span dir="ltr">${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}</span>`)}</tr><tr><td align="center" style="${centered}padding:12px"><div dir="ltr" style="width:100%;max-width:100%;overflow-x:auto"><table align="center" width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:640px;border-collapse:collapse;table-layout:fixed;border:1px solid #cbddea"><thead><tr>${headers.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 5px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:nowrap">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></td></tr></table>`;
     }).join("");
     const message=(text,closing=false)=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#97c3e3" cellpadding="0" cellspacing="0" bgcolor="#d5eaf8" style="width:100%;border-collapse:collapse;background-color:#d5eaf8;border:1px solid #97c3e3;border-radius:10px"><tr><td align="center" dir="rtl" bgcolor="#d5eaf8" style="${centered}padding:${closing?14:20}px 18px;background-color:#d5eaf8">${font(text,closing?18:20,"#173d63",true,closing?32:41)}</td></tr></table>`;
     const spacer='<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="26" style="height:26px;font-size:1px;line-height:26px">&nbsp;</td></tr></table>';
@@ -785,7 +789,7 @@ function buildFinalizedDiscrepancyEmailText(report){
     ];
 
     lines.push(Object.entries(model.counts).filter(([,value])=>value>0)
-        .map(([key,value])=>model.labels[key]+": "+value).join(" | "), "");
+        .map(([key,value])=>model.labels[key]+": "+formatReceivingEmailKpiValue(key,value)).join(" | "), "");
 
     groups.forEach(group=>{
         lines.push(

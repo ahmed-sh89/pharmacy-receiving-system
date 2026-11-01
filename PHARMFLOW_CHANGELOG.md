@@ -1,3 +1,7 @@
+# 2026-11-02 — Final Receiving email refinement
+
+Focused email refinement only: unit-summed signed KPIs, equal neutral cards with colored number badges, realistic two-order fixture, compact normal-weight names and stronger Diff/status colors. Existing rich copy and Outlook action retained. See docs/receiving-email-20261102/REFINEMENT.md.
+
 # 2026-11-01 — Original email restoration
 
 Restore approved original blue email and six columns. Compact single KPI row, dated headers, Diff badges, single HTML/plain clipboard pipeline without hidden DOM, and Open Outlook Web replacing Gmail. Staging only; see ORIGINAL_RESTORE.md.

@@ -1,3 +1,7 @@
+# 2026-11-02 — Final Receiving email refinement
+
+Final email refinement: 34 focused tests PASS, both builds PASS. KPI units/signs, 2/3/5 equal one-row cards, default realistic dates/values, six columns, colors, HTML safety and identical preview/clipboard tested. Owner says earlier rich paste largely works; refined Outlook visuals pending acceptance.
+
 # 2026-11-01 — Original email restoration
 
 Original-style email restoration: 30 focused checks PASS; both builds PASS. Preview/readback/narrow/full-width browser evidence in ORIGINAL_BROWSER_QA.md when complete. Real corporate Outlook acceptance PENDING. Six-column narrow fallback is horizontal scrolling, not stacked rows.
