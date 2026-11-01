@@ -714,7 +714,7 @@ function buildFinalizedDiscrepancyEmailHTML(report){
             return `<tr><td style="padding:3px 0;border-bottom:1px solid #dce8f3;background:${index%2?"#f2f7fb":"#ffffff"};font-size:0;text-align:left" dir="ltr">
               <table cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:top;width:55%;min-width:250px;max-width:100%;border-collapse:collapse;table-layout:fixed" dir="ltr">
                 <tr><th scope="col" style="${heading};width:84px">Code</th><th scope="col" style="${heading}">Item Name</th></tr>
-                <tr><td style="${cell};width:84px;white-space:nowrap">${esc(row["Item Number"])}</td><td dir="auto" style="${cell};white-space:normal;overflow-wrap:break-word">${esc(row["Item Name"])}</td></tr>
+                <tr><td style="${cell};width:84px;white-space:normal;overflow-wrap:break-word">${esc(row["Item Number"])}</td><td dir="auto" style="${cell};white-space:normal;overflow-wrap:break-word">${esc(row["Item Name"])}</td></tr>
               </table><table cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:top;width:45%;min-width:240px;max-width:100%;border-collapse:collapse;table-layout:auto" dir="ltr">
                 <tr><th scope="col" style="${heading}">Ordered</th><th scope="col" style="${heading}">Received</th><th scope="col" style="${heading}">Diff + Status</th></tr>
                 <tr><td style="${cell};white-space:nowrap">${esc(row["Ordered Qty"]??0)}</td><td style="${cell};white-space:nowrap">${esc(row["Received Qty"]??0)}</td><td style="${cell};color:${colors[row.kind]}"><strong style="white-space:nowrap">${sign}${esc(diff)}</strong> <span style="display:inline-block;white-space:nowrap;font-size:12px">${row.label}</span></td></tr>

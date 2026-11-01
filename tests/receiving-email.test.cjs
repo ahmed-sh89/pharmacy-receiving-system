@@ -44,7 +44,7 @@ test('HTML is inert, escaped, inline styled and contains each item once with sep
  assert.match(html,/&lt;test&gt; &amp;/);assert.equal(document.querySelectorAll('th').length,25);
  for(const th of document.querySelectorAll('th'))assert.match(th.getAttribute('style'),/white-space:nowrap/);
  const codes=[...document.querySelectorAll('td')].filter(t=>t.textContent==='001');assert.equal(codes.length,2);
- assert.equal(codes[0].nextElementSibling.getAttribute('dir'),'auto');
+ assert.equal(codes[0].nextElementSibling.getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/overflow-wrap:break-word/);
  assert.match(html,/>\+1<\/strong>/);assert.match(html,/>-69<\/strong>/);
  assert.match(html,/min-width:250px/);assert.match(html,/min-width:240px/);
  assert.equal((html.match(/TO-000535106/g)||[]).length,1);
