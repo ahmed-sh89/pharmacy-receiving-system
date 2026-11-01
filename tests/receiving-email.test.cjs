@@ -76,12 +76,12 @@ test('distinct codes within each KPI across orders; explicit extra never enters 
 });
 test('native copy writes both MIME types, requires successful event, removes host and restores focus/selection',async()=>{
  for(const succeeds of [true,false]){
-  const {c,writes,plain}=harness();const handlers={},data={},events=[];let removed=false,focused=false;
+  const {c,writes,plain}=harness({reject:true});const handlers={},data={},events=[];let removed=false,focused=false;
   const selection={rangeCount:0,removeAllRanges(){events.push('clear')},addRange(){events.push('range')}};
   c.window.getSelection=()=>selection;
   c.document={activeElement:{focus(){focused=true}},body:{appendChild(){events.push('append')}},createElement(){return {setAttribute(){},style:{},remove(){removed=true}}},createRange(){return {selectNodeContents(){}}},addEventListener(k,f){handlers[k]=f},removeEventListener(k){delete handlers[k]},execCommand(command){assert.equal(command,'copy');handlers.copy({clipboardData:{setData(k,v){data[k]=v}},preventDefault(){events.push('prevent')},stopImmediatePropagation(){}});return succeeds}};
-  assert.equal(await c.copyFormattedReceivingEmail(fixture()),true);assert(data['text/html'].includes('<!--StartFragment-->'));assert(data['text/plain'].includes('Partial Shortage'));
-  assert(removed&&focused);assert.equal(handlers.copy,undefined);assert.equal(plain.length,0);assert.equal(writes.length,succeeds?0:1);
+  assert.equal(await c.copyFormattedReceivingEmail(fixture()),succeeds);assert(data['text/html'].includes('<!--StartFragment-->'));assert(data['text/plain'].includes('Partial Shortage'));
+  assert(removed&&focused);assert.equal(handlers.copy,undefined);assert.equal(plain.length,succeeds?0:1);assert.equal(writes.length,0);
  }
 });
 test('ClipboardItem construction failure still provides explicitly flagged plain fallback',async()=>{

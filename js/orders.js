@@ -795,9 +795,8 @@ function copyReceivingEmailWithNativeEvent(html,text){
 async function copyFormattedReceivingEmail(report){
     const html=buildReceivingEmailClipboardHTML(report);
     const text=buildFinalizedDiscrepancyEmailText(report);
-    // Run synchronously during the existing button's user gesture. Explicit
-    // MIME data avoids inheriting app CSS and works without Async Clipboard.
-    if(copyReceivingEmailWithNativeEvent(html,text)) return true;
+    // Prefer the standards-based rich write; the native event is a compatibility
+    // fallback for browsers that deny or lack Async Clipboard HTML support.
     if(navigator.clipboard?.write&&typeof ClipboardItem!=="undefined"){
         try{
             const item=new ClipboardItem({
@@ -808,6 +807,7 @@ async function copyFormattedReceivingEmail(report){
             return true;
         }catch(_){}
     }
+    if(copyReceivingEmailWithNativeEvent(html,text))return true;
     if(!navigator.clipboard?.writeText)throw new Error("Rich email copying unavailable");
     await navigator.clipboard.writeText(text);
     return false;
