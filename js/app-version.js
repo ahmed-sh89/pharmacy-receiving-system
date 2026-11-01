@@ -125,7 +125,10 @@
             const response=await fetch(url.href,{cache:"no-store",credentials:"omit",headers:{"Accept":"application/json"}});
             if(!response.ok) return false;
             const deployed=await response.json();
-            if(deployed?.sha && localBuild && String(deployed.sha)!==localBuild) showNotice();
+            if(deployed?.sha && localBuild){
+                if(String(deployed.sha)!==localBuild) showNotice();
+                else if(notice) notice.hidden=true;
+            }
             return true;
         }catch(_){ return false; }
         finally{ checking=false; }

@@ -114,7 +114,7 @@ test('timeout terminates worker, rejects and never silently returns partial data
     const c=harness();let terminated=0;
     c.Worker=class{postMessage(){}terminate(){terminated++;}};
     c.setTimeout=fn=>setTimeout(fn,5);
-    await assert.rejects(c.PharmFlowExcel.readFile(file('placeholder')),/exceeded 30 seconds/);
+    await assert.rejects(c.PharmFlowExcel.readFile(file('placeholder')),/within 30 seconds/);
     assert.equal(terminated,1);
 });
 test('Expiry XLSX package/style/date export remains readable with patched library',()=>{

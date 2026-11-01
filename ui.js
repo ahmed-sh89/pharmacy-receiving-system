@@ -1542,12 +1542,10 @@ function bindUIStateEvents(){
             }
             refreshLastScan();
             refreshReceivingRow(data);
+            refreshDashboard();
+            refreshOpenKpiPanel();
             refreshSelectedSmartItem();
             refreshZebraInterface();
-            requestAnimationFrame(()=>{
-                refreshDashboard();
-                refreshOpenKpiPanel();
-            });
         }
     );
 
@@ -1676,6 +1674,7 @@ function refreshHeader(){
     // Pharmacy identity lives in the sidebar; the header identifies the route.
     const dashboardActive = document.getElementById("page-dashboard")?.classList.contains("active");
     if(dashboardActive){
+        if(renderReceivingHydrationPlaceholder())return;
         setElementText(UI.elements.pageTitle, "Receiving");
         setElementText(UI.elements.pageSubtitle, "Scan, review and reconcile orders");
     }
@@ -1853,7 +1852,7 @@ function getSelectedOrderDashboardMetrics(){
             remainingUnits+=Math.max(0,ordered-received);
             if(received<ordered) remainingItems++;
             if(received>ordered) overReceivedItems++;
-        }else if(item.manual && received>0) manualItems++;
+        }
     });
 
     const totalScans=(AppState.workspace?.receivingHistory||[])
@@ -1879,12 +1878,52 @@ function getSelectedOrderDashboardMetrics(){
         remainingUnits,
         remainingItems,
         overReceivedItems,
-        manualItems,
+        manualItems:targetOrders.flatMap(order=>getPerOrderReceivingRows(order)).filter(row=>row.issueKey==="manual" && toNumber(row["Received Qty"],0)>0).length,
         totalScans
     };
 }
 
+function renderReceivingHydrationPlaceholder(){
+    if(typeof getReceivingHydrationState!=="function") return false;
+    const state=getReceivingHydrationState();
+    const loading=state==="LOADING"||state==="ERROR";
+    const page=document.getElementById("page-dashboard");
+    if(page){page.dataset.receivingState=state.toLowerCase();page.setAttribute("aria-busy",String(state==="LOADING"));}
+    const input=document.getElementById("barcodeInput");
+    if(input){
+        if(loading && !input.disabled){input.dataset.receivingHydrationDisabled="1";input.disabled=true;}
+        else if(!loading && input.dataset.receivingHydrationDisabled==="1"){input.disabled=false;delete input.dataset.receivingHydrationDisabled;}
+    }
+    const previous=page?.dataset.receivingScanState;
+    if(loading || previous!==state){
+        if(typeof setScanBoxState==="function")setScanBoxState("ready");
+        if(page)page.dataset.receivingScanState=state;
+    }
+    let retry=document.getElementById('btnRetryReceiving');
+    if(state==='ERROR' && !retry){
+        retry=document.createElement('button');retry.id='btnRetryReceiving';retry.className='secondaryButton receivingRecoveryButton';retry.type='button';retry.textContent='Retry Receiving';
+        retry.onclick=async()=>{retry.disabled=true;try{if(await retryReceivingHydration()===true && typeof PharmacyApp!=="undefined" && !PharmacyApp.initialized)await startApplication();}finally{retry.disabled=false;}};
+        document.getElementById('progressLabel')?.parentElement?.appendChild(retry);
+    }
+    if(retry)retry.hidden=state!=='ERROR';
+    if(!loading)return false;
+    const label=state==="ERROR"?"Receiving unavailable — retry synchronization":"Loading receiving data…";
+    [UI.elements.statTotalItems,UI.elements.statCompleted,UI.elements.statRemainingItems,UI.elements.statRemaining,
+     UI.elements.statOver,UI.elements.statManual,UI.elements.statScans].forEach(el=>setElementText(el,"—"));
+    setElementText(document.getElementById("receivingNeedsReviewCount"),"—");
+    setElementText(UI.elements.progressLabel,label);
+    setElementText(UI.elements.progressCompletedText,label);
+    setElementText(UI.elements.progressRemainingText,"");
+    if(UI.elements.progressBar)UI.elements.progressBar.style.width="0%";
+    const picker=document.getElementById("headerOrderPicker");if(picker)picker.hidden=true;
+    const order=document.getElementById("headerOrderId");if(order)order.hidden=false;
+    setElementText(order,label);
+    setElementText(UI.elements.headerSessionId,state==="ERROR"?"ERROR":"LOADING");
+    return true;
+}
+
 function refreshDashboard(){
+    if(renderReceivingHydrationPlaceholder()) return;
 
     /* 2C.10.5.3 authority gate: no active Order means no operational metrics.
        Never render stale browser statistics when the manifest/workspace is empty. */
@@ -1975,7 +2014,7 @@ function refreshDashboard(){
             : stats.remainingItems
     );
     setElementText(UI.elements.statOver,scoped.overReceivedItems);
-    setElementText(UI.elements.statManual,scoped.manualItems);
+    setElementText(UI.elements.statManual,getKpiPanelItems("manual").length);
     setElementText(UI.elements.statScans,scoped.totalScans);
 
     refreshProgress();
@@ -1986,6 +2025,7 @@ function refreshDashboard(){
 ===================================================== */
 
 function refreshProgress(){
+    if(renderReceivingHydrationPlaceholder())return;
 
     const selectedMetrics=
         typeof getSelectedOrderDashboardMetrics==="function"
@@ -2046,8 +2086,7 @@ function refreshProgress(){
 
     setElementText(
         UI.elements.progressRemainingText,
-        AppState.statistics
-            .remainingItems +
+        (selectedMetrics ? selectedMetrics.remainingItems : AppState.statistics.remainingItems) +
         " Remaining"
     );
 
@@ -3379,6 +3418,7 @@ function renderFileList(
         `;
 
         container.appendChild(element);
+        if(typeof decorateReceivingRecoveryControls==="function")decorateReceivingRecoveryControls();
         const removeBtn=element.querySelector("[data-remove-order-file]");
         if(removeBtn){ removeBtn.addEventListener("click",event=>{ event.stopPropagation(); requestRemoveActiveOrderFile(removeBtn.dataset.removeOrderFile); }); }
 
@@ -4744,6 +4784,12 @@ function setScanBoxState(
 
     const badge =
         UI.elements.scanStatusBadge;
+
+    const readiness=typeof getReceivingHydrationState==='function'?getReceivingHydrationState():'READY';
+    if(readiness!=='READY'){
+        if(badge){badge.className='scanStatusBadge '+(readiness==='ERROR'?'error':'action');badge.textContent=readiness==='ERROR'?'RECEIVING UNAVAILABLE':readiness==='EMPTY'?'UNASSIGNED ONLY':'LOADING RECEIVING';}
+        return;
+    }
 
     if(!scanBox){
         return;
@@ -8126,6 +8172,7 @@ function getScopedOrderItems(){
 }
 
 function getKpiPanelItems(key){
+    if(key==="manual" && typeof getExtraCorrectionItems==="function")return getExtraCorrectionItems();
     const items=getScopedOrderItems();
     if(key==="total"){
         const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
@@ -8151,26 +8198,32 @@ function getKpiPanelItems(key){
                    redraws and the High Priority filter. */
                 priorityType:toSafeString(getItemByCode?.(row["Item Number"])?.priorityType||""),
                 highPriority:!!getItemByCode?.(row["Item Number"])?.highPriority
-            })));
+            }))).filter(item=>item.orderedQty>0);
         }
-        return items.slice();
+        return items.filter(item=>toNumber(item.orderedQty,0)>0);
     }
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
-    const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order).map(row=>({
+    const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
+    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item.itemCode),item]));
+    const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>({
         orderNumber:order,
         itemCode:row["Item Number"], itemName:row["Item Name"],
         orderedQty:toNumber(row["Ordered Qty"],0), receivedQty:toNumber(row["Received Qty"],0),
         remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
         status:row["Issue Type"], manual:row.issueKey==="manual"
     }))) : [];
-    const scoped=perOrderRows.length ? perOrderRows : items;
+    // Ordered metrics use the same selected Item Code projection as the cards.
+    // Extras retain Item + Order identity; combining them with a matching line
+    // in another Order would hide incorrect assignments.
+    const scoped=typeof getReceivingOperationalItems==="function"
+        ? getReceivingOperationalItems() : items;
     if(key==="completed") return scoped.filter(i=>{
         const o=toNumber(i.orderedQty,0),r=toNumber(i.receivedQty,0);
         return o>0 && r===o;
     });
     if(key==="remaining"||key==="remainingItems") return scoped.filter(i=>toNumber(i.remainingQty,0)>0);
-    if(key==="over") return scoped.filter(i=>toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
-    if(key==="manual") return scoped.filter(i=>i.manual===true);
+    if(key==="over") return scoped.filter(i=>toNumber(i.orderedQty,0)>0 && toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
+    if(key==="manual") return (typeof getPerOrderReceivingRows==="function" ? perOrderRows : items).filter(i=>i.manual===true && toNumber(i.receivedQty,0)>0);
     return [];
 }
 
@@ -8490,7 +8543,7 @@ function queueClearVisiblePriorities(items){
 
 function renderItemBrowser(body, rows, options={}){
     // Reuse the scoped, ambiguity-rejecting server projection; never classify orders.
-    const refreshGroups=()=>{if(body.isConnected){rebuildClassification();draw();}else window.removeEventListener("receiving:groups-ready",refreshGroups);};
+    const refreshGroups=()=>{if(body.isConnected){draw();}else window.removeEventListener("receiving:groups-ready",refreshGroups);};
     if(body._receivingGroupsListener)window.removeEventListener("receiving:groups-ready",body._receivingGroupsListener);
     body._receivingGroupsListener=refreshGroups;
     window.addEventListener("receiving:groups-ready",refreshGroups);
@@ -8505,9 +8558,10 @@ function renderItemBrowser(body, rows, options={}){
     const browserClose=browserPanel?.querySelector("[data-close]");
     body.innerHTML=`
       <div class="pfnBrowserControls ${orderMode?'pfrOrderToolbar':''}">
-        ${orderMode?`<div class="pfrOrderToolbarFilters"><label><span>Order</span><details data-order-filter class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>All Orders</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="ALL" class="active">All Orders</button>${orderNumbers.map(o=>`<button type="button" data-value="${esc(o)}">${esc(o)}</button>`).join('')}</div></div></details></label><div class="pfrClassificationFilters pfrGroupOnlyFilters"><details data-group-filter class="pfnMultiSelector operationalMultiFilter pfnUnifiedMultiSelect"><summary><span>Group</span><strong>All groups</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"></div></details></div><label><span>Quantity</span><details data-qty-sort class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>Highest → Lowest</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="desc" class="active">Highest → Lowest</button><button type="button" data-value="asc">Lowest → Highest</button><button type="button" data-value="default">Default / Order Sequence</button></div></div></details></label></div>`:''}
+        ${orderMode?`<div class="pfrOrderToolbarFilters"><label><span>Order</span><details data-order-filter class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>All Orders</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="ALL" class="active">All Orders</button>${orderNumbers.map(o=>`<button type="button" data-value="${esc(o)}">${esc(o)}</button>`).join('')}</div></div></details></label><label><span>Quantity</span><details data-qty-sort class="pfnSingleSelector pfnUnifiedMultiSelect"><summary><strong>Highest → Lowest</strong></summary><div class="pfrFilterMenu pfnUnifiedMultiSelectMenu"><div class="pfrFilterOptions"><button type="button" data-value="desc" class="active">Highest → Lowest</button><button type="button" data-value="asc">Lowest → Highest</button><button type="button" data-value="default">Default / Order Sequence</button></div></div></details></label></div>`:''}
         <div class="pfrOrderToolbarActions"><label class="pfnBrowserSearchField"><span>Search</span><input class="phase263Search pfnWideSearch" type="search" placeholder="Search by Item Name or Item Number" aria-label="Search items"></label>${orderMode?`<div class="pfrOrderPriorityActions"><button type="button" class="pfnHighPriorityFilter" data-priority-filter>High Priority</button><button type="button" class="pfnHighPriorityFilter" data-print-priority hidden>Print</button><button type="button" class="pfnHighPriorityFilter" data-clear-priority hidden>Clear High Priority</button></div>`:''}</div>
       </div>
+      ${orderMode?'<div class="phase263Summary" data-order-item-count role="status"></div>':''}
       ${receivedMode?`<div class="phase263Summary"><b>Received Items: ${rows.length}</b></div>`:''}
       <div class="phase263TableWrap pfnCleanWorklist"><table class="quickKpiTable phase263Table"><thead><tr>${orderMode?'<th>Item Code</th><th>Item Name</th><th>Priority</th><th>Group</th><th>Quantity</th><th>Order No.</th>':'<th>Item Code</th><th>Item Name</th><th>Ordered</th>'}${receivedMode?'<th>Received</th>':''}</tr></thead><tbody data-rows></tbody></table></div>`;
     if(orderMode){
@@ -8526,8 +8580,6 @@ function renderItemBrowser(body, rows, options={}){
     const tbody=body.querySelector('[data-rows]');
     const orderFilter=body.querySelector('[data-order-filter]');
     const qtySort=body.querySelector('[data-qty-sort]');
-    const groupFilter=body.querySelector('[data-group-filter]');
-    let selectedGroups=[];
     const BROWSER_PAGE_SIZE=200;
     let visibleLimit=BROWSER_PAGE_SIZE;
     const priorityFilter=body.querySelector('[data-priority-filter]');
@@ -8543,7 +8595,7 @@ function renderItemBrowser(body, rows, options={}){
         const key=rowKey(item);
         const selected=key===selectedRowKey;
         const rowAttributes=`class="pfnMobileItemCard${selected?' pfnBrowserRowSelected':''}" data-row-key="${esc(key)}" tabindex="0" aria-selected="${selected?'true':'false'}"`;
-        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number"><span class="pfnItemCodeValue">${esc(item.itemCode)}</span><button type="button" class="pfnCopyItemCode" data-copy-code="${esc(item.itemCode)}" title="Copy item code" aria-label="Copy item code"><span>⧉</span></button></td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalizeReceiving(item)||{};return window.PharmFlowClassificationFilters.displayGroup(x.group)||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
+        if(orderMode)return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number"><span class="pfnItemCodeValue">${esc(item.itemCode)}</span><button type="button" class="pfnCopyItemCode" data-copy-code="${esc(item.itemCode)}" title="Copy item code" aria-label="Copy item code"><span>⧉</span></button></td><td class="pfnItemName" data-label="Item Name">${esc(item.itemName)}</td><td class="pfnPriorityCell" data-label="Priority"><div class="pfnPrioritySegment"><button type="button" class="pfnPriorityMark ${pt==='SHORT'?'active short':''}" data-mark="SHORT" data-code="${esc(item.itemCode)}">SHORT</button><button type="button" class="pfnPriorityMark ${pt==='NEW'?'active new':''}" data-mark="NEW" data-code="${esc(item.itemCode)}">NEW</button></div></td><td class="pfnCategoryCell" data-label="Group">${esc((()=>{const x=window.PharmFlowClassificationFilters?.normalizeReceiving(item)||{};return window.PharmFlowClassificationFilters.displayGroup(x.group)||"—";})())}</td><td class="pfnOrderedQty" data-label="Quantity">${esc(toNumber(item.orderedQty,0))}</td><td class="pfnOrderNo" data-label="Order No.">${esc(orders)}</td></tr>`;
         return `<tr ${rowAttributes}><td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td><td class="pfnItemName" data-label="Item Name"><b>${esc(item.itemName)}</b></td><td class="pfnOrderedQty" data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td>${receivedMode?`<td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td>`:''}</tr>`;
     };
     const draw=()=>{
@@ -8559,15 +8611,13 @@ function renderItemBrowser(body, rows, options={}){
         ));
         const selectedOrder=orderFilter?.dataset.value||'ALL';
         if(orderMode&&selectedOrder!=='ALL') visible=visible.filter(item=>(Array.isArray(item?.orderNumbers)?item.orderNumbers:[]).map(normalizeOrderNumber).includes(selectedOrder));
-        if(orderMode&&window.PharmFlowClassificationFilters){
-            const selection={groups:selectedGroups,categories:[],subCategories:[]};
-            visible=window.PharmFlowClassificationFilters.filter(visible,selection);
-        }
+
         if(orderMode&&priorityOnly) visible=visible.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
         const sort=qtySort?.dataset.value||'desc';
         if(sort==='desc') visible=visible.slice().sort((a,b)=>toNumber(b.orderedQty,0)-toNumber(a.orderedQty,0));
         if(sort==='asc') visible=visible.slice().sort((a,b)=>toNumber(a.orderedQty,0)-toNumber(b.orderedQty,0));
         visibleRows=visible;
+        if(orderMode)body.querySelector("[data-order-item-count]").textContent=`${new Set(visible.map(item=>normalizeItemCode(item.itemCode))).size} unique items · ${visible.length} order rows`;
         if(orderMode&&priorityOnly){
             const groups=[['SHORT',visible.filter(i=>getEffectiveItemPriority(i)==='SHORT')],['NEW',visible.filter(i=>getEffectiveItemPriority(i)==='NEW')]];
             tbody.innerHTML=groups.map(([name,list])=>list.length?`<tr class="pfnPriorityGroup"><td colspan="6"><strong>${name}</strong><span>${list.length} items</span></td></tr>${list.map(rowHtml).join('')}`:'').join('')||`<tr><td colspan="6" class="tableEmptyState">No high priority items.</td></tr>`;
@@ -8578,7 +8628,7 @@ function renderItemBrowser(body, rows, options={}){
             if(rendered.length<visible.length){
                 const more=document.createElement('tr');
                 more.className='pfnBrowserLoadMore';
-                more.innerHTML=`<td colspan="${colspan}"><button type="button" data-load-more>Show next ${Math.min(BROWSER_PAGE_SIZE,visible.length-rendered.length)} items <span>${rendered.length} / ${visible.length}</span></button></td>`;
+                more.innerHTML=`<td colspan="${colspan}"><button type="button" data-load-more>Show next ${Math.min(BROWSER_PAGE_SIZE,visible.length-rendered.length)} ${orderMode?'order rows':'items'} <span>${rendered.length} / ${visible.length}</span></button></td>`;
                 tbody.appendChild(more);
                 more.querySelector('[data-load-more]')?.addEventListener('click',()=>{visibleLimit+=BROWSER_PAGE_SIZE;draw();});
             }
@@ -8633,22 +8683,6 @@ function renderItemBrowser(body, rows, options={}){
         event.preventDefault();
         selectBrowserRow(row);
     });
-    const rebuildClassification=()=>{
-        if(!orderMode||!window.PharmFlowClassificationFilters)return;
-        const currentRows=getKpiPanelItems("total");
-        const selected={groups:selectedGroups,categories:[],subCategories:[]};
-        const choices=window.PharmFlowClassificationFilters.choices(currentRows,selected);
-        const menu=groupFilter?.querySelector('.pfrFilterMenu');
-        if(!menu)return;
-        const allowed=new Set(choices.groups);selectedGroups=selectedGroups.filter(value=>allowed.has(value));
-        /* Order Items uses the same multi-select contract as Receiving:
-           opening at "All groups" means every available Group is explicitly
-           selected, never an arbitrary subset inherited from a prior render. */
-        if(selectedGroups.length===0 && choices.groups.length) selectedGroups=choices.groups.slice();
-        menu.innerHTML=`<div class="pfrFilterOptions">${choices.groups.map(value=>`<label><input type="checkbox" value="${esc(value)}" ${selectedGroups.includes(value)?"checked":""}><span>${esc(window.PharmFlowClassificationFilters.displayGroup(value))}</span></label>`).join('')||'<span class="tableEmptyState">No groups</span>'}</div><div class="pfrFilterActions"><button type="button" data-group-action="all">Select All</button><button type="button" data-group-action="clear">Clear</button><button type="button" data-group-action="ok">OK</button></div>`;
-        const label=groupFilter.querySelector('summary strong');if(label)label.textContent=selectedGroups.length===0||selectedGroups.length===choices.groups.length?'All groups':selectedGroups.length===1?window.PharmFlowClassificationFilters.displayGroup(selectedGroups[0]):selectedGroups.length+' groups';
-    };
-    rebuildClassification();
     const resetAndDraw=()=>{visibleLimit=BROWSER_PAGE_SIZE;draw();};
     input?.addEventListener('input',resetAndDraw);
     const bindSingleFilter=(details,defaultValue)=>{
@@ -8664,9 +8698,6 @@ function renderItemBrowser(body, rows, options={}){
         });
     };
     bindSingleFilter(orderFilter,'ALL');bindSingleFilter(qtySort,'desc');
-    groupFilter?.addEventListener('click',event=>{const action=event.target.closest('[data-group-action]')?.dataset.groupAction;if(!action)return;event.preventDefault();const boxes=[...groupFilter.querySelectorAll('input[type="checkbox"]')];if(action==='all')boxes.forEach(box=>box.checked=true);if(action==='clear')boxes.forEach(box=>box.checked=false);if(action==='ok')groupFilter.open=false;selectedGroups=boxes.filter(box=>box.checked).map(box=>box.value);rebuildClassification();draw();});
-    groupFilter?.addEventListener('change',event=>{if(!event.target.matches('input[type="checkbox"]'))return;selectedGroups=[...groupFilter.querySelectorAll('input:checked')].map(box=>box.value);rebuildClassification();draw();});
-    groupFilter?.addEventListener('toggle',()=>{if(groupFilter.open){if(orderFilter)orderFilter.open=false;if(qtySort)qtySort.open=false;}});
     priorityFilter?.addEventListener('click',()=>{priorityOnly=!priorityOnly;priorityFilter.classList.toggle('active',priorityOnly);if(printPriority)printPriority.hidden=!priorityOnly;if(clearPriority)clearPriority.hidden=!priorityOnly;resetAndDraw();});
     clearPriority?.addEventListener('click',async()=>{
         const targets=visibleRows.filter(item=>['NEW','SHORT'].includes(getEffectiveItemPriority(item)));
@@ -8749,6 +8780,7 @@ async function removeCurrentExtraItem(item){
 
 function renderDashboardKpiPanel(key,body){
     if(!body) return;
+    if(key==='manual' && typeof renderExtraReceivingCorrection==='function'){renderExtraReceivingCorrection(body);return;}
     const esc=value=>typeof escapeHtml==="function"?escapeHtml(toSafeString(value)):toSafeString(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
     if(key==="scans"){
         const allRows=addReceivingActivityFinalTotals(getGroupedReceivingActivityRows());

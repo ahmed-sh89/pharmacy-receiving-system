@@ -228,7 +228,7 @@ async function nrV2CreateDraft(parsed,options={}){
         : [];
     const explicitOrder=normalizeOrderNumber(options.orderNumber||"");
     const capturedOrders=options.workScopeOrderNumbers||selectedOrders;
-    const originalOrder=explicitOrder || (capturedOrders.length===1 ? normalizeOrderNumber(capturedOrders[0]) : "");
+    const originalOrder=options.unassigned===true?"":explicitOrder || (capturedOrders.length===1 ? normalizeOrderNumber(capturedOrders[0]) : "");
     const workScope=[...new Set((options.workScopeOrderNumbers||selectedOrders).map(normalizeOrderNumber).filter(Boolean))];
     if(originalOrder&&!workScope.includes(originalOrder)) workScope.push(originalOrder);
     if((options.workflow||"RECEIVING")==="RECEIVING"&&!workScope.length){

@@ -93,7 +93,7 @@
             };
             try{
                 worker=new root.Worker(new URL('excel-parser-worker.js?v=SEC001_1',scriptUrl));
-                timer=setTimeout(()=>finish(new Error("Excel processing exceeded 30 seconds. Split the workbook into smaller files and retry.")),limits.timeoutMs);
+                timer=setTimeout(()=>finish(new Error("Excel reader did not respond within 30 seconds. Reload PharmFlow and retry this workbook.")),limits.timeoutMs);
                 worker.onmessage=event=>{
                     if(event.data?.ok && event.data.version===version)finish(null,event.data.workbook);
                     else finish(new Error(event.data?.error||"Excel processing failed. Save a fresh workbook and retry."));

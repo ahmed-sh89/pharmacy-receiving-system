@@ -1124,7 +1124,7 @@ function buildReceivedQuantityByOrder(){
        top of attributed transactions: that aggregate already includes them
        and caused double-counted Receiving rows. */
     (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
-        if(tx?.undone===true) return;
+        if(tx?.undone===true || tx?.unassigned===true) return;
 
         const code=normalizeItemCode(tx?.itemCode||"");
         if(!code) return;
@@ -1280,7 +1280,7 @@ function getPerOrderReceivingRows(orderNumber, options={}){
     );
     const extrasByCode=new Map();
     (AppState?.workspace?.receivingHistory||[]).forEach(tx=>{
-        if(tx?.undone===true) return;
+        if(tx?.undone===true || tx?.unassigned===true) return;
         if(normalizeOrderNumber(tx?.orderId||tx?.orderNumber||"")!==normalized) return;
         const code=normalizeItemCode(tx?.itemCode||"");
         if(!code || orderedCodes.has(code)) return;
