@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {parseHTML}=require('linkedom');
 function harness(options={}){
  const writes=[],plain=[];
- const c={window:{},setTimeout(){},Blob,navigator:{clipboard:{write:async items=>{if(options.reject)throw Error('Unsupported');writes.push(items)},writeText:async t=>plain.push(t)}},ClipboardItem:class{constructor(data){this.data=data;}}};
+ const c={window:{},setTimeout(){},Blob,URLSearchParams,navigator:{clipboard:{write:async items=>{if(options.reject)throw Error('Unsupported');writes.push(items)},writeText:async t=>plain.push(t)}},ClipboardItem:class{constructor(data){this.data=data;}}};
  if(options.textOnly)delete c.ClipboardItem;
  vm.createContext(c);vm.runInContext(fs.readFileSync('js/orders.js','utf8'),c);
  return {c,writes,plain};
@@ -41,12 +41,12 @@ test('fallback reports, extras/unassigned do not count as orders, empty report',
 test('HTML is inert, escaped, inline styled and contains each item once with separate code/name cells',()=>{
  const {c}=harness(),html=c.buildFinalizedDiscrepancyEmailHTML(fixture()),{document}=parseHTML(html);
  assert.doesNotMatch(html,/<script|<style|on\w+=|https?:|overflow-wrap:anywhere|word-break:break-all|display:flex|display:grid/i);
- assert.match(html,/&lt;test&gt; &amp;/);assert.equal(document.querySelectorAll('th').length,25);
+ assert.match(html,/&lt;test&gt; &amp;/);assert.equal(document.querySelectorAll('th').length,12);
  for(const th of document.querySelectorAll('th'))assert.match(th.getAttribute('style'),/white-space:nowrap/);
  const codes=[...document.querySelectorAll('td')].filter(t=>t.textContent==='001');assert.equal(codes.length,2);
- assert.equal(codes[0].nextElementSibling.querySelector('[dir=auto]').getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/overflow-wrap:break-word/);
+ assert.equal(codes[0].nextElementSibling.querySelector('[dir=auto]').getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/white-space:nowrap/);
  assert.match(html,/<b>\+1<\/b>/);assert.match(html,/<b>-69<\/b>/);
- assert.match(html,/min-width:280px/);assert.match(html,/min-width:240px/);
+ assert.match(html,/min-width:560px/);assert.match(html,/overflow-x:auto/);
  assert.equal((html.match(/TO-000535106/g)||[]).length,1);
 });
 test('actual clipboard payload includes complete HTML and meaningful plain text',async()=>{
@@ -64,25 +64,16 @@ test('unsupported rich copy falls back to text, including write rejection',async
 test('all content cells explicitly centered; KPI backgrounds/fonts survive dropping inline CSS',()=>{
  const {c}=harness(),html=c.buildFinalizedDiscrepancyEmailHTML(fixture()),{document}=parseHTML(html);
  for(const cell of document.querySelectorAll('td,th'))assert.equal(cell.getAttribute('align'),'center');
+ const values=[...document.querySelectorAll('font[style*="font-size:17px"]')].map(n=>n.textContent);
  for(const node of document.querySelectorAll('[style]'))node.removeAttribute('style');
  assert(document.querySelectorAll('[bgcolor]').length>20);assert(document.querySelectorAll('font[color][face]').length>20);
  assert(document.querySelectorAll('b').length>20);assert(document.querySelectorAll('[bordercolor]').length>=8);
- const values=[...document.querySelectorAll('font[size="5"]')].map(n=>n.textContent);assert.deepEqual(values,['2','1','1','1','1']);
+ assert.deepEqual(values,['2','1','1','1','1']);
 });
 test('distinct codes within each KPI across orders; explicit extra never enters Over',()=>{
  const {c}=harness(),r={orderGroups:[group('A',[row('001',10,3),row('E',0,1,'Extra Item')]),group('B',[row('001',20,9),row('E',0,5,'UNORDERED'),row('001',2,4)])]};
  assert.deepEqual(json(c.getReceivingEmailModel(r).counts),{orders:2,partial:1,notReceived:0,over:1,extra:1});
  assert.equal(c.getReceivingEmailModel(r).groups.flatMap(g=>g.rows).length,5);
-});
-test('native copy writes both MIME types, requires successful event, removes host and restores focus/selection',async()=>{
- for(const succeeds of [true,false]){
-  const {c,writes,plain}=harness({reject:true});const handlers={},data={},events=[];let removed=false,focused=false;
-  const selection={rangeCount:0,removeAllRanges(){events.push('clear')},addRange(){events.push('range')}};
-  c.window.getSelection=()=>selection;
-  c.document={activeElement:{focus(){focused=true}},body:{appendChild(){events.push('append')}},createElement(){return {setAttribute(){},style:{},remove(){removed=true}}},createRange(){return {selectNodeContents(){}}},addEventListener(k,f){handlers[k]=f},removeEventListener(k){delete handlers[k]},execCommand(command){assert.equal(command,'copy');handlers.copy({clipboardData:{setData(k,v){data[k]=v}},preventDefault(){events.push('prevent')},stopImmediatePropagation(){}});return succeeds}};
-  assert.equal(await c.copyFormattedReceivingEmail(fixture()),succeeds);assert(data['text/html'].includes('<!--StartFragment-->'));assert(data['text/plain'].includes('Partial Shortage'));
-  assert(removed&&focused);assert.equal(handlers.copy,undefined);assert.equal(plain.length,succeeds?0:1);assert.equal(writes.length,0);
- }
 });
 test('ClipboardItem construction failure still provides explicitly flagged plain fallback',async()=>{
  const {c,plain}=harness();c.ClipboardItem=class{constructor(){throw Error('unsupported type')}};
@@ -95,4 +86,41 @@ test('actual PharmFlow preview embeds the same centered email markup with safe s
  const frame=document.querySelector('iframe');assert.equal(frame.getAttribute('sandbox'),'');
  const doc=frame.getAttribute('srcdoc');assert(doc.includes(c.buildFinalizedDiscrepancyEmailHTML(r)));assert(doc.includes('&lt;img'));
  assert.equal(document.querySelectorAll('#btnCopyFinalizedEmail').length,1);
+});
+
+test('six separate columns per order, dates, single compact KPI row and distinct Diff backgrounds',()=>{
+ const {c}=harness(),r=fixture();r.orderGroups[0].orderDate='2026-10-30';
+ const {document}=parseHTML(c.buildFinalizedDiscrepancyEmailHTML(r));
+ for(const head of document.querySelectorAll('thead'))assert.deepEqual([...head.querySelectorAll('th')].map(x=>x.textContent),['Code','Item Name','Ordered','Received','Diff','Status']);
+ assert.equal(document.querySelectorAll('thead').length,2);assert.match(document.textContent||document.toString(),/30 Oct 2026/);
+ const values=[...document.querySelectorAll('font[style*="font-size:17px"]')];assert.equal(values.length,5);
+ const cells=values.map(v=>v.closest('td'));assert.equal(new Set(cells.map(x=>x.parentElement)).size,1);
+ for(const [diff,bg] of [['-69','#fff5da'],['-10','#fff0ef'],['+1','#e7f6f1'],['+4','#edf0ff']]){
+  const value=[...document.querySelectorAll('b')].find(x=>x.textContent===diff);assert(value,diff);assert.equal(value.closest('td').getAttribute('bgcolor'),bg);
+ }
+ assert(!document.querySelector('font[style*="font-size:28px"]'));
+ assert.doesNotMatch(c.buildFinalizedDiscrepancyEmailHTML(r),/inline-block|inline-table|display:flex|display:grid/);
+});
+test('clipboard pipeline has no hidden content, native selection or legacy copy side effects',async()=>{
+ const {c,writes}=harness();c.document=new Proxy({}, {get(){throw Error('Copy must not touch DOM')}});
+ assert.equal(await c.copyFormattedReceivingEmail(fixture()),true);assert.equal(writes.length,1);
+});
+test('Outlook compose URL is business HTTPS with encoded recipient/subject and no rich body or account',()=>{
+ const {c}=harness();const u=new URL(c.buildOutlookWebComposeUrl({to:'warehouse@example.invalid',subject:'فرق توريد | TO-1 + TO-2',body:'<script>bad</script>'}));
+ assert.equal(u.origin,'https://outlook.office.com');assert.equal(u.pathname,'/mail/deeplink/compose');
+ assert.equal(u.searchParams.get('to'),'warehouse@example.invalid');assert.equal(u.searchParams.get('subject'),'فرق توريد | TO-1 + TO-2');assert.equal(u.searchParams.size,2);
+});
+test('actual preview uses exact clipboard document and replaces Gmail with safe Outlook link',()=>{
+ const {c}=harness(),{document}=parseHTML('<html><body></body></html>');c.document=document;
+ c.openFinalizedDiscrepancyEmailPreview(fixture());
+ assert.equal(document.querySelector('iframe').getAttribute('srcdoc'),c.buildReceivingEmailClipboardHTML(fixture()));
+ const link=document.querySelector('#btnOpenFinalizedOutlook');assert.equal(link.textContent,'Open Outlook Web');assert.equal(link.getAttribute('target'),'_blank');assert.match(link.getAttribute('rel'),/noopener/);
+ assert.equal(document.querySelectorAll('#btnCopyFinalizedEmail').length,1);assert.doesNotMatch(document.body.innerHTML,/Gmail|mailto:/);
+});
+test('Outlook action preserves clipboard and uses the entered recipient without sending',()=>{
+ const {c,writes,plain}=harness(),{document}=parseHTML('<html><body></body></html>');c.document=document;c.showToast=()=>{};
+ c.openFinalizedDiscrepancyEmailPreview(fixture());document.querySelector('#finalizedEmailTo').value='warehouse@example.invalid';
+ const link=document.querySelector('#btnOpenFinalizedOutlook');link.click();const u=new URL(link.getAttribute('href'));
+ assert.equal(u.searchParams.get('to'),'warehouse@example.invalid');assert.equal(u.searchParams.get('subject'),'فرق توريد | TO-000535106 + TO-000532448');
+ assert.equal(writes.length,0);assert.equal(plain.length,0);assert.equal(u.searchParams.has('body'),false);
 });

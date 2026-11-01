@@ -1,3 +1,7 @@
+# 2026-11-01 — Original email restoration
+
+Original-style email restoration: 30 focused checks PASS; both builds PASS. Preview/readback/narrow/full-width browser evidence in ORIGINAL_BROWSER_QA.md when complete. Real corporate Outlook acceptance PENDING. Six-column narrow fallback is horizontal scrolling, not stacked rows.
+
 # 2026-11-01 — Email rejection repair
 
 Email repair: 26 focused tests PASS and both builds PASS. Owner Outlook Ctrl+V/draft reopen/narrow/full width PENDING. Previous d378b24 visual result REJECTED. See docs/receiving-email-20261101/REPAIR.md.

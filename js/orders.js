@@ -699,115 +699,69 @@ function buildReceivingDiscrepancyEmailSubject(report){
     return prefix+numbers[0]+" + "+(numbers.length-1)+" أخرى"+(shortDate?" | "+shortDate:"");
 }
 
+function formatReceivingEmailOrderDate(value){
+    const iso=String(value||"").slice(0,10),match=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!match)return String(value||"—");
+    const date=new Date(iso+"T00:00:00Z");
+    if(Number.isNaN(date.getTime())||date.toISOString().slice(0,10)!==iso)return String(value);
+    return `${Number(match[3])} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(match[2])-1]} ${match[1]}`;
+}
+
 function buildFinalizedDiscrepancyEmailHTML(report){
     const esc=value=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
         .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     const model=getReceivingEmailModel(report);
-    const palette={
-        orders:{ink:"#164e87",tint:"#eaf2fc"},partial:{ink:"#315d9b",tint:"#edf3fc"},
-        notReceived:{ink:"#a12640",tint:"#fff0f3"},over:{ink:"#6546a4",tint:"#f3effb"},
-        extra:{ink:"#116b77",tint:"#eaf7f8"}
-    };
-    // Redundant HTML attributes and explicit per-cell styles preserve essential
-    // formatting when an email editor removes table CSS or inherited formatting.
-    const font=(text,size=14,color="#183b62",bold=false)=>
-        `<font face="Arial, Helvetica, sans-serif" size="${size>=24?5:size>=16?4:3}" color="${color}" style="font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:${size>=24?32:20}px;color:${color}">${bold?"<b>"+text+"</b>":text}</font>`;
-    const tdStyle="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;text-align:center;vertical-align:middle;word-break:normal;";
-    const th=(label,width="")=>`<th scope="col" align="center" valign="middle" bgcolor="#e7eff9" ${width?`width="${width}"`:""} style="${tdStyle}padding:4px 5px;background-color:#e7eff9;border-bottom:1px solid #ccdced;white-space:nowrap">${font(label,12,"#315779",true)}</th>`;
-    const cell=(content,extra="")=>`<td align="center" valign="middle" style="${tdStyle}padding:6px 5px;${extra}">${content}</td>`;
+    const palette={orders:{ink:"#173d63",tint:"#f1f8fe"},partial:{ink:"#8a5600",tint:"#fff5da"},
+        notReceived:{ink:"#b42318",tint:"#fff0ef"},over:{ink:"#15675c",tint:"#e7f6f1"},extra:{ink:"#504b99",tint:"#edf0ff"}};
+    const font=(text,size=13,color="#1d3954",bold=false,line=20)=>
+        `<font face="Arial, Helvetica, sans-serif" size="${size>=18?4:3}" color="${color}" style="font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:${line}px;color:${color}">${bold?"<b>"+text+"</b>":text}</font>`;
+    const centered="text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;word-break:normal;";
+    const bar=(text,bg="#0b5f9f",size=16)=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:12px 8px;background-color:${bg}">${font(text,size,"#ffffff",true,22)}</td>`;
     const nonzero=Object.entries(model.counts).filter(([,value])=>value>0);
-    // Balanced centered table rows: 5 -> 3 + 2, 4 -> 2 + 2, 3 -> 3.
-    // Each label can wrap at its space, never into vertical letters.
-    const perRow=nonzero.length===4?2:Math.min(nonzero.length,3);
-    const kpiRows=[];
-    for(let i=0;i<nonzero.length;i+=perRow){
-        const entries=nonzero.slice(i,i+perRow),width=Math.floor(100/entries.length);
-        kpiRows.push(`<tr><td align="center" style="padding:3px 0;text-align:center"><table role="presentation" align="center" width="${entries.length===1?50:100}%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:${entries.length===1?50:100}%;table-layout:fixed"><tr>${entries.map(([key,value])=>{
-            const {ink,tint}=palette[key];
-            const label=model.labels[key].split(" ").map(word=>`<span style="white-space:nowrap">${word}</span>`).join(" ");
-            return `<td align="center" valign="middle" width="${width}%" style="padding:0 3px;text-align:center"><table role="presentation" align="center" width="100%" border="1" bordercolor="#cbdbee" cellpadding="0" cellspacing="0" bgcolor="${tint}" style="width:100%;border-collapse:collapse;border:1px solid #cbdbee;background-color:${tint}"><tr><td align="center" bgcolor="${tint}" style="padding:8px 4px 0;text-align:center;background-color:${tint}">${font(value,28,ink,true)}</td></tr><tr><td align="center" bgcolor="${tint}" style="height:36px;padding:0 4px 7px;text-align:center;background-color:${tint}">${font(label,13,ink,true)}</td></tr></table></td>`;
-        }).join("")}</tr></table></td></tr>`);
-    }
-    const summary=kpiRows.length?`<table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse"><tr><td align="center" style="padding:12px 4px 4px;text-align:center">${font("DISCREPANCY SUMMARY",12,"#315779",true)}</td></tr>${kpiRows.join("")}</table>`:"";
+    // One real table row, never a card grid. When all five cannot fit, the
+    // bounded scroll wrapper preserves the row and readable labels/font size.
+    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#f5faff" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#f5faff;border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf",15)}</tr><tr><td align="center" style="${centered}padding:6px"><div style="width:100%;max-width:100%;overflow-x:auto"><table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:${nonzero.length*74}px;border-collapse:collapse"><tr>${nonzero.map(([kind,value])=>{
+        const {ink,tint}=palette[kind];
+        return `<td align="center" valign="middle" bgcolor="${tint}" style="${centered}padding:5px 6px;background-color:${tint};border:1px solid #cbddea">${font(value,17,ink,true)}<br>${font(model.labels[kind],12,ink,false,17)}</td>`;
+    }).join("")}</tr></table></div></td></tr></table>`:"";
+    const headers=[["Code",70],["Item Name",null],["Ordered",64],["Received",70],["Diff",54],["Status",100]];
     const sections=model.groups.map(group=>{
+        const date=group.orderDate||(report?.orders||[]).find(order=>String(order.orderNumber||"").trim()===String(group.orderNumber||"").trim())?.orderDate;
         const rows=group.rows.map((row,index)=>{
-            const {ink,tint}=palette[row.kind],bg=index%2?"#f3f7fc":"#ffffff";
+            const bg=index%2?"#eaf4fb":"#f6fbff",{ink,tint}=palette[row.kind];
+            const cell=(content,extra="")=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:9px 5px;background-color:${bg};border-bottom:1px solid #e1ebf3;${extra}">${content}</td>`;
             const diff=(row.difference>0?"+":"")+row.difference;
-            // Only flow is hybrid. Inner tables, colors, borders, fonts and
-            // alignment survive as regular email HTML even if display is stripped.
-            return `<tr><td align="center" dir="ltr" bgcolor="${bg}" style="padding:0;text-align:center;font-size:0;background-color:${bg};border-bottom:1px solid #cbdbee">
-              <div style="display:inline-block;vertical-align:middle;width:58%;min-width:280px;max-width:100%">
-                <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="${bg}" dir="ltr" style="width:100%;border-collapse:collapse;table-layout:fixed;background-color:${bg}"><tr>${th("Code","86")}${th("Item Name")}</tr><tr>${cell(font(esc(row["Item Number"]),14,"#183b62",true),"width:86px;white-space:normal;overflow-wrap:break-word")}${cell(`<span dir="auto">${font(esc(row["Item Name"]),14,"#183b62",true)}</span>`,"white-space:normal;overflow-wrap:break-word")}</tr></table>
-              </div><div style="display:inline-block;vertical-align:middle;width:42%;min-width:240px;max-width:100%">
-                <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="${bg}" dir="ltr" style="width:100%;border-collapse:collapse;table-layout:auto;background-color:${bg}"><tr>${th("Ordered")}${th("Received")}${th("Diff + Status")}</tr><tr>${cell(font(esc(row["Ordered Qty"]??0),15,"#183b62",true),"white-space:nowrap")}${cell(font(esc(row["Received Qty"]??0),15,"#183b62",true),"white-space:nowrap")}<td align="center" valign="middle" bgcolor="${tint}" style="${tdStyle}padding:4px;background-color:${tint}">${font(diff,16,ink,true)}<br>${font(`<span style="white-space:nowrap">${row.label}</span>`,12,ink,true)}</td></tr></table>
-              </div></td></tr>`;
+            return `<tr>${cell(font(esc(row["Item Number"])),"white-space:nowrap")}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`,"min-width:130px;white-space:normal;overflow-wrap:break-word")}${cell(font(esc(row["Ordered Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(font(esc(row["Received Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(`<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" bgcolor="${tint}" style="border-collapse:separate;background-color:${tint};border-radius:5px"><tr><td align="center" bgcolor="${tint}" style="${centered}padding:3px 6px;white-space:nowrap;background-color:${tint};border-radius:5px">${font(esc(diff),14,ink,true)}</td></tr></table>`)}${cell(font(row.label,13,"#173d63",true),"white-space:normal")}</tr>`;
         }).join("");
-        return `<table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse"><tr><td align="center" height="12" style="height:12px;font-size:1px;line-height:12px">&nbsp;</td></tr></table><table role="presentation" align="center" width="100%" border="1" bordercolor="#cbdbee" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #cbdbee"><tr><td align="center" dir="ltr" bgcolor="#155d91" style="padding:9px 4px;text-align:center;background-color:#155d91;white-space:nowrap">${font(esc(group.orderNumber||"Extra / Unassigned")+" &nbsp;|&nbsp; "+esc(group.orderDate||"—"),14,"#ffffff",true)}</td></tr>${rows}</table>`;
+        return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="22" style="height:22px;font-size:1px;line-height:22px">&nbsp;</td></tr></table>
+          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="#edf6fc" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:#edf6fc;border-radius:10px"><tr>${bar(`<span dir="ltr">${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}</span>`)}</tr><tr><td align="center" style="${centered}padding:12px"><div style="width:100%;max-width:100%;overflow-x:auto"><table align="center" width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;min-width:560px;border-collapse:collapse;table-layout:fixed;border:1px solid #cbddea"><thead><tr>${headers.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 5px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:nowrap">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></td></tr></table>`;
     }).join("");
-    const banner=(text,closing=false)=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#bdd3e9" cellpadding="0" cellspacing="0" bgcolor="#eaf2fc" style="width:100%;border-collapse:collapse;border:1px solid #bdd3e9;background-color:#eaf2fc"><tr><td align="center" dir="rtl" bgcolor="#eaf2fc" style="padding:${closing?10:14}px 8px;text-align:center;background-color:#eaf2fc">${font(text,16,"#173f6b",true)}</td></tr></table>`;
-    return `<table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" dir="rtl" style="width:100%;border-collapse:collapse;background-color:#ffffff;text-align:center"><tr><td align="center" style="padding:6px;text-align:center">
-      ${banner("الإخوة الكرام بالمستودع<br>تحية طيبة وبعد<br>يوجد فرق توريد موضح أدناه<br>نأمل التكرم بالمراجعة والتشييك")}
-      ${summary}${sections}
-      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="12" style="height:12px;font-size:1px;line-height:12px">&nbsp;</td></tr></table>
-      ${banner("خالص الشكر والتقدير",true)}
-      </td></tr></table>`;
+    const message=(text,closing=false)=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#97c3e3" cellpadding="0" cellspacing="0" bgcolor="#d5eaf8" style="width:100%;border-collapse:collapse;background-color:#d5eaf8;border:1px solid #97c3e3;border-radius:10px"><tr><td align="center" dir="rtl" bgcolor="#d5eaf8" style="${centered}padding:${closing?14:20}px 18px;background-color:#d5eaf8">${font(text,closing?18:20,"#173d63",true,closing?32:41)}</td></tr></table>`;
+    const spacer='<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr><td align="center" height="26" style="height:26px;font-size:1px;line-height:26px">&nbsp;</td></tr></table>';
+    // Original blue letter/section hierarchy. Outer fixed-layout tables contain
+    // wide detail tables without allowing their intrinsic minimum to widen the letter.
+    return `<table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="rtl" bgcolor="#f2f7fb" style="width:100%;max-width:920px;table-layout:fixed;border-collapse:collapse;background-color:#f2f7fb"><tr><td align="center" style="${centered}padding:12px"><table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d5e9" cellpadding="0" cellspacing="0" bgcolor="#eaf4fb" style="width:100%;table-layout:fixed;border-collapse:collapse;background-color:#eaf4fb;border:1px solid #b8d5e9;border-radius:14px"><tr><td align="center" style="${centered}padding:18px">
+      ${message("الإخوة الكرام بالمستودع<br>تحية طيبة وبعد<br>يوجد فرق توريد موضح أدناه<br>نأمل التكرم بالمراجعة والتشييك")}${nonzero.length?spacer+kpis:""}${sections}${spacer}${message("خالص الشكر والتقدير",true)}
+      </td></tr></table></td></tr></table>`;
 }
 
 function buildReceivingEmailClipboardHTML(report){
-    return '<!doctype html><html><head><meta charset="utf-8"></head><body dir="rtl" bgcolor="#ffffff" style="margin:0;text-align:center"><!--StartFragment-->'+buildFinalizedDiscrepancyEmailHTML(report)+'<!--EndFragment--></body></html>';
-}
-
-function copyReceivingEmailWithNativeEvent(html,text){
-    if(typeof document==="undefined"||typeof document.execCommand!=="function") return false;
-    const selection=window.getSelection?.(),ranges=[];
-    if(selection)for(let i=0;i<selection.rangeCount;i++)ranges.push(selection.getRangeAt(i).cloneRange());
-    const focused=document.activeElement;
-    let copied=false,host;
-    const onCopy=event=>{
-        if(!event.clipboardData)return;
-        try{
-            event.clipboardData.setData("text/html",html);
-            event.clipboardData.setData("text/plain",text);
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            copied=true;
-        }catch(_){copied=false;}
-    };
-    try{
-        host=document.createElement("div");
-        host.contentEditable="true";
-        host.setAttribute("aria-hidden","true");
-        host.style.cssText="position:fixed;left:-10000px;top:0;width:800px;background:white;";
-        host.innerHTML=html;
-        document.body.appendChild(host);
-        const range=document.createRange();range.selectNodeContents(host);
-        selection?.removeAllRanges();selection?.addRange(range);
-        document.addEventListener("copy",onCopy,true);
-        return document.execCommand("copy")===true&&copied;
-    }catch(_){return false;}
-    finally{
-        document.removeEventListener("copy",onCopy,true);
-        host?.remove();
-        try{focused?.focus({preventScroll:true});selection?.removeAllRanges();ranges.forEach(range=>selection?.addRange(range));}catch(_){}
-    }
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body dir="rtl" bgcolor="#f2f7fb" style="margin:0;background-color:#f2f7fb;text-align:center"><!--StartFragment-->'+buildFinalizedDiscrepancyEmailHTML(report)+'<!--EndFragment--></body></html>';
 }
 
 async function copyFormattedReceivingEmail(report){
-    const html=buildReceivingEmailClipboardHTML(report);
-    const text=buildFinalizedDiscrepancyEmailText(report);
-    // Prefer the standards-based rich write; the native event is a compatibility
-    // fallback for browsers that deny or lack Async Clipboard HTML support.
+    const html=buildReceivingEmailClipboardHTML(report),text=buildFinalizedDiscrepancyEmailText(report);
+    // A single standards-based rich payload, with no DOM selection, temporary
+    // hidden content, execCommand or custom native clipboard format.
     if(navigator.clipboard?.write&&typeof ClipboardItem!=="undefined"){
         try{
-            const item=new ClipboardItem({
+            await navigator.clipboard.write([new ClipboardItem({
                 "text/html":new Blob([html],{type:"text/html"}),
                 "text/plain":new Blob([text],{type:"text/plain"})
-            });
-            await navigator.clipboard.write([item]);
+            })]);
             return true;
         }catch(_){}
     }
-    if(copyReceivingEmailWithNativeEvent(html,text))return true;
     if(!navigator.clipboard?.writeText)throw new Error("Rich email copying unavailable");
     await navigator.clipboard.writeText(text);
     return false;
@@ -837,7 +791,7 @@ function buildFinalizedDiscrepancyEmailText(report){
         lines.push(
             "الطلبية "+(group.orderNumber||"-")+" | التاريخ "+(group.orderDate||"-"),
             "",
-            "Code | Item Name | Ordered | Received | Diff + Status"
+            "Code | Item Name | Ordered | Received | Diff | Status"
         );
 
         group.rows.forEach(row=>{
@@ -847,7 +801,8 @@ function buildFinalizedDiscrepancyEmailText(report){
                 row["Item Name"]||"",
                 row["Ordered Qty"]??0,
                 row["Received Qty"]??0,
-                (diff>0?"+":"")+diff+" "+row.label
+                (diff>0?"+":"")+diff,
+                row.label
             ].join(" | "));
         });
 
@@ -857,62 +812,14 @@ function buildFinalizedDiscrepancyEmailText(report){
     return lines.join("\r\n");
 }
 
-function buildGmailComposeUrl({to="",subject="",body=""}={}){
-    const base="https://mail.google.com/mail/u/0/";
-    const params=new URLSearchParams({
-        fs:"1",
-        tf:"cm",
-        to:String(to||""),
-        su:String(subject||""),
-        body:String(body||"")
-    });
-    return base+"?"+params.toString();
+function buildOutlookWebComposeUrl({to="",subject=""}={}){
+    const params=new URLSearchParams();
+    if(to)params.set("to",String(to));
+    if(subject)params.set("subject",String(subject));
+    const query=params.toString();
+    return "https://outlook.office.com/mail/deeplink/compose"+(query?"?"+query:"");
 }
 
-function openGmailComposeSafely({to="",subject="",body=""}={}){
-    const fullBody=String(body||"");
-    let gmailBody=fullBody;
-
-    /* Extremely long compose URLs can produce a blank browser tab.
-       Keep Gmail transport safe while the complete professional report
-       always remains stored in PharmFlow Archive. */
-    if(encodeURIComponent(gmailBody).length>11000){
-        const lines=gmailBody.split(/\r?\n/);
-        gmailBody=lines.slice(0,45).join("\r\n")+
-            "\r\n\r\n[The full discrepancy report is saved in PharmFlow Archive.]";
-    }
-
-    const url=buildGmailComposeUrl({to,subject,body:gmailBody});
-
-    try{
-        const popup=window.open("about:blank","_blank");
-        if(!popup){
-            throw new Error("Popup blocked");
-        }
-
-        popup.opener=null;
-        popup.location.replace(url);
-
-        setTimeout(()=>{
-            try{
-                if(popup && popup.location && popup.location.href==="about:blank"){
-                    popup.location.href=url;
-                }
-            }catch(_){}
-        },180);
-
-        return true;
-    }catch(error){
-        try{
-            window.location.href="mailto:"+encodeURIComponent(to)+
-                "?subject="+encodeURIComponent(subject)+
-                "&body="+encodeURIComponent(gmailBody);
-            return true;
-        }catch(_){
-            return false;
-        }
-    }
-}
 
 function openFinalizedDiscrepancyEmailPreview(report,options={}){
     document.getElementById("finalizedEmailPreviewOverlay")?.remove();
@@ -947,13 +854,13 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         </section>
 
         <article class="finalizedEmailLetter">
-          <iframe title="Formatted discrepancy email" sandbox="" style="width:100%;height:65vh;min-height:360px;border:0" srcdoc="${esc('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">'+buildFinalizedDiscrepancyEmailHTML(report)+'</body></html>')}"></iframe>
+          <iframe title="Formatted discrepancy email" sandbox="" style="width:100%;height:65vh;min-height:360px;border:0" srcdoc="${esc(buildReceivingEmailClipboardHTML(report))}"></iframe>
         </article>
 
         <footer class="finalizedEmailFooter">
           <div class="finalizedEmailActions">
             <button type="button" class="secondaryButton" id="btnCopyFinalizedEmail">Copy Email</button>
-            <button type="button" class="primaryButton" id="btnOpenFinalizedGmail">Open in Gmail</button>
+            <a class="primaryButton" id="btnOpenFinalizedOutlook" target="_blank" rel="noopener noreferrer" href="${esc(buildOutlookWebComposeUrl({subject}))}" style="display:inline-flex;align-items:center;text-decoration:none;padding:0 14px;min-height:40px">Open Outlook Web</a>
           </div>
         </footer>
       </aside>`;
@@ -978,36 +885,11 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         }
     });
 
-    document.getElementById("btnOpenFinalizedGmail")?.addEventListener("click",async()=>{
-        const to=String(
-            document.getElementById("finalizedEmailTo")?.value||""
-        ).trim();
-
-        let richCopied=false;
-        try{
-            richCopied=await copyFormattedReceivingEmail(report);
-        }catch(_){}
-
-        /* Gmail compose URLs cannot inject a reliable HTML table.
-           Open the compose window cleanly after copying the rich report.
-           One paste keeps the professional HTML design intact. */
-        const opened=openGmailComposeSafely({
-            to,
-            subject,
-            body:""
-        });
-
-        if(opened){
-            showToast?.(
-                richCopied ? "Formatted report copied — paste it into Gmail (Ctrl+V)" : "Gmail opened — rich copying unavailable; use Copy Email again",
-                richCopied ? "success" : "warning"
-            );
-        }else{
-            showToast?.(
-                "Gmail could not be opened. Use Copy Email instead.",
-                "warning"
-            );
-        }
+    const outlookLink=document.getElementById("btnOpenFinalizedOutlook");
+    outlookLink?.addEventListener("click",()=>{
+        const to=String(document.getElementById("finalizedEmailTo")?.value||"").trim();
+        outlookLink.href=buildOutlookWebComposeUrl({to,subject});
+        showToast?.("Outlook Web opened — use Copy Email, then paste into the message body","success");
     });
 }
 

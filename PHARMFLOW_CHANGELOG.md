@@ -1,3 +1,7 @@
+# 2026-11-01 — Original email restoration
+
+Restore approved original blue email and six columns. Compact single KPI row, dated headers, Diff badges, single HTML/plain clipboard pipeline without hidden DOM, and Open Outlook Web replacing Gmail. Staging only; see ORIGINAL_RESTORE.md.
+
 # 2026-11-01 — Email rejection repair
 
 Rejected email design repaired on same Staging branch: centered corporate tables/KPIs, redundant email attributes and native rich clipboard event with explicit fallback warning. Production unchanged. READY FOR TEST; see REPAIR.md.
