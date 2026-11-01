@@ -7,6 +7,8 @@
 
 const AppState = {
 
+    runtimeInitialized:false,
+
     /* =================================================
        CURRENT WORKSPACE
     ================================================= */
@@ -761,12 +763,12 @@ function addReceivingTransaction(
             transactionId,
 
         orderId:
-            transaction.orderId
+            transaction.unassigned === true ? "" : transaction.orderId
             ||
             AppState.workspace.orderId,
 
         selectedOrderNumber:
-            transaction.selectedOrderNumber
+            transaction.unassigned === true ? "" : transaction.selectedOrderNumber
             ||
             transaction.orderId
             ||
@@ -842,6 +844,9 @@ function addReceivingTransaction(
 
         manual:
             transaction.manual === true,
+
+        unassigned:
+            transaction.unassigned === true,
 
         cloudTransactionId:
             transaction.cloudTransactionId || null,
@@ -1277,6 +1282,11 @@ function getStateDebugSnapshot(){
 
 function initializeState(){
 
+    // Auth context can start cloud hydration before startApplication runs.
+    // Only the first runtime initialization may clear state; a later caller
+    // must preserve the server snapshot and any in-flight ledger merge.
+    if(AppState.runtimeInitialized===true) return;
+
     ensureDeviceId();
 
     /* Old PharmFlow versions used one browser-wide workspace key.
@@ -1300,6 +1310,8 @@ function initializeState(){
     rebuildStateIndexes();
 
     recalculateStatistics();
+
+    AppState.runtimeInitialized=true;
 
     Logger.info(
         "State initialized",

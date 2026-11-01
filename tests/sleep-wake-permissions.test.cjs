@@ -59,7 +59,7 @@ test('recovery uses existing refresh mechanism only when stale, distinguishes tr
 test('unavailable permissions cannot erase the Receiving workspace at the startup authority boundary',async()=>{
  const cloud=fs.readFileSync('cloud-workspace.js','utf8');const start=cloud.indexOf('async function ensureStartupCloudAuthority()'),end=start+1+cloud.slice(start+1).search(/^(?:async )?function /m);const fn=cloud.slice(start,end);
  const workspace={orderFiles:[{id:'retained'}],draft:'UNSAVED'},archive={orders:['retained'],transactions:['retained']};
- const c={window:{PharmFlowPermissions:{allowed:()=>false,snapshot:()=>null}},AppState:{workspace,archive},ensureCloudAccountContextIsolation(){throw Error('must not reset');}};vm.createContext(c);vm.runInContext(fn,c);assert.equal(await c.ensureStartupCloudAuthority(),false);assert.equal(c.AppState.workspace,workspace);assert.equal(c.AppState.archive,archive);
+ const c={PharmFlowCloudWorkspace:{},window:{PharmFlowPermissions:{allowed:()=>false,snapshot:()=>null}},AppState:{workspace,archive},ensureCloudAccountContextIsolation(){throw Error('must not reset');}};vm.createContext(c);vm.runInContext(fn,c);assert.equal(await c.ensureStartupCloudAuthority(),false);assert.equal(c.AppState.workspace,workspace);assert.equal(c.AppState.archive,archive);
 });
 test('lifecycle listeners are registered once; no page reload in recovery',()=>{
  const h=harness();for(const name of ['focus','pageshow','online','offline'])assert.equal(h.listeners['w:'+name].length,1);assert.equal(h.listeners['d:visibilitychange'].length,1);assert.doesNotMatch(source,/location\.reload/);
@@ -82,4 +82,11 @@ for(const outcome of ['success','denial','malformed'])test('same-scope revalidat
 test('logout or pharmacy change removes protected content during same-scope revalidation',async()=>{
  let finish,n=0;const h=harness(async()=>++n===1?good():new Promise(r=>finish=r));await h.p.load();const pending=h.p.load();await tick();
  h.auth.context.pharmacy_id='other';h.p.apply();assert.equal(h.p.allowed('RECEIVING'),false);finish(good());await pending;assert.equal(h.p.snapshot(),null);
+});
+
+test('transient permission loss preserves visible Receiving and unsaved input while all actions fail closed',async()=>{
+ let fail=false;const h=harness(async()=>{if(fail)throw Error('temporary network');return good();});await h.p.load();fail=true;await assert.rejects(h.p.load());assert.equal(h.p.allowed('RECEIVING',true),false);assert.equal(h.p.snapshot(),null);assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),false);assert.equal(h.document.getElementById('barcodeInput').value,'UNSAVED');assert.equal(h.document.getElementById('barcodeInput').disabled,true);assert.equal(h.c.AppRouter.currentRoute,'receiving');fail=false;await h.retry();assert.equal(h.p.allowed('RECEIVING',true),true);assert.equal(h.document.getElementById('barcodeInput').value,'UNSAVED');
+});
+test('offline retains only a same-scope display; definitive denial or another identity hides it',async()=>{
+ let denied=false;const h=harness(async()=>{if(denied)throw Object.assign(Error('denied'),{serverRejected:true,httpStatus:403});return good();});await h.p.load();h.event('offline');assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),false);assert.equal(h.p.allowed('RECEIVING'),false);h.auth.identityEpoch++;h.p.apply();assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),true);await h.p.load();denied=true;await assert.rejects(h.p.load());assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),true);assert.equal(h.p.allowed('RECEIVING'),false);
 });

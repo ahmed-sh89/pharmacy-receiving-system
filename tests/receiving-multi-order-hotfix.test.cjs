@@ -11,14 +11,14 @@ function harness(){
  getValidReceivingQuantity:Number,getActiveReceivingOrderNumbers:()=>orders,getSelectedReceivingOrderNumbers:()=>selected,getSelectedReceivingOrderNumber:()=> 'ALL',getWorkspaceOrderSourceRows:o=>source[o],getItemByCode:()=>item,isLikelyZebraDevice:()=>handheld,
  createTransactionId:()=> 'TX-'+c.AppState.workspace.receivingHistory.length,nowISO:()=> 'now',getReceivingRuntimeDeviceType:()=> 'PC',updateItemCalculatedFields:i=>{i.remainingQty=Math.max(0,i.orderedQty-i.receivedQty);},
  handleReceivingFailure:m=>{c.error=m;},showToast:()=>{},finishReceivingChange:()=>{},setLastScan:s=>{lastScan=s;},APP_CONFIG:{transactionSources:{scanner:'SCAN'}},ReceivingEngine:{recentScans:[],adjustmentSources:{increase:'MANUAL_INCREASE',decrease:'MANUAL_DECREASE',search:'SEARCH'}},
- getReceivingOrderMetadata:()=>orders.map(orderNumber=>({orderNumber})),setTimeout:()=>{},document:{body:{classList:{add(){},remove(){}}}}};
+ getScopedOrderItems:()=>c.AppState.workspace.orderData,getReceivingOrderMetadata:()=>orders.map(orderNumber=>({orderNumber})),setTimeout:()=>{},document:{body:{classList:{add(){},remove(){}}}}};
  c.addReceivingTransaction=t=>{c.AppState.workspace.receivingHistory.push(t);return t;};
  vm.createContext(c);
  for(const n of ['buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(reports,n),c);
  for(const n of ['getReceivingEligibleOrders','getReceivingOrderRow','chooseDeterministicReceivingOrder','resolveReceivingTransactionOrder','getReceivingDisplayMetrics','getReceivingOperationalItems','getReceivingAutoAllocationCandidates','buildReceivingAutoAllocationPlan','receiveAutoAllocatedItem','receiveOperationalItem','receiveOrderItem','createReceivingTransaction','addItemReceivedQuantity','receiveItemBySearch','applyQuantityAdjustment','increaseItemQuantity','decreaseItemQuantity','updateLastScanFromReceiving','undoRecentScannerTransaction'])vm.runInContext(fn(receiving,n),c);
  // Core transaction side effects are isolated; allocation/validation/ledger projection use actual code.
  c.ReceivingEngine.currentLocalBatch={};c.rememberReceivingTransaction=()=>{};
- for(const n of ['getReceivingSearchProjection','getSelectedOrderDashboardMetrics'])vm.runInContext(fn(ui,n),c);
+ for(const n of ['getReceivingSearchProjection','getKpiPanelItems','getSelectedOrderDashboardMetrics'])vm.runInContext(fn(ui,n),c);
  return {c,item,orders,source,scope:v=>{selected=v;},handheld:v=>{handheld=v;},scan:()=>lastScan};
 }
 function totals(h){return h.orders.map(o=>h.c.getPerOrderReceivingRows(o)[0]['Received Qty']);}
@@ -70,4 +70,19 @@ test('actual card refresh replaces stale single-Order snapshot without mutating 
  h.c.setElementText=(element,value)=>{if(element)element.textContent=String(value);};h.c.formatDateTime=()=> 'time';h.c.scheduleReceivingAutoClear=()=>{};h.c.refreshLastScanQuantityControl=()=>{};
  let rendered;h.c.refreshProfessionalLastScan=scan=>{rendered=scan;};vm.runInContext(fn(ui,'refreshLastScan'),h.c);h.c.refreshLastScan();
  assert.equal(h.c.UI.elements.lastOrderedQty.textContent,'134');assert.equal(rendered.receivedQty,131);assert.equal(rendered.remainingQty,3);assert.equal(JSON.stringify(h.c.AppState.workspace.lastScan),before);
+});
+
+test('Extra card and detail count agree for single/multiple Orders; Over excludes Extra',()=>{
+ const h=harness();h.c.AppState.workspace.receivingHistory=[{transactionId:'SYNTH-OVER',itemCode:'1019577',orderId:h.orders[0],quantity:135},{transactionId:'SYNTH-EXTRA',itemCode:'SYNTH-X',itemName:'Fictional Extra',orderId:h.orders[0],quantity:4}];
+ for(const scope of [[h.orders[0]],h.orders]){h.scope(scope);const metric=h.c.getSelectedOrderDashboardMetrics();assert.equal(metric.manualItems,1);assert.equal(metric.manualItems,h.c.getKpiPanelItems('manual').length);assert.equal(metric.overReceivedItems,1);assert.equal(h.c.getKpiPanelItems('over').length,1);assert(h.c.getKpiPanelItems('over').every(x=>x.orderedQty>0));assert.equal(metric.completedItems,h.c.getKpiPanelItems('completed').length);assert.equal(metric.remainingItems,h.c.getKpiPanelItems('remaining').length);}
+ h.scope([h.orders[1]]);assert.equal(h.c.getSelectedOrderDashboardMetrics().manualItems,0);assert.equal(h.c.getKpiPanelItems('manual').length,0);
+});
+test('Extra remains visible when same item is ordered on another selected Order',()=>{
+ const h=harness();h.source[h.orders[1]].push({itemCode:'SYNTH-X',itemName:'Fictional X',orderedQty:4});h.c.AppState.workspace.receivingHistory=[{itemCode:'SYNTH-X',itemName:'Fictional X',orderId:h.orders[0],quantity:4}];assert.equal(h.c.getSelectedOrderDashboardMetrics().manualItems,1);assert.equal(h.c.getKpiPanelItems('manual')[0].orderNumber,h.orders[0]);assert.equal(h.c.getKpiPanelItems('over').length,0);
+});
+test('explicit Unassigned receipt is never auto-attributed through legacy one-order fallback',()=>{
+ const h=harness();h.source[h.orders[1]]=[];h.item.orderNumbers=[h.orders[0]];h.c.AppState.workspace.receivingHistory=[{itemCode:'1019577',quantity:60,unassigned:true}];assert.equal(h.c.buildReceivedQuantityByOrder().size,0);
+});
+test('50 ordered /60 received becomes100 ordered /60 received without another receipt',()=>{
+ const h=harness();h.scope([h.orders[0]]);h.source[h.orders[0]]=[{...h.item,orderedQty:50}];h.c.AppState.workspace.receivingHistory=[{transactionId:'SYNTH-SIXTY',itemCode:'1019577',orderId:h.orders[0],quantity:60}];const before=JSON.stringify(h.c.AppState.workspace.receivingHistory);assert.equal(h.c.getKpiPanelItems('over')[0].receivedQty-h.c.getKpiPanelItems('over')[0].orderedQty,10);h.source[h.orders[0]][0].orderedQty=100;assert.equal(h.c.getKpiPanelItems('over').length,0);assert.equal(h.c.getSelectedOrderDashboardMetrics().remainingUnits,40);assert.equal(JSON.stringify(h.c.AppState.workspace.receivingHistory),before);
 });

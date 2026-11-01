@@ -263,10 +263,10 @@
     }else if(liveOrderList && typeof renderFileList==='function'){
       liveOrderList.setAttribute('aria-busy','false');
       renderFileList(liveOrderList,AppState?.workspace?.orderFiles||[],'No order files loaded.');
-    }else if(typeof refreshFileLists==='function'){
-      refreshFileLists();
     }
-    renderHandheldAssignment(overlay);
+    // The list can be detached while the modal is mounted/unmounted. Calling
+    // refreshFileLists here re-enters this function until the stack overflows.
+    if(liveOrderList)renderHandheldAssignment(overlay);
   }
   window.refreshOpenManageOrders=refreshOpenManageOrders;
 

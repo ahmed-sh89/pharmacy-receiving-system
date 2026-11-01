@@ -94,10 +94,6 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
         return false;
     }
 
-    if(AppState.workspace.orderData.length===0){
-        handleReceivingFailure("Load an order before receiving");
-        return false;
-    }
 
     const identifierDisplay=toSafeString(parsed.identifierDisplay||parsed.gtin||parsed.raw||parsed.original||"");
     const gtin=normalizeIdentifier(identifierDisplay);
@@ -120,7 +116,7 @@ async function receiveParsedBarcode(parsed,queueOptions={}){
 
     if(current?.item){
         if(isKnownItemOutsideHandheldScope(current.item)){
-            return showKnownItemOutsideHandheldScope(current.item);
+            return renderKnownNotInOrderHandheld(parsed,masterRecord);
         }
 
         const plan=buildReceivingAutoAllocationPlan(current.item,getValidReceivingQuantity(parsed.quantity));
@@ -441,175 +437,13 @@ function prepareManualExtraItem(itemCode,itemName,gtin,targetOrderOverride=""){
 
 function renderKnownNotInOrderHandheld(parsed,masterRecord){
     clearHandheldActionCard();
-
-    const lastScan=document.getElementById("lastScanCard");
-    if(!lastScan) return false;
-
-    const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||"");
-    const code=normalizeItemCode(masterRecord?.itemCode||"");
-    const name=toSafeString(masterRecord?.itemName||masterRecord?.name||code);
-    const selectedOrders=
-        typeof getSelectedReceivingOrderNumbers==="function"
-            ? getSelectedReceivingOrderNumbers()
-            : [];
-
-    const needsPharmacistTarget=selectedOrders.length!==1;
-
-    const card=document.createElement("section");
-    card.id="handheldKnownExtraCard";
-    card.className="handheldKnownExtraCard";
-    card.innerHTML=`
-      <div class="handheldKnownExtraStatus">KNOWN ITEM · NOT IN ORDER</div>
-      <strong class="handheldKnownExtraName">${escapeHTML(name)}</strong>
-      <div class="handheldKnownExtraMeta">
-        <span>Item <b>${escapeHTML(code)}</b></span>
-        <span>GTIN <b>${escapeHTML(gtin)}</b></span>
-      </div>
-      ${
-        needsPharmacistTarget
-        ? `<div class="handheldKnownExtraNote">
-             Multiple Orders are selected. The pharmacist will choose the target Order on PC.
-           </div>`
-        : ""
-      }
-      <div class="handheldReviewQtyLabel">
-        <span>PHYSICAL QTY</span>
-        <div class="handheldReviewQtyStepper">
-          <button type="button" data-qty-step="-1" aria-label="Decrease quantity">−</button>
-          <input id="handheldKnownExtraQty" type="number" min="1" step="1" inputmode="numeric" value="1">
-          <button type="button" data-qty-step="1" aria-label="Increase quantity">+</button>
-        </div>
-      </div>
-      <button id="btnHandheldAddExtra" class="handheldReviewSave" type="button">
-        ${needsPharmacistTarget ? "SAVE EXTRA FOR REVIEW" : "ADD EXTRA & NEXT"}
-      </button>
-      <button id="btnHandheldCancelExtra" class="handheldReviewCancel" type="button">
-        CANCEL SCAN
-      </button>
-    `;
-
-    /* Keep the exception card in the worker's immediate scan path, above
-       Last Scan, while the compact one-screen layout hides Last Scan until
-       the exception is saved or cancelled. */
-    lastScan.insertAdjacentElement("beforebegin",card);
-    document.body.classList.add("handheldActionCardActive");
-
-    const qty=card.querySelector("#handheldKnownExtraQty");
-    card.querySelectorAll("[data-qty-step]").forEach(button=>{
-        button.addEventListener("click",()=>{
-            const next=Math.max(1,(Number(qty?.value||1)||1)+Number(button.dataset.qtyStep||0));
-            if(qty) qty.value=String(next);
-        });
-    });
-
-    const reviewOperationId=globalThis.crypto.randomUUID();
-    let reviewCapture=null;
-    const submit=async()=>{
-        const button=card.querySelector("#btnHandheldAddExtra");
-        if(button) button.disabled=true;
-
-        try{
-            const quantity=Math.max(1,Number(qty?.value||1)||1);
-
-            /*
-               Multiple selected Orders:
-               Do NOT force a warehouse worker to choose accounting/reporting
-               ownership. Persist it to Needs Review and let the pharmacist
-               choose the target Order on PC.
-            */
-            if(needsPharmacistTarget){
-                const draft=await nrV2CreateDraft(reviewCapture=reviewCapture||{...parsed,quantity},{
-                    operationId:reviewOperationId,workScopeOrderNumbers:selectedOrders,workflow:"RECEIVING",
-                    reason:"KNOWN_NOT_IN_ORDER",
-                    itemCode:code,
-                    itemName:name,
-                    orderNumber:null
-                });
-
-                if(!draft?.review_id){
-                    throw new Error("Unable to save extra item for review");
-                }
-
-                refreshNeedsReviewCounters?.();
-
-                card.querySelector(".handheldKnownExtraStatus").textContent=
-                    "SAVED FOR REVIEW ✓";
-
-                setTimeout(()=>{
-                    clearHandheldActionCard();
-                    setScanBoxState?.("ready");
-                    focusScannerInput?.();
-                },220);
-
-                return true;
-            }
-
-            /*
-               Exactly one selected Order:
-               target is unambiguous, so Receiving can remain one-tap fast.
-            */
-            const targetOrder=normalizeOrderNumber(selectedOrders[0]);
-            const item=prepareManualExtraItem(
-                code,
-                name,
-                gtin,
-                targetOrder
-            );
-
-            const transaction=receiveOrderItem({
-                item,
-                quantity,
-                gtin,
-                lot:parsed?.lot||"",
-                expiry:parsed?.expiry||"",
-                serial:parsed?.serial||"",
-                source:APP_CONFIG.transactionSources.scanner,
-                manual:true,
-                targetOrder
-            });
-
-            if(!transaction){
-                throw new Error("Unable to receive unordered item");
-            }
-
-            clearHandheldActionCard();
-            setScanBoxState?.("ready");
-            focusScannerInput?.();
-            return true;
-
-        }catch(error){
-            if(button) button.disabled=false;
-            setScanBoxState?.("error");
-            showToast?.(
-                error?.message||"Unable to process extra item",
-                "error"
-            );
-            return false;
-        }
-    };
-
-    qty?.addEventListener("keydown",e=>{
-        if(e.key==="Enter"){
-            e.preventDefault();
-            try{ qty.blur(); }catch(_){}
-        }
-    });
-
-    card.querySelector("#btnHandheldAddExtra")
-        ?.addEventListener("click",submit);
-
-    card.querySelector("#btnHandheldCancelExtra")
-        ?.addEventListener("click",()=>{
-            try{ document.activeElement?.blur?.(); }catch(_){}
-            clearHandheldActionCard();
-            setScanBoxState?.("ready");
-            window.hhRefreshReadyState?.();
-            setTimeout(()=>focusScannerInput?.(),40);
-        });
-
-    /* Qty defaults to 1. Keyboard appears only after the worker taps Qty. */
-    try{ document.activeElement?.blur?.(); }catch(_){}
-
+    const host=document.getElementById("lastScanCard");if(!host)return false;
+    const card=document.createElement("section");card.id="handheldKnownExtraCard";card.className="handheldKnownExtraCard";
+    card.innerHTML=`<div class="handheldKnownExtraStatus">WARNING · UNASSIGNED</div><strong>${escapeHTML(masterRecord.itemName||masterRecord.name||masterRecord.itemCode)}</strong><p>No matching selected Order. Save physical quantity; pharmacist assigns on Desktop.</p><input data-qty type="number" min="1" step="1" value="1" inputmode="numeric"><button data-save type="button" class="handheldReviewSave">SAVE UNASSIGNED & NEXT</button><button data-cancel type="button" class="handheldReviewCancel">CANCEL SCAN</button><span data-message role="status"></span>`;
+    host.insertAdjacentElement("beforebegin",card);document.body.classList.add("handheldActionCardActive");
+    const id=crypto.randomUUID(),close=()=>{clearHandheldActionCard();setScanBoxState?.("ready");focusScannerInput?.();};
+    card.querySelector('[data-cancel]').onclick=close;
+    card.querySelector('[data-save]').onclick=async event=>{event.target.disabled=true;try{await recordUnassignedReceiving({itemCode:masterRecord.itemCode,itemName:masterRecord.itemName||masterRecord.name,quantity:Number(card.querySelector('[data-qty]').value),gtin:parsed.identifierDisplay||parsed.gtin,lot:parsed.lot,expiry:parsed.expiry,serial:parsed.serial,transactionId:id});close();}catch(e){card.querySelector('[data-message]').textContent=e.message;event.target.disabled=false;}};
     return true;
 }
 
@@ -893,6 +727,7 @@ async function quickResolveUnrecognizedGTIN(parsed,knownRecord=null){
     return await openQuickGTINResolver(parsed,masterRecord);
 }
 
+
 function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
     return new Promise(resolve=>{
         const gtin=normalizeIdentifier(parsed?.identifierDisplay||parsed?.gtin||parsed?.raw||"");
@@ -901,20 +736,26 @@ function openKnownNotInOrderPC(parsed,masterRecord,selectedOrders=[]){
         document.getElementById("quickGTINResolver")?.remove();
         const panel=document.createElement("div");
         panel.id="quickGTINResolver";panel.className="gtinResolutionShell open";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
-        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Extra Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="pfnInfoStrip"><b>Extra Item</b><span>Ordered quantity will remain 0. This receipt is recorded separately from the original Order items.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Add Extra Item</button></div></footer></aside>`;
+        panel.innerHTML=`<button type="button" class="gtinResolutionScrim" data-close aria-label="Close"></button><aside class="gtinResolutionPanel pfnIdentityPanel pfnKnownExtraPanel"><header class="gtinResolutionHeader"><div><span class="gtinActionBadge">RECOGNISED · NOT IN ORDER</span><h2>Receive Item</h2><p>The barcode is known in the Global Master, but this item is not part of the active Order.</p></div><button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button></header><div class="pfnIdentityBody"><div class="pfnIdentityCard"><div><small>ITEM</small><strong>${escapeHTML(name)}</strong><span>Item Code <b>${escapeHTML(code)}</b></span></div><div class="pfnBarcodeChip"><small>GTIN</small><b>${escapeHTML(gtin)}</b></div></div><div class="pfnExtraFields"><label><span>Target Order</span><select data-extra-order><option value="">Unassigned — choose order later</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label><label class="pfnQtyField"><span>Quantity</span><input data-extra-qty type="number" min="1" step="1" value="${escapeHTML(getValidReceivingQuantity(parsed?.quantity))}"></label></div><div class="receivingUnassignedNotice"><b>Unassigned by default</b><span>Choose an Order only when ownership is known. Unassigned quantities stay outside Order KPIs until explicitly allocated.</span></div></div><footer class="gtinResolutionFooter"><span>Recognised from Global Master</span><div><button type="button" data-close>Cancel</button><button type="button" class="gtinPrimaryAction" data-add-extra>Confirm Receipt</button></div></footer></aside>`;
         document.body.appendChild(panel);let done=false;
         const finish=value=>{if(done)return;done=true;panel.remove();setScanBoxState?.(value?"success":"ready");setTimeout(()=>focusScannerInput?.(),30);resolve(value);};
         panel.querySelectorAll("[data-close]").forEach(button=>button.onclick=()=>finish(false));
-        panel.querySelector("[data-add-extra]").onclick=()=>{
+        const unassignedId=crypto.randomUUID();
+        panel.querySelector("[data-add-extra]").onclick=async event=>{
+            event.target.disabled=true;
             try{
                 const targetOrder=normalizeOrderNumber(panel.querySelector("[data-extra-order]").value);
                 const quantity=Number(panel.querySelector("[data-extra-qty]").value);
-                if(!targetOrder||!Number.isInteger(quantity)||quantity<1)throw new Error("Choose an Order and enter a valid quantity.");
+                if(!Number.isInteger(quantity)||quantity<1)throw new Error("Enter a valid quantity.");
+                if(!targetOrder){
+                    const tx=await recordUnassignedReceiving({itemCode:code,itemName:name,quantity,gtin,lot:parsed?.lot,expiry:parsed?.expiry,serial:parsed?.serial,transactionId:unassignedId});
+                    finish(tx);return;
+                }
                 const item=prepareManualExtraItem(code,name,gtin,targetOrder);
                 const tx=receiveOrderItem({item,quantity,gtin,lot:parsed?.lot||"",expiry:parsed?.expiry||"",serial:parsed?.serial||"",source:APP_CONFIG.transactionSources.scanner,manual:true,targetOrder,identifierPreserveExact:true});
                 if(!tx)throw new Error("Unable to receive extra item");
                 finish(tx);
-            }catch(error){panel.querySelector(".gtinResolutionFooter span").textContent=error?.message||"Unable to receive extra item";}
+            }catch(error){panel.querySelector(".gtinResolutionFooter span").textContent=error?.message||"Unable to receive extra item";}finally{event.target.disabled=false;}
         };
     });
 }
@@ -1082,6 +923,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
               <button type="button" class="gtinCloseButton" data-close aria-label="Close">✕</button>
             </header>
             <div class="gtinReadout"><span>SCANNED BARCODE</span><strong>${escapeHTML(gtin)}</strong><label class="gtinResolverQtyLabel">Quantity <input data-resolver-qty class="gtinResolverQtyInput" type="number" min="1" step="1" inputmode="numeric" value="${escapeHTML(resolverQuantity)}" aria-label="Quantity"></label></div>
+            <label class="gtinResolutionLabel">Target Order<select data-unknown-order><option value="">Unassigned Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label>
             <section class="gtinResolutionSection pfnUnknownWorkspace">
               <div class="pfnResolverTabs"><button type="button" class="isActive" data-mode-find>Find Existing Item</button><button type="button" data-mode-quick>Find in Order — Quick Add</button></div>
               <div data-find-pane>
@@ -1144,6 +986,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         const pharmacyId=IdentifierService.pharmacyId();
         const drawSelection=()=>{
             if(!selectedItem){
+                panel.querySelector("[data-unknown-order]").value="";
                 selection.hidden=true;selection.innerHTML="";
                 panel.querySelector(".gtinResolutionPanel")?.classList.remove("isSelectionLocked");
                 searchLabel.hidden=false;
@@ -1162,7 +1005,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
             results.setAttribute("aria-hidden","true");
             selection.hidden=false;
             selection.innerHTML=(model?renderReceivingResolverSelectedCard(model,escapeHTML,"data-change-item"):
-                `<div class="resolverSelectedCard"><strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small><p>Not in Active Order · Ordered Quantity 0</p><button type="button" data-change-item>Change Item</button><label>Target Order <select data-extra-target><option value="">Select Target Order</option>${selectedOrders.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join("")}</select></label></div>`)+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
+                `<div class="resolverSelectedCard"><strong>${escapeHTML(selectedItem.itemName)}</strong><small>Item Code ${escapeHTML(selectedItem.itemCode)}</small><p>Not in Active Order · Ordered Quantity 0</p><button type="button" data-change-item>Change Item</button></div>`)+`<button type="button" class="gtinPrimaryAction" data-link-receive>Link &amp; Receive</button>`;
             selection.querySelector("[data-change-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();search.value="";search.focus();});
             selection.querySelector("[data-link-receive]")?.addEventListener("click",async event=>{
                 if(linking||reviewStarted||quickCapture)return;
@@ -1173,11 +1016,11 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                     if(typeof isPharmacyAdmin==="function"&&!isPharmacyAdmin())throw new Error("Pharmacy admin permission is required to link a new barcode.");
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                     const quantity=readQuantity();
-                    const targetOrder=inOrder?"":normalizeOrderNumber(selection.querySelector("[data-extra-target]")?.value||"");
-                    if(!inOrder&&(!targetOrder||!selectedOrders.includes(targetOrder))) throw new Error("Select a Target Order for this Extra Item.");
-                    if(!inOrder&&!getSelectedReceivingOrderNumbers().includes(targetOrder)) throw new Error("Target Order is no longer selected. Reopen Receiving resolution.");
-                    if(linkCapture&&(normalizeItemCode(linkCapture.item.itemCode)!==normalizeItemCode(resolvingItem.itemCode)||linkCapture.quantity!==quantity||linkCapture.extra===inOrder||(!inOrder&&linkCapture.plan[0].orderNumber!==targetOrder)))throw new Error("Retry the original item, Order and quantity, or close this dialog.");
-                    linkCapture=linkCapture||{item:resolvingItem,quantity,extra:!inOrder,transactionId:`RECEIVING_LINK:${globalThis.crypto.randomUUID()}`,plan:inOrder?buildReceivingAutoAllocationPlan(resolvingItem,quantity,selectedOrders):[{orderNumber:targetOrder,quantity}]};
+                    const targetOrder=normalizeOrderNumber(panel.querySelector("[data-unknown-order]").value||"");
+                    if(targetOrder&&!getSelectedReceivingOrderNumbers().includes(targetOrder))throw new Error("Target Order is no longer selected. Reopen Receiving resolution.");
+                    const targetMatches=targetOrder&&getReceivingAutoAllocationCandidates(resolvingItem,[targetOrder]).length>0;
+                    if(linkCapture&&(normalizeItemCode(linkCapture.item.itemCode)!==normalizeItemCode(resolvingItem.itemCode)||linkCapture.quantity!==quantity||linkCapture.targetOrder!==targetOrder))throw new Error("Retry the original item, Order and quantity, or close this dialog.");
+                    linkCapture=linkCapture||{item:resolvingItem,quantity,targetOrder,unassigned:!targetOrder,extra:!targetMatches,transactionId:`RECEIVING_LINK:${globalThis.crypto.randomUUID()}`,plan:!targetOrder?[]:targetMatches?buildReceivingAutoAllocationPlan(resolvingItem,quantity,[targetOrder]):[{orderNumber:targetOrder,quantity}]};
                     const globalItem=await IdentifierService.findGlobalItemByCode(resolvingItem.itemCode);
                     if(!globalItem) throw new Error("This item is no longer available in Global Master. Search again.");
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
@@ -1185,7 +1028,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                     if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                     const mapping=Array.isArray(mappingResult)?mappingResult[0]:mappingResult;
                     const resolution=IdentifierService.receivingProvenance(mapping);
-                    const txs=receivePinnedReceivingLink(linkCapture,gtin,parsed,resolution);
+                    const txs=linkCapture.unassigned?[await recordUnassignedReceiving({itemCode:resolvingItem.itemCode,itemName:resolvingItem.itemName,quantity,gtin,lot:parsed?.lot,expiry:parsed?.expiry,serial:parsed?.serial,transactionId:linkCapture.transactionId})]:receivePinnedReceivingLink(linkCapture,gtin,parsed,resolution);
                     finish(txs[0]||true);
                 }catch(error){button.disabled=false;setScanBoxState?.("error");panel.querySelector(".gtinPanelMessage").textContent=error?.message||"Unable to link and receive item";}
                 finally{linking=false;if(!finished)panel.querySelector("[data-review]").disabled=false;}
@@ -1214,7 +1057,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
         qtyInput?.addEventListener("input",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);}catch(_error){}});
         qtyInput?.addEventListener("change",()=>{try{readQuantity();const mirror=panel.querySelector("[data-create-qty-mirror]");if(mirror)mirror.textContent=String(resolverQuantity);if(selectedItem)drawSelection();}catch(error){panel.querySelector(".gtinPanelMessage").textContent=error.message;qtyInput.focus();}});
         const reviewOperationId=globalThis.crypto.randomUUID();
-        const reviewOptions={operationId:reviewOperationId,workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders};
+        const reviewOptions={unassigned:true,operationId:reviewOperationId,workflow:"RECEIVING",reason:knownRecord?"KNOWN_NOT_IN_ORDER":"UNKNOWN_GTIN",itemCode:knownRecord?.itemCode||"",itemName:knownRecord?.itemName||knownRecord?.name||"",orderNumber:null,workScopeOrderNumbers:selectedOrders};
         let reviewDraft=null,reviewSaving=false,reviewCapture=null;
         panel.querySelector("[data-review]")?.addEventListener("click",async event=>{
             if(reviewSaving||linking||quickCapture)return;
@@ -1225,6 +1068,7 @@ function openQuickGTINResolver(parsed,knownRecord=null){
                 if(pharmacyId!==IdentifierService.pharmacyId()) throw new Error("Pharmacy changed. Reopen Receiving resolution.");
                 const quantity=reviewCapture?.quantity??readQuantity();
                 reviewCapture=reviewCapture||{...parsed,quantity,identifierDisplay:gtin};
+                if(!reviewDraft){reviewOptions.orderNumber=panel.querySelector("[data-unknown-order]").value;reviewOptions.unassigned=!reviewOptions.orderNumber;}
                 reviewDraft=reviewDraft||await nrV2CreateDraft(reviewCapture,reviewOptions);
                 if(!reviewDraft?.review_id)throw new Error("Review confirmation is unavailable. Retry Save for Review.");
                 const savedReview=reviewDraft;

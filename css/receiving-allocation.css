@@ -1,0 +1,18 @@
+/* Extra Items correction controls; no separate allocation surface. */
+.receivingExtraSummary{display:flex;gap:20px;align-items:center;padding:9px 12px;margin-bottom:10px;border:1px solid #c7dced;border-radius:8px;background:#f1f7fd;color:#315979;font-size:12px}
+.receivingExtraTools,.receivingExtraAssign{display:flex;align-items:end;gap:10px;margin-bottom:10px}
+.receivingExtraTools label,.receivingExtraAssign label{display:grid;gap:4px;color:#315979;font-size:12px;font-weight:700}
+.receivingExtraTools label:first-child,.receivingExtraAssign label{flex:1}
+.receivingExtraTools input,.receivingExtraTools select,.receivingExtraAssign select{box-sizing:border-box;width:100%;min-height:36px;border:1px solid #b8d0e5;border-radius:8px;background:#fff;padding:6px 10px;color:#123f6d;font:inherit}
+.receivingExtraTools input:focus-visible,.receivingExtraTools select:focus-visible,.receivingExtraAssign select:focus-visible{outline:2px solid #1769aa;outline-offset:2px}
+.receivingExtraAssign button,body:not(.zebraDevice) .receivingRecoveryButton{min-height:34px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;white-space:nowrap}
+.receivingExtraAssign [data-selected]{font-size:12px;color:#607d96;white-space:nowrap}
+.receivingExtraTable{overflow:auto;max-height:56vh;border:1px solid #d4e2ef;border-radius:8px}
+.receivingExtraTable table{width:100%;margin:0}
+.receivingExtraTable th{position:sticky;top:0;background:#edf5fc;color:#315979}
+.receivingExtraTable input[type=checkbox]{width:16px;height:16px;accent-color:#1769aa}
+.receivingExtraTable input:disabled{opacity:.4}
+.receivingExtraMessage{margin:8px 0;color:#a12b41;font-size:12px}
+.receivingExtraMessage:empty{display:none}
+.receivingUnassignedNotice{display:grid;gap:3px;padding:10px 12px;border:1px solid #c7dced;border-radius:8px;background:#f1f7fd;color:#315979;font-size:12px;line-height:1.5}
+@media(max-width:640px){.receivingExtraTools,.receivingExtraAssign{flex-wrap:wrap}.receivingExtraTable table{min-width:620px}}

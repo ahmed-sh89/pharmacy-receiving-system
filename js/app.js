@@ -103,11 +103,12 @@ async function bootstrapMedryvo(){
 }
 
 function showAuthenticationStartupFailure(){
-    showWorkspaceStartupAuthorityFailure();
-    const card=document.querySelector("#workspaceBootOverlay .workspaceBootCard");
-    const title=card?.querySelector("strong"),detail=card?.querySelector("small");
-    if(title)title.textContent="Secure startup failed";
-    if(detail){detail.hidden=false;detail.textContent="Unable to initialize secure access. Reload to retry.";}
+    // Authentication failures stay in the secure sign-in surface, never boot
+    // protected modules or share Receiving's synchronization error state.
+    document.body.classList.add("authLocked");
+    finishAuthBootState();
+    document.body.classList.remove("workspaceBooting");
+    document.getElementById("authGate")?.classList.add("visible");
 }
 
 window.bootProtectedApplication = async function(){
@@ -121,6 +122,10 @@ window.bootProtectedApplication = async function(){
 ===================================================== */
 
 async function startApplication(){
+    // Auth render and bootstrap can enter concurrently. Both await the same
+    // startup, rather than resetting/rendering the runtime twice.
+    if(PharmacyApp.startPromise) return PharmacyApp.startPromise;
+    const pending=Promise.resolve().then(async()=>{
 
     /* Do not expose partially hydrated KPI/dashboard markup while the
        authoritative workspace is still loading. */
@@ -205,12 +210,12 @@ async function startApplication(){
         }
 
 
-        startRouter();
+        if(!PharmacyApp.modules.router)startRouter();
 
         PharmacyApp.modules.router = true;
 
 
-        initializeUI();
+        if(!PharmacyApp.modules.ui)initializeUI();
 
         PharmacyApp.modules.ui = true;
 
@@ -277,36 +282,19 @@ async function startApplication(){
 
     }
 
+    });
+    PharmacyApp.startPromise=pending;
+    try{return await pending;}
+    finally{if(PharmacyApp.startPromise===pending)PharmacyApp.startPromise=null;}
 }
 
 function showWorkspaceStartupAuthorityFailure(){
-    document.body.classList.add("workspaceBooting");
-    const overlay=document.getElementById("workspaceBootOverlay");
-    const card=overlay?.querySelector(".workspaceBootCard");
-    if(!card) return;
-
-    const title=card.querySelector("strong");
-    const detail=card.querySelector("small");
-    if(title) title.textContent="Receiving data is not ready";
-    if(detail){detail.hidden=false;detail.textContent="PharmFlow could not confirm the complete receiving snapshot. Dashboard totals and scanning are paused to protect accuracy.";}
-
-    let retry=card.querySelector("#workspaceBootRetry");
-    if(!retry){
-        retry=document.createElement("button");
-        retry.id="workspaceBootRetry";
-        retry.type="button";
-        retry.className="workspaceBootRetry";
-        retry.textContent="Retry synchronization";
-        retry.addEventListener("click",()=>{
-            retry.disabled=true;
-            retry.textContent="Retrying…";
-            window.location.reload();
-        });
-        card.appendChild(retry);
-    }
-    retry.hidden=false;
-    retry.disabled=false;
-    retry.textContent="Retry synchronization";
+    // Keep genuine failures visible in the existing Receiving surface. Its
+    // hydration guard disables scanning and owns the single in-app Retry.
+    if(!PharmacyApp.modules.router){startRouter();PharmacyApp.modules.router=true;}
+    if(!PharmacyApp.modules.ui){initializeUI();PharmacyApp.modules.ui=true;}
+    refreshEntireUI();
+    document.body.classList.remove("workspaceBooting");
 }
 
 

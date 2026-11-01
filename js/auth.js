@@ -100,6 +100,23 @@ async function initializeAuth(){
         }
     }
 
+    // A restored token may be valid while its embedded user metadata predates
+    // a completed admin password reset in another tab/device. Revalidate a
+    // locally asserted password gate with Auth before presenting that form.
+    // On network/authorization failure retain the gate; never clear it by guess.
+    if(AuthState.session && AuthState.mustChangePassword){
+        try{
+            const user=await authRequest("/auth/v1/user",{
+                method:"GET",headers:{"Authorization":"Bearer "+getSupabaseAccessToken()}
+            });
+            if(user?.id===AuthState.user?.id){
+                persistAuthSession({...AuthState.session,user});
+            }
+        }catch(error){
+            Logger?.warn?.("Unable to revalidate password-change requirement");
+        }
+    }
+
     // Setup status only controls the signed-out registration UI. A restored
     // session still passes the context, permission and SEC-007 server gates.
     if(!AuthState.session)await loadPublicSetupStatus().catch(()=>{});
@@ -731,7 +748,6 @@ async function signInFromForm(){
             body:JSON.stringify({email,password})
         });
         persistAuthSession(session);
-        await loadPublicSetupStatus().catch(()=>{});
         if(AuthState.mustChangePassword){
             renderAuthState();
             return;

@@ -38,16 +38,11 @@ function hhMode(){
 }
 
 function hhReceivingSessionReady(){
-    /* 2C.11.0: READY means authenticated pharmacy + authoritative Active
-       Order data. There is intentionally no Create/Join session dependency. */
-    return !!(
-        typeof AuthState!=="undefined" &&
-        AuthState?.context?.pharmacy_id &&
-        Array.isArray(AppState?.workspace?.orderFiles) &&
-        AppState.workspace.orderFiles.length>0 &&
-        Array.isArray(AppState?.workspace?.orderData) &&
-        AppState.workspace.orderData.length>0
-    );
+    // An authenticated synchronized empty manifest permits Unassigned capture.
+    // It never authorizes cross-pharmacy reads or bypasses server permissions.
+    return !!(typeof AuthState!=="undefined" && AuthState.context?.pharmacy_id &&
+        window.PharmFlowCloudWorkspace?.startupAuthorityReady===true &&
+        window.PharmFlowPermissions?.allowed("RECEIVING",true)===true);
 }
 
 function hhSetVisualState(state,label){
@@ -120,7 +115,7 @@ async function hhProcessReceiving(raw,input){
         const cleaned=typeof cleanScannerInput==="function"?cleanScannerInput(raw):String(raw||"").trim();
         if(!hhReceivingSessionReady()){
             hhSetVisualState("blocked","SESSION / ORDERS NOT READY");
-            showToast("No synchronized Active Order is available for this pharmacy","warning");
+            showToast("Authenticated Receiving is not ready for this pharmacy","warning");
             return false;
         }
 

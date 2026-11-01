@@ -130,7 +130,7 @@ test("workspace restore fails closed when the authoritative ledger fetch fails",
         AppState:{workspace:{orderData:[{itemCode:"A"}],orderFiles:[{documentId:"order-a"}],receivingHistory:[]}},
         PharmFlowCloudWorkspace:{hydratedPharmacyId:null,hydrationPromise:null,activeManifestPresent:true,
             receivingCursorCreatedAt:"old",receivingCursorTransactionId:"old",receivingBootstrapComplete:true},
-        ensureCloudAccountContextIsolation(){},cloudWorkspacePharmacyId(){return "pharmacy-a";},
+        ensureCloudAccountContextIsolation(){},cloudWorkspacePharmacyId(){return "pharmacy-a";},activeOrderAuthorityScope:()=>"p/u",
         authRpc:async name=>name==="get_pharmflow_cloud_workspace"?[{}]:[],
         setCloudWorkspaceStatus(){},getCloudWorkspaceGeneration:async()=>0,
         pullActiveOrderManifestAuthority:async()=>true,
@@ -142,40 +142,11 @@ test("workspace restore fails closed when the authoritative ledger fetch fails",
     assert.equal(sandbox.PharmFlowCloudWorkspace.hydratedPharmacyId,null,"failed ledger data must not be marked hydrated");
 });
 
-test("Production startup does not initialize dashboard or scanner on failed authority",()=>{
-    assert.match(appSource,/error\?\.code==="PHARMFLOW_STARTUP_AUTHORITY_NOT_READY"/);
-    assert.match(appSource,/PharmFlow could not confirm the complete receiving snapshot/);
-    assert.match(appSource,/Retry synchronization/);
-});
-
-test("failed startup presents a direct retry without exposing the workspace",()=>{
-    const nodes={
-        strong:{textContent:"Preparing PharmFlow"},
-        small:{textContent:"Loading your receiving workspace…"}
-    };
-    let reloads=0;
-    const card={
-        children:[],
-        querySelector(selector){return nodes[selector]||(selector==="#workspaceBootRetry"?null:null);},
-        appendChild(element){this.children.push(element);}
-    };
-    const overlay={querySelector(){return card;}};
-    const bodyClasses=[];
-    const sandbox={
-        document:{
-            body:{classList:{add(value){bodyClasses.push(value);}}},
-            getElementById(){return overlay;},
-            createElement(){return {addEventListener(_type,handler){this.handler=handler;}};}
-        },
-        window:{location:{reload(){reloads++;}}}
-    };
+test("failed Receiving authority uses the existing guarded UI without a reload loop",()=>{
+    let router=0,ui=0,refresh=0,removed=0;
+    const sandbox={PharmacyApp:{modules:{}},startRouter(){router++;},initializeUI(){ui++;},refreshEntireUI(){refresh++;},document:{body:{classList:{remove(name){assert.equal(name,'workspaceBooting');removed++;}}}}};
     vm.runInNewContext(extractFunction(appSource,"function showWorkspaceStartupAuthorityFailure()"),sandbox);
-    sandbox.showWorkspaceStartupAuthorityFailure();
-    assert.match(nodes.strong.textContent,/not ready/);
-    assert.match(nodes.small.textContent,/Dashboard totals and scanning are paused/);
-    assert.ok(bodyClasses.includes("workspaceBooting"));
-    const retry=card.children[0];
-    assert.equal(retry.textContent,"Retry synchronization");
-    retry.handler();
-    assert.equal(reloads,1);
+    sandbox.showWorkspaceStartupAuthorityFailure();sandbox.showWorkspaceStartupAuthorityFailure();
+    assert.equal(router,1);assert.equal(ui,1);assert.equal(refresh,2);assert.equal(removed,2);
+    assert.doesNotMatch(appSource.slice(appSource.indexOf('function showWorkspaceStartupAuthorityFailure()'),appSource.indexOf('function setInitialSystemStatus()')),/location.reload|createElement/);
 });
