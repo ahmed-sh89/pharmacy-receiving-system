@@ -1,3 +1,7 @@
+# 2026-11-01 — Receiving discrepancy email
+
+Receiving discrepancy email: 21 focused automated PASS; default/Staging builds PASS. Outlook compose/Reading Pane/full width and Owner visual acceptance pending. Acceptance scenarios: docs/receiving-email-20261101/ACCEPTANCE.md.
+
 ## Final focused Staging refinements — 28 October 2026
 
 READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.

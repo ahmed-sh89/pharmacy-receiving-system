@@ -656,88 +656,81 @@ function getEmailReportOrderGroups(report){
     }];
 }
 
+/* Presentation only: use the canonical report rows, never workspace totals or
+   report.summary (which may include completed items). Each order/item is one
+   discrepancy; the same code in two orders remains two distinct report rows. */
+function getReceivingEmailModel(report){
+    const labels={partial:"Partial Shortage",notReceived:"Not Received",over:"Over Received",extra:"Extra Items"};
+    const counts={orders:0,partial:0,notReceived:0,over:0,extra:0};
+    const groups=getEmailReportOrderGroups(report).map(group=>({
+        ...group,
+        rows:(group.rows||[]).flatMap(row=>{
+            const ordered=Number(row["Ordered Qty"]||0),received=Number(row["Received Qty"]||0);
+            if(!Number.isFinite(ordered)||!Number.isFinite(received)) return [];
+            const issue=String(row["Issue Type"]||row.Status||"").trim().toUpperCase();
+            const extra=["EXTRA ITEM","EXTRA","UNORDERED","UNASSIGNED"].includes(issue)||ordered===0;
+            const kind=extra&&received>0 ? "extra" : ordered>0&&received===0 ? "notReceived"
+                : received>0&&received<ordered ? "partial" : received>ordered ? "over" : "";
+            if(!kind) return [];
+            counts[kind]++;
+            const difference=Number(row["Difference"]);
+            return [{...row,kind,label:kind==="extra"?"Extra":labels[kind],
+                difference:Number.isFinite(difference)?difference:received-ordered}];
+        })
+    })).filter(group=>group.rows.length);
+    const orderNumbers=[...new Set(groups.filter(g=>!g.unassigned)
+        .map(g=>String(g.orderNumber||"").trim()).filter(n=>n&&!/^(UNASSIGNED|UNORDERED)$/i.test(n)))];
+    counts.orders=orderNumbers.length;
+    return {groups,orderNumbers,counts,labels:{orders:"Orders",...labels}};
+}
+
+function buildReceivingDiscrepancyEmailSubject(report){
+    const model=getReceivingEmailModel(report),numbers=model.orderNumbers;
+    const prefix="فرق توريد | ";
+    if(numbers.length<3) return prefix+(numbers.join(" + ")||"Extra Items");
+    // Prefer the latest affected order date; never an unrelated order or local date.
+    const dates=model.groups.map(g=>String(g.orderDate||"").slice(0,10))
+        .filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+    const date=dates.at(-1)||String(report?.generatedAt||"").slice(0,10);
+    const shortDate=/^\d{4}-\d{2}-\d{2}$/.test(date)?date.slice(8,10)+"-"+date.slice(5,7):"";
+    return prefix+numbers[0]+" + "+(numbers.length-1)+" أخرى"+(shortDate?" | "+shortDate:"");
+}
+
 function buildFinalizedDiscrepancyEmailHTML(report){
-    const esc=value=>String(value??"")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;");
-
-    const groups=getEmailReportOrderGroups(report)
-        .filter(group=>Array.isArray(group.rows) && group.rows.length);
-
-    const formatOrderDate=value=>{
-        const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if(!match) return String(value||"-");
-        return `${match[3]} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(match[2])-1]} ${match[1]}`;
-    };
-    const summaryRows=groups.map(group=>`
-      <tr>
-        <td style="padding:9px 8px;border-bottom:1px solid #dce8f3;font-weight:700;color:#133d65">${esc(group.orderNumber||"-")}</td>
-        <td style="padding:9px 8px;border-bottom:1px solid #dce8f3">${esc(formatOrderDate(group.orderDate))}</td>
-        <td style="padding:9px 8px;border-bottom:1px solid #dce8f3;font-weight:800;color:#b42318">${esc(group.summary?.discrepancyItems??group.rows.length)}</td>
-      </tr>`).join("");
-
-    const sections=groups.map(group=>{
-        const rows=group.rows;
-        const orderHeading=`الطلبية ${group.orderNumber||"-"}`;
-        return `
-        <section dir="rtl" style="margin:22px 0 0;border:1px solid #b8d4e9;border-radius:10px;overflow:hidden;background:#edf6fc">
-          <div style="padding:12px 16px;background:#0b5f9f;color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:700;text-align:center">${esc(orderHeading)}</div>
-          <div style="padding:12px">
-            <table dir="ltr" role="presentation" style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:Arial,sans-serif;font-size:12px;color:#1d3954;border:1px solid #cbddea" cellpadding="0" cellspacing="0">
-              <thead>
-                <tr style="background:#dceefb;color:#103d66">
-                  <th style="width:13%;padding:9px 6px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Code</th>
-                  <th style="width:43%;padding:9px 8px;border-bottom:1px solid #b7d3e8;text-align:left;font-weight:800">Item Name</th>
-                  <th style="width:10%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Ordered</th>
-                  <th style="width:10%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Received</th>
-                  <th style="width:10%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Diff</th>
-                  <th style="width:14%;padding:9px 5px;border-bottom:1px solid #b7d3e8;text-align:center;font-weight:800">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.map((row,index)=>{
-                    const diff=Number(row["Difference"]||0);
-                    const status=String(row["Issue Type"]||row["Status"]||"");
-                    const diffStyle=diff<0
-                        ? "color:#b42318;background:#fff0ef"
-                        : diff>0
-                            ? "color:#9a6200;background:#fff5da"
-                            : "color:#315b7e;background:#edf4fa";
-                    return `
-                    <tr style="background:${index%2?"#eaf4fb":"#f6fbff"}">
-                      <td style="padding:9px 6px;border-bottom:1px solid #e1ebf3;text-align:center;white-space:nowrap">${esc(row["Item Number"]||"")}</td>
-                      <td style="padding:9px 8px;border-bottom:1px solid #e1ebf3;text-align:left;overflow-wrap:anywhere">${esc(row["Item Name"]||"")}</td>
-                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center"><strong style="font-weight:800;color:#103d66">${esc(row["Ordered Qty"]??0)}</strong></td>
-                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center"><strong style="font-weight:800;color:#103d66">${esc(row["Received Qty"]??0)}</strong></td>
-                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center"><strong style="display:inline-block;min-width:28px;padding:3px 5px;border-radius:5px;font-weight:800;${diffStyle}">${diff>0?"+":""}${esc(diff)}</strong></td>
-                      <td style="padding:9px 5px;border-bottom:1px solid #e1ebf3;text-align:center;font-weight:700">${esc(status)}</td>
-                    </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          </div>
-        </section>`;
+    const esc=value=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    const model=getReceivingEmailModel(report);
+    const colors={orders:"#174e7b",partial:"#965600",notReceived:"#a52834",over:"#775600",extra:"#28637c"};
+    const kpis=Object.entries(model.counts).filter(([,value])=>value>0).map(([key,value])=>
+        `<table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:top;margin:0 6px 6px 0;border:1px solid #cbddea;background:#f2f7fb;color:${colors[key]};font-family:Arial,sans-serif;font-size:13px"><tr><td style="padding:7px 10px;white-space:nowrap"><strong style="font-size:17px">${value}</strong> &nbsp;${model.labels[key]}</td></tr></table>`).join("");
+    const heading="font-family:Arial,sans-serif;font-size:11px;line-height:16px;color:#48627a;text-align:left;font-weight:normal;padding:3px 6px 0;white-space:nowrap;word-break:normal";
+    const cell="font-family:Arial,sans-serif;font-size:13px;line-height:18px;color:#173d63;text-align:left;vertical-align:top;padding:2px 6px 5px;word-break:normal";
+    const sections=model.groups.map(group=>{
+        const rows=group.rows.map((row,index)=>{
+            const diff=row.difference,sign=diff>0?"+":"";
+            // Hybrid fluid layout survives clipboard sanitization: no media query,
+            // style block, flex/grid, fixed-layout table or hidden duplicate rows.
+            // At < ~510px the quantity table flows below the code/name table.
+            return `<tr><td style="padding:3px 0;border-bottom:1px solid #dce8f3;background:${index%2?"#f2f7fb":"#ffffff"};font-size:0;text-align:left" dir="ltr">
+              <table cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:top;width:55%;min-width:250px;max-width:100%;border-collapse:collapse;table-layout:fixed" dir="ltr">
+                <tr><th scope="col" style="${heading};width:84px">Code</th><th scope="col" style="${heading}">Item Name</th></tr>
+                <tr><td style="${cell};width:84px;white-space:nowrap">${esc(row["Item Number"])}</td><td dir="auto" style="${cell};white-space:normal;overflow-wrap:break-word">${esc(row["Item Name"])}</td></tr>
+              </table><table cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:top;width:45%;min-width:240px;max-width:100%;border-collapse:collapse;table-layout:auto" dir="ltr">
+                <tr><th scope="col" style="${heading}">Ordered</th><th scope="col" style="${heading}">Received</th><th scope="col" style="${heading}">Diff + Status</th></tr>
+                <tr><td style="${cell};white-space:nowrap">${esc(row["Ordered Qty"]??0)}</td><td style="${cell};white-space:nowrap">${esc(row["Received Qty"]??0)}</td><td style="${cell};color:${colors[row.kind]}"><strong style="white-space:nowrap">${sign}${esc(diff)}</strong> <span style="display:inline-block;white-space:nowrap;font-size:12px">${row.label}</span></td></tr>
+              </table></td></tr>`;
+        }).join("");
+        return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin-top:12px;border:1px solid #cbddea;border-collapse:collapse">
+          <tr><td dir="ltr" style="padding:8px;background:#155d91;color:#ffffff;font: bold 13px Arial,sans-serif;text-align:left;word-break:normal"><span style="display:inline-block;white-space:nowrap">${esc(group.orderNumber||"Extra / Unassigned")}</span> <span style="display:inline-block;white-space:nowrap;font-weight:normal"> &nbsp;|&nbsp; ${esc(group.orderDate||"Date unavailable")}</span></td></tr>
+          ${rows}</table>`;
     }).join("");
-
-    return `
-    <div dir="rtl" style="max-width:920px;margin:0 auto;padding:24px;background:#f2f7fb;font-family:Arial,sans-serif;color:#173d63;text-align:center">
-      <div style="max-width:840px;margin:0 auto;padding:30px 28px;background:#eaf4fb;border:1px solid #b8d5e9;border-radius:14px;box-shadow:0 5px 18px rgba(23,61,99,.10)">
-      <div style="padding:20px 18px;border:1px solid #97c3e3;border-radius:10px;background:#d5eaf8">
-        <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;line-height:2.05;font-weight:800;color:#173d63">الإخوة الكرام بالمستودع<br>تحية طيبة وبعد<br>يوجد فرق توريد موضح أدناه<br>نأمل التكرم بالمراجعة والتشييك</p>
-      </div>
-      <section style="margin:26px 0 0;border:1px solid #b8d4e9;border-radius:10px;overflow:hidden;background:#f5faff">
-        <div style="padding:12px 14px;background:#0b6faf;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:800">ملخص الطلبيات التي بها فروقات</div>
-        <table dir="ltr" role="presentation" style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;color:#1d3954" cellpadding="0" cellspacing="0">
-          <thead><tr style="background:#f1f8fe;color:#103d66"><th style="padding:9px 8px;border-bottom:1px solid #c7ddeb;font-weight:800">Order Number</th><th style="padding:9px 8px;border-bottom:1px solid #c7ddeb;font-weight:800">Order Date</th><th style="padding:9px 8px;border-bottom:1px solid #c7ddeb;font-weight:800">Discrepant Items</th></tr></thead>
-          <tbody>${summaryRows}</tbody>
-        </table>
-      </section>
-      ${sections}
-      <div style="margin:26px 0 0;padding:14px 18px;border:1px solid #97c3e3;border-radius:10px;background:#d5eaf8;font-family:Arial,sans-serif;font-size:18px;line-height:1.8;font-weight:700;color:#173d63">خالص الشكر والتقدير</div>
-      </div>
-    </div>`;
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="rtl" style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;color:#173d63;background:#ffffff">
+      <tr><td style="padding:8px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#eaf4fb;border:1px solid #bdd6e8"><tr><td dir="rtl" style="padding:10px 12px;text-align:right;font-size:15px;line-height:23px;font-weight:bold">الإخوة الكرام بالمستودع<br>تحية طيبة وبعد<br>يوجد فرق توريد موضح أدناه<br>نأمل التكرم بالمراجعة والتشييك</td></tr></table>
+        <div dir="ltr" style="padding-top:10px;text-align:left;font-size:0">${kpis}</div>
+        ${sections}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin-top:12px;border-collapse:collapse;background:#eaf4fb;border:1px solid #bdd6e8"><tr><td dir="rtl" style="padding:10px 12px;text-align:right;font-size:15px;line-height:23px;font-weight:bold">خالص الشكر والتقدير</td></tr></table>
+      </td></tr></table>`;
 }
 
 async function copyFormattedReceivingEmail(report){
@@ -754,10 +747,15 @@ async function copyFormattedReceivingEmail(report){
             "text/plain":new Blob([text],{type:"text/plain"})
         });
 
-        await navigator.clipboard.write([item]);
-        return true;
+        try{
+            await navigator.clipboard.write([item]);
+            return true;
+        }catch(error){
+            if(!navigator.clipboard.writeText) throw error;
+        }
     }
 
+    if(!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
     await navigator.clipboard.writeText(text);
     return false;
 }
@@ -769,8 +767,7 @@ window.copyFormattedReceivingEmail=
 
 
 function buildFinalizedDiscrepancyEmailText(report){
-    const groups=getEmailReportOrderGroups(report)
-        .filter(group=>Array.isArray(group.rows) && group.rows.length);
+    const model=getReceivingEmailModel(report),groups=model.groups;
 
     const lines=[
         "الإخوة الكرام بالمستودع،",
@@ -780,30 +777,24 @@ function buildFinalizedDiscrepancyEmailText(report){
         ""
     ];
 
-    lines.push("ملخص الطلبيات التي بها فروقات", "Order Number | Order Date | Discrepant Items");
-    groups.forEach(group=>lines.push([
-        group.orderNumber||"-",
-        group.orderDate||"-",
-        group.summary?.discrepancyItems??group.rows.length
-    ].join(" | ")));
-    lines.push("");
+    lines.push(Object.entries(model.counts).filter(([,value])=>value>0)
+        .map(([key,value])=>model.labels[key]+": "+value).join(" | "), "");
 
     groups.forEach(group=>{
         lines.push(
             "الطلبية "+(group.orderNumber||"-")+" | التاريخ "+(group.orderDate||"-"),
             "",
-            "Item Code | Item Name | Ordered | Received | Difference | Status"
+            "Code | Item Name | Ordered | Received | Diff + Status"
         );
 
         group.rows.forEach(row=>{
-            const diff=Number(row["Difference"]||0);
+            const diff=row.difference;
             lines.push([
                 row["Item Number"]||"",
                 row["Item Name"]||"",
                 row["Ordered Qty"]??0,
                 row["Received Qty"]??0,
-                (diff>0?"+":"")+diff,
-                row["Issue Type"]||row["Status"]||""
+                (diff>0?"+":"")+diff+" "+row.label
             ].join(" | "));
         });
 
@@ -877,13 +868,7 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         ? escapeHTML(String(v??""))
         : String(v??"");
 
-    const orders=Array.isArray(report?.orders)?report.orders:[];
-    const orderLabel=orders.map(x=>x.orderNumber).filter(Boolean).join(" + ") || report?.orderId || "";
-    const reportGroups=getEmailReportOrderGroups(report)
-        .filter(group=>Array.isArray(group.rows) && group.rows.length);
-
-    const subject=`فرق توريد — ${orderLabel||"-"}`;
-    const rows=Array.isArray(report?.rows)?report.rows:[];
+    const subject=buildReceivingDiscrepancyEmailSubject(report);
 
     const overlay=document.createElement("div");
     overlay.id="finalizedEmailPreviewOverlay";
@@ -910,9 +895,7 @@ function openFinalizedDiscrepancyEmailPreview(report,options={}){
         </section>
 
         <article class="finalizedEmailLetter">
-          <div class="finalizedEmailRichPreview" dir="ltr">
-            ${buildFinalizedDiscrepancyEmailHTML(report)}
-          </div>
+          <iframe title="Formatted discrepancy email" sandbox="" style="width:100%;height:65vh;min-height:360px;border:0" srcdoc="${esc('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">'+buildFinalizedDiscrepancyEmailHTML(report)+'</body></html>')}"></iframe>
         </article>
 
         <footer class="finalizedEmailFooter">

@@ -1,3 +1,9 @@
+# Focused Staging task — 1 November 2026: Receiving email
+
+Production baseline verified from main: `5b963d82501a317790f5ece8e5552b4a09a5886e`. New isolated branch `feature/receiving-email-staging-20261101`: email-only hybrid layout, dynamic nonzero item KPIs, order/date headers, compact subject and HTML/plain clipboard. 21 focused tests PASS; default/Staging builds PASS. Corporate Outlook/owner visual acceptance PENDING / READY FOR TEST. No Production deploy/merge, migrations, database/operational data or Expiry changes. Staging binding targets `tovkcakucyagvbzvlnks` only. See `docs/receiving-email-20261101/ACCEPTANCE.md`. Next: exact Preview and clipboard rendering verification, then Owner Outlook compose/narrow/full-width acceptance. No Production release authorized. Earlier checkpoint entries below are historical.
+
+---
+
 # Receiving Production preparation — 1 November 2026
 
 Release branch `release/receiving-approved-prep-20261101` is based on remote main `4978f12e9daf92eb60205e140583b0e3aa758f49` and contains only accepted Receiving candidate `f5896709dd458a094193c83e69f5a7e1442a51d4` changes and dependencies. No Production writes, migrations, deployment or merge. 114 focused PASS/2 optional SKIP; 62 existing CI-source checks PASS; build PASS. Database catalog confirms new revision/correction contracts absent: three ordered migrations require separate approval and atomic rollout. BLOCKED FOR PRODUCTION DEPLOYMENT. See docs/releases/RECEIVING_PRODUCTION_PREP_20261101.md. Staging helpers/uploads/operational synthetic data and unrelated modules excluded.
