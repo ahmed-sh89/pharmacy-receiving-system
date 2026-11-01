@@ -13,7 +13,7 @@ const fixture=()=>({orderGroups:[group('TO-000535106',[row('001',100,31,'SHORTAG
 const json=x=>JSON.parse(JSON.stringify(x));
 test('canonical grouped discrepancies only: count items, distinct orders, exclusive categories, no mutation',()=>{
  const {c}=harness(),r=fixture(),before=JSON.stringify(r),m=c.getReceivingEmailModel(r);
- assert.deepEqual(json(m.counts),{orders:2,partial:2,notReceived:1,over:1,extra:1});
+ assert.deepEqual(json(m.counts),{orders:2,partial:1,notReceived:1,over:1,extra:1});
  assert.equal(JSON.stringify(r),before);assert.equal(m.groups[0].rows.length,4);
  assert.equal(m.groups[0].rows[3].label,'Extra');
 });
@@ -44,19 +44,55 @@ test('HTML is inert, escaped, inline styled and contains each item once with sep
  assert.match(html,/&lt;test&gt; &amp;/);assert.equal(document.querySelectorAll('th').length,25);
  for(const th of document.querySelectorAll('th'))assert.match(th.getAttribute('style'),/white-space:nowrap/);
  const codes=[...document.querySelectorAll('td')].filter(t=>t.textContent==='001');assert.equal(codes.length,2);
- assert.equal(codes[0].nextElementSibling.getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/overflow-wrap:break-word/);
- assert.match(html,/>\+1<\/strong>/);assert.match(html,/>-69<\/strong>/);
- assert.match(html,/min-width:250px/);assert.match(html,/min-width:240px/);
+ assert.equal(codes[0].nextElementSibling.querySelector('[dir=auto]').getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/overflow-wrap:break-word/);
+ assert.match(html,/<b>\+1<\/b>/);assert.match(html,/<b>-69<\/b>/);
+ assert.match(html,/min-width:280px/);assert.match(html,/min-width:240px/);
  assert.equal((html.match(/TO-000535106/g)||[]).length,1);
 });
 test('actual clipboard payload includes complete HTML and meaningful plain text',async()=>{
  const {c,writes}=harness(),r=fixture();assert.equal(await c.copyFormattedReceivingEmail(r),true);
  const data=writes[0][0].data;assert.deepEqual(Object.keys(data),['text/html','text/plain']);
- assert.equal(await data['text/html'].text(),c.buildFinalizedDiscrepancyEmailHTML(r));
+ assert.equal(await data['text/html'].text(),c.buildReceivingEmailClipboardHTML(r));
  assert.equal(await data['text/plain'].text(),c.buildFinalizedDiscrepancyEmailText(r));
- assert.match(await data['text/plain'].text(),/Orders: 2.*Partial Shortage: 2/);
+ assert.match(await data['text/plain'].text(),/Orders: 2.*Partial Shortage: 1/);
  assert.doesNotMatch(await data['text/plain'].text(),/<table/);
 });
 test('unsupported rich copy falls back to text, including write rejection',async()=>{
  for(const options of [{textOnly:true},{reject:true}]){const {c,plain}=harness(options);assert.equal(await c.copyFormattedReceivingEmail(fixture()),false);assert.match(plain[0],/Code \| Item Name/);}
+});
+
+test('all content cells explicitly centered; KPI backgrounds/fonts survive dropping inline CSS',()=>{
+ const {c}=harness(),html=c.buildFinalizedDiscrepancyEmailHTML(fixture()),{document}=parseHTML(html);
+ for(const cell of document.querySelectorAll('td,th'))assert.equal(cell.getAttribute('align'),'center');
+ for(const node of document.querySelectorAll('[style]'))node.removeAttribute('style');
+ assert(document.querySelectorAll('[bgcolor]').length>20);assert(document.querySelectorAll('font[color][face]').length>20);
+ assert(document.querySelectorAll('b').length>20);assert(document.querySelectorAll('[bordercolor]').length>=8);
+ const values=[...document.querySelectorAll('font[size="5"]')].map(n=>n.textContent);assert.deepEqual(values,['2','1','1','1','1']);
+});
+test('distinct codes within each KPI across orders; explicit extra never enters Over',()=>{
+ const {c}=harness(),r={orderGroups:[group('A',[row('001',10,3),row('E',0,1,'Extra Item')]),group('B',[row('001',20,9),row('E',0,5,'UNORDERED'),row('001',2,4)])]};
+ assert.deepEqual(json(c.getReceivingEmailModel(r).counts),{orders:2,partial:1,notReceived:0,over:1,extra:1});
+ assert.equal(c.getReceivingEmailModel(r).groups.flatMap(g=>g.rows).length,5);
+});
+test('native copy writes both MIME types, requires successful event, removes host and restores focus/selection',async()=>{
+ for(const succeeds of [true,false]){
+  const {c,writes,plain}=harness();const handlers={},data={},events=[];let removed=false,focused=false;
+  const selection={rangeCount:0,removeAllRanges(){events.push('clear')},addRange(){events.push('range')}};
+  c.window.getSelection=()=>selection;
+  c.document={activeElement:{focus(){focused=true}},body:{appendChild(){events.push('append')}},createElement(){return {setAttribute(){},style:{},remove(){removed=true}}},createRange(){return {selectNodeContents(){}}},addEventListener(k,f){handlers[k]=f},removeEventListener(k){delete handlers[k]},execCommand(command){assert.equal(command,'copy');handlers.copy({clipboardData:{setData(k,v){data[k]=v}},preventDefault(){events.push('prevent')},stopImmediatePropagation(){}});return succeeds}};
+  assert.equal(await c.copyFormattedReceivingEmail(fixture()),true);assert(data['text/html'].includes('<!--StartFragment-->'));assert(data['text/plain'].includes('Partial Shortage'));
+  assert(removed&&focused);assert.equal(handlers.copy,undefined);assert.equal(plain.length,0);assert.equal(writes.length,succeeds?0:1);
+ }
+});
+test('ClipboardItem construction failure still provides explicitly flagged plain fallback',async()=>{
+ const {c,plain}=harness();c.ClipboardItem=class{constructor(){throw Error('unsupported type')}};
+ assert.equal(await c.copyFormattedReceivingEmail(fixture()),false);assert.equal(plain.length,1);
+});
+test('actual PharmFlow preview embeds the same centered email markup with safe srcdoc escaping',()=>{
+ const {c}=harness();const {document}=parseHTML('<html><body></body></html>');c.document=document;
+ const r=fixture();r.orderGroups[0].rows[0]['Item Name']='Mixed عربي "quote" <img src=x onerror=alert(1)>';
+ c.openFinalizedDiscrepancyEmailPreview(r,{liveReport:true});
+ const frame=document.querySelector('iframe');assert.equal(frame.getAttribute('sandbox'),'');
+ const doc=frame.getAttribute('srcdoc');assert(doc.includes(c.buildFinalizedDiscrepancyEmailHTML(r)));assert(doc.includes('&lt;img'));
+ assert.equal(document.querySelectorAll('#btnCopyFinalizedEmail').length,1);
 });

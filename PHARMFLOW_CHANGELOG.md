@@ -1,3 +1,7 @@
+# 2026-11-01 — Email rejection repair
+
+Rejected email design repaired on same Staging branch: centered corporate tables/KPIs, redundant email attributes and native rich clipboard event with explicit fallback warning. Production unchanged. READY FOR TEST; see REPAIR.md.
+
 # 2026-11-01 — Receiving discrepancy email
 
 Staging-only Receiving email presentation/subject/clipboard redesign on feature/receiving-email-staging-20261101. Preserved canonical report data, Receiving logic and Production. See docs/receiving-email-20261101/ACCEPTANCE.md; READY FOR TEST, Outlook acceptance pending.

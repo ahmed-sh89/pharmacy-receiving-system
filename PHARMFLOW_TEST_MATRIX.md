@@ -1,3 +1,7 @@
+# 2026-11-01 — Email rejection repair
+
+Email repair: 26 focused tests PASS and both builds PASS. Owner Outlook Ctrl+V/draft reopen/narrow/full width PENDING. Previous d378b24 visual result REJECTED. See docs/receiving-email-20261101/REPAIR.md.
+
 # 2026-11-01 — Receiving discrepancy email
 
 Receiving discrepancy email: 21 focused automated PASS; default/Staging builds PASS. Outlook compose/Reading Pane/full width and Owner visual acceptance pending. Acceptance scenarios: docs/receiving-email-20261101/ACCEPTANCE.md.
