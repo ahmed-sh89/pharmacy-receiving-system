@@ -171,3 +171,28 @@ test('original intro/closing type remains unchanged; realistic names normal and 
   assert.equal(row.children[5].querySelector('font').getAttribute('color'),row.children[4].querySelector('font').getAttribute('color'));
  }
 });
+test('polish: category-colored 600 labels and lowered badges preserve fixed card sizes/colors',()=>{
+ const {c}=harness(),{document}=parseHTML(c.buildFinalizedDiscrepancyEmailHTML(acceptanceReport(c,'five')));
+ const numbers=[...document.querySelectorAll('font[style*="font-size:22px"]')];
+ const inks=['#173d63','#865600','#a72f2f','#16634b','#62468e'],badges=['#176CA1','#BF8525','#C44949','#248568','#7759A6'];
+ numbers.forEach((n,i)=>{
+  const badge=n.closest('table'),top=badge.parentElement,card=top.closest('table'),label=card.querySelector('font[style*="font-size:14px"]');
+  assert.equal(card.getAttribute('width'),'124');assert.equal(card.getAttribute('height'),'84');
+  assert.equal(badge.getAttribute('bgcolor'),badges[i]);assert.equal(top.getAttribute('valign'),'bottom');assert.match(top.getAttribute('style'),/padding:0 0 2px/);assert.equal(top.getAttribute('height'),'42');
+  assert.equal(label.getAttribute('color'),inks[i]);assert.match(label.getAttribute('style'),/font-weight:600/);assert.equal(label.querySelector('b'),null);assert.match(label.querySelector('span').getAttribute('style'),/font-weight:600/);
+ });
+});
+test('polish: every blue bar explicitly sets white on its cell, font, bold and nested text in both payloads',()=>{
+ const {c}=harness(),r=acceptanceReport(c,'realistic');
+ for(const html of [c.buildFinalizedDiscrepancyEmailHTML(r),c.buildReceivingEmailClipboardHTML(r)]){
+  const {document}=parseHTML(html),bars=[...document.querySelectorAll('td')].filter(n=>['#0b6faf','#0b5f9f'].includes(n.getAttribute('bgcolor')));
+  assert.equal(bars.length,3);
+  for(const bar of bars){
+   for(const node of [bar,...bar.querySelectorAll('font,b,span')]){
+    assert.match(node.getAttribute('style'),/color:#FFFFFF(?:;|$)/i);
+    if(node.tagName!=='FONT')assert.match(node.getAttribute('style'),/font-weight:700/);
+   }
+   assert.equal(bar.querySelector('font').getAttribute('color'),'#FFFFFF');
+  }
+ }
+});

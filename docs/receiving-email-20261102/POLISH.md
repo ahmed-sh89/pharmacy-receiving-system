@@ -1,0 +1,13 @@
+# Final email visual polish — 2 November 2026
+
+Baseline 2cb477255c59a2e554bcd535e8cafed2dd2bcb72. Same feature/receiving-email-staging-20261101 branch. Owner accepts the existing layout/rich Outlook copy behavior; only three visual corrections authorized. READY FOR OWNER ACCEPTANCE for this polish, not a new design or Production release.
+
+1. Number badge parent cell now aligns to the bottom of its existing 42px row with a 2px bottom inset, rather than centering in that row. This moves the badge slightly downward without changing the card/row/badge dimensions or label placement. One row, spacing, colors, dimensions and all numbers/signs remain.
+2. Labels use the existing category's dark ink color and explicit font-weight:600 on both the label font and its text span. Label size/line-height unchanged (14px/18px). No other text styling is affected.
+3. Blue-bar foreground is explicit #FFFFFF on the table cell, font, bold text and nested order/date span, with bold weight 700. Previously only the font wrapper had explicit white; its bold child/order span and blue cell depended on inheritance. These inheritance gaps are removed in the shared source renderer, with no external CSS or clipboard-specific patches. Actual Outlook normalization behavior still requires the owner check; source inspection cannot prove the precise corporate editor rule that made text black.
+
+Only six application source lines changed in js/orders.js. KPI calculations, signed values, palettes, body/item tables, names, dates, Arabic introduction/closing HTML, subject, rich Clipboard API pathway, HTML/plain document consistency and Open Outlook Web action retained. No Supabase, operational data, Receiving/allocation, Expiry, Production or main changes.
+
+22 focused email tests PASS, including all existing email cases plus the three polished properties: category colors/600 weight, retained dimensions/badge alignment attributes, and explicit white on every blue-bar text-bearing element in generated and clipboard HTML. Default and exact-branch Staging builds PASS (existing classic-script warnings). Live browser geometry/colors and deployment identity recorded in POLISH_QA.md when verified.
+
+Remaining acceptance only: use the realistic two-order fixture, Copy Email -> normal Ctrl+V in corporate Outlook Web, save/reopen draft, and confirm slightly lower badges, semi-bold category labels and white summary/order header text in narrow/full-width views. Existing owner acceptance of the rich-copy/layout remains valid; new Outlook foreground/polish is pending. No Production preparation or promotion authorized.

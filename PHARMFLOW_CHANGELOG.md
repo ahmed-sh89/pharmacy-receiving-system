@@ -1,3 +1,7 @@
+# 2026-11-02 — Three final email visual fixes
+
+Only three email visual fixes: badge moved slightly down within unchanged card, category-dark semi-bold KPI labels, explicit white/bold on every blue-bar text-bearing element. Existing accepted layout/calculations/copy/Outlook action unchanged. Staging only; see POLISH.md.
+
 # 2026-11-02 — Final Receiving email refinement
 
 Focused email refinement only: unit-summed signed KPIs, equal neutral cards with colored number badges, realistic two-order fixture, compact normal-weight names and stronger Diff/status colors. Existing rich copy and Outlook action retained. See docs/receiving-email-20261102/REFINEMENT.md.
