@@ -1016,9 +1016,8 @@ body:not(.zebraDevice) .pfnAdjustSelection{margin-top:14px!important;border:1px 
 body:not(.zebraDevice) .finalizedEmailPreviewOverlay{background:rgba(7,31,58,.52)!important}
 body:not(.zebraDevice) .finalizedEmailPanel{width:min(1160px,92vw)!important;height:min(820px,88vh)!important;border:1px solid #cbdff1!important;border-radius:18px!important;background:#fff!important;color:#153f66!important;overflow:hidden!important}
 body:not(.zebraDevice) .finalizedEmailHeader{background:#f7fbff!important;border-bottom:1px solid #dbe8f5!important;padding:18px 20px!important}.finalizedEmailHeader h2{font-size:24px!important;color:#123f6d!important}.finalizedEmailHeader p{font-size:13px!important;color:#64809a!important}.finalizedEmailKicker{color:#1769aa!important;font-weight:900!important}
-body:not(.zebraDevice) .finalizedEmailSummary{display:grid!important;grid-template-columns:1.4fr 1fr .8fr .8fr!important;gap:8px!important;padding:12px 20px!important;background:#fff!important}.finalizedEmailSummary>div{border:1px solid #d6e5f2!important;border-radius:10px!important;background:#f8fbff!important;padding:10px 12px!important}.finalizedEmailSummary span{color:#69839b!important;font-size:10px!important;font-weight:900!important}.finalizedEmailSummary strong{display:block!important;margin-top:3px!important;color:#123f6d!important;font-size:15px!important}
 body:not(.zebraDevice) .finalizedEmailCompose{display:grid!important;grid-template-columns:.8fr 1.4fr!important;gap:8px!important;padding:0 20px 12px!important}.finalizedEmailCompose label span{font-size:11px!important;font-weight:900!important;color:#5f7d98!important}.finalizedEmailCompose input{min-height:42px!important;border:1px solid #b9d1e7!important;border-radius:9px!important;padding:0 11px!important;font-size:14px!important;color:#173f66!important}
-body:not(.zebraDevice) .finalizedEmailLetter{margin:0 20px 14px!important;border:1px solid #d8e5f2!important;border-radius:12px!important;background:#fff!important;overflow:auto!important;padding:14px!important}.finalizedEmailFooter{border-top:1px solid #dce8f4!important;background:#f8fbff!important;padding:12px 20px!important}.finalizedEmailSavedNote strong{color:#234f76!important}.finalizedEmailSavedNote small{color:#70869c!important}.finalizedEmailActions button{min-height:40px!important;border-radius:9px!important;font-weight:850!important}.finalizedEmailActions .primaryButton{background:#1769aa!important;border-color:#1769aa!important}
+body:not(.zebraDevice) .finalizedEmailLetter{margin:0 20px 14px!important;border:1px solid #d8e5f2!important;border-radius:12px!important;background:#fff!important;overflow:auto!important;padding:14px!important}.finalizedEmailFooter{border-top:1px solid #dce8f4!important;background:#f8fbff!important;padding:12px 20px!important}.finalizedEmailActions button{min-height:40px!important;border-radius:9px!important;font-weight:850!important}.finalizedEmailActions .primaryButton{background:#1769aa!important;border-color:#1769aa!important}
 
 /* Receiving completion actions use the report toolbar visual system; safety behavior remains in JS. */
 
@@ -1029,7 +1028,7 @@ body:not(.zebraDevice) .finalizedEmailLetter{margin:0 20px 14px!important;border
 .pfnSuccessEyebrow{display:block;font-size:12px;font-weight:950;letter-spacing:.12em;color:#198754}.pfnReceivingSuccessCard h2{margin:8px 0 4px;font-size:34px;line-height:1.15;color:#123f6d}.pfnReceivingSuccessCard>strong{display:block;font-size:24px;color:#1769aa;margin-top:8px}.pfnReceivingSuccessCard p{max-width:590px;margin:14px auto 0;font-size:16px;line-height:1.55;color:#58758f}.pfnSuccessActions{display:flex;justify-content:center;gap:10px;margin-top:26px}.pfnSuccessActions button{min-width:170px;min-height:46px;border:1px solid #aac7df;border-radius:10px;background:#fff;color:#285778;font-size:14px;font-weight:900;padding:0 18px}.pfnSuccessActions .primary{background:#198754;border-color:#198754;color:#fff}
 @keyframes pfnSuccessIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
 
-@media(max-width:860px){body:not(.zebraDevice) .pfnGroupedReview{grid-template-columns:1fr!important}.gtinExtraGrid{grid-template-columns:1fr!important}.finalizedEmailSummary{grid-template-columns:1fr 1fr!important}.finalizedEmailCompose{grid-template-columns:1fr!important}}
+@media(max-width:860px){body:not(.zebraDevice) .pfnGroupedReview{grid-template-columns:1fr!important}.gtinExtraGrid{grid-template-columns:1fr!important}.finalizedEmailCompose{grid-template-columns:1fr!important}}
 
 /* B10 Clean 4.1 — Email preview scroll + typography root fix */
 body:not(.zebraDevice) .finalizedEmailPanel{
@@ -1038,7 +1037,6 @@ body:not(.zebraDevice) .finalizedEmailPanel{
   overflow:hidden!important;
 }
 body:not(.zebraDevice) .finalizedEmailHeader,
-body:not(.zebraDevice) .finalizedEmailSummary,
 body:not(.zebraDevice) .finalizedEmailCompose,
 body:not(.zebraDevice) .finalizedEmailFooter{
   flex:0 0 auto!important;
@@ -1051,41 +1049,10 @@ body:not(.zebraDevice) .finalizedEmailLetter{
   overscroll-behavior:contain!important;
   scrollbar-gutter:stable!important;
 }
-body:not(.zebraDevice) .finalizedEmailRichPreview{
-  min-height:min-content!important;
-}
-body:not(.zebraDevice) .finalizedEmailRichPreview table td{
-  font-size:15px!important;
-  font-weight:400!important;
-}
-body:not(.zebraDevice) .finalizedEmailRichPreview table th{
-  font-size:15px!important;
-}
 
 
 
 /* B10 Clean 4.2 — Email typography normalization */
-body:not(.zebraDevice) .finalizedEmailRichPreview{
-  font-size:16px!important;
-  font-weight:400!important;
-  line-height:1.7!important;
-}
-body:not(.zebraDevice) .finalizedEmailRichPreview table{
-  font-size:16px!important;
-}
-body:not(.zebraDevice) .finalizedEmailRichPreview table td{
-  font-size:16px!important;
-  font-weight:400!important;
-}
-body:not(.zebraDevice) .finalizedEmailRichPreview table th{
-  font-size:16px!important;
-  font-weight:600!important;
-}
-body:not(.zebraDevice) .finalizedEmailRichPreview p,
-body:not(.zebraDevice) .finalizedEmailRichPreview span{
-  font-size:16px!important;
-  font-weight:400!important;
-}
 
 /* Report owner: compact hierarchy, readable discrepancy controls. */
 body:not(.zebraDevice).pfnCleanReceiving #page-receiving>.contentCard{max-width:1500px!important;margin:0 auto!important}

@@ -1,3 +1,9 @@
+# Current Staging — final cleanup / summary and Code fixes
+
+Owner confirms Outlook colors/formatting RESOLVED by Default Paste = Keep Source Formatting; clipboard protected and unchanged. On baseline19b9267: removed55 proven-unused email CSS rules (active selectors/cascade verified identical), unused orders.tint and redundant header size parameter. Summary matches order16px/700. Detail table uses intrinsic auto layout, removes centered oversized-table alignment and anchors its host LTR; six centered fields,640px minimum and existing scroll fallback remain. 25 focused tests/default+Staging builds PASS. Updated Code/header Outlook visual acceptance pending; Production NOT READY pending owner acceptance. See docs/receiving-email-20261102/CLEANUP.md. No Production/main/DB changes.
+
+---
+
 # Current Staging task — foreground trace / ice-blue interior
 
 Current result: PARTIAL / foreground root cause OPEN. Owner actual Outlook paste still turns explicit header/status foregrounds black; generated and actual clipboard HTML preserve them. Remote native paste delivered plain text, so rich editable-surface C is unverified; no authenticated corporate Outlook DOM. No speculative foreground/clipboard changes added. Implemented approved #F0F6FB internal empty areas only. Exterior, panels, cards, cell/Diff backgrounds, text, data and dimensions preserved. 24 focused tests and both builds PASS; full fixture DOM differs only in background properties on19 elements. See docs/receiving-email-20261102/FOREGROUND_TRACE.md. Staging only; no Production/main/DB changes.

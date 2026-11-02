@@ -241,3 +241,26 @@ test('ice-blue interior reaches empty padding/spacers but preserves exterior and
   for(const tr of document.querySelectorAll('tbody>tr'))if(tr.children.length===6)assert(['#f6fbff','#eaf4fb'].includes(tr.children[1].getAttribute('bgcolor')));
  }
 });
+test('summary matches order typography and detail width respects intrinsic code/status content',async()=>{
+ const {c,writes}=harness(),report=acceptanceReport(c,'realistic');
+ report.orderGroups[0].rows.push(row('123456789012345',2,1,'Partial Shortage'));
+ await c.copyFormattedReceivingEmail(report);
+ for(const html of [c.buildFinalizedDiscrepancyEmailHTML(report),await writes[0][0].data['text/html'].text()]){
+  const {document}=parseHTML(html),bars=[...document.querySelectorAll('td')].filter(n=>['#0b6faf','#0b5f9f'].includes(n.getAttribute('bgcolor')));
+  for(const bar of bars)assert.match(bar.querySelector('span').getAttribute('style'),/font-size:16px;line-height:22px;color:#FFFFFF;font-weight:700/);
+  for(const head of document.querySelectorAll('thead')){
+   const table=head.closest('table'),host=table.parentElement.parentElement;
+   assert.equal(table.getAttribute('align'),null);assert.equal(table.getAttribute('width'),'100%');
+   assert.match(table.getAttribute('style'),/min-width:640px.*table-layout:auto/);
+   assert.equal(host.getAttribute('dir'),'ltr');
+   assert.equal(head.querySelectorAll('th').length,6);
+   for(const tr of table.querySelectorAll('tbody>tr')){
+    if(tr.children.length!==6)continue;
+    assert.match(tr.children[0].getAttribute('style'),/white-space:nowrap/);
+    assert.match(tr.children[5].getAttribute('style'),/white-space:nowrap/);
+    for(const cell of tr.children)assert.equal(cell.getAttribute('align'),'center');
+   }
+  }
+  assert.match(html,/123456789012345/);
+ }
+});

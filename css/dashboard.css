@@ -4650,30 +4650,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
   background:#fff;
 }
 
-.finalizedEmailFields{
-  display:grid;
-  grid-template-columns:1fr 1.4fr;
-  gap:10px;
-  margin:14px 0;
-}
-
-.finalizedEmailFields label{
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-  font-size:10px;
-  font-weight:800;
-  color:#66564C;
-}
-
-.finalizedEmailFields input{
-  height:42px;
-  padding:0 10px;
-  border:1px solid #CFBCAA;
-  border-radius:9px;
-  background:#fff;
-}
-
 .finalizedEmailLetter{
   padding:22px;
   border:1px solid #D9C6B5;
@@ -4684,43 +4660,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
 
 .finalizedEmailLetter p{
   line-height:1.7;
-}
-
-.finalizedEmailTableWrap{
-  width:100%;
-  overflow:auto;
-  margin:15px 0;
-}
-
-.finalizedEmailTableWrap table{
-  width:100%;
-  min-width:900px;
-  border-collapse:collapse;
-}
-
-.finalizedEmailTableWrap th{
-  padding:9px 8px;
-  border:1px solid #8C654D;
-  background:#8C654D;
-  color:#fff;
-  font-size:10px;
-  text-align:left;
-}
-
-.finalizedEmailTableWrap td{
-  padding:8px;
-  border:1px solid #E2D6CC;
-  font-size:10px;
-}
-
-.finalizedEmailTableWrap td.negative{
-  color:#A52B2B;
-  font-weight:900;
-}
-
-.finalizedEmailTableWrap td.positive{
-  color:#956016;
-  font-weight:900;
 }
 
 .finalizedEmailPanel>footer{
@@ -4734,9 +4673,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
   border-top:1px solid #DCC9B8;
   background:#F8F0E9;
 }
-
-@media(max-width:760px){
-  .finalizedEmailFields{grid-template-columns:1fr}}
 
 
 /* =========================================================
@@ -4895,36 +4831,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
   color:#7B6E65;
 }
 
-.finalizedEmailSummary{
-  display:grid;
-  grid-template-columns:1.4fr 1fr .8fr .8fr;
-  gap:8px;
-  padding:14px 24px 0;
-}
-
-.finalizedEmailSummary>div{
-  min-height:62px;
-  padding:11px 12px;
-  border:1px solid #E0D3C8;
-  border-radius:11px;
-  background:#FCFAF8;
-}
-
-.finalizedEmailSummary span{
-  display:block;
-  margin-bottom:5px;
-  font-size:7px;
-  font-weight:700;
-  letter-spacing:.09em;
-  color:#8B7B70;
-}
-
-.finalizedEmailSummary strong{
-  font-size:14px;
-  font-weight:600 !important;
-  color:#342C27;
-}
-
 .finalizedEmailCompose{
   display:grid;
   grid-template-columns:.8fr 1.2fr;
@@ -4970,90 +4876,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
   font-weight:400 !important;
 }
 
-.finalizedEmailMessage,
-.finalizedEmailClosing{
-  font-size:13px;
-  font-weight:400;
-  line-height:1.8;
-  color:#3F3630;
-}
-
-.finalizedEmailMessage p,
-.finalizedEmailClosing p{
-  margin:0 0 7px;
-  font-weight:400 !important;
-}
-
-.finalizedEmailTableWrap{
-  margin:17px 0 !important;
-  border:1px solid #DFD3C9;
-  border-radius:10px;
-  overflow:auto;
-}
-
-.finalizedEmailTableWrap table{
-  min-width:920px !important;
-  border-collapse:separate !important;
-  border-spacing:0;
-}
-
-.finalizedEmailTableWrap th{
-  position:sticky;
-  top:0;
-  padding:9px 10px !important;
-  border:0 !important;
-  border-bottom:1px solid #B98265 !important;
-  background:#9A6246 !important;
-  font-size:8px !important;
-  font-weight:650 !important;
-  letter-spacing:.03em;
-  color:#fff;
-  white-space:nowrap;
-}
-
-.finalizedEmailTableWrap td{
-  padding:9px 10px !important;
-  border:0 !important;
-  border-bottom:1px solid #EEE6E0 !important;
-  background:#fff;
-  font-size:10px !important;
-  font-weight:400 !important;
-  color:#413832;
-  vertical-align:middle;
-}
-
-.finalizedEmailTableWrap tbody tr:last-child td{
-  border-bottom:0 !important;
-}
-
-.finalizedEmailTableWrap tbody tr:hover td{
-  background:#FBF7F3;
-}
-
-.finalizedEmailTableWrap td.code{
-  font-variant-numeric:tabular-nums;
-  color:#65574E;
-}
-
-.finalizedEmailTableWrap td.itemName{
-  min-width:220px;
-}
-
-.finalizedEmailTableWrap td.number{
-  text-align:center;
-  font-variant-numeric:tabular-nums;
-}
-
-.finalizedEmailTableWrap td.shortage{
-  color:#A54343 !important;
-  font-weight:600 !important;
-}
-
-.finalizedEmailTableWrap td.over{
-  color:#9A6A20 !important;
-  font-weight:600 !important;
-}
-
 .emailIssue{
   display:inline-flex;
   align-items:center;
@@ -5094,41 +4916,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
   background:rgba(247,242,237,.98) !important;
 }
 
-.finalizedEmailSavedNote{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  color:#47795A;
-}
-
-.finalizedEmailSavedNote>span{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:28px;
-  height:28px;
-  border-radius:50%;
-  background:#E6F4EA;
-  font-weight:700;
-}
-
-.finalizedEmailSavedNote>div{
-  display:flex;
-  flex-direction:column;
-}
-
-.finalizedEmailSavedNote strong{
-  font-size:10px;
-  font-weight:600 !important;
-}
-
-.finalizedEmailSavedNote small{
-  margin-top:2px;
-  font-size:8px;
-  font-weight:400;
-  color:#7A706A;
-}
-
 .finalizedEmailActions{
   display:flex;
   gap:8px;
@@ -5158,9 +4945,6 @@ body.zebraDevice.zebraReceivingActive .zebraJoinPanel{
 }
 
 @media(max-width:760px){
-  .finalizedEmailSummary{
-    grid-template-columns:1fr 1fr;
-  }
 
   .finalizedEmailCompose{
     grid-template-columns:1fr;
@@ -5339,22 +5123,8 @@ body.zebraDevice .topBarRight{
   box-shadow:0 0 0 3px rgba(169,107,75,.08);
 }
 
-.finalizedEmailRichPreview{
-  margin:16px 0;
-  overflow:auto;
-  border-radius:14px;
-}
-
-.finalizedEmailRichPreview > div{
-  min-width:760px;
-}
-
 .finalizedEmailLetter{
   font-weight:400 !important;
-}
-
-.finalizedEmailMessage{
-  display:none;
 }
 
 @media(max-width:1050px){
@@ -5382,28 +5152,8 @@ body.zebraDevice .topBarRight{
   background:#195fb9 !important;
 }
 
-.finalizedEmailLetter,
-.finalizedEmailRichPreview{
+.finalizedEmailLetter{
   text-align:center !important;
-}
-
-.finalizedEmailRichPreview{
-  font-size:15px;
-}
-
-.finalizedEmailRichPreview table th,
-.finalizedEmailRichPreview table td{
-  text-align:center !important;
-  vertical-align:middle !important;
-}
-
-.finalizedEmailRichPreview table th{
-  font-weight:800 !important;
-  font-size:13px !important;
-}
-
-.finalizedEmailRichPreview table td{
-  font-size:13px !important;
 }
 body.zebraDevice .headerOrderPicker{
   position:relative;
