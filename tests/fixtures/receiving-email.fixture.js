@@ -6,6 +6,7 @@ function buildReceivingEmailAcceptanceReport(scenario="realistic"){
  ];
  const extra=()=>row("1010300","La Roche Posay Anthelios SPF50+ Invisible Fluid 50 Ml",0,3,"Extra Item");
  if(scenario==="twoIndicators")groups[1].rows=[groups[1].rows[2]];
+ if(scenario==="four")groups[1].rows.push(row("1010200","Panadol Advance 500 Mg 24 Tab",12,0,"Not Received"));
  if(scenario==="five"||scenario==="large")groups[1].rows.push(row("1010200","Panadol Advance 500 Mg 24 Tab",12,0,"Not Received"),extra());
  if(scenario==="large"){
   groups[0].rows[0]=row("1010120",groups[0].rows[0]["Item Name"],3,1253,"Over Received");
