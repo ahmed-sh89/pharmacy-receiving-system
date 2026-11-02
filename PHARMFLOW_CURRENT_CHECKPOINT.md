@@ -1,3 +1,23 @@
+# Receiving Email Production release — 3 November 2026
+
+**Production deployment: PASS. Mandatory non-destructive smoke: PASS.**
+
+PR #41 merged through the normal GitHub workflow. Approved head: `00b2e365210b669cb0a5fe54f2f976f7882566e9`; accepted Staging: `de01f49dcb5084274606e6e29c1a8e1c31c027ce`. Runtime release/main after merge: `c5c9b23079af046fe60903f3703094acaf70bab4`, based on `3c2abf7f45b20e038af9b58a24bbcb399dd39e36`. Official GitHub Pages run [41546695844](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/41546695844) completed SUCCESS. Served page build identity and `version.json` match the runtime release SHA. Served `js/orders.js`, `js/auth.js` and `js/supabase.js` matched release source exactly; Production configuration remains intact.
+
+The release changes only `js/orders.js`, `tests/receiving-email.test.cjs`, and `tests/fixtures/receiving-email.fixture.js`. Runtime edits are confined to the email HTML generator. Cards retain #E1EAF2 backgrounds, #CBD9E6 borders, category-colored numbers and 3px matching top accents. Expanded five-card layout, six-column word-wrapped item tables, Arabic sections, clipboard behavior, calculations and conditional visibility are preserved. Staging preview/build helpers are excluded.
+
+Pre-merge gates: unchanged Production baseline, exact approved head/files, no conflicts, GitHub PR CI SUCCESS, 77 focused release tests PASS and build/artifact validation PASS. Final execution reran all 27 email tests: PASS. Forward and reverse rollback patch checks PASS. Normal merge used an expected-head SHA; no security-control bypass. Vercel's automatic branch Preview was rejected by the existing Production build guard; no Vercel deployment was published or manually requested.
+
+Authenticated read-only Production smoke in HHP084: Receiving opened; both existing active orders remained visible; Receiving Report and actual live discrepancy preview opened; category unit totals matched the displayed report and Remaining Units. Card colors/top accents/alignment and six-column Status containment PASS. Copy Email displayed **Formatted email copied**; HTML fragment, card colors and 3px dimensions were present. Report row count and ordered/received totals were identical before and after these read/copy actions. No application JavaScript errors observed (browser-extension messages excluded). No scans, quantity changes, imports, assignments, finalizations or operational record writes were performed.
+
+Live data showed three nonzero KPI categories, correctly suppressing zero categories. The five-card expanded behavior was already browser-tested on the identical accepted generator and owner-accepted in actual Outlook Web (USER VERIFIED — PASS). Actual post-release Outlook paste was not repeated by the agent. The previously documented artificial extreme at 420px (15-digit code plus 9-digit item quantity) still requires a wider pane; it is unchanged and was disclosed before owner acceptance. No new email issue or rollback trigger was observed.
+
+No migrations, schema, database, Supabase, authentication, Handheld, dependency, workflow or unrelated code changes. Rollback, if needed, is a protected reverting PR for #41 followed by official Pages deployment; preserve the earlier authentication/Handheld fixes and do not restore databases or clear operational storage.
+
+This follow-up updates only this checkpoint and the changelog; runtime bytes remain those of `c5c9b23` (Pages build identity may advance with the documentation commit). Historical checkpoint entries below are retained as dated history.
+
+---
+
 # Receiving Production preparation — 1 November 2026
 
 Release branch `release/receiving-approved-prep-20261101` is based on remote main `4978f12e9daf92eb60205e140583b0e3aa758f49` and contains only accepted Receiving candidate `f5896709dd458a094193c83e69f5a7e1442a51d4` changes and dependencies. No Production writes, migrations, deployment or merge. 114 focused PASS/2 optional SKIP; 62 existing CI-source checks PASS; build PASS. Database catalog confirms new revision/correction contracts absent: three ordered migrations require separate approval and atomic rollout. BLOCKED FOR PRODUCTION DEPLOYMENT. See docs/releases/RECEIVING_PRODUCTION_PREP_20261101.md. Staging helpers/uploads/operational synthetic data and unrelated modules excluded.
