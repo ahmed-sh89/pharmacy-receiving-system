@@ -46,7 +46,7 @@ test('HTML is inert, escaped, inline styled and contains each item once with sep
  const codes=[...document.querySelectorAll('td')].filter(t=>t.textContent==='001');assert.equal(codes.length,2);
  assert.equal(codes[0].nextElementSibling.querySelector('[dir=auto]').getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/white-space:nowrap/);
  assert.match(html,/<b>\+1<\/b>/);assert.match(html,/<b>-69<\/b>/);
- assert.doesNotMatch(html,/min-width:|overflow-x:|overflow-wrap:break-word/);
+ assert.doesNotMatch(html,/min-width:640px|overflow-x:|overflow-wrap:break-word/);
  assert.equal((html.match(/TO-000535106/g)||[]).length,1);
 });
 test('actual clipboard payload includes complete HTML and meaningful plain text',async()=>{
@@ -94,12 +94,12 @@ test('six separate columns per order, dates, compact KPI cards and distinct Diff
  for(const head of document.querySelectorAll('thead'))assert.deepEqual([...head.querySelectorAll('th')].map(x=>x.textContent),['Code','Item Name','Ordered','Received','Diff','Status']);
  assert.equal(document.querySelectorAll('thead').length,2);assert.match(document.textContent||document.toString(),/30 Oct 2026/);
  const values=[...document.querySelectorAll('font[style*="font-size:22px"]')];assert.equal(values.length,5);
- const cards=values.map(v=>v.closest('table'));assert.equal(new Set(cards.map(x=>x.parentElement.parentElement)).size,2);
+ const cards=values.map(v=>v.closest('table'));assert.equal(new Set(cards.map(x=>x.parentElement.parentElement)).size,5);
  for(const [diff,bg] of [['-69','#ffdf9e'],['-10','#f7c3c3'],['+1','#bde8d7'],['+4','#d9ccef']]){
   const value=[...document.querySelectorAll('font[style*="font-size:14px"] b')].find(x=>x.textContent===diff);assert(value,diff);assert.equal(value.closest('td').getAttribute('bgcolor'),bg);
  }
  assert(!document.querySelector('font[style*="font-size:28px"]'));
- assert.doesNotMatch(c.buildFinalizedDiscrepancyEmailHTML(r),/inline-block|inline-table|display:flex|display:grid/);
+ assert.doesNotMatch(c.buildFinalizedDiscrepancyEmailHTML(r),/display:flex|display:grid/);
 });
 test('clipboard pipeline has no hidden content, native selection or legacy copy side effects',async()=>{
  const {c,writes}=harness();c.document=new Proxy({}, {get(){throw Error('Copy must not touch DOM')}});
@@ -140,21 +140,25 @@ test('approved realistic two-order fixture: 2 Orders, -2 Partial, +2 Over; corre
  assert.equal(document.querySelectorAll('thead th').length,12);assert.match(document.toString(),/29 Oct 2026/);assert.match(document.toString(),/30 Oct 2026/);
  assert.equal(JSON.stringify(r),before);assert.match(c.buildFinalizedDiscrepancyEmailText(r),/Orders: 2 \| Partial Shortage: -2 \| Over Received: \+2/);
 });
-test('conditional 1/2/3/5 indicators use fluid white cards without number badges',()=>{
+test('conditional 1/2/3/4/5 indicators use independent cool gray blue cards without badges',()=>{
  const {c}=harness();
- for(const [scenario,count] of [['singleKpi',1],['twoIndicators',2],['realistic',3],['five',5]]){
+ for(const [scenario,count] of [['singleKpi',1],['twoIndicators',2],['realistic',3],['four',4],['five',5]]){
   const {document}=parseHTML(c.buildFinalizedDiscrepancyEmailHTML(acceptanceReport(c,scenario)));
   const numbers=[...document.querySelectorAll('font[style*="font-size:22px"]')];assert.equal(numbers.length,count);
   const cards=numbers.map(n=>n.closest('table'));
   for(const [i,card] of cards.entries()){
    assert.equal(card.getAttribute('width'),'100%');assert.equal(card.getAttribute('height'),'84');
-   assert.equal(card.getAttribute('bgcolor'),'#ffffff');assert.equal(card.getAttribute('bordercolor'),'#d5e1eb');
-   assert.equal(numbers[i].closest('td').getAttribute('dir'),'ltr');assert.equal(numbers[i].closest('td').getAttribute('bgcolor'),'#ffffff');
+   assert.equal(card.getAttribute('bgcolor'),'#E1EAF2');assert.equal(card.getAttribute('bordercolor'),'#CBD9E6');
+   assert.equal(numbers[i].closest('td').getAttribute('dir'),'ltr');assert.equal(numbers[i].closest('td').getAttribute('bgcolor'),'#E1EAF2');
    assert.equal(card.querySelectorAll('table').length,0);
   }
   const cardRows=[...new Set(cards.map(n=>n.parentElement.parentElement))];
-  assert.equal(cardRows.length,Math.ceil(count/3));
-  for(const row of cardRows)assert(row.children.length<=3);
+  assert.equal(cardRows.length,count);
+  for(const card of cards){
+   const column=card.parentElement.closest("table");
+   assert.equal(column.getAttribute("width"),`${100/count}%`);
+   assert.match(column.getAttribute("style"),/display:inline-table/);
+  }
  }
 });
 test('larger quantities and extra/not-received totals are signed units, never row counts',()=>{
@@ -179,7 +183,7 @@ test('prominent category-colored numbers and consistent dark-slate semi-bold lab
  numbers.forEach((n,i)=>{
   const card=n.closest('table'),label=card.querySelector('font[style*="font-size:14px"]');
   assert.equal(n.getAttribute('color'),inks[i]);assert(n.querySelector('b'));
-  assert.equal(n.closest('td').getAttribute('bgcolor'),'#ffffff');
+  assert.equal(n.closest('td').getAttribute('bgcolor'),'#E1EAF2');
   assert.equal(label.getAttribute('color'),'#334155');assert.match(label.getAttribute('style'),/font-weight:600/);
   assert.match(label.querySelector('span').getAttribute('style'),/font-weight:600/);
  });
@@ -236,7 +240,7 @@ test('ice-blue interior reaches empty padding/spacers but preserves exterior and
   assert.equal(tables[0].getAttribute('bgcolor'),'#f2f7fb');
   for(const node of document.querySelectorAll('td[height="22"],td[height="26"]'))assert.equal(node.getAttribute('bgcolor'),'#F0F6FB');
   for(const node of document.querySelectorAll('td[style*="padding:8px 0"],td[style*="padding:12px;"]'))assert.equal(node.getAttribute('bgcolor'),'#F0F6FB');
-  for(const card of document.querySelectorAll('table[height="84"]'))assert.equal(card.getAttribute('bgcolor'),'#ffffff');
+  for(const card of document.querySelectorAll('table[height="84"]'))assert.equal(card.getAttribute('bgcolor'),'#E1EAF2');
   assert.equal(document.querySelectorAll('table[bgcolor="#d5eaf8"]').length,2);
   assert.equal(document.querySelectorAll('td[bgcolor="#0b6faf"]').length,1);
   assert.equal(document.querySelectorAll('td[bgcolor="#0b5f9f"]').length,2);

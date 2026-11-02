@@ -722,18 +722,15 @@ function buildFinalizedDiscrepancyEmailHTML(report){
     const centered="text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;word-break:normal;";
     const bar=(text,bg="#0b5f9f")=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:12px 8px;background-color:${bg};color:#FFFFFF;font-weight:700"><span style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:22px;color:#FFFFFF;font-weight:700">${text}</span></td>`;
     const nonzero=Object.entries(model.counts).filter(([,value])=>value>0);
-    // Fluid presentation tables keep independent cards inside the pasted letter.
-    // At most three cards per row; center a short final row at the same card width.
-    const columns=Math.min(3,nonzero.length),kpiRows=[];
-    for(let i=0;i<nonzero.length;i+=columns){
-        const entries=nonzero.slice(i,i+columns),width=100*entries.length/columns;
-        kpiRows.push(`<table role="presentation" align="center" width="${width}%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:${width}%;table-layout:fixed;border-collapse:collapse"><tr>${entries.map(([kind,value])=>{
-            const ink=palette[kind].ink,valueText=formatReceivingEmailKpiValue(kind,value);
-            const numberSize=valueText.length>8?18:22;
-            return `<td align="center" valign="top" width="${100/entries.length}%" bgcolor="${interior}" style="${centered}padding:4px;background-color:${interior}"><table role="presentation" align="center" width="100%" height="84" border="1" bordercolor="#d5e1eb" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:100%;height:84px;table-layout:fixed;border-collapse:collapse;border:1px solid #d5e1eb;background-color:#ffffff"><tr><td align="center" valign="middle" height="40" dir="ltr" bgcolor="#ffffff" style="${centered}height:40px;padding:4px 2px 0;border:0;white-space:nowrap;background-color:#ffffff">${font(esc(valueText),numberSize,ink,true,28)}</td></tr><tr><td align="center" valign="middle" height="40" bgcolor="#ffffff" style="${centered}height:40px;padding:0 3px 4px;border:0;white-space:normal;background-color:#ffffff">${font(model.labels[kind],14,"#334155",600,18)}</td></tr></table></td>`;
-        }).join("")}</tr></table>`);
-    }
-    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:${interior};border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf")}</tr><tr><td align="center" bgcolor="${interior}" style="${centered}padding:8px 0;background-color:${interior}"><table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;max-width:${columns*140}px;table-layout:fixed;border-collapse:collapse"><tr><td align="center" style="${centered}">${kpiRows.join("")}</td></tr></table></td></tr></table>`:"";
+    // Hybrid email tables: one equal-width row when space permits; natural
+    // wrapping in narrow compose panes without media queries, Grid or Flexbox.
+    const cardBackground="#E1EAF2",cardBorder="#CBD9E6";
+    const kpiCards=nonzero.map(([kind,value])=>{
+        const ink=palette[kind].ink,valueText=formatReceivingEmailKpiValue(kind,value);
+        const numberSize=valueText.length>8?18:22;
+        return `<table role="presentation" width="${100/nonzero.length}%" border="0" cellpadding="0" cellspacing="0" dir="ltr" style="display:inline-table;vertical-align:top;width:${100/nonzero.length}%;min-width:116px;max-width:140px;table-layout:fixed;border-collapse:collapse"><tr><td align="center" valign="top" bgcolor="${interior}" style="${centered}padding:4px;background-color:${interior}"><table role="presentation" align="center" width="100%" height="84" border="1" bordercolor="${cardBorder}" cellpadding="0" cellspacing="0" bgcolor="${cardBackground}" style="width:100%;height:84px;table-layout:fixed;border-collapse:collapse;border:1px solid ${cardBorder};background-color:${cardBackground}"><tr><td align="center" valign="middle" height="40" dir="ltr" bgcolor="${cardBackground}" style="${centered}height:40px;padding:4px 2px 0;border:0;white-space:nowrap;background-color:${cardBackground}">${font(esc(valueText),numberSize,ink,true,28)}</td></tr><tr><td align="center" valign="middle" height="40" bgcolor="${cardBackground}" style="${centered}height:40px;padding:0 3px 4px;border:0;white-space:normal;background-color:${cardBackground}">${font(model.labels[kind],14,"#334155",600,18)}</td></tr></table></td></tr></table>`;
+    }).join("");
+    const kpis=nonzero.length?`<table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:${interior};border-radius:10px"><tr>${bar("ملخص الطلبيات التي بها فروقات","#0b6faf")}</tr><tr><td align="center" bgcolor="${interior}" style="${centered}padding:8px 0;background-color:${interior};font-size:0;line-height:0">${kpiCards}</td></tr></table>`:"";
     // Percentage hints share the available width; auto layout honors intact codes
     // and quantities, while names and statuses wrap only at word boundaries.
     const headers=[["Code","16%"],["Item Name","28%"],["Ordered","12%"],["Received","12%"],["Diff","10%"],["Status","22%"]];
