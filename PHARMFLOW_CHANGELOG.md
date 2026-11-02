@@ -1,3 +1,13 @@
+## 3 November 2026 — Receiving Email Production release (#41)
+
+**Deployed / verified PASS.** Approved release `00b2e365210b669cb0a5fe54f2f976f7882566e9` merged as runtime `c5c9b23079af046fe60903f3703094acaf70bab4`; official Pages run [41546695844](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/41546695844) SUCCESS and served SHA verified. Exact owner-accepted email generator: independent cool gray blue KPI cards (#E1EAF2/#CBD9E6), bold colored numbers, dark-slate labels, 3px matching top accents, five cards across at expanded width, fluid six-column detail table and word-wrapped Status. Arabic sections, report calculations/visibility and rich Copy Email are preserved.
+
+77 focused release tests/build and required PR CI PASS; execution email suite 27/27 PASS. Authenticated Production Receiving/orders/report/email preview, live category-total reconciliation, colors/accents/Status containment and **Formatted email copied** confirmation PASS. No application JavaScript errors observed; report quantities remained unchanged through read/copy checks. Current live zero categories remain hidden; five-card layout and actual Outlook paste acceptance use the identical owner-accepted Staging implementation. The disclosed artificial 420px extreme remains unchanged.
+
+Only email HTML and its two test files were released. No database/schema/Supabase/Auth/Handheld changes; no operational records modified. Vercel remained protected by its existing build guard. Revert #41 through a protected PR and official Pages deployment if needed; no database rollback. This outcome entry and the current-checkpoint update are documentation only.
+
+---
+
 ## Final focused Staging refinements — 28 October 2026
 
 READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.
