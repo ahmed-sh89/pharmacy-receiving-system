@@ -1,3 +1,9 @@
+# 2026-11-02 — Outlook header/status correction
+
+Baseline757285c. Shared blue-bar renderer uses direct white700 spans instead of legacy font/b nesting. Status124px, category inks/600, standard labels nowrap with existing narrow scroll fallback. KPI HTML/model, Arabic sections and ClipboardItem pipeline unchanged. 23 focused tests and both builds PASS. Precise corporate Outlook normalization cause unverified; real paste/save/reopen acceptance PENDING owner. Staging feature branch only; no Production/main/DB changes. See docs/receiving-email-20261102/OUTLOOK_FINAL.md.
+
+---
+
 # 2026-11-02 — Three final email visual fixes
 
 Only three email visual fixes: badge moved slightly down within unchanged card, category-dark semi-bold KPI labels, explicit white/bold on every blue-bar text-bearing element. Existing accepted layout/calculations/copy/Outlook action unchanged. Staging only; see POLISH.md.

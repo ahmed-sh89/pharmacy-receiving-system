@@ -192,7 +192,34 @@ test('polish: every blue bar explicitly sets white on its cell, font, bold and n
     assert.match(node.getAttribute('style'),/color:#FFFFFF(?:;|$)/i);
     if(node.tagName!=='FONT')assert.match(node.getAttribute('style'),/font-weight:700/);
    }
-   assert.equal(bar.querySelector('font').getAttribute('color'),'#FFFFFF');
+   assert.equal(bar.querySelector('font,b'),null);
+   assert.match(bar.querySelector('span').getAttribute('style'),/font-size:(15|16)px;line-height:22px;color:#FFFFFF;font-weight:700/);
   }
  }
+});
+
+test('status allocation and direct semi-bold category text survive actual clipboard payload',async()=>{
+ const {c,writes}=harness(),report=acceptanceReport(c,'five');
+ await c.copyFormattedReceivingEmail(report);
+ const payload=writes[0][0].data;
+ assert.equal(payload['text/html'].type,'text/html');assert.equal(payload['text/plain'].type,'text/plain');
+ const html=await payload['text/html'].text();assert.equal(html,c.buildReceivingEmailClipboardHTML(report));
+ const {document}=parseHTML(html);
+ for(const head of document.querySelectorAll('thead')){
+  assert.equal(head.querySelectorAll('th').length,6);
+  assert.equal(head.querySelector('th:last-child').getAttribute('width'),'124');
+ }
+ const expected={'Partial Shortage':'#865600','Not Received':'#a72f2f','Over Received':'#16634b','Extra':'#62468e'};
+ for(const tr of document.querySelectorAll('tbody>tr')){
+  if(tr.children.length!==6)continue;
+  const cell=tr.children[5],font=cell.querySelector('font'),span=font.querySelector('span');
+  assert.match(cell.getAttribute('style'),/white-space:nowrap/);
+  assert.equal(font.getAttribute('color'),expected[cell.textContent]);
+  assert.match(font.getAttribute('style'),/font-size:13px.*font-weight:600/);
+  assert.equal(span.getAttribute('style'),`color:${expected[cell.textContent]};font-weight:600`);
+  assert.equal(cell.getAttribute('bgcolor'),tr.children[1].getAttribute('bgcolor'));
+ }
+ const bars=[...document.querySelectorAll('td')].filter(n=>['#0b6faf','#0b5f9f'].includes(n.getAttribute('bgcolor')));
+ assert.equal(bars.length,3);
+ for(const bar of bars){assert.equal(bar.querySelector('font,b'),null);assert.match(bar.querySelector('span').getAttribute('style'),/color:#FFFFFF;font-weight:700/);}
 });

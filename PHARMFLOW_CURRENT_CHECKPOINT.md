@@ -1,3 +1,9 @@
+# Current Staging task — final Outlook header/status correction
+
+Baseline757285c. Shared blue-bar renderer uses direct white700 spans instead of legacy font/b nesting. Status124px, category inks/600, standard labels nowrap with existing narrow scroll fallback. KPI HTML/model, Arabic sections and ClipboardItem pipeline unchanged. 23 focused tests and both builds PASS. Precise corporate Outlook normalization cause unverified; real paste/save/reopen acceptance PENDING owner. Staging feature branch only; no Production/main/DB changes. See docs/receiving-email-20261102/OUTLOOK_FINAL.md.
+
+---
+
 # Current Staging task — 2 November 2026: three final email visual fixes
 
 Owner accepts current layout and Outlook rich Copy Email behavior on 2cb4772. Same `feature/receiving-email-staging-20261101`: only badge vertical placement, dark category-colored 600-weight KPI labels, and explicit #FFFFFF/bold on blue-bar cell/font/bold/nested order-date text. Existing dimensions, values/signs/unit calculations, palettes, six columns, names, dates, Arabic intro/closing, Clipboard API and Outlook action preserved. 22 focused email tests PASS; default/Staging builds PASS. READY FOR OWNER ACCEPTANCE; new Outlook white-header/draft/narrow/full-width confirmation pending. See docs/receiving-email-20261102/POLISH.md. No Production, main, Supabase, Receiving/allocation, Expiry or operational-data change; Production baseline 5b963d82501a317790f5ece8e5552b4a09a5886e protected, Staging ref tovkcakucyagvbzvlnks only. Browser compared with accepted baseline: cards remain 124×86px, badges +4px lower (7→11px offset), labels 600/category-colored, blue bars remain 47px high and every relevant node computes white. See POLISH_QA.md. Next: owner normal Outlook paste/draft reopen/white-header confirmation; no independent Outlook PASS claimed. No Production release authorized.
