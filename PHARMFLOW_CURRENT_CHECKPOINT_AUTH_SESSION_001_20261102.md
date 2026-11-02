@@ -34,3 +34,13 @@ Existing `tests/settings-account-access.test.cjs` FAILS at 'Owner approval must 
 Real browser suite was attempted but could not launch because Chromium is absent. Browser download returned truncated archives; no browser PASS claim. Live account login, live multi-PC receiving and real reset/temporary-password acceptance remain NOT RUN. New concurrency tests use independent simulated device stores, not physical PCs. Recovery tests cover routing; existing Edge tests mock Auth and do not reset real passwords.
 
 Next: inspect exact Preview deployment SHA, Staging URL/key/CSP, open Preview for owner acceptance. Verify normal login/reload, Receiving continuity through refresh, and genuine approved password flows with disposable Staging accounts when available. No Production merge/deploy approval requested before Staging acceptance.
+
+## Preview verification — completed
+
+First verified runtime commit: `ca643943507f21046818a073a55d16d50e51ad4d`.
+Preview: https://pharmflow-test-a53tjyqgc-fhyh2xtskz-3504.vercel.app/
+Vercel deployment: `dpl_3DiAbM31dbCbMZBiuc7fQoqqWamc`, READY, target=null (Preview), exact isolated branch/commit.
+Fetched live version.json, index.html CSP and js/supabase.js: exact candidate SHA and Staging ref confirmed; Production ref absent from both connection-bearing files. Production served version and auth.js matched the verified main baseline byte-for-byte.
+A separate cloud-browser smoke check loaded the actual Preview sign-in form successfully; no application JavaScript error was captured at startup (one unrelated browser-extension metadata error). This is a basic page-load smoke test, NOT a substitute for the unavailable local Chromium lifecycle suite or live authenticated/device acceptance.
+PR #39: https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/39 (DRAFT, no merge).
+Status: READY FOR USER TEST on Staging; NOT USER VERIFIED; Production unchanged. Documentation-only follow-up does not change tested runtime code. Use the latest exact-SHA Preview reported in PR #39 for continued acceptance.
