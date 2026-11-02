@@ -38,11 +38,14 @@ function hhMode(){
 }
 
 function hhReceivingSessionReady(){
-    // An authenticated synchronized empty manifest permits Unassigned capture.
-    // It never authorizes cross-pharmacy reads or bypasses server permissions.
-    return !!(typeof AuthState!=="undefined" && AuthState.context?.pharmacy_id &&
-        window.PharmFlowCloudWorkspace?.startupAuthorityReady===true &&
-        window.PharmFlowPermissions?.allowed("RECEIVING",true)===true);
+    // Use the same scoped authority as Desktop. The cloud state is a classic-
+    // script const binding, not a window property. EMPTY permits Unassigned.
+    if(typeof AuthState==="undefined" || !AuthState.session ||
+       !AuthState.context?.pharmacy_id || AuthState.mustChangePassword ||
+       window.PharmFlowPermissions?.allowed("RECEIVING",true)!==true ||
+       typeof getReceivingHydrationState!=="function") return false;
+    const state=getReceivingHydrationState();
+    return state==="READY" || state==="EMPTY";
 }
 
 function hhSetVisualState(state,label){

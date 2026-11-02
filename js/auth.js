@@ -485,9 +485,7 @@ function restoreAuthSession(){
         if(!raw){ return; }
         const parsed = JSON.parse(raw);
         if(parsed && parsed.access_token && parsed.refresh_token){
-            AuthState.session = parsed;
-            AuthState.user = parsed.user || null;
-            scheduleTokenRefresh(parsed);
+            persistAuthSession(parsed);
         }
     }
     catch(_){
@@ -502,7 +500,7 @@ function persistAuthSession(session){
     }
     AuthState.session = session || null;
     AuthState.user = session && session.user ? session.user : null;
-    AuthState.mustChangePassword = !!(AuthState.user?.app_metadata?.pharmflow_must_change_password);
+    AuthState.mustChangePassword = AuthState.user?.app_metadata?.pharmflow_must_change_password === true;
     AuthState.contextError = null;
 
     if(session){
@@ -668,6 +666,51 @@ async function publicRpc(functionName, params = {}){
     });
 }
 
+// SEC-007 also rejects revoked/expired sessions with PASSWORD_CHANGE_REQUIRED.
+// That ambiguous business error is not proof of a temporary password. Auth is
+// authoritative; never manufacture a password requirement from an RPC error.
+async function recoverPasswordRequirementRejection(session, epoch, allowRefresh = true){
+    const isCurrent=()=>AuthState.identityEpoch===epoch && AuthState.session===session;
+    if(!session || !isCurrent()){ return false; }
+    let user;
+    try{
+        user=await authRequest("/auth/v1/user",{
+            method:"GET",headers:{"Authorization":"Bearer "+session.access_token}
+        });
+    }catch(error){
+        if(isCurrent()){
+            if(error.httpStatus===401 && allowRefresh){
+                const refreshed=await refreshAuthToken();
+                if(AuthState.identityEpoch!==epoch || AuthState.user?.id!==session.user?.id){ return false; }
+                if(refreshed && AuthState.mustChangePassword){ renderAuthState(); }
+                return refreshed && !AuthState.mustChangePassword;
+            }else if(error.httpStatus===401 || error.httpStatus===403){
+                clearRejectedAuthSession(session.refresh_token);
+            }else{
+                setAuthConnectionDegraded(true);
+            }
+        }
+        throw error;
+    }
+    if(!isCurrent() || user?.id!==session.user?.id){ return false; }
+    persistAuthSession({...session,user});
+    if(AuthState.mustChangePassword){
+        window.PharmFlowPermissions?.clear();
+        renderAuthState();
+        return false;
+    }
+    if(!allowRefresh){
+        // A refreshed session was still rejected. Require sign-in; the server
+        // denial remains enforced. clearRejectedAuthSession preserves Receiving
+        // data and pending writes rather than resetting the operational workspace.
+        clearRejectedAuthSession(AuthState.session.refresh_token);
+        return false;
+    }
+    const refreshed=await refreshAuthToken();
+    return refreshed && AuthState.identityEpoch===epoch &&
+        AuthState.user?.id===user.id && !AuthState.mustChangePassword;
+}
+
 async function authRpc(functionName, params = {}){
     if(typeof window!=="undefined")window.PharmFlowPermissions?.checkRpc?.(functionName,params);
     const execute = async () => {
@@ -680,14 +723,23 @@ async function authRpc(functionName, params = {}){
         });
     };
 
+    const requestSession=AuthState.session;
+    const requestEpoch=AuthState.identityEpoch;
     try{
         return await execute();
     }catch(error){
         const message = String(error?.message || "").toLowerCase();
         if(message.includes("password_change_required")){
-            AuthState.mustChangePassword=true;
-            window.PharmFlowPermissions?.clear();
-            renderAuthState();
+            if(await recoverPasswordRequirementRejection(requestSession,requestEpoch)){
+                const retrySession=AuthState.session;
+                try{ return await execute(); }
+                catch(retryError){
+                    if(String(retryError?.message||"").toLowerCase().includes("password_change_required")){
+                        await recoverPasswordRequirementRejection(retrySession,requestEpoch,false);
+                    }
+                    throw retryError;
+                }
+            }
             throw error;
         }
         if(message.includes("pharmflow_permission_denied") && functionName!=="get_my_pharmflow_permissions_v1"){
