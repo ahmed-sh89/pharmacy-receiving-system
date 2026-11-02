@@ -42,11 +42,11 @@ test('HTML is inert, escaped, inline styled and contains each item once with sep
  const {c}=harness(),html=c.buildFinalizedDiscrepancyEmailHTML(fixture()),{document}=parseHTML(html);
  assert.doesNotMatch(html,/<script|<style|on\w+=|https?:|overflow-wrap:anywhere|word-break:break-all|display:flex|display:grid/i);
  assert.match(html,/&lt;test&gt; &amp;/);assert.equal(document.querySelectorAll('th').length,12);
- for(const th of document.querySelectorAll('th'))assert.match(th.getAttribute('style'),/white-space:nowrap/);
+ for(const th of document.querySelectorAll('th'))assert.match(th.getAttribute('style'),/white-space:normal/);
  const codes=[...document.querySelectorAll('td')].filter(t=>t.textContent==='001');assert.equal(codes.length,2);
  assert.equal(codes[0].nextElementSibling.querySelector('[dir=auto]').getAttribute('dir'),'auto');assert.match(codes[0].getAttribute('style'),/white-space:nowrap/);
  assert.match(html,/<b>\+1<\/b>/);assert.match(html,/<b>-69<\/b>/);
- assert.match(html,/min-width:640px/);assert.match(html,/overflow-x:auto/);
+ assert.doesNotMatch(html,/min-width:|overflow-x:|overflow-wrap:break-word/);
  assert.equal((html.match(/TO-000535106/g)||[]).length,1);
 });
 test('actual clipboard payload includes complete HTML and meaningful plain text',async()=>{
@@ -88,13 +88,13 @@ test('actual PharmFlow preview embeds the same centered email markup with safe s
  assert.equal(document.querySelectorAll('#btnCopyFinalizedEmail').length,1);
 });
 
-test('six separate columns per order, dates, single compact KPI row and distinct Diff backgrounds',()=>{
+test('six separate columns per order, dates, compact KPI cards and distinct Diff backgrounds',()=>{
  const {c}=harness(),r=fixture();r.orderGroups[0].orderDate='2026-10-30';
  const {document}=parseHTML(c.buildFinalizedDiscrepancyEmailHTML(r));
  for(const head of document.querySelectorAll('thead'))assert.deepEqual([...head.querySelectorAll('th')].map(x=>x.textContent),['Code','Item Name','Ordered','Received','Diff','Status']);
  assert.equal(document.querySelectorAll('thead').length,2);assert.match(document.textContent||document.toString(),/30 Oct 2026/);
  const values=[...document.querySelectorAll('font[style*="font-size:22px"]')];assert.equal(values.length,5);
- const cards=values.map(v=>v.closest('table').parentElement.closest('table'));assert.equal(new Set(cards.map(x=>x.parentElement.parentElement)).size,1);
+ const cards=values.map(v=>v.closest('table'));assert.equal(new Set(cards.map(x=>x.parentElement.parentElement)).size,2);
  for(const [diff,bg] of [['-69','#ffdf9e'],['-10','#f7c3c3'],['+1','#bde8d7'],['+4','#d9ccef']]){
   const value=[...document.querySelectorAll('font[style*="font-size:14px"] b')].find(x=>x.textContent===diff);assert(value,diff);assert.equal(value.closest('td').getAttribute('bgcolor'),bg);
  }
@@ -140,19 +140,21 @@ test('approved realistic two-order fixture: 2 Orders, -2 Partial, +2 Over; corre
  assert.equal(document.querySelectorAll('thead th').length,12);assert.match(document.toString(),/29 Oct 2026/);assert.match(document.toString(),/30 Oct 2026/);
  assert.equal(JSON.stringify(r),before);assert.match(c.buildFinalizedDiscrepancyEmailText(r),/Orders: 2 \| Partial Shortage: -2 \| Over Received: \+2/);
 });
-test('2/3/5 indicators use equal fixed-size neutral cards in one centered row, badges only colored',()=>{
- const {c}=harness();let baseline;
- for(const [scenario,count] of [['twoIndicators',2],['realistic',3],['five',5]]){
+test('conditional 1/2/3/5 indicators use fluid white cards without number badges',()=>{
+ const {c}=harness();
+ for(const [scenario,count] of [['singleKpi',1],['twoIndicators',2],['realistic',3],['five',5]]){
   const {document}=parseHTML(c.buildFinalizedDiscrepancyEmailHTML(acceptanceReport(c,scenario)));
   const numbers=[...document.querySelectorAll('font[style*="font-size:22px"]')];assert.equal(numbers.length,count);
-  const cards=numbers.map(n=>n.closest('table').parentElement.closest('table'));
-  assert.equal(new Set(cards.map(n=>n.parentElement.parentElement)).size,1);
+  const cards=numbers.map(n=>n.closest('table'));
   for(const [i,card] of cards.entries()){
-   const dimensions=[card.getAttribute('width'),card.getAttribute('height')];if(!baseline)baseline=dimensions;assert.deepEqual(dimensions,baseline);
-   assert.equal(card.getAttribute('bgcolor'),'#ffffff');assert.equal(numbers[i].getAttribute('color'),'#ffffff');
-   assert.equal(numbers[i].closest('td').getAttribute('dir'),'ltr');assert.notEqual(numbers[i].closest('td').getAttribute('bgcolor'),'#ffffff');
+   assert.equal(card.getAttribute('width'),'100%');assert.equal(card.getAttribute('height'),'84');
+   assert.equal(card.getAttribute('bgcolor'),'#ffffff');assert.equal(card.getAttribute('bordercolor'),'#d5e1eb');
+   assert.equal(numbers[i].closest('td').getAttribute('dir'),'ltr');assert.equal(numbers[i].closest('td').getAttribute('bgcolor'),'#ffffff');
+   assert.equal(card.querySelectorAll('table').length,0);
   }
-  const group=cards[0].parentElement.parentElement.closest('table');assert.equal(group.getAttribute('align'),'center');assert(!group.getAttribute('width').includes('%'));
+  const cardRows=[...new Set(cards.map(n=>n.parentElement.parentElement))];
+  assert.equal(cardRows.length,Math.ceil(count/3));
+  for(const row of cardRows)assert(row.children.length<=3);
  }
 });
 test('larger quantities and extra/not-received totals are signed units, never row counts',()=>{
@@ -170,15 +172,16 @@ test('original intro/closing type remains unchanged; realistic names normal and 
   assert.equal(row.children[5].querySelector('font').getAttribute('color'),row.children[4].querySelector('font').getAttribute('color'));
  }
 });
-test('polish: category-colored 600 labels and lowered badges preserve fixed card sizes/colors',()=>{
+test('prominent category-colored numbers and consistent dark-slate semi-bold labels',()=>{
  const {c}=harness(),{document}=parseHTML(c.buildFinalizedDiscrepancyEmailHTML(acceptanceReport(c,'five')));
  const numbers=[...document.querySelectorAll('font[style*="font-size:22px"]')];
- const inks=['#173d63','#865600','#a72f2f','#16634b','#62468e'],badges=['#176CA1','#BF8525','#C44949','#248568','#7759A6'];
+ const inks=['#173d63','#865600','#a72f2f','#16634b','#62468e'];
  numbers.forEach((n,i)=>{
-  const badge=n.closest('table'),top=badge.parentElement,card=top.closest('table'),label=card.querySelector('font[style*="font-size:14px"]');
-  assert.equal(card.getAttribute('width'),'124');assert.equal(card.getAttribute('height'),'84');
-  assert.equal(badge.getAttribute('bgcolor'),badges[i]);assert.equal(top.getAttribute('valign'),'bottom');assert.match(top.getAttribute('style'),/padding:0 0 2px/);assert.equal(top.getAttribute('height'),'40');
-  assert.equal(label.getAttribute('color'),inks[i]);assert.match(label.getAttribute('style'),/font-weight:600/);assert.equal(label.querySelector('b'),null);assert.match(label.querySelector('span').getAttribute('style'),/font-weight:600/);
+  const card=n.closest('table'),label=card.querySelector('font[style*="font-size:14px"]');
+  assert.equal(n.getAttribute('color'),inks[i]);assert(n.querySelector('b'));
+  assert.equal(n.closest('td').getAttribute('bgcolor'),'#ffffff');
+  assert.equal(label.getAttribute('color'),'#334155');assert.match(label.getAttribute('style'),/font-weight:600/);
+  assert.match(label.querySelector('span').getAttribute('style'),/font-weight:600/);
  });
 });
 test('polish: every blue bar explicitly sets white on its cell, font, bold and nested text in both payloads',()=>{
@@ -206,13 +209,13 @@ test('status allocation and direct semi-bold category text survive actual clipbo
  const {document}=parseHTML(html);
  for(const head of document.querySelectorAll('thead')){
   assert.equal(head.querySelectorAll('th').length,6);
-  assert.equal(head.querySelector('th:last-child').getAttribute('width'),'124');
+  assert.equal(head.querySelector('th:last-child').getAttribute('width'),'22%');
  }
  const expected={'Partial Shortage':'#865600','Not Received':'#a72f2f','Over Received':'#16634b','Extra':'#62468e'};
  for(const tr of document.querySelectorAll('tbody>tr')){
   if(tr.children.length!==6)continue;
   const cell=tr.children[5],font=cell.querySelector('font'),span=font.querySelector('span');
-  assert.match(cell.getAttribute('style'),/white-space:nowrap/);
+  assert.match(cell.getAttribute('style'),/white-space:normal;overflow-wrap:normal/);
   assert.equal(font.getAttribute('color'),expected[cell.textContent]);
   assert.match(font.getAttribute('style'),/font-size:13px.*font-weight:600/);
   assert.equal(span.getAttribute('style'),`color:${expected[cell.textContent]};font-weight:600`);
@@ -248,18 +251,31 @@ test('summary matches order typography and detail width respects intrinsic code/
   const {document}=parseHTML(html),bars=[...document.querySelectorAll('td')].filter(n=>['#0b6faf','#0b5f9f'].includes(n.getAttribute('bgcolor')));
   for(const bar of bars)assert.match(bar.querySelector('span').getAttribute('style'),/font-size:16px;line-height:22px;color:#FFFFFF;font-weight:700/);
   for(const head of document.querySelectorAll('thead')){
-   const table=head.closest('table'),host=table.parentElement.parentElement;
+   const table=head.closest('table'),host=table.parentElement;
    assert.equal(table.getAttribute('align'),null);assert.equal(table.getAttribute('width'),'100%');
-   assert.match(table.getAttribute('style'),/min-width:640px.*table-layout:auto/);
+   assert.match(table.getAttribute('style'),/width:100%;.*table-layout:auto/);assert.doesNotMatch(table.getAttribute('style'),/min-width/);
    assert.equal(host.getAttribute('dir'),'ltr');
    assert.equal(head.querySelectorAll('th').length,6);
    for(const tr of table.querySelectorAll('tbody>tr')){
     if(tr.children.length!==6)continue;
     assert.match(tr.children[0].getAttribute('style'),/white-space:nowrap/);
-    assert.match(tr.children[5].getAttribute('style'),/white-space:nowrap/);
+    assert.match(tr.children[5].getAttribute('style'),/white-space:normal;overflow-wrap:normal/);
     for(const cell of tr.children)assert.equal(cell.getAttribute('align'),'center');
    }
   }
   assert.match(html,/123456789012345/);
  }
+});
+
+test('very large signed KPI values stay intact in the clipboard with no data or text changes',async()=>{
+ const {c,writes}=harness(),report=acceptanceReport(c,'five');
+ report.orderGroups[0].rows[0]['Received Qty']=123456789;
+ report.orderGroups[1].rows[0]['Ordered Qty']=123456789;
+ const before=JSON.stringify(report),text=c.buildFinalizedDiscrepancyEmailText(report);
+ await c.copyFormattedReceivingEmail(report);
+ assert.equal(JSON.stringify(report),before);assert.equal(await writes[0][0].data['text/plain'].text(),text);
+ const {document}=parseHTML(await writes[0][0].data['text/html'].text());
+ const large=[...document.querySelectorAll('td[dir="ltr"]')].filter(n=>/^[+-]\d{8,}$/.test(n.textContent));
+ assert.equal(large.length,2);
+ for(const value of large){assert.match(value.getAttribute('style'),/white-space:nowrap/);assert(value.querySelector('b'));}
 });
