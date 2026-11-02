@@ -1,3 +1,9 @@
+# Current Staging task — foreground trace / ice-blue interior
+
+Current result: PARTIAL / foreground root cause OPEN. Owner actual Outlook paste still turns explicit header/status foregrounds black; generated and actual clipboard HTML preserve them. Remote native paste delivered plain text, so rich editable-surface C is unverified; no authenticated corporate Outlook DOM. No speculative foreground/clipboard changes added. Implemented approved #F0F6FB internal empty areas only. Exterior, panels, cards, cell/Diff backgrounds, text, data and dimensions preserved. 24 focused tests and both builds PASS; full fixture DOM differs only in background properties on19 elements. See docs/receiving-email-20261102/FOREGROUND_TRACE.md. Staging only; no Production/main/DB changes.
+
+---
+
 # Current Staging task — final Outlook header/status correction
 
 Baseline757285c. Shared blue-bar renderer uses direct white700 spans instead of legacy font/b nesting. Status124px, category inks/600, standard labels nowrap with existing narrow scroll fallback. KPI HTML/model, Arabic sections and ClipboardItem pipeline unchanged. 23 focused tests and both builds PASS. Precise corporate Outlook normalization cause unverified; real paste/save/reopen acceptance PENDING owner. Staging feature branch only; no Production/main/DB changes. See docs/receiving-email-20261102/OUTLOOK_FINAL.md.

@@ -223,3 +223,21 @@ test('status allocation and direct semi-bold category text survive actual clipbo
  assert.equal(bars.length,3);
  for(const bar of bars){assert.equal(bar.querySelector('font,b'),null);assert.match(bar.querySelector('span').getAttribute('style'),/color:#FFFFFF;font-weight:700/);}
 });
+test('ice-blue interior reaches empty padding/spacers but preserves exterior and colored panels',async()=>{
+ const {c,writes}=harness(),report=acceptanceReport(c,'realistic');
+ await c.copyFormattedReceivingEmail(report);
+ for(const html of [c.buildFinalizedDiscrepancyEmailHTML(report),await writes[0][0].data['text/html'].text()]){
+  const {document}=parseHTML(html),tables=[...document.querySelectorAll('table')];
+  const outer=tables.find(n=>n.getAttribute('bordercolor')==='#b8d5e9');
+  assert.equal(outer.getAttribute('bgcolor'),'#F0F6FB');
+  assert.equal(outer.querySelector('td').getAttribute('bgcolor'),'#F0F6FB');
+  assert.equal(tables[0].getAttribute('bgcolor'),'#f2f7fb');
+  for(const node of document.querySelectorAll('td[height="22"],td[height="26"]'))assert.equal(node.getAttribute('bgcolor'),'#F0F6FB');
+  for(const node of document.querySelectorAll('td[style*="padding:8px 0"],td[style*="padding:12px;"]'))assert.equal(node.getAttribute('bgcolor'),'#F0F6FB');
+  for(const card of document.querySelectorAll('table[height="84"]'))assert.equal(card.getAttribute('bgcolor'),'#ffffff');
+  assert.equal(document.querySelectorAll('table[bgcolor="#d5eaf8"]').length,2);
+  assert.equal(document.querySelectorAll('td[bgcolor="#0b6faf"]').length,1);
+  assert.equal(document.querySelectorAll('td[bgcolor="#0b5f9f"]').length,2);
+  for(const tr of document.querySelectorAll('tbody>tr'))if(tr.children.length===6)assert(['#f6fbff','#eaf4fb'].includes(tr.children[1].getAttribute('bgcolor')));
+ }
+});
