@@ -178,7 +178,7 @@ test('polish: category-colored 600 labels and lowered badges preserve fixed card
  numbers.forEach((n,i)=>{
   const badge=n.closest('table'),top=badge.parentElement,card=top.closest('table'),label=card.querySelector('font[style*="font-size:14px"]');
   assert.equal(card.getAttribute('width'),'124');assert.equal(card.getAttribute('height'),'84');
-  assert.equal(badge.getAttribute('bgcolor'),badges[i]);assert.equal(top.getAttribute('valign'),'bottom');assert.match(top.getAttribute('style'),/padding:0 0 2px/);assert.equal(top.getAttribute('height'),'42');
+  assert.equal(badge.getAttribute('bgcolor'),badges[i]);assert.equal(top.getAttribute('valign'),'bottom');assert.match(top.getAttribute('style'),/padding:0 0 2px/);assert.equal(top.getAttribute('height'),'40');
   assert.equal(label.getAttribute('color'),inks[i]);assert.match(label.getAttribute('style'),/font-weight:600/);assert.equal(label.querySelector('b'),null);assert.match(label.querySelector('span').getAttribute('style'),/font-weight:600/);
  });
 });

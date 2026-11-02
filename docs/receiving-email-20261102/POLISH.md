@@ -2,7 +2,7 @@
 
 Baseline 2cb477255c59a2e554bcd535e8cafed2dd2bcb72. Same feature/receiving-email-staging-20261101 branch. Owner accepts the existing layout/rich Outlook copy behavior; only three visual corrections authorized. READY FOR OWNER ACCEPTANCE for this polish, not a new design or Production release.
 
-1. Number badge parent cell now aligns to the bottom of its existing 42px row with a 2px bottom inset, rather than centering in that row. This moves the badge slightly downward without changing the card/row/badge dimensions or label placement. One row, spacing, colors, dimensions and all numbers/signs remain.
+1. Number badge parent cell now aligns to the bottom using 40px content height plus a 2px bottom inset, preserving the existing 42px rendered row, rather than centering in that row. This moves the badge slightly downward without changing the card/row/badge dimensions or label placement. One row, spacing, colors, dimensions and all numbers/signs remain.
 2. Labels use the existing category's dark ink color and explicit font-weight:600 on both the label font and its text span. Label size/line-height unchanged (14px/18px). No other text styling is affected.
 3. Blue-bar foreground is explicit #FFFFFF on the table cell, font, bold text and nested order/date span, with bold weight 700. Previously only the font wrapper had explicit white; its bold child/order span and blue cell depended on inheritance. These inheritance gaps are removed in the shared source renderer, with no external CSS or clipboard-specific patches. Actual Outlook normalization behavior still requires the owner check; source inspection cannot prove the precise corporate editor rule that made text black.
 
