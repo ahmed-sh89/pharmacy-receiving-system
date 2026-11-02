@@ -35,6 +35,7 @@ const AuthState = {
        Receiving workspace. This flag is UI/runtime state only; it never
        grants access or treats a failed request as successful. */
     connectionDegraded:false,
+    refreshRejected:false,
     busy:false,
     registration:null,
     mustChangePassword:false,
@@ -498,6 +499,7 @@ function persistAuthSession(session){
         AuthState.identityEpoch++;
         window.PharmFlowPermissions?.clear();
     }
+    AuthState.refreshRejected = false;
     AuthState.session = session || null;
     AuthState.user = session && session.user ? session.user : null;
     AuthState.mustChangePassword = AuthState.user?.app_metadata?.pharmflow_must_change_password === true;
@@ -683,6 +685,7 @@ async function recoverPasswordRequirementRejection(session, epoch, allowRefresh 
                 const refreshed=await refreshAuthToken();
                 if(AuthState.identityEpoch!==epoch || AuthState.user?.id!==session.user?.id){ return false; }
                 if(refreshed && AuthState.mustChangePassword){ renderAuthState(); }
+                if(!refreshed && AuthState.refreshRejected){ clearRejectedAuthSession(session.refresh_token); }
                 return refreshed && !AuthState.mustChangePassword;
             }else if(error.httpStatus===401 || error.httpStatus===403){
                 clearRejectedAuthSession(session.refresh_token);
@@ -707,6 +710,9 @@ async function recoverPasswordRequirementRejection(session, epoch, allowRefresh 
         return false;
     }
     const refreshed=await refreshAuthToken();
+    if(!refreshed && AuthState.identityEpoch===epoch && AuthState.user?.id===user.id && AuthState.refreshRejected){
+        clearRejectedAuthSession(AuthState.session?.refresh_token);
+    }
     return refreshed && AuthState.identityEpoch===epoch &&
         AuthState.user?.id===user.id && !AuthState.mustChangePassword;
 }
@@ -1181,6 +1187,10 @@ async function refreshAuthToken(){
                    arrive before removing only this rejected local session. */
                 const adopted=await waitForRotatedStoredSession(startingAccessToken,500);
                 if(adopted){ return true; }
+                // A foreground RPC rejection can distinguish an irrecoverable
+                // refresh from a transient failure, while background Handheld
+                // refresh retains its existing state-preserving behavior.
+                AuthState.refreshRejected=true;
                 if(isActiveHandheldWorkspace()){
                     /* B10 Clean15.3 — a scan burst can overlap a refresh-token
                        rotation or a short connection failure. Preserve the last

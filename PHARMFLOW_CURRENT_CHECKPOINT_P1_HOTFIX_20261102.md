@@ -16,14 +16,14 @@ The causes are independent: fixing Auth alone cannot repair the Zebra lexical/wi
 ## Exact changes
 
 - `js/handheld-runtime.js`: use shared getReceivingHydrationState (READY/EMPTY), with active session, pharmacy context and existing Receiving write permission. Canonical authority already checks identity epoch, pharmacy, manifest and ledger scope. EMPTY retains approved Unassigned capture. No change to scanner transport, parsing, allocation, queue IDs or server saves.
-- `js/auth.js`: reuse the runtime correction from PR #39 / 1fe07f9. Auth user endpoint verifies the server-owned mandatory-password boolean. Ordinary ambiguous denials get one existing single-flight refresh/RPC retry; continued denial returns to login. Genuine password requirements remain gated. Late results cannot overwrite a changed identity. Restore revalidates stored mandatory metadata. Backend revocation/security gates unchanged.
+- `js/auth.js`: reuse the runtime correction from PR #39 / 1fe07f9. Auth user endpoint verifies the server-owned mandatory-password boolean. Ordinary ambiguous denials get one existing single-flight refresh/RPC retry; continued denial returns to login. Genuine password requirements remain gated. Late results cannot overwrite a changed identity. Restore revalidates stored mandatory metadata. Backend revocation/security gates unchanged. A definitive irrecoverable refresh is signaled to the foreground rejection handler so revoked active Handheld sessions reach ordinary login; background-only Handheld refresh preserves its existing workspace behavior.
 - `index.html`: version both changed scripts to P1_HANDHELD_AUTH_20261102.
 - Focused tests for both incidents; existing protected PR CI includes them.
 - No Staging builder/config or unrelated PR #39 documentation included in this Production hotfix.
 
 ## Executed evidence
 
-Initial combined relevant regression run: 219 total, 217 PASS, 0 FAIL, 2 SKIP (two unavailable real supplier files). Includes exact existing protected CI test commands plus Auth viewport/order authority tests. Final incident suite after adding 3 extra Auth cases: 37 PASS, 0 FAIL. These test groups overlap; do not add their counts.
+Final combined relevant regression run: 225 total, 223 PASS, 0 FAIL, 2 SKIP (two unavailable real supplier files). Includes exact protected CI test commands plus Auth viewport/order authority tests. Final incident suite: 40 PASS, 0 FAIL. These test groups overlap; do not add their counts.
 Build PASS; syntax checks PASS; git diff --check PASS; npm audit: 0 vulnerabilities.
 Tests cover actual canonical Desktop/Zebra authority, selected order/scans, scoped initialization, EMPTY/Unassigned, logout, password required, account/pharmacy changes, session expiry/revocation, persisted rejection without cache clearing, refresh races, pending-state retention, fixed operation ID and one simulated commit after a pre-request denial. Existing queue/idempotency and isolated PGlite session-security tests also executed.
 These are automated fixtures, not physical Zebra scans or authenticated live pharmacy writes. No operational writes, password changes, account creation or credential rotation performed. No production login available for live authenticated smoke yet. Do not claim USER VERIFIED.
