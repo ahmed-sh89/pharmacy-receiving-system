@@ -158,6 +158,7 @@ test('conditional 1/2/3/4/5 indicators use independent cool gray blue cards with
    const column=card.parentElement.closest("table");
    assert.equal(column.getAttribute("width"),`${100/count}%`);
    assert.match(column.getAttribute("style"),/display:inline-table/);
+   assert.equal(column.parentElement.getAttribute("dir"),"ltr");
   }
  }
 });
