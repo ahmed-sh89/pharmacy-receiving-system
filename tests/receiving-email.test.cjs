@@ -284,3 +284,22 @@ test('very large signed KPI values stay intact in the clipboard with no data or 
  assert.equal(large.length,2);
  for(const value of large){assert.match(value.getAttribute('style'),/white-space:nowrap/);assert(value.querySelector('b'));}
 });
+
+test('each canonical KPI card retains one 3px category accent in preview and clipboard HTML',async()=>{
+ const {c,writes}=harness(),report=acceptanceReport(c,'five');
+ await c.copyFormattedReceivingEmail(report);
+ for(const html of [c.buildFinalizedDiscrepancyEmailHTML(report),await writes[0][0].data['text/html'].text()]){
+  const {document}=parseHTML(html),cards=[...document.querySelectorAll('table[height="84"]')];
+  assert.equal(cards.length,5);
+  for(const card of cards){
+   const strips=card.querySelectorAll('td[height="3"]');assert.equal(strips.length,1);
+   const strip=strips[0],number=card.querySelector('td[dir="ltr"] font');
+   assert.equal(strip.parentElement,card.querySelector('tr'));
+   assert.equal(strip.getAttribute('bgcolor'),number.getAttribute('color'));
+   assert.match(strip.getAttribute('style'),/height:3px;padding:0;border:0;font-size:0;line-height:3px/);
+   assert(strip.getAttribute('style').includes('background-color:'+number.getAttribute('color')));
+   assert.equal(card.getAttribute('bgcolor'),'#E1EAF2');assert.equal(card.getAttribute('bordercolor'),'#CBD9E6');
+   assert.equal(card.querySelector('td[dir="ltr"]').getAttribute('height'),'37');
+  }
+ }
+});
