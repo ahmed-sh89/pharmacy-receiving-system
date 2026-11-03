@@ -1,0 +1,40 @@
+-- All records below are synthetic and rolled back. Never run against Production.
+begin;
+select set_config('duty.test_user',gen_random_uuid()::text,true),set_config('duty.test_session',gen_random_uuid()::text,true),set_config('duty.test_pharmacy',gen_random_uuid()::text,true),set_config('duty.other_pharmacy',gen_random_uuid()::text,true);
+insert into auth.users(id,email,raw_app_meta_data) values(current_setting('duty.test_user')::uuid,'duty-synthetic-'||current_setting('duty.test_user')||'@example.invalid','{}');
+insert into auth.sessions(id,user_id,created_at,not_after) values(current_setting('duty.test_session')::uuid,current_setting('duty.test_user')::uuid,now(),now()+interval '10 minutes');
+insert into public.pharmacies(id,name,code) values(current_setting('duty.test_pharmacy')::uuid,'Synthetic Duty QA','DUTYQA-'||left(current_setting('duty.test_pharmacy'),8)),(current_setting('duty.other_pharmacy')::uuid,'Synthetic Duty Isolation','DUTYQB-'||left(current_setting('duty.other_pharmacy'),8));
+insert into public.pharmacy_members(pharmacy_id,user_id,role,active) values(current_setting('duty.test_pharmacy')::uuid,current_setting('duty.test_user')::uuid,'admin',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('duty.test_user'),'session_id',current_setting('duty.test_session'),'exp',extract(epoch from now()+interval '10 minutes'),'role','authenticated')::text,true);
+set local role authenticated;
+do $$declare pid uuid=current_setting('duty.test_pharmacy')::uuid;v jsonb;begin
+ v=public.get_pharmflow_duty_foundation_v1(pid,'2026-11-01');
+ if jsonb_array_length(v->'employees')<>0 or jsonb_array_length(v->'positions')<>3 then raise exception 'FAIL empty defaults';end if;
+ v=public.save_pharmflow_duty_employee_v1(pid,'SYNTH-001','Synthetic Pharmacist','pharmacist',true,0);
+ if v->>'code'<>'SYNTH-001' or (v->>'revision')::int<>1 then raise exception 'FAIL create';end if;
+ begin perform public.save_pharmflow_duty_employee_v1(pid,'SYNTH-001','Overwrite','pharmacist',true,0);raise exception 'FAIL stale write accepted';exception when raise_exception then if sqlerrm<>'DUTY_CONFLICT' then raise;end if;end;
+ perform public.save_pharmflow_duty_employee_v1(pid,'SYNTH-001','Synthetic Updated','pharmacist',false,1);
+ v=public.get_pharmflow_duty_foundation_v1(pid,'2027-02-01');
+ if v->'employees'->0->>'name'<>'Synthetic Updated' or v->'employees'->0->>'active'<>'false' then raise exception 'FAIL persistence';end if;
+ if v->'month'<>'null'::jsonb then raise exception 'FAIL month auto-created';end if;
+ begin perform public.get_pharmflow_duty_foundation_v1(current_setting('duty.other_pharmacy')::uuid,'2026-11-01');raise exception 'FAIL tenant boundary';exception when insufficient_privilege then null;end;
+ begin perform count(*) from public.pharmflow_duty_employees_v1;raise exception 'FAIL direct table access';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+do $$begin if (select count(*) from public.pharmflow_duty_audit_v1 where pharmacy_id=current_setting('duty.test_pharmacy')::uuid)<>2 then raise exception 'FAIL audit';end if;end $$;
+update public.pharmacy_members set role='staff' where pharmacy_id=current_setting('duty.test_pharmacy')::uuid;
+set local role authenticated;
+do $$declare pid uuid=current_setting('duty.test_pharmacy')::uuid;begin
+ if (public.get_pharmflow_duty_foundation_v1(pid,'2026-11-01')->>'can_write')::boolean then raise exception 'FAIL staff write permission';end if;
+ begin perform public.save_pharmflow_duty_employee_v1(pid,'SYNTH-002','Denied','pharmacist',true,0);raise exception 'FAIL staff write';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+update auth.sessions set not_after=now()-interval '1 second' where id=current_setting('duty.test_session')::uuid;
+set local role authenticated;
+do $$begin begin perform public.get_pharmflow_duty_foundation_v1(current_setting('duty.test_pharmacy')::uuid,'2026-11-01');raise exception 'FAIL revoked session';exception when insufficient_privilege then null;end;end $$;
+reset role;
+set local role anon;
+do $$begin begin perform public.get_pharmflow_duty_foundation_v1(current_setting('duty.test_pharmacy')::uuid,'2026-11-01');raise exception 'FAIL anon';exception when insufficient_privilege then null;end;end $$;
+reset role;
+rollback;
+select 'Duty live security/persistence checks PASS; all synthetic fixtures rolled back' as result;
