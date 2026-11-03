@@ -1,5 +1,5 @@
 /* Scoped to Duty. Existing operational surfaces are intentionally untouched. */
-#page-duty{--duty-ink:#17263d;--duty-blue:#2165a8;--duty-line:#d8e2ed;--duty-muted:#62738a;color:var(--duty-ink);font-size:13px}
+#page-duty{--duty-ink:#17263d;--duty-blue:#2165a8;--duty-line:#d8e2ed;--duty-muted:#62738a;--pfn-table-header-bg:#f1f5fa;--pfn-table-header-ink:#546b86;color:var(--duty-ink);font-size:13px}
 #page-duty *{box-sizing:border-box}
 #page-duty .duty-shell{padding:2px 0 16px}
 #page-duty .duty-toolbar,#page-duty .duty-title-row,#page-duty .duty-actions,#page-duty .duty-month-picker,#page-duty .duty-tabs{display:flex;align-items:center;gap:9px}
@@ -33,7 +33,7 @@
 #page-duty thead th.duty-employee-col,#page-duty thead th.duty-total-col{z-index:5;background:#edf3f9}
 #page-duty .duty-day-col{width:88px;min-width:88px}
 #page-duty td.duty-friday{background:#d5e0ed;border-left:1px solid #afc0d5;border-right:1px solid #afc0d5}
-#page-duty thead th.duty-friday{background:#17263d;color:#e0eaf6;border-color:#17263d}
+#page-duty thead th.duty-friday{--pfn-table-header-bg:#17263d;--pfn-table-header-ink:#e0eaf6;background:#17263d;color:#e0eaf6;border-color:#17263d}
 #page-duty thead th.duty-friday .duty-date{color:#fff}
 #page-duty .duty-group td{height:30px;background:#e9f0f8;color:#31516f;font-size:11px;font-weight:700;letter-spacing:.15px;text-align:left;padding-left:14px}
 #page-duty .duty-group td span{position:sticky;left:14px}
@@ -70,4 +70,4 @@
 #page-duty .duty-panel-footer{margin-top:auto;border-top:1px solid var(--duty-line);padding:16px 24px;display:flex;justify-content:flex-end;gap:9px}
 #page-duty .duty-panel-error{color:#a13737;min-height:17px;font-size:12px;margin:0}
 #page-duty .duty-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:1000px){#page-duty .duty-grid-scroll{max-height:65vh}#page-duty .duty-title-row{align-items:flex-start}#page-duty .duty-actions{flex-wrap:wrap}#page-duty th.duty-employee-col,#page-duty td.duty-employee-col{width:180px;min-width:180px}#page-duty th.duty-total-col,#page-duty td.duty-total-col{left:180px}}
+@media(max-width:1000px){#page-duty .duty-grid-scroll{max-height:65vh}#page-duty .duty-title-row{align-items:flex-start}#page-duty .duty-actions{flex-wrap:wrap}}

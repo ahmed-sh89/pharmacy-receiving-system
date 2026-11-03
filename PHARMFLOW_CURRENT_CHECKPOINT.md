@@ -1,6 +1,6 @@
 # Duty Staging development — 4 November 2026
 
-Independent Duty Stage A is IN DEVELOPMENT on `feature/duty-staging-20261104`, based on verified `main` `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Staging only; no Production release. See [Duty checkpoint](docs/duty/CURRENT_CHECKPOINT.md) for exact implementation, database verification, boundaries and next action. Stop for Product Owner visual acceptance before Stage B. Existing Production checkpoint follows unchanged.
+Independent Duty Stage A is READY FOR TEST on `feature/duty-staging-20261104`, based on verified `main` `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Staging only; no Production release. See [Duty checkpoint](docs/duty/CURRENT_CHECKPOINT.md) for implementation, applied Staging migrations, stable Preview, verification limits and owner review steps. Stop for Product Owner visual acceptance before Stage B. Existing Production checkpoint follows unchanged.
 
 # Receiving Email Production release — 3 November 2026
 
