@@ -59,3 +59,7 @@ Staging build and 22 automated Duty tests passed, including isolated PostgreSQL 
 READY FOR TEST on the isolated Duty Staging preview. Compact single-line monthly KPIs, condensed navigation, selection-local actions, single-click selection, double-click editing, mouse-drag rectangles and Shift+Arrow extension. Delete clears only selected Duty cell payloads through the existing audited revision-checked save path. Multi-cell deletion and populated paste require confirmation. Undo/Redo also uses revision checks.
 
 Staging build and 23 automated tests passed, including cancel, clear, undo, redo and rejection of stale history. The existing manual-hours SQL proposal remains unapplied. Production and unrelated modules are outside this change. Next action is Product Owner review with synthetic schedules.
+
+### Duty visual cleanup
+
+The grid now displays shifts, statuses and nonzero hours as static content. Double-click opens one editor for times, leave status and all manual categories. Selection actions stay above the grid. Column dividers, alternating tints and a continuous range border improve scanning. The calculation model, revision-checked writes and migration state are unchanged.

@@ -76,6 +76,8 @@ test('range deletion is atomic, undoable and revision checked',async()=>{
  const a='DEMO-001',b='DEMO-002',d1='2026-11-01',d2='2026-11-02';
  const press=(code,date,key,modifiers={})=>host.onkeydown({target:cell(code,date),key,preventDefault(){},...modifiers});
  cell(a,d1).click();assert.equal(host.querySelectorAll('.duty-cell-editor').length,0);
+ assert.equal(host.querySelectorAll('td[data-s-code] button').length,0);
+ assert.equal(host.querySelector('.duty-selection-tools').parentElement.nextElementSibling,host.querySelector('.duty-vertical'));
  await press(a,d1,'ArrowRight',{shiftKey:true});
  await press(b,d1,'ArrowDown',{shiftKey:true});
  assert.equal(host.querySelectorAll('.duty-selected').length,4);
