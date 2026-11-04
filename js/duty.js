@@ -11,7 +11,7 @@
  const active=()=>typeof AppRouter!=='undefined'&&AppRouter.currentRoute==='duty';
  const demoMonth=month=>{if(!demos.has(month)){const d=M.demoMonth(month);if(month!==demoSeedMonth)d.entries=[];demos.set(month,d);}return demos.get(month);};
  const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
- function reset(){state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();DutySchedule.clear();closePanel();render();}
+ function reset(){if(pendingConfirm)pendingConfirm(false);state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();DutySchedule.clear();closePanel();render();}
  async function readMonth(month){return authRpc('get_pharmflow_duty_schedule_v1',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01'});}
  async function load(force=false){
   if(!active()||!context()?.pharmacy_id||!scope()||state.demo)return;
@@ -39,7 +39,7 @@
   ${state.demo?'<div class="duty-banner"><span><strong>Interactive demo</strong> · Synthetic schedules. Edits stay in memory and reset on reload.</span></div>':''}
   ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':list(d)}</div>`;
-  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:async message=>window.confirm(message),panel:customPanel,
+  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:confirmReplace,panel:customPanel,
    holiday:async(date,active,revision)=>{if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});const d=demoMonth(state.month),i=d.holidays.findIndex(h=>h.date===date),v={date,active,revision:revision+1};if(i<0)d.holidays.push(v);else d.holidays[i]=v;return d;},
    monthStatus:async(status,revision,reason)=>{if(!state.demo)return mutate('set_pharmflow_duty_month_v1',{p_month:state.month+'-01',p_status:status,p_expected_revision:revision,p_reason:reason});const d=demoMonth(state.month);d.month={status,revision:revision+1};return d;}
   });
@@ -91,6 +91,15 @@
   form.querySelector('input:not([readonly])')?.focus();
  }
 
+ let pendingConfirm=null;
+ function confirmReplace(message){
+  return new Promise(resolve=>{
+   const backdrop=document.createElement('div');backdrop.className='duty-confirm-backdrop';backdrop.innerHTML=`<section role="dialog" aria-modal="true" aria-labelledby="duty-confirm-title" class="duty-confirm-card"><h3 id="duty-confirm-title">Replace Duty entries?</h3><p>${esc(message)}</p><div class="duty-actions"><button type="button" data-confirm-cancel>Cancel</button><button type="button" class="duty-primary" data-confirm-replace>Replace</button></div></section>`;
+   const finish=result=>{backdrop.remove();pendingConfirm=null;resolve(result);};pendingConfirm=finish;root.append(backdrop);
+   backdrop.onclick=e=>{if(e.target===backdrop||e.target.closest('[data-confirm-cancel]'))finish(false);else if(e.target.closest('[data-confirm-replace]'))finish(true);};
+   backdrop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();finish(false);}if(e.key==='Tab'){e.preventDefault();const buttons=[...backdrop.querySelectorAll('button')];buttons[document.activeElement===buttons[0]?1:0].focus();}};backdrop.querySelector('button').focus();
+  });
+ }
  function customPanel(title,body,onSubmit){
   closePanel();returnFocus=document.activeElement;const requestScope=scope();
   const backdrop=document.createElement('div');backdrop.className='duty-panel-backdrop';

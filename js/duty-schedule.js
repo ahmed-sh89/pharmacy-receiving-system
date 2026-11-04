@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const M=window.DutyModel,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const S={mode:7,group:'pharmacists',start:0,month:'',selected:[],anchor:null,clipboard:[],busy:false,notice:'',editing:null};
+ const S={mode:7,group:'pharmacists',start:0,month:'',selected:[],anchor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
  let host,data,options;
  const key=(code,date)=>code+'|'+date;
  const entry=(code,date)=>data.entries?.find(e=>e.code===code&&e.date===date);
@@ -54,7 +54,7 @@
   const snapshots=new Map([[S.month,data]]);for(const month of new Set(changes.map(c=>c.date.slice(0,7))))if(!snapshots.has(month))snapshots.set(month,await options.readMonth(month));
   const existing=c=>snapshots.get(c.date.slice(0,7))?.entries?.find(e=>e.code===c.code&&e.date===c.date);
   const normalized=changes.map(c=>({...c,payload:M.normalize(c.payload),expected_revision:c.expected_revision??existing(c)?.revision??0}));
-  if(confirmOverwrite){const count=normalized.filter(c=>existing(c)&&existing(c).payload.status!=='EMPTY').length;if(count&&!await options.confirm(`Replace ${count} populated destination cell${count===1?'':'s'}? Other entries will stay unchanged.`))return false;}
+  if(confirmOverwrite){const count=normalized.filter(c=>existing(c)&&existing(c).payload.status!=='EMPTY').length;if(count){S.confirming=true;let approved;try{approved=await options.confirm(`Replace ${count} populated destination cell${count===1?'':'s'}? Other entries will stay unchanged.`);}finally{S.confirming=false;}if(!approved)return false;}}
   S.busy=true;S.notice='Saving…';
   try{
    const next=await options.save(normalized,reason);data=next;S.notice=`Saved ${normalized.length} cell${normalized.length===1?'':'s'}.`;return true;
@@ -115,6 +115,7 @@
   host.onpointerover=event=>{const td=event.target.closest('[data-s-date]');if(!td)return;host.querySelectorAll('.duty-column-hover').forEach(e=>e.classList.remove('duty-column-hover'));host.querySelectorAll(`[data-s-date="${td.dataset.sDate}"],[data-s-column="${td.dataset.sDate}"]`).forEach(e=>e.classList.add('duty-column-hover'));};
   host.onpointerleave=()=>host.querySelectorAll('.duty-column-hover').forEach(e=>e.classList.remove('duty-column-hover'));
   host.onclick=async event=>{
+   try{
    const button=event.target.closest('button'),cellEl=event.target.closest('[data-s-code]'),column=event.target.closest('[data-s-column]');
    if(S.editing&&event.target.closest('.duty-editing'))return;
    if(S.editing){const input=host.querySelector('.duty-inline');if(input&&input.value===M.text(payload(S.editing.code,S.editing.date))){S.editing=null;}else {const message=host.querySelector('.duty-cell-error');if(message)message.textContent='Press Enter to save or Escape to cancel.';return;}}
@@ -128,6 +129,7 @@
     case 'forward':S.start+=S.mode;S.selected=[];render();break;
     case 'details':details();break;case 'copy':copy();break;case 'paste':await paste();break;case 'reuse':reuse();break;case 'next-week':await save(employees().flatMap(e=>dates().slice(0,7).map(d=>({code:e.code,date:M.addDays(d.date,7),payload:payload(e.code,d.date)}))),'Copy complete week to next week',true);break;case 'month':monthPanel();break;
    }
+   }catch(error){S.notice=error.message||'Duty action could not be completed.';render();}
   };
   host.onchange=async e=>{if(e.target.id==='duty-apply-status'&&e.target.value){if(!S.selected.length){S.notice='Select a cell, date column or range first.';render();return;}await save(S.selected.map(c=>({...c,payload:{...payload(c.code,c.date),status:e.target.value,periods:[]}})),'Set OFF / leave / clear',true);}};
   host.onkeydown=e=>{
@@ -142,5 +144,5 @@
    if(e.key.length===1&&!e.ctrlKey&&!e.metaKey){e.preventDefault();select(code,date,false);edit(code,date,e.key);}
   };
  }
- window.DutySchedule={mount,isEditing:()=>!!S.editing||S.busy,clear(){S.editing=null;S.selected=[];S.clipboard=[];S.month='';S.notice='';}};
+ window.DutySchedule={mount,isEditing:()=>!!S.editing||S.busy||S.confirming,clear(){S.editing=null;S.selected=[];S.clipboard=[];S.month='';S.notice='';}};
 })();
