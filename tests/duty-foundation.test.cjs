@@ -38,7 +38,7 @@ test('month navigation is read only; demo never writes and highlights entire Fri
  assert.equal(f.root.querySelectorAll('thead .duty-mini-kpis').length,6);
  assert.equal(f.root.querySelectorAll('.duty-friday-row').length,1);
  assert.equal(f.root.querySelectorAll('.duty-friday-row td').length,6);
- assert.ok(f.root.textContent.includes('Edits stay in memory'));
+ assert.ok(f.root.textContent.includes('Synthetic demo'));
  f.root.querySelector('[data-duty-action="next"]').click();await new Promise(setImmediate);
  assert.ok(f.calls.every(c=>c.name==='get_pharmflow_duty_schedule_v1'));
  assert.equal(f.root.querySelectorAll('thead .duty-category-total').length,6);
@@ -52,11 +52,43 @@ test('Duty keyboard and clipboard events act on the selected cell',async()=>{
  let consumed=false;
  await host.onkeydown({target:cell(),key:'c',code:'KeyC',ctrlKey:true,preventDefault(){consumed=true;}});
  assert.ok(consumed);
- assert.match(host.textContent,/Copied 1 cells/);
+ assert.match(host.textContent,/Copied 1 cell/);
  consumed=false;
  host.oncopy({target:cell(),preventDefault(){consumed=true;}});
  assert.ok(consumed);
  assert.ok(!host.querySelector('[data-s-action="paste"]').disabled);
+});
+test('range deletion is atomic, undoable and revision checked',async()=>{
+ const f=fixture(),host=f.root.querySelector('#duty-schedule-body'),data=M.demoMonth('2026-11');
+ const row=(code,date)=>data.entries.find(e=>e.code===code&&e.date===date);
+ const cell=(code,date)=>host.querySelector(`[data-s-code="${code}"][data-s-date="${date}"]`);
+ const confirms=[];
+ let allow=false;
+ f.window.DutySchedule.mount(host,data,{month:'2026-11',demo:true,readMonth:async()=>({...data,entries:[]}),
+  confirm:async(message,action)=>{confirms.push({message,action});return allow;},
+  save:async(changes)=>{
+   if(changes.some(c=>row(c.code,c.date)?.revision!==c.expected_revision))throw Error('DUTY_CONFLICT');
+   changes.forEach(c=>Object.assign(row(c.code,c.date),{payload:c.payload,revision:c.expected_revision+1}));
+   return data;
+  }
+ });
+ await new Promise(setImmediate);
+ const a='DEMO-001',b='DEMO-002',d1='2026-11-01',d2='2026-11-02';
+ const press=(code,date,key,modifiers={})=>host.onkeydown({target:cell(code,date),key,preventDefault(){},...modifiers});
+ cell(a,d1).click();assert.equal(host.querySelectorAll('.duty-cell-editor').length,0);
+ await press(a,d1,'ArrowRight',{shiftKey:true});
+ await press(b,d1,'ArrowDown',{shiftKey:true});
+ assert.equal(host.querySelectorAll('.duty-selected').length,4);
+ await press(b,d2,'Delete');
+ assert.equal(confirms[0].action,'Delete');assert.equal(row(a,d1).payload.status,'WORK');
+ allow=true;await press(b,d2,'Delete');
+ assert.equal(row(a,d1).payload.status,'EMPTY');assert.equal(row(b,d2).payload.status,'EMPTY');
+ assert.notEqual(row(a,'2026-11-03').payload.status,'EMPTY');
+ await press(b,d2,'z',{ctrlKey:true});assert.equal(row(a,d1).payload.status,'WORK');
+ await press(b,d2,'y',{ctrlKey:true});assert.equal(row(a,d1).payload.status,'EMPTY');
+ row(b,d2).revision++;
+ await press(b,d2,'z',{ctrlKey:true});
+ assert.equal(row(a,d1).payload.status,'EMPTY');assert.match(host.textContent,/Another session changed/);
 });
 test('untrusted employee content is escaped, never executed as HTML',async()=>{
  const f=fixture();f.data.employees=[{code:'TEST-1',name:'<img src=x onerror=alert(1)>',position_key:'pharmacist',active:true}];

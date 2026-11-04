@@ -53,3 +53,9 @@ Direct category overrides replace the same category's calculated value. Other ca
 `STAGING_MANUAL_HOURS.sql` is a proposed Staging-only migration requiring Product Owner approval under repository backend rules. It replaces three function bodies in place, adds no table or columns, does no backfill, keeps existing grants, and advertises support in the authorized schedule read. Existing rows retain their current totals. With the change unapplied, the signed-in UI gates manual entry and existing schedules continue to use Stage B. To roll back after manual entries have been saved, preserve the new reader/validator until those entries have been reviewed because the old calculator cannot interpret overrides.
 
 Staging build and 22 automated Duty tests passed, including isolated PostgreSQL legacy and proposed-manual payloads, audit, revision conflict, validation and isolation. No connected database migration or real employee data import. Next action is Product Owner synthetic review, followed by explicit approval of the Staging SQL and authenticated two-session verification. Production and Stage C remain outside this work.
+
+## 4 November 2026 · Focused scheduling UX
+
+READY FOR TEST on the isolated Duty Staging preview. Compact single-line monthly KPIs, condensed navigation, selection-local actions, single-click selection, double-click editing, mouse-drag rectangles and Shift+Arrow extension. Delete clears only selected Duty cell payloads through the existing audited revision-checked save path. Multi-cell deletion and populated paste require confirmation. Undo/Redo also uses revision checks.
+
+Staging build and 23 automated tests passed, including cancel, clear, undo, redo and rejection of stale history. The existing manual-hours SQL proposal remains unapplied. Production and unrelated modules are outside this change. Next action is Product Owner review with synthetic schedules.

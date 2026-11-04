@@ -8,14 +8,18 @@
 <!--DUTY_CSS-->
 <style>
 body{margin:0;background:#f2f6fb;color:#17263d;font-family:Arial,sans-serif}
-.demo-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 auto;padding:12px 18px;background:#172e4b;color:#e2edf9}
-.demo-top strong{font-size:20px;color:#fff}.demo-top strong b{color:#8fc5ff}.demo-top span{font-size:12px;letter-spacing:.07em}
-.demo-body{padding:12px 16px;max-width:1600px;margin:auto}#page-duty{display:block}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 auto;padding:7px 13px;background:#172e4b;color:#e2edf9}
+.demo-top strong{font-size:16px;color:#fff}.demo-top strong b{color:#8fc5ff}.demo-top span{font-size:12px;letter-spacing:.07em}
+.demo-body{padding:6px 9px;max-width:1600px;margin:auto}#page-duty{display:block}
 </style>
 </head>
 <body data-duty-synthetic>
 <header class="demo-top"><strong>Pharm<b>Flow</b></strong><span>STAGING / DUTY</span></header>
 <main class="demo-body"><section id="page-duty" aria-label="Duty"></section></main>
+<script>
+const scale=new URLSearchParams(location.search).get("scale");
+if(scale==="75"||scale==="80")document.body.style.zoom=Number(scale)/100;
+</script>
 <script src="./js/duty-model.js"></script>
 <script src="./js/duty-schedule.js"></script>
 <script src="./js/duty.js"></script>

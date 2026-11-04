@@ -81,11 +81,6 @@
 #page-duty .duty-segment button[aria-pressed=true]{background:#fff;color:#175a99;box-shadow:0 1px 3px #17263d15}
 #page-duty .duty-period{display:flex;align-items:center;gap:12px;font-size:13px;white-space:nowrap}
 #page-duty .duty-period button{font-size:21px;padding:2px 12px;min-height:34px}
-#page-duty .duty-selection-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:39px;margin:5px 0 8px}
-#page-duty .duty-selection-label{font-size:11px;color:#62738a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
-#page-duty .duty-selection-tools .duty-actions{gap:5px}
-#page-duty .duty-selection-tools button,#page-duty .duty-selection-tools select{font-size:11px;min-height:30px;padding:5px 9px;white-space:nowrap}
-#page-duty .duty-selection-tools select{border:1px solid #cbd8e6;border-radius:6px;background:#fff;color:#294766}
 #page-duty .duty-inline-message{font-size:12px;color:#375d85;background:#eef5fd;padding:7px 10px;border-radius:5px;margin:5px 0}
 #page-duty .duty-scheduling-grid{min-height:200px;max-height:calc(100vh - 240px);border:1px solid #cbd8e6;border-radius:8px}
 #page-duty .duty-scheduling-grid th.duty-employee-col,#page-duty .duty-scheduling-grid td.duty-employee-col{width:178px;min-width:178px}
@@ -137,10 +132,10 @@
 #page-duty .duty-confirm-card p{font-size:13px;line-height:1.6;color:#62738a;margin:0 0 20px}
 #page-duty .duty-confirm-card .duty-actions{justify-content:flex-end}
 @media(min-width:1600px){#page-duty .duty-week .duty-time-period{font-size:14px;white-space:nowrap}#page-duty .duty-scheduling-grid td{height:82px}}
-@media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}#page-duty .duty-selection-tools{flex-wrap:wrap}#page-duty .duty-selection-label{max-width:100%}#page-duty .duty-scheduling-grid{max-height:70vh}}
+@media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}#page-duty .duty-scheduling-grid{max-height:70vh}}
 
 /* Vertical Duty workspace. */
-#page-duty .duty-vertical{max-height:calc(100vh - 240px);border-top:1px solid var(--duty-line);border-radius:9px}
+#page-duty .duty-vertical{max-height:calc(100dvh - 165px);border-top:1px solid var(--duty-line);border-radius:9px}
 #page-duty .duty-vertical table{width:100%;font-size:13px}
 #page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #cad9e8;border-bottom:1px solid #cad9e8}
 #page-duty .duty-vertical thead th{background:#eaf1f9;vertical-align:top;padding:8px 5px 6px}
@@ -149,7 +144,7 @@
 #page-duty .duty-vertical .duty-date-heading{left:0;z-index:5;vertical-align:middle}
 #page-duty .duty-date-heading small{display:block;margin-top:4px;line-height:1.3}
 #page-duty .duty-vertical tbody th{position:sticky;left:0;z-index:2;background:#eaf1f9}
-#page-duty .duty-vertical td{position:relative;height:70px;background:#fff;vertical-align:middle}
+#page-duty .duty-vertical td{position:relative;height:64px;background:#fff;vertical-align:middle}
 #page-duty .duty-vertical tr:nth-child(even) td{background:#f6f9fc}
 #page-duty .duty-vertical .duty-holiday-row :is(th,td){background:#fff2d9}
 #page-duty .duty-vertical .duty-friday-row :is(th,td){background:#dce8f7;border-top:1px solid #9bb6d6;border-bottom:1px solid #9bb6d6}
@@ -159,10 +154,11 @@
 #page-duty .duty-date-button{display:grid;justify-items:start;gap:2px;width:100%;border:0;background:transparent;box-shadow:none;padding:3px 6px}
 #page-duty .duty-date-button strong{font-size:14px}
 #page-duty .duty-date-button span,#page-duty .duty-date-button small{font-size:11px;font-weight:500}
-#page-duty .duty-mini-kpis{display:grid;grid-template-columns:1fr 1fr;gap:3px;max-width:320px;margin:auto}
-#page-duty .duty-mini-kpis span{padding:3px 2px;border-radius:4px;font-size:11px;line-height:1.25;white-space:normal}
-#page-duty .duty-mini-kpis b{font-size:15px;font-variant-numeric:tabular-nums}
-#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1;padding:2px}
+#page-duty .duty-kpi-wrap{container-type:inline-size}
+#page-duty .duty-mini-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;max-width:260px;margin:auto}
+#page-duty .duty-mini-kpis span{padding:2px 1px;border-radius:4px;font-size:11px;line-height:16px;white-space:nowrap;letter-spacing:-.12px}
+#page-duty .duty-mini-kpis b{font-size:12px;font-variant-numeric:tabular-nums}
+#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1}
 #page-duty .duty-category-basic{--hour-ink:#174f87;--hour-bg:#e0effe}
 #page-duty .duty-category-normal_ot{--hour-ink:#185e4d;--hour-bg:#dbf1e9}
 #page-duty .duty-category-friday_ot{--hour-ink:#504084;--hour-bg:#eee7fc}
@@ -189,4 +185,18 @@
 #page-duty .duty-time-fields span{font-weight:600}
 #page-duty .duty-vertical .duty-cell:focus-visible{outline:2px solid #2477bb;outline-offset:-2px}
 #page-duty .duty-history{gap:4px}
-#page-duty .duty-schedule-controls,#page-duty .duty-selection-tools{flex-wrap:wrap}
+#page-duty .duty-schedule-controls{flex-wrap:wrap;justify-content:flex-start;gap:7px;margin:5px 0}
+#page-duty .duty-schedule-controls .duty-history{margin-left:auto}
+#page-duty .duty-stage-b .duty-toolbar{margin-bottom:4px;padding:4px 8px}
+#page-duty .duty-stage-b .duty-footnote{padding:4px 2px}
+#page-duty .duty-vertical td[data-s-code]{user-select:none;cursor:cell}
+#page-duty .duty-vertical td[data-s-code] button{cursor:cell}
+#page-duty .duty-more{position:relative;z-index:9}
+#page-duty .duty-more summary{cursor:pointer;padding:7px 9px;border:1px solid #ccd9e6;border-radius:7px;background:#fff;font-weight:600}
+#page-duty .duty-more .duty-actions{position:absolute;right:0;top:calc(100% + 4px);display:grid;gap:4px;padding:5px;white-space:nowrap;background:#fff;border:1px solid #ccd9e6;border-radius:7px;box-shadow:0 5px 16px #17263d22}
+#page-duty .duty-context:not([hidden]){display:flex;align-items:center;gap:3px;position:fixed;z-index:20;padding:4px;border:1px solid #9dbbdb;border-radius:7px;background:#f7fbff;box-shadow:0 4px 14px #17263d30;white-space:nowrap}
+#page-duty .duty-context button,#page-duty .duty-context select{font-size:11px;min-height:24px;padding:3px 6px}
+#page-duty .duty-context select{border:1px solid #ccd9e6;border-radius:6px;background:#fff;color:#294766}
+#page-duty .duty-selection-count,#page-duty .duty-demo-badge{font-size:11px;color:#365a7e;padding:0 4px}
+
+@container (max-width: 172px){#page-duty .duty-mini-kpis{grid-template-columns:1fr}}
