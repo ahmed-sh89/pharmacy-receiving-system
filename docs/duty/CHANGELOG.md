@@ -1,5 +1,12 @@
 # Duty development changelog
 
+## 4 November 2026 — Stage B candidate
+
+Refined weekly layout, employee groups, AM/PM split/overnight cells and compact controls. Added inline editing, integer-minute totals/categories, OFF/leave ranges, notes, highlight stripes, user-marked holidays, Copy/Paste/week/range/previous-month reuse, completed-month locks and historical snapshots. Applied Duty-only `20261104013200_duty_stage_b_scheduling` on Staging.
+
+20 automated tests/live SQL PASS; real concurrent DB sessions demonstrated one success/one stale rejection. Disposable fixtures removed. Browser demo scheduling/copy/leave/management PASS. Authenticated browser verification blocked by rejected Staging credentials. 75/80 screenshots use CSS preview scale; native Windows zoom pending. READY FOR TEST. No Production, export or confirmed-attendance release.
+
+
 ## 4 November 2026 — Stage A
 
 Added independent Staging Duty foundation, employee and position management, empty-month calendar, grouped rows, complete Friday highlighting, sticky employee identity/totals, synthetic-only visual demo, guarded Preview build and RPC-only audited persistence. Preserved Receiving/Expiry/authentication code and Production.
