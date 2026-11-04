@@ -135,7 +135,7 @@
 @media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}#page-duty .duty-scheduling-grid{max-height:70vh}}
 
 /* Vertical Duty workspace. */
-#page-duty .duty-vertical{max-height:calc(100dvh - 165px);border-top:1px solid var(--duty-line);border-radius:9px}
+#page-duty .duty-vertical{max-height:calc(100dvh / var(--duty-preview-scale,1) - 165px);border-top:1px solid var(--duty-line);border-radius:9px}
 #page-duty .duty-vertical table{width:100%;font-size:13px}
 #page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #cad9e8;border-bottom:1px solid #cad9e8}
 #page-duty .duty-vertical thead th{background:#eaf1f9;vertical-align:top;padding:8px 5px 6px}
@@ -145,6 +145,7 @@
 #page-duty .duty-date-heading small{display:block;margin-top:4px;line-height:1.3}
 #page-duty .duty-vertical tbody th{position:sticky;left:0;z-index:2;background:#eaf1f9}
 #page-duty .duty-vertical td{position:relative;height:64px;background:#fff;vertical-align:middle}
+#page-duty .duty-week-height td[data-s-code]{height:max(64px,calc((100dvh / var(--duty-preview-scale,1) - 325px)/7))}
 #page-duty .duty-vertical tr:nth-child(even) td{background:#f6f9fc}
 #page-duty .duty-vertical .duty-holiday-row :is(th,td){background:#fff2d9}
 #page-duty .duty-vertical .duty-friday-row :is(th,td){background:#dce8f7;border-top:1px solid #9bb6d6;border-bottom:1px solid #9bb6d6}

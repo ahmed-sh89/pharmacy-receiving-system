@@ -18,7 +18,11 @@ body{margin:0;background:#f2f6fb;color:#17263d;font-family:Arial,sans-serif}
 <main class="demo-body"><section id="page-duty" aria-label="Duty"></section></main>
 <script>
 const scale=new URLSearchParams(location.search).get("scale");
-if(scale==="75"||scale==="80")document.body.style.zoom=Number(scale)/100;
+if(scale==="75"||scale==="80"){
+ const factor=Number(scale)/100;
+ document.body.style.zoom=factor;
+ document.body.style.setProperty("--duty-preview-scale",factor);
+}
 </script>
 <script src="./js/duty-model.js"></script>
 <script src="./js/duty-schedule.js"></script>
