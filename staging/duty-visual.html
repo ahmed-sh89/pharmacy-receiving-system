@@ -7,4 +7,4 @@ const APP_CONFIG={environment:'staging'},CLOUD_CONFIG={url:'https://tovkcakucyag
 const AuthState={session:{},user:{id:'synthetic'},context:{user_id:'synthetic',pharmacy_id:'synthetic',pharmacy_code:'DEMO'},mustChangePassword:false};
 const AppRouter={currentRoute:'duty'},AUTH_STORAGE_KEY='synthetic-unused',AppEvents={on(){}};
 async function authRpc(name){if(name!=='get_pharmflow_duty_foundation_v1')throw Error('Visual demo cannot save records.');return {pharmacy_id:'synthetic',positions:DutyModel.defaults,employees:[],can_write:true};}
-</script><script src="js/duty-model.js"></script><script src="js/duty.js"></script><script>document.querySelector('[data-duty-action="demo"]').click();</script></body></html>
+</script><script src="js/duty-model.js"></script><script src="js/duty-schedule.js"></script><script src="js/duty.js"></script><script>document.querySelector('[data-duty-action="demo"]').click();</script></body></html>

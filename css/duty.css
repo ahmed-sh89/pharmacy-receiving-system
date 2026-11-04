@@ -65,9 +65,70 @@
 #page-duty .duty-field{display:grid;gap:7px;color:#3b526b;font-size:12px;font-weight:600}
 #page-duty .duty-field input:not([type=checkbox]),#page-duty .duty-field select{width:100%;border:1px solid #cbd8e6;border-radius:7px;padding:10px 11px;background:#f9fbfd;color:#17263d;min-height:41px}
 #page-duty .duty-field small{font-weight:400;color:#73849a;font-size:11px}
+#page-duty .duty-field textarea{font:inherit;width:100%;border:1px solid #cbd8e6;border-radius:7px;padding:9px;background:#f9fbfd;color:#17263d;resize:vertical}
 #page-duty .duty-field-check{display:flex;align-items:center;gap:9px}
 #page-duty .duty-field-check input{accent-color:#2165a8}
 #page-duty .duty-panel-footer{margin-top:auto;border-top:1px solid var(--duty-line);padding:16px 24px;display:flex;justify-content:flex-end;gap:9px}
 #page-duty .duty-panel-error{color:#a13737;min-height:17px;font-size:12px;margin:0}
 #page-duty .duty-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:1000px){#page-duty .duty-grid-scroll{max-height:65vh}#page-duty .duty-title-row{align-items:flex-start}#page-duty .duty-actions{flex-wrap:wrap}}
+#page-duty .duty-stage-b .duty-toolbar{border-radius:9px;margin-bottom:8px;padding:8px 10px}
+#page-duty .duty-compact-title{font-size:16px;margin-right:5px}
+#page-duty .duty-stage-b .duty-banner{padding:6px 10px;margin:0 0 7px;font-size:11px}
+#page-duty .duty-schedule-controls{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:8px 0}
+#page-duty .duty-segment{display:flex;border:1px solid #cad8e7;border-radius:7px;padding:2px;background:#eef3f9;gap:2px}
+#page-duty .duty-segment button{min-height:30px;border:0;background:transparent;padding:6px 12px;box-shadow:none;font-size:12px;white-space:nowrap}
+#page-duty .duty-segment button[aria-pressed=true]{background:#fff;color:#175a99;box-shadow:0 1px 3px #17263d15}
+#page-duty .duty-period{display:flex;align-items:center;gap:12px;font-size:13px;white-space:nowrap}
+#page-duty .duty-period button{font-size:21px;padding:2px 12px;min-height:34px}
+#page-duty .duty-selection-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:39px;margin:5px 0 8px}
+#page-duty .duty-selection-label{font-size:11px;color:#62738a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+#page-duty .duty-selection-tools .duty-actions{gap:5px}
+#page-duty .duty-selection-tools button,#page-duty .duty-selection-tools select{font-size:11px;min-height:30px;padding:5px 9px;white-space:nowrap}
+#page-duty .duty-selection-tools select{border:1px solid #cbd8e6;border-radius:6px;background:#fff;color:#294766}
+#page-duty .duty-inline-message{font-size:12px;color:#375d85;background:#eef5fd;padding:7px 10px;border-radius:5px;margin:5px 0}
+#page-duty .duty-scheduling-grid{min-height:200px;max-height:calc(100vh - 240px);border:1px solid #cbd8e6;border-radius:8px}
+#page-duty .duty-scheduling-grid th.duty-employee-col,#page-duty .duty-scheduling-grid td.duty-employee-col{width:178px;min-width:178px}
+#page-duty .duty-scheduling-grid th.duty-total-col,#page-duty .duty-scheduling-grid td.duty-total-col{width:85px;min-width:85px;left:178px}
+#page-duty .duty-scheduling-grid .duty-day-col{width:160px;min-width:160px}
+#page-duty .duty-week .duty-day-col{width:auto;min-width:100px}
+#page-duty .duty-scheduling-grid td{height:77px;padding:8px 5px;vertical-align:middle;border-bottom:1px solid #cbd8e6;font-size:13px}
+#page-duty .duty-scheduling-grid th{height:54px;padding:3px 5px}
+#page-duty .duty-date-select{display:block;width:100%;color:inherit;background:transparent;border:0;box-shadow:none;padding:3px;min-height:40px;font-size:12px}
+#page-duty .duty-date-select:hover{background:#2165a812}
+#page-duty .duty-date-select strong{display:block;font-size:16px;margin-top:3px}
+#page-duty .duty-date-select small{display:block;font-size:10px;margin-top:2px}
+#page-duty .duty-scheduling-grid thead .duty-friday .duty-date-select{color:#fff}
+#page-duty td.duty-holiday{background:#e9e1f3;border-left:1px solid #c4aedc;border-right:1px solid #c4aedc}
+#page-duty th.duty-holiday{--pfn-table-header-bg:#664b88;--pfn-table-header-ink:#fff;background:#664b88;color:#fff}
+#page-duty .duty-employee-row:nth-child(even) td.duty-holiday,#page-duty .duty-employee-row:hover td.duty-holiday{background:#e9e1f3}
+#page-duty .duty-cell-content{position:relative;line-height:1.5;font-variant-numeric:tabular-nums;color:#243f5e;min-height:28px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+#page-duty .duty-time-period{display:block;white-space:normal;font-size:12.5px;font-weight:600;line-height:1.4;letter-spacing:-.1px}
+#page-duty .duty-time-dash{color:#7c8fa3}
+#page-duty .duty-cell-hours{font-size:10px;color:#62758c;font-weight:400}
+#page-duty .duty-blank{color:#a7b5c5}
+#page-duty .duty-cell{cursor:text;position:relative}
+#page-duty .duty-selected{outline:2px solid #2477bb;outline-offset:-2px;z-index:1}
+#page-duty .duty-cell:focus-visible{outline:2px solid #2477bb;outline-offset:-2px;z-index:1}
+#page-duty .duty-scheduling-grid:has(.duty-cell:hover) .duty-employee-row:has(.duty-cell:hover) .duty-employee-col{box-shadow:inset 3px 0 #3c89c7}
+#page-duty .duty-cell:hover:before{content:'';position:absolute;inset:0;background:#246cb70b;pointer-events:none;border:1px solid #7aa7d2}
+#page-duty .duty-column-hover{border-left-color:#78a5cc;border-right-color:#78a5cc}
+#page-duty .duty-scheduling-grid .duty-total-button{border:0;box-shadow:none;background:transparent;padding:0;width:100%;min-height:40px}
+#page-duty .duty-note-dot{position:absolute;right:0;top:-5px;color:#2a6ca6;font-size:17px}
+#page-duty .duty-override-dot{position:absolute;left:0;top:-2px;color:#7453a1;font-size:13px}
+#page-duty .duty-mark-blue{box-shadow:inset 0 -4px #6ba3d4}
+#page-duty .duty-mark-mint{box-shadow:inset 0 -4px #5aaf98}
+#page-duty .duty-mark-violet{box-shadow:inset 0 -4px #aa87c9}
+#page-duty .duty-mark-rose{box-shadow:inset 0 -4px #cd8498}
+#page-duty .duty-status{font-size:12px;font-weight:600;color:#677b92}
+#page-duty .duty-status-annual_leave .duty-status{color:#476f94}
+#page-duty .duty-status-sick_leave .duty-status{color:#865c85}
+#page-duty .duty-status-other_leave .duty-status{color:#657e7c}
+#page-duty .duty-editing{outline:2px solid #2477bb;outline-offset:-2px;z-index:6;overflow:visible}
+#page-duty .duty-inline{width:100%;min-width:90px;border:1px solid #8db7d8;padding:7px 4px;border-radius:4px;font-size:12px;box-sizing:border-box;background:#fff;color:#173d64}
+#page-duty .duty-inline-hint{font-size:9px;line-height:1.2;display:block;color:#597a9a;margin-top:3px}
+#page-duty .duty-cell-error{display:block;color:#a63c3c;font-size:10px;line-height:1.3;margin-top:2px}
+#page-duty .duty-total-breakdown{display:grid;gap:8px;padding-top:12px;border-top:1px solid #d8e2ed}
+#page-duty .duty-total-breakdown span{display:flex;justify-content:space-between;font-size:12px;color:#62738a}
+@media(min-width:1600px){#page-duty .duty-week .duty-time-period{font-size:14px;white-space:nowrap}#page-duty .duty-scheduling-grid td{height:82px}}
+@media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}#page-duty .duty-selection-tools{flex-wrap:wrap}#page-duty .duty-selection-label{max-width:100%}#page-duty .duty-scheduling-grid{max-height:70vh}}

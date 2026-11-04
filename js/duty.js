@@ -1,59 +1,48 @@
 (function(){
  'use strict';
  if(typeof APP_CONFIG==='undefined'||APP_CONFIG.environment!=='staging'||typeof CLOUD_CONFIG==='undefined'||!CLOUD_CONFIG.url.includes('tovkcakucyagvbzvlnks.supabase.co'))return;
- const M=window.DutyModel;
- const state={month:new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}),tab:'schedule',demo:false,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
- // Explicit ISO month construction does not depend on browser locale ordering.
- const todayParts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
- state.month=todayParts.find(p=>p.type==='year').value+'-'+todayParts.find(p=>p.type==='month').value;
- const root=document.getElementById('page-duty');if(!root)return;
+ const M=window.DutyModel,root=document.getElementById('page-duty');if(!root)return;
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
+ const state={month:parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value,tab:'schedule',demo:false,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
+ const demos=new Map();
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const context=()=>typeof AuthState==='undefined'?null:AuthState.context;
  const scope=()=>!AuthState.session||AuthState.mustChangePassword?'':(context()?.user_id||AuthState.user?.id||'')+'/'+(context()?.pharmacy_id||'');
  const active=()=>typeof AppRouter!=='undefined'&&AppRouter.currentRoute==='duty';
- const view=()=>state.demo?M.demo():state.data||{positions:M.defaults,employees:[],can_write:false};
- function reset(){state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();closePanel();render();}
+ const demoMonth=month=>{if(!demos.has(month))demos.set(month,M.demoMonth(month));return demos.get(month);};
+ const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
+ function reset(){state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();DutySchedule.clear();closePanel();render();}
+ async function readMonth(month){return authRpc('get_pharmflow_duty_schedule_v1',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01'});}
  async function load(force=false){
-  if(!active()||!context()?.pharmacy_id||!scope())return;
+  if(!active()||!context()?.pharmacy_id||!scope()||state.demo)return;
   const key=scope();if(key!==state.scope)reset();
-  if(state.loading||(!force&&state.data&&Date.now()-state.lastRead<30000))return;
-  const seq=++state.sequence;state.loading=true;state.error='';render();
-  try{
-   const data=await authRpc('get_pharmflow_duty_foundation_v1',{p_pharmacy_id:context().pharmacy_id,p_month:state.month+'-01'});
-   if(seq!==state.sequence||key!==scope())return;
-   if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');
-   state.data=data;state.scope=key;state.lastRead=Date.now();
+  if(state.loading||DutySchedule.isEditing()||root.querySelector('.duty-panel')||(!force&&state.data&&Date.now()-state.lastRead<15000))return;
+  const seq=++state.sequence,month=state.month;state.loading=true;state.error='';render();
+  try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month)return;
+   if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.data=data;state.scope=key;state.lastRead=Date.now();
   }catch(error){if(seq===state.sequence&&key===scope())state.error=error.message||'Unable to load Duty.';}
   finally{if(seq===state.sequence){state.loading=false;render();}}
  }
- function render(){
-  const previousScroll=root.querySelector('.duty-grid-scroll');
-  const scrollPosition=previousScroll?{left:previousScroll.scrollLeft,top:previousScroll.scrollTop}:null;
-  const data=view(),days=M.days(state.month),staff=data.employees.filter(e=>e.active),fridays=days.filter(d=>d.friday).length;
-  const monthTitle=new Date(state.month+'-01T12:00:00Z').toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'});
-  root.innerHTML=`<div class="duty-shell"><header class="duty-title-row"><div><h2>Duty</h2><p class="duty-subtitle">Monthly planning · ${esc(context()?.pharmacy_code||'Staging pharmacy')}</p></div><div class="duty-actions"><span class="duty-stage">Stage A · Foundation</span><button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button><button type="button" class="duty-primary" data-duty-action="add-employee" ${!data.can_write?'disabled':''}>+ Add employee</button></div></header>
-  ${state.demo?'<div class="duty-banner"><span><strong>Visual demo</strong> · Synthetic employees and sample times. Nothing in this view is saved.</span><span>Preview only</span></div>':''}
-  ${state.error?`<div class="duty-banner duty-error" role="alert"><span>${esc(state.error)}</span><button type="button" data-duty-action="retry">Retry</button></div>`:''}
-  <div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><label><span class="sr-only">Month </span><input id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"></label><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(tab=>`<button type="button" role="tab" aria-selected="${state.tab===tab}" data-duty-tab="${tab}">${tab[0].toUpperCase()+tab.slice(1)}</button>`).join('')}</nav></div>
-  <div class="duty-meta"><strong>${esc(monthTitle)}</strong><span>${staff.length} employees</span><span><i class="duty-dot"></i>${fridays} Fridays</span><span>${state.demo?'Sample plan':esc(data.month?.status||'Draft')} · ${state.demo?'Not saved':'Empty schedule'}</span>${state.loading?'<span role="status">Updating…</span>':''}</div>
-  ${state.tab==='schedule'?grid(data,days):list(data)}
-  <footer class="duty-footnote"><span>${state.tab==='schedule'?'Scheduling and hour calculations become available after visual acceptance.':'Changes preserve employee and position history.'}</span><span>${state.demo?'Demo · memory only':state.data?'Saved to Staging':'Staging only'}</span></footer></div>`;
-  const nextScroll=root.querySelector('.duty-grid-scroll');if(scrollPosition&&nextScroll){nextScroll.scrollLeft=scrollPosition.left;nextScroll.scrollTop=scrollPosition.top;}
+ async function mutate(name,args){
+  const key=scope(),month=state.month;if(!key)throw Error('Sign in to manage Duty.');
+  await authRpc(name,{p_pharmacy_id:context().pharmacy_id,...args});
+  const result=await readMonth(month);if(key!==scope()||month!==state.month)throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;
  }
- function grid(data,days){
-  const employees=data.employees.filter(e=>e.active);
-  if(!employees.length)return `<div class="duty-empty"><h3>${state.loading?'Loading employees…':'Start your Duty workspace'}</h3><p>${state.loading?'Retrieving this pharmacy’s records.':'Add employees manually, or open the synthetic visual demo.'}</p><button type="button" data-duty-action="demo">View demo</button></div>`;
-  let rows='';
-  for(const position of data.positions){
-   const members=employees.filter(e=>e.position_key===position.key);if(!members.length)continue;
-   rows+=`<tr class="duty-group"><td colspan="${days.length+2}"><span>${esc(position.label)} · ${members.length}</span></td></tr>`;
-   for(const employee of members){
-    const idx=employees.indexOf(employee);
-    rows+=`<tr class="duty-employee-row"><td class="duty-employee-col"><button type="button" class="duty-name-button" data-duty-employee="${esc(employee.code)}"><span class="duty-name">${esc(employee.name)}</span><span class="duty-code">${esc(employee.code)}</span></button></td><td class="duty-total-col"><span class="duty-total">${state.demo?'—':'0'}</span><span class="duty-hours-unit">hours${state.demo?' · sample':''}</span></td>`;
-    rows+=days.map(d=>{const off=state.demo&&(d.day+idx)%7===0;return `<td class="duty-cell duty-day-col ${d.friday?'duty-friday':''}" tabindex="0" aria-label="${esc(employee.name)}, ${d.date}, ${state.demo?'sample duty':'empty'}">${state.demo?off?'<span class="duty-sample">OFF</span>':`<span class="duty-sample">${idx%3===0?'19:00 – 04:00':idx%3===1?'09:00 – 18:00':'15:00 – 00:00'}${idx%3===0?'<small>+1 day</small>':''}</span>`:'—'}</td>`;}).join('')+'</tr>';
-   }
-  }
-  return `<div class="duty-grid-scroll" role="region" aria-label="Monthly duty schedule" tabindex="0"><table aria-label="Duty schedule for ${state.month}"><colgroup><col style="width:215px"><col style="width:84px">${days.map(()=>'<col style="width:88px">').join('')}</colgroup><thead><tr><th class="duty-employee-col" scope="col">Employee</th><th class="duty-total-col" scope="col">Total hours</th>${days.map(d=>`<th class="duty-day-col ${d.friday?'duty-friday':''}" scope="col">${d.weekday}<span class="duty-date">${String(d.day).padStart(2,'0')}</span></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+ async function save(changes,reason){
+  if(!state.demo)return mutate('save_pharmflow_duty_entries_v1',{p_changes:changes,p_reason:reason});
+  const d=demoMonth(state.month),entries=structuredClone(d.entries);
+  for(const c of changes){const i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');const employee=d.employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
+  M.validateOverlaps(entries);d.entries=entries;return d;
+ }
+ function render(){
+  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><strong class="duty-compact-title">Duty</strong><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions"><button type="button" data-duty-action="retry" title="Refresh Duty">↻</button><button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button><button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
+  ${state.demo?'<div class="duty-banner"><span><strong>Interactive demo</strong> · Synthetic schedules. Edits stay in memory and reset on reload.</span></div>':''}
+  ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
+  ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':list(d)}</div>`;
+  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:async message=>window.confirm(message),panel:customPanel,
+   holiday:async(date,active,revision)=>{if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});const d=demoMonth(state.month),i=d.holidays.findIndex(h=>h.date===date),v={date,active,revision:revision+1};if(i<0)d.holidays.push(v);else d.holidays[i]=v;return d;},
+   monthStatus:async(status,revision,reason)=>{if(!state.demo)return mutate('set_pharmflow_duty_month_v1',{p_month:state.month+'-01',p_status:status,p_expected_revision:revision,p_reason:reason});const d=demoMonth(state.month);d.month={status,revision:revision+1};return d;}
+  });
  }
  function list(data){
   if(state.tab==='positions')return `<div class="duty-list"><div class="duty-list-row"><strong>Positions</strong><button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button></div>${data.positions.map(p=>`<div class="duty-list-row ${p.active?'':'duty-inactive'}"><span><strong>${esc(p.label)}</strong> <span class="duty-count">${p.active?'':'· Inactive'}</span></span><button type="button" data-duty-position="${esc(p.key)}" ${!data.can_write?'disabled':''}>Edit</button></div>`).join('')}</div>`;
@@ -96,35 +85,37 @@
   });
   form.querySelector('input:not([readonly])')?.focus();
  }
- function month(value){try{M.days(value);}catch(_){render();return;}state.month=value;state.lastRead=0;state.sequence++;state.loading=false;render();load(true);}
+
+ function customPanel(title,body,onSubmit){
+  closePanel();returnFocus=document.activeElement;const requestScope=scope();
+  const backdrop=document.createElement('div');backdrop.className='duty-panel-backdrop';
+  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-custom-title"><div class="duty-panel-header"><h3 id="duty-custom-title">${esc(title)}</h3><button type="button" data-custom-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${body}<p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-custom-close>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form>`;
+  root.append(backdrop);const form=backdrop.querySelector('form');
+  backdrop.onclick=e=>{if(e.target===backdrop||e.target.closest('[data-custom-close]'))closePanel();};
+  backdrop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();closePanel();}if(e.key==='Tab'){const items=[...form.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')];if(e.shiftKey&&document.activeElement===items[0]){e.preventDefault();items.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===items.at(-1)){e.preventDefault();items[0].focus();}}};
+  form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;try{if(requestScope!==scope())throw Error('Duty identity changed. Reopen this panel.');await onSubmit(new FormData(form));if(form.isConnected)closePanel();}catch(error){if(form.isConnected){form.querySelector('[role=alert]').textContent=error.message;button.disabled=false;}}};
+  form.querySelector('input,select,textarea,button')?.focus();return form;
+ }
+ function month(value){if(DutySchedule.isEditing()){state.error='Save with Enter or cancel with Escape before changing month.';return;}try{M.days(value);}catch(_){return;}state.month=value;state.lastRead=0;state.sequence++;state.loading=false;state.data=null;DutySchedule.clear();render();load(true);}
  root.addEventListener('change',e=>{if(e.target.id==='duty-month'&&e.target.value)month(e.target.value);});
  root.addEventListener('click',e=>{
   const target=e.target.closest('button');if(!target)return;
+  if(target.closest('#duty-schedule-body,.duty-panel-backdrop'))return;
+  if(DutySchedule.isEditing()){state.error='Press Enter to save or Escape to cancel the current edit.';return;}
   if(target.dataset.dutyTab){state.tab=target.dataset.dutyTab;render();return;}
   if(target.dataset.dutyEmployee){panel('employee',view().employees.find(x=>x.code===target.dataset.dutyEmployee));return;}
   if(target.dataset.dutyPosition){panel('position',view().positions.find(x=>x.key===target.dataset.dutyPosition));return;}
   switch(target.dataset.dutyAction){
-   case 'demo':state.demo=!state.demo;render();break;
-   case 'previous':month(M.shiftMonth(state.month,-1));break;
-   case 'next':month(M.shiftMonth(state.month,1));break;
-   case 'retry':load(true);break;
-   case 'add-employee':panel('employee');break;
-   case 'add-position':panel('position');break;
+   case 'demo':state.demo=!state.demo;DutySchedule.clear();render();if(!state.demo)load(true);break;
+   case 'previous':month(M.shiftMonth(state.month,-1));break;case 'next':month(M.shiftMonth(state.month,1));break;
+   case 'retry':load(true);break;case 'add-employee':panel('employee');break;case 'add-position':panel('position');break;
   }
  });
- root.addEventListener('keydown',e=>{
-  if(!e.target.matches('.duty-cell'))return;
-  const cells=[...root.querySelectorAll('.duty-cell')],index=cells.indexOf(e.target),width=M.days(state.month).length;
-  const delta={ArrowRight:1,ArrowLeft:-1,ArrowDown:width,ArrowUp:-width}[e.key];
-  if(delta!==undefined&&cells[index+delta]){e.preventDefault();cells[index+delta].focus();}
- });
- window.addEventListener('auth:context-ready',()=>{if(scope()!==state.scope)reset();if(active()&&!root.querySelector('.duty-panel'))load(true);});
- window.addEventListener('focus',()=>{if(scope()!==state.scope)reset();if(active()&&!root.querySelector('.duty-panel'))load();});
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&active()&&!root.querySelector('.duty-panel'))load();});
- window.addEventListener('storage',event=>{if(event.key===AUTH_STORAGE_KEY){reset();if(active())load(true);}});
- // Duty has no shared Receiving/Expiry synchronization path. One bounded read,
- // only while this module is visible, keeps its own records consistent across PCs.
- setInterval(()=>{if(active()&&document.visibilityState==='visible'&&!root.querySelector('.duty-panel'))load();},30000);
- AppEvents.on('route:changed',event=>{closePanel();if(event.routeName==='duty')load(true);});
+ window.addEventListener('auth:context-ready',()=>{if(scope()!==state.scope)reset();if(active())load(true);});
+ window.addEventListener('focus',()=>{if(scope()!==state.scope)reset();if(active())load();});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&active())load();});
+ window.addEventListener('storage',e=>{if(e.key===AUTH_STORAGE_KEY){reset();if(active())load(true);}});
+ setInterval(()=>{if(active()&&document.visibilityState==='visible')load();},15000);
+ AppEvents.on('route:changed',event=>{closePanel();DutySchedule.clear();if(event.routeName==='duty')load(true);});
  render();
 })();

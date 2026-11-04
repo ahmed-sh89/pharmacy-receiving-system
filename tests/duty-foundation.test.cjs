@@ -25,23 +25,23 @@ function fixture(){
  const window={document,DutyModel:M,addEventListener:()=>{}};
  const events={},calls=[];
  const data={...M.demo(),pharmacy_id:'pharmacy-a'};data.employees=[];
- const c={window,document:window.document,APP_CONFIG:{environment:'staging'},CLOUD_CONFIG:{url:'https://tovkcakucyagvbzvlnks.supabase.co'},AuthState:{session:{},user:{id:'user-a'},context:{pharmacy_id:'pharmacy-a',user_id:'user-a',pharmacy_code:'TEST'},mustChangePassword:false},AppRouter:{currentRoute:'duty'},AppEvents:{on:(key,fn)=>events[key]=fn},AUTH_STORAGE_KEY:'auth',authRpc:async(name,args)=>{calls.push({name,args});return data;},Intl,Date,crypto:require('node:crypto').webcrypto,FormData};
- c.setInterval=()=>{};vm.createContext(c);vm.runInContext(fs.readFileSync('js/duty.js','utf8'),c);
+ const c={window,document:window.document,APP_CONFIG:{environment:'staging'},CLOUD_CONFIG:{url:'https://tovkcakucyagvbzvlnks.supabase.co'},AuthState:{session:{},user:{id:'user-a'},context:{pharmacy_id:'pharmacy-a',user_id:'user-a',pharmacy_code:'TEST'},mustChangePassword:false},AppRouter:{currentRoute:'duty'},AppEvents:{on:(key,fn)=>events[key]=fn},AUTH_STORAGE_KEY:'auth',authRpc:async(name,args)=>{calls.push({name,args});return data;},Intl,Date,crypto:require('node:crypto').webcrypto,FormData,structuredClone,CSS:{escape:s=>s}};
+ c.setInterval=()=>{};vm.createContext(c);vm.runInContext(fs.readFileSync('js/duty-schedule.js','utf8'),c);c.DutySchedule=window.DutySchedule;vm.runInContext(fs.readFileSync('js/duty.js','utf8'),c);
  return {c,root:window.document.getElementById('page-duty'),events,calls,window,data};
 }
 test('month navigation is read only; demo never writes and highlights entire Fridays',async()=>{
  const f=fixture();f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
- assert.equal(f.calls.length,1);assert.equal(f.calls[0].name,'get_pharmflow_duty_foundation_v1');
+ assert.equal(f.calls.length,1);assert.equal(f.calls[0].name,'get_pharmflow_duty_schedule_v1');
  f.root.querySelector('[data-duty-action="demo"]').click();
- assert.equal(f.root.querySelectorAll('.duty-employee-row').length,10);
- assert.equal(f.root.querySelectorAll('td.duty-friday').length,f.root.querySelectorAll('th.duty-friday').length*10);
- assert.ok(f.root.textContent.includes('Nothing in this view is saved'));
+ assert.equal(f.root.querySelectorAll('.duty-employee-row').length,6);
+ assert.equal(f.root.querySelectorAll('td.duty-friday').length,f.root.querySelectorAll('th.duty-friday').length*6);
+ assert.ok(f.root.textContent.includes('Edits stay in memory'));
  f.root.querySelector('[data-duty-action="next"]').click();await new Promise(setImmediate);
- assert.ok(f.calls.every(c=>c.name==='get_pharmflow_duty_foundation_v1'));
- assert.equal(f.root.querySelectorAll('td.duty-total-col').length,10);
+ assert.ok(f.calls.every(c=>c.name==='get_pharmflow_duty_schedule_v1'));
+ assert.equal(f.root.querySelectorAll('td.duty-total-col').length,6);
 });
 test('untrusted employee content is escaped, never executed as HTML',async()=>{
- const f=fixture();f.data.employees=[{code:'TEST-1',name:'<img src=x onerror=alert(1)>',position_key:'labor',active:true}];
+ const f=fixture();f.data.employees=[{code:'TEST-1',name:'<img src=x onerror=alert(1)>',position_key:'pharmacist',active:true}];
  f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
  assert.equal(f.root.querySelectorAll('img').length,0);assert.ok(f.root.textContent.includes('<img'));
 });
@@ -50,5 +50,5 @@ test('build output points exclusively to Staging and Duty sits after Expiry',()=
  assert.ok(html.indexOf('data-page="duty"')>html.indexOf('data-page="expiry"'));
  assert.ok(!html.includes('zznoshzcyxmtwfbznjyr'));assert.ok(!cloud.includes('zznoshzcyxmtwfbznjyr'));
  assert.ok(cloud.includes('tovkcakucyagvbzvlnks'));assert.match(config,/"staging"/);assert.match(config,/duty:\{id:"duty"/);
- assert.equal(version.environment,'staging');assert.equal(version.stage,'A');
+ assert.equal(version.environment,'staging');assert.equal(version.stage,'B');
 });
