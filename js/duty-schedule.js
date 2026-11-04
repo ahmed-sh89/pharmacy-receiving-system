@@ -2,8 +2,9 @@
 (function(){
  'use strict';
  const M=window.DutyModel,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const S={mode:7,group:'pharmacists',start:0,month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
+ const S={mode:31,staffSize:6,staffPage:0,support:new Set(),start:0,month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
  let host,data,options,scopeVersion=0,periodVersion=0,drag=null,skipClick=false;
+ const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const adjacent=new Map(),past=[],future=[],localRevisions=new Map();
  const monthData=date=>date.slice(0,7)===S.month?data:adjacent.get(date.slice(0,7));
  const canOverride=()=>options.demo||data.manual_hours===true;
@@ -13,10 +14,13 @@
  const key=(code,date)=>code+'|'+date;
  const entry=(code,date)=>monthData(date)?.entries?.find(e=>e.code===code&&e.date===date);
  const payload=(code,date)=>entry(code,date)?.payload||M.normalize();
- function employees(){
+ function roster(){
   const history=data.entries||[],all=data.employees.filter(e=>e.active||history.some(x=>x.code===e.code&&x.payload.status!=='EMPTY'));
-  return all.map(e=>{const h=history.find(x=>x.code===e.code);return h?{...e,...h.identity}:e;}).filter(e=>S.group==='pharmacists'?e.position_key==='pharmacist':e.position_key!=='pharmacist');
+  return all.map(e=>{const h=history.find(x=>x.code===e.code);return h?{...e,...h.identity}:e;});
  }
+ const staffList=()=>roster().filter(e=>e.position_key==='pharmacist'||S.support.has(e.code)).sort((a,b)=>Number(b.position_key==='pharmacist')-Number(a.position_key==='pharmacist'));
+ const employees=()=>staffList().slice(S.staffPage*S.staffSize,(S.staffPage+1)*S.staffSize);
+ const basic=(code,date,p)=>M.basicAllowance(date,p,monthData(date)?.employees?.find(e=>e.code===code),monthData(date)?.hour_rules);
  const dates=()=>M.calendarPeriod(S.month,S.start,S.mode);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
  const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&data.month?.status!=='Completed';
@@ -24,7 +28,7 @@
  const holiday=date=>monthData(date)?.holidays?.find(h=>h.date===date&&h.active);
  function mount(el,d,config){
   host=el;data={entries:[],holidays:[],...d};options=config;
-  if(S.month!==config.month){S.month=config.month;S.start=0;S.selected=[];S.editing=null;S.notice='';}
+  if(S.month!==config.month){S.month=config.month;S.start=0;clearSelection();S.editing=null;S.notice='';}
   render();if(!options.loading&&employees().length)loadBoundary();
  }
  async function loadBoundary(){
@@ -39,36 +43,41 @@
    if(version===periodVersion&&host?.isConnected){S.notice='Adjacent dates could not be loaded. '+error.message;render();}
   }
  }
+ function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;}
  function render(){
   if(!host?.isConnected)return;
   const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition={left:scroll?.scrollLeft||0,top:scroll?.scrollTop||0};
-  const days=dates(),staff=employees(),totals=M.totals(data.entries,data.holidays);
+  const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/S.staffSize));
+  S.staffPage=Math.min(S.staffPage,pages-1);
+  const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules);
+  const support=roster().filter(e=>e.position_key!=='pharmacist');
   const next=days.at(-1).date<M.days(S.month).at(-1).date;
   host.innerHTML=`<div class="duty-schedule-controls">
-   <div class="duty-segment" role="group" aria-label="Employee group"><button type="button" data-s-group="pharmacists" aria-pressed="${S.group==='pharmacists'}">Pharmacists</button><button type="button" data-s-group="support" aria-pressed="${S.group==='support'}">Labor &amp; Beauty</button></div>
+   <details class="duty-staff-filter"><summary>Staff${S.support.size?' · +'+S.support.size:''}</summary><div>${support.map(e=>`<label><input type="checkbox" data-s-support="${esc(e.code)}" ${S.support.has(e.code)?'checked':''}> ${esc(e.name)}</label>`).join('')||'Pharmacists only'}</div></details>
+   <label class="duty-staff-size">Columns <select id="duty-staff-size">${[2,4,6].map(n=>`<option ${S.staffSize===n?'selected':''}>${n}</option>`).join('')}</select></label>
+   <div class="duty-period" aria-label="Staff pages"><button type="button" data-s-action="staff-back" aria-label="Previous staff page" ${S.staffPage?'':'disabled'}>‹</button><span>${S.staffPage+1}/${pages}</span><button type="button" data-s-action="staff-next" aria-label="Next staff page" ${S.staffPage+1<pages?'':'disabled'}>›</button></div>
    <div class="duty-period"><button type="button" data-s-action="back" aria-label="Previous period" ${!S.start||S.mode===31?'disabled':''}>‹</button><strong>${formatDate(days[0].date)} – ${formatDate(days.at(-1).date)}</strong><button type="button" data-s-action="forward" aria-label="Next period" ${!next||S.mode===31?'disabled':''}>›</button></div>
-   <div class="duty-segment" role="group" aria-label="Calendar view">${[[7,'Week'],[14,'2 Weeks'],[31,'Month']].map(([n,label])=>`<button type="button" data-s-mode="${n}" aria-pressed="${S.mode===n}">${label}</button>`).join('')}</div>
+   <div class="duty-segment" role="group" aria-label="Calendar view">${[[31,'Month'],[14,'2 Weeks'],[7,'Week']].map(([n,label])=>`<button type="button" data-s-mode="${n}" aria-pressed="${S.mode===n}">${label}</button>`).join('')}</div>
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
    <button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button><button type="button" data-s-action="delete">Delete</button>
    <button type="button" data-s-action="undo" title="Ctrl+Z" ${!past.length||!writable()?'disabled':''}>↶ Undo</button><button type="button" data-s-action="redo" title="Ctrl+Y" ${!future.length||!writable()?'disabled':''}>↷ Redo</button>
    <button type="button" data-s-action="details">Details</button><select aria-label="Apply status to selection" id="duty-apply-status"><option value="">Status…</option>${Object.entries(M.statuses).filter(([k])=>k!=='WORK').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
-   <details class="duty-more"><summary>More</summary><div class="duty-actions">
-   <button type="button" data-s-action="reuse" ${!writable()?'disabled':''}>Reuse schedule</button>${S.mode===7?`<button type="button" data-s-action="next-week" ${!writable()?'disabled':''}>Copy week →</button>`:''}<button type="button" data-s-action="month" ${!data.can_write?'disabled':''}>${esc(data.month?.status||'Draft')} ▾</button></div></details></div>
+   <button type="button" data-s-action="color">Cell Color</button><button type="button" data-s-action="day">Day Type</button>${options.demo?`<button type="button" data-s-action="rules">Hour Rules</button>`:''}</div>
    <div class="duty-grid-scroll duty-vertical ${S.mode===7?'duty-week-height':''}" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Calendar <small>Monthly totals · h</small></th>
-    ${staff.map(e=>`<th scope="col"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.code)}${e.active?'':' · inactive'}</span><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></th>`).join('')}</tr></thead>
-    <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${d.weekday}</strong><span>${formatDate(d.date)}</span>${holiday(d.date)?'<small>Holiday</small>':''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
-   <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours pending Staging database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
+    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.code)}${e.active?'':' · inactive'}</span><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
+    <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
+   <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
   bind();updateSelection();
  }
  function cell(e,d){
-  const p=payload(e.code,d.date),n=M.calculate(d.date,p,!!holiday(d.date));
+  const p=payload(e.code,d.date),n=M.calculate(d.date,p,!!holiday(d.date),basic(e.code,d.date,p));
   const times=p.periods.map(t=>`<span class="duty-time-period">${M.formatTime(t.start)} – ${M.formatTime(t.end)}</span>`).join('');
   const categories=Object.entries(categoryLabels).filter(([k])=>k!=='total'&&n[k]>0).map(([k,label])=>{
    const manual=Object.hasOwn(p.manual_minutes||{},k);
-   return `<span data-s-hours="${k}" class="duty-category-${k} ${manual?'duty-manual':''}">${label} ${M.hours(n[k])}</span>`;
+   return `<span data-s-hours="${k}" class="duty-category-${k} ${manual?'duty-manual':''}">${label} <b>${M.hours(n[k])}</b></span>`;
   }).join('');
   const status=p.status!=='WORK'&&p.status!=='EMPTY'?M.statuses[p.status]:'';
   return `<td tabindex="-1" aria-label="${esc(e.name)}, ${d.date}, ${esc(M.text(p)||(categories?'Hours only':'Empty'))}${p.note?', note: '+esc(p.note):''}" data-s-code="${esc(e.code)}" data-s-date="${d.date}" class="duty-cell ${p.highlight?'duty-mark-'+p.highlight:''}">
@@ -105,11 +114,13 @@
   tools.querySelector('[data-s-action="delete"]').disabled=!canEdit;
   tools.querySelector('[data-s-action="details"]').disabled=!hasSelection;
   tools.querySelector('select').disabled=!canEdit;
+  host.querySelector('[data-s-action="color"]').disabled=!canEdit;
+  host.querySelector('[data-s-action="day"]').disabled=!canEdit||new Set(S.selected.map(c=>c.date)).size!==1;
  }
  function dropdowns(prefix,value){
   const [hour,minute,meridiem]=M.formatTime(value).split(/[: ]/);
   const select=(name,values,current)=>`<select name="${prefix}-${name}" aria-label="${prefix} ${name}">${values.map(v=>`<option ${String(v)===current?'selected':''}>${v}</option>`).join('')}</select>`;
-  const minutes=[...new Set(['00','15','30','45',minute])].sort();
+  const minutes=[...new Set(['00','30',minute])].sort();
   return select('Hour',Array.from({length:12},(_,i)=>i+1),hour)+select('Minutes',minutes,minute)+select('AM-PM',['AM','PM'],meridiem);
  }
  function timeFields(periods){
@@ -129,7 +140,7 @@
   S.editing={code,date};td.classList.add('duty-editing');updateSelection();
   const editor=document.createElement('form');editor.className='duty-cell-editor';
   editor.setAttribute('aria-label','Edit Duty cell');
-  const auto=M.calculate(date,{...before,status:before.periods.length?'WORK':'EMPTY',manual_minutes:undefined},!!holiday(date));
+  const auto=M.calculate(date,{...before,status:before.periods.length?'WORK':'EMPTY',manual_minutes:undefined},!!holiday(date),basic(code,date,before));
   const manualEnabled=canOverride();
   const defaultTimes=before.periods.length||before.manual_minutes?before.periods:[{start:540,end:1080}];
   const status=before.status==='EMPTY'?'WORK':before.status;
@@ -139,7 +150,7 @@
    ${manualEnabled?`<fieldset class="duty-manual-fields"><legend>Manual hours</legend>
     ${Object.entries(M.categories).map(([k,label])=>`<label>${label}<input name="${k}" type="number" min="0" max="24" step="any" placeholder="Auto ${M.hours(auto[k])}" value="${Object.hasOwn(before.manual_minutes||{},k)?before.manual_minutes[k]/60:''}"></label>`).join('')}
     <small>Leave blank to calculate automatically.</small></fieldset>`:''}</fieldset>
-   <span class="duty-cell-error" role="alert"></span><div class="duty-actions"><button type="button" data-cancel>Cancel</button><button type="submit" class="duty-primary">Save</button></div>`;
+   <label class="duty-editor-note">Note <input name="note" maxlength="300" value="${esc(before.note)}"></label><span class="duty-cell-error" role="alert"></span><div class="duty-actions"><button type="button" data-cancel>Cancel</button><button type="submit" class="duty-primary">Save</button></div>`;
   // Keep the editor above the scroll container so edge cells never clip it.
   host.append(editor);
   const rect=td.getBoundingClientRect(),bounds=editor.getBoundingClientRect(),scale=bounds.width/editor.offsetWidth;
@@ -171,13 +182,11 @@
      for(const k of Object.keys(M.categories)){
       const value=fields.get(k);
       if(value===''){delete manual[k];continue;}
-      const minutes=Number(value)*60;
-      if(!Number.isFinite(minutes)||Math.abs(minutes-Math.round(minutes))>0.000001)throw Error('Enter hours in whole-minute increments, for example 9 or 1.25.');
-      manual[k]=Math.round(minutes);
+      manual[k]=M.hourMinutes(value);
      }
     }
     if(status==='WORK'&&!periods.length&&!Object.keys(manual).length)status='EMPTY';
-    const next=M.normalize({...before,status,periods,manual_minutes:manual});
+    const next=M.normalize({...before,status,periods,manual_minutes:manual,note:fields.get('note')});
     button.disabled=true;
     if(await save([{code,date,payload:next,expected_revision:revision}],'Edit Duty cell'))finish();
     else if(editor.isConnected)editor.querySelector('[role=alert]').textContent=S.notice;
@@ -239,11 +248,16 @@
  }
  function copy(){if(S.selected.some(c=>!monthData(c.date))){S.notice='Wait for adjacent dates to load before copying.';render();return;}S.clipboard=S.selected.map(s=>({...s,payload:structuredClone(payload(s.code,s.date))}));S.notice=`Copied ${S.clipboard.length} cell${S.clipboard.length===1?'':'s'}. Select a destination and Paste.`;render();}
  async function paste(){
-  const first=S.anchor||S.selected[0],source=S.clipboard;if(!S.selected.length||!first||!source.length)return;
+  const first=S.selected[0],source=S.clipboard;if(!first||!source.length)return;
+  if(source.length===1){await save(S.selected.map(c=>({...c,payload:source[0].payload})),'Paste Duty cells');return;}
   const staff=employees(),sourceCodes=[...new Set(source.map(s=>s.code))],base=source.map(s=>s.date).sort()[0],destIndex=staff.findIndex(e=>e.code===first.code);
   const changes=source.map(s=>({code:staff[destIndex+sourceCodes.indexOf(s.code)]?.code,date:M.addDays(first.date,Math.round((Date.parse(s.date)-Date.parse(base))/86400000)),payload:s.payload}));
-  if(changes.some(c=>!c.code||!dates().some(d=>d.date===c.date)||!monthData(c.date))){S.notice='The copied range does not fit this view. Select an earlier destination.';render();return;}
-  await save(changes,'Paste schedule range',true);
+  const targets=new Set(S.selected.map(c=>key(c.code,c.date)));
+  if(changes.some(c=>!c.code||!dates().some(d=>d.date===c.date)||!writableDate(c.date))||
+     (targets.size>1&&(targets.size!==changes.length||changes.some(c=>!targets.has(key(c.code,c.date)))))){
+   S.notice='Select a top-left cell or a matching rectangle on this staff page.';render();return;
+  }
+  await save(changes,'Paste schedule range');
  }
  async function deleteSelection(){
   if(!S.selected.length||S.selected.some(c=>!writableDate(c.date)))return;
@@ -259,14 +273,12 @@
  }
  function details(){
   const selection=[...S.selected],first=selection[0];if(!first)return;
-  const p=payload(first.code,first.date),h=holiday(first.date),datesSelected=selection.map(c=>c.date).sort();
+  const p=payload(first.code,first.date),datesSelected=selection.map(c=>c.date).sort();
   const opening=new Map([data,...adjacent.values()].flatMap(d=>d.entries||[]).map(e=>[key(e.code,e.date),e]));
-  const form=smallPanel(selection.length===1?`${first.code} · ${first.date}`:`${selection.length} selected cells`,
+  smallPanel(selection.length===1?`${first.code} · ${first.date}`:`${selection.length} selected cells`,
    `<label class="duty-field">Status<select name="status"><option value="">Keep existing</option>${Object.entries(M.statuses).filter(([k])=>k!=='WORK').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
     <label class="duty-field">Note<textarea name="note" maxlength="300" rows="2">${esc(p.note)}</textarea></label>
-    <label class="duty-field">Manual highlight<select name="highlight">${[['','None'],['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose']].map(([v,l])=>`<option value="${v}" ${p.highlight===v?'selected':''}>${l}</option>`).join('')}</select></label>
-    <div class="duty-detail-grid"><label class="duty-field">From<input name="from" type="date" value="${datesSelected[0]}" required></label><label class="duty-field">Through<input name="through" type="date" value="${datesSelected.at(-1)}" required></label></div>
-    <button type="button" data-duty-holiday-action ${writableDate(first.date)?'':'disabled'}>${h?'Remove':'Mark'} Official Holiday · ${first.date}</button><small>Friday takes precedence for automatic hours.</small>`,async fields=>{
+    <div class="duty-detail-grid"><label class="duty-field">From<input name="from" type="date" value="${datesSelected[0]}" required></label><label class="duty-field">Through<input name="through" type="date" value="${datesSelected.at(-1)}" required></label></div>`,async fields=>{
     const from=String(fields.get('from')),through=String(fields.get('through')),status=fields.get('status');
     const span=Math.round((Date.parse(through)-Date.parse(from))/86400000)+1,codes=[...new Set(selection.map(c=>c.code))];
     if(!Number.isFinite(span)||span<1||span>366||span*codes.length>1000)throw Error('Choose a valid range of up to 1000 employee/day cells.');
@@ -278,48 +290,62 @@
     const changes=codes.flatMap(code=>Array.from({length:span},(_,i)=>{
      const date=M.addDays(from,i),row=opening.get(key(code,date))||snapshots.get(date.slice(0,7))?.entries.find(e=>e.code===code&&e.date===date);
      const prior=row?.payload||M.normalize();
-     const next={...prior,note:fields.get('note'),highlight:fields.get('highlight')};
+     const next={...prior,note:fields.get('note')};
      if(status)Object.assign(next,{status,periods:[],manual_minutes:undefined});
      return {code,date,payload:next,expected_revision:row?.revision||0};
     }));
-    if(!await save(changes,'Duty details / leave / note / highlight',changes.length>1||!!status))throw Error(S.notice||'No changes saved.');
+    if(!await save(changes,'Duty details / leave / note',changes.length>1||!!status))throw Error(S.notice||'No changes saved.');
    });
-  form?.querySelector('[data-duty-holiday-action]')?.addEventListener('click',async event=>{
-   if(!writableDate(first.date))return;
-   const button=event.currentTarget;button.disabled=true;
-   try{data=await options.holiday(first.date,!h,h?.revision||0);await loadBoundary();button.textContent='Date classification saved. Reopen to change again.';render();}
-   catch(error){form.querySelector('[role=alert]').textContent=error.message;button.disabled=false;}
+ }
+ function color(){
+  const targets=S.selected.map(c=>({...c,payload:payload(c.code,c.date),expected_revision:entry(c.code,c.date)?.revision||0}));
+  if(!targets.length)return;
+  smallPanel('Cell Color',`<label class="duty-field">Color<select name="color">${palette.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></label>`,async fields=>{
+   if(!await save(targets.map(c=>({...c,payload:{...c.payload,highlight:fields.get('color')}})),'Set Duty cell color'))throw Error(S.notice||'Selection is read only.');
   });
  }
- function reuse(){
-  const first=S.selected[0]||{code:employees()[0]?.code,date:dates()[0].date};if(!first.code)return;
-  smallPanel('Reuse schedule',`<label class="duty-field">Source<select name="kind"><option value="selection" ${S.selected.length?'selected':''}>Selected cells</option><option value="day">Whole visible group · selected day</option><option value="week" ${!S.selected.length?'selected':''}>Whole visible group · displayed week</option><option value="month">Previous month · same dates</option></select></label><label class="duty-field">Destination start date<input type="date" name="destination" value="${S.mode===7&&S.start+7<M.days(S.month).length?M.addDays(dates()[0].date,7):first.date}" required></label><label class="duty-field">Destination employee<select name="employee"><option value="same">Keep source employees</option>${employees().map(e=>`<option value="${esc(e.code)}">${esc(e.name)}</option>`).join('')}</select><small>Choose another employee to copy one employee’s selected range.</small></label>`,async fields=>{
-   const kind=fields.get('kind'),destination=String(fields.get('destination')),employee=fields.get('employee');let src=[],base;
-   if(!/^\d{4}-\d{2}-\d{2}$/.test(destination))throw Error('Choose a destination date.');
-   if(kind==='month'){
-    const previous=await options.readMonth(M.shiftMonth(S.month,-1));src=previous.entries.filter(e=>employees().some(x=>x.code===e.code)&&e.payload.status!=='EMPTY');
-    const changes=src.filter(e=>Number(e.date.slice(8))<=M.days(S.month).length).map(e=>({code:e.code,date:S.month+e.date.slice(7),payload:e.payload}));
-    if(!changes.length)throw Error('The previous month has no entries for this group.');
-    if(!await save(changes,'Copy previous month',true))throw Error(S.notice);return;
+ function dayType(){
+  const date=S.selected[0]?.date;if(!date||!writableDate(date))return;
+  const previous=monthData(date).holidays.find(h=>h.date===date);
+  smallPanel('Day Type · '+formatDate(date),`<label class="duty-field">Type<select name="type"><option value="normal">${new Date(date+'T12:00Z').getUTCDay()===5?'Friday':'Regular day'}</option><option value="holiday" ${previous?.active?'selected':''}>Public holiday</option></select></label>
+   ${options.demo?`<label class="duty-field">Occasion<input name="name" maxlength="80" placeholder="Eid Al-Fitr" value="${esc(previous?.name||'')}"></label><label class="duty-field">Note<input name="note" maxlength="300" value="${esc(previous?.note||'')}"></label>`:''}`,async fields=>{
+   data=await options.holiday(date,fields.get('type')==='holiday',previous?.revision||0,fields.get('name')?.trim(),fields.get('note')?.trim());await loadBoundary();render();
+  });
+ }
+ function hourRules(){
+  const rules=data.hour_rules||[];
+  const form=smallPanel('Working-hour rules',`<label class="duty-field">Rule<select name="rule"><option value="">Add a rule</option>${rules.map((r,i)=>`<option value="${i}">${esc(r.name)} · ${r.from}–${r.through}${r.code?' · '+esc(r.code):''}</option>`).join('')}</select></label>
+   <label class="duty-field">Name<input name="name" maxlength="80" placeholder="Ramadan"></label>
+   <label class="duty-field">Employee<select name="code"><option value="">All employees</option>${roster().map(e=>`<option value="${esc(e.code)}">${esc(e.name)}</option>`).join('')}</select></label>
+   <div class="duty-detail-grid"><label class="duty-field">From<input name="from" type="date" value="${S.month}-01"></label><label class="duty-field">Through<input name="through" type="date" value="${M.days(S.month).at(-1).date}"></label></div>
+   <div class="duty-detail-grid"><label class="duty-field">Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="7"></label><label class="duty-field">Change at shift start<input name="cutoff" type="time"></label></div>
+   <label class="duty-field">Basic hours at or after cutoff<input name="after" type="number" min="0" max="24" step="any" value="6"></label>
+   <label><input name="remove" type="checkbox"> Remove selected rule</label>`,async fields=>{
+   const index=fields.get('rule')===''?null:Number(fields.get('rule'));
+   if(fields.has('remove')&&index===null)throw Error('Select a rule to remove.');
+   const next=rules.filter((_,i)=>i!==index);
+   if(!fields.has('remove')){
+    const from=fields.get('from'),through=fields.get('through'),cutoff=fields.get('cutoff'),name=fields.get('name').trim();
+    if(!name||!from||!through||from>through)throw Error('Enter a name and a valid date range.');
+    const [h,m]=cutoff.split(':').map(Number);
+    next.push({name,from,through,code:fields.get('code'),basic:M.hourMinutes(fields.get('basic')),cutoff:cutoff?h*60+m:null,after:cutoff?M.hourMinutes(fields.get('after')):null});
    }
-   if(kind==='selection'){src=S.selected.map(c=>({...c,payload:payload(c.code,c.date)}));base=src.map(e=>e.date).sort()[0];}
-   else {const ds=kind==='day'?[first.date]:dates().slice(0,7).map(d=>d.date);base=ds[0];src=employees().flatMap(e=>ds.map(date=>({code:e.code,date,payload:payload(e.code,date)})));}
-   if(src.some(c=>!monthData(c.date)))throw Error('Wait for adjacent dates to load before copying.');
-   if(!src.length)throw Error('Select at least one source cell.');
-   if(employee!=='same'&&new Set(src.map(e=>e.code)).size>1)throw Error('Select one source employee when copying to another employee.');
-   const changes=src.map(e=>({code:employee==='same'?e.code:employee,date:M.addDays(destination,Math.round((Date.parse(e.date)-Date.parse(base))/86400000)),payload:e.payload}));
-
-   if(!await save(changes,'Copy '+kind+' schedule',true))throw Error(S.notice);
+   data=options.hourRules(next);await loadBoundary();render();
   });
+  form.elements.rule.onchange=()=>{
+   if(form.elements.rule.value==='')return;
+   const rule=rules[Number(form.elements.rule.value)];
+   for(const name of ['name','from','through','code'])form.elements[name].value=rule[name];
+   form.elements.basic.value=rule.basic/60;form.elements.after.value=rule.after==null?'':rule.after/60;
+   form.elements.cutoff.value=rule.cutoff==null?'':String(Math.floor(rule.cutoff/60)).padStart(2,'0')+':'+String(rule.cutoff%60).padStart(2,'0');
+  };
  }
- function monthPanel(){smallPanel('Month status',`<label class="duty-field">Status<select name="status">${['Draft','Active','Completed'].map(s=>`<option ${s===data.month?.status?'selected':''}>${s}</option>`).join('')}</select></label><label class="duty-field">Reason<input name="reason" required minlength="3" maxlength="200" placeholder="Reason for completing or reopening"></label><p class="duty-subtitle">Completed months are locked. Reopening and corrections are audited.</p>`,async fields=>{data=await options.monthStatus(fields.get('status'),data.month?.revision||0,fields.get('reason'));render();});}
  function bind(){
   host.onclick=async event=>{
    if(event.target.closest('.duty-cell-editor'))return;
    if(S.editing||S.busy||S.confirming)return;
    try{
     const button=event.target.closest('button'),cellEl=event.target.closest('[data-s-code]'),row=event.target.closest('[data-s-column]');
-    if(button?.dataset.sGroup){S.group=button.dataset.sGroup;S.selected=[];S.anchor=null;S.cursor=null;render();return;}
     if(button?.dataset.sMode){S.mode=Number(button.dataset.sMode);S.start=0;S.selected=[];S.anchor=null;S.cursor=null;render();await loadBoundary();return;}
     if(row){S.selected=employees().map(e=>({code:e.code,date:row.dataset.sColumn}));S.cursor=S.anchor=S.selected[0];updateSelection();focusSelection();return;}
     if(cellEl){
@@ -335,11 +361,10 @@
      case 'delete':await deleteSelection();break;
      case 'undo':await history(false);break;
      case 'redo':await history(true);break;
-     case 'reuse':reuse();break;
-     case 'next-week':
-      if(dates().slice(0,7).some(d=>!monthData(d.date)))throw Error('Wait for adjacent dates to load before copying.');
-      await save(employees().flatMap(e=>dates().slice(0,7).map(d=>({code:e.code,date:M.addDays(d.date,7),payload:payload(e.code,d.date)}))),'Copy complete week to next week',true);break;
-     case 'month':monthPanel();break;
+     case 'staff-back':case 'staff-next':S.staffPage+=button.dataset.sAction==='staff-back'?-1:1;clearSelection();render();break;
+     case 'color':color();break;
+     case 'day':dayType();break;
+     case 'rules':hourRules();break;
     }
     if(!document.activeElement?.closest('[role=dialog]'))focusSelection();
    }catch(error){S.notice=error.message||'Duty action could not be completed.';render();}
@@ -377,6 +402,8 @@
   host.onpointerleave=()=>{if(drag&&!drag.moved)drag=null;};
   host.ondragstart=event=>{if(event.target.closest('[data-s-code]'))event.preventDefault();};
   host.onchange=async e=>{
+   if(e.target.id==='duty-staff-size'){S.staffSize=Number(e.target.value);S.staffPage=0;clearSelection();render();return;}
+   if(e.target.dataset.sSupport){const code=e.target.dataset.sSupport;if(e.target.checked)S.support.add(code);else S.support.delete(code);clearSelection();const open=host.querySelector('.duty-staff-filter').open;render();host.querySelector('.duty-staff-filter').open=open;return;}
    if(e.target.id!=='duty-apply-status'||!e.target.value)return;
    if(!S.selected.length||S.selected.some(c=>!writableDate(c.date))){S.notice='Select editable dates before changing status.';render();return;}
    await save(S.selected.map(c=>({...c,payload:{...payload(c.code,c.date),status:e.target.value,periods:[],manual_minutes:undefined}})),'Set OFF / leave / clear',true);
@@ -416,8 +443,9 @@
    if(next&&nextDate){e.preventDefault();select(next,nextDate,e.shiftKey);focus(next,nextDate,true);}
   };
  }
- window.DutySchedule={mount,isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(){
+ window.DutySchedule={mount,isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(keepClipboard=false){
   drag=null;skipClick=false;scopeVersion++;periodVersion++;adjacent.clear();clearHistory();
-  Object.assign(S,{editing:null,selected:[],anchor:null,cursor:null,clipboard:[],month:'',notice:'',busy:false,confirming:false});
+  if(!keepClipboard){S.clipboard=[];S.support.clear();S.staffPage=0;S.staffSize=6;S.mode=31;}
+  Object.assign(S,{editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};
 })();

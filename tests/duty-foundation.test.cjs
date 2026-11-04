@@ -36,8 +36,9 @@ test('month navigation is read only; demo never writes and highlights entire Fri
  assert.equal(f.calls.length,1);assert.equal(f.calls[0].name,'get_pharmflow_duty_schedule_v1');
  f.root.querySelector('[data-duty-action="demo"]').click();
  assert.equal(f.root.querySelectorAll('thead .duty-mini-kpis').length,6);
- assert.equal(f.root.querySelectorAll('.duty-friday-row').length,1);
- assert.equal(f.root.querySelectorAll('.duty-friday-row td').length,6);
+ const fridays=M.days(f.root.querySelector('#duty-month').value).filter(d=>d.friday).length;
+ assert.equal(f.root.querySelectorAll('.duty-friday-row').length,fridays);
+ assert.equal(f.root.querySelectorAll('.duty-friday-row td').length,6*fridays);
  assert.ok(f.root.textContent.includes('Synthetic demo'));
  f.root.querySelector('[data-duty-action="next"]').click();await new Promise(setImmediate);
  assert.ok(f.calls.every(c=>c.name==='get_pharmflow_duty_schedule_v1'));

@@ -82,3 +82,23 @@ test('real Postgres engine: batch transactions, computed minutes, isolation, his
  await db.exec(`set role authenticated;`);await assert.rejects(q('select * from pharmflow_duty_entries_v1'),/permission denied/);await db.exec('reset role;set test.valid=\'no\';');await assert.rejects(read('2026-11'),/access required/);
  await db.close();
 });
+
+test('dated Basic rules use shift start, employee priority and exclusive special-day hours',()=>{
+ const employee={code:'P1',basic_minutes:480};
+ const rule={from:'2026-11-01',through:'2026-11-30',basic:420,cutoff:1080,after:360};
+ const date='2026-11-03',before=M.parse('8 AM–5 PM'),after=M.parse('7 PM–4 AM');
+ const hours=(date,p,holiday=false,rules=[rule])=>M.calculate(date,p,holiday,M.basicAllowance(date,p,employee,rules));
+ assert.equal(hours(date,before).basic,420);
+ assert.equal(hours(date,before).normal_ot,120);
+ assert.equal(hours(date,after).basic,360);
+ assert.equal(hours(date,after).normal_ot,180);
+ assert.equal(hours(date,after,false,[rule,{...rule,code:'P1',after:330}]).basic,330);
+ assert.equal(hours('2026-12-01',before).basic,480);
+ const holiday=hours(date,M.parse('7 PM–5 AM'),true);
+ assert.deepEqual([holiday.basic,holiday.normal_ot,holiday.friday_ot,holiday.holiday_ot,holiday.total],[0,0,0,600,600]);
+ const friday=hours('2026-11-06',after);
+ assert.deepEqual([friday.basic,friday.normal_ot,friday.friday_ot,friday.holiday_ot,friday.total],[0,0,540,0,540]);
+ const manual=hours(date,M.normalize({...after,manual_minutes:{basic:300}}));
+ assert.deepEqual([manual.basic,manual.normal_ot,manual.total],[300,180,480]);
+ assert.equal(M.totals([{date,code:'P1',payload:after}],[],[employee],[rule]).P1.total,540);
+});

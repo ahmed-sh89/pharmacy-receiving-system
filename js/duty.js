@@ -5,21 +5,22 @@
  const M=window.DutyModel,root=document.getElementById('page-duty');if(!root)return;
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
  const state={month:preview?'2026-11':parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value,tab:'schedule',demo:preview,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
- const demos=new Map();let demoSeedMonth=state.month;
+ const demos=new Map(),demoRules=[];let demoStaff=M.demo();let demoSeedMonth=state.month;
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const context=()=>typeof AuthState==='undefined'?null:AuthState.context;
  const scope=()=>preview?'synthetic':!AuthState.session||AuthState.mustChangePassword?'':(context()?.user_id||AuthState.user?.id||'')+'/'+(context()?.pharmacy_id||'');
  const active=()=>typeof AppRouter!=='undefined'&&AppRouter.currentRoute==='duty';
  const demoMonth=month=>{if(!demos.has(month)){const d=M.demoMonth(month);if(month!==demoSeedMonth)d.entries=[];
+ Object.assign(d,demoStaff,{hour_rules:demoRules});
  if(preview&&month===demoSeedMonth){
   const assign=(index,day,payload)=>{const row=d.entries.find(e=>e.code===d.employees[index].code&&e.date===month+'-'+day);row.payload=payload;};
   assign(0,'01',M.normalize({status:'WORK',manual_minutes:{basic:540}}));
   assign(1,'02',M.normalize({status:'ANNUAL_LEAVE'}));
   assign(1,'04',M.parse('12 PM – 9:30 PM'));
-  d.holidays=[{date:month+'-05',active:true,revision:1}];
+  d.holidays=[{date:month+'-05',active:true,name:'Public holiday',revision:1}];
  }demos.set(month,d);}return demos.get(month);};
  const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
- function reset(){if(pendingConfirm)pendingConfirm(false);state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();DutySchedule.clear();closePanel();render();}
+ function reset(){if(pendingConfirm)pendingConfirm(false);state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();demoRules.length=0;demoStaff=M.demo();DutySchedule.clear();closePanel();render();}
  async function readMonth(month){
   const pharmacy=context()?.pharmacy_id,identity=scope();
   if(preview||!pharmacy||!identity)throw Error('Sign in to read Duty.');
@@ -54,13 +55,19 @@
   ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':list(d)}</div>`;
   if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,loading:state.loading,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:confirmReplace,panel:customPanel,
-   holiday:async(date,active,revision)=>{if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});const d=demoMonth(date.slice(0,7)),i=d.holidays.findIndex(h=>h.date===date),v={date,active,revision:revision+1};if(i<0)d.holidays.push(v);else d.holidays[i]=v;return demoMonth(state.month);},
-   monthStatus:async(status,revision,reason)=>{if(!state.demo)return mutate('set_pharmflow_duty_month_v1',{p_month:state.month+'-01',p_status:status,p_expected_revision:revision,p_reason:reason});const d=demoMonth(state.month);d.month={status,revision:revision+1};return d;}
+   holiday:async(date,active,revision,name,note)=>{
+    if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});
+    const d=demoMonth(date.slice(0,7)),i=d.holidays.findIndex(h=>h.date===date);
+    if((d.holidays[i]?.revision||0)!==revision)throw Error('DUTY_CONFLICT');
+    const v={date,active,revision:revision+1,name,note};if(i<0)d.holidays.push(v);else d.holidays[i]=v;return demoMonth(state.month);
+   },
+   hourRules:rules=>{demoRules.splice(0,demoRules.length,...rules);return demoMonth(state.month);}
+
   });
  }
  function list(data){
   if(state.tab==='positions')return `<div class="duty-list"><div class="duty-list-row"><strong>Positions</strong><button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button></div>${data.positions.map(p=>`<div class="duty-list-row ${p.active?'':'duty-inactive'}"><span><strong>${esc(p.label)}</strong> <span class="duty-count">${p.active?'':'· Inactive'}</span></span><button type="button" data-duty-position="${esc(p.key)}" ${!data.can_write?'disabled':''}>Edit</button></div>`).join('')}</div>`;
-  return `<div class="duty-list">${data.employees.length?data.employees.map(e=>`<div class="duty-list-row ${e.active?'':'duty-inactive'}"><span><strong>${esc(e.name)}</strong><span class="duty-code">${esc(e.code)} · ${esc(data.positions.find(p=>p.key===e.position_key)?.label||'Position')} ${e.active?'':'· Inactive'}</span></span><button type="button" data-duty-employee="${esc(e.code)}">${data.can_write?'Edit':'View'}</button></div>`).join(''):'<div class="duty-empty"><h3>No employees yet</h3><p>Employee records are entered manually.</p></div>'}</div>`;
+  return `<div class="duty-list"><div class="duty-list-row"><strong>Employees</strong></div>${data.employees.length?data.employees.map(e=>`<div class="duty-list-row ${e.active?'':'duty-inactive'}"><span><strong>${esc(e.name)}</strong><span class="duty-code">${esc(e.code)} · ${esc(data.positions.find(p=>p.key===e.position_key)?.label||'Position')} ${e.active?'':'· Inactive'}</span></span><span class="duty-count">${M.hours(e.basic_minutes??540)} h Basic</span><button type="button" data-duty-employee="${esc(e.code)}">${data.can_write?'Edit':'View'}</button></div>`).join(''):'<div class="duty-empty"><h3>No employees yet</h3><p>Employee records are entered manually.</p></div>'}</div>`;
  }
  let returnFocus=null,panelScope='';
  function closePanel(){const panel=root.querySelector('.duty-panel-backdrop');if(panel){panel.remove();if(returnFocus?.isConnected)returnFocus.focus();}}
@@ -70,7 +77,7 @@
   const isEmployee=kind==='employee',editing=!!item,readOnly=!data.can_write;
   const backdrop=document.createElement('div');backdrop.className='duty-panel-backdrop';
   const choices=data.positions.filter(p=>p.active||p.key===item?.position_key);
-  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-panel-title"><div class="duty-panel-header"><div><h3 id="duty-panel-title">${readOnly?'View':editing?'Edit':'Add'} ${isEmployee?'employee':'position'}</h3><p class="duty-subtitle">${state.demo?'Synthetic demo · Changes are not saved.':'Duty · '+esc(context()?.pharmacy_code||'Staging')}</p></div><button type="button" data-duty-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${isEmployee?`<label class="duty-field">Employee Code<input name="code" autocomplete="off" required maxlength="40" value="${esc(item?.code||'')}" ${editing?'readonly':''}><small>${editing?'Employee Code is the permanent identifier.':'Unique within this pharmacy.'}</small></label><label class="duty-field">Employee Name<input name="name" autocomplete="off" required maxlength="120" value="${esc(item?.name||'')}"></label><label class="duty-field">Position<select name="position_key" required>${choices.map(p=>`<option value="${esc(p.key)}" ${item?.position_key===p.key?'selected':''}>${esc(p.label)}${p.active?'':' (inactive)'}</option>`).join('')}</select></label>`:`<label class="duty-field">Position Name<input name="label" required maxlength="60" value="${esc(item?.label||'')}"></label>`}<label class="duty-field duty-field-check"><input type="checkbox" name="active" ${item?.active===false?'':'checked'}> Active ${isEmployee?'employee':'position'}</label><p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-duty-close>Cancel</button>${!readOnly?'<button class="duty-primary" type="submit">Save</button>':''}</div></form>`;
+  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-panel-title"><div class="duty-panel-header"><div><h3 id="duty-panel-title">${readOnly?'View':editing?'Edit':'Add'} ${isEmployee?'employee':'position'}</h3><p class="duty-subtitle">${state.demo?'Synthetic demo · Changes are not saved.':'Duty · '+esc(context()?.pharmacy_code||'Staging')}</p></div><button type="button" data-duty-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${isEmployee?`<label class="duty-field">Employee Code<input name="code" autocomplete="off" required maxlength="40" value="${esc(item?.code||'')}" ${editing?'readonly':''}><small>${editing?'Employee Code is the permanent identifier.':'Unique within this pharmacy.'}</small></label><label class="duty-field">Employee Name<input name="name" autocomplete="off" required maxlength="120" value="${esc(item?.name||'')}"></label><label class="duty-field">Position<select name="position_key" required>${choices.map(p=>`<option value="${esc(p.key)}" ${item?.position_key===p.key?'selected':''}>${esc(p.label)}${p.active?'':' (inactive)'}</option>`).join('')}</select></label><div class="duty-detail-grid"><label class="duty-field">Pharmacy<input value="${esc(state.demo?'Synthetic demo':context()?.pharmacy_code||data.pharmacy_id||'')}" readonly></label><label class="duty-field">Default Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="${(item?.basic_minutes??540)/60}" ${state.demo?'':'readonly'}></label></div>`:`<label class="duty-field">Position Name<input name="label" required maxlength="60" value="${esc(item?.label||'')}"></label>`}<label class="duty-field duty-field-check"><input type="checkbox" name="active" ${item?.active===false?'':'checked'}> Active ${isEmployee?'employee':'position'}</label><p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-duty-close>Cancel</button>${!readOnly?'<button class="duty-primary" type="submit">Save</button>':''}</div></form>`;
   root.append(backdrop);const form=backdrop.querySelector('form');
   if(readOnly)form.querySelectorAll('input,select').forEach(el=>el.disabled=true);
   backdrop.addEventListener('click',e=>{if(e.target===backdrop||e.target.closest('[data-duty-close]'))closePanel();});
@@ -82,7 +89,7 @@
     const pid=context()?.pharmacy_id;
     if(state.demo){
      const d=view();
-     if(isEmployee){const input=M.validateEmployee({code:fields.get('code'),name:fields.get('name'),position_key:fields.get('position_key'),active:fields.has('active')});if(!item&&d.employees.some(e=>e.code.toLowerCase()===input.code.toLowerCase()))throw Error('This employee code already exists.');const value={...input,revision:(item?.revision||0)+1};for(const current of demos.values()){const index=current.employees.findIndex(e=>e.code===input.code);if(index<0)current.employees.push({...value});else current.employees[index]={...value};}}
+     if(isEmployee){const input=M.validateEmployee({code:fields.get('code'),name:fields.get('name'),position_key:fields.get('position_key'),active:fields.has('active')});if(!item&&d.employees.some(e=>e.code.toLowerCase()===input.code.toLowerCase()))throw Error('This employee code already exists.');const value={...input,basic_minutes:M.hourMinutes(fields.get('basic')),revision:(item?.revision||0)+1};const index=d.employees.findIndex(e=>e.code===input.code);if(index<0)d.employees.push(value);else d.employees[index]=value;}
      else {const label=String(fields.get('label')||'').trim();if(!label)throw Error('Enter a position name.');if(d.positions.some(p=>p.key!==item?.key&&p.label.toLowerCase()===label.toLowerCase()))throw Error('This position name already exists.');const value={key:item?.key||crypto.randomUUID(),label,active:fields.has('active'),revision:(item?.revision||0)+1};for(const current of demos.values()){const index=current.positions.findIndex(p=>p.key===value.key);if(index<0)current.positions.push({...value});else current.positions[index]={...value};}}
      closePanel();render();return;
     }
@@ -124,7 +131,7 @@
   form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;try{if(requestScope!==scope())throw Error('Duty identity changed. Reopen this panel.');await onSubmit(new FormData(form));if(form.isConnected)closePanel();}catch(error){if(form.isConnected){form.querySelector('[role=alert]').textContent=error.message;button.disabled=false;}}};
   form.querySelector('input,select,textarea,button')?.focus();return form;
  }
- function month(value){if(DutySchedule.isEditing()){state.error='Save with Enter or cancel with Escape before changing month.';return;}try{M.days(value);}catch(_){return;}state.month=value;state.lastRead=0;state.sequence++;state.loading=false;state.data=null;DutySchedule.clear();render();load(true);}
+ function month(value){if(DutySchedule.isEditing()){state.error='Save with Enter or cancel with Escape before changing month.';return;}try{M.days(value);}catch(_){return;}state.month=value;state.lastRead=0;state.sequence++;state.loading=false;state.data=null;DutySchedule.clear(true);render();load(true);}
  root.addEventListener('change',e=>{if(e.target.id==='duty-month'&&e.target.value)month(e.target.value);});
  root.addEventListener('click',e=>{
   const target=e.target.closest('button');if(!target)return;

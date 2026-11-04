@@ -63,3 +63,9 @@ Staging build and 23 automated tests passed, including cancel, clear, undo, redo
 ### Duty visual cleanup
 
 The grid now displays shifts, statuses and nonzero hours as static content. Double-click opens one editor for times, leave status and all manual categories. Selection actions stay above the grid. Column dividers, alternating tints and a continuous range border improve scanning. The calculation model, revision-checked writes and migration state are unchanged.
+
+### Duty final refinement
+
+Month is the default, with 2/4/6 staff columns, individual support filters, compact employee cards, a 00/30-minute editor preserving existing unusual values, and a centered employee/position editor. Scoped clipboard survives schedule navigation, with immediate one-to-many and rectangular paste through the existing audited, revision-checked save. Cell Color changes only the existing highlight field. Draft state remains intact.
+
+Synthetic mode adds employee Basic defaults, dated Basic rules with an optional shift-start cutoff and employee scope, and named public holidays with notes. Precedence is an existing non-default cell Basic limit, then a matching employee rule, then a matching pharmacy rule, then the employee default. The most recently saved matching rule wins within a scope. Friday retains the existing precedence on coincident holidays. No automatic prayer deductions. The pending manual-hours SQL was not applied. Persistent rules, Basic defaults and holiday metadata require a separate authorized database contract, including server calculation and audit coverage.
