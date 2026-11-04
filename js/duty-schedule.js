@@ -49,7 +49,7 @@
    <div class="duty-period"><button type="button" data-s-action="back" aria-label="Previous period" ${!S.start||S.mode===31?'disabled':''}>‹</button><strong>${formatDate(days[0].date)} – ${formatDate(days.at(-1).date)}</strong><button type="button" data-s-action="forward" aria-label="Next period" ${!next||S.mode===31?'disabled':''}>›</button></div>
    <div class="duty-segment" role="group" aria-label="Calendar view">${[[7,'Week'],[14,'2 Weeks'],[31,'Month']].map(([n,label])=>`<button type="button" data-s-mode="${n}" aria-pressed="${S.mode===n}">${label}</button>`).join('')}</div>
    <div class="duty-actions duty-history"><button type="button" data-s-action="undo" title="Ctrl+Z" ${!past.length||!writable()?'disabled':''}>↶ Undo</button><button type="button" data-s-action="redo" title="Ctrl+Y" ${!future.length||!writable()?'disabled':''}>↷ Redo</button></div></div>
-   <div class="duty-selection-tools"><span class="duty-selection-label">${S.selected.length?`${S.selected.length} selected · ${formatDate(S.selected[0].date)}`:'Click a time to edit · Shift-click to select a range'}</span><div class="duty-actions">
+   <div class="duty-selection-tools"><span class="duty-selection-label">${S.selected.length?`${S.selected.length} selected · ${formatDate(S.selected[0].date)}`:'Click a time to edit · Ctrl-click to select · Shift-click for a range'}</span><div class="duty-actions">
    ${S.selected.length?`<button type="button" data-s-action="copy" title="Ctrl+C">Copy</button><button type="button" data-s-action="paste" title="Ctrl+V" ${!S.clipboard.length||!writable()?'disabled':''}>Paste</button><button type="button" data-s-action="details">Details</button><select aria-label="Apply status to selection" id="duty-apply-status" ${!writable()?'disabled':''}><option value="">Set status…</option>${Object.entries(M.statuses).filter(([k])=>k!=='WORK').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>`:''}
    <button type="button" data-s-action="reuse" ${!writable()?'disabled':''}>Reuse schedule</button>${S.mode===7?`<button type="button" data-s-action="next-week" ${!writable()?'disabled':''}>Copy week →</button>`:''}<button type="button" data-s-action="month" ${!data.can_write?'disabled':''}>${esc(data.month?.status||'Draft')} ▾</button></div></div>
    <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${92+staff.length*145}px">
@@ -269,7 +269,7 @@
     if(cellEl){
      const {sCode:code,sDate:date}=cellEl.dataset;
      select(code,date,event.shiftKey);focus(code,date);
-     if(!event.shiftKey&&(button?.hasAttribute('data-s-time')||button?.dataset.sHours))edit(code,date,button.dataset.sHours);
+     if(!event.shiftKey&&!event.ctrlKey&&!event.metaKey&&(button?.hasAttribute('data-s-time')||button?.dataset.sHours))edit(code,date,button.dataset.sHours);
      return;
     }
     switch(button?.dataset.sAction){
@@ -294,9 +294,20 @@
    await save(S.selected.map(c=>({...c,payload:{...payload(c.code,c.date),status:e.target.value,periods:[],manual_minutes:undefined}})),'Set OFF / leave / clear',true);
    render();if(S.anchor)focus(S.anchor.code,S.anchor.date);
   };
+  const fromSchedule=e=>!S.editing&&!S.busy&&!S.confirming&&!e.target.closest('input,select,textarea,[contenteditable]');
+  host.oncopy=e=>{
+   if(!fromSchedule(e)||!S.selected.length)return;
+   e.preventDefault();copy();
+   if(S.anchor)focus(S.anchor.code,S.anchor.date);
+  };
+  host.onpaste=async e=>{
+   if(!fromSchedule(e)||!S.selected.length||!S.clipboard.length)return;
+   e.preventDefault();await paste();
+   if(S.anchor)focus(S.anchor.code,S.anchor.date);
+  };
   host.onkeydown=async e=>{
-   if(e.target.closest('input,select,textarea,.duty-cell-editor')||S.editing||S.busy||S.confirming)return;
-   const k=e.key.toLowerCase();
+   if(!fromSchedule(e))return;
+   const k=/^Key[A-Z]$/.test(e.code)?e.code.slice(3).toLowerCase():e.key.toLowerCase();
    if((e.ctrlKey||e.metaKey)&&['c','v','z','y'].includes(k)){
     e.preventDefault();
     if(k==='c'&&S.selected.length)copy();

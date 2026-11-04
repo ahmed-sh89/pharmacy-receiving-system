@@ -145,6 +145,6 @@
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&active())load();});
  window.addEventListener('storage',e=>{if(e.key===AUTH_STORAGE_KEY){reset();if(active())load(true);}});
  setInterval(()=>{if(active()&&document.visibilityState==='visible')load();},15000);
- AppEvents.on('route:changed',event=>{closePanel();DutySchedule.clear();if(event.routeName==='duty')load(true);});
+ AppEvents.on('route:changed',event=>{if(pendingConfirm)pendingConfirm(false);closePanel();DutySchedule.clear();if(event.routeName==='duty')load(true);});
  render();
 })();

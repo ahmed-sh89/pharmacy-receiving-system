@@ -43,6 +43,21 @@ test('month navigation is read only; demo never writes and highlights entire Fri
  assert.ok(f.calls.every(c=>c.name==='get_pharmflow_duty_schedule_v1'));
  assert.equal(f.root.querySelectorAll('thead .duty-category-total').length,6);
 });
+test('Duty keyboard and clipboard events act on the selected cell',async()=>{
+ const f=fixture();
+ f.root.querySelector('[data-duty-action="demo"]').click();
+ await new Promise(setImmediate);
+ const host=f.root.querySelector('#duty-schedule-body'),cell=()=>host.querySelector('[data-s-code="DEMO-001"][data-s-date="2026-11-01"]')||host.querySelector('[data-s-code="DEMO-001"]');
+ cell().click();
+ let consumed=false;
+ await host.onkeydown({target:cell(),key:'c',code:'KeyC',ctrlKey:true,preventDefault(){consumed=true;}});
+ assert.ok(consumed);
+ assert.match(host.textContent,/Copied 1 cells/);
+ consumed=false;
+ host.oncopy({target:cell(),preventDefault(){consumed=true;}});
+ assert.ok(consumed);
+ assert.ok(!host.querySelector('[data-s-action="paste"]').disabled);
+});
 test('untrusted employee content is escaped, never executed as HTML',async()=>{
  const f=fixture();f.data.employees=[{code:'TEST-1',name:'<img src=x onerror=alert(1)>',position_key:'pharmacist',active:true}];
  f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
