@@ -81,8 +81,9 @@
     if(!Number.isFinite(basic)||Math.abs(basic-Math.round(basic))>0.00001)throw Error('Use a basic limit in whole minutes.');
     const p2=status==='WORK'?M.parse(fields.get('times'),{...p,status,basic_limit:Math.round(basic),note:fields.get('note'),highlight:fields.get('highlight')}):M.normalize({status,basic_limit:Math.round(basic),note:fields.get('note'),highlight:fields.get('highlight'),periods:[]});
     const from=String(fields.get('from')),through=String(fields.get('through'));
-    if(from>through||from.slice(0,7)!==S.month||through.slice(0,7)!==S.month)throw Error('Choose a valid range inside this month.');
-    const codes=[...new Set(S.selected.map(c=>c.code))],changes=codes.flatMap(code=>M.days(S.month).filter(d=>d.date>=from&&d.date<=through).map(d=>({code,date:d.date,payload:p2,expected_revision:openingRevisions.get(key(code,d.date))||0})));
+    const span=Math.round((Date.parse(through)-Date.parse(from))/86400000)+1,codes=[...new Set(S.selected.map(c=>c.code))];
+    if(!Number.isFinite(span)||span<1||span>366||span*codes.length>1000)throw Error('Choose a valid range of up to 1000 employee/day cells.');
+    const changes=codes.flatMap(code=>Array.from({length:span},(_,i)=>{const date=M.addDays(from,i);return {code,date,payload:p2,expected_revision:date.slice(0,7)===S.month?(openingRevisions.get(key(code,date))||0):undefined};}));
     if(!await save(changes,'Duty details / basic limit / note / highlight',changes.length>1))throw Error(S.notice);
    });
   form?.querySelector('[data-duty-holiday-action]')?.addEventListener('click',async event=>{

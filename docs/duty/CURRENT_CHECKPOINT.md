@@ -2,7 +2,7 @@
 
 **READY FOR TEST. Owner acceptance pending. Stop before further stages or Production.**
 
-Branch `feature/duty-staging-20261104`; starting head `c446562cf9c48c7ec84bbfe30ae4d72ae7b7d7dc`. Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Tested runtime `7c2facbef68186f385be08e7b9697e4601467028`; documentation follow-up leaves runtime unchanged. Deployed version.json identifies exact current head.
+Branch `feature/duty-staging-20261104`; starting head `c446562cf9c48c7ec84bbfe30ae4d72ae7b7d7dc`. Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Browser-reviewed runtime `7c2facbef68186f385be08e7b9697e4601467028` plus the final cross-month date-range follow-up. Deployed version.json identifies the exact current head.
 
 Stable Staging: https://pharmflow-test-git-feature-duty-staging-1396d6-fhyh2xtskz-3504.vercel.app/
 Synthetic interactive preview: same origin `/duty-demo.html` (network blocked; memory-only edits reset on reload).
@@ -12,7 +12,7 @@ Database target exclusively `tovkcakucyagvbzvlnks`. No main merge, Pages deploym
 
 Week default with period arrows; Week/2 Weeks/Month; default Pharmacists and separate Labor & Beauty; sticky identity/monthly totals; complete AM/PM periods and stacked splits; Friday whole-column identity, distinct holiday styling, controlled manual highlight stripes. Six pharmacists fit tested desktop geometry without vertical scrolling. Wider date modes intentionally scroll.
 
-Direct in-cell input: Enter commits, Escape cancels, Tab commits/moves, arrows navigate outside editing. Shift-click ranges and full-date selection. Contextual notes, basic-hour override, leave ranges and highlights. Holidays are separate explicit date actions. One compact corporate confirmation before populated batch overwrites.
+Direct in-cell input: Enter commits, Escape cancels, Tab commits/moves, arrows navigate outside editing. Shift-click ranges and full-date selection. Contextual notes, basic-hour override, leave ranges (including cross-month ranges, up to 1000 employee/day cells per atomic operation) and highlights. Holidays are separate explicit date actions. One compact corporate confirmation before populated batch overwrites.
 
 Internal Copy/Paste; source-day/employee/range/week reuse; one-action week-to-next-week copying; cross-month destinations; optional previous-month copy. Destination hour categories recalculate. Unaffected cells stay intact. New real/demo months are empty; only the initial synthetic month is seeded. Draft/Active/Completed; completed months reject edits until reopened with a reason.
 
