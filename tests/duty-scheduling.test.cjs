@@ -23,7 +23,7 @@ test('real Postgres engine: batch transactions, computed minutes, isolation, his
  insert into public.pharmacies(id) values ('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222');
  insert into public.pharmacy_members values ('11111111-1111-4111-8111-111111111111','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true,'admin');
  set test.uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';`);
- for(const path of ['supabase/migrations/20261103235030_duty_stage_a_foundation.sql','supabase/migrations/20261103235335_duty_position_default_name_validation.sql','staging/duty-scheduling.sql'])await db.exec(fs.readFileSync(path,'utf8'));
+ for(const path of ['supabase/migrations/20261103235030_duty_stage_a_foundation.sql','supabase/migrations/20261103235335_duty_position_default_name_validation.sql','supabase/migrations/20261104013200_duty_stage_b_scheduling.sql'])await db.exec(fs.readFileSync(path,'utf8'));
  const pid='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222',q=(sql,args=[])=>db.query(sql,args);
  for(const code of ['TEST-A','TEST-B'])await q('select save_pharmflow_duty_employee_v1($1,$2,$3,$4,$5,$6)',[pid,code,'Synthetic '+code,'pharmacist',true,0]);
  const change=(code,date,text,revision=0)=>({code,date,expected_revision:revision,payload:M.parse(text)});

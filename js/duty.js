@@ -4,12 +4,12 @@
  const M=window.DutyModel,root=document.getElementById('page-duty');if(!root)return;
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
  const state={month:parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value,tab:'schedule',demo:false,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
- const demos=new Map();
+ const demos=new Map();let demoSeedMonth=state.month;
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const context=()=>typeof AuthState==='undefined'?null:AuthState.context;
  const scope=()=>!AuthState.session||AuthState.mustChangePassword?'':(context()?.user_id||AuthState.user?.id||'')+'/'+(context()?.pharmacy_id||'');
  const active=()=>typeof AppRouter!=='undefined'&&AppRouter.currentRoute==='duty';
- const demoMonth=month=>{if(!demos.has(month))demos.set(month,M.demoMonth(month));return demos.get(month);};
+ const demoMonth=month=>{if(!demos.has(month)){const d=M.demoMonth(month);if(month!==demoSeedMonth)d.entries=[];demos.set(month,d);}return demos.get(month);};
  const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
  function reset(){state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();DutySchedule.clear();closePanel();render();}
  async function readMonth(month){return authRpc('get_pharmflow_duty_schedule_v1',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01'});}
@@ -30,9 +30,9 @@
  }
  async function save(changes,reason){
   if(!state.demo)return mutate('save_pharmflow_duty_entries_v1',{p_changes:changes,p_reason:reason});
-  const d=demoMonth(state.month),entries=structuredClone(d.entries);
-  for(const c of changes){const i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');const employee=d.employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
-  M.validateOverlaps(entries);d.entries=entries;return d;
+  const proposed=new Map();
+  for(const c of changes){const month=c.date.slice(0,7);if(!proposed.has(month))proposed.set(month,structuredClone(demoMonth(month).entries));const entries=proposed.get(month),i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');if(demoMonth(month).month?.status==='Completed')throw Error('Duty month is completed');const employee=demoMonth(month).employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
+  M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
  }
  function render(){
   const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><strong class="duty-compact-title">Duty</strong><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions"><button type="button" data-duty-action="retry" title="Refresh Duty">↻</button><button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button><button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
@@ -62,11 +62,16 @@
   backdrop.addEventListener('click',e=>{if(e.target===backdrop||e.target.closest('[data-duty-close]'))closePanel();});
   form.addEventListener('submit',async event=>{
    event.preventDefault();const save=form.querySelector('[type=submit]'),error=form.querySelector('[role=alert]');error.textContent='';
-   if(state.demo){error.textContent='Demo is for visual review only. Exit demo to manage saved employees.';return;}
    if(panelScope!==scope()){closePanel();reset();return;}
    const requestScope=scope(),fields=new FormData(form);save.disabled=true;
    try{
     const pid=context().pharmacy_id;
+    if(state.demo){
+     const d=view();
+     if(isEmployee){const input=M.validateEmployee({code:fields.get('code'),name:fields.get('name'),position_key:fields.get('position_key'),active:fields.has('active')});if(!item&&d.employees.some(e=>e.code.toLowerCase()===input.code.toLowerCase()))throw Error('This employee code already exists.');const value={...input,revision:(item?.revision||0)+1};for(const current of demos.values()){const index=current.employees.findIndex(e=>e.code===input.code);if(index<0)current.employees.push({...value});else current.employees[index]={...value};}}
+     else {const label=String(fields.get('label')||'').trim();if(!label)throw Error('Enter a position name.');if(d.positions.some(p=>p.key!==item?.key&&p.label.toLowerCase()===label.toLowerCase()))throw Error('This position name already exists.');const value={key:item?.key||crypto.randomUUID(),label,active:fields.has('active'),revision:(item?.revision||0)+1};for(const current of demos.values()){const index=current.positions.findIndex(p=>p.key===value.key);if(index<0)current.positions.push({...value});else current.positions[index]={...value};}}
+     closePanel();render();return;
+    }
     if(isEmployee){const input=M.validateEmployee({code:fields.get('code'),name:fields.get('name'),position_key:fields.get('position_key'),active:fields.has('active')});
      await authRpc('save_pharmflow_duty_employee_v1',{p_pharmacy_id:pid,p_code:input.code,p_name:input.name,p_position_key:input.position_key,p_active:input.active,p_expected_revision:item?.revision||0});
     }else{
@@ -106,7 +111,7 @@
   if(target.dataset.dutyEmployee){panel('employee',view().employees.find(x=>x.code===target.dataset.dutyEmployee));return;}
   if(target.dataset.dutyPosition){panel('position',view().positions.find(x=>x.key===target.dataset.dutyPosition));return;}
   switch(target.dataset.dutyAction){
-   case 'demo':state.demo=!state.demo;DutySchedule.clear();render();if(!state.demo)load(true);break;
+   case 'demo':if(!demos.size)demoSeedMonth=state.month;state.demo=!state.demo;DutySchedule.clear();render();if(!state.demo)load(true);break;
    case 'previous':month(M.shiftMonth(state.month,-1));break;case 'next':month(M.shiftMonth(state.month,1));break;
    case 'retry':load(true);break;case 'add-employee':panel('employee');break;case 'add-position':panel('position');break;
   }

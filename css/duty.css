@@ -103,7 +103,8 @@
 #page-duty th.duty-holiday{--pfn-table-header-bg:#664b88;--pfn-table-header-ink:#fff;background:#664b88;color:#fff}
 #page-duty .duty-employee-row:nth-child(even) td.duty-holiday,#page-duty .duty-employee-row:hover td.duty-holiday{background:#e9e1f3}
 #page-duty .duty-cell-content{position:relative;line-height:1.5;font-variant-numeric:tabular-nums;color:#243f5e;min-height:28px;display:flex;flex-direction:column;justify-content:center;gap:3px}
-#page-duty .duty-time-period{display:block;white-space:normal;font-size:12.5px;font-weight:600;line-height:1.4;letter-spacing:-.1px}
+#page-duty .duty-time-period{display:flex;justify-content:center;flex-wrap:wrap;gap:0 3px;white-space:normal;font-size:12.5px;font-weight:600;line-height:1.4;letter-spacing:-.1px}
+#page-duty .duty-time-part{white-space:nowrap}
 #page-duty .duty-time-dash{color:#7c8fa3}
 #page-duty .duty-cell-hours{font-size:10px;color:#62758c;font-weight:400}
 #page-duty .duty-blank{color:#a7b5c5}
