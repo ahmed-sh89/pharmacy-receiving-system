@@ -19,6 +19,7 @@
   return {...input,code,name};
  }
  function demo(){return {positions:defaults.map(p=>({...p})),employees:Array.from({length:10},(_,i)=>({code:'DEMO-'+String(i+1).padStart(3,'0'),name:(i<6?'Pharmacist ':i<9?'Labor ':'Beauty Advisor ')+(i<6?i+1:i<9?i-5:1),position_key:i<6?'pharmacist':i<9?'labor':'beauty-advisor',active:true,revision:0})),can_write:true};}
+ const categories={basic:'Basic Hours',normal_ot:'Normal OT',friday_ot:'Friday OT',holiday_ot:'Holiday OT'};
  const statuses={WORK:'Working',OFF:'OFF',ANNUAL_LEAVE:'Annual Leave',SICK_LEAVE:'Sick Leave',OTHER_LEAVE:'Other Leave',EMPTY:'Empty'};
  function time(value){
   const m=String(value).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?$/i);
@@ -33,9 +34,17 @@
   if(p.note.length>300)throw Error('Notes can contain up to 300 characters.');
   if(!['','blue','mint','violet','rose'].includes(p.highlight))throw Error('Select a highlight from the palette.');
   const input=payload.periods||[];
-  if(input.length>2||!Array.isArray(input))throw Error('Use at most two working periods.');
+  if(!Array.isArray(input)||input.length>2)throw Error('Use at most two working periods.');
   if(p.status!=='WORK'&&input.length)throw Error('Leave and OFF entries cannot contain working periods.');
-  if(p.status==='WORK'&&!input.length)throw Error('Enter at least one working period.');
+  const manual=payload.manual_minutes??{};
+  if(typeof manual!=='object'||Array.isArray(manual))throw Error('Invalid manual hours.');
+  const overrides=Object.entries(manual);
+  if(overrides.some(([category,n])=>!Object.hasOwn(categories,category)||!Number.isInteger(n)||n<0||n>1440))throw Error('Use 0–24 hours per category, in whole minutes.');
+  if(overrides.length){
+   if(p.status!=='WORK')throw Error('Manual hours require a working day.');
+   p.manual_minutes=Object.fromEntries(overrides);
+  }
+  if(p.status==='WORK'&&!input.length&&!overrides.length)throw Error('Enter working times or manual hours.');
   input.forEach((v,i)=>{
    let start=Number(v.start),end=Number(v.end);
    if(!Number.isInteger(start)||!Number.isInteger(end)||start<0||start>=2880||end<0||end>=2880)throw Error('Invalid working time.');
@@ -53,14 +62,15 @@
  function parse(value,previous={}){
   const text=String(value).trim();
   const matched=Object.keys(statuses).find(k=>k===text.toUpperCase().replaceAll(' ','_')||statuses[k].toLowerCase()===text.toLowerCase());
-  if(!text||matched&&matched!=='WORK')return normalize({...previous,status:matched||'EMPTY',periods:[]});
+  if(!text||matched&&matched!=='WORK')return normalize({...previous,status:matched||'EMPTY',periods:[],manual_minutes:undefined});
   const periods=text.split(/\s*(?:\/|&|;)\s*/).map(piece=>{const pair=piece.split(/\s*[-–—]\s*/);if(pair.length!==2)throw Error('Enter a start and end time, separated by a dash.');return {start:time(pair[0]),end:time(pair[1])};});
   return normalize({...previous,status:'WORK',periods});
  }
  function text(payload){const p=normalize(payload);return p.status==='WORK'?p.periods.map(v=>formatTime(v.start)+' – '+formatTime(v.end)).join(' / '):p.status==='EMPTY'?'':statuses[p.status];}
  function calculate(date,payload,holiday=false){
   const p=normalize(payload),total=p.periods.reduce((a,v)=>a+v.end-v.start,0),friday=new Date(date+'T12:00:00Z').getUTCDay()===5;
-  return {basic:!friday&&!holiday?Math.min(total,p.basic_limit):0,normal_ot:!friday&&!holiday?Math.max(0,total-p.basic_limit):0,friday_ot:friday?total:0,holiday_ot:!friday&&holiday?total:0,total};
+  const result={basic:!friday&&!holiday?Math.min(total,p.basic_limit):0,normal_ot:!friday&&!holiday?Math.max(0,total-p.basic_limit):0,friday_ot:friday?total:0,holiday_ot:!friday&&holiday?total:0,...p.manual_minutes};
+  return {...result,total:Object.values(result).reduce((sum,minutes)=>sum+minutes,0)};
  }
  const hours=minutes=>(minutes/60).toLocaleString('en-GB',{maximumFractionDigits:4});
  const addDays=(date,count)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+count);return d.toISOString().slice(0,10);};
@@ -70,6 +80,15 @@
   for(const e of data.employees)for(const d of days(month)){const i=data.employees.indexOf(e),off=(d.day+i)%7===0;const payload=off?normalize({status:'OFF'}):parse(i%3===0?'9 AM – 1 PM / 5 PM – 10 PM':i%3===1?'12 PM – 9 PM':'7 PM – 4 AM');data.entries.push({code:e.code,date:d.date,payload,revision:1,identity:{name:e.name,position_key:e.position_key,position_label:data.positions.find(p=>p.key===e.position_key).label}});}
   data.totals=totals(data.entries);return data;
  }
- const api={defaults,days,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,hours,addDays,totals,validateOverlaps,demoMonth};
+ function calendarPeriod(month,offset,length){
+  if(length===31)return days(month);
+  const first=month+'-01',weekday=new Date(first+'T12:00Z').getUTCDay();
+  const start=addDays(first,offset-(weekday+1)%7);
+  return Array.from({length},(_,i)=>{
+   const date=addDays(start,i),d=new Date(date+'T12:00Z');
+   return {date,day:d.getUTCDate(),weekday:d.toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'}),friday:d.getUTCDay()===5};
+  });
+ }
+ const api={defaults,days,calendarPeriod,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

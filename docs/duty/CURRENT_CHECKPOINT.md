@@ -43,3 +43,13 @@ Six rows fit: at 100% table bottom 847.72px within 936px viewport; Week scrollWi
 ## Next action
 
 Owner opens stable Staging with a valid Staging account, chooses Duty, reviews Week/2 Weeks/Month at native Chrome 75–80%, creates synthetic staff only, enters split/overnight duty with Enter, refreshes and compares a second PC, tests one copy and leave range. Review supplied Week/2 Weeks/Month/inline/split screenshots. Report acceptance or focused changes. Do not proceed to export, actual-attendance workflow, Production or unrelated fixes.
+
+## 4 November 2026 · Vertical Duty refinement
+
+READY FOR TEST in the synthetic Staging preview at `/duty-demo.html`. The signed-in Staging Duty view shares the vertical scheduler and retains the Stage B save RPC, pharmacy scope, expected revisions and audit path. Full Saturday–Friday weeks include adjacent-month dates. Monthly KPIs use the selected month only. Shift-click and date-row selection support rectangular copy; Undo/Redo submit revision-checked compensating edits and keep the audit history.
+
+Direct category overrides replace the same category's calculated value. Other categories remain automatic unless separately overridden. Blank restores automatic calculation. Legacy Basic limits and Friday/holiday rules remain effective for automatic hours. A manual-only day can have zero time periods.
+
+`STAGING_MANUAL_HOURS.sql` is a proposed Staging-only migration requiring Product Owner approval under repository backend rules. It replaces three function bodies in place, adds no table or columns, does no backfill, keeps existing grants, and advertises support in the authorized schedule read. Existing rows retain their current totals. With the change unapplied, the signed-in UI gates manual entry and existing schedules continue to use Stage B. To roll back after manual entries have been saved, preserve the new reader/validator until those entries have been reviewed because the old calculator cannot interpret overrides.
+
+Staging build and 21 automated Duty tests passed, including isolated PostgreSQL legacy and proposed-manual payloads, audit, revision conflict, validation and isolation. No connected database migration or real employee data import. Next action is Product Owner synthetic review, followed by explicit approval of the Staging SQL and authenticated two-session verification. Production and Stage C remain outside this work.

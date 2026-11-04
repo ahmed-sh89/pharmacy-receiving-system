@@ -138,3 +138,55 @@
 #page-duty .duty-confirm-card .duty-actions{justify-content:flex-end}
 @media(min-width:1600px){#page-duty .duty-week .duty-time-period{font-size:14px;white-space:nowrap}#page-duty .duty-scheduling-grid td{height:82px}}
 @media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}#page-duty .duty-selection-tools{flex-wrap:wrap}#page-duty .duty-selection-label{max-width:100%}#page-duty .duty-scheduling-grid{max-height:70vh}}
+
+/* Vertical Duty workspace. */
+#page-duty .duty-vertical{max-height:calc(100vh - 240px);border-top:1px solid var(--duty-line);border-radius:9px}
+#page-duty .duty-vertical table{width:100%;font-size:13px}
+#page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #cad9e8;border-bottom:1px solid #cad9e8}
+#page-duty .duty-vertical thead th{background:#eaf1f9;vertical-align:top;padding:8px 5px 6px}
+#page-duty .duty-vertical thead .duty-name{font-size:14px;font-weight:700}
+#page-duty .duty-vertical .duty-code{margin:2px 0 5px;font-size:11px}
+#page-duty .duty-vertical .duty-date-heading{left:0;z-index:5;vertical-align:middle}
+#page-duty .duty-date-heading small{display:block;margin-top:4px;line-height:1.3}
+#page-duty .duty-vertical tbody th{position:sticky;left:0;z-index:2;background:#eaf1f9}
+#page-duty .duty-vertical td{position:relative;height:70px;background:#fff;vertical-align:middle}
+#page-duty .duty-vertical tr:nth-child(even) td{background:#f6f9fc}
+#page-duty .duty-vertical .duty-holiday-row :is(th,td){background:#fff2d9}
+#page-duty .duty-vertical .duty-friday-row :is(th,td){background:#dce8f7;border-top:1px solid #9bb6d6;border-bottom:1px solid #9bb6d6}
+#page-duty .duty-vertical .duty-friday-row th{background:#c7dbf2}
+#page-duty .duty-vertical td.duty-selected{background:#eaf4ff}
+#page-duty .duty-vertical .duty-friday-row td.duty-selected{background:#cbdff6}
+#page-duty .duty-date-button{display:grid;justify-items:start;gap:2px;width:100%;border:0;background:transparent;box-shadow:none;padding:3px 6px}
+#page-duty .duty-date-button strong{font-size:14px}
+#page-duty .duty-date-button span,#page-duty .duty-date-button small{font-size:11px;font-weight:500}
+#page-duty .duty-mini-kpis{display:grid;grid-template-columns:1fr 1fr;gap:3px;max-width:320px;margin:auto}
+#page-duty .duty-mini-kpis span{padding:3px 2px;border-radius:4px;font-size:11px;line-height:1.25;white-space:normal}
+#page-duty .duty-mini-kpis b{font-size:15px;font-variant-numeric:tabular-nums}
+#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1;padding:2px}
+#page-duty .duty-category-basic{--hour-ink:#174f87;--hour-bg:#e0effe}
+#page-duty .duty-category-normal_ot{--hour-ink:#185e4d;--hour-bg:#dbf1e9}
+#page-duty .duty-category-friday_ot{--hour-ink:#504084;--hour-bg:#eee7fc}
+#page-duty .duty-category-holiday_ot{--hour-ink:#7b4908;--hour-bg:#fceccc}
+#page-duty .duty-category-total{--hour-ink:#fff;--hour-bg:#284b73}
+#page-duty .duty-mini-kpis span,#page-duty .duty-cell-categories button{color:var(--hour-ink);background:var(--hour-bg)}
+#page-duty .duty-cell-time{min-height:23px;width:100%;padding:1px 2px;border:1px solid transparent;background:transparent;box-shadow:none}
+#page-duty .duty-cell-time.duty-split{border-left:2px solid #5b84b0}
+#page-duty .duty-cell-time.duty-status-off,#page-duty .duty-cell-time.duty-status-annual_leave,#page-duty .duty-cell-time.duty-status-sick_leave,#page-duty .duty-cell-time.duty-status-other_leave{color:#315970;background:#e7f1f4}
+#page-duty .duty-vertical .duty-time-period{display:block;line-height:1.24;font-size:12px;white-space:nowrap}
+#page-duty .duty-vertical .duty-note-dot{top:1px;right:3px}
+#page-duty .duty-cell-categories{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:3px}
+#page-duty .duty-cell-categories button{min-height:18px;padding:1px 2px;border:1px solid transparent;border-radius:4px;font-size:11px;font-weight:700;box-shadow:none}
+#page-duty .duty-cell-categories button:hover:not(:disabled){border-color:currentColor}
+#page-duty .duty-cell-categories button:disabled{opacity:.85}
+#page-duty .duty-cell-categories .duty-manual{text-decoration:underline;text-decoration-style:dotted;border-color:currentColor}
+#page-duty .duty-cell-editor{position:fixed;z-index:900;display:grid;gap:8px;width:348px;max-width:calc(100vw - 16px);padding:12px;border:1px solid #a3bbd5;border-radius:9px;background:white;box-shadow:0 10px 30px #142b4b33}
+#page-duty .duty-editor-head{display:flex;justify-content:space-between;align-items:center}
+#page-duty .duty-cell-editor [data-time-fields]{margin-top:1px}
+#page-duty .duty-cell-editor .duty-actions{justify-content:flex-end}
+#page-duty .duty-time-fields{display:grid;grid-template-columns:1fr auto auto auto;gap:4px;align-items:center;margin:5px 0 8px}
+#page-duty .duty-time-fields strong{grid-column:1 / -1}
+#page-duty .duty-time-fields select{min-height:29px;border:1px solid #cbd8e6;border-radius:5px;background:#f5f8fc;color:#17263d}
+#page-duty .duty-time-fields span{font-weight:600}
+#page-duty .duty-vertical .duty-cell:focus-visible{outline:2px solid #2477bb;outline-offset:-2px}
+#page-duty .duty-history{gap:4px}
+#page-duty .duty-schedule-controls,#page-duty .duty-selection-tools{flex-wrap:wrap}

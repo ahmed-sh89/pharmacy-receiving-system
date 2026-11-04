@@ -1,30 +1,44 @@
 (function(){
  'use strict';
- if(typeof APP_CONFIG==='undefined'||APP_CONFIG.environment!=='staging'||typeof CLOUD_CONFIG==='undefined'||!CLOUD_CONFIG.url.includes('tovkcakucyagvbzvlnks.supabase.co'))return;
+ const preview=document.body.hasAttribute('data-duty-synthetic');
+ if(!preview&&(typeof APP_CONFIG==='undefined'||APP_CONFIG.environment!=='staging'||typeof CLOUD_CONFIG==='undefined'||!CLOUD_CONFIG.url.includes('tovkcakucyagvbzvlnks.supabase.co')))return;
  const M=window.DutyModel,root=document.getElementById('page-duty');if(!root)return;
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
- const state={month:parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value,tab:'schedule',demo:false,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
+ const state={month:preview?'2026-11':parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value,tab:'schedule',demo:preview,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
  const demos=new Map();let demoSeedMonth=state.month;
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const context=()=>typeof AuthState==='undefined'?null:AuthState.context;
- const scope=()=>!AuthState.session||AuthState.mustChangePassword?'':(context()?.user_id||AuthState.user?.id||'')+'/'+(context()?.pharmacy_id||'');
+ const scope=()=>preview?'synthetic':!AuthState.session||AuthState.mustChangePassword?'':(context()?.user_id||AuthState.user?.id||'')+'/'+(context()?.pharmacy_id||'');
  const active=()=>typeof AppRouter!=='undefined'&&AppRouter.currentRoute==='duty';
- const demoMonth=month=>{if(!demos.has(month)){const d=M.demoMonth(month);if(month!==demoSeedMonth)d.entries=[];demos.set(month,d);}return demos.get(month);};
+ const demoMonth=month=>{if(!demos.has(month)){const d=M.demoMonth(month);if(month!==demoSeedMonth)d.entries=[];
+ if(preview&&month===demoSeedMonth){
+  const assign=(index,day,payload)=>{const row=d.entries.find(e=>e.code===d.employees[index].code&&e.date===month+'-'+day);row.payload=payload;};
+  assign(0,'01',M.normalize({status:'WORK',manual_minutes:{basic:540}}));
+  assign(1,'02',M.normalize({status:'ANNUAL_LEAVE'}));
+  assign(1,'04',M.parse('12 PM – 9:30 PM'));
+  d.holidays=[{date:month+'-05',active:true,revision:1}];
+ }demos.set(month,d);}return demos.get(month);};
  const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
  function reset(){if(pendingConfirm)pendingConfirm(false);state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();DutySchedule.clear();closePanel();render();}
- async function readMonth(month){return authRpc('get_pharmflow_duty_schedule_v1',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01'});}
+ async function readMonth(month){
+  const pharmacy=context()?.pharmacy_id,identity=scope();
+  if(preview||!pharmacy||!identity)throw Error('Sign in to read Duty.');
+  const result=await authRpc('get_pharmflow_duty_schedule_v1',{p_pharmacy_id:pharmacy,p_month:month+'-01'});
+  if(result.pharmacy_id!==pharmacy||scope()!==identity)throw Error('Duty pharmacy context changed. Reopen Duty.');
+  return result;
+ }
  async function load(force=false){
   if(!active()||!context()?.pharmacy_id||!scope()||state.demo)return;
   const key=scope();if(key!==state.scope)reset();
   if(state.loading||DutySchedule.isEditing()||root.querySelector('.duty-panel')||(!force&&state.data&&Date.now()-state.lastRead<15000))return;
   const seq=++state.sequence,month=state.month;state.loading=true;state.error='';render();
-  try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month)return;
+  try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month||state.demo)return;
    if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.data=data;state.scope=key;state.lastRead=Date.now();
   }catch(error){if(seq===state.sequence&&key===scope())state.error=error.message||'Unable to load Duty.';}
   finally{if(seq===state.sequence){state.loading=false;render();}}
  }
  async function mutate(name,args){
-  const key=scope(),month=state.month;if(!key)throw Error('Sign in to manage Duty.');
+  const key=scope(),month=state.month;if(preview||!key)throw Error('Sign in to manage Duty.');
   await authRpc(name,{p_pharmacy_id:context().pharmacy_id,...args});
   const result=await readMonth(month);if(key!==scope()||month!==state.month)throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;
  }
@@ -35,12 +49,12 @@
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
  }
  function render(){
-  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><strong class="duty-compact-title">Duty</strong><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions"><button type="button" data-duty-action="retry" title="Refresh Duty">↻</button><button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button><button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
+  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><strong class="duty-compact-title">Duty</strong><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions"><button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${preview?'':`<button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button>`}<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
   ${state.demo?'<div class="duty-banner"><span><strong>Interactive demo</strong> · Synthetic schedules. Edits stay in memory and reset on reload.</span></div>':''}
   ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':list(d)}</div>`;
-  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:confirmReplace,panel:customPanel,
-   holiday:async(date,active,revision)=>{if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});const d=demoMonth(state.month),i=d.holidays.findIndex(h=>h.date===date),v={date,active,revision:revision+1};if(i<0)d.holidays.push(v);else d.holidays[i]=v;return d;},
+  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,loading:state.loading,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:confirmReplace,panel:customPanel,
+   holiday:async(date,active,revision)=>{if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});const d=demoMonth(date.slice(0,7)),i=d.holidays.findIndex(h=>h.date===date),v={date,active,revision:revision+1};if(i<0)d.holidays.push(v);else d.holidays[i]=v;return demoMonth(state.month);},
    monthStatus:async(status,revision,reason)=>{if(!state.demo)return mutate('set_pharmflow_duty_month_v1',{p_month:state.month+'-01',p_status:status,p_expected_revision:revision,p_reason:reason});const d=demoMonth(state.month);d.month={status,revision:revision+1};return d;}
   });
  }
@@ -65,7 +79,7 @@
    if(panelScope!==scope()){closePanel();reset();return;}
    const requestScope=scope(),fields=new FormData(form);save.disabled=true;
    try{
-    const pid=context().pharmacy_id;
+    const pid=context()?.pharmacy_id;
     if(state.demo){
      const d=view();
      if(isEmployee){const input=M.validateEmployee({code:fields.get('code'),name:fields.get('name'),position_key:fields.get('position_key'),active:fields.has('active')});if(!item&&d.employees.some(e=>e.code.toLowerCase()===input.code.toLowerCase()))throw Error('This employee code already exists.');const value={...input,revision:(item?.revision||0)+1};for(const current of demos.values()){const index=current.employees.findIndex(e=>e.code===input.code);if(index<0)current.employees.push({...value});else current.employees[index]={...value};}}
@@ -120,11 +134,12 @@
   if(target.dataset.dutyEmployee){panel('employee',view().employees.find(x=>x.code===target.dataset.dutyEmployee));return;}
   if(target.dataset.dutyPosition){panel('position',view().positions.find(x=>x.key===target.dataset.dutyPosition));return;}
   switch(target.dataset.dutyAction){
-   case 'demo':if(!demos.size)demoSeedMonth=state.month;state.demo=!state.demo;DutySchedule.clear();render();if(!state.demo)load(true);break;
+   case 'demo':if(preview)return;if(!demos.size)demoSeedMonth=state.month;state.demo=!state.demo;DutySchedule.clear();render();if(!state.demo)load(true);break;
    case 'previous':month(M.shiftMonth(state.month,-1));break;case 'next':month(M.shiftMonth(state.month,1));break;
    case 'retry':load(true);break;case 'add-employee':panel('employee');break;case 'add-position':panel('position');break;
   }
  });
+ if(preview){render();return;}
  window.addEventListener('auth:context-ready',()=>{if(scope()!==state.scope)reset();if(active())load(true);});
  window.addEventListener('focus',()=>{if(scope()!==state.scope)reset();if(active())load();});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&active())load();});

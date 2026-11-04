@@ -8,6 +8,8 @@ test('calendar lengths, leap year and Friday columns use UTC dates',()=>{
  assert.equal(M.days('2026-11').length,30);assert.equal(M.days('2028-02').length,29);assert.equal(M.days('2027-02').length,28);
  assert.deepEqual(Array.from(M.days('2026-11').filter(x=>x.friday),x=>x.day),[6,13,20,27]);
  assert.equal(M.shiftMonth('2026-12',1),'2027-01');assert.equal(M.shiftMonth('2027-01',-1),'2026-12');
+ assert.deepEqual(Array.from(M.calendarPeriod('2026-11',0,7),d=>d.date),['2026-10-31','2026-11-01','2026-11-02','2026-11-03','2026-11-04','2026-11-05','2026-11-06']);
+ assert.equal(M.calendarPeriod('2026-12',28,7).at(-1).date,'2027-01-01');
  assert.throws(()=>M.days('2026-13'));assert.throws(()=>M.days('2026-1'));
 });
 test('synthetic employee demo is detached and has all positions',()=>{
@@ -33,12 +35,13 @@ test('month navigation is read only; demo never writes and highlights entire Fri
  const f=fixture();f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
  assert.equal(f.calls.length,1);assert.equal(f.calls[0].name,'get_pharmflow_duty_schedule_v1');
  f.root.querySelector('[data-duty-action="demo"]').click();
- assert.equal(f.root.querySelectorAll('.duty-employee-row').length,6);
- assert.equal(f.root.querySelectorAll('td.duty-friday').length,f.root.querySelectorAll('th.duty-friday').length*6);
+ assert.equal(f.root.querySelectorAll('thead .duty-mini-kpis').length,6);
+ assert.equal(f.root.querySelectorAll('.duty-friday-row').length,1);
+ assert.equal(f.root.querySelectorAll('.duty-friday-row td').length,6);
  assert.ok(f.root.textContent.includes('Edits stay in memory'));
  f.root.querySelector('[data-duty-action="next"]').click();await new Promise(setImmediate);
  assert.ok(f.calls.every(c=>c.name==='get_pharmflow_duty_schedule_v1'));
- assert.equal(f.root.querySelectorAll('td.duty-total-col').length,6);
+ assert.equal(f.root.querySelectorAll('thead .duty-category-total').length,6);
 });
 test('untrusted employee content is escaped, never executed as HTML',async()=>{
  const f=fixture();f.data.employees=[{code:'TEST-1',name:'<img src=x onerror=alert(1)>',position_key:'pharmacist',active:true}];

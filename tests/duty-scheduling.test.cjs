@@ -13,6 +13,17 @@ test('adjacent-date overlap rejected; no overlap for normal consecutive nights',
 test('copy recalculates destination date and minute accumulation is exact',()=>{const p=M.parse('9 AM–6:15 PM'),entries=[{code:'A',date:ordinary,payload:p},{code:'A',date:friday,payload:p}];const n=M.totals(entries).A;assert.equal(n.total,1110);assert.equal(n.friday_ot,555);assert.equal(n.normal_ot,15);assert.equal(M.text(p),'9:00 AM – 6:15 PM');});
 test('one-minute periods accumulate without fractional loss',()=>{const p=M.parse('9 AM–9:01 AM'),entries=M.days('2026-11').map(d=>({code:'A',date:d.date,payload:p}));assert.equal(M.totals(entries).A.total,30);});
 
+test('manual category values replace automatic values and work without periods',()=>{
+ const hoursOnly=M.normalize({status:'WORK',manual_minutes:{basic:540,normal_ot:15}});
+ assert.equal(M.calculate(ordinary,hoursOnly).total,555);
+ const timed=M.parse('9 AM–7:15 PM',{manual_minutes:{basic:480,normal_ot:30}});
+ assert.equal(M.calculate(ordinary,timed).total,510);
+ assert.equal(M.calculate(ordinary,M.parse('9 AM–6 PM',timed)).basic,480);
+ assert.equal(M.calculate(friday,M.parse('9 AM–6 PM',{manual_minutes:{friday_ot:0}}),true).total,0);
+ assert.equal(M.calculate(ordinary,M.parse('OFF',timed)).total,0);
+ assert.throws(()=>M.normalize({status:'WORK',manual_minutes:{total:540}}));
+ assert.throws(()=>M.normalize({status:'OFF',manual_minutes:{basic:540}}));
+});
 test('real Postgres engine: batch transactions, computed minutes, isolation, history, locks and overlaps',async()=>{
  const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create schema pharmflow_auth_private;
  create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.uid',true),'')::uuid$$;
@@ -52,6 +63,22 @@ test('real Postgres engine: batch transactions, computed minutes, isolation, his
  const leave=['2026-11-10','2026-11-11','2026-11-12'].map(date=>change('TEST-A',date,'Annual Leave'));await save(leave);assert.equal((await read('2026-11')).entries.filter(e=>e.payload.status==='ANNUAL_LEAVE').length,3);
  await save([change('TEST-A',ordinary,'',1)]);assert.equal((await read('2026-11')).entries.find(e=>e.date===ordinary&&e.code==='TEST-A').revision,2);
  const bad=change('TEST-A','2026-11-15','9 AM–6 PM');bad.payload.periods[0].start=1.5;await assert.rejects(save([bad]),/integer minutes/);
+ assert.equal((await read('2026-11')).manual_hours,undefined);
+ await db.exec(fs.readFileSync('docs/duty/STAGING_MANUAL_HOURS.sql','utf8'));
+ assert.equal((await read('2026-11')).manual_hours,true);
+ const manualDay='2026-11-16',manualPayload=M.normalize({status:'WORK',manual_minutes:{basic:540,normal_ot:15}});
+ await save([{code:'TEST-A',date:manualDay,payload:manualPayload,expected_revision:0}]);
+ const saved=(await read('2026-11')).entries.find(e=>e.date===manualDay);
+ assert.deepEqual(saved.minutes,{basic:540,normal_ot:15,friday_ot:0,holiday_ot:0,total:555});
+ assert.deepEqual(saved.payload.manual_minutes,{basic:540,normal_ot:15});
+ const manualFriday='2026-11-20',timed=M.parse('9 AM–6 PM',{manual_minutes:{friday_ot:75,holiday_ot:15}});
+ await save([{code:'TEST-A',date:manualFriday,payload:timed,expected_revision:0}]);
+ assert.deepEqual((await read('2026-11')).entries.find(e=>e.date===manualFriday).minutes,JSON.parse(JSON.stringify(M.calculate(manualFriday,timed))));
+ await assert.rejects(save([{code:'TEST-A',date:manualDay,payload:manualPayload,expected_revision:0}]),/DUTY_CONFLICT/);
+ const audit=(await q("select after_record from pharmflow_duty_audit_v1 where entity_key='TEST-A/2026-11-16'")).rows;
+ assert.equal(audit.length,1);assert.equal(audit[0].after_record.payload.manual_minutes.basic,540);
+ await assert.rejects(save([{code:'TEST-A',date:manualDay,payload:{...manualPayload,manual_minutes:{basic:1441}},expected_revision:1}]),/0 to 1440/);
+ await assert.rejects(save([{code:'TEST-A',date:manualDay,payload:manualPayload,expected_revision:0}],other),/access required/);
  await db.exec(`set role authenticated;`);await assert.rejects(q('select * from pharmflow_duty_entries_v1'),/permission denied/);await db.exec('reset role;set test.valid=\'no\';');await assert.rejects(read('2026-11'),/access required/);
  await db.close();
 });
