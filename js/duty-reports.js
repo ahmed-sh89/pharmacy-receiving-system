@@ -144,7 +144,7 @@
     <div class="duty-report-preview-heading"><strong>${esc(title)} · ${esc(report.title)}</strong>
      ${count>1?`<nav aria-label="Preview pages"><button type="button" data-preview-page="-1" aria-label="Previous preview page" ${state.page?'':'disabled'}>‹</button><span>${state.page+1} / ${count}</span><button type="button" data-preview-page="1" aria-label="Next preview page" ${state.page+1<count?'':'disabled'}>›</button></nav>`:''}
     </div><div class="duty-report-table-scroll" tabindex="0"><table aria-label="${state.format==='standard'?'Standard Timesheet':'Schedule Layout'} preview" class="duty-report-table duty-report-${state.format}">
-    <colgroup>${sheet.widths.map(width=>`<col style="width:${width}ch">`).join('')}</colgroup>
+    <colgroup>${sheet.widths.map((width,col)=>`<col style="width:${state.format==='schedule'?(col===0?'100px':col===1?'110px':'auto'):width+'ch'}">`).join('')}</colgroup>
     <thead><tr>${sheet.rows[0].values.map(v=>`<th scope="col">${esc(v)}</th>`).join('')}</tr></thead>
     <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:sheet.widths.length},(_,col)=>`<td>${esc(display(row.values[col],row.formats?.[col]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }

@@ -292,10 +292,10 @@
 #page-duty .duty-report-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#eaf1f8;color:#174a79}
 #page-duty .duty-report-preview-heading nav{display:flex;align-items:center;gap:8px;white-space:nowrap}
 #page-duty .duty-report-preview-heading button{min-height:28px;padding:2px 9px}
-#page-duty .duty-report-table-scroll{max-height:calc(100dvh - 340px);min-height:180px;overflow:auto}
+#page-duty .duty-report-table-scroll{max-height:calc(100dvh - 365px);min-height:180px;overflow:auto}
 #page-duty .duty-report-table{width:100%;table-layout:fixed;font-size:12px}
 #page-duty .duty-report-table :is(th,td){height:auto;padding:6px 7px;vertical-align:middle;border-right:1px solid #cad9e8;border-bottom:1px solid #cad9e8;white-space:pre-line;overflow-wrap:anywhere;line-height:1.4}
-#page-duty .duty-report-table thead th{top:0;background:#174a79;color:#fff;font-size:12px}
+#page-duty .duty-report-table thead th{top:0;--pfn-table-header-bg:#174a79;--pfn-table-header-ink:#fff;background:#174a79;color:#fff;font-size:12px}
 #page-duty .duty-report-table .duty-report-row-total td{background:#dfebf8;color:#173f70;font-weight:700}
 #page-duty .duty-report-table .duty-report-row-friday td{background:#d8e8fa}
 #page-duty .duty-report-table .duty-report-row-holiday td{background:#fff2d9}
@@ -303,5 +303,5 @@
 #page-duty .duty-report-standard td:nth-child(-n+2){text-align:left}
 #page-duty .duty-report-standard td:nth-child(12){text-align:left}
 #page-duty .duty-report-schedule{min-width:650px}
-#page-duty .duty-report-standard thead th{background:#f2f2f2;color:#173f70;border-bottom:2px solid #99aebe}
+#page-duty .duty-report-standard thead th{--pfn-table-header-bg:#f2f2f2;--pfn-table-header-ink:#173f70;background:#f2f2f2;color:#173f70;border-bottom:2px solid #99aebe}
 #page-duty .duty-report-table .duty-report-row-templateFriday td{background:#8ed973;color:#203f3a}
