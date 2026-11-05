@@ -8,8 +8,10 @@ test('calendar lengths, leap year and Friday columns use UTC dates',()=>{
  assert.equal(M.days('2026-11').length,30);assert.equal(M.days('2028-02').length,29);assert.equal(M.days('2027-02').length,28);
  assert.deepEqual(Array.from(M.days('2026-11').filter(x=>x.friday),x=>x.day),[6,13,20,27]);
  assert.equal(M.shiftMonth('2026-12',1),'2027-01');assert.equal(M.shiftMonth('2027-01',-1),'2026-12');
- assert.deepEqual(Array.from(M.calendarPeriod('2026-11',0,7),d=>d.date),['2026-10-31','2026-11-01','2026-11-02','2026-11-03','2026-11-04','2026-11-05','2026-11-06']);
- assert.equal(M.calendarPeriod('2026-12',28,7).at(-1).date,'2027-01-01');
+ assert.deepEqual(Array.from(M.calendarPeriod('2026-11',0,7),d=>d.date),['2026-11-01','2026-11-02','2026-11-03','2026-11-04','2026-11-05','2026-11-06','2026-11-07']);
+ assert.deepEqual(Array.from(M.calendarPeriod('2026-11',28,14),d=>d.day),[29,30]);
+ assert.deepEqual(Array.from(M.calendarPeriod('2026-11',28,7),d=>d.day),[29,30]);
+ assert.equal(M.calendarPeriod('2026-12',28,7).at(-1).date,'2026-12-31');
  assert.throws(()=>M.days('2026-13'));assert.throws(()=>M.days('2026-1'));
 });
 test('synthetic employee demo is detached and has all positions',()=>{

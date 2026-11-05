@@ -51,11 +51,13 @@
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
  }
  function render(){
-  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input class="${state.month===currentMonth?'duty-current-month':''}" id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions">${state.demo?'<span class="duty-demo-badge" title="Edits stay in memory and reset on reload">Synthetic demo</span>':''}<button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${preview?'':`<button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button>`}<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
+  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input class="${state.month===currentMonth?'duty-current-month':''}" id="duty-month" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions">${state.demo?'<span class="duty-demo-badge" title="Edits stay in memory and reset on reload">Synthetic demo</span>':''}<button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${preview?'':`<button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button>`}${state.tab==='schedule'?`<button type="button" data-duty-action="calendar" ${!d.can_write?'disabled':''}>Calendar Settings</button>`:''}<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
 
   ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':list(d)}</div>`;
-  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,{month:state.month,demo:state.demo,loading:state.loading,save,readMonth:async month=>state.demo?demoMonth(month):readMonth(month),confirm:confirmReplace,panel:customPanel,
+  if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,scheduleConfig());
+ }
+ function scheduleConfig(){return {month:state.month,demo:state.demo,loading:state.loading,save,confirm:confirmReplace,panel:customPanel,
    holiday:async(date,active,revision,name,note)=>{
     if(!state.demo)return mutate('set_pharmflow_duty_holiday_v1',{p_date:date,p_active:active,p_expected_revision:revision});
     const d=demoMonth(date.slice(0,7)),i=d.holidays.findIndex(h=>h.date===date);
@@ -64,11 +66,14 @@
    },
    hourRules:rules=>{demoRules.splice(0,demoRules.length,...rules);return demoMonth(state.month);}
 
-  });
+  };
  }
  function list(data){
-  if(state.tab==='positions')return `<div class="duty-list"><div class="duty-list-row"><strong>Positions</strong><button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button></div>${data.positions.map(p=>`<div class="duty-list-row ${p.active?'':'duty-inactive'}"><span><strong>${esc(p.label)}</strong> <span class="duty-count">${p.active?'':'· Inactive'}</span></span><button type="button" data-duty-position="${esc(p.key)}" ${!data.can_write?'disabled':''}>Edit</button></div>`).join('')}</div>`;
-  return `<div class="duty-list"><div class="duty-list-row"><strong>Employees</strong></div>${data.employees.length?data.employees.map(e=>`<div class="duty-list-row ${e.active?'':'duty-inactive'}"><span><strong>${esc(e.name)}</strong><span class="duty-code">${esc(e.display_code||e.code)} · ${esc(data.positions.find(p=>p.key===e.position_key)?.label||'Position')} ${e.active?'':'· Inactive'}</span></span><span class="duty-count">${M.hours(e.basic_minutes??540)} h Basic</span><button type="button" data-duty-employee="${esc(e.code)}">${data.can_write?'Edit':'View'}</button></div>`).join(''):'<div class="duty-empty"><h3>No employees yet</h3><p>Employee records are entered manually.</p></div>'}</div>`;
+  const positions=state.tab==='positions';
+  const editIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg>';
+  const cards=positions?data.positions.map(p=>`<article class="duty-directory-card"><div><strong>${esc(p.label)}</strong><small>${data.employees.filter(e=>e.position_key===p.key).length} staff${p.active?'':' · Inactive'}</small></div><button type="button" class="duty-icon" data-duty-position="${esc(p.key)}" aria-label="Edit ${esc(p.label)}" ${!data.can_write?'disabled':''}>${editIcon}</button></article>`):
+   data.employees.map(e=>`<article class="duty-directory-card"><div><strong>${esc(e.name)}</strong><small>${esc(e.display_code||e.code)} · ${esc(data.positions.find(p=>p.key===e.position_key)?.label||'Position')}${e.active?'':' · Inactive'}</small><small>${M.hours(e.basic_minutes??540)} h Basic</small></div><button type="button" class="duty-icon" data-duty-employee="${esc(e.code)}" aria-label="${data.can_write?'Edit':'View'} ${esc(e.name)}">${editIcon}</button></article>`);
+  return `<section class="duty-directory"><div class="duty-directory-heading"><strong>${positions?'Positions':'Employees'}</strong>${positions?`<button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button>`:state.demo?'<button type="button" data-duty-action="hour-rules">Working Hours Settings</button>':''}</div><div class="duty-directory-grid">${cards.join('')||'No employees yet.'}</div></section>`;
  }
  let returnFocus=null,panelScope='';
  function closePanel(){const panel=root.querySelector('.duty-panel-backdrop');if(panel){panel.remove();if(returnFocus?.isConnected)returnFocus.focus();}}
@@ -151,6 +156,7 @@
   switch(target.dataset.dutyAction){
    case 'demo':if(preview)return;if(!demos.size)demoSeedMonth=state.month;state.demo=!state.demo;DutySchedule.clear();render();if(!state.demo)load(true);break;
    case 'previous':month(M.shiftMonth(state.month,-1));break;case 'next':month(M.shiftMonth(state.month,1));break;
+   case 'calendar':DutySchedule.calendar();break;case 'hour-rules':if(state.demo)DutySchedule.rules(view(),scheduleConfig());break;
    case 'retry':load(true);break;case 'add-employee':panel('employee');break;case 'add-position':panel('position');break;
   }
  });

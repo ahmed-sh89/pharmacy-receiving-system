@@ -44,7 +44,10 @@
    if(p.status!=='WORK')throw Error('Manual hours require a working day.');
    p.manual_minutes=Object.fromEntries(overrides);
   }
-  if(p.status==='WORK'&&!input.length&&!overrides.length)throw Error('Enter working times or manual hours.');
+  if(p.status==='WORK'&&!input.length&&!overrides.length){
+   if(payload.working_pending!==true)throw Error('Enter working times or manual hours.');
+   p.working_pending=true;
+  }
   input.forEach((v,i)=>{
    let start=Number(v.start),end=Number(v.end);
    if(!Number.isInteger(start)||!Number.isInteger(end)||start<0||start>=2880||end<0||end>=2880)throw Error('Invalid working time.');
@@ -94,13 +97,7 @@
   data.totals=totals(data.entries);return data;
  }
  function calendarPeriod(month,offset,length){
-  if(length===31)return days(month);
-  const first=month+'-01',weekday=new Date(first+'T12:00Z').getUTCDay();
-  const start=addDays(first,offset-(weekday+1)%7);
-  return Array.from({length},(_,i)=>{
-   const date=addDays(start,i),d=new Date(date+'T12:00Z');
-   return {date,day:d.getUTCDate(),weekday:d.toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'}),friday:d.getUTCDay()===5};
-  });
+  return days(month).slice(offset,offset+length);
  }
  const api={defaults,days,calendarPeriod,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;

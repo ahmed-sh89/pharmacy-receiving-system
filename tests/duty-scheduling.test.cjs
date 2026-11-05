@@ -108,3 +108,14 @@ test('dated Basic rules use shift start, employee priority and exclusive special
  assert.deepEqual([manual.basic,manual.normal_ot,manual.total],[300,180,480]);
  assert.equal(M.totals([{date,code:'P1',payload:after}],[],[employee],[rule]).P1.total,540);
 });
+
+test('full manual allocations replace automatic categories and pending Working has zero hours',()=>{
+ const date='2026-11-03',shift=M.parse('3 PM–1 AM');
+ const auto=M.calculate(date,shift);
+ assert.deepEqual([auto.basic,auto.normal_ot,auto.total],[540,60,600]);
+ const manual=M.normalize({...shift,manual_minutes:{basic:480,normal_ot:0,friday_ot:0,holiday_ot:120}});
+ const actual=M.calculate(date,manual,true);
+ assert.deepEqual([actual.basic,actual.normal_ot,actual.friday_ot,actual.holiday_ot,actual.total],[480,0,0,120,600]);
+ assert.equal(M.calculate(date,M.normalize({status:'WORK',working_pending:true})).total,0);
+ assert.equal(M.calculate(date,M.normalize({...manual,manual_minutes:undefined})).normal_ot,60);
+});
