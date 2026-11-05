@@ -64,7 +64,15 @@ test('real Postgres engine: batch transactions, computed minutes, isolation, his
  await save([change('TEST-A',ordinary,'',1)]);assert.equal((await read('2026-11')).entries.find(e=>e.date===ordinary&&e.code==='TEST-A').revision,2);
  const bad=change('TEST-A','2026-11-15','9 AM–6 PM');bad.payload.periods[0].start=1.5;await assert.rejects(save([bad]),/integer minutes/);
  assert.equal((await read('2026-11')).manual_hours,undefined);
- await db.exec(fs.readFileSync('docs/duty/STAGING_MANUAL_HOURS.sql','utf8'));
+ // Upgrade the legacy fixtures using the actual release contract, not the
+ // superseded manual-hours proposal that is deliberately excluded.
+ await db.exec(`create table public.pharmflow_pharmacy_permissions_v1(
+  pharmacy_id uuid primary key references pharmacies(id),receiving text default 'FULL',expiry text default 'FULL',
+  data_access text default 'READ_ONLY',revision bigint default 1,updated_by uuid,updated_at timestamptz);
+ create table public.pharmflow_permission_audit_v1(pharmacy_id uuid,actor uuid,before_value jsonb,after_value jsonb);
+ insert into public.pharmflow_pharmacy_permissions_v1(pharmacy_id) select id from public.pharmacies;`);
+ await db.exec(fs.readFileSync('supabase/migrations/20261105183357_duty_production_readiness_staging.sql','utf8'));
+ await q("update public.pharmflow_pharmacy_permissions_v1 set duty='FULL' where pharmacy_id=$1",[pid]);
  assert.equal((await read('2026-11')).manual_hours,true);
  const manualDay='2026-11-16',manualPayload=M.normalize({status:'WORK',manual_minutes:{basic:540,normal_ot:15}});
  await save([{code:'TEST-A',date:manualDay,payload:manualPayload,expected_revision:0}]);

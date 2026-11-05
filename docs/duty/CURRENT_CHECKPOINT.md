@@ -1,47 +1,39 @@
 # Duty Production Readiness · 5 November 2026
 
-**BLOCKED — NOT READY FOR PRODUCTION. Staging only; draft PR #43.**
+**BLOCKED — NOT READY FOR PRODUCTION. No merge, Production SQL, deployment or activation.**
 
 ## Authoritative state
 
-Repository `ahmed-sh89/pharmacy-receiving-system`; branch `feature/duty-staging-20261104`.
-Implementation commit: `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`. Draft PR: https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/43 (not merged).
-Recovery source: `1c2879676a1be354805bdb594ec48d29340a6fae`; previous XLSX repair `fb0a8fddd340cba22cfaf73f6280960f06a0a16c`.
-Production main verified unchanged at `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
-Staging DB exclusively `tovkcakucyagvbzvlnks`. No main merge, Pages deployment, Production database call or Production Duty activation.
+Production main verified unchanged: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
+Duty feature source: `76288141aad46469e6a3f838525550757f602324`; runtime implementation `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`. Existing Staging draft PR #43 remains unmerged. Focused release draft PR #44: https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/44 · prepared release SHA `745a09f23b29dcd3d848a2ce8ff3df6516a8275d`.
+Clean release branch: `release/duty-production-prep-20261105`, based directly on verified main. It retains the approved Duty runtime and necessary integration, excluding Staging build exceptions, synthetic HTML/live-fixture scripts, obsolete manual-hours proposal and unrelated global checkpoint edits. See `PRODUCTION_RELEASE.md` and the exact protected-file hashes in `RELEASE_MANIFEST.json`.
 
-Recovery inspected the branch's 27 commits, all 42 existing PRs (open and closed), all branch pages and the surviving local Duty workspace. No readiness branch, commit, PR or recoverable uncommitted readiness implementation was found. The surviving workspace remains untouched; this work used an isolated copy and verified runtime files against GitHub blob hashes. This does not establish what was once held only in the inaccessible conversation's memory.
+Working implementation preview: https://pharmflow-test-qq5ur5108-fhyh2xtskz-3504.vercel.app/ — Vercel READY, runtime d89296b. Synthetic `/duty-demo.html` is available on this Staging deployment only; it is not part of the clean release. Later feature commits only changed documentation. No Production connection or operational record was used for browser testing.
 
-## Implemented and locally verified
+## Implemented architecture
 
-- Duty is a normal runtime module, registered after Expiry. Administrator → existing Permissions dialog has Duty Enabled/Disabled. Default is Disabled for existing and new pharmacies, including System Administrator module access. The existing Receiving/Expiry authorization helper and v1 permission writer remain unchanged. The new v2 permission writer preserves their fields and uses existing policy revisions and audit.
-- Hidden navigation, route authorization, scoped RPC rules, disabled-page CSS and server-side Duty authorization. Revocation clears Duty schedule/clipboard state; a rejected server read triggers permission revalidation. No demo button in Production.
-- Server-authoritative Duty settings, employee Basic defaults and effective-date history, dated pharmacy/employee rules, editable display codes with immutable schedule keys, atomic holiday ranges with names/notes, manual categories and pending Working days. New table uses RLS default deny and RPC-only access. No browser schedule persistence or new sync loop: existing visible-Duty 15-second reads/focus refresh are reused.
-- SQL and client calculations agree, including shift-start dates, inclusive rule intervals, employee priority, explicit manual zeros and Holiday OT on Friday holidays (the newer approved demo behavior). Completed-month hours cannot be changed indirectly through settings. Earlier effective-date history is preserved by bulk updates. Existing Staging Duty employee, entry and holiday counts were all zero before migration.
-- Existing approved screens, schedules, Copy Values E:L, both XLSX formats and inline report preview retained. Report changes only connect the existing projection to the persisted holiday precedence.
+Duty is registered in normal PharmFlow navigation and the existing Administrator Permissions dialog. Its policy field defaults Disabled, including Administrator module access. Disabled Duty is hidden; routes and server RPCs deny access. Existing Receiving/Expiry authorization and the v1 permission writer are unchanged. The new atomic v2 writer uses existing policy revisions and audit.
 
-## Staging migration
+Supabase is authoritative for Duty employees, positions, entries, holidays, months and settings. Effective Basic defaults, timestamp/employee rules, Manual allocations and holiday metadata are durable. Internal employee keys remain stable. RLS defaults deny, direct client table access is revoked, and RPCs validate live session, password policy, pharmacy scope and existing member/admin authority. Schedule operations retain audit, row revisions, atomic batches, overlap checks and safe Undo/Redo. Existing bounded refresh/focus reads are reused; no browser schedule persistence or parallel authorization system.
 
-Applied `20261105183357_duty_production_readiness_staging.sql` exactly once to Staging, after local PostgreSQL tests. Supersedes the old **unapplied** `STAGING_MANUAL_HOURS.sql` proposal; do not apply both. Original three Stage A/B migrations remain unchanged.
+Four Duty migrations have already been applied to Staging `tovkcakucyagvbzvlnks`, including `20261105183357_duty_production_readiness_staging.sql`. No migration was applied in this continuation. The manual-hours SQL proposal is superseded. Production migration application is not authorized. Deploying the new Permissions UI requires the v2 RPC first; the runbook specifies that cutover dependency.
 
-Before/after: all 12 existing Staging policies remain Duty Disabled. No real employee or pharmacy records used in tests. Live synthetic rollback-only SQL passed default denial, save/read, manual allocations, rule persistence, holiday precedence, CAS, completed-month locks, tenant isolation, staff write rejection, revoked sessions and anonymous/table denial. Fixtures were rolled back. Final counts: employees=0, entries=0, holidays=0, settings=0, enabled Duty policies=0. No disposable browser account was created.
+## Actual verification
 
-Supabase CLI was unavailable in this runtime. The migration filename uses the actual version allocated by the hosted Staging migration tool; no timestamp or migration history was invented. Advisors retain the existing RPC-only/default-deny and SECURITY DEFINER notices; the new table also deliberately has no client grants or policies. No broad grants were added.
+- Local Production-target build PASS (build only).
+- Duty, access and release-isolation: **63/63 PASS**. New checks cover permitted Production runtime loading/revocation and 81 byte-identical protected main files. Build assertions verify either exact isolated Staging output or exact Production output, without relaxing the Vercel Production guard.
+- Focused security, Receiving/email, authentication, Handheld and Expiry capture/session regression: **300 PASS, 2 optional SKIP, 0 FAIL**.
+- Complete serial legacy suite: candidate **1270 PASS, 140 FAIL, 4 cancelled, 3 SKIP** (1417 total). Exact main fixture: **1227 PASS, 141 FAIL, 4 cancelled, 3 SKIP** (1375 total). All candidate failing/cancelled test names also fail/cancel on main; no new failure name. Full command used `--test-concurrency=1 --test-timeout=10000`; the full suite is NOT green. Historical Git objects were recovered for comparison; earlier missing-checkout failures are not used as final evidence. Details and all failing names: `VERIFICATION_20261105.json`.
+- Live Staging SQL PASS: access/default denial, durable writes/rules, revisions, Manual and overnight allocations, Holiday-over-Friday precedence, completed locks, pharmacy isolation, member-write/session/anonymous/table denial. Synthetic transaction rolled back. Final employees/entries/settings/holidays and enabled Duty policies all **0**.
+- Chrome synthetic workflow PASS: single-click selection, double-click editor, confirmed Basic 8 from November 7 then 1 PM–10 PM = Basic 8 + Normal OT 1; paste to Friday = Friday OT 9; Undo/Redo; Schedule → Reports; recalculated monthly preview totals. Reports Copy Values showed success; the cloud virtual clipboard remained empty, so actual clipboard bytes are not claimed verified in this browser.
+- Both XLSX formats downloaded from the implementation preview and independently passed ZIP CRC/XML order, relationship, style and cell-structure validation. Notes remain saved-note-only. Native Excel 2016/2019 acceptance remains open.
+- Authenticated browser is at the Staging sign-in screen. No authenticated save/refresh/two-session or Administrator browser result is claimed. Release CI on `745a09f` PASS: Duty readiness [42096419377](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42096419377) and PharmFlow security [42096419340](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42096419340). The first release CI exposed a legacy test dependency on the excluded manual-hours proposal; its fixture now upgrades using the actual readiness migration, preserving all assertions. The final 63-check rerun and CI pass. Full-suite figures above precede that test-only dependency correction; unrelated failure names were compared against main.
 
-## Verification and open gates
+## Exact next actions / release gates
 
-- 39 Duty automated tests PASS (includes embedded PostgreSQL, projection, Copy Values, both workbook formats and independent ZIP/XML validation for 28/29/30/31 days).
-- 137 focused regression tests PASS across permissions/reconnect, authentication, Handheld readiness, Receiving/email/KPI and Expiry capture/session state.
-- Staging and Production builds PASS locally (build only; no Production connection or deployment). Four runtime Pages artifact/security checks PASS. New Duty readiness CI workflow builds/tests only and has no deploy or database credentials.
-- GitHub CI PASS on implementation `d89296b`: Duty readiness checks [42086333198](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42086333198), required PharmFlow security checks [42086333139](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42086333139). No protected Receiving/Expiry/auth/Handheld business file changes in the reviewed PR diff.
-- Two legacy Settings tests cannot run locally because this recovered checkout lacks historical git objects `ef0077c` and `66ac0b2`. No assertions were removed. A separate Expiry draft-discard test fails unchanged on the prior baseline as well as this candidate (1 versus 0). No Expiry fix attempted.
-- Authenticated browser save/refresh, two independent browser sessions and actual multi-PC synchronization remain unverified in this recovery. Local browser executable unavailable; cloud browser cannot reach the local build. The implementation Preview `https://pharmflow-test-qq5ur5108-fhyh2xtskz-3504.vercel.app/` remained INITIALIZING in Vercel and displayed “Deployment is building” in the cloud browser, with no build events returned. No deployment failure or success is claimed. Continue when that exact candidate Preview is available; match version.json to the candidate SHA.
-- Native Microsoft Excel 2016/2019 and actual online-template Copy Values acceptance remain USER TEST pending; native Chrome 75–80% zoom is also not verified. Prior historical verification is preserved in `HISTORY_BEFORE_READINESS_20261105.md` and is not claimed as new evidence.
+1. Reconcile inherited full-suite failures; preserve unrelated business code rather than changing it merely to satisfy old snapshots.
+2. With an authorized synthetic Staging account, verify Administrator enable/disable, hidden navigation/direct-route denial, save → refresh → independent-session read, settings/calendar propagation, stale writes and Receiving/Expiry smoke.
+3. Product Owner opens both downloads in Microsoft Excel without repair and tests E:L paste into a disposable actual template. Native Windows Chrome 80% remains unverified. Values-only paste can overwrite formulas inside E:L.
+4. Recheck main/source/PR SHAs and CI. Obtain explicit Production approval covering migration prerequisites/order, exact release SHA and automatic official Pages deployment. No Production pharmacy activation without separate approval.
 
-## Exact next action
-
-Verify the pushed Staging SHA and CI, then run authenticated synthetic browser save → reload → second-session read, settings/defaults/calendar propagation, disable/direct-route denial and enable restoration. Verify Microsoft Excel and disposable online-template paste if not already accepted by the Product Owner. Keep a draft release PR targeting main; do not merge or enable Production.
-
-## Safety and rollback
-
-All release gates stay closed. UI rollback uses the prior Duty branch SHA. Keep additive database columns/functions and disable Duty rather than drop tables or restore the old calculator after manual data exists. Disabling retains records; re-enabling restores access. A future Production release needs explicit approval, schema/dependency preflight and the three foundation migrations plus readiness migration in order. No automatic SQL deployment is wired into CI. Preserve Receiving/Expiry business logic and permissions.
+Rollback: disable Duty and revert only its focused UI release through the normal protected PR/Pages path. Preserve additive schema, historical records and the Manual-aware reader. Do not drop tables, restore databases or reset operational storage. Detailed migration/rollback sequence: `PRODUCTION_RELEASE.md`. No USER VERIFIED/DONE claim.
