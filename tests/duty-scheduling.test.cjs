@@ -5,7 +5,7 @@ const ordinary='2026-11-04',friday='2026-11-06';
 for(const [label,shift,total,basic,ot] of [['nine hours','12 PM–9 PM',540,540,0],['short duty','3 PM–8:30 PM',330,330,0],['fractional OT','12 PM–11:30 PM',690,540,150],['split duty','9 AM–1 PM / 5 PM–10 PM',540,540,0],['overnight','7 PM–4 AM',540,540,0],['quarter hours','9 AM–4:15 PM',435,435,0]])test(label,()=>{const n=M.calculate(ordinary,M.parse(shift));assert.equal(n.total,total);assert.equal(n.basic,basic);assert.equal(n.normal_ot,ot);});
 test('Thursday midnight remains Thursday; Friday/holiday precedence',()=>{
  const p=M.parse('7 PM–4 AM');assert.equal(M.calculate('2026-11-05',p).friday_ot,0);assert.equal(M.calculate(friday,p).friday_ot,540);
- assert.equal(M.calculate(ordinary,p,true).holiday_ot,540);const n=M.calculate(friday,p,true);assert.equal(n.friday_ot,540);assert.equal(n.holiday_ot+n.basic+n.normal_ot,0);
+ assert.equal(M.calculate(ordinary,p,true).holiday_ot,540);const n=M.calculate(friday,p,true);assert.equal(n.holiday_ot,540);assert.equal(n.friday_ot+n.basic+n.normal_ot,0);
 });
 test('manual basic limit and leave zero worked minutes',()=>{assert.equal(M.calculate(ordinary,M.parse('12 PM–9 PM',{basic_limit:480})).normal_ot,60);for(const status of ['OFF','ANNUAL_LEAVE','SICK_LEAVE','OTHER_LEAVE','EMPTY'])assert.equal(M.calculate(ordinary,M.normalize({status})).total,0);});
 test('invalid, overlapping and overlong periods are rejected',()=>{for(const value of ['14:00–18:00','9 AM–9 AM','9 AM–1 PM / 12 PM–6 PM','9 AM–6 PM / 8 AM–9 PM'])assert.throws(()=>M.parse(value),value);assert.throws(()=>M.normalize({status:'OFF',periods:[{start:540,end:600}]}));});
@@ -19,7 +19,7 @@ test('manual category values replace automatic values and work without periods',
  const timed=M.parse('9 AM–7:15 PM',{manual_minutes:{basic:480,normal_ot:30}});
  assert.equal(M.calculate(ordinary,timed).total,510);
  assert.equal(M.calculate(ordinary,M.parse('9 AM–6 PM',timed)).basic,480);
- assert.equal(M.calculate(friday,M.parse('9 AM–6 PM',{manual_minutes:{friday_ot:0}}),true).total,0);
+ assert.equal(M.calculate(friday,M.parse('9 AM–6 PM',{manual_minutes:{holiday_ot:0}}),true).total,0);
  assert.equal(M.calculate(ordinary,M.parse('OFF',timed)).total,0);
  assert.throws(()=>M.normalize({status:'WORK',manual_minutes:{total:540}}));
  assert.throws(()=>M.normalize({status:'OFF',manual_minutes:{basic:540}}));
@@ -160,4 +160,21 @@ test('editor defaults distinguish empty, timed, pending, and hours-only records'
  assert.deepEqual(structuredClone(M.editorDefaults(M.normalize({status:'WORK',working_pending:true}))),{hasTimes:false,allocation:'auto'});
  assert.deepEqual(structuredClone(M.editorDefaults(M.normalize({status:'WORK',manual_minutes:{basic:480}}))),{hasTimes:false,allocation:'manual'});
  assert.deepEqual(structuredClone(M.editorDefaults(M.normalize({...M.parse('3 PM–12 AM'),manual_minutes:{basic:480}}))),{hasTimes:true,allocation:'manual'});
+});
+
+test('Auto clipboard resolves destination allowance and day type; Manual preserves its source allocation',()=>{
+ const source=M.parse('1 PM–10 PM',{basic_limit:480});
+ const employee={code:'B',basic_minutes:480};
+ const copy=M.clipboardPayload(source);
+ assert.equal(copy.basic_limit,M.DEFAULT_BASIC);
+ assert.equal(copy.manual_minutes,undefined);
+ const dates=[['2026-11-07',false],['2026-11-13',false],['2026-11-14',true],['2026-11-20',true],['2026-12-01',false]];
+ const allocations=dates.map(([date,holiday])=>M.effectiveHours(date,copy,holiday,employee));
+ assert.deepEqual(allocations.map(a=>[a.basic,a.normal_ot,a.friday_ot,a.holiday_ot,a.total]),
+  [[480,60,0,0,540],[0,0,540,0,540],[0,0,0,540,540],[0,0,0,540,540],[480,60,0,0,540]]);
+ const manual=M.parse('1 PM–10 PM',{manual_minutes:{basic:480}});
+ const manualCopy=M.clipboardPayload(manual,M.effectiveHours('2026-11-07',manual,false,employee));
+ const result=M.effectiveHours('2026-11-20',manualCopy,true,employee);
+ assert.deepEqual([result.basic,result.normal_ot,result.friday_ot,result.holiday_ot,result.total],[480,60,0,0,540]);
+ assert.equal(M.effectiveHours('2026-12-01',copy,false,{basic_minutes:420}).normal_ot,120);
 });

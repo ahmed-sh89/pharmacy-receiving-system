@@ -84,17 +84,17 @@
   const matching=rules.filter(r=>r.start<=start&&start<=r.end&&(!r.codes.length||r.codes.includes(employee?.code)));
   return (matching.findLast(r=>r.codes.length)||matching.at(-1))?.basic??basicDefault(employee,date);
  }
- function calculate(date,payload,holiday=false,basic=payload.basic_limit??DEFAULT_BASIC){
-  const p=normalize(payload),total=p.periods.reduce((a,v)=>a+v.end-v.start,0),friday=new Date(date+'T12:00:00Z').getUTCDay()===5;
+ function calculate(date,payload,holiday=false,basic=payload.basic_limit??DEFAULT_BASIC,holidayFirst=true){
+  const p=normalize(payload),total=p.periods.reduce((a,v)=>a+v.end-v.start,0),friday=new Date(date+'T12:00:00Z').getUTCDay()===5&&!(holiday&&holidayFirst);
   const result={basic:!friday&&!holiday?Math.min(total,basic):0,normal_ot:!friday&&!holiday?Math.max(0,total-basic):0,friday_ot:friday?total:0,holiday_ot:!friday&&holiday?total:0,...p.manual_minutes};
   return {...result,total:Object.values(result).reduce((sum,minutes)=>sum+minutes,0)};
  }
  const hours=minutes=>(minutes/60).toLocaleString('en-GB',{maximumFractionDigits:4});
  const addDays=(date,count)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+count);return d.toISOString().slice(0,10);};
- function effectiveHours(date,payload,holiday,employee,rules){
-  return calculate(date,payload,holiday,basicAllowance(date,payload,employee,rules));
+ function effectiveHours(date,payload,holiday,employee,rules,holidayFirst){
+  return calculate(date,payload,holiday,basicAllowance(date,payload,employee,rules),holidayFirst);
  }
- function totals(entries,holidays=[],employees=[],rules=[]){const out={};for(const e of entries){const n=effectiveHours(e.date,e.payload,holidays.some(h=>h.date===e.date&&h.active),employees.find(person=>person.code===e.code),rules);const v=out[e.code]||(out[e.code]={basic:0,normal_ot:0,friday_ot:0,holiday_ot:0,total:0});for(const key in v)v[key]+=n[key];}return out;}
+ function totals(entries,holidays=[],employees=[],rules=[],holidayFirst){const out={};for(const e of entries){const n=effectiveHours(e.date,e.payload,holidays.some(h=>h.date===e.date&&h.active),employees.find(person=>person.code===e.code),rules,holidayFirst);const v=out[e.code]||(out[e.code]={basic:0,normal_ot:0,friday_ot:0,holiday_ot:0,total:0});for(const key in v)v[key]+=n[key];}return out;}
  function validateOverlaps(entries){const grouped={};for(const e of entries){const p=normalize(e.payload);for(const t of p.periods){const base=Date.parse(e.date+'T00:00:00Z')/60000;(grouped[e.code]||(grouped[e.code]=[])).push([base+t.start,base+t.end]);}}for(const intervals of Object.values(grouped)){intervals.sort((a,b)=>a[0]-b[0]);for(let i=1;i<intervals.length;i++)if(intervals[i][0]<intervals[i-1][1])throw Error('This duty overlaps another date for the same employee.');}}
  function demoMonth(month){const data=demo();data.pharmacy_id='synthetic';data.entries=[];data.holidays=[];data.month=null;
   for(const e of data.employees)for(const d of days(month)){const i=data.employees.indexOf(e),off=(d.day+i)%7===0;const payload=off?normalize({status:'OFF'}):parse(i%3===0?'9 AM – 1 PM / 5 PM – 10 PM':i%3===1?'12 PM – 9 PM':'7 PM – 4 AM');data.entries.push({code:e.code,date:d.date,payload,revision:1,identity:{name:e.name,position_key:e.position_key,position_label:data.positions.find(p=>p.key===e.position_key).label}});}
@@ -106,6 +106,16 @@
   const count=(Date.parse(to)-Date.parse(from))/86400000+1;
   if(count>366)throw Error('Choose a range of at most 366 days.');
   return Array.from({length:count},(_,i)=>addDays(from,i));
+ }
+ function selectedDateRange(selection,month){
+  const dates=[...new Set(selection.map(cell=>cell.date).filter(date=>date.startsWith(month+'-')))].sort();
+  if(!dates.length)return {from:month+'-01',to:month+'-01'};
+  if(dates.some((date,i)=>i&&date!==addDays(dates[i-1],1)))return {from:'',to:''};
+  return {from:dates[0],to:dates.at(-1)};
+ }
+ function clipboardPayload(payload,hours){
+  if(!payload.manual_minutes)return normalize({...payload,basic_limit:undefined});
+  return normalize({...payload,manual_minutes:Object.fromEntries(Object.keys(categories).map(k=>[k,hours[k]]))});
  }
  function calendarRange(month,range){
   return days(month).filter(d=>!range||(d.date>=range.from&&d.date<=range.to));
@@ -123,6 +133,6 @@
  function editorDefaults(payload){
   return {hasTimes:payload.status==='EMPTY'||!!payload.periods?.length,allocation:payload.manual_minutes?'manual':'auto'};
  }
- const api={DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ const api={DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

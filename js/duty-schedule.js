@@ -19,7 +19,7 @@
  }
  const staffList=()=>roster().filter(e=>S.group==='custom'?S.custom.has(e.code):(e.position_key==='pharmacist')===(S.group==='pharmacists'));
  const employees=()=>staffList().slice(S.staffPage*6,S.staffPage*6+6);
- const hoursFor=(code,date,p)=>M.effectiveHours(date,p,!!holiday(date),data.employees.find(e=>e.code===code),data.hour_rules);
+ const hoursFor=(code,date,p)=>M.effectiveHours(date,p,!!holiday(date),data.employees.find(e=>e.code===code),data.hour_rules,options.demo);
  const dates=()=>M.calendarRange(S.month,S.range);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
  const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&data.month?.status!=='Completed';
@@ -37,7 +37,7 @@
   const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition={left:scroll?.scrollLeft||0,top:scroll?.scrollTop||0};
   const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/6));
   S.staffPage=Math.min(S.staffPage,pages-1);
-  const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules);
+  const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules,options.demo);
   const rosterOptions=roster();
   const monthDays=M.days(S.month),first=monthDays[0].date,last=monthDays.at(-1).date;
   const groups=[['pharmacists','Pharmacists'],['support','Labor + Beauty'],['custom','Custom']];
@@ -56,7 +56,7 @@
    <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
     ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
-    <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
+    <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(options.demo||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
@@ -120,50 +120,22 @@
   host.querySelector('[data-s-action="color"]').disabled=!canEdit;
  }
  function timeFields(periods,hasTimes){
-  const picker=(name,value)=>`<input type="hidden" name="${name}" value="${value%1440}"><button type="button" class="duty-time-trigger" data-time-picker="${name}" aria-label="${name}, ${M.formatTime(value)}" aria-haspopup="dialog" aria-expanded="false">${M.formatTime(value)}</button>`;
+  const picker=(name,value)=>{
+   const parts=M.formatTime(value).split(/[: ]/);
+   const choices=[Array.from({length:12},(_,i)=>String(i+1)),[...new Set(['00','30',parts[1]])].sort(),['AM','PM']];
+   return `<div class="duty-time-controls" role="group" aria-label="${name}">${['Hour','Minute','AM/PM'].map((part,i)=>
+    dropdown(name.replaceAll(' ','-')+'-'+i,name+' '+part,parts[i],choices[i].map(v=>[v,v]),parts[i],i===1?'duty-time-minute':'')).join('')}</div>`;
+  };
   const row=(p,i)=>`<div class="duty-time-fields"><strong>Shift ${i}</strong><span>IN</span>${picker('Shift '+i+' In',p.start)}<span>OUT</span>${picker('Shift '+i+' Out',p.end)}</div>`;
   return `<label><input type="checkbox" name="hasTimes" ${hasTimes?'checked':''}> Use IN / OUT</label><div data-time-fields ${hasTimes?'':'hidden'}>${row(periods[0]||{start:540,end:1080},1)}<label><input type="checkbox" name="split" ${periods.length===2?'checked':''}> Add second shift</label><div data-split-fields ${periods.length===2?'':'hidden'}>${row(periods[1]||{start:1020,end:1320},2)}</div></div>`;
  }
  function readTimes(fields){
   if(!fields.has('hasTimes'))return [];
-  return (fields.has('split')?[1,2]:[1]).map(i=>({start:Number(fields.get('Shift '+i+' In')),end:Number(fields.get('Shift '+i+' Out'))}));
- }
- function wireTimePicker(editor,scale,changed){
-  const picker=editor.querySelector('.duty-time-picker');
-  let trigger,parts;
-  function draw(){
-   const groups=[['Hour',Array.from({length:12},(_,i)=>String(i+1))],['Minute',[...new Set(['00','30',parts[1]])].sort()],['AM / PM',['AM','PM']]];
-   picker.innerHTML=groups.map(([label,values],i)=>`<div class="duty-time-group duty-time-group-${i}" role="group" aria-label="${label}"><strong>${label}</strong><div class="duty-time-options">${values.map(v=>`<button type="button" data-part="${i}" data-value="${v}" aria-pressed="${parts[i]===v}">${v}</button>`).join('')}</div></div>`).join('')+'<button type="button" class="duty-primary" data-time-done>Done</button>';
-  }
-  editor.onclick=e=>{
-   const button=e.target.closest('[data-time-picker]');if(!button)return;
-   if(picker.matches(':popover-open'))picker.hidePopover();
-   trigger?.setAttribute('aria-expanded','false');
-   trigger=button;parts=M.formatTime(Number(editor.elements[button.dataset.timePicker].value)).split(/[: ]/);
-   picker.setAttribute('aria-label',button.dataset.timePicker);
-   draw();picker.showPopover();button.setAttribute('aria-expanded','true');
-   const rect=button.getBoundingClientRect(),box=picker.getBoundingClientRect();
-   picker.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-box.width-8))/scale+'px';
-   picker.style.top=Math.max(8,rect.bottom+box.height+8<=window.innerHeight?rect.bottom+4:rect.top-box.height-4)/scale+'px';
-   picker.querySelector('[aria-pressed=true]').focus();
+  const time=(i,end)=>{
+   const parts=[0,1,2].map(part=>fields.get(`Shift-${i}-${end}-${part}`));
+   return M.time(parts[0]+':'+parts[1]+' '+parts[2]);
   };
-  picker.onclick=e=>{
-   const button=e.target.closest('button');if(!button)return;
-   if(button.hasAttribute('data-time-done')){picker.hidePopover();trigger.focus();return;}
-   parts[Number(button.dataset.part)]=button.dataset.value;
-   const input=editor.elements[trigger.dataset.timePicker];
-   input.value=M.time(parts[0]+':'+parts[1]+' '+parts[2]);
-   trigger.textContent=M.formatTime(Number(input.value));trigger.setAttribute('aria-label',trigger.dataset.timePicker+', '+trigger.textContent);
-   button.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
-   changed();
-  };
-  picker.onkeydown=e=>{
-   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();picker.hidePopover();trigger.focus();return;}
-   if(!e.target.matches('[data-part]'))return;
-   const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-1,ArrowDown:1}[e.key];if(!delta)return;
-   const buttons=[...e.target.parentElement.querySelectorAll('button')];e.preventDefault();buttons[(buttons.indexOf(e.target)+delta+buttons.length)%buttons.length].focus();
-  };
-  picker.addEventListener('toggle',()=>{if(!picker.matches(':popover-open'))trigger?.setAttribute('aria-expanded','false');});
+  return (fields.has('split')?[1,2]:[1]).map(i=>({start:time(i,'In'),end:time(i,'Out')}));
  }
  function edit(code,date,forceWork=false){
   if(!writableDate(date))return;
@@ -185,7 +157,7 @@
     ${Object.entries(M.categories).map(([k,label])=>`<label>${label}<input name="${k}" type="number" min="0" max="24" step="any" value="${effective[k]/60}"></label>`).join('')}
     <small data-hours-difference aria-live="polite"></small></fieldset>`:''}</fieldset>
    <label class="duty-editor-note">Note <input name="note" maxlength="300" value="${esc(before.note)}"></label><span class="duty-cell-error" role="alert"></span><div class="duty-actions"><button type="button" data-cancel>Cancel</button><button type="submit" class="duty-primary">Save</button></div>
-   <div class="duty-time-picker" popover="auto" role="dialog"></div>`;
+   `;
   // Keep the editor above the scroll container so edge cells never clip it.
   host.append(editor);
   const rect=td.getBoundingClientRect(),bounds=editor.getBoundingClientRect(),scale=bounds.width/editor.offsetWidth;
@@ -218,7 +190,13 @@
     output.textContent=`Total ${M.hours(manual)} h${delta&&editor.elements.hasTimes.checked?' · '+(delta>0?'+':'−')+M.hours(Math.abs(delta))+' h vs IN / OUT':''}`;
    }catch{output.textContent='Check the times and manual hours.';}
   };
-  wireTimePicker(editor,scale,difference);
+  wireDropdowns(editor,(id,button,trigger)=>{
+   editor.elements[id].value=button.dataset.dropdownValue;
+   trigger.textContent=button.textContent;
+   trigger.setAttribute('aria-label',trigger.dataset.label+': '+button.textContent);
+   for(const option of button.parentElement.querySelectorAll('[aria-pressed]'))option.setAttribute('aria-pressed',String(option===button));
+   difference();
+  });
   editor.oninput=e=>{if(Object.hasOwn(M.categories,e.target.name))allocationChanged=true;difference();};
   editor.onchange=e=>{
    if(e.target.name==='status'){
@@ -306,18 +284,32 @@
   const changes=(redo?frame.after:frame.before).map(c=>({...c,expected_revision:localRevisions.get(key(c.code,c.date))}));
   if(await save(changes,redo?'Redo schedule edit':'Undo schedule edit',false,false)){source.pop();destination.push(frame);render();}
  }
- function copy(){S.clipboard=S.selected.map(s=>({...s,payload:structuredClone(payload(s.code,s.date))}));S.notice=`Copied ${S.clipboard.length} cell${S.clipboard.length===1?'':'s'}. Select a destination and Paste.`;render();}
+ function copy(){
+  S.clipboard=S.selected.map(s=>{
+   const p=payload(s.code,s.date);
+   return {...s,payload:M.clipboardPayload(p,p.manual_minutes?hoursFor(s.code,s.date,p):undefined)};
+  });
+  S.notice=`Copied ${S.clipboard.length} cell${S.clipboard.length===1?'':'s'}. Select a destination and Paste.`;render();
+ }
  async function paste(){
   const first=S.selected[0],source=S.clipboard;if(!first||!source.length)return;
-  if(source.length===1){await save(S.selected.map(c=>({...c,payload:source[0].payload})),'Paste Duty cells');return;}
+
   const staff=employees(),sourceCodes=[...new Set(source.map(s=>s.code))],base=source.map(s=>s.date).sort()[0],destIndex=staff.findIndex(e=>e.code===first.code);
-  const changes=source.map(s=>({code:staff[destIndex+sourceCodes.indexOf(s.code)]?.code,date:M.addDays(first.date,Math.round((Date.parse(s.date)-Date.parse(base))/86400000)),payload:s.payload}));
+  const changes=source.length===1?S.selected.map(c=>({...c,payload:source[0].payload})):source.map(s=>({code:staff[destIndex+sourceCodes.indexOf(s.code)]?.code,date:M.addDays(first.date,Math.round((Date.parse(s.date)-Date.parse(base))/86400000)),payload:s.payload}));
   const targets=new Set(S.selected.map(c=>key(c.code,c.date)));
   if(changes.some(c=>!c.code||!dates().some(d=>d.date===c.date)||!writableDate(c.date))||
      (targets.size>1&&(targets.size!==changes.length||changes.some(c=>!targets.has(key(c.code,c.date)))))){
    S.notice='Select a top-left cell or a matching rectangle on this staff page.';render();return;
   }
-  await save(changes,'Paste schedule range');
+  const warning=changes.some(({code,date,payload:p})=>{
+   if(!p.manual_minutes)return false;
+   const auto=hoursFor(code,date,{...p,manual_minutes:undefined});
+   return Object.keys(M.categories).some(k=>p.manual_minutes[k]!==auto[k]);
+  });
+  if(await save(changes,source.length===1?'Paste Duty cells':'Paste schedule range')&&warning){
+   S.notice+=' Manual hours retained and may differ from the destination’s automatic classification.';
+   render();
+  }
  }
  async function deleteSelection(){
   if(!S.selected.length||S.selected.some(c=>!writableDate(c.date)))return;
@@ -339,9 +331,10 @@
   });
  }
  function dayType(){
-  const initial=S.selected[0]?.date||M.days(S.month)[0].date;
-  const form=smallPanel('Calendar settings',`<div class="duty-detail-grid"><label class="duty-field">${options.demo?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${options.demo?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
-   ${options.demo?`<label class="duty-field">To date<input name="to" type="date" required value="${initial}"></label>`:''}</div>
+  const {from:initial,to:end}=M.selectedDateRange(S.selected,S.month);
+  const rangeNotice=!initial?'<p>Selection contains gaps. Choose the exact date range to update.</p>':'';
+  const form=smallPanel('Calendar settings',`${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${options.demo?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${options.demo?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
+   ${options.demo?`<label class="duty-field">To date<input name="to" type="date" required value="${end}"></label>`:''}</div>
    <label class="duty-field">Type<select name="type"><option value="normal">Calendar default</option><option value="holiday">Public holiday</option></select></label>
    ${options.demo?`<label class="duty-field">Holiday name<input name="name" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="note" maxlength="300"></label>`:''}`,async fields=>{
    if(!writable())throw Error('Calendar is read only.');
@@ -350,7 +343,7 @@
    data=await options.holiday(M.dateRange(from,to),active,name,fields.get('note')?.trim());render();
   },'Save');
   const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(options.demo){form.elements.name.value=row?.name||'';form.elements.note.value=row?.note||'';}};
-  form.elements.from.onchange=()=>{if(options.demo)form.elements.to.value=form.elements.from.value;sync();};sync();
+  form.elements.from.onchange=()=>{if(options.demo&&(!form.elements.to.value||form.elements.to.value<form.elements.from.value))form.elements.to.value=form.elements.from.value;sync();};sync();
  }
  function hourRules(){
   const rules=data.hour_rules||[];
@@ -400,17 +393,17 @@
   },'Save');
   form.querySelector('[name="scope"]').onchange=e=>{form.querySelector('[data-rule-staff]').hidden=e.target.value==='all';};
  }
- function dropdown(id,label,text,items,selection){
+ function dropdown(id,label,text,items,selection,variant=''){
   const multiple=selection instanceof Set;
   const itemMarkup=items.map(([value,name])=>multiple
    ?`<label class="duty-dropdown-option"><input type="checkbox" value="${esc(value)}" ${selection.has(value)?'checked':''}> ${esc(name)}</label>`
    :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${esc(name)}</button>`).join('');
-  return `<div class="duty-dropdown"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" aria-label="${esc(label+(id==='staff'?': '+text:''))}">${esc(text)}</button>
+  return `<div class="duty-dropdown ${variant}"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" data-label="${esc(label)}" aria-label="${esc(label+(id==='staff'||id.startsWith('Shift-')?': '+text:''))}">${esc(text)}</button>${id.startsWith('Shift-')?`<input type="hidden" name="${id}" value="${esc(text)}">`: ''}
    <div class="duty-dropdown-popup" popover="auto" id="duty-dropdown-${id}" role="dialog" aria-label="${esc(label)}">${itemMarkup||'No employees'}${multiple&&options.demo?'<button type="button" data-save-custom>Save as Default Custom View</button>':''}</div></div>`;
  }
- function wireDropdowns(){
-  for(const popup of host.querySelectorAll('.duty-dropdown-popup')){
-   const trigger=popup.previousElementSibling,id=trigger.dataset.dropdownTrigger;
+ function wireDropdowns(container,choose){
+  for(const popup of container.querySelectorAll('.duty-dropdown-popup')){
+   const trigger=popup.parentElement.querySelector('[data-dropdown-trigger]'),id=trigger.dataset.dropdownTrigger;
    const controls=()=>[...popup.querySelectorAll('button,input')];
    popup.addEventListener('toggle',()=>{
     if(!popup.matches(':popover-open'))return;
@@ -421,6 +414,7 @@
    });
    popup.onkeydown=e=>{
     const items=controls(),index=items.indexOf(e.target);
+    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();popup.hidePopover();trigger.focus();return;}
     const next={ArrowDown:index+1,ArrowUp:index-1,Home:0,End:items.length-1}[e.key];
     if(next===undefined||!items.length)return;
     e.preventDefault();items[(next+items.length)%items.length].focus();
@@ -428,14 +422,8 @@
    popup.onclick=async e=>{
     const button=e.target.closest('button');if(!button)return;
     popup.hidePopover();
-    if(button.hasAttribute('data-save-custom')){
-     options.saveCustom([...S.custom]);S.notice='Default Custom View saved for this demo session.';render();
-    }else if(id==='staff'){
-     S.group=button.dataset.dropdownValue;
-     if(S.group==='custom'&&options.demo){const saved=options.loadCustom();if(saved)S.custom=new Set(saved);}
-     S.staffPage=0;clearSelection();render();
-    }else await applyStatus(button.dataset.dropdownValue);
-    host.querySelector(`[data-dropdown-trigger="${id}"]:not(:disabled)`)?.focus();
+    await choose(id,button,trigger);
+    container.querySelector(`[data-dropdown-trigger="${id}"]:not(:disabled)`)?.focus();
    };
    if(id==='custom')popup.onchange=e=>{
     const {value,checked}=e.target;
@@ -537,7 +525,16 @@
    if(!writableDateForMonth(from)||!writableDateForMonth(to)||from>to){S.notice='Choose dates within the selected month in order.';render();return;}
    S.range={from,to};S.notice='';clearSelection();render();
   };
-  wireDropdowns();bindKeyboard();
+  wireDropdowns(host,async(id,button)=>{
+   if(button.hasAttribute('data-save-custom')){
+    options.saveCustom([...S.custom]);S.notice='Default Custom View saved for this demo session.';render();
+   }else if(id==='staff'){
+    S.group=button.dataset.dropdownValue;
+    if(S.group==='custom'&&options.demo){const saved=options.loadCustom();if(saved)S.custom=new Set(saved);}
+    S.staffPage=0;clearSelection();render();
+   }else await applyStatus(button.dataset.dropdownValue);
+  });
+  bindKeyboard();
  }
  async function applyStatus(status){
    if(status==='WORK'&&!options.demo){

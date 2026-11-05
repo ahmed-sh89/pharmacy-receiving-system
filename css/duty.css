@@ -176,9 +176,14 @@
 #page-duty .duty-editor-head{display:flex;justify-content:space-between;align-items:center}
 #page-duty .duty-cell-editor [data-time-fields]{margin-top:1px}
 #page-duty .duty-cell-editor .duty-actions{justify-content:flex-end}
-#page-duty .duty-time-fields{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:4px;align-items:center;margin:5px 0 8px}
+#page-duty .duty-time-fields{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 6px;align-items:center;margin:5px 0 8px}
 #page-duty .duty-time-fields strong{grid-column:1 / -1}
 #page-duty .duty-time-fields span{font-weight:600}
+#page-duty .duty-time-controls{display:grid;grid-template-columns:1fr .85fr 1fr;gap:4px}
+#page-duty .duty-time-controls .duty-dropdown-trigger{width:100%;justify-content:space-between;padding:3px 7px;min-height:29px}
+#page-duty .duty-time-controls .duty-dropdown-popup{min-width:68px;max-height:min(255px,calc(100dvh - 16px))}
+#page-duty .duty-time-controls .duty-time-minute .duty-dropdown-trigger{background:#f4f6f8;border-color:#d7dee5;color:#526273;font-size:11px}
+#page-duty .duty-time-minute .duty-dropdown-option[aria-pressed=true]{background:#e8edf2;color:#344557}
 #page-duty .duty-vertical .duty-cell:not(.duty-selected):focus-visible{outline:2px solid #2477bb;outline-offset:-2px}
 #page-duty .duty-schedule-controls{flex-wrap:wrap;justify-content:flex-start;gap:7px;margin:5px 0}
 #page-duty .duty-stage-b .duty-toolbar{margin-bottom:4px;padding:4px 8px}
@@ -243,27 +248,12 @@
 #page-duty .duty-directory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,235px),1fr));gap:8px}
 #page-duty .duty-directory-card{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:10px;border:1px solid #c5d6e7;border-radius:8px;background:#f0f5fa;color:#174a79}
 #page-duty .duty-directory-card small{display:block;margin-top:4px;color:#426383}
-#page-duty .duty-time-trigger{white-space:nowrap;text-align:left;padding-inline:8px}
-#page-duty .duty-time-trigger::after{content:"▾";float:right;margin-left:5px}
-#page-duty .duty-time-picker{position:fixed;inset:auto;margin:0;width:260px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;padding:9px;border:1px solid #a9bdd4;border-radius:8px;background:#fff;color:#174a79;box-shadow:0 8px 24px #173b6133}
-#page-duty .duty-time-picker:popover-open{display:grid;gap:7px}
-#page-duty .duty-time-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:3px}
-#page-duty .duty-time-options button{min-height:32px;padding:4px}
-#page-duty .duty-time-options button[aria-pressed=true]{background:#d8e9fb;border-color:#729bc5;color:#174a79}
 
 
 #page-duty .duty-date-range form{min-width:190px}
 #page-duty .duty-date-range label{display:grid;gap:3px;font-size:12px}
 #page-duty :is(.duty-date-range,.duty-default-hours) input{min-height:32px;padding:4px 6px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59}
 #page-duty .duty-default-hours{display:grid;gap:8px;padding:8px;border:1px solid #d5e1ed;border-radius:6px}
-#page-duty .duty-time-group-0 strong,#page-duty .duty-time-group-2 strong{font-size:15px}
-#page-duty .duty-time-group-0 button,#page-duty .duty-time-group-2 button{font-size:14px;font-weight:700}
-#page-duty .duty-time-group-1{display:flex;align-items:center;gap:8px;padding:3px 5px;border-radius:5px;background:#f2f4f6}
-#page-duty .duty-time-group-1 strong{font-size:10px;font-weight:600;color:#596775}
-#page-duty .duty-time-group-1 .duty-time-options{display:flex;gap:3px;margin:0}
-#page-duty .duty-time-group-1 .duty-time-options button{min-height:21px;min-width:27px;padding:1px 4px;font-size:10px;background:transparent;color:#536171;border-color:#d7dee5;box-shadow:none}
-#page-duty .duty-time-group-1 .duty-time-options button:hover{background:#e9edf0;border-color:#98a8b6}
-#page-duty .duty-time-group-1 .duty-time-options button[aria-pressed=true]{background:#e0e5ea;color:#344557;border-color:#aebbc7}
 #page-duty .duty-vertical td.duty-leave{box-shadow:inset 3px 0 #7eafba,inset 0 -4px var(--duty-mark,transparent)}
 #page-duty .duty-leave .duty-cell-status{font-size:13px}
 #page-duty .duty-dropdown-trigger{display:inline-flex;align-items:center;gap:9px;min-height:32px;padding:4px 8px}

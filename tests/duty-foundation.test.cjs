@@ -125,3 +125,10 @@ test('Duty renders compact shift lines and independently labels consecutive leav
  assert.ok(host.querySelector('button[popovertarget="duty-dropdown-staff"]'));
  assert.ok(host.querySelector('#duty-dropdown-status [data-dropdown-value="ANNUAL_LEAVE"]'));
 });
+
+test('Calendar Settings range deduplicates staff dates and requires explicit input for gaps',()=>{
+ const select=dates=>structuredClone(M.selectedDateRange(dates.map(date=>({date})),'2026-11'));
+ assert.deepEqual(select([]),{from:'2026-11-01',to:'2026-11-01'});
+ assert.deepEqual(select(['2026-11-03','2026-11-01','2026-11-01','2026-11-02']),{from:'2026-11-01',to:'2026-11-03'});
+ assert.deepEqual(select(['2026-11-01','2026-11-03']),{from:'',to:''});
+});
