@@ -188,7 +188,7 @@ window.editPharmacyPermissions=async function(button){
  return new Promise(resolve=>{
   const form=document.createElement('form');form.className='ownerPermissionsForm';form.setAttribute('aria-label','Pharmacy permissions');
   const moduleOptions=[['DISABLED','Disabled'],['FULL','Enabled']];
-  const options=[['receiving','Receiving',moduleOptions],['expiry','Expiry',moduleOptions],['data_access','Item & Barcode',[['READ_ONLY','Read Only'],['PHARMACY_ONLY','Pharmacy Only'],['PHARMACY_GLOBAL','Pharmacy + Global']]]];
+  const options=[['receiving','Receiving',moduleOptions],['expiry','Expiry',moduleOptions],['duty','Duty',moduleOptions],['data_access','Item & Barcode',[['READ_ONLY','Read Only'],['PHARMACY_ONLY','Pharmacy Only'],['PHARMACY_GLOBAL','Pharmacy + Global']]]];
   for(const [name,label,choices]of options){
    const field=document.createElement('label');field.textContent=label;
    const select=document.createElement('select');select.name=name;
@@ -196,7 +196,7 @@ window.editPharmacyPermissions=async function(button){
    if(name!=='data_access' && row[name]==='READ_ONLY'){
     const legacy=document.createElement('option');legacy.value='READ_ONLY';legacy.textContent='Legacy Read Only — choose Enabled or Disabled';legacy.disabled=true;select.prepend(legacy);
    }
-   select.value=row[name];field.append(select);form.append(field);
+   select.value=row[name]??(name==='duty'?'DISABLED':'');field.append(select);form.append(field);
   }
   const status=document.createElement('div');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
   const footer=document.createElement('footer');
@@ -213,7 +213,7 @@ window.editPharmacyPermissions=async function(button){
    const fields=Object.fromEntries(options.map(([name])=>[name,form.querySelector(`[name="${name}"]`).value]));
    setAuthBusy(true);save.disabled=cancel.disabled=true;form.querySelectorAll('select').forEach(el=>el.disabled=true);status.textContent='Saving…';
    try{
-    row=await authRpc('owner_set_pharmflow_permissions_v1',{p_pharmacy_id:id,p_receiving:fields.receiving,p_expiry:fields.expiry,p_data_access:fields.data_access,p_expected_revision:row.revision});
+    row=await authRpc('owner_set_pharmflow_permissions_v2',{p_pharmacy_id:id,p_duty:fields.duty,p_receiving:fields.receiving,p_expiry:fields.expiry,p_data_access:fields.data_access,p_expected_revision:row.revision});
     form.dataset.dirty='false';window.SettingsAccessActions?.setDirty?.(false);status.textContent='Permissions saved.';
     if(AuthState.context?.pharmacy_id===id)await window.PharmFlowPermissions.load();
    }catch(error){status.textContent=error.message || 'Unable to save permissions.';}

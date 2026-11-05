@@ -325,6 +325,7 @@ const APP_CONFIG = Object.freeze({
     ================================================= */
 
     routes:{
+ duty:{id:"duty",elementId:"page-duty",title:"Duty",subtitle:"Monthly employee planning"},
 
         dashboard:{
 
