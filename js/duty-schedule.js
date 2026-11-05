@@ -405,13 +405,15 @@
   for(const popup of container.querySelectorAll('.duty-dropdown-popup')){
    const trigger=popup.parentElement.querySelector('[data-dropdown-trigger]'),id=trigger.dataset.dropdownTrigger;
    const controls=()=>[...popup.querySelectorAll('button,input')];
-   popup.addEventListener('toggle',()=>{
-    if(!popup.matches(':popover-open'))return;
+   trigger.onclick=e=>{
+    e.preventDefault();
+    if(popup.matches(':popover-open')){popup.hidePopover();return;}
+    popup.showPopover({source:trigger});
     const rect=trigger.getBoundingClientRect(),box=popup.getBoundingClientRect(),scale=box.width/popup.offsetWidth;
     popup.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-box.width-8))/scale+'px';
     popup.style.top=Math.max(8,rect.bottom+box.height+8<=window.innerHeight?rect.bottom+4:rect.top-box.height-4)/scale+'px';
-    if(!popup.contains(document.activeElement))(popup.querySelector('[aria-pressed=true]')||controls()[0])?.focus();
-   });
+    (popup.querySelector('[aria-pressed=true]')||controls()[0])?.focus();
+   };
    popup.onkeydown=e=>{
     const items=controls(),index=items.indexOf(e.target);
     if(e.key==='Escape'){e.preventDefault();e.stopPropagation();popup.hidePopover();trigger.focus();return;}
@@ -430,7 +432,7 @@
     if(checked)S.custom.add(value);else S.custom.delete(value);
     S.staffPage=0;clearSelection();render();
     const replacement=host.querySelector('#duty-dropdown-custom');
-    replacement.showPopover({source:replacement.previousElementSibling});
+    replacement.previousElementSibling.click();
     [...replacement.querySelectorAll('input')].find(input=>input.value===value)?.focus();
    };
   }
