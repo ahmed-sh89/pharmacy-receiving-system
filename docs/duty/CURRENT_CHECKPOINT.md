@@ -89,3 +89,9 @@ The optional Date Range replaces fixed chunks and resets on month navigation. KP
 Ready for synthetic Product Owner testing. Leave labels repeat in seven-day blocks while daily cells remain editable. Duty has one centered corner heading, clear cell boundaries and selection outlines, and a compact two-column IN/OUT timetable. The empty editor opens with times and Auto selected. Existing hours-only and Manual entries reopen as saved.
 
 Global Basic still applies to new employees. Confirmed bulk changes now show effective dates and protect earlier timed shifts per employee, without deferring a change because of another employee's schedule or a later OFF/leave record. The editor previews the same effective allocation used by cells and monthly KPIs. Legacy cell limits, timestamp rule precedence, and saved manual allocations remain intact. No SQL migration or Production change.
+
+### Duty Staging · Product Owner correction
+
+The previous preview reproduced 9 Basic on the November 7, 1 PM–10 PM shift after an 8-hour confirmation because the last timed shift implicitly pushed the employee default into December. Working Hours Settings now separates saving the new-employee default from a confirmed existing-employee update with an explicit effective date and named scope. On and after that date Auto hours use the new employee default unless an explicit higher-priority rule applies. Earlier dates and Manual allocations keep their previous values. The update remains synthetic and session-only.
+
+Each leave day now shows its own label. The timetable uses one centered time range per shift. Staff, Custom Staff and Status share a keyboard-operable popover. The selected month has a solid green label and minute choices use a compact neutral group. Ready for Product Owner testing. No migration or Production change.

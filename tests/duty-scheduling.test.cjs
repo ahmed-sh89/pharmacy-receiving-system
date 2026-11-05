@@ -132,30 +132,26 @@ test('future Basic defaults preserve prior hours, rules and manual allocations',
  assert.equal(M.calculate('2026-12-01',manual,true,420).total,540);
 });
 
-test('confirmed Basic changes use each employee effective date and share editor/grid/KPI allocation',()=>{
- const shift=M.parse('3 PM–12 AM');
- const alice={code:'A',active:true},bob={code:'B',active:true},inactive={code:'C',active:false};
- const employees=[alice,bob,inactive],entries=[
-  {code:'A',date:'2026-11-10',payload:shift},
-  {code:'B',date:'2026-11-08',payload:shift},
-  {code:'B',date:'2026-11-30',payload:M.normalize({status:'OFF'})},
- ];
- const result=(date,employee,payload=shift,rules=[])=>M.effectiveHours(date,payload,false,employee,rules);
- const globalDefaultForNewEmployees=M.hourMinutes(8);
- assert.deepEqual(structuredClone(result('2026-11-09',{basic_minutes:globalDefaultForNewEmployees})),{basic:480,normal_ot:60,friday_ot:0,holiday_ot:0,total:540});
- assert.equal(result('2026-11-09',bob).basic,540);
- const plan=M.basicUpdates(employees,entries,480,'2026-11-05');
- assert.deepEqual(Array.from(plan,({employee,from})=>[employee.code,from]),[['A','2026-11-11'],['B','2026-11-09']]);
- assert.equal(result('2026-11-09',bob).basic,540);
- for(const {employee,defaults} of plan)employee.basic_defaults=defaults;
- assert.equal(result('2026-11-10',alice).basic,540);
- assert.equal(result('2026-11-08',bob).basic,540);
- assert.deepEqual(structuredClone(result('2026-11-09',bob)),{basic:480,normal_ot:60,friday_ot:0,holiday_ot:0,total:540});
- assert.deepEqual(M.totals([{code:'B',date:'2026-11-09',payload:shift}],[],employees).B,result('2026-11-09',bob));
- const rule={start:'2026-11-09T15:00',end:'2026-11-09T15:00',codes:['B'],basic:420};
- assert.equal(result('2026-11-09',bob,shift,[rule]).basic,420);
+test('November 7 existing shift uses the confirmed Basic date independently of the roster schedule',()=>{
+ const employee={code:'A',active:true},other={code:'B',active:true,basic_minutes:480},inactive={code:'C',active:false};
+ const employees=[employee,other,inactive],shift=M.parse('1 PM–10 PM');
+ const hours=(date,person,payload=shift,rules=[])=>structuredClone(M.effectiveHours(date,payload,false,person,rules));
+ const expected={basic:480,normal_ot:60,friday_ot:0,holiday_ot:0,total:540};
+ assert.equal(hours('2026-11-07',employee).basic,540);
+ assert.deepEqual(hours('2026-11-07',{basic_minutes:M.hourMinutes(8)}),expected);
+ assert.equal(hours('2026-11-07',employee).basic,540);
+ assert.throws(()=>M.basicUpdates(employees,480,'2026-11-04','2026-11-05'),/today or later/);
+ const plan=M.basicUpdates(employees,480,'2026-11-07','2026-11-05');
+ assert.deepEqual(Array.from(plan,x=>x.employee.code),['A']);
+ assert.equal(employee.basic_defaults,undefined);
+ for(const change of plan)change.employee.basic_defaults=change.defaults;
+ assert.equal(M.basicAllowance('2026-11-06',shift,employee),540);
+ assert.deepEqual(hours('2026-11-07',employee),expected);
+ assert.deepEqual(structuredClone(M.totals([{code:'A',date:'2026-11-07',payload:shift}],[],employees).A),expected);
+ const rule={start:'2026-11-07T13:00',end:'2026-11-07T13:00',codes:['A'],basic:420};
+ assert.equal(hours('2026-11-07',employee,shift,[rule]).basic,420);
  const manual=M.normalize({...shift,manual_minutes:{basic:540,normal_ot:0,friday_ot:0,holiday_ot:0}});
- assert.equal(result('2026-11-09',bob,manual).basic,540);
+ assert.equal(hours('2026-11-07',employee,manual).basic,540);
 });
 
 test('editor defaults distinguish empty, timed, pending, and hours-only records',()=>{

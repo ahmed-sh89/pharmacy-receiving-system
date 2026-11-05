@@ -109,27 +109,19 @@ test('build output points exclusively to Staging and Duty sits after Expiry',()=
 });
 
 
-test('leave runs retain daily cells and recenter after partial status changes',()=>{
- const days=M.calendarRange('2026-11',{from:'2026-11-01',to:'2026-11-06'});
- const statuses=['ANNUAL_LEAVE','ANNUAL_LEAVE','ANNUAL_LEAVE','ANNUAL_LEAVE','SICK_LEAVE','SICK_LEAVE'];
- const grouping=()=>M.leaveRuns(days,date=>statuses[Number(date.slice(-2))-1]);
- let runs=grouping();
- assert.equal(runs.size,6);
- assert.deepEqual(Array.from(runs).filter(([,run])=>run.label).map(([date])=>date),['2026-11-03','2026-11-06']);
- statuses[1]='OFF';runs=grouping();
- assert.equal(runs.has('2026-11-01'),false);
- assert.equal(runs.has('2026-11-02'),false);
- assert.equal(runs.get('2026-11-03').first,true);
-});
-
-test('twenty days of leave repeat labels within the continuous run and recenter for a filtered month',()=>{
- const status=date=>date<='2026-11-20'?'ANNUAL_LEAVE':'OFF';
- const group=range=>M.leaveRuns(M.calendarRange('2026-11',range),status);
- const labels=runs=>Array.from(runs).filter(([,day])=>day.label).map(([date])=>date);
- const runs=group();
- assert.equal(runs.size,20);
- assert.deepEqual(labels(runs),['2026-11-04','2026-11-11','2026-11-18']);
- assert.equal(runs.get('2026-11-20').last,true);
- assert.deepEqual(labels(group({from:'2026-11-18',to:'2026-11-20'})),['2026-11-19']);
- assert.deepEqual(labels(M.leaveRuns(M.days('2026-12'),status)),[]);
+test('Duty renders compact shift lines and independently labels consecutive leave cells',()=>{
+ const f=fixture(),month='2026-11',data=M.demoMonth(month),host=f.root;
+ const employee=data.employees[0];
+ for(const entry of data.entries.filter(e=>e.code===employee.code&&e.date<='2026-11-20')){
+  entry.payload=M.normalize({status:'ANNUAL_LEAVE'});
+ }
+ f.window.DutySchedule.mount(host,data,{month,demo:true});
+ const leave=[...host.querySelectorAll('td.duty-leave')];
+ assert.equal(leave.length,20);
+ assert.equal(new Set(leave.map(cell=>cell.dataset.sDate)).size,20);
+ assert.ok(leave.every(cell=>cell.querySelector('.duty-cell-status').textContent==='Annual Leave'));
+ const split=host.querySelector('[data-s-code="DEMO-001"][data-s-date="2026-11-22"] [data-s-time]');
+ assert.deepEqual([...split.children].map(line=>line.textContent),['9:00 AM – 1:00 PM','5:00 PM – 10:00 PM']);
+ assert.ok(host.querySelector('button[popovertarget="duty-dropdown-staff"]'));
+ assert.ok(host.querySelector('#duty-dropdown-status [data-dropdown-value="ANNUAL_LEAVE"]'));
 });

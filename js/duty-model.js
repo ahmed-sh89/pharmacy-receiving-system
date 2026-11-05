@@ -110,43 +110,19 @@
  function calendarRange(month,range){
   return days(month).filter(d=>!range||(d.date>=range.from&&d.date<=range.to));
  }
- function leaveRuns(dates,statusForDate){
-  const runs=new Map();
-  for(let start=0;start<dates.length;){
-   const status=statusForDate(dates[start].date);
-   let end=start+1;
-   if(['ANNUAL_LEAVE','SICK_LEAVE','OTHER_LEAVE'].includes(status)){
-    while(end<dates.length&&dates[end].date===addDays(dates[end-1].date,1)&&statusForDate(dates[end].date)===status)end++;
-    const length=end-start;
-    if(length>1){
-     const labels=new Set();
-     for(let offset=0;offset<length;offset+=7){
-      labels.add(start+offset+Math.floor(Math.min(7,length-offset)/2));
-     }
-     for(let i=start;i<end;i++)runs.set(dates[i].date,{first:i===start,last:i===end-1,label:labels.has(i)});
-    }
-   }
-   start=end;
-  }
-  return runs;
- }
  function basicDefault(employee,date){
   return employee?.basic_defaults?.findLast(row=>!date||row.from<=date)?.minutes??employee?.basic_minutes??DEFAULT_BASIC;
  }
- function basicUpdates(employees,entries,minutes,today){
-  const lastTimed=new Map();
-  for(const {code,date,payload} of entries){
-   if(payload.periods?.length&&date>(lastTimed.get(code)||''))lastTimed.set(code,date);
-  }
-  return employees.filter(e=>e.active&&basicDefault(e)!==minutes).map(employee=>{
-   const last=lastTimed.get(employee.code),prior=employee.basic_defaults||[];
-   const from=[today,last?addDays(last,1):today,prior.at(-1)?.from||today].sort().at(-1);
-   return {employee,from,defaults:[...prior.filter(row=>row.from<from),{from,minutes}]};
-  });
+ function basicUpdates(employees,minutes,from,today){
+  dateRange(from,from);
+  if(from<today)throw Error('Choose an effective date of today or later.');
+  return employees.filter(e=>e.active&&(basicDefault(e,from)!==minutes||e.basic_defaults?.some(row=>row.from>from&&row.minutes!==minutes))).map(employee=>({
+   employee,defaults:[...(employee.basic_defaults||[]).filter(row=>row.from<from),{from,minutes}]
+  }));
  }
  function editorDefaults(payload){
   return {hasTimes:payload.status==='EMPTY'||!!payload.periods?.length,allocation:payload.manual_minutes?'manual':'auto'};
  }
- const api={DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,leaveRuns,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ const api={DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

@@ -3,8 +3,9 @@
  const preview=document.body.hasAttribute('data-duty-synthetic');
  if(!preview&&(typeof APP_CONFIG==='undefined'||APP_CONFIG.environment!=='staging'||typeof CLOUD_CONFIG==='undefined'||!CLOUD_CONFIG.url.includes('tovkcakucyagvbzvlnks.supabase.co')))return;
  const M=window.DutyModel,root=document.getElementById('page-duty');if(!root)return;
- const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
- const currentMonth=parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value;
+ const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const monthLabel=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:'UTC'});
+ const currentMonth=today().slice(0,7);
  const state={month:preview?'2026-11':currentMonth,tab:'schedule',demo:preview,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
  const demos=new Map(),demoRules=[];let demoStaff=M.demo(),demoSeedMonth=state.month,demoPharmacyCode='DEMO',demoDefaultBasic=M.DEFAULT_BASIC;
  const customKey='pharmflow-duty-synthetic-custom-v1';
@@ -53,7 +54,7 @@
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
  }
  function render(){
-  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><input class="duty-active-month" id="duty-month" title="${state.month===currentMonth?'Current month':'Selected month'}" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions">${state.demo?`<span class="duty-demo-badge" title="Schedule edits reset on reload; saved Custom View lasts for this tab session">Synthetic demo · ${esc(demoPharmacyCode)}</span>`:''}<button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${preview?'':`<button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button>`}${state.tab==='schedule'?`<button type="button" data-duty-action="calendar" ${!d.can_write?'disabled':''}>Calendar Settings</button>`:''}<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
+  const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><span class="duty-active-month"><span aria-hidden="true">${monthLabel.format(new Date(state.month+'-01T12:00Z'))}</span><input id="duty-month" title="${state.month===currentMonth?'Current month':'Selected month'}" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"></span><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions">${state.demo?`<span class="duty-demo-badge" title="Schedule edits reset on reload; saved Custom View lasts for this tab session">Synthetic demo · ${esc(demoPharmacyCode)}</span>`:''}<button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${preview?'':`<button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button>`}${state.tab==='schedule'?`<button type="button" data-duty-action="calendar" ${!d.can_write?'disabled':''}>Calendar Settings</button>`:''}<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button></div></div>
 
   ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':list(d)}</div>`;
@@ -76,8 +77,7 @@
     }
     return demoMonth(state.month);
    },
-   planBasic:minutes=>M.basicUpdates(demoStaff.employees,[...demos.values()].flatMap(d=>d.entries),minutes,
-    new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())),
+   today,planBasic:(minutes,from)=>M.basicUpdates(demoStaff.employees,minutes,from,today()),
    saveBasic:(minutes,updates)=>{
     if(updates)for(const {employee,defaults} of updates)employee.basic_defaults=defaults;
     else demoDefaultBasic=minutes;
