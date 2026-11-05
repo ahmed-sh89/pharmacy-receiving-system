@@ -8,10 +8,10 @@ test('calendar lengths, leap year and Friday columns use UTC dates',()=>{
  assert.equal(M.days('2026-11').length,30);assert.equal(M.days('2028-02').length,29);assert.equal(M.days('2027-02').length,28);
  assert.deepEqual(Array.from(M.days('2026-11').filter(x=>x.friday),x=>x.day),[6,13,20,27]);
  assert.equal(M.shiftMonth('2026-12',1),'2027-01');assert.equal(M.shiftMonth('2027-01',-1),'2026-12');
- assert.deepEqual(Array.from(M.calendarPeriod('2026-11',0,7),d=>d.date),['2026-11-01','2026-11-02','2026-11-03','2026-11-04','2026-11-05','2026-11-06','2026-11-07']);
- assert.deepEqual(Array.from(M.calendarPeriod('2026-11',28,14),d=>d.day),[29,30]);
- assert.deepEqual(Array.from(M.calendarPeriod('2026-11',28,7),d=>d.day),[29,30]);
- assert.equal(M.calendarPeriod('2026-12',28,7).at(-1).date,'2026-12-31');
+ assert.deepEqual(Array.from(M.calendarRange('2026-11',{from:'2026-10-31',to:'2026-11-03'}),d=>d.day),[1,2,3]);
+ assert.deepEqual(Array.from(M.calendarRange('2026-11',{from:'2026-11-29',to:'2026-12-02'}),d=>d.day),[29,30]);
+ assert.deepEqual(Array.from(M.dateRange('2026-11-29','2026-12-02')),['2026-11-29','2026-11-30','2026-12-01','2026-12-02']);
+ assert.throws(()=>M.dateRange('2026-11-31','2026-12-02'));
  assert.throws(()=>M.days('2026-13'));assert.throws(()=>M.days('2026-1'));
 });
 test('synthetic employee demo is detached and has all positions',()=>{
@@ -106,4 +106,18 @@ test('build output points exclusively to Staging and Duty sits after Expiry',()=
  assert.ok(!html.includes('zznoshzcyxmtwfbznjyr'));assert.ok(!cloud.includes('zznoshzcyxmtwfbznjyr'));
  assert.ok(cloud.includes('tovkcakucyagvbzvlnks'));assert.match(config,/"staging"/);assert.match(config,/duty:\{id:"duty"/);
  assert.equal(version.environment,'staging');assert.equal(version.stage,'B');
+});
+
+
+test('leave runs retain daily cells and recenter after partial status changes',()=>{
+ const days=M.calendarRange('2026-11',{from:'2026-11-01',to:'2026-11-06'});
+ const statuses=['ANNUAL_LEAVE','ANNUAL_LEAVE','ANNUAL_LEAVE','ANNUAL_LEAVE','SICK_LEAVE','SICK_LEAVE'];
+ const grouping=()=>M.leaveRuns(days,date=>statuses[Number(date.slice(-2))-1]);
+ let runs=grouping();
+ assert.equal(runs.size,6);
+ assert.deepEqual(Array.from(runs).filter(([,run])=>run.label).map(([date])=>date),['2026-11-03','2026-11-06']);
+ statuses[1]='OFF';runs=grouping();
+ assert.equal(runs.has('2026-11-01'),false);
+ assert.equal(runs.has('2026-11-02'),false);
+ assert.equal(runs.get('2026-11-03').first,true);
 });

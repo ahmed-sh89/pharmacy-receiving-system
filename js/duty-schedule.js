@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const M=window.DutyModel,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const S={mode:31,group:'pharmacists',staffPage:0,custom:new Set(),start:0,month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
+ const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
  let host,data,options,scopeVersion=0,drag=null,skipClick=false;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const past=[],future=[],localRevisions=new Map();
@@ -20,7 +20,7 @@
  const staffList=()=>roster().filter(e=>S.group==='custom'?S.custom.has(e.code):(e.position_key==='pharmacist')===(S.group==='pharmacists'));
  const employees=()=>staffList().slice(S.staffPage*6,S.staffPage*6+6);
  const basic=(code,date,p)=>M.basicAllowance(date,p,data.employees.find(e=>e.code===code),data.hour_rules);
- const dates=()=>M.calendarPeriod(S.month,S.start,S.mode);
+ const dates=()=>M.calendarRange(S.month,S.range);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
  const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&data.month?.status!=='Completed';
  const writableDateForMonth=date=>date.startsWith(S.month+'-');
@@ -28,7 +28,7 @@
  const holiday=date=>data.holidays.find(h=>h.date===date&&h.active);
  function mount(el,d,config){
   host=el;data={entries:[],holidays:[],...d};options=config;
-  if(S.month!==config.month){S.month=config.month;S.start=0;clearSelection();S.editing=null;S.notice='';}
+  if(S.month!==config.month){S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
   render();
  }
  function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
@@ -39,37 +39,39 @@
   S.staffPage=Math.min(S.staffPage,pages-1);
   const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules);
   const rosterOptions=roster();
-  const monthDays=M.days(S.month);
+  const monthDays=M.days(S.month),first=monthDays[0].date,last=monthDays.at(-1).date;
+  const leave=staff.map(e=>M.leaveRuns(days,date=>payload(e.code,date).status));
   host.innerHTML=`<div class="duty-schedule-controls">
    <label class="duty-staff-group">Staff <select id="duty-staff-group">${[['pharmacists','Pharmacists'],['support','Labor + Beauty'],['custom','Custom']].map(([v,l])=>`<option value="${v}" ${S.group===v?'selected':''}>${l}</option>`).join('')}</select></label>
-   ${S.group==='custom'?`<details class="duty-staff-filter"><summary>Choose staff</summary><div>${rosterOptions.map(e=>`<label><input type="checkbox" data-s-staff="${esc(e.code)}" ${S.custom.has(e.code)?'checked':''}> ${esc(e.name)}</label>`).join('')||'No employees'}</div></details>`:''}
+   ${S.group==='custom'?`<details class="duty-staff-filter"><summary>Choose staff</summary><div>${rosterOptions.map(e=>`<label><input type="checkbox" data-s-staff="${esc(e.code)}" ${S.custom.has(e.code)?'checked':''}> ${esc(e.name)}</label>`).join('')||'No employees'}${options.demo?'<button type="button" data-s-action="save-custom">Save as Default Custom View</button>':''}</div></details>`:''}
    <div class="duty-period" aria-label="Staff pages"><button type="button" data-s-action="staff-back" aria-label="Previous staff page" ${S.staffPage?'':'disabled'}>‹</button><span>${S.staffPage+1}/${pages}</span><button type="button" data-s-action="staff-next" aria-label="Next staff page" ${S.staffPage+1<pages?'':'disabled'}>›</button></div>
-   <div class="duty-segment" role="group" aria-label="Calendar view">${[[31,'Month'],[14,'14 Days'],[7,'7 Days']].map(([n,label])=>`<button type="button" data-s-mode="${n}" aria-pressed="${S.mode===n}">${label}</button>`).join('')}</div>
-   ${S.mode===31?'':`<label class="duty-staff-group">Dates <select id="duty-date-chunk">${monthDays.filter((_,i)=>i%S.mode===0).map(d=>`<option value="${d.day-1}" ${S.start===d.day-1?'selected':''}>${formatDate(d.date)} – ${formatDate(monthDays[Math.min(d.day+S.mode-2,monthDays.length-1)].date)}</option>`).join('')}</select></label>`}
+   <details class="duty-date-range"><summary>${S.range?formatDate(S.range.from)+' – '+formatDate(S.range.to):'Date Range'}</summary>
+   <form data-date-range><label>From <input name="from" type="date" required min="${first}" max="${last}" value="${S.range?.from||first}"></label><label>To <input name="to" type="date" required min="${first}" max="${last}" value="${S.range?.to||last}"></label><button type="submit">Apply</button></form></details>
+   ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
    <button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    <select aria-label="Apply status to selection" id="duty-apply-status"><option value="">Status…</option>${Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
    <button type="button" data-s-action="color">Cell Color</button></div></div>
-   <div class="duty-grid-scroll duty-vertical ${S.mode===7?'duty-week-height':''}" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
-    <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Calendar <small>Monthly totals · h</small></th>
+   <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
+    <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading"><div class="duty-calendar-title">Calendar</div><div class="duty-calendar-totals">Monthly totals <small>Hours</small></div></th>
     ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
-    <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
+    <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map((e,i)=>cell(e,d,leave[i].get(d.date))).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
   bind();updateSelection();
  }
- function cell(e,d){
+ function cell(e,d,run){
   const p=payload(e.code,d.date),n=M.calculate(d.date,p,!!holiday(d.date),basic(e.code,d.date,p));
-  const times=p.periods.map(t=>`<span class="duty-time-period">${M.formatTime(t.start)} – ${M.formatTime(t.end)}</span>`).join('');
+  const times=p.periods.map(t=>`<span class="duty-time-period"><span>${M.formatTime(t.start)}</span><span aria-hidden="true">–</span><span>${M.formatTime(t.end)}</span></span>`).join('');
   const categories=Object.entries(categoryLabels).filter(([k])=>k!=='total'&&n[k]>0).map(([k,label])=>{
    const manual=Object.hasOwn(p.manual_minutes||{},k);
    return `<span data-s-hours="${k}" class="duty-category-${k} ${manual?'duty-manual':''}">${label} <b>${M.hours(n[k])}</b></span>`;
   }).join('');
   const status=p.working_pending?'Working':p.status!=='WORK'&&p.status!=='EMPTY'?(p.status==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[p.status]):'';
-  return `<td tabindex="-1" aria-label="${esc(e.name)}, ${d.date}, ${esc(M.text(p)||(categories?'Hours only':'Empty'))}${p.note?', note: '+esc(p.note):''}" data-s-code="${esc(e.code)}" data-s-date="${d.date}" class="duty-cell ${p.highlight?'duty-mark-'+p.highlight:''}">
-   ${times?`<div data-s-time class="duty-cell-time ${p.periods.length===2?'duty-split':''}">${times}</div>`:status?`<span class="duty-cell-status">${status}</span>`:''}
+  return `<td tabindex="-1" aria-label="${esc(e.name)}, ${d.date}, ${esc(M.text(p)||(categories?'Hours only':'Empty'))}${p.note?', note: '+esc(p.note):''}" data-s-code="${esc(e.code)}" data-s-date="${d.date}" class="duty-cell ${run?`duty-leave-run ${run.last?'duty-leave-last':''}`:''} ${p.highlight?'duty-mark-'+p.highlight:''}">
+   ${times?`<div data-s-time class="duty-cell-time ${p.periods.length===2?'duty-split':''}">${times}</div>`:status&&(!run||run.label)?`<span class="duty-cell-status ${run?.even?'duty-leave-midpoint':''}">${status}</span>`:''}
    ${p.note?'<span class="duty-note-dot" aria-hidden="true">•</span>':''}
    ${categories?`<div class="duty-cell-categories">${categories}</div>`:''}</td>`;
  }
@@ -131,7 +133,7 @@
   let trigger,parts;
   function draw(){
    const groups=[['Hour',Array.from({length:12},(_,i)=>String(i+1))],['Minute',[...new Set(['00','30',parts[1]])].sort()],['AM / PM',['AM','PM']]];
-   picker.innerHTML=groups.map(([label,values],i)=>`<div role="group" aria-label="${label}"><strong>${label}</strong><div class="duty-time-options">${values.map(v=>`<button type="button" data-part="${i}" data-value="${v}" aria-pressed="${parts[i]===v}">${v}</button>`).join('')}</div></div>`).join('')+'<button type="button" class="duty-primary" data-time-done>Done</button>';
+   picker.innerHTML=groups.map(([label,values],i)=>`<div class="duty-time-group duty-time-group-${i}" role="group" aria-label="${label}"><strong>${label}</strong><div class="duty-time-options">${values.map(v=>`<button type="button" data-part="${i}" data-value="${v}" aria-pressed="${parts[i]===v}">${v}</button>`).join('')}</div></div>`).join('')+'<button type="button" class="duty-primary" data-time-done>Done</button>';
   }
   editor.onclick=e=>{
    const button=e.target.closest('[data-time-picker]');if(!button)return;
@@ -327,23 +329,37 @@
   });
  }
  function dayType(){
-  const days=M.days(S.month);
-  const form=smallPanel('Calendar settings',`<label class="duty-field">Date<select name="date">${days.map(d=>`<option value="${d.date}" ${d.date===S.selected[0]?.date?'selected':''}>${formatDate(d.date)} · ${d.weekday}</option>`).join('')}</select></label>
+  const initial=S.selected[0]?.date||M.days(S.month)[0].date;
+  const form=smallPanel('Calendar settings',`<div class="duty-detail-grid"><label class="duty-field">${options.demo?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${options.demo?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
+   ${options.demo?`<label class="duty-field">To date<input name="to" type="date" required value="${initial}"></label>`:''}</div>
    <label class="duty-field">Type<select name="type"><option value="normal">Calendar default</option><option value="holiday">Public holiday</option></select></label>
-   ${options.demo?`<label class="duty-field">Occasion<input name="name" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="note" maxlength="300"></label>`:''}`,async fields=>{
-   const date=fields.get('date');if(!writableDate(date))throw Error('Calendar is read only.');
-   const previous=data.holidays.find(h=>h.date===date);
-   data=await options.holiday(date,fields.get('type')==='holiday',previous?.revision||0,fields.get('name')?.trim(),fields.get('note')?.trim());render();
+   ${options.demo?`<label class="duty-field">Holiday name<input name="name" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="note" maxlength="300"></label>`:''}`,async fields=>{
+   if(!writable())throw Error('Calendar is read only.');
+   const from=fields.get('from'),to=fields.get('to')||from,active=fields.get('type')==='holiday',name=fields.get('name')?.trim();
+   if(options.demo&&active&&!name)throw Error('Enter a holiday name.');
+   data=await options.holiday(M.dateRange(from,to),active,name,fields.get('note')?.trim());render();
   },'Save');
-  const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.date.value);form.elements.type.value=row?.active?'holiday':'normal';if(options.demo){form.elements.name.value=row?.name||'';form.elements.note.value=row?.note||'';}};
-  form.elements.date.onchange=sync;sync();
+  const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(options.demo){form.elements.name.value=row?.name||'';form.elements.note.value=row?.note||'';}};
+  form.elements.from.onchange=()=>{if(options.demo)form.elements.to.value=form.elements.from.value;sync();};sync();
  }
  function hourRules(){
   const rules=data.hour_rules||[];
-  const form=smallPanel('Working-hour rules',`<button type="button" data-rule-add>Add rule</button>
+  const form=smallPanel('Working-hour rules',`<div class="duty-default-hours"><label class="duty-field">Default Basic Hours<input name="defaultBasic" type="number" min="0" max="24" step="any" value="${(data.default_basic??540)/60}"></label><div class="duty-actions"><button type="button" data-basic-save>Save for new employees</button><button type="button" data-basic-bulk>Apply to existing employees</button></div><small data-basic-message role="status"></small></div><button type="button" data-rule-add>Add rule</button>
    <div class="duty-rule-list">${rules.map((r,i)=>`<div class="duty-list-row"><span><strong>${esc(r.name)}</strong><small class="duty-code">${esc(r.start.replace('T',' '))} – ${esc(r.end.replace('T',' '))}<br>${r.codes.length?esc(r.codes.map(code=>roster().find(e=>e.code===code)?.name||code).join(', ')):'All employees'} · ${M.hours(r.basic)} h Basic</small></span><button type="button" data-rule-edit="${i}">Edit</button><button type="button" data-rule-delete="${i}">Delete</button></div>`).join('')||'No rules yet.'}</div>`);
   form.onclick=async e=>{
    const button=e.target.closest('button');if(!button)return;
+   if(button.hasAttribute('data-basic-save')||button.hasAttribute('data-basic-bulk')){
+    const message=form.querySelector('[data-basic-message]');
+    try{
+     const minutes=M.hourMinutes(form.elements.defaultBasic.value),bulk=button.hasAttribute('data-basic-bulk');
+     const count=data.employees.filter(e=>e.active&&M.basicDefault(e)!==minutes).length;
+     if(bulk&&!count){message.textContent='No active employee defaults need changing.';return;}
+     if(bulk&&!await options.confirm(`Apply ${M.hours(minutes)} h Basic to ${count} active employee${count===1?'':'s'}? Existing scheduled dates and manual allocations are preserved.`,'Apply'))return;
+     data=options.basicDefault(minutes,bulk);
+     message.textContent=bulk?`Updated ${count} employee defaults for future unscheduled dates.`:'Saved for new employees.';
+    }catch(error){message.textContent=error.message;}
+    return;
+   }
    if(button.hasAttribute('data-rule-add'))editRule();
    if(button.hasAttribute('data-rule-edit'))editRule(Number(button.dataset.ruleEdit));
    if(button.hasAttribute('data-rule-delete')){
@@ -373,11 +389,10 @@
  }
  function bind(){
   host.onclick=async event=>{
-   if(event.target.closest('.duty-cell-editor,select'))return;
+   if(event.target.closest('.duty-cell-editor,.duty-date-range,select'))return;
    if(S.editing||S.busy||S.confirming)return;
    try{
     const button=event.target.closest('button'),cellEl=event.target.closest('[data-s-code]'),row=event.target.closest('[data-s-column]');
-    if(button?.dataset.sMode){S.mode=Number(button.dataset.sMode);S.start=0;clearSelection();render();return;}
     if(row){if(!skipClick){selectRows(row.dataset.sColumn,event.shiftKey,event.ctrlKey||event.metaKey);focusSelection();}return;}
     if(cellEl){
      if(skipClick)return;
@@ -392,6 +407,8 @@
      case 'redo':await history(true);break;
      case 'staff-back':case 'staff-next':S.staffPage+=button.dataset.sAction==='staff-back'?-1:1;clearSelection();render();break;
      case 'color':color();break;
+     case 'full-month':S.range=null;clearSelection();render();break;
+     case 'save-custom':options.saveCustom([...S.custom]);S.notice='Default Custom View saved for this demo session.';render();break;
     }
     if(!document.activeElement?.closest('[role=dialog]'))focusSelection();
    }catch(error){S.notice=error.message||'Duty action could not be completed.';render();}
@@ -454,10 +471,16 @@
   host.onpointerup=host.onpointercancel=host.onlostpointercapture=finishDrag;
   host.onpointerleave=()=>{if(drag&&!drag.moved)drag=null;};
   host.ondragstart=event=>{if(event.target.closest('[data-s-code],[data-s-column]'))event.preventDefault();};
+  host.onsubmit=e=>{
+   if(!e.target.matches('[data-date-range]'))return;
+   e.preventDefault();
+   const fields=new FormData(e.target),from=fields.get('from'),to=fields.get('to');
+   if(!writableDateForMonth(from)||!writableDateForMonth(to)||from>to){S.notice='Choose dates within the selected month in order.';render();return;}
+   S.range={from,to};S.notice='';clearSelection();render();
+  };
   host.onchange=async e=>{
-   if(e.target.id==='duty-staff-group'){S.group=e.target.value;S.staffPage=0;clearSelection();render();return;}
+   if(e.target.id==='duty-staff-group'){S.group=e.target.value;if(S.group==='custom'&&options.demo){const saved=options.loadCustom();if(saved)S.custom=new Set(saved);}S.staffPage=0;clearSelection();render();return;}
    if(e.target.dataset.sStaff){const code=e.target.dataset.sStaff;if(e.target.checked)S.custom.add(code);else S.custom.delete(code);clearSelection();render();host.querySelector('.duty-staff-filter').open=true;return;}
-   if(e.target.id==='duty-date-chunk'){S.start=Number(e.target.value);clearSelection();render();host.querySelector('#duty-date-chunk').focus();return;}
    if(e.target.id!=='duty-apply-status'||!e.target.value)return;
    const status=e.target.value;
    if(status==='WORK'&&!options.demo){
@@ -510,7 +533,7 @@
  window.DutySchedule={mount,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
   drag=null;skipClick=false;scopeVersion++;clearHistory();
-  if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.mode=31;}
-  Object.assign(S,{editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
+  if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}
+  Object.assign(S,{range:null,editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};
 })();

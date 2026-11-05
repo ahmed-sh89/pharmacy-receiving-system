@@ -119,3 +119,15 @@ test('full manual allocations replace automatic categories and pending Working h
  assert.equal(M.calculate(date,M.normalize({status:'WORK',working_pending:true})).total,0);
  assert.equal(M.calculate(date,M.normalize({...manual,manual_minutes:undefined})).normal_ot,60);
 });
+
+test('future Basic defaults preserve prior hours, rules and manual allocations',()=>{
+ const employee={code:'P1',basic_minutes:540,basic_defaults:[{from:'2026-12-01',minutes:480}]};
+ const shift=M.parse('9 AM–6 PM');
+ assert.equal(M.basicDefault(employee),480);
+ assert.equal(M.basicAllowance('2026-11-30',shift,employee),540);
+ assert.equal(M.basicAllowance('2026-12-01',shift,employee),480);
+ const rule={start:'2026-12-01T00:00',end:'2026-12-01T23:59',codes:['P1'],basic:420};
+ assert.equal(M.basicAllowance('2026-12-01',shift,employee,[rule]),420);
+ const manual=M.normalize({...shift,manual_minutes:{basic:480,normal_ot:60,friday_ot:0,holiday_ot:0}});
+ assert.equal(M.calculate('2026-12-01',manual,true,420).total,540);
+});

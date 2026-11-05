@@ -79,3 +79,7 @@ Synthetic hour rules use inclusive local shift-start timestamps. An employee-spe
 ### Duty root-cause UX refinement
 
 Schedule periods partition the selected month from day one, with full-month KPIs. Calendar Settings and Employees → Working Hours Settings own configuration. Synthetic Working can be marked without hours, OFF/leave clear active allocations, and Clear Cell resets the complete payload. Existing Other Leave storage is displayed as Unpaid Leave. Time pickers share one light-dismiss popover per editor. Auto derives hours from shifts; newly edited Manual allocations explicitly store all four categories, including zeros. Existing partial overrides remain readable and are preserved when editing unrelated fields. No migration or Production change.
+
+### Duty Staging final UI/UX
+
+The optional Date Range replaces fixed chunks and resets on month navigation. KPI totals use the entire selected month. Leave labels are grouped visually while daily records and selection remain independent. Custom staff defaults are stored only in the synthetic tab session. Holiday ranges, the editable demo Pharmacy Code label, and global Basic defaults use synthetic state. Bulk Basic applies to active employees only after confirmation and starts no earlier than today or the day after the last saved schedule, whichever is later. The internal pharmacy ID and persisted contracts are unchanged. No migration or Production change.

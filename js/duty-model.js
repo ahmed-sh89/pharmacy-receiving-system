@@ -78,10 +78,10 @@
  function basicAllowance(date,payload,employee,rules=[]){
   if(payload.basic_limit!=null&&payload.basic_limit!==540)return payload.basic_limit;
   const first=payload.periods?.[0]?.start;
-  if(first==null)return employee?.basic_minutes??540;
+  if(first==null)return basicDefault(employee,date);
   const start=date+'T'+String(Math.floor(first/60)).padStart(2,'0')+':'+String(first%60).padStart(2,'0');
   const matching=rules.filter(r=>r.start<=start&&start<=r.end&&(!r.codes.length||r.codes.includes(employee?.code)));
-  return (matching.findLast(r=>r.codes.length)||matching.at(-1))?.basic??employee?.basic_minutes??540;
+  return (matching.findLast(r=>r.codes.length)||matching.at(-1))?.basic??basicDefault(employee,date);
  }
  function calculate(date,payload,holiday=false,basic=payload.basic_limit??540){
   const p=normalize(payload),total=p.periods.reduce((a,v)=>a+v.end-v.start,0),friday=new Date(date+'T12:00:00Z').getUTCDay()===5;
@@ -96,9 +96,33 @@
   for(const e of data.employees)for(const d of days(month)){const i=data.employees.indexOf(e),off=(d.day+i)%7===0;const payload=off?normalize({status:'OFF'}):parse(i%3===0?'9 AM – 1 PM / 5 PM – 10 PM':i%3===1?'12 PM – 9 PM':'7 PM – 4 AM');data.entries.push({code:e.code,date:d.date,payload,revision:1,identity:{name:e.name,position_key:e.position_key,position_label:data.positions.find(p=>p.key===e.position_key).label}});}
   data.totals=totals(data.entries);return data;
  }
- function calendarPeriod(month,offset,length){
-  return days(month).slice(offset,offset+length);
+ function dateRange(from,to){
+  const valid=date=>/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(date)&&days(date.slice(0,7)).some(d=>d.date===date);
+  if(!valid(from)||!valid(to)||from>to)throw Error('Choose a valid date range.');
+  const count=(Date.parse(to)-Date.parse(from))/86400000+1;
+  if(count>366)throw Error('Choose a range of at most 366 days.');
+  return Array.from({length:count},(_,i)=>addDays(from,i));
  }
- const api={defaults,days,calendarPeriod,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ function calendarRange(month,range){
+  return days(month).filter(d=>!range||(d.date>=range.from&&d.date<=range.to));
+ }
+ function leaveRuns(dates,statusForDate){
+  const runs=new Map();
+  for(let start=0;start<dates.length;){
+   const status=statusForDate(dates[start].date);
+   let end=start+1;
+   if(['ANNUAL_LEAVE','SICK_LEAVE','OTHER_LEAVE'].includes(status)){
+    while(end<dates.length&&statusForDate(dates[end].date)===status)end++;
+    const length=end-start;
+    if(length>1)for(let i=start;i<end;i++)runs.set(dates[i].date,{first:i===start,last:i===end-1,label:i===start+Math.floor(length/2),even:length%2===0});
+   }
+   start=end;
+  }
+  return runs;
+ }
+ function basicDefault(employee,date){
+  return employee?.basic_defaults?.findLast(row=>!date||row.from<=date)?.minutes??employee?.basic_minutes??540;
+ }
+ const api={defaults,days,calendarRange,dateRange,leaveRuns,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
