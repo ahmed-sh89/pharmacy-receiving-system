@@ -20,7 +20,7 @@ function fixture(){
   ['07',M.parse('9 AM–6 PM')],
   ['08',M.normalize({status:'OFF',note:'Coverage elsewhere'})],
   ['09',M.normalize({status:'ANNUAL_LEAVE'})],
-  ['10',M.normalize({status:'EMPTY',note:'=SUM(1,2)\t\nkeep literal'})],
+  ['10',M.normalize({status:'EMPTY',note:'Coverage 2'})],
   ['11',M.parse('9 AM–6 PM',{manual_minutes:{basic:420,normal_ot:120,friday_ot:0,holiday_ot:0}})],
   ['13',M.parse('9 AM–6 PM')]
  ].map(([day,payload])=>({code:employee.code,date:'2026-11-'+day,payload}));
@@ -56,14 +56,14 @@ test('one-click E:L clipboard includes only daily inputs and matches Schedule ov
  const rows=writes[0].split('\r\n').map(row=>row.split('\t'));
  assert.equal(rows.length,30);
  assert.ok(rows.every(row=>row.length===8));
- assert.deepEqual(rows[0],['1:15 PM','10:15 PM','','','1','','','Working']);
- assert.deepEqual(rows[1],['9:00 AM','1:00 PM','5:00 PM','10:00 PM','1','','','Working']);
- assert.deepEqual(rows[4],['7:00 PM','4:00 AM','','','1','','','Working']);
+ assert.deepEqual(rows[0],['1:15 PM','10:15 PM','','','1','','','']);
+ assert.deepEqual(rows[1],['9:00 AM','1:00 PM','5:00 PM','10:00 PM','1','','','']);
+ assert.deepEqual(rows[4],['7:00 PM','4:00 AM','','','1','','','']);
  assert.deepEqual(rows[5].slice(4,7),['','9','']);
  assert.deepEqual(rows[6].slice(4,7),['','','9']);
- assert.deepEqual(rows[7],['','','','','','','','OFF · Coverage elsewhere']);
- assert.deepEqual(rows[8],['','','','','','','','Annual Leave']);
- assert.equal(rows[9][7],"'=SUM(1,2) keep literal");
+ assert.deepEqual(rows[7],['','','','','','','','Coverage elsewhere']);
+ assert.deepEqual(rows[8],['','','','','','','','']);
+ assert.equal(rows[9][7],'Coverage 2');
  assert.deepEqual(rows[10].slice(4,7),['2','0','0']);
  assert.deepEqual(rows[12].slice(4,7),['','','9']);
  assert.deepEqual(rows.at(-1),Array(8).fill(''));
@@ -108,4 +108,67 @@ test('both XLSX formats reopen with typed values, sheet layout, colors and total
    assert.equal(s.C19.s.fgColor.rgb,'FFF2D9');
   }
  }
+});
+test('actual Notes remain independent of status across clipboard, preview and export',()=>{
+ const data=fixture(),note='Coverage Pharmacy 2 · Keep exact "text"';
+ data.entries[0].payload.note=note;
+ const report=R.project(data,'2026-11',true,'TEST'),employee=report.staff[0];
+ assert.equal(employee.days[1].notes,'');
+ assert.equal(employee.days[7].notes,'Coverage elsewhere');
+ assert.equal(employee.days[8].notes,'');
+ assert.equal(employee.days[0].notes,note);
+ assert.equal(R.copyValues(employee).split('\r\n')[0].split('	')[7],'"Coverage Pharmacy 2 · Keep exact ""text"""');
+ const standard=R.workbookPlan(report,[employee],'standard');
+ assert.equal(standard[0].rows[1].values[11],note);
+ assert.equal(standard[0].rows[2].values[11],null);
+ const schedule=R.workbookPlan(report,[employee],'schedule');
+ assert.ok(schedule[0].rows[6].values[2].includes(note));
+ assert.ok(!schedule[0].rows[7].values[2].includes('Working'));
+});
+test('preview is read-only, paginated, and follows employee, format and month',()=>{
+ const data=fixture();for(let i=2;i<=8;i++)data.employees.push({...data.employees[0],code:'P'+i});
+ const {document}=parseHTML('<div id="reports"></div>'),host=document.querySelector('#reports');
+ const original=JSON.stringify(data);
+ R.mount(host,data,{month:'2026-11',demo:true,pharmacyCode:'TEST'});
+ host.querySelector('[data-report-preview]').onclick();
+ assert.equal(host.querySelector('[data-report-preview]').textContent,'Hide Table');
+ host.querySelector('[data-report-format]').onchange({target:{value:'schedule'}});
+ host.querySelector('[data-report-employee]').onchange({target:{value:''}});
+ assert.equal(host.querySelectorAll('thead th').length,8);
+ host.querySelector('[data-preview-page="1"]').onclick();
+ assert.equal(host.querySelectorAll('thead th').length,4);
+ host.querySelector('[data-report-employee]').onchange({target:{value:'P1'}});
+ assert.equal(host.querySelectorAll('thead th').length,3);
+ assert.match(host.querySelector('.duty-report-preview-heading').textContent,/Test Pharmacist/);
+ R.mount(host,data,{month:'2028-02',demo:true,pharmacyCode:'TEST'});
+ assert.equal(host.querySelectorAll('tbody tr').length,34);
+ assert.match(host.querySelector('.duty-report-preview-heading').textContent,/February 2028/);
+ assert.equal(JSON.stringify(data),original);
+});
+test('XLSX ZIP, XML ordering, style indices, relationships and typed cells validate for every month length',()=>{
+ const os=require('node:os'),path=require('node:path'),{execFileSync}=require('node:child_process');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'duty-xlsx-'));
+ try{
+  for(const month of ['2026-02','2028-02','2026-11','2026-12']){
+   const data=fixture(),report=R.project(data,month,true,'TEST');
+   for(const format of ['standard','schedule']){
+    const bytes=R.workbookBytes(X,R.workbookPlan(report,report.staff,format));
+    const file=path.join(dir,month+'-'+format+'.xlsx');fs.writeFileSync(file,bytes);
+    const checks=JSON.parse(execFileSync('python3',['tests/duty-xlsx-validation.py',file],{encoding:'utf8'}));
+    assert.equal(checks[0].structure,'PASS');
+    assert.equal(checks[0].zip_crc,'PASS');
+   }
+  }
+  const report=R.project(fixture(),'2026-11',true,'TEST');
+  const bytes=R.workbookBytes(X,R.workbookPlan(report,report.staff,'schedule'));
+  const zip=X.CFB.read(bytes,{type:'buffer'});
+  const part=zip.FileIndex[zip.FullPaths.findIndex(n=>n.endsWith('/xl/worksheets/sheet1.xml'))];
+  let xml=new TextDecoder().decode(new Uint8Array(part.content));
+  const properties=xml.match(/<sheetPr>[\s\S]*?<\/sheetPr>/)[0];
+  xml=xml.replace(properties,'').replace(/<dimension[^>]*\/>/,tag=>tag+properties);
+  part.content=new TextEncoder().encode(xml);part.size=part.content.length;
+  const broken=path.join(dir,'invalid-order.xlsx');
+  fs.writeFileSync(broken,X.CFB.write(zip,{fileType:'zip',type:'array'}));
+  assert.throws(()=>execFileSync('python3',['tests/duty-xlsx-validation.py',broken],{stdio:'pipe'}));
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });

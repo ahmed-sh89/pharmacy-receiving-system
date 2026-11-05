@@ -26,7 +26,7 @@
     const p=byDate.get(d.date)||M.normalize(),holiday=holidays.has(d.date);
     const hours=M.effectiveHours(d.date,p,holiday,e,data.hour_rules,demo);
     const status=p.status==='EMPTY'?'':p.status==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[p.status];
-    return {...d,kind:holiday&&(demo||!d.friday)?'holiday':d.friday?'friday':'',periods:p.periods,hours,manual:p.manual_minutes,notes:[status,p.note].filter(Boolean).join(' · '),highlight:p.highlight};
+    return {...d,kind:holiday&&(demo||!d.friday)?'holiday':d.friday?'friday':'',periods:p.periods,hours,manual:p.manual_minutes,status,notes:p.note||'',highlight:p.highlight};
    });
    return [{code:e.code,id:String(e.display_code||e.code),name,days,totals:totals[e.code]||Object.fromEntries(Object.keys(categories).map(k=>[k,0]))}];
   });
@@ -40,8 +40,9 @@
  }
  function literal(value){
   if(typeof value!=='string')return String(value??'');
-  const text=value.replace(/[\u0000-\u001f\u007f]+/g,' ').trim();
-  return /^[=+\-@]/.test(text)?"'"+text:text;
+  // Quote embedded delimiters so a genuine note remains one spreadsheet cell.
+  const text=/^[=+\-@]/.test(value)?"'"+value:value;
+  return /[\t\r\n"]/.test(text)?'"'+text.replaceAll('"','""')+'"':text;
  }
  function copyValues(employee){
   return employee.days.map(day=>{
@@ -55,18 +56,18 @@
  function scheduleCell(day){
   const times=day.periods.map(p=>formatTime(p.start)+' – '+formatTime(p.end));
   const hours=Object.entries(categories).filter(([k])=>k!=='total'&&day.hours[k]).map(([k,v])=>v+' '+M.hours(day.hours[k])).join(' · ');
-  const notes=day.notes==='Working'?'':day.notes.replace(/^Working · /,'');
-  return [...times,hours,notes].filter(Boolean).join('\n');
+  const status=day.status==='Working'?'':day.status;
+  return [...times,hours,status,day.notes].filter(Boolean).join('\n');
  }
  function workbookPlan(report,staff,format){
   if(format==='standard')return staff.map(e=>{
    const [year,month]=report.month.split('-').map(Number);
    const metadata={2:['Pharmacy Code',report.pharmacyCode],3:['Month',month],4:['Year',year],10:['ID',e.id],11:['Name',e.name]};
    return {name:'Employee '+(staff.indexOf(e)+1),widths:[17,24,13,13,14,14,14,14,12,12,12,33,12,14,14],freeze:1,
-    rows:[{values:headers,style:'header'},...e.days.map((day,i)=>{
+    rows:[{values:headers,style:'templateHeader'},...e.days.map((day,i)=>{
      const values=dailyValues(day,true);
      if(metadata[i+2])[values[0],values[1]]=metadata[i+2];
-     return {values,style:day.kind,height:day.notes.length>35?32:17,formats:{2:'date',4:'time',5:'time',6:'time',7:'time',8:'number',9:'number',10:'number'}};
+     return {values,style:day.kind==='friday'?'templateFriday':day.kind,height:day.notes.length>35?32:17,formats:{2:'date',4:'time',5:'time',6:'time',7:'time',8:'number',9:'number',10:'number'}};
     }),{values:['Monthly totals',null,null,null,null,null,null,null,...overtime.map(k=>asHours(e.totals[k])),null],style:'total',formats:{8:'number',9:'number',10:'number'}},
     {values:['Basic Hours',asHours(e.totals.basic),'Total Hours',asHours(e.totals.total)],style:'total',formats:{1:'number',3:'number'}}]};
   });
@@ -76,12 +77,12 @@
     ...report.dates.map((d,i)=>({values:[dateValue(d.date),d.name,...page.map(e=>scheduleCell(e.days[i]))],
      style:page[0].days[i].kind,cellStyles:page.map(e=>e.days[i].highlight),formats:{0:'date'},height:Math.max(22,...page.map(e=>Math.min(130,15*(scheduleCell(e.days[i]).split('\n').length+(e.days[i].notes.length>40?Math.ceil(e.days[i].notes.length/40):0))+3)))}))]}));
  }
- const fills={plain:'FFFFFF',header:'174A79',total:'DFEBF8',friday:'D8E8FA',holiday:'FFF2D9',blue:'E2F0FF',mint:'E3F5EB',violet:'EDE4FA',rose:'FBE7EE'};
+ const fills={plain:'FFFFFF',templateHeader:'F2F2F2',templateFriday:'8ED973',header:'174A79',total:'DFEBF8',friday:'D8E8FA',holiday:'FFF2D9',blue:'E2F0FF',mint:'E3F5EB',violet:'EDE4FA',rose:'FBE7EE'};
  const formats={plain:0,date:164,time:165,number:166};
  const fillKeys=Object.keys(fills),formatKeys=Object.keys(formats);
  function workbookStyles(){
   const fill=(color)=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${color}"/><bgColor indexed="64"/></patternFill></fill>`;
-  const xf=(style,format,i)=>`<xf numFmtId="${formats[format]}" fontId="${style==='header'?1:style==='total'?2:0}" fillId="${i+2}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>`;
+  const xf=(style,format,i)=>`<xf numFmtId="${formats[format]}" fontId="${style==='header'?1:['total','templateHeader','templateFriday'].includes(style)?2:0}" fillId="${i+2}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>`;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="yyyy-mm-dd"/><numFmt numFmtId="165" formatCode="h:mm AM/PM"/><numFmt numFmtId="166" formatCode="0.####"/></numFmts><fonts count="3"><font><sz val="11"/><color rgb="FF243F5E"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF173F70"/><name val="Calibri"/></font></fonts><fills count="${fillKeys.length+2}"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${Object.values(fills).map(fill).join('')}</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right style="thin"><color rgb="FFD1DEEB"/></right><top/><bottom style="thin"><color rgb="FFD1DEEB"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${fillKeys.length*formatKeys.length}">${fillKeys.flatMap((style,i)=>formatKeys.map(format=>xf(style,format,i))).join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
  }
  function workbookBytes(X,plan){
@@ -102,26 +103,51 @@
    part.content=encoder.encode(transform(decoder.decode(new Uint8Array(part.content))));part.size=part.content.length;
   };
   replace('xl/styles.xml',()=>workbookStyles());
-  plan.forEach((sheet,index)=>replace(`xl/worksheets/sheet${index+1}.xml`,xml=>xml
-   .replace(/<c r="([A-Z]+[0-9]+)"(?: s="[0-9]+")?/g,(_,address)=>{
-    const {r,c}=X.utils.decode_cell(address),row=sheet.rows[r];
-    const style=row.style||row.cellStyles?.[c-2]||'plain';
-    const id=fillKeys.indexOf(style)*formatKeys.length+formatKeys.indexOf(row.formats?.[c]||'plain');
-    return `<c r="${address}" s="${id}"`;
-   })
-   .replace(/<sheetViews>.*?<\/sheetViews>/,`<sheetViews><sheetView workbookViewId="0"><pane ySplit="${sheet.freeze}" topLeftCell="A${sheet.freeze+1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>`)
-   .replace(/<sheetFormatPr[^>]*\/>/,'')
-   .replace('<sheetViews>','<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews>')
-   .replace(/<pageMargins[^>]*\/>/,'')
-   .replace('</worksheet>','<pageMargins left="0.25" right="0.25" top="0.35" bottom="0.35" header="0.15" footer="0.15"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>')));
+  plan.forEach((sheet,index)=>replace(`xl/worksheets/sheet${index+1}.xml`,xml=>{
+   const ignored=xml.match(/<ignoredErrors[\s\S]*?<\/ignoredErrors>/)?.[0]||'';
+   return xml
+    .replace(/<c r="([A-Z]+[0-9]+)"(?: s="[0-9]+")?/g,(_,address)=>{
+     const {r,c}=X.utils.decode_cell(address),row=sheet.rows[r];
+     const style=row.style||row.cellStyles?.[c-2]||'plain';
+     const fill=fillKeys.indexOf(style),format=formatKeys.indexOf(row.formats?.[c]||'plain');
+     if(fill<0||format<0)throw Error('Invalid Duty export cell style.');
+     return `<c r="${address}" s="${fill*formatKeys.length+format}"`;
+    })
+    .replace(/<worksheet\b[^>]*>/,tag=>tag+'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>')
+    .replace(/<sheetViews>[\s\S]*?<\/sheetViews>/,`<sheetViews><sheetView workbookViewId="0"><pane ySplit="${sheet.freeze}" topLeftCell="A${sheet.freeze+1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>`)
+    .replace(/<ignoredErrors[\s\S]*?<\/ignoredErrors>/,'')
+    .replace(/<pageMargins[^>]*\/>/,'')
+    .replace('</worksheet>','<pageMargins left="0.25" right="0.25" top="0.35" bottom="0.35" header="0.15" footer="0.15"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>'+ignored+'</worksheet>');
+  }));
   return X.CFB.write(archive,{fileType:'zip',type:'array',compression:true});
  }
- const state={employee:'',format:'standard'};
+ const state={employee:'',format:'standard',preview:false,page:0};
  function mount(host,data,config){
   const report=project(data,config.month,config.demo,config.pharmacyCode);
   if(!report.staff.some(e=>e.code===state.employee))state.employee='';
   const single=report.staff.find(e=>e.code===state.employee);
   const staff=single?[single]:report.staff;
+  const plan=workbookPlan(report,staff,state.format);
+  const count=plan.length;
+  state.page=Math.min(state.page,Math.max(0,count-1));
+  function display(value,format){
+   if(value==null)return '';
+   if(format==='date')return new Date((value-25569)*86400000).toISOString().slice(0,10);
+   if(format==='time')return formatTime(Math.round(value*1440));
+   if(format==='number')return M.hours(value*60);
+   return value;
+  }
+  function preview(){
+   if(!state.preview||!count)return '';
+   const sheet=plan[state.page],title=state.format==='standard'?staff[state.page].name+' · '+staff[state.page].id:single?single.name+' · '+single.id:sheet.name;
+   return `<section class="duty-report-preview" aria-label="Monthly table preview">
+    <div class="duty-report-preview-heading"><strong>${esc(title)} · ${esc(report.title)}</strong>
+     ${count>1?`<nav aria-label="Preview pages"><button type="button" data-preview-page="-1" aria-label="Previous preview page" ${state.page?'':'disabled'}>‹</button><span>${state.page+1} / ${count}</span><button type="button" data-preview-page="1" aria-label="Next preview page" ${state.page+1<count?'':'disabled'}>›</button></nav>`:''}
+    </div><div class="duty-report-table-scroll" tabindex="0"><table aria-label="${state.format==='standard'?'Standard Timesheet':'Schedule Layout'} preview" class="duty-report-table duty-report-${state.format}">
+    <colgroup>${sheet.widths.map(width=>`<col style="width:${width}ch">`).join('')}</colgroup>
+    <thead><tr>${sheet.rows[0].values.map(v=>`<th scope="col">${esc(v)}</th>`).join('')}</tr></thead>
+    <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:sheet.widths.length},(_,col)=>`<td>${esc(display(row.values[col],row.formats?.[col]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+  }
   const summary=e=>Object.entries(categories).map(([k,label])=>`<div class="duty-category-${k}"><dt>${label}</dt><dd>${M.hours(e.totals[k])}</dd></div>`).join('');
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
    <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
@@ -133,6 +159,7 @@
     <label class="duty-report-field">Excel format
      <select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select>
     </label>
+    <button type="button" data-report-preview aria-expanded="${state.preview}" ${staff.length?'':'disabled'}>${state.preview?'Hide Table':'Preview Table'}</button>
     <button type="button" data-report-download ${staff.length?'':'disabled'}>Download Excel</button>
    </div>
    <div class="duty-report-guidance">
@@ -140,14 +167,25 @@
     <details><summary>Paste safely</summary><p>Test in a disposable copy of the online timesheet first. Pasting can replace existing values or formulas in E:L. Match the employee and first daily date before pasting.</p></details>
    </div>
    ${single?`<dl class="duty-report-kpis" aria-label="Monthly totals">${summary(single)}</dl>`:''}
+   ${preview()}
   </section>`;
   const status=host.querySelector('[data-report-status]');
   host.querySelector('[data-report-employee]').onchange=e=>{
-   state.employee=e.target.value;
+   state.employee=e.target.value;state.page=0;
    mount(host,data,config);
    host.querySelector('[data-report-employee]').focus();
   };
-  host.querySelector('[data-report-format]').onchange=e=>{state.format=e.target.value;};
+  host.querySelector('[data-report-format]').onchange=e=>{
+   state.format=e.target.value;state.page=0;mount(host,data,config);
+   host.querySelector('[data-report-format]').focus();
+  };
+  host.querySelector('[data-report-preview]').onclick=()=>{
+   state.preview=!state.preview;mount(host,data,config);
+   host.querySelector('[data-report-preview]').focus();
+  };
+  for(const button of host.querySelectorAll('[data-preview-page]'))button.onclick=()=>{
+   state.page+=Number(button.dataset.previewPage);mount(host,data,config);
+  };
   host.querySelector('[data-report-copy]').onclick=async()=>{
    if(!single)return;
    try{
