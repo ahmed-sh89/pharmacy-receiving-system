@@ -93,7 +93,7 @@
    ws['!rows']=sheet.rows.map(row=>({hpt:row.height||19}));
    X.utils.book_append_sheet(workbook,ws,sheet.name);
   }
-  const archive=X.CFB.read(new Uint8Array(X.write(workbook,{type:'array',bookType:'xlsx'})),{type:'buffer'});
+  const archive=X.CFB.read(new Uint8Array(X.write(workbook,{type:'array',bookType:'xlsx',bookSST:true})),{type:'buffer'});
   const encoder=new TextEncoder(),decoder=new TextDecoder();
   // The bundled SheetJS writer provides the typed cells and ZIP. Apply Duty styles to those cells.
   const replace=(path,transform)=>{
