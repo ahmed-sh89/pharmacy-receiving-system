@@ -121,3 +121,15 @@ test('leave runs retain daily cells and recenter after partial status changes',(
  assert.equal(runs.has('2026-11-02'),false);
  assert.equal(runs.get('2026-11-03').first,true);
 });
+
+test('twenty days of leave repeat labels within the continuous run and recenter for a filtered month',()=>{
+ const status=date=>date<='2026-11-20'?'ANNUAL_LEAVE':'OFF';
+ const group=range=>M.leaveRuns(M.calendarRange('2026-11',range),status);
+ const labels=runs=>Array.from(runs).filter(([,day])=>day.label).map(([date])=>date);
+ const runs=group();
+ assert.equal(runs.size,20);
+ assert.deepEqual(labels(runs),['2026-11-04','2026-11-11','2026-11-18']);
+ assert.equal(runs.get('2026-11-20').last,true);
+ assert.deepEqual(labels(group({from:'2026-11-18',to:'2026-11-20'})),['2026-11-19']);
+ assert.deepEqual(labels(M.leaveRuns(M.days('2026-12'),status)),[]);
+});

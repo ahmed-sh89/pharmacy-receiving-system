@@ -83,3 +83,9 @@ Schedule periods partition the selected month from day one, with full-month KPIs
 ### Duty Staging final UI/UX
 
 The optional Date Range replaces fixed chunks and resets on month navigation. KPI totals use the entire selected month. Leave labels are grouped visually while daily records and selection remain independent. Custom staff defaults are stored only in the synthetic tab session. Holiday ranges, the editable demo Pharmacy Code label, and global Basic defaults use synthetic state. Bulk Basic applies to active employees only after confirmation and starts no earlier than today or the day after the last saved schedule, whichever is later. The internal pharmacy ID and persisted contracts are unchanged. No migration or Production change.
+
+### Duty Staging · Six Product Owner findings
+
+Ready for synthetic Product Owner testing. Leave labels repeat in seven-day blocks while daily cells remain editable. Duty has one centered corner heading, clear cell boundaries and selection outlines, and a compact two-column IN/OUT timetable. The empty editor opens with times and Auto selected. Existing hours-only and Manual entries reopen as saved.
+
+Global Basic still applies to new employees. Confirmed bulk changes now show effective dates and protect earlier timed shifts per employee, without deferring a change because of another employee's schedule or a later OFF/leave record. The editor previews the same effective allocation used by cells and monthly KPIs. Legacy cell limits, timestamp rule precedence, and saved manual allocations remain intact. No SQL migration or Production change.

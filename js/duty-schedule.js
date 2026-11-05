@@ -19,7 +19,7 @@
  }
  const staffList=()=>roster().filter(e=>S.group==='custom'?S.custom.has(e.code):(e.position_key==='pharmacist')===(S.group==='pharmacists'));
  const employees=()=>staffList().slice(S.staffPage*6,S.staffPage*6+6);
- const basic=(code,date,p)=>M.basicAllowance(date,p,data.employees.find(e=>e.code===code),data.hour_rules);
+ const hoursFor=(code,date,p)=>M.effectiveHours(date,p,!!holiday(date),data.employees.find(e=>e.code===code),data.hour_rules);
  const dates=()=>M.calendarRange(S.month,S.range);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
  const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&data.month?.status!=='Completed';
@@ -54,7 +54,7 @@
    <select aria-label="Apply status to selection" id="duty-apply-status"><option value="">Status…</option>${Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
    <button type="button" data-s-action="color">Cell Color</button></div></div>
    <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
-    <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading"><div class="duty-calendar-title">Calendar</div><div class="duty-calendar-totals">Monthly totals <small>Hours</small></div></th>
+    <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
     ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
     <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map((e,i)=>cell(e,d,leave[i].get(d.date))).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
@@ -63,15 +63,15 @@
   bind();updateSelection();
  }
  function cell(e,d,run){
-  const p=payload(e.code,d.date),n=M.calculate(d.date,p,!!holiday(d.date),basic(e.code,d.date,p));
-  const times=p.periods.map(t=>`<span class="duty-time-period"><span>${M.formatTime(t.start)}</span><span aria-hidden="true">–</span><span>${M.formatTime(t.end)}</span></span>`).join('');
+  const p=payload(e.code,d.date),n=hoursFor(e.code,d.date,p);
+  const times=p.periods.map(t=>`<span>${M.formatTime(t.start)}</span><span>${M.formatTime(t.end)}</span>`).join('');
   const categories=Object.entries(categoryLabels).filter(([k])=>k!=='total'&&n[k]>0).map(([k,label])=>{
    const manual=Object.hasOwn(p.manual_minutes||{},k);
    return `<span data-s-hours="${k}" class="duty-category-${k} ${manual?'duty-manual':''}">${label} <b>${M.hours(n[k])}</b></span>`;
   }).join('');
   const status=p.working_pending?'Working':p.status!=='WORK'&&p.status!=='EMPTY'?(p.status==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[p.status]):'';
   return `<td tabindex="-1" aria-label="${esc(e.name)}, ${d.date}, ${esc(M.text(p)||(categories?'Hours only':'Empty'))}${p.note?', note: '+esc(p.note):''}" data-s-code="${esc(e.code)}" data-s-date="${d.date}" class="duty-cell ${run?`duty-leave-run ${run.last?'duty-leave-last':''}`:''} ${p.highlight?'duty-mark-'+p.highlight:''}">
-   ${times?`<div data-s-time class="duty-cell-time ${p.periods.length===2?'duty-split':''}">${times}</div>`:status&&(!run||run.label)?`<span class="duty-cell-status ${run?.even?'duty-leave-midpoint':''}">${status}</span>`:''}
+   ${times?`<div data-s-time class="duty-cell-time ${p.periods.length===2?'duty-split':''}"><small aria-hidden="true">IN</small><small aria-hidden="true">OUT</small>${times}</div>`:status&&(!run||run.label)?`<span class="duty-cell-status">${status}</span>`:''}
    ${p.note?'<span class="duty-note-dot" aria-hidden="true">•</span>':''}
    ${categories?`<div class="duty-cell-categories">${categories}</div>`:''}</td>`;
  }
@@ -119,10 +119,10 @@
   tools.querySelector('select').disabled=!canEdit;
   host.querySelector('[data-s-action="color"]').disabled=!canEdit;
  }
- function timeFields(periods){
+ function timeFields(periods,hasTimes){
   const picker=(name,value)=>`<input type="hidden" name="${name}" value="${value%1440}"><button type="button" class="duty-time-trigger" data-time-picker="${name}" aria-label="${name}, ${M.formatTime(value)}" aria-haspopup="dialog" aria-expanded="false">${M.formatTime(value)}</button>`;
   const row=(p,i)=>`<div class="duty-time-fields"><strong>Shift ${i}</strong><span>IN</span>${picker('Shift '+i+' In',p.start)}<span>OUT</span>${picker('Shift '+i+' Out',p.end)}</div>`;
-  return `<label><input type="checkbox" name="hasTimes" ${periods.length?'checked':''}> Use IN / OUT</label><div data-time-fields ${periods.length?'':'hidden'}>${row(periods[0]||{start:540,end:1080},1)}<label><input type="checkbox" name="split" ${periods.length===2?'checked':''}> Add second shift</label><div data-split-fields ${periods.length===2?'':'hidden'}>${row(periods[1]||{start:1020,end:1320},2)}</div></div>`;
+  return `<label><input type="checkbox" name="hasTimes" ${hasTimes?'checked':''}> Use IN / OUT</label><div data-time-fields ${hasTimes?'':'hidden'}>${row(periods[0]||{start:540,end:1080},1)}<label><input type="checkbox" name="split" ${periods.length===2?'checked':''}> Add second shift</label><div data-split-fields ${periods.length===2?'':'hidden'}>${row(periods[1]||{start:1020,end:1320},2)}</div></div>`;
  }
  function readTimes(fields){
   if(!fields.has('hasTimes'))return [];
@@ -173,13 +173,14 @@
   S.editing={code,date};td.classList.add('duty-editing');updateSelection();
   const editor=document.createElement('form');editor.className='duty-cell-editor';
   editor.setAttribute('aria-label','Edit Duty cell');
-  const effective=M.calculate(date,before,!!holiday(date),basic(code,date,before)),manualEnabled=canOverride();
+  const effective=hoursFor(code,date,before),manualEnabled=canOverride(),initial=M.editorDefaults(before);
   const status=forceWork||before.status==='EMPTY'?'WORK':before.status;
   const longLeave=!['EMPTY','WORK','OFF'].includes(status);
   editor.innerHTML=`<div class="duty-editor-head"><strong>Edit Duty</strong><small>${formatDate(date)}</small></div>
    <label class="duty-editor-status">Status <select name="status">${(longLeave?[status,'WORK','OFF']:['WORK','OFF']).map(k=>`<option value="${k}" ${k===status?'selected':''}>${k==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[k]}</option>`).join('')}</select></label>
-   <fieldset class="duty-work-fields" data-work-fields ${status==='WORK'?'':'hidden disabled'}>${timeFields(before.periods)}
-   ${manualEnabled?`<label class="duty-editor-status">Hours <select name="allocation"><option value="auto">Auto</option><option value="manual" ${before.manual_minutes?'selected':''}>Manual</option></select></label>
+   <fieldset class="duty-work-fields" data-work-fields ${status==='WORK'?'':'hidden disabled'}>${timeFields(before.periods,initial.hasTimes)}
+   ${manualEnabled?`<fieldset class="duty-allocation"><legend>Hours Calculation</legend><div>${['Auto','Manual'].map(label=>`<label><input type="radio" name="allocation" value="${label.toLowerCase()}" ${initial.allocation===label.toLowerCase()?'checked':''}><span>${label}</span></label>`).join('')}</div></fieldset>
+   <small data-auto-hours aria-live="polite"></small>
    <fieldset class="duty-manual-fields" ${before.manual_minutes?'':'hidden disabled'}><legend>Manual allocation</legend>
     ${Object.entries(M.categories).map(([k,label])=>`<label>${label}<input name="${k}" type="number" min="0" max="24" step="any" value="${effective[k]/60}"></label>`).join('')}
     <small data-hours-difference aria-live="polite"></small></fieldset>`:''}</fieldset>
@@ -196,12 +197,21 @@
   const currentAuto=()=>{
    const periods=readTimes(new FormData(editor));
    const p=M.normalize({...before,status:periods.length?'WORK':'EMPTY',periods,manual_minutes:undefined});
-   return M.calculate(date,p,!!holiday(date),basic(code,date,p));
+   return hoursFor(code,date,p);
   };
   let allocationChanged=false;
   const difference=()=>{
    const output=editor.querySelector('[data-hours-difference]');
-   if(!output||editor.elements.allocation.value!=='manual')return;
+   if(!output)return;
+   const auto=editor.querySelector('[data-auto-hours]');
+   auto.hidden=editor.elements.allocation.value==='manual';
+   if(!auto.hidden){
+    try{
+     const n=currentAuto();
+     auto.textContent=Object.entries(categoryLabels).filter(([k])=>n[k]>0).map(([k,label])=>label+' '+M.hours(n[k])+' h').join(' · ');
+    }catch{auto.textContent='Check the selected times.';}
+    return;
+   }
    try{
     const manual=Object.keys(M.categories).reduce((sum,k)=>sum+M.hourMinutes(editor.elements[k].value||'0'),0);
     const duration=currentAuto().total,delta=manual-duration;
@@ -344,7 +354,7 @@
  }
  function hourRules(){
   const rules=data.hour_rules||[];
-  const form=smallPanel('Working-hour rules',`<div class="duty-default-hours"><label class="duty-field">Default Basic Hours<input name="defaultBasic" type="number" min="0" max="24" step="any" value="${(data.default_basic??540)/60}"></label><div class="duty-actions"><button type="button" data-basic-save>Save for new employees</button><button type="button" data-basic-bulk>Apply to existing employees</button></div><small data-basic-message role="status"></small></div><button type="button" data-rule-add>Add rule</button>
+  const form=smallPanel('Working-hour rules',`<div class="duty-default-hours"><label class="duty-field">Default Basic Hours<input name="defaultBasic" type="number" min="0" max="24" step="any" value="${(data.default_basic??M.DEFAULT_BASIC)/60}"></label><div class="duty-actions"><button type="button" data-basic-save>Save for new employees</button><button type="button" data-basic-bulk>Apply to existing employees</button></div><small data-basic-message role="status"></small></div><button type="button" data-rule-add>Add rule</button>
    <div class="duty-rule-list">${rules.map((r,i)=>`<div class="duty-list-row"><span><strong>${esc(r.name)}</strong><small class="duty-code">${esc(r.start.replace('T',' '))} – ${esc(r.end.replace('T',' '))}<br>${r.codes.length?esc(r.codes.map(code=>roster().find(e=>e.code===code)?.name||code).join(', ')):'All employees'} · ${M.hours(r.basic)} h Basic</small></span><button type="button" data-rule-edit="${i}">Edit</button><button type="button" data-rule-delete="${i}">Delete</button></div>`).join('')||'No rules yet.'}</div>`);
   form.onclick=async e=>{
    const button=e.target.closest('button');if(!button)return;
@@ -352,11 +362,15 @@
     const message=form.querySelector('[data-basic-message]');
     try{
      const minutes=M.hourMinutes(form.elements.defaultBasic.value),bulk=button.hasAttribute('data-basic-bulk');
-     const count=data.employees.filter(e=>e.active&&M.basicDefault(e)!==minutes).length;
-     if(bulk&&!count){message.textContent='No active employee defaults need changing.';return;}
-     if(bulk&&!await options.confirm(`Apply ${M.hours(minutes)} h Basic to ${count} active employee${count===1?'':'s'}? Existing scheduled dates and manual allocations are preserved.`,'Apply'))return;
-     data=options.basicDefault(minutes,bulk);
-     message.textContent=bulk?`Updated ${count} employee defaults for future unscheduled dates.`:'Saved for new employees.';
+     const updates=bulk?options.planBasic(minutes):null;
+     if(!bulk){data=options.saveBasic(minutes);message.textContent='Saved for new employees. Existing employees keep their own defaults.';return;}
+     const count=updates.length;
+     if(!count){message.textContent='No active employee defaults need changing.';return;}
+     const dates=updates.map(update=>update.from).sort(),first=dates[0],last=dates.at(-1);
+     const timing=first===last?first:first+' to '+last+' (by employee)';
+     if(!await options.confirm(`Apply ${M.hours(minutes)} h Basic to ${count} active employee${count===1?'':'s'} from ${timing}? Earlier timed shifts and saved manual allocations are preserved.`,'Apply'))return;
+     data=options.saveBasic(minutes,updates);
+     message.textContent=`Updated ${count} employee defaults. Effective: ${timing}.`;
     }catch(error){message.textContent=error.message;}
     return;
    }

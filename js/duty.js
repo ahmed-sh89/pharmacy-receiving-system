@@ -6,7 +6,7 @@
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit'}).formatToParts(new Date());
  const currentMonth=parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value;
  const state={month:preview?'2026-11':currentMonth,tab:'schedule',demo:preview,data:null,scope:'',sequence:0,loading:false,error:'',lastRead:0};
- const demos=new Map(),demoRules=[];let demoStaff=M.demo(),demoSeedMonth=state.month,demoPharmacyCode='DEMO',demoDefaultBasic=540;
+ const demos=new Map(),demoRules=[];let demoStaff=M.demo(),demoSeedMonth=state.month,demoPharmacyCode='DEMO',demoDefaultBasic=M.DEFAULT_BASIC;
  const customKey='pharmflow-duty-synthetic-custom-v1';
  let demoCustom=null;
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -23,7 +23,7 @@
   d.holidays=[{date:month+'-05',active:true,name:'Public holiday',revision:1}];
  }demos.set(month,d);}return Object.assign(demos.get(month),{default_basic:demoDefaultBasic});};
  const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
- function reset(){if(pendingConfirm)pendingConfirm(false);state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();demoRules.length=0;demoStaff=M.demo();demoPharmacyCode='DEMO';demoDefaultBasic=540;DutySchedule.clear();closePanel();render();}
+ function reset(){if(pendingConfirm)pendingConfirm(false);state.sequence++;state.data=null;state.error='';state.loading=false;state.scope=scope();state.demo=false;demos.clear();demoRules.length=0;demoStaff=M.demo();demoPharmacyCode='DEMO';demoDefaultBasic=M.DEFAULT_BASIC;DutySchedule.clear();closePanel();render();}
  async function readMonth(month){
   const pharmacy=context()?.pharmacy_id,identity=scope();
   if(preview||!pharmacy||!identity)throw Error('Sign in to read Duty.');
@@ -76,17 +76,11 @@
     }
     return demoMonth(state.month);
    },
-   basicDefault:(minutes,bulk)=>{
-    if(!bulk)demoDefaultBasic=minutes;
-    else{
-     const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-     const last=[...demos.values()].flatMap(d=>d.entries).filter(e=>e.payload.status!=='EMPTY').reduce((max,e)=>e.date>max?e.date:max,'');
-     const from=last>=today?M.addDays(last,1):today;
-     for(const e of demoStaff.employees.filter(e=>e.active&&M.basicDefault(e)!==minutes)){
-      const prior=e.basic_defaults||[],effective=prior.at(-1)?.from>from?prior.at(-1).from:from;
-      e.basic_defaults=[...prior.filter(row=>row.from<effective),{from:effective,minutes}];
-     }
-    }
+   planBasic:minutes=>M.basicUpdates(demoStaff.employees,[...demos.values()].flatMap(d=>d.entries),minutes,
+    new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())),
+   saveBasic:(minutes,updates)=>{
+    if(updates)for(const {employee,defaults} of updates)employee.basic_defaults=defaults;
+    else demoDefaultBasic=minutes;
     return demoMonth(state.month);
    },
    hourRules:rules=>{demoRules.splice(0,demoRules.length,...rules);return demoMonth(state.month);}
@@ -108,7 +102,7 @@
   const isEmployee=kind==='employee',editing=!!item,readOnly=!data.can_write;
   const backdrop=document.createElement('div');backdrop.className='duty-panel-backdrop';
   const choices=data.positions.filter(p=>p.active||p.key===item?.position_key);
-  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-panel-title"><div class="duty-panel-header"><div><h3 id="duty-panel-title">${readOnly?'View':editing?'Edit':'Add'} ${isEmployee?'employee':'position'}</h3><p class="duty-subtitle">${state.demo?'Synthetic demo · Changes reset on reload.':'Duty · '+esc(context()?.pharmacy_code||'Staging')}</p></div><button type="button" data-duty-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${isEmployee?`<label class="duty-field">Employee Code<input name="code" autocomplete="off" required maxlength="40" value="${esc(item?.display_code||item?.code||'')}" ${editing&&!state.demo?'readonly':''}><small>${editing&&!state.demo?'Code changes require database support.':'Unique within this pharmacy.'}</small></label><label class="duty-field">Employee Name<input name="name" autocomplete="off" required maxlength="120" value="${esc(item?.name||'')}"></label><label class="duty-field">Position<select name="position_key" required>${choices.map(p=>`<option value="${esc(p.key)}" ${item?.position_key===p.key?'selected':''}>${esc(p.label)}${p.active?'':' (inactive)'}</option>`).join('')}</select></label><div class="duty-detail-grid"><label class="duty-field">Pharmacy Code<input name="pharmacyCode" maxlength="40" required value="${esc(state.demo?demoPharmacyCode:context()?.pharmacy_code||data.pharmacy_id||'')}" ${state.demo?'':'readonly'}></label><label class="duty-field">Default Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="${(item?M.basicDefault(item):state.demo?demoDefaultBasic:540)/60}" ${state.demo?'':'readonly'}></label></div>`:`<label class="duty-field">Position Name<input name="label" required maxlength="60" value="${esc(item?.label||'')}"></label>`}<label class="duty-field duty-field-check"><input type="checkbox" name="active" ${item?.active===false?'':'checked'}> Active ${isEmployee?'employee':'position'}</label><p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-duty-close>Cancel</button>${!readOnly?'<button class="duty-primary" type="submit">Save</button>':''}</div></form>`;
+  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-panel-title"><div class="duty-panel-header"><div><h3 id="duty-panel-title">${readOnly?'View':editing?'Edit':'Add'} ${isEmployee?'employee':'position'}</h3><p class="duty-subtitle">${state.demo?'Synthetic demo · Changes reset on reload.':'Duty · '+esc(context()?.pharmacy_code||'Staging')}</p></div><button type="button" data-duty-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${isEmployee?`<label class="duty-field">Employee Code<input name="code" autocomplete="off" required maxlength="40" value="${esc(item?.display_code||item?.code||'')}" ${editing&&!state.demo?'readonly':''}><small>${editing&&!state.demo?'Code changes require database support.':'Unique within this pharmacy.'}</small></label><label class="duty-field">Employee Name<input name="name" autocomplete="off" required maxlength="120" value="${esc(item?.name||'')}"></label><label class="duty-field">Position<select name="position_key" required>${choices.map(p=>`<option value="${esc(p.key)}" ${item?.position_key===p.key?'selected':''}>${esc(p.label)}${p.active?'':' (inactive)'}</option>`).join('')}</select></label><div class="duty-detail-grid"><label class="duty-field">Pharmacy Code<input name="pharmacyCode" maxlength="40" required value="${esc(state.demo?demoPharmacyCode:context()?.pharmacy_code||data.pharmacy_id||'')}" ${state.demo?'':'readonly'}></label><label class="duty-field">Default Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="${(item?M.basicDefault(item):state.demo?demoDefaultBasic:M.DEFAULT_BASIC)/60}" ${state.demo?'':'readonly'}></label></div>`:`<label class="duty-field">Position Name<input name="label" required maxlength="60" value="${esc(item?.label||'')}"></label>`}<label class="duty-field duty-field-check"><input type="checkbox" name="active" ${item?.active===false?'':'checked'}> Active ${isEmployee?'employee':'position'}</label><p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-duty-close>Cancel</button>${!readOnly?'<button class="duty-primary" type="submit">Save</button>':''}</div></form>`;
   root.append(backdrop);const form=backdrop.querySelector('form');
   if(readOnly)form.querySelectorAll('input,select').forEach(el=>el.disabled=true);
   backdrop.addEventListener('click',e=>{if(e.target===backdrop||e.target.closest('[data-duty-close]'))closePanel();});

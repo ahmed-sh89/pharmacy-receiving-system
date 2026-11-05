@@ -131,3 +131,37 @@ test('future Basic defaults preserve prior hours, rules and manual allocations',
  const manual=M.normalize({...shift,manual_minutes:{basic:480,normal_ot:60,friday_ot:0,holiday_ot:0}});
  assert.equal(M.calculate('2026-12-01',manual,true,420).total,540);
 });
+
+test('confirmed Basic changes use each employee effective date and share editor/grid/KPI allocation',()=>{
+ const shift=M.parse('3 PM–12 AM');
+ const alice={code:'A',active:true},bob={code:'B',active:true},inactive={code:'C',active:false};
+ const employees=[alice,bob,inactive],entries=[
+  {code:'A',date:'2026-11-10',payload:shift},
+  {code:'B',date:'2026-11-08',payload:shift},
+  {code:'B',date:'2026-11-30',payload:M.normalize({status:'OFF'})},
+ ];
+ const result=(date,employee,payload=shift,rules=[])=>M.effectiveHours(date,payload,false,employee,rules);
+ const globalDefaultForNewEmployees=M.hourMinutes(8);
+ assert.deepEqual(structuredClone(result('2026-11-09',{basic_minutes:globalDefaultForNewEmployees})),{basic:480,normal_ot:60,friday_ot:0,holiday_ot:0,total:540});
+ assert.equal(result('2026-11-09',bob).basic,540);
+ const plan=M.basicUpdates(employees,entries,480,'2026-11-05');
+ assert.deepEqual(Array.from(plan,({employee,from})=>[employee.code,from]),[['A','2026-11-11'],['B','2026-11-09']]);
+ assert.equal(result('2026-11-09',bob).basic,540);
+ for(const {employee,defaults} of plan)employee.basic_defaults=defaults;
+ assert.equal(result('2026-11-10',alice).basic,540);
+ assert.equal(result('2026-11-08',bob).basic,540);
+ assert.deepEqual(structuredClone(result('2026-11-09',bob)),{basic:480,normal_ot:60,friday_ot:0,holiday_ot:0,total:540});
+ assert.deepEqual(M.totals([{code:'B',date:'2026-11-09',payload:shift}],[],employees).B,result('2026-11-09',bob));
+ const rule={start:'2026-11-09T15:00',end:'2026-11-09T15:00',codes:['B'],basic:420};
+ assert.equal(result('2026-11-09',bob,shift,[rule]).basic,420);
+ const manual=M.normalize({...shift,manual_minutes:{basic:540,normal_ot:0,friday_ot:0,holiday_ot:0}});
+ assert.equal(result('2026-11-09',bob,manual).basic,540);
+});
+
+test('editor defaults distinguish empty, timed, pending, and hours-only records',()=>{
+ assert.deepEqual(structuredClone(M.editorDefaults(M.normalize())),{hasTimes:true,allocation:'auto'});
+ assert.deepEqual(structuredClone(M.editorDefaults(M.parse('3 PM–12 AM'))),{hasTimes:true,allocation:'auto'});
+ assert.deepEqual(structuredClone(M.editorDefaults(M.normalize({status:'WORK',working_pending:true}))),{hasTimes:false,allocation:'auto'});
+ assert.deepEqual(structuredClone(M.editorDefaults(M.normalize({status:'WORK',manual_minutes:{basic:480}}))),{hasTimes:false,allocation:'manual'});
+ assert.deepEqual(structuredClone(M.editorDefaults(M.normalize({...M.parse('3 PM–12 AM'),manual_minutes:{basic:480}}))),{hasTimes:true,allocation:'manual'});
+});

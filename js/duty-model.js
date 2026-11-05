@@ -19,6 +19,7 @@
   return {...input,code,name};
  }
  function demo(){return {positions:defaults.map(p=>({...p})),employees:Array.from({length:10},(_,i)=>({code:'DEMO-'+String(i+1).padStart(3,'0'),name:(i<6?'Pharmacist ':i<9?'Labor ':'Beauty Advisor ')+(i<6?i+1:i<9?i-5:1),position_key:i<6?'pharmacist':i<9?'labor':'beauty-advisor',active:true,revision:0})),can_write:true};}
+ const DEFAULT_BASIC=540;
  const categories={basic:'Basic Hours',normal_ot:'Normal OT',friday_ot:'Friday OT',holiday_ot:'Holiday OT'};
  const statuses={WORK:'Working',OFF:'OFF',ANNUAL_LEAVE:'Annual Leave',SICK_LEAVE:'Sick Leave',OTHER_LEAVE:'Other Leave',EMPTY:'Empty'};
  function time(value){
@@ -28,7 +29,7 @@
  }
  function formatTime(minutes){const n=((minutes%1440)+1440)%1440,h=Math.floor(n/60);return (h%12||12)+':'+String(n%60).padStart(2,'0')+' '+(h<12?'AM':'PM');}
  function normalize(payload={}){
-  const p={status:payload.status||'EMPTY',periods:[],basic_limit:payload.basic_limit??540,note:String(payload.note||'').trim(),highlight:payload.highlight||''};
+  const p={status:payload.status||'EMPTY',periods:[],basic_limit:payload.basic_limit??DEFAULT_BASIC,note:String(payload.note||'').trim(),highlight:payload.highlight||''};
   if(!Object.hasOwn(statuses,p.status))throw Error('Select a valid working or leave status.');
   if(!Number.isInteger(p.basic_limit)||p.basic_limit<0||p.basic_limit>1440)throw Error('Basic limit must be between 0 and 24 hours, in whole minutes.');
   if(p.note.length>300)throw Error('Notes can contain up to 300 characters.');
@@ -76,21 +77,24 @@
   return rounded;
  }
  function basicAllowance(date,payload,employee,rules=[]){
-  if(payload.basic_limit!=null&&payload.basic_limit!==540)return payload.basic_limit;
+  if(payload.basic_limit!=null&&payload.basic_limit!==DEFAULT_BASIC)return payload.basic_limit;
   const first=payload.periods?.[0]?.start;
   if(first==null)return basicDefault(employee,date);
   const start=date+'T'+String(Math.floor(first/60)).padStart(2,'0')+':'+String(first%60).padStart(2,'0');
   const matching=rules.filter(r=>r.start<=start&&start<=r.end&&(!r.codes.length||r.codes.includes(employee?.code)));
   return (matching.findLast(r=>r.codes.length)||matching.at(-1))?.basic??basicDefault(employee,date);
  }
- function calculate(date,payload,holiday=false,basic=payload.basic_limit??540){
+ function calculate(date,payload,holiday=false,basic=payload.basic_limit??DEFAULT_BASIC){
   const p=normalize(payload),total=p.periods.reduce((a,v)=>a+v.end-v.start,0),friday=new Date(date+'T12:00:00Z').getUTCDay()===5;
   const result={basic:!friday&&!holiday?Math.min(total,basic):0,normal_ot:!friday&&!holiday?Math.max(0,total-basic):0,friday_ot:friday?total:0,holiday_ot:!friday&&holiday?total:0,...p.manual_minutes};
   return {...result,total:Object.values(result).reduce((sum,minutes)=>sum+minutes,0)};
  }
  const hours=minutes=>(minutes/60).toLocaleString('en-GB',{maximumFractionDigits:4});
  const addDays=(date,count)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+count);return d.toISOString().slice(0,10);};
- function totals(entries,holidays=[],employees=[],rules=[]){const out={};for(const e of entries){const n=calculate(e.date,e.payload,holidays.some(h=>h.date===e.date&&h.active),basicAllowance(e.date,e.payload,employees.find(person=>person.code===e.code),rules));const v=out[e.code]||(out[e.code]={basic:0,normal_ot:0,friday_ot:0,holiday_ot:0,total:0});for(const key in v)v[key]+=n[key];}return out;}
+ function effectiveHours(date,payload,holiday,employee,rules){
+  return calculate(date,payload,holiday,basicAllowance(date,payload,employee,rules));
+ }
+ function totals(entries,holidays=[],employees=[],rules=[]){const out={};for(const e of entries){const n=effectiveHours(e.date,e.payload,holidays.some(h=>h.date===e.date&&h.active),employees.find(person=>person.code===e.code),rules);const v=out[e.code]||(out[e.code]={basic:0,normal_ot:0,friday_ot:0,holiday_ot:0,total:0});for(const key in v)v[key]+=n[key];}return out;}
  function validateOverlaps(entries){const grouped={};for(const e of entries){const p=normalize(e.payload);for(const t of p.periods){const base=Date.parse(e.date+'T00:00:00Z')/60000;(grouped[e.code]||(grouped[e.code]=[])).push([base+t.start,base+t.end]);}}for(const intervals of Object.values(grouped)){intervals.sort((a,b)=>a[0]-b[0]);for(let i=1;i<intervals.length;i++)if(intervals[i][0]<intervals[i-1][1])throw Error('This duty overlaps another date for the same employee.');}}
  function demoMonth(month){const data=demo();data.pharmacy_id='synthetic';data.entries=[];data.holidays=[];data.month=null;
   for(const e of data.employees)for(const d of days(month)){const i=data.employees.indexOf(e),off=(d.day+i)%7===0;const payload=off?normalize({status:'OFF'}):parse(i%3===0?'9 AM – 1 PM / 5 PM – 10 PM':i%3===1?'12 PM – 9 PM':'7 PM – 4 AM');data.entries.push({code:e.code,date:d.date,payload,revision:1,identity:{name:e.name,position_key:e.position_key,position_label:data.positions.find(p=>p.key===e.position_key).label}});}
@@ -112,17 +116,37 @@
    const status=statusForDate(dates[start].date);
    let end=start+1;
    if(['ANNUAL_LEAVE','SICK_LEAVE','OTHER_LEAVE'].includes(status)){
-    while(end<dates.length&&statusForDate(dates[end].date)===status)end++;
+    while(end<dates.length&&dates[end].date===addDays(dates[end-1].date,1)&&statusForDate(dates[end].date)===status)end++;
     const length=end-start;
-    if(length>1)for(let i=start;i<end;i++)runs.set(dates[i].date,{first:i===start,last:i===end-1,label:i===start+Math.floor(length/2),even:length%2===0});
+    if(length>1){
+     const labels=new Set();
+     for(let offset=0;offset<length;offset+=7){
+      labels.add(start+offset+Math.floor(Math.min(7,length-offset)/2));
+     }
+     for(let i=start;i<end;i++)runs.set(dates[i].date,{first:i===start,last:i===end-1,label:labels.has(i)});
+    }
    }
    start=end;
   }
   return runs;
  }
  function basicDefault(employee,date){
-  return employee?.basic_defaults?.findLast(row=>!date||row.from<=date)?.minutes??employee?.basic_minutes??540;
+  return employee?.basic_defaults?.findLast(row=>!date||row.from<=date)?.minutes??employee?.basic_minutes??DEFAULT_BASIC;
  }
- const api={defaults,days,calendarRange,dateRange,leaveRuns,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ function basicUpdates(employees,entries,minutes,today){
+  const lastTimed=new Map();
+  for(const {code,date,payload} of entries){
+   if(payload.periods?.length&&date>(lastTimed.get(code)||''))lastTimed.set(code,date);
+  }
+  return employees.filter(e=>e.active&&basicDefault(e)!==minutes).map(employee=>{
+   const last=lastTimed.get(employee.code),prior=employee.basic_defaults||[];
+   const from=[today,last?addDays(last,1):today,prior.at(-1)?.from||today].sort().at(-1);
+   return {employee,from,defaults:[...prior.filter(row=>row.from<from),{from,minutes}]};
+  });
+ }
+ function editorDefaults(payload){
+  return {hasTimes:payload.status==='EMPTY'||!!payload.periods?.length,allocation:payload.manual_minutes?'manual':'auto'};
+ }
+ const api={DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,leaveRuns,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
