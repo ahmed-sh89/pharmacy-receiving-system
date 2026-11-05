@@ -6,6 +6,8 @@
  let host,data,options,scopeVersion=0,drag=null,skipClick=false;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const past=[],future=[],localRevisions=new Map();
+ const holidayFirst=()=>options.demo||data.holiday_first===true;
+ const settingsEnabled=()=>options.demo||data.persistent_settings===true;
  const canOverride=()=>options.demo||data.manual_hours===true;
  const categoryLabels={...M.categories,basic:'Basic',total:'Total'};
  const formatDate=date=>new Date(date+'T12:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
@@ -19,7 +21,7 @@
  }
  const staffList=()=>roster().filter(e=>S.group==='custom'?S.custom.has(e.code):(e.position_key==='pharmacist')===(S.group==='pharmacists'));
  const employees=()=>staffList().slice(S.staffPage*6,S.staffPage*6+6);
- const hoursFor=(code,date,p)=>M.effectiveHours(date,p,!!holiday(date),data.employees.find(e=>e.code===code),data.hour_rules,options.demo);
+ const hoursFor=(code,date,p)=>M.effectiveHours(date,p,!!holiday(date),data.employees.find(e=>e.code===code),data.hour_rules,holidayFirst());
  const dates=()=>M.calendarRange(S.month,S.range);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
  const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&data.month?.status!=='Completed';
@@ -37,7 +39,7 @@
   const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition={left:scroll?.scrollLeft||0,top:scroll?.scrollTop||0};
   const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/6));
   S.staffPage=Math.min(S.staffPage,pages-1);
-  const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules,options.demo);
+  const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules,holidayFirst());
   const rosterOptions=roster();
   const monthDays=M.days(S.month),first=monthDays[0].date,last=monthDays.at(-1).date;
   const groups=[['pharmacists','Pharmacists'],['support','Labor + Beauty'],['custom','Custom']];
@@ -56,7 +58,7 @@
    <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
     ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
-    <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(options.demo||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
+    <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(holidayFirst()||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
@@ -229,7 +231,7 @@
     }else if(manualEnabled&&(allocationChanged||!before.manual_minutes)){
      for(const k of Object.keys(M.categories))manual[k]=M.hourMinutes(fields.get(k)||'0');
     }
-    const workingPending=status==='WORK'&&!periods.length&&!Object.keys(manual).length&&options.demo;
+    const workingPending=status==='WORK'&&!periods.length&&!Object.keys(manual).length&&(options.demo||data.working_pending===true);
     if(status==='WORK'&&!periods.length&&!Object.keys(manual).length&&!workingPending)throw Error('Enter working times before saving.');
     const next=M.normalize({...before,status,periods,manual_minutes:manual,working_pending:workingPending,note:fields.get('note')});
     button.disabled=true;
@@ -333,17 +335,17 @@
  function dayType(){
   const {from:initial,to:end}=M.selectedDateRange(S.selected,S.month);
   const rangeNotice=!initial?'<p>Selection contains gaps. Choose the exact date range to update.</p>':'';
-  const form=smallPanel('Calendar settings',`${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${options.demo?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${options.demo?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
-   ${options.demo?`<label class="duty-field">To date<input name="to" type="date" required value="${end}"></label>`:''}</div>
+  const form=smallPanel('Calendar settings',`${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${settingsEnabled()?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${settingsEnabled()?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
+   ${settingsEnabled()?`<label class="duty-field">To date<input name="to" type="date" required value="${end}"></label>`:''}</div>
    <label class="duty-field">Type<select name="type"><option value="normal">Calendar default</option><option value="holiday">Public holiday</option></select></label>
-   ${options.demo?`<label class="duty-field">Holiday name<input name="name" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="note" maxlength="300"></label>`:''}`,async fields=>{
+   ${settingsEnabled()?`<label class="duty-field">Holiday name<input name="name" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="note" maxlength="300"></label>`:''}`,async fields=>{
    if(!writable())throw Error('Calendar is read only.');
    const from=fields.get('from'),to=fields.get('to')||from,active=fields.get('type')==='holiday',name=fields.get('name')?.trim();
-   if(options.demo&&active&&!name)throw Error('Enter a holiday name.');
+   if(settingsEnabled()&&active&&!name)throw Error('Enter a holiday name.');
    data=await options.holiday(M.dateRange(from,to),active,name,fields.get('note')?.trim());render();
   },'Save');
-  const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(options.demo){form.elements.name.value=row?.name||'';form.elements.note.value=row?.note||'';}};
-  form.elements.from.onchange=()=>{if(options.demo&&(!form.elements.to.value||form.elements.to.value<form.elements.from.value))form.elements.to.value=form.elements.from.value;sync();};sync();
+  const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(settingsEnabled()){form.elements.name.value=row?.name||'';form.elements.note.value=row?.note||'';}};
+  form.elements.from.onchange=()=>{if(settingsEnabled()&&(!form.elements.to.value||form.elements.to.value<form.elements.from.value))form.elements.to.value=form.elements.from.value;sync();};sync();
  }
  function hourRules(){
   const rules=data.hour_rules||[];
@@ -356,12 +358,12 @@
     try{
      const minutes=M.hourMinutes(form.elements.defaultBasic.value),bulk=button.hasAttribute('data-basic-bulk');
      const timing=form.elements.effectiveDate.value,updates=bulk?options.planBasic(minutes,timing):null;
-     if(!bulk){data=options.saveBasic(minutes);message.textContent='Saved for new employees. Existing employees keep their own defaults.';return;}
+     if(!bulk){data=await options.saveBasic(minutes);message.textContent='Saved for new employees. Existing employees keep their own defaults.';return;}
      const count=updates.length;
      if(!count){message.textContent='No active employee defaults need changing.';return;}
      const scope=updates.map(({employee:e})=>`${e.name} (${e.display_code||e.code})`).join(', ');
      if(!await options.confirm(`Apply ${M.hours(minutes)} h Basic from ${timing} to ${count} active employee${count===1?'':'s'}: ${scope}. Auto hours on or after this date may recalculate. Earlier shifts, Manual allocations, and higher-priority rules are preserved.`,'Apply'))return;
-     data=options.saveBasic(minutes,updates);
+     data=await options.saveBasic(minutes,updates);
      message.textContent=`Updated ${count} employee defaults. Effective: ${timing}.`;
     }catch(error){message.textContent=error.message;}
     return;
@@ -371,7 +373,7 @@
    if(button.hasAttribute('data-rule-delete')){
     const i=Number(button.dataset.ruleDelete);
     if(!await options.confirm('Delete '+rules[i].name+'?','Delete'))return;
-    data=options.hourRules(rules.filter((_,index)=>index!==i));render();hourRules();
+    data=await options.hourRules(rules.filter((_,index)=>index!==i));render();hourRules();
    }
   };
  }
@@ -388,7 +390,7 @@
    const name=fields.get('name').trim(),start=fields.get('startDate')+'T'+fields.get('startTime'),end=fields.get('endDate')+'T'+fields.get('endTime');
    const codes=fields.get('scope')==='all'?[]:fields.getAll('employee');
    if(!name||start>end||(fields.get('scope')==='selected'&&!codes.length))throw Error('Enter a valid interval and choose at least one employee for a selected scope.');
-   data=options.hourRules([...rules.filter((_,i)=>i!==index),{name,start,end,codes,basic:M.hourMinutes(fields.get('basic'))}]);
+   data=await options.hourRules([...rules.filter((_,i)=>i!==index),{name,start,end,codes,basic:M.hourMinutes(fields.get('basic'))}]);
    render();hourRules();
   },'Save');
   form.querySelector('[name="scope"]').onchange=e=>{form.querySelector('[data-rule-staff]').hidden=e.target.value==='all';};
@@ -539,7 +541,7 @@
   bindKeyboard();
  }
  async function applyStatus(status){
-   if(status==='WORK'&&!options.demo){
+   if(status==='WORK'&&!options.demo&&!data.working_pending){
     const target=S.selected.length===1?S.selected[0]:null;
     if(target){edit(target.code,target.date,true);return;}
     S.notice='Working needs hours. Open each cell to enter times.';render();return;

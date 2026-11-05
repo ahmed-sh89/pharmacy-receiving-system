@@ -12,3 +12,7 @@ Refined weekly layout, employee groups, AM/PM split/overnight cells and compact 
 Added independent Staging Duty foundation, employee and position management, empty-month calendar, grouped rows, complete Friday highlighting, sticky employee identity/totals, synthetic-only visual demo, guarded Preview build and RPC-only audited persistence. Preserved Receiving/Expiry/authentication code and Production.
 
 Focused tests and rollback-only live SQL verified. Preview deployed successfully on the new stable Duty branch alias. Employee/position panels and synthetic calendar browser-tested. Fixed Friday header inheritance through scoped corporate design tokens, preserving all shared CSS. READY FOR TEST; Product Owner acceptance, authenticated browser save and real multi-PC acceptance remain pending. No Stage B work authorized.
+
+## 5 November 2026 · Readiness recovery
+
+Recovered from GitHub head `1c28796` without changing the surviving workspace. Added default-deny Duty authorization to the existing Administrator Permissions architecture, normal runtime wiring, scoped client/server guards and durable Duty configuration/manual-hour/calendar contracts. Applied Staging migration `20261105183357` only. Added PostgreSQL readiness and permission regression coverage. Release remains blocked pending authenticated browser/two-session and Product Owner acceptance; no Production action authorized or performed.

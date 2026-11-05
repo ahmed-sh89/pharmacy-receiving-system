@@ -26,7 +26,7 @@ test('employee validation preserves codes and rejects empty names',()=>{
 });
 function fixture(){
  const {document}=parseHTML('<html><body><section id="page-duty"></section></body></html>');
- const window={document,DutyModel:M,addEventListener:()=>{}};
+ const window={document,DutyModel:M,addEventListener:()=>{},PharmFlowPermissions:{allowed:()=>true}};
  const events={},calls=[];
  const data={...M.demo(),pharmacy_id:'pharmacy-a'};data.employees=[];
  const c={window,document:window.document,APP_CONFIG:{environment:'staging'},CLOUD_CONFIG:{url:'https://tovkcakucyagvbzvlnks.supabase.co'},AuthState:{session:{},user:{id:'user-a'},context:{pharmacy_id:'pharmacy-a',user_id:'user-a',pharmacy_code:'TEST'},mustChangePassword:false},AppRouter:{currentRoute:'duty'},AppEvents:{on:(key,fn)=>events[key]=fn},AUTH_STORAGE_KEY:'auth',authRpc:async(name,args)=>{calls.push({name,args});return data;},Intl,Date,crypto:require('node:crypto').webcrypto,FormData,structuredClone,CSS:{escape:s=>s}};

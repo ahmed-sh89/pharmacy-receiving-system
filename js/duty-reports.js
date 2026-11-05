@@ -16,7 +16,7 @@
   const dates=M.days(month).map(d=>({...d,name:weekday.format(new Date(d.date+'T00:00:00Z'))}));
   const entries=(data.entries||[]).filter(e=>e.date.startsWith(month+'-'));
   const holidays=new Set((data.holidays||[]).filter(h=>h.active).map(h=>h.date));
-  const totals=M.totals(entries,data.holidays,data.employees,data.hour_rules,demo);
+  const totals=M.totals(entries,data.holidays,data.employees,data.hour_rules,demo||data.holiday_first===true);
   const staff=data.employees.flatMap(e=>{
    const saved=entries.filter(row=>row.code===e.code);
    if(!e.active&&!saved.some(row=>row.payload.status!=='EMPTY'))return [];
@@ -24,9 +24,9 @@
    const name=(!demo&&saved[0]?.identity?.name)||e.name;
    const days=dates.map(d=>{
     const p=byDate.get(d.date)||M.normalize(),holiday=holidays.has(d.date);
-    const hours=M.effectiveHours(d.date,p,holiday,e,data.hour_rules,demo);
+    const hours=M.effectiveHours(d.date,p,holiday,e,data.hour_rules,demo||data.holiday_first===true);
     const status=p.status==='EMPTY'?'':p.status==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[p.status];
-    return {...d,kind:holiday&&(demo||!d.friday)?'holiday':d.friday?'friday':'',periods:p.periods,hours,manual:p.manual_minutes,status,notes:p.note||'',highlight:p.highlight};
+    return {...d,kind:holiday&&(demo||data.holiday_first===true||!d.friday)?'holiday':d.friday?'friday':'',periods:p.periods,hours,manual:p.manual_minutes,status,notes:p.note||'',highlight:p.highlight};
    });
    return [{code:e.code,id:String(e.display_code||e.code),name,days,totals:totals[e.code]||Object.fromEntries(Object.keys(categories).map(k=>[k,0]))}];
   });
