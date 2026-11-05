@@ -266,21 +266,25 @@
 #page-duty .duty-dropdown-option input{accent-color:#2165a8;cursor:pointer}
 
 /* Duty Reports */
-#page-duty :is(.duty-report-toolbar,.duty-report-summary){display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
-#page-duty .duty-report-toolbar label{display:inline-flex;align-items:center;gap:5px;font-weight:600}
-#page-duty .duty-report-toolbar select{min-height:32px;max-width:100%;padding:4px 9px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59;cursor:pointer}
-#page-duty :is(.duty-report-copy,.duty-report-preview){margin:8px 0;padding:10px 12px;border:1px solid #cad9e8;border-radius:8px;background:#fff}
-#page-duty .duty-report-copy > strong{color:#78521a;font-size:12px}
-#page-duty .duty-report-copy p{margin:5px 0 8px}
-#page-duty .duty-report-preview h3{margin:0 0 7px;font-size:15px}
-#page-duty .duty-report-preview details{margin:6px 0;border:1px solid #d2dfec;border-radius:6px}
-#page-duty .duty-report-preview summary{padding:7px 9px;cursor:pointer;color:#174a79;font-weight:700}
-#page-duty .duty-report-summary > div{padding:6px 8px;border:1px solid #d2dfec;border-radius:6px;background:#f7fafd}
-#page-duty .duty-report-totals{margin-top:4px;min-width:215px}
-#page-duty .duty-report-scroll{max-height:340px;overflow:auto;border:1px solid #d2dfec;border-radius:6px}
-#page-duty .duty-report-scroll table{table-layout:auto}
-#page-duty .duty-report-scroll :is(td,th){height:auto;min-width:75px;padding:6px 8px;white-space:pre-line}
-#page-duty .duty-report-scroll thead th{background:#174a79;color:#fff;white-space:pre-line}
-#page-duty .duty-report-friday td{background:#d8e8fa}
-#page-duty .duty-report-holiday td{background:#fff2d9}
-#page-duty .duty-report-total td{background:#dfebf8;font-weight:700}
+#page-duty .duty-report{max-width:1024px;margin:8px auto;padding:15px 17px;border:1px solid #c4d4e4;border-radius:10px;background:#fff}
+#page-duty .duty-report-heading{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#page-duty .duty-report-heading h2{margin:0;font-size:19px;color:#174a79}
+#page-duty .duty-report-heading span{padding:3px 8px;border-radius:5px;background:#edf4fb;color:#355773;font-size:12px;font-weight:700}
+#page-duty .duty-report-controls{display:grid;grid-template-columns:minmax(180px,1.15fr) auto minmax(165px,1fr) auto;align-items:end;gap:8px 12px}
+#page-duty .duty-report-field,#page-duty .duty-report-action{display:grid;gap:4px;min-width:0}
+#page-duty .duty-report-field{font-size:12px;font-weight:700;color:#35516d}
+#page-duty .duty-report-field select{appearance:none;width:100%;min-height:36px;padding:5px 29px 5px 9px;border:1px solid #b9cde2;border-radius:7px;background:#f7fafd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23173F70' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 9px center;color:#203b59;cursor:pointer}
+#page-duty .duty-report-field select:hover{border-color:#729bc5;background-color:#edf4fb}
+#page-duty .duty-report-controls button{min-height:36px;white-space:nowrap}
+#page-duty .duty-report-action small{grid-row:1;text-align:center;color:#4d657d;font-size:11px}
+#page-duty .duty-report-guidance{margin-top:9px;color:#4d657d;font-size:12px;line-height:1.4}
+#page-duty .duty-report-guidance > p{display:inline;margin:0 8px 0 0}
+#page-duty .duty-report-guidance details{display:inline-block}
+#page-duty .duty-report-guidance details[open]{display:block;margin-top:4px}
+#page-duty .duty-report-guidance summary{cursor:pointer;color:#1e5f9f;font-weight:700}
+#page-duty .duty-report-guidance details p{margin:4px 0 0}
+#page-duty .duty-report-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:12px 0 0}
+#page-duty .duty-report-kpis div{display:flex;align-items:center;justify-content:space-between;gap:4px 8px;flex-wrap:wrap;padding:7px 9px;border-radius:6px;color:var(--hour-ink);background:var(--hour-bg)}
+#page-duty .duty-report-kpis dt{font-size:12px;font-weight:600}
+#page-duty .duty-report-kpis dd{margin:0;font-size:16px;font-weight:750;font-variant-numeric:tabular-nums}
+@media(max-width:700px){#page-duty .duty-report-controls{grid-template-columns:minmax(0,1fr) auto}#page-duty .duty-report-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}

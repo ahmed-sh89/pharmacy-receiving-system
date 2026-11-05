@@ -3,11 +3,6 @@
  'use strict';
  const M=root.DutyModel;
  const headers=['Store','data','Day','Day Name','Check In 1','Check Out 1','Check In 2','Check Out 2','Normal O.T','Friday O.T','Holiday O.T','Notes / Coverage Pharmacy','In-Out','Group Start','Group Number'];
- const groups={
-  shifts:{start:4,end:8,label:'Shift times',columns:'E:H'},
-  overtime:{start:8,end:11,label:'Overtime',columns:'I:K'},
-  notes:{start:11,end:12,label:'Notes and status',columns:'L'}
- };
  const categories={...M.categories,total:'Total'};
  const overtime=['normal_ot','friday_ot','holiday_ot'];
  const weekday=new Intl.DateTimeFormat('en-GB',{weekday:'long',timeZone:'UTC'});
@@ -31,7 +26,7 @@
     const p=byDate.get(d.date)||M.normalize(),holiday=holidays.has(d.date);
     const hours=M.effectiveHours(d.date,p,holiday,e,data.hour_rules,demo);
     const status=p.status==='EMPTY'?'':p.status==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[p.status];
-    return {...d,kind:holiday&&(demo||!d.friday)?'holiday':d.friday?'friday':'',periods:p.periods,hours,notes:[status,p.note].filter(Boolean).join(' · '),highlight:p.highlight};
+    return {...d,kind:holiday&&(demo||!d.friday)?'holiday':d.friday?'friday':'',periods:p.periods,hours,manual:p.manual_minutes,notes:[status,p.note].filter(Boolean).join(' · '),highlight:p.highlight};
    });
    return [{code:e.code,id:String(e.display_code||e.code),name,days,totals:totals[e.code]||Object.fromEntries(Object.keys(categories).map(k=>[k,0]))}];
   });
@@ -48,9 +43,14 @@
   const text=value.replace(/[\u0000-\u001f\u007f]+/g,' ').trim();
   return /^[=+\-@]/.test(text)?"'"+text:text;
  }
- function copyRows(employee,key){
-  const group=groups[key];
-  return employee.days.map(day=>dailyValues(day).slice(group.start,group.end).map(literal));
+ function copyValues(employee){
+  return employee.days.map(day=>{
+   const values=dailyValues(day).slice(4,12);
+   overtime.forEach((key,index)=>{
+    if(day.manual?.[key]===0)values[index+4]=0;
+   });
+   return values.map(literal).join('\t');
+  }).join('\r\n');
  }
  function scheduleCell(day){
   const times=day.periods.map(p=>formatTime(p.start)+' – '+formatTime(p.end));
@@ -116,60 +116,55 @@
    .replace('</worksheet>','<pageMargins left="0.25" right="0.25" top="0.35" bottom="0.35" header="0.15" footer="0.15"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>')));
   return X.CFB.write(archive,{fileType:'zip',type:'array',compression:true});
  }
- const state={employee:'',format:'standard',group:'shifts'};
+ const state={employee:'',format:'standard'};
  function mount(host,data,config){
   const report=project(data,config.month,config.demo,config.pharmacyCode);
   if(!report.staff.some(e=>e.code===state.employee))state.employee='';
   const single=report.staff.find(e=>e.code===state.employee);
-  const staff=single?[single]:report.staff,group=groups[state.group];
-  const values=single?copyRows(single,state.group):[];
-  const start=group.columns[0];
-  const plan=workbookPlan(report,staff,state.format);
-  function previewValue(value,format){
-   if(value==null)return '';
-   if(format==='date')return new Date((value-25569)*86400000).toISOString().slice(0,10);
-   if(format==='time')return formatTime(Math.round(value*1440));
-   if(format==='number')return M.hours(value*60);
-   return value;
-  }
-  const previewSheet=(sheet,i)=>`<details ${single?'open':''}><summary>${esc(state.format==='standard'?staff[i].name+' · '+staff[i].id:sheet.name)}</summary>
-   <div class="duty-report-scroll"><table aria-label="Duty report preview"><thead><tr>${sheet.rows[0].values.map(v=>`<th scope="col">${esc(v)}</th>`).join('')}</tr></thead>
-   <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-${row.style}">${Array.from({length:sheet.widths.length},(_,col)=>`<td>${esc(previewValue(row.values[col],row.formats?.[col]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`;
-
-  const summary=e=>Object.entries(categories).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(e.totals[k])}</b></span>`).join('');
-  host.innerHTML=`<div class="duty-report-toolbar"><strong>${esc(report.title)}</strong>
-   <label>Employee <select data-report-employee><option value="">All Employees</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select></label>
-   <label>Report format <select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select></label>
-   <button type="button" class="duty-primary" data-report-download ${staff.length?'':'disabled'}>Download Excel</button></div>
-   <section class="duty-report-copy"><strong>PROVISIONAL — REQUIRES LIVE TEMPLATE VERIFICATION</strong>
-   <p>Paste only into a verified input range in the matching employee block. Pasting values over formulas can replace them. Blank values can clear existing inputs.</p>
-   <div class="duty-report-toolbar"><label>Input columns <select data-report-group>${Object.entries(groups).map(([key,g])=>`<option value="${key}" ${key===state.group?'selected':''}>${g.columns} · ${g.label}</option>`).join('')}</select></label>
-   <span>Start in column <b>${start}</b> on the first daily row for this employee (e.g. ${start}2 in the first reference block). Confirm ${report.dates.length} rows.</span>
-   <label><input type="checkbox" data-report-confirm ${single?'':'disabled'}> I verified this input range in a disposable template copy</label>
-   <button type="button" data-report-copy disabled>Copy Values</button></div>
-   <p role="status" data-report-status>${single?'Copy preview below shows exact TSV fields. Dates identify rows and are omitted from the clipboard.':'Select one employee to preview and copy values.'}</p>
-   ${single?`<div class="duty-report-scroll"><table aria-label="Copy Values preview"><thead><tr><th scope="col">Date (guide only)</th>${headers.slice(group.start,group.end).map(h=>`<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${values.map((row,i)=>`<tr><th scope="row">${single.days[i].date}</th>${row.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}</section>
-   <section class="duty-report-preview"><h3>Report preview</h3>${staff.length?`<div class="duty-report-summary">${staff.map(e=>`<div><strong>${esc(e.name)} · ${esc(e.id)}</strong><div class="duty-mini-kpis duty-report-totals">${summary(e)}</div></div>`).join('')}</div>${plan.map(previewSheet).join('')}`:'<p>No employees are available for this month.</p>'}</section>`;
-  const confirmation=host.querySelector('[data-report-confirm]'),copy=host.querySelector('[data-report-copy]'),status=host.querySelector('[data-report-status]');
-  confirmation.onchange=()=>{copy.disabled=!confirmation.checked||!single;};
-  host.querySelector('[data-report-employee]').onchange=e=>{state.employee=e.target.value;mount(host,data,config);host.querySelector('[data-report-employee]').focus();};
-  host.querySelector('[data-report-format]').onchange=e=>{state.format=e.target.value;mount(host,data,config);host.querySelector('[data-report-format]').focus();};
-  host.querySelector('[data-report-group]').onchange=e=>{state.group=e.target.value;mount(host,data,config);host.querySelector('[data-report-group]').focus();};
-  copy.onclick=async()=>{
-   if(!single||!confirmation.checked)return;
-   try{await navigator.clipboard.writeText(values.map(row=>row.join('\t')).join('\r\n'));status.textContent=`Copied ${values.length} rows of plain values for ${group.columns}. Paste only into the verified inputs.`;}
-   catch{status.textContent='Clipboard access failed. Allow clipboard access in your browser and retry.';}
+  const staff=single?[single]:report.staff;
+  const summary=e=>Object.entries(categories).map(([k,label])=>`<div class="duty-category-${k}"><dt>${label}</dt><dd>${M.hours(e.totals[k])}</dd></div>`).join('');
+  host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
+   <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
+   <div class="duty-report-controls">
+    <label class="duty-report-field">Employee
+     <select data-report-employee><option value="">All Employees</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select>
+    </label>
+    <div class="duty-report-action"><button type="button" class="duty-primary" data-report-copy ${single?'':'disabled'}>Copy Values</button><small>E–L · Full Month</small></div>
+    <label class="duty-report-field">Excel format
+     <select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select>
+    </label>
+    <button type="button" data-report-download ${staff.length?'':'disabled'}>Download Excel</button>
+   </div>
+   <div class="duty-report-guidance">
+    <p role="status" data-report-status>${single?'Paste into column E on this employee’s first daily row in the verified E:L input range.':staff.length?'Select an employee to copy values. Excel downloads support all employees.':'No employees are available for this month.'}</p>
+    <details><summary>Paste safely</summary><p>Test in a disposable copy of the online timesheet first. Pasting can replace existing values or formulas in E:L. Match the employee and first daily date before pasting.</p></details>
+   </div>
+   ${single?`<dl class="duty-report-kpis" aria-label="Monthly totals">${summary(single)}</dl>`:''}
+  </section>`;
+  const status=host.querySelector('[data-report-status]');
+  host.querySelector('[data-report-employee]').onchange=e=>{
+   state.employee=e.target.value;
+   mount(host,data,config);
+   host.querySelector('[data-report-employee]').focus();
+  };
+  host.querySelector('[data-report-format]').onchange=e=>{state.format=e.target.value;};
+  host.querySelector('[data-report-copy]').onclick=async()=>{
+   if(!single)return;
+   try{
+    await navigator.clipboard.writeText(copyValues(single));
+    status.textContent=`Copied ${single.days.length} days. Paste into column E on ${single.name}’s first daily row.`;
+   }catch{status.textContent='Clipboard access failed. Allow clipboard access in your browser and retry.';}
   };
   host.querySelector('[data-report-download]').onclick=()=>{
    try{
     const X=root.XLSX;
     if(!X)throw Error('Excel export is unavailable.');
-    const blob=new Blob([workbookBytes(X,plan)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const blob=new Blob([workbookBytes(X,workbookPlan(report,staff,state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');
     link.href=url;link.download=`PharmFlow_Duty_${state.format==='standard'?'Standard_Timesheet':'Schedule_Layout'}_${report.month}.xlsx`;
     link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(error){status.textContent=error.message;}
   };
  }
- root.DutyReports={mount,project,copyRows,workbookPlan,workbookBytes};
+ root.DutyReports={mount,project,copyValues,workbookPlan,workbookBytes};
 })(typeof window==='undefined'?globalThis:window);
