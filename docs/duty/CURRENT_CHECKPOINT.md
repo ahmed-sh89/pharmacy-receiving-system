@@ -1,10 +1,11 @@
 # Duty Production Readiness · 5 November 2026
 
-**IN DEVELOPMENT / BLOCKED — NOT READY FOR PRODUCTION. Staging only.**
+**BLOCKED — NOT READY FOR PRODUCTION. Staging only; draft PR #43.**
 
 ## Authoritative state
 
 Repository `ahmed-sh89/pharmacy-receiving-system`; branch `feature/duty-staging-20261104`.
+Implementation commit: `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`. Draft PR: https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/43 (not merged).
 Recovery source: `1c2879676a1be354805bdb594ec48d29340a6fae`; previous XLSX repair `fb0a8fddd340cba22cfaf73f6280960f06a0a16c`.
 Production main verified unchanged at `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
 Staging DB exclusively `tovkcakucyagvbzvlnks`. No main merge, Pages deployment, Production database call or Production Duty activation.
@@ -23,7 +24,7 @@ Recovery inspected the branch's 27 commits, all 42 existing PRs (open and closed
 
 Applied `20261105183357_duty_production_readiness_staging.sql` exactly once to Staging, after local PostgreSQL tests. Supersedes the old **unapplied** `STAGING_MANUAL_HOURS.sql` proposal; do not apply both. Original three Stage A/B migrations remain unchanged.
 
-Before/after: all 12 existing Staging policies remain Duty Disabled. No real employee or pharmacy records used in tests. Live synthetic rollback-only SQL passed default denial, save/read, manual allocations, rule persistence, holiday precedence, CAS, completed-month locks, tenant isolation, staff write rejection, revoked sessions and anonymous/table denial. Fixtures were rolled back.
+Before/after: all 12 existing Staging policies remain Duty Disabled. No real employee or pharmacy records used in tests. Live synthetic rollback-only SQL passed default denial, save/read, manual allocations, rule persistence, holiday precedence, CAS, completed-month locks, tenant isolation, staff write rejection, revoked sessions and anonymous/table denial. Fixtures were rolled back. Final counts: employees=0, entries=0, holidays=0, settings=0, enabled Duty policies=0. No disposable browser account was created.
 
 Supabase CLI was unavailable in this runtime. The migration filename uses the actual version allocated by the hosted Staging migration tool; no timestamp or migration history was invented. Advisors retain the existing RPC-only/default-deny and SECURITY DEFINER notices; the new table also deliberately has no client grants or policies. No broad grants were added.
 
@@ -31,9 +32,10 @@ Supabase CLI was unavailable in this runtime. The migration filename uses the ac
 
 - 39 Duty automated tests PASS (includes embedded PostgreSQL, projection, Copy Values, both workbook formats and independent ZIP/XML validation for 28/29/30/31 days).
 - 137 focused regression tests PASS across permissions/reconnect, authentication, Handheld readiness, Receiving/email/KPI and Expiry capture/session state.
-- Staging build PASS. New Duty readiness CI workflow builds/tests only and has no deploy or database credentials.
+- Staging and Production builds PASS locally (build only; no Production connection or deployment). Four runtime Pages artifact/security checks PASS. New Duty readiness CI workflow builds/tests only and has no deploy or database credentials.
+- GitHub CI PASS on implementation `d89296b`: Duty readiness checks [42086333198](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42086333198), required PharmFlow security checks [42086333139](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42086333139). No protected Receiving/Expiry/auth/Handheld business file changes in the reviewed PR diff.
 - Two legacy Settings tests cannot run locally because this recovered checkout lacks historical git objects `ef0077c` and `66ac0b2`. No assertions were removed. A separate Expiry draft-discard test fails unchanged on the prior baseline as well as this candidate (1 versus 0). No Expiry fix attempted.
-- Authenticated browser save/refresh, two independent browser sessions and actual multi-PC synchronization remain unverified in this recovery. Local browser executable unavailable; cloud browser cannot reach the local build. Continue on the deployed Staging preview.
+- Authenticated browser save/refresh, two independent browser sessions and actual multi-PC synchronization remain unverified in this recovery. Local browser executable unavailable; cloud browser cannot reach the local build. The implementation Preview `https://pharmflow-test-qq5ur5108-fhyh2xtskz-3504.vercel.app/` remained INITIALIZING in Vercel and displayed “Deployment is building” in the cloud browser, with no build events returned. No deployment failure or success is claimed. Continue when that exact candidate Preview is available; match version.json to the candidate SHA.
 - Native Microsoft Excel 2016/2019 and actual online-template Copy Values acceptance remain USER TEST pending; native Chrome 75–80% zoom is also not verified. Prior historical verification is preserved in `HISTORY_BEFORE_READINESS_20261105.md` and is not claimed as new evidence.
 
 ## Exact next action

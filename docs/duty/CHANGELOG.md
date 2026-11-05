@@ -16,3 +16,5 @@ Focused tests and rollback-only live SQL verified. Preview deployed successfully
 ## 5 November 2026 · Readiness recovery
 
 Recovered from GitHub head `1c28796` without changing the surviving workspace. Added default-deny Duty authorization to the existing Administrator Permissions architecture, normal runtime wiring, scoped client/server guards and durable Duty configuration/manual-hour/calendar contracts. Applied Staging migration `20261105183357` only. Added PostgreSQL readiness and permission regression coverage. Release remains blocked pending authenticated browser/two-session and Product Owner acceptance; no Production action authorized or performed.
+
+Implementation `d89296b` is saved in draft PR #43. Both GitHub Duty and required security workflows PASS. Production build and four Pages artifact tests PASS without deployment. Preview remains INITIALIZING; authenticated browser verification is still blocked. Final Staging Duty fixture counts and enabled-policy count are all zero.
