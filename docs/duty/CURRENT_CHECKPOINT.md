@@ -99,3 +99,11 @@ Each leave day now shows its own label. The timetable uses one centered time ran
 ### Duty Staging · Clipboard, Calendar Settings and time editor
 
 Auto clipboard entries carry scheduling inputs and use destination rules through the existing calculator. Manual copies retain their effective source allocation and flag a destination mismatch. Synthetic Holiday OT takes precedence on a Friday holiday; the signed-in RPC calculation contract remains unchanged. Calendar Settings preloads contiguous selected dates and prompts for explicit dates when selection has gaps. The editor uses shared Hour, Minute and AM/PM dropdowns, preserving saved minute values. No SQL or Production changes. READY FOR TEST pending Product Owner verification.
+
+### 5 November 2026 · Duty Reports
+
+Duty Reports reads the same scoped saved schedule, rules, effective Basic limits, holiday precedence and Manual hours as Schedule. Both workbook formats and the preview share a projection. The standalone Standard Timesheet uses one worksheet per employee and keeps the A–O column order from `A(2).xlsx`; Schedule Layout uses up to six employee columns per sheet with monthly totals and special-day colors.
+
+Reference review found 12 employee blocks, 31 daily slots per block, mixed date types and no preserved formulas in A–O. A–B are metadata; the standalone export supplies pharmacy code, numeric month/year, text employee ID and name. C–D are generated date and weekday. E–H are IN/OUT 1/2. I–K are Normal, Friday and Holiday O.T. L is status/notes. M–O (In-Out, Group Start, Group Number) are reserved and left blank; P onward is excluded. Export dates are generated only for the selected month.
+
+Copy Values is a one-employee, one-range plain-text TSV operation for provisional E:H, I:K or L. The user must verify the corresponding range in a disposable copy before enabling Copy Values. A–D and M–O are excluded from paste. The destination's live formula/input boundaries remain unverified. Pasting over a formula can replace it. No direct spreadsheet integration, SQL migration, Production or main-branch change. READY FOR TEST pending Product Owner acceptance.

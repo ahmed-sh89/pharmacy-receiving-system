@@ -264,3 +264,23 @@
 #page-duty .duty-dropdown-popup .duty-dropdown-option:hover,#page-duty .duty-dropdown-popup .duty-dropdown-option:focus-within{background:#eef5fc;border-color:#bfd4e9}
 #page-duty .duty-dropdown-popup .duty-dropdown-option:is([aria-pressed=true],:has(input:checked)){background:#e1eefb;color:#174a79}
 #page-duty .duty-dropdown-option input{accent-color:#2165a8;cursor:pointer}
+
+/* Duty Reports */
+#page-duty :is(.duty-report-toolbar,.duty-report-summary){display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+#page-duty .duty-report-toolbar label{display:inline-flex;align-items:center;gap:5px;font-weight:600}
+#page-duty .duty-report-toolbar select{min-height:32px;max-width:100%;padding:4px 9px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59;cursor:pointer}
+#page-duty :is(.duty-report-copy,.duty-report-preview){margin:8px 0;padding:10px 12px;border:1px solid #cad9e8;border-radius:8px;background:#fff}
+#page-duty .duty-report-copy > strong{color:#78521a;font-size:12px}
+#page-duty .duty-report-copy p{margin:5px 0 8px}
+#page-duty .duty-report-preview h3{margin:0 0 7px;font-size:15px}
+#page-duty .duty-report-preview details{margin:6px 0;border:1px solid #d2dfec;border-radius:6px}
+#page-duty .duty-report-preview summary{padding:7px 9px;cursor:pointer;color:#174a79;font-weight:700}
+#page-duty .duty-report-summary > div{padding:6px 8px;border:1px solid #d2dfec;border-radius:6px;background:#f7fafd}
+#page-duty .duty-report-totals{margin-top:4px;min-width:215px}
+#page-duty .duty-report-scroll{max-height:340px;overflow:auto;border:1px solid #d2dfec;border-radius:6px}
+#page-duty .duty-report-scroll table{table-layout:auto}
+#page-duty .duty-report-scroll :is(td,th){height:auto;min-width:75px;padding:6px 8px;white-space:pre-line}
+#page-duty .duty-report-scroll thead th{background:#174a79;color:#fff;white-space:pre-line}
+#page-duty .duty-report-friday td{background:#d8e8fa}
+#page-duty .duty-report-holiday td{background:#fff2d9}
+#page-duty .duty-report-total td{background:#dfebf8;font-weight:700}

@@ -14,7 +14,7 @@ export function dutyPreviewBuild(){return {
   html=html.replace(expiry,expiry+'\n<button class="sidebarItem" type="button" data-page="duty" aria-label="Duty" title="Duty"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/></svg></span><span>Duty</span></button>');
   html=html.replace('</head>','<link rel="stylesheet" href="css/duty.css">\n</head>');
   html=html.replace('<div class="mainContent">','<div class="mainContent"><section id="page-duty" class="appPage" aria-label="Duty"></section>');
-  return html.replace('</body>','<script src="js/duty-model.js"></script><script src="js/duty-schedule.js"></script><script src="js/duty.js"></script>\n</body>');
+  return html.replace('</body>','<script src="js/duty-model.js"></script><script src="js/duty-schedule.js"></script><script src="js/duty-reports.js"></script><script src="js/duty.js"></script>\n</body>');
  }},
  closeBundle(){
   if(!dutyPreview)return;
