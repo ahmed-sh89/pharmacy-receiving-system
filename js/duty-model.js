@@ -74,11 +74,11 @@
  }
  function basicAllowance(date,payload,employee,rules=[]){
   if(payload.basic_limit!=null&&payload.basic_limit!==540)return payload.basic_limit;
-  const matching=rules.filter(r=>r.from<=date&&date<=r.through&&(!r.code||r.code===employee?.code));
-  const rule=matching.findLast(r=>r.code)||matching.at(-1);
-  if(!rule)return employee?.basic_minutes??540;
-  const start=payload.periods?.[0]?.start;
-  return rule.cutoff!=null&&start!=null&&start>=rule.cutoff?rule.after:rule.basic;
+  const first=payload.periods?.[0]?.start;
+  if(first==null)return employee?.basic_minutes??540;
+  const start=date+'T'+String(Math.floor(first/60)).padStart(2,'0')+':'+String(first%60).padStart(2,'0');
+  const matching=rules.filter(r=>r.start<=start&&start<=r.end&&(!r.codes.length||r.codes.includes(employee?.code)));
+  return (matching.findLast(r=>r.codes.length)||matching.at(-1))?.basic??employee?.basic_minutes??540;
  }
  function calculate(date,payload,holiday=false,basic=payload.basic_limit??540){
   const p=normalize(payload),total=p.periods.reduce((a,v)=>a+v.end-v.start,0),friday=new Date(date+'T12:00:00Z').getUTCDay()===5;

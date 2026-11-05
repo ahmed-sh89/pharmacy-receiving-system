@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const M=window.DutyModel,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const S={mode:31,staffSize:6,staffPage:0,support:new Set(),start:0,month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
+ const S={mode:31,group:'pharmacists',staffPage:0,custom:new Set(),start:0,month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
  let host,data,options,scopeVersion=0,periodVersion=0,drag=null,skipClick=false;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const adjacent=new Map(),past=[],future=[],localRevisions=new Map();
@@ -16,10 +16,10 @@
  const payload=(code,date)=>entry(code,date)?.payload||M.normalize();
  function roster(){
   const history=data.entries||[],all=data.employees.filter(e=>e.active||history.some(x=>x.code===e.code&&x.payload.status!=='EMPTY'));
-  return all.map(e=>{const h=history.find(x=>x.code===e.code);return h?{...e,...h.identity}:e;});
+  return all.map(e=>{const h=history.find(x=>x.code===e.code);return h&&!options.demo?{...e,...h.identity}:e;});
  }
- const staffList=()=>roster().filter(e=>e.position_key==='pharmacist'||S.support.has(e.code)).sort((a,b)=>Number(b.position_key==='pharmacist')-Number(a.position_key==='pharmacist'));
- const employees=()=>staffList().slice(S.staffPage*S.staffSize,(S.staffPage+1)*S.staffSize);
+ const staffList=()=>roster().filter(e=>S.group==='custom'?S.custom.has(e.code):(e.position_key==='pharmacist')===(S.group==='pharmacists'));
+ const employees=()=>staffList().slice(S.staffPage*6,S.staffPage*6+6);
  const basic=(code,date,p)=>M.basicAllowance(date,p,monthData(date)?.employees?.find(e=>e.code===code),monthData(date)?.hour_rules);
  const dates=()=>M.calendarPeriod(S.month,S.start,S.mode);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
@@ -43,18 +43,18 @@
    if(version===periodVersion&&host?.isConnected){S.notice='Adjacent dates could not be loaded. '+error.message;render();}
   }
  }
- function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;}
+ function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
  function render(){
   if(!host?.isConnected)return;
   const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition={left:scroll?.scrollLeft||0,top:scroll?.scrollTop||0};
-  const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/S.staffSize));
+  const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/6));
   S.staffPage=Math.min(S.staffPage,pages-1);
   const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules);
-  const support=roster().filter(e=>e.position_key!=='pharmacist');
+  const rosterOptions=roster();
   const next=days.at(-1).date<M.days(S.month).at(-1).date;
   host.innerHTML=`<div class="duty-schedule-controls">
-   <details class="duty-staff-filter"><summary>Staff${S.support.size?' · +'+S.support.size:''}</summary><div>${support.map(e=>`<label><input type="checkbox" data-s-support="${esc(e.code)}" ${S.support.has(e.code)?'checked':''}> ${esc(e.name)}</label>`).join('')||'Pharmacists only'}</div></details>
-   <label class="duty-staff-size">Columns <select id="duty-staff-size">${[2,4,6].map(n=>`<option ${S.staffSize===n?'selected':''}>${n}</option>`).join('')}</select></label>
+   <label class="duty-staff-group">Staff <select id="duty-staff-group">${[['pharmacists','Pharmacists'],['support','Labor + Beauty'],['custom','Custom']].map(([v,l])=>`<option value="${v}" ${S.group===v?'selected':''}>${l}</option>`).join('')}</select></label>
+   ${S.group==='custom'?`<details class="duty-staff-filter"><summary>Choose staff</summary><div>${rosterOptions.map(e=>`<label><input type="checkbox" data-s-staff="${esc(e.code)}" ${S.custom.has(e.code)?'checked':''}> ${esc(e.name)}</label>`).join('')||'No employees'}</div></details>`:''}
    <div class="duty-period" aria-label="Staff pages"><button type="button" data-s-action="staff-back" aria-label="Previous staff page" ${S.staffPage?'':'disabled'}>‹</button><span>${S.staffPage+1}/${pages}</span><button type="button" data-s-action="staff-next" aria-label="Next staff page" ${S.staffPage+1<pages?'':'disabled'}>›</button></div>
    <div class="duty-period"><button type="button" data-s-action="back" aria-label="Previous period" ${!S.start||S.mode===31?'disabled':''}>‹</button><strong>${formatDate(days[0].date)} – ${formatDate(days.at(-1).date)}</strong><button type="button" data-s-action="forward" aria-label="Next period" ${!next||S.mode===31?'disabled':''}>›</button></div>
    <div class="duty-segment" role="group" aria-label="Calendar view">${[[31,'Month'],[14,'2 Weeks'],[7,'Week']].map(([n,label])=>`<button type="button" data-s-mode="${n}" aria-pressed="${S.mode===n}">${label}</button>`).join('')}</div>
@@ -65,7 +65,7 @@
    <button type="button" data-s-action="color">Cell Color</button><button type="button" data-s-action="day">Day Type</button>${options.demo?`<button type="button" data-s-action="rules">Hour Rules</button>`:''}</div>
    <div class="duty-grid-scroll duty-vertical ${S.mode===7?'duty-week-height':''}" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Calendar <small>Monthly totals · h</small></th>
-    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.code)}${e.active?'':' · inactive'}</span><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
+    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
     <tbody>${staff.length?days.map(d=>`<tr class="${d.friday?'duty-friday-row':holiday(d.date)?'duty-holiday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${new Date(d.date+'T12:00Z').toLocaleDateString('en-GB',{weekday:'long',timeZone:'UTC'})}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
@@ -86,9 +86,23 @@
    ${categories?`<div class="duty-cell-categories">${categories}</div>`:''}</td>`;
  }
  function select(code,date,range){
+  S.rowAnchor=null;
   if(range&&S.anchor){const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===S.anchor.code),b=staff.findIndex(e=>e.code===code),x=ds.findIndex(d=>d.date===S.anchor.date),y=ds.findIndex(d=>d.date===date);if(a<0||b<0)return;S.selected=[];for(let i=Math.min(a,b);i<=Math.max(a,b);i++)for(let j=Math.min(x,y);j<=Math.max(x,y);j++)S.selected.push({code:staff[i].code,date:ds[j].date});}
   else {S.selected=[{code,date}];S.anchor={code,date};}
   S.cursor={code,date};updateSelection();
+ }
+ function selectRows(date,extend=false,toggle=false){
+  const staff=employees(),days=dates(),target=days.findIndex(d=>d.date===date);
+  if(!staff.length||target<0)return;
+  const start=extend?days.findIndex(d=>d.date===S.rowAnchor):-1;
+  const chosen=toggle?new Set(S.selected.filter(c=>staff.every(e=>selected(e.code,c.date))).map(c=>c.date)):new Set();
+  if(toggle&&chosen.has(date))chosen.delete(date);
+  else for(let i=start<0?target:Math.min(start,target);i<=(start<0?target:Math.max(start,target));i++)chosen.add(days[i].date);
+  if(start<0)S.rowAnchor=date;
+  S.selected=staff.flatMap(e=>days.filter(d=>chosen.has(d.date)).map(d=>({code:e.code,date:d.date})));
+  S.anchor={code:staff[0].code,date:S.rowAnchor};
+  S.cursor={code:staff[0].code,date};
+  updateSelection();
  }
  function findCell(code,date){return host.querySelector(`[data-s-code="${CSS.escape(code)}"][data-s-date="${date}"]`);}
  function focus(code,date,scroll=false){findCell(code,date)?.focus({preventScroll:!scroll});}
@@ -268,8 +282,8 @@
   if(!changes.length){S.notice='Selected cells are already empty.';render();return;}
   await save(changes,'Delete Duty cells',S.selected.length>1?'delete':false);
  }
- function smallPanel(title,body,onSubmit){
-  return options.panel(title,body,onSubmit);
+ function smallPanel(title,body,onSubmit,label){
+  return options.panel(title,body,onSubmit,label);
  }
  function details(){
   const selection=[...S.selected],first=selection[0];if(!first)return;
@@ -314,31 +328,36 @@
  }
  function hourRules(){
   const rules=data.hour_rules||[];
-  const form=smallPanel('Working-hour rules',`<label class="duty-field">Rule<select name="rule"><option value="">Add a rule</option>${rules.map((r,i)=>`<option value="${i}">${esc(r.name)} · ${r.from}–${r.through}${r.code?' · '+esc(r.code):''}</option>`).join('')}</select></label>
-   <label class="duty-field">Name<input name="name" maxlength="80" placeholder="Ramadan"></label>
-   <label class="duty-field">Employee<select name="code"><option value="">All employees</option>${roster().map(e=>`<option value="${esc(e.code)}">${esc(e.name)}</option>`).join('')}</select></label>
-   <div class="duty-detail-grid"><label class="duty-field">From<input name="from" type="date" value="${S.month}-01"></label><label class="duty-field">Through<input name="through" type="date" value="${M.days(S.month).at(-1).date}"></label></div>
-   <div class="duty-detail-grid"><label class="duty-field">Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="7"></label><label class="duty-field">Change at shift start<input name="cutoff" type="time"></label></div>
-   <label class="duty-field">Basic hours at or after cutoff<input name="after" type="number" min="0" max="24" step="any" value="6"></label>
-   <label><input name="remove" type="checkbox"> Remove selected rule</label>`,async fields=>{
-   const index=fields.get('rule')===''?null:Number(fields.get('rule'));
-   if(fields.has('remove')&&index===null)throw Error('Select a rule to remove.');
-   const next=rules.filter((_,i)=>i!==index);
-   if(!fields.has('remove')){
-    const from=fields.get('from'),through=fields.get('through'),cutoff=fields.get('cutoff'),name=fields.get('name').trim();
-    if(!name||!from||!through||from>through)throw Error('Enter a name and a valid date range.');
-    const [h,m]=cutoff.split(':').map(Number);
-    next.push({name,from,through,code:fields.get('code'),basic:M.hourMinutes(fields.get('basic')),cutoff:cutoff?h*60+m:null,after:cutoff?M.hourMinutes(fields.get('after')):null});
+  const form=smallPanel('Working-hour rules',`<button type="button" data-rule-add>Add rule</button>
+   <div class="duty-rule-list">${rules.map((r,i)=>`<div class="duty-list-row"><span><strong>${esc(r.name)}</strong><small class="duty-code">${esc(r.start.replace('T',' '))} – ${esc(r.end.replace('T',' '))}<br>${r.codes.length?esc(r.codes.map(code=>roster().find(e=>e.code===code)?.name||code).join(', ')):'All employees'} · ${M.hours(r.basic)} h Basic</small></span><button type="button" data-rule-edit="${i}">Edit</button><button type="button" data-rule-delete="${i}">Delete</button></div>`).join('')||'No rules yet.'}</div>`);
+  form.onclick=async e=>{
+   const button=e.target.closest('button');if(!button)return;
+   if(button.hasAttribute('data-rule-add'))editRule();
+   if(button.hasAttribute('data-rule-edit'))editRule(Number(button.dataset.ruleEdit));
+   if(button.hasAttribute('data-rule-delete')){
+    const i=Number(button.dataset.ruleDelete);
+    if(!await options.confirm('Delete '+rules[i].name+'?','Delete'))return;
+    data=options.hourRules(rules.filter((_,index)=>index!==i));await loadBoundary();render();hourRules();
    }
-   data=options.hourRules(next);await loadBoundary();render();
-  });
-  form.elements.rule.onchange=()=>{
-   if(form.elements.rule.value==='')return;
-   const rule=rules[Number(form.elements.rule.value)];
-   for(const name of ['name','from','through','code'])form.elements[name].value=rule[name];
-   form.elements.basic.value=rule.basic/60;form.elements.after.value=rule.after==null?'':rule.after/60;
-   form.elements.cutoff.value=rule.cutoff==null?'':String(Math.floor(rule.cutoff/60)).padStart(2,'0')+':'+String(rule.cutoff%60).padStart(2,'0');
   };
+ }
+ function editRule(index){
+  const rules=data.hour_rules||[],rule=rules[index];
+  const start=(rule?.start||S.month+'-01T00:00').split('T'),end=(rule?.end||M.days(S.month).at(-1).date+'T23:59').split('T');
+  const form=smallPanel(rule?'Edit hour rule':'Add hour rule',`
+   <label class="duty-field">Rule name<input name="name" required maxlength="80" value="${esc(rule?.name||'')}"></label>
+   <div class="duty-detail-grid"><label class="duty-field">Start Date<input name="startDate" type="date" required value="${start[0]}"></label><label class="duty-field">Start Time<input name="startTime" type="time" required value="${start[1]}"></label></div>
+   <div class="duty-detail-grid"><label class="duty-field">End Date<input name="endDate" type="date" required value="${end[0]}"></label><label class="duty-field">End Time<input name="endTime" type="time" required value="${end[1]}"></label></div>
+   <label class="duty-field">Apply To<select name="scope"><option value="all">All employees</option><option value="selected" ${rule?.codes.length?'selected':''}>Selected employees</option></select></label>
+   <fieldset data-rule-staff ${rule?.codes.length?'':'hidden'}><legend>Employees</legend>${roster().map(e=>`<label><input type="checkbox" name="employee" value="${esc(e.code)}" ${rule?.codes.includes(e.code)?'checked':''}> ${esc(e.name)}</label>`).join('')}</fieldset>
+   <label class="duty-field">Basic Hours<input name="basic" required type="number" min="0" max="24" step="any" value="${(rule?.basic??420)/60}"></label>`,async fields=>{
+   const name=fields.get('name').trim(),start=fields.get('startDate')+'T'+fields.get('startTime'),end=fields.get('endDate')+'T'+fields.get('endTime');
+   const codes=fields.get('scope')==='all'?[]:fields.getAll('employee');
+   if(!name||start>end||(fields.get('scope')==='selected'&&!codes.length))throw Error('Enter a valid interval and choose at least one employee for a selected scope.');
+   data=options.hourRules([...rules.filter((_,i)=>i!==index),{name,start,end,codes,basic:M.hourMinutes(fields.get('basic'))}]);
+   await loadBoundary();render();hourRules();
+  },'Save');
+  form.querySelector('[name="scope"]').onchange=e=>{form.querySelector('[data-rule-staff]').hidden=e.target.value==='all';};
  }
  function bind(){
   host.onclick=async event=>{
@@ -346,15 +365,15 @@
    if(S.editing||S.busy||S.confirming)return;
    try{
     const button=event.target.closest('button'),cellEl=event.target.closest('[data-s-code]'),row=event.target.closest('[data-s-column]');
-    if(button?.dataset.sMode){S.mode=Number(button.dataset.sMode);S.start=0;S.selected=[];S.anchor=null;S.cursor=null;render();await loadBoundary();return;}
-    if(row){S.selected=employees().map(e=>({code:e.code,date:row.dataset.sColumn}));S.cursor=S.anchor=S.selected[0];updateSelection();focusSelection();return;}
+    if(button?.dataset.sMode){S.mode=Number(button.dataset.sMode);S.start=0;clearSelection();render();await loadBoundary();return;}
+    if(row){if(!skipClick){selectRows(row.dataset.sColumn,event.shiftKey,event.ctrlKey||event.metaKey);focusSelection();}return;}
     if(cellEl){
      if(skipClick)return;
      const {sCode:code,sDate:date}=cellEl.dataset;
      select(code,date,event.shiftKey);focusSelection();return;
     }
     switch(button?.dataset.sAction){
-     case 'back':case 'forward':S.start+=button.dataset.sAction==='back'?-S.mode:S.mode;S.selected=[];S.anchor=null;S.cursor=null;render();await loadBoundary();break;
+     case 'back':case 'forward':S.start+=button.dataset.sAction==='back'?-S.mode:S.mode;clearSelection();render();await loadBoundary();break;
      case 'details':details();break;
      case 'copy':copy();break;
      case 'paste':await paste();break;
@@ -375,35 +394,61 @@
    const {sCode:code,sDate:date}=td.dataset;
    select(code,date,false);edit(code,date);
   };
+  const grid=host.querySelector('.duty-grid-scroll');
+  const dragTarget=(x,y)=>document.elementFromPoint(x,y)?.closest(drag.row?'tbody tr':'[data-s-code]');
+  const extendDrag=target=>{
+   if(!target||!grid.contains(target)||target===drag.last)return;
+   drag.last=target;
+   if(drag.row)selectRows(target.querySelector('[data-s-column]').dataset.sColumn,true);
+   else select(target.dataset.sCode,target.dataset.sDate,true);
+  };
+  const scrollDrag=()=>{
+   if(!drag?.moved)return;
+   const bounds=grid.getBoundingClientRect(),head=grid.querySelector('thead th').getBoundingClientRect();
+   const top=Math.max(bounds.top,head.bottom),bottom=bounds.top+grid.clientHeight*(bounds.width/grid.offsetWidth);
+   const left=drag.row?bounds.left:grid.querySelector('tbody th').getBoundingClientRect().right;
+   const right=bounds.left+grid.clientWidth*(bounds.width/grid.offsetWidth);
+   const speed=(point,min,max)=>point<min+28?-Math.min(24,(min+28-point)*0.45):point>max-28?Math.min(24,(point-max+28)*0.45):0;
+   const dx=drag.row?0:speed(drag.x,left,right),dy=speed(drag.y,top,bottom);
+   if(dx||dy){
+    grid.scrollBy(dx,dy);
+    extendDrag(dragTarget(Math.max(left+2,Math.min(right-3,drag.x)),Math.max(top+2,Math.min(bottom-3,drag.y))));
+   }
+   drag.frame=requestAnimationFrame(scrollDrag);
+  };
   host.onpointerdown=event=>{
    skipClick=false;
-   const td=event.target.closest('[data-s-code]');
-   if(!td||event.button!==0||event.pointerType!=='mouse'||S.editing||S.busy||S.confirming)return;
-   drag={id:event.pointerId,start:td,last:td,moved:false};
-  };
-  host.onpointermove=event=>{
-   if(!drag||drag.id!==event.pointerId)return;
-   if(!(event.buttons&1)){drag=null;updateSelection();return;}
-   const td=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-s-code]');
-   if(!td||!host.contains(td)||td===drag.last)return;
-   if(!drag.moved){
-    drag.moved=true;host.setPointerCapture(event.pointerId);
-    const {sCode:code,sDate:date}=drag.start.dataset;select(code,date,false);
-   }
-   drag.last=td;
-   select(td.dataset.sCode,td.dataset.sDate,true);
+   const dateButton=event.target.closest('[data-s-column]'),target=dateButton?.closest('tr')||event.target.closest('[data-s-code]');
+   if(!target||event.button!==0||event.pointerType!=='mouse'||S.editing||S.busy||S.confirming)return;
+   drag={id:event.pointerId,start:target,last:target,row:!!dateButton,moved:false,x:event.clientX,y:event.clientY};
   };
   const finishDrag=event=>{
    if(!drag||drag.id!==event.pointerId)return;
-   skipClick=drag.moved;drag=null;
-   if(skipClick){updateSelection();focusSelection();}
+   skipClick=drag.moved;
+   if(drag.frame)cancelAnimationFrame(drag.frame);
+   drag=null;
+   if(skipClick)focusSelection();
+  };
+  host.onpointermove=event=>{
+   if(!drag||drag.id!==event.pointerId)return;
+   if(!(event.buttons&1)){finishDrag(event);return;}
+   drag.x=event.clientX;drag.y=event.clientY;
+   const target=dragTarget(drag.x,drag.y);
+   if(!drag.moved){
+    if(!target||target===drag.start||!grid.contains(target))return;
+    drag.moved=true;host.setPointerCapture(event.pointerId);
+    if(drag.row)selectRows(drag.start.querySelector('[data-s-column]').dataset.sColumn);
+    else select(drag.start.dataset.sCode,drag.start.dataset.sDate,false);
+    drag.frame=requestAnimationFrame(scrollDrag);
+   }
+   extendDrag(target);
   };
   host.onpointerup=host.onpointercancel=host.onlostpointercapture=finishDrag;
   host.onpointerleave=()=>{if(drag&&!drag.moved)drag=null;};
-  host.ondragstart=event=>{if(event.target.closest('[data-s-code]'))event.preventDefault();};
+  host.ondragstart=event=>{if(event.target.closest('[data-s-code],[data-s-column]'))event.preventDefault();};
   host.onchange=async e=>{
-   if(e.target.id==='duty-staff-size'){S.staffSize=Number(e.target.value);S.staffPage=0;clearSelection();render();return;}
-   if(e.target.dataset.sSupport){const code=e.target.dataset.sSupport;if(e.target.checked)S.support.add(code);else S.support.delete(code);clearSelection();const open=host.querySelector('.duty-staff-filter').open;render();host.querySelector('.duty-staff-filter').open=open;return;}
+   if(e.target.id==='duty-staff-group'){S.group=e.target.value;S.staffPage=0;clearSelection();render();return;}
+   if(e.target.dataset.sStaff){const code=e.target.dataset.sStaff;if(e.target.checked)S.custom.add(code);else S.custom.delete(code);clearSelection();render();host.querySelector('.duty-staff-filter').open=true;return;}
    if(e.target.id!=='duty-apply-status'||!e.target.value)return;
    if(!S.selected.length||S.selected.some(c=>!writableDate(c.date))){S.notice='Select editable dates before changing status.';render();return;}
    await save(S.selected.map(c=>({...c,payload:{...payload(c.code,c.date),status:e.target.value,periods:[],manual_minutes:undefined}})),'Set OFF / leave / clear',true);
@@ -433,7 +478,7 @@
    }
    const cellEl=e.target.closest('[data-s-code]');if(!cellEl)return;
    if(e.key==='Delete'){e.preventDefault();if(!S.selected.length)select(cellEl.dataset.sCode,cellEl.dataset.sDate,false);await deleteSelection();focusSelection();return;}
-   if(e.key==='Escape'){S.selected=[];S.anchor=null;updateSelection();return;}
+   if(e.key==='Escape'){clearSelection();updateSelection();return;}
    const {sCode:code,sDate:date}=cellEl.dataset;
    if(e.key==='Enter'||e.key==='F2'){e.preventDefault();select(code,date,false);edit(code,date);return;}
    const staff=employees(),days=dates(),x=staff.findIndex(v=>v.code===code),y=days.findIndex(v=>v.date===date);
@@ -444,8 +489,9 @@
   };
  }
  window.DutySchedule={mount,isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(keepClipboard=false){
+  if(drag?.frame)cancelAnimationFrame(drag.frame);
   drag=null;skipClick=false;scopeVersion++;periodVersion++;adjacent.clear();clearHistory();
-  if(!keepClipboard){S.clipboard=[];S.support.clear();S.staffPage=0;S.staffSize=6;S.mode=31;}
+  if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.mode=31;}
   Object.assign(S,{editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};
 })();

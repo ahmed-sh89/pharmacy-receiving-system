@@ -85,14 +85,20 @@ test('real Postgres engine: batch transactions, computed minutes, isolation, his
 
 test('dated Basic rules use shift start, employee priority and exclusive special-day hours',()=>{
  const employee={code:'P1',basic_minutes:480};
- const rule={from:'2026-11-01',through:'2026-11-30',basic:420,cutoff:1080,after:360};
- const date='2026-11-03',before=M.parse('8 AM–5 PM'),after=M.parse('7 PM–4 AM');
- const hours=(date,p,holiday=false,rules=[rule])=>M.calculate(date,p,holiday,M.basicAllowance(date,p,employee,rules));
+ const rule={start:'2026-11-04T05:00',end:'2026-11-30T23:59',codes:[],basic:420};
+ const afterIftar={...rule,start:'2026-11-04T18:00',end:'2026-11-04T23:59',basic:360};
+ const date='2026-11-04',before=M.parse('8 AM–5 PM'),after=M.parse('7 PM–4 AM');
+ const hours=(date,p,holiday=false,rules=[rule,afterIftar])=>M.calculate(date,p,holiday,M.basicAllowance(date,p,employee,rules));
  assert.equal(hours(date,before).basic,420);
  assert.equal(hours(date,before).normal_ot,120);
  assert.equal(hours(date,after).basic,360);
  assert.equal(hours(date,after).normal_ot,180);
- assert.equal(hours(date,after,false,[rule,{...rule,code:'P1',after:330}]).basic,330);
+ const prior=M.parse('5 PM–5 AM');
+ const beforeBoundary=M.calculate('2026-11-03',prior,false,M.basicAllowance('2026-11-03',prior,{code:'P1'},[rule]));
+ assert.deepEqual([beforeBoundary.basic,beforeBoundary.normal_ot],[540,180]);
+ const exact=hours(date,M.parse('5 AM–2 PM'),false,[rule]);
+ assert.deepEqual([exact.basic,exact.normal_ot],[420,120]);
+ assert.equal(hours(date,after,false,[rule,{...rule,codes:['P1'],basic:330},afterIftar]).basic,330);
  assert.equal(hours('2026-12-01',before).basic,480);
  const holiday=hours(date,M.parse('7 PM–5 AM'),true);
  assert.deepEqual([holiday.basic,holiday.normal_ot,holiday.friday_ot,holiday.holiday_ot,holiday.total],[0,0,0,600,600]);

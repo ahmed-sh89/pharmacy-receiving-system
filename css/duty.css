@@ -139,7 +139,7 @@
 #page-duty .duty-vertical table{width:100%;font-size:13px}
 #page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #cad9e8;border-bottom:1px solid #cad9e8}
 #page-duty .duty-vertical thead th{background:#eaf1f9;vertical-align:top;padding:8px 5px 6px}
-#page-duty .duty-vertical thead .duty-name{font-size:14px;font-weight:700}
+#page-duty .duty-vertical thead .duty-name{color:#173F70;font-size:14px;font-weight:700}
 #page-duty .duty-vertical .duty-code{margin:2px 0 5px;font-size:11px}
 #page-duty .duty-vertical .duty-date-heading{left:0;z-index:5;vertical-align:middle}
 #page-duty .duty-date-heading small{display:block;margin-top:4px;line-height:1.3}
@@ -163,7 +163,7 @@
 #page-duty .duty-date-button{display:grid;justify-items:start;gap:2px;width:100%;border:0;background:transparent;box-shadow:none;padding:3px 6px}
 #page-duty .duty-date-button strong{font-size:15px;color:#173b61}
 #page-duty .duty-date-button span,#page-duty .duty-date-button small{font-size:11px;font-weight:500}
-#page-duty .duty-staff-card{padding:5px;border:1px solid #c5d6e7;border-radius:7px;background:#fff;box-shadow:0 1px 2px #173b6110}
+#page-duty .duty-staff-card{padding:5px;border:1px solid #c5d6e7;border-radius:7px;background:#F0F5FA;box-shadow:0 1px 2px #173b6110}
 #page-duty .duty-kpi-wrap{container-type:inline-size}
 #page-duty .duty-mini-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;max-width:260px;margin:auto}
 #page-duty .duty-mini-kpis span{padding:2px 1px;border-radius:4px;font-size:11px;line-height:16px;white-space:nowrap;letter-spacing:-.12px}
@@ -199,10 +199,10 @@
 #page-duty .duty-staff-filter{position:relative;z-index:9}
 #page-duty .duty-staff-filter summary{cursor:pointer;padding:7px 9px;border:1px solid #ccd9e6;border-radius:7px;background:#fff;font-weight:600}
 #page-duty .duty-staff-filter > div{position:absolute;top:100%;left:0;min-width:160px;display:grid;gap:6px;padding:9px;background:#fff;border:1px solid #ccd9e6;border-radius:6px}
-#page-duty .duty-staff-size{display:flex;align-items:center;gap:4px}
-#page-duty .duty-staff-size select{padding:4px;border:1px solid #ccd9e6;border-radius:5px;background:#fff}
+#page-duty .duty-staff-group{display:flex;align-items:center;gap:4px}
+#page-duty .duty-staff-group select{padding:4px;border:1px solid #ccd9e6;border-radius:5px;background:#fff}
 #page-duty :is(.duty-mini-kpis,.duty-cell-categories) b{display:inline-block;padding:0 3px;margin-left:2px;border-radius:4px;background:#ffffff80;color:var(--hour-ink);font-variant-numeric:tabular-nums}
-#page-duty .duty-category-total b{color:#173b61;background:#e5eff9}
+#page-duty .duty-category-total b{color:#fff;background:transparent;font-size:13px;padding:0}
 #page-duty .duty-editor-note{display:grid;gap:4px;font-size:12px;font-weight:600}
 #page-duty :is(.duty-editor-note,.duty-manual-fields) input,#page-duty .duty-cell-editor select{min-height:32px;padding:4px 7px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59;font-size:13px}
 #page-duty .duty-selection-tools{margin-left:auto;gap:4px;flex-wrap:wrap}
@@ -217,6 +217,16 @@
 #page-duty .duty-manual-fields small{grid-column:1/-1}
 #page-duty .duty-cell-editor{max-height:calc(100dvh - 16px);overflow:auto}
 #page-duty .duty-vertical .duty-date-button:hover{background:transparent;border-color:transparent}
+#page-duty .duty-date-button{user-select:none}
+#page-duty .duty-friday-row .duty-date-button :is(strong,span){color:#123c6c;font-weight:800}
+#page-duty .duty-month-picker .duty-current-month{background:#e4f5ea;border-color:#85bea0;color:#165638}
+#page-duty :is(.duty-month-picker,.duty-period) button{min-width:32px;min-height:32px;padding:2px 7px;font-size:18px;line-height:1}
+#page-duty :is(.duty-month-picker,.duty-period) button:disabled{cursor:default;opacity:.45}
+#page-duty :is(.duty-staff-group,.duty-field,.duty-selection-tools,.duty-editor-status,.duty-time-fields) select{appearance:none;background:#f7fafd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23173F70' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 7px center;padding-right:25px;min-height:32px;cursor:pointer}
+#page-duty :is(input[type=date],input[type=time],input[type=month])::-webkit-calendar-picker-indicator{cursor:pointer}
+#page-duty [data-rule-staff]:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;border:1px solid #d8e2ed;border-radius:6px}
+#page-duty .duty-rule-list .duty-list-row{align-items:center}
+#page-duty .duty-list-row .duty-count{min-width:74px;text-align:right}
 #page-duty .duty-selection-count,#page-duty .duty-demo-badge{font-size:11px;color:#365a7e;padding:0 4px}
 
 @container (max-width: 172px){#page-duty .duty-mini-kpis{grid-template-columns:1fr}}
