@@ -29,8 +29,9 @@
  const writableDateForMonth=date=>date.startsWith(S.month+'-');
  const writableDate=date=>writable()&&writableDateForMonth(date);
  const holiday=date=>data.holidays.find(h=>h.date===date&&h.active);
+ function rememberScroll(){if(host?.isConnected){const grid=host.querySelector('.duty-grid-scroll');if(grid)S.scroll={left:grid.scrollLeft,top:grid.scrollTop};}}
  function mount(el,d,config){
-  const previous=host?.querySelector('.duty-grid-scroll');if(previous)S.scroll={left:previous.scrollLeft,top:previous.scrollTop};
+  rememberScroll();
   host=el;data={entries:[],holidays:[],...d};options=config;
   if(S.month!==config.month){S.scroll={left:0,top:0};S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
   render();
@@ -586,7 +587,7 @@
    if(next&&nextDate){e.preventDefault();select(next,nextDate,e.shiftKey);focus(next,nextDate,true);}
   };
  }
- window.DutySchedule={mount,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(keepClipboard=false){
+ window.DutySchedule={mount,rememberScroll,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
   drag=null;skipClick=false;scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}

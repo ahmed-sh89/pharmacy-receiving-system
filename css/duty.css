@@ -1,5 +1,5 @@
 /* Scoped to Duty. Existing operational surfaces are intentionally untouched. */
-html:has(#page-duty.active){scrollbar-gutter:stable}
+html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter:stable}
 #page-duty{--duty-ink:#17263d;--duty-blue:#2165a8;--duty-line:#d8e2ed;--duty-muted:#62738a;--pfn-table-header-bg:#f1f5fa;--pfn-table-header-ink:#546b86;color:var(--duty-ink);font-size:13px}
 #page-duty *{box-sizing:border-box}
 #page-duty .duty-shell{padding:2px 0 16px}
@@ -18,11 +18,11 @@ html:has(#page-duty.active){scrollbar-gutter:stable}
 #page-duty .duty-toolbar{display:grid;grid-template-columns:240px 420px minmax(0,1fr);align-items:center;gap:8px;min-height:52px;border:1px solid var(--duty-line);border-radius:9px;background:#fff;margin-bottom:4px;padding:4px 8px}
 #page-duty .duty-toolbar > .duty-actions{justify-content:flex-end;flex-wrap:nowrap;min-height:40px;white-space:nowrap}
 #page-duty .duty-toolbar > .duty-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;width:420px;height:40px}
-@media(max-width:1150px){#page-duty .duty-toolbar{grid-template-columns:240px minmax(0,1fr);grid-template-rows:40px 40px}#page-duty .duty-toolbar > .duty-tabs{grid-row:2;grid-column:1 / -1;justify-self:center}#page-duty .duty-toolbar > .duty-actions{grid-column:2;grid-row:1}}
+@media(max-width:1300px){#page-duty .duty-toolbar{grid-template-columns:240px minmax(0,1fr);grid-template-rows:40px 40px}#page-duty .duty-toolbar > .duty-tabs{grid-row:2;grid-column:1 / -1;justify-self:center}#page-duty .duty-toolbar > .duty-actions{grid-column:2;grid-row:1}}
 @media(max-width:600px){#page-duty .duty-toolbar{grid-template-columns:minmax(0,1fr);grid-template-rows:40px 40px 40px}#page-duty .duty-toolbar > .duty-actions{grid-column:1;grid-row:3;justify-content:flex-start}#page-duty .duty-toolbar > .duty-tabs{width:100%;grid-row:2}}
 #page-duty .duty-count{color:#62738a;font-size:12px}
 #page-duty .duty-tabs{gap:3px}
-#page-duty .duty-tabs button{border:0;box-shadow:none;background:transparent;color:#62738a;transition:background-color .16s ease,color .16s ease}
+#page-duty .duty-tabs button{height:36px;min-height:36px;white-space:nowrap;font-size:12px;padding:6px 8px;border:0;box-shadow:none;background:transparent;color:#62738a;transition:background-color .16s ease,color .16s ease}
 #page-duty .duty-tabs button[aria-selected=true]{color:#1c5e9e;background:#eaf2fb}
 #page-duty .duty-meta{padding:10px 14px;border:1px solid var(--duty-line);border-top:0;background:#f7f9fc;display:flex;gap:18px;align-items:center;font-size:12px;color:#62738a}
 #page-duty .duty-meta strong{color:#294766;font-weight:600}
