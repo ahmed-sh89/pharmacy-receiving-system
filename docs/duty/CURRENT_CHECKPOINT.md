@@ -31,7 +31,7 @@ Rollback: disable Duty using existing Permissions while preserving Receiving/Exp
 | Focused feature tests | PASS: 72, no failures; private actual-template fixture included locally |
 | Focused release tests / protected files | PASS: 74, no failures; all 81 protected Production files match by Git blob hash |
 | Receiving/Expiry/auth/security/Handheld regressions | PASS: 124, no failures; no protected business source edits |
-| Build / CI / READY Preview identity | Pending final publish verification below |
+| Build / CI / READY Preview identity | PASS: both local builds; final release CI Duty readiness/security SUCCESS; exact READY preview identity recorded below |
 | Prior owner acceptance | Preserved USER VERIFIED — PASS for save/refresh, independent-session sync, conflicts, Administrator access, report consistency, native Excel opening and single-employee paste on prior candidate |
 | Fresh authenticated new-feature session/order/alias verification | BLOCKED: browser is signed out; no password request or authentication retries |
 | Native Windows Chrome 75/80/100 geometry | NOT VERIFIED; requires owner acceptance (DOM tests do not establish browser zoom geometry) |
@@ -48,3 +48,14 @@ Prior full legacy-suite inherited failures remain in `VERIFICATION_20261105.json
 4. Check report footer and both XLSX formats in Windows Excel 2016/2019 (no repair). Copy one employee's full month E:L once into a disposable correctly dated template; verify Notes, fractional/whole hours, totals and adjacent cells.
 
 Stop before Production. Security-warning closure and owner acceptance are required before readiness approval.
+
+## Saved delivery and recovery evidence
+
+- Final development runtime: `b865a7350c02bb48af82b06157488f2b918ee468`; final release runtime: `22356ab4a445ca45b1c3ed8c8874e6f7142752c0`. Later checkpoint-only commits do not change runtime bytes.
+- Confirmed READY Preview: https://pharmflow-test-etnd5hgnx-fhyh2xtskz-3504.vercel.app/ — deployment `dpl_CGcF7jdR3DJmF8Ztp9wQXPXhSk6g`, exact development runtime above, Preview target (not Production). Staging isolation build checks PASS.
+- Final release runtime CI: Duty readiness runs [42142487942](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42142487942) and [42142482471](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42142482471) SUCCESS; PharmFlow security [42142487940](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42142487940) SUCCESS. The private template fixture was included locally and is optional/skipped in CI; no native Excel inference.
+- After the final tab/scroll follow-up: feature layout/DOM checks 14 PASS; release layout/isolation checks 16 PASS. Earlier complete focused suites were 72/74 PASS and non-regression 124 PASS. No full legacy-suite rerun.
+- Actual deployed synthetic-browser measurement PASS at the cloud browser's current viewport: all four tabs keep x coordinates 266 / 371.75 / 477.5 / 583.25, y 52.390625, width 102.75, height 36 CSS px across Schedule, Employees, Positions and Duty Reports. This is not native Windows 75/80/100 zoom acceptance. Directory cards rendered and filters were inspected. These diagnostics are memory-only and do not prove authenticated persistence/synchronization.
+- Report preview browser continuation NOT VERIFIED: selecting the Employee control returned a selector deadline/no-match; the following read-only DOM snapshot did not complete. Automated report/XLSX verification remains PASS; no browser footer acceptance claim.
+- Exact available interruption evidence: the user-provided notice says **“Turn ended by Auto-review. Add more context to continue.”** The last tool result (read-only report DOM snapshot) says **“aborted by user after 9.8s.”** No detailed Auto-review rejection reason was supplied for this latest interruption. Do not invent a reason, conflate it with the earlier stop-browser rejection, or infer an application/security failure from it. Recovery used repository/deployment metadata only; no browser/auth retry or restriction bypass.
+- Latest recovery reverified PR #44 open/Draft/unmerged, development/release runtimes above, READY deployment and Production main still `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. No new implementation, tests, migrations or Production actions during recovery. Existing work preserved.
