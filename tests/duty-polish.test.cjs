@@ -48,3 +48,10 @@ test('date-range drafts do not apply until confirmation; invalid input preserves
  range().querySelector('[name=from]').value='2026-11-07';range().querySelector('[name=to]').value='2026-11-05';f.host.onsubmit({target:range(),preventDefault(){}});assert.equal(count(),full);assert.match(range().textContent,/Choose valid dates/);
  range().querySelector('[name=from]').value='2026-11-05';range().querySelector('[name=to]').value='2026-11-07';f.host.onsubmit({target:range(),preventDefault(){}});assert.equal(count(),3);trigger().onclick();assert.equal(range().querySelector('[name=from]').value,'2026-11-05');assert.equal(range().querySelector('[name=to]').value,'2026-11-07');
 });
+
+test('Apply Shift dropdown writes the real successful form control and updates selected label',async()=>{
+ const f=editorFixture();f.host.onclick({target:f.host.querySelector('[data-s-code="A"][data-s-date="2026-11-05"]')});await f.host.onclick({target:f.host.querySelector('[data-s-action="apply-shift"]')});
+ const form=f.panels.at(-1).form,popup=form.querySelector('.duty-dropdown-popup');popup.hidePopover=()=>{};
+ await popup.onclick({target:popup.querySelector('[data-dropdown-value="split"]')});
+ assert.equal(form.elements.preset.value,'split');assert.match(form.querySelector('[data-dropdown-trigger=preset]').textContent,/Split.*9:00 AM/);
+});
