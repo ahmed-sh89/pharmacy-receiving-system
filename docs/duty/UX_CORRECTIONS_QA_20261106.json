@@ -22,5 +22,70 @@
   "native_windows_chrome_zoom": "NOT VERIFIED",
   "native_excel": "USER VERIFICATION REQUIRED",
   "fresh_signed_in_two_session": "BLOCKED; no auth retry",
-  "dangerous_warning": "Unresolved prior blocker; no bypass or clean-security claim"
+  "dangerous_warning": "Unresolved prior blocker; no bypass or clean-security claim",
+  "non_regression": {
+    "pass": 124,
+    "fail": 0
+  },
+  "feature_runtime": "766d3e632f8861a26f6d8ba0fa177159aa99ba40",
+  "release_runtime": "aef6dbdfe8836fb9c4e99a53e7ca10b8f8876cff",
+  "preview": {
+    "url": "https://pharmflow-test-j8su0k191-fhyh2xtskz-3504.vercel.app/",
+    "state": "READY",
+    "deployment": "dpl_5myvkJWZ8YwGM4NyKJahmH42sZ12",
+    "deployed_sha": "766d3e632f8861a26f6d8ba0fa177159aa99ba40"
+  },
+  "release_runtime_ci": {
+    "duty": [
+      42147535314,
+      42147529280
+    ],
+    "security": 42147535337,
+    "result": "SUCCESS"
+  },
+  "synthetic_browser": {
+    "month_roundtrip": "PASS; directory retained/Dec empty/Nov shifts restored",
+    "report_document_height": 936,
+    "viewport_height": 936,
+    "report_bottom": 924,
+    "scales": [
+      1,
+      0.75,
+      0.8
+    ],
+    "scale_kind": "CSS-scaled diagnostics; not native Windows zoom",
+    "table_heights": [
+      [
+        539,
+        1065
+      ],
+      [
+        845,
+        1076
+      ],
+      [
+        768,
+        1073
+      ]
+    ],
+    "sticky_after_scroll": {
+      "scroll_top": 526,
+      "header_top": 373.34375,
+      "scroller_top": 373.34375
+    },
+    "custom_range_copy": {
+      "days": 3,
+      "columns": [
+        8,
+        8,
+        8
+      ]
+    },
+    "modal_fit_scales": [
+      1,
+      0.8
+    ],
+    "authenticated_write": "NOT VERIFIED; no browser write/auth retry"
+  },
+  "pr_files_reviewed": 41
 }

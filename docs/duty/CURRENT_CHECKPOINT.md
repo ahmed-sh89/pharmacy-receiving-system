@@ -48,4 +48,12 @@ Safe rollback is a focused Duty UI revert or disabling Duty through existing Per
 
 ## Delivery evidence
 
-Final commit, CI and READY Preview identity are recorded after publishing. No browser/authentication retry or approval bypass is authorized by a tool failure. The previous Auto-review notice supplied no detailed latest rejection reason; do not infer an app/security defect from that interruption.
+- Development runtime `766d3e632f8861a26f6d8ba0fa177159aa99ba40`; release runtime `aef6dbdfe8836fb9c4e99a53e7ca10b8f8876cff`. Later checkpoint-only commits do not change application bytes.
+- READY Preview: https://pharmflow-test-j8su0k191-fhyh2xtskz-3504.vercel.app/ — deployment `dpl_5myvkJWZ8YwGM4NyKJahmH42sZ12`, exact development runtime above, Preview target only.
+- Release runtime CI: Duty readiness [42147535314](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42147535314) and [42147529280](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42147529280) SUCCESS; security [42147535337](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42147535337) SUCCESS. Private actual-template fixture is included locally; it is optional/skipped in CI.
+- Deployed synthetic browser PASS: Nov → Dec → Nov retained six displayed employees, December 31 present/zero shift cells/no false empty state, November restored 153 shift cells and identical roster. This memory-only fixture is not fresh authenticated cloud persistence proof; deferred-RPC tests separately exercise loading/races/failure/scope reset.
+- Reports browser PASS at default scale 1 and CSS-scaled 0.75/0.8: document/viewport heights both 936 px, report bottom 924 px. Internal table client/scroll heights: 539/1065 (1), 845/1076 (0.75), 768/1073 (0.8). At full scale after End, scrollTop=526 and column header top equals scroller top=373.34375 px: sticky-header proof. Custom date controls remain visible at 0.8; actual Copy gave 3 rows × 8 columns for November 5–7. Native Windows zoom remains NOT VERIFIED.
+- Modal browser PASS at scale 1 and 0.8: correct PM IN / AM OUT, sections and totals visible; footer bottom 774.14 / 713.80 px within 936 px viewport. Cancel used; no browser schedule write or signed-in persistence claim.
+- Complete PR #44 diff reviewed: 41 files; protected operational/configuration/deployment files unchanged. No new migration. Production main reverified unchanged at the source SHA above.
+
+ No browser/authentication retry or approval bypass is authorized by a tool failure. The previous Auto-review notice supplied no detailed latest rejection reason; do not infer an app/security defect from that interruption.
