@@ -80,9 +80,10 @@
    ${p.note?'<span class="duty-note-dot" aria-hidden="true">•</span>':''}
    ${categories?`<div class="duty-cell-categories">${categories}</div>`:''}</td>`;
  }
- function select(code,date,range){
+ function select(code,date,range,toggle=false){
   S.rowAnchor=null;
-  if(range&&S.anchor){const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===S.anchor.code),b=staff.findIndex(e=>e.code===code),x=ds.findIndex(d=>d.date===S.anchor.date),y=ds.findIndex(d=>d.date===date);if(a<0||b<0)return;S.selected=[];for(let i=Math.min(a,b);i<=Math.max(a,b);i++)for(let j=Math.min(x,y);j<=Math.max(x,y);j++)S.selected.push({code:staff[i].code,date:ds[j].date});}
+  if(toggle){const i=S.selected.findIndex(c=>c.code===code&&c.date===date);if(i<0)S.selected.push({code,date});else S.selected.splice(i,1);S.anchor={code,date};}
+  else if(range&&S.anchor){const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===S.anchor.code),b=staff.findIndex(e=>e.code===code),x=ds.findIndex(d=>d.date===S.anchor.date),y=ds.findIndex(d=>d.date===date);if(a<0||b<0)return;S.selected=[];for(let i=Math.min(a,b);i<=Math.max(a,b);i++)for(let j=Math.min(x,y);j<=Math.max(x,y);j++)S.selected.push({code:staff[i].code,date:ds[j].date});}
   else {S.selected=[{code,date}];S.anchor={code,date};}
   S.cursor={code,date};updateSelection();
  }
@@ -108,7 +109,7 @@
   const isSelected=td=>td?.hasAttribute('data-s-code')&&keys.has(key(td.dataset.sCode,td.dataset.sDate));
   for(const td of cells){
    const {sCode:code,sDate:date}=td.dataset,active=isSelected(td),row=td.parentElement;
-   td.classList.toggle('duty-selected',active);
+   td.classList.toggle('duty-selected',active);td.setAttribute('aria-selected',String(active));
    td.classList.toggle('duty-edge-top',active&&!isSelected(row.previousElementSibling?.children[td.cellIndex]));
    td.classList.toggle('duty-edge-bottom',active&&!isSelected(row.nextElementSibling?.children[td.cellIndex]));
    td.classList.toggle('duty-edge-left',active&&!isSelected(td.previousElementSibling));
@@ -156,7 +157,7 @@
   const longLeave=!['EMPTY','WORK','OFF'].includes(status);
   editor.innerHTML=`<div class="duty-editor-head"><strong>Edit Duty</strong><small>${formatDate(date)}</small></div>
    <div class="duty-editor-body"><fieldset class="duty-editor-section"><legend>Status</legend><label class="duty-editor-status"><select name="status" aria-label="Duty status">${(longLeave?[status,'WORK','OFF']:['WORK','OFF']).map(k=>`<option value="${k}" ${k===status?'selected':''}>${k==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[k]}</option>`).join('')}</select></label></fieldset>
-   <fieldset class="duty-work-fields" data-work-fields ${status==='WORK'?'':'hidden disabled'}><fieldset class="duty-editor-section duty-shift-section"><legend>Shift Times</legend>${presetSelect()}<div data-editor-times>${timeFields(before.periods,initial.hasTimes)}</div></fieldset>
+   <fieldset class="duty-work-fields" data-work-fields ${status==='WORK'?'':'hidden disabled'}><fieldset class="duty-editor-section duty-shift-section"><legend>Shift Times</legend>${presetSelect(data.employees.find(e=>e.code===code)?.position_key)}<div data-editor-times>${timeFields(before.periods,initial.hasTimes)}</div></fieldset>
    ${manualEnabled?`<fieldset class="duty-allocation"><legend>Hours Calculation</legend><div>${['Auto','Manual'].map(label=>`<label><input type="radio" name="allocation" value="${label.toLowerCase()}" ${initial.allocation===label.toLowerCase()?'checked':''}><span>${label}</span></label>`).join('')}</div></fieldset>
    <div class="duty-auto-summary" data-auto-hours aria-live="polite"></div>
    <fieldset class="duty-manual-fields" ${before.manual_minutes?'':'hidden disabled'}><legend>Manual allocation</legend>
@@ -202,7 +203,7 @@
   });
   const quick=editor.querySelector('[data-preset-select]');
   if(quick)quick.onchange=()=>{
-   const preset=(data.shift_presets||[]).find(p=>p.id===quick.value);if(!preset)return;
+   const preset=(data.shift_presets||[]).find(p=>p.id===quick.value);if(!preset||!M.presetEligible(preset,[data.employees.find(e=>e.code===code)?.position_key]))return;
    editor.querySelector('[data-editor-times]').innerHTML=timeFields(preset.periods,true);
    wireDropdowns(editor.querySelector('[data-editor-times]'),(id,button,trigger)=>{
     editor.elements[id].value=button.dataset.dropdownValue;trigger.textContent=button.textContent;
@@ -253,7 +254,7 @@
   };
   editor.elements.status.focus();
  }
- async function save(changes,reason,confirmOverwrite=false,record=true){
+ async function save(changes,reason,confirmOverwrite=false,record=true,presetContext=null){
   if(!writable())return false;
   const version=scopeVersion,config=options;
   S.busy=true;S.notice='Saving…';const pending=host.querySelector('.duty-footnote [role=status]');if(pending)pending.textContent=S.notice;
@@ -273,7 +274,7 @@
     }
    }
    const before=normalized.map(({code,date})=>({code,date,payload:existing({code,date})?.payload||M.normalize()}));
-   const next=await config.save(normalized,reason);
+   const next=await (presetContext&&config.applyPreset?config.applyPreset(normalized,reason,presetContext):config.save(normalized,reason));
    if(version!==scopeVersion)return false;
    data=next;
    if(record){
@@ -343,35 +344,55 @@
    if(!await save(targets.map(c=>({...c,payload:{...c.payload,highlight:fields.get('color')}})),'Set Duty cell color'))throw Error(S.notice||'Selection is read only.');
   });
  }
- function presetSelect(){return `<label class="duty-field">Quick Shift<select data-preset-select name="preset"><option value="">Select shift…</option>${(data.shift_presets||[]).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>`;}
+ function positionChips(keys){return (keys.length?keys:[null]).map(key=>`<span class="duty-position-chip ${key?'duty-position-'+M.positionTone(key):'duty-position-neutral'}">${esc(key?data.positions.find(p=>p.key===key)?.label||'Position unavailable':'All Positions')}</span>`).join('');}
+ function presetHours(preset){return `<span class="duty-preset-hours"><span>Total <b>${M.hours(M.presetDuration(preset))}h</b></span><small>Basic / OT by duty date and employee</small></span>`;}
+ function presetSelect(positionKey){return `<label class="duty-field">Quick Shift<select data-preset-select name="preset"><option value="">Select shift…</option>${(data.shift_presets||[]).filter(p=>M.presetEligible(p,[positionKey])).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${M.hours(M.presetDuration(p))}h</option>`).join('')}</select></label>`;}
  function applyShift(){
   if(!writable()||!S.selected.length)return;
-  const version=scopeVersion,targets=S.selected.map(c=>({...c,expected_revision:entry(c.code,c.date)?.revision||0}));
+  const version=scopeVersion,targets=S.selected.map(c=>({...c,expected_revision:entry(c.code,c.date)?.revision||0})),settingsRevision=data.settings_revision;
+  const keys=[...new Set(targets.map(c=>data.employees.find(e=>e.code===c.code)?.position_key))];
+  const compatible=(data.shift_presets||[]).filter(p=>M.presetEligible(p,keys));
   const count=targets.filter(c=>payload(c.code,c.date).status!=='EMPTY').length;
-  const form=smallPanel('Apply Shift',`${dropdown('preset','Shift','Choose shift',(data.shift_presets||[]).map(p=>[p.id,p.name+' · '+M.text({status:'WORK',periods:p.periods})]))}<p class="duty-apply-summary">${targets.length} cells · ${count?count+' existing entries will be replaced':'No existing shifts to replace'}</p><small class="duty-muted" title="Notes and cell colors are preserved. Manual allocations are replaced by destination automatic hours.">Uses automatic hours</small>`,async fields=>{
+  const form=smallPanel('Apply Shift',`<div class="duty-position-context">${positionChips(keys)}</div>${dropdown('preset','Shift','Choose shift',compatible.map(p=>[p.id,p.name]))}<div class="duty-preset-hours" data-apply-hours aria-live="polite"></div><p class="duty-apply-summary">${targets.length} cells · ${count?count+' existing entries will be replaced':'No existing shifts to replace'}</p>${!compatible.length?'<p class="duty-cell-error">No preset applies to every selected position. Edit a preset’s positions or change the selection.</p>':''}`,async fields=>{
    if(version!==scopeVersion)throw Error('Duty context changed. Reopen Apply Shift.');
    const preset=(data.shift_presets||[]).find(p=>p.id===fields.get('preset'));if(!preset)throw Error('Select a shift.');
+   if(!M.presetEligible(preset,keys))throw Error('This preset does not apply to every selected position.');
    if(targets.some(c=>!writableDate(c.date)||!data.employees.some(e=>e.code===c.code)))throw Error('Selection is not editable.');
    const changes=targets.map(c=>({...c,payload:M.normalize({status:'WORK',periods:preset.periods,note:payload(c.code,c.date).note,highlight:payload(c.code,c.date).highlight})}));
-   if(!await save(changes,'Apply shift preset',true))throw Error(S.notice||'Shift not saved.');
+   if(!await save(changes,'Apply shift preset',true,true,{id:preset.id,revision:settingsRevision}))throw Error(S.notice||'Shift not saved.');
   },'Apply');
-  wireDropdowns(form,(id,button,trigger)=>{form.elements[id].value=button.dataset.dropdownValue;const preset=(data.shift_presets||[]).find(p=>p.id===button.dataset.dropdownValue);trigger.textContent=preset?.name||button.textContent;trigger.setAttribute('aria-label','Shift: '+(preset?preset.name+' · '+M.text({status:'WORK',periods:preset.periods}):button.textContent));});
+  form.querySelector('[type=submit]')?.toggleAttribute('disabled',!compatible.length);
+  wireDropdowns(form,(id,button,trigger)=>{
+   form.elements[id].value=button.dataset.dropdownValue;const preset=compatible.find(p=>p.id===button.dataset.dropdownValue);trigger.textContent=preset?.name||button.textContent;
+   trigger.setAttribute('aria-label','Shift: '+(preset?preset.name+' · '+M.text({status:'WORK',periods:preset.periods}):button.textContent));
+   if(preset){const totals={basic:0,normal_ot:0,friday_ot:0,holiday_ot:0,total:0};for(const cell of targets){const n=hoursFor(cell.code,cell.date,M.normalize({status:'WORK',periods:preset.periods}));for(const key in totals)totals[key]+=n[key];}
+    form.querySelector('[data-apply-hours]').innerHTML=`<span>Total <b>${M.hours(totals.total)}h</b></span><span>Basic <b>${M.hours(totals.basic)}h</b></span>${['normal_ot','friday_ot','holiday_ot'].filter(k=>totals[k]).map(k=>`<span data-ot>${categoryLabels[k]} <b>${M.hours(totals[k])}h</b></span>`).join('')}<small>Selected cells · automatic destination rules</small>`;
+   }
+  });
  }
+ let presetGroup='all';
  function managePresets(){
   const rows=structuredClone(data.shift_presets||[]),version=scopeVersion,revision=data.settings_revision;
-  const form=smallPanel('Shift Presets',`<div data-preset-list>${rows.map((p,i)=>`<div class="duty-list-row"><span class="duty-preset-description"><strong>${esc(p.name)}</strong>${p.periods.map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}</span><div class="duty-actions"><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}" class="duty-delete-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7"/></svg>Delete</button></div></div>`).join('')}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
+  const groups=M.ordered(data.positions);
+  const eligible=p=>presetGroup==='all'||M.presetEligible(p,[presetGroup]);
+  const form=smallPanel('Shift Presets',`<nav class="duty-preset-tabs" aria-label="Preset positions"><button type="button" data-preset-group="all" aria-pressed="${presetGroup==='all'}">All</button>${groups.map(g=>`<button type="button" class="duty-position-chip duty-position-${M.positionTone(g.key)}" data-preset-group="${esc(g.key)}" aria-pressed="${presetGroup===g.key}">${esc(g.label)}</button>`).join('')}</nav><div data-preset-list>${rows.map((p,i)=>eligible(p)?`<div class="duty-list-row"><span class="duty-preset-description"><strong>${esc(p.name)}</strong><span class="duty-position-context">${positionChips(M.presetPositions(p))}</span>${p.periods.map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}${presetHours(p)}</span><div class="duty-actions"><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}" class="duty-delete-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7"/></svg>Delete</button></div></div>`:'').join('')||'<p>No presets for this position.</p>'}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
   form.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+   if(b.hasAttribute('data-preset-group')){presetGroup=b.dataset.presetGroup;managePresets();return;}
    if(b.hasAttribute('data-preset-delete')){try{if(version!==scopeVersion||!writable())throw Error('Reopen settings.');const i=+b.dataset.presetDelete;if(!await options.confirm(`Delete preset ${rows[i].name}? Saved duties will remain unchanged.`,'Delete'))return;data=await options.presets(rows.filter((_,index)=>index!==i),revision);managePresets();}catch(error){form.querySelector('[role=alert]').textContent=error.message;}return;}
    if(!b.hasAttribute('data-preset-add')&&!b.hasAttribute('data-preset-edit'))return;
-   const i=b.hasAttribute('data-preset-edit')?+b.dataset.presetEdit:-1,p=rows[i];
-   const editForm=smallPanel(p?'Edit Shift Preset':'New Shift Preset',`<label class="duty-field">Name<input name="name" maxlength="40" required value="${esc(p?.name||'')}"></label>${timeFields(p?.periods||[],true)}`,async fields=>{
+   const i=b.hasAttribute('data-preset-edit')?+b.dataset.presetEdit:-1,p=rows[i],positionKeys=M.presetPositions(p);
+   const editForm=smallPanel(p?'Edit Shift Preset':'New Shift Preset',`<label class="duty-field">Name<input name="name" maxlength="40" required value="${esc(p?.name||'')}"></label><fieldset class="duty-preset-positions"><legend>Applicable positions</legend><label><input type="checkbox" name="preset-all" ${!positionKeys.length?'checked':''}> All Positions</label><div data-position-options>${groups.filter(g=>g.active||positionKeys.includes(g.key)).map(g=>`<label class="duty-position-chip duty-position-${M.positionTone(g.key)}"><input type="checkbox" name="preset-position" value="${esc(g.key)}" ${positionKeys.includes(g.key)?'checked':''}> ${esc(g.label)}${g.active?'':' (inactive)'}</label>`).join('')}</div></fieldset>${timeFields(p?.periods||[],true)}<div class="duty-preset-hours" data-preset-duration aria-live="polite"></div>`,async fields=>{
     if(version!==scopeVersion||!writable())throw Error('Reopen settings.');
-    const value={id:p?.id||crypto.randomUUID(),name:fields.get('name').trim(),periods:M.normalize({status:'WORK',periods:readTimes(fields)}).periods};
+    const positions=fields.has('preset-all')?[]:fields.getAll('preset-position');if(!fields.has('preset-all')&&!positions.length)throw Error('Choose a position or All Positions.');
+    const value={...p,id:p?.id||crypto.randomUUID(),name:fields.get('name').trim(),periods:M.normalize({status:'WORK',periods:readTimes(fields)}).periods,positions};
     if(!value.name)throw Error('Enter a name.');const next=rows.slice();if(i<0)next.push(value);else next[i]=value;
     data=await options.presets(next,revision);render();managePresets();
    },'Save Preset',{onCancel:managePresets});
-   wireDropdowns(editForm,(id,button,trigger)=>{editForm.elements[id].value=button.dataset.dropdownValue;trigger.textContent=button.textContent;if(id.endsWith('-2'))trigger.dataset.meridiem=button.dataset.dropdownValue;});
-   editForm.onchange=e=>{if(e.target.name==='split')editForm.querySelector('[data-split-fields]').hidden=!e.target.checked;if(e.target.name==='hasTimes')editForm.querySelector('[data-time-fields]').hidden=!e.target.checked;};
+   const duration=()=>{try{editForm.querySelector('[data-preset-duration]').innerHTML=presetHours({periods:readTimes(new FormData(editForm))});}catch{editForm.querySelector('[data-preset-duration]').textContent='Choose valid IN / OUT times.';}};
+   wireDropdowns(editForm,(id,button,trigger)=>{editForm.elements[id].value=button.dataset.dropdownValue;trigger.textContent=button.textContent;if(id.endsWith('-2'))trigger.dataset.meridiem=button.dataset.dropdownValue;duration();});
+   const positionsState=()=>{for(const checkbox of editForm.querySelectorAll('[name=preset-position]'))checkbox.disabled=editForm.elements['preset-all'].checked;};
+   editForm.onchange=e=>{if(e.target.name==='split')editForm.querySelector('[data-split-fields]').hidden=!e.target.checked;if(e.target.name==='hasTimes')editForm.querySelector('[data-time-fields]').hidden=!e.target.checked;if(e.target.name==='preset-all')positionsState();duration();};
+   positionsState();duration();
   };
  }
  function dayType(){
@@ -445,7 +466,7 @@
   const multiple=selection instanceof Set;
   const itemMarkup=items.map(([value,name])=>multiple
    ?`<label class="duty-dropdown-option"><input type="checkbox" value="${esc(value)}" ${selection.has(value)?'checked':''}> ${esc(name)}</label>`
-   :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(value)}"`:''} ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${id==='preset'?`<strong>${esc((data.shift_presets||[]).find(p=>p.id===value)?.name||name)}</strong>${((data.shift_presets||[]).find(p=>p.id===value)?.periods||[]).map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}`:esc(name)}</button>`).join('');
+   :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(value)}"`:''} ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${id==='preset'?`<strong>${esc((data.shift_presets||[]).find(p=>p.id===value)?.name||name)}</strong>${((data.shift_presets||[]).find(p=>p.id===value)?.periods||[]).map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}<small class="duty-preset-duration">Total ${M.hours(M.presetDuration((data.shift_presets||[]).find(p=>p.id===value)))}h</small>`:esc(name)}</button>`).join('');
   return `<div class="duty-dropdown ${variant}"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(text)}"`:''} popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" data-label="${esc(label)}" aria-label="${esc(label+(id==='staff'||id.startsWith('Shift-')?': '+text:''))}">${esc(text)}</button>${id.startsWith('Shift-')||id==='preset'?`<input type="hidden" name="${id}" value="${esc(id==='preset'?'':text)}">`: ''}
    <div class="duty-dropdown-popup ${id.startsWith('Shift-')?'duty-time-popup':''}" popover="auto" id="duty-dropdown-${id}" role="dialog" aria-label="${esc(label)}">${itemMarkup||'No employees'}${multiple&&options.demo?'<button type="button" data-save-custom>Save as Default Custom View</button>':''}</div></div>`;
  }
@@ -503,7 +524,7 @@
     if(cellEl){
      if(skipClick)return;
      const {sCode:code,sDate:date}=cellEl.dataset;
-     select(code,date,event.shiftKey);focusSelection();return;
+     select(code,date,event.shiftKey,event.ctrlKey||event.metaKey);focusSelection();return;
     }
     switch(button?.dataset.sAction){
      case 'apply-shift':applyShift();break;
@@ -551,6 +572,7 @@
    skipClick=false;
    const dateButton=event.target.closest('[data-s-column]'),target=dateButton?.closest('tr')||event.target.closest('[data-s-code]');
    if(!target||event.button!==0||event.pointerType!=='mouse'||S.editing||S.busy||S.confirming)return;
+   if(event.ctrlKey||event.metaKey){event.preventDefault();return;}
    drag={id:event.pointerId,start:target,last:target,row:!!dateButton,moved:false,x:event.clientX,y:event.clientY};
   };
   const finishDrag=event=>{
@@ -645,7 +667,7 @@
  }
  window.DutySchedule={mount,rememberScroll,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
-  drag=null;skipClick=false;scopeVersion++;clearHistory();
+  drag=null;skipClick=false;presetGroup='all';scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}
   Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};

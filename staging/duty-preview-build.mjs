@@ -1,6 +1,6 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-export const dutyBranch='feature/duty-staging-20261104';
+export const dutyBranch='feature/duty-workflow-staging-20261107';
 export const dutyPreview=process.env.VERCEL_ENV==='preview'&&process.env.VERCEL_GIT_COMMIT_REF===dutyBranch;
 const stagingRef='tovkcakucyagvbzvlnks';
 const stagingKey='sb_publishable_wck-im5qsFKt6-xCOlPZQw_lxBy3C7U';
