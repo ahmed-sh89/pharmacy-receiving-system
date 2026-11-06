@@ -38,7 +38,7 @@
   if(!permitted()||!active()||!context()?.pharmacy_id||!scope()||state.demo)return;
   const key=scope();if(key!==state.scope)reset();
   if(state.loading||DutySchedule.isEditing()||root.querySelector('.duty-panel')||(!force&&state.data&&Date.now()-state.lastRead<15000))return;
-  const seq=++state.sequence,month=state.month;state.loading=true;state.error='';const sync=root.querySelector('[data-duty-sync]');if(sync)sync.textContent='Loading Duty…';if(!state.data)render();
+  const seq=++state.sequence,month=state.month;state.loading=true;state.error='';syncStatus();if(!state.data)render();
   try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month||state.demo||DutySchedule.isEditing()||root.querySelector('.duty-panel'))return;
    if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.loading=false;state.transitioning=false;const changed=JSON.stringify(state.data)!==JSON.stringify(data);state.data=data;state.scope=key;state.lastRead=Date.now();syncWriteActions();if(changed&&state.tab==='schedule'&&root.querySelector('#duty-schedule-body'))DutySchedule.mount(root.querySelector('#duty-schedule-body'),data,scheduleConfig());else if(changed)render();
   }catch(error){
@@ -46,7 +46,7 @@
     reset();await window.PharmFlowPermissions?.load().catch(()=>{});
    }else if(seq===state.sequence&&key===scope()){state.error=error.message||'Unable to load Duty.';if(state.transitioning){state.transitioning=false;state.loading=false;if(state.tab==='schedule'&&!DutySchedule.isEditing())DutySchedule.mount(root.querySelector('#duty-schedule-body'),view(),scheduleConfig());}}
   }
-  finally{if(seq===state.sequence){state.loading=false;syncWriteActions();const status=root.querySelector('[data-duty-sync]');if(status)status.textContent=state.error||'';}}
+  finally{if(seq===state.sequence){state.loading=false;syncWriteActions();syncStatus();}}
  }
  async function mutate(name,args){
   const key=scope(),month=state.month;if(preview||!key||!permitted(true))throw Error('Sign in to manage Duty.');
@@ -59,6 +59,11 @@
   for(const c of changes){const month=c.date.slice(0,7);if(!proposed.has(month))proposed.set(month,structuredClone(demoMonth(month).entries));const entries=proposed.get(month),i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');if(demoMonth(month).month?.status==='Completed')throw Error('Duty month is completed');const employee=demoMonth(month).employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
  }
+ function syncStatus(){
+  const status=root.querySelector('[data-duty-sync]');if(!status)return;
+  status.textContent=state.error?state.error+' · Refresh Duty to retry.':(state.transitioning||(!state.data&&state.loading)?'Loading Duty…':'');
+  status.setAttribute('role',state.error?'alert':'status');
+ }
  function syncWriteActions(){
   const allowed=!!view().can_write&&(state.demo||permitted(true))&&!state.transitioning&&!state.error&&(state.demo||!!state.data);
   for(const button of root.querySelectorAll('[data-duty-action="calendar"],[data-duty-action="add-employee"]'))button.disabled=!allowed;
@@ -68,14 +73,14 @@
   root.dataset.dutyView=state.tab;
   const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><span class="duty-active-month"><span aria-hidden="true">${monthLabel.format(new Date(state.month+'-01T12:00Z'))}</span><input id="duty-month" title="${state.month===currentMonth?'Current month':'Selected month'}" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"></span><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions','reports'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t==='reports'?'Duty Reports':t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions">${state.demo?`<span class="duty-demo-badge" title="Schedule edits reset on reload; saved Custom View lasts for this tab session">Synthetic demo · ${esc(demoPharmacyCode)}</span>`:''}<button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${state.tab==='schedule'?`<button type="button" data-duty-action="calendar" ${!d.can_write?'disabled':''}>Calendar Settings</button>`:''}${state.tab!=='reports'?`<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button>`:''}</div></div>
 
-  ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}<span class="duty-sync-status" data-duty-sync role="status">${state.loading||state.transitioning?'Loading Duty…':''}</span>
+  ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}<span class="duty-sync-status" data-duty-sync role="status">${state.transitioning||(!state.data&&state.loading)?'Loading Duty…':''}</span>
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':state.tab==='reports'?'<div id="duty-reports-body"></div>':list(d)}</div>`;
   syncWriteActions();
   if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,scheduleConfig());
   if(state.tab==='reports')window.DutyReports.mount(root.querySelector('#duty-reports-body'),d,{month:state.month,demo:state.demo,pharmacyCode:state.demo?demoPharmacyCode:context()?.pharmacy_code});
  }
  let demoPresets=[];
- function scheduleConfig(){return {presets:async (rows,revision)=>{if(!state.demo)return mutate('save_pharmflow_duty_presets_v1',{p_presets:rows,p_expected_revision:revision});demoPresets=rows;return Object.assign(demoMonth(state.month),{shift_presets:demoPresets});},month:state.month,demo:state.demo,loading:state.loading||state.transitioning||(!state.data&&!state.demo&&!!scope()),save,confirm:confirmReplace,panel:customPanel,
+ function scheduleConfig(){return {presets:async (rows,revision)=>{if(!state.demo)return mutate('save_pharmflow_duty_presets_v1',{p_presets:rows,p_expected_revision:revision});demoPresets=rows;return Object.assign(demoMonth(state.month),{shift_presets:demoPresets});},month:state.month,demo:state.demo,applyPreset:async(changes,reason,preset)=>{if(state.demo)return save(changes,reason);const key=scope(),month=state.month;if(!key||!permitted(true))throw Error('Sign in to manage Duty.');const result=await authRpc('apply_pharmflow_duty_preset_v1',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01',p_preset_id:preset.id,p_expected_settings_revision:preset.revision,p_changes:changes,p_reason:reason});if(key!==scope()||month!==state.month||result.pharmacy_id!==context()?.pharmacy_id||!permitted())throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;},loading:state.transitioning||(!state.data&&!state.demo&&!!scope()),save,confirm:confirmReplace,panel:customPanel,
    loadCustom:()=>{try{const raw=sessionStorage.getItem(customKey+'/'+scope());if(raw!==null){const ids=JSON.parse(raw);if(Array.isArray(ids)&&ids.every(id=>typeof id==='string'))return ids;}}catch{/* Session memory fallback. */}return demoCustom;},
    saveCustom:ids=>{demoCustom=ids;try{sessionStorage.setItem(customKey+'/'+scope(),JSON.stringify(ids));}catch{/* Session memory fallback. */}},
    holiday:async(dates,active,name,note)=>{
@@ -111,12 +116,13 @@
   const icons={edit:'<path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/>',archive:'<path d="M3 4h18v4H3zM5 8v12h14V8M9 12h6"/>',restore:'<path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/>',delete:'<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/>'};
   const icon=name=>`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg>`;
   const visible=rows.filter(directoryMatches);
-  const cards=visible.map(row=>{
-   const i=visible.indexOf(row),key=row.code||row.key,name=row.name||row.label,status=row.archived?'Archived':row.active?'Active':'Inactive';
+  const card=row=>{
+   const peers=positions?visible:visible.filter(e=>e.position_key===row.position_key),i=peers.indexOf(row),key=row.code||row.key,name=row.name||row.label,status=row.archived?'Archived':row.active?'Active':'Inactive';
    const button=(action,title,content,disabled=false)=>`<button type="button" class="duty-icon ${action==='delete'?'duty-icon-delete':''}" data-directory-kind="${kind}" data-directory-key="${esc(key)}" data-directory-action="${action}" title="${title}" aria-label="${title} ${esc(name)}" ${disabled?'disabled':''}>${content}</button>`;
-   return `<article class="duty-directory-card"><div class="duty-directory-identity"><strong>${esc(name)}</strong><small>${positions?data.employees.filter(e=>e.position_key===key).length+' staff':esc(row.display_code||key)+' · '+esc(data.positions.find(p=>p.key===row.position_key)?.label||'Position')}</small>${positions?'':`<small>${M.hours(M.basicDefault(row))} h Basic</small>`}</div><span class="duty-record-status ${row.active?'is-active':''}">${status}</span><div class="duty-directory-actions"><button type="button" class="duty-icon" ${positions?'data-duty-position':'data-duty-employee'}="${esc(key)}" title="${row.archived?'View':'Edit'}" aria-label="${row.archived?'View':'Edit'} ${esc(name)}">${icon('edit')}</button>${data.can_write?button('earlier','Move Earlier','↑',i===0)+button('later','Move Later','↓',i===visible.length-1)+button(row.archived?'restore':'archive',row.archived?'Restore to Inactive':'Archive',icon(row.archived?'restore':'archive'))+button('delete','Permanently delete unused record',icon('delete')):''}</div></article>`;
-  });
-  return `<section class="duty-directory"><div class="duty-directory-heading"><strong>${positions?'Positions':'Employees'}</strong>${positions?`<button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button>`:(state.demo||data.persistent_settings)&&data.can_write?'<button type="button" data-duty-action="hour-rules">Working Hours Settings</button>':''}</div><nav class="duty-directory-filters duty-segment" aria-label="Directory status">${['active','inactive','archived','all'].map(f=>`<button type="button" data-directory-filter="${f}" aria-pressed="${state.directoryFilter===f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}</nav><div class="duty-directory-grid">${cards.join('')||'<p>No matching records.</p>'}</div></section>`;
+   return `<article class="duty-directory-card duty-position-${M.positionTone(positions?row.key:row.position_key)}"><div class="duty-directory-identity"><strong>${esc(name)}</strong><small>${positions?data.employees.filter(e=>e.position_key===key).length+' staff':esc(row.display_code||key)+' · '+esc(data.positions.find(p=>p.key===row.position_key)?.label||'Position')}</small>${positions?'':`<small>${M.hours(M.basicDefault(row))} h Basic</small>`}</div><span class="duty-record-status ${row.archived?'is-archived':row.active?'is-active':'is-inactive'}">${status}</span><div class="duty-directory-actions"><button type="button" class="duty-icon" ${positions?'data-duty-position':'data-duty-employee'}="${esc(key)}" title="${row.archived?'View':'Edit'}" aria-label="${row.archived?'View':'Edit'} ${esc(name)}">${icon('edit')}</button>${data.can_write?button('earlier','Move Earlier','↑',i===0)+button('later','Move Later','↓',i===peers.length-1)+button(row.archived?'restore':'archive',row.archived?'Restore to Inactive':'Archive',icon(row.archived?'restore':'archive'))+button('delete','Permanently delete unused record',icon('delete')):''}</div></article>`;
+  };
+  const cards=positions?`<div class="duty-directory-grid">${visible.map(card).join('')||'<p>No matching records.</p>'}</div>`:M.positionGroups(visible,data.positions).map(group=>`<section class="duty-position-section duty-position-${M.positionTone(group.key)}" data-position-section="${esc(group.key)}"><h3 class="duty-position-heading">${esc(group.label)} <small>${group.employees.length}</small></h3><div class="duty-directory-grid">${group.employees.map(card).join('')}</div></section>`).join('')||'<p>No matching records.</p>';
+  return `<section class="duty-directory"><div class="duty-directory-heading"><strong>${positions?'Positions':'Employees'}</strong>${positions?`<button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button>`:(state.demo||data.persistent_settings)&&data.can_write?'<button type="button" data-duty-action="hour-rules">Working Hours Settings</button>':''}</div><nav class="duty-directory-filters duty-segment" aria-label="Directory status">${['active','inactive','archived','all'].map(f=>`<button type="button" data-directory-filter="${f}" aria-pressed="${state.directoryFilter===f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}</nav>${cards}</section>`;
  }
  async function directory(button){
   if(!view().can_write)return;
@@ -124,7 +130,7 @@
   if(index<0)return;
   const reorder=action==='earlier'||action==='later';
   if(!reorder&&!await confirmReplace(action==='delete'?'Permanently delete this unused record? Records with historical dependencies cannot be deleted. Use Archive to preserve them.':action==='archive'?'Archive this record? Historical schedules and reports remain available. Archive is separate from temporary deactivation.':'Restore this record to Inactive? Activate it from Edit when needed.',action==='delete'?'Delete permanently':action==='archive'?'Archive':'Restore'))return;
-  if(reorder){const visible=rows.filter(directoryMatches),next=visible[visible.indexOf(rows[index])+(action==='earlier'?-1:1)],to=rows.indexOf(next);if(to<0)return;[rows[index],rows[to]]=[rows[to],rows[index]];}
+  if(reorder){const visible=rows.filter(directoryMatches).filter(r=>kind!=='employee'||r.position_key===rows[index].position_key),next=visible[visible.indexOf(rows[index])+(action==='earlier'?-1:1)],to=rows.indexOf(next);if(to<0)return;[rows[index],rows[to]]=[rows[to],rows[index]];}
   if(state.demo){
    const row=rows[index];
    if(action==='delete'){const used=kind==='employee'?[...demos.values()].some(d=>d.entries.some(e=>e.code===key))||demoRules.some(r=>r.codes.includes(key)):view().employees.some(e=>e.position_key===key)||M.defaults.some(p=>p.key===key);if(used)throw Error('Historical dependencies exist. Use Archive instead.');rows.splice(index,1);}

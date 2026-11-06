@@ -139,6 +139,22 @@
   const custom=String(employee.schedule_display_name||"").trim();if(custom)return custom;
   const name=String(employee.name||""),parts=name.trim().split(/\s+/);return name.length>22&&parts.length>2?parts[0]+" "+parts.at(-1):name;
  }
- const api={scheduleLabel,ordered,DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ // Presentation/eligibility helpers; hour calculations remain in effectiveHours.
+ function positionTone(key){
+  const builtins={'pharmacist':'blue','labor':'teal','beauty-advisor':'purple'};
+  if(Object.hasOwn(builtins,key))return builtins[key];
+  const tones=['indigo','slate','blue','teal','purple'];let hash=0;
+  for(const c of String(key||''))hash=(hash*31+c.charCodeAt(0))>>>0;
+  return tones[hash%tones.length];
+ }
+ function presetPositions(preset){return Array.isArray(preset?.positions)?[...new Set(preset.positions)]:[];}
+ function presetEligible(preset,positionKeys){const keys=presetPositions(preset);return !keys.length||positionKeys.every(key=>keys.includes(key));}
+ function presetDuration(preset){return normalize({status:'WORK',periods:preset.periods}).periods.reduce((sum,t)=>sum+t.end-t.start,0);}
+ function positionGroups(employees,positions){
+  const groups=ordered(positions).map(p=>({...p,employees:ordered(employees).filter(e=>e.position_key===p.key)}));
+  for(const e of ordered(employees))if(!groups.some(p=>p.key===e.position_key))groups.push({key:e.position_key,label:'Position unavailable',employees:employees.filter(x=>x.position_key===e.position_key)});
+  return groups.filter(p=>p.employees.length);
+ }
+ const api={positionTone,presetPositions,presetEligible,presetDuration,positionGroups,scheduleLabel,ordered,DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
