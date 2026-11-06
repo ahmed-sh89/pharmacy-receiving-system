@@ -29,7 +29,7 @@ async function observe(b,boundary){await b.query('reset role');assert.deepEqual(
  return {boundary,catalog:'baseline only',checks,permissionRead};}
 async function isolation(b){await b.query('set role authenticated');await b.query("select set_config('test.uid',$1,false)",[uid]);assert.deepEqual((await b.query('select quantity from receiving_synthetic')).rows,[{quantity:17}]);assert.deepEqual((await b.query('select quantity from expiry_synthetic')).rows,[{quantity:23}]);await b.query("select set_config('test.uid','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',false)");assert.equal((await b.query('select * from receiving_synthetic')).rows.length,0);assert.equal((await b.query('select * from expiry_synthetic')).rows.length,0);await b.query('reset role');}
 (async()=>{
- for(const failAfter of [null,3,6]){
+ for(const failAfter of [null,3,6,7]){
  const name='duty_atomic_'+(failAfter===null?'commit':'rollback_'+failAfter);
  let control=await connect('postgres');await control.query('create database '+name);await control.end();
  let a=await connect(name),b=await connect(name);
@@ -45,7 +45,7 @@ async function isolation(b){await b.query('set role authenticated');await b.quer
  }
  if(failAfter!==null){assert.ok(injected);await a.query('rollback');assert.deepEqual(await catalog(b),{objects:0,rpcs:0,duty_columns:0,history:1});assert.deepEqual(await baseline(b),before);await isolation(b);s.rollback='PASS';}
  else{
- await a.query('commit');const c=await catalog(b);assert.ok(c.objects>=7);assert.ok(c.rpcs>=10);assert.equal(c.duty_columns,1);assert.equal(c.history,7);
+ await a.query('commit');const c=await catalog(b);assert.ok(c.objects>=7);assert.ok(c.rpcs>=10);assert.equal(c.duty_columns,1);assert.equal(c.history,8);
  assert.deepEqual(await baseline(b),before);
  const rows=(await b.query("select version,name,statements from supabase_migrations.schema_migrations where version like '202611%' order by version")).rows;
  assert.deepEqual(rows,migrations.map(m=>({version:m.version,name:m.name,statements:[m.sql]})));

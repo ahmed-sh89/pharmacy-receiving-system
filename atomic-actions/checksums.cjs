@@ -6,7 +6,8 @@ const files=[
 ['20261104013200_duty_stage_b_scheduling.sql','ec7133695b21655e66a1e19e9bc252c8c6f06f892cbb0e8eb2c46037ae091bd4'],
 ['20261105183357_duty_production_readiness_staging.sql','8279998cdc6c7f222303faba38af45c61a1ac79f82cc989fd57f59726cb523b9'],
 ['20261106001033_duty_final_directory_and_save_staging.sql','bb69687131cb6a7cea8491db623bf045708f2ddefab56d925d8e5ed500e29a3f'],
-['20261106010727_duty_directory_lifecycle_staging.sql','ebf5633e92f7e82185056f435a6cf2623ff60f8eef68ae3af4ffa131d70d2352']];
+['20261106010727_duty_directory_lifecycle_staging.sql','ebf5633e92f7e82185056f435a6cf2623ff60f8eef68ae3af4ffa131d70d2352'],
+['20261106134244_duty_shift_presets_staging.sql','9c5f6aecc4a59439edccd90e08c4f03ec12145b7b51f2d97dc59fc2811cc4acb']];
 function load(){return files.map(([file,sha256])=>{const bytes=fs.readFileSync('supabase/migrations/'+file);if(crypto.createHash('sha256').update(bytes).digest('hex')!==sha256)throw Error('Checksum mismatch: '+file);return {file,sha256,version:file.slice(0,14),name:file.slice(15,-4),sql:bytes.toString('utf8')};});}
 // Test adapter uses exactly one connection. The caller supplies an isolated DB only.
 async function transaction(db,{failAfter=null,inspect=async()=>{}}={}){
