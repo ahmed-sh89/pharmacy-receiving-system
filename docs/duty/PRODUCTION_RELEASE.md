@@ -23,7 +23,7 @@ The server and browser resolve Basic allowances using the same documented preced
 ## Exact release files
 
 - Runtime: `index.html`, `js/config.js`, `js/permissions.js`, `js/settings-workspace.js`, `css/permissions.css`, the four `js/duty*.js` files and `css/duty.css`.
-- Database: the six Duty migration files listed below.
+- Database: the seven Duty migration files listed below.
 - Tests: `tests/duty-*.test.cjs`, `tests/duty-xlsx-validation.py`, the focused Duty case in `tests/sleep-wake-permissions.test.cjs`, and `.github/workflows/duty-readiness.yml`.
 - Documentation: `docs/duty` mapping/checkpoint/history, this runbook and `RELEASE_MANIFEST.json`.
 
@@ -39,10 +39,11 @@ Already applied to **Staging only** (`tovkcakucyagvbzvlnks`):
 4. `20261105183357_duty_production_readiness_staging.sql`
 5. `20261106001033_duty_final_directory_and_save_staging.sql`
 6. `20261106010727_duty_directory_lifecycle_staging.sql`
+7. `20261106134244_duty_shift_presets_staging.sql`
 
 The fourth filename records the actual hosted Staging migration version. Its additive definitions are the proposed Production contract, subject to a separate approval. Do not also apply `STAGING_MANUAL_HOURS.sql`; it is superseded and excluded. None of these scripts is an instruction to run Production SQL now.
 
-Before approval, inspect Production migration history, schemas and dependencies read-only. Confirm `pharmacies`, `pharmacy_members`, the existing permission/audit tables, `is_system_owner()` and the strict `pharmflow_auth_private.password_change_complete()` contract. Confirm no existing Duty tables/history conflict with the six migrations. If they exist, stop and reconcile instead of rerunning CREATE/ALTER statements. Production database state has not been queried in this continuation.
+Before approval, inspect Production migration history, schemas and dependencies read-only. Confirm `pharmacies`, `pharmacy_members`, the existing permission/audit tables, `is_system_owner()` and the strict `pharmflow_auth_private.password_change_complete()` contract. Confirm no existing Duty tables/history conflict with the seven migrations. If they exist, stop and reconcile instead of rerunning CREATE/ALTER statements. Production database state has not been queried in this continuation.
 
 After all acceptance gates pass, obtain explicit approval covering the exact release SHA, migration checksums/order and automatic official Pages deployment triggered by a main merge. Back up schema and record before/after permission values and relevant non-Duty schema signatures. Apply only the missing approved Duty migrations in order; never reset schemas, backfill real employees or change existing Receiving/Expiry permissions. Verify RLS/ACLs, default-denial and the v2 Permissions RPC before merging the UI. Keep every Production pharmacy Duty Disabled. Then merge through the normal protected PR workflow, check official Pages success and served identity, and perform the approved smoke checks. Enabling a Production pharmacy requires separate explicit authorization.
 
@@ -61,3 +62,5 @@ Final UI continuation adds an independent archived state, schedule-only optional
 The four final UX corrections retain the scoped roster during month reads, constrain Reports to an internal table scroller, refine editor presentation and auto-update searchable report controls. No new migrations or backend calls. Final local checks: 76 development / 78 release / 124 non-regression PASS; runtime CI SUCCESS. Synthetic browser month/range-copy/layout checks PASS; CSS-scaled 75/80 diagnostics are not native Windows zoom acceptance. Keep the Chrome Dangerous, fresh authenticated-session and native acceptance gates open as detailed in CURRENT_CHECKPOINT. No Production promotion is authorized.
 
 Final UI refinement introduces one reusable Duty-controls script (loaded before Schedule/Reports), a Receiving-History-style blue calendar in both Duty ranges, an ordered Employee Filter, adjacent Copy/Clear/Export and acknowledged two-second feedback. Time popups match fixed trigger dimensions. Receiving calendar code/styles remain untouched. 80 Duty / 82 release / 124 regression checks and final runtime CI PASS; 11 targeted follow-up checks PASS. READY FOR USER VERIFICATION only; native Windows, security-warning and fresh authenticated acceptance remain open. No new migration/dependency or Production authorization.
+
+Shift Presets release baseline now has SEVEN original migration files; use RELEASE_MANIFEST.json for exact SHA-256/order. Migration 7 adds only presets in existing pharmacy settings and one audited revision-safe writer, replacing the schedule reader to include presets. Already applied Staging only. Native PostgreSQL two-connection COMMIT/rollback 3/6/7 passes in Actions 42227797916. All seven SQL files and their seven history records must commit together; do not use six independent commits followed by presets. Postchecks must confirm Disabled for all policies, no client table access, guarded authenticated preset writer, and unchanged Receiving/Expiry. Backward UI rollback retains presets column/data, manual-aware readers and directory-v2; never delete saved entries. No Production action is authorized.
