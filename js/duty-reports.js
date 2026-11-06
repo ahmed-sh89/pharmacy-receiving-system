@@ -131,21 +131,6 @@
   }));
   return X.CFB.write(archive,{fileType:'zip',type:'array',compression:true});
  }
- let fitHost=null;
- function fitReport(host){
-  if(!root.requestAnimationFrame)return;
-  const entering=host!==fitHost;fitHost=host;
-  root.requestAnimationFrame(()=>{
-   if(!host.isConnected)return;
-   const page=host.closest('#page-duty');if(!page)return;
-   if(entering)root.scrollTo?.({top:0,left:0,behavior:'instant'});
-   const top=page.getBoundingClientRect().top,scale=Number(root.getComputedStyle(page).getPropertyValue('--duty-preview-scale'))||1;
-   const bottom=Number.parseFloat(root.getComputedStyle(page.parentElement).paddingBottom)||0;
-   page.style.setProperty('--duty-report-height',Math.max(0,(root.innerHeight-top-Math.max(12,bottom*scale+4))/scale)+'px');
-  });
- }
- root.addEventListener?.('resize',()=>{if(fitHost?.isConnected)fitReport(fitHost);});
- root.visualViewport?.addEventListener('resize',()=>{if(fitHost?.isConnected)fitReport(fitHost);});
  let copyTimer=null;
  const state={employee:'',format:'standard',preview:true,page:0,range:null,scope:''};
  function mount(host,data,config){
@@ -182,21 +167,21 @@
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
    <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
    <div class="duty-report-controls">
-    <label class="duty-report-field">Employee Filter<select data-report-employee aria-label="Employee Filter"><option value="">Choose employee</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select></label>
+    <label class="duty-report-field">Employee Filter<select data-report-employee aria-label="Employee Filter"><option value="" ${single?'':'selected'}>All Employees</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select></label>
     <div class="duty-report-period"><label class="duty-report-field">Period<select data-report-period><option value="full">Full Month</option><option value="custom" ${state.range?'selected':''}>Custom Date Range</option></select></label>
     ${state.range?`<div class="duty-range-inputs">${C.dateField({id:'duty-report-from',name:'from',label:'From',value:state.range.from,min:config.month+'-01',max:M.days(config.month).at(-1).date,attributes:'data-report-from'})}${C.dateField({id:'duty-report-to',name:'to',label:'To',value:state.range.to,min:config.month+'-01',max:M.days(config.month).at(-1).date,attributes:'data-report-to'})}</div>`:''}</div>
     <label class="duty-report-field">Excel format<select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select></label>
    </div>
-   <div class="duty-report-result-bar"><div class="duty-report-identity"><strong>${single?esc(single.name):'Choose an employee'}</strong><small>${single?esc(single.id)+' · ':''}${state.range?esc(state.range.from+' → '+state.range.to):esc(report.title)+' · Full Month'}</small></div><div class="duty-actions"><button type="button" data-report-copy title="Copy values · E:L" aria-label="Copy Values" ${single?'':'disabled'}>${icon('copy')}<span>Copy</span></button><button type="button" data-report-clear title="Clear employee selection only" ${single?'':'disabled'}>Clear Selection</button><button type="button" class="duty-primary" data-report-download title="Export selected employee to Excel" aria-label="Excel Export" ${single?'':'disabled'}>${icon('excel')}<span>Excel Export</span></button><details class="duty-report-help"><summary aria-label="Paste safely" title="Copy and paste guidance">?</summary><div><strong>Paste safely · E:L</strong><p data-report-destination></p><p>Use a disposable, correctly dated template first. Match the employee and first daily date; paste values starting in column E. Copy fills E:L only. Reserved M:O and adjacent cells remain untouched.</p></div></details></div></div>
+   <div class="duty-report-result-bar"><div class="duty-report-identity"><strong>${single?esc(single.name):'All Employees'}</strong><small>${single?esc(single.id)+' · ':''}${state.range?esc(state.range.from+' → '+state.range.to):esc(report.title)+' · Full Month'}</small></div><div class="duty-actions"><button type="button" data-report-copy title="Copy values · E:L" aria-label="Copy Values" ${single?'':'disabled'}>${icon('copy')}<span>Copy</span></button><button type="button" data-report-clear title="Clear employee selection only" ${single?'':'disabled'}>Clear Selection</button><button type="button" class="duty-primary" data-report-download title="Export ${single?'selected employee':'all applicable employees'} to Excel" aria-label="Excel Export" ${staff.length?'':'disabled'}>${icon('excel')}<span>Excel Export</span></button><details class="duty-report-help"><summary aria-label="Paste safely" title="Copy and paste guidance">?</summary><div><strong>Paste safely · E:L</strong><p data-report-destination></p><p>Use a disposable, correctly dated template first. Match the employee and first daily date; paste values starting in column E. Copy fills E:L only. Reserved M:O and adjacent cells remain untouched.</p></div></details></div></div>
    ${single?`<dl class="duty-report-kpis" aria-label="${state.range?'Selected period totals':'Monthly totals'}">${summary(single)}</dl>`:''}
    <p class="duty-report-status" role="status" data-report-status></p>
-   ${single?preview():'<div class="duty-report-placeholder">Select an employee to display the report.</div>'}
+   ${single?preview():`<div class="duty-report-placeholder">All Employees · ${staff.length} employee${staff.length===1?'':'s'} available for Excel Export.</div>`}
   </section>`;
   const status=host.querySelector('[data-report-status]');
   const destination=single?`Paste values into column E on the row dated ${single.days[0].date} in ${single.name}’s block (${single.id}). ${state.range?'Do not start at day 1 unless it is the selected start date.':'Start at this employee’s first daily row.'} Check the template month and dates first.`:'Select one employee to copy or export.';
   host.querySelector('[data-report-destination]').textContent=destination;
   C.bindCalendars(host);
-  fitReport(host);
+  C.fitViewport(host);
   host.querySelector('[data-report-period]').onchange=e=>{state.range=e.target.value==='custom'?{from:config.month+'-01',to:M.days(config.month).at(-1).date}:null;state.page=0;mount(host,data,config);};
   for(const name of ['from','to']){const field=host.querySelector('[data-report-'+name+']');if(field)field.onchange=e=>{const next={...state.range,[name]:e.target.value};try{period(report,next);state.range=next;state.page=0;mount(host,data,config);}catch(error){status.textContent=error.message;e.target.value=state.range[name];}};}
 
@@ -233,10 +218,10 @@
    try{
     const X=root.XLSX;
     if(!X)throw Error('Excel export is unavailable.');
-    if(!single)return;
-    const blob=new Blob([workbookBytes(X,workbookPlan(report,[single],state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    if(!staff.length)return;
+    const blob=new Blob([workbookBytes(X,workbookPlan(report,staff,state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download=`PharmFlow_Duty_${state.format==='standard'?'Standard_Timesheet':'Schedule_Layout'}_${report.month}.xlsx`;
+    link.href=url;link.download=`PharmFlow_Duty_${state.format==='standard'?'Standard_Timesheet':'Schedule_Layout'}_${report.month}${single?'':'_All_Employees'}.xlsx`;
     link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(error){status.textContent=error.message;}
   };

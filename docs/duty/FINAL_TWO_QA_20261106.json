@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-06",
+  "scope": "All Employees XLSX and Schedule internal scroll only",
+  "feature_tests": 84,
+  "release_tests": 86,
+  "focused_regressions": 124,
+  "failed": 0,
+  "private_template": "included locally; optional in CI",
+  "protected_production_files": 81,
+  "new_migrations": 0,
+  "new_dependencies": 0,
+  "exports": [
+    "All Full Month Standard / Schedule",
+    "All Custom Range Standard / Schedule",
+    "Individual",
+    "Active staff without shifts",
+    "Existing inactive-history applicability",
+    "Saved order / unique dates and columns / explicit totals",
+    "Copy individual only / Clear preserves period / empty roster guard"
+  ],
+  "native_windows_zoom": "NOT VERIFIED",
+  "fresh_authenticated_sync": "NOT VERIFIED; prior owner acceptance retained",
+  "native_excel": "outstanding owner acceptance retained",
+  "dangerous_badge": "prior unresolved release gate retained"
+}

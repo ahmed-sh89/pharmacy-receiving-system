@@ -17,7 +17,7 @@ test('single employee custom range preserves real start dates, exact E:L and per
 });
 test('report UI announces exact destination date and requires one employee for copy/export',async()=>{
  const {document}=parseHTML('<div id="reports"></div>'),host=document.querySelector('#reports'),data=sample(),config={month:'2026-11',demo:true,pharmacyCode:'SYNTH'};
- R.mount(host,data,config);assert(host.querySelector('[data-report-copy]').disabled);assert(host.querySelector('[data-report-download]').disabled);
+ R.mount(host,data,config);assert(host.querySelector('[data-report-copy]').disabled);assert(!host.querySelector('[data-report-download]').disabled);
  host.querySelector('[data-report-employee]').onchange({target:{value:'A'}});
  host.querySelector('[data-report-period]').onchange({target:{value:'custom'}});
  host.querySelector('[data-report-from]').onchange({target:{value:'2026-11-07'}});
