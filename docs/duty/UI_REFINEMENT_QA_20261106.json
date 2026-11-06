@@ -13,5 +13,43 @@
   "native_windows_zoom": "NOT VERIFIED",
   "fresh_authenticated_sync": "NOT VERIFIED; prior owner acceptance retained",
   "native_excel": "USER VERIFICATION REQUIRED for outstanding acceptance",
-  "dangerous_badge": "prior unresolved release gate retained"
+  "dangerous_badge": "prior unresolved release gate retained",
+  "runtime_feature_sha": "66dc1faffa19e67a48763ba148711bc3801b4702",
+  "runtime_release_sha": "9280ba620deb3b88f8f7f00c06c7d53ece169d45",
+  "preview": {
+    "url": "https://pharmflow-test-8xfh0ervw-fhyh2xtskz-3504.vercel.app/",
+    "state": "READY",
+    "deployment": "dpl_94wNTueBtwCvhtxa4K4JqzFgaUNQ"
+  },
+  "runtime_ci": {
+    "security": 42153188405,
+    "duty": [
+      42153188352,
+      42153180801
+    ],
+    "status": "SUCCESS"
+  },
+  "targeted_after_fractional_correction": {
+    "pass": 11,
+    "fail": 0
+  },
+  "browser": {
+    "all_12_time_triggers_stable": true,
+    "centered_options_weight": 650,
+    "final_css_scale": 0.8,
+    "trigger_before_after_popup_widths": [
+      88.28125,
+      88.28125,
+      88.28125
+    ],
+    "popup_vertical_bounds": [
+      358.390625,
+      424.359375
+    ],
+    "viewport_height": 936,
+    "calendar_grid": "PASS",
+    "employee_clear": "employee cleared; preservation of period/data verified by unit tests",
+    "copy_feedback": "controlled-clock success/failure PASS; brief green state not captured in browser"
+  },
+  "pr_files_reviewed": 44
 }
