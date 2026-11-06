@@ -333,8 +333,8 @@
   if(!changes.length){S.notice='Selected cells are already empty.';render();return;}
   await save(changes,'Delete Duty cells',S.selected.length>1?'delete':false);
  }
- function smallPanel(title,body,onSubmit,label){
-  return options.panel(title,body,onSubmit,label);
+ function smallPanel(title,body,onSubmit,label,lifecycle){
+  return options.panel(title,body,onSubmit,label,lifecycle);
  }
  function color(){
   const targets=S.selected.map(c=>({...c,payload:payload(c.code,c.date),expected_revision:entry(c.code,c.date)?.revision||0}));
@@ -355,11 +355,11 @@
    const changes=targets.map(c=>({...c,payload:M.normalize({status:'WORK',periods:preset.periods,note:payload(c.code,c.date).note,highlight:payload(c.code,c.date).highlight})}));
    if(!await save(changes,'Apply shift preset',true))throw Error(S.notice||'Shift not saved.');
   },'Apply');
-  wireDropdowns(form,(id,button,trigger)=>{form.elements[id].value=button.dataset.dropdownValue;trigger.textContent=button.textContent;trigger.setAttribute('aria-label','Shift: '+button.textContent);});
+  wireDropdowns(form,(id,button,trigger)=>{form.elements[id].value=button.dataset.dropdownValue;const preset=(data.shift_presets||[]).find(p=>p.id===button.dataset.dropdownValue);trigger.textContent=preset?.name||button.textContent;trigger.setAttribute('aria-label','Shift: '+(preset?preset.name+' · '+M.text({status:'WORK',periods:preset.periods}):button.textContent));});
  }
  function managePresets(){
   const rows=structuredClone(data.shift_presets||[]),version=scopeVersion,revision=data.settings_revision;
-  const form=smallPanel('Shift Presets',`<div data-preset-list>${rows.map((p,i)=>`<div class="duty-list-row"><span>${esc(p.name)} · ${esc(M.text({status:'WORK',periods:p.periods}))}</span><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}">Delete</button></div>`).join('')}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
+  const form=smallPanel('Shift Presets',`<div data-preset-list>${rows.map((p,i)=>`<div class="duty-list-row"><span class="duty-preset-description"><strong>${esc(p.name)}</strong>${p.periods.map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}</span><div class="duty-actions"><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}">Delete</button></div></div>`).join('')}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
   form.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
    if(b.hasAttribute('data-preset-delete')){try{if(version!==scopeVersion||!writable())throw Error('Reopen settings.');const i=+b.dataset.presetDelete;if(!await options.confirm(`Delete preset ${rows[i].name}? Saved duties will remain unchanged.`,'Delete'))return;data=await options.presets(rows.filter((_,index)=>index!==i),revision);managePresets();}catch(error){form.querySelector('[role=alert]').textContent=error.message;}return;}
    if(!b.hasAttribute('data-preset-add')&&!b.hasAttribute('data-preset-edit'))return;
@@ -368,8 +368,8 @@
     if(version!==scopeVersion||!writable())throw Error('Reopen settings.');
     const value={id:p?.id||crypto.randomUUID(),name:fields.get('name').trim(),periods:M.normalize({status:'WORK',periods:readTimes(fields)}).periods};
     if(!value.name)throw Error('Enter a name.');const next=rows.slice();if(i<0)next.push(value);else next[i]=value;
-    data=await options.presets(next,revision);render();
-   },'Save Preset');
+    data=await options.presets(next,revision);render();managePresets();
+   },'Save Preset',{onCancel:managePresets});
    wireDropdowns(editForm,(id,button,trigger)=>{editForm.elements[id].value=button.dataset.dropdownValue;trigger.textContent=button.textContent;if(id.endsWith('-2'))trigger.dataset.meridiem=button.dataset.dropdownValue;});
    editForm.onchange=e=>{if(e.target.name==='split')editForm.querySelector('[data-split-fields]').hidden=!e.target.checked;if(e.target.name==='hasTimes')editForm.querySelector('[data-time-fields]').hidden=!e.target.checked;};
   };
@@ -444,7 +444,7 @@
   const multiple=selection instanceof Set;
   const itemMarkup=items.map(([value,name])=>multiple
    ?`<label class="duty-dropdown-option"><input type="checkbox" value="${esc(value)}" ${selection.has(value)?'checked':''}> ${esc(name)}</label>`
-   :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(value)}"`:''} ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${esc(name)}</button>`).join('');
+   :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(value)}"`:''} ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${id==='preset'?`<strong>${esc((data.shift_presets||[]).find(p=>p.id===value)?.name||name)}</strong>${((data.shift_presets||[]).find(p=>p.id===value)?.periods||[]).map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}`:esc(name)}</button>`).join('');
   return `<div class="duty-dropdown ${variant}"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(text)}"`:''} popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" data-label="${esc(label)}" aria-label="${esc(label+(id==='staff'||id.startsWith('Shift-')?': '+text:''))}">${esc(text)}</button>${id.startsWith('Shift-')||id==='preset'?`<input type="hidden" name="${id}" value="${esc(id==='preset'?'':text)}">`: ''}
    <div class="duty-dropdown-popup ${id.startsWith('Shift-')?'duty-time-popup':''}" popover="auto" id="duty-dropdown-${id}" role="dialog" aria-label="${esc(label)}">${itemMarkup||'No employees'}${multiple&&options.demo?'<button type="button" data-save-custom>Save as Default Custom View</button>':''}</div></div>`;
  }
@@ -455,7 +455,7 @@
    trigger.onclick=e=>{
     e.preventDefault();
     if(popup.matches(':popover-open')){popup.hidePopover();return;}
-    C.openPopover(popup,trigger,id.startsWith('Shift-'));
+    C.openPopover(popup,trigger,id.startsWith('Shift-')||id==='preset');
     (popup.querySelector('[aria-pressed=true]')||controls()[0])?.focus();
    };
    popup.onkeydown=e=>{
@@ -642,7 +642,7 @@
    if(next&&nextDate){e.preventDefault();select(next,nextDate,e.shiftKey);focus(next,nextDate,true);}
   };
  }
- window.DutySchedule={mount,rememberScroll,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>!!S.editing||S.busy||S.confirming||!!drag?.moved,clear(keepClipboard=false){
+ window.DutySchedule={mount,rememberScroll,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
   drag=null;skipClick=false;scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}

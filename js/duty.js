@@ -196,17 +196,18 @@
    backdrop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();finish(false);}if(e.key==='Tab'){e.preventDefault();const buttons=[...backdrop.querySelectorAll('button')];buttons[document.activeElement===buttons[0]?1:0].focus();}};backdrop.querySelector('button').focus();
   });
  }
- function customPanel(title,body,onSubmit,label='Apply'){
+ function customPanel(title,body,onSubmit,label='Apply',lifecycle={}){
   closePanel();returnFocus=document.activeElement;const requestScope=scope();
   const backdrop=document.createElement('div');backdrop.className='duty-panel-backdrop';
-  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-custom-title"><div class="duty-panel-header"><h3 id="duty-custom-title">${esc(title)}</h3><button type="button" data-custom-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${body}<p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-custom-close>Cancel</button>${onSubmit?`<button type="submit" class="duty-primary">${esc(label)}</button>`:' '}</div></form>`;
+  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-custom-title"><div class="duty-panel-header"><h3 id="duty-custom-title">${esc(title)}</h3><button type="button" data-custom-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${body}<p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-custom-cancel>Cancel</button>${onSubmit?`<button type="submit" class="duty-primary">${esc(label)}</button>`:' '}</div></form>`;
   root.append(backdrop);const form=backdrop.querySelector('form');
-  backdrop.onclick=e=>{if(e.target===backdrop||e.target.closest('[data-custom-close]'))closePanel();};
-  backdrop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();closePanel();}if(e.key==='Tab'){const items=[...form.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')];if(e.shiftKey&&document.activeElement===items[0]){e.preventDefault();items.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===items.at(-1)){e.preventDefault();items[0].focus();}}};
+  const cancel=()=>{closePanel();if(requestScope===scope())lifecycle.onCancel?.();};
+  backdrop.onclick=e=>{if(e.target.closest('[data-custom-cancel]'))cancel();else if(e.target===backdrop||e.target.closest('[data-custom-close]'))closePanel();};
+  backdrop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cancel();}if(e.key==='Tab'){const items=[...form.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')];if(e.shiftKey&&document.activeElement===items[0]){e.preventDefault();items.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===items.at(-1)){e.preventDefault();items[0].focus();}}};
   form.onsubmit=async e=>{e.preventDefault();if(!onSubmit)return;const button=form.querySelector('[type=submit]');button.disabled=true;try{if(requestScope!==scope())throw Error('Duty identity changed. Reopen this panel.');await onSubmit(new FormData(form));if(form.isConnected)closePanel();}catch(error){if(form.isConnected){form.querySelector('[role=alert]').textContent=error.message;button.disabled=false;}}};
   form.querySelector('input,select,textarea,button')?.focus();return form;
  }
- function month(value){if(DutySchedule.isEditing()){state.error='Save with Enter or cancel with Escape before changing month.';return;}try{M.days(value);}catch(_){return;}state.month=value;state.lastRead=0;state.sequence++;state.loading=false;state.transitioning=!state.demo;state.error='';
+ function month(value){if(DutySchedule.isEditing()){root.querySelector('.duty-cell-editor [role=alert]')?.replaceChildren('Save or cancel this edit before changing month.');return;}try{M.days(value);}catch(_){return;}state.month=value;state.lastRead=0;state.sequence++;state.loading=false;state.transitioning=!state.demo;state.error='';
   // Carry only same-scope directory/settings into a read-only selected-month shell. Never carry shifts across months.
   state.data=state.data&&state.scope===scope()?{...state.data,entries:[],holidays:[],month:null,can_write:false}:null;
   DutySchedule.clear(true);render();load(true);}
@@ -214,7 +215,7 @@
  root.addEventListener('click',e=>{
   const target=e.target.closest('button');if(!target)return;
   if(target.closest('#duty-schedule-body,.duty-panel-backdrop'))return;
-  if(DutySchedule.isEditing()){state.error='Press Enter to save or Escape to cancel the current edit.';return;}
+  if(DutySchedule.isEditing()){root.querySelector('.duty-cell-editor [role=alert]')?.replaceChildren('Save or cancel this edit before navigating.');return;}
   if(target.dataset.directoryFilter){state.directoryFilter=target.dataset.directoryFilter;render();return;}
   if(target.dataset.directoryKind){directory(target).catch(error=>{state.error=error.message;render();});return;}
   if(target.dataset.dutyTab){state.tab=target.dataset.dutyTab;render();return;}

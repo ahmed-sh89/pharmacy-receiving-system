@@ -86,6 +86,20 @@
     ...report.dates.map((d,i)=>({values:[dateValue(d.date),d.name,...page.map(e=>scheduleCell(e.days[i]))],
      style:page[0].days[i].kind,cellStyles:page.map(e=>e.days[i].highlight),formats:{0:'date'},height:Math.max(22,...page.map(e=>Math.min(130,15*(scheduleCell(e.days[i]).split('\n').length+(e.days[i].notes.length>40?Math.ceil(e.days[i].notes.length/40):0))+3)))}))]}));
  }
+ function exportPlan(report,staff,format){
+  const used=new Set();return staff.map((employee,index)=>{
+   let base=String(employee.id||'').replace(/[\[\]:*?\/\\]/g,'_').replace(/^'+|'+$/g,'').trim()||'Unassigned_'+(index+1);base=base.slice(0,31);
+   let name=base,n=1;while(used.has(name.toLowerCase())){const suffix='_'+(++n);name=base.slice(0,31-suffix.length)+suffix;}used.add(name.toLowerCase());
+   const sheet=workbookPlan(report,[employee],format)[0];sheet.name=name;
+   if(format==='standard'&&employee.days.length<10)sheet.rows.push({values:['Employee Name',employee.name],style:'plain'},{values:['Job Number',employee.id],style:'plain'},{values:['Pharmacy Code',report.pharmacyCode],style:'plain'});
+   return sheet;
+  });
+ }
+ function exportFilename(report){
+  const code=String(report.pharmacyCode||'').trim().replace(/[<>:"/\\|?*\x00-\x1f]/g,'_');if(!code)throw Error('Select a pharmacy before exporting.');
+  const suffix=report.range?report.range.from+'_to_'+report.range.to:new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(report.month+'-01T12:00Z')).replace(' ','-');
+  return code+'_Duty_'+suffix+'.xlsx';
+ }
  const fills={plain:'FFFFFF',templateHeader:'F2F2F2',templateFriday:'8ED973',header:'174A79',total:'DFEBF8',friday:'D8E8FA',holiday:'FFF2D9',blue:'E2F0FF',mint:'E3F5EB',violet:'EDE4FA',rose:'FBE7EE'};
  const formats={plain:0,date:164,time:165,number:166,integer:167};
  const fillKeys=Object.keys(fills),formatKeys=Object.keys(formats);
@@ -129,7 +143,23 @@
     .replace(/<pageMargins[^>]*\/>/,'')
     .replace('</worksheet>','<pageMargins left="0.25" right="0.25" top="0.35" bottom="0.35" header="0.15" footer="0.15"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>'+ignored+'</worksheet>');
   }));
-  return X.CFB.write(archive,{fileType:'zip',type:'array',compression:true});
+  // ZIP DOS dates cannot represent month/day zero. Use a deterministic valid epoch.
+  for(const part of archive.FileIndex)part.mt=new Date(1980,0,1,0,0,0);
+  const bytes=new Uint8Array(X.CFB.write(archive,{fileType:'zip',type:'array',compression:true}));
+  if(bytes[0]!==80||bytes[1]!==75||bytes[2]!==3||bytes[3]!==4)throw Error('Invalid Excel workbook bytes.');
+  // The bundled CFB ZIP writer leaves central-directory dates zero even when mt is set.
+  // Copy the valid DOS timestamp from each local header without changing compressed data.
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let end=bytes.length-22;
+  while(end>=Math.max(0,bytes.length-65557)&&view.getUint32(end,true)!==0x06054b50)end--;
+  if(end<0||view.getUint32(end,true)!==0x06054b50)throw Error('Invalid Excel ZIP directory.');
+  let offset=view.getUint32(end+16,true);const count=view.getUint16(end+10,true);
+  for(let i=0;i<count;i++){
+   if(view.getUint32(offset,true)!==0x02014b50)throw Error('Invalid Excel ZIP entry.');
+   const local=view.getUint32(offset+42,true);if(view.getUint32(local,true)!==0x04034b50)throw Error('Invalid Excel ZIP header.');
+   view.setUint16(offset+12,view.getUint16(local+10,true),true);view.setUint16(offset+14,view.getUint16(local+12,true),true);
+   offset+=46+view.getUint16(offset+28,true)+view.getUint16(offset+30,true)+view.getUint16(offset+32,true);
+  }
+  return bytes;
  }
  let copyTimer=null;
  const state={employee:'',format:'standard',preview:true,page:0,range:null,scope:''};
@@ -219,12 +249,12 @@
     const X=root.XLSX;
     if(!X)throw Error('Excel export is unavailable.');
     if(!staff.length)return;
-    const blob=new Blob([workbookBytes(X,workbookPlan(report,staff,state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const blob=new Blob([workbookBytes(X,exportPlan(report,staff,state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download=`PharmFlow_Duty_${state.format==='standard'?'Standard_Timesheet':'Schedule_Layout'}_${report.month}${single?'':'_All_Employees'}.xlsx`;
+    link.href=url;link.download=exportFilename(report);
     link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(error){status.textContent=error.message;}
   };
  }
- root.DutyReports={mount,project,period,copyValues,workbookPlan,workbookBytes};
+ root.DutyReports={mount,project,period,copyValues,workbookPlan,workbookBytes,exportPlan,exportFilename};
 })(typeof window==='undefined'?globalThis:window);

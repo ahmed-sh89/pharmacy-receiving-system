@@ -1,3 +1,7 @@
+## 2026-11-06 · Export file conformance and focused operational regressions
+
+Normalize Duty ZIP local/central DOS timestamps; validate actual Blob output; pharmacy-code filenames and Job Number worksheets (one employee per sheet in both formats). Preset management child Save/Cancel returns to list; structured options match trigger width. Live-editor/captured-drag navigation checks and transient instructions no longer poison write-control state. Consolidated toolbar styles. No calculation/persistence/shared business/migration changes. Native Excel cause/opening remains unverified; machine file validity is separate evidence.
+
 ## 2026-11-06 · Initialization and five focused UX corrections
 
 Shell write-action synchronization after authoritative initialization; separated preset action; active-Holiday-only hydration and semantic field names; compact Apply Shift dropdown; bounded draft-only Start/End date popover. No calculation/persistence/schema changes. 49 focused and 58 neighboring checks PASS; prior atomic checksums unchanged. Native owner acceptance remains required for changed controls.

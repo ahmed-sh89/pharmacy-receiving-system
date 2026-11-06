@@ -16,7 +16,7 @@ const rows=(f,wb)=>plain(wb.SheetNames.map(n=>f.X.utils.sheet_to_json(wb.Sheets[
 test('All Employees defaults to enabled one-workbook export; Schedule Layout preserves every applicable employee/order/totals and blank staff',async()=>{
  const f=fixture(),before=JSON.stringify(f.data);assert.equal(f.host.querySelector('[data-report-employee]').value,'');assert.equal(f.host.querySelector('option').textContent,'All Employees');assert(!f.host.querySelector('[data-report-download]').disabled);assert(f.host.querySelector('[data-report-copy]').disabled);
  await f.host.querySelector('[data-report-copy]').onclick();assert.equal(f.writes.length,0);
- f.host.querySelector('[data-report-format]').onchange({target:{value:'schedule'}});const wb=f.export(),sheets=rows(f,wb);assert.equal(f.downloads.length,1);assert.equal(sheets.length,2);
+ f.host.querySelector('[data-report-format]').onchange({target:{value:'schedule'}});const wb=f.export(),sheets=rows(f,wb);assert.equal(f.downloads.length,1);assert.equal(sheets.length,9);
  const headers=sheets.flatMap(r=>r[0].slice(2)),report=f.R.project(f.data,'2026-11',true,'SYNTH');assert.deepEqual(headers,Array.from(report.staff,e=>e.name+'\n'+e.id));assert.equal(headers.length,9);assert.equal(new Set(headers).size,9);assert.match(headers[0],/Employee 8/);assert(!headers.some(x=>x.includes('Inactive Unused')));
  for(const sheet of sheets){assert.equal(sheet.length,36);assert.equal(new Set(sheet.slice(6).map(r=>r[0])).size,30);assert.equal(sheet[6][0],Date.parse('2026-11-01')/86400000+25569);for(let col=2;col<sheet[0].length;col++){const person=report.staff.find(e=>sheet[0][col]===e.name+'\n'+e.id);assert.equal(sheet[5][col],person.totals.total/60);}}
  assert.equal(sheets[0][5][2],0);assert(sheets[0].slice(6).every(r=>!r[2])); // active employee with no shifts
@@ -26,7 +26,7 @@ test('All Employees defaults to enabled one-workbook export; Schedule Layout pre
 });
 test('All Employees custom range exports one workbook in both formats with exact dates, no duplicate days, blank employees and selected-period totals',()=>{
  const f=fixture(),before=JSON.stringify(f.data);f.host.querySelector('[data-report-period]').onchange({target:{value:'custom'}});f.host.querySelector('[data-report-from]').onchange({target:{value:'2026-11-05'}});f.host.querySelector('[data-report-to]').onchange({target:{value:'2026-11-07'}});
- for(const format of ['schedule','standard']){f.host.querySelector('[data-report-format]').onchange({target:{value:format}});const wb=f.export(),sheets=rows(f,wb);assert.equal(wb.SheetNames.length,format==='schedule'?2:9);for(const sheet of sheets){const dates=format==='schedule'?sheet.slice(6).map(r=>r[0]):sheet.slice(1,4).map(r=>r[2]);assert.deepEqual(dates,['05','06','07'].map(day=>Date.parse('2026-11-'+day)/86400000+25569));assert.equal(new Set(dates).size,3);}}
+ for(const format of ['schedule','standard']){f.host.querySelector('[data-report-format]').onchange({target:{value:format}});const wb=f.export(),sheets=rows(f,wb);assert.equal(wb.SheetNames.length,9);for(const sheet of sheets){const dates=format==='schedule'?sheet.slice(6).map(r=>r[0]):sheet.slice(1,4).map(r=>r[2]);assert.deepEqual(dates,['05','06','07'].map(day=>Date.parse('2026-11-'+day)/86400000+25569));assert.equal(new Set(dates).size,3);}}
  assert.equal(f.downloads.length,2);assert.equal(JSON.stringify(f.data),before);
 });
 test('Individual export and Copy remain individual; Clear returns to All without losing the period; no-employee export stays disabled',async()=>{
