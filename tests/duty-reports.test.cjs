@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const {parseHTML}=require('linkedom');
 const writes=[];
 const ctx=vm.createContext({Uint8Array,ArrayBuffer,TextDecoder,TextEncoder,navigator:{clipboard:{writeText:async text=>writes.push(text)}}});
-for(const path of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js','js/duty-model.js','js/duty-reports.js']){
+for(const path of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js','js/duty-model.js','js/duty-controls.js','js/duty-reports.js']){
  vm.runInContext(fs.readFileSync(path,'utf8'),ctx);
 }
 const {DutyModel:M,DutyReports:R,XLSX:X}=ctx;
@@ -164,4 +164,23 @@ test('XLSX ZIP, XML ordering, style indices, relationships and typed cells valid
   fs.writeFileSync(broken,X.CFB.write(zip,{fileType:'zip',type:'array'}));
   assert.throws(()=>execFileSync('python3',['tests/duty-xlsx-validation.py',broken],{stdio:'pipe'}));
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('Copy success lasts two seconds; failure and Clear cannot show stale success',async()=>{
+ const {document}=parseHTML('<div id="reports"></div>'),host=document.querySelector('#reports'),timers=new Map();let id=0,write=async()=>{};
+ ctx.setTimeout=(fn,ms)=>{assert.equal(ms,2000);timers.set(++id,fn);return id;};ctx.clearTimeout=n=>timers.delete(n);ctx.navigator.clipboard.writeText=t=>write(t);
+ R.mount(host,fixture(),{month:'2026-11',demo:true,pharmacyCode:'FEEDBACK'});host.querySelector('[data-report-employee]').onchange({target:{value:'P1'}});
+ await host.querySelector('[data-report-copy]').onclick();let button=host.querySelector('[data-report-copy]');assert(button.classList.contains('is-copied'));assert.match(button.textContent,/Copied/);assert.equal(timers.size,1);
+ [...timers.values()][0]();timers.clear();assert(!button.classList.contains('is-copied'));assert.equal(button.textContent,'Copy');
+ write=async()=>{};await button.onclick();assert(button.classList.contains('is-copied'));
+ write=async()=>{throw Error('denied');};await button.onclick();assert(!button.classList.contains('is-copied'));assert.match(host.querySelector('[data-report-status]').textContent,/Clipboard access failed/);assert(!button.disabled);
+ let resolve;write=()=>new Promise(r=>resolve=r);const pending=button.onclick();host.querySelector('[data-report-clear]').onclick();resolve();await pending;assert(!host.querySelector('[data-report-copy]').classList.contains('is-copied'));assert(host.querySelector('[data-report-copy]').disabled);
+});
+test('Excel export follows current employee and period, without changing source records',()=>{
+ const {document}=parseHTML('<div id="reports"></div>'),host=document.querySelector('#reports'),data=fixture(),original=JSON.stringify(data);data.employees.push({...data.employees[0],code:'P2',display_code:'00043',name:'Second Official Employee'});
+ const expected=JSON.stringify(data);let bytes;
+ ctx.document=document;ctx.Blob=class{constructor(parts){bytes=parts[0];}};ctx.URL={createObjectURL:()=>'/synthetic.xlsx',revokeObjectURL:()=>{}};ctx.setTimeout=()=>0;
+ R.mount(host,data,{month:'2026-11',demo:true,pharmacyCode:'EXPORT'});host.querySelector('[data-report-employee]').onchange({target:{value:'P1'}});host.querySelector('[data-report-format]').onchange({target:{value:'schedule'}});host.querySelector('[data-report-period]').onchange({target:{value:'custom'}});host.querySelector('[data-report-from]').onchange({target:{value:'2026-11-05'}});host.querySelector('[data-report-to]').onchange({target:{value:'2026-11-07'}});
+ host.querySelector('[data-report-employee]').onchange({target:{value:'P2'}});host.querySelector('[data-report-download]').onclick();assert(bytes);
+ const wb=X.read(bytes,{type:'array'}),rows=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});assert.match(rows[0][2],/Second Official Employee/);assert.equal(rows.length,9);assert.equal(rows[6][0],Date.parse('2026-11-05')/86400000+25569);assert.equal(JSON.stringify(data),expected);
 });

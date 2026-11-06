@@ -195,11 +195,6 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-time-fields{display:grid;grid-template-columns:30px minmax(0,1fr);gap:5px 8px;align-items:center;margin:5px 0 8px}
 #page-duty .duty-time-fields strong{grid-column:1 / -1}
 #page-duty .duty-time-fields span{font-weight:600}
-#page-duty .duty-time-controls{display:grid;grid-template-columns:1fr .85fr 1fr;gap:4px}
-#page-duty .duty-time-controls .duty-dropdown-trigger{width:100%;justify-content:space-between;padding:3px 7px;min-height:29px}
-#page-duty .duty-time-controls .duty-dropdown-popup{min-width:68px;max-height:min(255px,calc(100dvh - 16px))}
-#page-duty .duty-time-controls .duty-time-minute .duty-dropdown-trigger{background:#f4f6f8;border-color:#d7dee5;color:#526273;font-size:11px}
-#page-duty .duty-time-minute .duty-dropdown-option[aria-pressed=true]{background:#e8edf2;color:#344557}
 #page-duty .duty-vertical .duty-cell:not(.duty-selected):focus-visible{outline:2px solid #2477bb;outline-offset:-2px}
 #page-duty .duty-schedule-controls{flex-wrap:wrap;justify-content:flex-start;gap:7px;margin:5px 0}
 #page-duty .duty-stage-b .duty-footnote{padding:4px 2px}
@@ -267,7 +262,7 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 
 #page-duty .duty-date-range form{min-width:190px}
 #page-duty .duty-date-range label{display:grid;gap:3px;font-size:12px}
-#page-duty :is(.duty-date-range,.duty-default-hours,.duty-range-inputs) input{min-height:32px;padding:4px 6px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59}
+#page-duty :is(.duty-date-range,.duty-default-hours) input{min-height:32px;padding:4px 6px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59}
 #page-duty .duty-default-hours{display:grid;gap:8px;padding:8px;border:1px solid #d5e1ed;border-radius:6px}
 #page-duty .duty-vertical td.duty-leave{box-shadow:inset 3px 0 #7eafba,inset 0 -4px var(--duty-mark,transparent)}
 #page-duty .duty-leave .duty-cell-status{font-size:13px}
@@ -279,6 +274,12 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-dropdown-popup .duty-dropdown-option:hover,#page-duty .duty-dropdown-popup .duty-dropdown-option:focus-within{background:#eef5fc;border-color:#bfd4e9}
 #page-duty .duty-dropdown-popup .duty-dropdown-option:is([aria-pressed=true],:has(input:checked)){background:#e1eefb;color:#174a79}
 #page-duty .duty-dropdown-option input{accent-color:#2165a8;cursor:pointer}
+#page-duty .duty-time-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#page-duty .duty-time-controls .duty-dropdown{min-width:0}
+#page-duty .duty-time-controls .duty-dropdown-trigger{position:relative;display:flex;width:100%;height:34px;min-height:34px;justify-content:center;text-align:center;gap:5px;padding:4px 19px 4px 6px;white-space:nowrap;font-size:13px;font-weight:650}
+#page-duty .duty-time-controls .duty-dropdown-trigger::after{position:absolute;right:8px}
+#page-duty .duty-time-popup{min-width:0;max-height:255px}
+#page-duty .duty-time-popup .duty-dropdown-option{justify-content:center;text-align:center;min-height:34px;font-size:13px;font-weight:650}
 
 /* Duty editor: presentation only; existing fields and save contract retained. */
 #page-duty .duty-editor-section{min-width:0;margin:0;padding:8px 10px;border:1px solid #d7e2ed;border-radius:7px;background:#f8fbfe}
@@ -287,10 +288,9 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-editor-status select{width:100%;background-color:#fff}
 #page-duty .duty-editor-section > label{font-size:12px;color:#426383}
 #page-duty .duty-time-fields > span{font-size:11px;color:#58718b;letter-spacing:.3px}
-#page-duty .duty-time-meridiem .duty-dropdown-trigger{gap:5px}
-#page-duty .duty-time-meridiem [data-meridiem]::before{display:inline-block;width:12px;color:#7891a7;font-size:13px}
-#page-duty .duty-time-meridiem [data-meridiem=AM]::before{content:"☀"}
-#page-duty .duty-time-meridiem [data-meridiem=PM]::before{content:"☾"}
+#page-duty :is(.duty-time-meridiem,.duty-time-popup) [data-meridiem]::before{display:inline-block;width:12px;font-size:14px}
+#page-duty :is(.duty-time-meridiem,.duty-time-popup) [data-meridiem=AM]::before{content:"☀";color:#c69517}
+#page-duty :is(.duty-time-meridiem,.duty-time-popup) [data-meridiem=PM]::before{content:"☾";color:#3979bd}
 #page-duty .duty-auto-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:5px 0}
 #page-duty .duty-auto-summary span{display:flex;justify-content:space-between;gap:5px;padding:5px 7px;border-radius:5px;background:#eef4fa;color:#426383;font-size:11px}
 #page-duty .duty-auto-summary b{font-variant-numeric:tabular-nums;color:#174a79}
@@ -310,25 +310,21 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-report-heading > span{padding:3px 8px;border-radius:5px;background:#edf4fb;color:#355773;font-size:12px;font-weight:700}
 #page-duty .duty-report-controls{display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(270px,1.5fr) minmax(160px,.8fr);align-items:start;gap:8px 12px}
 #page-duty .duty-report-field{display:grid;gap:4px;min-width:0;font-size:11px;font-weight:700;color:#35516d}
-#page-duty .duty-report-field select,#page-duty .duty-employee-picker > input{width:100%;min-height:34px;border:1px solid #b9cde2;border-radius:6px;background-color:#f7fafd;color:#203b59;padding:5px 8px}
+#page-duty .duty-report-field select{width:100%;min-height:34px;border:1px solid #b9cde2;border-radius:6px;background-color:#f7fafd;color:#203b59;padding:5px 8px}
 #page-duty .duty-report-field select{appearance:none;padding-right:25px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23173F70' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer}
 #page-duty .duty-report-period{display:grid;grid-template-columns:minmax(130px,.85fr) minmax(0,1.4fr);gap:8px;align-items:end}
 #page-duty .duty-report-period > .duty-report-field:only-child{grid-column:1 / -1}
 #page-duty .duty-range-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 #page-duty .duty-range-inputs label{display:grid;gap:4px;font-size:11px;font-weight:700;color:#35516d;min-width:0}
-#page-duty .duty-range-inputs input{width:100%;min-width:0;min-height:34px;font-size:11px;padding:4px}
-#page-duty .duty-employee-picker{position:relative;min-width:0}
-#page-duty .duty-employee-picker > label{margin-bottom:4px}
-#page-duty .duty-employee-options{position:absolute;z-index:15;top:100%;left:0;width:max(100%,280px);max-width:calc(100vw - 40px);max-height:240px;overflow:auto;padding:5px;background:#fff;border:1px solid #a9bdd4;border-radius:7px;box-shadow:0 8px 24px #173b6126}
-#page-duty .duty-employee-options button{display:block;width:100%;padding:7px;text-align:left;white-space:normal;border:0;box-shadow:none;font-size:12px}
-#page-duty .duty-employee-options button small{display:block;color:#6b8198;font-size:11px}
-#page-duty .duty-employee-options button[aria-selected=true]{background:#e1eefb;color:#174a79}
-#page-duty .duty-employee-options p{padding:5px;color:#62738a;font-size:12px}
-#page-duty .duty-report-result-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid #d5e1ed;border-radius:6px;background:#f8fbfe}
-#page-duty .duty-report-identity{display:grid;gap:3px;min-width:0;color:#174a79;font-size:13px}
+#page-duty .duty-report-result-bar{display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 8px;border:1px solid #d5e1ed;border-radius:6px;background:#f8fbfe}
+#page-duty .duty-report-identity{display:grid;gap:3px;min-width:0;max-width:min(42%,420px);color:#174a79;font-size:13px}
 #page-duty .duty-report-identity strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #page-duty .duty-report-identity small{font-size:11px;color:#617994}
-#page-duty .duty-report-result-bar .duty-actions{flex-shrink:0;gap:5px;flex-wrap:nowrap}
+#page-duty .duty-report-result-bar .duty-actions{flex-shrink:0;gap:6px;flex-wrap:nowrap}
+#page-duty [data-report-copy]{width:90px;justify-content:center}
+#page-duty [data-report-copy].is-copied{color:#22734d;background:#e3f3e9;border-color:#9dcdb1}
+#page-duty .duty-report-status.is-error{color:#a13737}
+#page-duty [data-report-clear]{min-height:32px;padding:5px 9px;font-size:12px}
 #page-duty :is([data-report-copy],[data-report-download]){display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:5px 9px;min-height:32px;font-size:12px}
 #page-duty :is([data-report-copy],[data-report-download]) svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 #page-duty .duty-report-help{position:relative;color:#355773}
@@ -361,5 +357,25 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-report-placeholder{display:grid;place-items:center;flex:1;min-height:0;color:#62738a;background:#f8fbfe;border:1px dashed #ccd9e6;border-radius:6px}
 @media(min-width:761px){html:has(#page-duty.active[data-duty-view=reports]),body:has(#page-duty.active[data-duty-view=reports]),html:has(body[data-duty-synthetic] [data-duty-view=reports]),body[data-duty-synthetic]:has([data-duty-view=reports]){overflow:hidden}}
 @media(max-width:1000px){#page-duty .duty-report-controls{grid-template-columns:minmax(200px,1fr) minmax(200px,1.4fr) minmax(145px,.8fr)}#page-duty .duty-report-period{grid-template-columns:1fr}#page-duty .duty-report-kpis dt{font-size:10px}}
-@media(max-width:700px){#page-duty .duty-report-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#page-duty .duty-report-result-bar{flex-wrap:wrap}#page-duty .duty-report-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){#page-duty .duty-report-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#page-duty .duty-report-result-bar{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){#page-duty .duty-tabs button{transition:none}}
+
+#page-duty .duty-calendar-field{display:grid;gap:4px;min-width:0;font-size:11px;font-weight:700;color:#35516d}
+#page-duty .duty-calendar-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:34px;min-height:34px;padding:0 9px;border:1px solid #b9cde2;border-radius:7px;background:#fff;color:#234d75;text-align:left;white-space:nowrap;font-size:12px;font-weight:650}
+#page-duty .duty-calendar-trigger svg{width:16px;height:16px;fill:none;stroke:#3979bd;stroke-width:1.7;flex-shrink:0}
+#page-duty .duty-calendar-trigger:hover,#page-duty .duty-calendar-trigger:focus-visible{border-color:#4c87be;background:#f2f7fd}
+#page-duty .duty-calendar-popover{position:fixed;inset:auto;margin:0;width:310px;max-width:calc(100vw - 16px);overflow:auto;padding:13px;border:1px solid #c5d6e7;border-radius:12px;background:#fff;color:#234d75;box-shadow:0 12px 32px #173b6133}
+#page-duty .duty-calendar-head{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:10px}
+#page-duty .duty-calendar-head strong{text-align:center;font-size:14px}
+#page-duty .duty-calendar-head button{width:34px;height:34px;padding:0;font-size:22px;line-height:1}
+#page-duty .duty-calendar-week,#page-duty .duty-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+#page-duty .duty-calendar-week{margin-bottom:5px}
+#page-duty .duty-calendar-week span{padding:4px 0;text-align:center;color:#7890a7;font-size:9px;font-weight:750;text-transform:uppercase}
+#page-duty .duty-calendar-grid button,#page-duty .duty-calendar-grid > span{height:34px;min-height:34px}
+#page-duty .duty-calendar-grid button{padding:0;border:1px solid transparent;border-radius:7px;box-shadow:none;background:transparent;text-align:center;font-weight:650}
+#page-duty .duty-calendar-grid button:hover:not(:disabled){background:#edf5fd;border-color:#b4cfe8}
+#page-duty .duty-calendar-grid button.is-today{border-color:#719bc2}
+#page-duty .duty-calendar-grid button[aria-pressed=true]{background:#2165a8;color:white;border-color:#2165a8}
+#page-duty .duty-calendar-grid button:disabled{color:#a9b6c4;opacity:.6}
+#page-duty .duty-calendar-foot{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:9px;border-top:1px solid #d8e2ed}
+#page-duty .duty-calendar-foot button{min-height:28px;padding:4px 9px;font-size:11px}

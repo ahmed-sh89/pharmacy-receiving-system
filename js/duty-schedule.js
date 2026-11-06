@@ -1,7 +1,7 @@
 /* Duty-only scheduler. All persisted writes pass through scoped, versioned RPCs. */
 (function(){
  'use strict';
- const M=window.DutyModel,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const M=window.DutyModel,C=window.DutyControls,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
  let host,data,options,scopeVersion=0,drag=null,skipClick=false;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
@@ -51,7 +51,7 @@
    ${S.group==='custom'?dropdown('custom','Choose staff','Choose staff',rosterOptions.map(e=>[e.code,e.name]),S.custom):''}
    <div class="duty-period" aria-label="Staff pages"><button type="button" data-s-action="staff-back" aria-label="Previous staff page" ${S.staffPage?'':'disabled'}>‹</button><span>${S.staffPage+1}/${pages}</span><button type="button" data-s-action="staff-next" aria-label="Next staff page" ${S.staffPage+1<pages?'':'disabled'}>›</button></div>
    <details class="duty-date-range"><summary>${S.range?formatDate(S.range.from)+' – '+formatDate(S.range.to):'Date Range'}</summary>
-   <form data-date-range><label>From <input name="from" type="date" required min="${first}" max="${last}" value="${S.range?.from||first}"></label><label>To <input name="to" type="date" required min="${first}" max="${last}" value="${S.range?.to||last}"></label><button type="submit">Apply</button></form></details>
+   <form data-date-range>${C.dateField({id:"duty-schedule-from",name:"from",label:"From",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"To",value:S.range?.to||last,min:first,max:last})}<button type="submit">Apply</button></form></details>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
    <button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
@@ -65,7 +65,7 @@
    <div class="duty-footnote"><span role="status">${esc(S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
-  bind();updateSelection();
+  bind();C.bindCalendars(host);updateSelection();
  }
  function cell(e,d){
   const p=payload(e.code,d.date),n=hoursFor(e.code,d.date,p);
@@ -399,9 +399,9 @@
   const multiple=selection instanceof Set;
   const itemMarkup=items.map(([value,name])=>multiple
    ?`<label class="duty-dropdown-option"><input type="checkbox" value="${esc(value)}" ${selection.has(value)?'checked':''}> ${esc(name)}</label>`
-   :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${esc(name)}</button>`).join('');
+   :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(value)}"`:''} ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${esc(name)}</button>`).join('');
   return `<div class="duty-dropdown ${variant}"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(text)}"`:''} popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" data-label="${esc(label)}" aria-label="${esc(label+(id==='staff'||id.startsWith('Shift-')?': '+text:''))}">${esc(text)}</button>${id.startsWith('Shift-')?`<input type="hidden" name="${id}" value="${esc(text)}">`: ''}
-   <div class="duty-dropdown-popup" popover="auto" id="duty-dropdown-${id}" role="dialog" aria-label="${esc(label)}">${itemMarkup||'No employees'}${multiple&&options.demo?'<button type="button" data-save-custom>Save as Default Custom View</button>':''}</div></div>`;
+   <div class="duty-dropdown-popup ${id.startsWith('Shift-')?'duty-time-popup':''}" popover="auto" id="duty-dropdown-${id}" role="dialog" aria-label="${esc(label)}">${itemMarkup||'No employees'}${multiple&&options.demo?'<button type="button" data-save-custom>Save as Default Custom View</button>':''}</div></div>`;
  }
  function wireDropdowns(container,choose){
   for(const popup of container.querySelectorAll('.duty-dropdown-popup')){
@@ -410,10 +410,7 @@
    trigger.onclick=e=>{
     e.preventDefault();
     if(popup.matches(':popover-open')){popup.hidePopover();return;}
-    popup.showPopover({source:trigger});
-    const rect=trigger.getBoundingClientRect(),box=popup.getBoundingClientRect(),scale=box.width/popup.offsetWidth;
-    popup.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-box.width-8))/scale+'px';
-    popup.style.top=Math.max(8,rect.bottom+box.height+8<=window.innerHeight?rect.bottom+4:rect.top-box.height-4)/scale+'px';
+    C.openPopover(popup,trigger,id.startsWith('Shift-'));
     (popup.querySelector('[aria-pressed=true]')||controls()[0])?.focus();
    };
    popup.onkeydown=e=>{
@@ -441,7 +438,7 @@
  }
  function bind(){
   host.onclick=async event=>{
-   if(event.target.closest('.duty-cell-editor,.duty-date-range,.duty-dropdown,select'))return;
+   if(event.target.closest('.duty-cell-editor,.duty-date-range,.duty-calendar-popover,.duty-dropdown,select'))return;
    if(S.editing||S.busy||S.confirming)return;
    try{
     const button=event.target.closest('button'),cellEl=event.target.closest('[data-s-code]'),row=event.target.closest('[data-s-column]');
@@ -554,7 +551,7 @@
    render();focusSelection();
  }
  function bindKeyboard(){
-  const fromSchedule=e=>!S.editing&&!S.busy&&!S.confirming&&!e.target.closest('input,select,textarea,[contenteditable],.duty-dropdown');
+  const fromSchedule=e=>!S.editing&&!S.busy&&!S.confirming&&!e.target.closest('input,select,textarea,[contenteditable],.duty-dropdown,.duty-calendar-popover,.duty-date-range');
   host.oncopy=e=>{
    if(!fromSchedule(e)||!S.selected.length)return;
    e.preventDefault();copy();

@@ -1,7 +1,7 @@
 /* Duty Reports uses saved schedule records and the Duty calculator. */
 (function(root){
  'use strict';
- const M=root.DutyModel;
+ const M=root.DutyModel,C=root.DutyControls;
  const headers=['Store','data','Day','Day Name','Check In 1','Check Out 1','Check In 2','Check Out 2','Normal O.T','Friday O.T','Holiday O.T','Notes / Coverage Pharmacy','In-Out','Group Start','Group Number'];
  const categories={...M.categories,total:'Total'};
  const overtime=['normal_ot','friday_ot','holiday_ot'];
@@ -146,8 +146,10 @@
  }
  root.addEventListener?.('resize',()=>{if(fitHost?.isConnected)fitReport(fitHost);});
  root.visualViewport?.addEventListener('resize',()=>{if(fitHost?.isConnected)fitReport(fitHost);});
+ let copyTimer=null;
  const state={employee:'',format:'standard',preview:true,page:0,range:null,scope:''};
  function mount(host,data,config){
+  if(copyTimer!==null){root.clearTimeout?.(copyTimer);copyTimer=null;}
   const scope=(data.pharmacy_id||config.pharmacyCode||'')+'/'+config.month;
   if(scope!==state.scope){state.scope=scope;state.range=null;state.employee='';state.page=0;}
   const report=period(project({...data,employees:M.ordered(data.employees)},config.month,config.demo,config.pharmacyCode),state.range);
@@ -180,12 +182,12 @@
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
    <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
    <div class="duty-report-controls">
-    <div class="duty-employee-picker"><label class="duty-report-field" for="duty-report-employee">Employee</label><input id="duty-report-employee" data-report-employee type="search" role="combobox" aria-label="Employee" aria-autocomplete="list" aria-expanded="false" aria-controls="duty-report-staff-list" autocomplete="off" placeholder="Search name or employee code" value="${single?esc(single.name+' · '+single.id):''}"><div class="duty-employee-options" id="duty-report-staff-list" role="listbox" aria-label="Employees" hidden>${report.staff.map(e=>`<button type="button" role="option" aria-selected="${e===single}" data-report-person="${esc(e.code)}">${esc(e.name)}<small>${esc(e.id)}</small></button>`).join('')}<p data-no-employee hidden>No matching employee</p></div></div>
+    <label class="duty-report-field">Employee Filter<select data-report-employee aria-label="Employee Filter"><option value="">Choose employee</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select></label>
     <div class="duty-report-period"><label class="duty-report-field">Period<select data-report-period><option value="full">Full Month</option><option value="custom" ${state.range?'selected':''}>Custom Date Range</option></select></label>
-    ${state.range?`<div class="duty-range-inputs"><label>From<input aria-label="Report from date" data-report-from type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.from}"></label><label>To<input aria-label="Report to date" data-report-to type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.to}"></label></div>`:''}</div>
+    ${state.range?`<div class="duty-range-inputs">${C.dateField({id:'duty-report-from',name:'from',label:'From',value:state.range.from,min:config.month+'-01',max:M.days(config.month).at(-1).date,attributes:'data-report-from'})}${C.dateField({id:'duty-report-to',name:'to',label:'To',value:state.range.to,min:config.month+'-01',max:M.days(config.month).at(-1).date,attributes:'data-report-to'})}</div>`:''}</div>
     <label class="duty-report-field">Excel format<select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select></label>
    </div>
-   <div class="duty-report-result-bar"><div class="duty-report-identity"><strong>${single?esc(single.name):'Choose an employee'}</strong><small>${single?esc(single.id)+' · ':''}${state.range?esc(state.range.from+' → '+state.range.to):esc(report.title)+' · Full Month'}</small></div><div class="duty-actions"><button type="button" data-report-copy title="Copy values · E:L" aria-label="Copy Values" ${single?'':'disabled'}>${icon('copy')}<span>Copy</span></button><button type="button" class="duty-primary" data-report-download title="Export selected employee to Excel" aria-label="Excel Export" ${single?'':'disabled'}>${icon('excel')}<span>Excel Export</span></button><details class="duty-report-help"><summary aria-label="Paste safely" title="Copy and paste guidance">?</summary><div><strong>Paste safely · E:L</strong><p data-report-destination></p><p>Use a disposable, correctly dated template first. Match the employee and first daily date; paste values starting in column E. Copy fills E:L only. Reserved M:O and adjacent cells remain untouched.</p></div></details></div></div>
+   <div class="duty-report-result-bar"><div class="duty-report-identity"><strong>${single?esc(single.name):'Choose an employee'}</strong><small>${single?esc(single.id)+' · ':''}${state.range?esc(state.range.from+' → '+state.range.to):esc(report.title)+' · Full Month'}</small></div><div class="duty-actions"><button type="button" data-report-copy title="Copy values · E:L" aria-label="Copy Values" ${single?'':'disabled'}>${icon('copy')}<span>Copy</span></button><button type="button" data-report-clear title="Clear employee selection only" ${single?'':'disabled'}>Clear Selection</button><button type="button" class="duty-primary" data-report-download title="Export selected employee to Excel" aria-label="Excel Export" ${single?'':'disabled'}>${icon('excel')}<span>Excel Export</span></button><details class="duty-report-help"><summary aria-label="Paste safely" title="Copy and paste guidance">?</summary><div><strong>Paste safely · E:L</strong><p data-report-destination></p><p>Use a disposable, correctly dated template first. Match the employee and first daily date; paste values starting in column E. Copy fills E:L only. Reserved M:O and adjacent cells remain untouched.</p></div></details></div></div>
    ${single?`<dl class="duty-report-kpis" aria-label="${state.range?'Selected period totals':'Monthly totals'}">${summary(single)}</dl>`:''}
    <p class="duty-report-status" role="status" data-report-status></p>
    ${single?preview():'<div class="duty-report-placeholder">Select an employee to display the report.</div>'}
@@ -193,16 +195,7 @@
   const status=host.querySelector('[data-report-status]');
   const destination=single?`Paste values into column E on the row dated ${single.days[0].date} in ${single.name}’s block (${single.id}). ${state.range?'Do not start at day 1 unless it is the selected start date.':'Start at this employee’s first daily row.'} Check the template month and dates first.`:'Select one employee to copy or export.';
   host.querySelector('[data-report-destination]').textContent=destination;
-  const picker=host.querySelector('[data-report-employee]'),list=host.querySelector('.duty-employee-options'),pickerBox=host.querySelector('.duty-employee-picker');
-  const closePicker=()=>{list.hidden=true;picker.setAttribute('aria-expanded','false');};
-  const choose=code=>{state.employee=code;state.page=0;state.preview=true;mount(host,data,config);host.querySelector('[data-report-employee]').focus();};
-  const search=()=>{const query=picker.value.trim().toLocaleLowerCase();let matches=0;list.hidden=false;picker.setAttribute('aria-expanded','true');for(const option of list.querySelectorAll('[data-report-person]')){option.hidden=!option.textContent.toLocaleLowerCase().includes(query);if(!option.hidden)matches++;}list.querySelector('[data-no-employee]').hidden=!!matches;};
-  picker.oninput=()=>{search();if(!picker.value&&state.employee){state.employee='';state.page=0;mount(host,data,config);host.querySelector('[data-report-employee]').focus();}};
-  picker.onclick=()=>{list.hidden=false;picker.setAttribute('aria-expanded','true');for(const option of list.querySelectorAll('[data-report-person]'))option.hidden=false;list.querySelector('[data-no-employee]').hidden=report.staff.length>0;};
-  picker.onkeydown=e=>{if(e.key==='Escape'){closePicker();return;}if(e.key==='Enter'&&list.hidden)return;if(e.key==='ArrowDown'||e.key==='Enter'){if(list.hidden)search();const first=[...list.querySelectorAll('[data-report-person]')].find(b=>!b.hidden);if(first){e.preventDefault();if(e.key==='Enter')choose(first.dataset.reportPerson);else first.focus();}}};
-  for(const option of list.querySelectorAll('[data-report-person]')){option.onclick=()=>choose(option.dataset.reportPerson);option.onkeydown=e=>{if(e.key==='Escape'){closePicker();picker.focus();}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const options=[...list.querySelectorAll('[data-report-person]')].filter(b=>!b.hidden),index=options.indexOf(option);options[(index+(e.key==='ArrowDown'?1:options.length-1))%options.length]?.focus();}};}
-  pickerBox.onfocusout=e=>{if(!pickerBox.contains(e.relatedTarget))closePicker();};
-  host.onclick=e=>{if(!pickerBox.contains(e.target))closePicker();};
+  C.bindCalendars(host);
   fitReport(host);
   host.querySelector('[data-report-period]').onchange=e=>{state.range=e.target.value==='custom'?{from:config.month+'-01',to:M.days(config.month).at(-1).date}:null;state.page=0;mount(host,data,config);};
   for(const name of ['from','to']){const field=host.querySelector('[data-report-'+name+']');if(field)field.onchange=e=>{const next={...state.range,[name]:e.target.value};try{period(report,next);state.range=next;state.page=0;mount(host,data,config);}catch(error){status.textContent=error.message;e.target.value=state.range[name];}};}
@@ -213,6 +206,7 @@
    mount(host,data,config);
    host.querySelector('[data-report-employee]').focus();
   };
+  host.querySelector('[data-report-clear]').onclick=()=>{state.employee='';state.page=0;mount(host,data,config);host.querySelector('[data-report-employee]').focus();};
   host.querySelector('[data-report-format]').onchange=e=>{
    state.format=e.target.value;state.page=0;mount(host,data,config);
    host.querySelector('[data-report-format]').focus();
@@ -221,11 +215,19 @@
    state.page+=Number(button.dataset.previewPage);mount(host,data,config);
   };
   host.querySelector('[data-report-copy]').onclick=async()=>{
-   if(!single)return;
+   const button=host.querySelector('[data-report-copy]');if(!single||button.disabled)return;
+   if(copyTimer!==null){root.clearTimeout?.(copyTimer);copyTimer=null;}
+   button.classList.remove('is-copied');button.innerHTML=icon('copy')+'<span>Copy</span>';
+   button.disabled=true;status.textContent='';status.classList.remove('is-error');
    try{
     await navigator.clipboard.writeText(copyValues(single));
+    if(!button.isConnected)return;
+    button.classList.add('is-copied');button.innerHTML='<span aria-hidden="true">✓</span><span>Copied</span>';
     status.textContent=`Copied ${single.days.length} days · E:L.`;status.title=destination;
-   }catch{status.textContent='Clipboard access failed. Allow clipboard access in your browser and retry.';}
+    copyTimer=root.setTimeout?.(()=>{if(button.isConnected){button.classList.remove('is-copied');button.innerHTML=icon('copy')+'<span>Copy</span>';status.textContent='';}copyTimer=null;},2000)??null;
+   }catch{
+    if(button.isConnected){status.classList.add('is-error');status.textContent='Clipboard access failed. Allow clipboard access in your browser and retry.';}
+   }finally{if(button.isConnected)button.disabled=false;}
   };
   host.querySelector('[data-report-download]').onclick=()=>{
    try{
