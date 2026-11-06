@@ -79,7 +79,16 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-compact-title{font-size:16px;margin-right:5px}
 #page-duty .duty-stage-b .duty-banner{padding:6px 10px;margin:0 0 7px;font-size:11px}
 #page-duty .duty-schedule-controls{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:7px;align-items:center;margin:5px 0}
-#page-duty .duty-schedule-controls :is(button,.duty-dropdown-trigger){font-family:inherit;font-size:12px;min-height:32px;border-radius:7px;padding:5px 9px;line-height:20px}
+/* Shared Schedule / Calendar control variant; reports and other modules keep their styles. */
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) :is(button,input:not([type=checkbox]),select),#page-duty [data-duty-action=calendar]{font-family:inherit;font-size:12px;font-weight:600;min-height:34px;border:1px solid #ccd9e6;border-radius:7px;padding:6px 9px;line-height:20px;color:#234d75}
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button:not(.duty-primary),#page-duty .duty-calendar-settings :is(input:not([type=checkbox]),select),#page-duty [data-duty-action=calendar]{background-color:#fff}
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button:not(.duty-primary):not(:disabled):hover,#page-duty [data-duty-action=calendar]:not(:disabled):hover{background-color:#f0f6fc;border-color:#8baccd}
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) .duty-primary{background-color:#2165a8;color:#fff;border-color:#2165a8}
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) .duty-primary:not(:disabled):hover{background-color:#194f86}
+#page-duty .duty-calendar-settings :is(button,input,select):disabled{opacity:.5;cursor:default}
+#page-duty .duty-delete-action{display:inline-flex;align-items:center;gap:6px}
+#page-duty .duty-delete-action svg{width:16px;height:16px;fill:none;stroke:#b42332;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
 #page-duty .duty-segment{display:flex;border:1px solid #cad8e7;border-radius:7px;padding:2px;background:#eef3f9;gap:2px}
 #page-duty .duty-segment button{min-height:30px;border:0;background:transparent;padding:6px 12px;box-shadow:none;font-size:12px;white-space:nowrap}
 #page-duty .duty-segment button[aria-pressed=true]{background:#fff;color:#175a99;box-shadow:0 1px 3px #17263d15}
@@ -200,7 +209,6 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-stage-b .duty-footnote{padding:4px 2px}
 #page-duty .duty-vertical td[data-s-code]{user-select:none;cursor:cell}
 #page-duty .duty-date-range{position:relative;z-index:9}
-#page-duty .duty-date-range > button{color:var(--duty-blue);background:#f1f6fc;border-color:#b9cde2;font-weight:650}
 #page-duty .duty-date-range > form{position:fixed;inset:auto;margin:0;width:280px;max-width:calc(100vw - 24px);overflow:auto;gap:10px;padding:12px;background:#fff;border:1px solid #ccd9e6;border-radius:9px;box-shadow:0 8px 24px #173f7024;color:var(--duty-ink)}
 #page-duty .duty-date-range > form:popover-open{display:grid}
 #page-duty .duty-date-range > form:not(:popover-open){display:none}
@@ -217,7 +225,6 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-editor-note{display:grid;gap:4px;font-size:12px;font-weight:600}
 #page-duty :is(.duty-editor-note,.duty-manual-fields) input,#page-duty .duty-cell-editor select{min-height:32px;padding:4px 7px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59;font-size:13px}
 #page-duty .duty-selection-tools{margin-left:auto;gap:4px;flex-wrap:wrap}
-#page-duty .duty-selection-tools button{min-height:30px;padding:4px 7px;font-size:11px}
 #page-duty .duty-editor-status select{border:1px solid #ccd9e6;border-radius:6px;background:#fff;color:#294766}
 #page-duty .duty-work-fields{min-width:0;margin:0;padding:0;border:0}
 #page-duty .duty-editor-status{display:flex;gap:8px;align-items:center}
@@ -260,9 +267,10 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-staff-title .duty-name{color:#fff;font-size:14px;font-weight:700}
 #page-duty .duty-staff-title .duty-code{color:#e5effa;margin:1px 0 0}
 #page-duty .duty-kpi-wrap{padding:0 4px}
-#page-duty .duty-icon{display:inline-grid;place-items:center;width:33px;height:32px;padding:5px}
+#page-duty .duty-icon{display:inline-grid;place-items:center;width:34px;height:34px;padding:6px}
+#page-duty .duty-schedule-controls .duty-icon{padding:6px}
 #page-duty .duty-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-#page-duty .duty-icon-delete{color:#ac343b}
+#page-duty .duty-schedule-controls .duty-icon-delete{color:#ac343b}
 #page-duty .duty-directory{max-width:1100px;margin:10px auto}
 #page-duty .duty-directory-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #page-duty .duty-directory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:12px}
