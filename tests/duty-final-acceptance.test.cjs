@@ -49,3 +49,19 @@ test('actual supervisor template: disposable full-month/range paste changes only
  }
  assert.equal(Buffer.compare(fs.readFileSync(process.env.PHARMFLOW_DUTY_TEMPLATE),original),0);
 });
+
+test('schedule labels never replace official names in either export; merged totals align after daily E:L',()=>{
+ const data=sample(),official='Synthetic Full Official Employee Name';Object.assign(data.employees[0],{name:official,schedule_display_name:'Schedule Short'});
+ assert.equal(M.scheduleLabel(data.employees[0]),'Schedule Short');assert.equal(data.employees[0].name,official);
+ assert.equal(M.scheduleLabel({...data.employees[0],schedule_display_name:''}),'Synthetic Name');
+ const report=R.project(data,'2026-11',true,'SYNTH'),person=report.staff.find(e=>e.code==='A');assert.equal(person.name,official);
+ for(const format of ['standard','schedule']){
+  const plan=R.workbookPlan(report,[person],format),wb=X.read(R.workbookBytes(X,plan),{type:'array'}),sheet=wb.Sheets[wb.SheetNames[0]],text=JSON.stringify(sheet);
+  assert(text.includes(official));assert(!text.includes('Schedule Short'));
+  if(format==='standard'){
+   const rows=X.utils.sheet_to_json(sheet,{header:1});assert.deepEqual(json(rows.slice(-3).map(r=>r[0])),['Period Totals','Basic Hours','Total Hours']);
+   assert.equal(rows.at(-2)[8],person.totals.basic/60);assert.equal(rows.at(-1)[8],person.totals.total/60);
+   assert.equal(sheet['!merges'].length,3);assert(sheet['!merges'].every(m=>m.s.c===0&&m.e.c===7));
+  }
+ }
+});

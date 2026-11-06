@@ -24,8 +24,9 @@ test('employee validation preserves codes and rejects empty names',()=>{
  assert.throws(()=>M.validateEmployee({code:'=1+1',name:'Test',position_key:'labor'}));
  assert.throws(()=>M.validateEmployee({code:'A',name:' ',position_key:'labor'}));
 });
-function fixture(){
+function fixture(synthetic=false){
  const {document}=parseHTML('<html><body><section id="page-duty"></section></body></html>');
+ if(synthetic)document.body.setAttribute('data-duty-synthetic','');
  const window={document,DutyModel:M,addEventListener:()=>{},PharmFlowPermissions:{allowed:()=>true}};
  const events={},calls=[];
  const data={...M.demo(),pharmacy_id:'pharmacy-a'};data.employees=[];
@@ -34,9 +35,9 @@ function fixture(){
  return {c,root:window.document.getElementById('page-duty'),events,calls,window,data};
 }
 test('month navigation is read only; demo never writes and highlights entire Fridays',async()=>{
- const f=fixture();f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
- assert.equal(f.calls.length,1);assert.equal(f.calls[0].name,'get_pharmflow_duty_schedule_v1');
- f.root.querySelector('[data-duty-action="demo"]').click();
+ const operational=fixture();operational.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
+ assert.equal(operational.calls.length,1);assert.equal(operational.calls[0].name,'get_pharmflow_duty_schedule_v1');assert.equal(operational.root.querySelector('[data-duty-action="demo"]'),null);
+ const f=fixture(true);
  assert.equal(f.root.querySelectorAll('thead .duty-mini-kpis').length,6);
  const fridays=M.days(f.root.querySelector('#duty-month').value).filter(d=>d.friday).length;
  assert.equal(f.root.querySelectorAll('.duty-friday-row').length,fridays);
@@ -47,8 +48,7 @@ test('month navigation is read only; demo never writes and highlights entire Fri
  assert.equal(f.root.querySelectorAll('thead .duty-category-total').length,6);
 });
 test('Duty keyboard and clipboard events act on the selected cell',async()=>{
- const f=fixture();
- f.root.querySelector('[data-duty-action="demo"]').click();
+ const f=fixture(true);
  await new Promise(setImmediate);
  const host=f.root.querySelector('#duty-schedule-body'),cell=()=>host.querySelector('[data-s-code="DEMO-001"][data-s-date="2026-11-01"]')||host.querySelector('[data-s-code="DEMO-001"]');
  cell().click();
@@ -149,4 +149,26 @@ test('pending schedule write immediately shows Saving and never Saved before aut
  resolve(data);await new Promise(setImmediate);assert.match(host.querySelector('.duty-footnote').textContent,/Saved/);
  cell('2026-11-03').click();host.querySelector('[data-s-action="paste"]').click();await new Promise(setImmediate);reject(Error('Network unavailable'));await new Promise(setImmediate);
  assert.match(host.querySelector('.duty-footnote').textContent,/Save not confirmed/);assert.match(host.querySelector('.duty-footnote').textContent,/draft is retained/);
+});
+
+test('directory lifecycle filters and accessible actions separate archive from inactive',()=>{
+ const f=fixture(true);f.root.querySelector('[data-duty-tab="employees"]').click();
+ assert.equal(f.root.querySelectorAll('.duty-directory-card').length,10);
+ assert(f.root.querySelector('[title="Move Earlier"]'));assert(f.root.querySelector('[title="Move Later"]'));
+ assert(f.root.querySelector('.duty-record-status.is-active'));
+ f.root.querySelector('[data-directory-filter="archived"]').click();assert.equal(f.root.querySelectorAll('.duty-directory-card').length,0);
+ f.root.querySelector('[data-duty-tab="positions"]').click();f.root.querySelector('[data-directory-filter="active"]').click();assert.equal(f.root.querySelectorAll('.duty-directory-card').length,3);
+ assert.equal(f.root.querySelectorAll('[data-directory-action="archive"]').length,3);
+ assert.equal(f.root.querySelectorAll('[data-directory-action="delete"] svg').length,3);
+});
+
+test('schedule uses display label with official identity tooltip; tab roundtrip retains grid scroll',()=>{
+ const f=fixture(true);const host=f.root.querySelector('#duty-schedule-body'),data=M.demoMonth('2026-11');
+ Object.assign(data.employees[0],{name:'Synthetic Full Official Employee Name',schedule_display_name:'Short Schedule'});
+ f.window.DutySchedule.mount(host,data,{month:'2026-11',demo:true});
+ assert.equal(host.querySelector('.duty-name').textContent,'Short Schedule');assert.match(host.querySelector('.duty-staff-title').title,/Synthetic Full Official Employee Name · DEMO-001/);
+ const grid=host.querySelector('.duty-grid-scroll');grid.scrollTop=140;grid.scrollLeft=65;
+ // Real browser scrollTo applies stored offsets; the DOM fixture records the requested restoration.
+ let restored;const proto=Object.getPrototypeOf(grid),original=proto.scrollTo;proto.scrollTo=function(pos){restored=pos;};
+ try{f.root.querySelector('[data-duty-tab="employees"]').click();f.root.querySelector('[data-duty-tab="schedule"]').click();assert.equal(restored.top,140);assert.equal(restored.left,65);}finally{if(original)proto.scrollTo=original;else delete proto.scrollTo;}
 });

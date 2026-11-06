@@ -71,12 +71,14 @@
    const [year,month]=report.month.split('-').map(Number);
    const metadata={2:['Pharmacy Code',report.pharmacyCode],3:['Month',month],4:['Year',year],10:['ID',e.id],11:['Name',e.name]};
    return {name:'Employee '+(staff.indexOf(e)+1),widths:[17,24,13,13,14,14,14,14,12,12,12,33,12,14,14],freeze:1,
+    merges:[0,1,2].map(i=>({s:{r:e.days.length+1+i,c:0},e:{r:e.days.length+1+i,c:7}})),
     rows:[{values:headers,style:'templateHeader'},...e.days.map((day,i)=>{
      const values=dailyValues(day,true);
      if(metadata[i+2])[values[0],values[1]]=metadata[i+2];
      return {values,style:day.kind==='friday'?'templateFriday':day.kind,height:day.notes.length>35?32:17,formats:{2:'date',4:'time',5:'time',6:'time',7:'time',8:'number',9:'number',10:'number'}};
-    }),{values:[report.range?'Period totals':'Monthly totals',null,null,null,null,null,null,null,...overtime.map(k=>asHours(e.totals[k])),null],style:'total',formats:{8:'number',9:'number',10:'number'}},
-    {values:['Basic Hours',asHours(e.totals.basic),'Total Hours',asHours(e.totals.total)],style:'total',formats:{1:'number',3:'number'}}]};
+    }),{values:['Period Totals',null,null,null,null,null,null,null,...overtime.map(k=>asHours(e.totals[k])),null],style:'total',formats:{8:'number',9:'number',10:'number'}},
+    {values:['Basic Hours',null,null,null,null,null,null,null,asHours(e.totals.basic)],style:'total',formats:{8:'number'}},
+    {values:['Total Hours',null,null,null,null,null,null,null,asHours(e.totals.total)],style:'total',formats:{8:'number'}}]};
   });
   return chunk(staff,6).map((page,index)=>({name:'Schedule '+(index+1),widths:[13,14,...page.map(()=>28)],freeze:6,
    rows:[{values:['Day','Day Name',...page.map(e=>e.name+'\n'+e.id)],style:'header',height:32},
@@ -97,6 +99,7 @@
   for(const sheet of plan){
    const rows=sheet.rows.map(row=>Array.from({length:sheet.widths.length},(_,i)=>row.values[i]??''));
    const ws=X.utils.aoa_to_sheet(rows);
+   if(sheet.merges)ws['!merges']=sheet.merges;
    ws['!cols']=sheet.widths.map(wch=>({wch}));
    ws['!rows']=sheet.rows.map(row=>({hpt:row.height||19}));
    X.utils.book_append_sheet(workbook,ws,sheet.name);
@@ -155,7 +158,7 @@
     </div><div class="duty-report-table-scroll" tabindex="0"><table aria-label="${state.format==='standard'?'Standard Timesheet':'Schedule Layout'} preview" class="duty-report-table duty-report-${state.format}">
     <colgroup>${sheet.widths.slice(0,state.format==='standard'?12:sheet.widths.length).map((width,col)=>`<col style="width:${state.format==='schedule'?(col===0?'100px':col===1?'110px':'auto'):([65,105,90,80,85,85,85,85,65,65,65,155][col]+'px')}">`).join('')}</colgroup>
     <thead><tr>${sheet.rows[0].values.slice(0,state.format==='standard'?12:sheet.widths.length).map(v=>`<th scope="col">${esc(v)}</th>`).join('')}</tr></thead>
-    <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:state.format==='standard'?12:sheet.widths.length},(_,col)=>`<td>${esc(display(row.values[col],row.formats?.[col]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+    <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:state.format==='standard'?12:sheet.widths.length},(_,col)=>{const merge=sheet.merges?.find(m=>m.s.r===sheet.rows.indexOf(row)&&m.s.c<=col&&m.e.c>=col);return merge&&merge.s.c!==col?'':`<td${merge?` colspan="${merge.e.c-merge.s.c+1}"`:''}>${esc(display(row.values[col],row.formats?.[col]))}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }
   const summary=e=>Object.entries(categories).map(([k,label])=>`<div class="duty-category-${k}"><dt>${label}</dt><dd>${M.hours(e.totals[k])}</dd></div>`).join('');
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">

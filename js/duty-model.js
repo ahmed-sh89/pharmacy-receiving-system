@@ -135,6 +135,10 @@
   return {hasTimes:payload.status==='EMPTY'||!!payload.periods?.length,allocation:payload.manual_minutes?'manual':'auto'};
  }
  const ordered=rows=>rows.map((value,index)=>({value,index})).sort((a,b)=>(a.value.sort_order??1000)-(b.value.sort_order??1000)||a.index-b.index).map(r=>r.value);
- const api={ordered,DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ function scheduleLabel(employee){
+  const custom=String(employee.schedule_display_name||"").trim();if(custom)return custom;
+  const name=String(employee.name||""),parts=name.trim().split(/\s+/);return name.length>22&&parts.length>2?parts[0]+" "+parts.at(-1):name;
+ }
+ const api={scheduleLabel,ordered,DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

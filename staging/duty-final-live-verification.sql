@@ -32,15 +32,28 @@ do $$declare pid uuid=current_setting('duty.test_pharmacy')::uuid;v jsonb;p json
  if v->'entries'->2->'minutes'->>'basic'<>'480' then raise exception 'FAIL persistent manual';end if;
 
  perform public.save_pharmflow_duty_employee_v1(pid,'UNUSED-001','Synthetic unused','labor',true,0);
- perform public.manage_pharmflow_duty_directory_v1(pid,'employee','reorder','[{"key":"UNUSED-001","expected_revision":1},{"key":"SYNTH-001","expected_revision":1}]');
+ perform public.manage_pharmflow_duty_directory_v2(pid,'employee','reorder','[{"key":"UNUSED-001","expected_revision":1},{"key":"SYNTH-001","expected_revision":1}]');
  v=public.get_pharmflow_duty_schedule_v1(pid,'2026-11-01');
  if not exists(select 1 from jsonb_array_elements(v->'employees') e where e->>'code'='UNUSED-001' and e->>'sort_order'='0') then raise exception 'FAIL durable order';end if;
- perform public.manage_pharmflow_duty_directory_v1(pid,'employee','delete','[{"key":"UNUSED-001","expected_revision":2}]');
+ perform public.manage_pharmflow_duty_directory_v2(pid,'employee','delete','[{"key":"UNUSED-001","expected_revision":2}]');
  v=public.save_pharmflow_duty_schedule_v2(pid,'2026-11-01',jsonb_build_array(jsonb_build_object('code','SYNTH-001','date','2026-11-10','expected_revision',0,'payload',p)),'Synthetic single round trip');
  if not exists(select 1 from jsonb_array_elements(v->'entries') e where e->>'date'='2026-11-10' and e->>'revision'='1') then raise exception 'FAIL save-read';end if;
- perform public.manage_pharmflow_duty_directory_v1(pid,'employee','delete','[{"key":"SYNTH-001","expected_revision":2}]');
+ perform public.manage_pharmflow_duty_directory_v2(pid,'employee','archive','[{"key":"SYNTH-001","expected_revision":2}]');
  v=public.get_pharmflow_duty_schedule_v1(pid,'2026-11-01');
  if v->'employees'->0->>'active'<>'false' or jsonb_array_length(v->'entries')<>4 then raise exception 'FAIL history archival';end if;
+
+ if v->'employees'->0->>'archived'<>'true' then raise exception 'FAIL distinct archive';end if;
+ begin perform public.manage_pharmflow_duty_directory_v2(pid,'employee','delete','[{"key":"SYNTH-001","expected_revision":3}]');raise exception 'FAIL historical delete';exception when raise_exception then if sqlerrm not like 'Historical dependencies%' then raise;end if;end;
+ perform public.manage_pharmflow_duty_directory_v2(pid,'employee','restore','[{"key":"SYNTH-001","expected_revision":3}]');
+ perform public.save_pharmflow_duty_employee_v3(pid,'SYNTH-001','SYNTH-001','Synthetic Full Official Name','pharmacist',true,540,4,'Schedule Short');
+ v=public.get_pharmflow_duty_schedule_v1(pid,'2026-11-01');
+ if v->'employees'->0->>'name'<>'Synthetic Full Official Name' or v->'employees'->0->>'schedule_display_name'<>'Schedule Short' or v->'employees'->0->>'archived'<>'false' then raise exception 'FAIL official/display name or restore';end if;
+ begin perform public.save_pharmflow_duty_employee_v3(pid,'SYNTH-001','SYNTH-001','Stale','pharmacist',true,540,4,'Stale');raise exception 'FAIL stale display edit';exception when raise_exception then if sqlerrm not like 'DUTY_CONFLICT%' then raise;end if;end;
+ begin perform public.manage_pharmflow_duty_directory_v2(current_setting('duty.other_pharmacy')::uuid,'employee','archive','[{"key":"SYNTH-001","expected_revision":5}]');raise exception 'FAIL lifecycle tenant';exception when insufficient_privilege then null;end;
+ perform public.save_pharmflow_duty_position_v1(pid,'SYNTH-POS','Synthetic Unused Position',true,0);
+ perform public.manage_pharmflow_duty_directory_v2(pid,'position','archive','[{"key":"SYNTH-POS","expected_revision":1}]');
+ perform public.manage_pharmflow_duty_directory_v2(pid,'position','restore','[{"key":"SYNTH-POS","expected_revision":2}]');
+ perform public.manage_pharmflow_duty_directory_v2(pid,'position','delete','[{"key":"SYNTH-POS","expected_revision":3}]');
  perform public.set_pharmflow_duty_month_v1(pid,'2026-11-01','Completed',1,'Synthetic completed month');
  begin perform public.save_pharmflow_duty_entries_v1(pid,jsonb_build_array(jsonb_build_object('code','SYNTH-001','date','2026-11-10','expected_revision',0,'payload',p)),'Locked synthetic');raise exception 'FAIL locked accepted';exception when raise_exception then if sqlerrm not like '%completed%' then raise;end if;end;
 end $$;
