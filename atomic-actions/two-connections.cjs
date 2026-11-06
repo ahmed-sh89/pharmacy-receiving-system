@@ -34,7 +34,7 @@ async function isolation(b){await b.query('set role authenticated');await b.quer
  let control=await connect('postgres');await control.query('create database '+name);await control.end();
  let a=await connect(name),b=await connect(name);
  const s={name,failAfter,boundaries:[]};try{
- await a.query(fs.readFileSync('atomic-actions/fixture.sql','utf8'));await isolation(b);const before=await baseline(b);
+ let fixture=fs.readFileSync('atomic-actions/fixture.sql','utf8');if(failAfter!==null)fixture=fixture.replace('create role anon;create role authenticated;','');await a.query(fixture);await isolation(b);const before=await baseline(b);
  const apid=(await a.query('select pg_backend_pid() pid')).rows[0].pid,bpid=(await b.query('select pg_backend_pid() pid')).rows[0].pid;assert.notEqual(apid,bpid);s.backends={a:apid,b:bpid};
  await a.query('begin');await a.query("set local statement_timeout='10s'");
  let injected=false;
