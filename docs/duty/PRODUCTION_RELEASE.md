@@ -1,3 +1,14 @@
+# Current workflow candidate — Staging only
+
+Production already contains the original seven Duty migrations and PR #44 at 7f0bcc1fe167415e38372b1db1d9c2f0c24858de. The historical installation steps below must NOT be replayed. New Draft PR #45 is not Production-approved.
+
+Only pending migration for this candidate: 20261106232443_duty_position_presets_staging.sql (SHA-256 5d78903e73f1e9f3b76826eb6dd2f3afcbf8769953b0e7582acbe568da1c9d5c); applied to Staging only. Before a future separately approved release, recheck current source/schema/backup and hosted history, verify original seven unchanged and new migration absent, then use one direct/session PostgreSQL connection and explicit transaction for ONLY this pending SQL plus its exact source history entry. Check auth, RLS/grants, pharmacy isolation, unchanged legacy presets/schedules and protected Receiving/Expiry fingerprints before COMMIT; inspect independently afterward. Any pre-commit failure rolls back completely. Current isolated test verifies new migration commit/history and injected rollback; previous seven-migration native atomic evidence remains historical, not proof of a new eight-file native run.
+
+After commit retain schema/history/data. UI recovery uses a protected revert PR and official workflow. No deletion/backfill of presets or assignments; old missing-position presets remain All Positions. Receiving/Expiry and Production configuration remain byte-for-byte protected. Production deployment/merge/migration/activation is NOT authorized by this Staging task.
+
+---
+Historical installation documentation (superseded for already installed databases):
+
 # Duty release preparation — 6 November 2026
 
 **READY FOR FINAL OWNER ACCEPTANCE — NOT DEPLOYED TO PRODUCTION. No merge, deployment, Production SQL or activation authorized.**
