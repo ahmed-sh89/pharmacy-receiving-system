@@ -1,3 +1,7 @@
+## 2026-11-06 · Initialization and five focused UX corrections
+
+Shell write-action synchronization after authoritative initialization; separated preset action; active-Holiday-only hydration and semantic field names; compact Apply Shift dropdown; bounded draft-only Start/End date popover. No calculation/persistence/schema changes. 49 focused and 58 neighboring checks PASS; prior atomic checksums unchanged. Native owner acceptance remains required for changed controls.
+
 # Duty development changelog
 
 ## 4 November 2026 — Stage B candidate

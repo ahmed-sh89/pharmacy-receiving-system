@@ -50,11 +50,11 @@
    ${dropdown('staff','Staff',groups.find(([id])=>id===S.group)[1],groups,S.group)}
    ${S.group==='custom'?dropdown('custom','Choose staff','Choose staff',rosterOptions.map(e=>[e.code,e.name]),S.custom):''}
    <div class="duty-period" aria-label="Staff pages"><button type="button" data-s-action="staff-back" aria-label="Previous staff page" ${S.staffPage?'':'disabled'}>‹</button><span>${S.staffPage+1}/${pages}</span><button type="button" data-s-action="staff-next" aria-label="Next staff page" ${S.staffPage+1<pages?'':'disabled'}>›</button></div>
-   <details class="duty-date-range"><summary>${S.range?formatDate(S.range.from)+' – '+formatDate(S.range.to):'Date Range'}</summary>
-   <form data-date-range>${C.dateField({id:"duty-schedule-from",name:"from",label:"From",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"To",value:S.range?.to||last,min:first,max:last})}<button type="submit">Apply</button></form></details>
+   <div class="duty-date-range"><button type="button" class="duty-dropdown-trigger" data-range-trigger aria-haspopup="dialog" aria-expanded="false">${S.range?formatDate(S.range.from)+' – '+formatDate(S.range.to):'Date Range'}</button>
+   <form data-date-range popover="manual" role="dialog" aria-label="Schedule date range">${C.dateField({id:"duty-schedule-from",name:"from",label:"Start Date",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"End Date",value:S.range?.to||last,min:first,max:last})}<p class="duty-range-error" role="alert"></p><div class="duty-popover-footer"><button type="button" data-range-cancel>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form></div>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
-   <button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
+   <button type="button" class="duty-primary" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    ${dropdown('status','Apply status to selection','Status…',Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}))}
    <button type="button" data-s-action="color">Cell Color</button></div></div>
@@ -348,19 +348,20 @@
   if(!writable()||!S.selected.length)return;
   const version=scopeVersion,targets=S.selected.map(c=>({...c,expected_revision:entry(c.code,c.date)?.revision||0}));
   const count=targets.filter(c=>payload(c.code,c.date).status!=='EMPTY').length;
-  smallPanel('Apply Shift',`${presetSelect()}<p>${targets.length} cells · ${new Set(targets.map(c=>c.code)).size} employees · ${new Set(targets.map(c=>c.date)).size} dates. ${count} existing entries will be replaced.</p><p>Existing Manual Hours are replaced by automatic hours for the chosen shift. Notes and cell colors are preserved.</p>`,async fields=>{
+  const form=smallPanel('Apply Shift',`${dropdown('preset','Shift','Choose shift',(data.shift_presets||[]).map(p=>[p.id,p.name+' · '+M.text({status:'WORK',periods:p.periods})]))}<p class="duty-apply-summary">${targets.length} cells · ${count?count+' existing entries will be replaced':'No existing shifts to replace'}</p><small class="duty-muted" title="Notes and cell colors are preserved. Manual allocations are replaced by destination automatic hours.">Uses automatic hours</small>`,async fields=>{
    if(version!==scopeVersion)throw Error('Duty context changed. Reopen Apply Shift.');
    const preset=(data.shift_presets||[]).find(p=>p.id===fields.get('preset'));if(!preset)throw Error('Select a shift.');
    if(targets.some(c=>!writableDate(c.date)||!data.employees.some(e=>e.code===c.code)))throw Error('Selection is not editable.');
    const changes=targets.map(c=>({...c,payload:M.normalize({status:'WORK',periods:preset.periods,note:payload(c.code,c.date).note,highlight:payload(c.code,c.date).highlight})}));
    if(!await save(changes,'Apply shift preset',true))throw Error(S.notice||'Shift not saved.');
   },'Apply');
+  wireDropdowns(form,(id,button,trigger)=>{form.elements[id].value=button.dataset.dropdownValue;trigger.textContent=button.textContent;trigger.setAttribute('aria-label','Shift: '+button.textContent);});
  }
  function managePresets(){
   const rows=structuredClone(data.shift_presets||[]),version=scopeVersion,revision=data.settings_revision;
   const form=smallPanel('Shift Presets',`<div data-preset-list>${rows.map((p,i)=>`<div class="duty-list-row"><span>${esc(p.name)} · ${esc(M.text({status:'WORK',periods:p.periods}))}</span><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}">Delete</button></div>`).join('')}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
   form.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
-   if(b.hasAttribute('data-preset-delete')){try{if(version!==scopeVersion||!writable())throw Error('Reopen settings.');const i=+b.dataset.presetDelete;if(!await options.confirm(`Delete preset ${rows[i].name}? Saved duties will remain unchanged.`,'Delete'))return;rows.splice(i,1);data=await options.presets(rows,revision);managePresets();}catch(error){form.querySelector('[role=alert]').textContent=error.message;}return;}
+   if(b.hasAttribute('data-preset-delete')){try{if(version!==scopeVersion||!writable())throw Error('Reopen settings.');const i=+b.dataset.presetDelete;if(!await options.confirm(`Delete preset ${rows[i].name}? Saved duties will remain unchanged.`,'Delete'))return;data=await options.presets(rows.filter((_,index)=>index!==i),revision);managePresets();}catch(error){form.querySelector('[role=alert]').textContent=error.message;}return;}
    if(!b.hasAttribute('data-preset-add')&&!b.hasAttribute('data-preset-edit'))return;
    const i=b.hasAttribute('data-preset-edit')?+b.dataset.presetEdit:-1,p=rows[i];
    const editForm=smallPanel(p?'Edit Shift Preset':'New Shift Preset',`<label class="duty-field">Name<input name="name" maxlength="40" required value="${esc(p?.name||'')}"></label>${timeFields(p?.periods||[],true)}`,async fields=>{
@@ -376,18 +377,20 @@
  function dayType(){
   const {from:initial,to:end}=M.selectedDateRange(S.selected,S.month);
   const rangeNotice=!initial?'<p>Selection contains gaps. Choose the exact date range to update.</p>':'';
-  const form=smallPanel('Calendar settings',`<button type="button" data-manage-presets>Shift Presets</button>${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${settingsEnabled()?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${settingsEnabled()?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
+  const form=smallPanel('Calendar settings',`<div class="duty-settings-action"><span>Saved shifts</span><button type="button" class="duty-primary" data-manage-presets>Shift Presets</button></div>${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${settingsEnabled()?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${settingsEnabled()?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
    ${settingsEnabled()?`<label class="duty-field">To date<input name="to" type="date" required value="${end}"></label>`:''}</div>
    <label class="duty-field">Type<select name="type"><option value="normal">Calendar default</option><option value="holiday">Public holiday</option></select></label>
-   ${settingsEnabled()?`<label class="duty-field">Holiday name<input name="name" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="note" maxlength="300"></label>`:''}`,async fields=>{
+   ${settingsEnabled()?`<label class="duty-field">Holiday name<input name="holiday_name" autocomplete="off" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="holiday_note" autocomplete="off" maxlength="300"></label>`:''}`,async fields=>{
    if(!writable())throw Error('Calendar is read only.');
-   const from=fields.get('from'),to=fields.get('to')||from,active=fields.get('type')==='holiday',name=fields.get('name')?.trim();
+   const from=fields.get('from'),to=fields.get('to')||from,active=fields.get('type')==='holiday',name=active?fields.get('holiday_name')?.trim():'';
    if(settingsEnabled()&&active&&!name)throw Error('Enter a holiday name.');
-   data=await options.holiday(M.dateRange(from,to),active,name,fields.get('note')?.trim());render();
+   data=await options.holiday(M.dateRange(from,to),active,name,active?fields.get('holiday_note')?.trim():'');render();
   },'Save');
   form.querySelector('[data-manage-presets]').onclick=managePresets;
-  const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(settingsEnabled()){form.elements.name.value=row?.name||'';form.elements.note.value=row?.note||'';}};
-  form.elements.from.onchange=()=>{if(settingsEnabled()&&(!form.elements.to.value||form.elements.to.value<form.elements.from.value))form.elements.to.value=form.elements.from.value;sync();};sync();
+  const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(settingsEnabled()){form.elements.holiday_name.value=row?.active?row.name||'':'';form.elements.holiday_note.value=row?.active?row.note||'':'';}};
+  const holidayFields=()=>{if(!settingsEnabled())return;const active=form.elements.type.value==='holiday';for(const name of ['holiday_name','holiday_note']){form.elements[name].disabled=!active;if(!active)form.elements[name].value='';}};
+  form.elements.type.onchange=holidayFields;
+  form.elements.from.onchange=()=>{if(settingsEnabled()&&(!form.elements.to.value||form.elements.to.value<form.elements.from.value))form.elements.to.value=form.elements.from.value;sync();holidayFields();};sync();holidayFields();
  }
  function hourRules(){
   const rules=data.hour_rules||[];
@@ -479,6 +482,17 @@
   }
  }
  function bind(){
+  const rangeForm=host.querySelector('[data-date-range]'),rangeTrigger=host.querySelector('[data-range-trigger]');
+  const closeRange=()=>{rangeForm.hidePopover?.();rangeTrigger.setAttribute('aria-expanded','false');rangeTrigger.focus();};
+  rangeTrigger.onclick=()=>{
+   const first=M.days(S.month)[0].date,last=M.days(S.month).at(-1).date;
+   rangeForm.querySelector('[name=from]').value=S.range?.from||first;rangeForm.querySelector('[name=to]').value=S.range?.to||last;
+   for(const input of rangeForm.querySelectorAll('[data-calendar-for]'))input.firstChild.textContent=formatDate(rangeForm.querySelector('#'+input.dataset.calendarFor).value);
+   rangeForm.querySelector('[role=alert]').textContent='';C.openPopover(rangeForm,rangeTrigger);rangeTrigger.setAttribute('aria-expanded','true');
+  };
+  rangeForm.querySelector('[data-range-cancel]').onclick=closeRange;
+  rangeForm.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeRange();}};
+
   host.onclick=async event=>{
    if(event.target.closest('.duty-cell-editor,.duty-date-range,.duty-calendar-popover,.duty-dropdown,select'))return;
    if(S.editing||S.busy||S.confirming)return;
@@ -566,7 +580,7 @@
    if(!e.target.matches('[data-date-range]'))return;
    e.preventDefault();
    const fields=new FormData(e.target),from=fields.get('from'),to=fields.get('to');
-   if(!writableDateForMonth(from)||!writableDateForMonth(to)||from>to){S.notice='Choose dates within the selected month in order.';render();return;}
+   try{M.dateRange(from,to);if(!writableDateForMonth(from)||!writableDateForMonth(to))throw Error();}catch{rangeForm.querySelector('[role=alert]').textContent='Choose valid dates within the selected month in order.';return;}
    S.range={from,to};S.notice='';clearSelection();render();
   };
   wireDropdowns(host,async(id,button)=>{

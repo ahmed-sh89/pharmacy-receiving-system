@@ -1,3 +1,25 @@
+# Duty initialization / final UX polish · 6 November 2026
+
+**READY FOR USER VERIFICATION — NOT PRODUCTION-APPROVED.** Staging only; PR #44 Draft. Prior owner Sync / Excel / Zoom acceptance remains preserved for unaffected scope.
+
+Root cause: successful initial read mounted Schedule body only, leaving shell Calendar Settings / + Employee disabled from the pre-load render. A shared shell action synchronizer now updates after authoritative reads, render and load completion/error, honoring server can_write/current permission/scope. No timeout or CSS enable workaround. Existing grid node/scroll preservation retained.
+
+Calendar Settings: separated Saved shifts action block using existing primary styles. Holiday fields have distinct semantic names and autocomplete off; inactive/default calendar rows never hydrate old names/notes. Normal type clears/disables and submits empty holiday fields; actual active saved Holiday restores its own name/note. Fresh modal lifecycle discards unsaved drafts.
+
+Apply Shift: existing toolbar action now primary; existing accessible Duty dropdown shows preset names/time ranges; concise cell/replacement summary and contextual Auto-hours help. Confirmation/batch CAS/save/Undo/Redo and calculations unchanged. Failed preset deletion no longer mutates its local draft before acknowledgement.
+
+Date Range: existing calendar fields now Start Date / End Date in bounded top-layer manual popover, separated Cancel/primary Apply footer. Opening resets drafts to applied range; Cancel/Escape don't apply; invalid ranges retain schedule and show inline error. Shared Report/calendar behavior unchanged. Superseded absolute/details source rules removed rather than overridden.
+
+Verification: 49 focused Duty/UI/authorization checks PASS (5 new initialization/Holiday/range tests); 58 auth/Receiving/Expiry neighbors PASS. Staging build PASS. No migration edits/new SQL; seven checksums unchanged, previous native atomic seven-migration Actions 42227797916 retained without rerun. Release protected-file check follows publishing. No Receiving/Expiry/auth/permission/Production config source modified.
+
+Fresh browser/native Windows Chrome 75/80/100 acceptance for these changed controls remains NOT VERIFIED until directly tested. Do not infer signed-in hard refresh or cross-session success from DOM tests. Tests simulate fresh-document initial reads, readonly/error restrictions, saved/inactive Holiday hydration, normal submission stripping, range draft/cancel/invalid/apply/reopen, overwrite/Undo/conflict regression.
+
+Owner checks: (1) Open Duty directly and hard-refresh; authorized Calendar Settings/+ Employee activate without tab switching. (2) Open fresh Calendar Settings, verify blank Holiday fields and separate Presets; edit a saved Holiday, Cancel/reopen. (3) Apply a named shift to occupied cells, cancel/confirm replacement and Undo/Redo. (4) At native Chrome 75/80/100 verify Start/End range popup, Cancel, invalid range and Apply, readable shift list and no clipping.
+
+No Production SQL/data/merge/deployment/activation authorized. Runtime/Preview/CI evidence recorded in delivery follow-up.
+
+## Preserved prior scope
+
 # Duty Shift Presets / Apply Shift · 6 November 2026
 
 **READY FOR USER VERIFICATION — NOT PRODUCTION-APPROVED.** PR #44 remains Draft. Preserve owner Sync/Excel/Zoom PASS for prior scope; these are not new-flow acceptance.
