@@ -3,7 +3,7 @@
 **BLOCKED — NOT READY FOR PRODUCTION; final security/visual acceptance open. No merge, deployment, Production SQL or activation authorized.**
 
 Production source: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
-Duty source: `76288141aad46469e6a3f838525550757f602324` (runtime `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`).
+Duty runtime source: `766d3e632f8861a26f6d8ba0fa177159aa99ba40`; release runtime `aef6dbdfe8836fb9c4e99a53e7ca10b8f8876cff`. Authoritative current evidence: `CURRENT_CHECKPOINT.md`.
 Release branch: `release/duty-production-prep-20261105`, created directly from that Production commit. The existing feature-branch PR #43 is a Staging candidate, not the clean release branch.
 
 ## Scope and access
@@ -57,3 +57,5 @@ Disable Duty using the existing Administrator Permissions form with current revi
 Final Staging migration adds two sort_order columns and guarded directory/save-read RPCs. Default values preserve the prior neutral/name ordering; the new reader field is backward-compatible. Updated clients need the final migration before release. Rollback should retain sort_order/data and both manual-aware readers; old clients ignore ordering. No automatic SQL execution is part of CI.
 
 Final UI continuation adds an independent archived state, schedule-only optional display names, aligned merged footer rows and fixed toolbar tracks. See CURRENT_CHECKPOINT for exact QA evidence. The directory-v1 authenticated grant is revoked by migration 6; older clients cannot manage the directory. Safe rollback is disable Duty and retain additive schema/history; keep the directory-v2 adapter for any scoped UI revert. The reported Chrome Dangerous badge is unresolved: one read-only prior-preview check reached sign-in without an interstitial but could not inspect Chrome chrome/security state. Do not bypass it or claim clean security.
+
+The four final UX corrections retain the scoped roster during month reads, constrain Reports to an internal table scroller, refine editor presentation and auto-update searchable report controls. No new migrations or backend calls. Final local checks: 76 development / 78 release / 124 non-regression PASS; runtime CI SUCCESS. Synthetic browser month/range-copy/layout checks PASS; CSS-scaled 75/80 diagnostics are not native Windows zoom acceptance. Keep the Chrome Dangerous, fresh authenticated-session and native acceptance gates open as detailed in CURRENT_CHECKPOINT. No Production promotion is authorized.
