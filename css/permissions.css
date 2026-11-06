@@ -1,4 +1,5 @@
 .permissionHidden{display:none!important}
+body.permissionDUTYDisabled #page-duty{display:none!important}
 body.permissionRECEIVINGDisabled :is(#page-dashboard,#page-receiving,#page-files,#page-reports,#page-sessions,#page-archive,#zebraReceivingShell){display:none!important}
 body.permissionEXPIRYDisabled :is(#page-expiry,#zebraExpiryShell,.expiryNeedsReviewPanel){display:none!important}
 [data-permission-blocked]{opacity:.55;cursor:not-allowed!important}

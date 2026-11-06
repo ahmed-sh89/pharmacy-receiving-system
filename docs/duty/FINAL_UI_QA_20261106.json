@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-06",
+  "scope": "Staging only final Duty UI",
+  "production_main": "2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f",
+  "feature_tests": {
+    "pass": 72,
+    "fail": 0,
+    "private_template": "included"
+  },
+  "release_tests": {
+    "pass": 74,
+    "fail": 0,
+    "protected_main_files": 81
+  },
+  "focused_non_regression": {
+    "pass": 124,
+    "fail": 0
+  },
+  "builds": {
+    "feature_preview": "PASS",
+    "release_local_artifact_only": "PASS"
+  },
+  "live_staging": {
+    "project": "tovkcakucyagvbzvlnks",
+    "synthetic_rollback_only": "PASS",
+    "migration": "20261106010727_duty_directory_lifecycle_staging.sql",
+    "checks": [
+      "archive/restore distinction",
+      "historical delete rejection",
+      "unused employee/position delete",
+      "official name/display name persistence",
+      "stale revision rejection",
+      "tenant denial",
+      "one-request schedule write/read",
+      "permission and expired-session denial"
+    ]
+  },
+  "browser_security": {
+    "target": "https://pharmflow-test-h286zbfaq-fhyh2xtskz-3504.vercel.app/",
+    "observed": "Sign-in page; no blocking warning interstitial",
+    "chrome_address_bar_dangerous_badge": "NOT VERIFIED",
+    "release_gate": "BLOCKED pending owner warning confirmation"
+  },
+  "native_zoom_75_80_100": "NOT VERIFIED",
+  "fresh_independent_session_new_features": "BLOCKED: browser signed out; no auth retry",
+  "changed_footer_native_excel_2016_2019": "USER VERIFICATION REQUIRED",
+  "prior_owner_acceptance": "Retained as recorded for previous candidate; not fresh evidence for these UI changes",
+  "full_legacy_suite": "Not rerun; inherited failures retained in VERIFICATION_20261105.json"
+}

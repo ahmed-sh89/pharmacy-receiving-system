@@ -72,10 +72,11 @@
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
 <link rel="stylesheet" href="css/settings-workspace.css?v=FINAL_REFINEMENTS_20261028">
-<link rel="stylesheet" href="css/permissions.css">
+<link rel="stylesheet" href="css/permissions.css?v=DUTY_READINESS_20261105">
 
 <link rel="stylesheet" href="css/receiving-order-toolbar.css">
 <link rel="stylesheet" href="css/receiving-allocation.css?v=20261031">
+<link rel="stylesheet" href="css/duty.css?v=DUTY_REFINE_20261106">
 </head>
 
 
@@ -365,6 +366,7 @@
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
 
             <button class="sidebarItem" type="button" data-page="expiry" aria-label="Expiry" title="Expiry"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Expiry</span></button>
+<button class="sidebarItem permissionHidden" type="button" data-page="duty" aria-label="Duty" title="Duty"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/></svg></span><span>Duty</span></button>
             <button class="sidebarItem" type="button" data-page="settings" aria-label="Settings" title="Settings"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.87 2h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.3 7.3 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L3.23 8.48a.5.5 0 0 0 .12.64l2.03 1.58a7.6 7.6 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.22l2.39-.96c.5.39 1.04.7 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96a.5.5 0 0 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64z"/></svg></span><span>Settings</span></button>
         </nav>
 
@@ -529,7 +531,7 @@
              MAIN CONTENT
         =================================================== -->
 
-        <div class="mainContent">
+        <div class="mainContent"><section id="page-duty" class="appPage" aria-label="Duty"></section>
 
 
             <!-- ==================================================
@@ -2572,7 +2574,7 @@
      APPLICATION FILES
 =================================================== -->
 
-<script src="js/config.js?v=UI_REVIEW_CLEAN1"></script>
+<script src="js/config.js?v=DUTY_READINESS_20261105"></script>
 
 <script src="js/utils.js?v=RECEIVING_U0030_RECOVERY2"></script>
 
@@ -2600,7 +2602,7 @@
 <script src="js/orders.js?v=RECEIVE_ALL_ATOMIC1"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
-<script src="js/permissions.js?v=RECEIVING_RELEASE_20261101"></script>
+<script src="js/permissions.js?v=DUTY_REFINE_20261106"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
 <script src="js/auth.js?v=P1_HANDHELD_AUTH_20261102"></script>
 
@@ -2639,7 +2641,9 @@
 <script src="js/header-account-ui.js?v=SLEEP_WAKE_20261026"></script>
 
 
-<script src="js/settings-workspace.js"></script>
+<script src="js/settings-workspace.js?v=DUTY_REFINE_20261106"></script>
+<script src="js/duty-model.js?v=DUTY_REFINE_20261106"></script><script src="js/duty-controls.js?v=DUTY_REFINE_20261106"></script><script src="js/duty-schedule.js?v=DUTY_REFINE_20261106"></script><script src="js/duty-reports.js?v=DUTY_REFINE_20261106"></script><script src="js/duty.js?v=DUTY_REFINE_20261106"></script>
 </body>
 
 </html>
+

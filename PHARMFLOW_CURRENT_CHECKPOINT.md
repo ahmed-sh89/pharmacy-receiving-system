@@ -1,3 +1,7 @@
+# Duty Staging Stage B — 4 November 2026
+
+Duty Stage A refinement and authorized Stage B scheduling are READY FOR TEST on `feature/duty-staging-20261104`. Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. See [Duty checkpoint](docs/duty/CURRENT_CHECKPOINT.md) and [verification](docs/duty/STAGE_B_VERIFICATION.md). Staging migration `20261104013200` applied; 20 automated tests, live SQL, real DB concurrency and browser-demo checks PASS. Authenticated browser save/sync and native Windows zoom remain acceptance gates. Stop for owner review; no export or Production work authorized. Previous Production checkpoint follows unchanged.
+
 # Receiving Email Production release — 3 November 2026
 
 **Production deployment: PASS. Mandatory non-destructive smoke: PASS.**
@@ -58,3 +62,8 @@ Production read-only schema/RLS/SEC007 compatibilityPASS after correcting malfor
 ## 2026-10-28 — Production release deployed
 
 READY FOR USER VERIFICATION. Approved3648a277 merged via PR33; runtimeab05fb5a5cfc2b1dc2cf35dabd9c8c5619c960ad, Pages40726680723SUCCESS. Production migration20261028162904 BEFORE STATEMENT applied/verified. Master56588/78164 counts and complete content hashes unchanged; SEC007/RLS/ACL preserved. Owner/non-owner/revoked read-only SQL checksPASS. Windows synthetic full-size Excel USER VERIFIED/PASS. CI/build/securityPASS. Actual signed-in Production UI/export smokePENDING; no USER VERIFIED DONE claim. No operational/Auth/Edge changes, no Vercel main deployment and no rollback. Details: docs/releases/PRODUCTION_DEPLOYMENT_20261028.md. This follow-up is documentation-only, runtime/SQL unchanged.
+
+
+## Duty readiness recovery · 5 November 2026
+
+Staging-only continuation on `feature/duty-staging-20261104`; authoritative Duty state is `docs/duty/CURRENT_CHECKPOINT.md`. Recovered report/XLSX work from `1c28796`; new additive Staging migration `20261105183357` integrates Disabled-by-default Duty permissions and durable settings. Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. No Receiving/Expiry business logic changed. Release blocked pending authenticated browser/synchronization and acceptance gates. No merge or Production deployment authorized.

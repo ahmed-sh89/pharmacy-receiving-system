@@ -1,0 +1,36 @@
+# Duty visual consistency · 6 November 2026
+
+**READY FOR USER VERIFICATION — NOT PRODUCTION-APPROVED.** Staging only; PR #44 stays Draft.
+
+Current change is visual only: shared white/blue-gray/dark-blue secondary controls for Schedule and Calendar Settings, 34px compact control sizing, consistent hover/focus/disabled states. Apply Shift and Shift Presets use secondary hierarchy; + Employee and modal confirmation remain primary blue. Calendar field surfaces match; existing preset-section divider remains. Delete retains confirmation and red iconography. Superseded Date Range accent and selection-tool sizing removed at source; no CSS override appendix.
+
+Files: css/duty.css, js/duty-schedule.js, tests/duty-polish.test.cjs and these Duty docs. No service/calculation/persistence/permission/export/migration/other-module edits. Seven migration checksums and prior atomic/Excel/Sync evidence preserved without retesting unrelated gates.
+
+Local verification: 17 focused UI/regression tests PASS, zero FAIL; feature/release Preview builds PASS; protected Production-file isolation test PASS. Browser synthetic fixture: 34px secondary controls and Calendar fields, white surfaces, primary Save/Apply white text on blue, red Delete icon, enabled Copy hover and 2px keyboard-focus outline verified. Date Range popover bounded; Calendar modal and outer page have no horizontal overflow at 100% and CSS-scale 75/80 simulations. These simulations do not prove native Windows Chrome zoom acceptance. No authentication retries or database writes. Native Windows Chrome 75/80/100 visual acceptance remains USER VERIFICATION REQUIRED. Exact next action: inspect toolbar and Calendar Settings at those zoom levels, including dropdowns, disabled controls, keyboard focus and Save/Cancel. No Production action authorized.
+
+Runtime Duty SHA: 92a59c8272910117aade474e3e320b9e4b2e8b17. READY Preview: https://pharmflow-test-13orzmn7i-fhyh2xtskz-3504.vercel.app/ (Preview target; matching Git SHA). PR #44 remains Draft. Runtime source followed by documentation-only checkpoint commit. Current visual-only rollback: revert the scoped style/markup commits; retain all schema/data/history.
+
+---
+Previous export and operational verification evidence (unchanged):
+
+# Duty final export / UX regression acceptance · 6 November 2026
+
+**READY FOR USER VERIFICATION — NOT PRODUCTION-APPROVED.** Staging only. PR #44 Draft. Owner-reported Excel regression supersedes earlier Excel PASS for the affected export scope. Prior accepted Sync/calculations/persistence/atomic evidence remains preserved.
+
+Excel investigation: inspected actual Chrome download from previous runtime d7c21d58457d93a020db5da2f56a3c00b327a18e. It is a real PK ZIP, passes CRC and independently opens with openpyxl; Blob is Uint8Array, not text. Found ZIP last-modification month/day zero in central/local headers. Bundled CFB writer writes zero central-directory timestamps even when mt is supplied. Corrected Duty-owned final ZIP timestamp serialization: valid deterministic 1980-01-01 in local AND central headers, retaining compressed bytes/CRC. Added typed-byte/signature/ZIP-directory guards. No vendor or shared export edits. This proves correction of a ZIP conformance defect; actual cause of Windows Excel's refusal cannot be conclusively attributed without the failing owner file or native Excel environment. Do not claim native Excel success.
+
+Export filenames use selected pharmacy context: CODE_Duty_November-2026.xlsx or CODE_Duty_2026-11-05_to_2026-11-07.xlsx. Both export formats now use one employee per worksheet, named from actual Job Number, deterministic invalid/missing/duplicate-name handling; identity inside worksheets preserved even for short custom ranges. On-screen report preview and Copy E:L unchanged. Blank applicable employees/order and existing calculations preserved.
+
+Preset list: compact rows with emphasized name, separate interval lines and aligned action group. Child Add/Edit Save returns to authoritative list; Cancel/Escape returns without save; Close/X exits. Existing CAS and settings read/write path unchanged. Apply preset list matches trigger width using existing top-layer helper; names/time intervals separated, selected trigger uses short name and accessible full time label.
+
+Editing lifecycle: no silent autosave. A detached editor could leave S.editing truthy; a stale drag flag also participated in navigation guard. isEditing now requires a live editor or real captured drag, while busy/confirmation remain blockers. Navigation guards no longer write transient edit instructions into persistent state.error (which could later disable shell write controls). Genuine unsaved modal still blocks navigation and retains draft. Cancel/save and normal tab navigation clear state normally.
+
+Toolbar: one source layout rule and one typography/control-size rule, original primary hierarchy retained. Scoped Duty only; no overlapping toolbar layout patches.
+
+Verified: 8 real-Blob output fixtures (single/all × standard/schedule × month/range) pass ZIP CRC, required OpenXML parts, valid ZIP dates and openpyxl independent reading with actual Job Number sheet names; selected-period totals/blank employees tested. 18 focused export/lifecycle tests PASS; 58 neighboring auth/Receiving/Expiry checks PASS. Full affected Duty suite before final small ZIP/label follow-up: 97 PASS, 1 optional private template SKIP, zero FAIL. Targeted follow-ups recorded separately. Native Windows Excel 2016/2019 and native Chrome 75/80/100 remain NOT VERIFIED for this correction; previous results are not relabeled.
+
+Seven migration files/checksums unchanged; no SQL/migration execution, no Production modifications. Existing atomic seven-migration Actions 42227797916 preserved. Release rollback is scoped UI revert only; retain schema/history/presets. Final Preview/SHA/CI evidence follows.
+
+Owner checks: (1) Download individual/all exports in both formats and open in Windows Excel; verify code filename, Job Number sheets and totals. (2) Add/edit several presets, Save/Cancel back to list, X exit. (3) Apply dropdown width/readability, overwrite cancel/confirm and Undo/Redo. (4) Navigate/edit/Cancel across tabs at Chrome 75/80/100; verify controls active and no stale instruction or overflow.
+
+Final local verification: affected release suite 116 PASS / 1 optional private-template SKIP / 0 FAIL (includes 17 previously local atomic tests, not new cloud evidence); 11 focused final UI/preset checks PASS and 18 export/lifecycle checks PASS (overlapping sets). 58 neighboring tests PASS. Eight independent openpyxl files compared cell-for-cell against expected projection: 3,180 cells including dates/time fractions, totals, identity and blank employees. Both builds PASS; seven original migration checksums unchanged. Source comparison to fb0a8fddd340cba22cfaf73f6280960f06a0a16c shows the same bare CFB writer/Blob pipeline: the zero-timestamp defect predates the latest UX work. No evidence supports blaming the last five UI fixes or claiming an exact newly introduced binary regression. Final Windows Excel acceptance is required; request the failing original workbook if refusal persists after this corrected candidate.

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { cpSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {dutyPreview,dutyPreviewBuild} from './staging/duty-preview-build.mjs';
 
 function copyLegacyRuntime(){
   return {
@@ -47,7 +48,7 @@ function productionAuthorizationRelease(){
     configResolved(config){
       if(config.command==='build' && process.env.VERCEL &&
           (process.env.VERCEL_ENV!=='production' ||
-           process.env.VERCEL_GIT_COMMIT_REF!=='main')){
+           process.env.VERCEL_GIT_COMMIT_REF!=='main') && !dutyPreview){
         throw new Error('Production release requires main and Production configuration');
       }
     },
@@ -66,5 +67,6 @@ function productionAuthorizationRelease(){
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic()]
+  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic(),dutyPreviewBuild()]
 });
+

@@ -90,3 +90,15 @@ test('transient permission loss preserves visible Receiving and unsaved input wh
 test('offline retains only a same-scope display; definitive denial or another identity hides it',async()=>{
  let denied=false;const h=harness(async()=>{if(denied)throw Object.assign(Error('denied'),{serverRejected:true,httpStatus:403});return good();});await h.p.load();h.event('offline');assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),false);assert.equal(h.p.allowed('RECEIVING'),false);h.auth.identityEpoch++;h.p.apply();assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),true);await h.p.load();denied=true;await assert.rejects(h.p.load());assert.equal(h.document.body.classList.contains('permissionRECEIVINGDisabled'),true);assert.equal(h.p.allowed('RECEIVING'),false);
 });
+
+test('Duty is default-deny even for System Administrator, routes and RPCs fail closed, legacy modules are unchanged',async()=>{
+ let response=good('p',{system_administrator:true});const h=harness(async()=>response);
+ const nav=h.document.createElement('a');nav.dataset.page='duty';h.document.body.append(nav);
+ await h.p.load();assert.equal(h.p.allowed('DUTY'),false);assert.equal(h.p.routeModule('duty'),'DUTY');assert(nav.classList.contains('permissionHidden'));
+ assert.throws(()=>h.p.checkRpc('get_pharmflow_duty_schedule_v1'),/not permitted/);
+ assert.equal(h.p.allowed('RECEIVING',true),true);assert.equal(h.p.allowed('EXPIRY',true),true);
+ response=good('p',{duty:'FULL'});await h.p.load();assert.equal(h.p.allowed('DUTY',true),true);assert(!nav.classList.contains('permissionHidden'));
+ h.auth.context.member_role='staff';assert.equal(h.p.allowed('DUTY'),true);assert.equal(h.p.allowed('DUTY',true),false);assert.throws(()=>h.p.checkRpc('save_pharmflow_duty_employee_v2'),/not permitted/);
+ h.c.AppRouter.currentRoute='duty';response=good('p',{duty:'DISABLED'});await h.p.load();assert.equal(h.c.AppRouter.currentRoute,'expiry');assert(nav.classList.contains('permissionHidden'));
+ response=good('p',{duty:'INVALID'});await assert.rejects(h.p.load(),/invalid server response/);assert.equal(h.p.allowed('DUTY'),false);
+});
