@@ -24,7 +24,7 @@
   assign(1,'02',M.normalize({status:'ANNUAL_LEAVE'}));
   assign(1,'04',M.parse('12 PM – 9:30 PM'));
   d.holidays=[{date:month+'-05',active:true,name:'Public holiday',revision:1}];
- }demos.set(month,d);}return Object.assign(demos.get(month),{default_basic:demoDefaultBasic});};
+ }demos.set(month,d);}return Object.assign(demos.get(month),{default_basic:demoDefaultBasic,shift_presets:demoPresets});};
  const view=()=>state.demo?demoMonth(state.month):state.data||{positions:M.defaults,employees:[],entries:[],holidays:[],can_write:false};
  function reset(){if(pendingConfirm)pendingConfirm(false);state.directoryFilter='active';state.sequence++;state.data=null;state.error='';state.loading=false;state.transitioning=false;state.scope=scope();state.demo=false;demoCustom=null;demos.clear();demoRules.length=0;demoStaff=M.demo();demoPharmacyCode='DEMO';demoDefaultBasic=M.DEFAULT_BASIC;DutySchedule.clear();closePanel();render();}
  async function readMonth(month){
@@ -69,7 +69,8 @@
   if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,scheduleConfig());
   if(state.tab==='reports')window.DutyReports.mount(root.querySelector('#duty-reports-body'),d,{month:state.month,demo:state.demo,pharmacyCode:state.demo?demoPharmacyCode:context()?.pharmacy_code});
  }
- function scheduleConfig(){return {month:state.month,demo:state.demo,loading:state.loading||state.transitioning||(!state.data&&!state.demo&&!!scope()),save,confirm:confirmReplace,panel:customPanel,
+ let demoPresets=[];
+ function scheduleConfig(){return {presets:async (rows,revision)=>{if(!state.demo)return mutate('save_pharmflow_duty_presets_v1',{p_presets:rows,p_expected_revision:revision});demoPresets=rows;return Object.assign(demoMonth(state.month),{shift_presets:demoPresets});},month:state.month,demo:state.demo,loading:state.loading||state.transitioning||(!state.data&&!state.demo&&!!scope()),save,confirm:confirmReplace,panel:customPanel,
    loadCustom:()=>{try{const raw=sessionStorage.getItem(customKey+'/'+scope());if(raw!==null){const ids=JSON.parse(raw);if(Array.isArray(ids)&&ids.every(id=>typeof id==='string'))return ids;}}catch{/* Session memory fallback. */}return demoCustom;},
    saveCustom:ids=>{demoCustom=ids;try{sessionStorage.setItem(customKey+'/'+scope(),JSON.stringify(ids));}catch{/* Session memory fallback. */}},
    holiday:async(dates,active,name,note)=>{

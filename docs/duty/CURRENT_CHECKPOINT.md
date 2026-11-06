@@ -1,43 +1,19 @@
-# Duty final two fixes · 6 November 2026
+# Duty Shift Presets / Apply Shift · 6 November 2026
 
-**READY FOR USER VERIFICATION — not Production-approved.** Staging only. No merge, Production deployment, schema/data change or activation.
+**READY FOR TEST — Staging only, not Production-approved.** PR #44 remains Draft. Preserve owner Sync/Excel/Zoom PASS for prior scope; these are not new-flow acceptance.
 
-## Scope and source
+Implementation: Calendar Settings → Shift Presets CRUD; short unique names, single/split/overnight periods. Presets are pharmacy-specific JSON in existing Duty settings, protected by current allowed() authorization, pharmacy transaction lock, settings revision/CAS and audit. Existing settings writers preserve presets. Authoritative month reads include presets, using existing refresh/focus/poll synchronization. No preset IDs are written to daily entries. Rename/delete never updates saved entries.
 
-Production main baseline `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Preserve development HEAD `1afffa85f267e777cdf6a1250c3b39b722eba80d` and Draft release PR #44 HEAD `6a2f374eebaa42146c8f761f030e3b519a975973` as parents. No new PR, migration or dependency.
+Quick Shift fills existing editor controls; no save until Save. Current Auto/Manual selection is preserved for manual adjustments. Apply Shift previews selected employee/date/cell counts and populated destinations, asks existing overwrite confirmation, then uses the same batch/CAS/save/Undo/Redo path. Applying replaces Manual allocations with destination automatic hours explicitly disclosed in preview, preserving Notes/highlight. Friday/holiday/employee rules and overnight allocation use the established model/server code. Scope/revision changes abort stale drafts; batch failure is transactional.
 
-1. **All Employees Excel:** default empty-key filter is now explicitly All Employees. Excel Export is enabled whenever the existing selected-month report projection contains applicable employees. One download uses the existing multi-employee workbook planner: Standard Timesheet has one sheet per employee; Schedule Layout retains six employees per page/sheet in one workbook. Includes active employees without shifts and preserves the existing inclusion of inactive staff with selected-month history. Existing order, IDs/official names, date/range projection, shifts and totals are unchanged. Individual selection still exports one employee. Copy remains disabled for All and stays exactly E:L for one employee; reserved M:O compatibility remains. Clear returns to All while preserving period. No-employees export stays disabled.
-2. **Schedule internal scrolling:** removed obsolete fixed viewport offsets and 65/70vh overrides from grid source styles. One measured Duty viewport helper now serves Schedule and Reports, using actual page top/content padding and current viewport/preview scale. It responds to resize/visual-viewport/header size changes. Flex layout reserves header, month/tabs, toolbar and notices; only the grid consumes/scrolls the remainder. Existing sticky column/date headers, horizontal scrolling, selection, editing, drag autoscroll and saved scroll offsets are retained. Grid region is keyboard focusable. Receiving/Expiry/global layout remains unaffected when Duty is inactive.
+Migration 7: `20261106134244_duty_shift_presets_staging.sql`, SHA-256 `9c5f6aecc4a59439edccd90e08c4f03ec12145b7b51f2d97dc59fc2811cc4acb`. Applied to Staging tovkcakucyagvbzvlnks only; actual hosted migration version reconciled. Previous six unchanged. Table RLS/grants remain inherited/default-deny; new authenticated RPC checks current Duty/admin access. No new dependency or Receiving/Expiry/auth/business code changes.
 
-## Verification
+Verification: 3 focused new-flow tests PASS (preset create/read/stale-revision/duplicate/isolation/rename/delete/history preservation; Quick Shift/manual adjustment/conflict; multi-cell preview/overwrite cancellation/batch/Friday/Undo conflict). 58 neighboring auth/Receiving/Expiry checks PASS. Both build types PASS. Seven-migration native two-connection COMMIT and rollback boundaries 3/6/7 PASS: https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42227797916 — separate test-only branch. Connection pairs 75/76,86/87,89/90,100/101. All seven history records retain exact SQL. Read visibility/ACLs/default-denial verified before and after COMMIT. Auth helpers in these isolated DB tests are synthetic, not live session verification.
 
-| Check | Result |
-|---|---|
-| Focused Duty tests | PASS: 84, no failures/skips locally, private actual-template overlay included |
-| Focused release tests | PASS: 86, no failures/skips locally, including 81 protected Production file hashes |
-| Relevant regressions | PASS: 124 Receiving/Expiry/auth/security/Handheld checks |
-| New export tests | PASS: one-workbook All Full Month in both formats; All Custom Range in both formats; active blank staff, historical applicability, order/identity, unique days/columns, explicit totals, individual export/Copy, Clear and empty-roster guard |
-| Viewport test | PASS: actual top/padding measurement, resize response and fractional preview-scale arithmetic |
-| Existing edit/data tests | PASS: serialized Save, conflict draft, overnight/split/manual rules, month response races, scope isolation, persisted order and retained grid scroll |
-| Build / CI / browser / READY Preview | Final delivery evidence below |
+One initial local artifact test failed because local default build produced a Production-configured artifact; explicit feature Preview build and that test then passed. No guard weakened. Private native Excel fixture is optional and unavailable in this runtime; prior owner Excel PASS preserved. Browser refresh/two-session/new controls are NOT VERIFIED here until owner test. No authentication retries or password requests.
 
-No full legacy-suite rerun; inherited failures remain in VERIFICATION_20261105.json. Prior owner USER VERIFIED persistence/refresh/two-session sync/conflicts/permissions/Excel/paste acceptance remains preserved evidence, not a fresh authenticated browser claim.
+Production order after separate authorization: freeze release SHA and all SEVEN checksums; confirm backup/current schema/history and permission baseline; apply seven originals with seven history records in one transaction, now including presets; verify Disabled for every pharmacy and unchanged Receiving/Expiry; only then normal protected merge/official deployment. No activation approved. Rollback retains additive presets column, existing schema/history/manual-aware readers and directory-v2; older UI ignores presets; never delete operational data.
 
-## Remaining acceptance / safety
+Owner checks (synthetic Staging): (1) Create/rename/edit single, split and overnight presets; refresh and compare in a second authorized session. (2) Choose Quick Shift, manually adjust, Cancel then Save; verify only Save persists. (3) Select ordinary/Friday/holiday cells with and without existing shifts; cancel replacement then apply; compare hours and Undo/Redo. (4) Change one target in another session before Apply; confirm conflict prevents partial writes, then delete preset and confirm saved duties are unchanged.
 
-- Native Windows Chrome zoom 75/80/100 remains NOT VERIFIED until actual owner acceptance. CSS-scaled browser diagnostics are identified separately.
-- Fresh authenticated two-session testing is not claimed; no password request/auth retry. Outstanding native Excel 2016/2019 acceptance remains USER VERIFICATION REQUIRED. Prior Chrome Dangerous badge remains an unresolved release gate; never bypass it or claim clean security.
-- No backend, calculation, persistence, Receiving, Expiry or authentication code changes. Existing six Duty migrations stay unchanged: `20261103235030`, `20261103235335`, `20261104013200`, `20261105183357`, `20261106001033`, `20261106010727`. No Production SQL performed. Preserve schema/history and directory-v2/manual-aware compatibility on rollback; keep other module grants unchanged.
-
-Next owner checks: export All Full Month/Custom Range, including a blank employee, then compare individual export/Copy; at native Chrome 75/80/100 scroll Schedule vertically/horizontally with sticky employee headers and visible top toolbar, edit/refresh a synthetic duty and compare saved values. Stop on any Dangerous warning without bypassing. Separate explicit approval is required before any Production action.
-
-## Delivery evidence
-
-- Duty runtime: `675ac449c80c129be432e6c051df1eab96f57d2d`; release runtime: `21d82f93fcfd781992c64b09b3506f93e2e1c0a7`.
-- READY Preview: https://pharmflow-test-3y7d8wg6e-fhyh2xtskz-3504.vercel.app/ · deployment `dpl_78nAS1Af6kFUEA8qFjxhVZokZ61P`, exact Duty runtime above, Preview target only. Staging build targets `tovkcakucyagvbzvlnks`; Production configuration/guards retained.
-- Both local builds PASS. Release runtime CI Duty readiness `42156148532` / `42156143002` and security `42156148529`: SUCCESS.
-- Synthetic browser fixture (connect-src none, no cloud writes): default All Employees, Excel enabled and Copy disabled. Reports document height equals viewport (936px).
-- Schedule actual internal scrolling PASS at CSS scales 0.75/0.8/1 (not native Windows zoom): document height equals viewport 936px in every case; grid scrollTop 1012/1085/1314px. Sticky employee header stays 1px inside grid top. Toolbar position unchanged before/after scrolling. Employees → Schedule restored scrollTop 1314px. Existing edit modal opens from scrolled cell and footer remains inside viewport; cancelled without writes.
-- Complete 46-file PR diff reviewed; approved shared authorization integration retained, no Receiving/Expiry/auth business source changes. All 81 protected Production files match. PR #44 remains Draft/unmerged. Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
-- This evidence is followed by documentation-only commits; deployed runtime is explicitly identified separately from branch documentation HEAD.
-
+New authenticated two-session/browser acceptance and final CI/Preview evidence must be distinguished from prior owner acceptance. No Production SQL, merge, deployment or activation occurred.
