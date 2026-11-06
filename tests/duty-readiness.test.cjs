@@ -22,6 +22,7 @@ test('Duty readiness: default denial, audit/CAS, durable rules, calculations, is
  set test.uid='${user}';`);
  for(const file of fs.readdirSync('supabase/migrations').filter(f=>/duty_stage_a_foundation|duty_position_default|duty_stage_b_scheduling/.test(f)).sort())await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261105183357_duty_production_readiness_staging.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261106001033_duty_final_directory_and_save_staging.sql','utf8'));
  const q=(sql,args=[])=>db.query(sql,args);
  const read=async(target=pid)=>(await q('select get_pharmflow_duty_schedule_v1($1,$2) d',[target,'2026-11-01'])).rows[0].d;
  const grant=async(level,revision)=>q("select owner_set_pharmflow_permissions_v2($1,'FULL','FULL','READ_ONLY',$2,$3)",[pid,level,revision]);
@@ -58,5 +59,37 @@ test('Duty readiness: default denial, audit/CAS, durable rules, calculations, is
  const policy=(await q('select * from pharmflow_pharmacy_permissions_v1 where pharmacy_id=$1',[pid])).rows[0];assert.equal(policy.receiving,'FULL');assert.equal(policy.expiry,'FULL');
  assert.equal((await q("select has_table_privilege('authenticated','pharmflow_duty_settings_v1','SELECT') p")).rows[0].p,false);
  assert.equal((await q("select has_function_privilege('anon','public.save_pharmflow_duty_settings_v1(uuid,integer,jsonb,jsonb,bigint)','EXECUTE') p")).rows[0].p,false);
+ await grant('FULL',3);
+ const rows=(await read()).employees;
+ const order=rows.slice().reverse().map(e=>({key:e.code,expected_revision:e.revision}));
+ await q("select manage_pharmflow_duty_directory_v1($1,'employee','reorder',$2)",[pid,JSON.stringify(order)]);
+ let ordered=(await read()).employees.sort((a,b)=>a.sort_order-b.sort_order);
+ assert.equal(ordered[0].code,order[0].key);
+ await assert.rejects(q("select manage_pharmflow_duty_directory_v1($1,'employee','reorder',$2)",[pid,JSON.stringify(order)]),/DUTY_CONFLICT/);
+ await employee('unused','unused');
+ await q("select manage_pharmflow_duty_directory_v1($1,'employee','delete',$2)",[pid,JSON.stringify([{key:'unused',expected_revision:1}])]);
+ assert.ok(!(await read()).employees.some(e=>e.code==='unused'));
+ const historic=(await read()).employees.find(e=>e.code==='key-a');
+ await q("select manage_pharmflow_duty_directory_v1($1,'employee','delete',$2)",[pid,JSON.stringify([{key:'key-a',expected_revision:historic.revision}])]);
+ assert.equal((await read()).employees.find(e=>e.code==='key-a').active,false);
+ assert.equal((await read()).entries.filter(e=>e.code==='key-a').length,2);
+ await q("select set_pharmflow_duty_month_v1($1,'2026-11-01','Active',2,'Synthetic reopen')",[pid]);
+ const one=JSON.stringify([{code:'key-b',date:'2026-11-10',expected_revision:0,payload:M.parse('9 AM–6 PM')}]);
+ const response=(await q("select save_pharmflow_duty_schedule_v2($1,'2026-11-01',$2,'One round trip') d",[pid,one])).rows[0].d;
+ assert.equal(response.entries.find(e=>e.date==='2026-11-10').revision,1);
+ assert.equal(response.pharmacy_id,pid);
+ await assert.rejects(q("select save_pharmflow_duty_schedule_v2($1,'2026-11-01',$2,'Stale')",[pid,one]),/DUTY_CONFLICT/);
+
+ await q("select save_pharmflow_duty_position_v1($1,'custom-test','Synthetic Custom',true,0)",[pid]);
+ const positions=(await read()).positions.slice().reverse().map(p=>({key:p.key,expected_revision:p.revision}));
+ await q("select manage_pharmflow_duty_directory_v1($1,'position','reorder',$2)",[pid,JSON.stringify(positions)]);
+ const custom=(await read()).positions.find(p=>p.key==='custom-test');
+ await q("select manage_pharmflow_duty_directory_v1($1,'position','delete',$2)",[pid,JSON.stringify([{key:custom.key,expected_revision:custom.revision}])]);
+ assert.ok(!(await read()).positions.some(p=>p.key==='custom-test'));
+ const referenced=(await read()).positions.find(p=>p.key==='pharmacist');
+ await q("select manage_pharmflow_duty_directory_v1($1,'position','delete',$2)",[pid,JSON.stringify([{key:referenced.key,expected_revision:referenced.revision}])]);
+ assert.equal((await read()).positions.find(p=>p.key==='pharmacist').active,false);
+ assert.equal((await q("select has_function_privilege('anon','public.manage_pharmflow_duty_directory_v1(uuid,text,text,jsonb)','EXECUTE') p")).rows[0].p,false);
+
  }finally{await db.close();}
 });

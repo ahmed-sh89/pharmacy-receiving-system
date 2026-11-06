@@ -93,7 +93,7 @@ test('range deletion is atomic, undoable and revision checked',async()=>{
  await press(b,d2,'y',{ctrlKey:true});assert.equal(row(a,d1).payload.status,'EMPTY');
  row(b,d2).revision++;
  await press(b,d2,'z',{ctrlKey:true});
- assert.equal(row(a,d1).payload.status,'EMPTY');assert.match(host.textContent,/Another session changed/);
+ assert.equal(row(a,d1).payload.status,'EMPTY');assert.match(host.textContent,/Conflict: this edit was not saved/);
 });
 test('untrusted employee content is escaped, never executed as HTML',async()=>{
  const f=fixture();f.data.employees=[{code:'TEST-1',name:'<img src=x onerror=alert(1)>',position_key:'pharmacist',active:true}];
@@ -131,4 +131,22 @@ test('Calendar Settings range deduplicates staff dates and requires explicit inp
  assert.deepEqual(select([]),{from:'2026-11-01',to:'2026-11-01'});
  assert.deepEqual(select(['2026-11-03','2026-11-01','2026-11-01','2026-11-02']),{from:'2026-11-01',to:'2026-11-03'});
  assert.deepEqual(select(['2026-11-01','2026-11-03']),{from:'',to:''});
+});
+
+test('background refresh retains the same grid node, scroll and selection when server data is unchanged',async()=>{
+ const f=fixture();f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
+ const grid=f.root.querySelector('#duty-schedule-body'),scroll=grid.querySelector('.duty-grid-scroll');scroll.scrollTop=123;scroll.scrollLeft=44;
+ f.events['route:changed']({routeName:'duty'});await new Promise(setImmediate);
+ assert.equal(f.root.querySelector('#duty-schedule-body'),grid);assert.equal(grid.querySelector('.duty-grid-scroll'),scroll);assert.equal(scroll.scrollTop,123);assert.equal(scroll.scrollLeft,44);assert.equal(f.root.querySelector('.duty-inline-message'),null);
+});
+test('pending schedule write immediately shows Saving and never Saved before authoritative acknowledgement',async()=>{
+ const f=fixture(),host=f.root.querySelector('#duty-schedule-body'),data=M.demoMonth('2026-11');let resolve,reject;
+ f.window.DutySchedule.clear();f.window.DutySchedule.mount(host,data,{month:'2026-11',demo:true,confirm:async()=>true,save:()=>new Promise((a,b)=>{resolve=a;reject=b;})});
+ const cell=(date)=>host.querySelector(`[data-s-code="DEMO-001"][data-s-date="${date}"]`);
+ cell('2026-11-01').click();await host.onkeydown({target:cell('2026-11-01'),key:'c',code:'KeyC',ctrlKey:true,preventDefault(){}});
+ cell('2026-11-02').click();host.querySelector('[data-s-action="paste"]').click();await new Promise(setImmediate);
+ assert.match(host.querySelector('.duty-footnote').textContent,/Saving/);assert.doesNotMatch(host.querySelector('.duty-footnote').textContent,/Saved/);
+ resolve(data);await new Promise(setImmediate);assert.match(host.querySelector('.duty-footnote').textContent,/Saved/);
+ cell('2026-11-03').click();host.querySelector('[data-s-action="paste"]').click();await new Promise(setImmediate);reject(Error('Network unavailable'));await new Promise(setImmediate);
+ assert.match(host.querySelector('.duty-footnote').textContent,/Save not confirmed/);assert.match(host.querySelector('.duty-footnote').textContent,/draft is retained/);
 });

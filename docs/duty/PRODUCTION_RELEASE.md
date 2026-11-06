@@ -1,6 +1,6 @@
-# Duty release preparation — 5 November 2026
+# Duty release preparation — 6 November 2026
 
-**BLOCKED — NOT READY FOR PRODUCTION. No merge, deployment, Production SQL or activation authorized.**
+**READY FOR FINAL OWNER ACCEPTANCE — NOT DEPLOYED TO PRODUCTION. No merge, deployment, Production SQL or activation authorized.**
 
 Production source: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
 Duty source: `76288141aad46469e6a3f838525550757f602324` (runtime `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`).
@@ -23,7 +23,7 @@ The server and browser resolve Basic allowances using the same documented preced
 ## Exact release files
 
 - Runtime: `index.html`, `js/config.js`, `js/permissions.js`, `js/settings-workspace.js`, `css/permissions.css`, the four `js/duty*.js` files and `css/duty.css`.
-- Database: the four Duty migration files listed below.
+- Database: the five Duty migration files listed below.
 - Tests: `tests/duty-*.test.cjs`, `tests/duty-xlsx-validation.py`, the focused Duty case in `tests/sleep-wake-permissions.test.cjs`, and `.github/workflows/duty-readiness.yml`.
 - Documentation: `docs/duty` mapping/checkpoint/history, this runbook and `RELEASE_MANIFEST.json`.
 
@@ -37,21 +37,20 @@ Already applied to **Staging only** (`tovkcakucyagvbzvlnks`):
 2. `20261103235335_duty_position_default_name_validation.sql`
 3. `20261104013200_duty_stage_b_scheduling.sql`
 4. `20261105183357_duty_production_readiness_staging.sql`
+5. `20261106001033_duty_final_directory_and_save_staging.sql`
 
 The fourth filename records the actual hosted Staging migration version. Its additive definitions are the proposed Production contract, subject to a separate approval. Do not also apply `STAGING_MANUAL_HOURS.sql`; it is superseded and excluded. None of these scripts is an instruction to run Production SQL now.
 
-Before approval, inspect Production migration history, schemas and dependencies read-only. Confirm `pharmacies`, `pharmacy_members`, the existing permission/audit tables, `is_system_owner()` and the strict `pharmflow_auth_private.password_change_complete()` contract. Confirm no existing Duty tables/history conflict with the four migrations. If they exist, stop and reconcile instead of rerunning CREATE/ALTER statements. Production database state has not been queried in this continuation.
+Before approval, inspect Production migration history, schemas and dependencies read-only. Confirm `pharmacies`, `pharmacy_members`, the existing permission/audit tables, `is_system_owner()` and the strict `pharmflow_auth_private.password_change_complete()` contract. Confirm no existing Duty tables/history conflict with the five migrations. If they exist, stop and reconcile instead of rerunning CREATE/ALTER statements. Production database state has not been queried in this continuation.
 
 After all acceptance gates pass, obtain explicit approval covering the exact release SHA, migration checksums/order and automatic official Pages deployment triggered by a main merge. Back up schema and record before/after permission values and relevant non-Duty schema signatures. Apply only the missing approved Duty migrations in order; never reset schemas, backfill real employees or change existing Receiving/Expiry permissions. Verify RLS/ACLs, default-denial and the v2 Permissions RPC before merging the UI. Keep every Production pharmacy Duty Disabled. Then merge through the normal protected PR workflow, check official Pages success and served identity, and perform the approved smoke checks. Enabling a Production pharmacy requires separate explicit authorization.
 
-## Open acceptance gates
+## Final acceptance gates
 
-- Authenticated synthetic Staging browser save → refresh → second independent session read, settings/calendar propagation and stale-write rejection.
-- Administrator browser disable/hide/direct-route denial and enable restoration; Receiving/Expiry browser smoke under the same existing grants.
-- Full legacy-suite failures must be reconciled against the exact Production baseline; do not relabel a failing full suite as PASS.
-- Native Microsoft Excel 2016/2019 must open both downloads without repair warnings. ZIP/XML validation and a third-party reader are not native Excel acceptance.
-- Actual E:L paste in a disposable live-template copy and native Windows Chrome 80% acceptance remain Product Owner checks. Values-only paste can replace formulas within the destination range.
+The owner has accepted the prior save/refresh, synchronization, conflict, access, Excel opening and single-employee paste cycles. See the updated CURRENT_CHECKPOINT for the six focused checks on the final changes. No repeated authentication flows are authorized. The supplied A(3).xlsx contains inconsistent underlying dates; verify the actual destination employee/month/date before pasting a partial range. The generated Standard Timesheet provides correct selected-period dates. Full legacy baseline failures remain separately documented; the full suite is not green.
 
 ## Rollback
 
 Disable Duty using the existing Administrator Permissions form with current revision, preserving all other module values. Revert the focused UI release through a protected PR and the normal Pages deployment. Retain the additive Duty schema, history and manual-aware readers; do not drop tables, restore a database or revert to the legacy calculator after Manual records exist. A failed Staging test is not permission to alter Production. No irreversible rollback or data deletion is part of this task.
+
+Final Staging migration adds two sort_order columns and guarded directory/save-read RPCs. Default values preserve the prior neutral/name ordering; the new reader field is backward-compatible. Updated clients need the final migration before release. Rollback should retain sort_order/data and both manual-aware readers; old clients ignore ordering. No automatic SQL execution is part of CI.

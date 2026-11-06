@@ -20,3 +20,7 @@ A.xlsx has A–L human-facing fields and R–Z helper/source fields. A3/B3 and A
 | Basic/Total worked | No confirmed A–L destination | Named standalone fields; do not invent a target column |
 
 B data, M In-Out, N/O grouping and W–Z outputs are not confirmed writable destinations. Validate active destination identity/date convention before claiming compatibility. Planning workbook historical/helper sheets inform layout, not calculation authority. Planned and confirmed-actual data must remain distinguishable in future reporting.
+
+## Final single-employee range (6 November 2026)
+
+Copy Values remains exactly E:L. A custom interval emits only those dates in calendar order, with no blank padding before/after it. Paste values in column E on the selected employee's row matching the interval's first date; never assume E2 for a later employee or date. Full Month preserves its original daily rectangle. The preview, period KPIs and both exports use the same filtered projection. Notes contain only saved notes. Standard export keeps reserved M:O blank and generates real selected-period dates. The supplied A(3).xlsx has inconsistent underlying date serials and non-November metadata, so verify the actual template calendar before pasting; the module does not write to the online sheet.

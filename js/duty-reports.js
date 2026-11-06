@@ -17,7 +17,7 @@
   const entries=(data.entries||[]).filter(e=>e.date.startsWith(month+'-'));
   const holidays=new Set((data.holidays||[]).filter(h=>h.active).map(h=>h.date));
   const totals=M.totals(entries,data.holidays,data.employees,data.hour_rules,demo||data.holiday_first===true);
-  const staff=data.employees.flatMap(e=>{
+  const staff=M.ordered(data.employees).flatMap(e=>{
    const saved=entries.filter(row=>row.code===e.code);
    if(!e.active&&!saved.some(row=>row.payload.status!=='EMPTY'))return [];
    const byDate=new Map(saved.map(row=>[row.date,row.payload]));
@@ -44,14 +44,21 @@
   const text=/^[=+\-@]/.test(value)?"'"+value:value;
   return /[\t\r\n"]/.test(text)?'"'+text.replaceAll('"','""')+'"':text;
  }
- function copyValues(employee){
-  return employee.days.map(day=>{
+ function copyValues(employee,range=null){
+  return employee.days.filter(d=>!range||(d.date>=range.from&&d.date<=range.to)).map(day=>{
    const values=dailyValues(day).slice(4,12);
    overtime.forEach((key,index)=>{
     if(day.manual?.[key]===0)values[index+4]=0;
    });
    return values.map(literal).join('\t');
   }).join('\r\n');
+ }
+ function period(report,range){
+  if(!range)return report;
+  M.dateRange(range.from,range.to);
+  if(!range.from.startsWith(report.month+'-')||!range.to.startsWith(report.month+'-'))throw Error('Choose dates within the selected month.');
+  const staff=report.staff.map(e=>{const days=e.days.filter(d=>range.from<=d.date&&d.date<=range.to);const totals=Object.fromEntries(Object.keys(categories).map(k=>[k,days.reduce((sum,d)=>sum+d.hours[k],0)]));return {...e,days,totals};});
+  return {...report,dates:report.dates.filter(d=>range.from<=d.date&&d.date<=range.to),staff,range};
  }
  function scheduleCell(day){
   const times=day.periods.map(p=>formatTime(p.start)+' – '+formatTime(p.end));
@@ -68,7 +75,7 @@
      const values=dailyValues(day,true);
      if(metadata[i+2])[values[0],values[1]]=metadata[i+2];
      return {values,style:day.kind==='friday'?'templateFriday':day.kind,height:day.notes.length>35?32:17,formats:{2:'date',4:'time',5:'time',6:'time',7:'time',8:'number',9:'number',10:'number'}};
-    }),{values:['Monthly totals',null,null,null,null,null,null,null,...overtime.map(k=>asHours(e.totals[k])),null],style:'total',formats:{8:'number',9:'number',10:'number'}},
+    }),{values:[report.range?'Period totals':'Monthly totals',null,null,null,null,null,null,null,...overtime.map(k=>asHours(e.totals[k])),null],style:'total',formats:{8:'number',9:'number',10:'number'}},
     {values:['Basic Hours',asHours(e.totals.basic),'Total Hours',asHours(e.totals.total)],style:'total',formats:{1:'number',3:'number'}}]};
   });
   return chunk(staff,6).map((page,index)=>({name:'Schedule '+(index+1),widths:[13,14,...page.map(()=>28)],freeze:6,
@@ -78,12 +85,12 @@
      style:page[0].days[i].kind,cellStyles:page.map(e=>e.days[i].highlight),formats:{0:'date'},height:Math.max(22,...page.map(e=>Math.min(130,15*(scheduleCell(e.days[i]).split('\n').length+(e.days[i].notes.length>40?Math.ceil(e.days[i].notes.length/40):0))+3)))}))]}));
  }
  const fills={plain:'FFFFFF',templateHeader:'F2F2F2',templateFriday:'8ED973',header:'174A79',total:'DFEBF8',friday:'D8E8FA',holiday:'FFF2D9',blue:'E2F0FF',mint:'E3F5EB',violet:'EDE4FA',rose:'FBE7EE'};
- const formats={plain:0,date:164,time:165,number:166};
+ const formats={plain:0,date:164,time:165,number:166,integer:167};
  const fillKeys=Object.keys(fills),formatKeys=Object.keys(formats);
  function workbookStyles(){
   const fill=(color)=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${color}"/><bgColor indexed="64"/></patternFill></fill>`;
-  const xf=(style,format,i)=>`<xf numFmtId="${formats[format]}" fontId="${style==='header'?1:['total','templateHeader','templateFriday'].includes(style)?2:0}" fillId="${i+2}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>`;
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="yyyy-mm-dd"/><numFmt numFmtId="165" formatCode="h:mm AM/PM"/><numFmt numFmtId="166" formatCode="0.####"/></numFmts><fonts count="3"><font><sz val="11"/><color rgb="FF243F5E"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF173F70"/><name val="Calibri"/></font></fonts><fills count="${fillKeys.length+2}"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${Object.values(fills).map(fill).join('')}</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right style="thin"><color rgb="FFD1DEEB"/></right><top/><bottom style="thin"><color rgb="FFD1DEEB"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${fillKeys.length*formatKeys.length}">${fillKeys.flatMap((style,i)=>formatKeys.map(format=>xf(style,format,i))).join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const xf=(style,format,i)=>`<xf numFmtId="${formats[format]}" fontId="${style==='header'?1:['total','templateHeader','templateFriday'].includes(style)?2:0}" fillId="${i+2}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="${format==='plain'?'left':'center'}" vertical="center" wrapText="1"/></xf>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="4"><numFmt numFmtId="164" formatCode="yyyy-mm-dd"/><numFmt numFmtId="165" formatCode="h:mm AM/PM"/><numFmt numFmtId="166" formatCode="0.####"/><numFmt numFmtId="167" formatCode="0"/></numFmts><fonts count="3"><font><sz val="11"/><color rgb="FF243F5E"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF173F70"/><name val="Calibri"/></font></fonts><fills count="${fillKeys.length+2}"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${Object.values(fills).map(fill).join('')}</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right style="thin"><color rgb="FFD1DEEB"/></right><top/><bottom style="thin"><color rgb="FFD1DEEB"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${fillKeys.length*formatKeys.length}">${fillKeys.flatMap((style,i)=>formatKeys.map(format=>xf(style,format,i))).join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
  }
  function workbookBytes(X,plan){
   const workbook=X.utils.book_new();
@@ -109,7 +116,7 @@
     .replace(/<c r="([A-Z]+[0-9]+)"(?: s="[0-9]+")?/g,(_,address)=>{
      const {r,c}=X.utils.decode_cell(address),row=sheet.rows[r];
      const style=row.style||row.cellStyles?.[c-2]||'plain';
-     const fill=fillKeys.indexOf(style),format=formatKeys.indexOf(row.formats?.[c]||'plain');
+     const fill=fillKeys.indexOf(style),kind=row.formats?.[c]||'plain',format=formatKeys.indexOf(kind==='number'&&Number.isInteger(row.values[c])?'integer':kind);
      if(fill<0||format<0)throw Error('Invalid Duty export cell style.');
      return `<c r="${address}" s="${fill*formatKeys.length+format}"`;
     })
@@ -121,9 +128,11 @@
   }));
   return X.CFB.write(archive,{fileType:'zip',type:'array',compression:true});
  }
- const state={employee:'',format:'standard',preview:false,page:0};
+ const state={employee:'',format:'standard',preview:false,page:0,range:null,scope:''};
  function mount(host,data,config){
-  const report=project(data,config.month,config.demo,config.pharmacyCode);
+  const scope=(data.pharmacy_id||config.pharmacyCode||'')+'/'+config.month;
+  if(scope!==state.scope){state.scope=scope;state.range=null;state.employee='';state.page=0;}
+  const report=period(project({...data,employees:M.ordered(data.employees)},config.month,config.demo,config.pharmacyCode),state.range);
   if(!report.staff.some(e=>e.code===state.employee))state.employee='';
   const single=report.staff.find(e=>e.code===state.employee);
   const staff=single?[single]:report.staff;
@@ -144,32 +153,39 @@
     <div class="duty-report-preview-heading"><strong>${esc(title)} · ${esc(report.title)}</strong>
      ${count>1?`<nav aria-label="Preview pages"><button type="button" data-preview-page="-1" aria-label="Previous preview page" ${state.page?'':'disabled'}>‹</button><span>${state.page+1} / ${count}</span><button type="button" data-preview-page="1" aria-label="Next preview page" ${state.page+1<count?'':'disabled'}>›</button></nav>`:''}
     </div><div class="duty-report-table-scroll" tabindex="0"><table aria-label="${state.format==='standard'?'Standard Timesheet':'Schedule Layout'} preview" class="duty-report-table duty-report-${state.format}">
-    <colgroup>${sheet.widths.map((width,col)=>`<col style="width:${state.format==='schedule'?(col===0?'100px':col===1?'110px':'auto'):width+'ch'}">`).join('')}</colgroup>
-    <thead><tr>${sheet.rows[0].values.map(v=>`<th scope="col">${esc(v)}</th>`).join('')}</tr></thead>
-    <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:sheet.widths.length},(_,col)=>`<td>${esc(display(row.values[col],row.formats?.[col]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+    <colgroup>${sheet.widths.slice(0,state.format==='standard'?12:sheet.widths.length).map((width,col)=>`<col style="width:${state.format==='schedule'?(col===0?'100px':col===1?'110px':'auto'):([65,105,90,80,85,85,85,85,65,65,65,155][col]+'px')}">`).join('')}</colgroup>
+    <thead><tr>${sheet.rows[0].values.slice(0,state.format==='standard'?12:sheet.widths.length).map(v=>`<th scope="col">${esc(v)}</th>`).join('')}</tr></thead>
+    <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:state.format==='standard'?12:sheet.widths.length},(_,col)=>`<td>${esc(display(row.values[col],row.formats?.[col]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }
   const summary=e=>Object.entries(categories).map(([k,label])=>`<div class="duty-category-${k}"><dt>${label}</dt><dd>${M.hours(e.totals[k])}</dd></div>`).join('');
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
    <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
    <div class="duty-report-controls">
+    <label class="duty-report-field">Period<select data-report-period><option value="full">Full Month</option><option value="custom" ${state.range?'selected':''}>Custom Date Range</option></select></label>
+    ${state.range?`<label class="duty-report-field">From<input data-report-from type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.from}"></label><label class="duty-report-field">To<input data-report-to type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.to}"></label>`:''}
     <label class="duty-report-field">Employee
-     <select data-report-employee><option value="">All Employees</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select>
+     <select data-report-employee><option value="">Choose employee</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select>
     </label>
-    <div class="duty-report-action"><button type="button" class="duty-primary" data-report-copy ${single?'':'disabled'}>Copy Values</button><small>E–L · Full Month</small></div>
+    <div class="duty-report-action"><button type="button" class="duty-primary" data-report-copy ${single?'':'disabled'}>Copy Values</button><small>E–L · ${state.range?'Date Range':'Full Month'}</small></div>
     <label class="duty-report-field">Excel format
      <select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select>
     </label>
     <button type="button" data-report-preview aria-expanded="${state.preview}" ${staff.length?'':'disabled'}>${state.preview?'Hide Table':'Preview Table'}</button>
-    <button type="button" data-report-download ${staff.length?'':'disabled'}>Download Excel</button>
+    <button type="button" data-report-download ${single?'':'disabled'}>Download Excel</button>
    </div>
    <div class="duty-report-guidance">
     <p role="status" data-report-status>${single?'Paste into column E on this employee’s first daily row in the verified E:L input range.':staff.length?'Select an employee to copy values. Excel downloads support all employees.':'No employees are available for this month.'}</p>
     <details><summary>Paste safely</summary><p>Test in a disposable copy of the online timesheet first. Pasting can replace existing values or formulas in E:L. Match the employee and first daily date before pasting.</p></details>
    </div>
-   ${single?`<dl class="duty-report-kpis" aria-label="Monthly totals">${summary(single)}</dl>`:''}
+   ${single?`<dl class="duty-report-kpis" aria-label="${state.range?'Selected period totals':'Monthly totals'}">${summary(single)}</dl>`:''}
    ${preview()}
   </section>`;
   const status=host.querySelector('[data-report-status]');
+  const destination=single?`Paste values into column E on the row dated ${single.days[0].date} in ${single.name}’s block (${single.id}). ${state.range?'Do not start at day 1 unless it is the selected start date.':'Start at this employee’s first daily row.'} Check the template month and dates first.`:'Select one employee to copy or export.';
+  status.textContent=destination;
+  host.querySelector('[data-report-period]').onchange=e=>{state.range=e.target.value==='custom'?{from:config.month+'-01',to:M.days(config.month).at(-1).date}:null;state.page=0;mount(host,data,config);};
+  for(const name of ['from','to']){const field=host.querySelector('[data-report-'+name+']');if(field)field.onchange=e=>{const next={...state.range,[name]:e.target.value};try{period(report,next);state.range=next;state.page=0;mount(host,data,config);}catch(error){status.textContent=error.message;e.target.value=state.range[name];}};}
+
   host.querySelector('[data-report-employee]').onchange=e=>{
    state.employee=e.target.value;state.page=0;
    mount(host,data,config);
@@ -190,19 +206,20 @@
    if(!single)return;
    try{
     await navigator.clipboard.writeText(copyValues(single));
-    status.textContent=`Copied ${single.days.length} days. Paste into column E on ${single.name}’s first daily row.`;
+    status.textContent=`Copied ${single.days.length} days. ${destination}`;
    }catch{status.textContent='Clipboard access failed. Allow clipboard access in your browser and retry.';}
   };
   host.querySelector('[data-report-download]').onclick=()=>{
    try{
     const X=root.XLSX;
     if(!X)throw Error('Excel export is unavailable.');
-    const blob=new Blob([workbookBytes(X,workbookPlan(report,staff,state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    if(!single)return;
+    const blob=new Blob([workbookBytes(X,workbookPlan(report,[single],state.format))],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');
     link.href=url;link.download=`PharmFlow_Duty_${state.format==='standard'?'Standard_Timesheet':'Schedule_Layout'}_${report.month}.xlsx`;
     link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(error){status.textContent=error.message;}
   };
  }
- root.DutyReports={mount,project,copyValues,workbookPlan,workbookBytes};
+ root.DutyReports={mount,project,period,copyValues,workbookPlan,workbookBytes};
 })(typeof window==='undefined'?globalThis:window);
