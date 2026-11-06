@@ -131,7 +131,22 @@
   }));
   return X.CFB.write(archive,{fileType:'zip',type:'array',compression:true});
  }
- const state={employee:'',format:'standard',preview:false,page:0,range:null,scope:''};
+ let fitHost=null;
+ function fitReport(host){
+  if(!root.requestAnimationFrame)return;
+  const entering=host!==fitHost;fitHost=host;
+  root.requestAnimationFrame(()=>{
+   if(!host.isConnected)return;
+   const page=host.closest('#page-duty');if(!page)return;
+   if(entering)root.scrollTo?.({top:0,left:0,behavior:'instant'});
+   const top=page.getBoundingClientRect().top,scale=Number(root.getComputedStyle(page).getPropertyValue('--duty-preview-scale'))||1;
+   const bottom=Number.parseFloat(root.getComputedStyle(page.parentElement).paddingBottom)||0;
+   page.style.setProperty('--duty-report-height',Math.max(0,(root.innerHeight-top-Math.max(12,bottom*scale+4))/scale)+'px');
+  });
+ }
+ root.addEventListener?.('resize',()=>{if(fitHost?.isConnected)fitReport(fitHost);});
+ root.visualViewport?.addEventListener('resize',()=>{if(fitHost?.isConnected)fitReport(fitHost);});
+ const state={employee:'',format:'standard',preview:true,page:0,range:null,scope:''};
  function mount(host,data,config){
   const scope=(data.pharmacy_id||config.pharmacyCode||'')+'/'+config.month;
   if(scope!==state.scope){state.scope=scope;state.range=null;state.employee='';state.page=0;}
@@ -161,46 +176,46 @@
     <tbody>${sheet.rows.slice(1).map(row=>`<tr class="duty-report-row-${row.style||'plain'}">${Array.from({length:state.format==='standard'?12:sheet.widths.length},(_,col)=>{const merge=sheet.merges?.find(m=>m.s.r===sheet.rows.indexOf(row)&&m.s.c<=col&&m.e.c>=col);return merge&&merge.s.c!==col?'':`<td${merge?` colspan="${merge.e.c-merge.s.c+1}"`:''}>${esc(display(row.values[col],row.formats?.[col]))}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }
   const summary=e=>Object.entries(categories).map(([k,label])=>`<div class="duty-category-${k}"><dt>${label}</dt><dd>${M.hours(e.totals[k])}</dd></div>`).join('');
+  const icon=kind=>`<svg viewBox="0 0 24 24" aria-hidden="true">${kind==='copy'?'<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>':'<path d="M14 3H4v18h16V9zM14 3v6h6M7 12l5 6m0-6-5 6M16 12v6"/>'}</svg>`;
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
    <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
    <div class="duty-report-controls">
-    <label class="duty-report-field">Period<select data-report-period><option value="full">Full Month</option><option value="custom" ${state.range?'selected':''}>Custom Date Range</option></select></label>
-    ${state.range?`<label class="duty-report-field">From<input data-report-from type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.from}"></label><label class="duty-report-field">To<input data-report-to type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.to}"></label>`:''}
-    <label class="duty-report-field">Employee
-     <select data-report-employee><option value="">Choose employee</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select>
-    </label>
-    <div class="duty-report-action"><button type="button" class="duty-primary" data-report-copy ${single?'':'disabled'}>Copy Values</button><small>E–L · ${state.range?'Date Range':'Full Month'}</small></div>
-    <label class="duty-report-field">Excel format
-     <select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select>
-    </label>
-    <button type="button" data-report-preview aria-expanded="${state.preview}" ${staff.length?'':'disabled'}>${state.preview?'Hide Table':'Preview Table'}</button>
-    <button type="button" data-report-download ${single?'':'disabled'}>Download Excel</button>
+    <div class="duty-employee-picker"><label class="duty-report-field" for="duty-report-employee">Employee</label><input id="duty-report-employee" data-report-employee type="search" role="combobox" aria-label="Employee" aria-autocomplete="list" aria-expanded="false" aria-controls="duty-report-staff-list" autocomplete="off" placeholder="Search name or employee code" value="${single?esc(single.name+' · '+single.id):''}"><div class="duty-employee-options" id="duty-report-staff-list" role="listbox" aria-label="Employees" hidden>${report.staff.map(e=>`<button type="button" role="option" aria-selected="${e===single}" data-report-person="${esc(e.code)}">${esc(e.name)}<small>${esc(e.id)}</small></button>`).join('')}<p data-no-employee hidden>No matching employee</p></div></div>
+    <div class="duty-report-period"><label class="duty-report-field">Period<select data-report-period><option value="full">Full Month</option><option value="custom" ${state.range?'selected':''}>Custom Date Range</option></select></label>
+    ${state.range?`<div class="duty-range-inputs"><label>From<input aria-label="Report from date" data-report-from type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.from}"></label><label>To<input aria-label="Report to date" data-report-to type="date" min="${config.month}-01" max="${M.days(config.month).at(-1).date}" value="${state.range.to}"></label></div>`:''}</div>
+    <label class="duty-report-field">Excel format<select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select></label>
    </div>
-   <div class="duty-report-guidance">
-    <p role="status" data-report-status>${single?'Paste into column E on this employee’s first daily row in the verified E:L input range.':staff.length?'Select an employee to copy values. Excel downloads support all employees.':'No employees are available for this month.'}</p>
-    <details><summary>Paste safely</summary><p>Test in a disposable copy of the online timesheet first. Pasting can replace existing values or formulas in E:L. Match the employee and first daily date before pasting.</p></details>
-   </div>
+   <div class="duty-report-result-bar"><div class="duty-report-identity"><strong>${single?esc(single.name):'Choose an employee'}</strong><small>${single?esc(single.id)+' · ':''}${state.range?esc(state.range.from+' → '+state.range.to):esc(report.title)+' · Full Month'}</small></div><div class="duty-actions"><button type="button" data-report-copy title="Copy values · E:L" aria-label="Copy Values" ${single?'':'disabled'}>${icon('copy')}<span>Copy</span></button><button type="button" class="duty-primary" data-report-download title="Export selected employee to Excel" aria-label="Excel Export" ${single?'':'disabled'}>${icon('excel')}<span>Excel Export</span></button><details class="duty-report-help"><summary aria-label="Paste safely" title="Copy and paste guidance">?</summary><div><strong>Paste safely · E:L</strong><p data-report-destination></p><p>Use a disposable, correctly dated template first. Match the employee and first daily date; paste values starting in column E. Copy fills E:L only. Reserved M:O and adjacent cells remain untouched.</p></div></details></div></div>
    ${single?`<dl class="duty-report-kpis" aria-label="${state.range?'Selected period totals':'Monthly totals'}">${summary(single)}</dl>`:''}
-   ${preview()}
+   <p class="duty-report-status" role="status" data-report-status></p>
+   ${single?preview():'<div class="duty-report-placeholder">Select an employee to display the report.</div>'}
   </section>`;
   const status=host.querySelector('[data-report-status]');
   const destination=single?`Paste values into column E on the row dated ${single.days[0].date} in ${single.name}’s block (${single.id}). ${state.range?'Do not start at day 1 unless it is the selected start date.':'Start at this employee’s first daily row.'} Check the template month and dates first.`:'Select one employee to copy or export.';
-  status.textContent=destination;
+  host.querySelector('[data-report-destination]').textContent=destination;
+  const picker=host.querySelector('[data-report-employee]'),list=host.querySelector('.duty-employee-options'),pickerBox=host.querySelector('.duty-employee-picker');
+  const closePicker=()=>{list.hidden=true;picker.setAttribute('aria-expanded','false');};
+  const choose=code=>{state.employee=code;state.page=0;state.preview=true;mount(host,data,config);host.querySelector('[data-report-employee]').focus();};
+  const search=()=>{const query=picker.value.trim().toLocaleLowerCase();let matches=0;list.hidden=false;picker.setAttribute('aria-expanded','true');for(const option of list.querySelectorAll('[data-report-person]')){option.hidden=!option.textContent.toLocaleLowerCase().includes(query);if(!option.hidden)matches++;}list.querySelector('[data-no-employee]').hidden=!!matches;};
+  picker.oninput=()=>{search();if(!picker.value&&state.employee){state.employee='';state.page=0;mount(host,data,config);host.querySelector('[data-report-employee]').focus();}};
+  picker.onclick=()=>{list.hidden=false;picker.setAttribute('aria-expanded','true');for(const option of list.querySelectorAll('[data-report-person]'))option.hidden=false;list.querySelector('[data-no-employee]').hidden=report.staff.length>0;};
+  picker.onkeydown=e=>{if(e.key==='Escape'){closePicker();return;}if(e.key==='Enter'&&list.hidden)return;if(e.key==='ArrowDown'||e.key==='Enter'){if(list.hidden)search();const first=[...list.querySelectorAll('[data-report-person]')].find(b=>!b.hidden);if(first){e.preventDefault();if(e.key==='Enter')choose(first.dataset.reportPerson);else first.focus();}}};
+  for(const option of list.querySelectorAll('[data-report-person]')){option.onclick=()=>choose(option.dataset.reportPerson);option.onkeydown=e=>{if(e.key==='Escape'){closePicker();picker.focus();}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const options=[...list.querySelectorAll('[data-report-person]')].filter(b=>!b.hidden),index=options.indexOf(option);options[(index+(e.key==='ArrowDown'?1:options.length-1))%options.length]?.focus();}};}
+  pickerBox.onfocusout=e=>{if(!pickerBox.contains(e.relatedTarget))closePicker();};
+  host.onclick=e=>{if(!pickerBox.contains(e.target))closePicker();};
+  fitReport(host);
   host.querySelector('[data-report-period]').onchange=e=>{state.range=e.target.value==='custom'?{from:config.month+'-01',to:M.days(config.month).at(-1).date}:null;state.page=0;mount(host,data,config);};
   for(const name of ['from','to']){const field=host.querySelector('[data-report-'+name+']');if(field)field.onchange=e=>{const next={...state.range,[name]:e.target.value};try{period(report,next);state.range=next;state.page=0;mount(host,data,config);}catch(error){status.textContent=error.message;e.target.value=state.range[name];}};}
 
   host.querySelector('[data-report-employee]').onchange=e=>{
-   state.employee=e.target.value;state.page=0;
+   if(e.target.value&&!report.staff.some(person=>person.code===e.target.value))return;
+   state.employee=e.target.value;state.preview=true;state.page=0;
    mount(host,data,config);
    host.querySelector('[data-report-employee]').focus();
   };
   host.querySelector('[data-report-format]').onchange=e=>{
    state.format=e.target.value;state.page=0;mount(host,data,config);
    host.querySelector('[data-report-format]').focus();
-  };
-  host.querySelector('[data-report-preview]').onclick=()=>{
-   state.preview=!state.preview;mount(host,data,config);
-   host.querySelector('[data-report-preview]').focus();
   };
   for(const button of host.querySelectorAll('[data-preview-page]'))button.onclick=()=>{
    state.page+=Number(button.dataset.previewPage);mount(host,data,config);
@@ -209,7 +224,7 @@
    if(!single)return;
    try{
     await navigator.clipboard.writeText(copyValues(single));
-    status.textContent=`Copied ${single.days.length} days. ${destination}`;
+    status.textContent=`Copied ${single.days.length} days · E:L.`;status.title=destination;
    }catch{status.textContent='Clipboard access failed. Allow clipboard access in your browser and retry.';}
   };
   host.querySelector('[data-report-download]').onclick=()=>{

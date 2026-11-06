@@ -1,61 +1,51 @@
-# Duty final UI acceptance · 6 November 2026
+# Duty final UX corrections · 6 November 2026
 
-**BLOCKED — NOT READY FOR PRODUCTION. Staging implementation complete; final visual/security acceptance remains open.**
+**BLOCKED — Staging implementation complete; final browser/native/security acceptance remains open. No Production action authorized.**
 
-Production main verified `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. PR #44 is the single Draft release candidate (`release/duty-production-prep-20261105`); PR #43 is the existing broader development branch. Recovered feature `972a451d08f79fe938c589fdffbbad99a758aee2` and release `05b3c5432835c1b2f16901fedb16d71d39e16f9e` were preserved as parents. No merge, Production deployment/SQL/activation or operational-data change is authorized.
+## Source and scope
 
-## Implemented in this continuation
+Production main: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Existing Duty branch `feature/duty-staging-20261104`, recovered HEAD `9c856adb37c0fc2c19ee7d91aa7a0a106e045235`; existing Draft release PR #44 (`release/duty-production-prep-20261105`), recovered HEAD `8662983330679a4564dceee6cd179b2a1f2e0b6f`. Preserve both parents. No new PR, main merge, Production deployment/SQL/activation or operational record change.
 
-- Compact separated Employee/Position cards, green Active/neutral Inactive indicators, accessible edit/archive/restore/delete icons and Move Earlier/Move Later tooltips. Active, Inactive, Archived and All filters share the same UX. Reordering swaps visible neighbors while submitting the complete immutable roster with expected revisions.
-- Archive is now a durable independent state. Restore returns to Inactive; ordinary activation remains in Edit. Historical schedules/rule/position references block permanent deletion. Unused records may be deleted after explicit confirmation. Archived records are view-only until restored; historical schedule/report visibility remains.
-- Optional Schedule Display Name affects only Schedule column labels. Without it, long multi-part names use first/last names; official names remain intact in records and reports/exports. Schedule identity tooltips show the full official name and employee code. No identity/history rewrite.
-- Standard Timesheet footer has three aligned separated rows: Period Totals (OT columns I:K), Basic Hours and Total Hours (column I). A:H label merges are shared by preview/XLSX. Daily E:L mapping, actual Notes, calculations and filters are unchanged.
-- Toolbar uses fixed grid tracks and fixed tab dimensions instead of content-dependent space-between. Responsive rows reserve the same space across views; Duty-only document scrollbar gutter prevents width shifts. Active colors transition subtly; reduced-motion is respected. Schedule scroll survives tab roundtrips. Duplicate toolbar overrides consolidated; vertical spacing reduced.
-- View Demo hidden from signed-in operational UI. Isolated generated Staging `/duty-demo.html` remains memory-only developer diagnostics and is excluded from release. Manual Refresh retained: automatic visible/focus reads skip active editors/panels and do not fully replace explicit recovery. No extra polling or authentication changes.
+This continuation changes only Duty month-view loading, Reports layout/controls and editor presentation, plus focused tests/docs. Prior lifecycle/order/archive/official-name/display-name/access integration is retained. No dependency, database, migration, permission, authentication, Receiving or Expiry code changes.
 
-## Migration / compatibility
+## Four fixes
 
-`20261106010727_duty_directory_lifecycle_staging.sql` applied **once to Staging only**, project `tovkcakucyagvbzvlnks`, after embedded PostgreSQL verification. Hosted history supplies this exact version. Additive archived flags/defaults, bounded schedule display name, guarded CAS employee-v3/directory-v2 writers and reader projection. Existing rows keep official names, IDs, ordering and entries; no backfill. Old directory-v1 direct authenticated execution is revoked to prevent superseded delete/archive behavior; v2 delegates internally under the existing guarded pharmacy lock. Legacy UI directory operations therefore require the updated client.
+1. **DUTY-UI-MONTH-TRANSITION-001:** carry only the same authenticated scope's directory/settings into the selected-month read-only shell. Clear all previous-month entries/holidays/month metadata immediately; show the correct new calendar with empty cells. Restore editability only from the authoritative selected-month response. Sequence/scope guards reject late replies; scope reset clears retained employees. Genuine read failure shows the reserved status error and retains a read-only roster. Remove obsolete pending-database text. Loading uses a reserved line, not an inserted row.
+2. **DUTY-REPORT-OUTER-SCROLL-001:** Reports use the remaining measured application viewport. Header, fixed tabs, controls, identity/actions and KPIs stay outside the table scroller. The table owns vertical/horizontal scrolling and sticky column headers. Height follows viewport resize; document overflow rules apply only while Duty Reports is active. Other modules' layout remains unchanged.
+3. **Edit Duty:** compact Status / Shift Times / Hours Calculation / Notes sections; aligned IN/OUT pickers, decorative sun/moon with explicit unchanged AM/PM text, Auto/Manual segment, Basic/OT/Total summary, optional second shift. Existing field names, time parsing, calculations, CAS/save/conflict behavior retained. Only editor body scrolls; error area and footer remain reserved/visible.
+4. **Reports controls:** searchable name/code combobox with keyboard support; Full Month / Custom Date Range using existing native date inputs with shared Schedule date-field styling. Selection auto-renders the single-employee report; no Search/Preview confirmation step. Compact labelled Copy/Excel icons, employee/code/period context and a small paste-help popover. No permanent long instruction row. Exact eight-column E:L clipboard/start-date mapping, reserved M:O compatibility and both XLSX formats unchanged.
 
-Migration order for any separately approved future Production release: `20261103235030`, `20261103235335`, `20261104013200`, `20261105183357`, `20261106001033`, `20261106010727`. Retain the readiness migration unchanged; never replay existing versions or apply the obsolete manual-hours proposal. No Production DB was queried or modified.
+## Verification
 
-Rollback: disable Duty using existing Permissions while preserving Receiving/Expiry grants. Retain additive schema/history. An older UI that calls directory-v1 is not a compatible directory rollback; retain the v2 client adapter or keep Duty disabled. Never drop tables, restore operational data or roll back manual-hour readers.
-
-## Focused verification
-
-| Acceptance | Status / evidence |
+| Item | Status |
 |---|---|
-| Lifecycle, archive/restore/delete, order/CAS and tenant isolation | PASS: embedded PostgreSQL and live rollback-only Staging synthetic RPC test |
-| Schedule label vs official names / tooltip | PASS: model, DOM and both XLSX exports |
-| Report footer / unchanged daily mapping and calculations | PASS: merged workbook roundtrip, existing independent XLSX ZIP/XML validator and E:L template overlay |
-| Focused feature tests | PASS: 72, no failures; private actual-template fixture included locally |
-| Focused release tests / protected files | PASS: 74, no failures; all 81 protected Production files match by Git blob hash |
-| Receiving/Expiry/auth/security/Handheld regressions | PASS: 124, no failures; no protected business source edits |
-| Build / CI / READY Preview identity | PASS: both local builds; final release CI Duty readiness/security SUCCESS; exact READY preview identity recorded below |
-| Prior owner acceptance | Preserved USER VERIFIED — PASS for save/refresh, independent-session sync, conflicts, Administrator access, report consistency, native Excel opening and single-employee paste on prior candidate |
-| Fresh authenticated new-feature session/order/alias verification | BLOCKED: browser is signed out; no password request or authentication retries |
-| Native Windows Chrome 75/80/100 geometry | NOT VERIFIED; requires owner acceptance (DOM tests do not establish browser zoom geometry) |
-| New footer/native Excel 2016/2019 acceptance | USER VERIFICATION REQUIRED; prior opening acceptance is preserved, not reused as proof of new footer |
-| Reported Chrome Dangerous warning | One focused read-only check reached the prior READY preview's sign-in page, no blocking interstitial reproduced. Cloud screenshot shows page content, not Chrome address-bar/security state. Exact Dangerous badge/cause remains NOT VERIFIED and an open release blocker; no bypass, protection change or clean-security claim |
+| Focused Duty tests | PASS: 76, 0 failed, 0 skipped locally; actual private A(3).xlsx overlay included |
+| Focused release tests | PASS: 78, 0 failed, 0 skipped locally; all 81 protected Production files match by blob hash |
+| New month regression | PASS: Nov → Dec → Nov, retained sorted roster, empty December calendar, late reply rejection, genuine failure and scope isolation |
+| New editor regression | PASS: operational AM/PM/overnight payload, rapid Save serialized, authoritative acknowledgement and retained conflict draft |
+| Report regression | PASS: name/code search, automatic selection/range changes, exact date-aligned E:L copy; existing independent XLSX/ZIP/XML/calculation checks retained |
+| Build | PASS: feature Staging Preview artifact and local release artifact; local release build is not a deployment |
+| Receiving/Expiry/auth/security/Handheld regressions | PASS: 124, 0 failed; no protected business source changes |
+| Native Windows Chrome 75/80/100 | NOT VERIFIED; CSS-scaled synthetic checks, if recorded below, do not establish native browser zoom |
+| Fresh authenticated two-session new UX | BLOCKED: no usable signed-in browser session; no credential request/retry. Prior owner acceptance of schedule persistence/sync/conflict/access is retained, not claimed as fresh verification |
+| Native Excel 2016/2019 on new report controls | USER VERIFICATION REQUIRED; prior owner XLSX-opening acceptance retained; no new native-Excel claim |
+| Chrome Dangerous badge | Unresolved prior release blocker. Earlier read-only preview reached sign-in without an interstitial but could not inspect Chrome security/address-bar state. No clean-security claim or bypass |
 
-Prior full legacy-suite inherited failures remain in `VERIFICATION_20261105.json`; no unnecessary full-suite rerun or unrelated repair. Actual A(3).xlsx has inconsistent underlying dates; match the real destination employee/month/date before paste. Source attachment and all outside-E:L cells/styles remain untouched by the disposable overlay test.
+Prior owner USER VERIFIED results remain preserved for save/refresh, independent-session sync, conflict rejection, Administrator enable/disable/sidebar, report consistency, native XLSX opening and single-employee paste on the prior candidate. No unnecessary full legacy-suite rerun; inherited failures stay in VERIFICATION_20261105.json.
 
-## Next action — maximum four owner checks
+## Database / rollback
 
-1. Open the READY Staging URL in Chrome. Verify no Dangerous warning; if present, stop and report its exact warning details without bypassing it. At 75%, 80%, 100%, switch all four tabs and check fixed positions, grid scroll and editor footer.
-2. With synthetic Employee/Position records, test ordering, Active/Inactive/Archive filters, Restore, unused delete and rejected historical delete. Check full official name vs optional schedule label/tooltip and preserved history.
-3. In two independent signed-in Staging sessions, confirm new order/name/archive state after the intended visible/focus refresh; attempt a stale edit and confirm conflict rejection and no duplicate/lost records. Prior schedule/session acceptance is retained.
-4. Check report footer and both XLSX formats in Windows Excel 2016/2019 (no repair). Copy one employee's full month E:L once into a disposable correctly dated template; verify Notes, fractional/whole hours, totals and adjacent cells.
+No new migration or SQL execution in this task. Retain existing ordered Staging migrations `20261103235030`, `20261103235335`, `20261104013200`, `20261105183357`, `20261106001033`, `20261106010727`. In particular retain `20261105183357_duty_production_readiness_staging.sql`; do not duplicate/replay or apply obsolete proposals. Last lifecycle migration intentionally revoked direct authenticated directory-v1 execution; retain the v2 adapter on any scoped UI rollback.
 
-Stop before Production. Security-warning closure and owner acceptance are required before readiness approval.
+Safe rollback is a focused Duty UI revert or disabling Duty through existing Permissions while retaining all data/schema/manual-hour readers and other module grants. Never drop/restore operational tables. Production requires separate explicit authorization.
 
-## Saved delivery and recovery evidence
+## Maximum four owner checks
 
-- Final development runtime: `b865a7350c02bb48af82b06157488f2b918ee468`; final release runtime: `22356ab4a445ca45b1c3ed8c8874e6f7142752c0`. Later checkpoint-only commits do not change runtime bytes.
-- Confirmed READY Preview: https://pharmflow-test-etnd5hgnx-fhyh2xtskz-3504.vercel.app/ — deployment `dpl_CGcF7jdR3DJmF8Ztp9wQXPXhSk6g`, exact development runtime above, Preview target (not Production). Staging isolation build checks PASS.
-- Final release runtime CI: Duty readiness runs [42142487942](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42142487942) and [42142482471](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42142482471) SUCCESS; PharmFlow security [42142487940](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42142487940) SUCCESS. The private template fixture was included locally and is optional/skipped in CI; no native Excel inference.
-- After the final tab/scroll follow-up: feature layout/DOM checks 14 PASS; release layout/isolation checks 16 PASS. Earlier complete focused suites were 72/74 PASS and non-regression 124 PASS. No full legacy-suite rerun.
-- Actual deployed synthetic-browser measurement PASS at the cloud browser's current viewport: all four tabs keep x coordinates 266 / 371.75 / 477.5 / 583.25, y 52.390625, width 102.75, height 36 CSS px across Schedule, Employees, Positions and Duty Reports. This is not native Windows 75/80/100 zoom acceptance. Directory cards rendered and filters were inspected. These diagnostics are memory-only and do not prove authenticated persistence/synchronization.
-- Report preview browser continuation NOT VERIFIED: selecting the Employee control returned a selector deadline/no-match; the following read-only DOM snapshot did not complete. Automated report/XLSX verification remains PASS; no browser footer acceptance claim.
-- Exact available interruption evidence: the user-provided notice says **“Turn ended by Auto-review. Add more context to continue.”** The last tool result (read-only report DOM snapshot) says **“aborted by user after 9.8s.”** No detailed Auto-review rejection reason was supplied for this latest interruption. Do not invent a reason, conflate it with the earlier stop-browser rejection, or infer an application/security failure from it. Recovery used repository/deployment metadata only; no browser/auth retry or restriction bypass.
-- Latest recovery reverified PR #44 open/Draft/unmerged, development/release runtimes above, READY deployment and Production main still `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. No new implementation, tests, migrations or Production actions during recovery. Existing work preserved.
+1. Open the READY Staging candidate without bypassing any Dangerous warning; check Nov → Dec → Nov with preserved roster/order and restored saved November shifts.
+2. At native Windows Chrome 75%, 80%, 100%, open Reports/select an employee and Custom Range: header/actions/KPIs stay visible, only the table scrolls and column headers stick.
+3. Edit ordinary/split/overnight duty in Auto/Manual, verify AM/PM and visible footer; rapidly Save, refresh, and compare the second independent Staging session without accepting a stale overwrite.
+4. Check both XLSX formats in Excel 2016/2019; copy the whole month and a custom range into a disposable correctly dated employee template starting at E, confirming E:L and unchanged reserved M:O/adjacent cells.
+
+## Delivery evidence
+
+Final commit, CI and READY Preview identity are recorded after publishing. No browser/authentication retry or approval bypass is authorized by a tool failure. The previous Auto-review notice supplied no detailed latest rejection reason; do not infer an app/security defect from that interruption.
