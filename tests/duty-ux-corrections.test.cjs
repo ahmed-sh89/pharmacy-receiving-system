@@ -50,7 +50,7 @@ test('ordered Employee Filter selects once, auto-renders and Clear preserves per
  f.host.querySelector('[data-report-from]').onchange({target:{value:'2026-11-05'}});f.host.querySelector('[data-report-to]').onchange({target:{value:'2026-11-07'}});
  await f.host.querySelector('[data-report-copy]').onclick();const lines=f.writes[0].split('\r\n').map(x=>x.split('\t'));assert.equal(lines.length,3);assert(lines.every(x=>x.length===8));assert.equal(lines[0][0],'7:00 PM');assert.equal(lines[0][1],'4:00 AM');
  assert.match(f.host.querySelector('[data-report-destination]').textContent,/row dated 2026-11-05/);
- f.host.querySelector('[data-report-clear]').onclick();assert.equal(f.host.querySelector('[data-report-from]').value,'2026-11-05');assert.equal(f.host.querySelector('[data-report-to]').value,'2026-11-07');assert.equal(JSON.stringify(d),original);assert(f.host.querySelector('[data-report-copy]').disabled);assert(f.host.querySelector('[data-report-download]').disabled);
+ f.host.querySelector('[data-report-clear]').onclick();assert.equal(f.host.querySelector('[data-report-from]').value,'2026-11-05');assert.equal(f.host.querySelector('[data-report-to]').value,'2026-11-07');assert.equal(JSON.stringify(d),original);assert(f.host.querySelector('[data-report-copy]').disabled);assert(!f.host.querySelector('[data-report-download]').disabled);
 });
 // DOM fixture supplies native successful-control semantics for the actual editor event handlers.
 function editorFixture(){

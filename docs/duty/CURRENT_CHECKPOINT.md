@@ -1,47 +1,36 @@
-# Duty final UI refinement · 6 November 2026
+# Duty final two fixes · 6 November 2026
 
-**READY FOR USER VERIFICATION — not Production-approved.** Existing release/security/native acceptance gates remain open. Staging only; no merge, Production deployment, SQL, migration or activation.
+**READY FOR USER VERIFICATION — not Production-approved.** Staging only. No merge, Production deployment, schema/data change or activation.
 
-## Source / implementation
+## Scope and source
 
-Production main baseline `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Continue existing feature branch and Draft release PR #44 from `ae75e5943a968e1bb2eb9e4f9b2b953153db15b2` / `be6168ca64588b927623c0746cfe3d313c9077c1`; all prior work preserved.
+Production main baseline `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Preserve development HEAD `1afffa85f267e777cdf6a1250c3b39b722eba80d` and Draft release PR #44 HEAD `6a2f374eebaa42146c8f761f030e3b519a975973` as parents. No new PR, migration or dependency.
 
-- Replace superseded free-text employee combobox with one ordered single-select Employee Filter containing official names/codes. No duplicate search implementation. Clear Selection resets only employee; period and saved data remain.
-- One compact contextual row places employee/code/period immediately beside Copy, Clear and Excel Export, above the five KPIs. Copy has fixed width; successful clipboard acknowledgement alone shows green ✓ Copied for 2 seconds. A new attempt clears earlier success; failures, stale responses and Clear cannot show false success. Detailed date/E:L guidance stays in the help popover.
-- New `js/duty-controls.js` provides one reusable Duty calendar and popover-positioning component. Calendar visuals/interactions follow the inspected Historical Receiving calendar (month header/arrows, Sunday-first weekdays/day grid, selected/today states, Today action), with corporate blue styling. Report and Schedule From/To use the same component. Date bounds, keyboard movement and existing range validation remain. Historical Receiving functions are coupled to its own state; its source/style/behavior were left unchanged.
-- Time pickers share equal grid tracks, stable trigger dimensions and popup width measured directly from the trigger before positioning. Centered semi-bold values/options, consistent selection styles; yellow sun AM and blue moon PM retain readable text in triggers/options for IN/OUT and both shifts. Generic non-time dropdown behavior retained. Popup height/placement is bounded to the viewport; no in-flow resizing.
-- Superseded employee-search styles/handlers and minute-specific sizing overrides removed. Component source styles consolidated; no new library/dependency. Only Duty script tags/cache versions added to the existing entry points. Internal report scrolling, sticky headers, one-row KPIs, month loading, calculations and authoritative write/CAS contracts retained.
+1. **All Employees Excel:** default empty-key filter is now explicitly All Employees. Excel Export is enabled whenever the existing selected-month report projection contains applicable employees. One download uses the existing multi-employee workbook planner: Standard Timesheet has one sheet per employee; Schedule Layout retains six employees per page/sheet in one workbook. Includes active employees without shifts and preserves the existing inclusion of inactive staff with selected-month history. Existing order, IDs/official names, date/range projection, shifts and totals are unchanged. Individual selection still exports one employee. Copy remains disabled for All and stays exactly E:L for one employee; reserved M:O compatibility remains. Clear returns to All while preserving period. No-employees export stays disabled.
+2. **Schedule internal scrolling:** removed obsolete fixed viewport offsets and 65/70vh overrides from grid source styles. One measured Duty viewport helper now serves Schedule and Reports, using actual page top/content padding and current viewport/preview scale. It responds to resize/visual-viewport/header size changes. Flex layout reserves header, month/tabs, toolbar and notices; only the grid consumes/scrolls the remainder. Existing sticky column/date headers, horizontal scrolling, selection, editing, drag autoscroll and saved scroll offsets are retained. Grid region is keyboard focusable. Receiving/Expiry/global layout remains unaffected when Duty is inactive.
 
 ## Verification
 
 | Check | Result |
 |---|---|
-| Focused Duty suite | PASS: 80, 0 failures/skips locally, including private actual-template overlay |
-| Focused release suite | PASS: 82, 0 failures/skips locally, including 81 protected Production file hashes |
-| Receiving/Expiry/auth/security/Handheld regressions | PASS: 124, 0 failures |
-| Targeted new checks | PASS: filter order/Clear preserves period/data; two-second Copy success, failed retry and stale async suppression; export after employee/range changes; shared calendar bounds/navigation/keyboard; trigger-matched popup sizing; retained save/conflict/overnight/session isolation cases |
-| Browser / READY identity / CI | PASS: READY preview and successful runtime CI; evidence below |
-| Native Windows Chrome 75/80/100 | NOT VERIFIED; CSS-scaled synthetic checks are not native zoom proof |
-| Fresh authenticated two-session verification | NOT VERIFIED in this continuation; no credential request/retry. Prior owner persistence/sync/conflict/access acceptance remains preserved |
-| Native Excel 2016/2019 | Prior owner opening acceptance retained; pending final native acceptance remains USER VERIFICATION REQUIRED |
-| Chrome Dangerous badge | Prior unresolved release gate retained; no bypass or clean-security claim |
+| Focused Duty tests | PASS: 84, no failures/skips locally, private actual-template overlay included |
+| Focused release tests | PASS: 86, no failures/skips locally, including 81 protected Production file hashes |
+| Relevant regressions | PASS: 124 Receiving/Expiry/auth/security/Handheld checks |
+| New export tests | PASS: one-workbook All Full Month in both formats; All Custom Range in both formats; active blank staff, historical applicability, order/identity, unique days/columns, explicit totals, individual export/Copy, Clear and empty-roster guard |
+| Viewport test | PASS: actual top/padding measurement, resize response and fractional preview-scale arithmetic |
+| Existing edit/data tests | PASS: serialized Save, conflict draft, overnight/split/manual rules, month response races, scope isolation, persisted order and retained grid scroll |
+| Build / CI / browser / READY Preview | Final delivery evidence below |
 
-Copy remains eight daily cells E:L, with actual Notes and correct selected starting date. Reserved M:O compatibility and both XLSX formats/calculations are preserved. No full legacy-suite rerun; inherited failures remain documented. Prior owner USER VERIFIED schedule/save/refresh/sync/conflict/access/Excel/paste results are preserved as prior-candidate evidence, not new browser claims.
+No full legacy-suite rerun; inherited failures remain in VERIFICATION_20261105.json. Prior owner USER VERIFIED persistence/refresh/two-session sync/conflicts/permissions/Excel/paste acceptance remains preserved evidence, not a fresh authenticated browser claim.
 
-## Safety / next action
+## Remaining acceptance / safety
 
-No backend/schema/data change or new migration. Retain existing six Staging migration versions `20261103235030`, `20261103235335`, `20261104013200`, `20261105183357`, `20261106001033`, `20261106010727`; never replay or apply obsolete proposals. No Production database call. UI rollback must retain directory-v2 compatibility and manual-aware readers; retain schema/history and other module grants. PR #44 remains Draft and unmerged.
+- Native Windows Chrome zoom 75/80/100 remains NOT VERIFIED until actual owner acceptance. CSS-scaled browser diagnostics are identified separately.
+- Fresh authenticated two-session testing is not claimed; no password request/auth retry. Outstanding native Excel 2016/2019 acceptance remains USER VERIFICATION REQUIRED. Prior Chrome Dangerous badge remains an unresolved release gate; never bypass it or claim clean security.
+- No backend, calculation, persistence, Receiving, Expiry or authentication code changes. Existing six Duty migrations stay unchanged: `20261103235030`, `20261103235335`, `20261104013200`, `20261105183357`, `20261106001033`, `20261106010727`. No Production SQL performed. Preserve schema/history and directory-v2/manual-aware compatibility on rollback; keep other module grants unchanged.
 
-1. On the READY Staging candidate, select employees from the saved-order filter, choose a custom range using the blue calendar, Copy (green ✓ then restore), and Clear: period remains and saved data is untouched.
-2. Check Report and Schedule calendars: selected/today states, previous/next month, boundary restrictions and From/To alignment. Verify both XLSX formats and full-month/custom E:L paste into a disposable correctly dated employee template.
-3. At native Chrome 75%, 80%, 100%, open every IN/OUT hour/minute/AM-PM control, including Second Shift: widths stay fixed, options center, icons/text remain clear, keyboard works, footer stays visible.
-4. Confirm report header/context row/KPIs remain visible with internal table scrolling; save/refresh one synthetic overnight duty and compare the independent Staging session. If Dangerous appears, stop without bypassing and report warning details. Production needs separate explicit authorization.
+Next owner checks: export All Full Month/Custom Range, including a blank employee, then compare individual export/Copy; at native Chrome 75/80/100 scroll Schedule vertically/horizontally with sticky employee headers and visible top toolbar, edit/refresh a synthetic duty and compare saved values. Stop on any Dangerous warning without bypassing. Separate explicit approval is required before any Production action.
 
-## Final delivery evidence
+## Delivery evidence
 
-- Final Duty runtime `66dc1faffa19e67a48763ba148711bc3801b4702`; release runtime `9280ba620deb3b88f8f7f00c06c7d53ece169d45`. Later documentation-only commits do not alter runtime bytes.
-- READY Staging Preview: https://pharmflow-test-8xfh0ervw-fhyh2xtskz-3504.vercel.app/ — deployment `dpl_94wNTueBtwCvhtxa4K4JqzFgaUNQ`, exact Duty runtime above, Preview target only.
-- Runtime release CI: security [42153188405](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42153188405) SUCCESS; Duty readiness [42153188352](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42153188352) / [42153180801](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42153180801) SUCCESS. Local complete suites 80/82 PASS; after fractional-width correction, 11 targeted calendar/clipboard/export checks PASS. CI skips only the optional private template; local overlay passed.
-- Browser synthetic diagnostics: all 12 IN/OUT hour/minute/AM-PM triggers in a split shift retained their widths when opened; centered options computed font-weight 650. Rounding drift was corrected in the shared component. Final 80% CSS-scaled check: trigger before/after and popup widths all **88.28125 px**, popup y=358.39–424.36 within 936 px viewport. Calendar blue day grid opened and From/To day buttons selected successfully; Employee Filter and contextual Copy/Clear/Export rendered; Clear emptied only employee selection. The two-second green/failure feedback timing is verified with controlled automated clocks; no claim of capturing the brief green state in a browser screenshot.
-- Final browser sizing check used CSS scale 0.8, not native Windows Chrome zoom. Current native 75/80/100, authenticated fresh persistence/sync and native Excel gates remain as listed above. No browser schedule writes/auth retries.
-- Complete PR diff reviewed: 44 files, Receiving calendar/runtime/Expiry/auth/connection/Vite/Production guards unchanged. All 81 protected Production files retain their hashes. No new migration/dependency, Production change or merge.
+Runtime commits, READY Preview, CI and scoped browser results recorded after publishing. PR #44 remains Draft/unmerged.

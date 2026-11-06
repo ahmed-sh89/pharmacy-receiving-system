@@ -27,7 +27,7 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-meta{padding:10px 14px;border:1px solid var(--duty-line);border-top:0;background:#f7f9fc;display:flex;gap:18px;align-items:center;font-size:12px;color:#62738a}
 #page-duty .duty-meta strong{color:#294766;font-weight:600}
 #page-duty .duty-dot{width:9px;height:9px;border-radius:2px;display:inline-block;background:#d5e0ed;border:1px solid #9fb4cd;margin-right:5px}
-#page-duty .duty-grid-scroll{overflow:auto;border:1px solid var(--duty-line);border-top:0;border-radius:0 0 10px 10px;max-height:calc(100vh - 270px);min-height:280px;background:white;isolation:isolate}
+#page-duty .duty-grid-scroll{overflow:auto;border:1px solid var(--duty-line);border-top:0;border-radius:0 0 10px 10px;min-height:0;background:white;isolation:isolate}
 #page-duty table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:12px}
 #page-duty th,#page-duty td{border-bottom:1px solid #dce4ed;border-right:1px solid #e4eaf1;height:54px;text-align:center;padding:7px 6px;background:#fff}
 #page-duty thead th{position:sticky;top:0;z-index:3;background:#f1f5fa;height:55px;color:#546b86;font-weight:600}
@@ -75,7 +75,7 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-panel-footer{flex-shrink:0;margin-top:auto;border-top:1px solid var(--duty-line);padding:16px 24px;display:flex;justify-content:flex-end;gap:9px}
 #page-duty .duty-panel-error{color:#a13737;min-height:17px;font-size:12px;margin:0}
 #page-duty .duty-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:1000px){#page-duty .duty-grid-scroll{max-height:65vh}#page-duty .duty-title-row{align-items:flex-start}#page-duty .duty-actions{flex-wrap:wrap}}
+@media(max-width:1000px){#page-duty .duty-title-row{align-items:flex-start}#page-duty .duty-actions{flex-wrap:wrap}}
 #page-duty .duty-compact-title{font-size:16px;margin-right:5px}
 #page-duty .duty-stage-b .duty-banner{padding:6px 10px;margin:0 0 7px;font-size:11px}
 #page-duty .duty-schedule-controls{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:8px 0}
@@ -85,7 +85,7 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-period{display:flex;align-items:center;gap:12px;font-size:13px;white-space:nowrap}
 #page-duty .duty-period button{font-size:21px;padding:2px 12px;min-height:34px}
 #page-duty .duty-inline-message{font-size:12px;color:#375d85;background:#eef5fd;padding:7px 10px;border-radius:5px;margin:5px 0}
-#page-duty .duty-scheduling-grid{min-height:200px;max-height:calc(100vh - 240px);border:1px solid #cbd8e6;border-radius:8px}
+#page-duty .duty-scheduling-grid{min-height:0;border:1px solid #cbd8e6;border-radius:8px}
 #page-duty .duty-scheduling-grid th.duty-employee-col,#page-duty .duty-scheduling-grid td.duty-employee-col{width:178px;min-width:178px}
 #page-duty .duty-scheduling-grid th.duty-total-col,#page-duty .duty-scheduling-grid td.duty-total-col{width:85px;min-width:85px;left:178px}
 #page-duty .duty-scheduling-grid .duty-day-col{width:160px;min-width:160px}
@@ -129,10 +129,10 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-confirm-card h3{font-size:18px;margin:0 0 12px}
 #page-duty .duty-confirm-card p{font-size:13px;line-height:1.6;color:#62738a;margin:0 0 20px}
 #page-duty .duty-confirm-card .duty-actions{justify-content:flex-end}
-@media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}#page-duty .duty-scheduling-grid{max-height:70vh}}
+@media(max-width:1100px){#page-duty .duty-schedule-controls{flex-wrap:wrap}}
 
 /* Vertical Duty workspace. */
-#page-duty .duty-vertical{max-height:calc(100dvh / var(--duty-preview-scale,1) - 165px);border-top:1px solid var(--duty-line);border-radius:9px}
+#page-duty .duty-vertical{border-top:1px solid var(--duty-line);border-radius:9px}
 #page-duty .duty-vertical table{width:100%;font-size:13px}
 #page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #b9cde0;border-bottom:1px solid #b9cde0}
 #page-duty .duty-vertical thead th{background:#eaf1f9;vertical-align:top;padding:8px 5px 6px}
@@ -299,10 +299,13 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-editor-footer{padding-top:8px;border-top:1px solid #d8e2ed}
 
 /* Reports own the remaining Duty viewport; only the table scrolls. */
-#page-duty[data-duty-view=reports]{height:var(--duty-report-height,calc(100dvh / var(--duty-preview-scale,1) - 140px));min-height:0;overflow:hidden}
-#page-duty[data-duty-view=reports] .duty-shell{height:100%;min-height:0;display:flex;flex-direction:column;padding-bottom:0}
-#page-duty[data-duty-view=reports] :is(.duty-toolbar,.duty-sync-status,.duty-banner){flex-shrink:0}
-#page-duty #duty-reports-body{flex:1;min-height:0;min-width:0}
+#page-duty:is([data-duty-view=schedule],[data-duty-view=reports]){height:var(--duty-viewport-height,100dvh);min-height:0;overflow:hidden}
+#page-duty:is([data-duty-view=schedule],[data-duty-view=reports]) .duty-shell{height:100%;min-height:0;display:flex;flex-direction:column;padding-bottom:0}
+#page-duty:is([data-duty-view=schedule],[data-duty-view=reports]) :is(.duty-toolbar,.duty-sync-status,.duty-banner){flex-shrink:0}
+#page-duty :is(#duty-schedule-body,#duty-reports-body){flex:1;min-height:0;min-width:0}
+#page-duty #duty-schedule-body{display:flex;flex-direction:column}
+#page-duty #duty-schedule-body > :is(.duty-schedule-controls,.duty-footnote){flex-shrink:0}
+#page-duty #duty-schedule-body > .duty-grid-scroll{flex:1}
 #page-duty .duty-report{display:flex;flex-direction:column;gap:8px;height:100%;min-height:0;width:100%;margin:0;padding:10px;border:1px solid #c4d4e4;border-radius:9px;background:#fff;overflow:hidden}
 #page-duty .duty-report > :not(.duty-report-preview,.duty-report-placeholder){flex-shrink:0}
 #page-duty .duty-report-heading{display:flex;align-items:center;gap:10px}
@@ -355,7 +358,7 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-report-standard thead th{--pfn-table-header-bg:#f2f2f2;--pfn-table-header-ink:#173f70;background:#f2f2f2;color:#173f70;border-bottom:2px solid #99aebe}
 #page-duty .duty-report-table .duty-report-row-templateFriday td{background:#8ed973;color:#203f3a}
 #page-duty .duty-report-placeholder{display:grid;place-items:center;flex:1;min-height:0;color:#62738a;background:#f8fbfe;border:1px dashed #ccd9e6;border-radius:6px}
-@media(min-width:761px){html:has(#page-duty.active[data-duty-view=reports]),body:has(#page-duty.active[data-duty-view=reports]),html:has(body[data-duty-synthetic] [data-duty-view=reports]),body[data-duty-synthetic]:has([data-duty-view=reports]){overflow:hidden}}
+@media(min-width:761px){html:has(#page-duty.active:is([data-duty-view=schedule],[data-duty-view=reports])),body:has(#page-duty.active:is([data-duty-view=schedule],[data-duty-view=reports])),html:has(body[data-duty-synthetic] :is([data-duty-view=schedule],[data-duty-view=reports])),body[data-duty-synthetic]:has(:is([data-duty-view=schedule],[data-duty-view=reports])){overflow:hidden}}
 @media(max-width:1000px){#page-duty .duty-report-controls{grid-template-columns:minmax(200px,1fr) minmax(200px,1.4fr) minmax(145px,.8fr)}#page-duty .duty-report-period{grid-template-columns:1fr}#page-duty .duty-report-kpis dt{font-size:10px}}
 @media(max-width:700px){#page-duty .duty-report-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#page-duty .duty-report-result-bar{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){#page-duty .duty-tabs button{transition:none}}

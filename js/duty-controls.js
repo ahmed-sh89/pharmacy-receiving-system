@@ -50,5 +50,22 @@
    popup.addEventListener('toggle',e=>{if(e.newState==='closed')popup.remove();});
   };
  }
- root.DutyControls={dateField,bindCalendars,openPopover};
+ // One viewport owner for both Duty workspaces; table/grid CSS receives the remainder.
+ let viewportHost=null,headerObserver=null;
+ function fitViewport(host){
+  if(!root.requestAnimationFrame)return;
+  const entering=viewportHost!==host;viewportHost=host;
+  root.requestAnimationFrame(()=>{
+   if(!host.isConnected)return;
+   const page=host.closest('#page-duty');if(!page||!page.getBoundingClientRect().width)return;
+   if(entering)root.scrollTo?.({top:0,left:0,behavior:'instant'});
+   const scale=Number(root.getComputedStyle(page).getPropertyValue('--duty-preview-scale'))||1;
+   const top=page.getBoundingClientRect().top,bottom=Number.parseFloat(root.getComputedStyle(page.parentElement).paddingBottom)||0;
+   page.style.setProperty('--duty-viewport-height',Math.max(0,(root.innerHeight-top-Math.max(12,bottom*scale+4))/scale)+'px');
+   if(!headerObserver&&root.ResizeObserver){const header=host.ownerDocument.querySelector('.topBar');if(header){headerObserver=new root.ResizeObserver(()=>{if(viewportHost?.isConnected)fitViewport(viewportHost);});headerObserver.observe(header);}}
+  });
+ }
+ root.addEventListener?.('resize',()=>{if(viewportHost?.isConnected)fitViewport(viewportHost);});
+ root.visualViewport?.addEventListener('resize',()=>{if(viewportHost?.isConnected)fitViewport(viewportHost);});
+ root.DutyControls={dateField,bindCalendars,openPopover,fitViewport};
 })(typeof window==='undefined'?globalThis:window);
