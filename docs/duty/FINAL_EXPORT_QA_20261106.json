@@ -1,0 +1,22 @@
+{
+  "status": "READY FOR USER VERIFICATION \u2014 NOT PRODUCTION-APPROVED",
+  "actual_previous_browser_file": "ZIP CRC PASS and openpyxl readable; central/local date month/day zero observed",
+  "confirmed_defect": "CFB ZIP central directory writes zero timestamps; canonical valid local/central timestamps now serialized",
+  "windows_error_attribution": "NOT VERIFIED; native Windows unavailable, original failing owner workbook not attached",
+  "blob_encoding": "Uint8Array and real PK bytes; textual Blob corruption hypothesis rejected",
+  "variants_independent_reader": 8,
+  "cells_compared": 3180,
+  "independent_reader": "openpyxl plus Python zipfile; actual Blob-saved bytes",
+  "release_local": {
+    "pass": 116,
+    "skip_optional_private_template": 1,
+    "fail": 0
+  },
+  "targeted_ui_pass": 11,
+  "targeted_export_lifecycle_pass": 18,
+  "neighbor_pass": 58,
+  "counts_overlap": true,
+  "new_migrations": 0,
+  "existing_migrations_unchanged": 7,
+  "production_changes": false
+}

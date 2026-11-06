@@ -1,6 +1,6 @@
 {
   "production_base": "2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f",
-  "duty_source": "d7c21d58457d93a020db5da2f56a3c00b327a18e",
+  "duty_source": "4750305b795973efa2e5db258d022d4dc2715272",
   "protected_files": {
     ".github/workflows/accepted-release-checks.yml": "b7211072ec465835448892c218daf870276cfc92",
     ".github/workflows/deploy.yml": "2b804175acdd222d4c6e1a7fb7804a7fbd1bc72a",
