@@ -1,3 +1,7 @@
+## 2026-11-06 · Unified Schedule / Calendar control appearance
+
+White secondary controls with shared typography, dimensions, border and interaction states; Apply Shift / Shift Presets secondary; + Employee and confirmations retain blue primary hierarchy. Calendar inputs match; Delete red icon and existing confirmation preserved. Removed superseded Date Range accent and selection-tool sizing. Visual-only change; 17 focused tests PASS. Existing export, synchronization and migration evidence unchanged; changed visuals await native zoom acceptance.
+
 ## 2026-11-06 · Export file conformance and focused operational regressions
 
 Normalize Duty ZIP local/central DOS timestamps; validate actual Blob output; pharmacy-code filenames and Job Number worksheets (one employee per sheet in both formats). Preset management child Save/Cancel returns to list; structured options match trigger width. Live-editor/captured-drag navigation checks and transient instructions no longer poison write-control state. Consolidated toolbar styles. No calculation/persistence/shared business/migration changes. Native Excel cause/opening remains unverified; machine file validity is separate evidence.

@@ -1,3 +1,16 @@
+# Duty visual consistency · 6 November 2026
+
+**READY FOR USER VERIFICATION — NOT PRODUCTION-APPROVED.** Staging only; PR #44 stays Draft.
+
+Current change is visual only: shared white/blue-gray/dark-blue secondary controls for Schedule and Calendar Settings, 34px compact control sizing, consistent hover/focus/disabled states. Apply Shift and Shift Presets use secondary hierarchy; + Employee and modal confirmation remain primary blue. Calendar field surfaces match; existing preset-section divider remains. Delete retains confirmation and red iconography. Superseded Date Range accent and selection-tool sizing removed at source; no CSS override appendix.
+
+Files: css/duty.css, js/duty-schedule.js, tests/duty-polish.test.cjs and these Duty docs. No service/calculation/persistence/permission/export/migration/other-module edits. Seven migration checksums and prior atomic/Excel/Sync evidence preserved without retesting unrelated gates.
+
+Local verification: 17 focused UI/regression tests PASS, zero FAIL; Preview build PASS. Fresh Preview/browser and release-isolation evidence recorded below after verification. Native Windows Chrome 75/80/100 visual acceptance remains USER VERIFICATION REQUIRED. Exact next action: inspect toolbar and Calendar Settings at those zoom levels, including dropdowns, disabled controls, keyboard focus and Save/Cancel. No Production action authorized.
+
+---
+Previous export and operational verification evidence (unchanged):
+
 # Duty final export / UX regression acceptance · 6 November 2026
 
 **READY FOR USER VERIFICATION — NOT PRODUCTION-APPROVED.** Staging only. PR #44 Draft. Owner-reported Excel regression supersedes earlier Excel PASS for the affected export scope. Prior accepted Sync/calculations/persistence/atomic evidence remains preserved.
@@ -19,7 +32,3 @@ Seven migration files/checksums unchanged; no SQL/migration execution, no Produc
 Owner checks: (1) Download individual/all exports in both formats and open in Windows Excel; verify code filename, Job Number sheets and totals. (2) Add/edit several presets, Save/Cancel back to list, X exit. (3) Apply dropdown width/readability, overwrite cancel/confirm and Undo/Redo. (4) Navigate/edit/Cancel across tabs at Chrome 75/80/100; verify controls active and no stale instruction or overflow.
 
 Final local verification: affected release suite 116 PASS / 1 optional private-template SKIP / 0 FAIL (includes 17 previously local atomic tests, not new cloud evidence); 11 focused final UI/preset checks PASS and 18 export/lifecycle checks PASS (overlapping sets). 58 neighboring tests PASS. Eight independent openpyxl files compared cell-for-cell against expected projection: 3,180 cells including dates/time fractions, totals, identity and blank employees. Both builds PASS; seven original migration checksums unchanged. Source comparison to fb0a8fddd340cba22cfaf73f6280960f06a0a16c shows the same bare CFB writer/Blob pipeline: the zero-timestamp defect predates the latest UX work. No evidence supports blaming the last five UI fixes or claiming an exact newly introduced binary regression. Final Windows Excel acceptance is required; request the failing original workbook if refusal persists after this corrected candidate.
-
-## Final runtime / browser evidence
-
-Duty runtime 4750305b795973efa2e5db258d022d4dc2715272; release runtime 36ad3066033d0a7e6da646e15605590e6c0a15f0. READY Preview https://pharmflow-test-kb9sazr33-fhyh2xtskz-3504.vercel.app/ · deployment dpl_BfREB2VvUfWujWRwpzcA8kxjYfw2, exact Duty runtime. CI readiness 42259238218/42259227857 and security 42259238224 SUCCESS. Actual final Chrome download: 93278 bytes, CRC/DOS timestamps valid, openpyxl opens all ten Job Number sheets DEMO-001…DEMO-010. Synthetic browser preset Save and Edit/Cancel both return to list; discarded name absent. Apply popup/trigger both 438px wide and inside viewport; structured name/time lines; Cancel closes, no horizontal overflow. Demo-memory-only, no hosted writes or Windows/native acceptance claim. Main read-only verified unchanged 2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f. Draft PR #44 retained. Documentation-only final heads follow separately.

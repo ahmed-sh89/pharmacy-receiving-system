@@ -54,7 +54,7 @@
    <form data-date-range popover="manual" role="dialog" aria-label="Schedule date range">${C.dateField({id:"duty-schedule-from",name:"from",label:"Start Date",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"End Date",value:S.range?.to||last,min:first,max:last})}<p class="duty-range-error" role="alert"></p><div class="duty-popover-footer"><button type="button" data-range-cancel>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form></div>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
-   <button type="button" class="duty-primary" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
+   <button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    ${dropdown('status','Apply status to selection','Status…',Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}))}
    <button type="button" data-s-action="color">Cell Color</button></div></div>
@@ -359,7 +359,7 @@
  }
  function managePresets(){
   const rows=structuredClone(data.shift_presets||[]),version=scopeVersion,revision=data.settings_revision;
-  const form=smallPanel('Shift Presets',`<div data-preset-list>${rows.map((p,i)=>`<div class="duty-list-row"><span class="duty-preset-description"><strong>${esc(p.name)}</strong>${p.periods.map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}</span><div class="duty-actions"><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}">Delete</button></div></div>`).join('')}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
+  const form=smallPanel('Shift Presets',`<div data-preset-list>${rows.map((p,i)=>`<div class="duty-list-row"><span class="duty-preset-description"><strong>${esc(p.name)}</strong>${p.periods.map(t=>`<small>${esc(M.formatTime(t.start))} – ${esc(M.formatTime(t.end))}</small>`).join('')}</span><div class="duty-actions"><button type="button" data-preset-edit="${i}">Edit</button><button type="button" data-preset-delete="${i}" class="duty-delete-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7"/></svg>Delete</button></div></div>`).join('')}</div><button type="button" data-preset-add>Add Shift Preset</button>`);
   form.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
    if(b.hasAttribute('data-preset-delete')){try{if(version!==scopeVersion||!writable())throw Error('Reopen settings.');const i=+b.dataset.presetDelete;if(!await options.confirm(`Delete preset ${rows[i].name}? Saved duties will remain unchanged.`,'Delete'))return;data=await options.presets(rows.filter((_,index)=>index!==i),revision);managePresets();}catch(error){form.querySelector('[role=alert]').textContent=error.message;}return;}
    if(!b.hasAttribute('data-preset-add')&&!b.hasAttribute('data-preset-edit'))return;
@@ -377,7 +377,7 @@
  function dayType(){
   const {from:initial,to:end}=M.selectedDateRange(S.selected,S.month);
   const rangeNotice=!initial?'<p>Selection contains gaps. Choose the exact date range to update.</p>':'';
-  const form=smallPanel('Calendar settings',`<div class="duty-settings-action"><span>Saved shifts</span><button type="button" class="duty-primary" data-manage-presets>Shift Presets</button></div>${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${settingsEnabled()?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${settingsEnabled()?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
+  const form=smallPanel('Calendar settings',`<div class="duty-settings-action"><span>Saved shifts</span><button type="button" data-manage-presets>Shift Presets</button></div>${rangeNotice}<div class="duty-detail-grid"><label class="duty-field">${settingsEnabled()?'From date':'Date'}<input name="from" type="date" required value="${initial}" ${settingsEnabled()?'':`min="${S.month}-01" max="${M.days(S.month).at(-1).date}"`}></label>
    ${settingsEnabled()?`<label class="duty-field">To date<input name="to" type="date" required value="${end}"></label>`:''}</div>
    <label class="duty-field">Type<select name="type"><option value="normal">Calendar default</option><option value="holiday">Public holiday</option></select></label>
    ${settingsEnabled()?`<label class="duty-field">Holiday name<input name="holiday_name" autocomplete="off" maxlength="80" placeholder="Eid Al-Fitr"></label><label class="duty-field">Note<input name="holiday_note" autocomplete="off" maxlength="300"></label>`:''}`,async fields=>{
@@ -386,6 +386,7 @@
    if(settingsEnabled()&&active&&!name)throw Error('Enter a holiday name.');
    data=await options.holiday(M.dateRange(from,to),active,name,active?fields.get('holiday_note')?.trim():'');render();
   },'Save');
+  form.classList.add('duty-calendar-settings');
   form.querySelector('[data-manage-presets]').onclick=managePresets;
   const sync=()=>{const row=data.holidays.find(h=>h.date===form.elements.from.value);form.elements.type.value=row?.active?'holiday':'normal';if(settingsEnabled()){form.elements.holiday_name.value=row?.active?row.name||'':'';form.elements.holiday_note.value=row?.active?row.note||'':'';}};
   const holidayFields=()=>{if(!settingsEnabled())return;const active=form.elements.type.value==='holiday';for(const name of ['holiday_name','holiday_note']){form.elements[name].disabled=!active;if(!active)form.elements[name].value='';}};

@@ -34,7 +34,7 @@ test('read-only and initialization errors never enable writes',async()=>{
 });
 test('Calendar independent of selection: inactive names cleared, saved Holiday restored, normal submission strips unrelated values',async()=>{
  const f=editorFixture();f.data.holidays.push({date:'2026-11-01',active:false,name:'afternoon',note:'old preset-like text'},{date:'2026-11-02',active:true,name:'Saved Holiday',note:'Saved note'});
- f.window.DutySchedule.calendar();let panel=f.panels.at(-1),form=panel.form;assert.equal(form.elements.holiday_name.value,'');assert(form.elements.holiday_name.disabled);assert(form.querySelector('.duty-settings-action .duty-primary'));
+ f.window.DutySchedule.calendar();let panel=f.panels.at(-1),form=panel.form;assert.equal(form.elements.holiday_name.value,'');assert(form.elements.holiday_name.disabled);assert(form.querySelector('.duty-settings-action [data-manage-presets]'));
  form.elements.from.value='2026-11-02';form.elements.from.onchange();assert.equal(form.elements.holiday_name.value,'Saved Holiday');assert(!form.elements.holiday_name.disabled);
  Object.defineProperty(form.elements.type,'value',{value:'normal',writable:true});form.elements.type.onchange();assert.equal(form.elements.holiday_name.value,'');
  await panel.submit(new Map([['from','2026-11-02'],['to','2026-11-02'],['type','normal'],['holiday_name','unrelated'],['holiday_note','unrelated']]));assert.equal(f.holidayCalls[0][2],'');assert.equal(f.holidayCalls[0][3],'');
