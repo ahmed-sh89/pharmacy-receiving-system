@@ -43,4 +43,14 @@ Future approved Production migration order: `20261103235030`, `20261103235335`, 
 5. Copy one employee for November 7–9 into that employee's matching dated rows in a disposable, correctly dated template; inspect E:L and adjacent cells.
 6. Open both new XLSX formats in Excel: no repair, integers without a trailing dot, fractions/Notes/period totals correct.
 
-Do not merge or deploy. Update Preview/deployed SHA and release CI evidence after publishing this candidate. Production requires separate explicit approval.
+## Saved release evidence
+
+Feature implementation: `52e376b455dca0e51473f673651c76fde81e9c6c` (PR #43). Focused release implementation: `7cda81d6c005456babbb4932aab738be14cdef8c` (PR #44). Subsequent evidence-only commits do not change this runtime.
+
+Confirmed Vercel READY Preview: https://pharmflow-test-h286zbfaq-fhyh2xtskz-3504.vercel.app/ — deployment `dpl_DkXpPXoeum5y4kB5GvMRjvKy9j9K`, exact deployed runtime `52e376b455dca0e51473f673651c76fde81e9c6c`, isolated Staging build.
+
+Release build PASS. Final focused release tests: **71 PASS, 0 FAIL** locally, including the actual-template overlay. Release CI on `7cda81d`: Duty readiness [42135949194](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42135949194) PASS; required PharmFlow security [42135949203](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42135949203) PASS. The actual-template fixture is optional in CI because the private attachment is not committed; its local run passed. All 81 protected files match Production by Git blob hash. PR #44 diff contains no Receiving/Expiry/auth/Handheld business file, Supabase connection or Vite/deployment guard change.
+
+New visual browser verification: **BLOCKED**. Automatic approval review rejected opening the new Preview because of the earlier explicit instruction to stop browser retries. No retry, alternate browser, credential request or bypass followed. New native-zoom geometry, changed integer-format display and cross-session ordering remain owner checks; the prior USER VERIFIED acceptance is retained as reported evidence.
+
+Do not merge or deploy. Production requires separate explicit approval.
