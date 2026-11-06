@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-06",
+  "scope": "Duty final UI refinement; Staging only",
+  "feature_tests": 80,
+  "release_tests": 82,
+  "focused_regressions": 124,
+  "failed": 0,
+  "private_template": "PASS locally; optional in CI",
+  "protected_production_files": 81,
+  "new_migrations": 0,
+  "new_dependencies": 0,
+  "receiving_calendar_files": "unchanged",
+  "native_windows_zoom": "NOT VERIFIED",
+  "fresh_authenticated_sync": "NOT VERIFIED; prior owner acceptance retained",
+  "native_excel": "USER VERIFICATION REQUIRED for outstanding acceptance",
+  "dangerous_badge": "prior unresolved release gate retained"
+}

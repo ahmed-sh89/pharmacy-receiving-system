@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {parseHTML}=require('linkedom');
 const writes=[];const context=vm.createContext({Uint8Array,ArrayBuffer,TextDecoder,TextEncoder,navigator:{clipboard:{writeText:async s=>writes.push(s)}}});
-for(const path of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js','js/duty-model.js','js/duty-reports.js'])vm.runInContext(fs.readFileSync(path,'utf8'),context);
+for(const path of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js','js/duty-model.js','js/duty-controls.js','js/duty-reports.js'])vm.runInContext(fs.readFileSync(path,'utf8'),context);
 const {DutyModel:M,DutyReports:R,XLSX:X}=context;
 const json=x=>JSON.parse(JSON.stringify(x));
 function sample(){return {pharmacy_id:'synthetic',can_write:true,employees:[{code:'A',name:'Synthetic A',active:true,sort_order:2},{code:'B',name:'Synthetic B',active:true,sort_order:1}],entries:[{code:'A',date:'2026-11-05',payload:M.parse('7 PM–4 AM')},{code:'A',date:'2026-11-06',payload:M.parse('9 AM–6 PM')},{code:'A',date:'2026-11-07',payload:M.parse('9 AM–1 PM / 5 PM–10 PM',{note:'Actual note'})}],holidays:[{date:'2026-11-07',active:true}],hour_rules:[]};}

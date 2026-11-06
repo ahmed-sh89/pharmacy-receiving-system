@@ -31,7 +31,7 @@ function fixture(environment='staging',synthetic=false){
  const events={},calls=[];
  const data={...M.demo(),pharmacy_id:'pharmacy-a'};data.employees=[];
  const c={window,document:window.document,APP_CONFIG:{environment},CLOUD_CONFIG:{url:'https://tovkcakucyagvbzvlnks.supabase.co'},AuthState:{session:{},user:{id:'user-a'},context:{pharmacy_id:'pharmacy-a',user_id:'user-a',pharmacy_code:'TEST'},mustChangePassword:false},AppRouter:{currentRoute:'duty'},AppEvents:{on:(key,fn)=>events[key]=fn},AUTH_STORAGE_KEY:'auth',authRpc:async(name,args)=>{calls.push({name,args});return data;},Intl,Date,crypto:require('node:crypto').webcrypto,FormData,structuredClone,CSS:{escape:s=>s}};
- c.setInterval=()=>{};vm.createContext(c);vm.runInContext(fs.readFileSync('js/duty-schedule.js','utf8'),c);c.DutySchedule=window.DutySchedule;vm.runInContext(fs.readFileSync('js/duty.js','utf8'),c);
+ c.setInterval=()=>{};vm.createContext(c);vm.runInContext(fs.readFileSync('js/duty-controls.js','utf8'),c);vm.runInContext(fs.readFileSync('js/duty-schedule.js','utf8'),c);c.DutySchedule=window.DutySchedule;vm.runInContext(fs.readFileSync('js/duty.js','utf8'),c);
  return {c,root:window.document.getElementById('page-duty'),events,calls,window,data,lifecycle};
 }
 test('month navigation is read only; demo never writes and highlights entire Fridays',async()=>{

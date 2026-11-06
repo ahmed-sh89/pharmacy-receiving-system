@@ -6,7 +6,7 @@ function app(){
  const window={document,addEventListener:(n,f)=>listeners[n]=f,PharmFlowPermissions:{allowed:()=>true}};
  const c=vm.createContext({window,document,Intl,Date,FormData,structuredClone,crypto:require('node:crypto').webcrypto,CSS:{escape:x=>x},APP_CONFIG:{environment:'staging'},AuthState:{identityEpoch:1,session:{},user:{id:'user-a'},context:{pharmacy_id:'pharmacy-a',user_id:'user-a'}},AppRouter:{currentRoute:'duty'},AppEvents:{on:(n,f)=>events[n]=f},AUTH_STORAGE_KEY:'auth',setInterval:()=>{},authRpc:(name,args)=>new Promise((resolve,reject)=>requests.push({name,args,resolve,reject}))});
  vm.runInContext(read('js/duty-model.js'),c);c.DutyModel=window.DutyModel;
- vm.runInContext(read('js/duty-schedule.js'),c);c.DutySchedule=window.DutySchedule;
+ vm.runInContext(read('js/duty-controls.js'),c);vm.runInContext(read('js/duty-schedule.js'),c);c.DutySchedule=window.DutySchedule;
  vm.runInContext(read('js/duty.js'),c);
  return {c,window,document,root:document.querySelector('#page-duty'),listeners,events,requests,M:c.DutyModel};
 }
@@ -38,27 +38,26 @@ function reports(){
  const {document}=parseHTML('<section id="reports"></section>'),writes=[],window={};
  const c=vm.createContext({window,document,Uint8Array,ArrayBuffer,TextEncoder,TextDecoder,navigator:{clipboard:{writeText:async text=>writes.push(text)}}});
  for(const path of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js','js/duty-model.js'])vm.runInContext(read(path),c);
- c.DutyModel=window.DutyModel;vm.runInContext(read('js/duty-reports.js'),c);
+ c.DutyModel=window.DutyModel;vm.runInContext(read('js/duty-controls.js'),c);vm.runInContext(read('js/duty-reports.js'),c);
  return {c,document,host:document.querySelector('#reports'),R:window.DutyReports,M:c.DutyModel,writes};
 }
-test('search finds employee name/code, selects once, auto-renders and keeps paste guidance out of permanent rows',async()=>{
+test('ordered Employee Filter selects once, auto-renders and Clear preserves period and saved data',async()=>{
  const f=reports(),d=monthData(f.M);d.employees[0].display_code='000123';f.R.mount(f.host,d,{month:'2026-11',demo:true,pharmacyCode:'SYNTH'});
- let input=f.host.querySelector('[data-report-employee]');input.value='000123';input.oninput();
- const visible=[...f.host.querySelectorAll('[data-report-person]')].filter(x=>!x.hidden);assert.equal(visible.length,1);visible[0].onclick();
+ const original=JSON.stringify(d),select=f.host.querySelector('[data-report-employee]');assert.equal(select.tagName,'SELECT');assert.deepEqual([...select.querySelectorAll('option')].map(x=>x.value),['','B','A']);assert.match(select.textContent,/000123/);select.onchange({target:{value:'A'}});
  assert.match(f.host.querySelector('.duty-report-identity').textContent,/Synthetic Alpha Official Name/);assert(f.host.querySelector('table'));assert.equal(f.host.querySelector('[data-report-preview]'),null);
  assert.equal(f.host.querySelector('[data-report-status]').textContent,'');assert(f.host.querySelector('.duty-report-help [data-report-destination]'));
  f.host.querySelector('[data-report-period]').onchange({target:{value:'custom'}});
  f.host.querySelector('[data-report-from]').onchange({target:{value:'2026-11-05'}});f.host.querySelector('[data-report-to]').onchange({target:{value:'2026-11-07'}});
  await f.host.querySelector('[data-report-copy]').onclick();const lines=f.writes[0].split('\r\n').map(x=>x.split('\t'));assert.equal(lines.length,3);assert(lines.every(x=>x.length===8));assert.equal(lines[0][0],'7:00 PM');assert.equal(lines[0][1],'4:00 AM');
  assert.match(f.host.querySelector('[data-report-destination]').textContent,/row dated 2026-11-05/);
- input=f.host.querySelector('[data-report-employee]');input.value='';input.oninput();assert(f.host.querySelector('[data-report-copy]').disabled);assert(f.host.querySelector('[data-report-download]').disabled);
+ f.host.querySelector('[data-report-clear]').onclick();assert.equal(f.host.querySelector('[data-report-from]').value,'2026-11-05');assert.equal(f.host.querySelector('[data-report-to]').value,'2026-11-07');assert.equal(JSON.stringify(d),original);assert(f.host.querySelector('[data-report-copy]').disabled);assert(f.host.querySelector('[data-report-download]').disabled);
 });
 // DOM fixture supplies native successful-control semantics for the actual editor event handlers.
 function editorFixture(){
  const {document,window}=parseHTML('<html><body><div id="grid"></div></body></html>');
  class Fields{constructor(form){this.values=new Map();for(const e of form.querySelectorAll('input,select,textarea')){if(!e.name||e.disabled||e.closest('fieldset[disabled]'))continue;if(['checkbox','radio'].includes(e.type)&&!e.hasAttribute('checked'))continue;this.values.set(e.name,e.value||'');}}has(k){return this.values.has(k);}get(k){return this.values.get(k)??null;}}
  Object.defineProperty(window.HTMLElement.prototype,'elements',{configurable:true,get(){const form=this;return new Proxy({}, {get:(_,key)=>{const nodes=[...form.querySelectorAll('[name]')].filter(x=>x.name===key);if(nodes.length>1)return {get value(){return nodes.find(x=>x.hasAttribute('checked'))?.value;}};return nodes[0];}});}});
- const c=vm.createContext({window,document,Intl,Date,FormData:Fields,CSS:{escape:x=>x},structuredClone});vm.runInContext(read('js/duty-model.js'),c);c.DutyModel=window.DutyModel;vm.runInContext(read('js/duty-schedule.js'),c);
+ const c=vm.createContext({window,document,Intl,Date,FormData:Fields,CSS:{escape:x=>x},structuredClone});vm.runInContext(read('js/duty-model.js'),c);c.DutyModel=window.DutyModel;vm.runInContext(read('js/duty-controls.js'),c);vm.runInContext(read('js/duty-schedule.js'),c);
  const M=c.DutyModel,data=monthData(M),host=document.querySelector('#grid'),requests=[];
  window.DutySchedule.mount(host,data,{month:'2026-11',demo:false,save:(changes)=>new Promise((resolve,reject)=>requests.push({changes,resolve,reject})),confirm:async()=>true});
  return {window,document,host,data,requests,M};
