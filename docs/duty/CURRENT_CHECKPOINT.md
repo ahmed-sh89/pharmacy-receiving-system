@@ -6,7 +6,9 @@ Current change is visual only: shared white/blue-gray/dark-blue secondary contro
 
 Files: css/duty.css, js/duty-schedule.js, tests/duty-polish.test.cjs and these Duty docs. No service/calculation/persistence/permission/export/migration/other-module edits. Seven migration checksums and prior atomic/Excel/Sync evidence preserved without retesting unrelated gates.
 
-Local verification: 17 focused UI/regression tests PASS, zero FAIL; Preview build PASS. Fresh Preview/browser and release-isolation evidence recorded below after verification. Native Windows Chrome 75/80/100 visual acceptance remains USER VERIFICATION REQUIRED. Exact next action: inspect toolbar and Calendar Settings at those zoom levels, including dropdowns, disabled controls, keyboard focus and Save/Cancel. No Production action authorized.
+Local verification: 17 focused UI/regression tests PASS, zero FAIL; feature/release Preview builds PASS; protected Production-file isolation test PASS. Browser synthetic fixture: 34px secondary controls and Calendar fields, white surfaces, primary Save/Apply white text on blue, red Delete icon, enabled Copy hover and 2px keyboard-focus outline verified. Date Range popover bounded; Calendar modal and outer page have no horizontal overflow at 100% and CSS-scale 75/80 simulations. These simulations do not prove native Windows Chrome zoom acceptance. No authentication retries or database writes. Native Windows Chrome 75/80/100 visual acceptance remains USER VERIFICATION REQUIRED. Exact next action: inspect toolbar and Calendar Settings at those zoom levels, including dropdowns, disabled controls, keyboard focus and Save/Cancel. No Production action authorized.
+
+Runtime Duty SHA: 92a59c8272910117aade474e3e320b9e4b2e8b17. READY Preview: https://pharmflow-test-13orzmn7i-fhyh2xtskz-3504.vercel.app/ (Preview target; matching Git SHA). PR #44 remains Draft. Runtime source followed by documentation-only checkpoint commit. Current visual-only rollback: revert the scoped style/markup commits; retain all schema/data/history.
 
 ---
 Previous export and operational verification evidence (unchanged):

@@ -83,8 +83,9 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) :is(button,input:not([type=checkbox]),select),#page-duty [data-duty-action=calendar]{font-family:inherit;font-size:12px;font-weight:600;min-height:34px;border:1px solid #ccd9e6;border-radius:7px;padding:6px 9px;line-height:20px;color:#234d75}
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button:not(.duty-primary),#page-duty .duty-calendar-settings :is(input:not([type=checkbox]),select),#page-duty [data-duty-action=calendar]{background-color:#fff}
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button:not(.duty-primary):not(:disabled):hover,#page-duty [data-duty-action=calendar]:not(:disabled):hover{background-color:#f0f6fc;border-color:#8baccd}
-#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) .duty-primary{background-color:#2165a8;color:#fff;border-color:#2165a8}
-#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) .duty-primary:not(:disabled):hover{background-color:#194f86}
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button.duty-primary{background-color:#2165a8;color:#fff;border-color:#2165a8}
+#page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button.duty-primary:not(:disabled):hover{background-color:#194f86}
+#page-duty .duty-calendar-settings :is(input:not([type=checkbox]),select){height:34px}
 #page-duty .duty-calendar-settings :is(button,input,select):disabled{opacity:.5;cursor:default}
 #page-duty .duty-delete-action{display:inline-flex;align-items:center;gap:6px}
 #page-duty .duty-delete-action svg{width:16px;height:16px;fill:none;stroke:#b42332;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -268,9 +269,9 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-staff-title .duty-code{color:#e5effa;margin:1px 0 0}
 #page-duty .duty-kpi-wrap{padding:0 4px}
 #page-duty .duty-icon{display:inline-grid;place-items:center;width:34px;height:34px;padding:6px}
-#page-duty .duty-schedule-controls .duty-icon{padding:6px}
+#page-duty .duty-schedule-controls button.duty-icon{padding:6px}
 #page-duty .duty-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-#page-duty .duty-schedule-controls .duty-icon-delete{color:#ac343b}
+#page-duty .duty-schedule-controls button.duty-icon-delete{color:#ac343b}
 #page-duty .duty-directory{max-width:1100px;margin:10px auto}
 #page-duty .duty-directory-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #page-duty .duty-directory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:12px}
