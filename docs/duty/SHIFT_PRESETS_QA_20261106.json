@@ -1,0 +1,30 @@
+{
+  "status": "READY FOR USER VERIFICATION \u2014 NOT PRODUCTION-APPROVED",
+  "duty_runtime": "2b77d822c2165a0cb3d6d8ee511c9a3fec023635",
+  "release_runtime": "8fcd6bd408f453df52bfe600fd0d2c548009ce6e",
+  "preview": "https://pharmflow-test-2gwjdnrfn-fhyh2xtskz-3504.vercel.app/",
+  "preview_state": "READY",
+  "focused_new_tests_pass": 3,
+  "neighbor_tests_pass": 58,
+  "release_local_suite": {
+    "pass": 105,
+    "skip_optional_private_template": 1,
+    "fail": 0,
+    "includes_prior_atomic_tests": 17
+  },
+  "runtime_ci": "SUCCESS",
+  "migration": "20261106134244_duty_shift_presets_staging.sql",
+  "sha256": "9c5f6aecc4a59439edccd90e08c4f03ec12145b7b51f2d97dc59fc2811cc4acb",
+  "staging_applied": true,
+  "production_applied": false,
+  "atomic_seven_migrations_run": 42227797916,
+  "atomic_cases": [
+    "COMMIT",
+    "ROLLBACK 3",
+    "ROLLBACK 6",
+    "ROLLBACK 7"
+  ],
+  "atomic_result": "PASS",
+  "authenticated_browser_sync": "NOT VERIFIED \u2014 sign-in boundary reached, no authentication retries",
+  "owner_prior_sync_excel_zoom": "preserved; no claim for new preset flow"
+}
