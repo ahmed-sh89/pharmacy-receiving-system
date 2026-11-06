@@ -1,0 +1,42 @@
+name: Isolated Duty atomic two-connection verification
+on:
+  push:
+    branches: ['test/duty-atomic-actions-20261106']
+permissions:
+  contents: read
+jobs:
+  atomic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: isolated-duty-service-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: isolated-duty-service-only
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-fund --no-audit
+      - name: Two independent PostgreSQL connections — only new atomic cases
+        run: node atomic-actions/two-connections.cjs
+      - name: Evidence in job summary
+        if: always()
+        run: |
+          if test -f atomic-results/evidence.json; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat atomic-results/evidence.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
