@@ -23,6 +23,7 @@ test('Duty readiness: default denial, audit/CAS, durable rules, calculations, is
  for(const file of fs.readdirSync('supabase/migrations').filter(f=>/duty_stage_a_foundation|duty_position_default|duty_stage_b_scheduling/.test(f)).sort())await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261105183357_duty_production_readiness_staging.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261106001033_duty_final_directory_and_save_staging.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261106010727_duty_directory_lifecycle_staging.sql','utf8'));
  const q=(sql,args=[])=>db.query(sql,args);
  const read=async(target=pid)=>(await q('select get_pharmflow_duty_schedule_v1($1,$2) d',[target,'2026-11-01'])).rows[0].d;
  const grant=async(level,revision)=>q("select owner_set_pharmflow_permissions_v2($1,'FULL','FULL','READ_ONLY',$2,$3)",[pid,level,revision]);
@@ -90,6 +91,39 @@ test('Duty readiness: default denial, audit/CAS, durable rules, calculations, is
  await q("select manage_pharmflow_duty_directory_v1($1,'position','delete',$2)",[pid,JSON.stringify([{key:referenced.key,expected_revision:referenced.revision}])]);
  assert.equal((await read()).positions.find(p=>p.key==='pharmacist').active,false);
  assert.equal((await q("select has_function_privilege('anon','public.manage_pharmflow_duty_directory_v1(uuid,text,text,jsonb)','EXECUTE') p")).rows[0].p,false);
+
+
+ // New lifecycle is distinct from temporary deactivation, and preserves historical entries.
+ const lifecycle=async(kind,action,key,target=pid,revision=null)=>{
+  const row=(await read())[kind==='employee'?'employees':'positions'].find(e=>(e.code||e.key)===key);
+  return q('select manage_pharmflow_duty_directory_v2($1,$2,$3,$4) d',[target,kind,action,JSON.stringify([{key,expected_revision:revision??row?.revision??0}])]);
+ };
+ const before=(await read()).entries;
+ await assert.rejects(lifecycle('employee','delete','key-a'),/Historical dependencies/);
+ await lifecycle('employee','archive','key-a');
+ let archived=(await read()).employees.find(e=>e.code==='key-a');
+ assert.equal(archived.archived,true);assert.equal(archived.active,false);
+ assert.deepEqual((await read()).entries,before);
+ await assert.rejects(lifecycle('employee','restore','key-a',pid,archived.revision-1),/DUTY_CONFLICT/);
+ await assert.rejects(lifecycle('employee','restore','key-a',other),/administrator access/);
+ await lifecycle('employee','restore','key-a');
+ archived=(await read()).employees.find(e=>e.code==='key-a');
+ assert.equal(archived.archived,false);assert.equal(archived.active,false);
+ await q('select save_pharmflow_duty_employee_v3($1,$2,$3,$4,$5,true,540,$6,$7)',[pid,'key-a','001999','Synthetic Full Official Employee Name','pharmacist',archived.revision,'Short Schedule']);
+ let named=(await read()).employees.find(e=>e.code==='key-a');
+ assert.equal(named.name,'Synthetic Full Official Employee Name');assert.equal(named.schedule_display_name,'Short Schedule');assert.equal(named.active,true);
+ assert.deepEqual((await read()).entries,before);
+ await assert.rejects(q('select save_pharmflow_duty_employee_v3($1,$2,$3,$4,$5,true,540,$6,$7)',[pid,'key-a','001999','Wrong','pharmacist',archived.revision,'X']),/DUTY_CONFLICT/);
+ const pos=(await read()).positions.find(p=>p.key==='pharmacist');await q("select save_pharmflow_duty_position_v1($1,'pharmacist','Pharmacist',true,$2)",[pid,pos.revision]);
+ await employee('lifecycle-unused');await lifecycle('employee','delete','lifecycle-unused');assert.ok(!(await read()).employees.some(e=>e.code==='lifecycle-unused'));
+ await q("select save_pharmflow_duty_position_v1($1,'new-unused','Lifecycle Position',true,0)",[pid]);
+ await lifecycle('position','archive','new-unused');assert.equal((await read()).positions.find(e=>e.key==='new-unused').archived,true);
+ await lifecycle('position','restore','new-unused');assert.equal((await read()).positions.find(e=>e.key==='new-unused').active,false);
+ await lifecycle('position','delete','new-unused');assert.ok(!(await read()).positions.some(e=>e.key==='new-unused'));
+ await lifecycle('position','archive','labor');assert.equal((await read()).positions.find(e=>e.key==='labor').archived,true);
+ await assert.rejects(lifecycle('position','delete','pharmacist'),/Historical dependencies/);
+ assert.equal((await q("select has_function_privilege('anon','public.manage_pharmflow_duty_directory_v2(uuid,text,text,jsonb)','EXECUTE') p")).rows[0].p,false);
+ assert.equal((await q("select has_function_privilege('authenticated','public.manage_pharmflow_duty_directory_v1(uuid,text,text,jsonb)','EXECUTE') p")).rows[0].p,false);
 
  }finally{await db.close();}
 });

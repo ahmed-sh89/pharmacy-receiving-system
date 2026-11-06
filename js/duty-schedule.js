@@ -30,14 +30,15 @@
  const writableDate=date=>writable()&&writableDateForMonth(date);
  const holiday=date=>data.holidays.find(h=>h.date===date&&h.active);
  function mount(el,d,config){
+  const previous=host?.querySelector('.duty-grid-scroll');if(previous)S.scroll={left:previous.scrollLeft,top:previous.scrollTop};
   host=el;data={entries:[],holidays:[],...d};options=config;
-  if(S.month!==config.month){S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
+  if(S.month!==config.month){S.scroll={left:0,top:0};S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
   render();
  }
  function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
  function render(){
   if(!host?.isConnected)return;
-  const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition={left:scroll?.scrollLeft||0,top:scroll?.scrollTop||0};
+  const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition=scroll?{left:scroll.scrollLeft||0,top:scroll.scrollTop||0}:S.scroll||{left:0,top:0};
   const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/6));
   S.staffPage=Math.min(S.staffPage,pages-1);
   const staff=employees(),totals=M.totals(data.entries,data.holidays,data.employees,data.hour_rules,holidayFirst());
@@ -58,7 +59,7 @@
    <button type="button" data-s-action="color">Cell Color</button></div></div>
    <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
-    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title"><span class="duty-name">${esc(e.name)}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
+    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title" title="${esc(e.name)} · ${esc(e.display_code||e.code)}"><span class="duty-name">${esc(M.scheduleLabel(e))}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
     <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(holidayFirst()||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${dayLabel.format(new Date(d.date+'T12:00Z'))}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
@@ -589,6 +590,6 @@
   if(drag?.frame)cancelAnimationFrame(drag.frame);
   drag=null;skipClick=false;scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}
-  Object.assign(S,{range:null,editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
+  Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};
 })();
