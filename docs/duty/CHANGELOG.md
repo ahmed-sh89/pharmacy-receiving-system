@@ -18,3 +18,7 @@ Focused tests and rollback-only live SQL verified. Preview deployed successfully
 Recovered from GitHub head `1c28796` without changing the surviving workspace. Added default-deny Duty authorization to the existing Administrator Permissions architecture, normal runtime wiring, scoped client/server guards and durable Duty configuration/manual-hour/calendar contracts. Applied Staging migration `20261105183357` only. Added PostgreSQL readiness and permission regression coverage. Release remains blocked pending authenticated browser/two-session and Product Owner acceptance; no Production action authorized or performed.
 
 Implementation `d89296b` is saved in draft PR #43. Both GitHub Duty and required security workflows PASS. Production build and four Pages artifact tests PASS without deployment. Preview remains INITIALIZING; authenticated browser verification is still blocked. Final Staging Duty fixture counts and enabled-policy count are all zero.
+
+## 6 November 2026 · Final owner candidate
+
+Added bounded editor/footer geometry, stable background refresh, cached date formatting, one-round-trip audited schedule save/read, durable directory ordering and confirmed history-safe delete/archive. Permissions close on confirmed save. Reports support a single employee/full month/custom range, explicit matching-date paste guidance, secondary Notes and integer-specific XLSX formats. Staging migration `20261106001033` applied; no Production change. Updated tests and actual-template disposable overlay evidence are recorded in CURRENT_CHECKPOINT.

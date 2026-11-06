@@ -38,15 +38,15 @@
   if(!permitted()||!active()||!context()?.pharmacy_id||!scope()||state.demo)return;
   const key=scope();if(key!==state.scope)reset();
   if(state.loading||DutySchedule.isEditing()||root.querySelector('.duty-panel')||(!force&&state.data&&Date.now()-state.lastRead<15000))return;
-  const seq=++state.sequence,month=state.month;state.loading=true;state.error='';render();
-  try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month||state.demo)return;
-   if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.data=data;state.scope=key;state.lastRead=Date.now();
+  const seq=++state.sequence,month=state.month;state.loading=true;state.error='';if(!state.data)render();
+  try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month||state.demo||DutySchedule.isEditing()||root.querySelector('.duty-panel'))return;
+   if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.loading=false;const changed=JSON.stringify(state.data)!==JSON.stringify(data);state.data=data;state.scope=key;state.lastRead=Date.now();if(changed&&state.tab==='schedule'&&root.querySelector('#duty-schedule-body'))DutySchedule.mount(root.querySelector('#duty-schedule-body'),data,scheduleConfig());else if(changed)render();
   }catch(error){
    if(error.httpStatus===403||error.code==='42501'){
     reset();await window.PharmFlowPermissions?.load().catch(()=>{});
    }else if(seq===state.sequence&&key===scope())state.error=error.message||'Unable to load Duty.';
   }
-  finally{if(seq===state.sequence){state.loading=false;render();}}
+  finally{if(seq===state.sequence){state.loading=false;const status=root.querySelector('[data-duty-sync]');if(status)status.textContent=state.error||'';}}
  }
  async function mutate(name,args){
   const key=scope(),month=state.month;if(preview||!key||!permitted(true))throw Error('Sign in to manage Duty.');
@@ -54,7 +54,7 @@
   const result=await readMonth(month);if(key!==scope()||month!==state.month)throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;
  }
  async function save(changes,reason){
-  if(!state.demo)return mutate('save_pharmflow_duty_entries_v1',{p_changes:changes,p_reason:reason});
+  if(!state.demo){const key=scope(),month=state.month;const result=await authRpc('save_pharmflow_duty_schedule_v2',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01',p_changes:changes,p_reason:reason});if(key!==scope()||month!==state.month||result.pharmacy_id!==context()?.pharmacy_id||!permitted())throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;}
   const proposed=new Map();
   for(const c of changes){const month=c.date.slice(0,7);if(!proposed.has(month))proposed.set(month,structuredClone(demoMonth(month).entries));const entries=proposed.get(month),i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');if(demoMonth(month).month?.status==='Completed')throw Error('Duty month is completed');const employee=demoMonth(month).employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
@@ -62,7 +62,7 @@
  function render(){
   const d=view();root.innerHTML=`<div class="duty-shell duty-stage-b"><div class="duty-toolbar"><div class="duty-month-picker"><button type="button" data-duty-action="previous" aria-label="Previous month">‹</button><span class="duty-active-month"><span aria-hidden="true">${monthLabel.format(new Date(state.month+'-01T12:00Z'))}</span><input id="duty-month" title="${state.month===currentMonth?'Current month':'Selected month'}" type="month" value="${state.month}" aria-label="Duty month" min="1900-01" max="2199-12"></span><button type="button" data-duty-action="next" aria-label="Next month">›</button></div><nav class="duty-tabs" role="tablist" aria-label="Duty workspace">${['schedule','employees','positions','reports'].map(t=>`<button type="button" role="tab" aria-selected="${state.tab===t}" data-duty-tab="${t}">${t==='reports'?'Duty Reports':t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</nav><div class="duty-actions">${state.demo?`<span class="duty-demo-badge" title="Schedule edits reset on reload; saved Custom View lasts for this tab session">Synthetic demo · ${esc(demoPharmacyCode)}</span>`:''}<button type="button" data-duty-action="retry" title="Refresh Duty">↻</button>${preview||!staging?'':`<button type="button" data-duty-action="demo">${state.demo?'Exit demo':'View demo'}</button>`}${state.tab==='schedule'?`<button type="button" data-duty-action="calendar" ${!d.can_write?'disabled':''}>Calendar Settings</button>`:''}${state.tab!=='reports'?`<button type="button" class="duty-primary" data-duty-action="add-employee" ${!d.can_write?'disabled':''}>+ Employee</button>`:''}</div></div>
 
-  ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}${state.loading?'<div class="duty-inline-message" role="status">Updating Duty…</div>':''}
+  ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}<span class="duty-sync-status" data-duty-sync role="status">${state.loading&&!state.data?'Loading Duty…':''}</span>
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':state.tab==='reports'?'<div id="duty-reports-body"></div>':list(d)}</div>`;
   if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,scheduleConfig());
   if(state.tab==='reports')window.DutyReports.mount(root.querySelector('#duty-reports-body'),d,{month:state.month,demo:state.demo,pharmacyCode:state.demo?demoPharmacyCode:context()?.pharmacy_code});
@@ -97,11 +97,26 @@
  }
  async function settings(change){const d=view();return mutate('save_pharmflow_duty_settings_v1',{p_default_basic:change.default_basic??d.default_basic,p_hour_rules:change.hour_rules??d.hour_rules,p_employee_defaults:change.employee_defaults||[],p_expected_revision:d.settings_revision});}
  function list(data){
+  data={...data,employees:M.ordered(data.employees),positions:M.ordered(data.positions)};
   const positions=state.tab==='positions';
   const editIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg>';
-  const cards=positions?data.positions.map(p=>`<article class="duty-directory-card"><div><strong>${esc(p.label)}</strong><small>${data.employees.filter(e=>e.position_key===p.key).length} staff${p.active?'':' · Inactive'}</small></div><button type="button" class="duty-icon" data-duty-position="${esc(p.key)}" aria-label="Edit ${esc(p.label)}" ${!data.can_write?'disabled':''}>${editIcon}</button></article>`):
-   data.employees.map(e=>`<article class="duty-directory-card"><div><strong>${esc(e.name)}</strong><small>${esc(e.display_code||e.code)} · ${esc(data.positions.find(p=>p.key===e.position_key)?.label||'Position')}${e.active?'':' · Inactive'}</small><small>${M.hours(M.basicDefault(e))} h Basic</small></div><button type="button" class="duty-icon" data-duty-employee="${esc(e.code)}" aria-label="${data.can_write?'Edit':'View'} ${esc(e.name)}">${editIcon}</button></article>`);
+  const actions=(row,i,rows,kind)=>data.can_write?`<span class="duty-directory-actions"><span class="duty-record-status">${row.active?'Active':'Inactive'}</span><button type="button" data-directory-kind="${kind}" data-directory-key="${esc(row.code||row.key)}" data-directory-move="-1" ${i===0?'disabled':''} aria-label="Move up ${esc(row.name||row.label)}">↑</button><button type="button" data-directory-kind="${kind}" data-directory-key="${esc(row.code||row.key)}" data-directory-move="1" ${i===rows.length-1?'disabled':''} aria-label="Move down ${esc(row.name||row.label)}">↓</button><button type="button" data-directory-kind="${kind}" data-directory-key="${esc(row.code||row.key)}" data-directory-delete aria-label="Delete or archive ${esc(row.name||row.label)}">Delete</button></span>`:'';
+  const cards=positions?data.positions.map((p,i)=>`<article class="duty-directory-card"><div><strong>${esc(p.label)}</strong><small>${data.employees.filter(e=>e.position_key===p.key).length} staff${p.active?'':' · Inactive'}</small></div><button type="button" class="duty-icon" data-duty-position="${esc(p.key)}" aria-label="Edit ${esc(p.label)}" ${!data.can_write?'disabled':''}>${editIcon}</button>${actions(p,i,data.positions,'position')}</article>`):
+   data.employees.map((e,i)=>`<article class="duty-directory-card"><div><strong>${esc(e.name)}</strong><small>${esc(e.display_code||e.code)} · ${esc(data.positions.find(p=>p.key===e.position_key)?.label||'Position')}${e.active?'':' · Inactive'}</small><small>${M.hours(M.basicDefault(e))} h Basic</small></div><button type="button" class="duty-icon" data-duty-employee="${esc(e.code)}" aria-label="${data.can_write?'Edit':'View'} ${esc(e.name)}">${editIcon}</button>${actions(e,i,data.employees,'employee')}</article>`);
   return `<section class="duty-directory"><div class="duty-directory-heading"><strong>${positions?'Positions':'Employees'}</strong>${positions?`<button type="button" data-duty-action="add-position" ${!data.can_write?'disabled':''}>+ Add position</button>`:(state.demo||data.persistent_settings)&&data.can_write?'<button type="button" data-duty-action="hour-rules">Working Hours Settings</button>':''}</div><div class="duty-directory-grid">${cards.join('')||'No employees yet.'}</div></section>`;
+ }
+ async function directory(button){
+  if(!view().can_write)return;
+  const kind=button.dataset.directoryKind,rows=M.ordered(kind==='employee'?view().employees:view().positions),key=button.dataset.directoryKey,index=rows.findIndex(r=>(r.code||r.key)===key);
+  if(index<0)return;
+  const deleting=button.hasAttribute('data-directory-delete');
+  if(deleting&&!await confirmReplace('Delete this unused record? If it has schedules or dependencies it will be made Inactive and history will be preserved.','Delete / Archive'))return;
+  if(!deleting){const to=index+Number(button.dataset.directoryMove);if(to<0||to>=rows.length)return;[rows[index],rows[to]]=[rows[to],rows[index]];}
+  if(state.demo){
+   if(deleting){const row=rows[index],used=kind==='employee'?[...demos.values()].some(d=>d.entries.some(e=>e.code===key))||demoRules.some(r=>r.codes.includes(key)):view().employees.some(e=>e.position_key===key)||M.defaults.some(p=>p.key===key);if(used)row.active=false;else rows.splice(index,1);}
+   rows.forEach((r,i)=>r.sort_order=i);if(kind==='employee')demoStaff.employees=rows;else demoStaff.positions=rows;for(const d of demos.values())d[kind==='employee'?'employees':'positions']=rows;
+  }else await mutate('manage_pharmflow_duty_directory_v1',{p_kind:kind,p_action:deleting?'delete':'reorder',p_rows:(deleting?[rows[index]]:rows).map(r=>({key:r.code||r.key,expected_revision:r.revision||0}))});
+  render();
  }
  let returnFocus=null,panelScope='';
  function closePanel(){const panel=root.querySelector('.duty-panel-backdrop');if(panel){panel.remove();if(returnFocus?.isConnected)returnFocus.focus();}}
@@ -110,8 +125,8 @@
   closePanel();returnFocus=document.activeElement;panelScope=scope();
   const isEmployee=kind==='employee',editing=!!item,readOnly=!data.can_write;
   const backdrop=document.createElement('div');backdrop.className='duty-panel-backdrop';
-  const choices=data.positions.filter(p=>p.active||p.key===item?.position_key);
-  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-panel-title"><div class="duty-panel-header"><div><h3 id="duty-panel-title">${readOnly?'View':editing?'Edit':'Add'} ${isEmployee?'employee':'position'}</h3><p class="duty-subtitle">${state.demo?'Synthetic demo · Changes reset on reload.':'Duty · '+esc(context()?.pharmacy_code||'Staging')}</p></div><button type="button" data-duty-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${isEmployee?`<label class="duty-field">Employee Code<input name="code" autocomplete="off" required maxlength="40" value="${esc(item?.display_code||item?.code||'')}" ><small>Unique within this pharmacy.</small></label><label class="duty-field">Employee Name<input name="name" autocomplete="off" required maxlength="120" value="${esc(item?.name||'')}"></label><label class="duty-field">Position<select name="position_key" required>${choices.map(p=>`<option value="${esc(p.key)}" ${item?.position_key===p.key?'selected':''}>${esc(p.label)}${p.active?'':' (inactive)'}</option>`).join('')}</select></label><div class="duty-detail-grid"><label class="duty-field">Pharmacy Code<input name="pharmacyCode" maxlength="40" required value="${esc(state.demo?demoPharmacyCode:context()?.pharmacy_code||data.pharmacy_id||'')}" ${state.demo?'':'readonly'}></label><label class="duty-field">Default Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="${(item?M.basicDefault(item):state.demo?demoDefaultBasic:data.default_basic??M.DEFAULT_BASIC)/60}" ></label></div>`:`<label class="duty-field">Position Name<input name="label" required maxlength="60" value="${esc(item?.label||'')}"></label>`}<label class="duty-field duty-field-check"><input type="checkbox" name="active" ${item?.active===false?'':'checked'}> Active ${isEmployee?'employee':'position'}</label><p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-duty-close>Cancel</button>${!readOnly?'<button class="duty-primary" type="submit">Save</button>':''}</div></form>`;
+  const choices=M.ordered(data.positions).filter(p=>p.active||p.key===item?.position_key);
+  backdrop.innerHTML=`<form class="duty-panel" role="dialog" aria-modal="true" aria-labelledby="duty-panel-title"><div class="duty-panel-header"><div><h3 id="duty-panel-title">${readOnly?'View':editing?'Edit':'Add'} ${isEmployee?'employee':'position'}</h3><p class="duty-subtitle">${state.demo?'Synthetic demo · Changes reset on reload.':'Duty · '+esc(context()?.pharmacy_code||'Staging')}</p></div><button type="button" data-duty-close aria-label="Close panel">×</button></div><div class="duty-panel-body">${isEmployee?`<label class="duty-field">Employee Code<input name="code" autocomplete="off" required maxlength="40" value="${esc(item?.display_code||item?.code||'')}" ><small>Unique within this pharmacy.</small></label><label class="duty-field">Employee Name<input name="name" autocomplete="off" required maxlength="120" value="${esc(item?.name||'')}"></label><label class="duty-field">Position<select name="position_key" required>${choices.map(p=>`<option value="${esc(p.key)}" ${item?.position_key===p.key?'selected':''}>${esc(p.label)}${p.active?'':' (inactive)'}</option>`).join('')}</select></label><div class="duty-detail-grid"><label class="duty-field">Pharmacy Code<input name="pharmacyCode" maxlength="40" required value="${esc(state.demo?demoPharmacyCode:context()?.pharmacy_code||'')}" ${state.demo?'':'readonly'}></label><label class="duty-field">Default Basic hours<input name="basic" type="number" min="0" max="24" step="any" value="${(item?M.basicDefault(item):state.demo?demoDefaultBasic:data.default_basic??M.DEFAULT_BASIC)/60}" ></label></div>`:`<label class="duty-field">Position Name<input name="label" required maxlength="60" value="${esc(item?.label||'')}"></label>`}<label class="duty-field duty-field-check"><input type="checkbox" name="active" ${item?.active===false?'':'checked'}> Active ${isEmployee?'employee':'position'}</label><p class="duty-panel-error" role="alert"></p></div><div class="duty-panel-footer"><button type="button" data-duty-close>Cancel</button>${!readOnly?'<button class="duty-primary" type="submit">Save</button>':''}</div></form>`;
   root.append(backdrop);const form=backdrop.querySelector('form');
   if(readOnly)form.querySelectorAll('input,select').forEach(el=>el.disabled=true);
   backdrop.addEventListener('click',e=>{if(e.target===backdrop||e.target.closest('[data-duty-close]'))closePanel();});
@@ -182,6 +197,7 @@
   const target=e.target.closest('button');if(!target)return;
   if(target.closest('#duty-schedule-body,.duty-panel-backdrop'))return;
   if(DutySchedule.isEditing()){state.error='Press Enter to save or Escape to cancel the current edit.';return;}
+  if(target.dataset.directoryKind){directory(target).catch(error=>{state.error=error.message;render();});return;}
   if(target.dataset.dutyTab){state.tab=target.dataset.dutyTab;render();return;}
   if(target.dataset.dutyEmployee){panel('employee',view().employees.find(x=>x.code===target.dataset.dutyEmployee));return;}
   if(target.dataset.dutyPosition){panel('position',view().positions.find(x=>x.key===target.dataset.dutyPosition));return;}

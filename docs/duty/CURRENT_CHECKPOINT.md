@@ -1,39 +1,46 @@
-# Duty Production Readiness · 5 November 2026
+# Duty final Staging candidate · 6 November 2026
 
-**BLOCKED — NOT READY FOR PRODUCTION. No merge, Production SQL, deployment or activation.**
+**READY FOR FINAL OWNER ACCEPTANCE — NOT DEPLOYED TO PRODUCTION.**
 
-## Authoritative state
+## State and authorization
 
-Production main verified unchanged: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
-Duty feature source: `76288141aad46469e6a3f838525550757f602324`; runtime implementation `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`. Existing Staging draft PR #43 remains unmerged.
-Clean release branch: `release/duty-production-prep-20261105`, based directly on verified main. It retains the approved Duty runtime and necessary integration, excluding Staging build exceptions, synthetic HTML/live-fixture scripts, obsolete manual-hours proposal and unrelated global checkpoint edits. See `PRODUCTION_RELEASE.md` and the exact protected-file hashes in `RELEASE_MANIFEST.json`.
+Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Development continues from `673e5e23d43c6f904fe99d3f1bea62b5f152f950` on `feature/duty-staging-20261104` (PR #43). PR #44 on `release/duty-production-prep-20261105` is the single focused release candidate; #43 remains the broader Staging development PR. No third release PR, main merge, Production deployment, database call or activation is authorized.
 
-Working implementation preview: https://pharmflow-test-qq5ur5108-fhyh2xtskz-3504.vercel.app/ — Vercel READY, runtime d89296b. Synthetic `/duty-demo.html` is available on this Staging deployment only; it is not part of the clean release. Later feature commits only changed documentation. No Production connection or operational record was used for browser testing.
+The Product Owner's 6 November execution attachment explicitly records USER VERIFIED — PASS for Administrator enable/disable/sidebar, schedule save/refresh, two independent synchronized sessions, conflict prevention, Reports/Schedule consistency, Microsoft Excel opening and single-employee paste. This supersedes the earlier open acceptance entries for that prior candidate; it is owner evidence, not a new automated browser claim. New behavior below requires focused final acceptance.
 
-## Implemented architecture
+## Final changes
 
-Duty is registered in normal PharmFlow navigation and the existing Administrator Permissions dialog. Its policy field defaults Disabled, including Administrator module access. Disabled Duty is hidden; routes and server RPCs deny access. Existing Receiving/Expiry authorization and the v1 permission writer are unchanged. The new atomic v2 writer uses existing policy revisions and audit.
+- One audited/CAS save-and-read RPC replaces two network round trips. Saving feedback appears immediately; Saved appears only after the authoritative response. Pending writes remain serialized; no browser-local schedule source of truth, optimistic success, replay or duplicate-write queue was added. Errors retain editor inputs/clipboard and stale revisions remain rejected.
+- Reused Intl date formatters reduce repeatable offline rendering cost; before/after samples and scenario are in `PERFORMANCE_20261106.json`. This is rendering evidence, not measured signed-in network latency. Run `node scripts/benchmark-duty.cjs 673e5e23d43c6f904fe99d3f1bea62b5f152f950` in a checkout with that Git object.
+- Centered editor with a bounded internally scrolling body, reserved error area and persistent footer. Employee/settings panels use the same body/footer principle. Background reads do not add a loading row or replace an unchanged grid; scroll and selection are retained and an edit opened during a request is protected.
+- Active/Inactive directory state, existing activation controls, Up/Down ordering and confirmed Delete/Archive. Records with schedules/rule references/dependencies are inactivated; unused rows can be deleted. Audit remains. Ordering uses immutable IDs, row revisions and the existing pharmacy lock; it is consumed by Employees, Schedule, report selection and exports.
+- Existing Administrator Permissions modal closes after confirmed save, stays open with recovery guidance on write failure, and revalidates current-scope permissions independently.
+- Reports preserve one employee at a time, Full Month and Custom Date Range. E:L remains eight values per day with no clipboard headers/totals/identity. The destination instruction names the employee and actual start date; partial ranges are not padded with blanks or shifted to day one. Preview/export share selected-period totals. Integer hours use Excel format `0`; fractions retain precision. Notes stay actual-note-only. Preview prioritizes A:K, with Notes secondary and reserved M:O retained in XLSX.
+- Real pharmacy identity is always the authenticated context; the synthetic badge/code is a separately labelled demo. No editable demo label alters a tenant ID.
 
-Supabase is authoritative for Duty employees, positions, entries, holidays, months and settings. Effective Basic defaults, timestamp/employee rules, Manual allocations and holiday metadata are durable. Internal employee keys remain stable. RLS defaults deny, direct client table access is revoked, and RPCs validate live session, password policy, pharmacy scope and existing member/admin authority. Schedule operations retain audit, row revisions, atomic batches, overlap checks and safe Undo/Redo. Existing bounded refresh/focus reads are reused; no browser schedule persistence or parallel authorization system.
+## Database and safety
 
-Four Duty migrations have already been applied to Staging `tovkcakucyagvbzvlnks`, including `20261105183357_duty_production_readiness_staging.sql`. No migration was applied in this continuation. The manual-hours SQL proposal is superseded. Production migration application is not authorized. Deploying the new Permissions UI requires the v2 RPC first; the runbook specifies that cutover dependency.
+Staging only: applied `20261106001033_duty_final_directory_and_save_staging.sql` once after embedded-PostgreSQL verification. It adds two ordering columns, narrow directory/save RPCs and an additive reader field. Existing records receive the same neutral ordering default. No Receiving/Expiry/auth tables, policies, business functions or records were changed. RPCs reuse strict Duty access; anonymous/direct-table access remains denied. Advisors retain the pre-existing RPC-only warnings; two additional authenticated SECURITY DEFINER wrappers are intentional and session/tenant guarded.
 
-## Actual verification
+Future approved Production migration order: `20261103235030`, `20261103235335`, `20261104013200`, `20261105183357`, `20261106001033`. Apply only missing approved migrations after dependency preflight; never replay against existing history. Do not apply the obsolete manual-hours proposal. No Production SQL performed. Retain additive schema/data on UI rollback; disabling Duty safely removes access.
 
-- Local Production-target build PASS (build only).
-- Duty, access and release-isolation: **63/63 PASS**. New checks cover permitted Production runtime loading/revocation and 81 byte-identical protected main files. Build assertions verify either exact isolated Staging output or exact Production output, without relaxing the Vercel Production guard.
-- Focused security, Receiving/email, authentication, Handheld and Expiry capture/session regression: **300 PASS, 2 optional SKIP, 0 FAIL**.
-- Complete serial legacy suite: candidate **1270 PASS, 140 FAIL, 4 cancelled, 3 SKIP** (1417 total). Exact main fixture: **1227 PASS, 141 FAIL, 4 cancelled, 3 SKIP** (1375 total). All candidate failing/cancelled test names also fail/cancel on main; no new failure name. Full command used `--test-concurrency=1 --test-timeout=10000`; the full suite is NOT green. Historical Git objects were recovered for comparison; earlier missing-checkout failures are not used as final evidence. Details and all failing names: `VERIFICATION_20261105.json`.
-- Live Staging SQL PASS: access/default denial, durable writes/rules, revisions, Manual and overnight allocations, Holiday-over-Friday precedence, completed locks, pharmacy isolation, member-write/session/anonymous/table denial. Synthetic transaction rolled back. Final employees/entries/settings/holidays and enabled Duty policies all **0**.
-- Chrome synthetic workflow PASS: single-click selection, double-click editor, confirmed Basic 8 from November 7 then 1 PM–10 PM = Basic 8 + Normal OT 1; paste to Friday = Friday OT 9; Undo/Redo; Schedule → Reports; recalculated monthly preview totals. Reports Copy Values showed success; the cloud virtual clipboard remained empty, so actual clipboard bytes are not claimed verified in this browser.
-- Both XLSX formats downloaded from the implementation preview and independently passed ZIP CRC/XML order, relationship, style and cell-structure validation. Notes remain saved-note-only. Native Excel 2016/2019 acceptance remains open.
-- Authenticated browser is at the Staging sign-in screen. No authenticated save/refresh/two-session or Administrator browser result is claimed. Existing feature CI passed; the separate release branch must obtain its own CI result.
+## Verification
 
-## Exact next actions / release gates
+- 69 focused Duty/permissions tests PASS, including atomic save/read, ordering, safe archive/delete, CAS, calculation rules, pending/error feedback, unchanged-grid refresh, range/date mapping, integer formats and independent XLSX XML/ZIP checks.
+- 124 relevant security/auth/Handheld/Receiving/email/Expiry regression checks PASS; no changed protected business source.
+- Live Staging rollback-only synthetic test PASS for ordering, unused deletion, historical inactivation and one-request save/read, in addition to the existing session/isolation/calculation checks. Synthetic fixture records were rolled back. Existing Staging user records were retained; aggregate current data includes 8 employees and 35 entries, so no zero-data claim is made.
+- Actual `A(3).xlsx` was read from its supplied local attachment. Disposable in-memory full-month and range overlays in the first two employee blocks preserve all cells outside E:L/the selected rows and preserve target styles. Source bytes remain unchanged. No online sheet was opened or written.
+- Template limitation: the supplied file's underlying dates are inconsistent (mixed month/day serials) and its metadata is not the selected November report. Calendar identity must be checked by the owner before normal paste. The standalone Standard Timesheet generates correct dates. Tests do not claim the untouched template was already a correct November calendar.
+- The prior full legacy suite has inherited baseline failures recorded in `VERIFICATION_20261105.json`; it was not rerun or repaired as unrelated work. No full-suite-green claim.
+- No new authenticated browser flow was attempted: the prior login cancellation remains respected. New ordering across independent authenticated sessions and native Windows Chrome 75/80/100 geometry require owner verification. Previous native Excel opening was USER VERIFIED; changed number formats/custom ranges need the short final check.
 
-1. Reconcile inherited full-suite failures; preserve unrelated business code rather than changing it merely to satisfy old snapshots.
-2. With an authorized synthetic Staging account, verify Administrator enable/disable, hidden navigation/direct-route denial, save → refresh → independent-session read, settings/calendar propagation, stale writes and Receiving/Expiry smoke.
-3. Product Owner opens both downloads in Microsoft Excel without repair and tests E:L paste into a disposable actual template. Native Windows Chrome 80% remains unverified. Values-only paste can overwrite formulas inside E:L.
-4. Recheck main/source/PR SHAs and CI. Obtain explicit Production approval covering migration prerequisites/order, exact release SHA and automatic official Pages deployment. No Production pharmacy activation without separate approval.
+## Final owner checks (synthetic Staging only)
 
-Rollback: disable Duty and revert only its focused UI release through the normal protected PR/Pages path. Preserve additive schema, historical records and the Manual-aware reader. Do not drop tables, restore databases or reset operational storage. Detailed migration/rollback sequence: `PRODUCTION_RELEASE.md`. No USER VERIFIED/DONE claim.
+1. Edit a split/overnight duty: Saving appears immediately, Saved follows confirmation; refresh preserves it.
+2. At native 75/80/100 zoom, Save/Cancel remain visible; changing browser tabs does not shift the grid.
+3. Reorder employees, compare Schedule/Reports and the second independent session; test one unused delete and one historical archive.
+4. Save Administrator permissions: modal closes; Duty Disabled hides/blocks it while Receiving/Expiry grants remain as selected.
+5. Copy one employee for November 7–9 into that employee's matching dated rows in a disposable, correctly dated template; inspect E:L and adjacent cells.
+6. Open both new XLSX formats in Excel: no repair, integers without a trailing dot, fractions/Notes/period totals correct.
+
+Do not merge or deploy. Update Preview/deployed SHA and release CI evidence after publishing this candidate. Production requires separate explicit approval.

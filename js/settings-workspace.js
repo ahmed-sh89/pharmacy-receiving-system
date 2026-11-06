@@ -215,8 +215,9 @@ window.editPharmacyPermissions=async function(button){
    try{
     row=await authRpc('owner_set_pharmflow_permissions_v2',{p_pharmacy_id:id,p_duty:fields.duty,p_receiving:fields.receiving,p_expiry:fields.expiry,p_data_access:fields.data_access,p_expected_revision:row.revision});
     form.dataset.dirty='false';window.SettingsAccessActions?.setDirty?.(false);status.textContent='Permissions saved.';
-    if(AuthState.context?.pharmacy_id===id)await window.PharmFlowPermissions.load();
-   }catch(error){status.textContent=error.message || 'Unable to save permissions.';}
+    finish();
+    if(AuthState.context?.pharmacy_id===id)await window.PharmFlowPermissions.load().catch(()=>window.PharmFlowPermissions.clear());
+   }catch(error){status.textContent=(error.message || 'Unable to save permissions.')+' Reload Permissions and retry; changes were not confirmed.';}
    finally{setAuthBusy(false);save.disabled=cancel.disabled=false;form.querySelectorAll('select').forEach(el=>el.disabled=false);}
   };
   form.querySelector('select').focus();

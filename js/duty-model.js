@@ -2,12 +2,13 @@
 (function(root){
  'use strict';
  const defaults=Object.freeze([{key:'pharmacist',label:'Pharmacist',active:true,revision:0},{key:'labor',label:'Labor',active:true,revision:0},{key:'beauty-advisor',label:'Beauty Advisor',active:true,revision:0}]);
+ const weekdayLabel=new Intl.DateTimeFormat('en-GB',{weekday:'short',timeZone:'UTC'});
  function days(month){
   if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw Error('Select a valid month');
   const [y,m]=month.split('-').map(Number);
   return Array.from({length:new Date(Date.UTC(y,m,0)).getUTCDate()},(_,i)=>{
    const date=new Date(Date.UTC(y,m-1,i+1));
-   return {day:i+1,date:month+'-'+String(i+1).padStart(2,'0'),weekday:date.toLocaleDateString('en-GB',{weekday:'short',timeZone:'UTC'}),friday:date.getUTCDay()===5};
+   return {day:i+1,date:month+'-'+String(i+1).padStart(2,'0'),weekday:weekdayLabel.format(date),friday:date.getUTCDay()===5};
   });
  }
  function shiftMonth(month,delta){const [y,m]=month.split('-').map(Number),d=new Date(Date.UTC(y,m-1+delta,1));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');}
@@ -133,6 +134,7 @@
  function editorDefaults(payload){
   return {hasTimes:payload.status==='EMPTY'||!!payload.periods?.length,allocation:payload.manual_minutes?'manual':'auto'};
  }
- const api={DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
+ const ordered=rows=>rows.map((value,index)=>({value,index})).sort((a,b)=>(a.value.sort_order??1000)-(b.value.sort_order??1000)||a.index-b.index).map(r=>r.value);
+ const api={ordered,DEFAULT_BASIC,basicUpdates,editorDefaults,effectiveHours,defaults,days,calendarRange,dateRange,selectedDateRange,clipboardPayload,basicDefault,categories,shiftMonth,validateEmployee,demo,statuses,time,formatTime,normalize,parse,text,calculate,basicAllowance,hourMinutes,hours,addDays,totals,validateOverlaps,demoMonth};
  root.DutyModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
