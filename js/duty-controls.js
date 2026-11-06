@@ -9,7 +9,7 @@
  function openPopover(popup,trigger,matchWidth=false){
   popup.showPopover?.({source:trigger});
   if(!trigger.getBoundingClientRect||!popup.getBoundingClientRect)return;
-  const rect=trigger.getBoundingClientRect(),initial=popup.getBoundingClientRect(),scale=initial.width/popup.offsetWidth||1;
+  const rect=trigger.getBoundingClientRect(),scale=Number(root.getComputedStyle?.(popup).getPropertyValue('--duty-preview-scale'))||1;
   const width=root.innerWidth,height=root.innerHeight;
   if(matchWidth){popup.style.minWidth='0';popup.style.width=rect.width/scale+'px';}
   const room=Math.max(rect.top,height-rect.bottom)-12;

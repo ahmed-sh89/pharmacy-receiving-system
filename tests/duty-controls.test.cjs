@@ -12,7 +12,7 @@ test('one calendar component keeps date boundaries, Receiving-style month naviga
  pop.querySelector('[data-duty-date="2026-11-12"]').onclick();assert.equal(changes,1);assert.equal(input.value,'2026-11-12');assert.equal(f.host.querySelector('.duty-calendar-popover'),null);assert.match(f.host.querySelector('button').textContent,/12 Nov 2026/);
 });
 test('time popover uses exact trigger width before positioning, bounds overflow and leaves trigger untouched',()=>{
- const {C}=controls(),style={},trigger={getBoundingClientRect:()=>({left:80,top:100,bottom:134,width:104}),offsetWidth:104},popup={style,offsetWidth:68,getBoundingClientRect:()=>({width:style.width?parseFloat(style.width):68,height:200}),showPopover:()=>{}};
+ const {C}=controls(),style={},trigger={getBoundingClientRect:()=>({left:80,top:100,bottom:134,width:104}),offsetWidth:104},popup={style,offsetWidth:68,getBoundingClientRect:()=>({width:style.width?parseFloat(style.width):68.375,height:200}),showPopover:()=>{}};
  // No layout geometry is changed on the trigger; only the detached/top-layer popup is sized.
  C.openPopover(popup,trigger,true);assert.equal(style.width,'104px');assert.equal(style.minWidth,'0');assert.equal(trigger.offsetWidth,104);assert.equal(style.maxHeight,'255px');assert.equal(style.left,'80px');assert.equal(style.top,'138px');
 });
