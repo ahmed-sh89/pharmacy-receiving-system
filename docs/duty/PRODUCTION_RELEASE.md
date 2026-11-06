@@ -3,7 +3,7 @@
 **BLOCKED — NOT READY FOR PRODUCTION; final security/visual acceptance open. No merge, deployment, Production SQL or activation authorized.**
 
 Production source: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
-Duty runtime source: `766d3e632f8861a26f6d8ba0fa177159aa99ba40`; release runtime `aef6dbdfe8836fb9c4e99a53e7ca10b8f8876cff`. Authoritative current evidence: `CURRENT_CHECKPOINT.md`.
+Duty runtime source: `66dc1faffa19e67a48763ba148711bc3801b4702`; release runtime `9280ba620deb3b88f8f7f00c06c7d53ece169d45`. Authoritative evidence: CURRENT_CHECKPOINT.md.
 Release branch: `release/duty-production-prep-20261105`, created directly from that Production commit. The existing feature-branch PR #43 is a Staging candidate, not the clean release branch.
 
 ## Scope and access
@@ -59,3 +59,5 @@ Final Staging migration adds two sort_order columns and guarded directory/save-r
 Final UI continuation adds an independent archived state, schedule-only optional display names, aligned merged footer rows and fixed toolbar tracks. See CURRENT_CHECKPOINT for exact QA evidence. The directory-v1 authenticated grant is revoked by migration 6; older clients cannot manage the directory. Safe rollback is disable Duty and retain additive schema/history; keep the directory-v2 adapter for any scoped UI revert. The reported Chrome Dangerous badge is unresolved: one read-only prior-preview check reached sign-in without an interstitial but could not inspect Chrome chrome/security state. Do not bypass it or claim clean security.
 
 The four final UX corrections retain the scoped roster during month reads, constrain Reports to an internal table scroller, refine editor presentation and auto-update searchable report controls. No new migrations or backend calls. Final local checks: 76 development / 78 release / 124 non-regression PASS; runtime CI SUCCESS. Synthetic browser month/range-copy/layout checks PASS; CSS-scaled 75/80 diagnostics are not native Windows zoom acceptance. Keep the Chrome Dangerous, fresh authenticated-session and native acceptance gates open as detailed in CURRENT_CHECKPOINT. No Production promotion is authorized.
+
+Final UI refinement introduces one reusable Duty-controls script (loaded before Schedule/Reports), a Receiving-History-style blue calendar in both Duty ranges, an ordered Employee Filter, adjacent Copy/Clear/Export and acknowledged two-second feedback. Time popups match fixed trigger dimensions. Receiving calendar code/styles remain untouched. 80 Duty / 82 release / 124 regression checks and final runtime CI PASS; 11 targeted follow-up checks PASS. READY FOR USER VERIFICATION only; native Windows, security-warning and fresh authenticated acceptance remain open. No new migration/dependency or Production authorization.

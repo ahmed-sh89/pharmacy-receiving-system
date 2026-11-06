@@ -20,7 +20,7 @@ Production main baseline `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`. Continue ex
 | Focused release suite | PASS: 82, 0 failures/skips locally, including 81 protected Production file hashes |
 | Receiving/Expiry/auth/security/Handheld regressions | PASS: 124, 0 failures |
 | Targeted new checks | PASS: filter order/Clear preserves period/data; two-second Copy success, failed retry and stale async suppression; export after employee/range changes; shared calendar bounds/navigation/keyboard; trigger-matched popup sizing; retained save/conflict/overnight/session isolation cases |
-| Browser / READY identity / CI | Final delivery evidence recorded after publishing below |
+| Browser / READY identity / CI | PASS: READY preview and successful runtime CI; evidence below |
 | Native Windows Chrome 75/80/100 | NOT VERIFIED; CSS-scaled synthetic checks are not native zoom proof |
 | Fresh authenticated two-session verification | NOT VERIFIED in this continuation; no credential request/retry. Prior owner persistence/sync/conflict/access acceptance remains preserved |
 | Native Excel 2016/2019 | Prior owner opening acceptance retained; pending final native acceptance remains USER VERIFICATION REQUIRED |
@@ -36,3 +36,12 @@ No backend/schema/data change or new migration. Retain existing six Staging migr
 2. Check Report and Schedule calendars: selected/today states, previous/next month, boundary restrictions and From/To alignment. Verify both XLSX formats and full-month/custom E:L paste into a disposable correctly dated employee template.
 3. At native Chrome 75%, 80%, 100%, open every IN/OUT hour/minute/AM-PM control, including Second Shift: widths stay fixed, options center, icons/text remain clear, keyboard works, footer stays visible.
 4. Confirm report header/context row/KPIs remain visible with internal table scrolling; save/refresh one synthetic overnight duty and compare the independent Staging session. If Dangerous appears, stop without bypassing and report warning details. Production needs separate explicit authorization.
+
+## Final delivery evidence
+
+- Final Duty runtime `66dc1faffa19e67a48763ba148711bc3801b4702`; release runtime `9280ba620deb3b88f8f7f00c06c7d53ece169d45`. Later documentation-only commits do not alter runtime bytes.
+- READY Staging Preview: https://pharmflow-test-8xfh0ervw-fhyh2xtskz-3504.vercel.app/ — deployment `dpl_94wNTueBtwCvhtxa4K4JqzFgaUNQ`, exact Duty runtime above, Preview target only.
+- Runtime release CI: security [42153188405](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42153188405) SUCCESS; Duty readiness [42153188352](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42153188352) / [42153180801](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42153180801) SUCCESS. Local complete suites 80/82 PASS; after fractional-width correction, 11 targeted calendar/clipboard/export checks PASS. CI skips only the optional private template; local overlay passed.
+- Browser synthetic diagnostics: all 12 IN/OUT hour/minute/AM-PM triggers in a split shift retained their widths when opened; centered options computed font-weight 650. Rounding drift was corrected in the shared component. Final 80% CSS-scaled check: trigger before/after and popup widths all **88.28125 px**, popup y=358.39–424.36 within 936 px viewport. Calendar blue day grid opened and From/To day buttons selected successfully; Employee Filter and contextual Copy/Clear/Export rendered; Clear emptied only employee selection. The two-second green/failure feedback timing is verified with controlled automated clocks; no claim of capturing the brief green state in a browser screenshot.
+- Final browser sizing check used CSS scale 0.8, not native Windows Chrome zoom. Current native 75/80/100, authenticated fresh persistence/sync and native Excel gates remain as listed above. No browser schedule writes/auth retries.
+- Complete PR diff reviewed: 44 files, Receiving calendar/runtime/Expiry/auth/connection/Vite/Production guards unchanged. All 81 protected Production files retain their hashes. No new migration/dependency, Production change or merge.
