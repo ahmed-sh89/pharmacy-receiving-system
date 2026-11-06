@@ -33,4 +33,11 @@ Next owner checks: export All Full Month/Custom Range, including a blank employe
 
 ## Delivery evidence
 
-Runtime commits, READY Preview, CI and scoped browser results recorded after publishing. PR #44 remains Draft/unmerged.
+- Duty runtime: `675ac449c80c129be432e6c051df1eab96f57d2d`; release runtime: `21d82f93fcfd781992c64b09b3506f93e2e1c0a7`.
+- READY Preview: https://pharmflow-test-3y7d8wg6e-fhyh2xtskz-3504.vercel.app/ · deployment `dpl_78nAS1Af6kFUEA8qFjxhVZokZ61P`, exact Duty runtime above, Preview target only. Staging build targets `tovkcakucyagvbzvlnks`; Production configuration/guards retained.
+- Both local builds PASS. Release runtime CI Duty readiness `42156148532` / `42156143002` and security `42156148529`: SUCCESS.
+- Synthetic browser fixture (connect-src none, no cloud writes): default All Employees, Excel enabled and Copy disabled. Reports document height equals viewport (936px).
+- Schedule actual internal scrolling PASS at CSS scales 0.75/0.8/1 (not native Windows zoom): document height equals viewport 936px in every case; grid scrollTop 1012/1085/1314px. Sticky employee header stays 1px inside grid top. Toolbar position unchanged before/after scrolling. Employees → Schedule restored scrollTop 1314px. Existing edit modal opens from scrolled cell and footer remains inside viewport; cancelled without writes.
+- Complete 46-file PR diff reviewed; approved shared authorization integration retained, no Receiving/Expiry/auth business source changes. All 81 protected Production files match. PR #44 remains Draft/unmerged. Production main remains `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
+- This evidence is followed by documentation-only commits; deployed runtime is explicitly identified separately from branch documentation HEAD.
+

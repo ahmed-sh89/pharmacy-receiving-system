@@ -21,5 +21,45 @@
   "native_windows_zoom": "NOT VERIFIED",
   "fresh_authenticated_sync": "NOT VERIFIED; prior owner acceptance retained",
   "native_excel": "outstanding owner acceptance retained",
-  "dangerous_badge": "prior unresolved release gate retained"
+  "dangerous_badge": "prior unresolved release gate retained",
+  "duty_runtime": "675ac449c80c129be432e6c051df1eab96f57d2d",
+  "release_runtime": "21d82f93fcfd781992c64b09b3506f93e2e1c0a7",
+  "preview_url": "https://pharmflow-test-3y7d8wg6e-fhyh2xtskz-3504.vercel.app/",
+  "deployment_id": "dpl_78nAS1Af6kFUEA8qFjxhVZokZ61P",
+  "deployment_state": "READY",
+  "deployment_target": "Preview",
+  "builds": "PASS: feature and release local artifacts",
+  "ci": {
+    "42156148532": "SUCCESS",
+    "42156143002": "SUCCESS",
+    "42156148529": "SUCCESS"
+  },
+  "browser_fixture": "Synthetic memory-only, connect-src none; no authentication or cloud writes",
+  "browser_controls": "PASS: default All Employees / Excel enabled / Copy disabled",
+  "browser_scroll": {
+    "result": "PASS",
+    "css_scales": [
+      0.75,
+      0.8,
+      1
+    ],
+    "viewport_height": 936,
+    "document_heights": [
+      936,
+      936,
+      936
+    ],
+    "grid_scroll_top": [
+      1012,
+      1085,
+      1314
+    ],
+    "sticky_header_offset_px": 1,
+    "toolbar_position": "unchanged before/after internal scrolling",
+    "restored_scroll_top_after_tab_change": 1314,
+    "edit_modal": "opened from scrolled cell; footer inside viewport; cancelled without save"
+  },
+  "production_main": "2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f",
+  "pr_files_reviewed": 46,
+  "status": "READY FOR USER VERIFICATION \u2014 not Production-approved"
 }
