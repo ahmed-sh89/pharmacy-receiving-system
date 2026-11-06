@@ -50,7 +50,7 @@ test('one-click E:L clipboard includes only daily inputs and matches Schedule ov
  assert.equal(host.querySelector('[data-report-copy]').disabled,true);
  host.querySelector('[data-report-employee]').onchange({target:{value:employee.code}});
  assert.equal(host.querySelector('[data-report-copy]').disabled,false);
- assert.equal(host.querySelectorAll('table,input[type="checkbox"]').length,0);
+ assert.equal(host.querySelectorAll('table').length,1);assert.equal(host.querySelectorAll('input[type="checkbox"]').length,0);
  await host.querySelector('[data-report-copy]').onclick();
  assert.deepEqual(writes,[R.copyValues(employee)]);
  const rows=writes[0].split('\r\n').map(row=>row.split('\t'));
@@ -125,25 +125,18 @@ test('actual Notes remain independent of status across clipboard, preview and ex
  assert.ok(schedule[0].rows[6].values[2].includes(note));
  assert.ok(!schedule[0].rows[7].values[2].includes('Working'));
 });
-test('preview is read-only, paginated, and follows employee, format and month',()=>{
+test('report automatically follows selected employee, format, range and month without mutating source',()=>{
  const data=fixture();for(let i=2;i<=8;i++)data.employees.push({...data.employees[0],code:'P'+i});
- const {document}=parseHTML('<div id="reports"></div>'),host=document.querySelector('#reports');
- const original=JSON.stringify(data);
- R.mount(host,data,{month:'2026-11',demo:true,pharmacyCode:'TEST'});
- host.querySelector('[data-report-preview]').onclick();
- assert.equal(host.querySelector('[data-report-preview]').textContent,'Hide Table');
- host.querySelector('[data-report-format]').onchange({target:{value:'schedule'}});
- host.querySelector('[data-report-employee]').onchange({target:{value:''}});
- assert.equal(host.querySelectorAll('thead th').length,8);
- host.querySelector('[data-preview-page="1"]').onclick();
- assert.equal(host.querySelectorAll('thead th').length,4);
- host.querySelector('[data-report-employee]').onchange({target:{value:'P1'}});
- assert.equal(host.querySelectorAll('thead th').length,3);
+ const {document}=parseHTML('<div id="reports"></div>'),host=document.querySelector('#reports'),original=JSON.stringify(data);
+ const config={month:'2026-11',demo:true,pharmacyCode:'TEST'};
+ R.mount(host,data,config);host.querySelector('[data-report-employee]').onchange({target:{value:''}});assert.equal(host.querySelector('[data-report-preview]'),null);assert(host.querySelector('.duty-report-placeholder'));
+ host.querySelector('[data-report-employee]').onchange({target:{value:'P1'}});assert.equal(host.querySelectorAll('thead th').length,12);
+ host.querySelector('[data-report-format]').onchange({target:{value:'schedule'}});assert.equal(host.querySelectorAll('thead th').length,3);
  assert.match(host.querySelector('.duty-report-preview-heading').textContent,/Test Pharmacist/);
- R.mount(host,data,{month:'2028-02',demo:true,pharmacyCode:'TEST'});
- assert.equal(host.querySelectorAll('tbody tr').length,34);
- assert.match(host.querySelector('.duty-report-preview-heading').textContent,/February 2028/);
- assert.equal(JSON.stringify(data),original);
+ const all=R.workbookPlan(R.project(data,'2026-11',true,'TEST'),R.project(data,'2026-11',true,'TEST').staff,'schedule');assert.equal(all.length,2);assert.equal(all[1].widths.length,4);
+ R.mount(host,data,{...config,month:'2028-02'});assert(host.querySelector('.duty-report-placeholder'));
+ host.querySelector('[data-report-employee]').onchange({target:{value:'P1'}});assert.equal(host.querySelectorAll('tbody tr').length,34);
+ assert.match(host.querySelector('.duty-report-preview-heading').textContent,/February 2028/);assert.equal(JSON.stringify(data),original);
 });
 test('XLSX ZIP, XML ordering, style indices, relationships and typed cells validate for every month length',()=>{
  const os=require('node:os'),path=require('node:path'),{execFileSync}=require('node:child_process');

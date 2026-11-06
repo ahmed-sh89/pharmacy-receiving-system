@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-06",
+  "scope": "Four Duty UX corrections only; Staging",
+  "feature_pass": 76,
+  "release_pass": 78,
+  "failed": 0,
+  "private_template": "local PASS",
+  "new_checks": [
+    "month shell retains sorted same-scope directory only",
+    "new calendar empty while loading",
+    "late old-month response rejected",
+    "failure readonly roster",
+    "scope reset clears roster",
+    "search official name/code and automatic report projection",
+    "date-aligned E:L Copy; reserved M:O untouched",
+    "operational overnight AM/PM payload",
+    "serialized rapid Save",
+    "conflict draft retained"
+  ],
+  "database_changes": "none",
+  "protected_main_files": 81,
+  "native_windows_chrome_zoom": "NOT VERIFIED",
+  "native_excel": "USER VERIFICATION REQUIRED",
+  "fresh_signed_in_two_session": "BLOCKED; no auth retry",
+  "dangerous_warning": "Unresolved prior blocker; no bypass or clean-security claim"
+}

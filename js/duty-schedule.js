@@ -61,8 +61,8 @@
    <div class="duty-grid-scroll duty-vertical" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
     ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title" title="${esc(e.name)} · ${esc(e.display_code||e.code)}"><span class="duty-name">${esc(M.scheduleLabel(e))}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
-    <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(holidayFirst()||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${dayLabel.format(new Date(d.date+'T12:00Z'))}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):'<tr><td class="duty-empty">No employees in this view</td></tr>'}</tbody></table></div>
-   <div class="duty-footnote"><span role="status">${esc(S.notice||(!canOverride()?'Manual hours and hour-rule settings are available in the synthetic preview pending database approval.':'Double-click to edit · Drag to select a range'))}</span></div>`;
+    <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(holidayFirst()||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${dayLabel.format(new Date(d.date+'T12:00Z'))}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):`<tr><td class="duty-empty">${options.loading?'Loading Duty…':'No employees in this view'}</td></tr>`}</tbody></table></div>
+   <div class="duty-footnote"><span role="status">${esc(S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
   bind();updateSelection();
@@ -129,9 +129,9 @@
    const parts=M.formatTime(value).split(/[: ]/);
    const choices=[Array.from({length:12},(_,i)=>String(i+1)),[...new Set(['00','30',parts[1]])].sort(),['AM','PM']];
    return `<div class="duty-time-controls" role="group" aria-label="${name}">${['Hour','Minute','AM/PM'].map((part,i)=>
-    dropdown(name.replaceAll(' ','-')+'-'+i,name+' '+part,parts[i],choices[i].map(v=>[v,v]),parts[i],i===1?'duty-time-minute':'')).join('')}</div>`;
+    dropdown(name.replaceAll(' ','-')+'-'+i,name+' '+part,parts[i],choices[i].map(v=>[v,v]),parts[i],i===1?'duty-time-minute':i===2?'duty-time-meridiem duty-meridiem-'+parts[i].toLowerCase():'')).join('')}</div>`;
   };
-  const row=(p,i)=>`<div class="duty-time-fields"><strong>Shift ${i}</strong><span>IN</span>${picker('Shift '+i+' In',p.start)}<span>OUT</span>${picker('Shift '+i+' Out',p.end)}</div>`;
+  const row=(p,i)=>`<div class="duty-time-fields"><strong>${i===1?'First shift':'Second shift'}</strong><span>IN</span>${picker('Shift '+i+' In',p.start)}<span>OUT</span>${picker('Shift '+i+' Out',p.end)}</div>`;
   return `<label><input type="checkbox" name="hasTimes" ${hasTimes?'checked':''}> Use IN / OUT</label><div data-time-fields ${hasTimes?'':'hidden'}>${row(periods[0]||{start:540,end:1080},1)}<label><input type="checkbox" name="split" ${periods.length===2?'checked':''}> Add second shift</label><div data-split-fields ${periods.length===2?'':'hidden'}>${row(periods[1]||{start:1020,end:1320},2)}</div></div>`;
  }
  function readTimes(fields){
@@ -154,14 +154,14 @@
   const status=forceWork||before.status==='EMPTY'?'WORK':before.status;
   const longLeave=!['EMPTY','WORK','OFF'].includes(status);
   editor.innerHTML=`<div class="duty-editor-head"><strong>Edit Duty</strong><small>${formatDate(date)}</small></div>
-   <div class="duty-editor-body"><label class="duty-editor-status">Status <select name="status">${(longLeave?[status,'WORK','OFF']:['WORK','OFF']).map(k=>`<option value="${k}" ${k===status?'selected':''}>${k==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[k]}</option>`).join('')}</select></label>
-   <fieldset class="duty-work-fields" data-work-fields ${status==='WORK'?'':'hidden disabled'}>${timeFields(before.periods,initial.hasTimes)}
+   <div class="duty-editor-body"><fieldset class="duty-editor-section"><legend>Status</legend><label class="duty-editor-status"><select name="status" aria-label="Duty status">${(longLeave?[status,'WORK','OFF']:['WORK','OFF']).map(k=>`<option value="${k}" ${k===status?'selected':''}>${k==='OTHER_LEAVE'?'Unpaid Leave':M.statuses[k]}</option>`).join('')}</select></label></fieldset>
+   <fieldset class="duty-work-fields" data-work-fields ${status==='WORK'?'':'hidden disabled'}><fieldset class="duty-editor-section duty-shift-section"><legend>Shift Times</legend>${timeFields(before.periods,initial.hasTimes)}</fieldset>
    ${manualEnabled?`<fieldset class="duty-allocation"><legend>Hours Calculation</legend><div>${['Auto','Manual'].map(label=>`<label><input type="radio" name="allocation" value="${label.toLowerCase()}" ${initial.allocation===label.toLowerCase()?'checked':''}><span>${label}</span></label>`).join('')}</div></fieldset>
-   <small data-auto-hours aria-live="polite"></small>
+   <div class="duty-auto-summary" data-auto-hours aria-live="polite"></div>
    <fieldset class="duty-manual-fields" ${before.manual_minutes?'':'hidden disabled'}><legend>Manual allocation</legend>
     ${Object.entries(M.categories).map(([k,label])=>`<label>${label}<input name="${k}" type="number" min="0" max="24" step="any" value="${effective[k]/60}"></label>`).join('')}
     <small data-hours-difference aria-live="polite"></small></fieldset>`:''}</fieldset>
-   <label class="duty-editor-note">Note <input name="note" maxlength="300" value="${esc(before.note)}"></label></div><span class="duty-cell-error" role="alert"></span><div class="duty-actions duty-editor-footer"><button type="button" data-cancel>Cancel</button><button type="submit" class="duty-primary">Save</button></div>
+   <label class="duty-editor-note">Notes <input placeholder="Optional note" name="note" maxlength="300" value="${esc(before.note)}"></label></div><span class="duty-cell-error" role="alert"></span><div class="duty-actions duty-editor-footer"><button type="button" data-cancel>Cancel</button><button type="submit" class="duty-primary">Save</button></div>
    `;
   const backdrop=document.createElement('div');backdrop.className='duty-editor-backdrop';backdrop.append(editor);host.append(backdrop);
   const positionEditor=()=>{};
@@ -181,7 +181,7 @@
    if(!auto.hidden){
     try{
      const n=currentAuto();
-     auto.textContent=Object.entries(categoryLabels).filter(([k])=>n[k]>0).map(([k,label])=>label+' '+M.hours(n[k])+' h').join(' · ');
+     auto.innerHTML=Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label}<b>${M.hours(n[k])} h</b></span>`).join('');
     }catch{auto.textContent='Check the selected times.';}
     return;
    }
@@ -194,6 +194,7 @@
   wireDropdowns(editor,(id,button,trigger)=>{
    editor.elements[id].value=button.dataset.dropdownValue;
    trigger.textContent=button.textContent;
+   if(id.endsWith('-2'))trigger.dataset.meridiem=button.dataset.dropdownValue;
    trigger.setAttribute('aria-label',trigger.dataset.label+': '+button.textContent);
    for(const option of button.parentElement.querySelectorAll('[aria-pressed]'))option.setAttribute('aria-pressed',String(option===button));
    difference();
@@ -399,7 +400,7 @@
   const itemMarkup=items.map(([value,name])=>multiple
    ?`<label class="duty-dropdown-option"><input type="checkbox" value="${esc(value)}" ${selection.has(value)?'checked':''}> ${esc(name)}</label>`
    :`<button type="button" class="duty-dropdown-option" data-dropdown-value="${esc(value)}" ${selection===undefined?'':`aria-pressed="${selection===value}"`}>${esc(name)}</button>`).join('');
-  return `<div class="duty-dropdown ${variant}"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" data-label="${esc(label)}" aria-label="${esc(label+(id==='staff'||id.startsWith('Shift-')?': '+text:''))}">${esc(text)}</button>${id.startsWith('Shift-')?`<input type="hidden" name="${id}" value="${esc(text)}">`: ''}
+  return `<div class="duty-dropdown ${variant}"><button type="button" class="duty-dropdown-trigger" data-dropdown-trigger="${id}" ${id.startsWith('Shift-')&&id.endsWith('-2')?`data-meridiem="${esc(text)}"`:''} popovertarget="duty-dropdown-${id}" aria-haspopup="dialog" data-label="${esc(label)}" aria-label="${esc(label+(id==='staff'||id.startsWith('Shift-')?': '+text:''))}">${esc(text)}</button>${id.startsWith('Shift-')?`<input type="hidden" name="${id}" value="${esc(text)}">`: ''}
    <div class="duty-dropdown-popup" popover="auto" id="duty-dropdown-${id}" role="dialog" aria-label="${esc(label)}">${itemMarkup||'No employees'}${multiple&&options.demo?'<button type="button" data-save-custom>Save as Default Custom View</button>':''}</div></div>`;
  }
  function wireDropdowns(container,choose){

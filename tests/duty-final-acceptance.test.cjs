@@ -22,9 +22,9 @@ test('report UI announces exact destination date and requires one employee for c
  host.querySelector('[data-report-period]').onchange({target:{value:'custom'}});
  host.querySelector('[data-report-from]').onchange({target:{value:'2026-11-07'}});
  host.querySelector('[data-report-to]').onchange({target:{value:'2026-11-07'}});
- assert.match(host.querySelector('[data-report-status]').textContent,/row dated 2026-11-07/);
+ assert.match(host.querySelector('[data-report-destination]').textContent,/row dated 2026-11-07/);assert.equal(host.querySelector('[data-report-status]').textContent,'');
  await host.querySelector('[data-report-copy]').onclick();assert.equal(writes.at(-1).split('\r\n').length,1);assert.equal(writes.at(-1).split('\t').length,8);
- assert.match(host.querySelector('[data-report-status]').textContent,/Do not start at day 1/);
+ assert.match(host.querySelector('[data-report-destination]').textContent,/Do not start at day 1/);assert.match(host.querySelector('[data-report-status]').textContent,/Copied 1 days/);
 });
 test('integer XLSX hours display without a trailing decimal; fractional hours retain precision',()=>{
  const d=sample();d.entries.push({code:'A',date:'2026-11-08',payload:M.normalize({status:'WORK',manual_minutes:{basic:540,normal_ot:90}})});
