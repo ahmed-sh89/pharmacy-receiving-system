@@ -200,8 +200,18 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-stage-b .duty-footnote{padding:4px 2px}
 #page-duty .duty-vertical td[data-s-code]{user-select:none;cursor:cell}
 #page-duty .duty-date-range{position:relative;z-index:9}
-#page-duty .duty-date-range summary{cursor:pointer;padding:7px 9px;border:1px solid #ccd9e6;border-radius:7px;background:#fff;font-weight:600}
-#page-duty .duty-date-range > form{position:absolute;top:100%;left:0;min-width:160px;display:grid;gap:6px;padding:9px;background:#fff;border:1px solid #ccd9e6;border-radius:6px}
+#page-duty .duty-date-range > button{color:var(--duty-blue);background:#f1f6fc;border-color:#b9cde2;font-weight:650}
+#page-duty .duty-date-range > form{position:fixed;inset:auto;margin:0;width:280px;max-width:calc(100vw - 24px);overflow:auto;gap:10px;padding:12px;background:#fff;border:1px solid #ccd9e6;border-radius:9px;box-shadow:0 8px 24px #173f7024;color:var(--duty-ink)}
+#page-duty .duty-date-range > form:popover-open{display:grid}
+#page-duty .duty-date-range > form:not(:popover-open){display:none}
+#page-duty .duty-popover-footer{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--duty-line);padding-top:10px;margin-top:2px}
+#page-duty .duty-range-error{color:#a82932;font-size:12px;margin:0}
+#page-duty .duty-range-error:empty{display:none}
+#page-duty .duty-settings-action{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--duty-line);font-weight:650;color:var(--duty-muted)}
+#page-duty .duty-apply-summary{font-weight:600;color:var(--duty-ink);margin:10px 0 6px}
+#page-duty .duty-panel-body > .duty-dropdown{width:100%}
+#page-duty .duty-panel-body > .duty-dropdown > .duty-dropdown-trigger{width:100%;justify-content:space-between;min-height:38px;text-align:left}
+#page-duty .duty-panel-body .duty-dropdown-option{white-space:normal;text-align:left;line-height:1.5}
 #page-duty :is(.duty-mini-kpis,.duty-cell-categories) b{display:inline-block;padding:0 3px;margin-left:2px;border-radius:4px;background:#ffffff80;color:var(--hour-ink);font-variant-numeric:tabular-nums}
 #page-duty .duty-category-total b{color:#fff;background:transparent;font-size:13px;padding:0}
 #page-duty .duty-editor-note{display:grid;gap:4px;font-size:12px;font-weight:600}
@@ -260,7 +270,6 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-directory-card small{display:block;margin-top:4px;color:#426383}
 
 
-#page-duty .duty-date-range form{min-width:190px}
 #page-duty .duty-date-range label{display:grid;gap:3px;font-size:12px}
 #page-duty :is(.duty-date-range,.duty-default-hours) input{min-height:32px;padding:4px 6px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59}
 #page-duty .duty-default-hours{display:grid;gap:8px;padding:8px;border:1px solid #d5e1ed;border-radius:6px}

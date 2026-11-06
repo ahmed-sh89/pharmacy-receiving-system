@@ -40,13 +40,13 @@
   if(state.loading||DutySchedule.isEditing()||root.querySelector('.duty-panel')||(!force&&state.data&&Date.now()-state.lastRead<15000))return;
   const seq=++state.sequence,month=state.month;state.loading=true;state.error='';const sync=root.querySelector('[data-duty-sync]');if(sync)sync.textContent='Loading Duty…';if(!state.data)render();
   try{const data=await readMonth(month);if(seq!==state.sequence||key!==scope()||month!==state.month||state.demo||DutySchedule.isEditing()||root.querySelector('.duty-panel'))return;
-   if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.loading=false;state.transitioning=false;const changed=JSON.stringify(state.data)!==JSON.stringify(data);state.data=data;state.scope=key;state.lastRead=Date.now();if(changed&&state.tab==='schedule'&&root.querySelector('#duty-schedule-body'))DutySchedule.mount(root.querySelector('#duty-schedule-body'),data,scheduleConfig());else if(changed)render();
+   if(data.pharmacy_id!==context().pharmacy_id)throw Error('Duty pharmacy context changed. Reopen Duty.');state.loading=false;state.transitioning=false;const changed=JSON.stringify(state.data)!==JSON.stringify(data);state.data=data;state.scope=key;state.lastRead=Date.now();syncWriteActions();if(changed&&state.tab==='schedule'&&root.querySelector('#duty-schedule-body'))DutySchedule.mount(root.querySelector('#duty-schedule-body'),data,scheduleConfig());else if(changed)render();
   }catch(error){
    if(error.httpStatus===403||error.code==='42501'){
     reset();await window.PharmFlowPermissions?.load().catch(()=>{});
    }else if(seq===state.sequence&&key===scope()){state.error=error.message||'Unable to load Duty.';if(state.transitioning){state.transitioning=false;state.loading=false;if(state.tab==='schedule'&&!DutySchedule.isEditing())DutySchedule.mount(root.querySelector('#duty-schedule-body'),view(),scheduleConfig());}}
   }
-  finally{if(seq===state.sequence){state.loading=false;const status=root.querySelector('[data-duty-sync]');if(status)status.textContent=state.error||'';}}
+  finally{if(seq===state.sequence){state.loading=false;syncWriteActions();const status=root.querySelector('[data-duty-sync]');if(status)status.textContent=state.error||'';}}
  }
  async function mutate(name,args){
   const key=scope(),month=state.month;if(preview||!key||!permitted(true))throw Error('Sign in to manage Duty.');
@@ -59,6 +59,10 @@
   for(const c of changes){const month=c.date.slice(0,7);if(!proposed.has(month))proposed.set(month,structuredClone(demoMonth(month).entries));const entries=proposed.get(month),i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');if(demoMonth(month).month?.status==='Completed')throw Error('Duty month is completed');const employee=demoMonth(month).employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
  }
+ function syncWriteActions(){
+  const allowed=!!view().can_write&&(state.demo||permitted(true))&&!state.transitioning&&!state.error&&(state.demo||!!state.data);
+  for(const button of root.querySelectorAll('[data-duty-action="calendar"],[data-duty-action="add-employee"]'))button.disabled=!allowed;
+ }
  function render(){
   DutySchedule.rememberScroll();
   root.dataset.dutyView=state.tab;
@@ -66,6 +70,7 @@
 
   ${state.error?`<div class="duty-banner duty-error" role="alert">${esc(state.error)}</div>`:''}<span class="duty-sync-status" data-duty-sync role="status">${state.loading||state.transitioning?'Loading Duty…':''}</span>
   ${state.tab==='schedule'?'<div id="duty-schedule-body"></div>':state.tab==='reports'?'<div id="duty-reports-body"></div>':list(d)}</div>`;
+  syncWriteActions();
   if(state.tab==='schedule')DutySchedule.mount(root.querySelector('#duty-schedule-body'),d,scheduleConfig());
   if(state.tab==='reports')window.DutyReports.mount(root.querySelector('#duty-reports-body'),d,{month:state.month,demo:state.demo,pharmacyCode:state.demo?demoPharmacyCode:context()?.pharmacy_code});
  }
