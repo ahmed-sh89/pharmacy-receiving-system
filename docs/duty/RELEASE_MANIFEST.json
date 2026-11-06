@@ -83,5 +83,36 @@
     "ui.js": "1530320c367d4fcbcd17632c51b74f6adb2c7aef",
     "vercel.json": "b98c816155b220d1b41de4b981c82298bef8e042",
     "vite.config.js": "3bcb602217314a2ca8d717f6838d1be35dfa4df2"
-  }
+  },
+  "duty_migration_inventory": [
+    {
+      "file": "20261103235030_duty_stage_a_foundation.sql",
+      "sha256": "63b407bd9f4bde20e522a5b538dc071bf15cdf978f80625e855972f562301447"
+    },
+    {
+      "file": "20261103235335_duty_position_default_name_validation.sql",
+      "sha256": "c0b946ceca851ee2dce2ecd55dadf0619fdee9e09f08b20c5d89f00349976cc4"
+    },
+    {
+      "file": "20261104013200_duty_stage_b_scheduling.sql",
+      "sha256": "ec7133695b21655e66a1e19e9bc252c8c6f06f892cbb0e8eb2c46037ae091bd4"
+    },
+    {
+      "file": "20261105183357_duty_production_readiness_staging.sql",
+      "sha256": "8279998cdc6c7f222303faba38af45c61a1ac79f82cc989fd57f59726cb523b9"
+    },
+    {
+      "file": "20261106001033_duty_final_directory_and_save_staging.sql",
+      "sha256": "bb69687131cb6a7cea8491db623bf045708f2ddefab56d925d8e5ed500e29a3f"
+    },
+    {
+      "file": "20261106010727_duty_directory_lifecycle_staging.sql",
+      "sha256": "ebf5633e92f7e82185056f435a6cf2623ff60f8eef68ae3af4ffa131d70d2352"
+    },
+    {
+      "file": "20261106134244_duty_shift_presets_staging.sql",
+      "sha256": "9c5f6aecc4a59439edccd90e08c4f03ec12145b7b51f2d97dc59fc2811cc4acb"
+    }
+  ],
+  "atomic_verification_run": "https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42227797916"
 }
