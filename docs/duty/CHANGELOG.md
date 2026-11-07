@@ -1,3 +1,11 @@
+# Duty workflow improvements · 7 November 2026
+
+- Quiet background refresh preserves authorized same-pharmacy content and actionable failures.
+- Shared position organization/colors, readable status badges and within-position employee reorder.
+- Preset duration and date/employee-rule hours preview; optional actual-position eligibility with legacy All Positions preserved.
+- Ctrl-toggle exact multi-cell selection; compatible Apply remains one conflict-protected atomic save with existing Undo/Redo.
+- Staging-only additive function migration; original seven migrations, calculations, exports and protected modules unchanged.
+
 ## 2026-11-06 · Unified Schedule / Calendar control appearance
 
 White secondary controls with shared typography, dimensions, border and interaction states; Apply Shift / Shift Presets secondary; + Employee and confirmations retain blue primary hierarchy. Calendar inputs match; Delete red icon and existing confirmation preserved. Removed superseded Date Range accent and selection-tool sizing. Visual-only change; 17 focused tests PASS. Existing export, synchronization and migration evidence unchanged; changed visuals await native zoom acceptance.

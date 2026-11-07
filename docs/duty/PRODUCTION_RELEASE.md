@@ -1,9 +1,20 @@
+# Current workflow candidate — Staging only
+
+Production already contains the original seven Duty migrations and PR #44 at 7f0bcc1fe167415e38372b1db1d9c2f0c24858de. The historical installation steps below must NOT be replayed. New Draft PR #45 is not Production-approved.
+
+Only pending migration for this candidate: 20261106232443_duty_position_presets_staging.sql (SHA-256 5d78903e73f1e9f3b76826eb6dd2f3afcbf8769953b0e7582acbe568da1c9d5c); applied to Staging only. Before a future separately approved release, recheck current source/schema/backup and hosted history, verify original seven unchanged and new migration absent, then use one direct/session PostgreSQL connection and explicit transaction for ONLY this pending SQL plus its exact source history entry. Check auth, RLS/grants, pharmacy isolation, unchanged legacy presets/schedules and protected Receiving/Expiry fingerprints before COMMIT; inspect independently afterward. Any pre-commit failure rolls back completely. Current isolated test verifies new migration commit/history and injected rollback; previous seven-migration native atomic evidence remains historical, not proof of a new eight-file native run.
+
+After commit retain schema/history/data. UI recovery uses a protected revert PR and official workflow. No deletion/backfill of presets or assignments; old missing-position presets remain All Positions. Receiving/Expiry and Production configuration remain byte-for-byte protected. Production deployment/merge/migration/activation is NOT authorized by this Staging task.
+
+---
+Historical installation documentation (superseded for already installed databases):
+
 # Duty release preparation — 6 November 2026
 
-**BLOCKED — NOT READY FOR PRODUCTION; final security/visual acceptance open. No merge, deployment, Production SQL or activation authorized.**
+**READY FOR FINAL OWNER ACCEPTANCE — NOT DEPLOYED TO PRODUCTION. No merge, deployment, Production SQL or activation authorized.**
 
 Production source: `2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f`.
-Duty runtime source: `66dc1faffa19e67a48763ba148711bc3801b4702`; release runtime `9280ba620deb3b88f8f7f00c06c7d53ece169d45`. Authoritative evidence: CURRENT_CHECKPOINT.md.
+Duty source: `76288141aad46469e6a3f838525550757f602324` (runtime `d89296b8fa44bbb1bfe5de0ca7e9ba0158d9f98a`).
 Release branch: `release/duty-production-prep-20261105`, created directly from that Production commit. The existing feature-branch PR #43 is a Staging candidate, not the clean release branch.
 
 ## Scope and access
@@ -23,7 +34,7 @@ The server and browser resolve Basic allowances using the same documented preced
 ## Exact release files
 
 - Runtime: `index.html`, `js/config.js`, `js/permissions.js`, `js/settings-workspace.js`, `css/permissions.css`, the four `js/duty*.js` files and `css/duty.css`.
-- Database: the seven Duty migration files listed below.
+- Database: the five Duty migration files listed below.
 - Tests: `tests/duty-*.test.cjs`, `tests/duty-xlsx-validation.py`, the focused Duty case in `tests/sleep-wake-permissions.test.cjs`, and `.github/workflows/duty-readiness.yml`.
 - Documentation: `docs/duty` mapping/checkpoint/history, this runbook and `RELEASE_MANIFEST.json`.
 
@@ -38,29 +49,21 @@ Already applied to **Staging only** (`tovkcakucyagvbzvlnks`):
 3. `20261104013200_duty_stage_b_scheduling.sql`
 4. `20261105183357_duty_production_readiness_staging.sql`
 5. `20261106001033_duty_final_directory_and_save_staging.sql`
-6. `20261106010727_duty_directory_lifecycle_staging.sql`
-7. `20261106134244_duty_shift_presets_staging.sql`
 
 The fourth filename records the actual hosted Staging migration version. Its additive definitions are the proposed Production contract, subject to a separate approval. Do not also apply `STAGING_MANUAL_HOURS.sql`; it is superseded and excluded. None of these scripts is an instruction to run Production SQL now.
 
-Before approval, inspect Production migration history, schemas and dependencies read-only. Confirm `pharmacies`, `pharmacy_members`, the existing permission/audit tables, `is_system_owner()` and the strict `pharmflow_auth_private.password_change_complete()` contract. Confirm no existing Duty tables/history conflict with the seven migrations. If they exist, stop and reconcile instead of rerunning CREATE/ALTER statements. Production database state has not been queried in this continuation.
+Before approval, inspect Production migration history, schemas and dependencies read-only. Confirm `pharmacies`, `pharmacy_members`, the existing permission/audit tables, `is_system_owner()` and the strict `pharmflow_auth_private.password_change_complete()` contract. Confirm no existing Duty tables/history conflict with the five migrations. If they exist, stop and reconcile instead of rerunning CREATE/ALTER statements. Production database state has not been queried in this continuation.
 
 After all acceptance gates pass, obtain explicit approval covering the exact release SHA, migration checksums/order and automatic official Pages deployment triggered by a main merge. Back up schema and record before/after permission values and relevant non-Duty schema signatures. Apply only the missing approved Duty migrations in order; never reset schemas, backfill real employees or change existing Receiving/Expiry permissions. Verify RLS/ACLs, default-denial and the v2 Permissions RPC before merging the UI. Keep every Production pharmacy Duty Disabled. Then merge through the normal protected PR workflow, check official Pages success and served identity, and perform the approved smoke checks. Enabling a Production pharmacy requires separate explicit authorization.
 
 ## Final acceptance gates
 
-The owner has accepted the prior save/refresh, synchronization, conflict, access, Excel opening and single-employee paste cycles. See the updated CURRENT_CHECKPOINT for the four focused checks on the final changes. No repeated authentication flows are authorized. The supplied A(3).xlsx contains inconsistent underlying dates; verify the actual destination employee/month/date before pasting a partial range. The generated Standard Timesheet provides correct selected-period dates. Full legacy baseline failures remain separately documented; the full suite is not green.
+The owner has accepted the prior save/refresh, synchronization, conflict, access, Excel opening and single-employee paste cycles. See the updated CURRENT_CHECKPOINT for the six focused checks on the final changes. No repeated authentication flows are authorized. The supplied A(3).xlsx contains inconsistent underlying dates; verify the actual destination employee/month/date before pasting a partial range. The generated Standard Timesheet provides correct selected-period dates. Full legacy baseline failures remain separately documented; the full suite is not green.
 
 ## Rollback
 
 Disable Duty using the existing Administrator Permissions form with current revision, preserving all other module values. Revert the focused UI release through a protected PR and the normal Pages deployment. Retain the additive Duty schema, history and manual-aware readers; do not drop tables, restore a database or revert to the legacy calculator after Manual records exist. A failed Staging test is not permission to alter Production. No irreversible rollback or data deletion is part of this task.
 
 Final Staging migration adds two sort_order columns and guarded directory/save-read RPCs. Default values preserve the prior neutral/name ordering; the new reader field is backward-compatible. Updated clients need the final migration before release. Rollback should retain sort_order/data and both manual-aware readers; old clients ignore ordering. No automatic SQL execution is part of CI.
-
-Final UI continuation adds an independent archived state, schedule-only optional display names, aligned merged footer rows and fixed toolbar tracks. See CURRENT_CHECKPOINT for exact QA evidence. The directory-v1 authenticated grant is revoked by migration 6; older clients cannot manage the directory. Safe rollback is disable Duty and retain additive schema/history; keep the directory-v2 adapter for any scoped UI revert. The reported Chrome Dangerous badge is unresolved: one read-only prior-preview check reached sign-in without an interstitial but could not inspect Chrome chrome/security state. Do not bypass it or claim clean security.
-
-The four final UX corrections retain the scoped roster during month reads, constrain Reports to an internal table scroller, refine editor presentation and auto-update searchable report controls. No new migrations or backend calls. Final local checks: 76 development / 78 release / 124 non-regression PASS; runtime CI SUCCESS. Synthetic browser month/range-copy/layout checks PASS; CSS-scaled 75/80 diagnostics are not native Windows zoom acceptance. Keep the Chrome Dangerous, fresh authenticated-session and native acceptance gates open as detailed in CURRENT_CHECKPOINT. No Production promotion is authorized.
-
-Final UI refinement introduces one reusable Duty-controls script (loaded before Schedule/Reports), a Receiving-History-style blue calendar in both Duty ranges, an ordered Employee Filter, adjacent Copy/Clear/Export and acknowledged two-second feedback. Time popups match fixed trigger dimensions. Receiving calendar code/styles remain untouched. 80 Duty / 82 release / 124 regression checks and final runtime CI PASS; 11 targeted follow-up checks PASS. READY FOR USER VERIFICATION only; native Windows, security-warning and fresh authenticated acceptance remain open. No new migration/dependency or Production authorization.
 
 Shift Presets release baseline now has SEVEN original migration files; use RELEASE_MANIFEST.json for exact SHA-256/order. Migration 7 adds only presets in existing pharmacy settings and one audited revision-safe writer, replacing the schedule reader to include presets. Already applied Staging only. Native PostgreSQL two-connection COMMIT/rollback 3/6/7 passes in Actions 42227797916. All seven SQL files and their seven history records must commit together; do not use six independent commits followed by presets. Postchecks must confirm Disabled for all policies, no client table access, guarded authenticated preset writer, and unchanged Receiving/Expiry. Backward UI rollback retains presets column/data, manual-aware readers and directory-v2; never delete saved entries. No Production action is authorized.

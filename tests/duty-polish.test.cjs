@@ -53,5 +53,5 @@ test('Apply Shift dropdown writes the real successful form control and updates s
  const f=editorFixture();f.host.onclick({target:f.host.querySelector('[data-s-code="A"][data-s-date="2026-11-05"]')});await f.host.onclick({target:f.host.querySelector('[data-s-action="apply-shift"]')});
  const form=f.panels.at(-1).form,popup=form.querySelector('.duty-dropdown-popup');popup.hidePopover=()=>{};
  await popup.onclick({target:popup.querySelector('[data-dropdown-value="split"]')});
- assert.equal(form.elements.preset.value,'split');assert.equal(form.querySelector('[data-dropdown-trigger=preset]').textContent,'Split');assert.equal(popup.querySelectorAll('[data-dropdown-value=split] small').length,2);
+ assert.equal(form.elements.preset.value,'split');assert.equal(form.querySelector('[data-dropdown-trigger=preset]').textContent,'Split');assert.equal(popup.querySelectorAll('[data-dropdown-value=split] small:not(.duty-preset-duration)').length,2);
 });

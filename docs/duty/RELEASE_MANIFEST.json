@@ -1,6 +1,6 @@
 {
-  "production_base": "2295d2de5d69ad8e2c9bf10193aea8cc7b254f3f",
-  "duty_source": "c00aa05e74a5c16ef0a878c23847de12a75b07db",
+  "production_base": "7f0bcc1fe167415e38372b1db1d9c2f0c24858de",
+  "duty_source": "f01c307e7e647dd564295aac07bb27776990c0a2",
   "protected_files": {
     ".github/workflows/accepted-release-checks.yml": "b7211072ec465835448892c218daf870276cfc92",
     ".github/workflows/deploy.yml": "2b804175acdd222d4c6e1a7fb7804a7fbd1bc72a",
@@ -112,7 +112,14 @@
     {
       "file": "20261106134244_duty_shift_presets_staging.sql",
       "sha256": "9c5f6aecc4a59439edccd90e08c4f03ec12145b7b51f2d97dc59fc2811cc4acb"
+    },
+    {
+      "file": "20261106232443_duty_position_presets_staging.sql",
+      "sha256": "5d78903e73f1e9f3b76826eb6dd2f3afcbf8769953b0e7582acbe568da1c9d5c"
     }
   ],
-  "atomic_verification_run": "https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42227797916"
+  "atomic_verification_run": "https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42227797916",
+  "production_pending_migrations": [
+    "20261106232443_duty_position_presets_staging.sql"
+  ]
 }
