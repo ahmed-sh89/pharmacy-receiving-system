@@ -1,3 +1,11 @@
+# Duty Production release PR #45 · 7 November 2026
+
+- PRODUCTION RELEASE: PASS. PR #45 approved head 37a0b820e80b6f9945ed4742d6f53e68b09d70ba merged as 1457f45fdf2af0ec84546a076e64191b5980a79a; official GitHub Pages run 42318372312 succeeded and live version.json matches.
+- Single position-presets migration plus exact-source history committed atomically (backend 858894 / transaction 203396), independently verified on backend 858898. Original seven migrations unchanged.
+- All protected data/security fingerprints preserved before/after migration and after smoke tests; HHP084 Duty FULL, other four pharmacies DISABLED; Receiving/Expiry permissions unchanged.
+- Authenticated Production read-only smoke PASS: Receiving totals/orders, Expiry, pharmacy-admin Settings, Duty directories/presets/Apply preview, Reports and single/all XLSX downloads. Two-tab read consistency verified; existing independent multi-session/Windows Excel acceptance retained. No operational test writes.
+- Pre-change recovery checkpoint and execution evidence persisted; actual backup restore not tested. Ctrl + Drag deferred.
+
 # Duty workflow improvements · 7 November 2026
 
 - Quiet background refresh preserves authorized same-pharmacy content and actionable failures.
