@@ -1,3 +1,18 @@
+# Duty interaction & Exchange — 9 November 2026
+
+**Current workstream: STAGING READY FOR USER TEST — not USER VERIFIED.**
+Base main verified `c68a940fecd9d40b57b625769e9a4654991b6010`; dedicated branch `fix/duty-exchange-staging-20261109`.
+
+- DUTY-SCHEDULE-INTERACTION-001: lifecycle cause reproduced before fix. Route reset emptied the internal month; unchanged cached response skipped mounting. Re-entering Duty now remounts an invalidated host; repeated activation of a valid host preserves DOM/scroll. Actual owner/idle reproduction remains pending.
+- Compact Exchange beside Apply Shift: two disjoint equal rectangles, bidirectional payload swap, destination Auto calculation, approved Manual allocation preservation. Ctrl + Drag adds ranges; third/incompatible range disables Exchange.
+- One existing revision-checked pharmacy-locked transactional RPC for the whole swap and each Undo/Redo. Actual Staging definitions inspected read-only. No migrations/backend deployments or remote data edits.
+- Verification: focused 12 PASS; Duty 98 PASS / 1 historical byte-snapshot FAIL / 1 template-input SKIP; auth/session/navigation 90 PASS. Separate old startup-performance assertion also fails unchanged original main. No checks disabled.
+- Delivery: [Draft PR #52](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/52); application commit `f5778a5fd1941d76e4979cfe8879c180a6f3a05c`; [immutable tested Preview](https://pharmflow-test-phmo9a672-fhyh2xtskz-3504.vercel.app/) READY. Served version/backend/CSP identify Staging only; signed-out Chrome opening/Reload PASS. Authenticated Chrome, actual idle Reload, zoom and two-PC checks await owner acceptance. CI security/session PASS; Duty CI 120 PASS / 1 historical snapshot FAIL / 1 SKIP.
+- Next: Product Owner acceptance tests. Do not merge or deploy Production. Keep the accepted PR49/47 state below.
+- Scope, architecture, evidence, limitations and acceptance: [Duty interaction delivery](docs/duty/20261109/INTERACTION_EXCHANGE.md).
+
+---
+
 # PharmFlow current checkpoint — 8 November 2026
 
 ## PR #49 — CLOSED — USER VERIFIED

@@ -65,17 +65,20 @@ const isVercelBuild = process.env.VERCEL === '1'
 // reviewed Production configuration; arbitrary Preview branches still fail.
 const startupStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'fix/startup-handheld-staging-20261108';
+const dutyStagingPreview = process.env.VERCEL_ENV === 'preview'
+  && process.env.VERCEL_GIT_COMMIT_REF === 'fix/duty-exchange-staging-20261109';
+const scopedStagingPreview = startupStagingPreview || dutyStagingPreview;
 const stagingRef = 'tovkcakucyagvbzvlnks';
 function startupStagingConfiguration(){
   return {
     name:'startup-staging-configuration',
     transformIndexHtml(html){
-      return startupStagingPreview ? html.replaceAll('zznoshzcyxmtwfbznjyr',stagingRef)
-        .replace('</head>','<script src="/js/startup-timing.js"></script></head>') : html;
+      const source=scopedStagingPreview ? html.replaceAll('zznoshzcyxmtwfbznjyr',stagingRef) : html;
+      return startupStagingPreview ? source.replace('</head>','<script src="/js/startup-timing.js"></script></head>') : source;
     },
     closeBundle(){
-      if(!startupStagingPreview) return;
-      copyFileSync('staging/startup-timing.js',resolve('dist/js/startup-timing.js'));
+      if(!scopedStagingPreview) return;
+      if(startupStagingPreview) copyFileSync('staging/startup-timing.js',resolve('dist/js/startup-timing.js'));
       const file=resolve('dist/js/supabase.js');
       const source=readFileSync(file,'utf8')
         .replace('https://zznoshzcyxmtwfbznjyr.supabase.co',`https://${stagingRef}.supabase.co`)
@@ -86,7 +89,7 @@ function startupStagingConfiguration(){
       writeFileSync(config,readFileSync(config,'utf8').replace('"production"','"staging"'));
       writeFileSync(resolve('dist/version.json'),JSON.stringify({
         sha:process.env.VERCEL_GIT_COMMIT_SHA||'local-startup-staging',
-        environment:'staging',supabaseRef:stagingRef
+        environment:'staging',supabaseRef:stagingRef,branch:process.env.VERCEL_GIT_COMMIT_REF
       }));
     }
   };
@@ -97,7 +100,7 @@ function productionAuthorizationRelease(){
     name:'production-authorization-release',
     configResolved(config){
       if(config.command==='build' && process.env.VERCEL &&
-          !startupStagingPreview && (process.env.VERCEL_ENV!=='production' ||
+          !scopedStagingPreview && (process.env.VERCEL_ENV!=='production' ||
            process.env.VERCEL_GIT_COMMIT_REF!=='main')){
         throw new Error('Production release requires main and Production configuration');
       }

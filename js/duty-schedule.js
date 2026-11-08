@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const M=window.DutyModel,C=window.DutyControls,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
+ const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],ranges:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
  let host,data,options,scopeVersion=0,drag=null,skipClick=false;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const past=[],future=[],localRevisions=new Map();
@@ -25,7 +25,7 @@
  const hoursFor=(code,date,p)=>M.effectiveHours(date,p,!!holiday(date),data.employees.find(e=>e.code===code),data.hour_rules,holidayFirst());
  const dates=()=>M.calendarRange(S.month,S.range);
  const selected=(code,date)=>S.selected.some(s=>s.code===code&&s.date===date);
- const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&data.month?.status!=='Completed';
+ const writable=()=>data.can_write&&!S.busy&&!S.confirming&&!options.loading&&(!options.authorized||options.authorized())&&data.month?.status!=='Completed';
  const writableDateForMonth=date=>date.startsWith(S.month+'-');
  const writableDate=date=>writable()&&writableDateForMonth(date);
  const holiday=date=>data.holidays.find(h=>h.date===date&&h.active);
@@ -36,7 +36,24 @@
   if(S.month!==config.month){S.scroll={left:0,top:0};S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
   render();
  }
- function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
+ function clearSelection(){S.selected=[];S.ranges=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
+ function setRanges(ranges){
+  S.ranges=ranges.filter(r=>r.length);S.selected=[...new Map(S.ranges.flat().map(c=>[key(c.code,c.date),c])).values()];
+ }
+ function rectangle(cells){
+  const staff=employees(),days=dates(),codes=[...new Set(cells.map(c=>c.code))].sort((a,b)=>staff.findIndex(e=>e.code===a)-staff.findIndex(e=>e.code===b)),ds=[...new Set(cells.map(c=>c.date))].sort();
+  const contiguous=(values,all)=>values.every((v,i)=>all.indexOf(v)>=0&&(!i||all.indexOf(v)===all.indexOf(values[i-1])+1));
+  if(!cells.length||new Set(cells.map(c=>key(c.code,c.date))).size!==cells.length||cells.length!==codes.length*ds.length||!contiguous(codes,staff.map(e=>e.code))||!contiguous(ds,days.map(d=>d.date)))return null;
+  return {width:codes.length,height:ds.length,cells:ds.flatMap(date=>codes.map(code=>({code,date})))};
+ }
+ function exchangeRanges(){
+  if(S.ranges.length!==2)return null;
+  const [a,b]=S.ranges.map(rectangle);
+  if(!a||!b||a.width!==b.width||a.height!==b.height||S.selected.length!==a.cells.length+b.cells.length||S.selected.some(c=>!writableDate(c.date)||!data.employees.some(e=>e.code===c.code)))return null;
+  return [a.cells,b.cells];
+ }
+ function selectionNotice(){if(S.ranges.length>=2&&!exchangeRanges())S.notice='Select two equal ranges to exchange shifts.';else if(S.notice==='Select two equal ranges to exchange shifts.')S.notice='';const status=host.querySelector('.duty-footnote [role=status]');if(status)status.textContent=S.notice||'Double-click to edit · Ctrl + Drag to add a range';}
+
  function render(){
   if(!host?.isConnected)return;
   const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition=scroll?{left:scroll.scrollLeft||0,top:scroll.scrollTop||0}:S.scroll||{left:0,top:0};
@@ -54,7 +71,7 @@
    <form data-date-range popover="manual" role="dialog" aria-label="Schedule date range">${C.dateField({id:"duty-schedule-from",name:"from",label:"Start Date",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"End Date",value:S.range?.to||last,min:first,max:last})}<p class="duty-range-error" role="alert"></p><div class="duty-popover-footer"><button type="button" data-range-cancel>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form></div>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
-   <button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
+   <button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="exchange" title="Exchange selected shifts" disabled>Exchange</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    ${dropdown('status','Apply status to selection','Status…',Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}))}
    <button type="button" data-s-action="color">Cell Color</button></div></div>
@@ -62,7 +79,7 @@
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
     ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title" title="${esc(e.name)} · ${esc(e.display_code||e.code)}"><span class="duty-name">${esc(M.scheduleLabel(e))}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
     <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(holidayFirst()||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${dayLabel.format(new Date(d.date+'T12:00Z'))}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):`<tr><td class="duty-empty">${options.loading?'Loading Duty…':'No employees in this view'}</td></tr>`}</tbody></table></div>
-   <div class="duty-footnote"><span role="status">${esc(S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Drag to select a range'))}</span></div>`;
+   <div class="duty-footnote"><span role="status">${esc(S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Ctrl + Drag to add a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
   bind();C.bindCalendars(host);C.fitViewport(host);updateSelection();
@@ -82,23 +99,29 @@
  }
  function select(code,date,range,toggle=false){
   S.rowAnchor=null;
-  if(toggle){const i=S.selected.findIndex(c=>c.code===code&&c.date===date);if(i<0)S.selected.push({code,date});else S.selected.splice(i,1);S.anchor={code,date};}
-  else if(range&&S.anchor){const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===S.anchor.code),b=staff.findIndex(e=>e.code===code),x=ds.findIndex(d=>d.date===S.anchor.date),y=ds.findIndex(d=>d.date===date);if(a<0||b<0)return;S.selected=[];for(let i=Math.min(a,b);i<=Math.max(a,b);i++)for(let j=Math.min(x,y);j<=Math.max(x,y);j++)S.selected.push({code:staff[i].code,date:ds[j].date});}
-  else {S.selected=[{code,date}];S.anchor={code,date};}
-  S.cursor={code,date};updateSelection();
+  let cells=[{code,date}];
+  if(range&&S.anchor){
+   const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===S.anchor.code),b=staff.findIndex(e=>e.code===code),x=ds.findIndex(d=>d.date===S.anchor.date),y=ds.findIndex(d=>d.date===date);
+   if(Math.min(a,b,x,y)<0)return;
+   cells=[];for(let j=Math.min(x,y);j<=Math.max(x,y);j++)for(let i=Math.min(a,b);i<=Math.max(a,b);i++)cells.push({code:staff[i].code,date:ds[j].date});
+   setRanges([...S.ranges.slice(0,-1),cells]);
+  }else if(toggle){
+   // Ctrl-click toggles a cell; Ctrl-drag always appends its own range.
+   if(!drag&&selected(code,date))setRanges(S.ranges.map(r=>r.filter(c=>c.code!==code||c.date!==date)));
+   else setRanges([...S.ranges,cells]);
+   S.anchor={code,date};
+  }else {setRanges([cells]);S.anchor={code,date};}
+  S.cursor={code,date};selectionNotice();updateSelection();
  }
  function selectRows(date,extend=false,toggle=false){
   const staff=employees(),days=dates(),target=days.findIndex(d=>d.date===date);
   if(!staff.length||target<0)return;
   const start=extend?days.findIndex(d=>d.date===S.rowAnchor):-1;
-  const chosen=toggle?new Set(S.selected.filter(c=>staff.every(e=>selected(e.code,c.date))).map(c=>c.date)):new Set();
-  if(toggle&&chosen.has(date))chosen.delete(date);
-  else for(let i=start<0?target:Math.min(start,target);i<=(start<0?target:Math.max(start,target));i++)chosen.add(days[i].date);
   if(start<0)S.rowAnchor=date;
-  S.selected=staff.flatMap(e=>days.filter(d=>chosen.has(d.date)).map(d=>({code:e.code,date:d.date})));
-  S.anchor={code:staff[0].code,date:S.rowAnchor};
-  S.cursor={code:staff[0].code,date};
-  updateSelection();
+  const cells=days.slice(start<0?target:Math.min(start,target),(start<0?target:Math.max(start,target))+1).flatMap(d=>staff.map(e=>({code:e.code,date:d.date})));
+  if(toggle&&!drag&&staff.every(e=>selected(e.code,date)))setRanges(S.ranges.map(r=>r.filter(c=>c.date!==date)));
+  else setRanges(extend&&start>=0?[...S.ranges.slice(0,-1),cells]:toggle?[...S.ranges,cells]:[cells]);
+  S.anchor={code:staff[0].code,date:S.rowAnchor};S.cursor={code:staff[0].code,date};selectionNotice();updateSelection();
  }
  function findCell(code,date){return host.querySelector(`[data-s-code="${CSS.escape(code)}"][data-s-date="${date}"]`);}
  function focus(code,date,scroll=false){findCell(code,date)?.focus({preventScroll:!scroll});}
@@ -109,7 +132,7 @@
   const isSelected=td=>td?.hasAttribute('data-s-code')&&keys.has(key(td.dataset.sCode,td.dataset.sDate));
   for(const td of cells){
    const {sCode:code,sDate:date}=td.dataset,active=isSelected(td),row=td.parentElement;
-   td.classList.toggle('duty-selected',active);td.setAttribute('aria-selected',String(active));
+   td.classList.toggle('duty-selected',active);td.classList.toggle('duty-range-b',active&&S.ranges[1]?.some(c=>c.code===code&&c.date===date));td.setAttribute('aria-selected',String(active));
    td.classList.toggle('duty-edge-top',active&&!isSelected(row.previousElementSibling?.children[td.cellIndex]));
    td.classList.toggle('duty-edge-bottom',active&&!isSelected(row.nextElementSibling?.children[td.cellIndex]));
    td.classList.toggle('duty-edge-left',active&&!isSelected(td.previousElementSibling));
@@ -117,6 +140,7 @@
    td.tabIndex=(S.cursor?code===S.cursor.code&&date===S.cursor.date:td===cells[0])?0:-1;
   }
   const hasSelection=!!S.selected.length&&!S.editing;
+  toolsExchange();
   const canEdit=hasSelection&&S.selected.every(c=>writableDate(c.date));
   const tools=host.querySelector('.duty-selection-tools');
   tools.querySelector('[data-s-action="apply-shift"]').disabled=!canEdit||!data.shift_presets?.length;
@@ -125,6 +149,17 @@
   tools.querySelector('[data-s-action="delete"]').disabled=!canEdit;
   tools.querySelector('[data-dropdown-trigger=status]').disabled=!canEdit;
   host.querySelector('[data-s-action="color"]').disabled=!canEdit;
+ }
+ function toolsExchange(){host.querySelector('[data-s-action="exchange"]').disabled=!!S.editing||!exchangeRanges();}
+ async function exchange(){
+  const ranges=exchangeRanges();
+  if(!ranges){S.notice='Select two equal ranges to exchange shifts.';render();return;}
+  const [a,b]=ranges;
+  // Capture both sources before a single revision-checked batch write.
+  // Auto resolves at the destination; Manual uses the approved clipboard allocation rule.
+  const content=c=>{const p=payload(c.code,c.date);return M.clipboardPayload(p,p.manual_minutes?hoursFor(c.code,c.date,p):undefined);};
+  const changes=a.flatMap((c,i)=>[{...c,payload:content(b[i])},{...b[i],payload:content(c)}]);
+  await save(changes,'Exchange Duty shifts');
  }
  function timeFields(periods,hasTimes){
   const picker=(name,value)=>{
@@ -257,7 +292,7 @@
  async function save(changes,reason,confirmOverwrite=false,record=true,presetContext=null){
   if(!writable())return false;
   const version=scopeVersion,config=options;
-  S.busy=true;S.notice='Saving…';const pending=host.querySelector('.duty-footnote [role=status]');if(pending)pending.textContent=S.notice;
+  S.busy=true;updateSelection();S.notice='Saving…';const pending=host.querySelector('.duty-footnote [role=status]');if(pending)pending.textContent=S.notice;
   try{
    if(changes.some(c=>!writableDateForMonth(c.date)))throw Error('Select dates in the active month.');
    const existing=c=>entry(c.code,c.date);
@@ -528,6 +563,7 @@
     }
     switch(button?.dataset.sAction){
      case 'apply-shift':applyShift();break;
+     case 'exchange':await exchange();break;
      case 'copy':copy();break;
      case 'paste':await paste();break;
      case 'delete':await deleteSelection();break;
@@ -572,8 +608,8 @@
    skipClick=false;
    const dateButton=event.target.closest('[data-s-column]'),target=dateButton?.closest('tr')||event.target.closest('[data-s-code]');
    if(!target||event.button!==0||event.pointerType!=='mouse'||S.editing||S.busy||S.confirming)return;
-   if(event.ctrlKey||event.metaKey){event.preventDefault();return;}
-   drag={id:event.pointerId,start:target,last:target,row:!!dateButton,moved:false,x:event.clientX,y:event.clientY};
+   if(event.ctrlKey||event.metaKey)event.preventDefault();
+   drag={add:event.ctrlKey||event.metaKey,id:event.pointerId,start:target,last:target,row:!!dateButton,moved:false,x:event.clientX,y:event.clientY};
   };
   const finishDrag=event=>{
    if(!drag||drag.id!==event.pointerId)return;
@@ -590,8 +626,8 @@
    if(!drag.moved){
     if(!target||target===drag.start||!grid.contains(target))return;
     drag.moved=true;host.setPointerCapture(event.pointerId);
-    if(drag.row)selectRows(drag.start.querySelector('[data-s-column]').dataset.sColumn);
-    else select(drag.start.dataset.sCode,drag.start.dataset.sDate,false);
+    if(drag.row)selectRows(drag.start.querySelector('[data-s-column]').dataset.sColumn,false,drag.add);
+    else select(drag.start.dataset.sCode,drag.start.dataset.sDate,false,drag.add);
     drag.frame=requestAnimationFrame(scrollDrag);
    }
    extendDrag(target);
@@ -665,10 +701,10 @@
    if(next&&nextDate){e.preventDefault();select(next,nextDate,e.shiftKey);focus(next,nextDate,true);}
   };
  }
- window.DutySchedule={mount,rememberScroll,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
+ window.DutySchedule={mount,rememberScroll,isMounted:(el,month)=>!!el?.isConnected&&host===el&&S.month===month,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
   drag=null;skipClick=false;presetGroup='all';scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}
-  Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
+  Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],ranges:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};
 })();
