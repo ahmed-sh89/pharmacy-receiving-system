@@ -1,6 +1,6 @@
 ## 9 November 2026 — Duty interaction and Exchange
 
-READY FOR TEST — Staging only, Product Owner verification pending. Focused real-component/DB/build tests: 12 PASS. Full Duty: 98 PASS / 1 historical byte-freeze FAIL / 1 external-template SKIP. Relevant authentication/session/permissions/navigation: 90 PASS. Old startup-performance literal assertion fails on original main too. No failing checks hidden or disabled. Actual Chrome F5/idle Reload, 75/80/100% zoom and simultaneous two-PC acceptance remain owner checks. [Exact cases and evidence](docs/duty/20261109/INTERACTION_EXCHANGE.md).
+STAGING READY FOR USER TEST — Draft PR #52 / immutable application Preview READY; Product Owner verification pending. Focused real-component/DB/build tests: 12 PASS. Full Duty: 98 PASS / 1 historical byte-freeze FAIL / 1 external-template SKIP. Relevant authentication/session/permissions/navigation: 90 PASS. Old startup-performance literal assertion fails on original main too. No failing checks hidden or disabled. Actual Chrome F5/idle Reload, 75/80/100% zoom and simultaneous two-PC acceptance remain owner checks. [Exact cases and evidence](docs/duty/20261109/INTERACTION_EXCHANGE.md).
 
 ## Final focused Staging refinements — 28 October 2026
 

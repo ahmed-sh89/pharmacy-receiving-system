@@ -1,6 +1,6 @@
 ## 9 November 2026 — Duty interaction and Exchange (Staging only)
 
-Reproduced route-reset/cached-response Schedule lifecycle defect and fixed invalidated-host activation. Added compact atomic Exchange through the existing CAS batch RPC and Ctrl + Drag ranges, with incompatible/third-range rejection, destination Auto calculations and Manual preservation. Focused 12 PASS; Duty 98 PASS / 1 historical snapshot FAIL / 1 missing-template SKIP; auth/session/navigation 90 PASS. Original-main failures independently confirmed, no checks disabled. Preview/owner acceptance pending. No Production or backend/data changes. [Evidence and acceptance](docs/duty/20261109/INTERACTION_EXCHANGE.md).
+Reproduced route-reset/cached-response Schedule lifecycle defect and fixed invalidated-host activation. Added compact atomic Exchange through the existing CAS batch RPC and Ctrl + Drag ranges, with incompatible/third-range rejection, destination Auto calculations and Manual preservation. Focused 12 PASS; Duty 98 PASS / 1 historical snapshot FAIL / 1 missing-template SKIP; auth/session/navigation 90 PASS. Original-main failures independently confirmed, no checks disabled. Draft PR #52 and exact-ref Staging Preview READY; owner acceptance pending. CI security/session PASS; Duty CI 120 PASS / 1 historical FAIL / 1 SKIP. No Production or backend/data changes. [Evidence and acceptance](docs/duty/20261109/INTERACTION_EXCHANGE.md).
 
 ## 8 November 2026 — PR #49 CLOSED — USER VERIFIED
 

@@ -1,6 +1,13 @@
 # Duty interaction and Exchange — 9 November 2026
 
-Status: READY FOR TEST; Preview delivery and Product Owner verification pending. Staging only.
+Status: STAGING READY FOR USER TEST; Product Owner verification pending. Staging only.
+
+[Draft PR #52](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/52). Application commit `f5778a5fd1941d76e4979cfe8879c180a6f3a05c`.
+[Immutable tested Preview](https://pharmflow-test-phmo9a672-fhyh2xtskz-3504.vercel.app/): READY; exact application commit/ref and Staging-only version/backend/CSP verified after deployment. Subsequent documentation-only commits may have their own Preview.
+
+GitHub CI: [security checks](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525235249) PASS, [session boundaries](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525235290) PASS; [Duty + sleep/permission suite](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525235283): 120 PASS / 1 historical js/app.js snapshot FAIL / 1 template SKIP. No checks disabled.
+
+Deployed Chrome signed-out opening/Reload reached Sign in successfully. No app-origin startup errors observed; an extension-only metadata error is excluded. No usable authenticated session/credentials were supplied, so authenticated browser/idle/zoom/two-PC acceptance is not claimed. No repeated login attempts or bypass.
 Production base verified before work: `c68a940fecd9d40b57b625769e9a4654991b6010`.
 Branch: `fix/duty-exchange-staging-20261109`. Staging DB: `tovkcakucyagvbzvlnks`.
 
