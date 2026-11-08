@@ -250,5 +250,6 @@
       "pass": true
     }
   ],
-  "staging_sql_assertions": 11
+  "staging_sql_assertions": 11,
+  "ci_followup": "Initial required security check PASS; Duty isolation correctly rejected modifying its frozen security workflow. Original workflow restored exactly; new session tests run in a separate additive workflow. No Duty manifest/test relaxation."
 }
