@@ -2,6 +2,26 @@ import { defineConfig } from 'vite';
 import { cpSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+function classicScriptPreloads(){
+  return [
+    {
+      name:'remove-source-classic-preloads',
+      transformIndexHtml:{order:'pre',handler:html=>html.replace(/<link rel="preload" as="script"[^>]*>\s*/g,'')}
+    },
+    {
+      name:'restore-emitted-classic-preloads',
+      transformIndexHtml:{order:'post',handler(html){
+        // Vite must not turn a classic preload into a different hashed asset:
+        // preload the exact URL that the unchanged ordered script executes.
+        const tags=[...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/g)]
+          .filter(([tag,src])=>!tag.includes('type="module"') && !/^https?:/.test(src) && !src.endsWith('/startup-timing.js'));
+        const links=tags.map(([tag,src])=>`<link rel="preload" as="script" href="${src}"${tag.match(/ integrity="[^"]+"/)?.[0]||''}>`).join('\n');
+        return html.replace('</head>',links+'\n</head>');
+      }}
+    }
+  ];
+}
+
 function copyLegacyRuntime(){
   return {
     name: 'pharmflow-copy-legacy-runtime',
@@ -97,5 +117,5 @@ function productionAuthorizationRelease(){
 export default defineConfig({
   // Production GitHub Pages keeps the repository path. Vercel Test uses root.
   base: isVercelBuild ? '/' : '/pharmacy-receiving-system/',
-  plugins:[productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic(),startupStagingConfiguration()]
+  plugins:[...classicScriptPreloads(),productionAuthorizationRelease(),copyLegacyRuntime(),copyStagingScanDiagnostic(),startupStagingConfiguration()]
 });

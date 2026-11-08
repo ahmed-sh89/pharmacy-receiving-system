@@ -68,3 +68,12 @@ test('Staging timing observer preserves promise identity and rejected/successful
  vm.createContext(c);vm.runInContext(read('staging/startup-timing.js'),c);callback();assert.equal(c.window.initializeAuth(),pending);assert.equal(await c.window.initializeAuth(),'same-result');
  await Promise.resolve();const snapshot=c.window.PharmFlowStartupTimings.snapshot();assert.equal(snapshot.spans[0].stage,'initializeAuth');assert(!JSON.stringify(snapshot).includes('same-result'));
 });
+test('local classic scripts preload in parallel without changing execution order, lifecycle or security attributes',()=>{
+ const current=parseHTML(read('index.html')).document,previous=parseHTML(read('index.html',true)).document;
+ const scripts=doc=>[...doc.querySelectorAll('script[src]')].filter(s=>!s.getAttribute('src').startsWith('https:')&&s.getAttribute('type')!=='module');
+ const now=scripts(current),old=scripts(previous);assert.equal(now.length,old.length);
+ assert.deepEqual(now.map(s=>s.getAttribute('src').split('?')[0]),old.map(s=>s.getAttribute('src').split('?')[0]));
+ for(let i=0;i<now.length;i++)for(const attr of ['defer','async','type','integrity','crossorigin'])assert.equal(now[i].getAttribute(attr),old[i].getAttribute(attr));
+ const links=[...current.querySelectorAll('link[rel="preload"][as="script"]')];assert.deepEqual(links.map(l=>l.getAttribute('href')),now.map(s=>s.getAttribute('src')));
+ for(let i=0;i<links.length;i++)assert.equal(links[i].getAttribute('integrity'),now[i].getAttribute('integrity'));
+});

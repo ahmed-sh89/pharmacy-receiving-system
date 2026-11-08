@@ -8,5 +8,9 @@ test('build environment fence: Production stays Production; exact Preview is Sta
  for(const p of ['dist/index.html','dist/js/supabase.js','dist/version.json']){const s=fs.readFileSync(p,'utf8');assert(s.includes('tovkcakucyagvbzvlnks'),p);assert(!s.includes('zznoshzcyxmtwfbznjyr'),p);}
  assert(fs.readFileSync('dist/index.html','utf8').includes('startup-timing.js'));assert(fs.existsSync('dist/js/startup-timing.js'));assert(fs.readFileSync('dist/index.html','utf8').includes('window.PharmFlowDeviceMode'));
  assert.equal(JSON.parse(fs.readFileSync('dist/version.json')).environment,'staging');
+ const {document}=require('linkedom').parseHTML(fs.readFileSync('dist/index.html','utf8'));
+ const scripts=[...document.querySelectorAll('script[src]')].filter(s=>s.getAttribute('type')!=='module'&&!s.getAttribute('src').startsWith('http')&&!s.getAttribute('src').endsWith('/startup-timing.js'));
+ const links=[...document.querySelectorAll('link[rel="preload"][as="script"]')];
+ assert.deepEqual(links.map(l=>l.getAttribute('href')),scripts.map(s=>s.getAttribute('src')),'Vite preloads must reuse the executed URL, without hashed duplicate files');
  const rejected=build({VERCEL:'1',VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'unapproved-preview'});assert.notEqual(rejected.status,0);assert(rejected.stderr.includes('Production release requires main and Production configuration'));
 });
