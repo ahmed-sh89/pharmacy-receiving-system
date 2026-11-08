@@ -1400,7 +1400,7 @@ async function claimAssignedAdminIfAvailable(throwIfMissing=false){
     }
 }
 
-async function finishPendingAccessIfPossible(){
+async function finishPendingAccessIfPossible(options={}){
     if(AuthState.mustChangePassword){ return; }
     if(!getSupabaseAccessToken()){ return; }
     await claimAssignedAdminIfAvailable(false).catch(()=>{});
@@ -1420,7 +1420,9 @@ async function finishPendingAccessIfPossible(){
     if(localStorage.getItem(AUTH_PENDING_INVITE_KEY)){
         await redeemPendingInvite();
     }
-    await loadMyRegistrationStatus().catch(()=>{});
+    // Startup owns the final status read after pending access/context settle.
+    // Other callers retain the existing status refresh by default.
+    if(options.registrationStatus!==false) await loadMyRegistrationStatus().catch(()=>{});
 }
 
 async function completePendingOwnerSetup(){

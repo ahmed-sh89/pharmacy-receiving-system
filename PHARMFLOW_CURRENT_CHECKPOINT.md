@@ -1,5 +1,17 @@
 # PharmFlow current checkpoint — 8 November 2026
 
+## Current Staging task — startup and Handheld
+
+Production main inspected: `cbd249427dbe8a0acfd6426ef8eede2f2f4e5f29` (unchanged remotely). Dedicated branch: `fix/startup-handheld-staging-20261108`.
+
+- Device persistence root cause verified and fixed; shared early/runtime policy ignores legacy automatic flags on Windows, preserves explicit selection and Zebra/Android fallback. Automated classification passes; actual Windows/DevTools and physical Zebra acceptance remain pending.
+- One redundant registration read removed from bootstrap only. Controlled 60 ms/response component comparison saves one round trip (~121 → 61 ms). Full reported 30–60 second startup cause and live before/after totals remain **NOT VERIFIED / OPEN**.
+- Verification: 19 new focused/build-fence tests and 255 relevant regression tests PASS. Historical full suite is not green; do not equate scoped passing tests with full-suite success.
+- Exact-branch Vercel Preview binds Staging `tovkcakucyagvbzvlnks`; read-only startup timing panel is Preview-only. No Production deployment, merge, backend changes or operational test writes.
+- Next: owner tests exact Preview on Windows and Zebra, captures startup timings with empty/active synthetic orders and repeated reload/logout; continue diagnosis from measured spans. No USER VERIFIED/DONE claim and no Production promotion authorization.
+
+[Scope, source trace, evidence and manual matrix](docs/startup/20261108/RESULTS.md). Prior Security Release #47 acceptance below remains intact.
+
 Security Release #47: **CLOSED — USER VERIFIED**. Approved remediation deployed and operationally accepted; continuing security maintenance remains separate. This is not comprehensive security certification.
 
 ## Production state

@@ -97,22 +97,35 @@
     </div>
 </div>
 <script>
-(function(){
-    try{
-        var ua=String(navigator.userAgent||"").toLowerCase();
-        var explicit=new URLSearchParams(location.search||"").get("handheld")==="1";
-        var remembered=localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")==="1";
-        var enterprise=/zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
-        var shortSide=Math.min(
-            Number((screen&&screen.width)||innerWidth||9999),
-            Number((screen&&screen.height)||innerHeight||9999)
+"use strict";
+
+/* One policy for the pre-auth shell and the operational UI. Automatic
+   detection is deliberately ephemeral: DevTools can emulate every Android
+   signal, so it must never create a remembered user preference. */
+window.PharmFlowDeviceMode = (() => {
+    function classify(){
+        let explicit = false;
+        try{
+            explicit = new URLSearchParams(window.location.search || "").get("handheld") === "1" ||
+                localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
+        }catch(_){}
+        if(explicit) return "explicit";
+
+        const ua = String(navigator.userAgent || "");
+        const platform = String(navigator.userAgentData?.platform || navigator.platform || "");
+        // A legacy auto-detection flag is never evidence of hardware or intent.
+        if(/windows/i.test(ua) || /^win/i.test(platform)) return "desktop";
+        if(/zebra|symbol|enterprise browser|\btc[0-9]{2,}\b|\bmc[0-9]{2,}\b/i.test(ua)) return "enterprise";
+        const shortest = Math.min(
+            Number(window.screen?.width || window.innerWidth || 9999),
+            Number(window.screen?.height || window.innerHeight || 9999)
         );
-        var formFactor=/android/i.test(ua) && shortSide<=600 && Number(navigator.maxTouchPoints||0)>0;
-        if(enterprise||explicit||remembered||formFactor){
-            document.body.classList.add("zebraDevice");
-            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
-        }
-    }catch(_){}
+        return /android/i.test(ua) && shortest <= 600 && Number(navigator.maxTouchPoints || 0) > 0
+            ? "android-form-factor" : "desktop";
+    }
+    const policy = Object.freeze({classify, isHandheld: () => classify() !== "desktop"});
+    document.body.classList.toggle("zebraDevice", policy.isHandheld());
+    return policy;
 })();
 </script>
 
@@ -2582,7 +2595,7 @@
 
 <script src="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1"></script>
 
-<script src="ui.js?v=RECEIVING_READY_20261031"></script>
+<script src="ui.js?v=STARTUP_HANDHELD_20261108"></script>
 
 <script src="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027"></script>
 
@@ -2604,7 +2617,7 @@
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
 <script src="js/permissions.js?v=DUTY_REFINE_20261106"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
-<script src="js/auth.js?v=P1_HANDHELD_AUTH_20261102"></script>
+<script src="js/auth.js?v=STARTUP_HANDHELD_20261108"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
@@ -2630,7 +2643,7 @@
 <script src="js/pharmflow-next.js?v=RECEIVING_RELEASE_20261101"></script>
 
 <script src="js/receiving-recovery.js?v=RECEIVING_RELEASE_20261101"></script>
-<script src="js/app.js?v=RECEIVING_RELEASE_20261101"></script>
+<script src="js/app.js?v=STARTUP_HANDHELD_20261108"></script>
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>

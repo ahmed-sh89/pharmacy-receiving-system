@@ -1,3 +1,7 @@
+## 8 November 2026 — Startup / Handheld candidate — Staging only
+
+Verified Windows persistence defect: automatic Android/emulation detection wrote a flag subsequently trusted on Desktop. Shared early/runtime detection now ignores that ambiguous flag, never persists automatic detection, and retains explicit Handheld and Zebra/Android paths. Bootstrap saves one redundant registration request while preserving access/context/permission/Receiving authority gates. Controlled component improvement only; full 30–60 second incident remains NOT VERIFIED/OPEN. 19 focused/build tests and 255 relevant regressions PASS; historical full suite remains ungreen. Exact branch Preview uses Staging with a read-only startup timing panel. Browser/hardware and live performance acceptance pending; not DONE. No Production merge/deploy/database/Edge/operational-data changes. [Evidence](docs/startup/20261108/RESULTS.md).
+
 ## 8 November 2026 — Security Release #47 CLOSED — USER VERIFIED
 
 Approved head `0ba04efc5f2272ef6f496914693c31f130a2c6b2` deployed as release SHA `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`. Both ordered migrations (`20261108123709`, `20261108124636`) and history applied atomically; password Edge Functions v8/v6 deployed and source-verified; protected PR #47 merge and official Pages run 42492205460 succeeded.

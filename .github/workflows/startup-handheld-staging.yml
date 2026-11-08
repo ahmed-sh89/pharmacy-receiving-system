@@ -1,0 +1,23 @@
+name: Startup and Handheld Staging checks
+on:
+  push:
+    branches: ['fix/startup-handheld-staging-20261108']
+permissions:
+  contents: read
+jobs:
+  targeted-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-fund --no-audit
+      - name: Device policy, bootstrap and build fences
+        run: node --test tests/startup-handheld-root.test.cjs tests/startup-staging-build.test.cjs
+      - name: Auth, authority, scanning and permission regressions
+        run: node --test tests/auth-request-timeout.test.cjs tests/auth-session-001.test.cjs tests/security-session-boundaries.test.cjs tests/receiving-startup-hydration.test.cjs tests/receiving-hydration-lifecycle.test.cjs tests/receiving-readiness-recovery.test.cjs tests/handheld-receiving-readiness-hotfix.test.cjs tests/handheld-scanner-rearm.test.cjs tests/handheld-assignment-delta.test.cjs tests/expiry-handheld-focus-hotfix.test.cjs tests/expiry-handheld-final-ux.test.cjs tests/expiry-handheld-ui.test.cjs tests/expiry-handheld-final-ui.test.cjs tests/expiry-handheld-polish.test.cjs tests/expiry-stage1-navigation-and-handheld.test.cjs tests/active-orders-authority.test.cjs tests/sleep-wake-permissions.test.cjs
