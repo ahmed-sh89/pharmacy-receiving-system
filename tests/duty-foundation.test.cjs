@@ -108,7 +108,7 @@ test('build output uses exactly the intended environment and registers Duty afte
   assert.equal(version.supabaseRef,'tovkcakucyagvbzvlnks');
   assert.ok(!html.includes('zznoshzcyxmtwfbznjyr'));assert.ok(!cloud.includes('zznoshzcyxmtwfbznjyr'));
   assert.ok(cloud.includes('tovkcakucyagvbzvlnks'));assert.match(config,/"staging"/);
-  assert.equal(version.branch,'feature/duty-staging-20261104');
+  assert.ok(['feature/duty-staging-20261104','fix/startup-handheld-staging-20261108','fix/duty-exchange-staging-20261109'].includes(version.branch),'Staging build must identify an approved branch');
  }else{
   assert.equal(version.environment,'production');assert.equal(version.supabaseRef,'zznoshzcyxmtwfbznjyr');
   assert.ok(cloud.includes('zznoshzcyxmtwfbznjyr'));assert.ok(!cloud.includes('tovkcakucyagvbzvlnks'));

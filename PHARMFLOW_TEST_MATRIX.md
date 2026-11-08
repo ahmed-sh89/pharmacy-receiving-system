@@ -1,3 +1,7 @@
+## 9 November 2026 — Duty interaction and Exchange
+
+READY FOR TEST — Staging only, Product Owner verification pending. Focused real-component/DB/build tests: 12 PASS. Full Duty: 98 PASS / 1 historical byte-freeze FAIL / 1 external-template SKIP. Relevant authentication/session/permissions/navigation: 90 PASS. Old startup-performance literal assertion fails on original main too. No failing checks hidden or disabled. Actual Chrome F5/idle Reload, 75/80/100% zoom and simultaneous two-PC acceptance remain owner checks. [Exact cases and evidence](docs/duty/20261109/INTERACTION_EXCHANGE.md).
+
 ## Final focused Staging refinements — 28 October 2026
 
 READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.

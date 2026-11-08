@@ -1,3 +1,7 @@
+## 9 November 2026 — Duty interaction and Exchange (Staging only)
+
+Reproduced route-reset/cached-response Schedule lifecycle defect and fixed invalidated-host activation. Added compact atomic Exchange through the existing CAS batch RPC and Ctrl + Drag ranges, with incompatible/third-range rejection, destination Auto calculations and Manual preservation. Focused 12 PASS; Duty 98 PASS / 1 historical snapshot FAIL / 1 missing-template SKIP; auth/session/navigation 90 PASS. Original-main failures independently confirmed, no checks disabled. Preview/owner acceptance pending. No Production or backend/data changes. [Evidence and acceptance](docs/duty/20261109/INTERACTION_EXCHANGE.md).
+
 ## 8 November 2026 — PR #49 CLOSED — USER VERIFIED
 
 **PR #49 RELEASE CLOSURE: CLOSED — USER VERIFIED.** Product Owner confirms actual Production acceptance on 8 November 2026: application fully loaded and usable approximately **7 seconds after Refresh**, versus previously reported **30–60 seconds**; Receiving, Orders, Reports, Expiry, Duty and Administrator open successfully. These are owner-observed approximate operational timings. This acceptance resolves the prior partial smoke/closure blocker; the earlier agent `Invalid login credentials` attempt is retained as its actual result, not relabeled agent-authenticated PASS.
