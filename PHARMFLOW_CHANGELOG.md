@@ -1,3 +1,13 @@
+## 8 November 2026 — Security Release #47 CLOSED — USER VERIFIED
+
+Approved head `0ba04efc5f2272ef6f496914693c31f130a2c6b2` deployed as release SHA `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`. Both ordered migrations (`20261108123709`, `20261108124636`) and history applied atomically; password Edge Functions v8/v6 deployed and source-verified; protected PR #47 merge and official Pages run 42492205460 succeeded.
+
+Product Owner confirms **USER VERIFIED — PASS — 8 November 2026**: login/Refresh persistence; read-only Receiving, Orders, Reports, Expiry, Duty and permitted Administrator access; logout/Refresh authentication requirement. This resolves the remaining operational acceptance blocker. Agent login remained blocked; no agent-authenticated PASS is claimed. Manual acceptance does not independently verify cross-pharmacy isolation, token revocation or comprehensive penetration resistance.
+
+SEC-005 remains ACCEPTED RISK (CSP/framing), SEC-006 PARTIALLY VERIFIED (comprehensive leaked-password screening), SEC-013 VENDOR DEPENDENCY (PostgreSQL security patch/backport confirmation). Release closure is separate from continuing security maintenance. Previous scoped automated evidence retained without rerun; historical suite limitations remain documented. Current backup was available before release; restore untested.
+
+This closure task changes documentation only. Application code, database/operational records, migrations, Edge and Auth settings unchanged; no release step repeated. [Closure evidence](docs/security/20261108/CLOSURE.md).
+
 ## 8 November 2026 — Security candidate, Staging only
 
 Read-only Production audit reconciled October operational closure and November advisories. Prepared session/legacy DATA/Edge/no-store/search-path hardening; applied two narrowly scoped Stage migrations and Stage password handlers v6/v3. Consolidated316 PASS/0 FAIL/3 SKIP; affected SQL13 PASS (overlap); Stage SQL11 PASS; two live endpoint flows9 checks each PASS. All75 observed historical-suite failures reproduced on unchanged main; full suite not green. Production source/307 function boundaries unchanged. No Production SQL/Auth/Edge/merge/deployment. Detailed assessment, limitations, inventories and release sequencing: docs/security/20261108/. Production execution requires separate approval.
