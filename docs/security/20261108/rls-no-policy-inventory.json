@@ -1,0 +1,1878 @@
+[
+  {
+    "schema": "pharmflow_auth_private",
+    "table": "account_provision_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "active_sessions_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "closed_auth_sessions_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "filtered_inventory_requests_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "first_operator_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "inventory_requests_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "operations",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "operator_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "photo_cleanup_jobs",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "photos",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "resolved_inventory_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "review_details",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "session_adjustments_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "session_captures_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "session_clear_requests_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_expiry_private",
+    "table": "session_group_adjustments_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_export_private",
+    "table": "master_revision",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_import_20261015",
+    "table": "control",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_import_20261015",
+    "table": "operations",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "pharmflow_receiving_private",
+    "table": "operations_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_admin_assignments",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_invitations",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_learned_gtin",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_learned_gtin_audit",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_master_gtin_imports_v2",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_master_gtin_meta_v2",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmacy_registration_requests",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_active_order_manifest_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_cloud_workspaces",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_employees_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_entries_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_holidays_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_months_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_positions_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_duty_settings_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_expiry_captures_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_expiry_review_resolution_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_expiry_workers_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_finalized_archives_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_group_change_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_gtin_conflicts_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_gtin_import_rows_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_gtin_imports_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_gtin_meta_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_gtin_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_item_identifiers_v2",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_global_items_v2",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_gtin_lifecycle_v3",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_gtin_mapping_disputes_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_identifier_mapping_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_identifier_migration_conflicts_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_needs_review_resolution_intents_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_needs_review_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_order_source_items",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_orders",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_pharmacy_gtin_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_pharmacy_gtin_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_pharmacy_identifier_mapping_audit_v2",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_pharmacy_identity_audit_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_receiving_transactions_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_session_terminations",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "pharmflow_workspace_generation_v1",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "session_items",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "sessions",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "system_owners",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  },
+  {
+    "schema": "public",
+    "table": "transactions",
+    "rls": true,
+    "policies": null,
+    "owner": "postgres",
+    "anon_authenticated_grants": {
+      "anon": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      },
+      "authenticated": {
+        "delete": false,
+        "insert": false,
+        "select": false,
+        "update": false,
+        "trigger": false,
+        "truncate": false,
+        "references": false
+      }
+    },
+    "classification": "intentionally RPC/private-only: default deny; do not add a permissive policy"
+  }
+]

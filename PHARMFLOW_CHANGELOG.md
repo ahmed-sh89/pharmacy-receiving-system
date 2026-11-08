@@ -1,3 +1,7 @@
+## 8 November 2026 — Security candidate, Staging only
+
+Read-only Production audit reconciled October operational closure and November advisories. Prepared session/legacy DATA/Edge/no-store/search-path hardening; applied two narrowly scoped Stage migrations and Stage password handlers v6/v3. Consolidated316 PASS/0 FAIL/3 SKIP; affected SQL13 PASS (overlap); Stage SQL11 PASS; two live endpoint flows9 checks each PASS. All75 observed historical-suite failures reproduced on unchanged main; full suite not green. Production source/307 function boundaries unchanged. No Production SQL/Auth/Edge/merge/deployment. Detailed assessment, limitations, inventories and release sequencing: docs/security/20261108/. Production execution requires separate approval.
+
 ## 3 November 2026 — Receiving Email Production release (#41)
 
 **Deployed / verified PASS.** Approved release `00b2e365210b669cb0a5fe54f2f976f7882566e9` merged as runtime `c5c9b23079af046fe60903f3703094acaf70bab4`; official Pages run [41546695844](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/41546695844) SUCCESS and served SHA verified. Exact owner-accepted email generator: independent cool gray blue KPI cards (#E1EAF2/#CBD9E6), bold colored numbers, dark-slate labels, 3px matching top accents, five cards across at expanded width, fluid six-column detail table and word-wrapped Status. Arabic sections, report calculations/visibility and rich Copy Email are preserved.

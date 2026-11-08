@@ -1,0 +1,119 @@
+[
+  {
+    "schema": "public",
+    "proname": "get_my_app_context",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.get_my_app_context()\n RETURNS TABLE(user_id uuid, email text, display_name text, system_role text, pharmacy_id uuid, pharmacy_code text, pharmacy_name text, member_role text)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n    select\r\n        u.id,\r\n        u.email,\r\n        case when coalesce(pr.display_name_verified,false) and nullif(trim(pr.display_name),'') is not null\r\n             then pr.display_name\r\n             else split_part(coalesce(u.email,''),'@',1)\r\n        end,\r\n        case when exists(select 1 from public.system_owners o where o.user_id=u.id) then 'owner'::text else null::text end,\r\n        p.id,p.code,p.name,m.role\r\n    from auth.users u\r\n    left join public.profiles pr on pr.user_id=u.id\r\n    left join lateral (\r\n        select m1.* from public.pharmacy_members m1\r\n        join public.pharmacies p1 on p1.id=m1.pharmacy_id\r\n        where m1.user_id=u.id and m1.active=true and p1.status='active'\r\n        order by m1.created_at limit 1\r\n    ) m on true\r\n    left join public.pharmacies p on p.id=m.pharmacy_id\r\n    where u.id=auth.uid();\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "owner_set_pharmacy_status",
+    "args": "p_pharmacy_id uuid, p_status text",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public, auth"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.owner_set_pharmacy_status(p_pharmacy_id uuid, p_status text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'auth'\nAS $function$\r\nbegin\r\n    if not public.medryvo_is_system_owner() then\r\n        raise exception 'System Owner access required';\r\n    end if;\r\n\r\n    if p_status not in ('active','suspended') then\r\n        raise exception 'Invalid pharmacy status';\r\n    end if;\r\n\r\n    update public.pharmacies\r\n       set status=p_status,\r\n           active=(p_status='active'),\r\n           updated_at=now()\r\n     where id=p_pharmacy_id;\r\n\r\n    if not found then\r\n        raise exception 'Pharmacy not found';\r\n    end if;\r\nend;\r\n$function$\n"
+  },
+  {
+    "schema": "pharmflow_auth_private",
+    "proname": "current_pharmacy",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=pg_catalog, public"
+    ],
+    "anon_exec": false,
+    "auth_exec": false,
+    "definition": "CREATE OR REPLACE FUNCTION pharmflow_auth_private.current_pharmacy()\n RETURNS uuid\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public'\nAS $function$\n SELECT m.pharmacy_id FROM public.pharmacy_members m JOIN public.pharmacies p ON p.id=m.pharmacy_id\n WHERE m.user_id=auth.uid() AND m.active AND p.status='active'\n ORDER BY m.created_at,m.pharmacy_id LIMIT 1;\n$function$\n"
+  },
+  {
+    "schema": "pharmflow_auth_private",
+    "proname": "data_allowed",
+    "args": "pid uuid, writing boolean, global_write boolean",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=pg_catalog, public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION pharmflow_auth_private.data_allowed(pid uuid, writing boolean DEFAULT false, global_write boolean DEFAULT false)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public'\nAS $function$\n SELECT pharmflow_auth_private.password_change_complete() AND\n (public.is_system_owner() OR EXISTS(\n SELECT 1 FROM public.pharmacy_members m JOIN public.pharmacies p ON p.id=m.pharmacy_id\n JOIN public.pharmflow_pharmacy_permissions_v1 a ON a.pharmacy_id=p.id\n WHERE m.user_id=auth.uid() AND m.pharmacy_id=pid AND m.active AND p.active AND p.status='active'\n AND (NOT writing OR (m.role='admin' AND a.data_access=ANY(\n CASE WHEN global_write THEN ARRAY['PHARMACY_GLOBAL'] ELSE ARRAY['PHARMACY_ONLY','PHARMACY_GLOBAL'] END)))));\n$function$\n"
+  },
+  {
+    "schema": "pharmflow_auth_private",
+    "proname": "module_allowed",
+    "args": "pid uuid, mod text, writing boolean",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=pg_catalog, public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION pharmflow_auth_private.module_allowed(pid uuid, mod text, writing boolean DEFAULT false)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public'\nAS $function$\n SELECT pharmflow_auth_private.password_change_complete() AND\n (public.is_system_owner() OR EXISTS(\n SELECT 1 FROM public.pharmacy_members m JOIN public.pharmacies p ON p.id=m.pharmacy_id\n JOIN public.pharmflow_pharmacy_permissions_v1 a ON a.pharmacy_id=p.id\n WHERE m.user_id=auth.uid() AND m.pharmacy_id=pid AND m.active AND p.active AND p.status='active'\n AND CASE mod WHEN 'RECEIVING' THEN a.receiving WHEN 'EXPIRY' THEN a.expiry ELSE 'DISABLED' END\n =ANY(CASE WHEN writing THEN ARRAY['FULL'] ELSE ARRAY['FULL','READ_ONLY'] END)));\n$function$\n"
+  },
+  {
+    "schema": "pharmflow_auth_private",
+    "proname": "password_change_complete",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=pg_catalog, auth"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION pharmflow_auth_private.password_change_complete()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'auth'\nAS $function$\n SELECT EXISTS (\n  SELECT 1 FROM auth.users u\n  WHERE u.id=auth.uid()\n   AND coalesce(u.raw_app_meta_data->>'pharmflow_must_change_password','false')<>'true'\n   AND coalesce((auth.jwt()->>'exp')::numeric,0)>extract(epoch from now())\n   AND EXISTS (\n    SELECT 1 FROM auth.sessions s\n    WHERE s.id=nullif(auth.jwt()->>'session_id','')::uuid\n     AND s.user_id=u.id\n     AND (s.not_after IS NULL OR s.not_after>now())\n   )\n );\n$function$\n"
+  },
+  {
+    "schema": "pharmflow_auth_private",
+    "proname": "require_access",
+    "args": "pid uuid, mod text, writing boolean, src text, op text",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=pg_catalog, public"
+    ],
+    "anon_exec": false,
+    "auth_exec": false,
+    "definition": "CREATE OR REPLACE FUNCTION pharmflow_auth_private.require_access(pid uuid, mod text, writing boolean, src text, op text DEFAULT NULL::text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public'\nAS $function$\nBEGIN\n IF NOT (CASE WHEN mod='DATA' THEN pharmflow_auth_private.data_allowed(pid,writing)\n  WHEN mod='GLOBAL' THEN pharmflow_auth_private.global_allowed()\n  ELSE pharmflow_auth_private.module_allowed(pid,mod,writing) END) THEN\n  RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='PHARMFLOW_PERMISSION_DENIED',DETAIL=mod;\n END IF;\n IF pid IS NOT NULL THEN PERFORM set_config('pharmflow.permission_pharmacy',pid::text,true); END IF;\n PERFORM set_config('pharmflow.permission_source',src,true);\n IF op IS NOT NULL THEN PERFORM set_config('pharmflow.permission_operation',op,true); END IF;\nEND $function$\n"
+  },
+  {
+    "schema": "pharmflow_auth_private",
+    "proname": "global_allowed",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=pg_catalog, public"
+    ],
+    "anon_exec": false,
+    "auth_exec": false,
+    "definition": "CREATE OR REPLACE FUNCTION pharmflow_auth_private.global_allowed()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'public'\nAS $function$\n SELECT CASE WHEN nullif(current_setting('pharmflow.permission_pharmacy',true),'') IS NOT NULL\n THEN pharmflow_auth_private.data_allowed(current_setting('pharmflow.permission_pharmacy')::uuid,true,true)\n ELSE pharmflow_auth_private.password_change_complete() AND (public.is_system_owner() OR EXISTS(\n SELECT 1 FROM public.pharmacy_members m JOIN public.pharmacies p ON p.id=m.pharmacy_id\n JOIN public.pharmflow_pharmacy_permissions_v1 a ON a.pharmacy_id=p.id\n WHERE m.user_id=auth.uid() AND m.active AND m.role='admin' AND p.active AND p.status='active' AND a.data_access='PHARMACY_GLOBAL')) END;\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "pharmflow_password_change_request_guard",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": false,
+    "proconfig": [
+      "search_path=pg_catalog, public"
+    ],
+    "anon_exec": true,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.pharmflow_password_change_request_guard()\n RETURNS void\n LANGUAGE plpgsql\n STABLE\n SET search_path TO 'pg_catalog', 'public'\nAS $function$\nDECLARE request_path text:=regexp_replace(coalesce(current_setting('request.path',true),''),'^/','');\nBEGIN\n IF auth.uid() IS NULL THEN RETURN; END IF;\n -- Exact identity/bootstrap reads and signed-session cleanup only.\n -- Password replacement and logout use Auth/Edge endpoints, not business RPCs.\n IF request_path=ANY(ARRAY[\n  'rpc/get_public_setup_status','rpc/get_my_app_context',\n  'rpc/get_my_pharmacy_registration','rpc/close_pharmflow_expiry_auth_session_v1'\n ]) THEN RETURN; END IF;\n IF NOT pharmflow_auth_private.password_change_complete() THEN\n  RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='PASSWORD_CHANGE_REQUIRED',\n   HINT='Replace the temporary password before accessing business data.';\n END IF;\nEND;\n$function$\n"
+  }
+]
