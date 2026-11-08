@@ -1,19 +1,7 @@
-# Duty PR #45 release preflight — 7 November 2026
+# Duty checkpoint — 9 November 2026
 
-**PRODUCTION RELEASE PREFLIGHT: BLOCKED.** Read-only Production preflight; no migration, merge, deployment, activation or operational write performed.
+**STAGING READY FOR USER TEST** — Interaction/Exchange/Ctrl+Drag. Owner acceptance pending; Production protected.
 
-Production main verified unchanged: 7f0bcc1fe167415e38372b1db1d9c2f0c24858de. Inspected PR #45 Draft head: 20718a03efe3fce4315a2d59450339ff351472f1. This update is documentation-only; pin the resulting PR head before future authorization. Accepted/deployed Staging runtime: f01c307e7e647dd564295aac07bb27776990c0a2; all five changed runtime files are byte-identical in the release PR.
+Production baseline `c68a940fecd9d40b57b625769e9a4654991b6010`; branch `fix/duty-exchange-staging-20261109-v2`. Existing atomic save RPC reused, no migration or hosted data changes. Preserve all accepted Duty rules and prior releases.
 
-USER VERIFIED PASS: quiet background sync; organized Employees/status badges; position-aware presets/durations; existing Select All + Ctrl exclusion; Apply/replacement/Undo/Redo; multi-session sync. Ctrl + Drag explicitly deferred. Preserve earlier accepted Excel/Receiving/Expiry evidence. Previous automated 153 PASS / 0 FAIL / 1 optional SKIP retained; no acceptance rerun.
-
-Source integrity, current required CI/security, migration compatibility, pharmacy isolation/permissions and inspected Production non-regression PASS. Active main ruleset 26077274 requires protected PR workflow and strict PharmFlow security checks. Inspected-head Duty/build run 42312824838 and security run 42312824826 PASS. Vercel release-branch status fails the unchanged Production configuration guard; it is not the required security check and is separate from READY Staging. No guard bypass or config/dependency changes.
-
-Only pending migration: 20261106232443_duty_position_presets_staging.sql, SHA-256 5d78903e73f1e9f3b76826eb6dd2f3afcbf8769953b0e7582acbe568da1c9d5c — exact source verified. Original seven installed history source hashes and existing relevant function bodies match; new history row and RPC absent. Compatible function-only additive change; no migration-time data/permission writes. Existing seven Production presets all lack position metadata and remain All Positions. Read-only counts: 10 employees, 3 positions, 10 saved entries. Duty tables RLS enabled; anon/authenticated direct table access denied; anon RPC execution denied. Hosted history text[] representation confirmed. Prior native seven-migration atomic proof and new isolated migration commit/rollback proof preserved without rerun.
-
-Actual Production baseline: HHP084 Duty FULL; DEV001, HHP107, TEST002, TEST003 Duty DISABLED. Receiving FULL except TEST003 DISABLED; Expiry FULL for all five. Preserve these states exactly; do not reset HHP084 or activate others. New pharmacy permission-row Duty default remains DISABLED.
-
-**Only unresolved release gate: current backup/recovery availability.** Dashboard scheduled-backups URL redirected to Sign in; no authenticated session and no supported backup-list tool. Historical 2026-11-06 00:41:13 UTC / Restore screenshot does not establish current availability. Latest available timestamp, completion/availability and retention constraints NOT VERIFIED; actual restore never tested. Minimum missing evidence: one fresh Production scheduled-backups screenshot showing project identity, latest timestamp and Restore/available status, plus displayed recovery window if present. No login retries/password requests/restore.
-
-Exact prepared transaction/history, pre-COMMIT assertions, uncertain-COMMIT handling, protected merge/Pages sequence, non-destructive smoke checks and rollback are in PR45_PRODUCTION_PREFLIGHT_20261107.md. Fresh backup and full pre-change checkpoint must be rechecked immediately before any separately approved execution. Use ONLY the pending migration in one direct/session transaction with exact-source history; never replay seven installed migrations. After commit preserve schema/history/data and activation, use protected application rollback if needed.
-
-Next action: close the backup gate with fresh evidence, verify any drift and final documentation-head checks, then request separately pinned Production authorization. PR remains Draft; no Production execution authorized.
+[Current evidence, remaining boundaries and exact acceptance steps](EXCHANGE_STAGING_20261109.md). See root current checkpoint for publishing identity. Next: owner Staging acceptance, then stop; no Production release authorized.

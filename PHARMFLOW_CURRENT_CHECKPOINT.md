@@ -1,6 +1,26 @@
-# PharmFlow current checkpoint — 8 November 2026
+# PharmFlow current checkpoint — 9 November 2026
 
-## PR #49 — CLOSED — USER VERIFIED
+## Duty interaction and Exchange — STAGING READY FOR USER TEST
+
+Authorized Staging-only scope: DUTY-SCHEDULE-INTERACTION-001 root-cause fix, bidirectional atomic Exchange, Ctrl+Drag multi-range. Product Owner verification pending. No Production merge/deploy/database/Edge Function/operational writes authorized or performed.
+
+Verified Production main: `c68a940fecd9d40b57b625769e9a4654991b6010`. Branch: `fix/duty-exchange-staging-20261109-v2`, based directly on that SHA. Staging Supabase: `tovkcakucyagvbzvlnks`.
+
+Root cause reproduced: route activation cleared scheduler month/state but retained the visible DOM and controller data; identical server data skipped mounting. Tab switching mounted and restored the scheduler. Final fix mounts cleared/detached state independently of data equality and preserves a live grid on redundant activation. No timeout recovery or new polling.
+
+Exchange submits both explicit equal, disjoint rectangles in one existing `save_pharmflow_duty_schedule_v2` transaction, retaining per-cell revision conflict guards and pharmacy lock. No migration required/applied. Automatic destination classification and explicit manual metadata preserved; one-frame revision-safe Undo/Redo. Ctrl+Drag adds a second range, normal drag replaces, third/mismatched/overlapping ranges disable Exchange.
+
+Actual checks: Duty 114 PASS / 1 historical FAIL / 1 optional SKIP; related regressions 61 PASS / 1 historical FAIL; focused security 66 PASS. Both failures reproduced independently on unchanged main. Chromium real-pointer, idle-resume and reload integration PASS with synthetic server fixture; SQL-engine atomic rollback/rules/permissions tests PASS; default and isolated Preview builds PASS. Native Windows zoom, hosted two-PC acceptance and owner acceptance remain pending. No whole-suite-green or live operational test claim.
+
+[Full implementation, evidence boundaries and exact owner tests](docs/duty/EXCHANGE_STAGING_20261109.md).
+
+Exact next action: verify Draft PR/Preview commit and Staging backend identity, then owner performs that test list. Keep **STAGING READY FOR USER TEST** until actual verification. Do not promote or modify Production.
+
+---
+
+## Retained accepted Production releases
+
+
 
 **PR #49 RELEASE CLOSURE: CLOSED — USER VERIFIED.** Product Owner Production acceptance recorded 8 November 2026. The previous operational acceptance blocker is resolved; no deployment or operational tests repeated for this documentation closure.
 
@@ -36,14 +56,5 @@ Closure changes **only `PHARMFLOW_CURRENT_CHECKPOINT.md` and `PHARMFLOW_CHANGELO
 
 Rollback remains a protected revert PR plus official Pages deployment; **actual rollback/restore was not tested**. No database rollback is required for the frontend-only release.
 
-## Separate unresolved incident / exact next action
 
-**DUTY-SCHEDULE-INTERACTION-001 — OPEN.** Intermittent Duty cell selection/editing can stop responding after navigation or the in-app Session Paused reload, and can also occur without that overlay; browser Refresh restores interaction. Its root cause is not established here. It remains separate from PR #49, was not fixed in this release and is not closed by the operational acceptance above.
-
-Next: undertake only a separately scoped/authorized investigation of that Duty incident. Do not reopen the accepted PR #49 release, repeat deployment/tests, or make speculative Production fixes.
-
-## Security Release #47 — retained accepted state
-
-Security Release #47 remains **CLOSED — USER VERIFIED** for its prior operational acceptance, not comprehensive security certification. Approved head `0ba04efc5f2272ef6f496914693c31f130a2c6b2`; deployed release SHA `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`. Migrations `20261108123709_security_session_boundaries.sql` then `20261108124636_security_live_session_request_gate.sql` were previously applied atomically; password Edge handlers v8/v6. No replay or backend change in PR #49.
-
-Residual risks remain: SEC-005 accepted CSP/framing limitations; SEC-006 partially verified comprehensive breached-password screening; SEC-013 vendor PostgreSQL patch/backport dependency. Prior security and historical full-suite verification limits remain; no new penetration/cross-pharmacy certification. [Security closure](docs/security/20261108/CLOSURE.md).
+Security Release #47 remains CLOSED — USER VERIFIED with its previously documented residual risks and verification boundaries: [closure](docs/security/20261108/CLOSURE.md). No replay, reopened audit or new certification.

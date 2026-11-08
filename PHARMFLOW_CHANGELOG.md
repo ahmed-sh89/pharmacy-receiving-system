@@ -1,3 +1,9 @@
+## 9 November 2026 — Duty interaction / Exchange / Ctrl+Drag — Staging
+
+Fixed reproduced cleared-scheduler/unchanged-data re-entry failure without replacing an already-live grid. Added compact bidirectional Exchange and explicit Ctrl+Drag range tracking with shape/overlap/third-range validation. Reuses existing atomic pharmacy-scoped revision-checked save RPC; no migration. Manual metadata and destination automatic calculations preserved; one-action Undo/Redo. Preview allowlist restricted to dedicated branch. Production unchanged; owner verification pending.
+
+Duty 114 PASS / 1 historical FAIL / 1 optional SKIP; related 61 PASS / 1 historical FAIL; security 66 PASS. Both historical failures reproduced on untouched main. Chromium synthetic integration and SQL-engine atomicity checks PASS; hosted two-PC/native Windows acceptance pending. [Details](docs/duty/EXCHANGE_STAGING_20261109.md).
+
 ## 8 November 2026 — PR #49 CLOSED — USER VERIFIED
 
 **PR #49 RELEASE CLOSURE: CLOSED — USER VERIFIED.** Product Owner confirms actual Production acceptance on 8 November 2026: application fully loaded and usable approximately **7 seconds after Refresh**, versus previously reported **30–60 seconds**; Receiving, Orders, Reports, Expiry, Duty and Administrator open successfully. These are owner-observed approximate operational timings. This acceptance resolves the prior partial smoke/closure blocker; the earlier agent `Invalid login credentials` attempt is retained as its actual result, not relabeled agent-authenticated PASS.

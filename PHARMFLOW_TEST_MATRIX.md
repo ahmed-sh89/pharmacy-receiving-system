@@ -1,3 +1,9 @@
+## Duty interaction / Exchange — 9 November 2026
+
+Status: **STAGING READY FOR USER TEST**, not USER VERIFIED/DONE. [Actual test matrix, result boundaries and owner steps](docs/duty/EXCHANGE_STAGING_20261109.md#actual-verification).
+
+New lifecycle, one-request bidirectional save, complete payload/manual metadata, invalid/third selections, failed exchange and stale Undo tests PASS. Isolated SQL rollback, rules and permission tests PASS. Real Chromium pointer/drag, repeated navigation, idle-resume and document reload PASS using synthetic mocked server. Windows native zoom and hosted multi-PC acceptance pending. Duty suite retains one independently reproduced historical snapshot failure and one optional skip; related suite retains one independently reproduced historical CSS expectation failure. No failing check hidden or disabled.
+
 ## Final focused Staging refinements — 28 October 2026
 
 READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.
