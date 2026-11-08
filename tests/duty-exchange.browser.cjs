@@ -12,6 +12,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');const {chromium
  for(const p of ['js/duty-model.js','js/duty-controls.js','js/duty-schedule.js'])await page.addScriptTag({content:fs.readFileSync(p,'utf8')});
  await page.evaluate(()=>{
   window.db={pharmacy_id:'synthetic',can_write:true,manual_hours:true,persistent_settings:true,holiday_first:true,positions:DutyModel.defaults,employees:[{code:'A',name:'Alpha',position_key:'pharmacist',active:true},{code:'B',name:'Beta',position_key:'pharmacist',active:true}],entries:[],holidays:[{date:'2026-11-13',active:true,name:'Holiday'}],hour_rules:[],shift_presets:[{id:'day',name:'Day',periods:[{start:540,end:1080}]}]};
+  for(let i=0;i<5;i++)for(const [code,day,start] of [['A',i+1,540+i*15],['B',i+10,780+i*15]])db.entries.push({code,date:'2026-11-'+String(day).padStart(2,'0'),revision:1,payload:DutyModel.normalize({status:'WORK',periods:[{start,end:start+480}],note:code+' original '+day})});
   window.saves=[];window.authRpc=async(name,args)=>{
    if(name==='get_pharmflow_duty_schedule_v1')return structuredClone(db);
    if(name!=='save_pharmflow_duty_schedule_v2')throw Error('Unexpected RPC '+name);
@@ -38,7 +39,10 @@ const fs=require('node:fs'),assert=require('node:assert/strict');const {chromium
   await page.evaluate(z=>document.body.style.zoom=z,zoom);
   await drag(cell('A','01'),cell('A','05'));assert.equal(await page.locator('.duty-selected').count(),5);
   await drag(cell('B','10'),cell('B','14'),true);assert.equal(await page.locator('.duty-selected').count(),10);assert.equal(await page.locator('.duty-range-b').count(),5);assert.equal(await exchange.isDisabled(),false);
+  const before=await page.evaluate(()=>structuredClone(db.entries));
   await exchange.click();assert.equal(await page.evaluate(()=>saves.at(-1).p_changes.length),10);
+  const after=await page.evaluate(()=>db.entries);
+  for(let i=0;i<5;i++){const a='2026-11-'+String(i+1).padStart(2,'0'),b='2026-11-'+String(i+10).padStart(2,'0'),get=(rows,code,date)=>rows.find(e=>e.code===code&&e.date===date).payload;assert.deepEqual(get(after,'A',a),get(before,'B',b));assert.deepEqual(get(after,'B',b),get(before,'A',a));}
   await page.locator('[data-s-action=undo]').click();await page.locator('[data-s-action=redo]').click();
   await drag(cell('A','16'),cell('A','18'),true);assert.equal(await exchange.isDisabled(),true);assert.match(await page.locator('.duty-footnote').textContent(),/Select two equal ranges/);
   await drag(cell('A','01'),cell('A','02'));assert.equal(await page.locator('.duty-selected').count(),2);
